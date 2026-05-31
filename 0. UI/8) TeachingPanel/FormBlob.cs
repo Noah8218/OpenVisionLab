@@ -89,8 +89,6 @@ namespace OpenVisionLab
             var col = new ImageListView.ImageListViewColumnHeader(ColumnType.Custom, "random", "Random");
             col.Comparer = new RandomColumnComparer();
             imageListView1.Columns.Add(col);
-
-            Global.Thread.CSeqVision.EventSeqComplete += OnInspResult;
         }
 
         private void OnInspResult(object sender, EventArgs e)

@@ -11,7 +11,6 @@ namespace OpenVisionLab
     public class CSystem
     {
         public ManualResetEvent PauseWait = new ManualResetEvent(false);
-        public ManualResetEvent AlarmWait = new ManualResetEvent(true);
 
         public EventHandler EventChangedMode = null;
         public EventHandler EventChangedAuthorization = null;

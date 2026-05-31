@@ -67,8 +67,6 @@ namespace OpenVisionLab
             AddTeachingCount();
             propertyGrid_Parameter.PropertyValueChanged += PropertyGrid_Parameter_PropertyValueChanged;
             this.Resize += FormTeaching_Resize;
-
-            Global.Thread.CSeqVision.EventSeqComplete += OnInspResult;
         }
 
         private void OnInspResult(object sender, EventArgs e)

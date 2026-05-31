@@ -79,7 +79,6 @@
             // 
             this.timerAlarm.Enabled = true;
             this.timerAlarm.Interval = 500;
-            this.timerAlarm.Tick += new System.EventHandler(this.timerAlarm_Tick);
             // 
             // pnMDI
             // 

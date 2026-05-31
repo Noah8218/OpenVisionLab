@@ -41,15 +41,13 @@ namespace OpenVisionLab
         //public CSeqVision SeqVision { get; set; } = new CSeqVision();        
         // 스팩,파라미터, 판정값등 각종 검사에 사용되는 값들을 관리
         public CData Data { get; set; } = new CData();
-        public CSeqThread Thread { get; set; } = new CSeqThread();
-
+        
         public CGlobal() { }        
 
         public bool Close()
         {
             try
             {
-                Thread.Stop();
                 System.Close();
                 Device.Close();                                
                 return true;

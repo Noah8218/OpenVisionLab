@@ -295,53 +295,17 @@
     <Compile Include="0. UI\0%29 MENU\FormTeachingVision.Designer.cs">
       <DependentUpon>FormTeachingVision.cs</DependentUpon>
     </Compile>
-    <Compile Include="0. UI\0%29 MENU\LoginForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\0%29 MENU\LoginForm.designer.cs">
-      <DependentUpon>LoginForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="0. UI\2%29 POPUP\FormPowerGraphConfig.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="0. UI\2%29 POPUP\FormPowerGraphConfig.Designer.cs">
       <DependentUpon>FormPowerGraphConfig.cs</DependentUpon>
     </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormSetting_UTIL.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormSetting_UTIL.Designer.cs">
-      <DependentUpon>FormSetting_UTIL.cs</DependentUpon>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormSetting_Camera.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormSetting_Camera.Designer.cs">
-      <DependentUpon>FormSetting_Camera.cs</DependentUpon>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormViewer_Alarm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormViewer_Alarm.Designer.cs">
-      <DependentUpon>FormViewer_Alarm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormAlarm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormAlarm.Designer.cs">
-      <DependentUpon>FormAlarm.cs</DependentUpon>
-    </Compile>
     <Compile Include="0. UI\2%29 POPUP\FormInit.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="0. UI\2%29 POPUP\FormInit.Designer.cs">
       <DependentUpon>FormInit.cs</DependentUpon>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormVisionAlarm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormVisionAlarm.Designer.cs">
-      <DependentUpon>FormVisionAlarm.cs</DependentUpon>
     </Compile>
     <Compile Include="0. UI\2%29 POPUP\FormImageCompare.cs">
       <SubType>Form</SubType>
@@ -445,24 +409,6 @@
     <Compile Include="0. UI\6%29 Vision Test\FormVision_Morphology.Designer.cs">
       <DependentUpon>FormVision_Morphology.cs</DependentUpon>
     </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormCSV.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormCSV.designer.cs">
-      <DependentUpon>FormCSV.cs</DependentUpon>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormMainGraph.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormMainGraph.Designer.cs">
-      <DependentUpon>FormMainGraph.cs</DependentUpon>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormVision_LotOpen.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormVision_LotOpen.Designer.cs">
-      <DependentUpon>FormVision_LotOpen.cs</DependentUpon>
-    </Compile>
     <Compile Include="0. UI\8%29 TeachingPanel\FormContour.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -505,24 +451,6 @@
     <Compile Include="0. UI\8%29 TeachingPanel\FormThreshold.Designer.cs">
       <DependentUpon>FormThreshold.cs</DependentUpon>
     </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormMainButton.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormMainButton.Designer.cs">
-      <DependentUpon>FormMainButton.cs</DependentUpon>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormMainDefect.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormMainDefect.Designer.cs">
-      <DependentUpon>FormMainDefect.cs</DependentUpon>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormMainSystem.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormMainSystem.Designer.cs">
-      <DependentUpon>FormMainSystem.cs</DependentUpon>
-    </Compile>
     <Compile Include="0. UI\2%29 POPUP\FormKeyboard.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -535,25 +463,14 @@
     <Compile Include="0. UI\2%29 POPUP\FormLayerDisplay.Designer.cs">
       <DependentUpon>FormLayerDisplay.cs</DependentUpon>
     </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormSettings_Devices.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormSettings_Devices.Designer.cs">
-      <DependentUpon>FormSettings_Devices.cs</DependentUpon>
-    </Compile>
     <Compile Include="1. Core\CDisplayManager.cs" />
     <Compile Include="1. Core\CInspectionAlgorithm.cs" />
-    <Compile Include="1. Core\CSeqThread.cs" />
     <Compile Include="1. Core\CVisionTools.cs" />
     <Compile Include="1. Core\CSequence.cs" />
     <Compile Include="2. Common\CAccountManager.cs" />
-    <Compile Include="2. Common\CAlarm.cs" />
-    <Compile Include="2. Common\CAlignCalculration.cs" />
-    <Compile Include="2. Common\CAlignParameter.cs" />
     <Compile Include="2. Common\CDrawBitmap.cs" />
     <Compile Include="2. Common\CEdgeList_Line.cs" />
     <Compile Include="2. Common\CDefectList_Blob.cs" />
-    <Compile Include="2. Common\CAttatchLabelling.cs" />
     <Compile Include="2. Common\CCommon.cs" />
     <Compile Include="2. Common\CParameterManager.cs" />
     <Compile Include="2. Common\CDefectList.cs" />
@@ -563,7 +480,6 @@
     <Compile Include="2. Common\SerializeHelper.cs" />
     <Compile Include="2. Common\UIThreadInvokeClass.cs" />
     <Compile Include="3. Device\CAMERA\CGrabberMatrox.cs" />
-    <Compile Include="4. Sequence\CSeqBase.cs" />
     <Compile Include="5. Property\CPropertyParam.cs" />
     <Compile Include="5. Property\CPropertyPlcSetting.cs" />
     <Compile Include="5. Property\CPropertySetting.cs" />
@@ -738,34 +654,15 @@
     <Compile Include="0. UI\2%29 POPUP\FormImageEditView.Designer.cs">
       <DependentUpon>FormImageEditView.cs</DependentUpon>
     </Compile>
-    <Compile Include="4. Sequence\CSeqVision.cs" />
     <Compile Include="Vision\OpenCV\CPropertyVision.cs" />
     <EmbeddedResource Include="0. UI\0%29 MENU\FormTeachingVision.resx">
       <DependentUpon>FormTeachingVision.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\0%29 MENU\LoginForm.resx">
-      <DependentUpon>LoginForm.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="0. UI\2%29 POPUP\FormPowerGraphConfig.resx">
       <DependentUpon>FormPowerGraphConfig.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\2%29 POPUP\FormSetting_UTIL.resx">
-      <DependentUpon>FormSetting_UTIL.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\2%29 POPUP\FormSetting_Camera.resx">
-      <DependentUpon>FormSetting_Camera.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\2%29 POPUP\FormViewer_Alarm.resx">
-      <DependentUpon>FormViewer_Alarm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\2%29 POPUP\FormAlarm.resx">
-      <DependentUpon>FormAlarm.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="0. UI\2%29 POPUP\FormInit.resx">
       <DependentUpon>FormInit.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\2%29 POPUP\FormVisionAlarm.resx">
-      <DependentUpon>FormVisionAlarm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="0. UI\2%29 POPUP\FormImageCompare.resx">
       <DependentUpon>FormImageCompare.cs</DependentUpon>
@@ -818,15 +715,6 @@
     <EmbeddedResource Include="0. UI\6%29 Vision Test\FormVision_Morphology.resx">
       <DependentUpon>FormVision_Morphology.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\7%29 MainPanel\FormCSV.resx">
-      <DependentUpon>FormCSV.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\7%29 MainPanel\FormMainGraph.resx">
-      <DependentUpon>FormMainGraph.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\7%29 MainPanel\FormVision_LotOpen.resx">
-      <DependentUpon>FormVision_LotOpen.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="0. UI\8%29 TeachingPanel\FormContour.resx">
       <DependentUpon>FormContour.cs</DependentUpon>
     </EmbeddedResource>
@@ -848,24 +736,11 @@
     <EmbeddedResource Include="0. UI\8%29 TeachingPanel\FormThreshold.resx">
       <DependentUpon>FormThreshold.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\7%29 MainPanel\FormMainButton.resx">
-      <DependentUpon>FormMainButton.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\7%29 MainPanel\FormMainDefect.resx">
-      <DependentUpon>FormMainDefect.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\7%29 MainPanel\FormMainSystem.resx">
-      <DependentUpon>FormMainSystem.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="0. UI\2%29 POPUP\FormKeyboard.resx">
       <DependentUpon>FormKeyboard.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="0. UI\2%29 POPUP\FormLayerDisplay.resx">
       <DependentUpon>FormLayerDisplay.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\2%29 POPUP\FormSettings_Devices.resx">
-      <DependentUpon>FormSettings_Devices.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Library\CViewer.resx">
       <DependentUpon>CViewer.cs</DependentUpon>

@@ -15,18 +15,6 @@ namespace OpenVisionLab
         // 해당 큐에 검사 이미지를 넣어서 검사를 진행        
         [XmlIgnore] public ConcurrentQueue<CGrabBuffer> GrabQueue = new ConcurrentQueue<CGrabBuffer>();
 
-        // 해당 디펙값을 넣고 스레드에서 검사
-        // 라벨러 관리는 어떻게?
-        // 리스트 딕셔너리?
-        // 관리 클래스를 하나 만들어도 괜찮음
-        [XmlIgnore] public List<List<CAttatchLabelling>> AttachesTemp = new List<List<CAttatchLabelling>>();
-        [XmlIgnore] public List<List<CAttatchLabelling>> Attaches = new List<List<CAttatchLabelling>>();
-        [XmlIgnore] public List<CAttatchLabelling> Already_AttachedList = new List<CAttatchLabelling>();
-        //[XmlIgnore] public List<CAttatchLabelling> AttatchLabels_No1 = new List<CAttatchLabelling>();
-        //[XmlIgnore] public List<CAttatchLabelling> AttatchLabels_No2 = new List<CAttatchLabelling>();
-        //[XmlIgnore] public List<CAttatchLabelling> AttatchLabels_No3 = new List<CAttatchLabelling>();
-        //[XmlIgnore] public List<CAttatchLabelling> AttatchLabels_No4 = new List<CAttatchLabelling>();
-
         // 스팩관련 프로퍼티
         [XmlIgnore] public CPropertySpec SPEC = new CPropertySpec("SPEC");
         [XmlIgnore] public CPropertySetting SETTING = new CPropertySetting("SETTING");
@@ -83,10 +71,6 @@ namespace OpenVisionLab
             // 직렬화는 아래와 같이 객체를 Load후 넘겨줘야 한다.
             SPEC = SPEC.LoadConfig(RecipeName);
             SETTING = SETTING.LoadConfig(RecipeName);
-
-            for (int i = 0; i < SETTING.LabelCount; i++) { Attaches.Add(new List<CAttatchLabelling>()); }
-            for (int i = 0; i < SETTING.LabelCount; i++) { AttachesTemp.Add(new List<CAttatchLabelling>()); }
-
 
             for (int i = 0; i < ParamList_Bolt_Count; i++) { ParamList_Bolt.Add(new CPropertyParam($"{PROCESS_TYPES.Bolt_tightened}-{ParamList_Bolt.Count + 1}")); }
             for (int i = 0; i < ParamList_Bolt.Count; i++)

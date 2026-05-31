@@ -56,8 +56,6 @@ namespace OpenVisionLab
             rjButton2.BackColor = Color.FromArgb(64, 73, 108);
 
             InitUI();
-            InitThread();
-            InitIO();
             InitMenu();
 
             Global.System.Menu = CSystem.MENU.VISION;
@@ -171,19 +169,6 @@ namespace OpenVisionLab
             fr.Activate();
         }
 
-        private bool InitIO()
-        {
-            try
-            {
-                Global.System.Notice = "Initialize The Init I/O";
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-                return false;
-            }
-            return true;
-        }
         private bool InitEvent()
         {
             try
@@ -191,7 +176,6 @@ namespace OpenVisionLab
                 Global.System.EventChangedMenu += OnChangedMenu;
                 Global.System.EventChangedAuthorization += OnChangedAuthorization;
                 Global.Recipe.EventChagedRecipe += OnChangedRecipe;
-                Global.Thread.CSeqVision.EventSeqComplete += OnInspResult;
 
                 CLOG.NORMAL($"[OK] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}");
             }
@@ -202,26 +186,6 @@ namespace OpenVisionLab
             }
 
             return true;
-        }
-        private void OnInspResult(object sender, EventArgs e)
-        {
-            if (!(e is InspResultArgs args)) { return; }
-            this.UIThreadBeginInvoke(() =>
-            {
-                if (Global.System.Menu == CSystem.MENU.MAIN)
-                {
-
-                    var task = Task.Run(() =>
-                    {
-                        this.BeginInvoke(new MethodInvoker(() =>
-                        {
-                            Global.Device.CAMERAS[args.Index].ImageManager._Ib.Image = args.imageResult;
-                            //Global.Device.CAMERAS[e.Index].ImageManager.ib.ZoomToFit();                            
-                            //CLOG.NORMAL($"Inspection Tack Time : {e.tackTime}");
-                        }));
-                    });
-                }
-            });
         }
 
         private bool InitConfig()
@@ -286,23 +250,6 @@ namespace OpenVisionLab
             return true;
         }
 
-
-        private bool InitThread()
-        {
-            try
-            {
-                Global.Thread.Start();
-
-                CLOG.NORMAL($"[OK] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}");
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-                return false;
-            }
-
-            return true;
-        }
         #endregion
 
         #region CALL BACK   
@@ -409,59 +356,6 @@ namespace OpenVisionLab
 
         #endregion
 
-        private void timerAlarm_Tick(object sender, EventArgs e)
-        {
-            if (CAlarm.Exists)
-            {
-                try
-                {
-                    if (CUtil.OpenCheckForm("FormAlarm"))
-                    {
-                        Global.System.AlarmWait.Reset();
-                        Global.System.Mode = CSystem.MODE.ALARM;
-
-                        string strCode = CAlarm.GetLastAlarm().Item1;
-                        string strDesc = CAlarm.GetLastAlarm().Item2;
-                        string strPos = CAlarm.GetLastAlarm().Item3;
-
-                        FormAlarm.BUTTON_TYPE btnType = FormAlarm.BUTTON_TYPE.DEFAULT;
-
-                        switch (strCode)
-                        {
-                            case "":
-                                btnType = FormAlarm.BUTTON_TYPE.DEFAULT;
-                                break;
-                        }
-
-                        FormAlarm frmAlarm = new FormAlarm(strCode, strDesc, strPos, btnType);
-
-                        if (frmAlarm != null && !frmAlarm.IsDisposed)
-                        {
-                            if (frmAlarm.ShowDialog() == DialogResult.OK || frmAlarm.ShowDialog() == DialogResult.Cancel)
-                            {
-                                switch (frmAlarm.m_ebtnResult)
-                                {
-                                    case FormAlarm.BUTTON_RESULT.NONE:
-                                    case FormAlarm.BUTTON_RESULT.SKIP:
-                                        break;
-                                    case FormAlarm.BUTTON_RESULT.RESET:
-                                        break;
-                                    case FormAlarm.BUTTON_RESULT.REJECT:
-                                        break;
-                                    case FormAlarm.BUTTON_RESULT.RETRY:
-                                        break;
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception Desc)
-                {
-                    CCommon.ShowMessageBox("S/W BUG", "디버깅용, 담당자와 연락을 취해주세요.");
-                    CLOG.ABNORMAL("S/W BUG, 담당자와 연락을 취해주세요.");
-                }
-            }
-        }
 
         private void timerStatus_Tick(object sender, EventArgs e)
         {
@@ -508,25 +402,6 @@ namespace OpenVisionLab
             }
         }
 
-        private void Open_DropdownMenu(RJDropdownMenu dropdownMenu, object sender)
-        {
-            Control control = (Control)sender;
-
-            switch (control.Text)
-            {
-                case "CAPTURE":
-                    dropdownMenu.ItemClicked += new ToolStripItemClickedEventHandler(CaptureClicked);
-                    dropdownMenu.Show(control, 0, control.Height);
-                    break;
-                case "Setting":
-                    dropdownMenu.ItemClicked += new ToolStripItemClickedEventHandler(DeviceClicked);
-                    //dropdownMenu.Show(control, control.Width, 0);
-                    dropdownMenu.Show(control, dropdownMenu.Width - control.Width, control.Height);
-                    //dropdownMenu.Show(control, (int)(control.Width / 2) * -1, 0);
-                    break;
-            }
-        }
-
         private void CaptureClicked(object sender, ToolStripItemClickedEventArgs e)
         {
             switch (e.ClickedItem.Text)
@@ -537,36 +412,6 @@ namespace OpenVisionLab
                 default:
                     break;
             }
-        }
-
-        private void DeviceClicked(object sender, ToolStripItemClickedEventArgs e)
-        {
-            switch (e.ClickedItem.Text)
-            {
-                case "CAMERA":
-                    FormSetting_Camera FrmCam = new FormSetting_Camera();
-                    FrmCam.StartPosition = FormStartPosition.CenterScreen;
-                    FrmCam.TopMost = true;
-
-                    if (!CUtil.OpenCheckForm(FrmCam)) return;
-                    FrmCam.Show();
-                    break;
-                case "UTIL":
-                    FormSetting_UTIL formSettings_UTIL = new FormSetting_UTIL();
-                    formSettings_UTIL.StartPosition = FormStartPosition.CenterScreen;
-                    formSettings_UTIL.TopMost = true;
-
-                    if (!CUtil.OpenCheckForm(formSettings_UTIL)) return;
-                    formSettings_UTIL.Show();
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        private void btnMenuOption_Click(object sender, EventArgs e)
-        {
-            Open_DropdownMenu(ddmDevice, sender);
         }
 
         private void btnCerrar_Click(object sender, EventArgs e)

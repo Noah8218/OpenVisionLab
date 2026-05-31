@@ -143,7 +143,6 @@ namespace OpenVisionLab
             try
             {
                 CDisplayManager.EventUpdateResult += OnUpdateResult;
-                Global.Thread.CSeqVision.EventSeqComplete += OnInspResult;
                 EventUpdateDisplay += OnUpdateDisplay;
                 Global.Recipe.EventChagedRecipe += OnChangedRecipe;                
 
