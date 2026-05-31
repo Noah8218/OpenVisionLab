@@ -157,15 +157,15 @@
     </Reference>
     <Reference Include="Lib.Common, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Library-Noah\Lib.Common\bin\Debug\netstandard2.0\Lib.Common.dll</HintPath>
+      <HintPath>dll\Lib.Common.dll</HintPath>
     </Reference>
     <Reference Include="Lib.OpenCV, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Library-Noah\Lib.OpenCV\bin\Debug\netstandard2.0\Lib.OpenCV.dll</HintPath>
+      <HintPath>dll\Lib.OpenCV.dll</HintPath>
     </Reference>
     <Reference Include="Lib.OpenCV.Blob, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Library-Noah\Lib.OpenCV.Blob\bin\Debug\netstandard2.0\Lib.OpenCV.Blob.dll</HintPath>
+      <HintPath>dll\Lib.OpenCV.Blob.dll</HintPath>
     </Reference>
     <Reference Include="log4net, Version=2.0.15.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>packages\log4net.2.0.15\lib\net45\log4net.dll</HintPath>
@@ -188,15 +188,6 @@
     </Reference>
     <Reference Include="MultiCam_NetApi">
       <HintPath>dll\MultiCam_NetApi.dll</HintPath>
-    </Reference>
-    <Reference Include="MvCameraControl.Net">
-      <HintPath>C:\Program Files (x86)\MVS\Development\DotNet\AnyCpu\MvCameraControl.Net.dll</HintPath>
-    </Reference>
-    <Reference Include="MySqlBackupNet.MySqlConnector, Version=2.3.8.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\MySqlBackup.NET.MySqlConnector.2.3.8\lib\net471\MySqlBackupNet.MySqlConnector.dll</HintPath>
-    </Reference>
-    <Reference Include="MySqlConnector, Version=2.0.0.0, Culture=neutral, PublicKeyToken=d33d3e53aa5f8c92, processorArchitecture=MSIL">
-      <HintPath>packages\MySqlConnector.2.2.5\lib\net471\MySqlConnector.dll</HintPath>
     </Reference>
     <Reference Include="OpenCvSharp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=6adad1e807fea099, processorArchitecture=MSIL">
       <HintPath>packages\OpenCvSharp4.4.4.0.20200915\lib\net461\OpenCvSharp.dll</HintPath>
@@ -315,12 +306,6 @@
     </Compile>
     <Compile Include="0. UI\2%29 POPUP\FormPowerGraphConfig.Designer.cs">
       <DependentUpon>FormPowerGraphConfig.cs</DependentUpon>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormSetting_llumination.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormSetting_llumination.Designer.cs">
-      <DependentUpon>FormSetting_llumination.cs</DependentUpon>
     </Compile>
     <Compile Include="0. UI\2%29 POPUP\FormSetting_UTIL.cs">
       <SubType>Form</SubType>
@@ -466,24 +451,6 @@
     <Compile Include="0. UI\7%29 MainPanel\FormCSV.designer.cs">
       <DependentUpon>FormCSV.cs</DependentUpon>
     </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormPLC.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormPLC.Designer.cs">
-      <DependentUpon>FormPLC.cs</DependentUpon>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormLabel.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormLabel.Designer.cs">
-      <DependentUpon>FormLabel.cs</DependentUpon>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormSummary.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormSummary.Designer.cs">
-      <DependentUpon>FormSummary.cs</DependentUpon>
-    </Compile>
     <Compile Include="0. UI\7%29 MainPanel\FormMainGraph.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -507,12 +474,6 @@
     </Compile>
     <Compile Include="0. UI\8%29 TeachingPanel\FormProperty.Designer.cs">
       <DependentUpon>FormProperty.cs</DependentUpon>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormSearchDB.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormSearchDB.Designer.cs">
-      <DependentUpon>FormSearchDB.cs</DependentUpon>
     </Compile>
     <Compile Include="0. UI\8%29 TeachingPanel\FormTeaching.cs">
       <SubType>Form</SubType>
@@ -544,12 +505,6 @@
     <Compile Include="0. UI\8%29 TeachingPanel\FormThreshold.Designer.cs">
       <DependentUpon>FormThreshold.cs</DependentUpon>
     </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormIO.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormIO.Designer.cs">
-      <DependentUpon>FormIO.cs</DependentUpon>
-    </Compile>
     <Compile Include="0. UI\7%29 MainPanel\FormMainButton.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -561,12 +516,6 @@
     </Compile>
     <Compile Include="0. UI\7%29 MainPanel\FormMainDefect.Designer.cs">
       <DependentUpon>FormMainDefect.cs</DependentUpon>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormLog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\7%29 MainPanel\FormLog.Designer.cs">
-      <DependentUpon>FormLog.cs</DependentUpon>
     </Compile>
     <Compile Include="0. UI\7%29 MainPanel\FormMainSystem.cs">
       <SubType>Form</SubType>
@@ -616,17 +565,6 @@
     <Compile Include="2. Common\SerializeHelper.cs" />
     <Compile Include="2. Common\UIThreadInvokeClass.cs" />
     <Compile Include="3. Device\CAMERA\CGrabberMatrox.cs" />
-    <Compile Include="3. Device\DB\CDefect.cs" />
-    <Compile Include="3. Device\DB\CDefectSummary.cs" />
-    <Compile Include="3. Device\DB\CMariaDB.cs" />
-    <Compile Include="3. Device\DB\CProduct.cs" />
-    <Compile Include="3. Device\DIO\CDIO_CONTEC.cs" />
-    <Compile Include="3. Device\LIGHT\CLightControler_KVP400.cs" />
-    <Compile Include="3. Device\MOTION\CMOTION_AJIN_ENC600.cs" />
-    <Compile Include="3. Device\MOTION\enc600.cs" />
-    <Compile Include="3. Device\PLC\CCommMelsec.cs" />
-    <Compile Include="3. Device\PLC\CDIO_PLC.cs" />
-    <Compile Include="3. Device\PLC\MCProtocol.cs" />
     <Compile Include="4. Sequence\CSeqBase.cs" />
     <Compile Include="5. Property\CPropertyParam.cs" />
     <Compile Include="5. Property\CPropertyPlcSetting.cs" />
@@ -637,14 +575,6 @@
     <Compile Include="5. Property\CPropertyMotion.cs" />
     <Compile Include="5. Property\CPropertyCamera.cs" />
     <Compile Include="1. Core\CImageFileManager.cs" />
-    <Compile Include="99. API\AXD.cs" />
-    <Compile Include="99. API\AXDev.cs" />
-    <Compile Include="99. API\AXHD.cs" />
-    <Compile Include="99. API\AXHS.cs" />
-    <Compile Include="99. API\AXL.cs" />
-    <Compile Include="99. API\AXM.cs" />
-    <Compile Include="99. API\Dask64.cs" />
-    <Compile Include="3. Device\CAMERA\CCameraHikVision.cs" />
     <Compile Include="2. Common\CArgument.cs" />
     <Compile Include="2. Common\DEFINE.cs" />
     <Compile Include="1. Core\CData.cs" />
@@ -652,12 +582,6 @@
     <Compile Include="1. Core\CGlobal.cs" />
     <Compile Include="1. Core\CRecipe.cs" />
     <Compile Include="2. Common\CSignal.cs" />
-    <Compile Include="0. UI\2%29 POPUP\FormIO_PLC.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormIO_PLC.Designer.cs">
-      <DependentUpon>FormIO_PLC.cs</DependentUpon>
-    </Compile>
     <Compile Include="1. Core\CSystem.cs" />
     <Compile Include="Library\DrawObject\CDrawObject.cs" />
     <Compile Include="Library\DrawObject\CEnum.cs" />
@@ -828,10 +752,6 @@
     <EmbeddedResource Include="0. UI\2%29 POPUP\FormPowerGraphConfig.resx">
       <DependentUpon>FormPowerGraphConfig.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\2%29 POPUP\FormSetting_llumination.resx">
-      <DependentUpon>FormSetting_llumination.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
     <EmbeddedResource Include="0. UI\2%29 POPUP\FormSetting_UTIL.resx">
       <DependentUpon>FormSetting_UTIL.cs</DependentUpon>
     </EmbeddedResource>
@@ -904,15 +824,6 @@
     <EmbeddedResource Include="0. UI\7%29 MainPanel\FormCSV.resx">
       <DependentUpon>FormCSV.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\7%29 MainPanel\FormPLC.resx">
-      <DependentUpon>FormPLC.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\7%29 MainPanel\FormLabel.resx">
-      <DependentUpon>FormLabel.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\7%29 MainPanel\FormSummary.resx">
-      <DependentUpon>FormSummary.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="0. UI\7%29 MainPanel\FormMainGraph.resx">
       <DependentUpon>FormMainGraph.cs</DependentUpon>
     </EmbeddedResource>
@@ -924,9 +835,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="0. UI\8%29 TeachingPanel\FormProperty.resx">
       <DependentUpon>FormProperty.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\7%29 MainPanel\FormSearchDB.resx">
-      <DependentUpon>FormSearchDB.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="0. UI\8%29 TeachingPanel\FormTeaching.resx">
       <DependentUpon>FormTeaching.cs</DependentUpon>
@@ -943,18 +851,12 @@
     <EmbeddedResource Include="0. UI\8%29 TeachingPanel\FormThreshold.resx">
       <DependentUpon>FormThreshold.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\7%29 MainPanel\FormIO.resx">
-      <DependentUpon>FormIO.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="0. UI\7%29 MainPanel\FormMainButton.resx">
       <DependentUpon>FormMainButton.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="0. UI\7%29 MainPanel\FormMainDefect.resx">
       <DependentUpon>FormMainDefect.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\7%29 MainPanel\FormLog.resx">
-      <DependentUpon>FormLog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="0. UI\7%29 MainPanel\FormMainSystem.resx">
       <DependentUpon>FormMainSystem.cs</DependentUpon>
@@ -967,9 +869,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="0. UI\2%29 POPUP\FormSettings_Devices.resx">
       <DependentUpon>FormSettings_Devices.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\2%29 POPUP\FormIO_PLC.resx">
-      <DependentUpon>FormIO_PLC.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Library\CViewer.resx">
       <DependentUpon>CViewer.cs</DependentUpon>
@@ -1164,9 +1063,7 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="3. Device\TCP\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <COMReference Include="ADOX">
       <Guid>{00000600-0000-0010-8000-00AA006D2EA4}</Guid>
@@ -1176,14 +1073,6 @@
       <WrapperTool>tlbimp</WrapperTool>
       <Isolated>False</Isolated>
       <EmbedInteropTypes>False</EmbedInteropTypes>
-    </COMReference>
-    <COMReference Include="AxCognexDisplay">
-      <Guid>{0ACBBD11-6E21-11D4-9751-0060089571FC}</Guid>
-      <VersionMajor>1</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>aximp</WrapperTool>
-      <Isolated>False</Isolated>
     </COMReference>
     <COMReference Include="stdole">
       <Guid>{00020430-0000-0000-C000-000000000046}</Guid>

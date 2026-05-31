@@ -37,10 +37,6 @@ namespace OpenVisionLab
             toolTip1.SetToolTip(btnNewPanel, "Create New Layer");
             cbCamera.SelectedIndex = 0;
             cbLayerList.SelectedIndex = 0;
-
-            FormLog formLog = new FormLog();
-            formLog.Show();
-
         }
 
         private void InitCameraItem()

@@ -1,17 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Serialization;
-using OpenVisionLab._3._Device.DB;
-using Lib.OpenCV;
 using Lib.OpenCV.Blob;
-using Lib.OpenCV.Result;
 using Matrox.MatroxImagingLibrary;
 using OpenCvSharp;
-using Vila.Extensions;
 
 namespace OpenVisionLab
 {
@@ -82,9 +74,7 @@ namespace OpenVisionLab
         public string resultData = "";
         public DEFINE.RESULT result = DEFINE.RESULT.NA;
         public double tackTime = 0;
-
-        public Dictionary<string, CDefectSummary> DefectSummaries = new Dictionary<string, CDefectSummary>();
-
+        
         public List<List<CAttatchLabelling>> Attaches = new List<List<CAttatchLabelling>>();
         public List<CAttatchLabelling> Already_AttachedList = new List<CAttatchLabelling>();
 
@@ -118,8 +108,7 @@ namespace OpenVisionLab
         }
 
         public InspResultArgs(Bitmap imageOriginal, Bitmap imageResult, int Index, double TackTime, DEFINE.RESULT result, List<CResultBlob> black_Result, List<CResultBlob> white_Result, List<CResultBlob> totalResults,
-            List<double> AvgMM, List<List<CAttatchLabelling>> Attaches, List<CAttatchLabelling> Already_AttachedList,
-            Dictionary<string, CDefectSummary> DefectSummaries)
+            List<double> AvgMM, List<List<CAttatchLabelling>> Attaches, List<CAttatchLabelling> Already_AttachedList            )
         {
             this.imageOri = (Bitmap)imageOriginal;
             this.imageResult = (Bitmap)imageResult;            
@@ -134,7 +123,7 @@ namespace OpenVisionLab
             this.avgMM = AvgMM;
             this.Attaches = Attaches.ConvertAll(s => s);
             this.Already_AttachedList = Already_AttachedList.ConvertAll(s => s);
-            this.DefectSummaries = new Dictionary<string, CDefectSummary>(DefectSummaries);
+            
         }
     }
 

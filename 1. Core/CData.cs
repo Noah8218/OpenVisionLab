@@ -1,23 +1,14 @@
-﻿using System;
-using System.IO;
-using System.Reflection;
+﻿using System.IO;
 using System.Windows.Forms;
-using System.Xml;
 using System.Collections.Concurrent;
-using System.Xml.Linq;
 using OpenCvSharp;
 using System.Collections.Generic;
 using System.Xml.Serialization;
 using static OpenVisionLab.DEFINE;
-using OpenVisionLab._2._Common;
-using System.ComponentModel;
-using System.Drawing;
-using OpenVisionLab._3._Device.DB;
-using OpenCvSharp.Aruco;
 using Lib.Common;
 
 namespace OpenVisionLab
-{   
+{
     public class CData
     {
         // 이미지 큐
@@ -72,8 +63,7 @@ namespace OpenVisionLab
         [XmlIgnore] public double Total_Dist_PerMM { get; set; } = 0;
         [XmlIgnore] public double Total_Encoder { get; set; } = 0;
         #endregion
-        [XmlIgnore] public string LotName { get; set; } = "";
-        [XmlIgnore] public Dictionary<string, CDefectSummary> defectSummaries { get; set; } = new Dictionary<string, CDefectSummary>();
+        [XmlIgnore] public string LotName { get; set; } = "";   
         public CData() { CUtil.InitDirectory("DATA"); }
    
         public void ResetCount()

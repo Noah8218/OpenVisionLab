@@ -4,15 +4,8 @@ using System.IO;
 using System.Windows.Forms;
 using System.Reflection;
 using System.Xml.Serialization;
-using Vila.Extensions;
-using OpenVisionLab.Common;
-using OpenCvSharp;
-using System.Collections;
 using System.Threading;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
-using OpenVisionLab;
-using OpenVisionLab._3._Device.DB;
 using Lib.Common;
 
 namespace OpenVisionLab
@@ -25,11 +18,6 @@ namespace OpenVisionLab
         private bool CloseProgram = false;
         
         [XmlIgnore]  public List<CGrabberMatrox> CAMERAS = new List<CGrabberMatrox>();
-        [XmlIgnore] public CDIO_CONTEC DIO_BD { get; set; } = new CDIO_CONTEC();
-        [XmlIgnore] public List<CLightControler_KVP400> LIGHTS { get; set; } = new List<CLightControler_KVP400>();
-        [XmlIgnore] public CMOTION_AJIN_ENC600 ENC600 { get; set; } = new CMOTION_AJIN_ENC600();
-        [XmlIgnore] public CDIO_PLC DIO_PLC { get; set; } = new CDIO_PLC();
-        [XmlIgnore] public CMariaSQL DB { get; set; } = new CMariaSQL();
         public CDevice() { }
         ~CDevice() { }      
         
@@ -125,10 +113,6 @@ namespace OpenVisionLab
                 {
                     CAMERAS[i].Property.LoadConfig(RecipeName);
                 }
-                for (int i = 0; i < LIGHTS.Count; i++)
-                {
-                    LIGHTS[i].ReadInitFile(RecipeName);
-                }
                 
                 return true;
             }
@@ -149,12 +133,7 @@ namespace OpenVisionLab
 
                 CloseProgram = true;
                 StopThreadDeviceConnected();
-                for (int i = 0; i < CAMERAS.Count; i++) { CAMERAS[i].Close(); }
-                for (int i = 0; i < LIGHTS.Count; i++) { LIGHTS[i].DisConnect(); }
-                DIO_BD.Close();                
-                DIO_PLC.Close();
-                DIO_PLC.StopThreadRead();
-                ENC600.StopThreadGetEncoder();
+                for (int i = 0; i < CAMERAS.Count; i++) { CAMERAS[i].Close(); }                
                 return true;
             }
             catch (Exception Desc)
@@ -208,19 +187,6 @@ namespace OpenVisionLab
                         //    ThreadPool.QueueUserWorkItem(new WaitCallback(OpenDeviceCam), i);
                         //}
                     }
-
-                    for (int i = 0; i < LIGHTS.Count; i++)
-                    {
-                        if (CloseProgram)
-                        {
-                            ThreadStatus.End();
-                            continue;
-                        }
-                        if (!LIGHTS[i].IsOpen)
-                        {
-                            ThreadPool.QueueUserWorkItem(new WaitCallback(OpenDeviceLight), i);
-                        }
-                    }
                 }
                 ThreadStatus.End();
             }
@@ -229,21 +195,6 @@ namespace OpenVisionLab
                 CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
                 ThreadStatus.End();
             }
-        }
-
-        public void OpenDeviceCam(Object obj)
-        {
-            int Cam = (int)obj;
-
-            //CAMERAS[Cam].Init();
-        }
-
-        public void OpenDeviceLight(Object obj)
-        {
-            int Light = (int)obj;
-
-            LIGHTS[Light].DisConnect();
-            LIGHTS[Light].Connect(CGlobal.Inst.Recipe.Name, Light);
         }
 
 

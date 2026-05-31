@@ -92,8 +92,7 @@ namespace OpenVisionLab
                 {                
                     Global.Data.SETTING.SaveConfig(Global.Recipe.Name);
                     Global.Data.SPEC.SaveConfig(Global.Recipe.Name);
-                    CImageManager.SaveConfig(Global.Recipe.Name);
-                    Global.Device.DIO_PLC.Property.SaveConfig(Global.Recipe.Name);
+                    CImageManager.SaveConfig(Global.Recipe.Name);                    
                 }
             }
             catch (Exception Desc)
@@ -124,10 +123,7 @@ namespace OpenVisionLab
                             break;
                         case "SETTING":
                             wpg.SelectedObject = CGlobal.Inst.Data.SETTING;
-                            break;
-                        case "PLC":
-                            wpg.SelectedObject = CGlobal.Inst.Device.DIO_PLC.Property;
-                            break;
+                            break;                        
                     }
                 }
             }

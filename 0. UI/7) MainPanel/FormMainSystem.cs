@@ -126,13 +126,7 @@ namespace OpenVisionLab
 
         private void timerEncoder_Tick(object sender, EventArgs e)
         {
-            double plcMotionSpeed = Global.Device.DIO_PLC.DI_PLC_DRIVE_SPEED.Current / 100;
-            lbPlcMotionSpeed.Text = plcMotionSpeed.ToString();
 
-            // 수정해야함
-            double getEncoder = Global.Device.ENC600.GetEncoderValue;
-            //int getEncoder = Global.Data.TestEncoder;
-            Global.Data.Total_Encoder = (getEncoder + Global.Data.RealTimeEncoder);
             lbEncoder.Text = Global.Data.Total_Encoder.ToString();
             Global.Data.Total_Dist_PerMM = (Global.Data.Total_Encoder * Global.Data.SETTING.EncoderPermm);
             lbTotalDis.Text = Global.Data.Total_Dist_PerMM.ToString("F2") + "mm";
@@ -157,8 +151,7 @@ namespace OpenVisionLab
             Global.Data.AcqusitionFrameCount = 0;            
             dgvLabelDefct.DataSource = new CAttatchLabelling().GetAttachLabelList(Global.Data.Attaches);
             dgvAttachLabel.DataSource = new CAttatchLabelling().GetAttachLabelList(Global.Data.Already_AttachedList);
-            Global.Data.SaveConfig(Global.Recipe.Name);
-            Global.Device.ENC600.Reset();
+            Global.Data.SaveConfig(Global.Recipe.Name);            
             //Global.Device.CAMERAS[DEFINE.CAM_1].ClearEncoder();
             //Global.Device.CAMERAS[DEFINE.CAM_2].ClearEncoder();
         }

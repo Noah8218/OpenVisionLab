@@ -1,9 +1,5 @@
-﻿using Automation.BDaq;
-using OpenVisionLab._3._Device.DB;
-using Lib.OpenCV;
-using Lib.OpenCV.Blob;
+﻿using Lib.OpenCV.Blob;
 using Lib.OpenCV.Result;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;

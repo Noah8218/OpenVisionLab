@@ -551,13 +551,6 @@ namespace OpenVisionLab
                     if (!CUtil.OpenCheckForm(FrmCam)) return;
                     FrmCam.Show();
                     break;
-                case "LIGHT":
-                    FormSetting_llumination FrmIIIumunation = new FormSetting_llumination();
-                    FrmIIIumunation.StartPosition = FormStartPosition.CenterScreen;
-
-                    if (!CUtil.OpenCheckForm(FrmIIIumunation)) return;
-                    FrmIIIumunation.Show();
-                    break;
                 case "UTIL":
                     FormSetting_UTIL formSettings_UTIL = new FormSetting_UTIL();
                     formSettings_UTIL.StartPosition = FormStartPosition.CenterScreen;

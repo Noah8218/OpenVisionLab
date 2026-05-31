@@ -98,7 +98,7 @@ namespace OpenVisionLab
             this.lbName.Name = "lbName";
             this.lbName.Size = new System.Drawing.Size(931, 87);
             this.lbName.TabIndex = 21;
-            this.lbName.Text = "KTEM VISION";
+            this.lbName.Text = "Vision Lab";
             this.lbName.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // lbVersion

@@ -312,9 +312,7 @@ namespace OpenVisionLab
             try
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
-                double getEncoder = CGlobal.Inst.Device.ENC600.GetEncoderValue;
-                CLOG.NORMAL($"Grab Complete, Encoder => {getEncoder}");
-
+               
                 //지금 콜백에 들어온 Image Buffer ID 가져오기
                 MIL_ID currentBuf = MIL.M_NULL;
                 MIL.MdigGetHookInfo(eventId, eventProp + MIL.M_BUFFER_ID, ref currentBuf);
@@ -344,11 +342,6 @@ namespace OpenVisionLab
                 if (Property.USE_ROTATE) { Cv2.Rotate(ImageGrab, ImageGrab, Property.ROTATE); }
                 
                     string ssss = stopwatch.ElapsedMilliseconds.ToString();
-                
-                if (EventGrabEnd != null)
-                {
-                    EventGrabEnd(null, new GrabEventArgs(ImageGrab, 0, getEncoder));
-                }
 
                 return 0;
             }
@@ -415,10 +408,7 @@ namespace OpenVisionLab
             {
                 if (Property.TRIGGER_MODE == CPropertyCamera.TRIGGER_MODE_TYPE.ON_HW) { return; }
                 if (IsOpen)
-                {
-                    int getEncoder = CGlobal.Inst.Device.ENC600.GetEncoder();
-                    CLOG.NORMAL($"Grab Complete, Encoder => {getEncoder}");
-
+                {                    
                     //Thread 로 구성해야될 필요가 있습니다.
                     IsGrabDone.Reset();
                     byte[] rawImage = new byte[(int)MIL_Width * (int)MIL_Height * 1];
@@ -429,12 +419,7 @@ namespace OpenVisionLab
                     var img = BitmapSource.Create(Property.WIDTH, Property.HEIGHT, 96d, 96d, PixelFormats.Indexed8, BitmapPalettes.Gray256, rawImage, Property.WIDTH);
                     
                     var image = BitmapFromSource(img);
-                    
-                    if (EventGrabEnd != null)
-                    {
-                        EventGrabEnd(null, new GrabEventArgs(Lib.Common.CImageConverter.ToMat(image), 0, getEncoder));
-                    }
-
+                                        
                     IsGrabDone.Set();
                 }
             }
