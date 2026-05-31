@@ -89,7 +89,6 @@ namespace OpenVisionLab
         {
             try
             {                
-                CImageManager.LoadConfig(Name);
                 CVisionTools.LoadTools(Name);
                 CGlobal.Inst.Device.LoadDevices(Name);
                 CGlobal.Inst.Data = CGlobal.Inst.Data.LoadConfig(Name);
@@ -107,7 +106,6 @@ namespace OpenVisionLab
         {
             try
             {                
-                CImageManager.SaveConfig(Name);
                 CVisionTools.SaveTools(Name);
                 CGlobal.Inst.Data.SaveConfig(Name);
                 return true;

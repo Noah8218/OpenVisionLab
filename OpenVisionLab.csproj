@@ -553,14 +553,12 @@
     <Compile Include="2. Common\CDrawBitmap.cs" />
     <Compile Include="2. Common\CEdgeList_Line.cs" />
     <Compile Include="2. Common\CDefectList_Blob.cs" />
-    <Compile Include="2. Common\CDeleteImages.cs" />
     <Compile Include="2. Common\CAttatchLabelling.cs" />
     <Compile Include="2. Common\CCommon.cs" />
     <Compile Include="2. Common\CParameterManager.cs" />
     <Compile Include="2. Common\CDefectList.cs" />
     <Compile Include="2. Common\CPropertyGridEditor.cs" />
     <Compile Include="2. Common\CRecipeModel.cs" />
-    <Compile Include="2. Common\CSaveImages.cs" />
     <Compile Include="2. Common\CWpgEvent.cs" />
     <Compile Include="2. Common\SerializeHelper.cs" />
     <Compile Include="2. Common\UIThreadInvokeClass.cs" />
@@ -574,7 +572,6 @@
     <Compile Include="5. Property\CPropertyLot.cs" />
     <Compile Include="5. Property\CPropertyMotion.cs" />
     <Compile Include="5. Property\CPropertyCamera.cs" />
-    <Compile Include="1. Core\CImageFileManager.cs" />
     <Compile Include="2. Common\CArgument.cs" />
     <Compile Include="2. Common\DEFINE.cs" />
     <Compile Include="1. Core\CData.cs" />

@@ -45,8 +45,6 @@ namespace OpenVisionLab
             };
             host.Child = wpg;
             pnParameter.Controls.Add(host);
-
-            wpg.SelectedObject = CImageManager.SaveImages.Property;
         }
 
         private void Form_KeyDown(object sender, KeyEventArgs e)
@@ -91,8 +89,7 @@ namespace OpenVisionLab
                 if (CCommon.ShowdialogMessageBox("SAVE", "DO YOU WANT TO SAVE THE PARAMETER", FormMessageBox.MESSAGEBOX_TYPE.Quit))
                 {                
                     Global.Data.SETTING.SaveConfig(Global.Recipe.Name);
-                    Global.Data.SPEC.SaveConfig(Global.Recipe.Name);
-                    CImageManager.SaveConfig(Global.Recipe.Name);                    
+                    Global.Data.SPEC.SaveConfig(Global.Recipe.Name);                   
                 }
             }
             catch (Exception Desc)
@@ -112,12 +109,6 @@ namespace OpenVisionLab
                 {
                     switch (rdoButton.Text)
                     {
-                        case "Save UTIL":
-                            wpg.SelectedObject = CImageManager.SaveImages.Property;
-                            break;
-                        case "Delete UTIL":
-                            wpg.SelectedObject = CImageManager.DelImages.Property;
-                            break;
                         case "SPEC":
                             wpg.SelectedObject = CGlobal.Inst.Data.SPEC;
                             break;

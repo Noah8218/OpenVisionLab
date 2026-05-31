@@ -15,13 +15,11 @@ namespace OpenVisionLab._1._Core
         public void Start()
         {
             CSeqVision.StartThread();
-            CImageManager.StartThread();
         }
         
         public void Stop()
         {
             CSeqVision.StopThread();
-            CImageManager.Dispose();
         }
     }
 }
