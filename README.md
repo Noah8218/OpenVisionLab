@@ -1,4 +1,4 @@
-<img width="1531" height="847" alt="image" src="https://github.com/user-attachments/assets/8edb57af-33b2-4a14-b8c4-4bc7c3ebd16f" /># 오픈비전 랩 (OpenVision Lab)
+# 오픈비전 랩 (OpenVision Lab)
 OpenCV 기반 룰베이스 비전 알고리즘 검증 툴
 
  - 프로젝트 개요
@@ -16,7 +16,19 @@ Blob / Contour 검사: 형태학적 특징 기반의 객체 검출 및 윤곽선
 이미지 프로세싱(전처리) 모듈 내장:
 Morphology, Filter, Edge Detection (Canny 등), Histogram 처리 등 검사 전 품질을 높이기 위한 다양한 전처리 툴을 제공합니다.
 
+<img width="1920" height="1040" alt="비전 테스트 프로그램(룰베이스)_gap 검출 PNG" src="https://github.com/user-attachments/assets/018922d4-907e-4000-b4b2-6b76ec3a466d" />
 
+<img width="1920" height="1040" alt="비전 테스트 프로그램(룰베이스)_fitLine PNG" src="https://github.com/user-attachments/assets/7c5e4d3d-ca32-4f29-83c1-269d2b1b1489" />
+
+<img width="1920" height="1040" alt="비전 테스트 프로그램(룰베이스)_패턴매칭_회전검출 PNG" src="https://github.com/user-attachments/assets/21aea53f-0a3b-4f35-adde-66ad05ccf662" />
+
+<img width="1269" height="885" alt="비전 테스트 프로그램(룰베이스)_패턴 등록 PNG" src="https://github.com/user-attachments/assets/b847b595-e4c7-41cc-87f3-e08036d9aa35" />
+
+<img width="1920" height="1040" alt="비전 테스트 프로그램(룰베이스)_blob PNG" src="https://github.com/user-attachments/assets/f51b188b-a72e-42c0-a9bf-7af0a845b1d8" />
+
+<img width="1920" height="1040" alt="비전 테스트 프로그램(룰베이스)_컨투어 PNG" src="https://github.com/user-attachments/assets/f1a5d5f5-42a7-400b-9cbd-841a157fa1cb" />
+
+<img width="1920" height="1040" alt="비전 테스트 프로그램(룰베이스)_이미지 프로세싱 PNG" src="https://github.com/user-attachments/assets/2c486b55-7bfd-4638-9db2-19a41801284f" />
 
 
 
