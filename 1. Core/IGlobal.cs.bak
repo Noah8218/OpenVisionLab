@@ -1,0 +1,176 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
+using System.Diagnostics;
+
+using Microsoft.Win32;
+using System.Net;
+using System.Net.Sockets;
+using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
+using System.IO;
+using System.Drawing;
+using System.Windows.Forms;
+using System.Reflection;
+
+using OpenCvSharp;
+using System.Xml;
+using IntelligentFactory;
+using System.CodeDom;
+
+namespace IntelligentFactory
+{
+    public static class CVersion
+    {
+        #region VERSION HISTORY
+        //VER 2.0.1 ==> 2021/11/13 현장 테스트 시작
+        //VER 2.0.2 ==> UI추가, 이니셜라이징 Rail, Flipper 시퀀스 변경
+        #endregion
+        public static string APP_NAME { get; set; } = "INTELLIGENT_VISION";
+        //public static string VERSION { get; set; } = "2.0.1";
+        public static string VERSION { get; set; } = "1.0.2";
+        public static string DATETIME_UPDATED { get; set; } = "2021/12/22 20:00";
+        public static string MANAGER { get; set; } = "SHS";
+    }
+    
+    public class IGlobal
+    {
+        private static readonly Lazy<IGlobal> instance = new Lazy<IGlobal>(() => new IGlobal());
+
+        public static IGlobal Instance
+        {
+            get { return instance.Value; }
+        }
+
+        private ISystem m_iSystem = null;
+        public ISystem System
+        {
+            get { return m_iSystem; }
+            set { m_iSystem = value; }
+        }
+
+        private IData m_iData = null;
+        public IData iData
+        {
+            get => m_iData;
+            set => m_iData = value;
+        }
+
+        private IDevice m_iDevice = null;
+        public IDevice iDevice
+        {
+            get => m_iDevice;
+            set => m_iDevice = value;
+        }
+
+        public CCIM m_Cim = null;
+        public CCIM CIM
+        {
+            get => m_Cim;
+            set => m_Cim = value;
+        }
+
+        
+        //private ISequence m_iSequence = null;
+        //public ISequence iSequence
+        //{
+        //    get => m_iSequence;
+        //    set => m_iSequence = value;
+        //}
+
+        private CSeqVision m_seqFrontVisionInsp = null;
+        public CSeqVision SeqFrontVisionInsp
+        {
+            get => m_seqFrontVisionInsp;
+            set => m_seqFrontVisionInsp = value;
+        }
+
+        private CSeqVision m_seqBackVisionInsp = null;
+        public CSeqVision SeqBackVisionInsp
+        {
+            get => m_seqBackVisionInsp;
+            set => m_seqBackVisionInsp = value;
+        }
+
+        private CSeqVision m_seqOCRVisionInsp = null;
+        public CSeqVision SeqOCRVisionInsp
+        {
+            get => m_seqOCRVisionInsp;
+            set => m_seqOCRVisionInsp = value;
+        }
+
+        private CSeqEject m_seqEject = null;
+        public CSeqEject SeqEject
+        {
+            get => m_seqEject;
+            set => m_seqEject = value;
+        }
+
+        private CAccessDB m_DB = null;
+        public CAccessDB DB
+        {
+            get => m_DB;
+            set => m_DB = value;
+        }
+
+        public CResultManager ResultManager = null;
+        #region Event Register                
+        public EventHandler<StringEventArgs> EventSystemInitStart;
+        public EventHandler<StringEventArgs> EventSystemInitEnd;
+        public EventHandler<StringEventArgs> EventOccuredAlarm;
+        #endregion
+
+        private IGlobal()
+        {
+            string strLogPath = CUtil.InitLogDirectory();
+            CLogger.SetPath(strLogPath);
+
+            //Logger.Init();
+
+            m_iSystem = new ISystem();
+            m_iData = new IData();
+            m_iDevice = new IDevice();
+
+            m_DB = new CAccessDB();
+            //m_Cim = new CCIM();
+            //m_iSequence = new ISequence();
+            //ResultManager = new CResultManager();            
+            Init();
+        }
+
+        public bool Init()
+        {
+            try
+            {
+                m_iDevice.Init();
+
+                //m_DB.Init();
+                //m_iSequence.Init();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                return false;
+            }
+        }
+
+        public bool Close()
+        {
+            try
+            {
+                m_iSystem.REQ_SYSTEM_CLOSE = true;
+
+                m_iSystem.Close();
+                m_iDevice.Close();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                return false;
+            }
+        }
+    }
+}

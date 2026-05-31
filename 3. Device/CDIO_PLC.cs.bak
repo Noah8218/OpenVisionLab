@@ -1,0 +1,931 @@
+﻿using InControls.PLC.Mitsubishi;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.IO.Ports;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Xml;
+
+namespace IntelligentFactory
+{
+    public class CDIO_PLC
+    {
+        
+        public McProtocolTcp Binary = null;
+
+        private string strHostIP;
+        private int strHostPort;
+
+        public bool IsOpen
+        {
+            get
+            {
+                if (Binary != null)
+                {
+                    if (Binary.Client != null)
+                    {
+                        if (Binary.Client.Connected != null)
+                            return Binary.Client.Connected;
+                        else
+                            return false;
+                    }
+                    else;
+                    {
+                        return false;
+                    }
+
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        public CDIO_PLC()
+        {
+
+        }
+
+        #region IO 
+        public CSignalMelsec DI_ALIVE_RECV = null;
+        public CSignalMelsec DI_PLC_MODE = null;
+        public CSignalMelsec DI_CYCLE_START = null;
+        public CSignalMelsec DI_INSP_START = null;
+        public CSignalMelsec DI_INSP_COMPLETE_ACK = null;
+        public CSignalMelsec DI_CYCLE_COMPLETE_ACK = null;
+        public CSignalMelsec DI_HEAD_USE_INFO = null;
+
+
+        public CSignalMelsec DI_MODEL_INDEX = null;
+        public CSignalMelsec DI_TOTAL_COUNT = null;
+        public CSignalMelsec DI_OK_COUNT = null;
+        public CSignalMelsec DI_NG_COUNT = null;
+        public CSignalMelsec DI_HEAD01_CELL_ID = null;
+        public CSignalMelsec DI_HEAD02_CELL_ID = null;
+        public CSignalMelsec DI_HEAD03_CELL_ID = null;
+        public CSignalMelsec DI_HEAD04_CELL_ID = null;
+        public CSignalMelsec DI_HEAD05_CELL_ID = null;
+        public CSignalMelsec DI_HEAD06_CELL_ID = null;
+        public CSignalMelsec DI_HEAD07_CELL_ID = null;
+        public CSignalMelsec DI_HEAD08_CELL_ID = null;
+        public CSignalMelsec DI_HEAD09_CELL_ID = null;
+        public CSignalMelsec DI_HEAD10_CELL_ID = null;
+
+        public CSignalMelsec DO_ALIVE_SEND = null;
+        public CSignalMelsec DO_PC_MODE = null;
+        public CSignalMelsec DO_CYCLE_START_ACK = null;
+        public CSignalMelsec DO_INSP_START_ACK = null;
+        public CSignalMelsec DO_INSP_COMPLETE = null;
+        public CSignalMelsec DO_CYCLE_COMPLETE = null;
+        public CSignalMelsec DO_HEAD_RESULT = null;
+        public CSignalMelsec DO_MODEL_INDEX_ACK = null;
+
+        public CSignalMelsec DO_HEAD01_RESULT = null;
+        public CSignalMelsec DO_HEAD02_RESULT = null;
+        public CSignalMelsec DO_HEAD03_RESULT = null;
+        public CSignalMelsec DO_HEAD04_RESULT = null;
+        public CSignalMelsec DO_HEAD05_RESULT = null;
+        public CSignalMelsec DO_HEAD06_RESULT = null;
+        public CSignalMelsec DO_HEAD07_RESULT = null;
+        public CSignalMelsec DO_HEAD08_RESULT = null;
+        public CSignalMelsec DO_HEAD09_RESULT = null;
+        public CSignalMelsec DO_HEAD10_RESULT = null;
+
+        //public CSignalMelsec DO_DISTANCE_RESULT = null; // Distance 결과값
+        public CSignalMelsec DO_MAX_SPEC = null; // 최대스펙
+        public CSignalMelsec DO_MIN_SPEC = null; // 최소스펙
+
+        public CSignalMelsec DO_DISTANCE01_RESULT = null;
+        public CSignalMelsec DO_DISTANCE02_RESULT = null;
+        public CSignalMelsec DO_DISTANCE03_RESULT = null;
+        public CSignalMelsec DO_DISTANCE04_RESULT = null;
+        public CSignalMelsec DO_DISTANCE05_RESULT = null;
+        public CSignalMelsec DO_DISTANCE06_RESULT = null;
+        public CSignalMelsec DO_DISTANCE07_RESULT = null;
+        public CSignalMelsec DO_DISTANCE08_RESULT = null;
+        public CSignalMelsec DO_DISTANCE09_RESULT = null;
+        public CSignalMelsec DO_DISTANCE10_RESULT = null;
+
+        public CSignalMelsec DO_HEAD01_CELL_ID_BCR_COMPARE_ = null;
+        public CSignalMelsec DO_HEAD02_CELL_ID_BCR_COMPARE_ = null;
+        public CSignalMelsec DO_HEAD03_CELL_ID_BCR_COMPARE_ = null;
+        public CSignalMelsec DO_HEAD04_CELL_ID_BCR_COMPARE_ = null;
+        public CSignalMelsec DO_HEAD05_CELL_ID_BCR_COMPARE_ = null;
+        public CSignalMelsec DO_HEAD06_CELL_ID_BCR_COMPARE_ = null;
+        public CSignalMelsec DO_HEAD07_CELL_ID_BCR_COMPARE_ = null;
+        public CSignalMelsec DO_HEAD08_CELL_ID_BCR_COMPARE_ = null;
+        public CSignalMelsec DO_HEAD09_CELL_ID_BCR_COMPARE_ = null;
+        public CSignalMelsec DO_HEAD10_CELL_ID_BCR_COMPARE_ = null;
+
+
+
+        public CSignalMelsec DO_SETBCR01 = null;
+
+
+        //public CSignalMelsec DO_MIN_RESULT = null;
+        //public CSignalMelsec DO_MAX_RESULT = null;
+        //public CSignalMelsec DO_AVERAGE_RESULT = null;
+
+        public List<CSignalMelsec> Inputs { get; set; } = new List<CSignalMelsec>();
+        public List<CSignalMelsec> Outputs { get; set; } = new List<CSignalMelsec>();
+
+        public bool Init()
+        {
+            try
+            {
+                #region INPUT
+                Inputs.Clear();
+
+                DI_ALIVE_RECV = new CSignalMelsec("DI_ALIVE_RECV", "7000"); // 연결상태체크
+                Inputs.Add(DI_ALIVE_RECV);
+
+                DI_PLC_MODE = new CSignalMelsec("DI_PLC_MODE", "7001"); // PLC 운전상태
+                Inputs.Add(DI_PLC_MODE);
+
+                DI_CYCLE_START = new CSignalMelsec("DI_CYCLE_START", "7002"); // 셀(셔틀) 투입 완료
+                Inputs.Add(DI_CYCLE_START);
+
+                DI_INSP_START = new CSignalMelsec("DI_INSP_START", "7003"); // 각 셀 별 검사 시작 (총 10회)
+                Inputs.Add(DI_INSP_START);
+
+                DI_INSP_COMPLETE_ACK = new CSignalMelsec("DI_INSP_COMPLETE_ACK", "7004"); // 각 셀 별 검사 완료 응답 (총 10회)
+                Inputs.Add(DI_INSP_COMPLETE_ACK);
+
+                DI_CYCLE_COMPLETE_ACK = new CSignalMelsec("DI_ALIVE_RECV", "7005"); // 전체 셀(10ea) 검사 완료 응답
+                Inputs.Add(DI_CYCLE_COMPLETE_ACK);
+
+                DI_HEAD_USE_INFO = new CSignalMelsec("DI_HEAD_USE_INFO", "7006", 10); // 헤드(셀) 제품 유무 정보
+                //Inputs.Add(DI_HEAD_USE_INFO);
+
+                //ONLY PLC
+                //DI_MODEL_INDEX = new CSignalMelsec("DI_MODEL_INDEX", "7020");
+                //Inputs.Add(DI_MODEL_INDEX);
+
+                //DI_TOTAL_COUNT = new CSignalMelsec("DI_TOTAL_COUNT", "7021");
+                //Inputs.Add(DI_TOTAL_COUNT);
+
+                //DI_OK_COUNT = new CSignalMelsec("DI_OK_COUNT", "7022");
+                //Inputs.Add(DI_OK_COUNT);
+
+                //DI_NG_COUNT = new CSignalMelsec("DI_NG_COUNT", "7023");
+                //Inputs.Add(DI_NG_COUNT);
+
+                //BCR
+                DI_HEAD01_CELL_ID = new CSignalMelsec("DI_HEAD01_CELL_ID", "7100", 10); // Head #01 CELL ID 정보
+                //Inputs.Add(DI_HEAD01_CELL_ID);
+
+                DI_HEAD02_CELL_ID = new CSignalMelsec("DI_HEAD02_CELL_ID", "7110", 10); // Head #02 CELL ID 정보
+                //Inputs.Add(DI_HEAD02_CELL_ID);
+
+                DI_HEAD03_CELL_ID = new CSignalMelsec("DI_HEAD03_CELL_ID", "7120", 10); // Head #03 CELL ID 정보
+                //Inputs.Add(DI_HEAD03_CELL_ID);
+
+                DI_HEAD04_CELL_ID = new CSignalMelsec("DI_HEAD04_CELL_ID", "7130", 10); // Head #04 CELL ID 정보
+                //Inputs.Add(DI_HEAD02_CELL_ID);
+
+                DI_HEAD05_CELL_ID = new CSignalMelsec("DI_HEAD05_CELL_ID", "7140", 10); // Head #05 CELL ID 정보
+                //Inputs.Add(DI_HEAD02_CELL_ID);
+
+                DI_HEAD06_CELL_ID = new CSignalMelsec("DI_HEAD06_CELL_ID", "7150", 10); // Head #06 CELL ID 정보
+                //Inputs.Add(DI_HEAD02_CELL_ID);
+
+                DI_HEAD07_CELL_ID = new CSignalMelsec("DI_HEAD07_CELL_ID", "7160", 10); // Head #07 CELL ID 정보
+                //Inputs.Add(DI_HEAD02_CELL_ID);
+
+                DI_HEAD08_CELL_ID = new CSignalMelsec("DI_HEAD08_CELL_ID", "7170", 10); // Head #08 CELL ID 정보
+                //Inputs.Add(DI_HEAD02_CELL_ID);
+
+                DI_HEAD09_CELL_ID = new CSignalMelsec("DI_HEAD09_CELL_ID", "7180", 10); // Head #09 CELL ID 정보
+                //Inputs.Add(DI_HEAD02_CELL_ID);
+
+                DI_HEAD10_CELL_ID = new CSignalMelsec("DI_HEAD10_CELL_ID", "7190", 10); // Head #10 CELL ID 정보
+               // Inputs.Add(DI_HEAD02_CELL_ID);
+                #endregion
+
+                #region OUTPUT
+                Outputs.Clear();
+
+                DO_ALIVE_SEND = new CSignalMelsec("DO_ALIVE_SEND", "7500"); // 연결상태체크
+                Outputs.Add(DO_ALIVE_SEND);
+
+                DO_PC_MODE = new CSignalMelsec("DO_PC_MODE", "7501"); // PC 운전 상태
+                Outputs.Add(DO_PC_MODE);
+
+                DO_CYCLE_START_ACK = new CSignalMelsec("DO_CYCLE_START_ACK", "7502"); // 셀(셔틀) 투입 완료 응답 (검사초기화 완료)
+                Outputs.Add(DO_CYCLE_START_ACK);
+
+                DO_INSP_START_ACK = new CSignalMelsec("DO_INSP_START_ACK", "7503"); // 각 셀 별 검사 시작 응답 (총 10회)
+                Outputs.Add(DO_INSP_START_ACK);
+
+                DO_INSP_COMPLETE = new CSignalMelsec("DO_INSP_COMPLETE", "7504"); // 각 셀 별 검사 완료 (총 10회)
+                Outputs.Add(DO_INSP_COMPLETE);
+
+                DO_CYCLE_COMPLETE = new CSignalMelsec("DO_CYCLE_COPLETE", "7505"); // 전체 셀(10ea) 검사 완료(판정 완료)
+                Outputs.Add(DO_CYCLE_COMPLETE);
+
+                DO_HEAD_RESULT = new CSignalMelsec("DO_HEAD_RESULT", "7506", 10); 
+                Outputs.Add(DO_HEAD_RESULT);
+
+                DO_MODEL_INDEX_ACK = new CSignalMelsec("DO_MODEL_INDEX_ACK", "7520"); // 생산 기종 번호 응답
+                Outputs.Add(DO_MODEL_INDEX_ACK);
+
+                DO_HEAD01_RESULT = new CSignalMelsec("DO_HEAD01_RESULT", "7506"); // 헤드(셀) 판정 결과 1~10
+                Outputs.Add(DO_HEAD01_RESULT);
+
+                DO_HEAD02_RESULT = new CSignalMelsec("DO_HEAD01_RESULT", "7507");
+                Outputs.Add(DO_HEAD02_RESULT);
+
+                DO_HEAD03_RESULT = new CSignalMelsec("DO_HEAD03_RESULT", "7508");
+                Outputs.Add(DO_HEAD03_RESULT);
+
+                DO_HEAD04_RESULT = new CSignalMelsec("DO_HEAD04_RESULT", "7509");
+                Outputs.Add(DO_HEAD04_RESULT);
+
+                DO_HEAD05_RESULT = new CSignalMelsec("DO_HEAD05_RESULT", "7510");
+                Outputs.Add(DO_HEAD05_RESULT);
+
+                DO_HEAD06_RESULT = new CSignalMelsec("DO_HEAD06_RESULT", "7511");
+                Outputs.Add(DO_HEAD06_RESULT);
+
+                DO_HEAD07_RESULT = new CSignalMelsec("DO_HEAD07_RESULT", "7512");
+                Outputs.Add(DO_HEAD07_RESULT);
+
+                DO_HEAD08_RESULT = new CSignalMelsec("DO_HEAD08_RESULT", "7513");
+                Outputs.Add(DO_HEAD08_RESULT);
+
+                DO_HEAD09_RESULT = new CSignalMelsec("DO_HEAD09_RESULT", "7514");
+                Outputs.Add(DO_HEAD09_RESULT);
+
+                DO_HEAD10_RESULT = new CSignalMelsec("DO_HEAD10_RESULT", "7515");
+                Outputs.Add(DO_HEAD10_RESULT);                               
+
+                DO_MAX_SPEC = new CSignalMelsec("DO_MAX_SPEC", "7550");
+                Outputs.Add(DO_MAX_SPEC);
+
+                DO_MIN_SPEC = new CSignalMelsec("DO_MIN_SPEC", "7552");
+                Outputs.Add(DO_MIN_SPEC);
+
+                //DO_DISTANCE_RESULT = new CSignalMelsec("DO_DISTANCE_RESULT", "7554");
+                //Outputs.Add(DO_DISTANCE_RESULT);
+                DO_DISTANCE01_RESULT = new CSignalMelsec("DO_DISTANCE01_RESULT", "7554");
+                Outputs.Add(DO_DISTANCE01_RESULT);
+
+                DO_DISTANCE02_RESULT = new CSignalMelsec("DO_DISTANCE02_RESULT", "7556");
+                Outputs.Add(DO_DISTANCE02_RESULT);
+
+                DO_DISTANCE03_RESULT = new CSignalMelsec("DO_DISTANCE03_RESULT", "7558");
+                Outputs.Add(DO_DISTANCE03_RESULT);
+
+                DO_DISTANCE04_RESULT = new CSignalMelsec("DO_DISTANCE04_RESULT", "7560");
+                Outputs.Add(DO_DISTANCE04_RESULT);
+
+                DO_DISTANCE05_RESULT = new CSignalMelsec("DO_DISTANCE05_RESULT", "7562");
+                Outputs.Add(DO_DISTANCE05_RESULT);
+
+                DO_DISTANCE06_RESULT = new CSignalMelsec("DO_DISTANCE06_RESULT", "7564");
+                Outputs.Add(DO_DISTANCE06_RESULT);
+
+                DO_DISTANCE07_RESULT = new CSignalMelsec("DO_DISTANCE07_RESULT", "7566");
+                Outputs.Add(DO_DISTANCE07_RESULT);
+
+                DO_DISTANCE08_RESULT = new CSignalMelsec("DO_DISTANCE08_RESULT", "7568");
+                Outputs.Add(DO_DISTANCE08_RESULT);
+
+                DO_DISTANCE09_RESULT = new CSignalMelsec("DO_DISTANCE09_RESULT", "7570");
+                Outputs.Add(DO_DISTANCE09_RESULT);
+
+                DO_DISTANCE10_RESULT = new CSignalMelsec("DO_DISTANCE10_RESULT", "7572");
+                Outputs.Add(DO_DISTANCE10_RESULT);
+
+
+                DO_HEAD01_CELL_ID_BCR_COMPARE_ = new CSignalMelsec("DO_HEAD01_CELL_ID_BCR_COMPARE_", "7516");
+                DO_HEAD02_CELL_ID_BCR_COMPARE_ = new CSignalMelsec("DO_HEAD02_CELL_ID_BCR_COMPARE_", "7517");
+                DO_HEAD03_CELL_ID_BCR_COMPARE_ = new CSignalMelsec("DO_HEAD03_CELL_ID_BCR_COMPARE_", "7518");
+                DO_HEAD04_CELL_ID_BCR_COMPARE_ = new CSignalMelsec("DO_HEAD04_CELL_ID_BCR_COMPARE_", "7519");
+                DO_HEAD05_CELL_ID_BCR_COMPARE_ = new CSignalMelsec("DO_HEAD05_CELL_ID_BCR_COMPARE_", "7520");
+                DO_HEAD06_CELL_ID_BCR_COMPARE_ = new CSignalMelsec("DO_HEAD06_CELL_ID_BCR_COMPARE_", "7521");
+                DO_HEAD07_CELL_ID_BCR_COMPARE_ = new CSignalMelsec("DO_HEAD07_CELL_ID_BCR_COMPARE_", "7522");
+                DO_HEAD08_CELL_ID_BCR_COMPARE_ = new CSignalMelsec("DO_HEAD08_CELL_ID_BCR_COMPARE_", "7523");
+                DO_HEAD09_CELL_ID_BCR_COMPARE_ = new CSignalMelsec("DO_HEAD09_CELL_ID_BCR_COMPARE_", "7524");
+                DO_HEAD10_CELL_ID_BCR_COMPARE_ = new CSignalMelsec("DO_HEAD10_CELL_ID_BCR_COMPARE_", "7525");
+                                
+
+
+
+
+
+                #endregion
+
+
+                //for (int i = 0; i < Inputs.Count; i++)
+                //{
+                //    //REGIST:IN:IN_00_XXX:0000:D:10
+                //    //0     :1 :2        :3   :4:5
+                //    string strName = Inputs[i].Name;
+                //    string strAddr = Inputs[i].Address;
+                //    string strWord = Inputs[i].WordCount.ToString();
+
+                //    string strRegistInput = '\u0002' + $"REGIST:IN:{strName}:{strAddr}:D:{strWord}" + '\u0003';
+                //}
+
+
+                // 임시 여기에서 오픈하는데 현 프로그램에 맞게 수정 부탁드립니다.
+                SetAddress("192.168.100.101", 4000);
+                Binary = new McProtocolTcp(strHostIP, strHostPort);
+                Binary.Init();
+                Open();
+                StartThreadRead();
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool Close()
+        {
+            try
+            {
+                if(Binary != null)
+                {
+                    Binary.Client.Close();
+                    Binary.Close();
+                }
+            }
+            catch
+            {
+                return false;
+            }
+
+            return true;
+        }
+        private IThreadStatus m_ThreadStatusRead = new IThreadStatus();
+        public IThreadStatus ThreadStatusRead
+        {
+            get { return m_ThreadStatusRead; }
+        }
+
+        private Stopwatch m_Timeout = new Stopwatch();
+        public Stopwatch PlcConnectionTimeout
+        {
+            get => m_Timeout;
+            set
+            {
+                m_Timeout = value;
+            }
+        }
+
+        public void StartThreadRead()
+        {
+            Thread t = new Thread(new ParameterizedThreadStart(ThreadRead));
+            t.Start(m_ThreadStatusRead);
+        }
+
+        public void StopThreadRead()
+        {
+            if (!ThreadStatusRead.IsExit())
+            {
+                ThreadStatusRead.Stop(100);
+            }
+        }
+
+        int m_nAliveTime = 0;
+        private const int INPUT_START_DEVICE_ADDRESS = 7000;
+        private const int INPUT_End_DEVICE_ADDRESS = 7100;
+
+        private const int OUTPUT_START_DEVICE_ADDRESS = 7200;
+        private const int OUTPUT_End_DEVICE_ADDRESS = 7240;
+
+        /// <summary>
+        /// 해당 주소값으로부터 값을 읽어옵니다 input / output주소값이 나눠져 있어서 나눠서 읽고 어드레스별로 값을 써줍니다.
+        /// </summary>
+        /// <param name="ob"></param>
+        private void ThreadRead(object ob)
+        {
+            IThreadStatus ThreadStatus = (IThreadStatus)ob;
+
+            ThreadStatus.Start("Read Io");
+           // ILogger.Add(LOG_TYPE.SYSTEM, "Read the Io Signal");
+
+            Thread.Sleep(500);
+
+            try
+            {
+                while (!ThreadStatus.IsExit())
+                {
+                    if ((Environment.TickCount - m_nAliveTime) > 1000)
+                    {
+                        m_nAliveTime = Environment.TickCount;
+
+                    }
+
+                    Thread.Sleep(1);
+
+                    try
+                    {
+                        if (IsOpen)
+                        {
+                            Stopwatch sw3 = new Stopwatch();
+                            sw3.Start();
+                            #region Input
+                            int nLengthInput = INPUT_End_DEVICE_ADDRESS - INPUT_START_DEVICE_ADDRESS; // 7100 - 7000
+                            int[] nArrReadDeviceDataInput = new int[nLengthInput];
+                            // PLC 테스트 : Read 10~50ms
+                            // 1 ~ 950개까지 읽을 수 있음--> 한번 읽을때마다 30~50ms
+                            try
+                            {
+                                var nCode = Binary.ReadDeviceBlock(INPUT_START_DEVICE_ADDRESS.ToString(), nLengthInput, nArrReadDeviceDataInput);
+
+                                if (nCode != 0)
+                                {
+
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+
+                            }
+
+                            for (int i = 0; i < Inputs.Count; i++)
+                            {
+                                CSignalMelsec InputSignal = Inputs[i];
+
+                                int nSignalArray = Math.Abs(INPUT_START_DEVICE_ADDRESS - int.Parse(InputSignal.Address));
+
+                                string strAddr = InputSignal.Address;
+
+                                int nWordCount = InputSignal.WordCount;
+                                int nValueW = 0;
+                                int[] nDataArr = new int[nWordCount];
+                                if (nWordCount == 1)
+                                {
+                                    InputSignal.Current = nArrReadDeviceDataInput[nSignalArray];
+                                }
+                                else
+                                {
+                                    nDataArr[0] = nArrReadDeviceDataInput[nSignalArray];
+                                    nDataArr[1] = nArrReadDeviceDataInput[nSignalArray + 1];
+                                    List<short> listValue = new List<short>();
+                                    int nSum = 0;
+                                    int shBuffTemp = 0;
+                                    int nBuffTemp = 0;
+
+                                    for (int k = 0; k < nDataArr.Length; k++)
+                                    {
+                                        shBuffTemp = nDataArr[k];
+                                        ushort ushBuffTemp = (ushort)shBuffTemp;
+                                        nBuffTemp = (int)ushBuffTemp;
+
+                                        if (k == 0)
+                                        {
+                                        }
+                                        else
+                                        {
+                                            nBuffTemp = ((int)nBuffTemp << (16 * k));
+                                        }
+
+                                        nSum += nBuffTemp;
+                                    }
+
+                                    nValueW = nSum;
+
+                                    InputSignal.Current = nValueW;
+                                }
+                            }
+                            sw3.Stop();
+                            //Logger.WriteLog(LOG.Normal, "PLC IO TackTime : {0}", sw3.ElapsedMilliseconds);
+
+                            //int nLengthInput = INPUT_End_DEVICE_ADDRESS - INPUT_START_DEVICE_ADDRESS;
+                            //int[] nArrReadDeviceDataInput = new int[nLengthInput];
+                            //// PLC 테스트 : Read 10~50ms
+                            //// 1 ~ 950개까지 읽을 수 있음--> 한번 읽을때마다 30~50ms
+                            //try
+                            //{
+                            //    //var nCode = Binary.ReadDeviceBlock(INPUT_START_DEVICE_ADDRESS.ToString(), nLengthInput, nArrReadDeviceDataInput);
+
+                            //    //if(nCode != 0)
+                            //    //{
+
+                            //    //}
+                            //}
+                            //catch (Exception ex)
+                            //{
+
+                            //}
+
+                            //for (int i = 0; i < Inputs.Count; i++)
+                            //{
+                            //    CSignalMelsec InputSignal = Inputs[i];
+
+                            //    int nSignalArray = Math.Abs(INPUT_START_DEVICE_ADDRESS - int.Parse(InputSignal.Address));
+
+                            //    string strAddr = InputSignal.Address;
+
+                            //    int nWordCount = InputSignal.WordCount;
+                            //    int nValueW = 0;
+                            //    int[] nDataArr = new int[nWordCount];
+                            //    int nData = 0;
+                            //    if (nWordCount == 1)
+                            //    {
+                            //        var rtn = Binary.GetDevice(strAddr, out nData);
+                            //        InputSignal.Current = nData;
+                            //       // InputSignal.Current = nArrReadDeviceDataInput[nSignalArray];
+                            //    }
+                            //    else
+                            //    {
+                            //        var rtn = Binary.ReadDeviceBlock(strAddr, nWordCount, nDataArr);
+
+                            //        if(rtn != 0)
+                            //        {
+
+                            //        }
+                            //        //nDataArr[0] = nArrReadDeviceDataInput[nSignalArray];
+                            //        //nDataArr[1] = nArrReadDeviceDataInput[nSignalArray + 1];
+                            //        List<short> listValue = new List<short>();
+                            //        int nSum = 0;
+                            //        int shBuffTemp = 0;
+                            //        int nBuffTemp = 0;
+
+                            //        for (int k = 0; k < nDataArr.Length; k++)
+                            //        {
+                            //            shBuffTemp = nDataArr[k];
+                            //            ushort ushBuffTemp = (ushort)shBuffTemp;
+                            //            nBuffTemp = (int)ushBuffTemp;
+
+                            //            if (k == 0)
+                            //            {
+                            //            }
+                            //            else
+                            //            {
+                            //                nBuffTemp = ((int)nBuffTemp << (16 * k));
+                            //            }
+
+                            //            nSum += nBuffTemp;
+                            //        }
+
+                            //        nValueW = nSum;
+
+                            //        InputSignal.Current = nValueW;
+                            //    }
+                            //}
+                            #endregion
+
+                            //int nLengthOutput = OUTPUT_End_DEVICE_ADDRESS - OUTPUT_START_DEVICE_ADDRESS;
+                            //int[] nArrReadDeviceDataOutput = new int[nLengthOutput];
+                            //// PLC 테스트 : Read 10~50ms
+                            //// 1 ~ 950개까지 읽을 수 있음--> 한번 읽을때마다 30~50ms
+                            //try
+                            //{
+                            //    var nCode = Binary.ReadDeviceBlock(OUTPUT_START_DEVICE_ADDRESS.ToString(), nLengthOutput, nArrReadDeviceDataOutput);
+                            //}
+                            //catch (Exception ex)
+                            //{
+
+                            //}
+
+                            //#region Output 
+                            //for (int i = 0; i < Outputs.Count; i++)
+                            //{
+                            //    CSignalMelsec OutputSignal = Outputs[i];
+
+                            //    int nSignalArray = Math.Abs(OUTPUT_START_DEVICE_ADDRESS - int.Parse(OutputSignal.Address));
+
+                            //    string strAddr = OutputSignal.Address;
+
+                            //    int nWordCount = OutputSignal.WordCount;
+                            //    int nValueW = 0;
+                            //    int[] nDataArr = new int[nWordCount];
+                            //    if (nWordCount == 1)
+                            //    {
+                            //        OutputSignal.Current = nArrReadDeviceDataOutput[nSignalArray];
+                            //    }
+                            //    else
+                            //    {
+                            //        nDataArr[0] = nArrReadDeviceDataOutput[nSignalArray];
+                            //        nDataArr[1] = nArrReadDeviceDataOutput[nSignalArray + 1];
+                            //        List<short> listValue = new List<short>();
+                            //        int nSum = 0;
+                            //        int shBuffTemp = 0;
+                            //        int nBuffTemp = 0;
+
+                            //        for (int k = 0; k < nDataArr.Length; k++)
+                            //        {
+                            //            shBuffTemp = nDataArr[k];
+                            //            ushort ushBuffTemp = (ushort)shBuffTemp;
+                            //            nBuffTemp = (int)ushBuffTemp;
+
+                            //            if (k == 0)
+                            //            {
+                            //            }
+                            //            else
+                            //            {
+                            //                nBuffTemp = ((int)nBuffTemp << (16 * k));
+                            //            }
+
+                            //            nSum += nBuffTemp;
+                            //        }
+
+                            //        nValueW = nSum;
+
+                            //        OutputSignal.Current = nValueW;
+                            //    }
+                            //    sw3.Stop();
+                            //    Logger.WriteLog(LOG.Normal, "PLC IO TackTime : {0}", sw3.ElapsedMilliseconds);
+                            //}                            
+
+                            #endregion
+                            #region Old
+                            //for (int i = 0; i < ListInput.Count; i++)
+                            //{
+                            //    ISignal InputSignal = ListInput[i];
+
+                            //    string strAddr = InputSignal.Address;
+
+                            //    int nWordCount = InputSignal.WordCount;
+                            //    int nValueW = 0;
+                            //    int nData = 0;
+                            //    int[] nDataArr = new int[nWordCount];
+                            //    if (nWordCount == 1)
+                            //    {
+                            //        var rtn = Binary.GetDevice(strAddr, out nData);
+
+                            //        InputSignal.Current = nData;
+                            //    }
+                            //    else
+                            //    {
+                            //        // PLC 테스트 : Read 10~50ms
+                            //        // 1 ~ 950개까지 읽을 수 있음--> 한번 읽을때마다 30~50ms
+                            //        strAddr = "D" + strAddr;
+                            //        var rtn = Binary.ReadDeviceBlock(strAddr, nWordCount, nDataArr);
+
+                            //        List<short> listValue = new List<short>();
+                            //        int nSum = 0;
+                            //        int shBuffTemp = 0;
+                            //        int nBuffTemp = 0;
+
+                            //        for (int k = 0; k < nDataArr.Length; k++)
+                            //        {
+                            //            shBuffTemp = nDataArr[k];
+                            //            ushort ushBuffTemp = (ushort)shBuffTemp;
+                            //            nBuffTemp = (int)ushBuffTemp;
+
+                            //            if (k == 0)
+                            //            {
+                            //            }
+                            //            else
+                            //            {
+                            //                nBuffTemp = ((int)nBuffTemp << (16 * k));
+                            //            }
+
+                            //            nSum += nBuffTemp;
+                            //        }
+
+                            //        nValueW = nSum;
+
+                            //        InputSignal.Current = nValueW;
+                            //    }
+                            //}
+                            #endregion
+                        }
+                    }
+                    catch (Exception Desc)
+                    {
+                        //ILogger.Add(LOG_TYPE.ERROR, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                    }
+                }
+            }
+            catch (Exception Desc)
+            {
+               // ILogger.Add(LOG_TYPE.ERROR, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+            }
+
+        }
+
+
+        /// <summary>
+        ///  주소값에 1을 씁니다.
+        /// </summary>
+        /// <param name="signal"></param>
+        /// <returns></returns>
+        public bool On(CSignalMelsec signal)
+        {
+            try
+            {
+                if (IsOpen)
+                {
+                    if (signal != null)
+                    {
+                        int nRet = Binary.SetDevice(signal.Address, ISignal.SIGNAL_ON);
+                        //ILogger.Add(LOG_TYPE.IO, "[{0}] {1} ==> {2}", signal.Name, signal.Current.ToString() == "1" ? "ON" : "OFF", "ON");
+                    }
+                }
+            }
+            catch (Exception Desc)
+            {
+               // ILogger.Add(LOG_TYPE.ERROR, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 주소값에 0을 씁니다.
+        /// </summary>
+        /// <param name="signal"></param>
+        /// <returns></returns>
+        public bool Off(CSignalMelsec signal)
+        {
+            try
+            {
+                if (IsOpen)
+                {
+                    if (signal != null)
+                    {
+                        Binary.SetDevice(signal.Address, ISignal.SIGNAL_OFF);
+
+                       // ILogger.Add(LOG_TYPE.IO, "[{0}] {1} ==> {2}", signal.Name, signal.Current.ToString() == "0" ? "OFF" : "ON", "OFF");
+                    }
+                }
+            }
+            catch (Exception Desc)
+            {
+              //  ILogger.Add(LOG_TYPE.ERROR, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 단일 워드값을 씁니다.
+        /// </summary>
+        /// <param name="signal"></param>
+        /// <param name="nData"></param>
+        /// <returns></returns>
+        public bool WriteWord(CSignalMelsec signal, int nData)
+        {
+            try
+            {
+                if (IsOpen)
+                {
+                    if (signal != null)
+                    {
+                        Binary.SetDevice(signal.Address, nData);
+
+                        // ILogger.Add(LOG_TYPE.IO, "[{0}] {1} ==> {2}", signal.Name, signal.Current.ToString() == "0" ? "OFF" : "ON", "OFF");
+                    }
+                }
+            }
+            catch (Exception Desc)
+            {
+                //  ILogger.Add(LOG_TYPE.ERROR, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 단일 워드값을 읽어옵니다.
+        /// </summary>
+        /// <param name="signal"></param>
+        /// <param name="nData"></param>
+        /// <returns></returns>
+        public bool ReadWord(CSignalMelsec signal, out int nData)
+        {
+            nData = -1;
+            try
+            {
+                if (IsOpen)
+                {
+                    if (signal != null)
+                    {
+                        Binary.GetDevice(signal.Address, out nData);
+
+                        // ILogger.Add(LOG_TYPE.IO, "[{0}] {1} ==> {2}", signal.Name, signal.Current.ToString() == "0" ? "OFF" : "ON", "OFF");
+                    }
+                }
+            }
+            catch (Exception Desc)
+            {
+                //  ILogger.Add(LOG_TYPE.ERROR, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 랭스값만큼 값을 읽고 아스키로 값을 변환하여 리턴합니다. 어드레스 타입은 W입니다.
+        /// </summary>
+        /// <param name="signal"></param>
+        /// <param name="nLength"></param>
+        /// <returns></returns>
+        public string GetBCR(CSignalMelsec signal, int nLength)
+        {
+            string strBarcode = string.Empty;
+            try
+            {
+                int[] nArrReadDeviceData = new int[nLength];
+                var nCode = Binary.ReadDeviceBlock(signal.Address, nLength, nArrReadDeviceData);
+
+                if (nCode != 0) return strBarcode;
+
+                for (int i = 0; i < nArrReadDeviceData.Length; i++)
+                {
+                    byte[] bytes = BitConverter.GetBytes(nArrReadDeviceData[i]);
+                    string str = Encoding.ASCII.GetString(bytes);
+
+                    str = str.Replace("\0", "");
+                    strBarcode += str;
+                }
+
+                //ILogger.Add(LOG_TYPE.SYSTEM, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return strBarcode;
+            }
+            catch (Exception Desc)
+            {
+               // ILogger.Add(LOG_TYPE.ERROR, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+            }
+
+            return strBarcode;
+        }
+
+        public bool WriteBCR(CSignalMelsec signal, string strData)
+        {
+            try
+            {
+                byte[] bytes = Encoding.ASCII.GetBytes(strData);
+                int[] nData = new int[bytes.Length];
+
+                for (int i = 0; i < nData.Length; i++) nData[i] = (int)bytes[i];
+
+                var nCode = Binary.WriteDeviceBlock(signal.Address, nData.Length, nData);
+
+                if (nCode != 0) return false;
+
+                //ILogger.Add(LOG_TYPE.SYSTEM, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                // ILogger.Add(LOG_TYPE.ERROR, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+            }
+
+            return false;
+        }
+
+        public bool AllOff()
+        {
+            try
+            {
+                if (IsOpen)
+                {
+                    //Off(OutputHeaveyAlarm);
+                    //Off(OutputInspectionComplete);
+                    ////Off(OutputInspectionJudgement);
+                    //Off(OutputInspectionStart);
+                    //Off(OutputOperationMode);
+                    //Off(OutputWarningAlarm);
+                    //Off(OutputHeaveyAlarm);
+                }
+            }
+            catch (Exception Desc)
+            {
+               // ILogger.Add(LOG_TYPE.ERROR, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        //#endregion   
+        public void Open()
+        {
+            Binary.Open();
+        }
+
+        public void SetAddress(string strIp, int nPort)
+        {
+            strHostIP = strIp;
+            strHostPort = nPort;
+            //ILogger.Add(LOG_TYPE.SYSTEM, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+        }
+
+        public void GetAddress(out string strIp, out int nPort)
+        {
+            strIp = strHostIP;
+            nPort = strHostPort;
+        }
+    }
+}

@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<LightControllerConfig>
+	<PD70Port>COM5</PD70Port>
+	<BaudRate>19200</BaudRate>
+	<Light1Value>50</Light1Value>
+	<Light2Value>50</Light2Value>
+	<Light3Value>50</Light3Value>
+	<Light4Value>50</Light4Value>
+</LightControllerConfig>

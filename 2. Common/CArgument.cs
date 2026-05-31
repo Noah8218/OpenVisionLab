@@ -1,0 +1,280 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Xml.Serialization;
+using OpenVisionLab._3._Device.DB;
+using Lib.OpenCV;
+using Lib.OpenCV.Blob;
+using Lib.OpenCV.Result;
+using Matrox.MatroxImagingLibrary;
+using OpenCvSharp;
+using Vila.Extensions;
+
+namespace OpenVisionLab
+{
+    public class MessageEventArgs : EventArgs
+    {
+        public enum MESSAGEBOX_TYPE { OKCANCEL, OK };
+
+        private string m_strHead = "";
+        public string Head
+        {
+            get => m_strHead;
+            set => m_strHead = value;
+        }
+
+        private string m_strMessage = "";
+        public string Message
+        {
+            get { return m_strMessage; }
+            set { m_strMessage = value; }
+        }
+
+        public MessageEventArgs(string strMessage, string strHead)
+        {
+            m_strMessage = strMessage;
+            m_strHead = strHead;
+        }
+
+        public MessageEventArgs()
+        {
+
+        }
+    }
+
+    public class StringEventArgs : EventArgs
+    {
+        private string m_strMessage = "";
+        public string Message
+        {
+            get { return m_strMessage; }
+            set { m_strMessage = value; }
+        }
+
+        public StringEventArgs(string strMessage)
+        {
+            m_strMessage = strMessage;
+        }
+
+        public StringEventArgs()
+        {
+
+        }
+    }
+
+    public class AlaramEventArgs : EventArgs
+    {
+        public CNodeAlarm cNodeAlarm = new CNodeAlarm();
+        public AlaramEventArgs(CNodeAlarm cNodeAlarm)
+        {
+            this.cNodeAlarm = cNodeAlarm;
+        }
+    }
+
+    public class InspResultArgs : EventArgs
+    {
+        public int Index = 0;
+        public Bitmap imageResult { get; set; } = new Bitmap(10, 10);
+        public Bitmap imageOri { get; set; } = new Bitmap(10, 10);
+        public string resultData = "";
+        public DEFINE.RESULT result = DEFINE.RESULT.NA;
+        public double tackTime = 0;
+
+        public Dictionary<string, CDefectSummary> DefectSummaries = new Dictionary<string, CDefectSummary>();
+
+        public List<List<CAttatchLabelling>> Attaches = new List<List<CAttatchLabelling>>();
+        public List<CAttatchLabelling> Already_AttachedList = new List<CAttatchLabelling>();
+
+        public List<CResultBlob> black_Result = new List<CResultBlob>();
+        public List<CResultBlob> white_Result = new List<CResultBlob>();
+        public List<CResultBlob> totalResults = new List<CResultBlob>();
+
+        public List<CResultBlob> pin_Results = new List<CResultBlob>();
+        public List<double> avgMM = new List<double>();
+        public InspResultArgs() { }
+
+        public InspResultArgs(Bitmap imageResult, double TackTime, DEFINE.RESULT result)
+        {
+            this.imageResult = (Bitmap)imageResult.Clone();
+            imageResult.Dispose();
+            imageResult = null;
+
+            this.result = result;
+            this.tackTime = TackTime;
+        }
+
+        public InspResultArgs(Bitmap imageResult, int Index, double TackTime, DEFINE.RESULT result)
+        {
+            this.imageResult = (Bitmap)imageResult.Clone();
+            imageResult.Dispose();
+            imageResult = null;
+
+            this.result = result;
+            this.Index = Index;
+            this.tackTime = TackTime;
+        }
+
+        public InspResultArgs(Bitmap imageOriginal, Bitmap imageResult, int Index, double TackTime, DEFINE.RESULT result, List<CResultBlob> black_Result, List<CResultBlob> white_Result, List<CResultBlob> totalResults,
+            List<double> AvgMM, List<List<CAttatchLabelling>> Attaches, List<CAttatchLabelling> Already_AttachedList,
+            Dictionary<string, CDefectSummary> DefectSummaries)
+        {
+            this.imageOri = (Bitmap)imageOriginal;
+            this.imageResult = (Bitmap)imageResult;            
+
+            this.result = result;
+            this.Index = Index;
+            this.tackTime = TackTime;
+            this.black_Result = black_Result;
+            this.white_Result = white_Result;
+            this.totalResults = totalResults;
+            this.totalResults = totalResults;
+            this.avgMM = AvgMM;
+            this.Attaches = Attaches.ConvertAll(s => s);
+            this.Already_AttachedList = Already_AttachedList.ConvertAll(s => s);
+            this.DefectSummaries = new Dictionary<string, CDefectSummary>(DefectSummaries);
+        }
+    }
+
+    public class LabelResultArgs : EventArgs
+    {
+        public List<List<CAttatchLabelling>> Attaches = new List<List<CAttatchLabelling>>();
+        public List<CAttatchLabelling> Already_AttachedList = new List<CAttatchLabelling>();
+        public LabelResultArgs(List<List<CAttatchLabelling>> Attaches, List<CAttatchLabelling> Already_AttachedList)
+        {
+            this.Attaches = Attaches.ConvertAll(s => s);
+            this.Already_AttachedList = Already_AttachedList.ConvertAll(s => s);
+        }
+    }
+
+    public class AlignResultArgs : EventArgs
+    {
+        public OpenCvSharp.Point IntersectionL;
+        public OpenCvSharp.Point IntersectionR;
+
+        public double Angle = 0;
+
+        public string MasterCenter = "";
+
+        public AlignResultArgs(OpenCvSharp.Point IntersectionL, OpenCvSharp.Point IntersectionR, double Angle)
+        {
+            this.IntersectionL = IntersectionL;
+            this.IntersectionR = IntersectionR;
+            this.Angle = Angle;
+
+            int nCx = (int)((IntersectionL.X + IntersectionR.X) / 2.0F);
+            int nCy = (int)((IntersectionL.Y + IntersectionR.Y) / 2.0F);
+
+            this.MasterCenter = string.Format("(X:{0} Y:{1})", nCx, nCy);
+        }
+    }
+
+    public class CVRectEventArgs : EventArgs
+    {
+        private Rect m_rt = new Rect();
+        public Rect rt
+        {
+            get { return m_rt; }
+            set { m_rt = value; }
+        }
+
+
+
+        public CVRectEventArgs(Rect rt)
+        {
+            m_rt = rt;
+        }
+    }
+
+    public class RectEventArgs : EventArgs
+    {
+        public string Mode = "";
+        public System.Drawing.Rectangle Rect = new System.Drawing.Rectangle();
+
+        public RectEventArgs(System.Drawing.Rectangle rt, string strMode)
+        {
+            Rect = rt;
+            Mode = strMode;
+        }
+    }
+
+    //public class CognexGrabEventArgs : EventArgs
+    //{
+    //    public Cognex.VisionPro.CogImage8Grey ImageGrab = new Cognex.VisionPro.CogImage8Grey();
+
+    //    public int m_Index;
+
+    //    public CognexGrabEventArgs(Cognex.VisionPro.CogImage8Grey ImageArgs, int nIndex)
+    //    {
+    //        ImageGrab = new Cognex.VisionPro.CogImage8Grey(ImageArgs);
+    //        //(Cognex.VisionPro.CogImage8Grey)ImageArgs.CopyBase(Cognex.VisionPro.CogImageCopyModeConstants.CopyPixels);
+    //        m_Index = nIndex;
+    //    }
+    //}
+
+    public class GrabEventArgs : EventArgs
+    {
+        public Mat ImageGrabColor = new Mat();
+        public Mat ImageGrab = null;
+        public IntPtr ImagePtr = new IntPtr();
+        public MIL_ID m_Buffer;
+        public int m_Index;
+        public double getEncoder = 0;
+
+        public GrabEventArgs(IntPtr ImageArgs, int nIndex)
+        {
+            ImagePtr = ImageArgs;
+            m_Index = nIndex;
+        }
+        public GrabEventArgs(Mat ImageArgs, int nIndex, double getEncoder)
+        {
+            ImageGrab = ImageArgs;
+            m_Index = nIndex;
+            this.getEncoder = getEncoder;   
+        }
+
+        public GrabEventArgs(Mat ImageArgs, Mat Image, int nIndex)
+        {
+            ImageGrabColor = Image.Clone();
+            ImageGrab = ImageArgs.Clone();
+            m_Index = nIndex;
+        }
+
+        public GrabEventArgs(MIL_ID Buffer, int nIndex)
+        {
+            m_Buffer = Buffer;
+            m_Index = nIndex;
+        }
+    }
+
+    public class DockDisplayEventArgs : EventArgs
+    {
+        public Bitmap Image = new Bitmap(10, 10);
+        public int Index;
+        public string TackTime = "";
+
+        public DockDisplayEventArgs(Bitmap bitmap, int nIndex, string tackTime)
+        {
+            Image = bitmap;
+            Index = nIndex;
+            TackTime = tackTime;
+        }
+    }
+
+    //public class LogEventArgs : EventArgs
+    //{
+    //    private ILog m_iLog;
+    //    public ILog Log
+    //    {
+    //        get { return m_iLog; }
+    //        set { m_iLog = value; }
+    //    }
+
+    //    public LogEventArgs(ILog iLog)
+    //    {
+    //        Log = iLog;
+    //    }
+    //}
+}

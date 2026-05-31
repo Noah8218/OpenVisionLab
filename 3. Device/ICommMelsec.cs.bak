@@ -1,0 +1,486 @@
+﻿using ActUtlTypeLib;
+using IntelligentFactory.Library;
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Text;
+using System.Threading;
+
+namespace IntelligentFactory
+{
+    public class ICommMelsec
+    {
+        #region Event Register        
+        public EventHandler<EventArgs> EventChangedConnection;
+        public EventHandler<EventArgs> EventReadEnd;
+        #endregion
+
+        //private ActUtlType plc;
+        ActUtlTypeLib.ActUtlType m_actType = new ActUtlType();
+
+        private bool m_bIsOpen = false;
+        public bool IsOpen
+        {
+            get { return m_bIsOpen; }
+            set
+            {
+                m_bIsOpen = value;
+
+                if (EventChangedConnection != null)
+                {
+                    EventChangedConnection(this, new EventArgs());
+                }
+            }
+        }
+
+        #region IO
+        List<IMelsecSignal> ListInput = new List<IMelsecSignal>();
+
+        public IMelsecSignal inputLeftReady = null;
+        public IMelsecSignal inputLeftRequest = null;
+        public IMelsecSignal inputReadBCR = null;
+        public IMelsecSignal inputLeftBCRRequest = null;
+        public IMelsecSignal inputLeftCellNo = null;
+        public IMelsecSignal inputLeftDisplacement1 = null;
+        public IMelsecSignal inputLeftDisplacement2 = null;
+        public IMelsecSignal inputLeftLoadCell1 = null;
+        public IMelsecSignal inputLeftLoadCell2 = null;
+
+        public IMelsecSignal inputRightReady = null;
+        public IMelsecSignal inputRightRequest = null;
+        public IMelsecSignal inputRightCellNo = null;
+        public IMelsecSignal inputRightDisplacement1 = null;
+        public IMelsecSignal inputRightDisplacement2 = null;
+        public IMelsecSignal inputRightLoadCell1 = null;
+        public IMelsecSignal inputRightLoadCell2 = null;
+
+        public IMelsecSignal outputLeftComple = null;
+        public IMelsecSignal outputLeftBCRComple = null;
+        public IMelsecSignal outputLeftJuge = null;
+        public IMelsecSignal outputLeftResultJuge = null;
+        public IMelsecSignal outputRightComple = null;
+        public IMelsecSignal outputRightJuge = null;
+
+        public IMelsecSignal inputLeftBCR1 = null;
+        public IMelsecSignal inputLeftBCR2 = null;
+        public IMelsecSignal inputLeftBCR3 = null;
+        public IMelsecSignal inputLeftBCR4 = null;
+        public IMelsecSignal inputLeftBCR5 = null;
+        public IMelsecSignal inputLeftBCR6 = null;
+        public IMelsecSignal inputLeftBCR7 = null;
+        public IMelsecSignal inputLeftBCR8 = null;
+        public IMelsecSignal inputLeftBCR9 = null;
+        public IMelsecSignal inputLeftBCR10 = null;
+
+        public IMelsecSignal outputRightBCR1 = null;
+        public IMelsecSignal outputRightBCR2 = null;
+        public IMelsecSignal outputRightBCR3 = null;
+        public IMelsecSignal outputRightBCR4 = null;
+        public IMelsecSignal outputRightBCR5 = null;
+        public IMelsecSignal outputRightBCR6 = null;
+        public IMelsecSignal outputRightBCR7 = null;
+        public IMelsecSignal outputRightBCR8 = null;
+        public IMelsecSignal outputRightBCR9 = null;
+        public IMelsecSignal outputRightBCR10 = null;
+
+
+
+        #endregion
+
+        public ICommMelsec(int nLogicalNumber)
+        {
+            m_actType.ActLogicalStationNumber = nLogicalNumber;
+            InitIO();
+        }
+
+        public bool InitIO()
+        {
+            try
+            {
+                ListInput.Clear();
+
+                inputLeftReady          = new IMelsecSignal("1200", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputLeftReady);
+                inputLeftRequest        = new IMelsecSignal("1201", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputLeftRequest);
+                inputReadBCR            = new IMelsecSignal("1203", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputReadBCR);
+                inputLeftBCRRequest     = new IMelsecSignal("1206", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputLeftBCRRequest);
+                inputLeftCellNo         = new IMelsecSignal("1214", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputLeftCellNo);
+                inputLeftDisplacement1  = new IMelsecSignal("1216", IMelsecSignal.DEV_TYPE.LW, 2, "kg", 0.01D);
+                ListInput.Add(inputLeftDisplacement1);
+                inputLeftDisplacement2  = new IMelsecSignal("1222", IMelsecSignal.DEV_TYPE.LW, 2, "kg", 0.01D);
+                ListInput.Add(inputLeftDisplacement2);
+                inputLeftLoadCell1      = new IMelsecSignal("1228", IMelsecSignal.DEV_TYPE.LW, 2, "kg", 0.1D);
+                ListInput.Add(inputLeftLoadCell1);
+                inputLeftLoadCell2      = new IMelsecSignal("1234", IMelsecSignal.DEV_TYPE.LW, 2, "kg", 0.1D);
+                ListInput.Add(inputLeftLoadCell2);
+
+                inputRightReady         = new IMelsecSignal("1240", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputRightReady);
+                inputRightRequest       = new IMelsecSignal("1241", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputRightRequest);
+                inputRightCellNo        = new IMelsecSignal("1254", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputRightCellNo);
+                inputRightDisplacement1 = new IMelsecSignal("1256", IMelsecSignal.DEV_TYPE.LW, 2, "kg", 0.01D);
+                ListInput.Add(inputRightDisplacement1);
+                inputRightDisplacement2 = new IMelsecSignal("1262", IMelsecSignal.DEV_TYPE.LW, 2, "kg", 0.01D);
+                ListInput.Add(inputRightDisplacement2);
+                inputRightLoadCell1     = new IMelsecSignal("1268", IMelsecSignal.DEV_TYPE.LW, 2, "kg", 0.01D);
+                ListInput.Add(inputRightLoadCell1);
+                inputRightLoadCell2     = new IMelsecSignal("1274", IMelsecSignal.DEV_TYPE.LW, 2, "kg", 0.01D);
+                ListInput.Add(inputRightLoadCell2);
+
+                inputLeftBCR1           = new IMelsecSignal("1301", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputLeftBCR1);
+                inputLeftBCR2           = new IMelsecSignal("1302", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputLeftBCR2);
+                inputLeftBCR3           = new IMelsecSignal("1303", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputLeftBCR3);
+                inputLeftBCR4           = new IMelsecSignal("1304", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputLeftBCR4);
+                inputLeftBCR5           = new IMelsecSignal("1305", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputLeftBCR5);
+                inputLeftBCR6           = new IMelsecSignal("1306", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputLeftBCR6);
+                inputLeftBCR7           = new IMelsecSignal("1307", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputLeftBCR7);
+                inputLeftBCR8           = new IMelsecSignal("1308", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputLeftBCR8);
+                inputLeftBCR9           = new IMelsecSignal("1309", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputLeftBCR9);
+                inputLeftBCR10          = new IMelsecSignal("1310", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(inputLeftBCR10);
+
+                outputLeftComple        = new IMelsecSignal("1207", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(outputLeftComple);
+                outputLeftJuge          = new IMelsecSignal("1210", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(outputLeftJuge);
+                outputLeftResultJuge    = new IMelsecSignal("1211", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(outputLeftResultJuge);
+                outputRightComple       = new IMelsecSignal("1242", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(outputRightComple);
+                outputRightJuge         = new IMelsecSignal("1250", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(outputRightJuge);
+
+                outputRightBCR1         = new IMelsecSignal("1280", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(outputRightBCR1);
+                outputRightBCR2         = new IMelsecSignal("1281", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(outputRightBCR2);
+                outputRightBCR3         = new IMelsecSignal("1282", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(outputRightBCR3);
+                outputRightBCR4         = new IMelsecSignal("1283", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(outputRightBCR4);
+                outputRightBCR5         = new IMelsecSignal("1284", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(outputRightBCR5);
+                outputRightBCR6         = new IMelsecSignal("1285", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(outputRightBCR6);
+                outputRightBCR7         = new IMelsecSignal("1286", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(outputRightBCR7);
+                outputRightBCR8         = new IMelsecSignal("1287", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(outputRightBCR8);
+                outputRightBCR9         = new IMelsecSignal("1288", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(outputRightBCR9);
+                outputRightBCR10        = new IMelsecSignal("1289", IMelsecSignal.DEV_TYPE.LW);
+                ListInput.Add(outputRightBCR10);
+
+                StartThreadReadInput();
+                //Logger.WriteLog(LOG.Normal, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool Open()
+        {
+            if (m_actType.Open() == 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool OutputClear()
+        {
+            try
+            {
+                if(IsOpen)
+                {
+                    WriteB(outputLeftComple.Address, 0);
+                    WriteB(outputLeftBCRComple.Address, 0);
+                    WriteB(outputLeftJuge.Address, 0);
+                    WriteB(outputLeftResultJuge.Address, 0);
+                    WriteB(outputRightComple.Address, 0);
+                    WriteB(outputRightJuge.Address, 0);
+                }
+
+                Logger.WriteLog(LOG.Normal, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public int WriteB(string strAddress, int nData, int nSize = 1)
+        {
+            try
+            { 
+                int ret = m_actType.WriteDeviceBlock(strAddress, nSize, nData);
+
+                return ret;
+            }
+            catch (Exception Desc)
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return -1;
+            }
+        }
+
+        public int WriteD(string strAddress, int nData, int nSize = 1)
+        {
+            try
+            {
+                int ret = m_actType.WriteDeviceBlock(strAddress, nSize, nData);
+
+                return ret;
+            }
+            catch (Exception Desc)
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return -1;
+            }
+        }
+
+        public int ReadD(string strAddress, int nData, int nSize = 1)
+        {
+            try
+            {
+                int ret = m_actType.ReadDeviceBlock(strAddress, nSize, out nData);
+
+                return ret;
+            }
+            catch (Exception Desc)
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return -1;
+            }
+        }
+
+        public int ReadWs(string strAddress, out int nValue)
+        {
+            try
+            {
+                int nSize = 2;
+                nValue = -1;
+
+                List<short> listValue = new List<short>();
+                int nSum = 0;
+                int nBuffTemp = 0;
+
+                int nWordCount = inputLeftDisplacement1.WordCount;
+                int nAddress = int.Parse(strAddress);
+
+                for (int i = 0; i < nWordCount; i++)
+                {
+                    int nRet = m_actType.ReadDeviceBlock(string.Format("D{0}", (int)nAddress + i), nSize, out nBuffTemp);
+                    if (nRet != 0)
+                    {
+                        Logger.WriteLog(LOG.AbNormal, "Failed Reading the Words, Err Code ==> {0}", nRet);
+                        return nRet;
+                    }
+
+                    if (i == 0)
+                    {
+                    }
+                    else
+                    {
+                        nBuffTemp = ((int)nBuffTemp << (16 * i));
+                    }
+
+                    nSum += nBuffTemp;
+                }
+
+                nValue = nSum;
+                return 0;
+            }
+            catch (Exception Desc)
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                nValue = -1;
+                return -1;
+            }
+        }
+
+        public int ReadDW(string strLowAddress, string strHighAddress, out double dValue, int nSize = 1)
+        {
+            try
+            {
+                dValue = -1;
+                int nValueLow = 0;
+                int nValueHigh = 0;
+
+                int nLowValue = 0;
+                int nHighValue = 0;
+
+                int ret = m_actType.ReadDeviceBlock(strLowAddress, nSize, out nValueLow);
+                nLowValue = (int)nValueLow;
+
+                if (ret != 0)
+                {
+                    return ret;
+                }
+
+                ret = m_actType.ReadDeviceBlock(strHighAddress, nSize, out nValueHigh);
+                nHighValue = nValueHigh << 16;
+
+                if (ret != 0)
+                {
+                    return ret;
+                }
+
+                dValue = nLowValue + nHighValue;
+                return ret;
+            }
+            catch (Exception Desc)
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                dValue = -1;
+                return -1;
+            }
+        }
+
+        public int ReadB(string strAddress, int nData, int nSize = 1)
+        {
+            try
+            {
+                int ret = m_actType.ReadDeviceBlock(strAddress, nSize, out nData);
+
+                return ret;
+            }
+            catch (Exception Desc)
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return -1;
+            }
+        }
+
+        #region Thread             
+        private IThreadStatus m_ThreadStatusReadInput = new IThreadStatus();
+        public IThreadStatus ThreadStatusReadInput
+        {
+            get { return m_ThreadStatusReadInput; }
+        }
+
+        private void StartThreadReadInput()
+        {
+            Thread t = new Thread(new ParameterizedThreadStart(ThreadReadInput));
+            t.Start(m_ThreadStatusReadInput);
+        }
+
+        public void StopThreadReadInput()
+        {
+            if (!ThreadStatusReadInput.IsExit())
+            {
+                ThreadStatusReadInput.Stop(100);
+            }
+        }
+
+        bool bIsAlive = false;
+        int m_nAliveTime = 0;
+        private void ThreadReadInput(object ob)
+        {
+            IThreadStatus ThreadStatus = (IThreadStatus)ob;
+
+            ThreadStatus.Start("Read Input");
+            Logger.WriteLog(LOG.Inspection, "Read the Input Signal");
+
+            int nPrevSum = 0;
+            int nCurrSum = 0;
+            while (!ThreadStatus.IsExit())
+            {
+                Thread.Sleep(1);
+
+                if (m_bIsOpen)
+                {
+                    try
+                    {
+                        nCurrSum = 0;
+
+                        for (int i = 0; i < ListInput.Count; i++)
+                        {
+                            IMelsecSignal InputSignal = ListInput[i];
+                            string strAddr = InputSignal.Address;
+
+                            switch (InputSignal.DevType)
+                            {
+                                case IMelsecSignal.DEV_TYPE.LB:
+                                    int nRet = 0;
+                                    if (nRet == 0)
+                                    {
+                                        //IsOn(InputSignal, out bool bIsOn);
+
+                                        //if (bIsOn == true)
+                                        //{
+                                        //    InputSignal.Current = ISignal.SIGNAL_ON;
+                                        //}
+                                        //else
+                                        //{
+                                        //    InputSignal.Current = ISignal.SIGNAL_OFF;
+                                        //}
+                                    }
+                                    else
+                                    {
+                                        Logger.WriteLog(LOG.AbNormal, "[FAILED] Read Input {0}==>{1} Err Code ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, nRet);
+                                    }
+                                    break;
+                                case IMelsecSignal.DEV_TYPE.LW:
+                                    int nWordCount = InputSignal.WordCount;
+                                    nRet = ReadWs(strAddr, out int nValueW);
+                                    if (nRet == 0)
+                                    {
+                                        InputSignal.Current = nValueW;
+
+                                        nCurrSum += nValueW;
+                                    }
+                                    else
+                                    {
+                                        Logger.WriteLog(LOG.AbNormal, "[FAILED] Read Input {0}==>{1} Err Code ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, nRet);
+                                    }
+
+                                    break;
+                            }
+                        }
+
+                        if(nPrevSum != nCurrSum)
+                        {
+                            nPrevSum = nCurrSum;
+
+                            if (EventReadEnd != null)
+                            {
+                                EventReadEnd(this, new EventArgs());
+                            }
+                        }
+                    }
+                    catch (Exception Desc)
+                    {
+                        Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                    }
+                }
+            }
+        }
+        #endregion
+
+    }
+}

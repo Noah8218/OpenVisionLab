@@ -1,0 +1,173 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Windows.Forms;
+using System.Reflection;
+
+using System.Xml;
+
+namespace IntelligentFactory
+{
+    public class IDevice
+    {
+        public int CAMERA_COUNT { get; set; } = 4;
+
+#if HIKVISION
+        public List<CCameraHikVision> CAMERAS { get; set; } = new List<CCameraHikVision>();
+#endif
+        
+#if DIO_ADLINK
+        public CDIO_ADLINK7432 DIO_BD { get; set; } = new CDIO_ADLINK7432();
+#endif
+
+#if DIO_AJIN
+        public CDIO_AJIN DIO_BD { get; set; } = new CDIO_AJIN();
+#endif       
+        public IDevice()
+        {
+
+        }
+
+        public bool Init()
+        {
+            try
+            {                
+                LoadConfig();
+
+                CUtil.InitDirectory("CONFIG");
+                CUtil.InitDirectory("CONFIG\\DEVICE");
+
+                try
+                {
+                    //if (!CAMERA.Init()) { CUtil.ShowMessageBox("ALARM", "Failed the Init Camera"); }
+                }
+                catch (Exception ex)
+                {
+                    CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);                    
+                }
+
+                try
+                {
+#if MX_COMPONENT
+                if (!DIO_PLC.Init()) { CUtil.ShowMessageBox("ALARM", "Failed the Init ComMelsec"); } 
+#endif
+                }
+                catch (Exception ex)
+                {
+                    CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                }
+                      
+                return true;
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                return false;
+            }
+     }
+
+        public bool Close()
+        {
+            try
+            {
+                CUtil.InitDirectory("CONFIG");
+                CUtil.InitDirectory("CONFIG\\DEVICE");
+                
+                return true;
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                return false;
+            }
+            
+        }
+
+
+        #region CONFIG BY XML              
+        private string m_XMLName = "PROPERTY_DEVOCE";
+        public bool LoadConfig()
+        {
+            try
+            {
+                string strPath = Application.StartupPath + "\\CONFIG\\DEVICE\\DEVICE.xml";
+
+                if (File.Exists(strPath))
+                {
+                    XmlTextReader xmlReader = new XmlTextReader(strPath);
+
+                    try
+                    {
+                        while (xmlReader.Read())
+                        {
+                            if (xmlReader.NodeType == XmlNodeType.Element)
+                            {
+                                switch (xmlReader.Name)
+                                {
+                                    case "CAMERA_COUNT": if (xmlReader.Read()) CAMERA_COUNT = int.Parse(xmlReader.Value); break;
+                                }
+                            }
+                            else
+                            {
+                                if (xmlReader.NodeType == XmlNodeType.EndElement)
+                                {
+                                    if (xmlReader.Name == m_XMLName) break;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}==>{1} Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                        xmlReader.Close();
+                    }
+
+                    xmlReader.Close();
+                }
+                else
+                {
+                    SaveConfig();
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}==>{1} Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                return false;
+            }
+            return true;
+        }
+        public bool SaveConfig()
+        {
+            string strPath = Application.StartupPath + "\\CONFIG\\DEVICE\\DEVICE.xml";
+
+            XmlWriterSettings settings = new XmlWriterSettings();
+            settings.Indent = true;
+            settings.NewLineOnAttributes = true;
+            settings.IndentChars = "\t";
+            settings.NewLineChars = "\r\n";
+            XmlWriter xmlWriter = XmlWriter.Create(strPath, settings);
+            try
+            {
+                xmlWriter.WriteStartDocument();
+                xmlWriter.WriteStartElement("PROPERTY");
+                xmlWriter.WriteElementString("CAMERA_COUNT", CAMERA_COUNT.ToString());
+
+                xmlWriter.WriteEndElement();
+                xmlWriter.WriteEndDocument();
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}==>{1} Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+            finally
+            {
+                xmlWriter.Flush();
+                xmlWriter.Close();
+            }
+
+            return true;
+        }
+        #endregion
+    }
+}

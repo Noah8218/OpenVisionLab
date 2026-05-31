@@ -1,0 +1,2643 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Xml;
+using IntelligentFactory;
+
+namespace IntelligentFactory
+{
+    public partial class CAXIS_AJIN
+    {
+        public enum PARAM_LEVEL : uint
+        {
+            LOW = 0,
+            HIGH = 1,
+            UNUSED = 2,
+            USED
+        }
+
+        public string LAST_COMMAND_DESC { get; set; } = "";
+        public double LAST_COMMAND_PULSE { get; set; } = 0.0D;
+
+
+        private bool m_bUseMotFile;
+
+        private IMotionStatus m_Status = new IMotionStatus();
+        public IMotionStatus Status
+        {
+            get { return m_Status; }
+            set { m_Status = value; }
+        }
+
+        private IMotionHome m_Home = new IMotionHome();
+        public IMotionHome Home
+        {
+            get { return m_Home; }
+            set { m_Home = value; }
+        }
+
+        public bool m_bIsHomeComplete = false;
+
+        private string m_strAxisName = "";
+        public string AxisName
+        {
+            get { return m_strAxisName; }
+            set { m_strAxisName = value; }
+        }
+
+        private long m_lActualPos = 0;
+        public long ActualPos
+        {
+            get => m_lActualPos;
+            set => m_lActualPos = value;
+        }
+
+        private long m_lReadyPos = 0;
+        public long ReadyPos
+        {
+            get => m_lReadyPos;
+            set => m_lReadyPos = value;
+        }
+
+        private int m_nAxisNo = 0;
+        public int AxisNo
+        {
+            get => m_nAxisNo;
+            set => m_nAxisNo = value;
+        }
+
+        private double m_dAccel = 0.1;
+        public double Accel
+        {
+            get => m_dAccel;
+            set => m_dAccel = value;
+        }
+
+        private double m_dDecel = 0.1;
+        public double Decel
+        {
+            get => m_dDecel;
+            set => m_dDecel = value;
+        }
+
+        private int m_nMoveVelocity = 40000;
+        public int MoveVelocity
+        {
+            get => m_nMoveVelocity;
+            set => m_nMoveVelocity = value;
+        }
+
+        private int m_nJogVelocity = 10000;
+        public int JogVelocity
+        {
+            get => m_nJogVelocity;
+            set => m_nJogVelocity = value;
+        }
+
+        private int m_nHomeRate = 0;
+        public int HomeRate
+        {
+            get => m_nHomeRate;
+            set => m_nHomeRate = value;
+        }
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("PULSE/mm")]
+        public double PulsePermm { get; set; } = 1.0D;
+
+        public CAXIS_AJIN(int nAxisNo, string strDesc)
+        {
+            m_nAxisNo = nAxisNo;
+            m_strAxisName = strDesc;
+        }
+
+        #region Thread
+        private CThreadStatus ThreadStatusReadStatus {get;set;} = new CThreadStatus();
+        private void StartThreadReadStatus()
+        {
+            if(ThreadStatusReadStatus.IsExit())
+            {
+                Thread t = new Thread(new ParameterizedThreadStart(ThreadReadStatus));
+                t.Start(ThreadStatusReadStatus);
+            }
+        }
+        public void StopThreadReadStatus()
+        {
+            if (!ThreadStatusReadStatus.IsExit())
+            {
+                ThreadStatusReadStatus.Stop(100);
+            }
+        }
+        private void ThreadReadStatus(object ob)
+        {
+            CThreadStatus ThreadStatus = (CThreadStatus)ob;
+
+            ThreadStatus.Start("Status Read");
+
+            try
+            {
+                while (!ThreadStatus.IsExit())
+                {
+                    Thread.Sleep(1);
+
+                    try
+                    {
+                        bool bSuccess = false;
+                        // 0과 1중 둘 중 한개의 값을 가져오기에 다른값으로 처음에 초기화
+                        uint uStatus1 = 100;
+                        uint uStatus2 = 100;
+                        double dPosition = 0;
+                        double dVelocity = 0;
+
+                        //++ Servo Alarm 신호의 상태를 확인합니다.
+                        bSuccess = ReadServoAlarm(ref uStatus1);
+                        Status.ServoAlarm = uStatus1 > 0;
+
+                        //++ Inposition(위치결정완료) 신호의 상태를 확인합니다.
+                        //bSuccess = ReadInposition(AxisNo, ref uStatus1);                        
+
+                        //++ Emergency 신호의 상태를 확인합니다.
+                        bSuccess = ReadEMGStop(AxisNo, ref uStatus1);
+                        Status.EMS = uStatus1 > 0;
+
+                        //++ (+/-)End Limit신호의 상태를 확인합니다.
+                        bSuccess = ReadLimit(ref uStatus1, ref uStatus2);
+                        Status.PlusLimit = uStatus1 > 0; ;
+                        Status.MinusLimit = uStatus2 > 0; ;                        
+
+                        for (uint uBitNo = 0; uBitNo < (uint)AXT_MOTION_UNIV_OUTPUT.UIO_OUT2; uBitNo++)
+                        {
+                            //++ 범용입력 신호의(Bit00-Bit04) 상태를 확인합니다.
+                            bSuccess = ReadSignalInputBit(AxisNo, (int)uBitNo, ref uStatus1);
+                            //++ 범용출력 신호의(Bit00-Bit04) 상태를 확인합니다.
+                            bSuccess = ReadSignalOutputBit(AxisNo, (int)uBitNo, ref uStatus2);
+
+                            switch (uBitNo)
+                            {
+                                case 0:
+                                    Status.HomeSensor = uStatus1 > 0; ;
+                                    Status.ServoOn = uStatus2 > 0; ;
+                                    break;
+                                case 1:
+                                    Status.OutputAlarmClear = uStatus2;
+                                    break;
+                            }
+                        }
+
+                        // 실제 위치
+                        bSuccess = GetPulseCount(AxisNo, ref dPosition);
+                        Status.ActualPos = dPosition;
+                        m_lActualPos = (long)dPosition;
+
+                        // 지령 위치
+                        bSuccess = GetComPulseCount(AxisNo, ref dPosition);
+                        Status.CommandPos = dPosition;
+
+                        // 지령 위치 - 실제 위치
+                        bSuccess = GetActToComdDifferenceInValue(AxisNo, ref dPosition);
+                        Status.ActToComdDifferenceInValue = dPosition;
+                        
+                        // 모션 구동 여부
+                        bSuccess = GetStatusInMotion(AxisNo, ref uStatus1);
+                        Status.InMotion = uStatus1>0;
+
+                        //인포지션
+                        bSuccess = GetInposition(ref uStatus1);
+                        Status.Inposition = uStatus1 > 0;
+
+                        // 현재 축의 속도
+                        bSuccess = GetStatusReadVel(AxisNo, ref dVelocity);
+                        Status.VelocityCurrent = dVelocity;
+
+                        // 홈 레벨 상태 확인
+                        bSuccess = ReadSignalHome(AxisNo, ref uStatus1);
+                        Home.HomeStatus = uStatus1;
+
+                        // 홈 상태 확인
+                        bSuccess = GetHomeResult(ref uStatus1, false);
+                        Home.HomeInProgress = uStatus1;
+
+                        uint uHomeRate = 0;
+
+                        bSuccess = GetHomeRate(ref uHomeRate);
+
+                        HomeRate = (int)uHomeRate;
+
+                        if (!bSuccess)
+                        {
+                            // 예외처리
+                        }
+                    }
+                    catch (Exception Desc)
+                    {
+                        CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                    }
+                }
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+            }
+
+        }
+        #endregion
+
+        public bool Init()
+        {
+            try
+            {
+                uint nModuleID = 0;
+                int nBoardNo = 0;
+                int nBoardPos = 0;
+                string strAxis = "";
+                bool bResult = true;
+
+                //if (m_bUseMotFile)
+                //{
+                //    //20210118_SWT.mot
+                //    string strMotFilePath = Application.StartupPath + "20210118_SWT.mot";
+                //    bResult = LoadMOTConfig(strMotFilePath);
+                //}
+
+                if (bResult)
+                {
+                    if (CAXM.AxmSignalSetStop(m_nAxisNo, (uint)AXT_MOTION_STOPMODE.EMERGENCY_STOP, (uint)AXT_MOTION_LEVEL_MODE.LOW) != (uint)AXT_FUNC_RESULT.AXT_RT_SUCCESS) return false;
+                    CLogger.WriteLog(LOG.MOTION, "Complete to Open the Axis [{0}]", m_nAxisNo);
+
+                    switch (m_nAxisNo)
+                    {
+                        case 0:
+                            SetInputEncoderMode((int)CMOTION_AJIN.InputEncoderMode.ObverseSqr4Mode);
+                            SetOutputEncoderMode((int)CMOTION_AJIN.OutputEncoderMode.TwoCwCcwLow);
+                            break;
+                        case 1:
+                            SetInputEncoderMode((int)CMOTION_AJIN.InputEncoderMode.ReverseSqr4Mode);
+                            SetOutputEncoderMode((int)CMOTION_AJIN.OutputEncoderMode.TwoCwCcwLow);
+                            break;
+                        case 2:
+                            SetInputEncoderMode((int)CMOTION_AJIN.InputEncoderMode.ReverseSqr4Mode);
+                            SetOutputEncoderMode((int)CMOTION_AJIN.OutputEncoderMode.TwoCwCcwHigh);
+                            break;
+                        case 3:
+                            SetInputEncoderMode((int)CMOTION_AJIN.InputEncoderMode.ObverseSqr4Mode);
+                            SetOutputEncoderMode((int)CMOTION_AJIN.OutputEncoderMode.TwoCwCcwLow);
+                            break;
+                        default:
+                            SetInputEncoderMode((int)CMOTION_AJIN.InputEncoderMode.ObverseSqr4Mode);
+                            SetOutputEncoderMode((int)CMOTION_AJIN.OutputEncoderMode.TwoCwCcwHigh);
+                            break;
+                    }
+
+
+                    //SetSingleLimit(m_nAxisNo, (uint)MOTION_AJIN.Status_StopMode.SlowDownStop, (uint)MOTION_AJIN.Status_LevelMode.Low, (uint)MOTION_AJIN.Status_LevelMode.Low);
+
+
+                    CAXM.AxmSignalServoOn(m_nAxisNo, 1);
+                    CAXM.AxmInfoGetAxis(m_nAxisNo, ref nBoardNo, ref nBoardPos, ref nModuleID);
+                    switch (nModuleID)
+                    {
+                        //++ 지정한 축의 정보를 반환합니다.
+                        // [INFO] 여러개의 정보를 읽는 함수 사용시 불필요한 정보는 NULL(0)을 입력하면 됩니다.
+                        case (uint)AXT_MODULE.AXT_SMC_4V04: strAxis = String.Format("{0:00}-[PCIB-QI4A]", m_nAxisNo); break;
+                        case (uint)AXT_MODULE.AXT_SMC_2V04: strAxis = String.Format("{0:00}-[PCIB-QI2A]", m_nAxisNo); break;
+                        case (uint)AXT_MODULE.AXT_SMC_R1V04: strAxis = String.Format("{0:00}-(RTEX-PM)", m_nAxisNo); break;
+                        case (uint)AXT_MODULE.AXT_SMC_R1V04PM2Q: strAxis = String.Format("{0:00}-(RTEX-PM2Q)", m_nAxisNo); break;
+                        case (uint)AXT_MODULE.AXT_SMC_R1V04PM2QE: strAxis = String.Format("{0:00}-(RTEX-PM2QE)", m_nAxisNo); break;
+                        case (uint)AXT_MODULE.AXT_SMC_R1V04A4: strAxis = String.Format("{0:00}-[RTEX-A4N] : Not support", m_nAxisNo); break;
+                        case (uint)AXT_MODULE.AXT_SMC_R1V04A5: strAxis = String.Format("{0:00}-[RTEX-A5N] : Not support", m_nAxisNo); break;
+                        case (uint)AXT_MODULE.AXT_SMC_R1V04MLIISV: strAxis = String.Format("{0:00}-[MLII-SGDV] : Not support", m_nAxisNo); break;
+                        case (uint)AXT_MODULE.AXT_SMC_R1V04MLIIPM: strAxis = String.Format("{0:00}-(MLII-PM) : Not support", m_nAxisNo); break;
+                        case (uint)AXT_MODULE.AXT_SMC_R1V04MLIICL: strAxis = String.Format("{0:00}-[MLII-CSDL] : Not support", m_nAxisNo); break;
+                        case (uint)AXT_MODULE.AXT_SMC_R1V04MLIICR: strAxis = String.Format("{0:00}-[MLII-CSDH] : Not support", m_nAxisNo); break;
+                        case (uint)AXT_MODULE.AXT_SMC_R1V04SIIIHMIV: strAxis = String.Format("{0:00}-[SIIIH-MRJ4] : Not support", m_nAxisNo); break;
+                        default: strAxis = String.Format("{0:00}-[Unknown] : Not support", m_nAxisNo); break;
+                    }
+
+                    InitContaceAorB();
+                    InitHomeParameter();
+                }
+
+                if (m_nAxisNo == 0)
+                {
+                    TriggerSetTimeLevel(1000, 0, 1, 0);
+                }
+
+                StartThreadReadStatus();
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool InitContaceAorB()
+        {
+            try
+            {
+                uint uRetCode;
+                uint uStopMode = 0, uPosigitaveLevel = 0, uNegativeLevel = 0;
+
+                uRetCode = CAXM.AxmSignalGetLimit(m_nAxisNo, ref uStopMode, ref uPosigitaveLevel, ref uNegativeLevel);
+
+                switch (m_nAxisNo)
+                {                    
+                    case 3:
+                        if (uRetCode == (uint)AXT_FUNC_RESULT.AXT_RT_SUCCESS)
+                        {
+                            CAXM.AxmSignalSetLimit(m_nAxisNo, uStopMode, (uint)PARAM_LEVEL.HIGH, (uint)PARAM_LEVEL.LOW);
+                        }
+                        break;                   
+                    default:
+                        if (uRetCode == (uint)AXT_FUNC_RESULT.AXT_RT_SUCCESS)
+                        {
+                            CAXM.AxmSignalSetLimit(m_nAxisNo, uStopMode, (uint)PARAM_LEVEL.LOW, (uint)PARAM_LEVEL.LOW);
+                        }
+                        break;
+                }
+
+                CAXM.AxmMotSetAccelUnit(m_nAxisNo, 1);
+                CAXM.AxmSignalSetInpos(m_nAxisNo, (uint)PARAM_LEVEL.HIGH);
+                CAXM.AxmSignalSetStop(m_nAxisNo, uStopMode, (uint)PARAM_LEVEL.HIGH);
+                CAXM.AxmSignalSetServoAlarmResetLevel(m_nAxisNo, (uint)PARAM_LEVEL.HIGH);
+                CAXM.AxmHomeSetSignalLevel(m_nAxisNo, (uint)PARAM_LEVEL.HIGH);
+
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool InitHomeParameter()
+        {
+            try
+            {
+                // HClrTim : HomeClear Time : 원점 검색 Encoder 값 Set하기 위한 대기시간
+                // HmDir(홈 방향): DIR_CCW (0) -방향 , DIR_CW(1) +방향
+                // HOffset - 원점검출후 이동거리.
+                // uZphas: 1차 원점검색 완료 후 엔코더 Z상 검출 유무 설정  0: 사용안함 , 1: Hmdir과 반대 방향, 2: Hmdir과 같은 방향
+                // HmSig : PosEndLimit(0) -> +Limit
+                //         NegEndLimit(1) -> -Limit
+                //         HomeSensor (4) -> 원점센서(범용 입력 0)
+
+                uint duRetCode = 0;
+                double dVelFirst, dVelSecond, dVelThird, dVelLast, dAccFirst, dAccSecond;
+
+                // 각각의 Edit 콘트롤에서 설정값을 가져옴
+                dVelFirst = 40000.0D;
+                dVelSecond = 4000.0D;
+                dVelThird = 40.0D;
+                dVelLast = 5.0D;
+                dAccFirst = 0.5D;
+                dAccSecond = 0.5D;
+
+                switch (m_nAxisNo)
+                {
+                    case 2:
+                        CAXM.AxmHomeSetMethod(m_nAxisNo, 0, 1, 0, 0, 0);
+                        duRetCode = CAXM.AxmHomeSetVel(m_nAxisNo, 20000, 1000, 100, 10, 1, 1);
+                        break;
+                    case 3:
+                        CAXM.AxmHomeSetMethod(m_nAxisNo, 0, 1, 0, 0, 0);
+                        duRetCode = CAXM.AxmHomeSetVel(m_nAxisNo, 20000, 5000, 500, 20, 1, 1);
+                        break;
+                    default:
+                        duRetCode = CAXM.AxmHomeSetVel(m_nAxisNo, dVelFirst * 1.5D, dVelSecond * 1.5D, dVelThird * 1.5D, dVelLast, dAccFirst, dAccSecond);
+                        break;
+                }
+                
+                if (duRetCode != (uint)AXT_FUNC_RESULT.AXT_RT_SUCCESS)
+                {
+                    CUtil.ShowMessageBox("ERROR", "FAILED HOME");
+                }
+
+                //CAXM.AxmHomeSetMethod(m_nAxisNo, 0, duHomeSignal, duZphas, dHomeClrTime, dHomeOffset);
+
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                CUtil.ShowMessageBox("EXCEPTION", Desc.Message, FormMessageBox.MESSAGEBOX_TYPE.OK);
+                return false;
+            }
+        }
+
+        public bool ServoOnOff(bool bOn)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                if (bOn)
+                {
+                    uRet = CAXM.AxmSignalServoOn(m_nAxisNo, 1);
+                }
+                else
+                {
+                    uRet = CAXM.AxmSignalServoOn(m_nAxisNo, 0);
+                }
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Fail] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                CUtil.ShowMessageBox("EXCEPTION", Desc.Message, FormMessageBox.MESSAGEBOX_TYPE.OK);
+                return false;
+            }
+        }
+
+        public bool TriggerSetTimeLevel(double dTriggerTime, uint uTriggerLevel, uint uSelect, uint uInterrupt)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmTriggerSetTimeLevel(m_nAxisNo, dTriggerTime, uTriggerLevel, uSelect, uInterrupt);
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Fail] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                CUtil.ShowMessageBox("EXCEPTION", Desc.Message, FormMessageBox.MESSAGEBOX_TYPE.OK);
+                return false;
+            }
+        }
+
+        public bool TriggerOnlyABS(int nTriggerLength, double[] dArrTrigPos)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmTriggerOnlyAbs(m_nAxisNo, nTriggerLength, dArrTrigPos);
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Fail] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                CUtil.ShowMessageBox("EXCEPTION", Desc.Message, FormMessageBox.MESSAGEBOX_TYPE.OK);
+                return false;
+            }
+        }
+
+        public bool TriggerGrab()
+        {
+            try
+            {
+                CAXM.AxmTriggerOneShot(m_nAxisNo);
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                CUtil.ShowMessageBox("EXCEPTION", Desc.Message, FormMessageBox.MESSAGEBOX_TYPE.OK);
+                return false;
+            }            
+        }
+
+        public bool Close()
+        {
+            try
+            {
+                StopThreadHome();
+                StopThreadReadStatus();
+
+                if (CAXL.AxlClose() != (uint)AXT_FUNC_RESULT.AXT_RT_SUCCESS)
+                {
+                    CLogger.WriteLog(LOG.ALARM, "Failed the Close the Axis [{0}]", AxisNo);
+                    return false;
+                }
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        private string GetReturnCode(uint uFunctionNumber)
+        {
+            string strReason = "";
+            try
+            {
+                if (uFunctionNumber != 0)
+                {
+                    switch (uFunctionNumber)
+                    {
+                        case 4053:
+                            strReason = "해당 축 모션 초기화 실패";
+                            break;
+                        case 4101:
+                            strReason = "해당 축이 존재하지 않음";
+                            break;
+                        case 1053:
+                            strReason = "라이브러리 초기화 실패";
+                            break;
+                        default:
+                            strReason = "정의 되지 않은 에러 코드";
+                            break;
+                    }
+
+                    CLogger.WriteLog(LOG.ALARM, "MOTION ERROR : {0}", strReason);
+                }
+                return strReason;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return strReason;
+            }
+        }
+
+        private string GetStopCode(uint uFunctionNumber)
+        {
+            string strReason = "";
+            try
+            {
+                //송현수 : 최선웅 선임 스탑 요청 시 나오는 코드에 따른 분기 / 알람 / 로그 추가
+                if (uFunctionNumber != 0)
+                {
+                    switch (uFunctionNumber)
+                    {
+                        case 4053:
+                            strReason = "해당 축 모션 초기화 실패";
+                            break;
+                        case 4101:
+                            strReason = "해당 축이 존재하지 않음";
+                            break;
+                        case 1053:
+                            strReason = "라이브러리 초기화 실패";
+                            break;
+                    }
+                }
+                return strReason;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return strReason;
+            }
+        }
+
+        #region Motion
+        public bool Move(double dPosition)
+        {
+            try
+            {
+                if(!m_bIsHomeComplete)
+                {
+                    CUtil.ShowMessageBox("INTERLOCK", "The Axis Should Set Home First");
+                    return false;
+                }
+
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMoveStartPos(m_nAxisNo, dPosition, m_nMoveVelocity, 0.15, 0.2);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Fail] --> {0}", strReason);
+                    return false;
+                }
+
+                LAST_COMMAND_DESC = $"AXIS_{AxisName} => MOVE TO {dPosition.ToString("F2")}";
+                LAST_COMMAND_PULSE = dPosition;
+
+                CLogger.WriteLog(LOG.MOTION, LAST_COMMAND_DESC);
+                
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool Wait(int nTimeOut = 10000)
+        {
+            try
+            {
+                long START_TIME = Environment.TickCount;
+
+                while(true)
+                {
+                    Thread.Sleep(10);
+
+                    if(Environment.TickCount - START_TIME > nTimeOut)
+                    {
+                        CLogger.WriteLog(LOG.ALARM, "AXIS {0} WAIT TIME OUT", AxisName);
+                        break;
+                    }
+
+                    if (!Status.InMotion && Status.Inposition) return true;
+                }
+
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool InpositionEx(double dPosition)
+        {
+            try
+            {
+                if (!m_bIsHomeComplete)
+                {
+                    CUtil.ShowMessageBox("INTERLOCK", "The Axis Should Set Home First");
+                    return false;
+                }
+
+                if (dPosition >= ActualPos - (ActualPos * 0.05)
+                    && dPosition <= ActualPos + (ActualPos * 0.05))
+                {
+                    // 커맨드 완료 로그 추가
+                    CLogger.WriteLog(LOG.MOTION, $"Inposition Complete -> {AxisName} : TARGET : {dPosition} COMMAND : {Status.CommandPos}");
+                    CLogger.WriteLog(LOG.MOTION, $"Inposition Complete -> {AxisName} : TARGET : {dPosition} ACTUAL  : {ActualPos}");
+                    return true;
+                }
+                else
+                {
+                    // 커맨드 로그 추가
+                    CLogger.WriteLog(LOG.MOTION, $"{AxisName} : TARGET : {dPosition} COMMAND : {Status.CommandPos}");
+                    CLogger.WriteLog(LOG.MOTION, $"{AxisName} : TARGET : {dPosition} ACTUAL  : {Status.ActualPos}");
+
+                    Thread.Sleep(100);
+                }
+
+                return false;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool Move(int nPosition)
+        {
+            try
+            {
+                GetReturnCode(CAXM.AxmMoveStartPos(m_nAxisNo, (double)nPosition, m_nMoveVelocity, m_dAccel, m_dDecel));
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool JogStart(int nJogVelocity=1000)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMoveVel(m_nAxisNo, nJogVelocity, m_dAccel, m_dDecel);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Fail] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool JogStop()
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMoveEStop(m_nAxisNo);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Fail] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool EStop()
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMoveEStop(m_nAxisNo);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Fail] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+        public bool ReadEndStatus()
+        {
+            try
+            {
+                uint uRet = 0;
+                uint uReturnCode = 0;
+
+                GetReturnCode(CAXM.AxmStatusReadStop(AxisNo, ref uReturnCode));
+
+                if(uReturnCode != 0)
+                {
+                    CLogger.WriteLog(LOG.ALARM, "READ STOP STATUS ERROR [AXIS : {0}] ==> {1}", AxisName, uRet);
+                }
+                
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool Emergency()
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMoveEStop(m_nAxisNo);
+                ServoOnOff(false);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Fail] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool SlowStop()
+        {
+            try
+            {
+                // ++ =======================================================================
+                // >> OnBtnMoveStop() : "Move Stop"버튼 클릭시 호출되는 핸들러 함수.
+                //  - 지정한 축의 구동을 종료합니다. 만약 원점검색 중이면 검색을 중단하고 원점검색
+                //    결과를 HOME_ERR_USER_BREAK로 설정합니다.
+                // --------------------------------------------------------------------------
+
+
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMoveSStop(m_nAxisNo);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Fail] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool StopMoveStop(double dDecel=100)
+        {
+            try
+            {
+                // ++ =======================================================================
+                // >> OnBtnMoveStop() : "Move Stop"버튼 클릭시 호출되는 핸들러 함수.
+                //  - 지정한 축의 구동을 종료합니다. 만약 원점검색 중이면 검색을 중단하고 원점검색
+                //    결과를 HOME_ERR_USER_BREAK로 설정합니다.
+                // --------------------------------------------------------------------------
+
+                string strReason = "";
+                uint uRet = 0;
+                //++ 지정한 축의 구동을 정지합니다.
+                uRet = CAXM.AxmMoveStop(m_nAxisNo, dDecel);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Fail] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정 축의 이동 거리 계산 모드를 설정합니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="uAbsRelMode"></param>
+        /// <returns></returns>
+        public bool SetMoveMode(uint uAbsRelMode)
+        {
+            try
+            {
+                // 0: 절대 모드 --> 예를 들어 현재 위치값 이 10 일 때 절대 위치 모드에서 100 위치로 이동할 경우 현재 위치에서 ‘‘+90 만큼 이동하여 100 위치에서 정지하게 된다
+                // 1: 상대 모드 --> 예를 들어 현재 위치값 이 10 일 때 상대 위치 모드에서 100 만큼 이동할 경우 ,현재 위치에서 ‘‘+100 만큼 이동하여 110 의 위치에서 정지하게 된다
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMotSetAbsRelMode(m_nAxisNo, uAbsRelMode);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Fail] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정 축의 구동 속도 프로파일을 설정한다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="uProfileMode">Status_Motion_Profile_Mode참고</param>
+        /// <returns></returns>
+        public bool SetMotionProfileMode(int nAxis, uint uProfileMode)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMotSetProfileMode(nAxis, uProfileMode);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Fail] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        #endregion
+
+        #region Setting        
+
+        public bool LoadMOTConfig(string strPath)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMotLoadParaAll(strPath);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Fail] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool SetInputEncoderMode(int nMode)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMotSetEncInputMethod(m_nAxisNo, (uint)nMode);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Fail] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool SetOutputEncoderMode(int nMode)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMotSetPulseOutMethod(m_nAxisNo, (uint)nMode);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Fail] --> {0}", strReason);
+                    return false;
+                }
+
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정 축의 거리당 움직이는 Pulse값을 지정합니다.
+        /// </summary>
+        /// <param name="nAxis">변경하고자 하는 축</param>
+        /// <param name="dUint">거리</param>
+        /// <param name="nPulse">펄스</param>
+        /// <returns></returns>
+        public bool SetUnitPerFulse(int nAxis, double dUint, int nPulse)
+        {
+            try
+            {
+                // 0축 지령 값을 mm단위로 변경하고자 할때 
+                // nAxis == 0
+                // dUint == 1000
+                // nPulse == 1
+
+                // 0축 지령 값을 Pulse단위로 변경하고자 할때 
+                // nAxis == 0
+                // dUint == 1
+                // nPulse == 1
+
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMotSetMoveUnitPerPulse(nAxis, dUint, nPulse);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Fail] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정 축의 거리당 움직이는 Pulse값을 가져옵니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="dUint"></param>
+        /// <param name="nPulse"></param>
+        /// <returns></returns>
+        public bool GetUnitPerFulse(int nAxis, ref double dUint, ref int nPulse)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMotGetMoveUnitPerPulse(nAxis, ref dUint, ref nPulse);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Fail] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정 축의 초기속도를 지정합니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="dVelocity"></param>
+        /// <returns></returns>
+        public bool SetMotionMinVelocity(int nAxis, double dVelocity)
+        {
+            try
+            {
+                //초기속도는 가속의 시작 속도와 감속의 종료 속도를 의미한다.초기 속도가 작업 속도보다 높게
+                //설정되면 기존에 설정된 초기 속도로부터 출발하여 작업 속도까지 도달하며 그 이후의 이동은 초기
+                //설정 속도로 가속없이 동작한다 . 특별한 경우가 아니면 이 함수를 사용할 필요는 없지만 기본적으로
+                //초기 속도는 1 로 설정된다 스텝 모터를 사용할 경우 기동 초기 속도를 설정하여 탈조 현상을 없앨 수 있다
+                //주의사항: 최소 속도를 UNIT / PULSE 보다 작게할 경우 최소 단위가 UNIT/ PULSE 로 맞추어지기 때문에
+                //최소 속도가 UNIT/ PULSE 가 된다
+
+
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMotSetMinVel(nAxis, dVelocity);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정한 축의 초기속도를 가져옵니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="dVelocity"></param>
+        /// <returns></returns>
+        public bool GetMotionMinVelocity(int nAxis, ref double dVelocity)
+        {
+            try
+            {
+                //초기속도는 가속의 시작 속도와 감속의 종료 속도를 의미한다.초기 속도가 작업 속도보다 높게
+                //설정되면 기존에 설정된 초기 속도로부터 출발하여 작업 속도까지 도달하며 그 이후의 이동은 초기
+                //설정 속도로 가속없이 동작한다 . 특별한 경우가 아니면 이 함수를 사용할 필요는 없지만 기본적으로
+                //초기 속도는 1 로 설정된다 스텝 모터를 사용할 경우 기동 초기 속도를 설정하여 탈조 현상을 없앨 수 있다
+                //주의사항: 최소 속도를 UNIT / PULSE 보다 작게할 경우 최소 단위가 UNIT/ PULSE 로 맞추어지기 때문에
+                //최소 속도가 UNIT/ PULSE 가 된다
+
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMotGetMinVel(nAxis, ref dVelocity);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정한 축의 최대속도를 지정합니다. 지정한 축의 모든 구동 함수에서 입력되는 속도값이 이 메서드에서 지정됩니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="dVelocity"></param>
+        /// <returns></returns>
+        public bool SetMotionMaxVelocity(int nAxis, double dVelocity)
+        {
+            try
+            {
+                //지정한 축에 대한 모든 구동 함수에서 입력되는 속도값 을 AxmMotSetMaxVel 에서 설정한 속도로 제한한다
+                //주의사항 : SMC 2V03 제품은 최대 4MPPS 까지 설정이 가능하며, PCI Nx04 는 최대 10MPPS 까지 설정이 가능하다 . 즉 AxmMotSetMoveUnitPerPulse 함수로 설정된 Unit / Pulse 값에 따라
+                //AxmMotSetMaxVel 의 최대 속도값 이 다르게 적용된다 , 예를 들어 Unit / Pulse 가 0.01 이라면 AxmMotSetMaxVel 로 설정할 수 있는 최대 값은 SMC 2V03 제품에 대하여서는(4M /
+                //100) 이며 PCI Nx04 는(10M / 100) 이다
+
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMotSetMaxVel(nAxis, dVelocity);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정한 축의 최대속도를 가져옵니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="dVelocity"></param>
+        /// <returns></returns>
+        public bool GetMotionMaxVelocity(int nAxis, ref double dVelocity)
+        {
+            try
+            {
+                //지정한 축에 대한 모든 구동 함수에서 입력되는 속도값 을 AxmMotSetMaxVel 에서 설정한 속도로 제한한다
+                //주의사항 : SMC 2V03 제품은 최대 4MPPS 까지 설정이 가능하며, PCI Nx04 는 최대 10MPPS 까지 설정이 가능하다 . 즉 AxmMotSetMoveUnitPerPulse 함수로 설정된 Unit / Pulse 값에 따라
+                //AxmMotSetMaxVel 의 최대 속도값 이 다르게 적용된다 , 예를 들어 Unit / Pulse 가 0.01 이라면 AxmMotSetMaxVel 로 설정할 수 있는 최대 값은 SMC 2V03 제품에 대하여서는(4M /
+                //100) 이며 PCI Nx04 는(10M / 100) 이다
+
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMotGetMaxVel(nAxis, ref dVelocity);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정축의 종료 속도를 설정합니다. 연속 보간 구동을 사용시에만 사용하는 것이 바람직하다고 합니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="dVelocity"></param>
+        /// <returns></returns>
+        public bool SetMotionEndVelocity(int nAxis, double dVelocity)
+        {
+            try
+            {
+                //지정축의 종료 속도를 설정한다.종료 속도를 지정하지 않으면 속도는 설정한 감속도에 따라 감속하여
+                //0 이 된다 . 하지만 종료 속도를 지정하면 지정한 속도까지만 감속한다.만약에 연속 보간 구동이
+                //아니어서 현재의 프로파일이 종료될 때 뒤따라 오는 프로파일이 없다면 , 지정된 속도까지만 감속하고
+                //지정한 속도에 도달하면 급정지한다.따라서 종료 속도는 연속 보간 구동을 사용하고 있을 때만
+                //사용하는 것이 바람직하다 . 연속 보간 구동을 사용할 때 종료 속도를 설정하면 프로파일의 종료 시
+                //속도가 0 이 되지 않으므로 설정한 값에 따라 부드러운 모션을 구현할 수 있다
+
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMotSetEndVel(nAxis, dVelocity);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정한 축의 종료 속도를 가져옵니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="dVelocity"></param>
+        /// <returns></returns>
+        public bool GetMotionEndVelocity(int nAxis, ref double dVelocity)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmMotGetEndVel(nAxis, ref dVelocity);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+
+        #endregion
+
+        #region 센서 Read
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="uZPhaseLevelStatus"></param>
+        /// <returns></returns>
+        private bool ReadZPhaseLevel(int nAxis, ref uint uZPhaseLevelStatus)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmStatusReadMechanical(nAxis, ref uZPhaseLevelStatus);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+
+        /// <summary>
+        /// End Limit 신호를 확인한다
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="uPositiveStatus"></param>
+        /// <param name="uNegativeStatus"></param>
+        /// <returns></returns>
+        private bool ReadLimit(ref uint uPositiveStatus, ref uint uNegativeStatus)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmSignalReadLimit(m_nAxisNo, ref uPositiveStatus, ref uNegativeStatus);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정한 축의 Inposition신호의 입력 여부를 확인할 때 사용한다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="uInpositionStatus"></param>
+        /// <returns></returns>
+        private bool ReadInposition(ref uint uInpositionStatus)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmSignalReadInpos(m_nAxisNo, ref uInpositionStatus);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Alarm 신호의 입력 여부를 확인할 때 사용한다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="uAlarmStatus"></param>
+        /// <returns></returns>
+        private bool ReadServoAlarm(ref uint uAlarmStatus)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmSignalReadServoAlarm(m_nAxisNo, ref uAlarmStatus);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                //CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Emergency Stop 신호의 입력 여부를 확인할 때 사용한다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="uEmgStatus"></param>
+        /// <returns></returns>
+        private bool ReadEMGStop(int nAxis, ref uint uEmgStatus)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmSignalReadStop(nAxis, ref uEmgStatus);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        private bool ReadSoftLimit(int nAxis, ref uint uPositiveStatus, ref uint uNegativeStatus)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmSignalReadSoftLimit(nAxis, ref uPositiveStatus, ref uNegativeStatus);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        private bool ReadSignalInputBit(int nAxis, int nBitNo, ref uint uBitStatus)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmSignalReadInputBit(nAxis, nBitNo, ref uBitStatus);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        private bool ReadSignalOutputBit(int nAxis, int nBitNo, ref uint uBitStatus)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmSignalReadOutputBit(nAxis, nBitNo, ref uBitStatus);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        #endregion
+
+        #region Status
+        /// <summary>
+        /// 지정 축의 현재 위치를 반환합니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="dPulse"></param>
+        /// <returns></returns>
+        public bool GetPulseCount(int nAxis, ref double dPulse)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                //CAXM.AxmSignalServoOn(nAxis, (uint)AXT_BOOLEAN.TRUE);
+                uRet = CAXM.AxmStatusGetActPos(nAxis, ref dPulse);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정한 축의 지령(Command)위치를 반환합니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="dPulse"></param>
+        /// <returns></returns>
+        public bool GetComPulseCount(int nAxis, ref double dPulse)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmStatusGetCmdPos(nAxis, ref dPulse);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool GetActToComdDifferenceInValue(int nAxis, ref double dPulse)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmStatusReadPosError(nAxis, ref dPulse);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정한 축의 구동 속도를 반환합니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="dPulse"></param>
+        /// <returns></returns>
+        public bool GetStatusReadVel(int nAxis, ref double dComVel)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmStatusGetCmdPos(nAxis, ref dComVel);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool GetStatusInMotion(int nAxis, ref uint uMotionStatus)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmStatusReadInMotion(nAxis, ref uMotionStatus);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 해당 축의 Command 위치와 Actual 위치를 초기화합니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <returns></returns>
+        public bool PulseReset(int nAxis = 0)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmStatusSetPosMatch(nAxis, 0.0);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// 지정 축의 Limit 센서 사용 유무 및 신호 레벨을 지정합니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="uStopMode">Status_Limit_StopMode 참고</param>
+        /// <param name="uPositiveLevel">Status_LevelMode 참고</param>
+        /// <param name="uNegativeLevel">Status_LevelMode 참고</param>
+        /// <returns></returns>
+        private bool SetSingleLimit(int nAxis, uint uStopMode, uint uPositiveLevel, uint uNegativeLevel)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmSignalSetLimit(nAxis, uStopMode, uPositiveLevel, uNegativeLevel);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        private bool GetSingleLimit(int nAxis, ref uint uStopMode, uint uPositiveLevel, uint uNegativeLevel)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmSignalGetLimit(nAxis, ref uStopMode, ref uPositiveLevel, ref uNegativeLevel);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정 축의 Inposition신호의 사용 여부를 지정합니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="uUseInpos">Status_LevelMode 참고</param>
+        /// <returns></returns>
+        private bool SetSingleInposition(int nAxis, uint uUseInpos)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmSignalSetInpos(nAxis, uUseInpos);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        private bool GetInposition(ref uint uUseInpos)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmSignalReadInpos(m_nAxisNo, ref uUseInpos);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "Faile] --> {0}", strReason);
+                    return false;
+                }
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정 축의 ServoAlarm 상태를 초기화 합니다.
+        /// </summary>
+        /// <param name="nAxis"></param>        
+        /// <returns></returns>
+        private bool SignalServoAlarmReset(int nAxis)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmSignalServoAlarmReset(nAxis, 1);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정축의 알람 신호 입력 시 비상 정지의 사용 여부 및 알람 신호 Active Level 을 설정합니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="uUseServo">Status_LevelMode 참고</param>
+        /// <returns></returns>
+        private bool SetSignalServoAlarm(int nAxis, uint uUseServo)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmSignalSetServoAlarm(nAxis, uUseServo);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        private bool GetSignalServoAlarm(int nAxis, ref uint uUseServo)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmSignalGetServoAlarm(nAxis, ref uUseServo);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정축의 비상 정지 신호(SSTOP, ESTOP) 정지 모드와 레벨 을 설정합니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="uStopMode">Status_StopMode 참고</param>
+        /// <param name="uLevel">Status_LevelMode 참고</param>
+        /// <returns></returns>
+        private bool SetSignalSetStop(int nAxis, uint uStopMode, uint uLevel)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmSignalSetStop(nAxis, uStopMode, uLevel);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+        #endregion
+
+        #region HOME
+        private CThreadStatus ThreadStatusHome { get; set; } = new CThreadStatus();
+
+        public void StartThreadHome()
+        {
+            Thread t = new Thread(new ParameterizedThreadStart(ThreadHome));
+            t.Start(ThreadStatusHome);
+        }
+
+        public void StopThreadHome()
+        {
+            if (!ThreadStatusHome.IsExit())
+            {
+                ThreadStatusHome.Stop(100);
+            }
+
+            StopMoveStop();
+        }
+
+        //int m_nAliveTime = 0;
+        private void ThreadHome(object ob)
+        {
+            CThreadStatus ThreadStatus = (CThreadStatus)ob;
+
+            ThreadStatus.Start(AxisName + " Home Start");
+            CLogger.WriteLog(LOG.MOTION, AxisName + " Home Start");
+
+            try
+            {
+                int nStartTime = Environment.TickCount;
+                int TIME_OUT = 120000;
+
+                StartHome();
+
+                while (!ThreadStatus.IsExit())
+                {
+                    Thread.Sleep(1);
+
+                    try
+                    {
+                        uint uHomeReslt = 0;
+                        
+                        if(GetHomeResult(ref uHomeReslt, true))
+                        {
+                            m_bIsHomeComplete = true;
+                            break;
+                        }
+                        else
+                        {
+                            if(Environment.TickCount - nStartTime > TIME_OUT)
+                            {
+                                CLogger.WriteLog(LOG.MOTION, "[Fail] Home Failed");
+                                break;
+                            }
+                        }
+                    }
+                    catch (Exception Desc)
+                    {
+                        CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                    }
+                }
+
+                ThreadStatus.End();
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+            }
+
+        }
+
+        /// <summary>
+        /// 원점 검색을 시작합니다. 함수가 실행되면 라이브러리 내부에서 해당 축의 원점 검색을 수행할 스레드가 자동 생성되어 원점 검색을 순차적으로 수행한 후 자동 종료됩니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <returns></returns>
+        public bool StartHome()
+        {
+            try
+            {
+                // ++ =======================================================================
+                // >> OnBtnHomeStart() : "Home Start"버튼 클릭시 호출되는 핸들러 함수.
+                //  - 선택한 축으로 원점검색을 진행합니다.
+                //  - 원점검색의 단계를 세분화해 빠르고 정밀하게 원점검색을 구현할 수 있습니다.
+                // ※ [CAUTION] 원점검색시 라이브러리 내부에서 해당축의 원점검색을 수행 할 쓰레드가
+                //    자동 생성되어 원점검색을 순차적으로 수행한 후 자동 종료됩니다. 따라서 단일 
+                //    CPU시스템의 경우 사용자 프로그램에서 CPU를 100% 점유할 경우 원점 검색 진행이
+                //    원할하게 되지 않을 수 있습니다.
+                // --------------------------------------------------------------------------
+                m_bIsHomeComplete = false;
+
+                string strReason = "";
+                /*uint uRet = 4053;   // 초기화실패 메세지
+                if (m_nAxisNo != 2)
+                {
+                    uint uHomeResult = 0;
+                    CAXM.AxmHomeGetResult(2, ref uHomeResult);
+
+                    if (uHomeResult == 0)
+                        uRet = CAXM.AxmHomeSetStart(m_nAxisNo);
+                }
+                else*/
+                uint uRet = CAXM.AxmHomeSetStart(m_nAxisNo);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+
+        /// <summary>
+        /// 지정 축의 Home 신호의 입력 상태를 반환합니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="uStatus"></param>
+        /// <returns></returns>
+        private bool ReadSignalHome(int nAxis, ref uint uStatus)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmHomeReadSignal(nAxis, ref uStatus);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+                
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 지정 축의 Home 센서 Level을 설정합니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="uUseHome">Status_LevelMode 참고</param>
+        /// <returns></returns>
+        private bool SetSignalHomeLevel(int nAxis, uint uUseHome)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmHomeSetSignalLevel(nAxis, uUseHome);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        private bool GetSignalHomeLevel(int nAxis, ref uint uUseHome)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmHomeGetSignalLevel(nAxis, ref uUseHome);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 원점 검색 관련 파라미터들을 설정합니다.
+        /// </summary>
+        /// <param name="nAxis">파라미터를 설정할 축</param>
+        /// <param name="nDir">원점 검색을 초기에 진행할 방향 --> Status_Move_Direction참고</param>
+        /// <param name="uHomeSignal">원점 검색에 사용할 신호 설정 --> Status_Home_Detect_Signal_Def참고(0:+방향 리밋, 1: -방향 리밋, 4:INO(ORG) 원점 센서 신호)</param>
+        /// <param name="uZphas">1차 원점 검색 완료 후 엔코더 Z상 검출 유무 설정(0: Z상 검출 사용하지 않음, 1: Z상 검출 +방향 사용, 2: Z상 검출 -방향 사용</param>
+        /// <param name="dHomeClrTime">원점 검색 완료 후 지령 위치와 Encoder 위치를 Clear하기 위해 대기하는 시간설정[mSec단위]</param>
+        /// <param name="dHomeOffset">원점 검색이 완료된 후 기구 원점으로 이동 후 원점 재설정할 위치</param>
+        /// <returns></returns>
+        private bool SetHomeParameter(int nAxis, int nDir, uint uHomeSignal, uint uZphas, double dHomeClrTime, double dHomeOffset)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmHomeSetMethod(nAxis, nDir, uHomeSignal, uZphas, dHomeClrTime, dHomeOffset);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 현재 설정된 원점 검색 관련 파라미터들을 가져옵니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="nDir"></param>
+        /// <param name="uHomeSignal"></param>
+        /// <param name="uZphas"></param>
+        /// <param name="dHomeClrTime"></param>
+        /// <param name="dHomeOffset"></param>
+        /// <returns></returns>
+        private bool GetHomeParameter(int nAxis, ref int nDir, ref uint uHomeSignal, ref uint uZphas, ref double dHomeClrTime, ref double dHomeOffset)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmHomeGetMethod(nAxis, ref nDir, ref uHomeSignal, ref uZphas, ref dHomeClrTime, ref dHomeOffset);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 원점을 찾을시 각 스탭별 속도값을 지정해줍니다.
+        /// </summary>
+        /// <param name="nAxis"></param>
+        /// <param name="dVelFirst">원점 센서가 감지되어 있지 않을 때 원점 검색 진행 방향으로 구동할 속도</param>
+        /// <param name="dVelSecond">원점 센서가 감지되어 있을 때 원점 검색 진행 반대 방향으로 구동할 속도</param>
+        /// <param name="dVelThird">1차 원점 센서 검출 후 재검색할 때 사용될 구동 속도</param>
+        /// <param name="dVelLast">마지막 원점 검출 시 사용될 구동 속도(Z상 검출 사용 시 속도, 원점 센서 정밀 검출 속도)</param>
+        /// <param name="dAccFirst">원점 센서가 감지되어 있지 않을 때 원점 검색 진행 방향으로 구동할 때 사용될 가속/감속도(감속도의 단위는 Unit/Pulse를 1/1로 한 경우에 PPS)</param>
+        /// <param name="dAccSecond">원점 센서가 감지되어 있을 때 원점 검색 진행 반대 방향으로 구동할 때 사용될 가속/감속도(감속도의 단위는 Unit/Pulse를 1/1로 한 경우에 PPS)</param>
+        /// <returns></returns>
+        private bool SetHomeVel(int nAxis, double dVelFirst, double dVelSecond, double dVelThird, double dVelLast, double dAccFirst, double dAccSecond)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmHomeSetVel(nAxis, dVelFirst, dVelSecond, dVelThird, dVelLast, dAccFirst, dAccSecond);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        private bool GetHomeVel(int nAxis, ref double dVelFirst, ref double dVelSecond, ref double dVelThird, ref double dVelLast, ref double dAccFirst, ref double dAccSecond)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmHomeGetVel(nAxis, ref dVelFirst, ref dVelSecond, ref dVelThird, ref dVelLast, ref dAccFirst, ref dAccSecond);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        private bool GetHomeResult(ref uint uHomeResult, bool bLogDisplay)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmHomeGetResult(m_nAxisNo, ref uHomeResult);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+                else
+                {
+                    return DecodeHomeResult(uHomeResult, out string strResult);
+                }                
+
+                if (bLogDisplay)
+                {
+                    CLogger.WriteLog(LOG.MOTION, "[Result] --> {0}", uHomeResult);
+                    CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                }
+
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        private bool GetHomeRate(ref uint uHomeRate)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uint uHomeAllRate = 0;
+                uRet = CAXM.AxmHomeGetRate(m_nAxisNo, ref uHomeAllRate, ref uHomeRate);
+                
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        private bool SetHomeResult(uint uHomeResult, bool bLogDisplay)
+        {
+            try
+            {
+                string strReason = "";
+                uint uRet = 0;
+                uRet = CAXM.AxmHomeSetResult(m_nAxisNo, uHomeResult);
+
+                if (uRet != 0)
+                {
+                    strReason = GetReturnCode(uRet);
+                    CLogger.WriteLog(LOG.MOTION, "[Failed] --> {0}", strReason);
+                    return false;
+                }
+                else
+                {
+                    return DecodeHomeResult(uHomeResult, out string strResult);
+                }
+
+                if (bLogDisplay)
+                {
+                    CLogger.WriteLog(LOG.MOTION, "[Result] --> {0}", uHomeResult);
+                    CLogger.WriteLog(LOG.MOTION, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                }
+
+                return true;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool DecodeHomeResult(uint uHomeResult, out string strResult)
+        {
+            strResult = "EMPTY";
+
+            try
+            {
+                switch (uHomeResult)
+                {
+                    case (uint)AXT_MOTION_HOME_RESULT.HOME_SUCCESS:
+                        strResult = ("[01H] HOME_SUCCESS");
+                        return true;
+                    case (uint)AXT_MOTION_HOME_RESULT.HOME_SEARCHING: strResult = ("([02H] HOME_SEARCHING"); break;
+                    case (uint)AXT_MOTION_HOME_RESULT.HOME_ERR_GNT_RANGE: strResult = ("[10H] HOME_ERR_GNT_RANGE"); break;
+                    case (uint)AXT_MOTION_HOME_RESULT.HOME_ERR_USER_BREAK: strResult = ("[11H] HOME_ERR_USER_BREAK"); break;
+                    case (uint)AXT_MOTION_HOME_RESULT.HOME_ERR_VELOCITY: strResult = ("[12H] HOME_ERR_VELOCITY"); break;
+                    case (uint)AXT_MOTION_HOME_RESULT.HOME_ERR_AMP_FAULT: strResult = ("[13H] HOME_ERR_AMP_FAULT"); break;
+                    case (uint)AXT_MOTION_HOME_RESULT.HOME_ERR_NEG_LIMIT: strResult = ("[14H] HOME_ERR_NEG_LIMIT"); break;
+                    case (uint)AXT_MOTION_HOME_RESULT.HOME_ERR_POS_LIMIT: strResult = ("[15H] HOME_ERR_POS_LIMIT"); break;
+                    case (uint)AXT_MOTION_HOME_RESULT.HOME_ERR_NOT_DETECT: strResult = ("[16H] HOME_ERR_NOT_DETECT"); break;
+                    case (uint)AXT_MOTION_HOME_RESULT.HOME_ERR_UNKNOWN: strResult = ("[FFH] HOME_ERR_UNKNOWN"); break;
+                }
+
+                return false;
+            }
+            catch (Exception Desc)
+            {
+                CCLog.Error( "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+        #endregion
+
+    }
+
+
+    public class IMotionStatus
+    {
+        // Z상
+        private uint m_uZPhaseLevel = 0;
+        public uint ZPhaseLevel
+        {
+            get { return m_uZPhaseLevel; }
+            set { m_uZPhaseLevel = value; }
+        }
+
+        private bool m_bServoAlarm = false;
+        public bool ServoAlarm
+        {
+            get { return m_bServoAlarm; }
+            set { m_bServoAlarm = value; }
+        }
+
+        public bool m_bInposition = false;
+        public bool Inposition
+        {
+            get => m_bInposition;
+            set => m_bInposition = value;
+        }
+        private bool m_bEMS = false;
+        public bool EMS
+        {
+            get { return m_bEMS; }
+            set { m_bEMS = value; }
+        }
+        private bool m_bPlusLimit = false;
+        public bool PlusLimit
+        {
+            get { return m_bPlusLimit; }
+            set { m_bPlusLimit = value; }
+        }
+        private bool m_bMinusLimit = false;
+        public bool MinusLimit
+        {
+            get { return m_bMinusLimit; }
+            set { m_bMinusLimit = value; }
+        }
+
+        private uint m_uSoftPositiveLimit = 0;
+        public uint SoftPositiveLimit
+        {
+            get { return m_uSoftPositiveLimit; }
+            set { m_uSoftPositiveLimit = value; }
+        }
+        private uint m_uSoftSoftNegativeLimit = 0;
+        public uint SoftNegativeLimit
+        {
+            get { return m_uSoftSoftNegativeLimit; }
+            set { m_uSoftSoftNegativeLimit = value; }
+        }
+        /* 
+         - INPUT
+         0 : 원점 신호
+         1 : Encoder Z상 신호
+         2~4 : 범용 입력 신호
+         5 : 범용 입력(SMC-2V04)
+
+        - OUTPUT
+        0 : 서보 On/Off 신호 
+        1 : 알람 제거 신호
+        2~4 : 범용 출력
+        5 : 범용 출력(SMC-2V04)
+
+        */
+        private bool m_bHomeSensor = false;
+        public bool HomeSensor
+        {
+            get { return m_bHomeSensor; }
+            set { m_bHomeSensor = value; }
+        }
+        private uint m_uInputZPhase = 0;
+        public uint InputZPhase
+        {
+            get { return m_uInputZPhase; }
+            set { m_uInputZPhase = value; }
+        }
+        private uint m_uInputGeneralBit1 = 0;
+        public uint InputGeneralBit1
+        {
+            get { return m_uInputGeneralBit1; }
+            set { m_uInputGeneralBit1 = value; }
+        }
+        private uint m_uInputGeneralBit2 = 0;
+        public uint InputGeneralBit2
+        {
+            get { return m_uInputGeneralBit2; }
+            set { m_uInputGeneralBit2 = value; }
+        }
+        private uint m_uInputGeneralBit3 = 0;
+        public uint InputGeneralBit3
+        {
+            get { return m_uInputGeneralBit3; }
+            set { m_uInputGeneralBit3 = value; }
+        }
+
+        private bool m_bServoOn = false;
+        public bool ServoOn
+        {
+            get { return m_bServoOn; }
+            set { m_bServoOn = value; }
+        }
+        private uint m_uOutputAlarmClear = 0;
+        public uint OutputAlarmClear
+        {
+            get { return m_uOutputAlarmClear; }
+            set { m_uOutputAlarmClear = value; }
+        }
+        private uint m_bOutputGeneralBit1 = 0;
+        public uint OutputGeneralBit1
+        {
+            get { return m_bOutputGeneralBit1; }
+            set { m_bOutputGeneralBit1 = value; }
+        }
+        private uint m_uOutputGeneralBit2 = 0;
+        public uint OutputGeneralBit2
+        {
+            get { return m_uOutputGeneralBit2; }
+            set { m_uOutputGeneralBit2 = value; }
+        }
+        private uint m_uOutputGeneralBit3 = 0;
+        public uint OutputGeneralBit3
+        {
+            get { return m_uOutputGeneralBit3; }
+            set { m_uOutputGeneralBit3 = value; }
+        }
+
+        private double m_dActPos = 0;
+        public double ActualPos
+        {
+            get { return m_dActPos; }
+            set { m_dActPos = value; }
+        }
+
+        private double m_dComPos = 0;
+        public double CommandPos
+        {
+            get { return m_dComPos; }
+            set { m_dComPos = value; }
+        }
+        // 지령 위치와 실제 위치의 차이값
+        private double m_dActToComdDifferenceInValue = 0;
+        public double ActToComdDifferenceInValue
+        {
+            get { return m_dActToComdDifferenceInValue; }
+            set { m_dActToComdDifferenceInValue = value; }
+        }
+
+        private double m_dVelocityCurrent = 0;
+        public double VelocityCurrent
+        {
+            get { return m_dVelocityCurrent; }
+            set { m_dVelocityCurrent = value; }
+        }
+
+        private bool m_bInMotion = false;
+        public bool InMotion
+        {
+            get => m_bInMotion;
+            set => m_bInMotion = value;
+        }
+    }
+
+    public class IMotionHome
+    {
+        private uint m_uHomeStatus = 0;
+        public uint HomeStatus
+        {
+            get { return m_uHomeStatus; }
+            set { m_uHomeStatus = value; }
+        }
+
+        private uint m_uHomeInProgress = 0;
+        public uint HomeInProgress
+        {
+            get { return m_uHomeInProgress; }
+            set { m_uHomeInProgress = value; }
+        }
+    }
+}

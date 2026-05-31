@@ -1,0 +1,669 @@
+﻿namespace IntelligentFactory
+{
+    partial class FormTeachingVision
+    {
+        /// <summary>
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+#region Windows Form Designer generated code
+
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormTeachingVision));
+            this.metroStyleManager = new MetroFramework.Components.MetroStyleManager(this.components);
+            this.lbThreshold = new MetroFramework.Controls.MetroLabel();
+            this.metroLabel8 = new MetroFramework.Controls.MetroLabel();
+            this.trbThreshold = new MetroFramework.Controls.MetroTrackBar();
+            this.btnCameraOperator = new MetroFramework.Controls.MetroLabel();
+            this.metroLabel9 = new MetroFramework.Controls.MetroLabel();
+            this.timerStatus = new System.Windows.Forms.Timer(this.components);
+            this.metroLabel16 = new MetroFramework.Controls.MetroLabel();
+            this.cbCamera = new MetroFramework.Controls.MetroComboBox();
+            this.lbTackTimems = new System.Windows.Forms.Label();
+            this.panel1 = new System.Windows.Forms.Panel();
+            this.cogDisplay_Source = new Cognex.VisionPro.Display.CogDisplay();
+            this.label2 = new System.Windows.Forms.Label();
+            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.btnGrab = new MetroFramework.Controls.MetroButton();
+            this.btnLive = new MetroFramework.Controls.MetroButton();
+            this.btnImageLoad = new MetroFramework.Controls.MetroButton();
+            this.btnImageSave = new MetroFramework.Controls.MetroButton();
+            this.btnLightSave = new MetroFramework.Controls.MetroButton();
+            this.btnOFF = new MetroFramework.Controls.MetroButton();
+            this.btnON = new MetroFramework.Controls.MetroButton();
+            this.trbLightValue = new MetroFramework.Controls.MetroTrackBar();
+            this.lbLightValue = new MetroFramework.Controls.MetroLabel();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.propertygrid_Base = new System.Windows.Forms.PropertyGrid();
+            this.metroLabel1 = new MetroFramework.Controls.MetroLabel();
+            this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.btnBlobRun = new MetroFramework.Controls.MetroButton();
+            this.btnPatternSearchRegion = new MetroFramework.Controls.MetroButton();
+            this.btnPatternTrain = new MetroFramework.Controls.MetroButton();
+            this.btnPatternTrainRegion = new MetroFramework.Controls.MetroButton();
+            this.btnPatternRun = new MetroFramework.Controls.MetroButton();
+            this.groupBox5 = new System.Windows.Forms.GroupBox();
+            this.cbCropIndex = new MetroFramework.Controls.MetroComboBox();
+            this.metroLabel2 = new MetroFramework.Controls.MetroLabel();
+            ((System.ComponentModel.ISupportInitialize)(this.metroStyleManager)).BeginInit();
+            this.panel1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.cogDisplay_Source)).BeginInit();
+            this.groupBox2.SuspendLayout();
+            this.groupBox1.SuspendLayout();
+            this.groupBox3.SuspendLayout();
+            this.groupBox4.SuspendLayout();
+            this.groupBox5.SuspendLayout();
+            this.SuspendLayout();
+            // 
+            // metroStyleManager
+            // 
+            this.metroStyleManager.Owner = this;
+            this.metroStyleManager.Style = MetroFramework.MetroColorStyle.Teal;
+            // 
+            // lbThreshold
+            // 
+            this.lbThreshold.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(170)))), ((int)(((byte)(173)))));
+            this.lbThreshold.FontWeight = MetroFramework.MetroLabelWeight.Regular;
+            this.lbThreshold.ForeColor = System.Drawing.Color.White;
+            this.lbThreshold.Location = new System.Drawing.Point(620, 15);
+            this.lbThreshold.Name = "lbThreshold";
+            this.lbThreshold.Size = new System.Drawing.Size(94, 35);
+            this.lbThreshold.Style = MetroFramework.MetroColorStyle.Teal;
+            this.lbThreshold.TabIndex = 1430;
+            this.lbThreshold.Text = "000";
+            this.lbThreshold.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lbThreshold.UseCustomBackColor = true;
+            this.lbThreshold.UseCustomForeColor = true;
+            // 
+            // metroLabel8
+            // 
+            this.metroLabel8.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(170)))), ((int)(((byte)(173)))));
+            this.metroLabel8.FontWeight = MetroFramework.MetroLabelWeight.Regular;
+            this.metroLabel8.ForeColor = System.Drawing.Color.White;
+            this.metroLabel8.Location = new System.Drawing.Point(6, 15);
+            this.metroLabel8.Name = "metroLabel8";
+            this.metroLabel8.Size = new System.Drawing.Size(92, 35);
+            this.metroLabel8.Style = MetroFramework.MetroColorStyle.Teal;
+            this.metroLabel8.TabIndex = 1429;
+            this.metroLabel8.Text = "Threshold";
+            this.metroLabel8.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.metroLabel8.UseCustomBackColor = true;
+            this.metroLabel8.UseCustomForeColor = true;
+            // 
+            // trbThreshold
+            // 
+            this.trbThreshold.BackColor = System.Drawing.Color.Transparent;
+            this.trbThreshold.Location = new System.Drawing.Point(99, 15);
+            this.trbThreshold.Maximum = 254;
+            this.trbThreshold.Minimum = 1;
+            this.trbThreshold.Name = "trbThreshold";
+            this.trbThreshold.Size = new System.Drawing.Size(520, 35);
+            this.trbThreshold.TabIndex = 1428;
+            this.trbThreshold.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.trbThreshold.Scroll += new System.Windows.Forms.ScrollEventHandler(this.trbThreshold_Scroll);
+            // 
+            // btnCameraOperator
+            // 
+            this.btnCameraOperator.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(170)))), ((int)(((byte)(173)))));
+            this.btnCameraOperator.FontWeight = MetroFramework.MetroLabelWeight.Bold;
+            this.btnCameraOperator.ForeColor = System.Drawing.Color.White;
+            this.btnCameraOperator.Location = new System.Drawing.Point(0, 6);
+            this.btnCameraOperator.Name = "btnCameraOperator";
+            this.btnCameraOperator.Size = new System.Drawing.Size(735, 35);
+            this.btnCameraOperator.Style = MetroFramework.MetroColorStyle.Teal;
+            this.btnCameraOperator.TabIndex = 1185;
+            this.btnCameraOperator.Text = "VISION";
+            this.btnCameraOperator.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.btnCameraOperator.UseCustomBackColor = true;
+            this.btnCameraOperator.UseCustomForeColor = true;
+            this.btnCameraOperator.Click += new System.EventHandler(this.btnCameraOperator_Click);
+            // 
+            // metroLabel9
+            // 
+            this.metroLabel9.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(170)))), ((int)(((byte)(173)))));
+            this.metroLabel9.FontWeight = MetroFramework.MetroLabelWeight.Bold;
+            this.metroLabel9.ForeColor = System.Drawing.Color.White;
+            this.metroLabel9.Location = new System.Drawing.Point(1337, 6);
+            this.metroLabel9.Name = "metroLabel9";
+            this.metroLabel9.Size = new System.Drawing.Size(431, 35);
+            this.metroLabel9.Style = MetroFramework.MetroColorStyle.Teal;
+            this.metroLabel9.TabIndex = 1189;
+            this.metroLabel9.Text = "PARAMETER";
+            this.metroLabel9.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.metroLabel9.UseCustomBackColor = true;
+            this.metroLabel9.UseCustomForeColor = true;
+            // 
+            // timerStatus
+            // 
+            this.timerStatus.Enabled = true;
+            this.timerStatus.Tick += new System.EventHandler(this.timerStatus_Tick);
+            // 
+            // metroLabel16
+            // 
+            this.metroLabel16.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(170)))), ((int)(((byte)(173)))));
+            this.metroLabel16.FontWeight = MetroFramework.MetroLabelWeight.Bold;
+            this.metroLabel16.ForeColor = System.Drawing.Color.White;
+            this.metroLabel16.Location = new System.Drawing.Point(1, 42);
+            this.metroLabel16.Name = "metroLabel16";
+            this.metroLabel16.Size = new System.Drawing.Size(135, 35);
+            this.metroLabel16.Style = MetroFramework.MetroColorStyle.Teal;
+            this.metroLabel16.TabIndex = 1271;
+            this.metroLabel16.Text = "NO";
+            this.metroLabel16.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.metroLabel16.UseCustomBackColor = true;
+            this.metroLabel16.UseCustomForeColor = true;
+            // 
+            // cbCamera
+            // 
+            this.cbCamera.FontSize = MetroFramework.MetroComboBoxSize.Tall;
+            this.cbCamera.FormattingEnabled = true;
+            this.cbCamera.ItemHeight = 29;
+            this.cbCamera.Items.AddRange(new object[] {
+            "1",
+            "2",
+            "3",
+            "4"});
+            this.cbCamera.Location = new System.Drawing.Point(137, 42);
+            this.cbCamera.Name = "cbCamera";
+            this.cbCamera.Size = new System.Drawing.Size(304, 35);
+            this.cbCamera.Style = MetroFramework.MetroColorStyle.Teal;
+            this.cbCamera.TabIndex = 1270;
+            this.cbCamera.Theme = MetroFramework.MetroThemeStyle.Light;
+            this.cbCamera.UseSelectable = true;
+            this.cbCamera.SelectedIndexChanged += new System.EventHandler(this.cbCamera_SelectedIndexChanged);
+            // 
+            // lbTackTimems
+            // 
+            this.lbTackTimems.BackColor = System.Drawing.Color.Transparent;
+            this.lbTackTimems.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.lbTackTimems.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.lbTackTimems.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lbTackTimems.ForeColor = System.Drawing.Color.Black;
+            this.lbTackTimems.Location = new System.Drawing.Point(579, 42);
+            this.lbTackTimems.Name = "lbTackTimems";
+            this.lbTackTimems.Size = new System.Drawing.Size(156, 35);
+            this.lbTackTimems.TabIndex = 1731;
+            this.lbTackTimems.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // panel1
+            // 
+            this.panel1.Controls.Add(this.cogDisplay_Source);
+            this.panel1.Location = new System.Drawing.Point(1, 78);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(734, 500);
+            this.panel1.TabIndex = 1768;
+            // 
+            // cogDisplay_Source
+            // 
+            this.cogDisplay_Source.ColorMapLowerClipColor = System.Drawing.Color.Black;
+            this.cogDisplay_Source.ColorMapLowerRoiLimit = 0D;
+            this.cogDisplay_Source.ColorMapPredefined = Cognex.VisionPro.Display.CogDisplayColorMapPredefinedConstants.None;
+            this.cogDisplay_Source.ColorMapUpperClipColor = System.Drawing.Color.Black;
+            this.cogDisplay_Source.ColorMapUpperRoiLimit = 1D;
+            this.cogDisplay_Source.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.cogDisplay_Source.DoubleTapZoomCycleLength = 2;
+            this.cogDisplay_Source.DoubleTapZoomSensitivity = 2.5D;
+            this.cogDisplay_Source.Location = new System.Drawing.Point(0, 0);
+            this.cogDisplay_Source.Margin = new System.Windows.Forms.Padding(4);
+            this.cogDisplay_Source.MouseWheelMode = Cognex.VisionPro.Display.CogDisplayMouseWheelModeConstants.Zoom1;
+            this.cogDisplay_Source.MouseWheelSensitivity = 1D;
+            this.cogDisplay_Source.Name = "cogDisplay_Source";
+            this.cogDisplay_Source.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("cogDisplay_Source.OcxState")));
+            this.cogDisplay_Source.Size = new System.Drawing.Size(734, 500);
+            this.cogDisplay_Source.TabIndex = 1761;
+            // 
+            // label2
+            // 
+            this.label2.BackColor = System.Drawing.Color.Transparent;
+            this.label2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.label2.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label2.ForeColor = System.Drawing.Color.Black;
+            this.label2.Location = new System.Drawing.Point(1943, 425);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(125, 46);
+            this.label2.TabIndex = 1927;
+            this.label2.Text = "00.000 mm";
+            this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.label2.Click += new System.EventHandler(this.lbVisionResultThicknessMax1_Click);
+            // 
+            // groupBox2
+            // 
+            this.groupBox2.BackColor = System.Drawing.Color.White;
+            this.groupBox2.Controls.Add(this.btnGrab);
+            this.groupBox2.Controls.Add(this.btnLive);
+            this.groupBox2.Controls.Add(this.btnImageLoad);
+            this.groupBox2.Controls.Add(this.btnImageSave);
+            this.groupBox2.ForeColor = System.Drawing.Color.Black;
+            this.groupBox2.Location = new System.Drawing.Point(1, 585);
+            this.groupBox2.Name = "groupBox2";
+            this.groupBox2.Size = new System.Drawing.Size(734, 66);
+            this.groupBox2.TabIndex = 1930;
+            this.groupBox2.TabStop = false;
+            this.groupBox2.Text = "CAMERA";
+            // 
+            // btnGrab
+            // 
+            this.btnGrab.FontSize = MetroFramework.MetroButtonSize.Tall;
+            this.btnGrab.FontWeight = MetroFramework.MetroButtonWeight.Regular;
+            this.btnGrab.Highlight = true;
+            this.btnGrab.Location = new System.Drawing.Point(5, 20);
+            this.btnGrab.Name = "btnGrab";
+            this.btnGrab.Size = new System.Drawing.Size(178, 35);
+            this.btnGrab.Style = MetroFramework.MetroColorStyle.Teal;
+            this.btnGrab.TabIndex = 1045;
+            this.btnGrab.Text = "GRAB";
+            this.btnGrab.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.btnGrab.UseSelectable = true;
+            this.btnGrab.Click += new System.EventHandler(this.OnClickCameraOperation);
+            // 
+            // btnLive
+            // 
+            this.btnLive.FontSize = MetroFramework.MetroButtonSize.Tall;
+            this.btnLive.FontWeight = MetroFramework.MetroButtonWeight.Regular;
+            this.btnLive.Highlight = true;
+            this.btnLive.Location = new System.Drawing.Point(183, 20);
+            this.btnLive.Name = "btnLive";
+            this.btnLive.Size = new System.Drawing.Size(178, 35);
+            this.btnLive.Style = MetroFramework.MetroColorStyle.Teal;
+            this.btnLive.TabIndex = 1046;
+            this.btnLive.Text = "LIVE";
+            this.btnLive.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.btnLive.UseSelectable = true;
+            this.btnLive.Click += new System.EventHandler(this.OnClickCameraOperation);
+            // 
+            // btnImageLoad
+            // 
+            this.btnImageLoad.FontSize = MetroFramework.MetroButtonSize.Tall;
+            this.btnImageLoad.FontWeight = MetroFramework.MetroButtonWeight.Regular;
+            this.btnImageLoad.Highlight = true;
+            this.btnImageLoad.Location = new System.Drawing.Point(361, 20);
+            this.btnImageLoad.Name = "btnImageLoad";
+            this.btnImageLoad.Size = new System.Drawing.Size(178, 35);
+            this.btnImageLoad.Style = MetroFramework.MetroColorStyle.Teal;
+            this.btnImageLoad.TabIndex = 1047;
+            this.btnImageLoad.Text = "IMAGE LOAD";
+            this.btnImageLoad.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.btnImageLoad.UseSelectable = true;
+            this.btnImageLoad.Click += new System.EventHandler(this.OnClickCameraOperation);
+            // 
+            // btnImageSave
+            // 
+            this.btnImageSave.FontSize = MetroFramework.MetroButtonSize.Tall;
+            this.btnImageSave.FontWeight = MetroFramework.MetroButtonWeight.Regular;
+            this.btnImageSave.Highlight = true;
+            this.btnImageSave.Location = new System.Drawing.Point(539, 20);
+            this.btnImageSave.Name = "btnImageSave";
+            this.btnImageSave.Size = new System.Drawing.Size(175, 35);
+            this.btnImageSave.Style = MetroFramework.MetroColorStyle.Teal;
+            this.btnImageSave.TabIndex = 1048;
+            this.btnImageSave.Text = "IMAGE SAVE";
+            this.btnImageSave.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.btnImageSave.UseSelectable = true;
+            this.btnImageSave.Click += new System.EventHandler(this.OnClickCameraOperation);
+            // 
+            // btnLightSave
+            // 
+            this.btnLightSave.FontSize = MetroFramework.MetroButtonSize.Tall;
+            this.btnLightSave.FontWeight = MetroFramework.MetroButtonWeight.Regular;
+            this.btnLightSave.Highlight = true;
+            this.btnLightSave.Location = new System.Drawing.Point(549, 20);
+            this.btnLightSave.Name = "btnLightSave";
+            this.btnLightSave.Size = new System.Drawing.Size(165, 35);
+            this.btnLightSave.Style = MetroFramework.MetroColorStyle.Teal;
+            this.btnLightSave.TabIndex = 1063;
+            this.btnLightSave.Text = "LIGHT SAVE";
+            this.btnLightSave.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.btnLightSave.UseSelectable = true;
+            // 
+            // btnOFF
+            // 
+            this.btnOFF.FontSize = MetroFramework.MetroButtonSize.Tall;
+            this.btnOFF.FontWeight = MetroFramework.MetroButtonWeight.Regular;
+            this.btnOFF.Highlight = true;
+            this.btnOFF.Location = new System.Drawing.Point(487, 20);
+            this.btnOFF.Name = "btnOFF";
+            this.btnOFF.Size = new System.Drawing.Size(68, 35);
+            this.btnOFF.Style = MetroFramework.MetroColorStyle.Teal;
+            this.btnOFF.TabIndex = 1062;
+            this.btnOFF.Text = "OFF";
+            this.btnOFF.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.btnOFF.UseSelectable = true;
+            // 
+            // btnON
+            // 
+            this.btnON.FontSize = MetroFramework.MetroButtonSize.Tall;
+            this.btnON.FontWeight = MetroFramework.MetroButtonWeight.Regular;
+            this.btnON.Highlight = true;
+            this.btnON.Location = new System.Drawing.Point(419, 20);
+            this.btnON.Name = "btnON";
+            this.btnON.Size = new System.Drawing.Size(71, 35);
+            this.btnON.Style = MetroFramework.MetroColorStyle.Teal;
+            this.btnON.TabIndex = 1061;
+            this.btnON.Text = "ON";
+            this.btnON.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.btnON.UseSelectable = true;
+            // 
+            // trbLightValue
+            // 
+            this.trbLightValue.BackColor = System.Drawing.Color.Transparent;
+            this.trbLightValue.Location = new System.Drawing.Point(6, 20);
+            this.trbLightValue.Maximum = 1000;
+            this.trbLightValue.Name = "trbLightValue";
+            this.trbLightValue.Size = new System.Drawing.Size(331, 35);
+            this.trbLightValue.TabIndex = 1051;
+            this.trbLightValue.Theme = MetroFramework.MetroThemeStyle.Dark;
+            // 
+            // lbLightValue
+            // 
+            this.lbLightValue.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(170)))), ((int)(((byte)(173)))));
+            this.lbLightValue.FontWeight = MetroFramework.MetroLabelWeight.Regular;
+            this.lbLightValue.ForeColor = System.Drawing.Color.White;
+            this.lbLightValue.Location = new System.Drawing.Point(338, 20);
+            this.lbLightValue.Name = "lbLightValue";
+            this.lbLightValue.Size = new System.Drawing.Size(80, 35);
+            this.lbLightValue.Style = MetroFramework.MetroColorStyle.Teal;
+            this.lbLightValue.TabIndex = 1052;
+            this.lbLightValue.Text = "000";
+            this.lbLightValue.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lbLightValue.UseCustomBackColor = true;
+            this.lbLightValue.UseCustomForeColor = true;
+            // 
+            // groupBox1
+            // 
+            this.groupBox1.BackColor = System.Drawing.Color.White;
+            this.groupBox1.Controls.Add(this.trbLightValue);
+            this.groupBox1.Controls.Add(this.btnLightSave);
+            this.groupBox1.Controls.Add(this.lbLightValue);
+            this.groupBox1.Controls.Add(this.btnON);
+            this.groupBox1.Controls.Add(this.btnOFF);
+            this.groupBox1.ForeColor = System.Drawing.Color.Black;
+            this.groupBox1.Location = new System.Drawing.Point(1, 653);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(734, 66);
+            this.groupBox1.TabIndex = 1931;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "LIGHT";
+            // 
+            // groupBox3
+            // 
+            this.groupBox3.BackColor = System.Drawing.Color.White;
+            this.groupBox3.Controls.Add(this.metroLabel8);
+            this.groupBox3.Controls.Add(this.trbThreshold);
+            this.groupBox3.Controls.Add(this.lbThreshold);
+            this.groupBox3.ForeColor = System.Drawing.Color.Black;
+            this.groupBox3.Location = new System.Drawing.Point(1, 725);
+            this.groupBox3.Name = "groupBox3";
+            this.groupBox3.Size = new System.Drawing.Size(734, 137);
+            this.groupBox3.TabIndex = 1932;
+            this.groupBox3.TabStop = false;
+            this.groupBox3.Text = "IMAGE PROCESS";
+            // 
+            // propertygrid_Base
+            // 
+            this.propertygrid_Base.BackColor = System.Drawing.Color.Black;
+            this.propertygrid_Base.CategoryForeColor = System.Drawing.Color.White;
+            this.propertygrid_Base.CategorySplitterColor = System.Drawing.Color.Black;
+            this.propertygrid_Base.CommandsBorderColor = System.Drawing.Color.Black;
+            this.propertygrid_Base.CommandsDisabledLinkColor = System.Drawing.Color.White;
+            this.propertygrid_Base.CommandsForeColor = System.Drawing.Color.White;
+            this.propertygrid_Base.DisabledItemForeColor = System.Drawing.Color.White;
+            this.propertygrid_Base.HelpBackColor = System.Drawing.Color.Black;
+            this.propertygrid_Base.HelpBorderColor = System.Drawing.Color.Teal;
+            this.propertygrid_Base.HelpForeColor = System.Drawing.Color.White;
+            this.propertygrid_Base.LineColor = System.Drawing.Color.Teal;
+            this.propertygrid_Base.Location = new System.Drawing.Point(1337, 72);
+            this.propertygrid_Base.Name = "propertygrid_Base";
+            this.propertygrid_Base.PropertySort = System.Windows.Forms.PropertySort.Categorized;
+            this.propertygrid_Base.SelectedItemWithFocusBackColor = System.Drawing.Color.Black;
+            this.propertygrid_Base.SelectedItemWithFocusForeColor = System.Drawing.Color.Teal;
+            this.propertygrid_Base.Size = new System.Drawing.Size(431, 789);
+            this.propertygrid_Base.TabIndex = 1933;
+            this.propertygrid_Base.ToolbarVisible = false;
+            this.propertygrid_Base.ViewBackColor = System.Drawing.Color.Black;
+            this.propertygrid_Base.ViewBorderColor = System.Drawing.Color.Teal;
+            this.propertygrid_Base.ViewForeColor = System.Drawing.Color.White;
+            // 
+            // metroLabel1
+            // 
+            this.metroLabel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(170)))), ((int)(((byte)(173)))));
+            this.metroLabel1.FontWeight = MetroFramework.MetroLabelWeight.Bold;
+            this.metroLabel1.ForeColor = System.Drawing.Color.White;
+            this.metroLabel1.Location = new System.Drawing.Point(737, 6);
+            this.metroLabel1.Name = "metroLabel1";
+            this.metroLabel1.Size = new System.Drawing.Size(598, 35);
+            this.metroLabel1.Style = MetroFramework.MetroColorStyle.Teal;
+            this.metroLabel1.TabIndex = 1934;
+            this.metroLabel1.Text = "ALGORITHM";
+            this.metroLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.metroLabel1.UseCustomBackColor = true;
+            this.metroLabel1.UseCustomForeColor = true;
+            // 
+            // groupBox4
+            // 
+            this.groupBox4.BackColor = System.Drawing.Color.White;
+            this.groupBox4.Controls.Add(this.btnBlobRun);
+            this.groupBox4.ForeColor = System.Drawing.Color.Black;
+            this.groupBox4.Location = new System.Drawing.Point(737, 44);
+            this.groupBox4.Name = "groupBox4";
+            this.groupBox4.Size = new System.Drawing.Size(598, 152);
+            this.groupBox4.TabIndex = 1935;
+            this.groupBox4.TabStop = false;
+            this.groupBox4.Text = "BLOB";
+            // 
+            // btnBlobRun
+            // 
+            this.btnBlobRun.FontSize = MetroFramework.MetroButtonSize.Tall;
+            this.btnBlobRun.FontWeight = MetroFramework.MetroButtonWeight.Regular;
+            this.btnBlobRun.Highlight = true;
+            this.btnBlobRun.Location = new System.Drawing.Point(6, 19);
+            this.btnBlobRun.Name = "btnBlobRun";
+            this.btnBlobRun.Size = new System.Drawing.Size(184, 59);
+            this.btnBlobRun.Style = MetroFramework.MetroColorStyle.Teal;
+            this.btnBlobRun.TabIndex = 1936;
+            this.btnBlobRun.Text = "Blob Run";
+            this.btnBlobRun.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.btnBlobRun.UseSelectable = true;
+            this.btnBlobRun.Click += new System.EventHandler(this.btnBlobRun_Click);
+            // 
+            // btnPatternSearchRegion
+            // 
+            this.btnPatternSearchRegion.FontSize = MetroFramework.MetroButtonSize.Tall;
+            this.btnPatternSearchRegion.Highlight = true;
+            this.btnPatternSearchRegion.Location = new System.Drawing.Point(5, 20);
+            this.btnPatternSearchRegion.Name = "btnPatternSearchRegion";
+            this.btnPatternSearchRegion.Size = new System.Drawing.Size(174, 39);
+            this.btnPatternSearchRegion.Style = MetroFramework.MetroColorStyle.Teal;
+            this.btnPatternSearchRegion.TabIndex = 1939;
+            this.btnPatternSearchRegion.Tag = "";
+            this.btnPatternSearchRegion.Text = "검사 영역 설정";
+            this.btnPatternSearchRegion.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.btnPatternSearchRegion.UseSelectable = true;
+            this.btnPatternSearchRegion.Click += new System.EventHandler(this.btnPatternSearchRegion_Click);
+            // 
+            // btnPatternTrain
+            // 
+            this.btnPatternTrain.FontSize = MetroFramework.MetroButtonSize.Tall;
+            this.btnPatternTrain.Highlight = true;
+            this.btnPatternTrain.Location = new System.Drawing.Point(355, 20);
+            this.btnPatternTrain.Name = "btnPatternTrain";
+            this.btnPatternTrain.Size = new System.Drawing.Size(174, 39);
+            this.btnPatternTrain.Style = MetroFramework.MetroColorStyle.Teal;
+            this.btnPatternTrain.TabIndex = 1938;
+            this.btnPatternTrain.Tag = "";
+            this.btnPatternTrain.Text = "패턴 영역 학습";
+            this.btnPatternTrain.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.btnPatternTrain.UseSelectable = true;
+            // 
+            // btnPatternTrainRegion
+            // 
+            this.btnPatternTrainRegion.FontSize = MetroFramework.MetroButtonSize.Tall;
+            this.btnPatternTrainRegion.Highlight = true;
+            this.btnPatternTrainRegion.Location = new System.Drawing.Point(180, 20);
+            this.btnPatternTrainRegion.Name = "btnPatternTrainRegion";
+            this.btnPatternTrainRegion.Size = new System.Drawing.Size(174, 39);
+            this.btnPatternTrainRegion.Style = MetroFramework.MetroColorStyle.Teal;
+            this.btnPatternTrainRegion.TabIndex = 1937;
+            this.btnPatternTrainRegion.Tag = "";
+            this.btnPatternTrainRegion.Text = "패턴 영역 설정";
+            this.btnPatternTrainRegion.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.btnPatternTrainRegion.UseSelectable = true;
+            // 
+            // btnPatternRun
+            // 
+            this.btnPatternRun.FontSize = MetroFramework.MetroButtonSize.Tall;
+            this.btnPatternRun.Highlight = true;
+            this.btnPatternRun.Location = new System.Drawing.Point(355, 60);
+            this.btnPatternRun.Name = "btnPatternRun";
+            this.btnPatternRun.Size = new System.Drawing.Size(174, 39);
+            this.btnPatternRun.Style = MetroFramework.MetroColorStyle.Teal;
+            this.btnPatternRun.TabIndex = 1936;
+            this.btnPatternRun.Tag = "DEVICE";
+            this.btnPatternRun.Text = "패턴 검사";
+            this.btnPatternRun.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.btnPatternRun.UseSelectable = true;
+            // 
+            // groupBox5
+            // 
+            this.groupBox5.BackColor = System.Drawing.Color.White;
+            this.groupBox5.Controls.Add(this.btnPatternTrainRegion);
+            this.groupBox5.Controls.Add(this.btnPatternSearchRegion);
+            this.groupBox5.Controls.Add(this.btnPatternRun);
+            this.groupBox5.Controls.Add(this.btnPatternTrain);
+            this.groupBox5.ForeColor = System.Drawing.Color.Black;
+            this.groupBox5.Location = new System.Drawing.Point(737, 202);
+            this.groupBox5.Name = "groupBox5";
+            this.groupBox5.Size = new System.Drawing.Size(598, 152);
+            this.groupBox5.TabIndex = 1940;
+            this.groupBox5.TabStop = false;
+            this.groupBox5.Text = "PATTERN";
+            // 
+            // cbCropIndex
+            // 
+            this.cbCropIndex.FormattingEnabled = true;
+            this.cbCropIndex.ItemHeight = 23;
+            this.cbCropIndex.Location = new System.Drawing.Point(1337, 42);
+            this.cbCropIndex.Name = "cbCropIndex";
+            this.cbCropIndex.Size = new System.Drawing.Size(431, 29);
+            this.cbCropIndex.TabIndex = 1941;
+            this.cbCropIndex.UseSelectable = true;
+            // 
+            // metroLabel2
+            // 
+            this.metroLabel2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(170)))), ((int)(((byte)(173)))));
+            this.metroLabel2.FontWeight = MetroFramework.MetroLabelWeight.Bold;
+            this.metroLabel2.ForeColor = System.Drawing.Color.White;
+            this.metroLabel2.Location = new System.Drawing.Point(443, 42);
+            this.metroLabel2.Name = "metroLabel2";
+            this.metroLabel2.Size = new System.Drawing.Size(135, 35);
+            this.metroLabel2.Style = MetroFramework.MetroColorStyle.Teal;
+            this.metroLabel2.TabIndex = 1942;
+            this.metroLabel2.Text = "Tack Time";
+            this.metroLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.metroLabel2.UseCustomBackColor = true;
+            this.metroLabel2.UseCustomForeColor = true;
+            // 
+            // FormTeachingVision
+            // 
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
+            this.ClientSize = new System.Drawing.Size(1771, 863);
+            this.ControlBox = false;
+            this.Controls.Add(this.metroLabel2);
+            this.Controls.Add(this.cbCropIndex);
+            this.Controls.Add(this.groupBox5);
+            this.Controls.Add(this.groupBox4);
+            this.Controls.Add(this.metroLabel1);
+            this.Controls.Add(this.propertygrid_Base);
+            this.Controls.Add(this.groupBox3);
+            this.Controls.Add(this.groupBox1);
+            this.Controls.Add(this.groupBox2);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.panel1);
+            this.Controls.Add(this.lbTackTimems);
+            this.Controls.Add(this.metroLabel16);
+            this.Controls.Add(this.cbCamera);
+            this.Controls.Add(this.metroLabel9);
+            this.Controls.Add(this.btnCameraOperator);
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Movable = false;
+            this.Name = "FormTeachingVision";
+            this.Resizable = false;
+            this.ShadowType = MetroFramework.Forms.MetroFormShadowType.None;
+            this.ShowInTaskbar = false;
+            this.Style = MetroFramework.MetroColorStyle.Teal;
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FormTeachingMotion_FormClosing);
+            this.Load += new System.EventHandler(this.FormTeachingVision_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.metroStyleManager)).EndInit();
+            this.panel1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.cogDisplay_Source)).EndInit();
+            this.groupBox2.ResumeLayout(false);
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox3.ResumeLayout(false);
+            this.groupBox4.ResumeLayout(false);
+            this.groupBox5.ResumeLayout(false);
+            this.ResumeLayout(false);
+
+        }
+
+#endregion
+
+        private MetroFramework.Components.MetroStyleManager metroStyleManager;
+        private MetroFramework.Controls.MetroLabel metroLabel9;
+        private MetroFramework.Controls.MetroLabel btnCameraOperator;
+        private System.Windows.Forms.Timer timerStatus;
+        private MetroFramework.Controls.MetroLabel metroLabel16;
+        private MetroFramework.Controls.MetroComboBox cbCamera;
+        private MetroFramework.Controls.MetroLabel lbThreshold;
+        private MetroFramework.Controls.MetroLabel metroLabel8;
+        private MetroFramework.Controls.MetroTrackBar trbThreshold;
+        private System.Windows.Forms.Label lbTackTimems;
+        private System.Windows.Forms.Panel panel1;
+        internal Cognex.VisionPro.Display.CogDisplay cogDisplay_Source;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.GroupBox groupBox3;
+        private System.Windows.Forms.GroupBox groupBox1;
+        private MetroFramework.Controls.MetroTrackBar trbLightValue;
+        private MetroFramework.Controls.MetroButton btnLightSave;
+        private MetroFramework.Controls.MetroLabel lbLightValue;
+        private MetroFramework.Controls.MetroButton btnON;
+        private MetroFramework.Controls.MetroButton btnOFF;
+        private System.Windows.Forms.GroupBox groupBox2;
+        private MetroFramework.Controls.MetroButton btnGrab;
+        private MetroFramework.Controls.MetroButton btnLive;
+        private MetroFramework.Controls.MetroButton btnImageLoad;
+        private MetroFramework.Controls.MetroButton btnImageSave;
+        private System.Windows.Forms.PropertyGrid propertygrid_Base;
+        private MetroFramework.Controls.MetroLabel metroLabel1;
+        private System.Windows.Forms.GroupBox groupBox4;
+        private MetroFramework.Controls.MetroButton btnBlobRun;
+        private System.Windows.Forms.GroupBox groupBox5;
+        private MetroFramework.Controls.MetroButton btnPatternTrainRegion;
+        private MetroFramework.Controls.MetroButton btnPatternSearchRegion;
+        private MetroFramework.Controls.MetroButton btnPatternRun;
+        private MetroFramework.Controls.MetroButton btnPatternTrain;
+        private MetroFramework.Controls.MetroComboBox cbCropIndex;
+        private MetroFramework.Controls.MetroLabel metroLabel2;
+    }
+}

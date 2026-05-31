@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<LightControllerConfig>
+	<PD300Port>COM5</PD300Port>
+	<BaudRate>19200</BaudRate>
+	<Light1Value>50</Light1Value>
+	<Light2Value>50</Light2Value>
+	<Light3Value>50</Light3Value>
+	<Light4Value>50</Light4Value>
+	<Light5Value>50</Light5Value>
+	<Light6Value>50</Light6Value>
+	<Light7Value>50</Light7Value>
+	<Light8Value>50</Light8Value>
+</LightControllerConfig>

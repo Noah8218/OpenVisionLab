@@ -1,0 +1,75 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Xml;
+using System.Xml.Serialization;
+using OpenCvSharp;
+
+namespace KtemVisionSystem
+{
+    public class CPropertyBlob
+    {
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("NAME")]
+        public string NAME { get; set; } = "";
+    
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("THRESHOLD")]
+        public int THRESHOLD { get; set; } = 128;
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("MIN_AREA")]
+        public int MIN_AREA { get; set; } = 200;
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("MAX_AREA")]
+        public int MAX_AREA { get; set; } = 1000000;
+
+        [CategoryAttribute("Image Process"), DescriptionAttribute(""), DisplayNameAttribute("USE_THRESHOLD")]
+        public bool USE_THRESHOLD { get; set; } = false;
+
+        [CategoryAttribute("Image Process"), DescriptionAttribute(""), DisplayNameAttribute("THRESHOLD_TYPE")]
+        public ThresholdTypes THRESHOLD_TYPES { get; set; } = ThresholdTypes.Binary;
+
+        [CategoryAttribute("Image Process"), DescriptionAttribute(""), DisplayNameAttribute("USE_ROI")]
+        public bool USE_ROI { get; set; } = false;
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("ROI")]
+        public Rect CVROI { get; set; } = new Rect();
+        
+        public CPropertyBlob(string strName)
+        {
+            NAME = strName;
+        }
+
+        public CPropertyBlob()
+        {            
+        }
+
+        public CPropertyBlob LoadConfig(string RecipeName)
+        {
+            string strPath = Application.StartupPath + "\\RECIPE\\" + RecipeName + "\\" + NAME + ".xml";
+            CPropertyBlob newData = null;
+
+            if (File.Exists(strPath))
+            {
+                newData = SerializeHelper.FromXmlFile<CPropertyBlob>(strPath);
+                if (newData != null)
+                    return newData;
+            }
+            this.SaveConfig(RecipeName);
+            this.LoadConfig(RecipeName);
+            return newData;
+        }
+
+        public void SaveConfig(string RecipeName)
+        {
+            string strPath = Application.StartupPath + "\\RECIPE\\" + RecipeName + "\\" + NAME + ".xml";
+            SerializeHelper.ToXmlFile(strPath, this);
+        }
+
+    }
+}

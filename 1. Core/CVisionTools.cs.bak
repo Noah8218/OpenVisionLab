@@ -1,0 +1,41 @@
+﻿using System;
+using System.Reflection;
+
+namespace KtemVisionSystem
+{
+    public static class CVisionTools
+    {
+        
+
+        public static bool Init()
+        {
+            try
+            {
+                
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        public static bool Save()
+        {
+            try
+            {
+                //PMALIGN_FRONT.SaveConfig(CGlobal.Instance.System.Recipe.Name);
+                //OCR.SaveConfig(CGlobal.Instance.System.Recipe.Name);
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                return false;
+            }
+
+            return true;
+        }           
+    }
+}

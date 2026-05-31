@@ -1,0 +1,121 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace KtemVisionSystem
+{
+    public static class DEFINE
+    {
+        #region 카메라 인덱스
+        public const int CAM_FRONT = 0;
+        public const int CAM_BACK = 1;
+        public const int CAM_OCR = 2;
+        #endregion
+
+        public const int Main = 0;
+        public const int nThreshold = 1;
+
+
+        //SYSTEM 5000
+        public const string ALARM_SYSTEM = "5000";
+        public const string ALARM_REGIST_NULL = "6000";
+
+        public const string ALARM_CODESYS_ERROR = "90000";
+
+        public const string ALARM_BCR_READ_FAIL = "22000";
+        public const string ALARM_TOP_COVER_BCR_READ_FAIL = "22010";
+        public const string ALARM_METALTRAY_BCR_READ_FAIL = "22020";
+
+
+        public const string ALARM_TIME_OUT = "100";
+        public const string ALARM_TIME_OUT_AXIS_MOVE = "110";
+        public const string ALARM_TIME_OUT_AXIS_HOME = "120";
+        public const string ALARM_RESET_TIME_OUT = "130";
+        public const string ALARM_TIME_OUT_CONV = "140";
+
+
+        public enum FLIP_TYPE : int { X, Y, XY };
+        public enum FORM_RESULT : int { IDLE, SKIP, RETRY, REJECT };
+
+        public enum RESULT : int
+        {
+            NA = 0,
+            OK = 1,
+            NG = 2,
+            RVS = 3
+
+        }
+
+        public enum AUTHORIZATION : uint { OPERATOR = 1, ENGINEER, MASTER };
+
+        public enum PROJECTION_POLARITY : uint {BTOW = 0,WTOB,ALL};
+        public enum PROJECTION_DIR : uint { X_LTOR = 0, X_RTOL, Y_TTOB, Y_BTOT, DIAG };
+        public const int FILRM_LEFT = 0;
+        public const int FILRM_RIGHT = 1;
+        public const int RECHECK_LEFT = 2;
+        public const int RECHECK_RIGHT = 3;
+
+        public const int GLASS_LEFT = 0;
+        public const int GLASS_RIGHT = 1;
+
+        public const double PIXEL_RESOLUTION_UM = 4.3125;
+        public const double PIXEL_RESOLUTION_MM = 0.01750;
+        public const double PIXEL_RESOLUTION_ETCHING_MM = 0.005;
+
+        public static System.Drawing.Color MOUSEHOVER_COLOR = System.Drawing.Color.FromArgb(72, 52, 183);
+        public static System.Drawing.Color BACK_COLOR = System.Drawing.Color.FromArgb(51, 51, 76);
+
+        public static System.Drawing.Color COLOR_TEAL = System.Drawing.Color.FromArgb(0, 170, 173);
+        public static System.Drawing.Color COLOR_RED = System.Drawing.Color.FromArgb(209, 17, 65);
+        public static System.Drawing.Color COLOR_SECOND = System.Drawing.Color.FromArgb(41, 41, 76);
+
+        public const string PATH_RECIPE = "RECIPE";
+
+        public const int ROI_RB = 0;
+        public const int ROI_LB = 1;
+        public const int ROI_RT = 2;
+        public const int ROI_LT = 3;
+
+        public const string Grab = "GRAB";
+        public const string Live = "LIVE";
+        public const string Live_Stop = "LIVE STOP";
+        public const string Image_Load = "IMAGE LOAD";
+        public const string Image_Save = "IMAGE SAVE";
+
+        public const string Line = "Line";
+        public const string Blob = "Blob";
+        public const string Pattern = "Pattern";
+        public const string Filter = "Filter";
+        public const string MultyPly = "MultyPly";
+        public const string Threshold = "Threshold";
+
+        public const int ImageW = 8192;
+        public const int ImageH = 4000;        
+
+        //public const int ALIGN_Panel_LEFT = 0;
+        //public const int ALIGN_Panel_RIGHT = 1;
+        public const int ALIGN_Filrm_LEFT = 0;
+        public const int ALIGN_Filrm_RIGHT = 1;
+        public const int ALIGN_FilrmReCheck_LEFT = 2;
+        public const int ALIGN_FilrmReCheck_RIGHT =3;
+
+        //슬라이딩 메뉴의 최대, 최소 폭 크기
+        public static int MAX_SLIDING_WIDTH = 1841;
+        public static int MIN_SLIDING_WIDTH = 1721;
+        //슬라이딩 메뉴가 보이는/접히는 속도 조절
+        public const int STEP_SLIDING = 10;
+        //최초 슬라이딩 메뉴 크기
+        public const int _posSliding = 200;
+
+        public  enum MOVE_POS : int
+        {
+            POS_LOADER_LAPPING_R = 0,
+            POS_MAIN_R = 1,
+            POS_BACK_AND_FORTH_Y = 2,
+            POS_LAPPING_R = 3
+        }
+
+    }
+}

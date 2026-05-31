@@ -1,0 +1,124 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Xml;
+using System.Xml.Serialization;
+using OpenCvSharp;
+
+namespace IntelligentFactory
+{
+    public class CPropertySetting
+    {
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("NAME")]
+        public string NAME { get; set; } = "";
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("사용 라벨러 개수")]
+        public int LabelCount { get; set; } = 4;
+
+        // 라벨러 사용 유무를 설정합니다. 체크하면, 결함 검출 시 라벨 신호를 발생합니다.
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("라벨러1 사용/미사용")]
+        public bool USE_Labeler_No1 { get; set; } = true;
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("라벨러2 사용/미사용")]
+        public bool USE_Labeler_No2 { get; set; } = true;
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("라벨러3 사용/미사용")]
+        public bool USE_Labeler_No3 { get; set; } = true;
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("라벨러4 사용/미사용")]
+        public bool USE_Labeler_No4 { get; set; } = true;
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("Reel 개수")]
+        public int Reel_Count { get; set; } = 2;
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("라벨러1 부착 REEL 번호")]
+        public int Select_Labeler_No1 { get; set; } = 1;
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("라벨러2 부착 REEL 번호")]
+        public int Select_Labeler_No2 { get; set; } = 2;
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("라벨러3 부착 REEL 번호")]
+        public int Select_Labeler_No3 { get; set; } = 3;
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("라벨러4 부착 REEL 번호")]
+        public int Select_Labeler_No4 { get; set; } = 4;
+
+        //상부 카메라를 기준으로 상부 라벨러까지의 거리를 설정합니다. 설정 단위는 엔코더 펄스 단위입니다.
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("상부 엔코더 오프셋(pulse)")]
+        public double Upper_Encoder_Offset { get; set; } = 0;
+
+        //하부 카메라를 기준으로 하부 라벨러까지의 거리를 설정합니다. 설정 단위는 엔코더 펄스 단위입니다.
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("하부 엔코더 오프셋(pulse)")]
+        public double Lower_Encoder_Offset { get; set; } = 0;
+
+        //라벨러로 부착 신호를 ON한 후 ‘ON’상태를 유지하는 시간을 입력합니다.
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("라벨 ON 시간(msec)")]
+        public int Labeler_OnTime { get; set; } = 20;
+
+        //라벨러로 리셋 신호를 보내는 시간입니다.
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("라벨 리셋 On 시간(msec)")]
+        public int Labeler_RestOnTime { get; set; } = 55;
+
+        //라벨러로 부착 신호를 OFF한 후 ‘OFF’상태를 유지하는 시간을 입력합니다
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("라벨 OFF 시간(msec)")]
+        public int Labeler_OffTime { get; set; } = 20;
+
+        //라벨러로 부착 신호를 OFF한 후 ‘OFF’상태를 유지하는 시간을 입력합니다
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("디스플레이 라벨 OFF 시간(msec)")]
+        public int Display_Labeler_OffTime { get; set; } = 1000;
+
+        //라벨러가 연속으로 라벨을 부착할 수 있는 최소 거리를 입력합니다.
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("라벨 최소 간격(mm)")]
+        public double Labeler_Minimum_Spacing { get; set; } = 35;
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("1펄스당 길이값(mm)")]
+        public double EncoderPermm { get; set; } = 0.09817475;
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("라벨 부착 오프셋(mm)")]
+        public double EncoderPermmOffset { get; set; } = 0;
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("상부 카메라 검사 사용")]
+        public bool USE_Upper_Inspection { get; set; } = true;
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("하부 카메라 검사 사용")]
+        public bool USE_Lower_Inspection { get; set; } = true;
+
+
+        public CPropertySetting(string strName)
+        {
+            NAME = strName;
+        }
+
+        public CPropertySetting()
+        {
+            
+        }
+
+        public CPropertySetting LoadConfig(string RecipeName)
+        {
+            string strPath = Application.StartupPath + "\\RECIPE\\" + RecipeName + "\\" + NAME + ".xml";
+            CPropertySetting newData = null;
+
+            if (File.Exists(strPath))
+            {
+                newData = SerializeHelper.FromXmlFile<CPropertySetting>(strPath);
+                if (newData != null)
+                    return newData;
+            }
+            this.SaveConfig(RecipeName);
+            return newData = this.LoadConfig(RecipeName);
+        }
+
+        public void SaveConfig(string RecipeName)
+        {
+            string strPath = Application.StartupPath + "\\RECIPE\\" + RecipeName + "\\" + NAME + ".xml";
+            SerializeHelper.ToXmlFile(strPath, this);
+        }
+
+    }
+}

@@ -1,0 +1,219 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="IntelligentAlign.Properties" GeneratedClassName="Settings">
+	<Profiles />
+	<Settings>
+		<Setting Name="STATIONNUMBER" Type="System.String" Scope="User">
+			<Value Profile="(Default)">2</Value>
+		</Setting>
+		<Setting Name="NETWORKNUMBER" Type="System.String" Scope="User">
+			<Value Profile="(Default)">1</Value>
+		</Setting>
+		<Setting Name="GROUPNUMBER" Type="System.String" Scope="User">
+			<Value Profile="(Default)">1</Value>
+		</Setting>
+		<Setting Name="CCLINK_MODE" Type="System.String" Scope="User">
+			<Value Profile="(Default)">-1</Value>
+		</Setting>
+		<Setting Name="INPUT_ALIVE" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B2800</Value>
+		</Setting>
+		<Setting Name="INPUT_EMERGENCY_STOP" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B2802</Value>
+		</Setting>
+		<Setting Name="INPUT_DOOR_OPEN" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B2803</Value>
+		</Setting>
+		<Setting Name="INPUT_PLC_ALARM" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B2804</Value>
+		</Setting>
+		<Setting Name="INPUT_PLC_WARNING" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B2805</Value>
+		</Setting>
+		<Setting Name="INPUT_PC_ALARM_ACK" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B280A</Value>
+		</Setting>
+		<Setting Name="INPUT_PC_WARNING_ACK" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B280B</Value>
+		</Setting>
+		<Setting Name="INPUT_DRYRUN" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B2820</Value>
+		</Setting>
+		<Setting Name="INPUT_PC_NOT_USE" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B2821</Value>
+		</Setting>
+		<Setting Name="INPUT_REQ_ALIGN_LAMI" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B2900</Value>
+		</Setting>
+		<Setting Name="INPUT_ACK_ALIGN_LAMI" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B2901</Value>
+		</Setting>
+		<Setting Name="INPUT_REQ_ALIGN_LAMI_CAL" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B290A</Value>
+		</Setting>
+		<Setting Name="INPUT_ACK_ALIGN_LAMI_CAL_MOVE" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B290B</Value>
+		</Setting>
+		<Setting Name="INPUT_REQ_ALIGN_SUPPLY" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B2910</Value>
+		</Setting>
+		<Setting Name="INPUT_ACK_ALIGN_SUPPLY" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B2911</Value>
+		</Setting>
+		<Setting Name="INPUT_REQ_ALIGN_SUPPLY_CAL" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B291A</Value>
+		</Setting>
+		<Setting Name="INPUT_ACK_ALIGN_SUPPLY_CAL_MOVE" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B291B</Value>
+		</Setting>
+
+		<Setting Name="INPUT_PLC_ALARM_CODE" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W2804</Value>
+		</Setting>
+		<Setting Name="INPUT_PLC_WARNING_CODE" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W2805</Value>
+		</Setting>
+		<Setting Name="INPUT_MODEL_NO" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W2810</Value>
+		</Setting>
+		<Setting Name="INPUT_MODEL_NAME1" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W2811</Value>
+		</Setting>
+		<Setting Name="INPUT_MODEL_NAME2" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W2812</Value>
+		</Setting>
+		<Setting Name="INPUT_MODEL_NAME3" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W2813</Value>
+		</Setting>
+		<Setting Name="INPUT_MODEL_NAME4" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W2814</Value>
+		</Setting>
+		<Setting Name="INPUT_MODEL_NAME5" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W2815</Value>
+		</Setting>
+		<Setting Name="INPUT_MODEL_NAME6" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W2816</Value>
+		</Setting>
+		<Setting Name="INPUT_MODEL_NAME7" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W2817</Value>
+		</Setting>
+		<Setting Name="INPUT_MODEL_NAME8" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W2818</Value>
+		</Setting>
+		<Setting Name="INPUT_MODEL_NAME9" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W2819</Value>
+		</Setting>
+		<Setting Name="INPUT_MODEL_NAME10" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W2820</Value>
+		</Setting>
+
+		<Setting Name="OUTPUT_ALIVE" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B5000</Value>
+		</Setting>
+		<Setting Name="OUTPUT_PLC_ALARM_ACK" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B5004</Value>
+		</Setting>
+		<Setting Name="OUTPUT_PLC_WARNING_ACK" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B5005</Value>
+		</Setting>
+		<Setting Name="OUTPUT_PC_ALARM" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B5006</Value>
+		</Setting>
+		<Setting Name="OUTPUT_PC_WARNING" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B5007</Value>
+		</Setting>
+		<Setting Name="OUTPUT_PC_MODE" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B500A</Value>
+		</Setting>
+		<Setting Name="OUTPUT_REQ_ALIGN_LAMI_ACK" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B5100</Value>
+		</Setting>
+		<Setting Name="OUTPUT_REQ_ALIGN_LAMI_MOVE" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B5101</Value>
+		</Setting>
+		<Setting Name="OUTPUT_REQ_ALIGN_LAMI_CAL_ACK" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B510A</Value>
+		</Setting>
+		<Setting Name="OUTPUT_REQ_ALIGN_LAMI_MOVE_ACK" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B510B</Value>
+		</Setting>
+		<Setting Name="OUTPUT_REQ_ALIGN_SUPPLY_ACK" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B5110</Value>
+		</Setting>
+		<Setting Name="OUTPUT_REQ_ALIGN_SUPPLY_MOVE" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B5111</Value>
+		</Setting>
+		<Setting Name="OUTPUT_REQ_ALIGN_SUPPLY_CAL_ACK" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B511A</Value>
+		</Setting>
+		<Setting Name="OUTPUT_REQ_ALIGN_SUPPLY_MOVE_ACK" Type="System.String" Scope="User">
+			<Value Profile="(Default)">B511B</Value>
+		</Setting>
+		<Setting Name="OUTPUT_ALARM_CODE" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5006</Value>
+		</Setting>
+		<Setting Name="OUTPUT_WARNING_CODE" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5007</Value>
+		</Setting>
+		<Setting Name="OUTPUT_MODEL_NO" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5010</Value>
+		</Setting>
+		<Setting Name="OUTPUT_MODEL_NAME1" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5011</Value>
+		</Setting>
+		<Setting Name="OUTPUT_MODEL_NAME2" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5012</Value>
+		</Setting>
+		<Setting Name="OUTPUT_MODEL_NAME3" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5013</Value>
+		</Setting>
+		<Setting Name="OUTPUT_MODEL_NAME4" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5014</Value>
+		</Setting>
+		<Setting Name="OUTPUT_MODEL_NAME5" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5015</Value>
+		</Setting>
+		<Setting Name="OUTPUT_MODEL_NAME6" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5016</Value>
+		</Setting>
+		<Setting Name="OUTPUT_MODEL_NAME7" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5017</Value>
+		</Setting>
+		<Setting Name="OUTPUT_MODEL_NAME8" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5018</Value>
+		</Setting>
+		<Setting Name="OUTPUT_MODEL_NAME9" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5019</Value>
+		</Setting>
+		<Setting Name="OUTPUT_MODEL_NAME10" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5020</Value>
+		</Setting>
+		<Setting Name="OUTPUT_ALIGN_LAMI_X_INC" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5100</Value>
+		</Setting>
+		<Setting Name="OUTPUT_ALIGN_LAMI_Y_INC" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5102</Value>
+		</Setting>
+		<Setting Name="OUTPUT_ALIGN_LAMI_T_INC" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5104</Value>
+		</Setting>
+		<Setting Name="OUTPUT_ALIGN_LAMI_X_ABS" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W510A</Value>
+		</Setting>
+		<Setting Name="OUTPUT_ALIGN_LAMI_Y_ABS" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W510C</Value>
+		</Setting>
+		<Setting Name="OUTPUT_ALIGN_LAMI_T_ABS" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W510E</Value>
+		</Setting>
+		<Setting Name="OUTPUT_ALIGN_SUPPLY_X_INC" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5110</Value>
+		</Setting>
+		<Setting Name="OUTPUT_ALIGN_SUPPLY_Y_INC" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5112</Value>
+		</Setting>
+		<Setting Name="OUTPUT_ALIGN_SUPPLY_T_INC" Type="System.String" Scope="User">
+			<Value Profile="(Default)">W5114</Value>
+		</Setting>
+		
+	</Settings>
+</SettingsFile>

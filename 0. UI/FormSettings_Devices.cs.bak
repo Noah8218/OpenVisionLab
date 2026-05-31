@@ -1,0 +1,249 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Reflection;
+using System.Threading;
+using System.Diagnostics;
+
+
+//IF 전용 Library
+using OpenCvSharp;
+using System.IO;
+using System.Collections;
+using System.Net;
+using System.Net.Sockets;
+
+using MetroFramework;
+using MetroFramework.Forms;
+
+namespace IntelligentFactory
+{
+    public partial class FormSettings_Devices : MetroForm
+    {
+        IGlobal Global = IGlobal.Instance;
+
+        #region Event Register        
+        public EventHandler<EventArgs> EventUpdateUi;
+        #endregion
+        public FormSettings_Devices()
+        {
+            InitializeComponent();
+
+            try
+            {
+                string[] ComportList = CUtil.AvalibleComports();
+
+                if (ComportList.Length > 0)
+                {
+                    cbPortName.Items.AddRange(ComportList);
+                    cbPortName.SelectedIndex = 0;
+                }
+
+                if(cbBaudrate.Items.Count > 0) cbBaudrate.SelectedIndex = 0;
+
+                else
+                {
+                    lbConnection.Text = "DISCONNECTED";
+                    lbConnection.Style = MetroColorStyle.Silver;
+
+                    //btnConnect.Text = "CONNECT";
+                }
+
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);                
+            }
+        }
+
+        private void FormSettings_Device_Load(object sender, EventArgs e)
+        {
+            try
+            {
+                InitEvent();
+                Global.iData.PropertyCamera_1.INDEX = 0;
+                propertyGrid_Cam1.SelectedObject = Global.iData.PropertyCamera_1;
+                Global.iData.PropertyCamera_2.INDEX = 1;
+                propertyGrid_Cam2.SelectedObject = Global.iData.PropertyCamera_2;
+                Global.iData.PropertyCamera_3.INDEX = 2;
+                propertyGrid_Cam3.SelectedObject = Global.iData.PropertyCamera_3;
+                Global.iData.PropertyCamera_4.INDEX = 3;
+                propertyGrid_Cam4.SelectedObject = Global.iData.PropertyCamera_4;
+                Global.iData.PropertyCamera_5.INDEX = 4;
+                propertyGrid_Cam5.SelectedObject = Global.iData.PropertyCamera_5;
+                Global.iData.PropertyCamera_6.INDEX = 5;
+                propertyGrid_Cam6.SelectedObject = Global.iData.PropertyCamera_6;
+                Global.iData.PropertyCamera_7.INDEX = 6;
+                propertyGrid_Cam7.SelectedObject = Global.iData.PropertyCamera_7;
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private bool InitEvent()
+        {
+            try
+            {
+                Global.System.EventChangedRecipe += OnChangedRecipe;
+
+                if (Global.System.EventChangedRecipe != null)
+                {
+                    Global.System.EventChangedRecipe(null, null);
+                }
+
+                if (EventUpdateUi != null)
+                {
+                    EventUpdateUi(null, null);
+                }
+
+                CLogger.Add(LOG.NORMAL, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        private void OnChangedRecipe(object sender, EventArgs e)
+        {
+            if (this.InvokeRequired)
+            {
+                try
+                {
+                    this.Invoke(new MethodInvoker(() =>
+                    {
+                        OnChangedRecipe(sender, e);
+                    }));
+                }
+                catch (Exception ex)
+                {
+                    CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                }
+            }
+            else
+            {
+                try
+                {
+                    string[] strRecipeArr = Global.System.Recipe.Name.Split('.');
+                }
+                catch (Exception ex)
+                {
+                    CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                }                
+            }
+        }
+
+        private void btnSave_Click(object sender, EventArgs e)
+        {
+            try
+            {               
+
+                FormMessageBox FrmMessageBox = new FormMessageBox(string.Format("Save the Illumination Parameter"), string.Format("Do you want the save?"));
+
+                if (FrmMessageBox.ShowDialog() == DialogResult.OK)
+                {
+                    //Global.LightController.Close();
+                    //Global.LightController.PortName = cbPortName.Text;
+                    //Global.LightController.BaudRate = int.Parse(cbBaudrate.Text);
+                    //Global.LightController.SaveConfig();
+
+                    //Global.LightController.Init();
+                }
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                CUtil.ShowMessageBox("EXCEPTION", ex.Message, FormMessageBox.MESSAGEBOX_TYPE.OK);
+            }
+        }
+
+        private void btnON_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                int nChannel = int.Parse(cbChannel.Text);
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                CUtil.ShowMessageBox("EXCEPTION", ex.Message, FormMessageBox.MESSAGEBOX_TYPE.OK);
+            }            
+        }
+
+        private void btnOFF_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                int nChannel = int.Parse(cbChannel.Text);
+                //Global.LightController.Off(nChannel);
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                CUtil.ShowMessageBox("EXCEPTION", ex.Message, FormMessageBox.MESSAGEBOX_TYPE.OK);
+            }
+        }
+
+        private void btnConnect_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                int nChannel = int.Parse(cbChannel.Text);
+                //Global.iDevice.LIGHTCON_JSL_200.On(nChannel);
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                CUtil.ShowMessageBox("EXCEPTION", ex.Message, FormMessageBox.MESSAGEBOX_TYPE.OK);
+            }            
+        }
+
+        private void btnSaveCameraParam_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if(CUtil.ShowMessageBox("SAVE", "DO YOU WANT TO SAVE THE PARAMETER OF CAMERA", FormMessageBox.MESSAGEBOX_TYPE.OKCANCEL))
+                {
+                    for (int i = 0; i < Global.iDevice.CAMERAS.Count; i++)
+                    {
+                        Global.iDevice.CAMERAS[i].SaveConfig();
+                        Global.iDevice.CAMERAS[i].Init(i);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                CUtil.ShowMessageBox("EXCEPTION", ex.Message, FormMessageBox.MESSAGEBOX_TYPE.OK);
+            }
+        }
+
+        private void btnSave_LightController_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (CUtil.ShowMessageBox("SAVE", "DO YOU WANT TO SAVE THE PARAMETER LIGHTCONTROLLER", FormMessageBox.MESSAGEBOX_TYPE.OKCANCEL))
+                {
+                    
+                }
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                CUtil.ShowMessageBox("EXCEPTION", ex.Message, FormMessageBox.MESSAGEBOX_TYPE.OK);
+            }
+        }
+    }
+ }
+

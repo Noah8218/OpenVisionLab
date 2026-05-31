@@ -1,0 +1,222 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Windows.Media;
+using System.Xml;
+
+using Matrox.MatroxImagingLibrary;
+
+using OpenCvSharp;
+//using OpenCvSharp.Blob;
+using OpenCvSharp.UserInterface;
+using PixelFormat = System.Drawing.Imaging.PixelFormat;
+
+namespace KtemVisionSystem
+{
+    public partial class CIVT_CVBlob
+    {
+        public CPropertyBlob Property = new CPropertyBlob();
+
+        #region PROPERTIES
+        public List<CResultBlob> Results = new List<CResultBlob>();
+        public string ToolName = "EMPTY";
+        public Mat ImageSource { get; set; } = null;        
+        public Mat ImageResult { get; set; } = null;                                
+
+        public string Algorism { get; set; } = "";
+        #endregion
+
+        public Stopwatch sw_TaktTimems = new Stopwatch();
+
+
+        public CIVT_CVBlob(string strAlgorism)
+        {
+            this.Algorism = strAlgorism;
+        }
+
+        public void Dispose()
+        {
+            ImageSource.Dispose();            
+            ImageResult.Dispose();
+        }
+
+        public bool SetSourceImage(MIL_ID image)
+        {            
+            Bitmap bmp = new Bitmap(4096, 4000, PixelFormat.Format8bppIndexed);
+
+            try
+            {                
+                
+                int nSTART = Environment.TickCount;
+                byte[] buff = new byte[4096 * 4000];
+
+                MIL.MbufGet(image, buff); // MilImage-> MIL 이미지 ,  UserBuffer -> Array 버퍼
+                bmp = CConverter.ByteToBitmap(buff, 4096, 4000);
+
+                Bitmap ImageIsp = bmp.Clone(new Rectangle(0, 0, bmp.Width, bmp.Height), System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+
+                ImageSource = OpenCvSharp.Extensions.BitmapConverter.ToMat(ImageIsp);
+            }
+            catch(Exception Desc)
+            {
+                return false;
+            }
+
+            return true;
+        }
+        
+
+        public bool SetSourceImage(System.Drawing.Bitmap Image)
+        {
+            try
+            {                
+                ImageSource = OpenCvSharp.Extensions.BitmapConverter.ToMat(Image).Clone();
+            }
+            catch (Exception Desc)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[ERROR] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool SetSourceImage(Mat Image)
+        {
+            try
+            {                
+                ImageSource = Image.Clone();
+            }
+            catch (Exception Desc)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[ERROR] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool SetProperty(CPropertyBlob property)
+        {
+            try
+            {
+                Property = property;
+            }
+            catch (Exception Desc)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[ERROR] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool Run()
+        {
+            try
+            {
+                sw_TaktTimems.Restart();
+                Results.Clear();
+
+                if (CVision.IsMatEmpty(ImageSource))
+                {
+                    CLogger.Add(LOG.EXCEPTION, "Image is Empty");
+                    return false;
+                }
+
+                if (Property.CVROI.Width == 0 || Property.CVROI.Height == 0)
+                {
+                    Property.CVROI = new OpenCvSharp.Rect(0, 0, ImageSource.Width, ImageSource.Height);
+                }
+
+                using (Mat ImageSrc = ImageSource.Clone())                
+                {                    
+                    if (CVision.IsMatEmpty(ImageSource)) return false;
+                    ImageResult = ImageSrc.Clone();
+
+                    if (ImageSrc.Channels() == 4) Cv2.CvtColor(ImageSrc, ImageSrc, ColorConversionCodes.RGBA2GRAY);
+                    if (ImageSrc.Channels() == 3) Cv2.CvtColor(ImageSrc, ImageSrc, ColorConversionCodes.RGB2GRAY);
+                    if (ImageResult.Channels() == 1) Cv2.CvtColor(ImageResult, ImageResult, ColorConversionCodes.GRAY2RGB);
+
+                    Mat ImageBlob = null;
+
+                    if (Property.USE_ROI) { ImageBlob = ImageSrc.SubMat(Property.CVROI).Clone(); }
+                    else { ImageBlob = ImageSrc.Clone(); }
+
+                    if (Property.USE_THRESHOLD)
+                    {
+                        Cv2.Threshold(ImageBlob, ImageBlob, Property.THRESHOLD, 255, Property.THRESHOLD_TYPES);
+                    }
+
+                    OpenCvSharp.Blob.CvBlobs Blobs = new OpenCvSharp.Blob.CvBlobs();
+                    Blobs.Label(ImageBlob);
+                    Blobs.FilterByArea(Property.MIN_AREA, Property.MAX_AREA);
+
+                    foreach (var item in Blobs)
+                    {
+                        OpenCvSharp.Blob.CvBlob b = item.Value;
+                        Rect rect = new Rect();
+                        OpenCvSharp.Point2d Center = new Point2d();
+
+                        if (Property.USE_ROI)
+                        {
+                            rect.X = b.Rect.X + Property.CVROI.X;
+                            rect.Y = b.Rect.Y + Property.CVROI.Y;
+                            rect.Width = b.Rect.Width;
+                            rect.Height = b.Rect.Height;
+
+                            Center.X = b.Centroid.X + Property.CVROI.X;
+                            Center.Y = b.Centroid.Y + Property.CVROI.Y;
+                        }
+                        else
+                        {
+                            rect = b.Rect;
+                            Center = b.Centroid;
+                        }
+
+                        CResultBlob Result = new CResultBlob(b.Area, Center, rect, b.Angle());
+                        Results.Add(Result);
+                    }
+
+                }
+
+                sw_TaktTimems.Stop();                
+            }
+            catch (Exception Desc)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[ERROR] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+
+            return true;
+        }
+    }
+
+    public class CResultBlob
+    {        
+        public double Area { get; set; } = 0.0D;
+        public double Angle { get; set; } = 0.0D;
+        public OpenCvSharp.Point2d Center { get; set; } = new OpenCvSharp.Point2d();
+        public Rectangle Bounding { get; set; } = new Rectangle();
+
+        public CResultBlob(double Area, OpenCvSharp.Point2d Center, Rect rt, double dAngle = 0.0D)
+        {
+            this.Area = Area;
+            this.Center = new OpenCvSharp.Point2d(Center.X, Center.Y);
+            Bounding = new Rectangle(rt.X, rt.Y, rt.Width, rt.Height);
+            Angle = dAngle;
+        }
+    }
+}
+

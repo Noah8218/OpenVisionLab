@@ -1,0 +1,133 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Globalization;
+using System.Diagnostics;
+using System.Threading;
+using System.Drawing;
+using System.Reflection;
+using System.Windows.Forms;
+using static KtemVisionSystem.CAlarm;
+
+namespace KtemVisionSystem
+{
+    public class CNodeAlarm
+    {
+        public string Code { get; set; } = "1";
+        public string Desc { get; set; } = "EMPTY";
+        public string Str { get; set; } = "EMPTY";
+        public string TrayType { get; set; } = "SYSTEM"; 
+        public bool IsIgnore { get; set; } = false;
+        public DateTime Time { get; set; } = new DateTime();        
+        public enum LEVEL : int { WARNING, ALARM, EMERGENCY};
+        public LEVEL Level { get; set; } = LEVEL.ALARM;
+
+        public EventHandler<AlaramEventArgs> EventAlaramClear;
+
+        public CNodeAlarm()
+        {            
+        }
+
+        public CNodeAlarm(string strCode, string strDesc, string strPos, EventHandler<AlaramEventArgs> newMethod, LEVEL lv = LEVEL.ALARM, bool bIsIgnore = false)
+        {
+            this.Code = strCode;
+            this.Desc = strDesc;
+            this.Str = strPos;
+            this.IsIgnore = bIsIgnore;
+            this.Time = DateTime.Now;
+            this.Level = lv;
+            EventAlaramClear += newMethod;
+        }
+
+        public CNodeAlarm(string strCode, string strDesc, string strPos, LEVEL lv = LEVEL.ALARM, bool bIsIgnore = false)
+        {
+            this.Code = strCode;
+            this.Desc = strDesc;
+            this.Str = strPos;
+            this.IsIgnore = bIsIgnore;
+            this.Time = DateTime.Now;
+            this.Level = lv;            
+        }
+
+        public CNodeAlarm(string strCode, string strDesc, string strTrayType,string strPos)
+        {
+            this.Code = strCode;
+            this.Desc = strDesc;
+            this.IsIgnore = false;
+            this.Time = DateTime.Now;
+            this.Level = LEVEL.ALARM;
+            this.TrayType = strTrayType;
+            this.Str = strPos;
+        }
+    }
+
+    public static class CAlarm
+    {   
+        public static Dictionary<string, CNodeAlarm> m_dicNodes = new Dictionary<string, CNodeAlarm>();        
+        
+
+        private static DateTime timestampOld;
+        public static bool m_bStartLog = true;
+        private static string m_strLogPath = Application.StartupPath + "\\ALARM";
+        private static string m_strAppName;
+
+        public delegate void AlarmEvent(CNodeAlarm item);
+        public static event AlarmEvent EventAlarm;
+
+        public static bool Exists
+        {
+            get => m_dicNodes.Count > 0 ? true : false;
+        }        
+
+        public static void Add(CNodeAlarm alarm)
+        {
+            if(!m_dicNodes.ContainsKey(alarm.Code))
+            {
+                try
+                {
+                    m_dicNodes.Add(alarm.Code, alarm);                    
+                    CLogger.Add(LOG.ALARM, $"ALARM CODE : {alarm.Code} DESC : {alarm.Desc} POS : {alarm.Str}");
+                }
+                catch
+                {
+
+                }
+                
+
+                if(!alarm.IsIgnore)
+                {
+                    //FormAlarm FrmAlarm = new FormAlarm(alarm.Code, alarm.Desc);
+                    //if(!CUtil.OpenCheckForm(FrmAlarm))
+                    //{
+                    //    FrmAlarm.Show();
+                    //}
+                }
+            }
+        }
+
+        public static (string, string,string) GetLastAlarm()
+        {
+            if (m_dicNodes.Count == 0) return ("N/A", "N/A","N/A");
+            else
+            {
+                string strCode = m_dicNodes.ElementAt(m_dicNodes.Count - 1).Value.Code;
+                string strDesc = m_dicNodes.ElementAt(m_dicNodes.Count - 1).Value.Desc;
+                string strPos = m_dicNodes.ElementAt(m_dicNodes.Count - 1).Value.Str;
+                return (strCode, strDesc, strPos);
+            }
+        }
+
+        public static void Clear()
+        {
+            m_dicNodes.Clear();
+            CLogger.Add(LOG.NORMAL, $"ALARM CLEAR");
+        }
+
+        public static void AddEvent(AlarmEvent newMethod )
+        {
+            EventAlarm += newMethod;
+        }
+    }
+}

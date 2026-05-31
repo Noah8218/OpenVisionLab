@@ -1,0 +1,798 @@
+﻿using ImageGlass;
+using MetroFramework.Controls;
+using MetroFramework.Forms;
+using OpenCvSharp;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Reflection;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Windows.Media;
+using WeifenLuo.WinFormsUI.Docking;
+
+namespace KtemVisionSystem
+{
+    public partial class FormTeachingVision : MetroForm
+    {
+        private CGlobal Global = CGlobal.Inst;
+        private DockPanel dockPanel;
+        private List<FormLayerDisplay> m_Displays = new List<FormLayerDisplay>();
+
+        private Mat ImageSource = new Mat();
+
+
+        public List<FormLayerDisplay> Displays
+        {
+            get
+            {
+                return m_Displays;
+            }
+            set { m_Displays = value; }
+        }
+
+        public enum VisionProcessMode
+        {
+            Pattern,
+            Filter,
+            Line,
+            Blob
+        }
+
+        private VisionProcessMode m_VisionMode = VisionProcessMode.Pattern;
+        public VisionProcessMode VisionMode
+        {
+            get { return m_VisionMode; }
+            set
+            {
+                m_VisionMode = value;
+            }
+        }
+
+
+        #region Event Register        
+        public EventHandler<EventArgs> EventUpdateUi;
+        #endregion
+
+        public FormTeachingVision()
+        {
+            InitializeComponent();
+        }
+
+        private void FormTeachingVision_Load(object sender, EventArgs e)
+        {
+            InitEvent();
+            InitLayerDisplay();
+            InitUI();
+            InitProperty();
+        }
+
+        protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
+        {
+            Keys key = keyData & ~(Keys.Shift | Keys.Control);
+
+            switch (key)
+            {
+                case Keys.Escape:
+                    //if (CUtil.ShowMessageBox("Notice", "창을 닫으시겠습니까?"))
+                    //{
+                    //    this.DialogResult = DialogResult.Cancel;
+                    //    this.Close();
+                    //}
+                    return true;
+                case Keys.Q:
+
+                    return true;
+                case Keys.W:
+
+                    return true;
+                case Keys.E:
+
+                    return true;
+                case Keys.R:
+
+                    return true;
+                case Keys.T:
+
+                    return true;
+                case Keys.Y:
+
+                    return true;
+                case Keys.U:
+
+                    return true;
+                case Keys.I:
+
+                    return true;
+                case Keys.O:
+
+                    return true;
+                // Train
+                case Keys.F1:
+                    return true;
+                // ROI
+                case Keys.F2:
+
+                    return true;
+                // Modify
+                case Keys.F3:
+
+                    return true;
+                // RUN
+                case Keys.F5:
+                    return true;
+                case Keys.F7:
+                    SaveParameter();
+                    return true;
+            }
+
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+
+        private void OnGrabEnd(object sender, GrabEventArgs e)
+        {
+            if (this.InvokeRequired)
+            {
+                try
+                {
+                    this.Invoke(new MethodInvoker(() =>
+                    {
+                        OnGrabEnd(sender, e);
+                    }));
+                }
+                catch (Exception ex)
+                {
+                    CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                }
+            }
+            else
+            {
+                try
+                {
+                    if (Global.System.m_strSelectedMenu == "TEACHING")
+                    {
+                        if (!CUtil.IsImageEmpty(e.ImageGrab))
+                        {
+                            Displays[DEFINE.Main].ImageView.ibSource.Image = CConverter.ToBitmap(e.ImageGrab.Clone());
+                        }
+
+                        GC.Collect();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                }
+            }
+        }
+
+        private void FormTeachingMotion_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            try
+            {
+
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private bool InitEvent()
+        {
+            try
+            {
+                EventUpdateUi += OnUpdateUi;
+                EventUpdateUi(null, null);
+
+                Global.Recipe.EventChagedRecipe += OnChangedRecipe;
+
+                for (int i = 0; i < Global.Device.CAMERAS.Count; i++)
+                {
+                    //Global.Device.CAMERAS[i].EventGrabEnd += OnGrabEnd;
+                }
+
+                Global.SeqVision.EventInspResult += OnInspResult;
+
+                Global.Device.CAMERAS[0].EventGrabEnd += OnGrabEnd;                
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                return false;
+            }
+            return true;
+        }
+
+        private void OnInspResult(object sender, InspResultArgs e)
+        {
+            if (this.InvokeRequired)
+            {
+                try
+                {
+                    this.BeginInvoke(new MethodInvoker(() =>
+                    {
+                        OnInspResult(sender, e);
+                    }));
+                }
+                catch (Exception Desc)
+                {
+                    CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                }
+            }
+            else
+            {
+                if (Global.System.m_strSelectedMenu == "TEACHING")
+                {
+                    CreateLayerDisplay(e.imageResult, "Edge");
+
+                    Displays[Displays.Count - 1].Activate();
+
+                    Displays[Displays.Count - 1].ImageView.ibSource.ZoomToFit();
+
+                    lbTackTime.Text = e.TackTime.ToString() + "ms";
+                }
+            }
+        }
+
+        private bool InitUI()
+        {
+            try
+            {
+                InitCameraItem();
+                InitLayListItem();
+                cbCamera.SelectedIndex = 0;
+                cbLayerList.SelectedIndex = 0;
+
+                tbExposure.Texts = Global.Device.CAMERAS[0].Property.EXPOSURETIME_US.ToString();
+                tbGain.Texts = Global.Device.CAMERAS[0].Property.GAIN.ToString();
+
+                cbROIMenu.Items.Add("LEFT ROI");
+                cbROIMenu.Items.Add("RIGHT ROI");
+                cbROIMenu.Items.Add("TOP ROI");                               
+                cbROIMenu.SelectedIndex = 0;
+
+
+                rdoLeftEdgePara.Checked = true;
+                //cbParameterMenu.Items.Add("LEFT EDGE");
+                //cbParameterMenu.Items.Add("RIGHT EDGE");
+                //cbParameterMenu.SelectedIndex = 0;
+            }
+            catch (Exception exc)
+            {
+                MessageBox.Show(exc.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+            return true;
+        }
+
+        private void InitCameraItem()
+        {
+            for (int i = 0; i < Global.Device.CAMERA_COUNT; i++)
+            {
+                cbCamera.Items.Add("Camera " + (i + 1));
+            }
+        }
+
+        private void InitLayerDisplay()
+        {
+            this.dockPanel = new WeifenLuo.WinFormsUI.Docking.DockPanel();
+
+            var theme = new VS2015DarkTheme();
+            this.dockPanel.Theme = theme;
+            this.dockPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.dockPanel.DocumentStyle = DocumentStyle.DockingWindow;
+
+            TeachingPanel.Controls.Add(this.dockPanel);
+            Displays.Add(new FormLayerDisplay(null, 0, m_Displays, false, "Main"));
+            CreateLayerDisplay(null, DEFINE.Threshold, false);
+            ShowPanel();
+
+            Displays[0].ImageView.ibSource.ImageChanged += IbSource_ImageChanged;
+        }
+
+        private void IbSource_ImageChanged(object sender, EventArgs e)
+        {
+            ImageSource = CConverter.ToMat((Bitmap)Displays[0].ImageView.ibSource.Image);
+        }
+
+        private void InitLayListItem()
+        {
+            cbLayerList.Items.Clear();
+
+            for (int i = 0; i < Displays.Count; i++)
+            {
+                cbLayerList.Items.Add(Displays[i].Text);
+            }
+
+            if (cbLayerList.Items.Count > 0)
+            {
+                cbLayerList.SelectedItem = strSelecteItem;
+            }
+        }
+
+        private void ClearLayerDisplay(string strTitle)
+        {
+            try
+            {
+                object _ob = new object();
+                Invoke((MethodInvoker)delegate ()
+                {
+                    lock (_ob)
+                    {
+                        bool bIsLayer = false;
+                        int nIsIndex = 0;
+                        for (int i = 0; i < Displays.Count; i++)
+                        {
+                            if (Displays[i].Text == strTitle)
+                            {
+                                bIsLayer = true;
+                                nIsIndex = i;
+                            }
+                        }
+
+                        if (bIsLayer)
+                        {
+                            Displays[nIsIndex].Dispose();
+                            Displays.RemoveAt(nIsIndex);
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private void CreateLayerDisplay(Bitmap ImageSource, string strTitle, bool bUseClose = true)
+        {
+            try
+            {
+                ClearLayerDisplay(strTitle);
+
+                object _ob = new object();
+                Invoke((MethodInvoker)delegate ()
+                {
+                    lock (_ob)
+                    {
+                        bool bIsLayer = false;
+                        int nIsIndex = 0;
+                        for (int i = 0; i < Displays.Count; i++)
+                        {
+                            if (Displays[i].Text == strTitle)
+                            {
+                                bIsLayer = true;
+                                nIsIndex = i;
+                            }
+                        }
+
+                        if (!bIsLayer)
+                        {
+                            Displays.Add(new FormLayerDisplay(ImageSource, Displays.Count, Displays, bUseClose, strTitle));
+                            Displays[Displays.Count - 1].Show(this.dockPanel, DockState.Document);
+                        }
+                    }
+                });
+
+                InitLayListItem();
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+
+        }
+
+        private void ShowPanel()
+        {
+            for (int i = Displays.Count - 1; i >= 0; i--) { Displays[i].Show(this.dockPanel, DockState.Document); }
+        }
+
+
+        private bool InitProperty()
+        {
+            try
+            {
+                //propertyGrid_Parameter.SelectedObject = Global.Data.PropertyVisionInsp;
+            }
+            catch (Exception exc)
+            {
+                MessageBox.Show(exc.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+            return true;
+        }
+
+        private void OnUpdateUi(object sender, EventArgs e)
+        {
+            if (this.InvokeRequired)
+            {
+                try
+                {
+                    this.Invoke(new MethodInvoker(() =>
+                    {
+                        OnUpdateUi(sender, e);
+                    }));
+                }
+                catch (Exception ex)
+                {
+                    CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                }
+            }
+            else
+            {
+                tbExposure.Texts = Global.Device.CAMERAS[0].Property.EXPOSURETIME_US.ToString();
+                tbGain.Texts = Global.Device.CAMERAS[0].Property.GAIN.ToString();
+
+                CLogger.Add(LOG.NORMAL, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+            }
+        }
+
+        private void OnChangedRecipe(object sender, EventArgs e)
+        {
+            if (this.InvokeRequired)
+            {
+                try
+                {
+                    this.Invoke(new MethodInvoker(() =>
+                    {
+                        OnChangedRecipe(sender, e);
+                    }));
+                }
+                catch (Exception ex)
+                {
+                    CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                }
+            }
+            else
+            {
+                try
+                {
+                    InitProperty();
+                    InitUI();
+                }
+                catch (Exception ex)
+                {
+                    CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                }
+            }
+        }
+        private void cbCamera_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                int nIndex = cbCamera.SelectedIndex;
+
+                CLogger.Add(LOG.NORMAL, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private void OnClickCameraOperation(object sender, EventArgs e)
+        {
+            try
+            {
+                if (!(sender is RJButton)) return;
+
+                string strIndex = (sender as RJButton).Text;
+
+                switch (strIndex)
+                {
+                    case DEFINE.Grab:
+                        if (!Global.Device.CAMERAS[0].IsOpen) return;
+                        Global.Device.CAMERAS[0].Grab(false);
+                        break;
+                    case DEFINE.Live:
+                        if (!Global.Device.CAMERAS[0].IsOpen) return;
+                        (sender as RJButton).Text = "LIVE STOP";
+                        Global.Device.CAMERAS[0].Live(true);
+                        break;
+                    case DEFINE.Live_Stop:
+                        if (!Global.Device.CAMERAS[0].IsOpen) return;
+                        (sender as RJButton).Text = "LIVE";
+                        Global.Device.CAMERAS[0].Live(false);
+                        break;
+                    case DEFINE.Image_Load:
+                        try
+                        {
+                            //cogDisplay_Source.InteractiveGraphics.Clear();
+
+                            OpenFileDialog ofd = new OpenFileDialog();
+                            ofd.Title = "Image Load";
+                            ofd.Filter = "Image File (*.png, *.jpg, *.gif, *.bmp) | *.png; *.jpg; *.gif; *.bmp; | 모든 파일 (*.*) | *.*";
+
+                            if (ofd.ShowDialog() == DialogResult.OK)
+                            {
+                                string strFilePath = ofd.FileName;
+
+                                if (File.Exists(strFilePath))
+                                {
+
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.Message);
+                        }
+                        break;
+                }
+
+                CLogger.Add(LOG.NORMAL, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private void mainTab_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                string strIndex = "";
+                if (sender is MetroTabControl) strIndex = (sender as MetroTabControl).SelectedTab.Text;
+
+                switch (strIndex)
+                {
+                    case DEFINE.Pattern:
+                        VisionMode = VisionProcessMode.Pattern;
+                        break;
+                    case DEFINE.Filter:
+                        VisionMode = VisionProcessMode.Filter;
+                        break;
+                    case DEFINE.Line:
+                        VisionMode = VisionProcessMode.Line;
+                        break;
+                    case DEFINE.Blob:
+                        VisionMode = VisionProcessMode.Blob;
+                        break;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private void btnSaveVisionParam_Click(object sender, EventArgs e)
+        {
+            SaveParameter();
+        }
+
+        private void SaveParameter()
+        {
+            try
+            {
+                FormMessageBox SaveForm = new FormMessageBox("Save", "현재까지 설정된 값을 저장하시겠습니까?");
+                if (SaveForm.ShowDialog() == DialogResult.OK)
+                {
+                    int nIndex = cbCamera.SelectedIndex;
+                    Global.Device.CAMERAS[nIndex].Property.SaveConfig();
+                    Global.Data.PropertyVisionInsp.SaveConfig(Global.Recipe.Name);
+                    Global.Data.Property_LineGuage_LEFT.SaveConfig(Global.Recipe.Name);
+                    Global.Data.Property_LineGuage_RIGHT.SaveConfig(Global.Recipe.Name);
+                }
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private string strSelecteItem = "";
+
+        private void cbLayerList_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            strSelecteItem = cbLayerList.SelectedItem.ToString();
+        }
+
+        private void btnLightSave_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                FormMessageBox SaveForm = new FormMessageBox("Save", "현재까지 설정된 값을 저장하시겠습니까?");
+                if (SaveForm.ShowDialog() == DialogResult.OK)
+                {
+                    //Global.Device.LIGHT.WriteInitFile();
+                }
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private bool UseCross = false;
+
+        private void timerStatus_Tick(object sender, EventArgs e)
+        {
+            // 크로스라인 드로우
+            try
+            {
+
+            }
+            catch
+            {
+
+            }
+
+        }
+
+        private void metroButton1_Click(object sender, EventArgs e)
+        {
+            UseCross = !UseCross;
+        }
+
+        private void trbLightValue_Scroll(object sender, ScrollEventArgs e)
+        {
+            try
+            {
+
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private void btnON_Click(object sender, EventArgs e)
+        {
+            //Global.Device.LIGHT.AllOn();
+        }
+
+        private void btnOFF_Click(object sender, EventArgs e)
+        {
+            //Global.Device.LIGHT.AllOff();
+        }
+
+        private void cbLightCh_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                //if (Global.Device.LIGHT.Values[cbLightCh.SelectedIndex] == 0) { trbLightValue.Value = 1; }                
+                //else { trbLightValue.Value = Global.Device.LIGHT.Values[cbLightCh.SelectedIndex]; }               
+                //lbLightValue.Text = trbLightValue.Value.ToString();
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private void btnSetRoi_LD_JT_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                FormImageEditView FrmImageEdit = new FormImageEditView(Displays[cbLayerList.SelectedIndex].ImageView.Image, "TEMP");
+                if (FrmImageEdit.ShowDialog() == DialogResult.OK)
+                {
+                    switch (cbROIMenu.SelectedItem.ToString())
+                    {
+                        case "TOP ROI":
+                            Global.Data.PropertyVisionInsp.TOP_ROI = FrmImageEdit.SelectedRegion;
+                            //lbInspParam_ROI.Text = Global.Data.PropertyVisionInsp.TOP_ROI.ToString();
+                            break;
+                        case "LEFT ROI":
+                            Global.Data.Property_LineGuage_LEFT.CVROI = FrmImageEdit.SelectedRegion;
+                            //lbInspParam_ROI.Text = Global.Data.Property_LineGuage_LEFT.CVROI.ToString();
+                            propertyGrid_Parameter.SelectedObject = Global.Data.Property_LineGuage_LEFT;
+                            break;
+                        case "RIGHT ROI":
+                            Global.Data.Property_LineGuage_RIGHT.CVROI = FrmImageEdit.SelectedRegion;
+                            //lbInspParam_ROI.Text = Global.Data.Property_LineGuage_RIGHT.CVROI.ToString();
+                            propertyGrid_Parameter.SelectedObject = Global.Data.Property_LineGuage_RIGHT;
+                            break;
+                    }
+                    //propertyGrid_Parameter.SelectedObject = Global.Data.PRO;
+                }
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private void trbThreshold_Scroll(object sender, ScrollEventArgs e)
+        {
+            try
+            {
+                if (CUtil.IsImageEmpty(ImageSource)) return;
+
+                int nThreshold = trbThreshold.Value;
+                lbThreshold.Text = nThreshold.ToString();
+
+                using (Mat imageSrc = ImageSource.Clone())
+                {
+                    Displays[1].ImageView.ibSource.Image = CConverter.ToBitmap(imageSrc.Threshold(nThreshold, 255, ThresholdTypes.Binary));
+                    Displays[1].Activate();
+                }
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private void btnCameraSetting_Click(object sender, EventArgs e)
+        {
+            try
+            {                
+                int Gain = int.Parse(tbGain.Texts);
+                int Exposure = int.Parse(tbExposure.Texts);
+                Global.Device.CAMERAS[0].Property.GAIN = Gain;
+                Global.Device.CAMERAS[0].Property.EXPOSURETIME_US = Exposure;
+                Global.Device.CAMERAS[0].Property.SaveConfig();
+
+                Global.Device.CAMERAS[0].SetGain(Gain);
+                Global.Device.CAMERAS[0].SetExposure(Exposure);
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private void btnTest_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Global.SeqVision.RunInspection(new CGrabBuffer(ImageSource.Clone(), 0));                
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+      
+        private void rdoLeftEdgePara_CheckedChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                RJRadioButton rdoButton = (RJRadioButton)sender;
+
+                 if(rdoButton.Checked)
+                {
+                    switch (rdoButton.Text)
+                    {
+                        case "LEFT EDGE":
+                            propertyGrid_Parameter.SelectedObject = Global.Data.Property_LineGuage_LEFT;
+                            break;
+                        case "RIGHT EDGE":
+                            propertyGrid_Parameter.SelectedObject = Global.Data.Property_LineGuage_RIGHT;
+                            break;
+                    }
+                }
+
+                //switch (rdoButton.Checked)
+                //{
+                //    case 0:
+                //        propertyGrid_Parameter.SelectedObject = Global.Data.Property_LineGuage_LEFT;
+                //        break;
+                //    case 1:
+                //        propertyGrid_Parameter.SelectedObject = Global.Data.Property_LineGuage_RIGHT;
+                //        break;
+
+                //}
+
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private void cbROIMenu_OnSelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+    }
+}

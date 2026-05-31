@@ -1,0 +1,1082 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
+using System.Diagnostics;
+
+using Microsoft.Win32;
+using System.Net;
+using System.Net.Sockets;
+using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
+using System.IO;
+using System.Drawing;
+using System.Windows.Forms;
+using System.Reflection;
+
+using IntelligentFactory.Library;
+using IntelligentFactory.Device;
+using IntelligentFactory.Vision;
+
+using OpenCvSharp;
+using System.Xml;
+using IntelligentFactory.Camera;
+using System.CodeDom;
+
+namespace IntelligentFactory.Common
+{   
+    // Ver 1.0.0 : 
+
+    using ListPoint = List<OpenCvSharp.Point>;
+    public class IData
+    {
+        #region Define
+        public const int ALARM_CONNECTION = 0x1000;
+        public const int ALARM_CONNECTION_UDP = 0x0001;
+        public const int ALARM_CONNECTION_CAMERA = 0x0002;
+        public const int ALARM_CONNECTION_LIGHTCONTROLLER = 0x0003;
+        public const int ALARM_CONNECTION_VISION_LICENSE = 0x0004;
+        #endregion
+
+        public enum MODE { Ready, Auto, Alarm };
+        private MODE m_nMode = MODE.Ready;
+        public MODE Mode
+        {
+            get { return m_nMode; }
+            set { m_nMode = value; }
+        }
+
+        public enum RESULT { IDLE, OK, NG };
+        private RESULT m_nResult = RESULT.IDLE;
+        public RESULT Result
+        {
+            get { return m_nResult; }
+            set { m_nResult = value; }
+        }
+        public enum ParameterMode
+        {
+            Inspection = 0,
+            Align = 1,
+            Bottom = 2
+        }
+
+        private int m_nParameterMode = 1;
+        public int Parameter
+        {
+            get { return m_nParameterMode; }
+            set { m_nParameterMode = value; }
+        }
+
+        private IRecipe m_RecipeAlign = new IRecipe();
+        public IRecipe Recipe
+        {
+            get { return m_RecipeAlign; }
+            set
+            {
+                m_RecipeAlign = value; 
+
+                if(EventChangedRecipe != null)
+                {
+                    EventChangedRecipe(this, new EventArgs());
+                }
+            }
+        }
+
+        private ICommCCLink m_CommCCLink = new ICommCCLink();
+        public ICommCCLink CommCCLink
+        {
+            get { return m_CommCCLink; }
+            set { m_CommCCLink = value; }
+        }
+
+        #region Signal
+        #endregion
+
+        private string m_strNotice = "-";
+        public string Notice
+        {
+            get { return m_strNotice; }
+            set
+            {
+                m_strNotice = value;
+
+                if (m_strNotice != "")
+                {   
+                    if (EventChangedNotice != null)
+                    {
+                        EventChangedNotice(null, null);
+                    }
+                }
+
+                Logger.WriteLog(LOG.Normal, Notice);
+            }
+        }
+
+        public List<ListPoint> m_ListMaskingForLamiInsp = new List<ListPoint>();
+        //public List<ListPoint> ListMaskingForLamiInsp
+        //{
+        //    get { return m_ListMaskingForLamiInsp; }
+        //    set { m_ListMaskingForLamiInsp = value; }
+        //}
+
+        private int m_nCameraCount = 2;
+        public int CameraCount
+        {
+            get { return m_nCameraCount; }
+            set { m_nCameraCount = value; }
+        }
+
+        private int m_nAlignCount = 0;
+        public int AlignCount
+        {
+            get { return m_nAlignCount; }
+            set { m_nAlignCount = value; }
+        }
+
+
+        private List<ICameraJai> m_listCamera = new List<ICameraJai>();
+        public List<ICameraJai> ListCamera
+        {
+            get { return m_listCamera; }
+            set { m_listCamera = value; }
+        }
+
+        private Mat m_MatSupplyLeft = new Mat();
+        public Mat MatSupplyLeft
+        {
+            get { return m_MatSupplyLeft; }
+            set { m_MatSupplyLeft = value; }
+        }
+
+        private Mat m_MatSupplyLeftResult = new Mat();
+        public Mat MatSupplyLeftResult
+        {
+            get { return m_MatSupplyLeftResult; }
+            set { m_MatSupplyLeftResult = value; }
+        }
+        private Mat m_MatSupplyRight = new Mat();
+        public Mat MatSupplyRight
+        {
+            get { return m_MatSupplyRight; }
+            set { m_MatSupplyRight = value; }
+        }
+
+        private Mat m_MatSupplyRightResult = new Mat();
+        public Mat MatSupplyRightResult
+        {
+            get { return m_MatSupplyRightResult; }
+            set { m_MatSupplyRightResult = value; }
+        }
+
+        //private Mat m_MatLamiLeft = new Mat();
+        //public Mat MatLamiLeft
+        //{
+        //    get { return m_MatLamiLeft; }
+        //    set { m_MatLamiLeft = value; }
+        //}
+
+        //private Mat m_MatLamiTopLeft = new Mat();
+        //public Mat MatLamiTopLeft
+        //{
+        //    get { return m_MatLamiTopLeft; }
+        //    set { m_MatLamiTopLeft = value; }
+        //}
+
+        //private Mat m_MatLamiTopRight = new Mat();
+        //public Mat MatLamiTopRight
+        //{
+        //    get { return m_MatLamiTopRight; }
+        //    set { m_MatLamiTopRight = value; }
+        //}
+
+        //private Mat m_MatLamiRight = new Mat();
+        //public Mat MatLamiRight
+        //{
+        //    get { return m_MatLamiRight; }
+        //    set { m_MatLamiRight = value; }
+        //}
+
+        //private Mat m_MatLamiBottomLeft = new Mat();
+        //public Mat MatLamiBottomLeft
+        //{
+        //    get { return m_MatLamiBottomLeft; }
+        //    set { m_MatLamiBottomLeft = value; }
+        //}
+
+        //private Mat m_MatLamiBottomRight = new Mat();
+        //public Mat MatLamiBottomRight
+        //{
+        //    get { return m_MatLamiBottomRight; }
+        //    set { m_MatLamiBottomRight = value; }
+        //}
+
+        private OpenCvSharp.Point m_ptAlignDetectedL = new OpenCvSharp.Point(1000, 1000);
+        public OpenCvSharp.Point AlignDetectedL
+        {
+            get { return m_ptAlignDetectedL; }
+            set { m_ptAlignDetectedL = value; }
+        }
+        private OpenCvSharp.Point m_ptAlignDetectedR = new OpenCvSharp.Point(1000, 1000);
+        public OpenCvSharp.Point AlignDetectedR
+        {
+            get { return m_ptAlignDetectedR; }
+            set { m_ptAlignDetectedR = value; }
+        }
+
+        private OpenCvSharp.Point m_ptDetectedCenter = new OpenCvSharp.Point(1000, 1000);
+        public OpenCvSharp.Point DetectedCenter
+        {
+            get { return m_ptDetectedCenter; }
+            set { m_ptDetectedCenter = value; }
+        }
+
+
+        #region Lami
+        private OpenCvSharp.Point m_ptAlignLamiDetectedL = new OpenCvSharp.Point(1000, 1000);
+        public OpenCvSharp.Point AlignLamiDetectedL
+        {
+            get { return m_ptAlignLamiDetectedL; }
+            set { m_ptAlignLamiDetectedL = value; }
+        }
+        private OpenCvSharp.Point m_ptAlignLamiDetectedR = new OpenCvSharp.Point(1000, 1000);
+        public OpenCvSharp.Point AlignLamiDetectedR
+        {
+            get { return m_ptAlignLamiDetectedR; }
+            set { m_ptAlignLamiDetectedR = value; }
+        }
+
+        private OpenCvSharp.Point m_ptAlignLamiDetectedTL = new OpenCvSharp.Point(1000, 1000);
+        public OpenCvSharp.Point AlignLamiDetectedTL
+        {
+            get { return m_ptAlignLamiDetectedTL; }
+            set { m_ptAlignLamiDetectedTL = value; }
+        }
+        private OpenCvSharp.Point m_ptAlignLamiDetectedTR = new OpenCvSharp.Point(1000, 1000);
+        public OpenCvSharp.Point AlignLamiDetectedTR
+        {
+            get { return m_ptAlignLamiDetectedTR; }
+            set { m_ptAlignLamiDetectedTR = value; }
+        }
+
+        private OpenCvSharp.Point m_ptAlignLamiDetectedBL = new OpenCvSharp.Point(1000, 1000);
+        public OpenCvSharp.Point AlignLamiDetectedBL
+        {
+            get { return m_ptAlignLamiDetectedBL; }
+            set { m_ptAlignLamiDetectedBL = value; }
+        }
+        private OpenCvSharp.Point m_ptAlignLamiDetectedBR = new OpenCvSharp.Point(1000, 1000);
+        public OpenCvSharp.Point AlignLamiDetectedBR
+        {
+            get { return m_ptAlignLamiDetectedBR; }
+            set { m_ptAlignLamiDetectedBR = value; }
+        }
+
+        private List<OpenCvSharp.Point> m_ListLamiContourL = new ListPoint();
+        public List<OpenCvSharp.Point> ListLamiContourL
+        {
+            get { return m_ListLamiContourL; }
+            set { m_ListLamiContourL = value; }
+        }
+
+        private List<OpenCvSharp.Point> m_ListLamiContourR = new ListPoint();
+        public List<OpenCvSharp.Point> ListLamiContourR
+        {
+            get { return m_ListLamiContourR; }
+            set { m_ListLamiContourR = value; }
+        }
+
+        private List<OpenCvSharp.Point> m_ListLamiContourTL = new ListPoint();
+        public List<OpenCvSharp.Point> ListLamiContourTL
+        {
+            get { return m_ListLamiContourTL; }
+            set { m_ListLamiContourTL = value; }
+        }
+
+        private List<OpenCvSharp.Point> m_ListLamiContourTR = new ListPoint();
+        public List<OpenCvSharp.Point> ListLamiContourTR
+        {
+            get { return m_ListLamiContourTR; }
+            set { m_ListLamiContourTR = value; }
+        }
+
+        private List<OpenCvSharp.Point> m_ListLamiContourBL = new ListPoint();
+        public List<OpenCvSharp.Point> ListLamiContourBL
+        {
+            get { return m_ListLamiContourBL; }
+            set { m_ListLamiContourBL = value; }
+        }
+
+        private List<OpenCvSharp.Point> m_ListLamiContourBR = new ListPoint();
+        public List<OpenCvSharp.Point> ListLamiContourBR
+        {
+            get { return m_ListLamiContourBR; }
+            set { m_ListLamiContourBR = value; }
+        }
+
+        #endregion
+
+        #region Plate
+        private OpenCvSharp.Point m_ptPlateLamiDetectedL = new OpenCvSharp.Point(1000, 1000);
+        public OpenCvSharp.Point PlateLamiDetectedL
+        {
+            get { return m_ptPlateLamiDetectedL; }
+            set { m_ptPlateLamiDetectedL = value; }
+        }
+        private OpenCvSharp.Point m_ptPlateLamiDetectedR = new OpenCvSharp.Point(1000, 1000);
+        public OpenCvSharp.Point PlateLamiDetectedR
+        {
+            get { return m_ptPlateLamiDetectedR; }
+            set { m_ptPlateLamiDetectedR = value; }
+        }
+
+        private OpenCvSharp.Point m_ptPlateLamiDetectedTL = new OpenCvSharp.Point(1000, 1000);
+        public OpenCvSharp.Point PlateLamiDetectedTL
+        {
+            get { return m_ptPlateLamiDetectedTL; }
+            set { m_ptPlateLamiDetectedTL = value; }
+        }
+        private OpenCvSharp.Point m_ptPlateLamiDetectedTR = new OpenCvSharp.Point(1000, 1000);
+        public OpenCvSharp.Point PlateLamiDetectedTR
+        {
+            get { return m_ptPlateLamiDetectedTR; }
+            set { m_ptPlateLamiDetectedTR = value; }
+        }
+
+        private OpenCvSharp.Point m_ptPlateLamiDetectedBL = new OpenCvSharp.Point(1000, 1000);
+        public OpenCvSharp.Point PlateLamiDetectedBL
+        {
+            get { return m_ptPlateLamiDetectedBL; }
+            set { m_ptPlateLamiDetectedBL = value; }
+        }
+        private OpenCvSharp.Point m_ptPlateLamiDetectedBR = new OpenCvSharp.Point(1000, 1000);
+        public OpenCvSharp.Point PlateLamiDetectedBR
+        {
+            get { return m_ptPlateLamiDetectedBR; }
+            set { m_ptPlateLamiDetectedBR = value; }
+        }
+
+
+        private List<OpenCvSharp.Point> m_ListPlateLamiContourL = new ListPoint();
+        public List<OpenCvSharp.Point> ListPlateLamiContourL
+        {
+            get { return m_ListPlateLamiContourL; }
+            set { m_ListPlateLamiContourL = value; }
+        }
+
+        private List<OpenCvSharp.Point> m_ListPlateLamiContourR = new ListPoint();
+        public List<OpenCvSharp.Point> ListPlateLamiContourR
+        {
+            get { return m_ListPlateLamiContourR; }
+            set { m_ListPlateLamiContourR = value; }
+        }
+
+        private List<OpenCvSharp.Point> m_ListPlateLamiContourTL = new ListPoint();
+        public List<OpenCvSharp.Point> ListPlateLamiContourTL
+        {
+            get { return m_ListPlateLamiContourTL; }
+            set { m_ListPlateLamiContourTL = value; }
+        }
+
+        private List<OpenCvSharp.Point> m_ListPlateLamiContourTR = new ListPoint();
+        public List<OpenCvSharp.Point> ListPlateLamiContourTR
+        {
+            get { return m_ListPlateLamiContourTR; }
+            set { m_ListPlateLamiContourTR = value; }
+        }
+
+        private List<OpenCvSharp.Point> m_ListPlateLamiContourBL = new ListPoint();
+        public List<OpenCvSharp.Point> ListPlateLamiContourBL
+        {
+            get { return m_ListPlateLamiContourBL; }
+            set { m_ListPlateLamiContourBL = value; }
+        }
+
+        private List<OpenCvSharp.Point> m_ListPlateLamiContourBR = new ListPoint();
+        public List<OpenCvSharp.Point> ListPlateLamiContourBR
+        {
+            get { return m_ListPlateLamiContourBR; }
+            set { m_ListPlateLamiContourBR = value; }
+        }
+
+        #endregion
+
+        private string m_strLastRecipe = "";
+        public string LastRecipe
+        {
+            get { return m_strLastRecipe; }
+            set { m_strLastRecipe = value; }
+        }
+
+        private int m_nLogRemainDay = 30;
+        public int LogRemainDay
+        {
+            get { return m_nLogRemainDay; }
+            set { m_nLogRemainDay = value; }
+        }
+
+        private string m_strVisionType = "Edge";
+        public string VisionType
+        {
+            get { return m_strVisionType; }
+            set { m_strVisionType = value; }
+        }
+
+        private string m_strLogPath = Application.StartupPath + "\\Log";
+        public string LogPath
+        {
+            get { return m_strLogPath; }
+            set { m_strLogPath = value; }
+        }
+
+        private string m_strLicense = "";
+        public string License
+        {
+            get { return m_strLicense; }
+            set { m_strLicense = value; }
+        }
+
+        private double m_dAlignSpec = 0.05D;
+        public double AlignSpec
+        {
+            get { return m_dAlignSpec; }
+            set { m_dAlignSpec = value; }
+        }
+        private double m_dInspectionSpec = 0.2D;
+        public double InspectionSpec
+        {
+            get { return m_dInspectionSpec; }
+            set { m_dInspectionSpec = value; }
+        }
+
+
+        //private IVision m_IVision = new IVision();
+        //public IVision iVision
+        //{
+        //    get { return m_IVision; }
+        //    set { m_IVision = value; }
+        //}
+
+        private ILightController m_LightControllerPd70 = new ILightController();
+        public ILightController LightControllerPd70
+        {
+            get { return m_LightControllerPd70; }
+            set { m_LightControllerPd70 = value; }
+        }
+
+        private ILightController m_LightControllerPd300 = new ILightController();
+        public ILightController LightControllerPd300
+        {
+            get { return m_LightControllerPd300; }
+            set { m_LightControllerPd300 = value; }
+        }
+
+        private bool m_bChangeRecipe = false;
+        public bool ChangeRecipe
+        {
+            get { return m_bChangeRecipe; }
+            set { m_bChangeRecipe = value; }
+        }
+
+        private string m_strAlarmReason = "";
+        public string AlarmReason
+        {
+            get { return m_strAlarmReason;}
+            set { m_strAlarmReason = value; }
+        }
+
+        private bool m_bUseInpParamerterMode = false;
+        public bool UseInpParameterMode
+        {
+            get { return m_bUseInpParamerterMode; }
+            set { m_bUseInpParamerterMode = value; }
+        }
+
+        private string m_strDrivePath = "C";
+        public string DrivePath
+        {
+            get { return m_strDrivePath; }
+            set { m_strDrivePath = value; }
+        }
+        private int m_nDriveVolum = 80;
+        public int DriveVolum
+        {
+            get { return m_nDriveVolum; }
+            set { m_nDriveVolum = value; }
+        }
+        private int m_nDeleteImageDay = 7;
+        public int DeleteImageDay
+        {
+            get { return m_nDeleteImageDay; }
+            set { m_nDeleteImageDay = value; }
+        }
+
+        #region Motor
+        //private int m_nEncPulseX = 0;
+        //public int EncPulseX
+        //{
+        //    get { return m_nEncPulseX; }
+        //    set { m_nEncPulseX = value; }
+        //}
+
+        //private double m_dPulsePerumX = 0.0D;
+        //public double PulsePerumX
+        //{
+        //    get { return m_dPulsePerumX; }
+        //    set { m_dPulsePerumX = value; }
+        //}
+
+        //private int m_nEncPulseY = 0;
+        //public int EncPulseY
+        //{
+        //    get { return m_nEncPulseY; }
+        //    set { m_nEncPulseY = value; }
+        //}
+
+        //private double m_dPulsePerumY = 0.0D;
+        //public double PulsePerumY
+        //{
+        //    get { return m_dPulsePerumY; }
+        //    set { m_dPulsePerumY = value; }
+        //}
+
+        //private int m_nEncPulseTheta = 0;
+        //public int EncPulseTheta
+        //{
+        //    get { return m_nEncPulseTheta; }
+        //    set { m_nEncPulseTheta = value; }
+        //}
+
+        //private double m_dPulsePerAngleTheta = 0.0D;
+        //public double PulsePerAngleTheta
+        //{
+        //    get { return m_dPulsePerAngleTheta; }
+        //    set { m_dPulsePerAngleTheta = value; }
+        //}
+        #endregion
+
+        #region Event Register        
+        public EventHandler<EventArgs> EventChangedNotice;
+        public EventHandler<EventArgs> EventChangedRecipe;
+        #endregion
+
+        public bool InitLogDirectory(string strName)
+        {
+            try
+            {
+                string sDirPath;
+                sDirPath = LogPath + "\\" + strName;                
+                DirectoryInfo di = new DirectoryInfo(sDirPath);
+                if (di.Exists == false)
+                {
+                    di.Create();
+                    //Logger.WriteLog(LOG.Normal, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                }
+                else
+                {
+                    //Logger.WriteLog(LOG.Normal, "Already Exist Folder ==> " + strName);
+                }
+                return true;
+            }
+            catch (Exception Desc)
+            
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool DeleteLog()
+        {
+            try
+            {
+                int nLogDay = LogRemainDay;
+
+                DirectoryInfo dirInfo = new DirectoryInfo(m_strLogPath + "\\System");
+                DateTime fileCreatedTime;
+                DateTime cmpTime = DateTime.ParseExact(DateTime.Now.AddDays(-LogRemainDay).ToString("yyyyMMdd"), "yyyyMMdd", null);
+
+                foreach(FileInfo file in dirInfo.GetFiles())
+                {
+                    fileCreatedTime = file.CreationTime;
+
+                    if(DateTime.Compare(fileCreatedTime, cmpTime) < 0)
+                    {
+                        File.Delete(file.FullName);
+                    }
+                }                
+                
+                return true;
+            }
+            catch (Exception Desc)
+
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public bool DeleteFolder()
+        {
+            try
+            {
+                int nLogDay = LogRemainDay;
+                nLogDay = 5;
+
+                DirectoryInfo diYear = new DirectoryInfo(m_strLogPath + "\\img\\");
+                DirectoryInfo[] dirInfoYear = diYear.GetDirectories();
+                DateTime cmpTime = DateTime.ParseExact(DateTime.Now.AddDays(-nLogDay).ToString("yyyyMMdd"), "yyyyMMdd", null);
+
+                foreach (DirectoryInfo dirYear in dirInfoYear)
+                {
+                    DirectoryInfo diMonth = new DirectoryInfo(dirYear.FullName);
+                    DirectoryInfo[] dirInfoMonth = diMonth.GetDirectories();
+
+                    foreach (DirectoryInfo dirMonth in dirInfoMonth)
+                    {
+                        DirectoryInfo diDay = new DirectoryInfo(dirMonth.FullName);
+                        DirectoryInfo[] dirInfoDay = diDay.GetDirectories();
+
+                        foreach (DirectoryInfo dirDay in dirInfoDay)
+                        {
+                            DateTime fileCreatedTime = dirDay.LastWriteTime;
+                            if (DateTime.Compare(fileCreatedTime, cmpTime) < 0)
+                            {
+                                dirDay.Attributes = FileAttributes.Normal;
+                                dirDay.Delete(true);
+                            }
+
+                            if (diDay.GetDirectories().Length == 0)
+                            {
+                                diDay.Attributes = FileAttributes.Normal;
+                                diDay.Delete(true);
+                                break;
+                            }
+                        }
+
+                        if (diMonth.GetDirectories().Length == 0)
+                        {
+                            diMonth.Attributes = FileAttributes.Normal;
+                            diMonth.Delete(true);
+                            break;
+                        }
+                    }
+
+                    if (diYear.GetDirectories().Length == 0)
+                    {
+                        diYear.Attributes = FileAttributes.Normal;
+                        diYear.Delete(true);
+                        break;
+                    }
+                }
+
+
+                return true;
+            }
+            catch (Exception Desc)
+
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public static bool InitDirectory(string strName)
+        {
+            try
+            {
+                string sDirPath;
+                sDirPath = Application.StartupPath + "\\" + strName;                
+                DirectoryInfo di = new DirectoryInfo(sDirPath);
+                if (di.Exists == false)
+                {
+                    di.Create();
+
+                    if(strName == "Config")
+                    {
+                        //devLightController.WriteInitFile();
+                    }
+
+                    Logger.WriteLog(LOG.Normal, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                }
+                else
+                {
+                    //Logger.WriteLog(LOG.Normal, "Already Exist Folder ==> " + strName);
+                }
+                return true;
+            }
+            catch (Exception Desc)
+
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        public static bool InitRecipeDirectory(string strRecipeName)
+        {
+            try
+            {
+                string sDirPath;
+                sDirPath = Application.StartupPath + "\\Recipe\\" + strRecipeName;
+                DirectoryInfo di = new DirectoryInfo(sDirPath);
+                if (di.Exists == false)
+                {
+                    di.Create();
+
+                    Logger.WriteLog(LOG.Normal, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+                }
+                else
+                {
+                    //Logger.WriteLog(LOG.Normal, "Already Exist Folder ==> " + strName);
+                }
+                return true;
+            }
+            catch (Exception Desc)
+
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+        }
+
+        #region File Manager              
+        private string m_XMLName = "Main";
+        public bool ReadInitFile()
+        {
+            try
+            {
+                string strPath = Application.StartupPath + "\\" + m_XMLName + ".xml";
+
+                if (File.Exists(strPath))   
+                {
+                    XmlTextReader xmlReader = new XmlTextReader(strPath);   
+
+                    try
+                    {
+                        ReadInitFileFromXML(xmlReader);
+                        // 2020.06.23 Noah Choi 레시피 name은 마지막 레시피 이름으로 변경
+                        Recipe.Name = LastRecipe;
+                    }
+                    catch (Exception e)
+                    {
+                        xmlReader.Close();
+                    }
+
+                    xmlReader.Close();
+                }
+                else
+                {
+                    WriteInitFile();
+                    return false;
+                }
+            }
+            catch (Exception Desc)
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+            return true;
+        }
+
+        public bool WriteInitFile()
+        {
+            string strPath = Application.StartupPath + "\\" + m_XMLName + ".xml";
+
+            XmlWriterSettings settings = new XmlWriterSettings();
+            settings.Indent = true;
+            settings.NewLineOnAttributes = true;
+            settings.IndentChars = "\t";
+            settings.NewLineChars = "\r\n";
+            XmlWriter xmlWriter = XmlWriter.Create(strPath, settings);
+            try
+            {
+                xmlWriter.WriteStartDocument();
+
+                WriteInitFileToXML(xmlWriter);
+                xmlWriter.WriteEndDocument();
+            }
+            catch (Exception Desc)
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+            }
+            finally
+            {
+                xmlWriter.Flush();
+                xmlWriter.Close();
+            }
+
+            Logger.WriteLog(LOG.Normal, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+            return true;
+        }
+
+        public bool ReadInitFileFromXML(XmlReader xmlReader)
+        {
+            while (xmlReader.Read())
+            {
+                if (xmlReader.NodeType == XmlNodeType.Element)
+                {
+                    switch (xmlReader.Name)
+                    {
+                        case "VisionType":
+                            if (!xmlReader.Read()) return false;
+                            VisionType = xmlReader.Value;
+                            break;
+                        case "CameraCount":
+                            if (!xmlReader.Read()) return false;
+                            CameraCount = int.Parse(xmlReader.Value);
+                            break;
+                        case "LogPath":
+                            if (!xmlReader.Read()) return false;
+                            LogPath = xmlReader.Value;
+                            break;                                   
+                        case "License":
+                            if (!xmlReader.Read()) return false;
+                            License = xmlReader.Value;
+                            break;
+                        case "LogRemainDay":
+                            if (!xmlReader.Read()) return false;
+                            LogRemainDay = int.Parse(xmlReader.Value);
+                            break;
+                        case "LastRecipe":
+                            if (!xmlReader.Read()) return false;
+                            LastRecipe = xmlReader.Value;
+                            break;
+                        case "UseInpParameterMode":
+                            if (!xmlReader.Read()) return false;
+                            UseInpParameterMode = bool.Parse(xmlReader.Value);
+                            break;
+                        case "AlignSpec":
+                            if (!xmlReader.Read()) return false;
+                            AlignSpec = double.Parse(xmlReader.Value);
+                            break;
+                        case "InspectionSpec":
+                            if (!xmlReader.Read()) return false;
+                            InspectionSpec = double.Parse(xmlReader.Value);
+                            break;
+                        case "DrivePath":
+                            if (!xmlReader.Read()) return false;
+                            DrivePath = xmlReader.Value;
+                            break;
+                        case "DriveVolum":
+                            if (!xmlReader.Read()) return false;
+                            DriveVolum = int.Parse(xmlReader.Value);
+                            break;
+                        case "DeleteImageDay":
+                            if (!xmlReader.Read()) return false;
+                            DeleteImageDay = int.Parse(xmlReader.Value);
+                            break;
+                        case "Parameter":
+                            if (!xmlReader.Read()) return false;
+                            Parameter = int.Parse(xmlReader.Value);       //int.Parse();
+                            break;
+                    }
+                }
+                else
+                {
+                    if (xmlReader.NodeType == XmlNodeType.EndElement)
+                    {
+                        if (xmlReader.Name == m_XMLName) break;
+                    }
+                }
+            }
+
+
+            Logger.WriteLog(LOG.Normal, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+            return true;
+        }
+
+        public bool WriteInitFileToXML(XmlWriter xmlWriter)
+        {
+            xmlWriter.WriteStartElement("MainConfig");
+            xmlWriter.WriteElementString("VisionType", VisionType);                       
+            xmlWriter.WriteElementString("License", License);
+            // 2020.06.23 Noah Choi xml생성시 카메라 카운트 생성토록 추가
+            xmlWriter.WriteElementString("CameraCount", CameraCount.ToString());
+            xmlWriter.WriteElementString("LogPath", LogPath);
+            xmlWriter.WriteElementString("LogRemainDay", LogRemainDay.ToString());
+            xmlWriter.WriteElementString("LastRecipe", LastRecipe);
+            xmlWriter.WriteElementString("UseInpParameterMode", UseInpParameterMode.ToString());
+            xmlWriter.WriteElementString("AlignSpec", AlignSpec.ToString());
+            xmlWriter.WriteElementString("InspectionSpec", InspectionSpec.ToString());
+            xmlWriter.WriteElementString("DrivePath", DrivePath.ToString());
+            xmlWriter.WriteElementString("DriveVolum", DriveVolum.ToString());
+            xmlWriter.WriteElementString("DeleteImageDay", DeleteImageDay.ToString());
+            xmlWriter.WriteElementString("Parameter", Parameter.ToString());
+            xmlWriter.WriteEndElement();
+            return true;
+        }
+        #endregion
+    }
+
+    public class ILamiMeasureData : EventArgs
+    {
+        private double m_dLeftGap = 0.0;
+        public double LeftGap
+        {
+            get { return m_dLeftGap; }
+            set { m_dLeftGap = value; }
+        }
+
+        private double m_dRightGap = 0.0;
+        public double RightGap
+        {
+            get { return m_dRightGap; }
+            set { m_dRightGap = value; }
+        }
+
+        private double m_dTopLeftGap = 0.0;
+        public double TopLeftGap
+        {
+            get { return m_dTopLeftGap; }
+            set { m_dTopLeftGap = value; }
+        }
+
+        private double m_dTopRightGap = 0.0;
+        public double TopRightGap
+        {
+            get { return m_dTopRightGap; }
+            set { m_dTopRightGap = value; }
+        }
+
+        private double m_dBottomLeftGap = 0.0;
+        public double BottomLeftGap
+        {
+            get { return m_dBottomLeftGap; }
+            set { m_dBottomLeftGap = value; }
+        }
+
+        private double m_dBottomRightGap = 0.0;
+        public double BottomRightGap
+        {
+            get { return m_dBottomRightGap; }
+            set { m_dBottomRightGap = value; }
+        }
+        private string m_strProductId = "";
+        public string ProductId
+        {
+            get { return m_strProductId; }
+            set { m_strProductId = value; }
+        }
+        private bool m_bJudge = false;
+        public bool Judge
+        {
+            get { return m_bJudge; }
+            set { m_bJudge = value; }
+        }
+
+        public ILamiMeasureData(bool bJudge, string strProductId, double dLeftGap, double dRightGap, double dTopLeftGap, double dTopRightGap,
+            double dBottomLeftGap, double dBottomRightGap)
+        {
+            this.m_bJudge = bJudge;
+            this.m_strProductId = strProductId;
+            this.m_dLeftGap = dLeftGap;
+            this.m_dRightGap = dRightGap;
+            this.m_dTopLeftGap = dTopLeftGap;
+            this.m_dTopRightGap = dTopRightGap;
+            this.m_dBottomLeftGap = dBottomLeftGap;
+            this.m_dBottomRightGap = dBottomRightGap;
+        }
+
+    }
+
+    public static class IConverter
+    {
+        public static string ShortToBinaryString(short shValue)
+        {
+            string strBinary = Convert.ToString(shValue, 2).PadLeft(8, '0');
+            return strBinary;
+        }
+
+        //public static string IntToBinaryString(int nValue)
+        //{
+        //    string strBinary = Convert.ToString(nValue, 2).PadLeft(16, '0');
+        //    return strBinary;
+        //}
+
+        public static string IntToBinaryString(int nValue, int nZeroCount)
+        {
+            string strBinary = Convert.ToString(nValue, 2).PadLeft(nZeroCount, '0');
+            return strBinary;
+        }
+
+        //public static string ByteToString(byte[] strByte)
+        //{
+        //    string str = Encoding.Default.GetString(strByte);
+        //    return str;
+        //}
+
+        //public static byte[] StringToByte(string str)
+        //{
+        //    byte[] StrByte = Encoding.UTF8.GetBytes(str);
+        //    return StrByte;
+        //}
+
+        public static byte IntToByte(int nValue)
+        {
+            //string hexValue = nValue.ToString("X");
+            return Convert.ToByte(nValue.ToString());
+        }
+
+        public static string PointToString(OpenCvSharp.Point pt)
+        {
+            return string.Format("{0},{1}", pt.X, pt.Y);
+        }
+
+        public static OpenCvSharp.Point StringToPoint(string strPoint)
+        {
+            string[] strPointSplit = strPoint.Split(',');
+            OpenCvSharp.Point pt = new OpenCvSharp.Point(0, 0);
+
+            if (strPointSplit.Length == 2)
+            {
+                string strX = strPointSplit[0].Trim();
+                string strY = strPointSplit[1].Trim();
+
+                int nX = int.Parse(strX);
+                int nY = int.Parse(strY);
+
+                pt = new OpenCvSharp.Point(nX, nY);
+            }
+
+            return pt;
+        }
+    }
+
+    public class StringEventArgs : EventArgs
+    {
+        private string m_strMessage;
+        public string Message
+        {
+            get { return m_strMessage; }
+            set { m_strMessage = value; }
+        }
+
+        public StringEventArgs(String strMessage)
+        {
+            m_strMessage = strMessage;
+        }
+    }
+
+    public class GrabEventArgs : EventArgs
+    {
+        private Mat m_Mat = new Mat();
+        public Mat mat
+        {
+            get { return m_Mat; }
+            set { m_Mat = value; }
+        }
+
+        public GrabEventArgs(Mat matGrab)
+        {
+            try
+            {
+                matGrab.CopyTo(m_Mat);
+            }
+            catch (Exception Desc)
+            {
+                Logger.WriteLog(LOG.AbNormal, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return;
+            }
+        }
+    }
+}

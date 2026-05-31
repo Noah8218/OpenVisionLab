@@ -1,0 +1,121 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Windows.Forms;
+using System.Reflection;
+using System.Xml.Serialization;
+
+namespace KtemVisionSystem
+{
+    public class CDevice
+    {
+        public int CAMERA_COUNT { get; set; } = 4;        
+        
+        [XmlIgnore]  public List<CCameraHikVision> CAMERAS = new List<CCameraHikVision>();
+
+        [XmlIgnore] public CMotionManager MOTION_AJIN { get; set; } = new CMotionManager();
+
+        [XmlIgnore] public CDIO_AJIN DIO_BD { get; set; } = new CDIO_AJIN();
+
+        [XmlIgnore] public CLightControler_KVP400 LIGHT { get; set; } = new CLightControler_KVP400();
+ 
+
+        public CDevice() { }
+        public bool Init()
+        {
+            try
+            {
+                
+                CUtil.InitDirectory("CONFIG");
+                CUtil.InitDirectory("CONFIG\\DEVICE");
+
+                try
+                {
+                    if (!MOTION_AJIN.Init()) { CUtil.ShowMessageBox("ALARM", "Failed the Init Motion", FormMessageBox.MESSAGEBOX_TYPE.Waring); }
+                }
+                catch (Exception ex)
+                {
+                    CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                }
+
+                try
+                {
+                    if (!DIO_BD.Init()) { CUtil.ShowMessageBox("ALARM", "Failed the Init I/O", FormMessageBox.MESSAGEBOX_TYPE.Waring); }
+                }
+                catch (Exception ex)
+                {
+                    CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                }
+
+                try
+                {
+#if MX_COMPONENT
+                if (!DIO_PLC.Init()) { CUtil.ShowMessageBox("ALARM", "Failed the Init ComMelsec"); } 
+#endif
+                }
+                catch (Exception ex)
+                {
+                    CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                }
+
+                try
+                {
+                    //LIGHT.ReadInitFile();
+                    if (!LIGHT.Connect()) { CUtil.ShowdialogMessageBox("ALARM", "Failed the Init LIGHT"); }                    
+                }
+                catch (Exception ex)
+                {
+                    CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                return false;
+            }
+        }
+
+        public bool Close()
+        {
+            try
+            {
+                CUtil.InitDirectory("CONFIG");
+                CUtil.InitDirectory("CONFIG\\DEVICE");
+
+                DIO_BD.Close();
+                MOTION_AJIN.Close();
+                //DIO_PLC.StopThreadRead();
+                //DIO_BD.StopThreadRead();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.ABNORMAL, "[FAILED] {0}/{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                return false;
+            }
+
+        }
+        public CDevice LoadConfig()
+        {
+            string strPath = Application.StartupPath + "\\CONFIG\\DEVICE\\DEVICE.xml";
+            CDevice newData = null;
+
+            if (File.Exists(strPath))
+            {
+                newData = SerializeHelper.FromXmlFile<CDevice>(strPath);
+                if (newData != null)
+                    return newData;
+            }
+            this.SaveConfig();
+            return newData;
+        }
+
+        public void SaveConfig()
+        {
+            string strPath = Application.StartupPath + "\\CONFIG\\DEVICE\\DEVICE.xml";
+            SerializeHelper.ToXmlFile(strPath, this);
+        }
+    }
+}

@@ -1,0 +1,2695 @@
+﻿using IntelligentFactory.Library;
+using OpenCvSharp;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+
+using OpenCvSharp.UserInterface;
+using IntelligentFactory.Common;
+using System.Runtime.InteropServices;
+using System.Reflection;
+
+namespace IntelligentFactory.Vision
+{
+    public class IVision
+    {
+        public static void UpdateImage(PictureBoxIpl pbDisplay, Mat MatSource)
+        {
+            if (pbDisplay.InvokeRequired)
+            {
+                pbDisplay.Invoke(new Action<PictureBoxIpl, Mat>(UpdateImage), pbDisplay, MatSource);
+            }
+            else
+            {
+                if(!IVision.IsMatEmpty(MatSource))
+                {
+                    pbDisplay.ImageIpl = MatSource;
+                }
+                
+            }
+        }
+
+        public enum Direction { LeftToRight, RightToLeft, ToptoBottom, BottomToTop}
+
+        public enum Position
+        {
+            Left = 0,
+            Right = 1 ,
+            TopLeft = 2,
+            TopRight = 3,
+            BottomLeft = 4,
+            BottomRight = 5
+        }
+
+        public static List<OpenCvSharp.Point> m_listLeftInLine = new List<Point>();
+        public static List<OpenCvSharp.Point> m_listRightInLine = new List<Point>();
+        public static List<OpenCvSharp.Point> m_listTopLeftInLine = new List<Point>();
+        public static List<OpenCvSharp.Point> m_listTopRightInLine = new List<Point>();
+        public static List<OpenCvSharp.Point> m_listBottomLeftInLine = new List<Point>();
+        public static List<OpenCvSharp.Point> m_listBottomRightInLine = new List<Point>();
+
+        public static List<Point> Edge(Mat MatMeasure, int nThreshold, int nContrast, int nThickness, Direction dr)
+        {
+            List<Point> listContour = new List<Point>();
+            Object lockList = new Object();
+
+            try
+            {   
+                Mat MatKernel = Cv2.GetStructuringElement(MorphShapes.Rect, new OpenCvSharp.Size(3, 3));
+
+                if (IsMatEmpty(MatMeasure))
+                {
+                    return null;
+                }
+               
+                Cv2.Threshold(MatMeasure, MatMeasure, nThreshold, 255, ThresholdTypes.Binary);
+                Cv2.MorphologyEx(MatMeasure, MatMeasure, MorphTypes.Erode, MatKernel, new OpenCvSharp.Point(-1, -1), 1);
+
+                switch (dr)
+                {
+                    case Direction.LeftToRight:
+                        var result = System.Threading.Tasks.Parallel.For(0, MatMeasure.Rows, (ny, state) =>
+                        {
+                            for (int nx = 0; nx < MatMeasure.Cols - 1; nx++)
+                            {
+                                if (nx > 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny, nx - 1);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (nx + nThickness < MatMeasure.Cols - 1)
+                                    {
+                                        if ((greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny, nx + k);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if ((greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                OpenCvSharp.Point ptContour = new OpenCvSharp.Point(nx, ny);
+                                                lock (lockList)
+                                                {
+                                                    listContour.Add(new OpenCvSharp.Point(nx, ny));
+                                                }
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        break;
+                    case Direction.RightToLeft:
+                        result = System.Threading.Tasks.Parallel.For(0, MatMeasure.Rows, (ny, state) =>
+                        {
+                            for (int nx = MatMeasure.Cols - 1; nx > 0; nx--)
+                            {
+                                if (nx < MatMeasure.Cols-1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny, nx + 1);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (nx - nThickness > 0)
+                                    {
+                                        if ((greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny, nx - k);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if ((greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                OpenCvSharp.Point ptContour = new OpenCvSharp.Point(nx, ny);
+                                                lock (lockObject)
+                                                {
+                                                    listContour.Add(ptContour);
+                                                }
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        break;
+                    case Direction.ToptoBottom:
+                        result = System.Threading.Tasks.Parallel.For(0, MatMeasure.Cols, (nx, state) =>
+                        {
+                            for (int ny = 0; ny < MatMeasure.Rows; ny++)
+                            {
+                                if (ny > 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny - 1, nx);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (ny + nThickness < MatMeasure.Rows)
+                                    {
+                                        if ((greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny + k, nx);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                OpenCvSharp.Point ptContour = new OpenCvSharp.Point(nx, ny);
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        break;
+                    case Direction.BottomToTop:
+                        result = System.Threading.Tasks.Parallel.For(0, MatMeasure.Cols, (nx, state) =>
+                        {
+                            for (int ny = MatMeasure.Rows; ny > 0; ny--)
+                            {
+                                if (ny < MatMeasure.Rows-1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny + 1, nx);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (ny - nThickness > 0)
+                                    {
+                                        if ((greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny - k, nx);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                OpenCvSharp.Point ptContour = new OpenCvSharp.Point(nx, ny);
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        Monitor.Exit(listContour);
+
+                        break;
+                }
+            }
+            catch(Exception Desc)
+            {
+                return null;
+            }
+
+            return listContour;
+        }
+
+        public static Point EdgeCorner(Mat MatMeasure, int nThreshold, int nContrast, int nThickness, Direction dr, ref Mat MatDraw)
+        {
+            List<Point> listContour = new List<Point>();
+            Object lockList = new Object();
+            Point ptCorner = new Point(-1, -1);
+
+            try
+            {
+                Mat MatKernel = Cv2.GetStructuringElement(MorphShapes.Rect, new OpenCvSharp.Size(3, 3));
+
+                if (IsMatEmpty(MatMeasure))
+                {
+                    return new Point(-1, -1);
+                }
+
+                Masking(dr, ref MatMeasure);
+
+                Cv2.Threshold(MatMeasure, MatDraw, nThreshold, 255, ThresholdTypes.Binary);                
+
+                switch (dr)
+                {
+                    case Direction.LeftToRight:
+                        var result = System.Threading.Tasks.Parallel.For(0, MatMeasure.Rows, (ny, state) =>
+                        {
+                            for (int nx = 0; nx < MatMeasure.Cols - 1; nx++)
+                            {
+                                if (nx > 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny, nx - 1);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (nx + nThickness < MatMeasure.Cols - 1)
+                                    {
+                                        if ((greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny, nx + k);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if ((greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                OpenCvSharp.Point ptContour = new OpenCvSharp.Point(nx, ny);
+                                                lock (lockList)
+                                                {
+                                                    listContour.Add(new OpenCvSharp.Point(nx, ny));
+                                                }
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        break;
+                    case Direction.RightToLeft:
+                        result = System.Threading.Tasks.Parallel.For(0, MatMeasure.Rows, (ny, state) =>
+                        {
+                            for (int nx = MatMeasure.Cols - 1; nx > 0; nx--)
+                            {
+                                if (nx < MatMeasure.Cols - 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny, nx + 1);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (nx - nThickness > 0)
+                                    {
+                                        if ((greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny, nx - k);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if ((greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                OpenCvSharp.Point ptContour = new OpenCvSharp.Point(nx, ny);
+                                                lock (lockObject)
+                                                {
+                                                    listContour.Add(ptContour);
+                                                }
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        break;
+                }
+            }
+            catch (Exception Desc)
+            {
+                return new Point(-1, -1);
+            }
+
+            try
+            {
+                if (listContour.Count > 0)
+                {
+                    switch (dr)
+                    {
+                        case Direction.LeftToRight:
+                            listContour = listContour.OrderBy(p => p.X).ToList();
+                            break;
+                        case Direction.RightToLeft:
+                            listContour = listContour.OrderByDescending(p => p.X).ToList();
+                            
+                            break;
+                    }
+
+                    return listContour[0];
+                }   
+            }
+            catch (Exception Desc)
+            {
+                return new Point(-1, -1);
+            }
+            
+            return ptCorner;
+        }
+
+        public static List<double> GapTest(Mat MatMeasure, int nThreshold, int nContrast, int nThickness, int nEdgeColor, Direction dr, ref Mat MatResult, List<Point> listMaskingLine, Rect ROI)
+        {
+            List<Line> listLine = new List<Line>();
+            List<Point> listContour = new List<Point>();
+            List<double> listGap = new List<double>();
+
+            double dSum = 0.0D;
+
+            try
+            {
+                Mat MatKernel = Cv2.GetStructuringElement(MorphShapes.Rect, new OpenCvSharp.Size(9, 9));
+
+                if (IsMatEmpty(MatMeasure))
+                {
+                    Logger.WriteLog(LOG.AbNormal, "1");
+                    return null;
+                }
+
+                Masking(dr, ref MatMeasure);
+
+                MatMeasure = MatMeasure.SubMat(ROI);
+
+                if (listMaskingLine != null)
+                {                    
+                    listMaskingLine = RansacLineFittingInt(listMaskingLine, out double a, out double b);
+
+                    for (int i = 0; i < listMaskingLine.Count; i++)
+                    {
+                        if (i > 0)
+                        {
+                            Point ptPrev = listMaskingLine[i - 1];
+                            Point ptCurrnt = listMaskingLine[i];
+
+                            double dDistance = ptPrev.DistanceTo(ptCurrnt);
+
+                            if (dDistance > 30)
+                            {
+                                continue;
+                            }
+                            else
+                            {
+                                MatMeasure.Line(ptPrev, ptCurrnt, Scalar.White, 5);
+                            }
+                        }
+                    }
+                }
+
+                Cv2.Threshold(MatMeasure, MatMeasure, nThreshold, 255, ThresholdTypes.Binary);
+
+                if (nEdgeColor == 0)
+                {
+
+                }
+                else if (nEdgeColor == 1)
+                {
+                    Cv2.MorphologyEx(MatMeasure, MatMeasure, MorphTypes.Dilate, MatKernel, new OpenCvSharp.Point(-1, -1), 1);
+                }
+                else
+                {
+                    Cv2.MorphologyEx(MatMeasure, MatMeasure, MorphTypes.Erode, MatKernel, new OpenCvSharp.Point(-1, -1), 1);
+                }
+
+
+                switch (dr)
+                {
+                    case Direction.LeftToRight:
+                        listMaskingLine.OrderBy(p => p.X).ToList();
+
+                        for (int ny = 0; ny < MatMeasure.Rows; ny = ny + 5)
+                        {
+                            Point ptFirst = new Point();
+                            Point ptSecond = new Point();
+
+                            bool bFirst = false;
+
+                            Line line = new Line(new Point(), new Point());
+
+                            for (int nx = 0; nx < MatMeasure.Cols - 1; nx++)
+                            {
+                                if (nx > 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny, nx - 1);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (nx + nThickness < MatMeasure.Cols - 1)
+                                    {
+                                        if (Math.Abs(greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny, nx + k);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+
+                                                if (bFirst == false)
+                                                {
+                                                    ptFirst = new OpenCvSharp.Point(nx, ny);
+                                                    line.Start = ptFirst;
+                                                    bFirst = true;
+                                                }
+                                                else
+                                                {
+                                                    ptSecond = new OpenCvSharp.Point(nx, ny);
+                                                    line.End = ptSecond;
+
+                                                    if (line != null)
+                                                    {
+                                                        if(listMaskingLine[0].X > ptSecond.X)
+                                                        {
+                                                            dSum += line.Distance();
+                                                            listLine.Add(line);
+                                                        }                                                        
+                                                    }
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    case Direction.RightToLeft:
+                        listMaskingLine.OrderByDescending(p => p.X).ToList();
+                        for (int ny = 0; ny < MatMeasure.Rows; ny = ny + 5)
+                        {
+                            Point ptFirst = new Point();
+                            Point ptSecond = new Point();
+
+                            bool bFirst = false;
+
+                            Line line = new Line(new Point(), new Point());
+
+                            for (int nx = MatMeasure.Cols - 1; nx > 0; nx--)
+                            {
+                                if (nx < MatMeasure.Cols - 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny, nx + 1);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (nx - nThickness > 0)
+                                    {
+                                        bool bFind = false;
+
+                                        //if (bFind)
+                                        if (Math.Abs(greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny, nx - k);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+
+                                                if (bFirst == false)
+                                                {
+                                                    ptFirst = new OpenCvSharp.Point(nx, ny);
+                                                    line.Start = ptFirst;
+                                                    bFirst = true;
+                                                }
+                                                else
+                                                {
+                                                    ptSecond = new OpenCvSharp.Point(nx, ny);
+                                                    line.End = ptSecond;
+
+                                                    if (line != null)
+                                                    {
+                                                        if(listMaskingLine[0].X < ptSecond.X)
+                                                        {
+                                                            dSum += line.Distance();
+                                                            listLine.Add(line);
+                                                        }
+                                                    }
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    case Direction.ToptoBottom:
+                        listMaskingLine.OrderBy(p => p.Y).ToList();
+                        for (int nx = 0; nx < MatMeasure.Cols; nx = nx + 5)
+                        {
+                            Point ptFirst = new Point();
+                            Point ptSecond = new Point();
+
+                            bool bFirst = false;
+
+                            Line line = new Line(new Point(), new Point());
+
+                            for (int ny = 0; ny < MatMeasure.Rows - 1; ny++)
+                            {
+                                if (ny > 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny - 1, nx);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (ny + nThickness < MatMeasure.Rows - 1)
+                                    {
+                                        if (Math.Abs(greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny + k, nx);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+
+                                                if (bFirst == false)
+                                                {
+                                                    ptFirst = new OpenCvSharp.Point(nx, ny);
+                                                    line.Start = ptFirst;
+                                                    bFirst = true;
+                                                }
+                                                else
+                                                {
+                                                    ptSecond = new OpenCvSharp.Point(nx, ny);
+                                                    line.End = ptSecond;
+
+                                                    if (line != null)
+                                                    {
+                                                        if(listMaskingLine[0].Y > ptSecond.Y)
+                                                        {
+                                                            dSum += line.Distance();
+                                                            listLine.Add(line);
+                                                        }
+                                                    }
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    case Direction.BottomToTop:
+                        listMaskingLine.OrderByDescending(p => p.Y).ToList();
+                        for (int nx = 0; nx < MatMeasure.Cols; nx = nx + 5)
+                        {
+                            Point ptFirst = new Point();
+                            Point ptSecond = new Point();
+
+                            bool bFirst = false;
+
+                            Line line = new Line(new Point(), new Point());
+
+                            for (int ny = MatMeasure.Rows - 1; ny > 0; ny--)
+                            {
+                                if (ny < MatMeasure.Rows - 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny + 1, nx);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (ny - nThickness > 0)
+                                    {
+                                        bool bFind = false;
+                                        if (Math.Abs(greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny - k, nx);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+
+                                                if (bFirst == false)
+                                                {
+                                                    ptFirst = new OpenCvSharp.Point(nx, ny);
+                                                    line.Start = ptFirst;
+                                                    bFirst = true;
+                                                }
+                                                else
+                                                {
+                                                    ptSecond = new OpenCvSharp.Point(nx, ny);
+                                                    line.End = ptSecond;
+
+                                                    if (line != null)
+                                                    {
+                                                        if (listMaskingLine[0].Y < ptSecond.Y)
+                                                        {
+                                                            dSum += line.Distance();
+                                                            listLine.Add(line);
+                                                        }
+                                                    }
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+            catch (Exception Desc)
+            {
+                Logger.WriteLog(LOG.AbNormal, "2");
+                Logger.WriteLog(LOG.AbNormal, Desc.Message);
+                return null;
+            }
+
+            if (listLine.Count > 0)
+            {
+                for (int i = 0; i < listLine.Count; i++)
+                {
+                    MatMeasure.Line(listLine[i].Start, listLine[i].End, Scalar.Aquamarine);
+                }
+            }               
+
+            MatMeasure.CopyTo(MatResult);
+            return listGap;
+        }
+
+        public static List<double> Gap(Mat MatMeasure, int nThreshold, int nContrast, int nThickness, int nEdgeColor, Direction dr, ref Mat MatResult, out double dAngle)
+        {
+            List<Line> listLine = new List<Line>();
+            List<Point> listContour = new List<Point>();
+            List<double> listGap = new List<double>();
+
+            double dSum = 0.0D;
+            dAngle = 361.0D;
+
+            try
+            {
+                Mat MatKernel = Cv2.GetStructuringElement(MorphShapes.Rect, new OpenCvSharp.Size(9, 9));
+
+                if (IsMatEmpty(MatMeasure))
+                {
+                    Logger.WriteLog(LOG.AbNormal, "1");
+                    return null;
+                }
+
+                Rect rt = new Rect();
+
+                switch (dr)
+                {
+                    case Direction.LeftToRight:
+                        rt.X = 0;
+                        rt.Y = 0;
+                        rt.Width = (int)(MatMeasure.Width * 0.25D);
+                        rt.Height = MatMeasure.Height;
+                        MatMeasure.Rectangle(rt, Scalar.White, -1);
+                        break;
+                    case Direction.RightToLeft:
+                        rt.Width = (int)(MatMeasure.Width * 0.25D);
+                        rt.Height = MatMeasure.Height;
+                        rt.X = MatMeasure.Width - rt.Width;
+                        rt.Y = 0;
+                        MatMeasure.Rectangle(rt, Scalar.White, -1);
+                        break;
+                    case Direction.ToptoBottom:
+                        rt.X = 0;
+                        rt.Y = 0;
+                        rt.Width = MatMeasure.Width;
+                        rt.Height = (int)(MatMeasure.Height * 0.2D);
+                        MatMeasure.Rectangle(rt, Scalar.White, -1);
+                        break;
+                    case Direction.BottomToTop:
+                        rt.Width = MatMeasure.Width;
+                        rt.Height = (int)(MatMeasure.Height * 0.2D);
+                        rt.X = 0;
+                        rt.Y = MatMeasure.Height - rt.Height;
+                        MatMeasure.Rectangle(rt, Scalar.White, -1);
+                        break;
+                }
+
+                
+
+                Cv2.Threshold(MatMeasure, MatMeasure, nThreshold, 255, ThresholdTypes.Binary);
+
+                if (nEdgeColor == 0)
+                {
+                    
+                }
+                else if (nEdgeColor == 1)
+                {
+                    Cv2.MorphologyEx(MatMeasure, MatMeasure, MorphTypes.Dilate, MatKernel, new OpenCvSharp.Point(-1, -1), 1);
+                }
+                else
+                {
+                    Cv2.MorphologyEx(MatMeasure, MatMeasure, MorphTypes.Erode, MatKernel, new OpenCvSharp.Point(-1, -1), 1);
+                }
+
+
+                switch (dr)
+                {
+                    case Direction.LeftToRight:
+                        for (int ny = 0; ny < MatMeasure.Rows; ny = ny + 5)
+                        {
+                            Point ptFirst = new Point();
+                            Point ptSecond = new Point();
+
+                            bool bFirst = false;
+
+                            Line line = new Line(new Point(), new Point());
+
+                            for (int nx = 0; nx < MatMeasure.Cols - 1; nx++)
+                            {
+                                if (nx > 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny, nx - 1);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (nx + nThickness < MatMeasure.Cols - 1)
+                                    {
+                                        if (Math.Abs(greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny, nx + k);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+
+                                                if (bFirst == false)
+                                                {
+                                                    ptFirst = new OpenCvSharp.Point(nx, ny);
+                                                    line.Start = ptFirst;
+                                                    bFirst = true;
+                                                }
+                                                else
+                                                {
+                                                    ptSecond = new OpenCvSharp.Point(nx, ny);
+                                                    line.End = ptSecond;
+
+                                                    if (line != null)
+                                                    {
+                                                        dSum += line.Distance();
+                                                        listLine.Add(line);
+                                                    }
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    case Direction.RightToLeft:
+                        for (int ny = 0; ny < MatMeasure.Rows; ny = ny + 5)
+                        {
+                            Point ptFirst = new Point();
+                            Point ptSecond = new Point();
+
+                            bool bFirst = false;
+
+                            Line line = new Line(new Point(), new Point());
+
+                            for (int nx = MatMeasure.Cols - 1; nx > 0; nx--)
+                            {
+                                if (nx < MatMeasure.Cols - 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny, nx + 1);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (nx - nThickness > 0)
+                                    {
+                                        bool bFind = false;
+
+                                        //if (bFind)
+                                        if (Math.Abs(greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny, nx - k);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+
+                                                if (bFirst == false)
+                                                {
+                                                    ptFirst = new OpenCvSharp.Point(nx, ny);
+                                                    line.Start = ptFirst;
+                                                    bFirst = true;
+                                                }
+                                                else
+                                                {
+                                                    ptSecond = new OpenCvSharp.Point(nx, ny);
+                                                    line.End = ptSecond;
+
+                                                    if (line != null)
+                                                    {
+                                                        dSum += line.Distance();
+                                                        listLine.Add(line);
+                                                    }
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    case Direction.ToptoBottom:
+                        for (int nx = 0; nx < MatMeasure.Cols; nx = nx + 5)
+                        {
+                            Point ptFirst = new Point();
+                            Point ptSecond = new Point();
+
+                            bool bFirst = false;
+
+                            Line line = new Line(new Point(), new Point());
+
+                            for (int ny = 0; ny < MatMeasure.Rows - 1; ny++)
+                            {
+                                if (ny > 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny - 1, nx);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (ny + nThickness < MatMeasure.Rows - 1)
+                                    {
+                                        if (Math.Abs(greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny + k, nx);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) > nContrast)
+                                                {
+                                                    
+                                                }
+                                                else
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+
+                                                if (bFirst == false)
+                                                {
+                                                    ptFirst = new OpenCvSharp.Point(nx, ny);
+                                                    line.Start = ptFirst;
+                                                    bFirst = true;
+                                                }
+                                                else
+                                                {
+                                                    ptSecond = new OpenCvSharp.Point(nx, ny);
+                                                    line.End = ptSecond;
+
+                                                    if (line != null)
+                                                    {
+                                                        dSum += line.Distance();
+                                                        listLine.Add(line);
+                                                    }
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    case Direction.BottomToTop:
+                        for (int nx = 0; nx < MatMeasure.Cols; nx = nx + 5)
+                        {
+                            Point ptFirst = new Point();
+                            Point ptSecond = new Point();
+
+                            bool bFirst = false;
+
+                            Line line = new Line(new Point(), new Point());
+
+                            for (int ny = MatMeasure.Rows - 1; ny > 0; ny--)
+                            {
+                                if (ny < MatMeasure.Rows - 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny + 1, nx);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (ny - nThickness > 0)
+                                    {
+                                        bool bFind = false;
+                                        if (Math.Abs(greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny - k, nx);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+
+                                                if (bFirst == false)
+                                                {
+                                                    ptFirst = new OpenCvSharp.Point(nx, ny);
+                                                    line.Start = ptFirst;
+                                                    bFirst = true;
+                                                }
+                                                else
+                                                {
+                                                    ptSecond = new OpenCvSharp.Point(nx, ny);
+                                                    line.End = ptSecond;
+
+                                                    if (line != null)
+                                                    {
+                                                        if (line.Distance() < 10)
+                                                        {
+
+                                                        }
+                                                        else
+                                                        {
+                                                            dSum += line.Distance();
+                                                            listLine.Add(line);
+                                                        }
+                                                    }
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                }
+            }
+            catch (Exception Desc)
+            {
+                Logger.WriteLog(LOG.AbNormal, "2");
+                Logger.WriteLog(LOG.AbNormal, Desc.Message);
+                return null;
+            }
+
+            if (listLine.Count > 0)
+            {
+                double dSumTemp = 0.0D;
+
+                List<OpenCvSharp.Point> listOutline = new List<Point>();
+                List<OpenCvSharp.Point> listInLine = new List<Point>();
+
+                if (dr == Direction.BottomToTop || dr == Direction.ToptoBottom)
+                {
+                    List<double> listCenterY = new List<double>();                    
+
+                    for (int i = 0; i < listLine.Count; i++)
+                    {
+                        Line line = listLine[i];
+                        double dDist = line.Distance();
+                        dSumTemp += dDist;
+
+                        double dCenterY = (line.Start.Y + line.Distance() / 2.0D);
+                        listCenterY.Add(dCenterY);
+                    }
+
+                    double dCenterYAvg = listCenterY.Average();
+                    double dAverageDist = dSumTemp / listCenterY.Count;
+
+                    for (int i = 0; i < listLine.Count; i++)
+                    {
+                        Line line = listLine[i];
+
+                        if (line != null)
+                        {
+                            double dDist = line.Distance();
+                            double dCenterY = (line.Start.Y + dDist / 2.0D);
+
+                            if (dCenterY > (dCenterYAvg - (dAverageDist))
+                                && dCenterY < (dCenterYAvg + (dAverageDist)))
+                            {
+                                if (dDist >= (dAverageDist * 0.8D)
+                                    && dDist <= (dAverageDist * 1.5D))
+                                {
+                                    MatMeasure.Line(line.Start, line.End, Scalar.Aquamarine);
+                                    lock (lockObject)
+                                    {
+                                        listGap.Add(dDist);
+                                    }
+
+                                    listOutline.Add(listLine[i].Start);
+                                    listInLine.Add(listLine[i].End);
+
+                                }
+                            }
+                        }
+                    }
+                }
+                else if(dr == Direction.LeftToRight || dr == Direction.RightToLeft)
+                {
+                    List<double> listCenterX = new List<double>();
+
+                    for (int i = 0; i < listLine.Count; i++)
+                    {
+                        Line line = listLine[i];
+                        double dDist = line.Distance();
+                        dSumTemp += dDist;
+
+                        double dCenterX = (line.Start.X + line.Distance() / 2.0D);
+                        listCenterX.Add(dCenterX);
+                    }
+
+                    double dCenterXAvg = listCenterX.Average();
+                    double dAverageDist = dSumTemp / listCenterX.Count;
+
+                    for (int i = 0; i < listLine.Count; i++)
+                    {
+                        Line line = listLine[i];
+
+                        if (line != null)
+                        {
+                            double dDist = line.Distance();
+                            double dCenterX = (line.Start.X + dDist / 2.0D);
+
+                            if (dCenterX > (dCenterXAvg - (dAverageDist))
+                                && dCenterX < (dCenterXAvg + (dAverageDist)))
+                            {
+                                if (dDist >= (dAverageDist * 0.8D)
+                                    && dDist <= (dAverageDist * 1.5D))
+                                {
+                                    MatMeasure.Line(line.Start, line.End, Scalar.Aquamarine);
+                                    lock (lockObject)
+                                    {
+                                        listGap.Add(dDist);
+                                    }
+
+                                    listOutline.Add(listLine[i].Start);
+                                    listInLine.Add(listLine[i].End);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                List<Point2d> listFitOut = IVision.RansacLineFitting(listOutline, out double dAOut, out double dBOut);
+                List<Point2d> listFitIn = IVision.RansacLineFitting(listInLine, out double dAIn, out double dBIn);
+
+                if (listFitOut.Count > 1)
+                {
+                    dAngle = IMath.Angle(new Point(listFitOut[0].X, listFitOut[0].Y), new Point(listFitOut[listFitOut.Count - 1].X, listFitOut[listFitOut.Count - 1].Y));
+
+                    for (int i = 0; i < listFitOut.Count; i++)
+                    {
+                        OpenCvSharp.Point pt = new OpenCvSharp.Point((int)listFitOut[i].X, (int)listFitOut[i].Y);
+                        MatMeasure.Circle(pt, 5, Scalar.Red, 5);
+                    }
+
+                    for (int i = 0; i < listFitIn.Count; i++)
+                    {
+                        OpenCvSharp.Point pt = new OpenCvSharp.Point((int)listFitIn[i].X, (int)listFitIn[i].Y);
+                        MatMeasure.Circle(pt, 5, Scalar.Red, 5);
+                    }
+
+                    MatMeasure.PutText("Angle : " + dAngle.ToString("F4"), new Point((int)(listFitOut[0].X + (listFitOut[listFitOut.Count - 1].X - listFitOut[0].X) / 2.0D), listFitOut[0].Y - 50), HersheyFonts.HersheyDuplex, 2.0D, Scalar.Blue, 2);
+                }
+            }
+
+            MatMeasure.CopyTo(MatResult);
+            return listGap;
+        }
+
+        public static bool Masking(Direction dr, ref Mat MatMeasure)
+        {
+            Rect rt = new Rect();
+
+            switch (dr)
+            {
+                case Direction.LeftToRight:
+                    rt.X = 0;
+                    rt.Y = 0;
+                    rt.Width = (int)(MatMeasure.Width * 0.25D);
+                    rt.Height = MatMeasure.Height;
+                    break;
+                case Direction.RightToLeft:
+                    rt.Width = (int)(MatMeasure.Width * 0.25D);
+                    rt.Height = MatMeasure.Height;
+                    rt.X = MatMeasure.Width - rt.Width;
+                    rt.Y = 0;
+                    break;
+                case Direction.ToptoBottom:
+                    rt.X = 0;
+                    rt.Y = 0;
+                    rt.Width = MatMeasure.Width;
+                    rt.Height = (int)(MatMeasure.Height * 0.2D);
+                    break;
+                case Direction.BottomToTop:
+                    rt.Width = MatMeasure.Width;
+                    rt.Height = (int)(MatMeasure.Height * 0.2D);
+                    rt.X = 0;
+                    rt.Y = MatMeasure.Height - rt.Height;
+                    break;
+            }
+
+            MatMeasure.Rectangle(rt, Scalar.White, -1);
+            return true;
+        }
+
+        public static bool Masking(Rect rtROI, Scalar cr, ref Mat MatMeasure)
+        {
+            MatMeasure.Rectangle(rtROI, cr, -1);
+            return true;
+        }
+
+        public static List<double> Gap(Mat MatMeasure, int nThreshold, int nContrast, int nThickness, int nEdgeColor, Direction dr, ref Mat MatResult, ref List<Point> listMaskingLine)
+        {
+            List<Line> listLine = new List<Line>();            
+            List<Point> listContour = new List<Point>();
+            List<double> listGap = new List<double>();
+            listMaskingLine = new List<Point>();
+
+            double dSum = 0.0D;
+
+            try
+            {
+                Mat MatKernel = Cv2.GetStructuringElement(MorphShapes.Rect, new OpenCvSharp.Size(9, 9));
+
+                if (IsMatEmpty(MatMeasure))
+                {
+                    Logger.WriteLog(LOG.AbNormal, "1");
+                    return null;
+                }
+
+                Masking(dr, ref MatMeasure);
+
+                Cv2.Threshold(MatMeasure, MatMeasure, nThreshold, 255, ThresholdTypes.Binary);
+
+               if (nEdgeColor == 1)
+                {
+                    Cv2.MorphologyEx(MatMeasure, MatMeasure, MorphTypes.Dilate, MatKernel, new OpenCvSharp.Point(-1, -1), 1);
+                }
+                else if(nEdgeColor == 2)
+                {
+                    Cv2.MorphologyEx(MatMeasure, MatMeasure, MorphTypes.Erode, MatKernel, new OpenCvSharp.Point(-1, -1), 1);
+                }
+
+                switch (dr)
+                {
+                    case Direction.LeftToRight:
+                        for (int ny = 0; ny < MatMeasure.Rows; ny = ny + 5)
+                        {
+                            Point ptFirst = new Point();
+                            Point ptSecond = new Point();
+
+                            bool bFirst = false;
+
+                            Line line = new Line(new Point(), new Point());
+
+                            for (int nx = 0; nx < MatMeasure.Cols - 1; nx++)
+                            {
+                                if (nx > 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny, nx - 1);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (nx + nThickness < MatMeasure.Cols - 1)
+                                    {
+                                        if (Math.Abs(greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny, nx + k);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+
+                                                if (bFirst == false)
+                                                {
+                                                    ptFirst = new OpenCvSharp.Point(nx, ny);
+                                                    line.Start = ptFirst;
+                                                    bFirst = true;
+                                                }
+                                                else
+                                                {
+                                                    ptSecond = new OpenCvSharp.Point(nx, ny);
+                                                    line.End = ptSecond;
+
+                                                    if (line != null)
+                                                    {
+                                                        dSum += line.Distance();
+                                                        listLine.Add(line);
+                                                    }
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    case Direction.RightToLeft:
+                        for (int ny = 0; ny < MatMeasure.Rows; ny = ny + 5)
+                        {
+                            Point ptFirst = new Point();
+                            Point ptSecond = new Point();
+
+                            bool bFirst = false;
+
+                            Line line = new Line(new Point(), new Point());
+
+                            for (int nx = MatMeasure.Cols - 1; nx > 0; nx--)
+                            {
+                                if (nx < MatMeasure.Cols - 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny, nx + 1);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (nx - nThickness > 0)
+                                    {
+                                        bool bFind = false;
+
+                                        if (Math.Abs(greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny, nx - k);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+
+                                                if (bFirst == false)
+                                                {
+                                                    ptFirst = new OpenCvSharp.Point(nx, ny);
+                                                    line.Start = ptFirst;
+                                                    bFirst = true;
+                                                }
+                                                else
+                                                {
+                                                    ptSecond = new OpenCvSharp.Point(nx, ny);
+                                                    line.End = ptSecond;
+
+                                                    if (line != null)
+                                                    {
+                                                        dSum += line.Distance();
+                                                        listLine.Add(line);
+                                                    }
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    case Direction.ToptoBottom:
+                        for (int nx = 0; nx < MatMeasure.Cols; nx = nx + 5)
+                        { 
+                            Point ptFirst = new Point();
+                            Point ptSecond = new Point();
+
+                            bool bFirst = false;
+
+                            Line line = new Line(new Point(), new Point());
+
+                            for (int ny = 0; ny < MatMeasure.Rows - 1; ny++)
+                            {
+                                if (ny > 010)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny - 1, nx);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (ny + nThickness < MatMeasure.Rows - 1)
+                                    {
+                                        if ((!bFirst && (greyValuePrev - greyValue) > nContrast)
+                                            || Math.Abs(greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny + k, nx);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+
+                                                if (bFirst == false)
+                                                {
+                                                    ptFirst = new OpenCvSharp.Point(nx, ny);
+                                                    line.Start = ptFirst;
+                                                    bFirst = true;
+                                                }
+                                                else
+                                                {
+                                                    ptSecond = new OpenCvSharp.Point(nx, ny);
+                                                    line.End = ptSecond;
+
+                                                    if (line != null)
+                                                    {
+                                                        dSum += line.Distance();
+                                                        listLine.Add(line);
+                                                    }
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    case Direction.BottomToTop:
+                        for (int nx = 0; nx < MatMeasure.Cols; nx = nx + 5)
+                        {
+                            Point ptFirst = new Point();
+                            Point ptSecond = new Point();
+
+                            bool bFirst = false;
+
+                            Line line = new Line(new Point(), new Point());
+
+                            for (int ny = MatMeasure.Rows - 1; ny > 0; ny--)
+                            {
+                                if (ny < MatMeasure.Rows - 10)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny + 1, nx);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (ny - nThickness > 0)
+                                    {
+                                        bool bFind = false;
+
+                                        if ((!bFirst && (greyValuePrev - greyValue) > nContrast)
+                                            || Math.Abs(greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny - k, nx);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+
+                                                if (bFirst == false)
+                                                {
+                                                    ptFirst = new OpenCvSharp.Point(nx, ny);
+                                                    line.Start = ptFirst;
+                                                    bFirst = true;
+                                                }
+                                                else
+                                                {
+                                                    ptSecond = new OpenCvSharp.Point(nx, ny);
+                                                    line.End = ptSecond;
+
+                                                    if (line != null)
+                                                    {
+                                                        if (line.Distance() < 10)
+                                                        {
+
+                                                        }
+                                                        else
+                                                        {
+                                                            dSum += line.Distance();
+                                                            listLine.Add(line);
+                                                        }
+                                                    }
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                }
+            }
+            catch (Exception Desc)
+            {
+                Logger.WriteLog(LOG.AbNormal, "2");
+                Logger.WriteLog(LOG.AbNormal, Desc.Message);
+                return null;
+            }
+
+            if (listLine.Count > 0)
+            {
+                double dSumTemp = 0.0D;
+
+                List<OpenCvSharp.Point> listOutline = new List<Point>();
+                List<OpenCvSharp.Point> listInLine = new List<Point>();
+
+                if (dr == Direction.BottomToTop || dr == Direction.ToptoBottom)
+                {
+                    List<double> listCenterY = new List<double>();
+
+                    for (int i = 0; i < listLine.Count; i++)
+                    {
+                        Line line = listLine[i];
+                        double dDist = line.Distance();
+                        dSumTemp += dDist;
+
+                        double dCenterY = (line.Start.Y + line.Distance() / 2.0D);
+                        listCenterY.Add(dCenterY);
+                    }
+
+                    double dCenterYAvg = listCenterY.Average();
+                    double dAverageDist = dSumTemp / listCenterY.Count;
+
+                    for (int i = 0; i < listLine.Count; i++)
+                    {
+                        Line line = listLine[i];
+
+                        if (line != null)
+                        {
+                            double dDist = line.Distance();
+                            double dCenterY = (line.Start.Y + dDist / 2.0D);
+
+                            if (dCenterY > (dCenterYAvg - (dAverageDist))
+                                && dCenterY < (dCenterYAvg + (dAverageDist)))
+                            {
+                                if (dDist >= (dAverageDist * 0.8D)
+                                    && dDist <= (dAverageDist * 1.5D))
+                                {
+                                    MatMeasure.Line(line.Start, line.End, Scalar.Aquamarine);
+                                    lock (lockObject)
+                                    {
+                                        listGap.Add(dDist);
+                                    }
+
+                                    listOutline.Add(listLine[i].Start);
+                                    listInLine.Add(listLine[i].End);
+
+                                    listMaskingLine.Add(listLine[i].End);
+
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (dr == Direction.LeftToRight || dr == Direction.RightToLeft)
+                {
+                    List<double> listCenterX = new List<double>();
+
+                    for (int i = 0; i < listLine.Count; i++)
+                    {
+                        Line line = listLine[i];
+                        double dDist = line.Distance();
+                        dSumTemp += dDist;
+
+                        double dCenterX = (line.Start.X + line.Distance() / 2.0D);
+                        listCenterX.Add(dCenterX);
+                    }
+
+                    double dCenterXAvg = listCenterX.Average();
+                    double dAverageDist = dSumTemp / listCenterX.Count;
+
+                    for (int i = 0; i < listLine.Count; i++)
+                    {
+                        Line line = listLine[i];
+
+                        if (line != null)
+                        {
+                            double dDist = line.Distance();
+                            double dCenterX = (line.Start.X + dDist / 2.0D);
+
+                            if (dCenterX > (dCenterXAvg - (dAverageDist))
+                                && dCenterX < (dCenterXAvg + (dAverageDist)))
+                            {
+                                if (dDist >= (dAverageDist * 0.8D)
+                                    && dDist <= (dAverageDist * 1.5D))
+                                {
+                                    MatMeasure.Line(line.Start, line.End, Scalar.Aquamarine);
+                                    lock (lockObject)
+                                    {
+                                        listGap.Add(dDist);
+                                    }
+
+                                    listOutline.Add(listLine[i].Start);
+                                    listInLine.Add(listLine[i].End);
+
+                                    listMaskingLine.Add(listLine[i].End);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            MatMeasure.CopyTo(MatResult);
+
+            return listGap;
+        }
+
+        public static List<double> Gap(Mat MatMeasure, int nThreshold, int nContrast, int nThickness, int nEdgeColor, Direction dr, ref Mat MatResult, List<Point> listMaskingLine)
+        {
+            List<Line> listLine = new List<Line>();
+            List<Point> listContour = new List<Point>();
+            List<double> listGap = new List<double>();
+
+            double dSum = 0.0D;
+
+            try
+            {
+                Mat MatKernel = Cv2.GetStructuringElement(MorphShapes.Rect, new OpenCvSharp.Size(9, 9));
+
+                if (IsMatEmpty(MatMeasure))
+                {
+                    Logger.WriteLog(LOG.AbNormal, "1");
+                    return null;
+                }
+
+                Masking(dr, ref MatMeasure);
+
+
+                if(listMaskingLine != null)
+                {
+                    for (int i = 0; i < listMaskingLine.Count; i++)
+                    {
+                        if (i > 0)
+                        {
+                            Point ptPrev = listMaskingLine[i - 1];
+                            Point ptCurrnt = listMaskingLine[i];
+
+                            double dDistance = ptPrev.DistanceTo(ptCurrnt);
+
+                            if (dDistance > 30)
+                            {
+                                continue;
+                            }
+                            else
+                            {
+                                MatMeasure.Line(ptPrev, ptCurrnt, Scalar.White, 5);
+                            }
+                        }
+                    }
+                }
+
+                Cv2.Threshold(MatMeasure, MatMeasure, nThreshold, 255, ThresholdTypes.Binary);
+
+                if (nEdgeColor == 1)
+                {
+                    Cv2.MorphologyEx(MatMeasure, MatMeasure, MorphTypes.Dilate, MatKernel, new OpenCvSharp.Point(-1, -1), 1);
+                }
+                else
+                {
+                    Cv2.MorphologyEx(MatMeasure, MatMeasure, MorphTypes.Erode, MatKernel, new OpenCvSharp.Point(-1, -1), 1);
+                }
+
+                switch (dr)
+                {
+                    case Direction.LeftToRight:
+                        for (int ny = 0; ny < MatMeasure.Rows; ny = ny + 5)
+                        {
+                            Point ptFirst = new Point();
+                            Point ptSecond = new Point();
+
+                            bool bFirst = false;
+
+                            Line line = new Line(new Point(), new Point());
+
+                            for (int nx = 0; nx < MatMeasure.Cols - 1; nx++)
+                            {
+                                if (nx > 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny, nx - 1);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (nx + nThickness < MatMeasure.Cols - 1)
+                                    {
+                                        if (Math.Abs(greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny, nx + k);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+
+                                                if (bFirst == false)
+                                                {
+                                                    ptFirst = new OpenCvSharp.Point(nx, ny);
+                                                    line.Start = ptFirst;
+                                                    bFirst = true;
+                                                }
+                                                else
+                                                {
+                                                    ptSecond = new OpenCvSharp.Point(nx, ny);
+                                                    line.End = ptSecond;
+
+                                                    if (line != null)
+                                                    {
+                                                        dSum += line.Distance();
+                                                        listLine.Add(line);
+                                                    }
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    case Direction.RightToLeft:
+                        for (int ny = 0; ny < MatMeasure.Rows; ny = ny + 5)
+                        {
+                            Point ptFirst = new Point();
+                            Point ptSecond = new Point();
+
+                            bool bFirst = false;
+
+                            Line line = new Line(new Point(), new Point());
+
+                            for (int nx = MatMeasure.Cols - 1; nx > 0; nx--)
+                            {
+                                if (nx < MatMeasure.Cols - 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny, nx + 1);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (nx - nThickness > 0)
+                                    {
+                                        bool bFind = false;
+
+                                        if (Math.Abs(greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny, nx - k);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+
+                                                if (bFirst == false)
+                                                {
+                                                    ptFirst = new OpenCvSharp.Point(nx, ny);
+                                                    line.Start = ptFirst;
+                                                    bFirst = true;
+                                                }
+                                                else
+                                                {
+                                                    ptSecond = new OpenCvSharp.Point(nx, ny);
+                                                    line.End = ptSecond;
+
+                                                    if (line != null)
+                                                    {
+                                                        dSum += line.Distance();
+                                                        listLine.Add(line);
+                                                    }
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    case Direction.ToptoBottom:
+                        for (int nx = 0; nx < MatMeasure.Cols; nx = nx + 5)
+                        {
+                            Point ptFirst = new Point();
+                            Point ptSecond = new Point();
+
+                            bool bFirst = false;
+
+                            Line line = new Line(new Point(), new Point());
+
+                            for (int ny = 0; ny < MatMeasure.Rows - 1; ny++)
+                            {
+                                if (ny > 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny - 1, nx);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (ny + nThickness < MatMeasure.Rows - 1)
+                                    {
+                                        if (!bFirst && ((greyValuePrev - greyValue) > nContrast)
+                                            || Math.Abs(greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny + k, nx);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+
+                                                if (bFirst == false)
+                                                {
+                                                    ptFirst = new OpenCvSharp.Point(nx, ny);
+                                                    line.Start = ptFirst;
+                                                    bFirst = true;
+                                                }
+                                                else
+                                                {
+                                                    ptSecond = new OpenCvSharp.Point(nx, ny);
+                                                    line.End = ptSecond;
+
+                                                    if (line != null)
+                                                    {
+                                                        dSum += line.Distance();
+                                                        listLine.Add(line);
+                                                    }
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    case Direction.BottomToTop:
+                        for (int nx = 0; nx < MatMeasure.Cols; nx = nx + 5)
+                        {
+                            Point ptFirst = new Point();
+                            Point ptSecond = new Point();
+
+                            bool bFirst = false;
+
+                            Line line = new Line(new Point(), new Point());
+
+                            for (int ny = MatMeasure.Rows - 1; ny > 0; ny--)
+                            {
+                                if (ny < MatMeasure.Rows - 1)
+                                {
+                                    var pt = MatMeasure.At<Vec3b>(ny, nx);
+                                    var ptPrev = MatMeasure.At<Vec3b>(ny + 1, nx);
+
+                                    int greyValue = (int)((pt.Item2 * 0.3) + (pt.Item1 * 0.59) + (pt.Item0 * 0.11));
+                                    int greyValuePrev = (int)((ptPrev.Item2 * 0.3) + (ptPrev.Item1 * 0.59) + (ptPrev.Item0 * 0.11));
+
+                                    if (ny - nThickness > 0)
+                                    {
+                                        bool bFind = false;
+
+                                        if (Math.Abs(greyValuePrev - greyValue) > nContrast)
+                                        {
+                                            bool bThickness = true;
+
+                                            for (int k = 1; k <= nThickness; k++)
+                                            {
+                                                var ptThickness = MatMeasure.At<Vec3b>(ny - k, nx);
+                                                int greyValueT = (int)((ptThickness.Item2 * 0.3) + (ptThickness.Item1 * 0.59) + (ptThickness.Item0 * 0.11));
+
+                                                if (Math.Abs(greyValuePrev - greyValueT) < nContrast)
+                                                {
+                                                    bThickness = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (bThickness)
+                                            {
+                                                listContour.Add(new OpenCvSharp.Point(nx, ny));
+
+                                                if (bFirst == false)
+                                                {
+                                                    ptFirst = new OpenCvSharp.Point(nx, ny);
+                                                    line.Start = ptFirst;
+                                                    bFirst = true;
+                                                }
+                                                else
+                                                {
+                                                    ptSecond = new OpenCvSharp.Point(nx, ny);
+                                                    line.End = ptSecond;
+
+                                                    if (line != null)
+                                                    {
+                                                        if (line.Distance() < 10)
+                                                        {
+
+                                                        }
+                                                        else
+                                                        {
+                                                            dSum += line.Distance();
+                                                            listLine.Add(line);
+                                                        }
+                                                    }
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                }
+            }
+            catch (Exception Desc)
+            {
+                Logger.WriteLog(LOG.AbNormal, "2");
+                Logger.WriteLog(LOG.AbNormal, Desc.Message);
+                return null;
+            }
+
+            if (listLine.Count > 0)
+            {
+                double dSumTemp = 0.0D;
+
+                List<OpenCvSharp.Point> listOutline = new List<Point>();
+                List<OpenCvSharp.Point> listInLine = new List<Point>();
+
+                if (dr == Direction.BottomToTop || dr == Direction.ToptoBottom)
+                {
+                    List<double> listCenterY = new List<double>();
+
+                    for (int i = 0; i < listLine.Count; i++)
+                    {
+                        Line line = listLine[i];
+                        double dDist = line.Distance();
+                        dSumTemp += dDist;
+
+                        double dCenterY = (line.Start.Y + line.Distance() / 2.0D);
+                        listCenterY.Add(dCenterY);
+                    }
+
+                    double dCenterYAvg = listCenterY.Average();
+                    double dAverageDist = dSumTemp / listCenterY.Count;
+
+                    for (int i = 0; i < listLine.Count; i++)
+                    {
+                        Line line = listLine[i];
+
+                        if (line != null)
+                        {
+                            double dDist = line.Distance();
+                            double dCenterY = (line.Start.Y + dDist / 2.0D);
+
+                            if (dCenterY > (dCenterYAvg - (dAverageDist))
+                                && dCenterY < (dCenterYAvg + (dAverageDist)))
+                            {
+                                if (dDist >= (dAverageDist * 0.8D)
+                                    && dDist <= (dAverageDist * 1.5D))
+                                {
+                                    MatMeasure.Line(line.Start, line.End, Scalar.Aquamarine);
+                                    lock (lockObject)
+                                    {
+                                        listGap.Add(dDist);
+                                    }
+
+                                    listOutline.Add(listLine[i].Start);
+                                    listInLine.Add(listLine[i].End);
+
+                                    listMaskingLine.Add(listLine[i].End);
+
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (dr == Direction.LeftToRight || dr == Direction.RightToLeft)
+                {
+                    List<double> listCenterX = new List<double>();
+
+                    for (int i = 0; i < listLine.Count; i++)
+                    {
+                        Line line = listLine[i];
+                        double dDist = line.Distance();
+                        dSumTemp += dDist;
+
+                        double dCenterX = (line.Start.X + line.Distance() / 2.0D);
+                        listCenterX.Add(dCenterX);
+                    }
+
+                    double dCenterXAvg = listCenterX.Average();
+                    double dAverageDist = dSumTemp / listCenterX.Count;
+
+                    for (int i = 0; i < listLine.Count; i++)
+                    {
+                        Line line = listLine[i];
+
+                        if (line != null)
+                        {
+                            double dDist = line.Distance();
+                            double dCenterX = (line.Start.X + dDist / 2.0D);
+
+                            if (dCenterX > (dCenterXAvg - (dAverageDist))
+                                && dCenterX < (dCenterXAvg + (dAverageDist)))
+                            {
+                                if (dDist >= (dAverageDist * 0.8D)
+                                    && dDist <= (dAverageDist * 1.5D))
+                                {
+                                    MatMeasure.Line(line.Start, line.End, Scalar.Aquamarine);
+                                    lock (lockObject)
+                                    {
+                                        listGap.Add(dDist);
+                                    }
+
+                                    listOutline.Add(listLine[i].Start);
+                                    listInLine.Add(listLine[i].End);
+
+                                    listMaskingLine.Add(listLine[i].End);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            MatMeasure.CopyTo(MatResult);
+
+            return listGap;
+        }
+
+
+        public static void InspectionGap(Mat MatMeasure, int nContrast, int nThickness, int nEdgeColor, Direction dr)
+        {
+            try
+            {
+                List<Line> listInspectionLine = new List<Line>();
+
+
+            }
+            catch (Exception Desc)
+            {
+
+            }
+        }
+
+
+        public static Mat DeleteNonFocusingBackground(Mat MatSource, Direction dr, int nThreshold, out Mat MatDraw)
+        {
+            Mat MatCanny = new Mat();
+            Mat MatKernel = Cv2.GetStructuringElement(MorphShapes.Rect, new OpenCvSharp.Size(3, 3));
+
+            MatDraw = new Mat();
+            MatSource.CopyTo(MatDraw);
+            if (IVision.IsMatEmpty(MatSource))
+            {
+                return new Mat();
+            }
+            
+            Mat MatSoble = new Mat();
+            Cv2.Canny(MatSource, MatCanny, nThreshold, 255);
+
+            if(dr == Direction.LeftToRight || dr == Direction.RightToLeft)
+            {
+                Cv2.Sobel(MatCanny, MatSoble, MatType.CV_8U, 1, 0);
+            }
+            else
+            {
+                Cv2.Sobel(MatCanny, MatSoble, MatType.CV_8U, 0, 1);
+            }
+
+            LineSegmentPoint[] segHoughP = Cv2.HoughLinesP(MatSoble, 1, Math.PI / 180, 100, 100, 10);
+
+            int nNearest = 0;
+
+            if (dr == Direction.LeftToRight || dr == Direction.ToptoBottom)
+            {
+                nNearest = int.MaxValue;
+            }
+            
+            List<OpenCvSharp.Point> listPts = new List<OpenCvSharp.Point>();
+
+            List<double> listCenter = new List<double>();
+
+            if (dr == Direction.LeftToRight || dr == Direction.RightToLeft)
+            {
+                for (int i = 0; i < segHoughP.Length; i++)
+                {
+                    listCenter.Add(segHoughP[i].P1.X);
+                    listCenter.Add(segHoughP[i].P2.X);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < segHoughP.Length; i++)
+                {
+                    listCenter.Add(segHoughP[i].P1.Y);
+                    listCenter.Add(segHoughP[i].P2.Y);
+                }
+            }
+
+            double dCenterAvg = listCenter.Average();
+
+            for (int i = 0; i < segHoughP.Length; i++)
+            {
+                LineSegmentPoint s = segHoughP[i];
+
+                if (dr == Direction.LeftToRight)
+                {
+                    if (s.P1.X < (int)(dCenterAvg * 1.025D)
+                        && s.P1.X > (int)(dCenterAvg * 0.9D)
+                        && s.P2.X < (int)(dCenterAvg * 1.025D)
+                        && s.P2.X > (int)(dCenterAvg * 0.9D))
+                    {
+                        if (nNearest > s.P1.X)
+                        {
+                            nNearest = s.P1.X;
+                        }
+
+                        if (nNearest > s.P2.X)
+                        {
+                            nNearest = s.P2.X;
+                        }
+
+                        listPts.Add(s.P1);
+                        listPts.Add(s.P2);
+                    }
+                }
+                else if (dr == Direction.RightToLeft)
+                {
+                    if (s.P1.X < (int)(dCenterAvg * 1.1D)
+                        && s.P1.X > (int)(dCenterAvg)
+                        && s.P2.X < (int)(dCenterAvg * 1.1D)
+                        && s.P2.X > (int)(dCenterAvg))
+                    {
+                        if (nNearest > s.P1.X)
+                        {
+                            nNearest = s.P1.X;
+                        }
+
+                        if (nNearest > s.P2.X)
+                        {
+                            nNearest = s.P2.X;
+                        }
+
+                        listPts.Add(s.P1);
+                        listPts.Add(s.P2);
+                    }
+                }
+                else
+                {
+                    if (s.P1.Y < (int)(dCenterAvg * 1.1D)
+                       && s.P1.Y > (int)(dCenterAvg * 0.9D)
+                       && s.P2.Y < (int)(dCenterAvg * 1.1D)
+                       && s.P2.Y > (int)(dCenterAvg * 0.9D))
+                    {
+                        if (nNearest > s.P1.Y)
+                        {
+                            nNearest = s.P1.Y;
+                        }
+
+                        if (nNearest > s.P2.Y)
+                        {
+                            nNearest = s.P2.Y;
+                        }
+
+                        listPts.Add(s.P1);
+                        listPts.Add(s.P2);
+                    }
+                }
+            }
+
+            Mat MatFilter = new Mat();
+            MatSource.CopyTo(MatFilter);
+
+            List<Point2d> listFitOut = IVision.RansacLineFitting(listPts, out double dAOut, out double dBOut);
+
+            int nMax = 0;
+            int nMin = int.MaxValue;
+
+            if (dr == Direction.LeftToRight || dr == Direction.RightToLeft)
+            {
+                for (int i = 0; i < listFitOut.Count; i++)
+                {
+                    if (listFitOut[i].X > nMax)
+                    {
+                        nMax = (int)listFitOut[i].X;
+                    }
+
+                    if (listFitOut[i].X < nMin)
+                    {
+                        nMin = (int)listFitOut[i].X;
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < listFitOut.Count; i++)
+                {
+                    if (listFitOut[i].Y > nMax)
+                    {
+                        nMax = (int)listFitOut[i].Y;
+                    }
+
+                    if (listFitOut[i].Y < nMin)
+                    {
+                        nMin = (int)listFitOut[i].Y;
+                    }
+                }
+            }
+
+            List<List<Point>> ListOfListOfPoint = new List<List<Point>>();
+            List<Point> listPolygon = new List<Point>();
+
+            if (dr == Direction.LeftToRight)
+            {
+                listPolygon.Add(new Point(0, 0));
+                listPolygon.Add(new Point(0, MatFilter.Height));
+                listPolygon.Add(new Point(nMax, MatFilter.Height));
+                listPolygon.Add(new Point(nMin, 0));
+                listPolygon.Add(new Point(0, 0));
+            }
+            else if(dr == Direction.RightToLeft)
+            {
+                listPolygon.Add(new Point(MatFilter.Width, 0));
+                listPolygon.Add(new Point(MatFilter.Width, MatFilter.Height));
+                listPolygon.Add(new Point(nMax, MatFilter.Height));
+                listPolygon.Add(new Point(nMin, 0));
+                listPolygon.Add(new Point(MatFilter.Width, 0));
+            }
+            else if (dr == Direction.ToptoBottom)
+            {
+                listPolygon.Add(new Point(0, 0));
+                listPolygon.Add(new Point(0, nMin));
+                listPolygon.Add(new Point(MatFilter.Width, nMax));
+                listPolygon.Add(new Point(MatFilter.Width, 0));
+                listPolygon.Add(new Point(0, 0));
+            }
+
+
+            ListOfListOfPoint.Add(listPolygon);
+
+            MatFilter.FillPoly(ListOfListOfPoint, Scalar.White);
+
+            if (listFitOut.Count > 1)
+            {
+                double dAngle = IMath.Angle(new OpenCvSharp.Point(listFitOut[0].X, listFitOut[0].Y), new OpenCvSharp.Point(listFitOut[listFitOut.Count - 1].X, listFitOut[listFitOut.Count - 1].Y));
+
+                for (int i = 0; i < listFitOut.Count; i++)
+                {
+                    OpenCvSharp.Point pt = new OpenCvSharp.Point((int)listFitOut[i].X, (int)listFitOut[i].Y);
+                    MatDraw.Circle(pt, 5, Scalar.Red, 5);
+                }
+
+                MatDraw.PutText("Angle : " + dAngle.ToString("F4"), new OpenCvSharp.Point((int)(listFitOut[0].X + (listFitOut[listFitOut.Count - 1].X - listFitOut[0].X) / 2.0D), listFitOut[0].Y - 50), HersheyFonts.HersheyDuplex, 2.0D, Scalar.Blue, 2);
+            }
+            GC.Collect();
+
+            return MatFilter;
+            
+        }
+
+        private static object lockObject = new object();
+        public static List<Polygon> CenterofGravityFromContour(Mat MatSource, int nThreshold, int nMinArea, int nMaxArea)
+        {
+            Mat MatGray = new Mat();
+            Mat MatMorp = new Mat();
+            Mat MatContour = new Mat();
+            Mat MatKernel = Cv2.GetStructuringElement(MorphShapes.Rect, new OpenCvSharp.Size(3, 3));
+
+            HierarchyIndex[] hierarchy;
+
+            List<Polygon> ListCenterofGravity = new List<Polygon>();
+            Point testpoint = new OpenCvSharp.Point();            
+
+            OpenCvSharp.Size cvsize;
+            OpenCvSharp.Point[][] contours;
+
+            int nThreshold1 = nThreshold;
+            int nThreshold2 = 255;
+            
+            MatSource.CopyTo(MatContour);
+
+            cvsize.Width = MatContour.Width;
+            cvsize.Height = MatContour.Height;
+
+            
+            //Image Process
+            //Cv2.CvtColor(MatContour, MatGray, ColorConversionCodes.BGRA2GRAY);
+            //Cv2.ImShow("Test1", MatGray);
+            Cv2.Threshold(MatContour, MatGray, nThreshold1, nThreshold2, ThresholdTypes.Binary);
+            //Cv2.AdaptiveThreshold(MatGray, MatGray, nThreshold, AdaptiveThresholdTypes.MeanC, ThresholdTypes.Binary, 15, 5);
+            //Cv2.ImShow("Test2", MatGray);
+            Cv2.MorphologyEx(MatGray, MatMorp, MorphTypes.Erode, MatKernel, new OpenCvSharp.Point(-1, -1), 1);
+            //Cv2.ImShow("Test3", MatMorp);
+
+            //Algorithm
+            Cv2.FindContours(MatMorp, out contours, out hierarchy, RetrievalModes.Tree, ContourApproximationModes.ApproxSimple, null);
+
+            try
+            {
+                for (int i = 0; i < contours.Length; i++)
+                {
+                    double peri = Cv2.ArcLength(contours[i], true);
+
+                    OpenCvSharp.Point[] pp = Cv2.ApproxPolyDP(contours[i], 0.02 * peri, true);
+                    Rect rt = Cv2.BoundingRect(pp);
+
+                    RotatedRect rrect = Cv2.MinAreaRect(pp);
+                    double areaRatio = Math.Abs(Cv2.ContourArea(contours[i], false)) / (rrect.Size.Width * rrect.Size.Height);
+
+                    Cv2.DrawContours(MatMorp, contours, i, Scalar.Yellow, 2, LineTypes.AntiAlias, hierarchy, 100, testpoint);
+
+                    if (IVision.AreaofRect(rt.Size) >= nMinArea && IVision.AreaofRect(rt.Size) <= nMaxArea)
+                    {
+                        Cv2.PutText(MatContour, string.Format("{0} Angles", pp.Length), new OpenCvSharp.Point((int)rrect.Center.X, (int)rrect.Center.Y), HersheyFonts.HersheySimplex, 0.5D, new Scalar(125, 125, 255), 3);
+                        
+                        for (int j = 0; j < pp.Length; j++)
+                        {
+                            Cv2.Circle(MatContour, new OpenCvSharp.Point(pp[j].X, pp[j].Y), 5, new Scalar(0, 0, 255), 2);
+                        }
+
+                        if (pp.Length != 0)
+                        {
+                            Polygon pg = new Polygon(pp);
+                            ListCenterofGravity.Add(pg);
+
+                            Point[] parrCt = pg.ReturnCenterpointofPolygon();
+                        }
+                    }
+                }
+            }
+
+            catch (Exception Desc)
+            {
+                
+            }
+
+            return ListCenterofGravity;
+        }
+        public static int GetLargestContour(Mat MatSource, int nThreshold, out Rect rtLargestContour, out OpenCvSharp.Point ptConvex)
+        {
+            int nContourCount = 0;
+            rtLargestContour = new Rect();
+            ptConvex = new Point();
+
+            if (IsMatEmpty(MatSource))
+            {                
+                return nContourCount;
+            }
+
+            Mat MatResult = new Mat();
+            Mat MatGray = new Mat();
+            Mat MatMorp = new Mat();
+            Mat MatBinary = new Mat();
+            Mat MatAda = new Mat();
+
+
+            int nThreshold1 = nThreshold;
+            int nThreshold2 = 255;
+
+            OpenCvSharp.Size cvsize;
+
+            cvsize.Width = MatSource.Width;
+            cvsize.Height = MatSource.Height;
+
+            Mat MatKernel = Cv2.GetStructuringElement(MorphShapes.Rect, new OpenCvSharp.Size(3, 3));
+
+            Cv2.CvtColor(MatSource, MatGray, ColorConversionCodes.BGRA2GRAY);
+            Cv2.Threshold(MatGray, MatGray, nThreshold1, nThreshold2, ThresholdTypes.Binary);
+            Cv2.MorphologyEx(MatGray, MatMorp, MorphTypes.Erode, MatKernel, new OpenCvSharp.Point(-1, -1), 1);
+
+            OpenCvSharp.Point[][] contours;
+            OpenCvSharp.Point[] ptsLargest = null;
+            HierarchyIndex[] hierarchy;
+            int nMaxArea = 0;
+
+            Cv2.FindContours(MatMorp, out contours, out hierarchy, RetrievalModes.List, ContourApproximationModes.ApproxSimple, null);
+
+            for (int i = 0; i < contours.Length; i++)
+            {
+                double peri = Cv2.ArcLength(contours[i], true);
+
+                OpenCvSharp.Point[] pp = Cv2.ApproxPolyDP(contours[i], 0.02 * peri, true);
+
+                RotatedRect rrect = Cv2.MinAreaRect(pp);
+                double areaRatio = System.Math.Abs(Cv2.ContourArea(contours[i], false)) / (rrect.Size.Width * rrect.Size.Height);
+
+                Rect rt = Cv2.BoundingRect(pp);
+                
+                if (nMaxArea < (rt.Width * rt.Height))
+                {
+                    nMaxArea = (rt.Width * rt.Height);                    
+                    rtLargestContour = rt;
+                    ptsLargest = pp;
+                }
+            }
+
+            OpenCvSharp.Point ptCenter = new OpenCvSharp.Point(rtLargestContour.Left + rtLargestContour.Width / 2, rtLargestContour.Top + rtLargestContour.Height / 2);
+
+            List<double> listDistance = new List<double>();
+            double dMinDistacne = double.MaxValue;            
+
+            foreach (OpenCvSharp.Point pt in ptsLargest)
+            {
+                double distance = Math.Sqrt(Math.Pow(pt.X - ptCenter.X, 2) + Math.Pow(pt.Y - ptCenter.Y, 2));
+                if(distance < dMinDistacne)
+                {
+                    dMinDistacne = distance;
+                    ptConvex = pt;
+                }
+            }
+
+            return contours.Length;
+        }
+
+        public static List<Point2d> RansacLineFitting(List<Point> points, out double dFactorA, out double dFactorB)
+        {
+            int nPointsCount = points.Count;
+
+            if (nPointsCount == 0)
+            {
+                dFactorA = 0.0D;
+                dFactorB = 0.0D;
+                return new List<Point2d>();
+            }
+
+            double dMeanX = points.Average(point => point.X);
+            double dMeanY = points.Average(point => point.Y);
+
+            double dSumXSquared = 0.0D;// points.Sum(point => point.X * point.X);
+            double dSumXY = 0.0D; //points.Sum(point => point.X * point.Y);
+
+            for (int i = 0; i < points.Count; i++)
+            {
+                dSumXSquared += (points[i].X * points[i].X);
+                dSumXY += (points[i].X * points[i].Y);
+            }
+
+            dFactorA = (dSumXY / nPointsCount - dMeanX * dMeanY) / (dSumXSquared / nPointsCount - dMeanX * dMeanX);
+            dFactorB = (dFactorA * dMeanX - dMeanY);
+
+            double dFacA = dFactorA;
+            double dFacB = dFactorB;
+
+            return points.Select(point => new Point2d() { X = point.X, Y = dFacA * point.X - dFacB }).ToList();
+        }
+
+        public static List<Point> RansacLineFittingInt(List<Point> points, out double dFactorA, out double dFactorB)
+        {
+            int nPointsCount = points.Count;
+
+            if (nPointsCount == 0)
+            {
+                dFactorA = 0.0D;
+                dFactorB = 0.0D;
+                return new List<Point>();
+            }
+
+            double dMeanX = points.Average(point => point.X);
+            double dMeanY = points.Average(point => point.Y);
+
+            double dSumXSquared = 0.0D;// points.Sum(point => point.X * point.X);
+            double dSumXY = 0.0D; //points.Sum(point => point.X * point.Y);
+
+            for (int i = 0; i < points.Count; i++)
+            {
+                dSumXSquared += (points[i].X * points[i].X);
+                dSumXY += (points[i].X * points[i].Y);
+            }
+
+            dFactorA = (dSumXY / nPointsCount - dMeanX * dMeanY) / (dSumXSquared / nPointsCount - dMeanX * dMeanX);
+            dFactorB = (dFactorA * dMeanX - dMeanY);
+
+            double dFacA = dFactorA;
+            double dFacB = dFactorB;
+
+            return points.Select(point => new Point() { X = point.X, Y = (int)(dFacA * point.X - dFacB) }).ToList();
+        }
+
+        public static int AreaofRect(Size sz)
+        {
+            return sz.Width * sz.Height;
+        }
+
+        public static Point CenterofRect(Rect rt)
+        {
+            return new Point(rt.X+rt.Width/2, rt.Y + rt.Height/2);
+        }
+
+        public static bool IsMatEmpty(Mat MatSource)
+        {
+            if(MatSource == null)
+            {
+                return true;
+            }
+
+            if(MatSource.Width == 0 || MatSource.Height == 0)
+            {
+                return true;
+            }
+
+            return false;
+        }
+    }
+}

@@ -1,0 +1,141 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Xml;
+
+using OpenCvSharp;
+
+namespace KtemVisionSystem
+{
+    public class CPropertyMean
+    {
+        //[CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("NAME")]
+        [Browsable(false)]
+        public string NAME { get; set; } = "";
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("RECT_WIDTH")]
+        public int WIDTH { get; set; } = 100;
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("RECT_HEIGHT")]
+        public int HEIGHT { get; set; } = 120;
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("MEAN_MAX")]
+        public int MEAN_MAX { get; set; } = 240;
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("MEAN_MIN")]
+        public int MEAN_MIN { get; set; } = 100;
+
+        [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("OFFSET_SIZE")]
+        public int OFFSETY { get; set; } = 30;
+
+        public CPropertyMean(string strName)
+        {
+            NAME = strName;
+        }
+
+        #region CONFIG BY XML              
+        private string m_XMLName = "PROPERTY_MATCHING";
+        public bool LoadConfig(string strRecipeName)
+        {
+            try
+            {
+                string strPath = Application.StartupPath + "\\RECIPE\\" + strRecipeName + "\\" + NAME + ".xml";
+
+                if (File.Exists(strPath))
+                {
+                    XmlTextReader xmlReader = new XmlTextReader(strPath);
+
+                    try
+                    {
+                        while (xmlReader.Read())
+                        {                            
+                            if (xmlReader.NodeType == XmlNodeType.Element)
+                            {
+                                switch (xmlReader.Name)
+                                {
+                                    case "WIDTH": if (xmlReader.Read()) WIDTH = int.Parse(xmlReader.Value); break;
+                                    case "HEIGHT": if (xmlReader.Read()) HEIGHT = int.Parse(xmlReader.Value); break;
+                                    case "MEAN_MAX": if (xmlReader.Read()) MEAN_MAX = int.Parse(xmlReader.Value); break;
+                                    case "MEAN_MIN": if (xmlReader.Read()) MEAN_MIN = int.Parse(xmlReader.Value); break;
+                                    case "OFFSETY": if (xmlReader.Read()) OFFSETY = int.Parse(xmlReader.Value); break;
+                                }
+                            }
+                            else
+                            {
+                                if (xmlReader.NodeType == XmlNodeType.EndElement)
+                                {
+                                    if (xmlReader.Name == m_XMLName) break;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception Desc)
+                    {
+                        CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1} Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                        xmlReader.Close();
+                    }
+
+                    xmlReader.Close();
+                }
+                else
+                {
+                    SaveConfig(strRecipeName);
+                    return false;
+                }
+            }
+            catch (Exception Desc)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1} Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+                return false;
+            }
+            return true;
+        }
+        public bool SaveConfig(string strRecipeName)
+        {
+            string strPath = Application.StartupPath + "\\RECIPE\\" + strRecipeName + "\\" + NAME + ".xml";
+
+            XmlWriterSettings settings = new XmlWriterSettings();
+            settings.Indent = true;
+            settings.NewLineOnAttributes = true;
+            settings.IndentChars = "\t";
+            settings.NewLineChars = "\r\n";
+            XmlWriter xmlWriter = XmlWriter.Create(strPath, settings);
+            try
+            {
+                xmlWriter.WriteStartDocument();
+                xmlWriter.WriteStartElement("PROPERTY");
+                xmlWriter.WriteElementString("WIDTH", WIDTH.ToString());
+                xmlWriter.WriteElementString("HEIGHT", HEIGHT.ToString());
+                xmlWriter.WriteElementString("MEAN_MAX", MEAN_MAX.ToString());
+                xmlWriter.WriteElementString("MEAN_MIN", MEAN_MIN.ToString());
+                xmlWriter.WriteElementString("OFFSETY", OFFSETY.ToString());
+
+
+
+
+                xmlWriter.WriteEndElement();
+                xmlWriter.WriteEndDocument();
+            }
+            catch (Exception Desc)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1} Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
+            }
+            finally
+            {
+                xmlWriter.Flush();
+                xmlWriter.Close();
+            }
+
+            return true;
+        }
+        #endregion
+
+    }
+}

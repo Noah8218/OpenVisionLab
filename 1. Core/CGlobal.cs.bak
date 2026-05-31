@@ -1,0 +1,92 @@
+﻿using System;
+using System.Reflection;
+
+namespace KtemVisionSystem
+{
+    public static class CVersion
+    {
+        #region VERSION HISTORY
+        //VER 1.0.0 ==> 2022/08/04 초기 싱글톤 패턴을 적용 --> 현장 검증은 어느정도 완료
+        #endregion
+        public static string APP_NAME { get; set; } = "KTEM_VISION";
+        public static string VERSION { get; set; } = "1.0.0";
+        public static string DATETIME_UPDATED { get; set; } = "2022/08/04 /*20:00*/";
+        public static string MANAGER { get; set; } = "NOAH";
+    }
+    
+    public class CGlobal
+    {
+        private static readonly Lazy<CGlobal> instance = new Lazy<CGlobal>(() => new CGlobal());
+
+        public static CGlobal Inst
+        {
+            get { return instance.Value; }
+        }
+
+        public CSystem System { get; set; }      
+        public CRecipe Recipe { get; set; }       
+        public CData Data { get; set; }
+        /// <summary>
+        /// 각종 Device 객체를 관리하는 매니저 객체
+        /// </summary>
+        public CDevice Device { get; set; }        
+        /// <summary>
+        /// 비전검사 스레드를 관리하는 매니저 객체
+        /// </summary>
+        public CSeqVision SeqVision { get; set; }
+
+        public CSequence Sequence { get; set; }
+
+        public CSeqOrthogonalY orthogonalY { get; set; }
+
+        private CGlobal()
+        {
+            // 처음 Log 생성 위치를 결정
+            string strLogPath = CUtil.InitLogDirectory();
+            CLogger.SetPath(strLogPath);
+
+            orthogonalY = new CSeqOrthogonalY();
+            Sequence = new CSequence();
+            SeqVision = new CSeqVision();            
+            System = new CSystem();
+            Recipe = new CRecipe();
+            Data = new CData();
+            Device = new CDevice(); 
+            Device = Device.LoadConfig();
+
+            // 프로그램 Load때 마지막에 사용한 레시피를 Load
+            Recipe.Name = System.LastRecipe;
+
+            //Init();
+        }
+
+        public bool Init()
+        {
+            try
+            {
+                Device.Init();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                return false;
+            }
+        }
+
+        public bool Close()
+        {
+            try
+            {
+                System.Close();
+                Device.Close();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                return false;
+            }
+        }
+    }
+}

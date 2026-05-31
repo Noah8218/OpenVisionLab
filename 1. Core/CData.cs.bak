@@ -1,0 +1,221 @@
+﻿using System;
+using System.IO;
+using System.Reflection;
+using System.Windows.Forms;
+using System.Xml;
+using System.Collections.Concurrent;
+using System.Xml.Linq;
+using OpenCvSharp;
+
+namespace KtemVisionSystem
+{
+    public class CData
+    {
+        public CPropertyLineGuage Property_LineGuage_LEFT = new CPropertyLineGuage("LEFT_EDGE");
+        public CPropertyLineGuage Property_LineGuage_RIGHT = new CPropertyLineGuage("RIGHT_EDGE");
+        public CPropertyLineGuage Property_LineGuage_THICKNESS_TOP = new CPropertyLineGuage("THICKNESS_TOP_EDGE");
+        public CPropertyLineGuage Property_LineGuage_THICKNESS_BTM = new CPropertyLineGuage("THICKNESS_BTM_EDGE");
+
+        public CPropertyMatching Property_Matching_Masking = new CPropertyMatching("MASKING");
+        public CPropertyMean Property_Mean_Masking = new CPropertyMean("MEAN_MASKING");
+
+        public CPropertyBlob Property_Blob = new CPropertyBlob("Blob");
+
+        public CPropertyContour Property_Contour = new CPropertyContour("Contour");
+
+        public CPropertyCorner Property_Corner = new CPropertyCorner("Corner");
+
+        public ConcurrentQueue<CGrabBuffer> GrabQueue = new ConcurrentQueue<CGrabBuffer>();
+
+        public CPropertyVisionInsp PropertyVisionInsp = new CPropertyVisionInsp("VISION_INSP");
+
+        public CPositionManager PositionManager = new CPositionManager();
+
+        #region COUNT
+        public int CountOK = 0;
+        public int CountNG_Label = 0;
+        public int CountNG_OCR = 0;
+        public int CountBypass = 0;
+        public int CountTotal = 0;
+        #endregion
+
+        #region FLAG
+        public bool MODE_IO_BOARD = true;
+        public bool MODE_BCR_PASS = false;
+        public bool MODE_USE_MES  = false;
+        public bool MODE_USE_DRY_RUN = false;
+                        
+        public bool IsCycleStart = false;
+        public int  InspIndex = 0;
+        public int MAX_CELL_COUNT = 10;
+
+        public bool[] HEAD_USE_INFO = new bool[10] { false, false, false, false, false, false, false, false, false, false};
+        public bool[] HEAD_USE_RESULT_DIST = new bool[10] { false, false, false, false, false, false, false, false, false, false };
+        public bool[] HEAD_USE_RESULT_BCR = new bool[10] { false, false, false, false, false, false, false, false, false, false };
+        public string[] HEAD_CELL_BCR = new string[10] { "", "", "", "", "", "", "", "", "", "" };
+        
+        #endregion
+
+        public CData()
+        {
+            CUtil.InitDirectory("DATA");
+            
+        }
+
+        public void ResetCount()
+        {
+            CountOK = 0;
+            CountNG_Label = 0;
+            CountNG_OCR = 0;
+            CountBypass = 0;
+            CountTotal = 0;
+        }
+
+        #region CONFIG BY XML              
+        private string m_XMLName = "LastStatus";
+        public bool LoadConfig()
+        {
+            try
+            {
+                string strPath = $"{Application.StartupPath}\\LastStatus.xml";
+
+                if (File.Exists(strPath))
+                {
+                    XmlTextReader xmlReader = new XmlTextReader(strPath);
+
+                    try
+                    {
+                        LoadConfigFromXML(xmlReader);
+                    }
+                    catch (Exception ex)
+                    {
+                        CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                        xmlReader.Close();
+                    }
+
+                    xmlReader.Close();
+                }
+                else
+                {
+                    SaveConfig();
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+                return false;
+            }
+            return true;
+        }
+
+        public bool LoadConfigFromXML(XmlReader xmlReader)
+        {
+            while (xmlReader.Read())
+            {
+                if (xmlReader.NodeType == XmlNodeType.Element)
+                {
+                    CLogger.Add(LOG.NORMAL, "CONFIG [{0}] ==> {1}", xmlReader.Name, xmlReader.Value);
+
+
+                    switch (xmlReader.Name)
+                    {
+                        case "Threshold":
+                            if (!xmlReader.Read()) return false;
+                            //Tools[nIndex].Threshold = int.Parse(xmlReader.Value);
+                            break;
+
+
+                    }
+                }
+                else
+                {
+                    if (xmlReader.NodeType == XmlNodeType.EndElement)
+                    {
+                        if (xmlReader.Name == m_XMLName) break;
+                    }
+                }
+            }
+
+            CLogger.Add(LOG.NORMAL, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+            return true;
+        }
+
+        public bool SaveConfig()
+        {
+            string strPath = $"{Application.StartupPath}\\LastStatus.xml";
+
+            XmlWriterSettings settings = new XmlWriterSettings();
+            settings.Indent = true;
+            settings.NewLineOnAttributes = true;
+            settings.IndentChars = "\t";
+            settings.NewLineChars = "\r\n";
+            XmlWriter xmlWriter = XmlWriter.Create(strPath, settings);
+            try
+            {
+                xmlWriter.WriteStartDocument();
+                SaveConfigToXML(xmlWriter);
+                xmlWriter.WriteEndDocument();
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+            finally
+            {
+                xmlWriter.Flush();
+                xmlWriter.Close();
+            }
+            return true;
+
+
+
+            CLogger.Add(LOG.NORMAL, "[OK] {0}==>{1}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name);
+            return true;
+        }
+
+        public bool SaveConfigToXML(XmlWriter xmlWriter)
+        {
+            try
+            {
+                xmlWriter.WriteStartElement("Parameter");
+                //xmlWriter.WriteElementString("Threshold", Tools[nIndex].Threshold.ToString());
+
+
+
+          
+
+                xmlWriter.WriteEndElement();
+            }
+            catch (Exception ex)
+            {
+                CLogger.Add(LOG.EXCEPTION, "[FAILED] {0}==>{1}   Execption ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+
+            return true;
+        }
+        #endregion
+    }
+
+    public class CGrabBuffer
+    {
+        public int Index = 0;        
+        public IntPtr Handle = IntPtr.Zero;
+        public Mat ImageGrab = new Mat();
+
+        public CGrabBuffer(Mat image, int nIndex)
+        {
+            try
+            {
+                Index = nIndex;
+                // 나중에 메모리 증가 사유일수 있음(Deep/Slow 확인 필요)
+                image.CopyTo(ImageGrab);
+            }
+            catch (Exception Desc)
+            {
+
+            }
+
+        }
+    }
+}

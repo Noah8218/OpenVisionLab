@@ -1,0 +1,931 @@
+﻿using ADOX;
+using IntelligentFactory._1._Core;
+using IntelligentFactory._2._Common;
+using Manina.Windows.Forms;
+using OpenCvSharp;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Windows.Media;
+using static IntelligentFactory.FormVision_Mean;
+using Vila.Win32;
+using System.Security.Cryptography;
+using OpenCvSharp.Flann;
+using System.ComponentModel;
+using System.Text;
+using static IntelligentFactory._2._Common.CParameterManager;
+using System.Xml.Serialization;
+using System.Drawing.Drawing2D;
+using System.Drawing.Text;
+using IntelligentFactory._3._Device.DB;
+using System.Windows.Media.Effects;
+using static IntelligentFactory.DEFINE;
+using static IntelligentFactory.CResultBlob;
+using Lib.Common;
+
+namespace IntelligentFactory
+{
+    public static class CSeqVision
+    {
+        public static EventHandler<InspResultArgs> EventInspResult;
+        public static EventHandler<LabelResultArgs> EventLabelResult;
+
+        private static bool[] GRAB_COMPLETE { get; set; } = new bool[1] { false};
+        private static bool[] INSP_COMPLETE { get; set; } = new bool[1] { false };
+        private static Bitmap[] INSP_IMAGE { get; set; } = new Bitmap[1] { new Bitmap(10, 10)};
+
+        #region Thread 라벨
+        private static CThreadStatus ThreadStatusAttachLabel = new CThreadStatus();
+
+        public static void StartThreadAttachLabel()
+        {
+            Thread t = new Thread(new ParameterizedThreadStart(ThreadAttachLabel));
+            t.Start(ThreadStatusAttachLabel);
+        }
+
+        public static void ResetThreadAttachLabel()
+        {
+            ThreadStatusAttachLabel.End();
+        }
+
+        public static void StopThreadAttachLabel()
+        {
+            if (!ThreadStatusAttachLabel.IsExit())
+            {
+                ThreadStatusAttachLabel.Stop(100);
+            }
+
+            ResetThreadAttachLabel();
+        }
+
+        private static void ThreadAttachLabel(object ob)
+        {
+            CThreadStatus ThreadStatus = (CThreadStatus)ob;
+
+            ThreadStatus.Start("Attach Label");
+            CLOG.NORMAL("Attach Label");
+
+            try
+            {
+                // 무한루프
+                while (!ThreadStatus.IsExit())
+                {
+                    for(int i=0; i < CGlobal.Inst.Data.Attaches.Count; i++)
+                    {
+                        CheckAttachLabel(CGlobal.Inst.Data.Attaches[i]);
+                    }                   
+                    Thread.Sleep(1);
+                }
+                ThreadStatus.End();
+            }
+            catch (Exception Desc)
+            {
+                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
+                ThreadStatus.End();
+            }
+        }
+
+        private static void CheckAttachLabel(List<CAttatchLabelling> AttatchLabels)
+        {
+            try
+            {
+                if (AttatchLabels.Count == 0) { return; }
+                int count = AttatchLabels.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    // 여기서 on / off 작업
+                    var AttatchLabel = AttatchLabels[i];
+                    if (AttatchLabel.IsAttachLabel) { continue; }
+
+                    if (AttatchLabel.Total_Acq_DistPerMM < CGlobal.Inst.Data.Total_Dist_PerMM)
+                    {
+                        // CGlobal.Inst.Data.SETTING.Select_Labeler_No1이 변수들에 들어가 있는 번호로 
+                        // 릴마다 라벨러를 지정해줌
+                        // 라벨러는 1개만 쓸수도 3개를 쓸수도 있음
+                        switch (AttatchLabel.Reel_Position)
+                        {
+                            case (int)DEFINE.REEL_NO.NO1:                                
+                                StartAttachLabel(CGlobal.Inst.Data.SETTING.Select_Labeler_No1);
+                                break;
+                            case (int)DEFINE.REEL_NO.NO2:
+                                StartAttachLabel(CGlobal.Inst.Data.SETTING.Select_Labeler_No2);
+                                break;
+                            case (int)DEFINE.REEL_NO.NO3:
+                                StartAttachLabel(CGlobal.Inst.Data.SETTING.Select_Labeler_No3);
+                                break;
+                            case (int)DEFINE.REEL_NO.NO4:
+                                StartAttachLabel(CGlobal.Inst.Data.SETTING.Select_Labeler_No4);
+                                break;
+                        }
+                        AttatchLabel.Use_Labelling = false;
+                        AttatchLabel.IsAttachLabel = true;
+                        // 삭제된 라벨링 리스트.. 관리.. 고객 요청..
+                        if(CGlobal.Inst.Data.Already_AttachedList.Count > 500)
+                        {
+                            CGlobal.Inst.Data.Already_AttachedList.RemoveRange(0, 400);
+                        }
+                        CGlobal.Inst.Data.Already_AttachedList.Add(AttatchLabel);
+
+                        CsvSave(AttatchLabel);
+                        // on off라벨링
+                        // 데이터 삭제
+                        if (EventLabelResult != null)
+                        {
+                            EventLabelResult(null, new LabelResultArgs(CGlobal.Inst.Data.Attaches, CGlobal.Inst.Data.Already_AttachedList));
+                        }
+                    }
+                }
+                lock(m_ob)
+                {
+                    if (AttatchLabels.Count != 0) { AttatchLabels.RemoveAll(x => x.Use_Labelling == false); }
+                }
+                
+                // 라벨러 위치를 검사하지만 부착 위치 엔코더 대비 현재 생산 엔코더가 100? 정도 차이나면 그냥 부착 안하고 흘러 간거니까 
+                // 해당 리스트 값은 삭제 하도록 한다. 그리고 로그(이력)을 남겨서 왜 엔코더 부착을 안했는지 검토해야함
+            }
+            catch (Exception Desc)
+            {
+                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
+            }          
+        }
+
+        // 사용자가 검사중 파일을 열어버리면 예외가 나올수 있으니 예외처리 진행
+        private static void CsvSave(CAttatchLabelling attach)
+        {
+            try
+            {
+                string strPath = Application.StartupPath + "\\DATA\\" + DateTime.Now.ToString("yyyy-MM-dd") + "_Label.csv";
+
+                // 파일이 없다면 최초에 컬럼을 추가합니다.
+                if (!File.Exists(strPath))
+                {
+                    string strHeader = "No,라벨 부착 위치[mm],라벨러 포지션,라벨 부착 유무,DateTime";
+
+                    File.AppendAllText(strPath, strHeader + "\r\n", Encoding.UTF8);
+                }
+
+
+                StringBuilder sb = new StringBuilder();
+
+                // 현재 csv ROW 개수를 가져옴
+                int nLineCount = File.ReadAllLines(strPath).Length;
+                sb.Append(string.Format("{0},", nLineCount));
+                sb.Append(string.Format("{0},", attach.Total_Acq_DistPerMM));
+                sb.Append(string.Format("{0},", attach.Reel_Position));
+                sb.Append(string.Format("{0},", "부착완료"));
+                sb.Append(string.Format("{0},", DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss")));
+                File.AppendAllText(strPath, sb.ToString() + "\r\n", Encoding.UTF8);
+            }
+            catch (Exception Desc)
+            {
+                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
+            }          
+        }
+
+        private static void StartAttachLabel(int No)
+        {            
+            switch (No)
+            {
+                case (int)DEFINE.REEL_NO.NO1:
+                    if (!CGlobal.Inst.Data.SETTING.USE_Labeler_No1)
+                    {
+                        CLOG.NORMAL($"라벨러 미사용 No : {No}");
+                        return;
+                    }
+
+                    LabelOnOff(CGlobal.Inst.Device.DIO_BD.DO_02_Label1_Start);
+                    CLOG.IO($"On Label Start No 1");
+                    break;
+                case (int)DEFINE.REEL_NO.NO2:
+                    if (!CGlobal.Inst.Data.SETTING.USE_Labeler_No2)
+                    {
+                        CLOG.NORMAL($"라벨러 미사용 No : {No}");
+                        return;
+                    }
+                    LabelOnOff(CGlobal.Inst.Device.DIO_BD.DO_04_Label2_Start);
+                    CLOG.IO($"On Label Start No 2");
+                    break;
+                case (int)DEFINE.REEL_NO.NO3:
+                    if (!CGlobal.Inst.Data.SETTING.USE_Labeler_No3)
+                    {
+                        CLOG.NORMAL($"라벨러 미사용 No : {No}");
+                        return;
+                    }
+                    LabelOnOff(CGlobal.Inst.Device.DIO_BD.DO_06_Label3_Start);
+                    CLOG.IO($"On Label Start No 3");
+                    break;
+                case (int)DEFINE.REEL_NO.NO4:
+                    if (!CGlobal.Inst.Data.SETTING.USE_Labeler_No4)
+                    {
+                        CLOG.NORMAL($"라벨러 미사용 No : {No}");
+                        return;
+                    }
+                    LabelOnOff(CGlobal.Inst.Device.DIO_BD.DO_08_Label4_Start);
+                    CLOG.IO($"On Label Start No 4");
+                    break;
+            }
+        }
+
+        //private static void LabelOnOff(CSignal DO)
+        //{
+        //    CGlobal.Inst.Device.DIO_BD.On(DO);
+        //    Thread.Sleep(CGlobal.Inst.Data.SETTING.Labeler_OnTime);
+        //    CGlobal.Inst.Device.DIO_BD.Off(DO);
+        //    Thread.Sleep(CGlobal.Inst.Data.SETTING.Labeler_OffTime);
+        //}
+        // 테스트용
+
+        private static void LabelOnOff(CSignal DO)
+        {
+            DO.Current = 1;
+            Thread.Sleep(CGlobal.Inst.Data.SETTING.Labeler_OnTime);
+            DO.Current = 0;
+            Thread.Sleep(CGlobal.Inst.Data.SETTING.Labeler_OffTime);
+        }
+
+        private static void LabelResetOnOff(CSignal DO)
+        {
+            CGlobal.Inst.Device.DIO_BD.On(DO);
+            Thread.Sleep(CGlobal.Inst.Data.SETTING.Labeler_RestOnTime);
+            CGlobal.Inst.Device.DIO_BD.Off(DO);
+            Thread.Sleep(CGlobal.Inst.Data.SETTING.Labeler_OffTime);
+        }
+
+        #endregion
+
+        #region Thread
+        private static CThreadStatus ThreadStatusVision = new CThreadStatus();
+
+        public static void StartThreadVision()
+        {
+            Thread t = new Thread(new ParameterizedThreadStart(ThreadVision));
+            t.Start(ThreadStatusVision);
+        }
+
+        public static void ResetThreadVision()
+        {
+            ThreadStatusVision.End();
+        }
+
+        public static void StopThreadVision()
+        {
+            if (!ThreadStatusVision.IsExit())
+            {
+                ThreadStatusVision.Stop(100);
+            }
+
+            ResetThreadVision();
+        }
+
+        /// <summary>
+        /// 프로그램이 종료가 될때까지 실행되며, 큐에 있는 데이터를 비전검사합니다.
+        /// </summary>
+        /// <param name="ob"></param>
+        private static void ThreadVision(object ob)
+        {
+            CThreadStatus ThreadStatus = (CThreadStatus)ob;
+
+            ThreadStatus.Start("Vision Inspection");
+            CLOG.NORMAL("Vision Inspection");
+
+            try
+            {
+                while (!ThreadStatus.IsExit())
+                {
+                    if (CGlobal.Inst.Data.GrabQueue.Count > 0)
+                    {
+                        int START_TIME = Environment.TickCount;
+
+                        if (CGlobal.Inst.Data.GrabQueue.TryDequeue(out CGrabBuffer GrabBuffer))
+                        {
+                            RunInspection(GrabBuffer);
+                        }
+                    }
+                    Thread.Sleep(1);
+                }
+                ThreadStatus.End();
+            }
+            catch (Exception Desc)
+            {
+                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
+                ThreadStatus.End();
+            }
+        }
+
+        private static Stopwatch stopwatch = new Stopwatch();
+
+        // 비동기 Task를 실행하는 가장 기본적인 방법입니다.
+        // async키워드로 비동기가 가능하며, 해당 키워드를 사용시 await 키워드를 찾게 됩니다.
+        // await키워드를 사용하지 않을시 동기식으로 실행이 됩니다.
+        public static async void RunInspection(CGrabBuffer GrabBuffer)
+        {
+            await Task.Run(() =>
+            {
+                if (GrabBuffer.Index == 0) { CGlobal.Inst.Data.runInsp_1 = false; }
+                else { CGlobal.Inst.Data.runInsp_2 = false; }
+
+                // 상부 하부 사용 유무를 보고 둘다 이미지가 들어왔을 때 카운트를 늘려야 함                
+                GRAB_COMPLETE[GrabBuffer.Index] = true;
+                if (GRAB_COMPLETE.All(c => c == true))
+                {
+                    stopwatch = Stopwatch.StartNew();
+                    CGlobal.Inst.Data.AcqusitionFrameCount++;
+                    CLOG.NORMAL($"Frame Count : {CGlobal.Inst.Data.AcqusitionFrameCount}");
+                    GRAB_COMPLETE = new bool[1] { false };
+                }
+
+                Inspection(GrabBuffer);
+            });
+        }
+
+        //public void Inspection(CGrabBuffer GrabBuffer)
+        //{
+        //    try
+        //    {
+        //        Stopwatch stopwatch = Stopwatch.StartNew();
+        //        DEFINE.RESULT Result = DEFINE.RESULT.OK;
+        //        using (Mat ImageCVSource = GrabBuffer.ImageGrab)
+        //        {
+        //            if (ImageCVSource.Channels() == 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.RGB2GRAY);
+        //            List<CPropertyParam> ParamList = new List<CPropertyParam>();
+        //            switch (GrabBuffer.PROCESS_Type)
+        //            {
+        //                case DEFINE.PROCESS_TYPES.Bolt_tightened:
+        //                    ParamList = GrabBuffer.ParamList_Bolt;
+        //                    break;
+        //                case DEFINE.PROCESS_TYPES.Pin_Inspection:
+        //                    ParamList = GrabBuffer.ParamList_Pin;
+        //                    break;
+        //                case DEFINE.PROCESS_TYPES.Connector_Inspection:
+        //                    ParamList = GrabBuffer.ParamList_Connector;
+        //                    break;
+        //                case DEFINE.PROCESS_TYPES.ThermalGrease_Inspection:
+        //                    ParamList = GrabBuffer.ParamList_Thermal;
+        //                    break;
+        //            }
+
+        //            List<Rectangle> calculRoi = new List<Rectangle>();
+        //            // 각도 측정을 할 매칭
+        //            List<CResultMatching> Matching_Results = RunMatching(ImageCVSource, ParamList, GrabBuffer.Index, ref calculRoi);
+
+        //            // 못찾으면 예외처리 필요
+        //            double Diff = 0;
+        //            if (Matching_Results.Count > 0) { Diff = Matching_Results[0].Angle - ParamList[GrabBuffer.Index].Master_T; }
+
+        //            // 이미지를 돌리고
+        //            Mat RotateImage = Rotate(ImageCVSource, Diff);
+        //            if (RotateImage.Channels() != 1) Cv2.CvtColor(RotateImage, RotateImage, ColorConversionCodes.RGB2GRAY);
+
+        //            Bitmap ImageDisplay = Lib.Common.CImageConverter.ToBitmap(RotateImage).Clone(new Rectangle(0, 0, ImageCVSource.Width, ImageCVSource.Height), System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+        //            Graphics g = Graphics.FromImage(ImageDisplay);
+        //            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+        //            // 돌린 이미지로 다시 매칭
+        //            Matching_Results = RunMatching(RotateImage, ParamList, GrabBuffer.Index, ref calculRoi);
+
+        //            foreach (var item in Matching_Results)
+        //            {
+        //                g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Blue, 5), new Rectangle((int)item.Bounding.X, (int)item.Bounding.Y, (int)item.Bounding.Width, (int)item.Bounding.Height));
+        //                g.DrawString("Fiducial", new Font("Arial", 15, FontStyle.Bold), new SolidBrush(System.Drawing.Color.Lime), (int)item.Bounding.X - 20, (int)item.Bounding.Y - 20);
+        //                g.DrawString(item.Score.ToString("F3"), new Font("Arial", 15, FontStyle.Bold), new SolidBrush(System.Drawing.Color.Lime), (int)item.Center.X, (int)item.Center.Y);
+        //            }
+
+        //            // 못찾으면
+        //            if (Matching_Results.Count == 0)
+        //            {
+        //                g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Orange, 5), CConverter.CVRectToRect(ParamList[GrabBuffer.Index].Matching.TrainROI));
+        //                g.DrawString("Fiducial", new Font("Arial", 15, FontStyle.Bold), new SolidBrush(System.Drawing.Color.OrangeRed), (int)ParamList[GrabBuffer.Index].Matching.TrainROI.X - 20, (int)ParamList[GrabBuffer.Index].Matching.TrainROI.Y - 20);
+        //            }
+
+        //            // * 매칭된게 없을 때 예외처리 등 필요
+        //            // * 각 검사 예외처리 필요
+        //            switch (GrabBuffer.PROCESS_Type)
+        //            {
+        //                case DEFINE.PROCESS_TYPES.Bolt_tightened:
+        //                    RunBolteInspection(g, RotateImage, GrabBuffer, Matching_Results, calculRoi, ref Result);
+        //                    break;
+        //                case DEFINE.PROCESS_TYPES.Pin_Inspection:
+        //                    RunPinInspection(g, RotateImage, GrabBuffer, Matching_Results, calculRoi, ref Result);
+        //                    break;
+        //                case DEFINE.PROCESS_TYPES.Connector_Inspection:
+        //                    RunConnectorInspection(g, RotateImage, GrabBuffer, Matching_Results, calculRoi, ref Result);
+        //                    break;
+        //                case DEFINE.PROCESS_TYPES.ThermalGrease_Inspection:
+        //                    RunThermalInspection(g, RotateImage, GrabBuffer, Matching_Results, calculRoi, ref Result);
+        //                    break;
+        //            }
+
+        //            SendQueueImage(g, ImageDisplay, Result, GrabBuffer);
+
+        //            if (CGlobal.Inst.SeqVision.EventInspResult != null)
+        //            {
+        //                CGlobal.Inst.SeqVision.EventInspResult(null, new InspResultArgs(ImageDisplay, GrabBuffer.Index, stopwatch.ElapsedMilliseconds, Result));
+        //            }
+        //        }
+        //    }
+        //    catch (Exception Desc)
+        //    {
+        //        CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
+        //    }
+        //}
+
+        public static Mat Rotate(Mat src, double angle)
+        {
+            Mat rotate = new Mat(src.Size(), MatType.CV_8UC3);
+            Mat matrix = Cv2.GetRotationMatrix2D(new Point2f(src.Width / 2, src.Height / 2), angle, 1);
+            Cv2.WarpAffine(src, rotate, matrix, src.Size(), InterpolationFlags.Linear);
+            return rotate;
+        }
+
+        private static void SendDefectData(string lotID, string imagePath, int camIndex)
+        {
+            try
+            {
+                string CamName = CGlobal.Inst.Device.CAMERAS[camIndex].Property.CAMERA_POSITION;
+                for (int i = 0; i < CGlobal.Inst.Data.AttachesTemp.Count; i++)
+                {
+                    var item = CGlobal.Inst.Data.AttachesTemp[i];                    
+                    List<CDefect> defects = new List<CDefect>();
+                    for (int j = 0; j < item.Count; j++)
+                    {
+                        CDefect cDefect = new CDefect()
+                        {
+                            LotID = lotID,
+                            Position = CamName,
+                            Reel_No = item[j].Reel_Position,
+                            CenterX = item[j].Bounding.X + (item[j].Bounding.Width / 2),
+                            CenterY = item[j].Bounding.Y + (item[j].Bounding.Height / 2),
+                            Width = item[j].Bounding.Width,
+                            Height = item[j].Bounding.Height,
+                            Area = item[j].Bounding.Width * item[j].Bounding.Height,
+                            DefectType = item[j].defectType.ToString(),
+                            ImagePath = imagePath,
+                            DateTime = DateTime.Now,
+                        };
+                        defects.Add(cDefect);
+
+                        if(!CGlobal.Inst.Data.defectSummaries.ContainsKey(lotID))
+                        {
+                            CDefectSummary cDefectSummary = new CDefectSummary();
+                            cDefectSummary.LotID = lotID;
+                            cDefectSummary.Index = CGlobal.Inst.Data.defectSummaries.Count + 1;
+                            cDefectSummary.RunCountIncrease(item[j].defectType);
+                            CGlobal.Inst.Data.defectSummaries.Add(lotID, cDefectSummary);
+                        }
+                        else
+                        {                            
+                            CGlobal.Inst.Data.defectSummaries[lotID].RunCountIncrease(item[j].defectType);
+                        }
+                        
+                    }
+                    CGlobal.Inst.Device.DB.InsertBulkToData(defects);
+                }
+            }
+            catch
+            {
+
+            }            
+        }                
+
+        private static (string, string) SendQueueImage(Graphics g, Bitmap ImageDisplay, DEFINE.RESULT Result, CGrabBuffer GrabBuffer)
+        {
+            Rectangle rtFullScreen = new Rectangle(0, 0, ImageDisplay.Width, ImageDisplay.Height);
+            string saveImagePathOri = "";
+            string saveImagePathInsp = "";
+            if (Result == DEFINE.RESULT.OK)
+            {
+                g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Aquamarine, 30), rtFullScreen);
+                g.DrawString(string.Format("OK"), new Font("Arial", 250, FontStyle.Bold), new SolidBrush(System.Drawing.Color.Aquamarine), ImageDisplay.Width - 700, ImageDisplay.Height - 500);
+
+                saveImagePathOri = CCommon.GetPathOK_Ori() + $"Ori_Cam{(GrabBuffer.Index + 1)}_{DateTime.Now.ToString("yyMMdd_HHmmss")}_OK.jpeg";
+                saveImagePathInsp = CCommon.GetPathOK_Insp() + $"Insp_Cam{(GrabBuffer.Index + 1)}_{DateTime.Now.ToString("yyMMdd_HHmmss")}_OK.jpeg";
+                if (CImageManager.SaveImages.Property.UseSaveOK)
+                {
+                    CImageManager.SaveImages.Queues.Enqueue(new Images(Lib.Common.CImageConverter.ToBitmap(GrabBuffer.ImageGrab.Clone()), saveImagePathOri, ImageFormat.Jpeg));
+                    CImageManager.SaveImages.Queues.Enqueue(new Images((Bitmap)ImageDisplay.Clone(), saveImagePathInsp, ImageFormat.Jpeg));
+                }
+            }
+            else
+            {
+                g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Red, 30), rtFullScreen);
+                g.DrawString(string.Format("NG"), new Font("Arial", 250, FontStyle.Bold), new SolidBrush(System.Drawing.Color.Red), ImageDisplay.Width - 700, ImageDisplay.Height - 500);
+
+                saveImagePathOri = CCommon.GetPathNG_Ori() + $"Ori_Cam{(GrabBuffer.Index + 1)}_{DateTime.Now.ToString("yyMMdd_HHmmss")}_NG.jpeg";
+                saveImagePathInsp = CCommon.GetPathNG_Insp() + $"Insp_Cam{(GrabBuffer.Index + 1)}_{DateTime.Now.ToString("yyMMdd_HHmmss")}_NG.jpeg";
+                if (CImageManager.SaveImages.Property.UseSaveNG)
+                {
+                    CImageManager.SaveImages.Queues.Enqueue(new Images(Lib.Common.CImageConverter.ToBitmap(GrabBuffer.ImageGrab.Clone()), saveImagePathOri, ImageFormat.Jpeg));
+                    CImageManager.SaveImages.Queues.Enqueue(new Images((Bitmap)ImageDisplay.Clone(), saveImagePathInsp, ImageFormat.Jpeg));
+                }
+            }
+            //var saveTask = Task.Run(() =>
+            //{                
+
+            //});    
+
+            return (saveImagePathOri, saveImagePathInsp);
+        }
+
+        private static List<CResultMatching> RunMatching(Mat ImageCVSource, List<CPropertyParam> ParamList, int TeachingNo, ref List<Rectangle> calculRoi)
+        {
+            CPropertyMatching cProperty = (CPropertyMatching)ParamList[TeachingNo].Matching.DeepCopy();
+
+            int Hmc_Path_Index = cProperty.PATTERN_PATH.IndexOf("PATTERN\\") + 8;
+            int total_Length = cProperty.PATTERN_PATH.Length;
+            string splite_Path = cProperty.PATTERN_PATH.Substring(Hmc_Path_Index, total_Length - Hmc_Path_Index);
+            string Pattern_Path = Application.StartupPath + $"\\RECIPE\\{CGlobal.Inst.Recipe.Name}\\PATTERN\\{splite_Path}";
+
+            CIVT_CVMatching Matching = new CIVT_CVMatching("T");
+            if (System.IO.File.Exists(Pattern_Path))
+            {
+                Matching.SetProperty(cProperty);
+                Matching.SetTemplateImage(Cv2.ImRead(Pattern_Path));
+                Matching.SetSourceImage(ImageCVSource.Clone());
+                Matching.ImagePyramidsRun(false);
+            }
+
+            var ROIs = ParamList[TeachingNo].ROIs.ToList();
+            foreach (var ROI in ROIs)
+            {
+                if (Matching.Results.Count == 0) { break; }
+                calculRoi.Add(new Rectangle((int)(Matching.Results[0].Center.X + ROI.PidutialX), (int)(Matching.Results[0].Center.Y + ROI.PidutialY), ROI.Roi.Width, ROI.Roi.Height));
+            }
+
+            return Matching.Results;
+        }
+
+        public static void ToHighQuality(this Graphics graphics)
+        {
+            graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            graphics.CompositingQuality = CompositingQuality.HighQuality;
+            graphics.SmoothingMode = SmoothingMode.HighQuality;
+            graphics.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+            graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        }
+
+        public static void ToLowQuality(this Graphics graphics)
+        {
+            graphics.InterpolationMode = InterpolationMode.Low;
+            graphics.CompositingQuality = CompositingQuality.HighSpeed;
+            graphics.SmoothingMode = SmoothingMode.HighSpeed;
+            graphics.TextRenderingHint = TextRenderingHint.SystemDefault;
+            graphics.PixelOffsetMode = PixelOffsetMode.HighSpeed;
+        }
+
+        // 슬리터 검사 소스임..
+        // 잠시 주석..
+        // 플젝 하나만 치면 관리도 편한데..
+        // 맨날 3~4개 ..
+        public static void Inspection(CGrabBuffer GrabBuffer)
+        {
+            try
+            {                
+                DEFINE.RESULT Result = DEFINE.RESULT.OK;
+                List<double> avgMMList = new List<double>();
+                using (Mat imageCVSource = GrabBuffer.ImageGrab)
+                {
+                    if (imageCVSource.Channels() == 3) Cv2.CvtColor(imageCVSource, imageCVSource, ColorConversionCodes.RGB2GRAY);
+                    Bitmap imageSrc = Lib.Common.CImageConverter.ToBitmap(imageCVSource);
+                    Bitmap resultImg = imageSrc.Clone(new Rectangle(0, 0, imageSrc.Width, imageSrc.Height), System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+
+                    int H = imageCVSource.Height;
+
+                    using (Graphics g = Graphics.FromImage(resultImg))
+                    {
+                        ToLowQuality(g);
+                        //g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+                        List<CResultBlob> totalResults = new List<CResultBlob>();
+                        List<CResultBlob> black_Result = new List<CResultBlob>();
+                        List<CResultBlob> white_Result = new List<CResultBlob>();
+                        (totalResults, black_Result, white_Result) = CInspectionAlgorithm.RunSlitterBlob(g, imageCVSource, CVisionTools.Blobs[GrabBuffer.Index]);
+
+                        List<CResultseEdgeList> intersectionLin1 = new List<CResultseEdgeList>();
+                        List<CResultseEdgeList> intersectionLin2 = new List<CResultseEdgeList>();
+                        bool bUseSpecDraw = true;
+                        (intersectionLin1, intersectionLin2) = CInspectionAlgorithm.RunIntersectionLines(g, imageCVSource, CVisionTools.Lines_L[GrabBuffer.Index], CVisionTools.Lines_R[GrabBuffer.Index], true, bUseSpecDraw);
+
+                        Dictionary<DEFINE.REEL_NO, List<OpenCvSharp.Point>> Lines_Defect = new Dictionary<DEFINE.REEL_NO, List<OpenCvSharp.Point>>();
+                        List<double> Distance_Avg = new List<double>();
+
+                        // 스레드에서 한개의 공유자원에 접근하는건 좋지 않습니다.
+                        // 여러 예외가 발생할 수 있기 때문입니다.                
+                        // 공유자원에 대한 스레드에 동시 접근을 막아주는게 lock/monitor 등이지만 완벽하지 않습니다.                                
+
+                        // 주임님 Draw를 스레드에서 동시에 할 경우 스레드 충돌 에러가 발생합니다.
+                        // 검사 자체는 비동기로 병렬처리하여 검사하여 검사 데이터를 얻고
+                        // 검사 데이터를 draw할 때는 동기적으로 그리도록 합시다.
+                        // 그래야 최적의 속도가 나올것입니다.
+                        bool multiRoiDraw = true;
+                        CInspectionAlgorithm.DrawBlobResulte(g, CVisionTools.Blobs[GrabBuffer.Index], black_Result, true, multiRoiDraw);
+                        CInspectionAlgorithm.DrawBlobResulte(g, CVisionTools.Blobs[GrabBuffer.Index], white_Result, false, multiRoiDraw);
+                        (Distance_Avg, Lines_Defect) = CInspectionAlgorithm.DrawInstersectionLines(g, CVisionTools.Lines_L[GrabBuffer.Index], CVisionTools.Lines_R[GrabBuffer.Index],
+                            intersectionLin1, intersectionLin2, new System.Drawing.Size(resultImg.Width, resultImg.Height), multiRoiDraw, bUseSpecDraw);
+
+                        var item = SendQueueImage(g, resultImg, Result, GrabBuffer);
+
+                        // imageListView에 이미지가 들어가는 도중에 다시 Defect이 추가되었을 때 
+                        // item에 계속 add하면 느려질수가 있기 때문에 해당 bool변수로 감시
+                        if (GrabBuffer.Index == DEFINE.CAM_1) { CGlobal.Inst.Data.runInsp_1 = true; }
+                        else { CGlobal.Inst.Data.runInsp_2 = true; }
+
+                        GetAttatchLabelling(GrabBuffer, totalResults, Lines_Defect, H);
+                        SendDefectData(CGlobal.Inst.Data.LotName, item.Item2, GrabBuffer.Index);
+
+                        // 상부 하부 사용 유무를 보고 둘다 이미지가 들어왔을 때 카운트를 늘려야 함
+                        // 한 이미지를 여러곳에서 사용하기 때문에 개체 참조 에러가 나올 수 있음                
+                        INSP_IMAGE[GrabBuffer.Index] = (Bitmap)resultImg.Clone();
+                        INSP_COMPLETE[GrabBuffer.Index] = true;
+                        if (INSP_COMPLETE.All(c => c == true))
+                        {
+                            CLOG.NORMAL($"TOP/BOTTOM Insp Complet");
+                            // 상/하부에 검출된 라벨을 정렬함
+                            lock (m_ob)
+                            {
+                                for (int i = 0; i < CGlobal.Inst.Data.AttachesTemp.Count; i++)
+                                {
+                                    CGlobal.Inst.Data.AttachesTemp[i] = OrderByLabel(CGlobal.Inst.Data.AttachesTemp[i]);
+                                }
+
+                                // 라벨러 체크
+                                foreach (var attach in CGlobal.Inst.Data.AttachesTemp)
+                                {
+                                    CheckLabel(attach);
+                                }
+
+                                // Crop image를 넣어줌
+                                foreach (var attach in CGlobal.Inst.Data.AttachesTemp)
+                                {
+                                    GetCropImage(INSP_IMAGE, attach);
+                                }
+
+                                foreach (var attach in CGlobal.Inst.Data.AttachesTemp)
+                                {
+                                    if (CImageManager.SaveImages.Property.UseSaveCrop)
+                                    {
+                                        SaveCropImage(GrabBuffer.Index, attach);
+                                    }
+                                }
+
+                                int count = 0;
+                                foreach (var attach in CGlobal.Inst.Data.AttachesTemp)
+                                {
+                                    for (int i = 0; i < attach.Count; i++)
+                                    {
+                                        CGlobal.Inst.Data.Attaches[count].Add(attach[i]);
+                                    }
+                                    count++;
+                                }
+
+                                foreach (var attach in CGlobal.Inst.Data.AttachesTemp)
+                                {
+                                    attach.Clear();
+                                }
+
+                                INSP_COMPLETE = new bool[1] { false};                                                                
+                                INSP_IMAGE = new Bitmap[1] { new Bitmap(10, 10) };
+                                //CGlobal.Inst.Data.INSP_IMAGE = new Bitmap[2] { new Bitmap(10, 10), new Bitmap(10, 10) }; 
+                            }
+
+                            CLOG.NORMAL($"Inspection Tack Time : {stopwatch.ElapsedMilliseconds}");
+                        }
+
+                        if (EventInspResult != null)
+                        {
+                            EventInspResult(null, new InspResultArgs(imageSrc, resultImg, GrabBuffer.Index, stopwatch.ElapsedMilliseconds, Result, black_Result, white_Result, totalResults,
+                                Distance_Avg, CGlobal.Inst.Data.Attaches, CGlobal.Inst.Data.Already_AttachedList,
+                                CGlobal.Inst.Data.defectSummaries));
+                        }
+                    }
+                }             
+            }
+            catch (Exception Desc)
+            {
+                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
+            }
+        }
+
+        private static void GetCropImage(Bitmap[] images, List<CAttatchLabelling> AttatchLabels)
+        {
+            if (AttatchLabels.Count > 0)
+            {
+                for (int i = 0; i < AttatchLabels.Count; i++)
+                {
+                    if (AttatchLabels[i].InsertCropImage) { continue; }
+                    Rectangle ResizeRect = AttatchLabels[i].Bounding;
+                    int OffsetSize = 20;
+                    ResizeRect = new Rectangle(ResizeRect.X - OffsetSize, ResizeRect.Y - OffsetSize, ResizeRect.Width + (OffsetSize * 2), ResizeRect.Height + (OffsetSize * 2));
+                    AttatchLabels[i].CropImage = Lib.Common.CBitmapProcessing.CropAtRect(images[AttatchLabels[i].Cam_No], ResizeRect).Result;
+                    AttatchLabels[i].InsertCropImage = true;
+                }
+            }
+        }
+
+        private static void SaveCropImage(int index, List<CAttatchLabelling> AttatchLabels)
+        {
+            if (AttatchLabels.Count > 0)
+            {
+                for (int i = 0; i < AttatchLabels.Count; i++)
+                {
+                    //await Task.Delay(1);
+                    if (AttatchLabels[i].IsSaveCropImage) { continue; }
+                    string saveImagePath = CCommon.GetPath_Crop() + $"Cam{(index + 1)}_{DateTime.Now.ToString("yyMMdd_HHmmss")}_위치({AttatchLabels[i].Total_Acq_DistPerMM})_OK.jpeg";
+                    CImageManager.SaveImages.Queues.Enqueue(new Images((Bitmap)AttatchLabels[i].CropImage.Clone(), saveImagePath, ImageFormat.Jpeg));
+                    AttatchLabels[i].IsSaveCropImage = true;
+                }
+            }
+        }
+
+        private static void GetAttatchLabelling(CGrabBuffer GrabBuffer, List<CResultBlob> totalResults, Dictionary<DEFINE.REEL_NO, List<OpenCvSharp.Point>> Lines_Defect, int H)
+        {
+            //List<List<CAttatchLabelling>> Attaches = new List<List<CAttatchLabelling>>();
+            // 검출한 디팩 리스트를 mm로 변환하고 가져옴
+            var Defect = new CDefectList().GetDefectList(totalResults.ConvertAll(s => s), GrabBuffer.Index, H);
+            double Encoder_Offset = 0;
+
+            if (GrabBuffer.Index == DEFINE.CAM_1)
+            {
+                if (!CGlobal.Inst.Data.SETTING.USE_Upper_Inspection) { return; }
+                Encoder_Offset = CGlobal.Inst.Data.SETTING.Upper_Encoder_Offset;
+            }
+            else if (GrabBuffer.Index == DEFINE.CAM_2)
+            {
+                if (!CGlobal.Inst.Data.SETTING.USE_Lower_Inspection) { return; }
+                Encoder_Offset = CGlobal.Inst.Data.SETTING.Lower_Encoder_Offset;
+            }
+
+            // 릴 1개에 라벨러 1개가 대응되는 구조이며, 해당 구조에서는 
+            /*
+             * 2023.03.16 릴 여러개에 라벨러 1개가 대응될수도 있음
+             */
+            // 라벨러가 상부에 있고, 하부에 이물이 발견되면, 해당 릴에 상부에 라벨러를 부착하는 시스템임
+            for (int i = 0; i < Defect.Count; i++)
+            {
+                CAttatchLabelling attatchLabelling = new CAttatchLabelling();
+                attatchLabelling.defectType = CUtil.ParseEnum<DefectType>(Defect[i].Defect_Type);
+                attatchLabelling.Cam_No = GrabBuffer.Index;
+                attatchLabelling.Use_Labelling = true;
+                //attatchLabelling.AcqusitionFrameCount = CGlobal.Inst.Data.AcqusitionFrameCount - 1; // 5회찍었으면 그중 4회는 흘러갔고 1회는 검사중                
+                attatchLabelling.detection_DistPerMM = Defect[i].CenterDistY;
+                attatchLabelling.Speed_Proportion_MM_Offset = CGlobal.Inst.Data.SETTING.EncoderPermmOffset;
+                attatchLabelling.CameraToLabeler_Enc_Offset = Encoder_Offset;
+                attatchLabelling.CameraToLabeler_MM_Offset = Encoder_Offset * CGlobal.Inst.Data.SETTING.EncoderPermm;
+                attatchLabelling.CalculatorAttach(H, GrabBuffer.TotalEncoder);
+                attatchLabelling.Bounding = Defect[i].Bounding;
+                // 디팩에 관한 라벨을 넣어줌
+                int defectInsertNo = 0;
+                switch (Defect[i].Reel_No)
+                {
+                    case (int)DEFINE.REEL_NO.NO1:
+                        defectInsertNo = CGlobal.Inst.Data.SETTING.Select_Labeler_No1 - 1;
+                        break;
+                    case (int)DEFINE.REEL_NO.NO2:
+                        defectInsertNo = CGlobal.Inst.Data.SETTING.Select_Labeler_No2 - 1;
+                        break;
+                    case (int)DEFINE.REEL_NO.NO3:
+                        defectInsertNo = CGlobal.Inst.Data.SETTING.Select_Labeler_No3 - 1;
+                        break;
+                    case (int)DEFINE.REEL_NO.NO4:
+                        defectInsertNo = CGlobal.Inst.Data.SETTING.Select_Labeler_No4 - 1;
+                        break;
+                }
+
+                attatchLabelling.Reel_Position = defectInsertNo + 1;
+
+                CGlobal.Inst.Data.AttachesTemp[defectInsertNo].Add(attatchLabelling);                
+            }
+
+            foreach (var attach in Lines_Defect)
+            {
+                for (int i = 0; i < attach.Value.Count; i++)
+                {
+                    CAttatchLabelling attatchLabelling = new CAttatchLabelling();
+                    attatchLabelling.defectType = DefectType.폭불량;
+                    attatchLabelling.Cam_No = GrabBuffer.Index;
+                    attatchLabelling.Use_Labelling = true;
+                    //attatchLabelling.AcqusitionFrameCount = CGlobal.Inst.Data.AcqusitionFrameCount - 1; // 5회찍었으면 그중 4회는 흘러갔고 1회는 검사중
+                    
+                    // 방향에 따라서 Y축 값이 바뀜
+                    // 방향에 따라 검증이 필요하겠지요?
+                    if (CGlobal.Inst.Device.CAMERAS[GrabBuffer.Index].Property.USE_ROTATE)
+                    {
+                        switch (CGlobal.Inst.Device.CAMERAS[GrabBuffer.Index].Property.ROTATE)
+                        {
+                            case OpenCvSharp.RotateFlags.Rotate90Counterclockwise:
+                                attatchLabelling.detection_DistPerMM = Math.Truncate(100 * (attach.Value[i].Y * CGlobal.Inst.Data.SETTING.EncoderPermm)) / 100;
+                                break;
+                            case OpenCvSharp.RotateFlags.Rotate90Clockwise:
+                                attatchLabelling.detection_DistPerMM = Math.Truncate(100 * (attach.Value[i].Y * CGlobal.Inst.Data.SETTING.EncoderPermm)) / 100;
+                                break;
+                            case OpenCvSharp.RotateFlags.Rotate180:
+                                attatchLabelling.detection_DistPerMM = Math.Truncate(100 * ((H - attach.Value[i].Y) * CGlobal.Inst.Data.SETTING.EncoderPermm)) / 100;
+                                break;
+                        }
+                    }
+                    else { attatchLabelling.detection_DistPerMM = Math.Truncate(100 * (attach.Value[i].Y * CGlobal.Inst.Data.SETTING.EncoderPermm)) / 100; }
+                    attatchLabelling.Speed_Proportion_MM_Offset = CGlobal.Inst.Data.SETTING.EncoderPermmOffset;
+                    attatchLabelling.CameraToLabeler_Enc_Offset = Encoder_Offset;
+                    attatchLabelling.CameraToLabeler_MM_Offset = Encoder_Offset * CGlobal.Inst.Data.SETTING.EncoderPermm;
+                    attatchLabelling.CalculatorAttach(H, GrabBuffer.TotalEncoder);
+                    attatchLabelling.Bounding = new Rectangle(attach.Value[i].X, attach.Value[i].Y, 10, 10);
+                    // 디팩에 관한 라벨을 넣어줌
+                    int defectInsertNo = 0;
+                    switch ((int)attach.Key)
+                    {
+                        case (int)DEFINE.REEL_NO.NO1:
+                            defectInsertNo = CGlobal.Inst.Data.SETTING.Select_Labeler_No1 - 1;
+                            break;
+                        case (int)DEFINE.REEL_NO.NO2:
+                            defectInsertNo = CGlobal.Inst.Data.SETTING.Select_Labeler_No2 - 1;
+                            break;
+                        case (int)DEFINE.REEL_NO.NO3:
+                            defectInsertNo = CGlobal.Inst.Data.SETTING.Select_Labeler_No3 - 1;
+                            break;
+                        case (int)DEFINE.REEL_NO.NO4:
+                            defectInsertNo = CGlobal.Inst.Data.SETTING.Select_Labeler_No4 - 1;
+                            break;
+                    }
+
+                    attatchLabelling.Reel_Position = defectInsertNo + 1;
+
+
+                    CGlobal.Inst.Data.AttachesTemp[defectInsertNo].Add(attatchLabelling);
+                }
+            }            
+        }
+
+        private static object m_ob = new object();
+
+        private static List<CAttatchLabelling> OrderByLabel(List<CAttatchLabelling> AttatchLabels)
+        {
+            if (AttatchLabels.Count > 0)
+            {
+                AttatchLabels = AttatchLabels.OrderBy(x => x.Total_Acq_DistPerMM).ToList();
+            }
+            return AttatchLabels;
+        }
+
+        private static void CheckLabel(List<CAttatchLabelling> AttatchLabels)
+        {
+            // 적합한 인덱스인지 검사            
+            int findVaildIndex = 0;
+            for (int i = 0; i < AttatchLabels.Count - 1; i++)
+            {
+                if (i < findVaildIndex) { continue; }
+                CAttatchLabelling attatchLabellingBef = AttatchLabels[findVaildIndex];
+                CAttatchLabelling attatchLabellingAf = AttatchLabels[i + 1];
+
+                // 두개의 차이
+                double diffMM = attatchLabellingAf.Total_Acq_DistPerMM - attatchLabellingBef.Total_Acq_DistPerMM;
+
+                // 이어서 디팩이 발견된건 부착을 안하도록 Use_Labelling를 false로 바꿔줘야함
+                // 예를 들면 라벨러는 x축을 움직을 수 없고 Y축기준으로만 부착이 되는데
+                // X축이 100 / 1000포지션이고 Y축이 동일하다면 두번 부착할것임(부착도 안될것임 자재는 계속 흐를거니까)
+                // 그래서 1번만 부착할 수 있게 예외처리 진행 해야함
+
+                // 첫번째 인덱스부터 마지막 인덱스까지 최소 거리 계산을 함
+                // 계산 후 최소 거리 안에 들어오면 Use_Labelling를 false로 바꿔줌
+                // 다음 최소 거리 계산은 Use_Labellingd이 마지막으로 false로 바뀐거 다음부터 다시 마지막 인덱스까지 최소 거리 계산을 함 
+                if (diffMM < CGlobal.Inst.Data.SETTING.Labeler_Minimum_Spacing)
+                {
+                    AttatchLabels[i + 1].Use_Labelling = false;
+                }
+                else { findVaildIndex = i + 1; }
+            }
+            AttatchLabels.RemoveAll(x => x.Use_Labelling == false);
+        }
+
+        private static DEFINE.RESULT InspectionJudge(double Dist, double Thickness, bool FindLength)
+        {
+            DEFINE.RESULT rESULT = DEFINE.RESULT.OK;
+
+            // 길이를 못찾으면 두께만 판정
+            if (!FindLength)
+            {
+                if (CGlobal.Inst.Data.SPEC.THICKNESS_MIN_MM > Thickness || CGlobal.Inst.Data.SPEC.THICKNESS_MAX_MM < Thickness || Thickness == 0) { rESULT = DEFINE.RESULT.T_NG; }
+                else { rESULT = DEFINE.RESULT.OK; }
+            }
+            else if (CGlobal.Inst.Data.SPEC.DIST_MIN_MM > Dist || CGlobal.Inst.Data.SPEC.DIST_MAX_MM < Dist || Dist == 0)
+            {
+                rESULT = DEFINE.RESULT.L_NG;
+            }
+            else if (CGlobal.Inst.Data.SPEC.THICKNESS_MIN_MM > Thickness || CGlobal.Inst.Data.SPEC.THICKNESS_MAX_MM < Thickness || Thickness == 0)
+            {
+                rESULT = DEFINE.RESULT.T_NG;
+            }
+            else { rESULT = DEFINE.RESULT.OK; }
+
+            return rESULT;
+        }
+
+        #endregion
+    }
+}
