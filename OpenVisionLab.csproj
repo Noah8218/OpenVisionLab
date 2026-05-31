@@ -950,6 +950,9 @@
     <None Include="Resources\Apply_MouseOff.jpg" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="OpenCvSharpExtern.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <None Include="Images\권한%2864%29.png" />
     <None Include="Images\user %28256%29.png" />
     <None Include="Images\user%28128%29.png" />
