@@ -17,7 +17,8 @@ Blob / Contour 검사: 형태학적 특징 기반의 객체 검출 및 윤곽선
 Morphology, Filter, Edge Detection (Canny 등), Histogram 처리 등 검사 전 품질을 높이기 위한 다양한 전처리 툴을 제공합니다.
 
  - 길이검사
-<img width="1920" height="1040" alt="비전 테스트 프로그램(룰베이스)_gap 검출 PNG" src="https://github.com/user-attachments/assets/018922d4-907e-4000-b4b2-6b76ec3a466d" />
+<img width="1920" height="1080" alt="_20260603_081522" src="https://github.com/user-attachments/assets/3a8edf91-f7db-4e90-b863-0e7ac26b463c" />
+
 
  - 교차점 검사
 <img width="1920" height="1040" alt="비전 테스트 프로그램(룰베이스)_fitLine PNG" src="https://github.com/user-attachments/assets/7c5e4d3d-ca32-4f29-83c1-269d2b1b1489" />
