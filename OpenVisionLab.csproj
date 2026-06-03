@@ -114,9 +114,6 @@
     <OutputPath>bin\x64\Side_2\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="CircularProgressBar">
-      <HintPath>dll\CircularProgressBar.dll</HintPath>
-    </Reference>
     <Reference Include="Cyotek.Windows.Forms.ImageBox, Version=1.2.0.0, Culture=neutral, PublicKeyToken=58daa28b0b2de221, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>dll\Cyotek.Windows.Forms.ImageBox.dll</HintPath>
@@ -256,12 +253,6 @@
     </Compile>
     <Compile Include="0. UI\0%29 MENU\FormTeachingVision.Designer.cs">
       <DependentUpon>FormTeachingVision.cs</DependentUpon>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormInit.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormInit.Designer.cs">
-      <DependentUpon>FormInit.cs</DependentUpon>
     </Compile>
     <Compile Include="0. UI\2%29 POPUP\FormImageCompare.cs">
       <SubType>Form</SubType>
@@ -503,9 +494,6 @@
     <EmbeddedResource Include="0. UI\0%29 MENU\FormTeachingVision.resx">
       <DependentUpon>FormTeachingVision.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\2%29 POPUP\FormInit.resx">
-      <DependentUpon>FormInit.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="0. UI\2%29 POPUP\FormImageCompare.resx">
       <DependentUpon>FormImageCompare.cs</DependentUpon>
     </EmbeddedResource>
@@ -621,6 +609,10 @@
     <ProjectReference Include="Library\RJControls\RJControls.csproj">
       <Project>{0D20A454-1A31-44F7-BFD4-B5784FB25224}</Project>
       <Name>RJControls</Name>
+    </ProjectReference>
+    <ProjectReference Include="Library\OpenVisionLab.Controls.Init\OpenVisionLab.Controls.Init.csproj">
+      <Project>{68D70C4C-B7A7-4395-ABCF-E30E75EC0C04}</Project>
+      <Name>OpenVisionLab.Controls.Init</Name>
     </ProjectReference>
     <ProjectReference Include="Library\PropertyGrid.Abstractions\PropertyGrid.Abstractions.csproj">
       <Project>{E3B27A4A-4F7A-4AF3-9A98-135C961265F4}</Project>

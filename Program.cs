@@ -44,7 +44,11 @@ namespace OpenVisionLab
 
                     SettingsManager.LoadApperanceSettings();//Load current appearance settings.
 
-                    FormInit formInit = new FormInit();
+                    FormInit formInit = new FormInit
+                    {
+                        VersionText = $"VERSION : {CVersion.VERSION} - {CVersion.DATETIME_UPDATED} ({CVersion.MANAGER})",
+                        VersionLogAction = text => CLOG.NORMAL(text)
+                    };
 #if Release
 
 #endif
