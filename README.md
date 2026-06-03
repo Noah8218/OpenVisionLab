@@ -32,11 +32,18 @@ Morphology, Filter, Edge Detection (Canny 등), Histogram 처리 등 검사 전 
  - Contour 검사
 <img width="1920" height="1080" alt="_20260603_092304" src="https://github.com/user-attachments/assets/c364daab-4b0a-4237-8592-62fa4a9c8d88" />
 
-
  - 이미지 프로세싱
 <img width="1920" height="1040" alt="비전 테스트 프로그램(룰베이스)_이미지 프로세싱 PNG" src="https://github.com/user-attachments/assets/2c486b55-7bfd-4638-9db2-19a41801284f" />
 
+## 개발 환경 및 기술 스택
 
+OpenVisionLab의 메인 실행 프로젝트는 기존 .NET Framework가 아닌 **.NET 8 Windows Desktop (`net8.0-windows`)** 기반으로 마이그레이션되었습니다.
 
+- Language: C#
+- Framework: .NET 8 Windows Desktop
+- UI: Windows Forms / WPF interop
+- Vision Library: OpenCvSharp
+- IDE: Visual Studio 2022
+- Platform: Windows / x64
 
-
+일부 기존 .NET Framework 전용 UI 컨트롤 및 레거시 DLL 의존성은 메인 프로젝트와 분리하여 별도 라이브러리 프로젝트로 관리하고 있습니다.
