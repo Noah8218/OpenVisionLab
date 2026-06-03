@@ -5,7 +5,6 @@ using FontAwesome.Sharp;
 using RJCodeUI_M1.RJControls;
 using RJCodeUI_M1.Settings;
 using System.ComponentModel;
-using OpenVisionLab;
 
 namespace RJCodeUI_M1.RJForms
 {
@@ -69,7 +68,7 @@ namespace RJCodeUI_M1.RJForms
             //           
             btnClose.FlatAppearance.BorderSize = 0;
             btnClose.FlatStyle = FlatStyle.Flat;
-            btnClose.Image = OpenVisionLab.Properties.Resources.CloseWhite;
+            btnClose.Image = CreateCloseImage(Color.White);
             btnClose.Location = new Point(175, 0);
             btnClose.Name = "btnClose";
             btnClose.Size = new Size(35, 40);
@@ -82,7 +81,7 @@ namespace RJCodeUI_M1.RJForms
             // 
             btnMaximize.FlatAppearance.BorderSize = 0;
             btnMaximize.FlatStyle = FlatStyle.Flat;
-            btnMaximize.Image = OpenVisionLab.Properties.Resources.MaximizeWhite;
+            btnMaximize.Image = CreateMaximizeImage(Color.White);
             btnMaximize.Location = new Point(140, 0);
             btnMaximize.Name = "btnMaximize";
             btnMaximize.Size = new Size(35, 40);
@@ -95,7 +94,7 @@ namespace RJCodeUI_M1.RJForms
             // 
             btnMinimize.FlatAppearance.BorderSize = 0;
             btnMinimize.FlatStyle = FlatStyle.Flat;
-            btnMinimize.Image = OpenVisionLab.Properties.Resources.MinimizeWhite;
+            btnMinimize.Image = CreateMinimizeImage(Color.White);
             btnMinimize.Location = new Point(105, 0);
             btnMinimize.Name = "btnMinimize";
             btnMinimize.Size = new Size(35, 40);
@@ -153,6 +152,48 @@ namespace RJCodeUI_M1.RJForms
                      ControlStyles.AllPaintingInWmPaint |
                      ControlStyles.UserPaint, true);
 
+        }
+
+        #endregion
+
+        #region -> Private icon helpers
+
+        private static Image CreateCloseImage(Color color)
+        {
+            Bitmap bitmap = new Bitmap(14, 14);
+            using (Graphics graphics = Graphics.FromImage(bitmap))
+            using (Pen pen = new Pen(color, 2))
+            {
+                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                graphics.DrawLine(pen, 3, 3, 11, 11);
+                graphics.DrawLine(pen, 11, 3, 3, 11);
+            }
+
+            return bitmap;
+        }
+
+        private static Image CreateMaximizeImage(Color color)
+        {
+            Bitmap bitmap = new Bitmap(14, 14);
+            using (Graphics graphics = Graphics.FromImage(bitmap))
+            using (Pen pen = new Pen(color, 2))
+            {
+                graphics.DrawRectangle(pen, 3, 3, 8, 8);
+            }
+
+            return bitmap;
+        }
+
+        private static Image CreateMinimizeImage(Color color)
+        {
+            Bitmap bitmap = new Bitmap(14, 14);
+            using (Graphics graphics = Graphics.FromImage(bitmap))
+            using (Pen pen = new Pen(color, 2))
+            {
+                graphics.DrawLine(pen, 3, 10, 11, 10);
+            }
+
+            return bitmap;
         }
 
         #endregion

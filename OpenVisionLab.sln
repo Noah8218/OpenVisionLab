@@ -5,6 +5,8 @@ VisualStudioVersion = 17.3.32811.315
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenVisionLab", "OpenVisionLab.csproj", "{8A4C00DB-1734-4DD1-BF8C-C6C4DFFA571F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RJControls", "Library\RJControls\RJControls.csproj", "{0D20A454-1A31-44F7-BFD4-B5784FB25224}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,18 @@ Global
 		{8A4C00DB-1734-4DD1-BF8C-C6C4DFFA571F}.Release|x64.Build.0 = Release|x64
 		{8A4C00DB-1734-4DD1-BF8C-C6C4DFFA571F}.Release|x86.ActiveCfg = Release|x86
 		{8A4C00DB-1734-4DD1-BF8C-C6C4DFFA571F}.Release|x86.Build.0 = Release|x86
+		{0D20A454-1A31-44F7-BFD4-B5784FB25224}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D20A454-1A31-44F7-BFD4-B5784FB25224}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D20A454-1A31-44F7-BFD4-B5784FB25224}.Debug|x64.ActiveCfg = Debug|x64
+		{0D20A454-1A31-44F7-BFD4-B5784FB25224}.Debug|x64.Build.0 = Debug|x64
+		{0D20A454-1A31-44F7-BFD4-B5784FB25224}.Debug|x86.ActiveCfg = Debug|x86
+		{0D20A454-1A31-44F7-BFD4-B5784FB25224}.Debug|x86.Build.0 = Debug|x86
+		{0D20A454-1A31-44F7-BFD4-B5784FB25224}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D20A454-1A31-44F7-BFD4-B5784FB25224}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D20A454-1A31-44F7-BFD4-B5784FB25224}.Release|x64.ActiveCfg = Release|x64
+		{0D20A454-1A31-44F7-BFD4-B5784FB25224}.Release|x64.Build.0 = Release|x64
+		{0D20A454-1A31-44F7-BFD4-B5784FB25224}.Release|x86.ActiveCfg = Release|x86
+		{0D20A454-1A31-44F7-BFD4-B5784FB25224}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
