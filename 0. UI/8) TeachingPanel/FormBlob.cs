@@ -168,7 +168,7 @@ namespace OpenVisionLab
                     var task = Task.Run(() =>
                     {
 
-                        this.Invoke(new MethodInvoker(() =>
+                        this.Invoke(new System.Windows.Forms.MethodInvoker(() =>
                         {
                             dgvDefect.DataSource = new CDefectList_Result().GetBlobList(totalResults);
                             dgvDefect.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;

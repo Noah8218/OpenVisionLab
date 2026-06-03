@@ -6,11 +6,7 @@ using System.Windows.Forms;
 using OpenCvSharp;
 using Cyotek.Windows.Forms;
 using RJCodeUI_M1.RJForms;
-using System.Drawing.Imaging;
-using OpenVisionLab._1._Core;
-using Vila.Win32;
 using static OpenVisionLab.DrawObject.CEnum;
-using static OpenVisionLab._2._Common.CParameterManager;
 using OpenVisionLab.DrawObject;
 using Lib.Common;
 

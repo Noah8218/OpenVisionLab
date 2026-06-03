@@ -26,8 +26,8 @@ namespace OpenVisionLab._2._Common
             try
             {
                 var propertyGrid = (System.Windows.Controls.WpfPropertyGrid.PropertyGrid)sender;
-                if (propertyGrid.SelectedObject == null || !propertyGrid.HasCategories) return;
-                if(e != null)
+                if (propertyGrid.SelectedObject == null) return;
+                if(e != null && propertyGrid.SelectedObject is COpenCVPropertyBase)
                 {
                     var Prop = (COpenCVPropertyBase)propertyGrid.SelectedObject;
                     switch (e.Property.Name.ToUpper())
@@ -141,25 +141,23 @@ namespace OpenVisionLab._2._Common
                 if (Prop.USE_ROI)
                 {
                     propertyGrid.Properties[nameof(Prop.USE_MULTI_ROI)].IsBrowsable = true;
-                    propertyGrid.Properties[nameof(Prop.CvROI)].IsBrowsable = true;
-                    propertyGrid.Properties[nameof(Prop.CvROIS)].IsBrowsable = true;
+
+                    if (Prop.USE_MULTI_ROI)
+                    {
+                        propertyGrid.Properties[nameof(Prop.CvROI)].IsBrowsable = false;
+                        propertyGrid.Properties[nameof(Prop.CvROIS)].IsBrowsable = true;
+                    }
+                    else
+                    {
+                        propertyGrid.Properties[nameof(Prop.CvROI)].IsBrowsable = true;
+                        propertyGrid.Properties[nameof(Prop.CvROIS)].IsBrowsable = false;
+                    }
                 }
                 else
                 {
                     propertyGrid.Properties[nameof(Prop.USE_MULTI_ROI)].SetValue(false);
                     propertyGrid.Properties[nameof(Prop.USE_MULTI_ROI)].IsBrowsable = false;
                     propertyGrid.Properties[nameof(Prop.CvROI)].IsBrowsable = false;
-                    propertyGrid.Properties[nameof(Prop.CvROIS)].IsBrowsable = false;
-                }
-
-                if (Prop.USE_MULTI_ROI)
-                {
-                    propertyGrid.Properties[nameof(Prop.CvROI)].IsBrowsable = false;
-                    propertyGrid.Properties[nameof(Prop.CvROIS)].IsBrowsable = true;
-                }
-                else
-                {
-                    propertyGrid.Properties[nameof(Prop.CvROI)].IsBrowsable = true;
                     propertyGrid.Properties[nameof(Prop.CvROIS)].IsBrowsable = false;
                 }
 

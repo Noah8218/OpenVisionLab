@@ -187,7 +187,7 @@ namespace OpenVisionLab
                     var myTask = Task.Run(() =>
                     {
 
-                        this.Invoke(new MethodInvoker(() =>
+                        this.Invoke(new System.Windows.Forms.MethodInvoker(() =>
                         {
                             dgvDefect.DataSource = new CDefectList_Result().GetContourList(TotalResults);
                             dgvDefect.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
@@ -329,7 +329,7 @@ namespace OpenVisionLab
                     var myTask = Task.Run(() =>
                     {
 
-                        this.Invoke(new MethodInvoker(() =>
+                        this.Invoke(new System.Windows.Forms.MethodInvoker(() =>
                         {
                             dgvDefect.DataSource = new CDefectList_Result().GetContourList(TotalResults);
                             dgvDefect.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;

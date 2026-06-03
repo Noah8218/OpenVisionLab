@@ -70,10 +70,10 @@ namespace OpenVisionLab.DrawObject
             {
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-                g.DrawString(Title, new Font("Arial", 12, FontStyle.Bold), new SolidBrush(System.Drawing.Color.OrangeRed), Location.X + 15, Location.Y + 15);
+                g.DrawString(Title, new System.Drawing.Font("Arial", 12, FontStyle.Bold), new SolidBrush(System.Drawing.Color.OrangeRed), Location.X + 15, Location.Y + 15);
                 if (IsRotate)
                 {
-                    g.DrawString(Angle.ToString(), new Font("Arial", 12, FontStyle.Bold), new SolidBrush(System.Drawing.Color.OrangeRed), Location.X + 15, Location.Y + 15);
+                    g.DrawString(Angle.ToString(), new System.Drawing.Font("Arial", 12, FontStyle.Bold), new SolidBrush(System.Drawing.Color.OrangeRed), Location.X + 15, Location.Y + 15);
                 }
                 
                 foreach (PosSizableRect pos in Enum.GetValues(typeof(PosSizableRect)))

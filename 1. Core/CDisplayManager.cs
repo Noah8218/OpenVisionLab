@@ -93,7 +93,7 @@ namespace OpenVisionLab._1._Core
         private static void ClearEmptyDisplay()
         {
             object _ob = new object();
-            Frm.Invoke((MethodInvoker)delegate ()
+            Frm.Invoke((System.Windows.Forms.MethodInvoker)delegate ()
             {
                 lock (_ob)
                 {
@@ -114,7 +114,7 @@ namespace OpenVisionLab._1._Core
             ClearEmptyDisplay();
 
             object _ob = new object();
-            Frm.Invoke((MethodInvoker)delegate ()
+            Frm.Invoke((System.Windows.Forms.MethodInvoker)delegate ()
             {
                 lock (_ob)
                 {
@@ -157,7 +157,7 @@ namespace OpenVisionLab._1._Core
             ClearEmptyDisplay();
 
             object _ob = new object();
-            Frm.Invoke((MethodInvoker)delegate ()
+            Frm.Invoke((System.Windows.Forms.MethodInvoker)delegate ()
             {
                 lock (_ob)
                 {

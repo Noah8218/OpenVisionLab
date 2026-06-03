@@ -28,541 +28,525 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMetroFrame));
-            this.timerAlarm = new System.Windows.Forms.Timer(this.components);
-            this.pnMDI = new System.Windows.Forms.Panel();
-            this.pnFormMain = new MetroFramework.Controls.MetroPanel();
-            this.OperatorPanel = new System.Windows.Forms.Panel();
-            this.panel3 = new System.Windows.Forms.Panel();
-            this.timerConnection = new System.Windows.Forms.Timer(this.components);
-            this.pnStatusBar = new RJCodeUI_M1.RJControls.RJPanel();
-            this.pgbDriveD = new MetroFramework.Controls.MetroProgressBar();
-            this.lbDriveD = new RJCodeUI_M1.RJControls.RJLabel();
-            this.lbVersion = new RJCodeUI_M1.RJControls.RJLabel();
-            this.pgbDriveC = new MetroFramework.Controls.MetroProgressBar();
-            this.lbDriveC = new RJCodeUI_M1.RJControls.RJLabel();
-            this.pnlTitleBar = new RJCodeUI_M1.RJControls.RJPanel();
-            this.biUserOptions = new RJCodeUI_M1.RJControls.RJMenuIcon();
-            this.dmUserOptions = new RJCodeUI_M1.RJControls.RJDropdownMenu(this.components);
-            this.miMyProfile = new FontAwesome.Sharp.IconMenuItem();
-            this.miSettings = new FontAwesome.Sharp.IconMenuItem();
-            this.miTermsCond = new FontAwesome.Sharp.IconMenuItem();
-            this.miHelp = new FontAwesome.Sharp.IconMenuItem();
-            this.miLogout = new FontAwesome.Sharp.IconMenuItem();
-            this.miExit = new FontAwesome.Sharp.IconMenuItem();
-            this.btnAuthoriztionName = new RJCodeUI_M1.RJControls.RJButton();
-            this.rjButton2 = new RJCodeUI_M1.RJControls.RJButton();
-            this.btnCerrar = new System.Windows.Forms.Button();
-            this.btnAuthoriztion = new RJCodeUI_M1.RJControls.RJButton();
-            this.btnMinimizar = new System.Windows.Forms.Button();
-            this.rjLabel1 = new RJCodeUI_M1.RJControls.RJLabel();
-            this.ddmDevice = new RJCodeUI_M1.RJControls.RJDropdownMenu(this.components);
-            this.iconMenuItem2 = new FontAwesome.Sharp.IconMenuItem();
-            this.iconMenuItem3 = new FontAwesome.Sharp.IconMenuItem();
-            this.iconMenuItem4 = new FontAwesome.Sharp.IconMenuItem();
-            this.iconMenuItem5 = new FontAwesome.Sharp.IconMenuItem();
-            this.iconMenuItem6 = new FontAwesome.Sharp.IconMenuItem();
-            this.ddmCapture = new RJCodeUI_M1.RJControls.RJDropdownMenu(this.components);
-            this.iconMenuItem1 = new FontAwesome.Sharp.IconMenuItem();
-            this.pnMDI.SuspendLayout();
-            this.pnFormMain.SuspendLayout();
-            this.pnStatusBar.SuspendLayout();
-            this.pnlTitleBar.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.biUserOptions)).BeginInit();
-            this.dmUserOptions.SuspendLayout();
-            this.ddmDevice.SuspendLayout();
-            this.ddmCapture.SuspendLayout();
-            this.SuspendLayout();
+            timerAlarm = new System.Windows.Forms.Timer(components);
+            pnMDI = new System.Windows.Forms.Panel();
+            pnFormMain = new MetroFramework.Controls.MetroPanel();
+            OperatorPanel = new System.Windows.Forms.Panel();
+            panel3 = new System.Windows.Forms.Panel();
+            timerConnection = new System.Windows.Forms.Timer(components);
+            pnStatusBar = new RJCodeUI_M1.RJControls.RJPanel();
+            pgbDriveD = new MetroFramework.Controls.MetroProgressBar();
+            lbDriveD = new RJCodeUI_M1.RJControls.RJLabel();
+            lbVersion = new RJCodeUI_M1.RJControls.RJLabel();
+            pgbDriveC = new MetroFramework.Controls.MetroProgressBar();
+            lbDriveC = new RJCodeUI_M1.RJControls.RJLabel();
+            pnlTitleBar = new RJCodeUI_M1.RJControls.RJPanel();
+            biUserOptions = new RJCodeUI_M1.RJControls.RJMenuIcon();
+            dmUserOptions = new RJCodeUI_M1.RJControls.RJDropdownMenu(components);
+            miMyProfile = new FontAwesome.Sharp.IconMenuItem();
+            miSettings = new FontAwesome.Sharp.IconMenuItem();
+            miTermsCond = new FontAwesome.Sharp.IconMenuItem();
+            miHelp = new FontAwesome.Sharp.IconMenuItem();
+            miLogout = new FontAwesome.Sharp.IconMenuItem();
+            miExit = new FontAwesome.Sharp.IconMenuItem();
+            btnAuthoriztionName = new RJCodeUI_M1.RJControls.RJButton();
+            rjButton2 = new RJCodeUI_M1.RJControls.RJButton();
+            btnCerrar = new System.Windows.Forms.Button();
+            btnAuthoriztion = new RJCodeUI_M1.RJControls.RJButton();
+            btnMinimizar = new System.Windows.Forms.Button();
+            rjLabel1 = new RJCodeUI_M1.RJControls.RJLabel();
+            ddmDevice = new RJCodeUI_M1.RJControls.RJDropdownMenu(components);
+            iconMenuItem2 = new FontAwesome.Sharp.IconMenuItem();
+            iconMenuItem3 = new FontAwesome.Sharp.IconMenuItem();
+            iconMenuItem4 = new FontAwesome.Sharp.IconMenuItem();
+            iconMenuItem5 = new FontAwesome.Sharp.IconMenuItem();
+            iconMenuItem6 = new FontAwesome.Sharp.IconMenuItem();
+            ddmCapture = new RJCodeUI_M1.RJControls.RJDropdownMenu(components);
+            iconMenuItem1 = new FontAwesome.Sharp.IconMenuItem();
+            pnMDI.SuspendLayout();
+            pnFormMain.SuspendLayout();
+            pnStatusBar.SuspendLayout();
+            pnlTitleBar.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)biUserOptions).BeginInit();
+            dmUserOptions.SuspendLayout();
+            ddmDevice.SuspendLayout();
+            ddmCapture.SuspendLayout();
+            SuspendLayout();
             // 
             // timerAlarm
             // 
-            this.timerAlarm.Enabled = true;
-            this.timerAlarm.Interval = 500;
+            timerAlarm.Enabled = true;
+            timerAlarm.Interval = 500;
             // 
             // pnMDI
             // 
-            this.pnMDI.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
-            this.pnMDI.Controls.Add(this.pnFormMain);
-            this.pnMDI.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pnMDI.Location = new System.Drawing.Point(0, 50);
-            this.pnMDI.Margin = new System.Windows.Forms.Padding(0);
-            this.pnMDI.Name = "pnMDI";
-            this.pnMDI.Size = new System.Drawing.Size(1924, 1050);
-            this.pnMDI.TabIndex = 1258;
+            pnMDI.BackColor = System.Drawing.Color.FromArgb(240, 245, 249);
+            pnMDI.Controls.Add(pnFormMain);
+            pnMDI.Dock = System.Windows.Forms.DockStyle.Fill;
+            pnMDI.Location = new System.Drawing.Point(0, 50);
+            pnMDI.Margin = new System.Windows.Forms.Padding(0);
+            pnMDI.Name = "pnMDI";
+            pnMDI.Size = new System.Drawing.Size(1924, 1011);
+            pnMDI.TabIndex = 1258;
             // 
             // pnFormMain
             // 
-            this.pnFormMain.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.pnFormMain.Controls.Add(this.OperatorPanel);
-            this.pnFormMain.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pnFormMain.HorizontalScrollbarBarColor = true;
-            this.pnFormMain.HorizontalScrollbarHighlightOnWheel = false;
-            this.pnFormMain.HorizontalScrollbarSize = 10;
-            this.pnFormMain.Location = new System.Drawing.Point(0, 0);
-            this.pnFormMain.Margin = new System.Windows.Forms.Padding(0);
-            this.pnFormMain.Name = "pnFormMain";
-            this.pnFormMain.Size = new System.Drawing.Size(1924, 1050);
-            this.pnFormMain.TabIndex = 895;
-            this.pnFormMain.VerticalScrollbarBarColor = true;
-            this.pnFormMain.VerticalScrollbarHighlightOnWheel = false;
-            this.pnFormMain.VerticalScrollbarSize = 10;
+            pnFormMain.BackColor = System.Drawing.Color.FromArgb(83, 97, 212);
+            pnFormMain.Controls.Add(OperatorPanel);
+            pnFormMain.Dock = System.Windows.Forms.DockStyle.Fill;
+            pnFormMain.HorizontalScrollbarBarColor = true;
+            pnFormMain.HorizontalScrollbarHighlightOnWheel = false;
+            pnFormMain.HorizontalScrollbarSize = 10;
+            pnFormMain.Location = new System.Drawing.Point(0, 0);
+            pnFormMain.Margin = new System.Windows.Forms.Padding(0);
+            pnFormMain.Name = "pnFormMain";
+            pnFormMain.Size = new System.Drawing.Size(1924, 1011);
+            pnFormMain.TabIndex = 895;
+            pnFormMain.VerticalScrollbarBarColor = true;
+            pnFormMain.VerticalScrollbarHighlightOnWheel = false;
+            pnFormMain.VerticalScrollbarSize = 10;
             // 
             // OperatorPanel
             // 
-            this.OperatorPanel.BackColor = System.Drawing.Color.Black;
-            this.OperatorPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.OperatorPanel.Location = new System.Drawing.Point(0, 0);
-            this.OperatorPanel.Name = "OperatorPanel";
-            this.OperatorPanel.Size = new System.Drawing.Size(1924, 1050);
-            this.OperatorPanel.TabIndex = 2138;
+            OperatorPanel.BackColor = System.Drawing.Color.Black;
+            OperatorPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            OperatorPanel.Location = new System.Drawing.Point(0, 0);
+            OperatorPanel.Name = "OperatorPanel";
+            OperatorPanel.Size = new System.Drawing.Size(1924, 1011);
+            OperatorPanel.TabIndex = 2138;
             // 
             // panel3
             // 
-            this.panel3.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel3.Location = new System.Drawing.Point(0, 0);
-            this.panel3.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
-            this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(1910, 47);
-            this.panel3.TabIndex = 1949;
+            panel3.Dock = System.Windows.Forms.DockStyle.Fill;
+            panel3.Location = new System.Drawing.Point(0, 0);
+            panel3.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
+            panel3.Name = "panel3";
+            panel3.Size = new System.Drawing.Size(1910, 47);
+            panel3.TabIndex = 1949;
             // 
             // timerConnection
             // 
-            this.timerConnection.Enabled = true;
-            this.timerConnection.Tick += new System.EventHandler(this.timerConnection_Tick);
+            timerConnection.Enabled = true;
+            timerConnection.Tick += timerConnection_Tick;
             // 
             // pnStatusBar
             // 
-            this.pnStatusBar.BackColor = System.Drawing.Color.Black;
-            this.pnStatusBar.BorderRadius = 0;
-            this.pnStatusBar.Controls.Add(this.pgbDriveD);
-            this.pnStatusBar.Controls.Add(this.lbDriveD);
-            this.pnStatusBar.Controls.Add(this.lbVersion);
-            this.pnStatusBar.Controls.Add(this.pgbDriveC);
-            this.pnStatusBar.Controls.Add(this.lbDriveC);
-            this.pnStatusBar.Customizable = true;
-            this.pnStatusBar.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.pnStatusBar.Location = new System.Drawing.Point(0, 1067);
-            this.pnStatusBar.Name = "pnStatusBar";
-            this.pnStatusBar.Size = new System.Drawing.Size(1924, 33);
-            this.pnStatusBar.TabIndex = 0;
+            pnStatusBar.BackColor = System.Drawing.Color.Black;
+            pnStatusBar.BorderRadius = 0;
+            pnStatusBar.Controls.Add(pgbDriveD);
+            pnStatusBar.Controls.Add(lbDriveD);
+            pnStatusBar.Controls.Add(lbVersion);
+            pnStatusBar.Controls.Add(pgbDriveC);
+            pnStatusBar.Controls.Add(lbDriveC);
+            pnStatusBar.Customizable = true;
+            pnStatusBar.Dock = System.Windows.Forms.DockStyle.Bottom;
+            pnStatusBar.Location = new System.Drawing.Point(0, 1028);
+            pnStatusBar.Name = "pnStatusBar";
+            pnStatusBar.Size = new System.Drawing.Size(1924, 33);
+            pnStatusBar.TabIndex = 0;
             // 
             // pgbDriveD
             // 
-            this.pgbDriveD.Location = new System.Drawing.Point(268, 21);
-            this.pgbDriveD.Name = "pgbDriveD";
-            this.pgbDriveD.Size = new System.Drawing.Size(218, 10);
-            this.pgbDriveD.Style = MetroFramework.MetroColorStyle.Lime;
-            this.pgbDriveD.TabIndex = 2109;
-            this.pgbDriveD.Theme = MetroFramework.MetroThemeStyle.Dark;
+            pgbDriveD.Location = new System.Drawing.Point(268, 21);
+            pgbDriveD.Name = "pgbDriveD";
+            pgbDriveD.Size = new System.Drawing.Size(218, 10);
+            pgbDriveD.Style = MetroFramework.MetroColorStyle.Lime;
+            pgbDriveD.TabIndex = 2109;
+            pgbDriveD.Theme = MetroFramework.MetroThemeStyle.Dark;
             // 
             // lbDriveD
             // 
-            this.lbDriveD.AutoSize = true;
-            this.lbDriveD.Cursor = System.Windows.Forms.Cursors.Arrow;
-            this.lbDriveD.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lbDriveD.ForeColor = System.Drawing.Color.White;
-            this.lbDriveD.LinkLabel = false;
-            this.lbDriveD.Location = new System.Drawing.Point(265, 6);
-            this.lbDriveD.Name = "lbDriveD";
-            this.lbDriveD.Size = new System.Drawing.Size(164, 13);
-            this.lbDriveD.Style = RJCodeUI_M1.RJControls.LabelStyle.Custom;
-            this.lbDriveD.TabIndex = 2111;
-            this.lbDriveD.Text = "(D:) : 00%    (000/000 GB)";
+            lbDriveD.AutoSize = true;
+            lbDriveD.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+            lbDriveD.ForeColor = System.Drawing.Color.White;
+            lbDriveD.LinkLabel = false;
+            lbDriveD.Location = new System.Drawing.Point(265, 6);
+            lbDriveD.Name = "lbDriveD";
+            lbDriveD.Size = new System.Drawing.Size(164, 13);
+            lbDriveD.Style = RJCodeUI_M1.RJControls.LabelStyle.Custom;
+            lbDriveD.TabIndex = 2111;
+            lbDriveD.Text = "(D:) : 00%    (000/000 GB)";
             // 
             // lbVersion
             // 
-            this.lbVersion.AutoSize = true;
-            this.lbVersion.BackColor = System.Drawing.Color.Transparent;
-            this.lbVersion.Cursor = System.Windows.Forms.Cursors.Arrow;
-            this.lbVersion.Dock = System.Windows.Forms.DockStyle.Right;
-            this.lbVersion.Font = new System.Drawing.Font("Verdana", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lbVersion.ForeColor = System.Drawing.Color.White;
-            this.lbVersion.LinkLabel = false;
-            this.lbVersion.Location = new System.Drawing.Point(1745, 0);
-            this.lbVersion.Name = "lbVersion";
-            this.lbVersion.Size = new System.Drawing.Size(179, 18);
-            this.lbVersion.Style = RJCodeUI_M1.RJControls.LabelStyle.Custom;
-            this.lbVersion.TabIndex = 2122;
-            this.lbVersion.Text = "Version 2.5 - 211007";
+            lbVersion.AutoSize = true;
+            lbVersion.BackColor = System.Drawing.Color.Transparent;
+            lbVersion.Dock = System.Windows.Forms.DockStyle.Right;
+            lbVersion.Font = new System.Drawing.Font("Verdana", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+            lbVersion.ForeColor = System.Drawing.Color.White;
+            lbVersion.LinkLabel = false;
+            lbVersion.Location = new System.Drawing.Point(1745, 0);
+            lbVersion.Name = "lbVersion";
+            lbVersion.Size = new System.Drawing.Size(179, 18);
+            lbVersion.Style = RJCodeUI_M1.RJControls.LabelStyle.Custom;
+            lbVersion.TabIndex = 2122;
+            lbVersion.Text = "Version 2.5 - 211007";
             // 
             // pgbDriveC
             // 
-            this.pgbDriveC.Location = new System.Drawing.Point(10, 20);
-            this.pgbDriveC.Name = "pgbDriveC";
-            this.pgbDriveC.Size = new System.Drawing.Size(218, 10);
-            this.pgbDriveC.Style = MetroFramework.MetroColorStyle.Lime;
-            this.pgbDriveC.TabIndex = 2108;
-            this.pgbDriveC.Theme = MetroFramework.MetroThemeStyle.Dark;
+            pgbDriveC.Location = new System.Drawing.Point(10, 20);
+            pgbDriveC.Name = "pgbDriveC";
+            pgbDriveC.Size = new System.Drawing.Size(218, 10);
+            pgbDriveC.Style = MetroFramework.MetroColorStyle.Lime;
+            pgbDriveC.TabIndex = 2108;
+            pgbDriveC.Theme = MetroFramework.MetroThemeStyle.Dark;
             // 
             // lbDriveC
             // 
-            this.lbDriveC.AutoSize = true;
-            this.lbDriveC.Cursor = System.Windows.Forms.Cursors.Arrow;
-            this.lbDriveC.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lbDriveC.ForeColor = System.Drawing.Color.White;
-            this.lbDriveC.LinkLabel = false;
-            this.lbDriveC.Location = new System.Drawing.Point(7, 6);
-            this.lbDriveC.Name = "lbDriveC";
-            this.lbDriveC.Size = new System.Drawing.Size(164, 13);
-            this.lbDriveC.Style = RJCodeUI_M1.RJControls.LabelStyle.Custom;
-            this.lbDriveC.TabIndex = 2110;
-            this.lbDriveC.Text = "(C:) : 00%    (000/000 GB)";
+            lbDriveC.AutoSize = true;
+            lbDriveC.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+            lbDriveC.ForeColor = System.Drawing.Color.White;
+            lbDriveC.LinkLabel = false;
+            lbDriveC.Location = new System.Drawing.Point(7, 6);
+            lbDriveC.Name = "lbDriveC";
+            lbDriveC.Size = new System.Drawing.Size(164, 13);
+            lbDriveC.Style = RJCodeUI_M1.RJControls.LabelStyle.Custom;
+            lbDriveC.TabIndex = 2110;
+            lbDriveC.Text = "(C:) : 00%    (000/000 GB)";
             // 
             // pnlTitleBar
             // 
-            this.pnlTitleBar.BackColor = System.Drawing.Color.Black;
-            this.pnlTitleBar.BorderRadius = 0;
-            this.pnlTitleBar.Controls.Add(this.biUserOptions);
-            this.pnlTitleBar.Controls.Add(this.btnAuthoriztionName);
-            this.pnlTitleBar.Controls.Add(this.rjButton2);
-            this.pnlTitleBar.Controls.Add(this.btnCerrar);
-            this.pnlTitleBar.Controls.Add(this.btnAuthoriztion);
-            this.pnlTitleBar.Controls.Add(this.btnMinimizar);
-            this.pnlTitleBar.Controls.Add(this.rjLabel1);
-            this.pnlTitleBar.Customizable = true;
-            this.pnlTitleBar.Dock = System.Windows.Forms.DockStyle.Top;
-            this.pnlTitleBar.Location = new System.Drawing.Point(0, 0);
-            this.pnlTitleBar.Name = "pnlTitleBar";
-            this.pnlTitleBar.Size = new System.Drawing.Size(1924, 50);
-            this.pnlTitleBar.TabIndex = 1260;
+            pnlTitleBar.BackColor = System.Drawing.Color.Black;
+            pnlTitleBar.BorderRadius = 0;
+            pnlTitleBar.Controls.Add(biUserOptions);
+            pnlTitleBar.Controls.Add(btnAuthoriztionName);
+            pnlTitleBar.Controls.Add(rjButton2);
+            pnlTitleBar.Controls.Add(btnCerrar);
+            pnlTitleBar.Controls.Add(btnAuthoriztion);
+            pnlTitleBar.Controls.Add(btnMinimizar);
+            pnlTitleBar.Controls.Add(rjLabel1);
+            pnlTitleBar.Customizable = true;
+            pnlTitleBar.Dock = System.Windows.Forms.DockStyle.Top;
+            pnlTitleBar.Location = new System.Drawing.Point(0, 0);
+            pnlTitleBar.Name = "pnlTitleBar";
+            pnlTitleBar.Size = new System.Drawing.Size(1924, 50);
+            pnlTitleBar.TabIndex = 1260;
             // 
             // biUserOptions
             // 
-            this.biUserOptions.BackColor = System.Drawing.Color.Transparent;
-            this.biUserOptions.BackIcon = false;
-            this.biUserOptions.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.biUserOptions.Customizable = false;
-            this.biUserOptions.DropdownMenu = this.dmUserOptions;
-            this.biUserOptions.ForeColor = System.Drawing.Color.WhiteSmoke;
-            this.biUserOptions.IconChar = FontAwesome.Sharp.IconChar.Cog;
-            this.biUserOptions.IconColor = System.Drawing.Color.WhiteSmoke;
-            this.biUserOptions.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.biUserOptions.IconSize = 40;
-            this.biUserOptions.Location = new System.Drawing.Point(1746, 4);
-            this.biUserOptions.Name = "biUserOptions";
-            this.biUserOptions.Size = new System.Drawing.Size(40, 40);
-            this.biUserOptions.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
-            this.biUserOptions.TabIndex = 1267;
-            this.biUserOptions.TabStop = false;
-            this.biUserOptions.Click += new System.EventHandler(this.biUserOptions_Click_1);
+            biUserOptions.BackColor = System.Drawing.Color.Transparent;
+            biUserOptions.BackIcon = false;
+            biUserOptions.Cursor = System.Windows.Forms.Cursors.Hand;
+            biUserOptions.Customizable = false;
+            biUserOptions.DropdownMenu = dmUserOptions;
+            biUserOptions.ForeColor = System.Drawing.Color.WhiteSmoke;
+            biUserOptions.IconChar = FontAwesome.Sharp.IconChar.Cog;
+            biUserOptions.IconColor = System.Drawing.Color.WhiteSmoke;
+            biUserOptions.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            biUserOptions.IconSize = 40;
+            biUserOptions.Location = new System.Drawing.Point(1746, 4);
+            biUserOptions.Name = "biUserOptions";
+            biUserOptions.Size = new System.Drawing.Size(40, 40);
+            biUserOptions.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
+            biUserOptions.TabIndex = 1267;
+            biUserOptions.TabStop = false;
+            biUserOptions.Click += biUserOptions_Click_1;
             // 
             // dmUserOptions
             // 
-            this.dmUserOptions.ActiveMenuItem = false;
-            this.dmUserOptions.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.dmUserOptions.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.miMyProfile,
-            this.miSettings,
-            this.miTermsCond,
-            this.miHelp,
-            this.miLogout,
-            this.miExit});
-            this.dmUserOptions.Name = "dmUserOptions";
-            this.dmUserOptions.OwnerIsMenuButton = false;
-            this.dmUserOptions.Size = new System.Drawing.Size(182, 136);
+            dmUserOptions.ActiveMenuItem = false;
+            dmUserOptions.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+            dmUserOptions.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miMyProfile, miSettings, miTermsCond, miHelp, miLogout, miExit });
+            dmUserOptions.Name = "dmUserOptions";
+            dmUserOptions.OwnerIsMenuButton = false;
+            dmUserOptions.Size = new System.Drawing.Size(182, 136);
             // 
             // miMyProfile
             // 
-            this.miMyProfile.IconChar = FontAwesome.Sharp.IconChar.UserAlt;
-            this.miMyProfile.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(104)))), ((int)(((byte)(85)))), ((int)(((byte)(230)))));
-            this.miMyProfile.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.miMyProfile.IconSize = 21;
-            this.miMyProfile.Name = "miMyProfile";
-            this.miMyProfile.Size = new System.Drawing.Size(181, 22);
-            this.miMyProfile.Text = "My Profile";
+            miMyProfile.IconChar = FontAwesome.Sharp.IconChar.UserAlt;
+            miMyProfile.IconColor = System.Drawing.Color.FromArgb(104, 85, 230);
+            miMyProfile.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            miMyProfile.IconSize = 21;
+            miMyProfile.Name = "miMyProfile";
+            miMyProfile.Size = new System.Drawing.Size(181, 22);
+            miMyProfile.Text = "My Profile";
             // 
             // miSettings
             // 
-            this.miSettings.IconChar = FontAwesome.Sharp.IconChar.Tools;
-            this.miSettings.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(47)))), ((int)(((byte)(168)))), ((int)(((byte)(210)))));
-            this.miSettings.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.miSettings.IconSize = 21;
-            this.miSettings.Name = "miSettings";
-            this.miSettings.Size = new System.Drawing.Size(181, 22);
-            this.miSettings.Text = "Settings";
-            this.miSettings.Click += new System.EventHandler(this.miSettings_Click);
+            miSettings.IconChar = FontAwesome.Sharp.IconChar.Tools;
+            miSettings.IconColor = System.Drawing.Color.FromArgb(47, 168, 210);
+            miSettings.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            miSettings.IconSize = 21;
+            miSettings.Name = "miSettings";
+            miSettings.Size = new System.Drawing.Size(181, 22);
+            miSettings.Text = "Settings";
+            miSettings.Click += miSettings_Click;
             // 
             // miTermsCond
             // 
-            this.miTermsCond.IconChar = FontAwesome.Sharp.IconChar.ShieldAlt;
-            this.miTermsCond.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(70)))), ((int)(((byte)(132)))), ((int)(((byte)(235)))));
-            this.miTermsCond.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.miTermsCond.IconSize = 21;
-            this.miTermsCond.Name = "miTermsCond";
-            this.miTermsCond.Size = new System.Drawing.Size(181, 22);
-            this.miTermsCond.Text = "Terms and Cond";
+            miTermsCond.IconChar = FontAwesome.Sharp.IconChar.ShieldAlt;
+            miTermsCond.IconColor = System.Drawing.Color.FromArgb(70, 132, 235);
+            miTermsCond.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            miTermsCond.IconSize = 21;
+            miTermsCond.Name = "miTermsCond";
+            miTermsCond.Size = new System.Drawing.Size(181, 22);
+            miTermsCond.Text = "Terms and Cond";
             // 
             // miHelp
             // 
-            this.miHelp.IconChar = FontAwesome.Sharp.IconChar.QuestionCircle;
-            this.miHelp.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(238)))), ((int)(((byte)(96)))), ((int)(((byte)(112)))));
-            this.miHelp.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.miHelp.IconSize = 21;
-            this.miHelp.Name = "miHelp";
-            this.miHelp.Size = new System.Drawing.Size(181, 22);
-            this.miHelp.Text = "Help";
+            miHelp.IconChar = FontAwesome.Sharp.IconChar.QuestionCircle;
+            miHelp.IconColor = System.Drawing.Color.FromArgb(238, 96, 112);
+            miHelp.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            miHelp.IconSize = 21;
+            miHelp.Name = "miHelp";
+            miHelp.Size = new System.Drawing.Size(181, 22);
+            miHelp.Text = "Help";
             // 
             // miLogout
             // 
-            this.miLogout.IconChar = FontAwesome.Sharp.IconChar.SignOutAlt;
-            this.miLogout.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(73)))), ((int)(((byte)(84)))), ((int)(((byte)(228)))));
-            this.miLogout.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.miLogout.IconSize = 21;
-            this.miLogout.Name = "miLogout";
-            this.miLogout.Size = new System.Drawing.Size(181, 22);
-            this.miLogout.Text = "Logout";
+            miLogout.IconChar = FontAwesome.Sharp.IconChar.SignOutAlt;
+            miLogout.IconColor = System.Drawing.Color.FromArgb(73, 84, 228);
+            miLogout.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            miLogout.IconSize = 21;
+            miLogout.Name = "miLogout";
+            miLogout.Size = new System.Drawing.Size(181, 22);
+            miLogout.Text = "Logout";
             // 
             // miExit
             // 
-            this.miExit.IconChar = FontAwesome.Sharp.IconChar.PowerOff;
-            this.miExit.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(220)))), ((int)(((byte)(37)))), ((int)(((byte)(118)))));
-            this.miExit.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.miExit.IconSize = 21;
-            this.miExit.Name = "miExit";
-            this.miExit.Size = new System.Drawing.Size(181, 22);
-            this.miExit.Text = "Exit";
+            miExit.IconChar = FontAwesome.Sharp.IconChar.PowerOff;
+            miExit.IconColor = System.Drawing.Color.FromArgb(220, 37, 118);
+            miExit.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            miExit.IconSize = 21;
+            miExit.Name = "miExit";
+            miExit.Size = new System.Drawing.Size(181, 22);
+            miExit.Text = "Exit";
             // 
             // btnAuthoriztionName
             // 
-            this.btnAuthoriztionName.BackColor = System.Drawing.Color.Black;
-            this.btnAuthoriztionName.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(90)))), ((int)(((byte)(146)))), ((int)(((byte)(246)))));
-            this.btnAuthoriztionName.BorderRadius = 10;
-            this.btnAuthoriztionName.BorderSize = 1;
-            this.btnAuthoriztionName.Design = RJCodeUI_M1.RJControls.ButtonDesign.Normal;
-            this.btnAuthoriztionName.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.btnAuthoriztionName.FlatAppearance.BorderSize = 0;
-            this.btnAuthoriztionName.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            this.btnAuthoriztionName.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            this.btnAuthoriztionName.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnAuthoriztionName.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnAuthoriztionName.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(90)))), ((int)(((byte)(146)))), ((int)(((byte)(246)))));
-            this.btnAuthoriztionName.IconChar = FontAwesome.Sharp.IconChar.None;
-            this.btnAuthoriztionName.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(90)))), ((int)(((byte)(146)))), ((int)(((byte)(246)))));
-            this.btnAuthoriztionName.IconFont = FontAwesome.Sharp.IconFont.Regular;
-            this.btnAuthoriztionName.IconSize = 24;
-            this.btnAuthoriztionName.Location = new System.Drawing.Point(74, 10);
-            this.btnAuthoriztionName.Name = "btnAuthoriztionName";
-            this.btnAuthoriztionName.Size = new System.Drawing.Size(108, 32);
-            this.btnAuthoriztionName.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
-            this.btnAuthoriztionName.TabIndex = 2647;
-            this.btnAuthoriztionName.Text = "Model";
-            this.btnAuthoriztionName.UseVisualStyleBackColor = false;
+            btnAuthoriztionName.BackColor = System.Drawing.Color.Black;
+            btnAuthoriztionName.BorderColor = System.Drawing.Color.FromArgb(90, 146, 246);
+            btnAuthoriztionName.BorderRadius = 10;
+            btnAuthoriztionName.BorderSize = 1;
+            btnAuthoriztionName.Design = RJCodeUI_M1.RJControls.ButtonDesign.Normal;
+            btnAuthoriztionName.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(83, 97, 212);
+            btnAuthoriztionName.FlatAppearance.BorderSize = 0;
+            btnAuthoriztionName.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(0, 0, 0);
+            btnAuthoriztionName.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(0, 0, 0);
+            btnAuthoriztionName.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            btnAuthoriztionName.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+            btnAuthoriztionName.ForeColor = System.Drawing.Color.FromArgb(90, 146, 246);
+            btnAuthoriztionName.IconChar = FontAwesome.Sharp.IconChar.None;
+            btnAuthoriztionName.IconColor = System.Drawing.Color.FromArgb(90, 146, 246);
+            btnAuthoriztionName.IconFont = FontAwesome.Sharp.IconFont.Regular;
+            btnAuthoriztionName.IconSize = 24;
+            btnAuthoriztionName.Location = new System.Drawing.Point(74, 10);
+            btnAuthoriztionName.Name = "btnAuthoriztionName";
+            btnAuthoriztionName.Size = new System.Drawing.Size(108, 32);
+            btnAuthoriztionName.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
+            btnAuthoriztionName.TabIndex = 2647;
+            btnAuthoriztionName.Text = "Model";
+            btnAuthoriztionName.UseVisualStyleBackColor = false;
             // 
             // rjButton2
             // 
-            this.rjButton2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(90)))), ((int)(((byte)(146)))), ((int)(((byte)(246)))));
-            this.rjButton2.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(90)))), ((int)(((byte)(146)))), ((int)(((byte)(246)))));
-            this.rjButton2.BorderRadius = 0;
-            this.rjButton2.BorderSize = 1;
-            this.rjButton2.Design = RJCodeUI_M1.RJControls.ButtonDesign.IconButton;
-            this.rjButton2.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.rjButton2.FlatAppearance.BorderSize = 0;
-            this.rjButton2.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(84)))), ((int)(((byte)(137)))), ((int)(((byte)(231)))));
-            this.rjButton2.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(79)))), ((int)(((byte)(128)))), ((int)(((byte)(216)))));
-            this.rjButton2.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.rjButton2.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.rjButton2.ForeColor = System.Drawing.Color.White;
-            this.rjButton2.IconChar = FontAwesome.Sharp.IconChar.FileExport;
-            this.rjButton2.IconColor = System.Drawing.Color.White;
-            this.rjButton2.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.rjButton2.IconSize = 40;
-            this.rjButton2.Location = new System.Drawing.Point(1792, 2);
-            this.rjButton2.Name = "rjButton2";
-            this.rjButton2.Size = new System.Drawing.Size(63, 45);
-            this.rjButton2.Style = RJCodeUI_M1.RJControls.ControlStyle.Solid;
-            this.rjButton2.TabIndex = 8;
-            this.rjButton2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.rjButton2.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.rjButton2.UseVisualStyleBackColor = false;
-            this.rjButton2.Click += new System.EventHandler(this.btnScreenCapture_Click);
-            this.rjButton2.MouseUp += new System.Windows.Forms.MouseEventHandler(this.btnScreenCapture_MouseUp);
+            rjButton2.BackColor = System.Drawing.Color.FromArgb(90, 146, 246);
+            rjButton2.BorderColor = System.Drawing.Color.FromArgb(90, 146, 246);
+            rjButton2.BorderRadius = 0;
+            rjButton2.BorderSize = 1;
+            rjButton2.Design = RJCodeUI_M1.RJControls.ButtonDesign.IconButton;
+            rjButton2.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(83, 97, 212);
+            rjButton2.FlatAppearance.BorderSize = 0;
+            rjButton2.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(84, 137, 231);
+            rjButton2.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(79, 128, 216);
+            rjButton2.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            rjButton2.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+            rjButton2.ForeColor = System.Drawing.Color.White;
+            rjButton2.IconChar = FontAwesome.Sharp.IconChar.FileExport;
+            rjButton2.IconColor = System.Drawing.Color.White;
+            rjButton2.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            rjButton2.IconSize = 40;
+            rjButton2.Location = new System.Drawing.Point(1792, 2);
+            rjButton2.Name = "rjButton2";
+            rjButton2.Size = new System.Drawing.Size(63, 45);
+            rjButton2.Style = RJCodeUI_M1.RJControls.ControlStyle.Solid;
+            rjButton2.TabIndex = 8;
+            rjButton2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            rjButton2.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            rjButton2.UseVisualStyleBackColor = false;
+            rjButton2.Click += btnScreenCapture_Click;
+            rjButton2.MouseUp += btnScreenCapture_MouseUp;
             // 
             // btnCerrar
             // 
-            this.btnCerrar.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnCerrar.FlatAppearance.BorderColor = System.Drawing.Color.White;
-            this.btnCerrar.FlatAppearance.BorderSize = 0;
-            this.btnCerrar.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnCerrar.ForeColor = System.Drawing.Color.White;
-            this.btnCerrar.Image = ((System.Drawing.Image)(resources.GetObject("btnCerrar.Image")));
-            this.btnCerrar.Location = new System.Drawing.Point(1888, 8);
-            this.btnCerrar.Name = "btnCerrar";
-            this.btnCerrar.Size = new System.Drawing.Size(30, 30);
-            this.btnCerrar.TabIndex = 2638;
-            this.btnCerrar.UseVisualStyleBackColor = true;
-            this.btnCerrar.Click += new System.EventHandler(this.btnCerrar_Click);
+            btnCerrar.Cursor = System.Windows.Forms.Cursors.Hand;
+            btnCerrar.FlatAppearance.BorderColor = System.Drawing.Color.White;
+            btnCerrar.FlatAppearance.BorderSize = 0;
+            btnCerrar.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            btnCerrar.ForeColor = System.Drawing.Color.White;
+            btnCerrar.Image = (System.Drawing.Image)resources.GetObject("btnCerrar.Image");
+            btnCerrar.Location = new System.Drawing.Point(1888, 8);
+            btnCerrar.Name = "btnCerrar";
+            btnCerrar.Size = new System.Drawing.Size(30, 30);
+            btnCerrar.TabIndex = 2638;
+            btnCerrar.UseVisualStyleBackColor = true;
+            btnCerrar.Click += btnCerrar_Click;
             // 
             // btnAuthoriztion
             // 
-            this.btnAuthoriztion.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(90)))), ((int)(((byte)(146)))), ((int)(((byte)(246)))));
-            this.btnAuthoriztion.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(90)))), ((int)(((byte)(146)))), ((int)(((byte)(246)))));
-            this.btnAuthoriztion.BorderRadius = 0;
-            this.btnAuthoriztion.BorderSize = 1;
-            this.btnAuthoriztion.Design = RJCodeUI_M1.RJControls.ButtonDesign.IconButton;
-            this.btnAuthoriztion.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.btnAuthoriztion.FlatAppearance.BorderSize = 0;
-            this.btnAuthoriztion.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(84)))), ((int)(((byte)(137)))), ((int)(((byte)(231)))));
-            this.btnAuthoriztion.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(79)))), ((int)(((byte)(128)))), ((int)(((byte)(216)))));
-            this.btnAuthoriztion.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnAuthoriztion.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnAuthoriztion.ForeColor = System.Drawing.Color.White;
-            this.btnAuthoriztion.IconChar = FontAwesome.Sharp.IconChar.UserAlt;
-            this.btnAuthoriztion.IconColor = System.Drawing.Color.White;
-            this.btnAuthoriztion.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.btnAuthoriztion.IconSize = 40;
-            this.btnAuthoriztion.Location = new System.Drawing.Point(5, 4);
-            this.btnAuthoriztion.Name = "btnAuthoriztion";
-            this.btnAuthoriztion.Size = new System.Drawing.Size(63, 43);
-            this.btnAuthoriztion.Style = RJCodeUI_M1.RJControls.ControlStyle.Solid;
-            this.btnAuthoriztion.TabIndex = 9;
-            this.btnAuthoriztion.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnAuthoriztion.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnAuthoriztion.UseVisualStyleBackColor = false;
+            btnAuthoriztion.BackColor = System.Drawing.Color.FromArgb(90, 146, 246);
+            btnAuthoriztion.BorderColor = System.Drawing.Color.FromArgb(90, 146, 246);
+            btnAuthoriztion.BorderRadius = 0;
+            btnAuthoriztion.BorderSize = 1;
+            btnAuthoriztion.Design = RJCodeUI_M1.RJControls.ButtonDesign.IconButton;
+            btnAuthoriztion.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(83, 97, 212);
+            btnAuthoriztion.FlatAppearance.BorderSize = 0;
+            btnAuthoriztion.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(84, 137, 231);
+            btnAuthoriztion.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(79, 128, 216);
+            btnAuthoriztion.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            btnAuthoriztion.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+            btnAuthoriztion.ForeColor = System.Drawing.Color.White;
+            btnAuthoriztion.IconChar = FontAwesome.Sharp.IconChar.UserAlt;
+            btnAuthoriztion.IconColor = System.Drawing.Color.White;
+            btnAuthoriztion.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            btnAuthoriztion.IconSize = 40;
+            btnAuthoriztion.Location = new System.Drawing.Point(5, 4);
+            btnAuthoriztion.Name = "btnAuthoriztion";
+            btnAuthoriztion.Size = new System.Drawing.Size(63, 43);
+            btnAuthoriztion.Style = RJCodeUI_M1.RJControls.ControlStyle.Solid;
+            btnAuthoriztion.TabIndex = 9;
+            btnAuthoriztion.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            btnAuthoriztion.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            btnAuthoriztion.UseVisualStyleBackColor = false;
             // 
             // btnMinimizar
             // 
-            this.btnMinimizar.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnMinimizar.FlatAppearance.BorderColor = System.Drawing.Color.White;
-            this.btnMinimizar.FlatAppearance.BorderSize = 0;
-            this.btnMinimizar.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnMinimizar.ForeColor = System.Drawing.Color.White;
-            this.btnMinimizar.Image = ((System.Drawing.Image)(resources.GetObject("btnMinimizar.Image")));
-            this.btnMinimizar.Location = new System.Drawing.Point(1859, 8);
-            this.btnMinimizar.Name = "btnMinimizar";
-            this.btnMinimizar.Size = new System.Drawing.Size(30, 30);
-            this.btnMinimizar.TabIndex = 2639;
-            this.btnMinimizar.UseVisualStyleBackColor = true;
-            this.btnMinimizar.Click += new System.EventHandler(this.btnMinimizar_Click);
+            btnMinimizar.Cursor = System.Windows.Forms.Cursors.Hand;
+            btnMinimizar.FlatAppearance.BorderColor = System.Drawing.Color.White;
+            btnMinimizar.FlatAppearance.BorderSize = 0;
+            btnMinimizar.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            btnMinimizar.ForeColor = System.Drawing.Color.White;
+            btnMinimizar.Image = (System.Drawing.Image)resources.GetObject("btnMinimizar.Image");
+            btnMinimizar.Location = new System.Drawing.Point(1859, 8);
+            btnMinimizar.Name = "btnMinimizar";
+            btnMinimizar.Size = new System.Drawing.Size(30, 30);
+            btnMinimizar.TabIndex = 2639;
+            btnMinimizar.UseVisualStyleBackColor = true;
+            btnMinimizar.Click += btnMinimizar_Click;
             // 
             // rjLabel1
             // 
-            this.rjLabel1.AutoSize = true;
-            this.rjLabel1.BackColor = System.Drawing.Color.Transparent;
-            this.rjLabel1.Cursor = System.Windows.Forms.Cursors.Arrow;
-            this.rjLabel1.Font = new System.Drawing.Font("Verdana", 24.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.rjLabel1.ForeColor = System.Drawing.Color.White;
-            this.rjLabel1.LinkLabel = false;
-            this.rjLabel1.Location = new System.Drawing.Point(188, 5);
-            this.rjLabel1.Name = "rjLabel1";
-            this.rjLabel1.Size = new System.Drawing.Size(503, 40);
-            this.rjLabel1.Style = RJCodeUI_M1.RJControls.LabelStyle.Custom;
-            this.rjLabel1.TabIndex = 2133;
-            this.rjLabel1.Text = "비전 테스트 프로그램(룰베이스 기반)";
+            rjLabel1.AutoSize = true;
+            rjLabel1.BackColor = System.Drawing.Color.Transparent;
+            rjLabel1.Font = new System.Drawing.Font("Verdana", 24.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+            rjLabel1.ForeColor = System.Drawing.Color.White;
+            rjLabel1.LinkLabel = false;
+            rjLabel1.Location = new System.Drawing.Point(188, 5);
+            rjLabel1.Name = "rjLabel1";
+            rjLabel1.Size = new System.Drawing.Size(503, 40);
+            rjLabel1.Style = RJCodeUI_M1.RJControls.LabelStyle.Custom;
+            rjLabel1.TabIndex = 2133;
+            rjLabel1.Text = "비전 테스트 프로그램(룰베이스 기반)";
             // 
             // ddmDevice
             // 
-            this.ddmDevice.ActiveMenuItem = false;
-            this.ddmDevice.BackColor = System.Drawing.Color.White;
-            this.ddmDevice.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.ddmDevice.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.iconMenuItem2,
-            this.iconMenuItem3,
-            this.iconMenuItem4,
-            this.iconMenuItem5,
-            this.iconMenuItem6});
-            this.ddmDevice.Name = "ddmDevice";
-            this.ddmDevice.OwnerIsMenuButton = false;
-            this.ddmDevice.Size = new System.Drawing.Size(134, 114);
+            ddmDevice.ActiveMenuItem = false;
+            ddmDevice.BackColor = System.Drawing.Color.White;
+            ddmDevice.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+            ddmDevice.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { iconMenuItem2, iconMenuItem3, iconMenuItem4, iconMenuItem5, iconMenuItem6 });
+            ddmDevice.Name = "ddmDevice";
+            ddmDevice.OwnerIsMenuButton = false;
+            ddmDevice.Size = new System.Drawing.Size(134, 114);
             // 
             // iconMenuItem2
             // 
-            this.iconMenuItem2.IconChar = FontAwesome.Sharp.IconChar.Camera;
-            this.iconMenuItem2.IconColor = System.Drawing.Color.Black;
-            this.iconMenuItem2.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.iconMenuItem2.Name = "iconMenuItem2";
-            this.iconMenuItem2.Size = new System.Drawing.Size(133, 22);
-            this.iconMenuItem2.Text = "CAMERA";
+            iconMenuItem2.IconChar = FontAwesome.Sharp.IconChar.Camera;
+            iconMenuItem2.IconColor = System.Drawing.Color.Black;
+            iconMenuItem2.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            iconMenuItem2.Name = "iconMenuItem2";
+            iconMenuItem2.Size = new System.Drawing.Size(133, 22);
+            iconMenuItem2.Text = "CAMERA";
             // 
             // iconMenuItem3
             // 
-            this.iconMenuItem3.IconChar = FontAwesome.Sharp.IconChar.Lightbulb;
-            this.iconMenuItem3.IconColor = System.Drawing.Color.Black;
-            this.iconMenuItem3.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.iconMenuItem3.Name = "iconMenuItem3";
-            this.iconMenuItem3.Size = new System.Drawing.Size(133, 22);
-            this.iconMenuItem3.Text = "LIGHT";
+            iconMenuItem3.IconChar = FontAwesome.Sharp.IconChar.Lightbulb;
+            iconMenuItem3.IconColor = System.Drawing.Color.Black;
+            iconMenuItem3.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            iconMenuItem3.Name = "iconMenuItem3";
+            iconMenuItem3.Size = new System.Drawing.Size(133, 22);
+            iconMenuItem3.Text = "LIGHT";
             // 
             // iconMenuItem4
             // 
-            this.iconMenuItem4.IconChar = FontAwesome.Sharp.IconChar.None;
-            this.iconMenuItem4.IconColor = System.Drawing.Color.Black;
-            this.iconMenuItem4.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.iconMenuItem4.Name = "iconMenuItem4";
-            this.iconMenuItem4.Size = new System.Drawing.Size(133, 22);
-            this.iconMenuItem4.Text = "PLC";
-            this.iconMenuItem4.Visible = false;
+            iconMenuItem4.IconChar = FontAwesome.Sharp.IconChar.None;
+            iconMenuItem4.IconColor = System.Drawing.Color.Black;
+            iconMenuItem4.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            iconMenuItem4.Name = "iconMenuItem4";
+            iconMenuItem4.Size = new System.Drawing.Size(133, 22);
+            iconMenuItem4.Text = "PLC";
+            iconMenuItem4.Visible = false;
             // 
             // iconMenuItem5
             // 
-            this.iconMenuItem5.IconChar = FontAwesome.Sharp.IconChar.None;
-            this.iconMenuItem5.IconColor = System.Drawing.Color.Black;
-            this.iconMenuItem5.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.iconMenuItem5.Name = "iconMenuItem5";
-            this.iconMenuItem5.Size = new System.Drawing.Size(133, 22);
-            this.iconMenuItem5.Text = "I/O";
-            this.iconMenuItem5.Visible = false;
+            iconMenuItem5.IconChar = FontAwesome.Sharp.IconChar.None;
+            iconMenuItem5.IconColor = System.Drawing.Color.Black;
+            iconMenuItem5.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            iconMenuItem5.Name = "iconMenuItem5";
+            iconMenuItem5.Size = new System.Drawing.Size(133, 22);
+            iconMenuItem5.Text = "I/O";
+            iconMenuItem5.Visible = false;
             // 
             // iconMenuItem6
             // 
-            this.iconMenuItem6.IconChar = FontAwesome.Sharp.IconChar.Cog;
-            this.iconMenuItem6.IconColor = System.Drawing.Color.Black;
-            this.iconMenuItem6.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.iconMenuItem6.Name = "iconMenuItem6";
-            this.iconMenuItem6.Size = new System.Drawing.Size(133, 22);
-            this.iconMenuItem6.Text = "UTIL";
+            iconMenuItem6.IconChar = FontAwesome.Sharp.IconChar.Cog;
+            iconMenuItem6.IconColor = System.Drawing.Color.Black;
+            iconMenuItem6.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            iconMenuItem6.Name = "iconMenuItem6";
+            iconMenuItem6.Size = new System.Drawing.Size(133, 22);
+            iconMenuItem6.Text = "UTIL";
             // 
             // ddmCapture
             // 
-            this.ddmCapture.ActiveMenuItem = false;
-            this.ddmCapture.BackColor = System.Drawing.Color.White;
-            this.ddmCapture.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.ddmCapture.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.iconMenuItem1});
-            this.ddmCapture.Name = "ddmCapture";
-            this.ddmCapture.OwnerIsMenuButton = false;
-            this.ddmCapture.Size = new System.Drawing.Size(155, 26);
+            ddmCapture.ActiveMenuItem = false;
+            ddmCapture.BackColor = System.Drawing.Color.White;
+            ddmCapture.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+            ddmCapture.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { iconMenuItem1 });
+            ddmCapture.Name = "ddmCapture";
+            ddmCapture.OwnerIsMenuButton = false;
+            ddmCapture.Size = new System.Drawing.Size(155, 26);
             // 
             // iconMenuItem1
             // 
-            this.iconMenuItem1.IconChar = FontAwesome.Sharp.IconChar.FolderOpen;
-            this.iconMenuItem1.IconColor = System.Drawing.Color.Black;
-            this.iconMenuItem1.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.iconMenuItem1.Name = "iconMenuItem1";
-            this.iconMenuItem1.Size = new System.Drawing.Size(154, 22);
-            this.iconMenuItem1.Text = "Show Folder";
+            iconMenuItem1.IconChar = FontAwesome.Sharp.IconChar.FolderOpen;
+            iconMenuItem1.IconColor = System.Drawing.Color.Black;
+            iconMenuItem1.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            iconMenuItem1.Name = "iconMenuItem1";
+            iconMenuItem1.Size = new System.Drawing.Size(154, 22);
+            iconMenuItem1.Text = "Show Folder";
             // 
             // FormMetroFrame
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.Black;
-            this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.ClientSize = new System.Drawing.Size(1924, 1100);
-            this.Controls.Add(this.pnStatusBar);
-            this.Controls.Add(this.pnMDI);
-            this.Controls.Add(this.pnlTitleBar);
-            this.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.KeyPreview = true;
-            this.Margin = new System.Windows.Forms.Padding(3, 5, 3, 5);
-            this.Name = "FormMetroFrame";
-            this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FormMetroFrame_FormClosing);
-            this.Load += new System.EventHandler(this.FormMetroFrame_Load);
-            this.Shown += new System.EventHandler(this.FormMetroFrame_Shown);
-            this.pnMDI.ResumeLayout(false);
-            this.pnFormMain.ResumeLayout(false);
-            this.pnStatusBar.ResumeLayout(false);
-            this.pnStatusBar.PerformLayout();
-            this.pnlTitleBar.ResumeLayout(false);
-            this.pnlTitleBar.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.biUserOptions)).EndInit();
-            this.dmUserOptions.ResumeLayout(false);
-            this.ddmDevice.ResumeLayout(false);
-            this.ddmCapture.ResumeLayout(false);
-            this.ResumeLayout(false);
+            AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            BackColor = System.Drawing.Color.Black;
+            BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            ClientSize = new System.Drawing.Size(1924, 1061);
+            Controls.Add(pnStatusBar);
+            Controls.Add(pnMDI);
+            Controls.Add(pnlTitleBar);
+            Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+            FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            Icon = (System.Drawing.Icon)resources.GetObject("$this.Icon");
+            KeyPreview = true;
+            Margin = new System.Windows.Forms.Padding(3, 5, 3, 5);
+            Name = "FormMetroFrame";
+            WindowState = System.Windows.Forms.FormWindowState.Maximized;
+            FormClosing += FormMetroFrame_FormClosing;
+            Load += FormMetroFrame_Load;
+            Shown += FormMetroFrame_Shown;
+            pnMDI.ResumeLayout(false);
+            pnFormMain.ResumeLayout(false);
+            pnStatusBar.ResumeLayout(false);
+            pnStatusBar.PerformLayout();
+            pnlTitleBar.ResumeLayout(false);
+            pnlTitleBar.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)biUserOptions).EndInit();
+            dmUserOptions.ResumeLayout(false);
+            ddmDevice.ResumeLayout(false);
+            ddmCapture.ResumeLayout(false);
+            ResumeLayout(false);
 
         }
 

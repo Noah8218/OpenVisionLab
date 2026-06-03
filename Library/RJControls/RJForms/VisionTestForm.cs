@@ -471,7 +471,7 @@ namespace RJCodeUI_M1.RJForms
 
             if (dmFormOptions.Visible == true)//If menu is displayed
             {//keep button highlighted and set icon to options list                
-                btnFormIcon.BackColor = ColorEditor.Darken(btnFormIcon.BackColor, 15);
+                btnFormIcon.BackColor = RJCodeUI_M1.Utils.ColorEditor.Darken(btnFormIcon.BackColor, 15);
                 btnFormIcon.FlatAppearance.MouseOverBackColor = btnFormIcon.BackColor;
                 btnFormIcon.IconChar = IconChar.ListUl;//Options list Icon
             }
