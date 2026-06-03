@@ -1,6 +1,6 @@
-﻿using Lib.Common;
-using MetroFramework.Forms;
+﻿using MetroFramework.Forms;
 using System;
+using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -29,6 +29,33 @@ namespace OpenVisionLab
             this.TopLevel = true;
             this.StartPosition = FormStartPosition.CenterScreen;
             this.Shown += new EventHandler(Form_Loaded);
+            this.Layout += FormInit_Layout;
+        }
+
+        private void FormInit_Layout(object sender, EventArgs e)
+        {
+            NormalizeProgressCircleLayout();
+        }
+
+        private void NormalizeProgressCircleLayout()
+        {
+            if (progressLayout == null || progressCanvas == null || circularProgressBar5 == null || lbTackTime == null)
+            {
+                return;
+            }
+
+            int available = Math.Min(progressLayout.ClientSize.Width, progressLayout.ClientSize.Height);
+            int size = Math.Max(240, Math.Min(300, available - 8));
+            Size squareSize = new Size(size, size);
+
+            if (progressCanvas.Size != squareSize)
+            {
+                progressCanvas.Size = squareSize;
+            }
+
+            circularProgressBar5.Location = Point.Empty;
+            circularProgressBar5.Size = squareSize;
+            lbTackTime.SetBounds(0, (int)(size * 0.57), size, 40);
         }
 
         private void Form_Loaded(object sender, EventArgs e)
@@ -53,7 +80,7 @@ namespace OpenVisionLab
 
         private void FormInit_Shown(object sender, EventArgs e)
         {
-           
+            NormalizeProgressCircleLayout();
         }
 
         private void FormInit_Load(object sender, EventArgs e)
@@ -66,6 +93,7 @@ namespace OpenVisionLab
 
             lbVersion.Text = VersionText;
             VersionLogAction?.Invoke(VersionText);
+            NormalizeProgressCircleLayout();
 
             m_swTackTimeMinute = new System.Diagnostics.Stopwatch();
             m_swTackTimeMinute.Start();

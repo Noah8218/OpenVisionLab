@@ -6,11 +6,11 @@
 
   <ItemGroup>
     <Reference Include="OpenCvSharp">
-      <HintPath>..\..\packages\OpenCvSharp4.4.4.0.20200915\lib\netstandard2.0\OpenCvSharp.dll</HintPath>
+      <HintPath>..\Lib.Common\DLL\OpenCvSharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="OpenCvSharp.Blob">
-      <HintPath>..\..\packages\OpenCvSharp4.4.4.0.20200915\lib\netstandard2.0\OpenCvSharp.Blob.dll</HintPath>
+      <HintPath>..\Lib.Common\DLL\OpenCvSharp.Blob.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Windows.Forms">

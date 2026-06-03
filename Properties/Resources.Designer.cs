@@ -88,17 +88,7 @@ namespace OpenVisionLab.Properties {
                 object obj = ResourceManager.GetObject("brain-641", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
-        }
-        
-        /// <summary>
-        ///   System.Drawing.Bitmap 형식의 지역화된 리소스를 찾습니다.
-        /// </summary>
-        internal static System.Drawing.Bitmap ButtonBackGround {
-            get {
-                object obj = ResourceManager.GetObject("ButtonBackGround", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
+        }       
         
         /// <summary>
         ///   System.Drawing.Bitmap 형식의 지역화된 리소스를 찾습니다.
@@ -116,26 +106,6 @@ namespace OpenVisionLab.Properties {
         internal static System.Drawing.Bitmap calendarWhite {
             get {
                 object obj = ResourceManager.GetObject("calendarWhite", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   (아이콘)과(와) 유사한 System.Drawing.Icon 형식의 지역화된 리소스를 찾습니다.
-        /// </summary>
-        internal static System.Drawing.Icon Camera {
-            get {
-                object obj = ResourceManager.GetObject("Camera", resourceCulture);
-                return ((System.Drawing.Icon)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   System.Drawing.Bitmap 형식의 지역화된 리소스를 찾습니다.
-        /// </summary>
-        internal static System.Drawing.Bitmap Chart_1 {
-            get {
-                object obj = ResourceManager.GetObject("Chart_1", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -258,17 +228,7 @@ namespace OpenVisionLab.Properties {
                 object obj = ResourceManager.GetObject("disconnection_64", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
-        }
-        
-        /// <summary>
-        ///   System.Drawing.Bitmap 형식의 지역화된 리소스를 찾습니다.
-        /// </summary>
-        internal static System.Drawing.Bitmap DNC_BASE_UI {
-            get {
-                object obj = ResourceManager.GetObject("DNC_BASE_UI", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
+        }        
         
         /// <summary>
         ///   System.Drawing.Bitmap 형식의 지역화된 리소스를 찾습니다.
@@ -363,39 +323,9 @@ namespace OpenVisionLab.Properties {
         /// <summary>
         ///   System.Drawing.Bitmap 형식의 지역화된 리소스를 찾습니다.
         /// </summary>
-        internal static System.Drawing.Bitmap ImageSave_MouseOff {
-            get {
-                object obj = ResourceManager.GetObject("ImageSave_MouseOff", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   System.Drawing.Bitmap 형식의 지역화된 리소스를 찾습니다.
-        /// </summary>
         internal static System.Drawing.Bitmap keyboard_5_481 {
             get {
                 object obj = ResourceManager.GetObject("keyboard-5-481", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   System.Drawing.Bitmap 형식의 지역화된 리소스를 찾습니다.
-        /// </summary>
-        internal static System.Drawing.Bitmap ktem {
-            get {
-                object obj = ResourceManager.GetObject("ktem", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   System.Drawing.Bitmap 형식의 지역화된 리소스를 찾습니다.
-        /// </summary>
-        internal static System.Drawing.Bitmap ktem1 {
-            get {
-                object obj = ResourceManager.GetObject("ktem1", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -426,16 +356,6 @@ namespace OpenVisionLab.Properties {
         internal static System.Drawing.Bitmap LIVE_50 {
             get {
                 object obj = ResourceManager.GetObject("LIVE_50", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   System.Drawing.Bitmap 형식의 지역화된 리소스를 찾습니다.
-        /// </summary>
-        internal static System.Drawing.Bitmap Live_MouseOff {
-            get {
-                object obj = ResourceManager.GetObject("Live_MouseOff", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -557,16 +477,6 @@ namespace OpenVisionLab.Properties {
             get {
                 object obj = ResourceManager.GetObject("move-up-50", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   System.Byte[] 형식의 지역화된 리소스를 찾습니다.
-        /// </summary>
-        internal static byte[] OpenCvSharp_UserInterface {
-            get {
-                object obj = ResourceManager.GetObject("OpenCvSharp_UserInterface", resourceCulture);
-                return ((byte[])(obj));
             }
         }
         
@@ -796,16 +706,6 @@ namespace OpenVisionLab.Properties {
         internal static System.Drawing.Bitmap stop_button_150 {
             get {
                 object obj = ResourceManager.GetObject("stop-button_150", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   System.Drawing.Bitmap 형식의 지역화된 리소스를 찾습니다.
-        /// </summary>
-        internal static System.Drawing.Bitmap Stop_MouseOff {
-            get {
-                object obj = ResourceManager.GetObject("Stop_MouseOff", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

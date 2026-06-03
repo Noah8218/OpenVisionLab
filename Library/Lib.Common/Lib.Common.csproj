@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <Reference Include="OpenCvSharp">
-      <HintPath>..\..\packages\OpenCvSharp4.4.4.0.20200915\lib\netstandard2.0\OpenCvSharp.dll</HintPath>
+      <HintPath>DLL\OpenCvSharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Windows.Forms">

@@ -7,12 +7,8 @@ namespace OpenVisionLab
 {
     public static class CVersion
     {
-        #region VERSION HISTORY
-        //VER 1.0.0 ==> 2022/08/04 초기 싱글톤 패턴을 적용 --> 현장 검증은 어느정도 완료        
-        #endregion
-        public static string APP_NAME { get; set; } = "KTEM_VISION";
-        public static string VERSION { get; set; } = "1.0.5";
-        public static string DATETIME_UPDATED { get; set; } = "2023/05/09 /*20:00*/";
+        public static string VERSION { get; set; } = "2.0.0";
+        public static string DATETIME_UPDATED { get; set; } = "2026/06/03 /*18:00*/";
         public static string MANAGER { get; set; } = "NOAH";
     }
 
@@ -35,10 +31,7 @@ namespace OpenVisionLab
         // 모드, 권한, 창 변경 등 System 관련 클래스
         public CSystem System { get; set; } = new CSystem();
         // 장치(카메라,io,조명,모션) 등 관리 클래스
-        public CDevice Device { get; set; } = new CDevice();
-        // 상시로 스레드가 돌면서 큐에 이미지가 들어오면 검사
-        // 유동적으로 알아서 변경 사용
-        //public CSeqVision SeqVision { get; set; } = new CSeqVision();        
+        public CDevice Device { get; set; } = new CDevice(); 
         // 스팩,파라미터, 판정값등 각종 검사에 사용되는 값들을 관리
         public CData Data { get; set; } = new CData();
         

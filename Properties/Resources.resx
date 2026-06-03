@@ -165,16 +165,10 @@
   </data>
   <data name="LIVE_150" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Images\LIVE_150.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Background" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Background.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
+  </data>  
   <data name="save-75" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Images\save-75.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="DNC_BASE_UI" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\DNC_BASE_UI.PNG;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
+  </data>  
   <data name="move-right-50" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\move-right-50.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -192,10 +186,7 @@
   </data>
   <data name="recycle_150" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Images\recycle_150.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="ButtonBackGround" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ButtonBackGround.jpg;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
+  </data>  
   <data name="close1" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Images\close1.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -210,9 +201,6 @@
   </data>
   <data name="connection_64" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Images\connection_64.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="OpenCvSharp_UserInterface" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Dll\OpenCvSharp.UserInterface.dll;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="output" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Images\output.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -235,20 +223,11 @@
   <data name="권한(64)" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Images\권한(64).png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="ImageSave_MouseOff" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ImageSave_MouseOff.jpg;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Stop_MouseOff" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Stop_MouseOff.jpg;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
   <data name="MaximizeWhite" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Images\MaximizeWhite.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="CloseWhite" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Images\CloseWhite.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="ktem" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Images\ktem.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Disconnected" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Disconnected.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -264,9 +243,6 @@
   </data>
   <data name="motion-graphics" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Images\motion-graphics.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Camera" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Camera.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="save-50" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\save-50.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -286,9 +262,6 @@
   <data name="delete-50" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\delete-50.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="ktem1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Images\ktem.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
   <data name="recycle_100" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Images\recycle_100.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -304,9 +277,6 @@
   <data name="switches-50" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\switches-50.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="Chart_1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Chart_1_1.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
   <data name="DefaultBackground" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Title Background.jpg;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -321,9 +291,6 @@
   </data>
   <data name="Close" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Images\Close.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Live_MouseOff" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Live_MouseOff.jpg;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="webcam-4-321" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\webcam-4-321.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
