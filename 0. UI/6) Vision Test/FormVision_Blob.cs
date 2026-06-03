@@ -11,15 +11,7 @@ using RJCodeUI_M1.RJForms;
 using Lib.Common;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
-using static PACNET.Sys;
-using System.Collections.Concurrent;
-using System.Windows.Media.Media3D;
-using System.Threading.Tasks;
-using System.Linq;
-using System.Windows.Media;
 using Lib.OpenCV;
-using Lib.OpenCV.Result;
-using Lib.OpenCV.Tool;
 using Lib.OpenCV.Blob;
 
 namespace OpenVisionLab

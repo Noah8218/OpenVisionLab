@@ -1,9 +1,5 @@
-﻿using Accord.MachineLearning;
-using Accord.Math;
-using Accord.Math.Distances;
-using OpenVisionLab._1._Core;
+﻿using OpenVisionLab._1._Core;
 using OpenVisionLab._2._Common;
-using OpenVisionLab.Vision._1._Tools.OpenCV;
 using Lib.Common;
 using Lib.OpenCV;
 using Lib.OpenCV.Blob;
@@ -13,7 +9,6 @@ using OpenCvSharp;
 using RJCodeUI_M1.RJControls;
 using Sunny.UI;
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -23,9 +18,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Media;
-using static System.Reflection.Metadata.BlobBuilder;
-using static System.Windows.Controls.WpfPropertyGrid.KnownTypes;
 
 namespace OpenVisionLab
 {

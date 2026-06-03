@@ -1,5 +1,4 @@
-﻿using ADOX;
-using OpenVisionLab._1._Core;
+﻿using OpenVisionLab._1._Core;
 using OpenVisionLab._2._Common;
 using Lib.Common;
 using Lib.OpenCV.Result;
@@ -8,12 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
-using System.Windows.Media;
 
 namespace OpenVisionLab
 {
