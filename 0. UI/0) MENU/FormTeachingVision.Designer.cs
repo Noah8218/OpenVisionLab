@@ -89,7 +89,7 @@
             this.TeachingPanel.Location = new System.Drawing.Point(0, 1);
             this.TeachingPanel.Margin = new System.Windows.Forms.Padding(0);
             this.TeachingPanel.Name = "TeachingPanel";
-            this.TeachingPanel.Size = new System.Drawing.Size(1922, 892);
+            this.TeachingPanel.Size = new System.Drawing.Size(1922, 965);
             this.TeachingPanel.TabIndex = 1949;
             // 
             // timer1
@@ -115,7 +115,7 @@
             this.lbTackTime.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.lbTackTime.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lbTackTime.ForeColor = System.Drawing.Color.Black;
-            this.lbTackTime.Location = new System.Drawing.Point(857, 896);
+            this.lbTackTime.Location = new System.Drawing.Point(857, 969);
             this.lbTackTime.Name = "lbTackTime";
             this.lbTackTime.Size = new System.Drawing.Size(162, 26);
             this.lbTackTime.TabIndex = 2168;
@@ -127,7 +127,7 @@
             this.panel1.Controls.Add(this.cbLayerList);
             this.panel1.Controls.Add(this.cbCamera);
             this.panel1.Controls.Add(this.menuStrip1);
-            this.panel1.Location = new System.Drawing.Point(0, -4);
+            this.panel1.Location = new System.Drawing.Point(0, 69);
             this.panel1.Margin = new System.Windows.Forms.Padding(0);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(707, 926);
@@ -328,7 +328,7 @@
             this.rjLabel3.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.rjLabel3.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.rjLabel3.LinkLabel = false;
-            this.rjLabel3.Location = new System.Drawing.Point(778, 902);
+            this.rjLabel3.Location = new System.Drawing.Point(778, 975);
             this.rjLabel3.Name = "rjLabel3";
             this.rjLabel3.Size = new System.Drawing.Size(73, 16);
             this.rjLabel3.Style = RJCodeUI_M1.RJControls.LabelStyle.Normal;
@@ -354,7 +354,7 @@
             this.chkUseLayerImage.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.chkUseLayerImage.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.chkUseLayerImage.IconColor = System.Drawing.Color.White;
-            this.chkUseLayerImage.Location = new System.Drawing.Point(569, 897);
+            this.chkUseLayerImage.Location = new System.Drawing.Point(569, 970);
             this.chkUseLayerImage.MinimumSize = new System.Drawing.Size(0, 21);
             this.chkUseLayerImage.Name = "chkUseLayerImage";
             this.chkUseLayerImage.Padding = new System.Windows.Forms.Padding(10, 0, 0, 0);
@@ -377,7 +377,7 @@
             this.btnNewPanel.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.btnNewPanel.IconFont = FontAwesome.Sharp.IconFont.Auto;
             this.btnNewPanel.IconSize = 30;
-            this.btnNewPanel.Location = new System.Drawing.Point(742, 897);
+            this.btnNewPanel.Location = new System.Drawing.Point(742, 970);
             this.btnNewPanel.Name = "btnNewPanel";
             this.btnNewPanel.Size = new System.Drawing.Size(30, 30);
             this.btnNewPanel.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
@@ -475,7 +475,7 @@
             // FormTeachingVision
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.ClientSize = new System.Drawing.Size(1924, 923);
+            this.ClientSize = new System.Drawing.Size(1924, 1100);
             this.ControlBox = false;
             this.Controls.Add(this.lbTackTime);
             this.Controls.Add(this.rjLabel3);

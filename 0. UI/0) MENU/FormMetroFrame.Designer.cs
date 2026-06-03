@@ -88,8 +88,7 @@
             this.pnMDI.Location = new System.Drawing.Point(0, 50);
             this.pnMDI.Margin = new System.Windows.Forms.Padding(0);
             this.pnMDI.Name = "pnMDI";
-            this.pnMDI.Padding = new System.Windows.Forms.Padding(0, 0, 0, 33);
-            this.pnMDI.Size = new System.Drawing.Size(1924, 996);
+            this.pnMDI.Size = new System.Drawing.Size(1924, 1050);
             this.pnMDI.TabIndex = 1258;
             // 
             // pnFormMain
@@ -103,7 +102,7 @@
             this.pnFormMain.Location = new System.Drawing.Point(0, 0);
             this.pnFormMain.Margin = new System.Windows.Forms.Padding(0);
             this.pnFormMain.Name = "pnFormMain";
-            this.pnFormMain.Size = new System.Drawing.Size(1924, 963);
+            this.pnFormMain.Size = new System.Drawing.Size(1924, 1050);
             this.pnFormMain.TabIndex = 895;
             this.pnFormMain.VerticalScrollbarBarColor = true;
             this.pnFormMain.VerticalScrollbarHighlightOnWheel = false;
@@ -115,7 +114,7 @@
             this.OperatorPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.OperatorPanel.Location = new System.Drawing.Point(0, 0);
             this.OperatorPanel.Name = "OperatorPanel";
-            this.OperatorPanel.Size = new System.Drawing.Size(1924, 963);
+            this.OperatorPanel.Size = new System.Drawing.Size(1924, 1050);
             this.OperatorPanel.TabIndex = 2138;
             // 
             // panel3
@@ -143,7 +142,7 @@
             this.pnStatusBar.Controls.Add(this.lbDriveC);
             this.pnStatusBar.Customizable = true;
             this.pnStatusBar.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.pnStatusBar.Location = new System.Drawing.Point(0, 1013);
+            this.pnStatusBar.Location = new System.Drawing.Point(0, 1067);
             this.pnStatusBar.Name = "pnStatusBar";
             this.pnStatusBar.Size = new System.Drawing.Size(1924, 33);
             this.pnStatusBar.TabIndex = 0;
@@ -420,7 +419,6 @@
             this.btnAuthoriztion.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.btnAuthoriztion.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnAuthoriztion.UseVisualStyleBackColor = false;
-            this.btnAuthoriztion.Click += new System.EventHandler(this.btnAuthoriztion_Click);
             // 
             // btnMinimizar
             // 
@@ -540,7 +538,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Black;
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.ClientSize = new System.Drawing.Size(1924, 1046);
+            this.ClientSize = new System.Drawing.Size(1924, 1100);
             this.Controls.Add(this.pnStatusBar);
             this.Controls.Add(this.pnMDI);
             this.Controls.Add(this.pnlTitleBar);

@@ -452,17 +452,6 @@ namespace OpenVisionLab
             //  btnMaximizar.Visible = false;
             //  btnRestaurar.Visible = true;
         }
-
-        private void btnAuthoriztion_Click(object sender, EventArgs e)
-        {
-            FormAuthorization formAuthorization = new FormAuthorization();
-            formAuthorization.TopLevel = true;
-            formAuthorization.TopMost = true;
-            formAuthorization.StartPosition = FormStartPosition.CenterParent;
-            if (!CUtil.OpenCheckForm(formAuthorization)) return;
-            formAuthorization.Show();
-        }
-
         private void timerConnection_Tick(object sender, EventArgs e)
         {
             double dDrivePercentC = CUtil.DrivePercent("C:\\", out double dCDriveTotalSize, out double dCDriveUsedSize);
@@ -482,6 +471,11 @@ namespace OpenVisionLab
         }
 
         private void biUserOptions_Click_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btnAuthoriztion_Click(object sender, EventArgs e)
         {
 
         }

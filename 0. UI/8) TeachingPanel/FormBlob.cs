@@ -91,53 +91,6 @@ namespace OpenVisionLab
             imageListView1.Columns.Add(col);
         }
 
-        private void OnInspResult(object sender, EventArgs e)
-        {
-            if (!(e is InspResultArgs args)) { return; }
-            this.UIThreadBeginInvoke(() =>
-            {
-                if (Global.System.Menu == CSystem.MENU.VISION)
-                {
-                    var task = Task.Run(() =>
-                    {
-                        this.BeginInvoke(new Action(() =>
-                        {
-                            if (args.black_Result.Count != 0 || args.white_Result.Count != 0)
-                            {
-                                dgvDefect.DataSource = new CDefectList_Result().GetBlobList(args.totalResults);
-                                dgvDefect.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-                                imageListView1.Items.Clear();
-                                imageListView1.ThumbnailSize = new System.Drawing.Size(200, 200);
-                            }
-
-                            using (Bitmap imageSrc = Lib.Common.CImageConverter.ToBitmap(CDisplayManager.ImageSrc))
-                            {
-                                for (int i = 0; i < args.black_Result.Count; i++)
-                                {
-                                    if (!CGlobal.Inst.Data.runInsp_1) { break; }
-                                    Rectangle ResizeRect = args.black_Result[i].Bounding;
-                                    int OffsetSize = 20;
-                                    ResizeRect = new Rectangle(ResizeRect.X - OffsetSize, ResizeRect.Y - OffsetSize, ResizeRect.Width + (OffsetSize * 2), ResizeRect.Height + (OffsetSize * 2));
-                                   // imageListView1.Items.Add($"{e.black_Result[i].defectType.ToString()}-Index : " + (i + 1), CBitmapProcessing.CropAtRect(imageSrc, ResizeRect).Result);
-                                    Application.DoEvents();
-                                }
-
-                                for (int i = 0; i < args.white_Result.Count; i++)
-                                {
-                                    if (!CGlobal.Inst.Data.runInsp_1) { break; }
-                                    Rectangle ResizeRect = args.white_Result[i].Bounding;
-                                    int OffsetSize = 20;
-                                    ResizeRect = new Rectangle(ResizeRect.X - OffsetSize, ResizeRect.Y - OffsetSize, ResizeRect.Width + (OffsetSize * 2), ResizeRect.Height + (OffsetSize * 2));
-                                 //   imageListView1.Items.Add($"{e.white_Result[i].defectType.ToString()}-Index : " + (i + 1), CBitmapProcessing.CropAtRect(imageSrc, ResizeRect).Result);
-                                    Application.DoEvents();
-                                }
-                            }
-                        }));
-                    });
-                }
-            });
-        }
-
         private void dgvSeletecList_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             try

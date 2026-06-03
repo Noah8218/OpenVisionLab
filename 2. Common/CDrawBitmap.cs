@@ -170,21 +170,57 @@ namespace OpenVisionLab
             );
         }
 
-        public static void DrawIntersectionPoint(Graphics g, List<CLine> intersection_Lines, List<double> intersectionLengths)
+        public static void DrawIntersectionPoint(
+            Graphics g,
+            List<CLine> intersection_Lines,
+            List<double> intersectionLengths)
         {
-            using (System.Drawing.Pen pen = new System.Drawing.Pen(System.Drawing.Color.Green, 3))
+            if (g == null || intersection_Lines == null || intersectionLengths == null)
+                return;
+
+            int count = Math.Min(intersection_Lines.Count, intersectionLengths.Count);
+
+            using (Pen pen = new Pen(Color.Green, 3))
+            using (Font font = new Font("Arial", 10, FontStyle.Bold, GraphicsUnit.Pixel))
+            using (SolidBrush textBrush = new SolidBrush(Color.Lime))
+            using (SolidBrush bgBrush = new SolidBrush(Color.FromArgb(160, Color.Black)))
             {
-                for (int h = 0; h < intersection_Lines.Count; h++)
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+
+                for (int h = 0; h < count; h++)
                 {
-                    var line = intersection_Lines[h];        
-                    double Distance = intersectionLengths[h];
+                    var line = intersection_Lines[h];
+                    double distance = intersectionLengths[h];
 
-                    g.DrawString(Distance.ToString("F2") + "mm", new Font("Arial", 8, FontStyle.Bold), new SolidBrush(System.Drawing.Color.Lime), line.Start.X - 15, line.Start.Y);
-                    g.DrawString(Distance.ToString("F2") + "mm", new Font("Arial", 8, FontStyle.Bold), new SolidBrush(System.Drawing.Color.Lime), line.End.X + 5, line.End.Y);
-                    g.DrawLine(pen, CConverter.CVPointToPointF(line.Start), CConverter.CVPointToPointF(line.End));
+                    PointF start = CConverter.CVPointToPointF(line.Start);
+                    PointF end = CConverter.CVPointToPointF(line.End);
 
-                    DrawPoint(g, CConverter.CVPointToPointF(line.Start));
-                    DrawPoint(g, CConverter.CVPointToPointF(line.End));
+                    // 1. 선 먼저
+                    g.DrawLine(pen, start, end);
+
+                    // 2. 포인트 먼저
+                    DrawPoint(g, start);
+                    DrawPoint(g, end);
+
+                    // 3. 글자는 마지막에
+                    string text = $"{distance:F2} mm";
+
+                    PointF mid = new PointF(
+                        (start.X + end.X) / 2f,
+                        (start.Y + end.Y) / 2f);
+
+                    SizeF textSize = g.MeasureString(text, font);
+
+                    RectangleF textRect = new RectangleF(
+                        mid.X - textSize.Width / 2f,
+                        mid.Y - textSize.Height - 8,
+                        textSize.Width,
+                        textSize.Height);
+
+                    // 배경을 살짝 깔면 영상 위에서도 잘 보입니다.
+                    g.FillRectangle(bgBrush, textRect);
+                    g.DrawString(text, font, textBrush, textRect);
                 }
             }
         }

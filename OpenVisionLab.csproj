@@ -295,12 +295,6 @@
     <Compile Include="0. UI\0%29 MENU\FormTeachingVision.Designer.cs">
       <DependentUpon>FormTeachingVision.cs</DependentUpon>
     </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormPowerGraphConfig.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormPowerGraphConfig.Designer.cs">
-      <DependentUpon>FormPowerGraphConfig.cs</DependentUpon>
-    </Compile>
     <Compile Include="0. UI\2%29 POPUP\FormInit.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -450,12 +444,6 @@
     </Compile>
     <Compile Include="0. UI\8%29 TeachingPanel\FormThreshold.Designer.cs">
       <DependentUpon>FormThreshold.cs</DependentUpon>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormKeyboard.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormKeyboard.Designer.cs">
-      <DependentUpon>FormKeyboard.cs</DependentUpon>
     </Compile>
     <Compile Include="0. UI\2%29 POPUP\FormLayerDisplay.cs">
       <SubType>Form</SubType>
@@ -623,23 +611,11 @@
     <Compile Include="0. UI\0%29 MENU\FormMetroFrame.Designer.cs">
       <DependentUpon>FormMetroFrame.cs</DependentUpon>
     </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormAuthorization.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="0. UI\2%29 POPUP\FormAuthorization.Designer.cs">
-      <DependentUpon>FormAuthorization.cs</DependentUpon>
-    </Compile>
     <Compile Include="0. UI\2%29 POPUP\FormMessageBox.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="0. UI\2%29 POPUP\FormMessageBox.Designer.cs">
       <DependentUpon>FormMessageBox.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Library\CMvcGraph.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Library\CMvcGraph.Designer.cs">
-      <DependentUpon>CMvcGraph.cs</DependentUpon>
     </Compile>
     <Compile Include="Library\CThreadStatus.cs" />
     <Compile Include="Library\RichTextBoxEx.cs">
@@ -657,9 +633,6 @@
     <Compile Include="Vision\OpenCV\CPropertyVision.cs" />
     <EmbeddedResource Include="0. UI\0%29 MENU\FormTeachingVision.resx">
       <DependentUpon>FormTeachingVision.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\2%29 POPUP\FormPowerGraphConfig.resx">
-      <DependentUpon>FormPowerGraphConfig.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="0. UI\2%29 POPUP\FormInit.resx">
       <DependentUpon>FormInit.cs</DependentUpon>
@@ -736,9 +709,6 @@
     <EmbeddedResource Include="0. UI\8%29 TeachingPanel\FormThreshold.resx">
       <DependentUpon>FormThreshold.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\2%29 POPUP\FormKeyboard.resx">
-      <DependentUpon>FormKeyboard.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="0. UI\2%29 POPUP\FormLayerDisplay.resx">
       <DependentUpon>FormLayerDisplay.cs</DependentUpon>
     </EmbeddedResource>
@@ -751,12 +721,6 @@
     <EmbeddedResource Include="0. UI\0%29 MENU\FormMetroFrame.resx">
       <DependentUpon>FormMetroFrame.cs</DependentUpon>
       <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="0. UI\2%29 POPUP\FormAuthorization.resx">
-      <DependentUpon>FormAuthorization.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Library\CMvcGraph.resx">
-      <DependentUpon>CMvcGraph.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Library\Log4netView.resx">
       <DependentUpon>Log4netView.cs</DependentUpon>

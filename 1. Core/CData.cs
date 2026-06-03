@@ -28,15 +28,11 @@ namespace OpenVisionLab
         public int ParamList_Pin_Count { get; set; } = 0;
         public int ParamList_Connector_Count { get; set; } = 0;
         public int ParamList_Thermal_Count { get; set; } = 0;
-
-        // 그래프 관리 리스트
-        [XmlIgnore] public List<CMvcGraph> GraphList { get; set; } = new List<CMvcGraph>();
+        
 
         [XmlIgnore] public bool runInsp_1 = false;
 
         [XmlIgnore] public bool runInsp_2 = false;
-        public bool IsSaveImage { get; set; } = false;
-        public int AcqusitionFrameCount { get; set; } = 0;
 
         // 프로그램 종료할 때 1회 저장함        
         public double RealTimeEncoder { get; set; } = 0;
