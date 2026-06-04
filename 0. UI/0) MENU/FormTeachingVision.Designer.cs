@@ -138,7 +138,7 @@
 			lbTackTime.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
 			lbTackTime.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0);
 			lbTackTime.ForeColor = System.Drawing.Color.Black;
-			lbTackTime.Location = new System.Drawing.Point(857, 3);
+			lbTackTime.Location = new System.Drawing.Point(885, 3);
 			lbTackTime.Name = "lbTackTime";
 			lbTackTime.Size = new System.Drawing.Size(162, 28);
 			lbTackTime.TabIndex = 2168;
@@ -163,7 +163,7 @@
 			chkUseLayerImage.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
 			chkUseLayerImage.ForeColor = System.Drawing.Color.FromArgb(132, 129, 132);
 			chkUseLayerImage.IconColor = System.Drawing.Color.White;
-			chkUseLayerImage.Location = new System.Drawing.Point(569, 3);
+			chkUseLayerImage.Location = new System.Drawing.Point(597, 3);
 			chkUseLayerImage.MinimumSize = new System.Drawing.Size(0, 21);
 			chkUseLayerImage.Name = "chkUseLayerImage";
 			chkUseLayerImage.Padding = new System.Windows.Forms.Padding(10, 0, 0, 0);
@@ -179,7 +179,7 @@
 			rjLabel3.Font = new System.Drawing.Font("Verdana", 9.5F);
 			rjLabel3.ForeColor = System.Drawing.Color.FromArgb(132, 129, 132);
 			rjLabel3.LinkLabel = false;
-			rjLabel3.Location = new System.Drawing.Point(778, 3);
+			rjLabel3.Location = new System.Drawing.Point(806, 3);
 			rjLabel3.Name = "rjLabel3";
 			rjLabel3.Size = new System.Drawing.Size(73, 28);
 			rjLabel3.Style = RJCodeUI_M1.RJControls.LabelStyle.Normal;
@@ -199,7 +199,7 @@
 			btnNewPanel.IconColor = System.Drawing.Color.FromArgb(132, 129, 132);
 			btnNewPanel.IconFont = FontAwesome.Sharp.IconFont.Auto;
 			btnNewPanel.IconSize = 30;
-			btnNewPanel.Location = new System.Drawing.Point(742, 3);
+			btnNewPanel.Location = new System.Drawing.Point(770, 3);
 			btnNewPanel.Name = "btnNewPanel";
 			btnNewPanel.Size = new System.Drawing.Size(30, 30);
 			btnNewPanel.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
@@ -223,7 +223,7 @@
 			cbLayerList.Font = new System.Drawing.Font("Verdana", 15F);
 			cbLayerList.ForeColor = System.Drawing.Color.DimGray;
 			cbLayerList.IconColor = System.Drawing.Color.FromArgb(83, 97, 212);
-			cbLayerList.Location = new System.Drawing.Point(385, 3);
+			cbLayerList.Location = new System.Drawing.Point(413, 3);
 			cbLayerList.MinimumSize = new System.Drawing.Size(100, 20);
 			cbLayerList.Name = "cbLayerList";
 			cbLayerList.Padding = new System.Windows.Forms.Padding(2);
@@ -250,7 +250,7 @@
 			cbCamera.Font = new System.Drawing.Font("Verdana", 15F);
 			cbCamera.ForeColor = System.Drawing.Color.DimGray;
 			cbCamera.IconColor = System.Drawing.Color.FromArgb(83, 97, 212);
-			cbCamera.Location = new System.Drawing.Point(222, 3);
+			cbCamera.Location = new System.Drawing.Point(250, 3);
 			cbCamera.MinimumSize = new System.Drawing.Size(100, 20);
 			cbCamera.Name = "cbCamera";
 			cbCamera.Padding = new System.Windows.Forms.Padding(2);
@@ -268,7 +268,7 @@
 			menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { imageProcessingToolStripMenuItem, algorithmToolStripMenuItem });
 			menuStrip1.Location = new System.Drawing.Point(0, 3);
 			menuStrip1.Name = "menuStrip1";
-			menuStrip1.Size = new System.Drawing.Size(214, 28);
+			menuStrip1.Size = new System.Drawing.Size(242, 28);
 			menuStrip1.TabIndex = 2165;
 			menuStrip1.Text = "menuStrip1";
 			// 

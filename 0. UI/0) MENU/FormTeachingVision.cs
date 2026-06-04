@@ -190,13 +190,8 @@ namespace OpenVisionLab
 
             dockPanel.Theme.Skin.DockPaneStripSkin.TextFont = font;
             dockPanel.Theme.Skin.AutoHideStripSkin.TextFont = font;
-
-            Forms.Add(VISION_DOCK_FORM.System, new FormSystem());
-            Forms.Add(VISION_DOCK_FORM.BLOB, new FormBlob());
-            Forms.Add(VISION_DOCK_FORM.LINE, new FormLine());
-            Forms.Add(VISION_DOCK_FORM.PROPERTY, new FormProperty());
-            Forms.Add(VISION_DOCK_FORM.THRESHOLD, new FormThreshold());
-            Forms.Add(VISION_DOCK_FORM.TEACHING, new FormTeaching());
+            
+            Forms.Add(VISION_DOCK_FORM.THRESHOLD, new FormThreshold());            
             ShowVisionForms();
 
             dockPanel.DockLeftPortion = GetLeftDockWidth();
