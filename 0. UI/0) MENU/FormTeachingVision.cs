@@ -1,7 +1,6 @@
 ﻿using OpenVisionLab._1._Core;
 using Lib.Common;
 using Lib.OpenCV;
-using MetroFramework.Forms;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -13,7 +12,7 @@ using Cursors = System.Windows.Forms.Cursors;
 
 namespace OpenVisionLab
 {
-    public partial class FormTeachingVision : MetroForm
+    public partial class FormTeachingVision : Form
     {
         private CGlobal Global = CGlobal.Inst;
         private DockPanel dockPanel;
@@ -25,7 +24,10 @@ namespace OpenVisionLab
 
         private Dictionary<VISION_DOCK_FORM, object> Forms = new Dictionary<VISION_DOCK_FORM, object>();
 
-        public FormTeachingVision() => InitializeComponent();
+        public FormTeachingVision()
+        {
+            InitializeComponent();
+        }
         
         private void FormTeachingVision_Load(object sender, EventArgs e)
         {            
@@ -197,7 +199,12 @@ namespace OpenVisionLab
             Forms.Add(VISION_DOCK_FORM.TEACHING, new FormTeaching());
             ShowVisionForms();
 
-            dockPanel.DockLeftPortion = panel1.Width;
+            dockPanel.DockLeftPortion = GetLeftDockWidth();
+        }
+
+        private int GetLeftDockWidth()
+        {
+            return Math.Max(360, Math.Min(560, ClientSize.Width / 4));
         }
 
         private void ShowVisionForms()
@@ -206,13 +213,13 @@ namespace OpenVisionLab
             foreach (var form in Forms)
             {
                 fr = (form.Value as WeifenLuo.WinFormsUI.Docking.DockContent);
-                DockContent system = (Forms[VISION_DOCK_FORM.System] as DockContent);
+                //DockContent system = (Forms[VISION_DOCK_FORM.System] as DockContent);
                 switch (form.Key)
                 {
-                    case VISION_DOCK_FORM.System:
-                        fr.Show(this.dockPanel, DockState.DockLeft);
-                        fr.AutoHidePortion = panel1.Width;
-                        break;
+                    //case VISION_DOCK_FORM.System:
+                    //    fr.Show(this.dockPanel, DockState.DockLeft);
+                    //    fr.AutoHidePortion = GetLeftDockWidth();
+                    //    break;
                     //case VISION_DOCK_FORM.BLOB:
                     //    fr.Show(system.PanelPane, null);
                     //    break;
@@ -224,20 +231,20 @@ namespace OpenVisionLab
                     //    break;
                     case VISION_DOCK_FORM.CONTOUR:
                         break;
-                    case VISION_DOCK_FORM.PROPERTY:
-                        fr.Show(system.PanelPane, DockAlignment.Bottom, 0.47);
-                        fr.AutoHidePortion = panel1.Width;
-                        break;
+                    //case VISION_DOCK_FORM.PROPERTY:
+                    //    fr.Show(system.PanelPane, DockAlignment.Bottom, 0.47);
+                    //    fr.AutoHidePortion = GetLeftDockWidth();
+                    //    break;
                     case VISION_DOCK_FORM.THRESHOLD:
                         fr.Show(this.dockPanel, DockState.DockLeftAutoHide);
                         fr.AutoHidePortion = 500;
                         break;
                 }
             }
-            fr = (Forms[VISION_DOCK_FORM.System] as WeifenLuo.WinFormsUI.Docking.DockContent);
-            fr.Activate();
-            fr = (Forms[VISION_DOCK_FORM.PROPERTY] as WeifenLuo.WinFormsUI.Docking.DockContent);
-            fr.Activate();
+            //fr = (Forms[VISION_DOCK_FORM.System] as WeifenLuo.WinFormsUI.Docking.DockContent);
+            //fr.Activate();
+            //fr = (Forms[VISION_DOCK_FORM.PROPERTY] as WeifenLuo.WinFormsUI.Docking.DockContent);
+            //fr.Activate();
         }
 
         private void OnChangedRecipe(object sender, EventArgs e)
