@@ -11,9 +11,16 @@ namespace OpenVisionLab
 {
     public partial class FormThreshold : WeifenLuo.WinFormsUI.Docking.DockContent
     {
-        private CGlobal Global = CGlobal.Inst;
+        private readonly IDisplayManager displayManager;
+
         public FormThreshold()
-        {           
+            : this(ApplicationRuntimeContext.CreateDefault().DisplayManager)
+        {
+        }
+
+        public FormThreshold(IDisplayManager displayManager)
+        {
+            this.displayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
             InitializeComponent();
 
             CloseButton = false;
@@ -69,24 +76,24 @@ namespace OpenVisionLab
         {
             try
             {
-                if (COpenCVHelper.IsImageEmpty(CDisplayManager.ImageSrc)) return;
+                if (COpenCVHelper.IsImageEmpty(displayManager.GetImageSrc())) return;
 
-                using (Mat imageSrc = CDisplayManager.SelecteItem != DEFINE.Threshold ? CDisplayManager.ImageSrc.Clone() : Lib.Common.CImageConverter.ToMat((Bitmap)CDisplayManager.Displays[CDisplayManager.FindIndex("Main")].viewer._Ib.Image).Clone())
+                using (Mat imageSrc = displayManager.SelectedItem != DEFINE.Threshold ? displayManager.GetImageSrc().Clone() : Lib.Common.CImageConverter.ToMat(displayManager.GetLayerImage("Main")).Clone())
                 {
-                    if (CDisplayManager.Displays[CDisplayManager.FindIndex(CDisplayManager.SelecteItem)].viewer.Roi.IsEmpty)
+                    if (displayManager.IsLayerRoiEmpty(displayManager.SelectedItem))
                     {
                         if (imageSrc.Channels() != 1) Cv2.CvtColor(imageSrc, imageSrc, ColorConversionCodes.RGB2GRAY);
 
                         Cv2.Threshold(imageSrc, imageSrc, trbThreshold.Value, 255, CUtil.ParseEnum<ThresholdTypes>(cbThresholdMenu.SelectedItem.ToString()));
-                        CDisplayManager.CreateLayerDisplay(Lib.Common.CImageConverter.ToBitmap(imageSrc), DEFINE.Threshold, false);
+                        displayManager.CreateLayerDisplay(Lib.Common.CImageConverter.ToBitmap(imageSrc), DEFINE.Threshold, false);
                     }
                     else
                     {
-                        Rect r = CConverter.RectangleToRect(CDisplayManager.Displays[CDisplayManager.FindIndex(CDisplayManager.SelecteItem)].viewer.Roi);
+                        Rect r = CConverter.RectangleToRect(displayManager.GetLayerRoi(displayManager.SelectedItem));
                         Mat ImageRoi = imageSrc.SubMat(r);
                         Cv2.Threshold(ImageRoi, ImageRoi, trbThreshold.Value, 255, CUtil.ParseEnum<ThresholdTypes>(cbThresholdMenu.SelectedItem.ToString()));
                         Bitmap Reuslt = Lib.Common.CBitmapProcessing.OverlayImage(Lib.Common.CImageConverter.ToBitmap(imageSrc), Lib.Common.CImageConverter.ToBitmap(ImageRoi), r.Left, r.Top);
-                        CDisplayManager.CreateLayerDisplay(Reuslt, DEFINE.Threshold, false);
+                        displayManager.CreateLayerDisplay(Reuslt, DEFINE.Threshold, false);
                     }
                 }
             }
@@ -100,25 +107,25 @@ namespace OpenVisionLab
         {
             try
             {
-                if (COpenCVHelper.IsImageEmpty(CDisplayManager.ImageSrc)) return;
+                if (COpenCVHelper.IsImageEmpty(displayManager.GetImageSrc())) return;
 
                 int Min = trbDoubleThresholdMin.Value;
                 int Max = trbDoubleThresholdMax.Value;
 
-                using (Mat imageSrc = CDisplayManager.SelecteItem != DEFINE.Threshold ? CDisplayManager.ImageSrc.Clone() : Lib.Common.CImageConverter.ToMat((Bitmap)CDisplayManager.Displays[CDisplayManager.FindIndex("Main")].viewer._Ib.Image).Clone())
+                using (Mat imageSrc = displayManager.SelectedItem != DEFINE.Threshold ? displayManager.GetImageSrc().Clone() : Lib.Common.CImageConverter.ToMat(displayManager.GetLayerImage("Main")).Clone())
                 {
-                    if (CDisplayManager.Displays[CDisplayManager.FindIndex(CDisplayManager.SelecteItem)].viewer.Roi.IsEmpty)
+                    if (displayManager.IsLayerRoiEmpty(displayManager.SelectedItem))
                     {
                         Cv2.InRange(imageSrc, new Scalar(Min, Min, Min), new Scalar(Max, Max, Max), imageSrc);
-                        CDisplayManager.CreateLayerDisplay(Lib.Common.CImageConverter.ToBitmap(imageSrc), DEFINE.Threshold, false);
+                        displayManager.CreateLayerDisplay(Lib.Common.CImageConverter.ToBitmap(imageSrc), DEFINE.Threshold, false);
                     }
                     else
                     {
-                        Rect r = CConverter.RectangleToRect(CDisplayManager.Displays[CDisplayManager.FindIndex(CDisplayManager.SelecteItem)].viewer.Roi);
+                        Rect r = CConverter.RectangleToRect(displayManager.GetLayerRoi(displayManager.SelectedItem));
                         Mat ImageRoi = imageSrc.SubMat(r);
                         Cv2.InRange(ImageRoi, new Scalar(Min, Min, Min), new Scalar(Max, Max, Max), ImageRoi);
                         Bitmap Reuslt = Lib.Common.CBitmapProcessing.OverlayImage(Lib.Common.CImageConverter.ToBitmap(imageSrc), Lib.Common.CImageConverter.ToBitmap(ImageRoi), r.Left, r.Top);
-                        CDisplayManager.CreateLayerDisplay(Reuslt, DEFINE.Threshold, false);
+                        displayManager.CreateLayerDisplay(Reuslt, DEFINE.Threshold, false);
                     }
                 }
             }
@@ -132,7 +139,7 @@ namespace OpenVisionLab
         {
             try
             {
-                if (COpenCVHelper.IsImageEmpty(CDisplayManager.ImageSrc)) return;
+                if (COpenCVHelper.IsImageEmpty(displayManager.GetImageSrc())) return;
 
                 if (tbBlockSize.Text == "") { tbBlockSize.Text = "25"; }
                 if (tbWeight.Text == "") { tbWeight.Text = "5"; }
@@ -140,22 +147,22 @@ namespace OpenVisionLab
                 int Block = int.Parse(tbBlockSize.Text);
                 int Weight = int.Parse(tbWeight.Text);
 
-                using (Mat imageSrc = CDisplayManager.SelecteItem != DEFINE.Threshold ? CDisplayManager.ImageSrc.Clone() : Lib.Common.CImageConverter.ToMat((Bitmap)CDisplayManager.Displays[CDisplayManager.FindIndex("Main")].viewer._Ib.Image).Clone())
+                using (Mat imageSrc = displayManager.SelectedItem != DEFINE.Threshold ? displayManager.GetImageSrc().Clone() : Lib.Common.CImageConverter.ToMat(displayManager.GetLayerImage("Main")).Clone())
                 {
                     COpenCVHelper.SetImageChannel1(imageSrc);
                     
-                    if (CDisplayManager.Displays[CDisplayManager.FindIndex(CDisplayManager.SelecteItem)].viewer.Roi.IsEmpty)
+                    if (displayManager.IsLayerRoiEmpty(displayManager.SelectedItem))
                     {
                         Cv2.AdaptiveThreshold(imageSrc, imageSrc, trbAdaptiveThreshold.Value, CUtil.ParseEnum<AdaptiveThresholdTypes>(cbAdaptiveType.SelectedItem.ToString()), CUtil.ParseEnum<ThresholdTypes>(cbAdaptiveThresholdMenu.SelectedItem.ToString()), Block, Weight);
-                        CDisplayManager.CreateLayerDisplay(Lib.Common.CImageConverter.ToBitmap(imageSrc), DEFINE.Threshold, false);
+                        displayManager.CreateLayerDisplay(Lib.Common.CImageConverter.ToBitmap(imageSrc), DEFINE.Threshold, false);
                     }
                     else
                     {
-                        Rect r = CConverter.RectangleToRect(CDisplayManager.Displays[CDisplayManager.FindIndex(CDisplayManager.SelecteItem)].viewer.Roi);
+                        Rect r = CConverter.RectangleToRect(displayManager.GetLayerRoi(displayManager.SelectedItem));
                         Mat ImageRoi = imageSrc.SubMat(r);
                         Cv2.AdaptiveThreshold(ImageRoi, ImageRoi, trbAdaptiveThreshold.Value, CUtil.ParseEnum<AdaptiveThresholdTypes>(cbAdaptiveType.SelectedItem.ToString()), CUtil.ParseEnum<ThresholdTypes>(cbAdaptiveThresholdMenu.SelectedItem.ToString()), Block, Weight);                        
                         Bitmap Reuslt = Lib.Common.CBitmapProcessing.OverlayImage(Lib.Common.CImageConverter.ToBitmap(imageSrc), Lib.Common.CImageConverter.ToBitmap(ImageRoi), r.Left, r.Top);
-                        CDisplayManager.CreateLayerDisplay(Reuslt, DEFINE.Threshold, false);
+                        displayManager.CreateLayerDisplay(Reuslt, DEFINE.Threshold, false);
                     }
                 }
             }

@@ -15,21 +15,23 @@ namespace OpenVisionLab
         public CPropertyLineGuage Lines_R = new CPropertyLineGuage();
     }
 
-    public static class CVisionTools
+    public sealed class VisionToolRepository
     {
-        public static List<LinesProperties> Lines = new List<LinesProperties>();
-        public static List<CPropertyBlob> Blobs = new List<CPropertyBlob>();
-        public static List<CPropertyContour> Contours = new List<CPropertyContour>();
-        public static List<CPropertyLineGuage> Lines_L = new List<CPropertyLineGuage>();
-        public static List<CPropertyLineGuage> Lines_R = new List<CPropertyLineGuage>();
-        public static List<CPropertyLineGuage> Lines_TOP = new List<CPropertyLineGuage>();
-        public static List<CPropertyMatching> Matchings = new List<CPropertyMatching>();
+        private const int VisionToolSetCount = 1;
 
-        public static CPropertyVision PropertyVision = new CPropertyVision("VisionPara");
+        public List<LinesProperties> Lines = new List<LinesProperties>();
+        public List<CPropertyBlob> Blobs = new List<CPropertyBlob>();
+        public List<CPropertyContour> Contours = new List<CPropertyContour>();
+        public List<CPropertyLineGuage> Lines_L = new List<CPropertyLineGuage>();
+        public List<CPropertyLineGuage> Lines_R = new List<CPropertyLineGuage>();
+        public List<CPropertyLineGuage> Lines_TOP = new List<CPropertyLineGuage>();
+        public List<CPropertyMatching> Matchings = new List<CPropertyMatching>();
 
-        public static List<CPropertyFeatureMatching> Features = new List<CPropertyFeatureMatching>();
+        public CPropertyVision PropertyVision = new CPropertyVision("VisionPara");
 
-        public static bool LoadTools(string Name)
+        public List<CPropertyFeatureMatching> Features = new List<CPropertyFeatureMatching>();
+
+        public bool LoadTools(string Name)
         {
             try
             {
@@ -41,7 +43,7 @@ namespace OpenVisionLab
                 Matchings.Clear();
                 Features.Clear();
 
-                for (int i = 0; i < CGlobal.Inst.Device.CAMERA_COUNT; i++)
+                for (int i = 0; i < VisionToolSetCount; i++)
                 {                    
                     Blobs.Add(new CPropertyBlob($"Blob_{i + 1}"));
                     Contours.Add(new CPropertyContour($"Contour_{i + 1}"));
@@ -52,7 +54,7 @@ namespace OpenVisionLab
                     Features.Add(new CPropertyFeatureMatching($"Feature_{i + 1}"));
                 }
 
-                for (int i = 0; i < CGlobal.Inst.Device.CAMERA_COUNT; i++)
+                for (int i = 0; i < VisionToolSetCount; i++)
                 {
                     Blobs[i] = Blobs[i].LoadConfig(Name);
                     Contours[i] = Contours[i].LoadConfig(Name);
@@ -74,11 +76,11 @@ namespace OpenVisionLab
             return true;
         }
 
-        public static bool SaveTools(string Name)
+        public bool SaveTools(string Name)
         {
             try
             {
-                for (int i = 0; i < CGlobal.Inst.Device.CAMERA_COUNT; i++)
+                for (int i = 0; i < VisionToolSetCount; i++)
                 {
                     Blobs[i].SaveConfig(Name);
                     Lines_L[i].SaveConfig(Name);

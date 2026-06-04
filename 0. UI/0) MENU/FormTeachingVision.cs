@@ -1,4 +1,4 @@
-ï»¿using OpenVisionLab._1._Core;
+using OpenVisionLab._1._Core;
 using Lib.Common;
 using Lib.OpenCV;
 using System;
@@ -14,7 +14,9 @@ namespace OpenVisionLab
 {
     public partial class FormTeachingVision : Form
     {
-        private CGlobal Global = CGlobal.Inst;
+        private readonly CGlobal Global;
+        private readonly IDisplayManager displayManager;
+        private readonly IDisplayHostBinder displayHostBinder;
         private DockPanel dockPanel;
         private int PanelCount = 0;
 
@@ -25,7 +27,16 @@ namespace OpenVisionLab
         private Dictionary<VISION_DOCK_FORM, object> Forms = new Dictionary<VISION_DOCK_FORM, object>();
 
         public FormTeachingVision()
+            : this(ApplicationRuntimeContext.CreateDefault())
         {
+        }
+
+        public FormTeachingVision(ApplicationRuntimeContext runtimeContext)
+        {
+            ApplicationRuntimeContext context = runtimeContext ?? ApplicationRuntimeContext.CreateDefault();
+            Global = context.Global;
+            displayManager = context.DisplayManager;
+            displayHostBinder = context.DisplayHostBinder;
             InitializeComponent();
         }
         
@@ -43,27 +54,28 @@ namespace OpenVisionLab
 
         private void InitCameraItem()
         {
-            for (int i = 0; i < Global.Device.CAMERA_COUNT; i++) { cbCamera.Items.Add("Camera " + (i + 1)); }
+            cbCamera.Items.Clear();
+            cbCamera.Items.Add("Camera 1");
         }
 
         private void InitLayListItem()
         {
             cbLayerList.Items.Clear();
-            for (int i = 0; i < CDisplayManager.Displays.Count; i++) { cbLayerList.Items.Add(CDisplayManager.Displays[i].Text); }
+            for (int i = 0; i < displayManager.LayerCount; i++) { cbLayerList.Items.Add(displayManager.GetLayerTitle(i)); }
         }
 
-        private void btnNewPanel_Click(object sender, EventArgs e) => CDisplayManager.CreatePanel();
+        private void btnNewPanel_Click(object sender, EventArgs e) => displayManager.CreatePanel();
 
         private void chkUseLayerImage_CheckedChanged(object sender, EventArgs e)
         {
             try
             {
-                if (!chkUseLayerImage.Check) { CDisplayManager.ImageSrc = Lib.Common.CImageConverter.ToMat((Bitmap)CDisplayManager.Displays[DEFINE.Main].viewer._Ib.Image).Clone(); }
+                if (!chkUseLayerImage.Check) { displayManager.SetImageSrc(Lib.Common.CImageConverter.ToMat(displayManager.GetLayerImage(DEFINE.Main)).Clone()); }
                 else
                 {
                     if (cbLayerList.SelectedItem == null) { return; }
-                    CDisplayManager.SelecteItem = cbLayerList.SelectedItem.ToString();
-                    CDisplayManager.ImageSrc = Lib.Common.CImageConverter.ToMat((Bitmap)CDisplayManager.Displays[CDisplayManager.FindIndex(CDisplayManager.SelecteItem)].viewer._Ib.Image).Clone();
+                    displayManager.SelectedItem = cbLayerList.SelectedItem.ToString();
+                    displayManager.SetImageSrc(Lib.Common.CImageConverter.ToMat(displayManager.GetLayerImage(displayManager.SelectedItem)).Clone());
                 }
             }
             catch (Exception Desc)
@@ -74,12 +86,8 @@ namespace OpenVisionLab
 
         private void cbCamera_SelectedIndexChanged(object sender, EventArgs e)
         {
-            CDisplayManager.CameraIndex = cbCamera.SelectedIndex;
-
-            if (CDisplayManager.EventUpdateParameter != null)
-            {
-                CDisplayManager.EventUpdateParameter(null, null);
-            }
+            displayManager.SetCameraIndex(cbCamera.SelectedIndex);
+            displayManager.NotifyParameterChanged();
 
             CLOG.NORMAL($"[OK] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}");
         }
@@ -89,14 +97,14 @@ namespace OpenVisionLab
             if (chkUseLayerImage.Check)
             {
                 if (cbLayerList.SelectedItem == null) { return; }
-                CDisplayManager.SelecteItem = cbLayerList.SelectedItem.ToString();
-                CDisplayManager.ImageSrc = Lib.Common.CImageConverter.ToMat((Bitmap)CDisplayManager.Displays[CDisplayManager.FindIndex(CDisplayManager.SelecteItem)].viewer._Ib.Image).Clone();
-                CDisplayManager.Displays[CDisplayManager.FindIndex(CDisplayManager.SelecteItem)].Activate();
+                displayManager.SelectedItem = cbLayerList.SelectedItem.ToString();
+                displayManager.SetImageSrc(Lib.Common.CImageConverter.ToMat(displayManager.GetLayerImage(displayManager.SelectedItem)).Clone());
+                displayManager.ActivateLayer(displayManager.SelectedItem);
             }
         }
 
-        // ìµœìƒìœ„ keys ëª…ë ¹ì–´ ì´ê¸° ë•Œë¬¸ì— 
-        // Datagridview ê°™ì€ê³³ì— editmode f2ë²ˆê°™ì€ê²Œ ë¨¹ì§€ ì•ŠëŠ”ë‹¤.        
+        // ÃÖ»óÀ§ keys ¸í·É¾î ÀÌ±â ¶§¹®¿¡ 
+        // Datagridview °°Àº°÷¿¡ editmode f2¹ø°°Àº°Ô ¸ÔÁö ¾Ê´Â´Ù.        
         protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
         {
             Keys key = keyData & ~(Keys.Shift | Keys.Control);
@@ -104,7 +112,7 @@ namespace OpenVisionLab
             switch (key)
             {
                 case Keys.Escape:
-                    //if (CCommon.ShowMessageBox("Notice", "ì°½ì„ ë‹«ìœ¼ì‹œê² ìŠµë‹ˆê¹Œ?"))
+                    //if (CCommon.ShowMessageBox("Notice", "Ã¢À» ´ÝÀ¸½Ã°Ú½À´Ï±î?"))
                     //{
                     //    this.DialogResult = DialogResult.Cancel;
                     //    this.Close();
@@ -118,41 +126,13 @@ namespace OpenVisionLab
 
             return base.ProcessCmdKey(ref msg, keyData);
         }
-
-
-        private void OnGrabEnd(object sender, GrabEventArgs e)
-        {
-            this.UIThreadBeginInvoke(() =>
-            {
-                if (Global.System.Menu == CSystem.MENU.VISION)
-                {
-                    if (!COpenCVHelper.IsImageEmpty(e.ImageGrab))
-                    {
-                        //CDisplayManager.Displays[DEFINE.Main].Activate();
-                        CDisplayManager.Displays[DEFINE.Main].ibSource.Image = Lib.Common.CImageConverter.ToBitmap(e.ImageGrab.Clone());
-
-                        e.ImageGrab.Dispose();
-                        e.ImageGrab = null;
-                    }
-
-                    GC.Collect();
-                }
-            });           
-        }
-
         private bool InitEvent()
         {
             try
             {
-                CDisplayManager.EventUpdateResult += OnUpdateResult;
+                displayManager.UpdateResult += OnUpdateResult;
                 EventUpdateDisplay += OnUpdateDisplay;
-                Global.Recipe.EventChagedRecipe += OnChangedRecipe;                
-
-                for (int i = 0; i < Global.Device.CAMERAS.Count; i++)
-                {
-                    Global.Device.CAMERAS[i].EventGrabEnd += OnGrabEnd;
-                }
-                
+                Global.Recipe.EventChagedRecipe += OnChangedRecipe;
             }
             catch (Exception Desc)
             {
@@ -167,9 +147,9 @@ namespace OpenVisionLab
             if (!(e is InspResultArgs args)) { return; }
             this.UIThreadInvoke(() =>
             {
-                CDisplayManager.CreateLayerDisplay(args.imageResult, "Result");
-                CDisplayManager.Displays[CDisplayManager.FindIndex("Result")].Activate();
-                CDisplayManager.Displays[CDisplayManager.FindIndex("Result")].ibSource.ZoomToFit();
+                displayManager.CreateLayerDisplay(args.imageResult, "Result");
+                displayManager.ActivateLayer("Result");
+                displayManager.ZoomLayerToFit("Result");
                 lbTackTime.Text = args.tackTime.ToString() + "ms";
             });
         }
@@ -178,20 +158,15 @@ namespace OpenVisionLab
         {
             Font font = new Font("Verdana", 12, FontStyle.Regular);
 
-            this.dockPanel = new WeifenLuo.WinFormsUI.Docking.DockPanel();
-            this.dockPanel.Theme = new VS2015DarkTheme();
-            this.dockPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.dockPanel.DocumentStyle = DocumentStyle.DockingWindow;
-            TeachingPanel.Controls.Add(this.dockPanel);
-            CDisplayManager.SetForm(this);
-            CDisplayManager.SetDockPanel(dockPanel);
-            CDisplayManager.Displays.Add(new FormLayerDisplay(new Bitmap(10, 10), 0, CDisplayManager.Displays, false, "Main"));
-            CDisplayManager.Displays[DEFINE.Main].Show(this.dockPanel, DockState.Document);
+            this.dockPanel = TeachingVisionDockPanelFactory.Create(TeachingPanel, font);
+            displayHostBinder.SetForm(this);
+            displayHostBinder.SetDockPanel(dockPanel);
+            CPropertyGridEditor.SetRuntimeContext(() => displayManager);
+            CPropertyGridEditor.SetRecipeNameContext(() => Global.Recipe.Name);
+            displayManager.CreateLayerDisplay(new Bitmap(10, 10), "Main", false);
 
-            dockPanel.Theme.Skin.DockPaneStripSkin.TextFont = font;
-            dockPanel.Theme.Skin.AutoHideStripSkin.TextFont = font;
             
-            Forms.Add(VISION_DOCK_FORM.THRESHOLD, new FormThreshold());            
+            Forms.Add(VISION_DOCK_FORM.THRESHOLD, new FormThreshold(displayManager));            
             ShowVisionForms();
 
             dockPanel.DockLeftPortion = GetLeftDockWidth();
@@ -253,7 +228,7 @@ namespace OpenVisionLab
         {
             this.UIThreadBeginInvoke(() =>
             {
-                lbTackTime.Text = CDisplayManager.TackTime;
+                lbTackTime.Text = displayManager.TackTime;
             });          
         }
 
@@ -261,9 +236,9 @@ namespace OpenVisionLab
         {
             this.UIThreadBeginInvoke(() =>
             {
-                CDisplayManager.Displays[e.Index].ibSource.Image = e.Image;
-                CDisplayManager.Displays[e.Index].ibSource.Refresh();
-                CDisplayManager.Displays[e.Index].Activate();
+                displayManager.SetLayerImage(e.Index, e.Image);
+                displayManager.RefreshLayer(e.Index);
+                displayManager.ActivateLayer(e.Index);
                 lbTackTime.Text = e.TackTime;                
             });
         }             
@@ -288,55 +263,68 @@ namespace OpenVisionLab
             switch (CUtil.ParseEnum<VISION_MENU>(strIndex))
             {
                 case VISION_MENU.Morphology:
-                    FormVision_Morphology frm_Morphology = new FormVision_Morphology(CDisplayManager.Displays, EventUpdateDisplay);
+                    FormVision_Morphology frm_Morphology = new FormVision_Morphology(displayManager, EventUpdateDisplay);
+                    frm_Morphology.SetDisplayManager(displayManager);
                     this.ShowForm(frm_Morphology);                    
                     break;
                 case VISION_MENU.Filter:
-                    FormVision_Filter Frm_Filter = new FormVision_Filter(CDisplayManager.Displays, EventUpdateDisplay);
+                    FormVision_Filter Frm_Filter = new FormVision_Filter(displayManager, EventUpdateDisplay);
+                    Frm_Filter.SetDisplayManager(displayManager);
                     this.ShowForm(Frm_Filter);
                     break;
                 case VISION_MENU.Arithmetic:
-                    FormVision_Arithmetic Frm_Arithmetic = new FormVision_Arithmetic(CDisplayManager.Displays, EventUpdateDisplay);
+                    FormVision_Arithmetic Frm_Arithmetic = new FormVision_Arithmetic(displayManager, EventUpdateDisplay);
+                    Frm_Arithmetic.SetDisplayManager(displayManager);
                     this.ShowForm(Frm_Arithmetic);
                     break;
                 case VISION_MENU.Blob:
-                    FormVision_Blob Frm_Blob = new FormVision_Blob(CDisplayManager.Displays, EventUpdateDisplay);
+                    FormVision_Blob Frm_Blob = new FormVision_Blob(displayManager, EventUpdateDisplay);
+                    Frm_Blob.SetDisplayManager(displayManager);
                     this.ShowForm(Frm_Blob);
                     break;
                 case VISION_MENU.Contour:
-                    FormVision_Contour Frm_Contour = new FormVision_Contour(CDisplayManager.Displays, EventUpdateDisplay);
+                    FormVision_Contour Frm_Contour = new FormVision_Contour(displayManager, EventUpdateDisplay);
+                    Frm_Contour.SetDisplayManager(displayManager);
                     this.ShowForm(Frm_Contour);                   
                     break;
                 case VISION_MENU.Matching:
-                    FormVision_Matching Frm_Matching = new FormVision_Matching(CDisplayManager.Displays, EventUpdateDisplay);
+                    FormVision_Matching Frm_Matching = new FormVision_Matching(displayManager, EventUpdateDisplay);
+                    Frm_Matching.SetDisplayManager(displayManager);
                     this.ShowForm(Frm_Matching);                    
                     break;
                 case VISION_MENU.FeatureMatching:
-                    FormVision_FeatureMatching Frm_FeatureMatching = new FormVision_FeatureMatching(CDisplayManager.Displays, EventUpdateDisplay);
+                    FormVision_FeatureMatching Frm_FeatureMatching = new FormVision_FeatureMatching(displayManager, EventUpdateDisplay);
+                    Frm_FeatureMatching.SetDisplayManager(displayManager);
                     this.ShowForm(Frm_FeatureMatching);
                     break;
                 case VISION_MENU.Line:
-                    FormVision_Line Frm_Line = new FormVision_Line(CDisplayManager.Displays, EventUpdateDisplay);
+                    FormVision_Line Frm_Line = new FormVision_Line(displayManager, EventUpdateDisplay);
+                    Frm_Line.SetDisplayManager(displayManager);
                     this.ShowForm(Frm_Line);
                     break;
                 case VISION_MENU.EdgeDetection:
-                    FormVision_EdgeDection Frm_EdgeDetector = new FormVision_EdgeDection(CDisplayManager.Displays, EventUpdateDisplay);
+                    FormVision_EdgeDection Frm_EdgeDetector = new FormVision_EdgeDection(displayManager, EventUpdateDisplay);
+                    Frm_EdgeDetector.SetDisplayManager(displayManager);
                     this.ShowForm(Frm_EdgeDetector);                    
                     break;
                 case VISION_MENU.RotateAndScale:
-                    FormVision_RotateAndScale Frm_RotateAndScale = new FormVision_RotateAndScale(CDisplayManager.Displays, EventUpdateDisplay);
+                    FormVision_RotateAndScale Frm_RotateAndScale = new FormVision_RotateAndScale(displayManager, EventUpdateDisplay);
+                    Frm_RotateAndScale.SetDisplayManager(displayManager);
                     this.ShowForm(Frm_RotateAndScale);                    
                     break;
                 case VISION_MENU.Histogram:
-                    FormVision_Histogram Frm_Histogram = new FormVision_Histogram(CDisplayManager.Displays, EventUpdateDisplay);
+                    FormVision_Histogram Frm_Histogram = new FormVision_Histogram(displayManager, EventUpdateDisplay);
+                    Frm_Histogram.SetDisplayManager(displayManager);
                     this.ShowForm(Frm_Histogram);                    
                     break;
                 case VISION_MENU.Mean:
-                    FormVision_Mean Frm_Mean = new FormVision_Mean(CDisplayManager.Displays, EventUpdateDisplay);
+                    FormVision_Mean Frm_Mean = new FormVision_Mean(displayManager, EventUpdateDisplay);
+                    Frm_Mean.SetDisplayManager(displayManager);
                     this.ShowForm(Frm_Mean);                    
                     break;
                 case VISION_MENU.HSV:
-                    FormVision_HSV Frm_HSV = new FormVision_HSV(CDisplayManager.Displays, EventUpdateDisplay);
+                    FormVision_HSV Frm_HSV = new FormVision_HSV(displayManager, EventUpdateDisplay);
+                    Frm_HSV.SetDisplayManager(displayManager);
                     this.ShowForm(Frm_HSV);                    
                     break;
             }
@@ -351,16 +339,16 @@ namespace OpenVisionLab
         {
             try
             {
-                if (PanelCount != CDisplayManager.Displays.Count)
+                if (PanelCount != displayManager.LayerCount)
                 {
-                    PanelCount = CDisplayManager.Displays.Count;
+                    PanelCount = displayManager.LayerCount;
                     InitLayListItem();
                 }
 
-                if (CDisplayManager.Displays[CDisplayManager.FindIndex()].viewer._ImageChanged)
+                if (displayManager.IsLayerImageChanged(displayManager.SelectedItem))
                 {
-                    CDisplayManager.ImageSrc = Lib.Common.CImageConverter.ToMat((Bitmap)CDisplayManager.Displays[CDisplayManager.FindIndex()].viewer._Ib.Image);
-                    CDisplayManager.Displays[CDisplayManager.FindIndex()].viewer._ImageChanged = false;
+                    displayManager.SetImageSrc(Lib.Common.CImageConverter.ToMat(displayManager.GetLayerImage(displayManager.SelectedItem)));
+                    displayManager.AcceptLayerImageChanged(displayManager.SelectedItem);
                 }                
             }
             catch (Exception Desc)

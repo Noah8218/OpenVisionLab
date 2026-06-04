@@ -33,6 +33,7 @@ namespace OpenVisionLab
         private System.Drawing.Point _MouseDown = new System.Drawing.Point(0, 0);
 
         public bool _ViewCross { get; set; } = false;
+        public IDisplayManager DisplayManager { get; private set; }
 
         private FormVision_Result _FormVision_Result = new FormVision_Result();
 
@@ -50,14 +51,28 @@ namespace OpenVisionLab
 
         public Rectangle Roi
         {
-            get { return _RoiOb.Roi; }
-            set { _RoiOb.Roi = value; }
+            get { return HasDisplayContext ? DisplayManager.ImageSpace.GetRoi(displayIndex) : _RoiOb.Roi; }
+            set
+            {
+                _RoiOb.Roi = value;
+                if (HasDisplayContext)
+                {
+                    DisplayManager.ImageSpace.SetRoi(displayIndex, value);
+                }
+            }
         }
 
         public Rectangle TrainROI
         {
-            get { return _TrainOb.Roi; }
-            set { _TrainOb.Roi = value; }
+            get { return HasDisplayContext ? DisplayManager.ImageSpace.GetTrainRoi(displayIndex) : _TrainOb.Roi; }
+            set
+            {
+                _TrainOb.Roi = value;
+                if (HasDisplayContext)
+                {
+                    DisplayManager.ImageSpace.SetTrainRoi(displayIndex, value);
+                }
+            }
         }
 
         private Rectangle TempROI
@@ -75,12 +90,37 @@ namespace OpenVisionLab
         private int _SelectROiIndex = 0;
         public bool _ImageChanged = false;
         private bool _OnlyDragMode = false;
+        private int displayIndex = -1;
+        private string displayTitle = string.Empty;
+        private bool HasDisplayContext => DisplayManager != null && displayIndex >= 0;
 
         public CViewer(bool bCenter = true)
         {
             InitializeComponent();
             //ddmImageMenu.OwnerIsMenuButton = true;
             //ddmDelete.OwnerIsMenuButton = true;
+        }
+
+        public void SetDisplayManager(IDisplayManager displayManager)
+        {
+            SetDisplayContext(displayManager, displayIndex, displayTitle);
+        }
+
+        public void SetDisplayContext(IDisplayManager displayManager, int index, string title)
+        {
+            DisplayManager = displayManager;
+            displayIndex = index;
+            displayTitle = title ?? string.Empty;
+            LoadImageSpaceState();
+            SyncImageSpace();
+        }
+
+        private void LoadImageSpaceState()
+        {
+            if (!HasDisplayContext) return;
+
+            _RoiOb.Roi = DisplayManager.ImageSpace.GetRoi(displayIndex);
+            _TrainOb.Roi = DisplayManager.ImageSpace.GetTrainRoi(displayIndex);
         }
 
         public void LoadImageBox(ImageBox ImageBox, bool ControlROI = true, bool onlyDragmode = false)
@@ -168,7 +208,7 @@ namespace OpenVisionLab
                         Bitmap Image = new Bitmap(file);
                         _Ib.Image = Image;
                         //this.Image = Image;
-                        CDisplayManager.ImageSrc = Lib.Common.CImageConverter.ToMat(Image);
+                        DisplayManager?.SetImageSrc(Lib.Common.CImageConverter.ToMat(Image));
                         _Ib.ZoomToFit();
                         break;
                     default:
@@ -408,7 +448,7 @@ namespace OpenVisionLab
                                 using (Bitmap Image = new Bitmap(_Ib.Image))
                                 {
                                     Bitmap Crop = Lib.Common.CBitmapProcessing.CropAtRect(Image, Roi).Result;
-                                    CDisplayManager.CreatePanel(Crop);
+                                    DisplayManager?.CreatePanel(Crop);
                                     ClearROI();
                                 }
 
@@ -420,7 +460,7 @@ namespace OpenVisionLab
                                 using (Bitmap Image = new Bitmap(_Ib.Image))
                                 {
                                     Bitmap Crop = Lib.Common.CBitmapProcessing.CropAtRect(Image, TrainROI).Result;
-                                    CDisplayManager.CreatePanel(Crop);
+                                    DisplayManager?.CreatePanel(Crop);
                                     ClearROI();
                                 }
                             }
@@ -455,7 +495,26 @@ namespace OpenVisionLab
             _Ib.Invalidate();
         }
 
-        private void Ib_ImageChanged(object sender, EventArgs e) => _ImageChanged = true;
+        private void Ib_ImageChanged(object sender, EventArgs e)
+        {
+            _ImageChanged = true;
+            SyncImageSpace();
+        }
+
+        private void SyncImageSpace()
+        {
+            if (!HasDisplayContext) return;
+
+            Bitmap image = _Ib?.Image as Bitmap;
+            DisplayManager.ImageSpace.SetImage(displayIndex, displayTitle, image);
+            DisplayManager.ImageSpace.SetRoi(displayIndex, _RoiOb.Roi);
+            DisplayManager.ImageSpace.SetTrainRoi(displayIndex, _TrainOb.Roi);
+
+            if (!string.IsNullOrEmpty(displayTitle))
+            {
+                DisplayManager.ImageSpace.MarkImageChanged(displayTitle, _ImageChanged);
+            }
+        }
 
         private void Ib_MouseDown(object sender, MouseEventArgs e)
         {
@@ -565,6 +624,7 @@ namespace OpenVisionLab
                         break;
                 }
             }
+            SyncImageSpace();
             _Ib.Invalidate();
         }
 
@@ -675,6 +735,7 @@ namespace OpenVisionLab
                         break;
                 }
                 _MouseOperation = PosSizableRect.None;
+                SyncImageSpace();
             }
             catch (Exception Desc)
             {
@@ -744,7 +805,7 @@ namespace OpenVisionLab
                             Bitmap Image = new Bitmap(ImagePath);
                             _Ib.Image = Image;
                             //this.Image = Image;
-                            CDisplayManager.ImageSrc = Lib.Common.CImageConverter.ToMat(Image);
+                            DisplayManager?.SetImageSrc(Lib.Common.CImageConverter.ToMat(Image));
                             _Ib.ZoomToFit();
                         }
                         break;

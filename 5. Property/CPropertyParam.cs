@@ -74,7 +74,6 @@ namespace OpenVisionLab
         }
 
         #region CONFIG BY XML              
-        private string m_XMLName = "RECIPE";
         public CPropertyParam LoadConfig(string strName)
         {
             CUtil.InitDirectory($"RECIPE\\{strName}");

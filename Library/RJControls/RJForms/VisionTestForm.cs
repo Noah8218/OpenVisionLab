@@ -9,7 +9,6 @@ using RJCodeUI_M1.Settings;
 using RJCodeUI_M1.Utils;
 using RJCodeUI_M1.RJControls;
 using OpenVisionLab;
-using System.Collections.Generic;
 using OpenVisionLab._1._Core;
 using Lib.Common;
 using OpenCvSharp;
@@ -24,8 +23,9 @@ namespace RJCodeUI_M1.RJForms
     {
         public CViewer source_1 = new CViewer();
         public CViewer source_2 = new CViewer();
+        protected IDisplayManager displayManager;
+        private readonly CWpgEvent wpgEvent;
 
-        public List<FormLayerDisplay> displays { get; set; } = new List<FormLayerDisplay>();
         public int panelCount = 0;
 
         #region Event Register        
@@ -43,12 +43,59 @@ namespace RJCodeUI_M1.RJForms
 
         public int GetDisplayIndex(string strTitle)
         {
-            for (int i = 0; i < displays.Count; i++)
+            return displayManager.FindIndex(strTitle);
+        }
+
+        protected Bitmap GetLayerImage(string title)
+        {
+            return displayManager.ImageSpace.GetImage(title);
+        }
+
+        protected Bitmap GetLayerImage(int index)
+        {
+            return displayManager.ImageSpace.GetImage(index);
+        }
+
+        protected Rectangle GetLayerRoi(int index)
+        {
+            return displayManager.ImageSpace.GetRoi(index);
+        }
+
+        protected Rectangle GetLayerTrainRoi(int index)
+        {
+            return displayManager.ImageSpace.GetTrainRoi(index);
+        }
+
+        protected void SetLayerImage(int index, Bitmap image)
+        {
+            displayManager.SetLayerImage(index, image);
+        }
+
+        protected void BindLayerToViewer(CViewer viewer, Cyotek.Windows.Forms.ImageBox imageBox, int index, bool updateActiveImage = false)
+        {
+            Bitmap image = GetLayerImage(index);
+            viewer.Roi = GetLayerRoi(index);
+            viewer.TrainROI = GetLayerTrainRoi(index);
+            imageBox.Image = image;
+
+            if (updateActiveImage)
             {
-                if (displays[i].Text == strTitle) { return i; }
+                displayManager.SetImageSrc(image);
+            }
+        }
+
+        protected void RefreshViewerRoi(CViewer viewer, Control control, int index)
+        {
+            Rectangle roi = GetLayerRoi(index);
+            Rectangle trainRoi = GetLayerTrainRoi(index);
+
+            if (viewer.Roi != roi || viewer.TrainROI != trainRoi)
+            {
+                control.Invalidate();
             }
 
-            return 0;
+            viewer.Roi = roi;
+            viewer.TrainROI = trainRoi;
         }
 
         /// This class inherits from the <see cref="RJBaseForm"/> class
@@ -96,7 +143,14 @@ namespace RJCodeUI_M1.RJForms
 
         /// Constructor
         public VisionTestForm()
+            : this(DisplayManagerService.Default)
         {
+        }
+
+        public VisionTestForm(IDisplayManager displayManager)
+        {
+            this.displayManager = displayManager ?? DisplayManagerService.Default;
+            wpgEvent = new CWpgEvent(() => this.displayManager);
             InitializeItems();
             host = new System.Windows.Forms.Integration.ElementHost { Dock = DockStyle.Fill };
             wpg = new System.Windows.Controls.WpfPropertyGrid.PropertyGrid
@@ -104,8 +158,17 @@ namespace RJCodeUI_M1.RJForms
                 Layout = new System.Windows.Controls.WpfPropertyGrid.Design.CategorizedLayout()
             };
             host.Child = wpg;
-            wpg.PropertyValueChanged += CWpgEvent.Wpg_PropertyValueChanged;
-            wpg.SelectedObjectsChanged += CWpgEvent.Wpg_SelectedObjectsChanged;
+            wpg.PropertyValueChanged += wpgEvent.Wpg_PropertyValueChanged;
+            wpg.SelectedObjectsChanged += wpgEvent.Wpg_SelectedObjectsChanged;
+        }
+
+        public void SetDisplayManager(IDisplayManager manager)
+        {
+            displayManager = manager ?? DisplayManagerService.Default;
+            source_1.SetDisplayManager(displayManager);
+            source_2.SetDisplayManager(displayManager);
+            destination.SetDisplayManager(displayManager);
+            CPropertyGridEditor.SetRuntimeContext(() => displayManager);
         }
 
         /// Initialize Component

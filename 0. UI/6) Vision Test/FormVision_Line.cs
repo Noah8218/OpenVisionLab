@@ -26,14 +26,14 @@ namespace OpenVisionLab
         private CPropertyLineGuage Property_Line_L = new CPropertyLineGuage("Line_L");
         private CPropertyLineGuage Property_Line_R = new CPropertyLineGuage("Line_R");
 
-        public FormVision_Line(List<FormLayerDisplay> Displays, EventHandler<DockDisplayEventArgs> EventUpdateDisplay)
+        public FormVision_Line(IDisplayManager displayManager, EventHandler<DockDisplayEventArgs> EventUpdateDisplay)
         {
             InitializeComponent();
-            this.displays = Displays;
+            SetDisplayManager(displayManager);
             this.eventUpdateDisplay = EventUpdateDisplay;
-            panelCount = Displays.Count;
+            panelCount = this.displayManager.LayerCount;
             timer1.Enabled = true;
-            timer1.Start();            
+            timer1.Start();
         }
 
         public FormVision_Line()
@@ -44,10 +44,10 @@ namespace OpenVisionLab
         private void InitLayListItem()
         {
             cbLayerList.Items.Clear();
-            for (int i = 0; i < displays.Count; i++) { cbLayerList.Items.Add(displays[i].Text); }
+            for (int i = 0; i < displayManager.LayerCount; i++) { cbLayerList.Items.Add(displayManager.GetLayerTitle(i)); }
             cbLayerList.SelectedIndex = source1_Index;            
             cbLayerList2.Items.Clear();
-            for (int i = 0; i < displays.Count; i++) { cbLayerList2.Items.Add(displays[i].Text); }
+            for (int i = 0; i < displayManager.LayerCount; i++) { cbLayerList2.Items.Add(displayManager.GetLayerTitle(i)); }
             cbLayerList2.SelectedIndex = destination_Index;
         }
 
@@ -68,8 +68,8 @@ namespace OpenVisionLab
             source_1.LoadImageBox(ibSource, false);
             destination.LoadImageBox(ibDestination, false);
 
-            ibSource.Image = (Bitmap)displays[DEFINE.Main].viewer._Ib.Image;            
-            ibDestination.Image = (Bitmap)displays[DEFINE.Main].viewer._Ib.Image;
+            ibSource.Image = GetLayerImage(DEFINE.Main);            
+            ibDestination.Image = GetLayerImage(DEFINE.Main);
             ibSource.ImageChanged += IbSource_ImageChanged;            
             ibDestination.ImageChanged += IbDestination_ImageChanged;
             ibDestination.MouseClick += IbDestination_MouseClick;
@@ -87,7 +87,7 @@ namespace OpenVisionLab
 
         private void IbDestination_MouseClick(object sender, MouseEventArgs e)
         {
-            displays[destination_Index].Activate();
+            displayManager.ActivateLayer(destination_Index);
             this.Focus();
             this.TopLevel = true;
             this.TopMost = true;
@@ -95,7 +95,7 @@ namespace OpenVisionLab
 
         private void IbSource_MouseClick(object sender, MouseEventArgs e)
         {
-            displays[source1_Index].Activate();
+            displayManager.ActivateLayer(source1_Index);
             this.Focus();
             this.TopLevel = true;
             this.TopMost = true;
@@ -104,13 +104,13 @@ namespace OpenVisionLab
         private void IbDestination_ImageChanged(object sender, EventArgs e)
         {
             destination_Index = cbLayerList2.SelectedIndex;
-            displays[destination_Index].ibSource.Image = (Bitmap)ibDestination.Image;
+            SetLayerImage(destination_Index, (Bitmap)ibDestination.Image);
         }
 
         private void IbSource_ImageChanged(object sender, EventArgs e)
         {
             source1_Index = cbLayerList.SelectedIndex;
-            displays[source1_Index].ibSource.Image = (Bitmap)ibSource.Image;
+            SetLayerImage(source1_Index, (Bitmap)ibSource.Image);
         }
 
         private void Form_KeyDown(object sender, KeyEventArgs e)
@@ -142,7 +142,7 @@ namespace OpenVisionLab
 
         private void btnNewPanel_Desty_Click(object sender, EventArgs e)
         {
-            CDisplayManager.CreatePanel();
+            displayManager.CreatePanel();
             InitLayListItem();
             destination_Index = cbLayerList2.Items.Count - 1;
             cbLayerList2.SelectedIndex = destination_Index;
@@ -201,7 +201,7 @@ namespace OpenVisionLab
                         CDrawBitmap.DrawFitLinesInstersectionLines(g, intersectionLine.Item1, intersectionLine.Item2, intersectionLine.Item3);
 
                         stopwatch.Stop();
-                        displays[GetDisplayIndex(cbLayerList2.SelectedItem.ToString())].viewer._Ib.Image = Result;
+                        SetLayerImage(GetDisplayIndex(cbLayerList2.SelectedItem.ToString()), Result);
                         ibDestination.Image = Result;
                         eventUpdateDisplay(null, new DockDisplayEventArgs(Result, GetDisplayIndex(cbLayerList2.SelectedItem.ToString()), stopwatch.Elapsed.TotalSeconds.ToString() + "s"));
                     }
@@ -245,17 +245,17 @@ namespace OpenVisionLab
         private void cbLayerList_SelectedIndexChanged(object sender, EventArgs e)
         {
             source1_Index = cbLayerList.SelectedIndex;
-            source_1.Roi = displays[source1_Index].viewer.Roi;
-            ibSource.Image = (Bitmap)displays[source1_Index].ibSource.Image;
+            source_1.Roi = GetLayerRoi(source1_Index);
+            ibSource.Image = GetLayerImage(source1_Index);
 
-            CDisplayManager.ImageSrc = Lib.Common.CImageConverter.ToMat((Bitmap)displays[source1_Index].ibSource.Image);
+            displayManager.SetImageSrc(Lib.Common.CImageConverter.ToMat(GetLayerImage(source1_Index)));
         }
 
         private void cbLayerList2_SelectedIndexChanged(object sender, EventArgs e)
         {
             destination_Index = cbLayerList2.SelectedIndex;
-            destination.Roi = displays[destination_Index].viewer.Roi;
-            ibDestination.Image = (Bitmap)displays[destination_Index].ibSource.Image;
+            destination.Roi = GetLayerRoi(destination_Index);
+            ibDestination.Image = GetLayerImage(destination_Index);
         }
 
         private void timer1_Tick(object sender, EventArgs e)
@@ -264,29 +264,19 @@ namespace OpenVisionLab
             {
                 if (source1_Index < 0) { return; }
 
-                if(panelCount != displays.Count)
+                if(panelCount != displayManager.LayerCount)
                 {
-                    panelCount = displays.Count;
+                    panelCount = displayManager.LayerCount;
                     InitLayListItem();
                 }
                 
-                if (source_1.Roi != displays[source1_Index].viewer.Roi || source_1.TrainROI != displays[source1_Index].viewer.TrainROI)
-                {
-                    ibSource.Invalidate();
-                }
-                source_1.Roi = displays[source1_Index].viewer.Roi;
-                source_1.TrainROI = displays[source1_Index].viewer.TrainROI;
+                RefreshViewerRoi(source_1, ibSource, source1_Index);
 
-                if (destination.Roi != displays[destination_Index].viewer.Roi || destination.TrainROI != displays[destination_Index].viewer.TrainROI)
-                {
-                    ibDestination.Invalidate();
-                }
-                destination.Roi = displays[destination_Index].viewer.Roi;
-                destination.TrainROI = displays[destination_Index].viewer.TrainROI;
+                RefreshViewerRoi(destination, ibDestination, destination_Index);
 
                 source1_Index = cbLayerList.SelectedIndex;
-                source_1.Roi = displays[source1_Index].viewer.Roi;
-                ibSource.Image = (Bitmap)displays[source1_Index].ibSource.Image;
+                source_1.Roi = GetLayerRoi(source1_Index);
+                ibSource.Image = GetLayerImage(source1_Index);
 
                 cbLayerList2_SelectedIndexChanged(null, null);
             }
@@ -334,7 +324,7 @@ namespace OpenVisionLab
                         CDrawBitmap.DrawCVLineGuage(g, edgeTool);
  
                         stopwatch.Stop();
-                        displays[GetDisplayIndex(cbLayerList2.SelectedItem.ToString())].viewer._Ib.Image = Result;
+                        SetLayerImage(GetDisplayIndex(cbLayerList2.SelectedItem.ToString()), Result);
                         ibDestination.Image = Result;
                         eventUpdateDisplay(null, new DockDisplayEventArgs(Result, GetDisplayIndex(cbLayerList2.SelectedItem.ToString()), stopwatch.Elapsed.TotalSeconds.ToString() + "s"));
                     }                    
@@ -366,7 +356,7 @@ namespace OpenVisionLab
                         CDrawBitmap.DrawInstersectionLines(g, intersectionLine.Item1, intersectionLine.Item2, intersectionLine.Item3);
 
                         stopwatch.Stop();
-                        displays[GetDisplayIndex(cbLayerList2.SelectedItem.ToString())].viewer._Ib.Image = Result;
+                        SetLayerImage(GetDisplayIndex(cbLayerList2.SelectedItem.ToString()), Result);
                         ibDestination.Image = Result;
                         eventUpdateDisplay(null, new DockDisplayEventArgs(Result, GetDisplayIndex(cbLayerList2.SelectedItem.ToString()), stopwatch.Elapsed.TotalSeconds.ToString() + "s"));
                     }

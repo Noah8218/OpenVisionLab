@@ -28,42 +28,42 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>x64</PlatformTarget>
     <OutputPath>..\..\실행폴더\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;Dbug, TEST, _EURESYS, OPENCV, DPS, EGRABBER, DIO_ADLINK, _DIO_AJIN, _MOTION_AJIN, _DIO_TOWERLAMP, HIKVISION, BCR, !NON_MIL</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;TEST;OPENCV</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>x64</PlatformTarget>
     <OutputPath>C:\[0.Project]\3. 슬리터검사비전\실행폴더\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;Release, Dbug, TEST, _EURESYS, OPENCV, DPS, EGRABBER, DIO_ADLINK, _DIO_AJIN, _MOTION_AJIN, _DIO_TOWERLAMP, HIKVISION, BCR, !NON_MIL</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;Release;TEST;OPENCV</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <OutputPath>..\2. 실행경로\HAN-DNG-IFV-001-20210403\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;TEST, NO_CAMERA</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;TEST;OPENCV</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <OutputPath>D:\2. 실행경로\HAN-DNG-IFV-001-20210412\</OutputPath>
-    <DefineConstants>TRACE;TEST, NO_CAMERA</DefineConstants>
+    <DefineConstants>TRACE;TEST;OPENCV</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <OutputPath>..\..\SDIV_IF_SIDEV_0804\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;TEST, MIL, OPENCV, MATROX_SOLIOS, _BASLER_AREA, MATROX, EGRABBER</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;TEST;OPENCV</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>..\PLS_IF_0804\</OutputPath>
-    <DefineConstants>TRACE;TEST, _MIL, OPENCV, _MATROX_SOLIOS, _BASLER_AREA, _MATROX</DefineConstants>
+    <DefineConstants>TRACE;TEST;OPENCV</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Side_2|AnyCPU'">
     <OutputPath>..\ExcutePath\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;TEST, _EURESYS, OPENCV, DPS, EGRABBER, DIO_ADLINK, _DIO_AJIN, _MOTION_AJIN, _DIO_TOWERLAMP, HIKVISION, BCR, NON_MIL</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;TEST;OPENCV</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Side_2|x86'">
@@ -78,9 +78,6 @@
     </Reference>
     <Reference Include="FontAwesome.Sharp">
       <HintPath>dll\FontAwesome.Sharp.dll</HintPath>
-    </Reference>
-    <Reference Include="Matrox.MatroxImagingLibrary">
-      <HintPath>dll\Matrox.MatroxImagingLibrary.dll</HintPath>
     </Reference>
     <Reference Update="System">
       <HintPath>..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.dll</HintPath>
@@ -121,6 +118,8 @@
     <ProjectReference Include="Library\Lib.OpenCV.Blob\Lib.OpenCV.Blob.csproj" />
     <ProjectReference Include="Library\PropertyGrid.Abstractions\PropertyGrid.Abstractions.csproj" />
     <ProjectReference Include="Library\WpfPropertyGridBridge\WpfPropertyGridBridge.csproj" />
+    <ProjectReference Include="Library\OpenVisionLab.Display.Core\OpenVisionLab.Display.Core.csproj" />
+    <ProjectReference Include="Library\OpenVisionLab.ImageSpace.Core\OpenVisionLab.ImageSpace.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Library\Lib.Common\**\*.cs" />
@@ -128,6 +127,8 @@
     <Compile Remove="Library\Lib.OpenCV.Blob\**\*.cs" />
     <Compile Remove="Library\RJControls\**\*.cs" />
     <Compile Remove="Library\OpenVisionLab.Controls.Init\**\*.cs" />
+    <Compile Remove="Library\OpenVisionLab.Display.Core\**\*.cs" />
+    <Compile Remove="Library\OpenVisionLab.ImageSpace.Core\**\*.cs" />
     <Compile Remove="Library\PropertyGrid.Abstractions\**\*.cs" />
     <Compile Remove="Library\WpfPropertyGridBridge\**\*.cs" />
     <EmbeddedResource Remove="Library\Lib.Common\**\*.resx" />
@@ -135,11 +136,14 @@
     <EmbeddedResource Remove="Library\Lib.OpenCV.Blob\**\*.resx" />
     <EmbeddedResource Remove="Library\RJControls\**\*.resx" />
     <EmbeddedResource Remove="Library\OpenVisionLab.Controls.Init\**\*.resx" />
+    <EmbeddedResource Remove="Library\OpenVisionLab.ImageSpace.Core\**\*.resx" />
     <None Remove="Library\Lib.Common\**\*" />
     <None Remove="Library\Lib.OpenCV\**\*" />
     <None Remove="Library\Lib.OpenCV.Blob\**\*" />
     <None Remove="Library\RJControls\**\*" />
     <None Remove="Library\OpenVisionLab.Controls.Init\**\*" />
+    <None Remove="Library\OpenVisionLab.Display.Core\**\*" />
+    <None Remove="Library\OpenVisionLab.ImageSpace.Core\**\*" />
     <None Remove="Library\PropertyGrid.Abstractions\**\*" />
     <None Remove="Library\WpfPropertyGridBridge\**\*" />
   </ItemGroup>
@@ -169,7 +173,6 @@
     <None Include="Images\user %28256%29.png" />
     <None Include="Images\user%28128%29.png" />
     <Content Include="lens.ico" />
-    <None Include="Images\settings_Gray.png" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />

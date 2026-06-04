@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Drawing;
 using Lib.OpenCV.Blob;
-using Matrox.MatroxImagingLibrary;
 using OpenCvSharp;
 
 namespace OpenVisionLab
@@ -145,55 +144,6 @@ namespace OpenVisionLab
         {
             Rect = rt;
             Mode = strMode;
-        }
-    }
-
-    //public class CognexGrabEventArgs : EventArgs
-    //{
-    //    public Cognex.VisionPro.CogImage8Grey ImageGrab = new Cognex.VisionPro.CogImage8Grey();
-
-    //    public int m_Index;
-
-    //    public CognexGrabEventArgs(Cognex.VisionPro.CogImage8Grey ImageArgs, int nIndex)
-    //    {
-    //        ImageGrab = new Cognex.VisionPro.CogImage8Grey(ImageArgs);
-    //        //(Cognex.VisionPro.CogImage8Grey)ImageArgs.CopyBase(Cognex.VisionPro.CogImageCopyModeConstants.CopyPixels);
-    //        m_Index = nIndex;
-    //    }
-    //}
-
-    public class GrabEventArgs : EventArgs
-    {
-        public Mat ImageGrabColor = new Mat();
-        public Mat ImageGrab = null;
-        public IntPtr ImagePtr = new IntPtr();
-        public MIL_ID m_Buffer;
-        public int m_Index;
-        public double getEncoder = 0;
-
-        public GrabEventArgs(IntPtr ImageArgs, int nIndex)
-        {
-            ImagePtr = ImageArgs;
-            m_Index = nIndex;
-        }
-        public GrabEventArgs(Mat ImageArgs, int nIndex, double getEncoder)
-        {
-            ImageGrab = ImageArgs;
-            m_Index = nIndex;
-            this.getEncoder = getEncoder;   
-        }
-
-        public GrabEventArgs(Mat ImageArgs, Mat Image, int nIndex)
-        {
-            ImageGrabColor = Image.Clone();
-            ImageGrab = ImageArgs.Clone();
-            m_Index = nIndex;
-        }
-
-        public GrabEventArgs(MIL_ID Buffer, int nIndex)
-        {
-            m_Buffer = Buffer;
-            m_Index = nIndex;
         }
     }
 

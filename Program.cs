@@ -1,5 +1,6 @@
 ﻿using Lib.Common;
 using log4net;
+using OpenVisionLab._1._Core;
 using RJCodeUI_M1;
 using RJCodeUI_M1.Settings;
 using System;
@@ -15,8 +16,6 @@ namespace OpenVisionLab
 {
     static class Program
     {
-        public static Form MainForm;//Gets or sets the primary form of the application        
-
         /// <summary>
         /// 해당 애플리케이션의 주 진입점입니다.
         /// </summary>
@@ -57,7 +56,8 @@ namespace OpenVisionLab
                         Application.Run(formInit);
                     });
 
-                    Application.Run(new FormMetroFrame(formInit));
+                    ApplicationRuntimeContext runtimeContext = ApplicationRuntimeContext.CreateDefault();
+                    Application.Run(new FormMetroFrame(formInit, runtimeContext));
                 }
                 catch (Exception Desc)
                 {

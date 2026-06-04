@@ -7,8 +7,8 @@ using System.Runtime.InteropServices;
 using RJCodeUI_M1.RJControls;
 using System.Collections.Generic;
 using Cyotek.Windows.Forms;
-using WeifenLuo.WinFormsUI.Docking;
 using System.Threading.Tasks;
+using OpenVisionLab._1._Core;
 using static OpenVisionLab.DEFINE;
 using Lib.Common;
 using RJCodeUI_M1.Settings;
@@ -31,8 +31,8 @@ namespace OpenVisionLab
         [DllImport("user32.dll")]
         private static extern IntPtr SendMessage(IntPtr hWnd, int msg, int wParam, int lParam);
 
-        private CGlobal Global = CGlobal.Inst;
-        private DockPanel OperDockPanel;
+        private readonly ApplicationRuntimeContext runtimeContext;
+        private readonly CGlobal Global;
         private Rectangle restoredWindowBounds = Rectangle.Empty;
         private bool isFullScreenLayout = false;
         private Button btnFullScreen;
@@ -53,7 +53,14 @@ namespace OpenVisionLab
         #endregion
 
         public FormMetroFrame(FormInit formInit)
+            : this(formInit, ApplicationRuntimeContext.CreateDefault())
         {
+        }
+
+        public FormMetroFrame(FormInit formInit, ApplicationRuntimeContext runtimeContext)
+        {
+            this.runtimeContext = runtimeContext ?? ApplicationRuntimeContext.CreateDefault();
+            Global = this.runtimeContext.Global;
             this.formInit = formInit;
             InitializeComponent();
             InitWindowBehavior();
@@ -61,8 +68,6 @@ namespace OpenVisionLab
             InitConfig();
             // 프로그램 Load때 마지막에 사용한 레시피를 Load
             if (Global.System.LastRecipe != "" && Global.System.LastRecipe != "\r\n\t") { Global.Recipe.Name = Global.System.LastRecipe; }
-            InitDevice();
-
             btnAuthoriztionName.Text = Global.System.Authorization.ToString();
         }
 
@@ -411,82 +416,6 @@ namespace OpenVisionLab
             return true;
         }
 
-        private void ShowMainForms()
-        {
-            WeifenLuo.WinFormsUI.Docking.DockContent fr;
-            foreach (var form in Forms)
-            {
-                //  DockState.DockLeft : 도킹 방향
-                // CAM_TOP.Pane, DockAlignment.Bottom, 0.5 : 
-                // CAM_TOP 폼에 도킹 
-                // DockAlignment.Bottom => 폼의 하단부분에 도킹
-                // 0.5 => 폼에 사이즈 비율 1:1비율임
-                fr = (form.Value as WeifenLuo.WinFormsUI.Docking.DockContent);
-                switch (form.Key)
-                {
-                    case MAIN_DOCK_FORM.MainSystem:
-                        fr.Show(this.OperDockPanel, DockState.DockLeft);
-                        fr.AutoHidePortion = 500;
-                        break;
-                    case MAIN_DOCK_FORM.Defect:
-                        fr.Show(this.OperDockPanel, DockState.DockRight);
-                        fr.AutoHidePortion = 500;
-                        break;
-                    case MAIN_DOCK_FORM.Graph:
-                        fr.Show(this.OperDockPanel, DockState.DockLeft);
-                        fr.AutoHidePortion = 500;
-                        break;
-                    case MAIN_DOCK_FORM.IO:
-                        fr.Show(this.OperDockPanel, DockState.DockLeftAutoHide);
-                        fr.AutoHidePortion = 1200;
-                        break;
-                    case MAIN_DOCK_FORM.PLC:
-                        fr.Show(this.OperDockPanel, DockState.DockLeftAutoHide);
-                        fr.AutoHidePortion = 1200;
-                        break;
-                    case MAIN_DOCK_FORM.CSV:
-                        fr.Show(this.OperDockPanel, DockState.DockLeftAutoHide);
-                        fr.AutoHidePortion = 700;
-                        break;
-                    case MAIN_DOCK_FORM.SEARCHDB:
-                        fr.Show(this.OperDockPanel, DockState.DockLeftAutoHide);
-                        fr.AutoHidePortion = 720;
-                        break;
-                    case MAIN_DOCK_FORM.LABEL:
-                        fr.Show(this.OperDockPanel, DockState.DockRight);
-                        fr.AutoHidePortion = 500;
-                        break;
-                    case MAIN_DOCK_FORM.LOG:
-                        fr.Show(this.OperDockPanel, DockState.DockBottomAutoHide);
-                        fr.DockState = DockState.DockBottom;
-                        fr.AutoHidePortion = 400;
-                        break;
-                    case MAIN_DOCK_FORM.SUMMARY:
-                        DockContent log = (Forms[MAIN_DOCK_FORM.LOG] as DockContent);
-                        fr.Show(log.Pane, null);
-                        break;
-                    case MAIN_DOCK_FORM.BUTTON:
-                        fr.Show(this.OperDockPanel, DockState.DockBottomAutoHide);
-                        fr.DockState = DockState.DockBottom;
-                        fr.AutoHidePortion = 180;
-                        break;
-                    case MAIN_DOCK_FORM.CAM_TOP:
-                        fr.Show(this.OperDockPanel, DockState.Document);
-                        break;
-                    case MAIN_DOCK_FORM.CAM_BOTTOM:
-                        DockContent CAM_TOP = (Forms[MAIN_DOCK_FORM.CAM_TOP] as DockContent);
-                        fr.Show(CAM_TOP.Pane, DockAlignment.Bottom, 0.5);
-                        break;
-                }
-            }
-            // 텝 활성화
-            fr = (Forms[MAIN_DOCK_FORM.MainSystem] as WeifenLuo.WinFormsUI.Docking.DockContent);
-            fr.Activate();
-
-            fr = (Forms[MAIN_DOCK_FORM.LOG] as WeifenLuo.WinFormsUI.Docking.DockContent);
-            fr.Activate();
-        }
-
         private bool InitEvent()
         {
             try
@@ -514,8 +443,7 @@ namespace OpenVisionLab
                 CUtil.InitDirectory("TEST");
                 CUtil.InitDirectory("CAPTURE");
                 CUtil.InitDirectory("CONFIG");
-                CUtil.InitDirectory("CONFIG\\DEVICE");
-                CUtil.InitDirectory("RECIPE");
+                RecipeWorkspaceService.EnsureRoot();
                 CLOG.NORMAL($"[OK] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}");
             }
             catch (Exception Desc)
@@ -531,7 +459,7 @@ namespace OpenVisionLab
         {
             try
             {
-                if (FrmVision == null) FrmVision = new FormTeachingVision();
+                if (FrmVision == null) FrmVision = new FormTeachingVision(runtimeContext);
 
                 FrmVision.FormBorderStyle = FormBorderStyle.None;
                 FrmVision.ControlBox = false;
@@ -555,68 +483,16 @@ namespace OpenVisionLab
             return true;
         }
 
-        private bool InitDevice()
-        {
-            try
-            {
-                Global.Device = Global.Device.LoadConfig();
-                Global.Device.Init();
-
-                CLOG.NORMAL($"[OK] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}");
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-                return false;
-            }
-
-            return true;
-        }
-
         #endregion
 
         #region CALL BACK   
-        private void OnGrabEnd(object sender, GrabEventArgs e)
-        {
-            this.UIThreadBeginInvoke(() =>
-            {
-                try
-                {
-                    if (Global.System.Menu == CSystem.MENU.MAIN)
-                    {
-                        if (Global.System.Mode == CSystem.MODE.AUTO)
-                        {
-                            // Grab 완료후 현재 측정한 엔코더값을                             
-                            Global.Data.Total_Encoder = (e.getEncoder + Global.Data.RealTimeEncoder);
-                            CGlobal.Inst.Data.GrabQueue.Enqueue(new CGrabBuffer(e.ImageGrab.Clone(), e.m_Index, Global.Data.Total_Encoder, false));
-                        }
-                        else
-                        {
-                            if (!COpenCVHelper.IsImageEmpty(e.ImageGrab)) { Global.Device.CAMERAS[e.m_Index].ImageManager._Ib.Image = Lib.Common.CImageConverter.ToBitmap(e.ImageGrab); }
-                        }
-                        //if (!CUtil.IsImageEmpty(e.ImageGrab)) { Global.Device.CAMERAS[e.m_Index].ImageManager._Ib.Image = Lib.Common.CImageConverter.ToBitmap(e.ImageGrab); }
-                        GC.Collect();
-                    }
-                }
-                catch (Exception Desc)
-                {
-                    CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-                }
-            });
-        }
-
         private void OnChangedRecipe(object sender, EventArgs e)
         {
             this.UIThreadInvoke(() =>
             {
                 try
                 {
-                    CUtil.InitDirectory("RECIPE");
-                    CUtil.InitDirectory($"RECIPE\\{Global.Recipe.Name}\\VISION");
-                    CUtil.InitDirectory($"RECIPE\\{Global.Recipe.Name}\\DEVICE");
-                    CUtil.InitDirectory($"RECIPE\\{Global.Recipe.Name}\\MOTION");
-                    CUtil.InitDirectory($"RECIPE\\{Global.Recipe.Name}\\GRAPH");
-                    CUtil.InitDirectory($"RECIPE\\{Global.Recipe.Name}\\PATTERN");
+                    RecipeWorkspaceService.EnsureVisionWorkspace(Global.Recipe.Name);
                 }
                 catch (Exception Desc)
                 {
@@ -748,7 +624,6 @@ namespace OpenVisionLab
             {
                 if (CCommon.ShowdialogMessageBox("EXIT", "DO YOU WANT TO EXIT?", FormMessageBox.MESSAGEBOX_TYPE.Stop))
                 {
-                    Global.Data.RealTimeEncoder = Global.Data.Total_Encoder;
                     Global.Data.SaveConfig(Global.Recipe.Name);
 
                     Global.Close();

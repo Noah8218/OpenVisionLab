@@ -4,24 +4,28 @@ using Lib.Common;
 using Lib.OpenCV;
 using OpenCvSharp;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Documents;
 
 namespace OpenVisionLab._2._Common
 {
-    public static class CWpgEvent
+    public sealed class CWpgEvent
     {
-        public static void  Wpg_SelectedObjectsChanged(object sender, EventArgs e)
+        private readonly Func<IDisplayManager> displayManagerAccessor;
+
+        public CWpgEvent(Func<IDisplayManager> displayManagerAccessor)
+        {
+            this.displayManagerAccessor = displayManagerAccessor ?? (() => DisplayManagerService.Default);
+        }
+
+        private IDisplayManager DisplayManager => displayManagerAccessor() ?? DisplayManagerService.Default;
+
+        public void Wpg_SelectedObjectsChanged(object sender, EventArgs e)
         {
             Wpg_PropertyValueChanged(sender, null);
         }
 
-        public static void Wpg_PropertyValueChanged(object sender, System.Windows.Controls.WpfPropertyGrid.PropertyValueChangedEventArgs e)
+        public void Wpg_PropertyValueChanged(object sender, System.Windows.Controls.WpfPropertyGrid.PropertyValueChangedEventArgs e)
         {
             try
             {
@@ -191,26 +195,26 @@ namespace OpenVisionLab._2._Common
             }        
         }
 
-        private static void RunThreshold(COpenCVPropertyBase editor, double value)
+        private void RunThreshold(COpenCVPropertyBase editor, double value)
         {
-            if (COpenCVHelper.IsImageEmpty(CDisplayManager.ImageSrc)) return;
+            if (COpenCVHelper.IsImageEmpty(DisplayManager.GetImageSrc())) return;
 
-            using (Mat imageSrc = CDisplayManager.SelecteItem != DEFINE.Threshold ? CDisplayManager.ImageSrc.Clone() : Lib.Common.CImageConverter.ToMat((Bitmap)CDisplayManager.Displays[CDisplayManager.FindIndex("Main")].viewer._Ib.Image).Clone())
+            using (Mat imageSrc = DisplayManager.SelectedItem != DEFINE.Threshold ? DisplayManager.GetImageSrc().Clone() : Lib.Common.CImageConverter.ToMat(DisplayManager.GetLayerImage("Main")).Clone())
             {
                 Cv2.Threshold(imageSrc, imageSrc, (int)value, 255, CUtil.ParseEnum<ThresholdTypes>(editor.THRESHOLD_TYPES.ToString()));
-                CDisplayManager.CreateLayerDisplay(Lib.Common.CImageConverter.ToBitmap(imageSrc), DEFINE.Threshold, false);
+                DisplayManager.CreateLayerDisplay(Lib.Common.CImageConverter.ToBitmap(imageSrc), DEFINE.Threshold, false);
             }
         }
 
-        private static void RunAdaptiveThreshold(COpenCVPropertyBase editor, double value)
+        private void RunAdaptiveThreshold(COpenCVPropertyBase editor, double value)
         {
-            if (COpenCVHelper.IsImageEmpty(CDisplayManager.ImageSrc)) return;
+            if (COpenCVHelper.IsImageEmpty(DisplayManager.GetImageSrc())) return;
 
-            using (Mat imageSrc = CDisplayManager.SelecteItem != nameof(DEFINE.AdaptiveThreshold) ? CDisplayManager.ImageSrc.Clone() : Lib.Common.CImageConverter.ToMat((Bitmap)CDisplayManager.Displays[CDisplayManager.FindIndex("Main")].viewer._Ib.Image).Clone())
+            using (Mat imageSrc = DisplayManager.SelectedItem != nameof(DEFINE.AdaptiveThreshold) ? DisplayManager.GetImageSrc().Clone() : Lib.Common.CImageConverter.ToMat(DisplayManager.GetLayerImage("Main")).Clone())
             {
                 COpenCVHelper.SetImageChannel1(imageSrc);
                 Cv2.AdaptiveThreshold(imageSrc, imageSrc, (int)value, editor.ADAPTIVE_THRESHOLD_ALGORITHM, editor.ADAPTIVE_THRESHOLD_TYPES, editor.BlockSize, editor.Weight);
-                CDisplayManager.CreateLayerDisplay(Lib.Common.CImageConverter.ToBitmap(imageSrc), nameof(DEFINE.AdaptiveThreshold), false);
+                DisplayManager.CreateLayerDisplay(Lib.Common.CImageConverter.ToBitmap(imageSrc), nameof(DEFINE.AdaptiveThreshold), false);
             }
         }
     }

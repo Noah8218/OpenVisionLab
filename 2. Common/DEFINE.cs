@@ -69,10 +69,6 @@ namespace OpenVisionLab
         public const string ALARM_CODE_VISION_SOURCE_EMPTY = "620";
         public const string ALARM_CODE_VISION_TEMPLATE_EMPTY = "630";
 
-        //BCR 700~
-        public const string ALARM_TOP_COVER_BCR_READ_FAIL = "700";
-        public const string ALARM_METALTRAY_BCR_READ_FAIL = "710";
-
         //Work Done Buffer 800~
         public const string ALARM_WORK_DONE_BUFFER = "800";
 

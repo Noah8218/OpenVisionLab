@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OpenVisionLab.ImageSpace.Core\OpenVisionLab.ImageSpace.Core.csproj" />
+
+    <PackageReference Include="System.Drawing.Common" Version="8.0.27" />
+
+    <Reference Include="OpenCvSharp">
+      <HintPath>..\Lib.Common\DLL\OpenCvSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

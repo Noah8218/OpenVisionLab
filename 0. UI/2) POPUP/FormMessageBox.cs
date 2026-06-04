@@ -172,11 +172,11 @@ namespace OpenVisionLab
 
         private Point mousePoint;
 
-        private bool Click = false;
+        private bool isDragging = false;
 
         private void form_MouseDown(object sender, MouseEventArgs e)
         {
-            Click = true;
+            isDragging = true;
             mousePoint = new Point(e.X, e.Y);
         }
 
@@ -185,7 +185,7 @@ namespace OpenVisionLab
             if ((e.Button & MouseButtons.Left) == MouseButtons.Left)
             {
                 //if (mousePoint.X == 0 || mousePoint.Y == 0) { return; }
-                if (!Click) { return; }
+                if (!isDragging) { return; }
 
                 Location = new Point(this.Left - (mousePoint.X - e.X),
                     this.Top - (mousePoint.Y - e.Y));
@@ -194,7 +194,7 @@ namespace OpenVisionLab
 
         private void form_MouseUp(object sender, MouseEventArgs e)
         {
-            Click = false;
+            isDragging = false;
         }
 
         private void timerRefresh_Tick(object sender, EventArgs e)

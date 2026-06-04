@@ -33,11 +33,11 @@ namespace OpenVisionLab
 
             string strResult = "";
             Random rand = new Random();
-            string strRandomChar = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM0123456789"; //랜덤으로 들어갈 문자 및 숫자 
+            string strRandomChar = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM0123456789"; //�������� �� ���� �� ���� 
 
             StringBuilder rs = new StringBuilder();
 
-            //매개변수로 받은 numLength만큼 데이터를 가져 올 수 있습니다.
+            //�Ű������� ���� numLength��ŭ �����͸� ���� �� �� �ֽ��ϴ�.
             for (int i = 0; i < numLength; i++)
             {
                 rs.Append(strRandomChar[(int)(rand.NextDouble() * strRandomChar.Length)]);

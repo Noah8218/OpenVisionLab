@@ -6,24 +6,41 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing.Design;
 using System.Drawing;
-using System.Globalization;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms.Design;
 using System.Windows.Forms;
 using Lib.Common;
 using System.Windows.Controls.WpfPropertyGrid;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Controls.WpfPropertyGrid.Controls;
 
 namespace OpenVisionLab
 {
     public static class CPropertyGridEditor
     {
+        private static readonly PropertyGridEditorRuntime runtime = new PropertyGridEditorRuntime(new PropertyGridImageEditorService(() => DisplayManagerService.Default));
+
+        public static IDisplayManager RuntimeContext
+        {
+            get => runtime.ImageEditorService.RuntimeContext;
+            set => runtime.ImageEditorService.RuntimeContext = value;
+        }
+
+        public static void SetRuntimeContext(Func<IDisplayManager> contextAccessor)
+        {
+            runtime.SetRuntimeContext(contextAccessor);
+        }
+
+        public static void SetRecipeNameContext(Func<string> recipeNameAccessor)
+        {
+            runtime.SetRecipeNameContext(recipeNameAccessor);
+        }
+
+        internal static void SetImageEditorService(IPropertyGridImageEditorService service)
+        {
+            runtime.SetImageEditorService(service);
+        }
+
         public static void ChangeBrowsability(object pThis, string pProperty, bool pBrowsable)
         {
             PropertyDescriptor pdDescriptor = TypeDescriptor.GetProperties(pThis.GetType())[pProperty];
@@ -42,7 +59,7 @@ namespace OpenVisionLab
             {
                 IWindowsFormsEditorService svc = provider.GetService(typeof(IWindowsFormsEditorService)) as IWindowsFormsEditorService;
                 OpenFileDialog ofd = new OpenFileDialog();
-                ofd.InitialDirectory = System.Windows.Forms.Application.StartupPath + "\\RECIPE\\" + CGlobal.Inst.Recipe.Name + "\\Template";
+                ofd.InitialDirectory = RecipeWorkspaceService.GetTemplateDirectory(runtime.RecipeNameAccessor());
                 string strFilePath = "";
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
@@ -67,7 +84,8 @@ namespace OpenVisionLab
                 Rectangle r = new Rectangle(rect.X, rect.Y, rect.Width, rect.Height);
 
                 IWindowsFormsEditorService svc = provider.GetService(typeof(IWindowsFormsEditorService)) as IWindowsFormsEditorService;
-                FormImageEditView FrmImageEdit = new FormImageEditView(Lib.Common.CImageConverter.ToBitmap(CDisplayManager.ImageSrc), r, "ROI");
+                Mat sourceImage = runtime.ImageEditorService.GetSourceImage();
+                FormImageEditView FrmImageEdit = runtime.ImageEditorService.CreateImageEditView(sourceImage, r, "ROI");
                 if (FrmImageEdit.ShowDialog() == DialogResult.OK)
                 {
                     value = FrmImageEdit.SelectedRegion;
@@ -123,7 +141,8 @@ namespace OpenVisionLab
             public override object EditValue(ITypeDescriptorContext context, System.IServiceProvider provider, object value)
             {
                 IWindowsFormsEditorService svc = provider.GetService(typeof(IWindowsFormsEditorService)) as IWindowsFormsEditorService;
-                FormImageEditView FrmImageEdit = new FormImageEditView(Lib.Common.CImageConverter.ToBitmap(CDisplayManager.ImageSrc), (List<OpenCvSharp.Rect>)value, "MULTI_ROI");
+                Mat sourceImage = runtime.ImageEditorService.GetSourceImage();
+                FormImageEditView FrmImageEdit = runtime.ImageEditorService.CreateImageEditView(sourceImage, (List<OpenCvSharp.Rect>)value, "MULTI_ROI");
                 if (FrmImageEdit.ShowDialog() == DialogResult.OK)
                 {
                     value = FrmImageEdit.SelectedRegions;
@@ -131,25 +150,6 @@ namespace OpenVisionLab
 
                 return value; // can also replace the wrapper object here
             }
-
-            //public MULTIROIEditor(Type type) : base(type) { }
-
-            //public override object EditValue(ITypeDescriptorContext context, IServiceProvider provider, object value)
-            //{
-            //    object result = base.EditValue(context, provider, value);
-
-            //                IWindowsFormsEditorService svc = provider.GetService(typeof(IWindowsFormsEditorService)) as IWindowsFormsEditorService;
-            //    FormImageEditView FrmImageEdit = new FormImageEditView(Lib.Common.CImageConverter.ToBitmap(CDisplayManager.ImageSrc), (List<Rect>)value, "MULTI_ROI");
-            //    if (FrmImageEdit.ShowDialog() == DialogResult.OK)
-            //    {
-            //        value = FrmImageEdit.SelectedRegion;
-            //    }
-
-            //    // assign the temporary collection from the UI to the property
-            //    //((ClassContainingStuffProperty)context.Instance).Stuff = (List<SomeType>)result;
-
-            //    return result;
-            //}
         }
 
         public class MatchEditor : UITypeEditor
@@ -161,13 +161,11 @@ namespace OpenVisionLab
             public override object EditValue(ITypeDescriptorContext context, System.IServiceProvider provider, object value)
             {
                 IWindowsFormsEditorService svc = provider.GetService(typeof(IWindowsFormsEditorService)) as IWindowsFormsEditorService;
-                FormImageEditView FrmImageEdit = new FormImageEditView(Lib.Common.CImageConverter.ToBitmap(CDisplayManager.ImageSrc), new Rectangle(), "TRAIN");
+                Mat sourceImage = runtime.ImageEditorService.GetSourceImage();
+                FormImageEditView FrmImageEdit = runtime.ImageEditorService.CreateImageEditView(sourceImage, new Rectangle(), "TRAIN");
                 if (FrmImageEdit.ShowDialog() == DialogResult.OK)
                 {
-                    CUtil.InitDirectory($"RECIPE\\{CGlobal.Inst.Recipe.Name}\\PATTERN");
-                    string Path = System.Windows.Forms.Application.StartupPath + $"\\RECIPE\\{CGlobal.Inst.Recipe.Name}\\PATTERN\\{DateTime.Now.ToString("yyyyMMdd_HHmmss")}.bmp";
-                    Mat ImageTemplate = CDisplayManager.ImageSrc.SubMat(FrmImageEdit.SelectedRegion).Clone();
-                    Cv2.ImWrite(Path, ImageTemplate);
+                    string Path = runtime.ImageEditorService.SaveTemplateImage(sourceImage, FrmImageEdit.SelectedRegion);
 
                     value = Path;
                 }
@@ -216,13 +214,11 @@ namespace OpenVisionLab
                 if (propertyValue == null) return;
                 if (propertyValue.ParentProperty.IsReadOnly) return;
 
-                FormImageEditView FrmImageEdit = new FormImageEditView(Lib.Common.CImageConverter.ToBitmap(CDisplayManager.ImageSrc), new Rectangle(), "TRAIN");
+                Mat sourceImage = runtime.ImageEditorService.GetSourceImage();
+                FormImageEditView FrmImageEdit = runtime.ImageEditorService.CreateImageEditView(sourceImage, new Rectangle(), "TRAIN");
                 if (FrmImageEdit.ShowDialog() == DialogResult.OK)
                 {
-                    CUtil.InitDirectory($"RECIPE\\{CGlobal.Inst.Recipe.Name}\\PATTERN");
-                    string Path = System.Windows.Forms.Application.StartupPath + $"\\RECIPE\\{CGlobal.Inst.Recipe.Name}\\PATTERN\\{DateTime.Now.ToString("yyyyMMdd_HHmmss")}.bmp";
-                    Mat ImageTemplate = CDisplayManager.ImageSrc.SubMat(FrmImageEdit.SelectedRegion).Clone();
-                    Cv2.ImWrite(Path, ImageTemplate);
+                    string Path = runtime.ImageEditorService.SaveTemplateImage(sourceImage, FrmImageEdit.SelectedRegion);
 
                     propertyValue.StringValue = Path;
                 }
@@ -244,7 +240,8 @@ namespace OpenVisionLab
                 OpenCvSharp.Rect rect = (OpenCvSharp.Rect)propertyValue.Value;
                 Rectangle r = new Rectangle(rect.X, rect.Y, rect.Width, rect.Height);
                 
-                FormImageEditView FrmImageEdit = new FormImageEditView(Lib.Common.CImageConverter.ToBitmap(CDisplayManager.ImageSrc), r, "ROI");
+                Mat sourceImage = runtime.ImageEditorService.GetSourceImage();
+                FormImageEditView FrmImageEdit = runtime.ImageEditorService.CreateImageEditView(sourceImage, r, "ROI");
                 if (FrmImageEdit.ShowDialog() == DialogResult.OK)
                 {
                     propertyValue.Value = FrmImageEdit.SelectedRegion;
@@ -264,7 +261,8 @@ namespace OpenVisionLab
                 if (propertyValue == null) return;
                 if (propertyValue.ParentProperty.IsReadOnly) return;
 
-                FormImageEditView FrmImageEdit = new FormImageEditView(Lib.Common.CImageConverter.ToBitmap(CDisplayManager.ImageSrc), (List<OpenCvSharp.Rect>)propertyValue.Value, "MULTI_ROI");
+                Mat sourceImage = runtime.ImageEditorService.GetSourceImage();
+                FormImageEditView FrmImageEdit = runtime.ImageEditorService.CreateImageEditView(sourceImage, (List<OpenCvSharp.Rect>)propertyValue.Value, "MULTI_ROI");
                 if (FrmImageEdit.ShowDialog() == DialogResult.OK)
                 {
                     propertyValue.Value = FrmImageEdit.SelectedRegions;

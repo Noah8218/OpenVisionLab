@@ -10,19 +10,6 @@ namespace OpenVisionLab
 {
     public partial class FormImageCompare : RJCodeUI_M1.RJForms.RJChildForm
     {
-        private int m_nWidth = 0;
-        public int Width
-        {
-            get => m_nWidth;
-            set => m_nWidth = value;
-        }
-
-        private int m_nHeight = 0;
-        public int Height
-        {
-            get => m_nHeight;
-            set => m_nHeight = value;
-        }
         private float m_fImageScale { get; set; } = 5;
 
         public CViewer ImageView = new CViewer();
@@ -181,8 +168,6 @@ namespace OpenVisionLab
                 ibSource.Refresh();
             }
         }
-        bool bZoom = false;
-
         private void ZoomInImage(ImageBox ImageBox)
         {
             ImageBox.ZoomIn();

@@ -67,42 +67,23 @@ namespace OpenVisionLab._2._Common
                 CDefectList cDefectList = new CDefectList();
                 cDefectList.No = i + 1;
 
-                // 방향에 따라서 Y축 값이 바뀜
-                if (CGlobal.Inst.Device.CAMERAS[cam_Index].Property.USE_ROTATE)
-                {
-                    switch (CGlobal.Inst.Device.CAMERAS[cam_Index].Property.ROTATE)
-                    {
-                        case OpenCvSharp.RotateFlags.Rotate90Counterclockwise:
-                            cDefectList.CenterDistY = Math.Truncate(100 * (cResultBlobs[i].Center.Y * CGlobal.Inst.Data.SETTING.EncoderPermm)) / 100;
-                            break;
-                        case OpenCvSharp.RotateFlags.Rotate90Clockwise:
-                            cDefectList.CenterDistY = Math.Truncate(100 * (cResultBlobs[i].Center.Y * CGlobal.Inst.Data.SETTING.EncoderPermm)) / 100;
-                            break;
-                        case OpenCvSharp.RotateFlags.Rotate180:
-                            cDefectList.CenterDistY = Math.Truncate(100 * ((ImageH - cResultBlobs[i].Center.Y) * CGlobal.Inst.Data.SETTING.EncoderPermm)) / 100;
-                            break;
-                    }
-                }
-                else { cDefectList.CenterDistY = Math.Truncate(100 * (cResultBlobs[i].Center.Y * CGlobal.Inst.Data.SETTING.EncoderPermm)) / 100; }               
+                cDefectList.CenterDistY = TruncateTo2(cResultBlobs[i].Center.Y);
                 //cDefectList.Reel_No = cResultBlobs[i].ReelIndex + 1;
                 //cDefectList.Defect_Type = cResultBlobs[i].defectType.ToString();
-                cDefectList.Pos_X = Math.Truncate(100 * (cResultBlobs[i].Bounding.X * CGlobal.Inst.Device.CAMERAS[cam_Index].Property.PIXELPERMM)) / 100;
-                cDefectList.Size_X = Math.Truncate(100 * (cResultBlobs[i].Bounding.Width * CGlobal.Inst.Device.CAMERAS[cam_Index].Property.PIXELPERMM)) / 100;
-                cDefectList.Size_Y = Math.Truncate(100 * (cResultBlobs[i].Bounding.Height * CGlobal.Inst.Device.CAMERAS[cam_Index].Property.PIXELPERMM)) / 100;
-                switch(cam_Index)
-                {
-                    case DEFINE.CAM_1:
-                        cDefectList.CAM = "A";
-                        break;
-                    case DEFINE.CAM_2:
-                        cDefectList.CAM = "B";
-                        break;
-                }
+                cDefectList.Pos_X = TruncateTo2(cResultBlobs[i].Bounding.X);
+                cDefectList.Size_X = TruncateTo2(cResultBlobs[i].Bounding.Width);
+                cDefectList.Size_Y = TruncateTo2(cResultBlobs[i].Bounding.Height);
+                cDefectList.CAM = $"Camera {cam_Index + 1}";
                 cDefectList.Bounding = cResultBlobs[i].Bounding;
                 list.Add(cDefectList);
             }
 
             return list;
+        }
+
+        private static double TruncateTo2(double value)
+        {
+            return Math.Truncate(100.0 * value) / 100.0;
         }
     }
 }

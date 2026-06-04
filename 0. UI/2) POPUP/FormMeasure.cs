@@ -105,7 +105,7 @@ namespace OpenVisionLab
 
                 ibSource.Image = m_ImageDisplay;                
             }
-            catch (Exception Desc)
+            catch
             {
                // CLog.Error( "[FAILED] {0}==>{1} Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
             }
@@ -210,7 +210,7 @@ namespace OpenVisionLab
 
                 //ILogger.Add(LOG_TYPE.SYSTEM, $"[OK] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}");
             }
-            catch (Exception Desc)
+            catch
             {
               //  CLog.Error( "[FAILED] {0}==>{1} Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
             }
@@ -427,7 +427,7 @@ namespace OpenVisionLab
                     }
                 }
             }
-            catch (Exception Desc)
+            catch
             {
               //  CLog.Error( "[FAILED] {0}==>{1} Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
             }
@@ -548,9 +548,6 @@ namespace OpenVisionLab
             Graphics g = ibSource.CreateGraphics();
 
             //g.Clear(Color.Transparent);
-
-            System.Drawing.Point StartPoint = new System.Drawing.Point();
-            System.Drawing.Point EndPoint = new System.Drawing.Point();
 
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.DrawLine(Pens.Red,

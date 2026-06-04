@@ -1,10 +1,6 @@
 ﻿using System;
-using System.IO;
-using System.Windows.Forms;
 using System.Reflection;
-using System.Xml;
 using System.Xml.Serialization;
-using System.Threading.Tasks;
 using Lib.Common;
 
 namespace OpenVisionLab
@@ -35,11 +31,12 @@ namespace OpenVisionLab
         //[XmlArray("HeadUseInfos")]
         //[XmlArrayItem("HeadUseInfo")]
 
-        [XmlIgnore] private const string RECIPE_DIRECTORY = "RECIPE";
-
         [XmlIgnore] private string m_strName = "";
 
         [XmlIgnore] private string m_strNamePrev = "";
+        [XmlIgnore] private Func<CData> dataAccessor;
+        [XmlIgnore] private Action<CData> dataSetter;
+        [XmlIgnore] private Func<VisionToolRepository> visionToolAccessor;
 
         [XmlIgnore]
         public string Name
@@ -47,40 +44,35 @@ namespace OpenVisionLab
             get { return m_strName; }
             set
             {
-                Task LoadToolsTask = null;
-                if (m_strName != value)
+                string recipeName = value ?? string.Empty;
+                if (m_strName == recipeName)
                 {
-                    m_strNamePrev = m_strName;
-                    m_strName = value;
-
-                    try
-                    {
-                        ModelName = Name.Substring(0, Name.Length - 3);
-                        ModelNo = Name.Substring(Name.Length - 3);
-                    }
-                    catch { }
-
-                    CUtil.InitDirectory($"RECIPE\\{m_strName}\\VISION");
-                    CUtil.InitDirectory($"RECIPE\\{m_strName}\\DEVICE");
-                    CUtil.InitDirectory($"RECIPE\\{m_strName}\\MOTION");
-
-                    LoadToolsTask = Task.Run(() =>
-                    {
-                        LoadTools();
-                    });
+                    return;
                 }
 
-                if (m_strName != "")
-                {
-                    Task.WaitAll(LoadToolsTask);
-                    InitDirectory(m_strName);
+                m_strNamePrev = m_strName;
+                m_strName = recipeName;
+                UpdateModelInfo();
 
-                    if (EventChagedRecipe != null) { EventChagedRecipe(null, null); }                  
-                }               
+                if (string.IsNullOrWhiteSpace(m_strName))
+                {
+                    return;
+                }
+
+                RecipeWorkspaceService.EnsureVisionWorkspace(m_strName);
+                LoadTools();
+                EventChagedRecipe?.Invoke(this, EventArgs.Empty);
             }
         }
 
-        public CRecipe() { }        
+        public CRecipe() { }
+
+        public void SetRuntime(Func<CData> dataAccessor, Action<CData> dataSetter, Func<VisionToolRepository> visionToolAccessor)
+        {
+            this.dataAccessor = dataAccessor ?? this.dataAccessor;
+            this.dataSetter = dataSetter ?? this.dataSetter;
+            this.visionToolAccessor = visionToolAccessor ?? this.visionToolAccessor;
+        }
 
         public string ModelNo { get; set; } = "";
         public string ModelName { get; set; } = "";
@@ -89,9 +81,8 @@ namespace OpenVisionLab
         {
             try
             {                
-                CVisionTools.LoadTools(Name);
-                CGlobal.Inst.Device.LoadDevices(Name);
-                CGlobal.Inst.Data = CGlobal.Inst.Data.LoadConfig(Name);
+                GetVisionTools().LoadTools(Name);
+                dataSetter(GetData().LoadConfig(Name));
 
                 return true;
             }
@@ -106,8 +97,8 @@ namespace OpenVisionLab
         {
             try
             {                
-                CVisionTools.SaveTools(Name);
-                CGlobal.Inst.Data.SaveConfig(Name);
+                GetVisionTools().SaveTools(Name);
+                GetData().SaveConfig(Name);
                 return true;
             }
             catch (Exception Desc)
@@ -117,25 +108,37 @@ namespace OpenVisionLab
             }
         }
 
-        public static bool InitDirectory(string strRecipeName)
+        private CData GetData()
         {
-            try
+            if (dataAccessor == null)
             {
-                string strRecipePath = Application.StartupPath + "\\" + RECIPE_DIRECTORY + "\\";
-                DirectoryInfo dirRecipe = new DirectoryInfo(strRecipePath);
-                if (dirRecipe.Exists == false) dirRecipe.Create();
-
-                string strRecipeNamePath = Application.StartupPath + "\\" + RECIPE_DIRECTORY + "\\" + strRecipeName;
-                DirectoryInfo dirRecipeName = new DirectoryInfo(strRecipeNamePath);
-                if (dirRecipeName.Exists == false) dirRecipeName.Create();
-
-                return true;
+                throw new InvalidOperationException("Recipe runtime is not configured.");
             }
-            catch (Exception Desc)
+
+            return dataAccessor();
+        }
+
+        private VisionToolRepository GetVisionTools()
+        {
+            if (visionToolAccessor == null)
             {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-                return false;
+                throw new InvalidOperationException("Vision tool runtime is not configured.");
             }
-        }        
+
+            return visionToolAccessor();
+        }
+
+        private void UpdateModelInfo()
+        {
+            if (m_strName.Length < 3)
+            {
+                ModelName = m_strName;
+                ModelNo = string.Empty;
+                return;
+            }
+
+            ModelName = m_strName.Substring(0, m_strName.Length - 3);
+            ModelNo = m_strName.Substring(m_strName.Length - 3);
+        }
     }
 }

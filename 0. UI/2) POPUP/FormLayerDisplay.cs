@@ -24,18 +24,19 @@ namespace OpenVisionLab
 
         public bool ChangeSize { get; set; } = false;        
 
-        public FormLayerDisplay(Bitmap ImageSource, int nIndex, List<FormLayerDisplay> LayerDisplayList, bool UseCloseButton = true, string strTitle = "TEST", bool onlyDragMode = false)
+        public FormLayerDisplay(Bitmap ImageSource, int nIndex, List<FormLayerDisplay> LayerDisplayList, bool UseCloseButton = true, string strTitle = "TEST", bool onlyDragMode = false, IDisplayManager displayManager = null)
         {           
             InitializeComponent();
 
             this.Activated += FormLayerDisplay_Activated;
 
-            viewer.LoadImageBox(ibSource, true, onlyDragMode);
-
             ibSource.MouseMove += IbSource_MouseMove;
 
             if (strTitle != "TEST") { this.Text = strTitle; }
             else { this.Text = "TEST"; }
+
+            viewer.SetDisplayContext(displayManager ?? DisplayManagerService.Default, nIndex, this.Text);
+            viewer.LoadImageBox(ibSource, true, onlyDragMode);
             
             if (UseCloseButton)
             {
@@ -98,8 +99,6 @@ namespace OpenVisionLab
                 //lbXY.Text = string.Format("X,Y[{0},{1}]", ImageView.POSITION.X, ImageView.POSITION.Y);
                 //lbGV.Text = string.Format("GV[{0}]", ImageView.GrayValue);
                 //lbZOOM.Text = string.Format("ZOOM[{0}%]", ImageView.ibSource.Zoom.ToString("F1"));
-
-                //CLog.Info( "{0}", Global.Device.CAMERAS[0].FPS);
             }
             catch (Exception Desc)
             {
@@ -122,10 +121,6 @@ namespace OpenVisionLab
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            //if(this.IsActivated)
-            //{
-            //    CDisplayManager.FocusItem = this.Text;
-            //}
         }
     }
 }
