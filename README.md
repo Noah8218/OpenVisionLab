@@ -1,5 +1,19 @@
+## 개발 환경 및 기술 스택
+
+OpenVisionLab의 메인 실행 프로젝트는 기존 .NET Framework가 아닌 **.NET 8 Windows Desktop (`net8.0-windows`)** 기반으로 마이그레이션되었습니다.
+
+- Language: C#
+- Framework: .NET 8 Windows Desktop
+- UI: Windows Forms / WPF interop
+- Vision Library: OpenCvSharp
+- IDE: Visual Studio 2022
+- Platform: Windows / x64
+
 # 오픈비전 랩 (OpenVision Lab)
 OpenVisionLab은 산업용 머신비전 검사 개발 과정에서 사용되는 Rule-base 알고리즘을 C#과 OpenCvSharp 기반으로 검증하고, ROI·전처리·파라미터 튜닝·결과 시각화를 하나의 UI에서 수행할 수 있도록 만든 비전 검사 테스트 플랫폼입니다.
+
+해당 프로그램을 이용하여 비젼에 대해 많은 분들이 입문하시고 배우시길 소망합니다.
+산엽 현장에서 사용되는 비젼이 '길이 측정, 교차점 검출, 패턴 매칭, Blob, Contour' 만 제대로 익혀도 많은 부분에서 해결하시리라 믿습니다.
 
  - 프로젝트 개요
 길이 측정, 교차점 검출, 패턴 매칭, Blob, Contour 등 다양한 룰베이스 비전 검사 알고리즘을 UI 기반으로 테스트하고 파라미터를 튜닝할 수 있는 검증 툴입니다. 비전 검사 시스템 개발 과정에서 알고리즘의 신뢰성을 빠르게 확보하고, 최적의 파라미터 튜닝에 소요되는 시간을 대폭 단축하기 위해 개발되었습니다.
@@ -34,16 +48,3 @@ Morphology, Filter, Edge Detection (Canny 등), Histogram 처리 등 검사 전 
 
  - 이미지 프로세싱
 <img width="1920" height="1040" alt="비전 테스트 프로그램(룰베이스)_이미지 프로세싱 PNG" src="https://github.com/user-attachments/assets/2c486b55-7bfd-4638-9db2-19a41801284f" />
-
-## 개발 환경 및 기술 스택
-
-OpenVisionLab의 메인 실행 프로젝트는 기존 .NET Framework가 아닌 **.NET 8 Windows Desktop (`net8.0-windows`)** 기반으로 마이그레이션되었습니다.
-
-- Language: C#
-- Framework: .NET 8 Windows Desktop
-- UI: Windows Forms / WPF interop
-- Vision Library: OpenCvSharp
-- IDE: Visual Studio 2022
-- Platform: Windows / x64
-
-일부 기존 .NET Framework 전용 UI 컨트롤 및 레거시 DLL 의존성은 메인 프로젝트와 분리하여 별도 라이브러리 프로젝트로 관리하고 있습니다.
