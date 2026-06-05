@@ -1,4 +1,4 @@
-﻿using Cyotek.Windows.Forms;
+using Cyotek.Windows.Forms;
 
 namespace OpenVisionLab
 {
@@ -39,9 +39,9 @@ namespace OpenVisionLab
             this.ibSource = new Cyotek.Windows.Forms.ImageBox();
             this.ibSourceCopy = new Cyotek.Windows.Forms.ImageBox();
             this.btnLoad = new RJCodeUI_M1.RJControls.RJButton();
-            this.lbGV = new MetroFramework.Controls.MetroLabel();
-            this.lbXY = new MetroFramework.Controls.MetroLabel();
-            this.lbRGB = new MetroFramework.Controls.MetroLabel();
+            this.lbGV = new System.Windows.Forms.Label();
+            this.lbXY = new System.Windows.Forms.Label();
+            this.lbRGB = new System.Windows.Forms.Label();
             this.timePixelData = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -180,8 +180,6 @@ namespace OpenVisionLab
             this.lbGV.BackColor = System.Drawing.Color.White;
             this.lbGV.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.lbGV.Dock = System.Windows.Forms.DockStyle.Left;
-            this.lbGV.FontSize = MetroFramework.MetroLabelSize.Tall;
-            this.lbGV.FontWeight = MetroFramework.MetroLabelWeight.Regular;
             this.lbGV.ForeColor = System.Drawing.Color.Black;
             this.lbGV.Location = new System.Drawing.Point(412, 0);
             this.lbGV.Name = "lbGV";
@@ -189,18 +187,12 @@ namespace OpenVisionLab
             this.lbGV.TabIndex = 900;
             this.lbGV.Text = "GV[0]";
             this.lbGV.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.lbGV.Theme = MetroFramework.MetroThemeStyle.Dark;
-            this.lbGV.UseCustomBackColor = true;
-            this.lbGV.UseCustomForeColor = true;
-            this.lbGV.UseStyleColors = true;
             // 
             // lbXY
             // 
             this.lbXY.BackColor = System.Drawing.Color.White;
             this.lbXY.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.lbXY.Dock = System.Windows.Forms.DockStyle.Left;
-            this.lbXY.FontSize = MetroFramework.MetroLabelSize.Tall;
-            this.lbXY.FontWeight = MetroFramework.MetroLabelWeight.Regular;
             this.lbXY.ForeColor = System.Drawing.Color.Black;
             this.lbXY.Location = new System.Drawing.Point(206, 0);
             this.lbXY.Name = "lbXY";
@@ -208,18 +200,12 @@ namespace OpenVisionLab
             this.lbXY.TabIndex = 899;
             this.lbXY.Text = "X,Y[0,0]";
             this.lbXY.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.lbXY.Theme = MetroFramework.MetroThemeStyle.Dark;
-            this.lbXY.UseCustomBackColor = true;
-            this.lbXY.UseCustomForeColor = true;
-            this.lbXY.UseStyleColors = true;
             // 
             // lbRGB
             // 
             this.lbRGB.BackColor = System.Drawing.Color.White;
             this.lbRGB.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.lbRGB.Dock = System.Windows.Forms.DockStyle.Left;
-            this.lbRGB.FontSize = MetroFramework.MetroLabelSize.Tall;
-            this.lbRGB.FontWeight = MetroFramework.MetroLabelWeight.Regular;
             this.lbRGB.ForeColor = System.Drawing.Color.Black;
             this.lbRGB.Location = new System.Drawing.Point(0, 0);
             this.lbRGB.Name = "lbRGB";
@@ -227,10 +213,6 @@ namespace OpenVisionLab
             this.lbRGB.TabIndex = 896;
             this.lbRGB.Text = "R,G,B[0,0,0]";
             this.lbRGB.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.lbRGB.Theme = MetroFramework.MetroThemeStyle.Dark;
-            this.lbRGB.UseCustomBackColor = true;
-            this.lbRGB.UseCustomForeColor = true;
-            this.lbRGB.UseStyleColors = true;
             // 
             // timePixelData
             // 
@@ -272,13 +254,13 @@ namespace OpenVisionLab
         #endregion
 
         private System.Windows.Forms.SplitContainer splitContainer1;
-        private MetroFramework.Controls.MetroLabel lbRGB;
-        private MetroFramework.Controls.MetroLabel lbXY;
+        private System.Windows.Forms.Label lbRGB;
+        private System.Windows.Forms.Label lbXY;
         private System.Windows.Forms.SplitContainer splitContainer2;
         private ImageBox ibSource;
         private ImageBox ibSourceCopy;
         private RJCodeUI_M1.RJControls.RJButton btnLoad;
-        private MetroFramework.Controls.MetroLabel lbGV;
+        private System.Windows.Forms.Label lbGV;
         private System.Windows.Forms.Timer timePixelData;
         private ImageBox defaultGifAnimator1;
         private ImageBox defaultGifAnimator2;

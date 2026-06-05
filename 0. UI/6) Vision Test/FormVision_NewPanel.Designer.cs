@@ -1,4 +1,4 @@
-﻿namespace OpenVisionLab
+namespace OpenVisionLab
 {
     partial class FormVision_NewPanel
     {
@@ -29,14 +29,12 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.metroStyleManager = new MetroFramework.Components.MetroStyleManager(this.components);
-            this.tbNewPanel = new RJCodeUI_M1.RJControls.RJTextBox();
+                        this.tbNewPanel = new RJCodeUI_M1.RJControls.RJTextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.btnNewCancel = new RJCodeUI_M1.RJControls.RJButton();
             this.btnNewCreate = new RJCodeUI_M1.RJControls.RJButton();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.pnlClientArea.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.metroStyleManager)).BeginInit();
             this.SuspendLayout();
             // 
             // pnlClientArea
@@ -47,11 +45,7 @@
             this.pnlClientArea.Location = new System.Drawing.Point(1, 41);
             this.pnlClientArea.Size = new System.Drawing.Size(398, 138);
             // 
-            // metroStyleManager
             // 
-            this.metroStyleManager.Owner = this;
-            this.metroStyleManager.Style = MetroFramework.MetroColorStyle.Teal;
-            this.metroStyleManager.Theme = MetroFramework.MetroThemeStyle.Dark;
             // 
             // tbNewPanel
             // 
@@ -168,22 +162,18 @@
             this.Controls.Add(this.label1);
             this.Name = "FormVision_NewPanel";
             this.Padding = new System.Windows.Forms.Padding(1);
-            this.Resizable = false;
             this.Text = "New Panel";
             this.Load += new System.EventHandler(this.FormSettings_Camera_Load);
             this.Controls.SetChildIndex(this.pnlClientArea, 0);
             this.Controls.SetChildIndex(this.label1, 0);
             this.Controls.SetChildIndex(this.tbNewPanel, 0);
             this.pnlClientArea.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.metroStyleManager)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
         }
 
         #endregion
-
-        private MetroFramework.Components.MetroStyleManager metroStyleManager;
         private RJCodeUI_M1.RJControls.RJTextBox tbNewPanel;
         private System.Windows.Forms.Label label1;
         private RJCodeUI_M1.RJControls.RJButton btnNewCancel;

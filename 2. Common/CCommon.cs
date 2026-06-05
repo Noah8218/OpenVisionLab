@@ -18,8 +18,14 @@ namespace OpenVisionLab
             try
             {
                 FormMessageBox FrmMessageBox = new FormMessageBox(strHead, strMessage, type);
+                Form owner = GetMessageBoxOwner();
 
                 CLOG.NORMAL($"[{strHead}] ==> {strMessage}");
+
+                if (owner != null)
+                {
+                    return FrmMessageBox.ShowDialog(owner) == DialogResult.OK;
+                }
 
                 if (FrmMessageBox.ShowDialog() == DialogResult.OK) { return true; }
                 else { return false; }
@@ -36,12 +42,20 @@ namespace OpenVisionLab
             try
             {
                 FormMessageBox FrmMessageBox = new FormMessageBox(strHead, strMessage, type);
+                Form owner = GetMessageBoxOwner();
 
                 CLOG.NORMAL($"[{strHead}] ==> {strMessage}");
 
                 FrmMessageBox.UIThreadInvoke(() =>
                 {
-                    FrmMessageBox.Show();//You GUI code here         
+                    if (owner != null)
+                    {
+                        FrmMessageBox.Show(owner);
+                    }
+                    else
+                    {
+                        FrmMessageBox.Show();//You GUI code here
+                    }
                 });
 
                 return true;
@@ -51,6 +65,17 @@ namespace OpenVisionLab
                 CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
                 return false;
             }
+        }
+
+        private static Form GetMessageBoxOwner()
+        {
+            return Application.OpenForms
+                .OfType<FormMetroFrame>()
+                .FirstOrDefault(form => form.Visible && !form.IsDisposed)
+                ?? Form.ActiveForm
+                ?? Application.OpenForms
+                    .Cast<Form>()
+                    .FirstOrDefault(form => form.Visible && !form.IsDisposed && !(form is FormMessageBox));
         }
 
         public static void SetButtonBlue(RJButton rJButton)

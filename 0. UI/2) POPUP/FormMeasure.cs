@@ -1,8 +1,6 @@
-Ôªøusing System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
-using MetroFramework;
-using MetroFramework.Forms;
 using System.Reflection;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -417,7 +415,7 @@ namespace OpenVisionLab
 
                     if (e.KeyCode == Keys.Enter)
                     {
-                        // ROI ÏòÅÏó≠
+                        // ROI øµø™
                         Rectangle rect = new Rectangle((int)ibSource.SelectionRegion.X, (int)ibSource.SelectionRegion.Y, (int)ibSource.SelectionRegion.Width, (int)ibSource.SelectionRegion.Height);
                         
                         //DrawRectangle(rect);
@@ -612,7 +610,7 @@ namespace OpenVisionLab
 
         private void ParameterSaveToolStripMenuItem3_Click(object sender, EventArgs e)
         {
-            // m_Points Î†àÏãúÌîºÎ°ú ÎπºÎ©¥Îê®
+            // m_Points ∑πΩ√««∑Œ ª©∏Èµ 
         }
 
         private void tbPixelPermm_Click(object sender, EventArgs e)

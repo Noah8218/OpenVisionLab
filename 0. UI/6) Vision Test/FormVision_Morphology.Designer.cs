@@ -1,4 +1,4 @@
-﻿using Cyotek.Windows.Forms;
+using Cyotek.Windows.Forms;
 
 namespace OpenVisionLab
 {
@@ -31,8 +31,7 @@ namespace OpenVisionLab
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.metroStyleManager = new MetroFramework.Components.MetroStyleManager(this.components);
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
+                        this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.rdoGradient = new RJCodeUI_M1.RJControls.RJRadioButton();
             this.rdoHitMiss = new RJCodeUI_M1.RJControls.RJRadioButton();
             this.rdoBlackHat = new RJCodeUI_M1.RJControls.RJRadioButton();
@@ -60,7 +59,6 @@ namespace OpenVisionLab
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.btnMorpRun = new RJCodeUI_M1.RJControls.RJButton();
             this.pnlClientArea.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.metroStyleManager)).BeginInit();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -75,11 +73,7 @@ namespace OpenVisionLab
             this.pnlClientArea.Location = new System.Drawing.Point(1, 41);
             this.pnlClientArea.Size = new System.Drawing.Size(828, 331);
             // 
-            // metroStyleManager
             // 
-            this.metroStyleManager.Owner = this;
-            this.metroStyleManager.Style = MetroFramework.MetroColorStyle.Teal;
-            this.metroStyleManager.Theme = MetroFramework.MetroThemeStyle.Dark;
             // 
             // groupBox1
             // 
@@ -567,7 +561,6 @@ namespace OpenVisionLab
             this.MaximizeBox = false;
             this.Name = "FormVision_Morphology";
             this.Padding = new System.Windows.Forms.Padding(1);
-            this.Resizable = false;
             this.Text = "Morphology";
             this.Load += new System.EventHandler(this.FormSettings_Camera_Load);
             this.Controls.SetChildIndex(this.pnlClientArea, 0);
@@ -576,7 +569,6 @@ namespace OpenVisionLab
             this.Controls.SetChildIndex(this.groupBox2, 0);
             this.Controls.SetChildIndex(this.groupBox4, 0);
             this.pnlClientArea.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.metroStyleManager)).EndInit();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
@@ -590,8 +582,6 @@ namespace OpenVisionLab
         }
 
         #endregion
-
-        private MetroFramework.Components.MetroStyleManager metroStyleManager;
         private RJCodeUI_M1.RJControls.RJRadioButton rdoOpen;
         private RJCodeUI_M1.RJControls.RJRadioButton rdoDilate;
         private RJCodeUI_M1.RJControls.RJRadioButton rdoErode;

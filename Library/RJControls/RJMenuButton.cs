@@ -199,7 +199,7 @@ namespace RJCodeUI_M1.RJControls
                 else //If the side menu is collapsed, show the dropdown menu at the top right of the menu button
                     dropdownMenu.Show(this, DropdownMenuPosition.TopRight);
             }
-            catch (Exception Desc)
+            catch
             {
                 //RJMessageBox.Show("An error has occurred\n" + ex.ToString());
             }

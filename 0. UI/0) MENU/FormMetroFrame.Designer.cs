@@ -1,4 +1,4 @@
-Ôªønamespace OpenVisionLab
+namespace OpenVisionLab
 {
     partial class FormMetroFrame
     {
@@ -43,16 +43,17 @@
 			miExit = new FontAwesome.Sharp.IconMenuItem();
 			btnAuthoriztionName = new RJCodeUI_M1.RJControls.RJButton();
 			rjButton2 = new RJCodeUI_M1.RJControls.RJButton();
-			btnCerrar = new System.Windows.Forms.Button();
+			btnCerrar = new FontAwesome.Sharp.IconButton();
+			btnFullScreen = new FontAwesome.Sharp.IconButton();
 			btnAuthoriztion = new RJCodeUI_M1.RJControls.RJButton();
-			btnMinimizar = new System.Windows.Forms.Button();
+			btnMinimizar = new FontAwesome.Sharp.IconButton();
 			rjLabel1 = new RJCodeUI_M1.RJControls.RJLabel();
 			pnMDI = new System.Windows.Forms.Panel();
 			pnStatusBar = new RJCodeUI_M1.RJControls.RJPanel();
-			pgbDriveD = new MetroFramework.Controls.MetroProgressBar();
+			pgbDriveD = new System.Windows.Forms.ProgressBar();
 			lbDriveD = new RJCodeUI_M1.RJControls.RJLabel();
 			lbVersion = new RJCodeUI_M1.RJControls.RJLabel();
-			pgbDriveC = new MetroFramework.Controls.MetroProgressBar();
+			pgbDriveC = new System.Windows.Forms.ProgressBar();
 			lbDriveC = new RJCodeUI_M1.RJControls.RJLabel();
 			panel3 = new System.Windows.Forms.Panel();
 			timerConnection = new System.Windows.Forms.Timer(components);
@@ -104,6 +105,7 @@
 			pnlTitleBar.Controls.Add(btnAuthoriztionName);
 			pnlTitleBar.Controls.Add(rjButton2);
 			pnlTitleBar.Controls.Add(btnCerrar);
+			pnlTitleBar.Controls.Add(btnFullScreen);
 			pnlTitleBar.Controls.Add(btnAuthoriztion);
 			pnlTitleBar.Controls.Add(btnMinimizar);
 			pnlTitleBar.Controls.Add(rjLabel1);
@@ -127,7 +129,7 @@
 			biUserOptions.IconColor = System.Drawing.Color.WhiteSmoke;
 			biUserOptions.IconFont = FontAwesome.Sharp.IconFont.Auto;
 			biUserOptions.IconSize = 40;
-			biUserOptions.Location = new System.Drawing.Point(1746, 4);
+			biUserOptions.Location = new System.Drawing.Point(1707, 7);
 			biUserOptions.Name = "biUserOptions";
 			biUserOptions.Size = new System.Drawing.Size(40, 40);
 			biUserOptions.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
@@ -249,7 +251,7 @@
 			rjButton2.IconColor = System.Drawing.Color.White;
 			rjButton2.IconFont = FontAwesome.Sharp.IconFont.Auto;
 			rjButton2.IconSize = 40;
-			rjButton2.Location = new System.Drawing.Point(1792, 2);
+			rjButton2.Location = new System.Drawing.Point(1753, 5);
 			rjButton2.Name = "rjButton2";
 			rjButton2.Size = new System.Drawing.Size(63, 45);
 			rjButton2.Style = RJCodeUI_M1.RJControls.ControlStyle.Solid;
@@ -262,18 +264,49 @@
 			// 
 			// btnCerrar
 			// 
+			btnCerrar.BackColor = System.Drawing.Color.Transparent;
 			btnCerrar.Cursor = System.Windows.Forms.Cursors.Hand;
 			btnCerrar.FlatAppearance.BorderColor = System.Drawing.Color.White;
 			btnCerrar.FlatAppearance.BorderSize = 0;
 			btnCerrar.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
 			btnCerrar.ForeColor = System.Drawing.Color.White;
-			btnCerrar.Image = (System.Drawing.Image)resources.GetObject("btnCerrar.Image");
+			btnCerrar.IconChar = FontAwesome.Sharp.IconChar.WindowClose;
+			btnCerrar.IconColor = System.Drawing.Color.White;
+			btnCerrar.IconFont = FontAwesome.Sharp.IconFont.Auto;
+			btnCerrar.IconSize = 24;
 			btnCerrar.Location = new System.Drawing.Point(1888, 8);
+			btnCerrar.Margin = new System.Windows.Forms.Padding(0);
+			btnCerrar.MaximumSize = new System.Drawing.Size(30, 30);
+			btnCerrar.MinimumSize = new System.Drawing.Size(30, 30);
 			btnCerrar.Name = "btnCerrar";
 			btnCerrar.Size = new System.Drawing.Size(30, 30);
 			btnCerrar.TabIndex = 2638;
-			btnCerrar.UseVisualStyleBackColor = true;
+			btnCerrar.TabStop = false;
+			btnCerrar.UseVisualStyleBackColor = false;
 			btnCerrar.Click += btnCerrar_Click;
+			// 
+			// btnFullScreen
+			// 
+			btnFullScreen.BackColor = System.Drawing.Color.Transparent;
+			btnFullScreen.Cursor = System.Windows.Forms.Cursors.Hand;
+			btnFullScreen.FlatAppearance.BorderColor = System.Drawing.Color.White;
+			btnFullScreen.FlatAppearance.BorderSize = 0;
+			btnFullScreen.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+			btnFullScreen.ForeColor = System.Drawing.Color.White;
+			btnFullScreen.IconChar = FontAwesome.Sharp.IconChar.WindowMaximize;
+			btnFullScreen.IconColor = System.Drawing.Color.White;
+			btnFullScreen.IconFont = FontAwesome.Sharp.IconFont.Auto;
+			btnFullScreen.IconSize = 24;
+			btnFullScreen.Location = new System.Drawing.Point(1853, 8);
+			btnFullScreen.Margin = new System.Windows.Forms.Padding(0);
+			btnFullScreen.MaximumSize = new System.Drawing.Size(30, 30);
+			btnFullScreen.MinimumSize = new System.Drawing.Size(30, 30);
+			btnFullScreen.Name = "btnFullScreen";
+			btnFullScreen.Size = new System.Drawing.Size(30, 30);
+			btnFullScreen.TabIndex = 2640;
+			btnFullScreen.TabStop = false;
+			btnFullScreen.UseVisualStyleBackColor = false;
+			btnFullScreen.Click += btnFullScreen_Click;
 			// 
 			// btnAuthoriztion
 			// 
@@ -304,17 +337,25 @@
 			// 
 			// btnMinimizar
 			// 
+			btnMinimizar.BackColor = System.Drawing.Color.Transparent;
 			btnMinimizar.Cursor = System.Windows.Forms.Cursors.Hand;
 			btnMinimizar.FlatAppearance.BorderColor = System.Drawing.Color.White;
 			btnMinimizar.FlatAppearance.BorderSize = 0;
 			btnMinimizar.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
 			btnMinimizar.ForeColor = System.Drawing.Color.White;
-			btnMinimizar.Image = (System.Drawing.Image)resources.GetObject("btnMinimizar.Image");
-			btnMinimizar.Location = new System.Drawing.Point(1859, 8);
+			btnMinimizar.IconChar = FontAwesome.Sharp.IconChar.WindowMinimize;
+			btnMinimizar.IconColor = System.Drawing.Color.White;
+			btnMinimizar.IconFont = FontAwesome.Sharp.IconFont.Auto;
+			btnMinimizar.IconSize = 24;
+			btnMinimizar.Location = new System.Drawing.Point(1822, 8);
+			btnMinimizar.Margin = new System.Windows.Forms.Padding(0);
+			btnMinimizar.MaximumSize = new System.Drawing.Size(30, 30);
+			btnMinimizar.MinimumSize = new System.Drawing.Size(30, 30);
 			btnMinimizar.Name = "btnMinimizar";
 			btnMinimizar.Size = new System.Drawing.Size(30, 30);
 			btnMinimizar.TabIndex = 2639;
-			btnMinimizar.UseVisualStyleBackColor = true;
+			btnMinimizar.TabStop = false;
+			btnMinimizar.UseVisualStyleBackColor = false;
 			btnMinimizar.Click += btnMinimizar_Click;
 			// 
 			// rjLabel1
@@ -329,7 +370,7 @@
 			rjLabel1.Size = new System.Drawing.Size(503, 40);
 			rjLabel1.Style = RJCodeUI_M1.RJControls.LabelStyle.Custom;
 			rjLabel1.TabIndex = 2133;
-			rjLabel1.Text = "ÎπÑÏ†Ñ ÌÖåÏä§Ìä∏ ÌîÑÎ°úÍ∑∏Îû®(Î£∞Î≤†Ïù¥Ïä§ Í∏∞Î∞ò)";
+			rjLabel1.Text = "∫Ò¿¸ ≈◊Ω∫∆Æ «¡∑Œ±◊∑•(∑Í∫£¿ÃΩ∫ ±‚π›)";
 			// 
 			// pnMDI
 			// 
@@ -363,9 +404,7 @@
 			pgbDriveD.Location = new System.Drawing.Point(268, 21);
 			pgbDriveD.Name = "pgbDriveD";
 			pgbDriveD.Size = new System.Drawing.Size(218, 10);
-			pgbDriveD.Style = MetroFramework.MetroColorStyle.Lime;
 			pgbDriveD.TabIndex = 2109;
-			pgbDriveD.Theme = MetroFramework.MetroThemeStyle.Dark;
 			// 
 			// lbDriveD
 			// 
@@ -400,9 +439,7 @@
 			pgbDriveC.Location = new System.Drawing.Point(10, 20);
 			pgbDriveC.Name = "pgbDriveC";
 			pgbDriveC.Size = new System.Drawing.Size(218, 10);
-			pgbDriveC.Style = MetroFramework.MetroColorStyle.Lime;
 			pgbDriveC.TabIndex = 2108;
-			pgbDriveC.Theme = MetroFramework.MetroThemeStyle.Dark;
 			// 
 			// lbDriveC
 			// 
@@ -559,11 +596,12 @@
         private FontAwesome.Sharp.IconMenuItem miLogout;
         private FontAwesome.Sharp.IconMenuItem miExit;
         private RJCodeUI_M1.RJControls.RJMenuIcon biUserOptions;
-        private System.Windows.Forms.Button btnCerrar;
-        private System.Windows.Forms.Button btnMinimizar;
-        private MetroFramework.Controls.MetroProgressBar pgbDriveD;
+        private FontAwesome.Sharp.IconButton btnCerrar;
+        private FontAwesome.Sharp.IconButton btnFullScreen;
+        private FontAwesome.Sharp.IconButton btnMinimizar;
+        private System.Windows.Forms.ProgressBar pgbDriveD;
         private RJCodeUI_M1.RJControls.RJLabel lbDriveD;
-        private MetroFramework.Controls.MetroProgressBar pgbDriveC;
+        private System.Windows.Forms.ProgressBar pgbDriveC;
         private RJCodeUI_M1.RJControls.RJLabel lbDriveC;
         private RJCodeUI_M1.RJControls.RJButton btnAuthoriztionName;
         private FontAwesome.Sharp.IconMenuItem iconMenuItem1;

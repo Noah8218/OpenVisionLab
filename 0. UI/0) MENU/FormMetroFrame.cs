@@ -1,4 +1,4 @@
-Ôªøusing System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Reflection;
@@ -24,6 +24,8 @@ namespace OpenVisionLab
         private const int WM_NCLBUTTONDOWN = 0xA1;
         private const int HT_CAPTION = 0x2;
         private const double RestoredWindowRatio = 0.82;
+        private const int TitleBarButtonSize = 30;
+        private const int TitleBarButtonTop = 8;
 
         [DllImport("user32.dll")]
         private static extern bool ReleaseCapture();
@@ -35,7 +37,6 @@ namespace OpenVisionLab
         private readonly CGlobal Global;
         private Rectangle restoredWindowBounds = Rectangle.Empty;
         private bool isFullScreenLayout = false;
-        private Button btnFullScreen;
         private bool titleBarMouseDown = false;
         private bool titleBarDragging = false;
         private bool suppressTitleBarDrag = false;
@@ -66,7 +67,7 @@ namespace OpenVisionLab
             InitWindowBehavior();
             InitEvent();
             InitConfig();
-            // ÌîÑÎ°úÍ∑∏Îû® LoadÎïå ÎßàÏßÄÎßâÏóê ÏÇ¨Ïö©Ìïú Î†àÏãúÌîºÎ•º Load
+            // «¡∑Œ±◊∑• Load∂ß ∏∂¡ˆ∏∑ø° ªÁøÎ«— ∑πΩ√««∏¶ Load
             if (Global.System.LastRecipe != "" && Global.System.LastRecipe != "\r\n\t") { Global.Recipe.Name = Global.System.LastRecipe; }
             btnAuthoriztionName.Text = Global.System.Authorization.ToString();
         }
@@ -89,7 +90,7 @@ namespace OpenVisionLab
             CLOG.NORMAL("Progra");
         }
 
-        private void FormMetroFrame_Shown(object sender, EventArgs e) { formInit.Close = true; }
+        private void FormMetroFrame_Shown(object sender, EventArgs e) { formInit?.OnInitEnd(); }
 
         #region INIT
 
@@ -136,25 +137,6 @@ namespace OpenVisionLab
 
         private void InitFullScreenButton()
         {
-            btnFullScreen = new Button
-            {
-                Anchor = AnchorStyles.Top | AnchorStyles.Right,
-                BackColor = Color.Transparent,
-                Cursor = Cursors.Hand,
-                FlatStyle = FlatStyle.Flat,
-                ForeColor = Color.White,
-                Image = CreateFullScreenButtonImage(),
-                Location = new Point(btnCerrar.Left - btnCerrar.Width, btnCerrar.Top),
-                Size = btnCerrar.Size,
-                TabStop = false,
-                UseVisualStyleBackColor = true
-            };
-
-            btnFullScreen.FlatAppearance.BorderSize = 0;
-            btnFullScreen.FlatAppearance.BorderColor = Color.White;
-            btnFullScreen.Click += btnFullScreen_Click;
-
-            pnlTitleBar.Controls.Add(btnFullScreen);
             btnFullScreen.BringToFront();
             btnCerrar.BringToFront();
             btnMinimizar.BringToFront();
@@ -225,8 +207,13 @@ namespace OpenVisionLab
 
             int margin = 6;
             int gap = 5;
-            int top = 8;
+            int top = TitleBarButtonTop;
+            Size buttonSize = new Size(TitleBarButtonSize, TitleBarButtonSize);
             int right = pnlTitleBar.ClientSize.Width - margin;
+
+            btnCerrar.Size = buttonSize;
+            btnMinimizar.Size = buttonSize;
+            btnFullScreen.Size = buttonSize;
 
             btnCerrar.Location = new Point(right - btnCerrar.Width, top);
             right = btnCerrar.Left - gap;
@@ -241,19 +228,6 @@ namespace OpenVisionLab
             right = rjButton2.Left - gap;
 
             biUserOptions.Location = new Point(right - biUserOptions.Width, 4);
-        }
-
-        private Image CreateFullScreenButtonImage()
-        {
-            Bitmap image = new Bitmap(30, 30);
-            using (Graphics g = Graphics.FromImage(image))
-            using (Pen pen = new Pen(Color.White, 2))
-            {
-                g.Clear(Color.Transparent);
-                g.DrawRectangle(pen, 8, 8, 14, 14);
-            }
-
-            return image;
         }
 
         private void FitToCurrentScreen()
@@ -578,7 +552,7 @@ namespace OpenVisionLab
 
                 b.Save(strSavePath);
 
-                CLOG.NORMAL($"Ï†ÄÏû• Í≤ΩÎ°ú : {strSavePath}");
+                CLOG.NORMAL($"¿˙¿Â ∞Ê∑Œ : {strSavePath}");
             }
             catch (Exception Desc)
             {

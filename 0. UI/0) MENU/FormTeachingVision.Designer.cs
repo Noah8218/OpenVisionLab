@@ -1,4 +1,4 @@
-﻿namespace OpenVisionLab
+namespace OpenVisionLab
 {
     partial class FormTeachingVision
     {
@@ -85,7 +85,7 @@
 			// splitContainer1
 			// 
 			splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
-			splitContainer1.FixedPanel = System.Windows.Forms.FixedPanel.Panel2;
+			splitContainer1.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
 			splitContainer1.IsSplitterFixed = true;
 			splitContainer1.Location = new System.Drawing.Point(0, 0);
 			splitContainer1.Margin = new System.Windows.Forms.Padding(0);
@@ -94,14 +94,14 @@
 			// 
 			// splitContainer1.Panel1
 			// 
-			splitContainer1.Panel1.Controls.Add(TeachingPanel);
+			splitContainer1.Panel1.Controls.Add(panel1);
 			// 
 			// splitContainer1.Panel2
 			// 
-			splitContainer1.Panel2.Controls.Add(panel1);
-			splitContainer1.Panel2MinSize = 34;
+			splitContainer1.Panel2.Controls.Add(TeachingPanel);
+			splitContainer1.Panel1MinSize = 34;
 			splitContainer1.Size = new System.Drawing.Size(1924, 1000);
-			splitContainer1.SplitterDistance = 965;
+			splitContainer1.SplitterDistance = 34;
 			splitContainer1.SplitterWidth = 1;
 			splitContainer1.TabIndex = 2178;
 			// 
@@ -116,7 +116,7 @@
 			// 
 			// panel1
 			// 
-			panel1.BackColor = System.Drawing.Color.White;
+			panel1.BackColor = System.Drawing.Color.FromArgb(68, 79, 116);
 			panel1.Controls.Add(lbTackTime);
 			panel1.Controls.Add(chkUseLayerImage);
 			panel1.Controls.Add(rjLabel3);
@@ -133,11 +133,11 @@
 			// 
 			// lbTackTime
 			// 
-			lbTackTime.BackColor = System.Drawing.Color.Transparent;
-			lbTackTime.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			lbTackTime.BackColor = System.Drawing.Color.FromArgb(53, 62, 92);
+			lbTackTime.BorderStyle = System.Windows.Forms.BorderStyle.None;
 			lbTackTime.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-			lbTackTime.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0);
-			lbTackTime.ForeColor = System.Drawing.Color.Black;
+			lbTackTime.Font = new System.Drawing.Font("Verdana", 9.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0);
+			lbTackTime.ForeColor = System.Drawing.Color.WhiteSmoke;
 			lbTackTime.Location = new System.Drawing.Point(885, 3);
 			lbTackTime.Name = "lbTackTime";
 			lbTackTime.Size = new System.Drawing.Size(162, 28);
@@ -148,20 +148,20 @@
 			// 
 			chkUseLayerImage.Appearance = System.Windows.Forms.Appearance.Button;
 			chkUseLayerImage.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-			chkUseLayerImage.BorderColor = System.Drawing.Color.FromArgb(90, 146, 246);
+			chkUseLayerImage.BorderColor = System.Drawing.Color.FromArgb(120, 132, 190);
 			chkUseLayerImage.BorderSize = 1;
 			chkUseLayerImage.Check = true;
 			chkUseLayerImage.Checked = true;
 			chkUseLayerImage.CheckState = System.Windows.Forms.CheckState.Checked;
 			chkUseLayerImage.Cursor = System.Windows.Forms.Cursors.Hand;
-			chkUseLayerImage.Customizable = false;
-			chkUseLayerImage.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(83, 97, 212);
+			chkUseLayerImage.Customizable = true;
+			chkUseLayerImage.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(120, 132, 190);
 			chkUseLayerImage.FlatAppearance.CheckedBackColor = System.Drawing.Color.FromArgb(83, 97, 212);
 			chkUseLayerImage.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(108, 120, 218);
 			chkUseLayerImage.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(70, 82, 180);
 			chkUseLayerImage.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-			chkUseLayerImage.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
-			chkUseLayerImage.ForeColor = System.Drawing.Color.FromArgb(132, 129, 132);
+			chkUseLayerImage.Font = new System.Drawing.Font("Verdana", 8.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+			chkUseLayerImage.ForeColor = System.Drawing.Color.White;
 			chkUseLayerImage.IconColor = System.Drawing.Color.White;
 			chkUseLayerImage.Location = new System.Drawing.Point(597, 3);
 			chkUseLayerImage.MinimumSize = new System.Drawing.Size(0, 21);
@@ -177,7 +177,7 @@
 			// rjLabel3
 			// 
 			rjLabel3.Font = new System.Drawing.Font("Verdana", 9.5F);
-			rjLabel3.ForeColor = System.Drawing.Color.FromArgb(132, 129, 132);
+			rjLabel3.ForeColor = System.Drawing.Color.White;
 			rjLabel3.LinkLabel = false;
 			rjLabel3.Location = new System.Drawing.Point(806, 3);
 			rjLabel3.Name = "rjLabel3";
@@ -194,9 +194,9 @@
 			btnNewPanel.Cursor = System.Windows.Forms.Cursors.Hand;
 			btnNewPanel.Customizable = true;
 			btnNewPanel.DropdownMenu = null;
-			btnNewPanel.ForeColor = System.Drawing.Color.FromArgb(132, 129, 132);
+			btnNewPanel.ForeColor = System.Drawing.Color.WhiteSmoke;
 			btnNewPanel.IconChar = FontAwesome.Sharp.IconChar.Newspaper;
-			btnNewPanel.IconColor = System.Drawing.Color.FromArgb(132, 129, 132);
+			btnNewPanel.IconColor = System.Drawing.Color.WhiteSmoke;
 			btnNewPanel.IconFont = FontAwesome.Sharp.IconFont.Auto;
 			btnNewPanel.IconSize = 30;
 			btnNewPanel.Location = new System.Drawing.Point(770, 3);
@@ -211,18 +211,18 @@
 			// 
 			cbLayerList.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.None;
 			cbLayerList.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.None;
-			cbLayerList.BackColor = System.Drawing.Color.FromArgb(240, 245, 249);
-			cbLayerList.BorderColor = System.Drawing.Color.FromArgb(132, 129, 132);
+			cbLayerList.BackColor = System.Drawing.Color.FromArgb(53, 62, 92);
+			cbLayerList.BorderColor = System.Drawing.Color.FromArgb(120, 132, 190);
 			cbLayerList.BorderRadius = 0;
 			cbLayerList.BorderSize = 2;
 			cbLayerList.Customizable = true;
 			cbLayerList.DataSource = null;
-			cbLayerList.DropDownBackColor = System.Drawing.Color.FromArgb(250, 252, 253);
+			cbLayerList.DropDownBackColor = System.Drawing.Color.FromArgb(53, 62, 92);
 			cbLayerList.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-			cbLayerList.DropDownTextColor = System.Drawing.Color.FromArgb(132, 129, 132);
-			cbLayerList.Font = new System.Drawing.Font("Verdana", 15F);
-			cbLayerList.ForeColor = System.Drawing.Color.DimGray;
-			cbLayerList.IconColor = System.Drawing.Color.FromArgb(83, 97, 212);
+			cbLayerList.DropDownTextColor = System.Drawing.Color.WhiteSmoke;
+			cbLayerList.Font = new System.Drawing.Font("Verdana", 12F);
+			cbLayerList.ForeColor = System.Drawing.Color.WhiteSmoke;
+			cbLayerList.IconColor = System.Drawing.Color.WhiteSmoke;
 			cbLayerList.Location = new System.Drawing.Point(413, 3);
 			cbLayerList.MinimumSize = new System.Drawing.Size(100, 20);
 			cbLayerList.Name = "cbLayerList";
@@ -238,18 +238,18 @@
 			// 
 			cbCamera.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.None;
 			cbCamera.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.None;
-			cbCamera.BackColor = System.Drawing.Color.FromArgb(240, 245, 249);
-			cbCamera.BorderColor = System.Drawing.Color.FromArgb(132, 129, 132);
+			cbCamera.BackColor = System.Drawing.Color.FromArgb(53, 62, 92);
+			cbCamera.BorderColor = System.Drawing.Color.FromArgb(120, 132, 190);
 			cbCamera.BorderRadius = 0;
 			cbCamera.BorderSize = 2;
 			cbCamera.Customizable = true;
 			cbCamera.DataSource = null;
-			cbCamera.DropDownBackColor = System.Drawing.Color.FromArgb(250, 252, 253);
+			cbCamera.DropDownBackColor = System.Drawing.Color.FromArgb(53, 62, 92);
 			cbCamera.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-			cbCamera.DropDownTextColor = System.Drawing.Color.FromArgb(132, 129, 132);
-			cbCamera.Font = new System.Drawing.Font("Verdana", 15F);
-			cbCamera.ForeColor = System.Drawing.Color.DimGray;
-			cbCamera.IconColor = System.Drawing.Color.FromArgb(83, 97, 212);
+			cbCamera.DropDownTextColor = System.Drawing.Color.WhiteSmoke;
+			cbCamera.Font = new System.Drawing.Font("Verdana", 12F);
+			cbCamera.ForeColor = System.Drawing.Color.WhiteSmoke;
+			cbCamera.IconColor = System.Drawing.Color.WhiteSmoke;
 			cbCamera.Location = new System.Drawing.Point(250, 3);
 			cbCamera.MinimumSize = new System.Drawing.Size(100, 20);
 			cbCamera.Name = "cbCamera";
@@ -264,7 +264,9 @@
 			// menuStrip1
 			// 
 			menuStrip1.AutoSize = false;
+			menuStrip1.BackColor = System.Drawing.Color.FromArgb(68, 79, 116);
 			menuStrip1.Dock = System.Windows.Forms.DockStyle.None;
+			menuStrip1.ForeColor = System.Drawing.Color.WhiteSmoke;
 			menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { imageProcessingToolStripMenuItem, algorithmToolStripMenuItem });
 			menuStrip1.Location = new System.Drawing.Point(0, 3);
 			menuStrip1.Name = "menuStrip1";
@@ -275,7 +277,9 @@
 			// imageProcessingToolStripMenuItem
 			// 
 			imageProcessingToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { morphologyToolStripMenuItem, filterToolStripMenuItem, arithmeticToolStripMenuItem, edgeDetectionToolStripMenuItem, rotateAndScaleToolStripMenuItem, histogramToolStripMenuItem, hSVToolStripMenuItem });
+			imageProcessingToolStripMenuItem.BackColor = System.Drawing.Color.FromArgb(68, 79, 116);
 			imageProcessingToolStripMenuItem.Font = new System.Drawing.Font("Verdana", 9.5F);
+			imageProcessingToolStripMenuItem.ForeColor = System.Drawing.Color.WhiteSmoke;
 			imageProcessingToolStripMenuItem.Name = "imageProcessingToolStripMenuItem";
 			imageProcessingToolStripMenuItem.Size = new System.Drawing.Size(134, 24);
 			imageProcessingToolStripMenuItem.Text = "Image Processing";
@@ -333,7 +337,9 @@
 			// algorithmToolStripMenuItem
 			// 
 			algorithmToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { blobToolStripMenuItem, contourToolStripMenuItem, matchingToolStripMenuItem, featureMatchingToolStripMenuItem, lineToolStripMenuItem, meanToolStripMenuItem });
+			algorithmToolStripMenuItem.BackColor = System.Drawing.Color.FromArgb(68, 79, 116);
 			algorithmToolStripMenuItem.Font = new System.Drawing.Font("Verdana", 9.5F);
+			algorithmToolStripMenuItem.ForeColor = System.Drawing.Color.WhiteSmoke;
 			algorithmToolStripMenuItem.Name = "algorithmToolStripMenuItem";
 			algorithmToolStripMenuItem.Size = new System.Drawing.Size(80, 24);
 			algorithmToolStripMenuItem.Text = "Algorithm";

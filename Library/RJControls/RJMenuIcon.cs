@@ -108,7 +108,7 @@ namespace RJCodeUI_M1.RJControls
             {
                 dropdownMenu.Show(this, DropdownMenuPosition.BottomRight);
             }
-            catch (Exception Desc)
+            catch
             {
                 //RJMessageBox.Show("An error has occurred\n" + ex.ToString());
             }

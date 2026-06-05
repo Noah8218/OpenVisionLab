@@ -1,4 +1,4 @@
-﻿using Cyotek.Windows.Forms;
+using Cyotek.Windows.Forms;
 
 namespace OpenVisionLab
 {
@@ -31,8 +31,7 @@ namespace OpenVisionLab
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.metroStyleManager = new MetroFramework.Components.MetroStyleManager(this.components);
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
+                        this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.rjLabel1 = new RJCodeUI_M1.RJControls.RJLabel();
             this.cbEdgeType = new RJCodeUI_M1.RJControls.RJComboBox();
             this.ibSource = new Cyotek.Windows.Forms.ImageBox();
@@ -44,8 +43,8 @@ namespace OpenVisionLab
             this.ibDestination = new Cyotek.Windows.Forms.ImageBox();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.timer1 = new System.Windows.Forms.Timer(this.components);
-            this.Tab = new MetroFramework.Controls.MetroTabControl();
-            this.metroTabPage1 = new MetroFramework.Controls.MetroTabPage();
+            this.Tab = new System.Windows.Forms.TabControl();
+            this.metroTabPage1 = new System.Windows.Forms.TabPage();
             this.rjPanel3 = new RJCodeUI_M1.RJControls.RJPanel();
             this.chkUseL2 = new RJCodeUI_M1.RJControls.RJCheckBox();
             this.tbThresholdLow = new RJCodeUI_M1.RJControls.RJTextBox();
@@ -54,7 +53,7 @@ namespace OpenVisionLab
             this.tbSobelMask = new RJCodeUI_M1.RJControls.RJTextBox();
             this.rjLabel4 = new RJCodeUI_M1.RJControls.RJLabel();
             this.rjLabel2 = new RJCodeUI_M1.RJControls.RJLabel();
-            this.metroTabPage2 = new MetroFramework.Controls.MetroTabPage();
+            this.metroTabPage2 = new System.Windows.Forms.TabPage();
             this.rjPanel1 = new RJCodeUI_M1.RJControls.RJPanel();
             this.nudKernel = new System.Windows.Forms.NumericUpDown();
             this.nudDegreeY = new System.Windows.Forms.NumericUpDown();
@@ -62,18 +61,17 @@ namespace OpenVisionLab
             this.rjLabel5 = new RJCodeUI_M1.RJControls.RJLabel();
             this.rjLabel6 = new RJCodeUI_M1.RJControls.RJLabel();
             this.rjLabel7 = new RJCodeUI_M1.RJControls.RJLabel();
-            this.metroTabPage3 = new MetroFramework.Controls.MetroTabPage();
+            this.metroTabPage3 = new System.Windows.Forms.TabPage();
             this.rjPanel2 = new RJCodeUI_M1.RJControls.RJPanel();
             this.nudScharrDegreeY = new System.Windows.Forms.NumericUpDown();
             this.nudScharrDegreeX = new System.Windows.Forms.NumericUpDown();
             this.rjLabel9 = new RJCodeUI_M1.RJControls.RJLabel();
             this.rjLabel10 = new RJCodeUI_M1.RJControls.RJLabel();
-            this.metroTabPage4 = new MetroFramework.Controls.MetroTabPage();
+            this.metroTabPage4 = new System.Windows.Forms.TabPage();
             this.rjPanel4 = new RJCodeUI_M1.RJControls.RJPanel();
             this.nudLaplacianKernel = new System.Windows.Forms.NumericUpDown();
             this.rjLabel8 = new RJCodeUI_M1.RJControls.RJLabel();
             this.btnFilterRun = new RJCodeUI_M1.RJControls.RJButton();
-            ((System.ComponentModel.ISupportInitialize)(this.metroStyleManager)).BeginInit();
             this.groupBox1.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
@@ -101,11 +99,7 @@ namespace OpenVisionLab
             this.pnlClientArea.Location = new System.Drawing.Point(1, 1);
             this.pnlClientArea.Size = new System.Drawing.Size(894, 372);
             // 
-            // metroStyleManager
             // 
-            this.metroStyleManager.Owner = this;
-            this.metroStyleManager.Style = MetroFramework.MetroColorStyle.Teal;
-            this.metroStyleManager.Theme = MetroFramework.MetroThemeStyle.Dark;
             // 
             // groupBox1
             // 
@@ -297,27 +291,16 @@ namespace OpenVisionLab
             this.Tab.SelectedIndex = 0;
             this.Tab.Size = new System.Drawing.Size(299, 193);
             this.Tab.TabIndex = 2164;
-            this.Tab.Theme = MetroFramework.MetroThemeStyle.Dark;
-            this.Tab.UseCustomBackColor = true;
-            this.Tab.UseCustomForeColor = true;
-            this.Tab.UseSelectable = true;
             // 
             // metroTabPage1
             // 
             this.metroTabPage1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.metroTabPage1.Controls.Add(this.rjPanel3);
-            this.metroTabPage1.HorizontalScrollbarBarColor = true;
-            this.metroTabPage1.HorizontalScrollbarHighlightOnWheel = false;
-            this.metroTabPage1.HorizontalScrollbarSize = 1;
             this.metroTabPage1.Location = new System.Drawing.Point(4, 38);
             this.metroTabPage1.Name = "metroTabPage1";
             this.metroTabPage1.Size = new System.Drawing.Size(291, 151);
             this.metroTabPage1.TabIndex = 8;
             this.metroTabPage1.Text = "Canny";
-            this.metroTabPage1.UseCustomBackColor = true;
-            this.metroTabPage1.VerticalScrollbarBarColor = true;
-            this.metroTabPage1.VerticalScrollbarHighlightOnWheel = false;
-            this.metroTabPage1.VerticalScrollbarSize = 2;
             // 
             // rjPanel3
             // 
@@ -362,7 +345,7 @@ namespace OpenVisionLab
             this.chkUseL2.Size = new System.Drawing.Size(146, 26);
             this.chkUseL2.Style = RJCodeUI_M1.RJControls.ControlStyle.Solid;
             this.chkUseL2.TabIndex = 2161;
-            this.chkUseL2.Text = "L2 그레이디언트";
+            this.chkUseL2.Text = "L2 �׷��̵��Ʈ";
             this.chkUseL2.UseVisualStyleBackColor = false;
             // 
             // tbThresholdLow
@@ -476,17 +459,11 @@ namespace OpenVisionLab
             // metroTabPage2
             // 
             this.metroTabPage2.Controls.Add(this.rjPanel1);
-            this.metroTabPage2.HorizontalScrollbarBarColor = true;
-            this.metroTabPage2.HorizontalScrollbarHighlightOnWheel = false;
-            this.metroTabPage2.HorizontalScrollbarSize = 10;
             this.metroTabPage2.Location = new System.Drawing.Point(4, 38);
             this.metroTabPage2.Name = "metroTabPage2";
             this.metroTabPage2.Size = new System.Drawing.Size(291, 151);
             this.metroTabPage2.TabIndex = 9;
             this.metroTabPage2.Text = "Sobel";
-            this.metroTabPage2.VerticalScrollbarBarColor = true;
-            this.metroTabPage2.VerticalScrollbarHighlightOnWheel = false;
-            this.metroTabPage2.VerticalScrollbarSize = 10;
             // 
             // rjPanel1
             // 
@@ -598,17 +575,11 @@ namespace OpenVisionLab
             // metroTabPage3
             // 
             this.metroTabPage3.Controls.Add(this.rjPanel2);
-            this.metroTabPage3.HorizontalScrollbarBarColor = true;
-            this.metroTabPage3.HorizontalScrollbarHighlightOnWheel = false;
-            this.metroTabPage3.HorizontalScrollbarSize = 10;
             this.metroTabPage3.Location = new System.Drawing.Point(4, 38);
             this.metroTabPage3.Name = "metroTabPage3";
             this.metroTabPage3.Size = new System.Drawing.Size(291, 151);
             this.metroTabPage3.TabIndex = 10;
             this.metroTabPage3.Text = "Scharr";
-            this.metroTabPage3.VerticalScrollbarBarColor = true;
-            this.metroTabPage3.VerticalScrollbarHighlightOnWheel = false;
-            this.metroTabPage3.VerticalScrollbarSize = 10;
             // 
             // rjPanel2
             // 
@@ -681,17 +652,11 @@ namespace OpenVisionLab
             // metroTabPage4
             // 
             this.metroTabPage4.Controls.Add(this.rjPanel4);
-            this.metroTabPage4.HorizontalScrollbarBarColor = true;
-            this.metroTabPage4.HorizontalScrollbarHighlightOnWheel = false;
-            this.metroTabPage4.HorizontalScrollbarSize = 10;
             this.metroTabPage4.Location = new System.Drawing.Point(4, 38);
             this.metroTabPage4.Name = "metroTabPage4";
             this.metroTabPage4.Size = new System.Drawing.Size(291, 151);
             this.metroTabPage4.TabIndex = 11;
             this.metroTabPage4.Text = "Laplacian";
-            this.metroTabPage4.VerticalScrollbarBarColor = true;
-            this.metroTabPage4.VerticalScrollbarHighlightOnWheel = false;
-            this.metroTabPage4.VerticalScrollbarSize = 10;
             // 
             // rjPanel4
             // 
@@ -789,7 +754,6 @@ namespace OpenVisionLab
             this.MaximizeBox = false;
             this.Name = "FormVision_EdgeDection";
             this.Padding = new System.Windows.Forms.Padding(1);
-            this.Resizable = false;
             this.Text = "Edge Detection";
             this.Load += new System.EventHandler(this.FormSettings_Camera_Load);
             this.Controls.SetChildIndex(this.pnlClientArea, 0);
@@ -798,7 +762,6 @@ namespace OpenVisionLab
             this.Controls.SetChildIndex(this.groupBox4, 0);
             this.Controls.SetChildIndex(this.btnFilterRun, 0);
             this.Controls.SetChildIndex(this.Tab, 0);
-            ((System.ComponentModel.ISupportInitialize)(this.metroStyleManager)).EndInit();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.groupBox3.ResumeLayout(false);
@@ -829,8 +792,6 @@ namespace OpenVisionLab
         }
 
         #endregion
-
-        private MetroFramework.Components.MetroStyleManager metroStyleManager;
         private System.Windows.Forms.GroupBox groupBox1;
         private ImageBox ibSource;
         private System.Windows.Forms.GroupBox groupBox4;
@@ -851,10 +812,10 @@ namespace OpenVisionLab
         private RJCodeUI_M1.RJControls.RJTextBox tbThresholdLow;
         private RJCodeUI_M1.RJControls.RJTextBox tbThresholdHight;
         private RJCodeUI_M1.RJControls.RJCheckBox chkUseL2;
-        private MetroFramework.Controls.MetroTabControl Tab;
-        private MetroFramework.Controls.MetroTabPage metroTabPage1;
+        private System.Windows.Forms.TabControl Tab;
+        private System.Windows.Forms.TabPage metroTabPage1;
         private RJCodeUI_M1.RJControls.RJPanel rjPanel3;
-        private MetroFramework.Controls.MetroTabPage metroTabPage2;
+        private System.Windows.Forms.TabPage metroTabPage2;
         private RJCodeUI_M1.RJControls.RJPanel rjPanel1;
         private RJCodeUI_M1.RJControls.RJLabel rjLabel5;
         private RJCodeUI_M1.RJControls.RJLabel rjLabel6;
@@ -862,13 +823,13 @@ namespace OpenVisionLab
         private System.Windows.Forms.NumericUpDown nudKernel;
         private System.Windows.Forms.NumericUpDown nudDegreeY;
         private System.Windows.Forms.NumericUpDown nudDegreeX;
-        private MetroFramework.Controls.MetroTabPage metroTabPage3;
+        private System.Windows.Forms.TabPage metroTabPage3;
         private RJCodeUI_M1.RJControls.RJPanel rjPanel2;
         private System.Windows.Forms.NumericUpDown nudScharrDegreeY;
         private System.Windows.Forms.NumericUpDown nudScharrDegreeX;
         private RJCodeUI_M1.RJControls.RJLabel rjLabel9;
         private RJCodeUI_M1.RJControls.RJLabel rjLabel10;
-        private MetroFramework.Controls.MetroTabPage metroTabPage4;
+        private System.Windows.Forms.TabPage metroTabPage4;
         private RJCodeUI_M1.RJControls.RJPanel rjPanel4;
         private System.Windows.Forms.NumericUpDown nudLaplacianKernel;
         private RJCodeUI_M1.RJControls.RJLabel rjLabel8;

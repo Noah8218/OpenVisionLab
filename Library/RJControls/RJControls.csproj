@@ -1,210 +1,146 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{0D20A454-1A31-44F7-BFD4-B5784FB25224}</ProjectGuid>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <OutputType>Library</OutputType>
     <RootNamespace>RJControls</RootNamespace>
     <AssemblyName>RJControls</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
+    <UseWindowsForms>true</UseWindowsForms>
     <Deterministic>false</Deterministic>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
-    <WarningLevel>4</WarningLevel>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <WarningLevel>4</WarningLevel>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\x86\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
-    <WarningLevel>4</WarningLevel>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\x86\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <WarningLevel>4</WarningLevel>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\x64\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
-    <WarningLevel>4</WarningLevel>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\x64\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <WarningLevel>4</WarningLevel>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
+
   <ItemGroup>
     <Reference Include="FontAwesome.Sharp">
       <HintPath>..\..\dll\FontAwesome.Sharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Design" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Windows.Forms.DataVisualization" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.8" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Design\ButtonDesign.cs" />
-    <Compile Include="Design\ControlStyle.cs" />
-    <Compile Include="Design\DropdownMenuColors.cs" />
-    <Compile Include="Design\DropdownMenuPosition.cs" />
-    <Compile Include="Design\DropdownMenuRenderer.cs" />
-    <Compile Include="Design\LabelStyle.cs" />
-    <Compile Include="Design\TextBoxStyle.cs" />
-    <Compile Include="Design\TextPosition.cs" />
-    <Compile Include="RJButton.cs">
+    <Compile Remove="RJChart.cs" />
+    <Compile Remove="RJForms\VisionTestForm.cs" />
+    <Compile Remove="Settings\UIAppearanceSettings1.Designer.cs" />
+    <EmbeddedResource Remove="RJForms\VisionTestForm.resx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="RJButton.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="RJChart.cs">
+    <Compile Update="RJCheckBox.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="RJCheckBox.cs">
+    <Compile Update="RJCircularPictureBox.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="RJCircularPictureBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="RJComboBox.cs">
+    <Compile Update="RJComboBox.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="RJDataGridView.cs">
+    <Compile Update="RJDataGridView.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="RJDatePicker.cs">
+    <Compile Update="RJDatePicker.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="RJDragControl.cs">
+    <Compile Update="RJDragControl.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="RJDropdownMenu.cs">
+    <Compile Update="RJDropdownMenu.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="RJImageColorOverlay.cs">
+    <Compile Update="RJImageColorOverlay.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="RJLabel.cs">
+    <Compile Update="RJLabel.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="RJMenuButton.cs">
+    <Compile Update="RJMenuButton.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="RJMenuIcon.cs">
+    <Compile Update="RJMenuIcon.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="RJPanel.cs">
+    <Compile Update="RJPanel.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="RJPictureBox.cs">
+    <Compile Update="RJPictureBox.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="RJProgressBar.cs">
+    <Compile Update="RJProgressBar.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="RJRadioButton.cs">
+    <Compile Update="RJRadioButton.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="RJTextBox.cs">
+    <Compile Update="RJTextBox.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="RJToggleButton.cs">
+    <Compile Update="RJToggleButton.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="RJTrackBar.cs">
+    <Compile Update="RJTrackBar.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="RJForms\RJBaseForm.cs">
+    <Compile Update="RJForms\RJBaseForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="RJForms\RJChildForm.cs">
+    <Compile Update="RJForms\RJChildForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="RJForms\RJMainForm.cs">
+    <Compile Update="RJForms\RJMainForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="RJForms\RJMessageBox.cs" />
-    <Compile Include="RJForms\RJPrintForm.cs">
+    <Compile Update="RJForms\RJPrintForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="RJForms\RJPrintForm.designer.cs">
+    <Compile Update="RJForms\RJPrintForm.designer.cs">
       <DependentUpon>RJPrintForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="RJForms\RJSettingsForm.cs">
+    <Compile Update="RJForms\RJSettingsForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="RJForms\RJSettingsForm.Designer.cs">
+    <Compile Update="RJForms\RJSettingsForm.Designer.cs">
       <DependentUpon>RJSettingsForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="RJForms\Private\RJMessageForm.cs">
+    <Compile Update="RJForms\Private\RJMessageForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="RJForms\Private\RJMessageForm.designer.cs">
+    <Compile Update="RJForms\Private\RJMessageForm.designer.cs">
       <DependentUpon>RJMessageForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Settings\RJColors.cs" />
-    <Compile Include="Settings\SettingsManager.cs" />
-    <Compile Include="Settings\UIAppearance.cs" />
-    <Compile Include="Settings\UIAppearanceSettings.Designer.cs">
+    <Compile Update="Settings\UIAppearanceSettings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>UIAppearanceSettings.settings</DependentUpon>
     </Compile>
-    <Compile Include="Settings\UIStyle.cs" />
-    <Compile Include="Settings\UITheme.cs" />
-    <Compile Include="Utils\ColorEditor.cs" />
-    <Compile Include="Utils\RoundedControl.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="RJPanel.resx">
+    <EmbeddedResource Update="RJPanel.resx">
       <DependentUpon>RJPanel.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="RJForms\RJPrintForm.resx">
+    <EmbeddedResource Update="RJForms\RJPrintForm.resx">
       <DependentUpon>RJPrintForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="RJForms\RJSettingsForm.resx">
+    <EmbeddedResource Update="RJForms\RJSettingsForm.resx">
       <DependentUpon>RJSettingsForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="RJForms\Private\RJMessageForm.resx">
+    <EmbeddedResource Update="RJForms\Private\RJMessageForm.resx">
       <DependentUpon>RJMessageForm.cs</DependentUpon>
     </EmbeddedResource>
-    <None Include="Settings\UIAppearanceSettings.settings">
+    <None Update="Settings\UIAppearanceSettings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>UIAppearanceSettings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

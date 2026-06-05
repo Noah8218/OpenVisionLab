@@ -1,4 +1,4 @@
-﻿using Cyotek.Windows.Forms;
+using Cyotek.Windows.Forms;
 
 namespace OpenVisionLab
 {
@@ -31,8 +31,7 @@ namespace OpenVisionLab
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.metroStyleManager = new MetroFramework.Components.MetroStyleManager(this.components);
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
+                        this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.rjLabel7 = new RJCodeUI_M1.RJControls.RJLabel();
             this.cbFilterBorderType = new RJCodeUI_M1.RJControls.RJComboBox();
             this.rjLabel1 = new RJCodeUI_M1.RJControls.RJLabel();
@@ -60,7 +59,6 @@ namespace OpenVisionLab
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.btnFilterRun = new RJCodeUI_M1.RJControls.RJButton();
-            ((System.ComponentModel.ISupportInitialize)(this.metroStyleManager)).BeginInit();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -74,11 +72,7 @@ namespace OpenVisionLab
             this.pnlClientArea.Location = new System.Drawing.Point(1, 41);
             this.pnlClientArea.Size = new System.Drawing.Size(896, 276);
             // 
-            // metroStyleManager
             // 
-            this.metroStyleManager.Owner = this;
-            this.metroStyleManager.Style = MetroFramework.MetroColorStyle.Teal;
-            this.metroStyleManager.Theme = MetroFramework.MetroThemeStyle.Dark;
             // 
             // groupBox1
             // 
@@ -573,7 +567,6 @@ namespace OpenVisionLab
             this.MaximizeBox = false;
             this.Name = "FormVision_Filter";
             this.Padding = new System.Windows.Forms.Padding(1);
-            this.Resizable = false;
             this.Text = "Filter";
             this.Load += new System.EventHandler(this.FormSettings_Camera_Load);
             this.Controls.SetChildIndex(this.pnlClientArea, 0);
@@ -582,7 +575,6 @@ namespace OpenVisionLab
             this.Controls.SetChildIndex(this.groupBox2, 0);
             this.Controls.SetChildIndex(this.groupBox4, 0);
             this.Controls.SetChildIndex(this.btnFilterRun, 0);
-            ((System.ComponentModel.ISupportInitialize)(this.metroStyleManager)).EndInit();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
@@ -596,8 +588,6 @@ namespace OpenVisionLab
         }
 
         #endregion
-
-        private MetroFramework.Components.MetroStyleManager metroStyleManager;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.GroupBox groupBox2;
         private System.Windows.Forms.Label lbHeight;

@@ -1,4 +1,4 @@
-﻿namespace OpenVisionLab
+namespace OpenVisionLab
 {
     partial class FormMessageBox
     {
@@ -30,8 +30,8 @@
         {
             this.components = new System.ComponentModel.Container();
             this.lbMessage = new System.Windows.Forms.Label();
-            this.btnCancel = new MetroFramework.Controls.MetroButton();
-            this.btnOK = new MetroFramework.Controls.MetroButton();
+            this.btnCancel = new System.Windows.Forms.Button();
+            this.btnOK = new System.Windows.Forms.Button();
             this.pnBackground = new System.Windows.Forms.Panel();
             this.lbHeader = new System.Windows.Forms.Label();
             this.timerRefresh = new System.Windows.Forms.Timer(this.components);
@@ -55,33 +55,21 @@
             this.lbMessage.MouseUp += new System.Windows.Forms.MouseEventHandler(this.form_MouseUp);
             // 
             // btnCancel
-            // 
-            this.btnCancel.FontSize = MetroFramework.MetroButtonSize.Tall;
-            this.btnCancel.FontWeight = MetroFramework.MetroButtonWeight.Regular;
-            this.btnCancel.Highlight = true;
+            //
             this.btnCancel.Location = new System.Drawing.Point(808, 204);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(168, 35);
             this.btnCancel.TabIndex = 1083;
             this.btnCancel.Text = "No";
-            this.btnCancel.UseCustomBackColor = true;
-            this.btnCancel.UseCustomForeColor = true;
-            this.btnCancel.UseSelectable = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
             // btnOK
-            // 
-            this.btnOK.FontSize = MetroFramework.MetroButtonSize.Tall;
-            this.btnOK.FontWeight = MetroFramework.MetroButtonWeight.Regular;
-            this.btnOK.Highlight = true;
+            //
             this.btnOK.Location = new System.Drawing.Point(634, 204);
             this.btnOK.Name = "btnOK";
             this.btnOK.Size = new System.Drawing.Size(168, 35);
             this.btnOK.TabIndex = 1084;
             this.btnOK.Text = "Yes";
-            this.btnOK.UseCustomBackColor = true;
-            this.btnOK.UseCustomForeColor = true;
-            this.btnOK.UseSelectable = true;
             this.btnOK.Click += new System.EventHandler(this.btnOK_Click);
             // 
             // pnBackground
@@ -91,9 +79,10 @@
             this.pnBackground.Controls.Add(this.lbMessage);
             this.pnBackground.Controls.Add(this.btnOK);
             this.pnBackground.Controls.Add(this.btnCancel);
-            this.pnBackground.Location = new System.Drawing.Point(-5, -1);
+            this.pnBackground.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pnBackground.Location = new System.Drawing.Point(0, 0);
             this.pnBackground.Name = "pnBackground";
-            this.pnBackground.Size = new System.Drawing.Size(1001, 267);
+            this.pnBackground.Size = new System.Drawing.Size(987, 252);
             this.pnBackground.TabIndex = 1085;
             this.pnBackground.MouseDown += new System.Windows.Forms.MouseEventHandler(this.form_MouseDown);
             this.pnBackground.MouseMove += new System.Windows.Forms.MouseEventHandler(this.form_MouseMove);
@@ -140,12 +129,14 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(987, 252);
+            this.ControlBox = false;
             this.Controls.Add(this.pnBackground);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Name = "FormMessageBox";
-            this.Resizable = false;
-            this.Style = MetroFramework.MetroColorStyle.Default;
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "EXIT";
-            this.Theme = MetroFramework.MetroThemeStyle.Default;
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.FormMessageBox_KeyDown);
             this.pnBackground.ResumeLayout(false);
             this.pnBackground.PerformLayout();
@@ -156,8 +147,8 @@
 
         #endregion
         private System.Windows.Forms.Label lbMessage;
-        private MetroFramework.Controls.MetroButton btnCancel;
-        private MetroFramework.Controls.MetroButton btnOK;
+        private System.Windows.Forms.Button btnCancel;
+        private System.Windows.Forms.Button btnOK;
         private System.Windows.Forms.Panel pnBackground;
         private System.Windows.Forms.Label lbHeader;
         private System.Windows.Forms.Timer timerRefresh;

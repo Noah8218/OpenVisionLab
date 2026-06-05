@@ -174,6 +174,11 @@ namespace OpenVisionLab
         {
             try
             {
+                if (!ValidateDrawOption())
+                {
+                    return;
+                }
+
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
@@ -219,6 +224,22 @@ namespace OpenVisionLab
             {
                 CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
             }
+        }
+
+        private bool ValidateDrawOption()
+        {
+            if (!Property_Contour.USE_DRAW_IMAGE)
+            {
+                return true;
+            }
+
+            if (!Property_Contour.DrawColor.IsEmpty && Property_Contour.DrawColor.A != 0)
+            {
+                return true;
+            }
+
+            CCommon.ShowMessageBox("ALARM", "DrawColor is empty. Please select a draw color before running contour inspection.", FormMessageBox.MESSAGEBOX_TYPE.Waring);
+            return false;
         }
 
         private void cbLayerList_SelectedIndexChanged(object sender, EventArgs e)

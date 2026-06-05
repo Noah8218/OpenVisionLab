@@ -1,25 +1,14 @@
-﻿using MetroFramework.Forms;
-using System;
+﻿using System;
 using System.Drawing;
-using System.Threading;
 using System.Windows.Forms;
 
 namespace OpenVisionLab
 {
-    public partial class FormInit : MetroForm
+    public partial class FormInit : Form
     {
-        public EventHandler<EventArgs> EventExit;
-
-        public ManualResetEvent IsShow = new ManualResetEvent(false);
-
-        public Action Function { get; set; }
-
         public string VersionText { get; set; } = "";
 
         public Action<string> VersionLogAction { get; set; }
-
-        public bool Close { get; set; } = false;
-
 
         public FormInit()
         {
@@ -28,7 +17,6 @@ namespace OpenVisionLab
             this.TopMost = true;
             this.TopLevel = true;
             this.StartPosition = FormStartPosition.CenterScreen;
-            this.Shown += new EventHandler(Form_Loaded);
             this.Layout += FormInit_Layout;
         }
 
@@ -56,26 +44,6 @@ namespace OpenVisionLab
             circularProgressBar5.Location = Point.Empty;
             circularProgressBar5.Size = squareSize;
             lbTackTime.SetBounds(0, (int)(size * 0.57), size, 40);
-        }
-
-        private void Form_Loaded(object sender, EventArgs e)
-        {
-            //var thread = new Thread(
-            //    () =>
-            //    {
-            //        Function?.Invoke();
-            //        this.BeginInvoke(
-            //            (Action)(() =>
-            //            {
-
-            //                //this.Close();
-
-            //            }));
-
-            //    });
-
-            //thread.Start();
-
         }
 
         private void FormInit_Shown(object sender, EventArgs e)
@@ -120,7 +88,7 @@ namespace OpenVisionLab
                         OnInitStart(sender, e);
                     }));
                 }
-                catch (Exception Desc)
+                catch
                 {
                     //Logger.WriteLog(LOG.ERROR, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
                 }
@@ -142,10 +110,10 @@ namespace OpenVisionLab
                 {
                     this.BeginInvoke(new MethodInvoker(() =>
                     {
-                        OnInitStart(sender, e);
+                        OnInitEnd(sender, e);
                     }));
                 }
-                catch (Exception Desc)
+                catch
                 {
                     //Logger.WriteLog(LOG.ERROR, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
                 }
@@ -170,7 +138,7 @@ namespace OpenVisionLab
                         OnShowProgress(sender, e);
                     }));
                 }
-                catch (Exception Desc)
+                catch
                 {
                     //Logger.WriteLog(LOG.ERROR, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
                 }
@@ -198,7 +166,7 @@ namespace OpenVisionLab
                         OnEndProgress(sender, e);
                     }));
                 }
-                catch (Exception Desc)
+                catch
                 {
                     //Logger.WriteLog(LOG.ERROR, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
                 }
@@ -229,15 +197,5 @@ namespace OpenVisionLab
             //}));            
         }
 
-        private void timer1_Tick(object sender, EventArgs e)
-        {
-            if(Close)
-            {
-                this.BeginInvoke(new MethodInvoker(() =>
-                {
-                    this.Close();
-                }));
-            }
-        }
     }
 }

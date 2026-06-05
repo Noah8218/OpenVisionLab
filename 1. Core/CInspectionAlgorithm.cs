@@ -8,12 +8,7 @@ using OpenCvSharp;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Reflection;
-using System.Security.Cryptography.Xml;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Media;
 
 namespace OpenVisionLab
 {
@@ -47,8 +42,7 @@ namespace OpenVisionLab
                 edgeToolR.Run();
             });
 
-            Task.WaitAll(lineTask);
-            Task.WaitAll(lineTask2);
+            Task.WaitAll(lineTask, lineTask2);
 
             return (edgeToolL, edgeToolR, CLineVertical.GetIntersectionLines(edgeToolL.resultList[0].FitLine, edgeToolR.resultList[0].FitLine));
         }
@@ -71,8 +65,7 @@ namespace OpenVisionLab
                 edgeToolR.Run();
             });
 
-            Task.WaitAll(lineTask);
-            Task.WaitAll(lineTask2);
+            Task.WaitAll(lineTask, lineTask2);
 
             List<CVLineGuage_VerticalLines> intersectionLines = new List<CVLineGuage_VerticalLines>();
             for (int i = 0; i < edgeToolL.resultList.Count; i++)
@@ -117,13 +110,8 @@ namespace OpenVisionLab
         {
             for (int j = 0; j < edgeTool.property.CvROIS.Count; j++)
             {
-                var lineTask = Task.Run(() =>
-                {
-                    edgeTool.property.CvROI = edgeTool.property.CvROIS[j];
-                    edgeTool.Run();
-                });
-
-                Task.WaitAll(lineTask);
+                edgeTool.property.CvROI = edgeTool.property.CvROIS[j];
+                edgeTool.Run();
                 //edgeTool.Draw(g, edgeTool.resultList[j].edgeList, size);
             }
         }

@@ -43,21 +43,15 @@ namespace OpenVisionLab
 
                     SettingsManager.LoadApperanceSettings();//Load current appearance settings.
 
-                    FormInit formInit = new FormInit
-                    {
-                        VersionText = $"VERSION : {CVersion.VERSION} - {CVersion.DATETIME_UPDATED} ({CVersion.MANAGER})",
-                        VersionLogAction = text => CLOG.NORMAL(text)
-                    };
+                    StartupSplashScreen splashScreen = StartupSplashScreen.Start(
+                        $"VERSION : {CVersion.VERSION} - {CVersion.DATETIME_UPDATED} ({CVersion.MANAGER})",
+                        text => CLOG.NORMAL(text));
 #if Release
 
 #endif
-                    var Task = System.Threading.Tasks.Task.Run(() =>
-                    {
-                        Application.Run(formInit);
-                    });
-
                     ApplicationRuntimeContext runtimeContext = ApplicationRuntimeContext.CreateDefault();
-                    Application.Run(new FormMetroFrame(formInit, runtimeContext));
+                    Application.Run(new FormMetroFrame(splashScreen.Form, runtimeContext));
+                    splashScreen.Dispose();
                 }
                 catch (Exception Desc)
                 {
@@ -82,6 +76,90 @@ namespace OpenVisionLab
         private static void Application_ThreadException(object sender, ThreadExceptionEventArgs e)
         {
             //CLog.Error( "Ex ==> {0}", e.ToString());
+        }
+
+        private sealed class StartupSplashScreen : IDisposable
+        {
+            private readonly ManualResetEventSlim formReady = new ManualResetEventSlim(false);
+            private readonly Thread thread;
+            private readonly string versionText;
+            private readonly Action<string> versionLogAction;
+            private FormInit form;
+
+            private StartupSplashScreen(string versionText, Action<string> versionLogAction)
+            {
+                this.versionText = versionText;
+                this.versionLogAction = versionLogAction;
+                thread = new Thread(Run);
+                thread.SetApartmentState(ApartmentState.STA);
+                thread.IsBackground = true;
+                thread.Name = "OpenVisionLab.Init";
+            }
+
+            public FormInit Form
+            {
+                get
+                {
+                    formReady.Wait();
+                    return form;
+                }
+            }
+
+            public static StartupSplashScreen Start(string versionText, Action<string> versionLogAction)
+            {
+                StartupSplashScreen splashScreen = new StartupSplashScreen(versionText, versionLogAction);
+                splashScreen.thread.Start();
+                splashScreen.formReady.Wait();
+                return splashScreen;
+            }
+
+            public void Dispose()
+            {
+                Close();
+                formReady.Dispose();
+            }
+
+            private void Run()
+            {
+                try
+                {
+                    form = new FormInit
+                    {
+                        VersionText = versionText,
+                        VersionLogAction = versionLogAction
+                    };
+                    form.Shown += (sender, e) => formReady.Set();
+                    form.FormClosed += (sender, e) => Application.ExitThread();
+                    Application.Run(form);
+                }
+                catch
+                {
+                    formReady.Set();
+                }
+            }
+
+            private void Close()
+            {
+                formReady.Wait();
+                if (form == null || form.IsDisposed)
+                {
+                    return;
+                }
+
+                try
+                {
+                    form.BeginInvoke(new System.Windows.Forms.MethodInvoker(() =>
+                    {
+                        if (!form.IsDisposed)
+                        {
+                            form.Close();
+                        }
+                    }));
+                }
+                catch
+                {
+                }
+            }
         }
     }
 }

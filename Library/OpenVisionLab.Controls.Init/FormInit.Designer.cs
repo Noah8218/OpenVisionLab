@@ -39,7 +39,6 @@ namespace OpenVisionLab
             this.circularProgressBar5 = new CircularProgressBar.CircularProgressBar();
             this.lbProcedure = new System.Windows.Forms.Label();
             this.timerTackTime = new System.Windows.Forms.Timer(this.components);
-            this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.contentPanel.SuspendLayout();
             this.mainLayout.SuspendLayout();
             this.progressLayout.SuspendLayout();
@@ -49,12 +48,12 @@ namespace OpenVisionLab
             // contentPanel
             // 
             this.contentPanel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(12)))), ((int)(((byte)(12)))));
-            this.contentPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.contentPanel.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.contentPanel.Controls.Add(this.mainLayout);
             this.contentPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.contentPanel.Location = new System.Drawing.Point(18, 30);
+            this.contentPanel.Location = new System.Drawing.Point(0, 0);
             this.contentPanel.Name = "contentPanel";
-            this.contentPanel.Size = new System.Drawing.Size(896, 502);
+            this.contentPanel.Size = new System.Drawing.Size(932, 550);
             this.contentPanel.TabIndex = 0;
             // 
             // mainLayout
@@ -75,7 +74,7 @@ namespace OpenVisionLab
             this.mainLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 36F));
             this.mainLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.mainLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 50F));
-            this.mainLayout.Size = new System.Drawing.Size(894, 500);
+            this.mainLayout.Size = new System.Drawing.Size(932, 550);
             this.mainLayout.TabIndex = 0;
             // 
             // lbName
@@ -195,27 +194,24 @@ namespace OpenVisionLab
             this.timerTackTime.Interval = 50;
             this.timerTackTime.Tick += new System.EventHandler(this.timerTackTime_Tick);
             // 
-            // timer1
-            // 
-            this.timer1.Enabled = true;
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
-            // 
             // FormInit
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
+            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(12)))), ((int)(((byte)(12)))));
             this.ClientSize = new System.Drawing.Size(932, 550);
+            this.ControlBox = false;
             this.Controls.Add(this.contentPanel);
-            this.DisplayHeader = false;
             this.ForeColor = System.Drawing.Color.Transparent;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.MinimumSize = new System.Drawing.Size(932, 550);
             this.Name = "FormInit";
             this.Opacity = 0.92D;
-            this.Padding = new System.Windows.Forms.Padding(18, 30, 18, 18);
-            this.Resizable = false;
-            this.Style = MetroFramework.MetroColorStyle.Teal;
+            this.Padding = new System.Windows.Forms.Padding(0);
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "INIT";
-            this.Theme = MetroFramework.MetroThemeStyle.Dark;
             this.TopMost = true;
             this.Load += new System.EventHandler(this.FormInit_Load);
             this.Shown += new System.EventHandler(this.FormInit_Shown);
@@ -239,6 +235,5 @@ namespace OpenVisionLab
         private System.Windows.Forms.Label lbName;
         private System.Windows.Forms.Label lbVersion;
         private System.Windows.Forms.Label lbProcedure;
-        private System.Windows.Forms.Timer timer1;
     }
 }

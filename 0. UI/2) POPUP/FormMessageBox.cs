@@ -1,4 +1,4 @@
-ï»¿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -8,13 +8,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-using MetroFramework.Forms;
-using MetroFramework.Controls;
 using FontAwesome.Sharp;
 
 namespace OpenVisionLab
 {
-    public partial class FormMessageBox : MetroForm
+    public partial class FormMessageBox : Form
     {
         public enum MESSAGEBOX_TYPE { Normal, Info, Quit, Stop, Waring };
 
@@ -73,8 +71,27 @@ namespace OpenVisionLab
 
             this.TopLevel = true;
             this.TopMost = true;
+            this.StartPosition = FormStartPosition.CenterParent;
+            this.KeyPreview = true;
 
             CreateIcon(type);
+        }
+
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            CenterToOwnerOrScreen();
+        }
+
+        private void CenterToOwnerOrScreen()
+        {
+            Rectangle targetBounds = Owner != null && !Owner.IsDisposed
+                ? Owner.Bounds
+                : Screen.FromPoint(Cursor.Position).WorkingArea;
+
+            Location = new Point(
+                targetBounds.Left + Math.Max(0, (targetBounds.Width - Width) / 2),
+                targetBounds.Top + Math.Max(0, (targetBounds.Height - Height) / 2));
         }
         private void CreateIcon(MESSAGEBOX_TYPE icon)
         {//set message box icon
@@ -129,7 +146,7 @@ namespace OpenVisionLab
         //        fm.RightToLeftLayout = false;
         //        fm.Opacity = 0d;
         //        tm.Interval = 50;
-        //        // ë‚˜íƒ€ë‚˜ëŠ” ì†ë„ë¥¼ ì¡°ì •í•¨. Â  Â 
+        //        // ³ªÅ¸³ª´Â ¼Óµµ¸¦ Á¶Á¤ÇÔ. ? ?
         //        tm.Tick += delegate (object obj, EventArgs e)
         //        {
         //            if ((cnt + 1 > opacity.Length) || fm == null)

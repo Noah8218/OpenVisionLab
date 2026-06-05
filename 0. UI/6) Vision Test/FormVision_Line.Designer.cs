@@ -1,4 +1,4 @@
-﻿using Cyotek.Windows.Forms;
+using Cyotek.Windows.Forms;
 
 namespace OpenVisionLab
 {
@@ -32,10 +32,9 @@ namespace OpenVisionLab
         {
             this.components = new System.ComponentModel.Container();
             this.hostedComponent2 = new System.Windows.Controls.WpfPropertyGrid.PropertyGrid();
-            this.metroStyleManager = new MetroFramework.Components.MetroStyleManager(this.components);
-            this.ibSource = new Cyotek.Windows.Forms.ImageBox();
+                        this.ibSource = new Cyotek.Windows.Forms.ImageBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
-            this.metroTabControl2 = new MetroFramework.Controls.MetroTabControl();
+            this.metroTabControl2 = new System.Windows.Forms.TabControl();
             this.cbLayerList = new RJCodeUI_M1.RJControls.RJComboBox();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.cbLayerList2 = new RJCodeUI_M1.RJControls.RJComboBox();
@@ -51,7 +50,6 @@ namespace OpenVisionLab
             this.btnVerLineRun = new RJCodeUI_M1.RJControls.RJButton();
             this.pnParameter = new RJCodeUI_M1.RJControls.RJPanel();
             this.pnlClientArea.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.metroStyleManager)).BeginInit();
             this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.btnNewPanel_Desty)).BeginInit();
@@ -70,11 +68,7 @@ namespace OpenVisionLab
             this.pnlClientArea.Location = new System.Drawing.Point(1, 41);
             this.pnlClientArea.Size = new System.Drawing.Size(601, 570);
             // 
-            // metroStyleManager
             // 
-            this.metroStyleManager.Owner = this;
-            this.metroStyleManager.Style = MetroFramework.MetroColorStyle.Teal;
-            this.metroStyleManager.Theme = MetroFramework.MetroThemeStyle.Dark;
             // 
             // ibSource
             // 
@@ -102,7 +96,6 @@ namespace OpenVisionLab
             this.metroTabControl2.Name = "metroTabControl2";
             this.metroTabControl2.Size = new System.Drawing.Size(8, 8);
             this.metroTabControl2.TabIndex = 2159;
-            this.metroTabControl2.UseSelectable = true;
             // 
             // cbLayerList
             // 
@@ -395,7 +388,6 @@ namespace OpenVisionLab
             this.MaximizeBox = false;
             this.Name = "FormVision_Line";
             this.Padding = new System.Windows.Forms.Padding(1);
-            this.Resizable = false;
             this.Text = "Line";
             this.Load += new System.EventHandler(this.FormSettings_Camera_Load);
             this.Controls.SetChildIndex(this.pnlClientArea, 0);
@@ -403,7 +395,6 @@ namespace OpenVisionLab
             this.Controls.SetChildIndex(this.groupBox4, 0);
             this.pnlClientArea.ResumeLayout(false);
             this.pnlClientArea.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.metroStyleManager)).EndInit();
             this.groupBox3.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
@@ -413,8 +404,6 @@ namespace OpenVisionLab
         }
 
         #endregion
-
-        private MetroFramework.Components.MetroStyleManager metroStyleManager;
         private ImageBox ibSource;
         private System.Windows.Forms.GroupBox groupBox4;
         private ImageBox ibDestination;
@@ -426,7 +415,7 @@ namespace OpenVisionLab
         private RJCodeUI_M1.RJControls.RJComboBox cbLayerList2;
         private RJCodeUI_M1.RJControls.RJComboBox cbLayerList;
         private RJCodeUI_M1.RJControls.RJButton btnResult;
-        private MetroFramework.Controls.MetroTabControl metroTabControl2;
+        private System.Windows.Forms.TabControl metroTabControl2;
         private RJCodeUI_M1.RJControls.RJRadioButton rdoLeftEdgePara;
         private RJCodeUI_M1.RJControls.RJRadioButton rdoRightEdgePara;
         private RJCodeUI_M1.RJControls.RJButton rjButton1;
