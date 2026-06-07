@@ -5,7 +5,6 @@ using System.Windows.Forms;
 using System.Reflection;
 using System.Diagnostics;
 using OpenCvSharp;
-using Keys = System.Windows.Forms.Keys;
 using OpenVisionLab._1._Core;
 using RJCodeUI_M1.RJForms;
 using Lib.Common;
@@ -29,66 +28,102 @@ namespace OpenVisionLab
             ABS,
             ABSDIFF
         }
+        private void InitLayListItem()
+        {
+            InitializeLayerList(cbLayerList1, source1_Index);
+            InitializeLayerList(cbLayerList2, source2_Index);
+            InitializeLayerList(cbLayerList_Dest, destination_Index);
+        }
+
+        private void IbSource2_MouseClick(object sender, MouseEventArgs e)
+        {
+            ActivateViewerLayer(source2_Index, true);
+        }
+
+        private void IbSource2_ImageChanged(object sender, EventArgs e)
+        {
+            AcceptUserImageChange(cbLayerList2, ibSource2, index => source2_Index = index);
+        }
+
+        private void IbDestination_MouseClick(object sender, MouseEventArgs e)
+        {
+            ActivateViewerLayer(destination_Index, true);
+        }
+
+        private void IbSource1_MouseClick(object sender, MouseEventArgs e)
+        {
+            ActivateViewerLayer(source1_Index, true);
+        }
+
+        private void IbDestination_ImageChanged(object sender, EventArgs e)
+        {
+            AcceptUserImageChange(cbLayerList_Dest, ibDestination, index => destination_Index = index);
+        }
+
+        private void IbSource1_ImageChanged(object sender, EventArgs e)
+        {
+            AcceptUserImageChange(cbLayerList1, ibSource1, index => source1_Index = index);
+        }
+
+        private bool InitEvent()
+        {
+            return RegisterEscapeClose();
+        }
+
+        private void btnNewPanel_Desty_Click(object sender, EventArgs e)
+        {
+            CreateDestinationLayer(cbLayerList_Dest, InitLayListItem, index => destination_Index = index);
+        }
+
+        private void cbLayerList1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            SelectLayer(cbLayerList1, source_1, ibSource1, index => source1_Index = index);
+        }
+
+        private void cbLayerListDestination_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            SelectLayer(cbLayerList_Dest, destination, ibDestination, index => destination_Index = index);
+        }
+
+        private void cbLayerList2_OnSelectedIndexChanged(object sender, EventArgs e)
+        {
+            SelectLayer(cbLayerList2, source_2, ibSource2, index => source2_Index = index);
+        }
+        private void FormSettings_Camera_Load(object sender, EventArgs e)
+        {
+            InitMenu();
+            RegisterEscapeClose();
+            ApplyVisionTestCompactStyle();
+            InitLayListItem();
+
+            ibSource1.UserImageChanged += IbSource1_ImageChanged;
+            ibSource1.MouseClick += IbSource1_MouseClick;
+
+            ibSource2.UserImageChanged += IbSource2_ImageChanged;
+            ibSource2.MouseClick += IbSource2_MouseClick;
+
+            ibDestination.UserImageChanged += IbDestination_ImageChanged;
+            ibDestination.MouseClick += IbDestination_MouseClick;
+
+            rdoSourceImage.Checked = true;
+
+            DeferInitialViewerLoad(() =>
+            {
+                ibSource1.DisplayImage = GetLayerImage(DEFINE.Main);
+                ibSource2.DisplayImage = GetLayerImage(DEFINE.Main);
+                ibDestination.DisplayImage = GetLayerImage(DEFINE.Main);
+                ibSource1.ZoomToFit();
+                ibSource2.ZoomToFit();
+                ibDestination.ZoomToFit();
+            }, "arithmetic viewer image load");
+        }
 
         public FormVision_Arithmetic(IDisplayManager displayManager, EventHandler<DockDisplayEventArgs> EventUpdateDisplay)
         {
             InitializeComponent();
             SetDisplayManager(displayManager);
             this.eventUpdateDisplay = EventUpdateDisplay;
-            panelCount = this.displayManager.LayerCount;
-            timer1.Enabled = true;
-            timer1.Start();
         }
-
-        private void InitLayListItem()
-        {
-            cbLayerList1.Items.Clear();
-            for (int i = 0; i < displayManager.LayerCount; i++) { cbLayerList1.Items.Add(displayManager.GetLayerTitle(i)); }
-            cbLayerList1.SelectedIndex = source1_Index;
-
-            cbLayerList2.Items.Clear();
-            for (int i = 0; i < displayManager.LayerCount; i++) { cbLayerList2.Items.Add(displayManager.GetLayerTitle(i)); }
-            cbLayerList2.SelectedIndex = source2_Index;
-
-            cbLayerList_Dest.Items.Clear();
-            for (int i = 0; i < displayManager.LayerCount; i++) { cbLayerList_Dest.Items.Add(displayManager.GetLayerTitle(i)); }
-            cbLayerList_Dest.SelectedIndex = destination_Index;
-        }
-
-        private void FormSettings_Camera_Load(object sender, EventArgs e)
-        {
-            InitMenu();
-            InitEvent();
-            InitLayListItem();
-            source_1.LoadImageBox(ibSource1, false);
-            source_2.LoadImageBox(ibSource2, false);
-            destination.LoadImageBox(ibDestination, false);
-
-            ibSource1.Image = GetLayerImage(DEFINE.Main);
-            ibSource1.ImageChanged += IbSource1_ImageChanged;
-            ibSource1.MouseClick += IbSource1_MouseClick;
-            ibSource1.ZoomToFit();
-
-            ibSource2.Image = GetLayerImage(DEFINE.Main);
-            ibSource2.ImageChanged += IbSource2_ImageChanged;
-            ibSource2.MouseClick += IbSource2_MouseClick;
-            ibSource2.ZoomToFit();
-
-            ibDestination.Image = GetLayerImage(DEFINE.Main);
-            ibDestination.ImageChanged += IbDestination_ImageChanged;
-            ibDestination.MouseClick += IbDestination_MouseClick;
-            ibDestination.ZoomToFit();
-
-            this.GotFocus += FormVision_Arithmetic_GotFocus;
-
-            rdoSourceImage.Checked = true;            
-        }
-
-        private void FormVision_Arithmetic_GotFocus(object sender, EventArgs e)
-        {
-
-        }
-
         public void InitMenu()
         {
             cbArithmeticType.Items.Add(Arithmetic.Bitwise_AND);
@@ -105,137 +140,10 @@ namespace OpenVisionLab
             cbArithmeticType.Items.Add(Arithmetic.ABSDIFF);
             cbArithmeticType.SelectedIndex = 0;
         }
-
-        private void IbSource2_MouseClick(object sender, MouseEventArgs e)
-        {
-            displayManager.ActivateLayer(source2_Index);
-            this.Focus();
-            this.TopLevel = true;
-            this.TopMost = true;
-            displayManager.ZoomLayerToFit(source2_Index);
-        }
-
-        private void IbSource2_ImageChanged(object sender, EventArgs e)
-        {
-            source2_Index = cbLayerList2.SelectedIndex;
-            SetLayerImage(source2_Index, (Bitmap)ibSource2.Image);
-        }
-
-        private void IbDestination_MouseClick(object sender, MouseEventArgs e)
-        {
-            displayManager.ActivateLayer(destination_Index);
-            this.Focus();
-            this.TopLevel = true;
-            this.TopMost = true;
-            displayManager.ZoomLayerToFit(destination_Index);
-        }
-
-        private void IbSource1_MouseClick(object sender, MouseEventArgs e)
-        {
-            displayManager.ActivateLayer(source1_Index);
-            this.Focus();
-            this.TopLevel = true;
-            this.TopMost = true;
-            displayManager.ZoomLayerToFit(source1_Index);
-        }
-
-        private void IbDestination_ImageChanged(object sender, EventArgs e)
-        {
-            destination_Index = cbLayerList_Dest.SelectedIndex;
-            SetLayerImage(destination_Index, (Bitmap)ibDestination.Image);
-        }
-
-        private void IbSource1_ImageChanged(object sender, EventArgs e)
-        {
-            source1_Index = cbLayerList1.SelectedIndex;
-            SetLayerImage(source1_Index, (Bitmap)ibSource1.Image);
-        }
-
-        private void Form_KeyDown(object sender, KeyEventArgs e)
-        {
-            if ((Keys)e.KeyValue == Keys.Escape)
-            {
-                this.DialogResult = DialogResult.Cancel;
-                this.Close();
-            }
-        }
-
-        private bool InitEvent()
-        {
-            try
-            {
-                this.KeyPreview = true;
-                this.KeyDown += Form_KeyDown;
-
-                CLOG.NORMAL($"[OK] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}");
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-                return false;
-            }
-
-            return true;
-        }
-
-        private void btnNewPanel_Desty_Click(object sender, EventArgs e)
-        {
-            displayManager.CreatePanel();
-            InitLayListItem();
-            destination_Index = cbLayerList_Dest.Items.Count - 1;
-            cbLayerList_Dest.SelectedIndex = destination_Index;
-        }
-
-        private void cbLayerList1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            source1_Index = cbLayerList1.SelectedIndex;
-            source_1._Ib.Image =
-            ibSource1.Image = GetLayerImage(source1_Index);
-        }
-
-        private void cbLayerListDestination_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            destination_Index = cbLayerList_Dest.SelectedIndex;
-            ibDestination.Image = GetLayerImage(destination_Index);
-        }
-
-        private void timer1_Tick(object sender, EventArgs e)
-        {
-            try
-            {
-                if (panelCount != displayManager.LayerCount)
-                {
-                    panelCount = displayManager.LayerCount;
-                    InitLayListItem();
-                }
-
-                RefreshViewerRoi(source_1, ibSource1, source1_Index);
-
-                RefreshViewerRoi(source_2, ibSource2, source2_Index);
-
-                RefreshViewerRoi(destination, ibDestination, destination_Index);
-
-                cbLayerList1_SelectedIndexChanged(null, null);
-                cbLayerList2_OnSelectedIndexChanged(null, null);
-                cbLayerListDestination_SelectedIndexChanged(null, null);
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-            }
-        }
-
         private void btnFilterRun_Click(object sender, EventArgs e)
         {
 
         }
-
-        private void cbLayerList2_OnSelectedIndexChanged(object sender, EventArgs e)
-        {
-            source2_Index = cbLayerList2.SelectedIndex;
-            ibSource2.Image = GetLayerImage(source2_Index);
-        }
-
         private void btnArithmeticRun_Click(object sender, EventArgs e)
         {
             try
@@ -243,8 +151,8 @@ namespace OpenVisionLab
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                using (Mat ImageCVSource1 = Lib.Common.CImageConverter.ToMat((Bitmap)ibSource1.Image).Clone())
-                using (Mat ImageCVSource2 = Lib.Common.CImageConverter.ToMat((Bitmap)ibSource2.Image).Clone())
+                using (Mat ImageCVSource1 = Lib.Common.CImageConverter.ToMat(ibSource1.DisplayBitmap).Clone())
+                using (Mat ImageCVSource2 = Lib.Common.CImageConverter.ToMat(ibSource2.DisplayBitmap).Clone())
                 {
                     // bgr��
                     if (tbGray.Text == "") { tbGray.Text = "1"; }
@@ -372,10 +280,7 @@ namespace OpenVisionLab
 
                         Result = Lib.Common.CBitmapProcessing.OverlayImage(Lib.Common.CImageConverter.ToBitmap(ImageCVSource1), Lib.Common.CImageConverter.ToBitmap(ResultImage), r.Left, r.Top);
                     }
-
-                    SetLayerImage(GetDisplayIndex(cbLayerList_Dest.SelectedItem.ToString()), Result);
-                    ibDestination.Image = Result;
-                    eventUpdateDisplay(null, new DockDisplayEventArgs(Result, GetDisplayIndex(cbLayerList_Dest.SelectedItem.ToString()), stopwatch.Elapsed.TotalSeconds.ToString() + "s"));
+                    PublishResult(cbLayerList_Dest, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
                 }
             }
             catch (Exception Desc)
@@ -464,7 +369,7 @@ namespace OpenVisionLab
                 {
                     switch (rdoButton.Text)
                     {
-                        case "Source Image 2":
+                        case "Input B":
                             gpSourceImage.Enabled = true;
                             gpContrast.Enabled = false;
                             break;
@@ -506,7 +411,7 @@ namespace OpenVisionLab
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                using (Mat ImageCVSource1 = Lib.Common.CImageConverter.ToMat((Bitmap)ibSource1.Image).Clone())
+                using (Mat ImageCVSource1 = Lib.Common.CImageConverter.ToMat(ibSource1.DisplayBitmap).Clone())
                 {
                     Mat val = new Mat();
 
@@ -545,10 +450,7 @@ namespace OpenVisionLab
                     SrcImg[srcRect].CopyTo(DstImg[DstRect]);
 
                     Result = Lib.Common.CImageConverter.ToBitmap(DstImg);
-
-                    SetLayerImage(GetDisplayIndex(cbLayerList_Dest.SelectedItem.ToString()), Result);
-                    ibDestination.Image = Result;
-                    eventUpdateDisplay(null, new DockDisplayEventArgs(Result, GetDisplayIndex(cbLayerList_Dest.SelectedItem.ToString()), stopwatch.Elapsed.TotalSeconds.ToString() + "s"));
+                    PublishResult(cbLayerList_Dest, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
                 }
             }
             catch (Exception Desc)
@@ -558,4 +460,6 @@ namespace OpenVisionLab
         }
     }
 }
+
+
 

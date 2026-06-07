@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using RJCodeUI_M1.RJControls;
 using System.Collections.Generic;
-using Cyotek.Windows.Forms;
 using System.Threading.Tasks;
 using OpenVisionLab._1._Core;
 using static OpenVisionLab.DEFINE;
@@ -459,7 +458,7 @@ namespace OpenVisionLab
 
         #endregion
 
-        #region CALL BACK   
+        #region CALL BACK
         private void OnChangedRecipe(object sender, EventArgs e)
         {
             this.UIThreadInvoke(() =>
@@ -566,7 +565,7 @@ namespace OpenVisionLab
         }
 
         private void btnScreenCapture_MouseUp(object sender, MouseEventArgs e)
-        {           
+        {
             if (e.Button == MouseButtons.Right)
             {
                 Control control = (Control)sender;
@@ -646,7 +645,25 @@ namespace OpenVisionLab
             RJSettingsForm rJSettingsForm = new RJSettingsForm();
             rJSettingsForm.Show();
         }
+        private void miImageCompare_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                FormImageCompare formCompare = new FormImageCompare
+                {
+                    TopLevel = true,
+                    TopMost = false,
+                    StartPosition = FormStartPosition.CenterParent
+                };
 
+                if (!CUtil.OpenCheckForm(formCompare)) return;
+                formCompare.Show(this);
+            }
+            catch (Exception Desc)
+            {
+                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
+            }
+        }
         private void biUserOptions_Click_1(object sender, EventArgs e)
         {
 

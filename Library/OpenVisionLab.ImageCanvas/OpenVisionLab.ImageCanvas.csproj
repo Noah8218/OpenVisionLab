@@ -1,0 +1,73 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
+    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
+    <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <RootNamespace>OpenVisionLab.ImageCanvas</RootNamespace>
+    <AssemblyName>OpenVisionLab.ImageCanvas</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Emgu.CV.World" Condition="Exists('..\..\dll\EmguCV\Emgu.CV.World.dll')">
+      <HintPath>..\..\dll\EmguCV\Emgu.CV.World.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Emgu.CV.World" Condition="Exists('..\..\dl\EmguCV\Emgu.CV.World.dll')">
+      <HintPath>..\..\dl\EmguCV\Emgu.CV.World.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Emgu.CV.World" Condition="Exists('..\_lib\EmguCV\Emgu.CV.World.dll')">
+      <HintPath>..\_lib\EmguCV\Emgu.CV.World.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="OpenCvSharp">
+      <HintPath>..\..\dll\OpenCVSharp\OpenCvSharp.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="OpenCvSharp.Extensions">
+      <HintPath>..\..\dll\OpenCVSharp\OpenCvSharp.Extensions.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="SharpGL">
+      <HintPath>..\..\dll\SharpGL\SharpGL.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="SharpGL.WinForms">
+      <HintPath>..\..\dll\SharpGL\SharpGL.WinForms.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="ViewModel\AutoAlignTeachingViewModel.cs" />
+    <Compile Remove="ViewModel\AutoWarpageTeachingViewModel.cs" />
+    <Compile Remove="ViewModel\LayoutItemViewModel.cs" />
+    <Compile Remove="View\AddRoiArrayView.xaml.cs" />
+    <Compile Remove="View\AutoAlignTeachingView.xaml.cs" />
+    <Compile Remove="View\AutoWarpageTeachingView.xaml.cs" />
+    <Compile Remove="Converter\BooleanToEyeIconConverter .cs" />
+    <Page Remove="View\AddRoiArrayView.xaml" />
+    <Page Remove="View\AutoAlignTeachingView.xaml" />
+    <Page Remove="View\AutoWarpageTeachingView.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\dll\EmguCV\cvextern.dll">
+      <Link>cvextern.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\dll\OpenCVSharp\OpenCvSharpExtern.dll">
+      <Link>OpenCvSharpExtern.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\dll\OpenCVSharp\opencv_ffmpeg400_64.dll">
+      <Link>opencv_ffmpeg400_64.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+</Project>

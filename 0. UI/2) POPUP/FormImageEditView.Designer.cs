@@ -1,19 +1,18 @@
-
-using Cyotek.Windows.Forms;
+癤�
 
 namespace OpenVisionLab
 {
     partial class FormImageEditView
     {
-        /// <summary> 
-        /// 필수 디자이너 변수입니다.
+        /// <summary>
+        /// Required designer variable.
         /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary> 
-        /// 사용 중인 모든 리소스를 정리합니다.
+        /// <summary>
+        /// Clean up resources being used.
         /// </summary>
-        /// <param name="disposing">관리되는 리소스를 삭제해야 하면 true이고, 그렇지 않으면 false입니다.</param>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise false.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -23,11 +22,10 @@ namespace OpenVisionLab
             base.Dispose(disposing);
         }
 
-        #region 구성 요소 디자이너에서 생성한 코드
+        #region Component Designer generated code
 
-        /// <summary> 
-        /// 디자이너 지원에 필요한 메서드입니다. 
-        /// 이 메서드의 내용을 코드 편집기로 수정하지 마세요.
+        /// <summary>
+        /// Required method for Designer support.
         /// </summary>
         private void InitializeComponent()
         {
@@ -45,7 +43,6 @@ namespace OpenVisionLab
             this.btnZoomOut = new System.Windows.Forms.ToolStripButton();
             this.toolStripButton7 = new System.Windows.Forms.ToolStripButton();
             this.toolStripButton9 = new System.Windows.Forms.ToolStripButton();
-            this.ibSource = new Cyotek.Windows.Forms.ImageBox();
             this.lbGV = new System.Windows.Forms.Label();
             this.metroTile11 = new System.Windows.Forms.Label();
             this.metroTile1 = new System.Windows.Forms.Label();
@@ -55,17 +52,10 @@ namespace OpenVisionLab
             this.btnMatrixView = new System.Windows.Forms.Button();
             this.metroButton2 = new System.Windows.Forms.Button();
             this.metroButton3 = new System.Windows.Forms.Button();
-            this.timer1 = new System.Windows.Forms.Timer(this.components);
-            this.btnTrainROI = new RJCodeUI_M1.RJControls.RJButton();
-            this.btnDrag = new RJCodeUI_M1.RJControls.RJButton();
-            this.btnMultiRoi = new RJCodeUI_M1.RJControls.RJButton();
-            this.btnROI = new RJCodeUI_M1.RJControls.RJButton();
-            this.btnSaveParameter = new RJCodeUI_M1.RJControls.RJButton();
             this.propertygrid_Parameter = new System.Windows.Forms.PropertyGrid();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.ibTrainImage = new Cyotek.Windows.Forms.ImageBox();
+            this.imageCanvasHost = new System.Windows.Forms.Integration.ElementHost();
             this.pnlClientArea.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -76,7 +66,6 @@ namespace OpenVisionLab
             this.splitContainer2.Panel1.SuspendLayout();
             this.splitContainer2.Panel2.SuspendLayout();
             this.splitContainer2.SuspendLayout();
-            this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
             // pnlClientArea
@@ -226,18 +215,15 @@ namespace OpenVisionLab
             this.toolStripButton9.Size = new System.Drawing.Size(38, 25);
             this.toolStripButton9.Text = "ROI";
             // 
-            // ibSource
+            // imageCanvasHost
             // 
-            this.ibSource.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.ibSource.Font = new System.Drawing.Font("굴림", 35.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(129)));
-            this.ibSource.ForeColor = System.Drawing.Color.White;
-            this.ibSource.Location = new System.Drawing.Point(0, 0);
-            this.ibSource.Name = "ibSource";
-            this.ibSource.Size = new System.Drawing.Size(909, 775);
-            this.ibSource.TabIndex = 824;
-            this.ibSource.Text = "ROI Mode";
-            this.ibSource.TextAlign = System.Drawing.ContentAlignment.TopLeft;
-            this.ibSource.MouseMove += new System.Windows.Forms.MouseEventHandler(this.ibSource_MouseMove);
+            this.imageCanvasHost.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.imageCanvasHost.Location = new System.Drawing.Point(0, 0);
+            this.imageCanvasHost.Name = "imageCanvasHost";
+            this.imageCanvasHost.Size = new System.Drawing.Size(909, 775);
+            this.imageCanvasHost.TabIndex = 825;
+            this.imageCanvasHost.Text = "imageCanvasHost";
+            this.imageCanvasHost.Child = null;
             // 
             // lbGV
             // 
@@ -325,156 +311,6 @@ namespace OpenVisionLab
             this.metroButton3.TabIndex = 901;
             this.metroButton3.Visible = false;
             // 
-            // timer1
-            // 
-            this.timer1.Enabled = true;
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
-            // 
-            // btnTrainROI
-            // 
-            this.btnTrainROI.BackColor = System.Drawing.Color.Transparent;
-            this.btnTrainROI.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.btnTrainROI.BorderRadius = 15;
-            this.btnTrainROI.BorderSize = 3;
-            this.btnTrainROI.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnTrainROI.Design = RJCodeUI_M1.RJControls.ButtonDesign.Custom;
-            this.btnTrainROI.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(234)))), ((int)(((byte)(79)))), ((int)(((byte)(82)))));
-            this.btnTrainROI.FlatAppearance.BorderSize = 3;
-            this.btnTrainROI.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(239)))), ((int)(((byte)(239)))), ((int)(((byte)(239)))));
-            this.btnTrainROI.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.btnTrainROI.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnTrainROI.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnTrainROI.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.btnTrainROI.IconChar = FontAwesome.Sharp.IconChar.FileImage;
-            this.btnTrainROI.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.btnTrainROI.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.btnTrainROI.IconSize = 40;
-            this.btnTrainROI.ImageAlign = System.Drawing.ContentAlignment.TopCenter;
-            this.btnTrainROI.Location = new System.Drawing.Point(727, 6);
-            this.btnTrainROI.Name = "btnTrainROI";
-            this.btnTrainROI.Size = new System.Drawing.Size(52, 52);
-            this.btnTrainROI.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
-            this.btnTrainROI.TabIndex = 2146;
-            this.btnTrainROI.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnTrainROI.UseVisualStyleBackColor = false;
-            this.btnTrainROI.Click += new System.EventHandler(this.Onbtn_Click);
-            // 
-            // btnDrag
-            // 
-            this.btnDrag.BackColor = System.Drawing.Color.Transparent;
-            this.btnDrag.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.btnDrag.BorderRadius = 15;
-            this.btnDrag.BorderSize = 3;
-            this.btnDrag.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnDrag.Design = RJCodeUI_M1.RJControls.ButtonDesign.Custom;
-            this.btnDrag.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(234)))), ((int)(((byte)(79)))), ((int)(((byte)(82)))));
-            this.btnDrag.FlatAppearance.BorderSize = 3;
-            this.btnDrag.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(239)))), ((int)(((byte)(239)))), ((int)(((byte)(239)))));
-            this.btnDrag.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.btnDrag.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnDrag.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnDrag.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.btnDrag.IconChar = FontAwesome.Sharp.IconChar.MousePointer;
-            this.btnDrag.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.btnDrag.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.btnDrag.IconSize = 40;
-            this.btnDrag.ImageAlign = System.Drawing.ContentAlignment.TopCenter;
-            this.btnDrag.Location = new System.Drawing.Point(611, 7);
-            this.btnDrag.Name = "btnDrag";
-            this.btnDrag.Size = new System.Drawing.Size(52, 52);
-            this.btnDrag.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
-            this.btnDrag.TabIndex = 2145;
-            this.btnDrag.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnDrag.UseVisualStyleBackColor = false;
-            this.btnDrag.Click += new System.EventHandler(this.Onbtn_Click);
-            // 
-            // btnMultiRoi
-            // 
-            this.btnMultiRoi.BackColor = System.Drawing.Color.Transparent;
-            this.btnMultiRoi.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.btnMultiRoi.BorderRadius = 15;
-            this.btnMultiRoi.BorderSize = 3;
-            this.btnMultiRoi.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnMultiRoi.Design = RJCodeUI_M1.RJControls.ButtonDesign.Custom;
-            this.btnMultiRoi.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(234)))), ((int)(((byte)(79)))), ((int)(((byte)(82)))));
-            this.btnMultiRoi.FlatAppearance.BorderSize = 3;
-            this.btnMultiRoi.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(239)))), ((int)(((byte)(239)))), ((int)(((byte)(239)))));
-            this.btnMultiRoi.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.btnMultiRoi.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnMultiRoi.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnMultiRoi.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.btnMultiRoi.IconChar = FontAwesome.Sharp.IconChar.ObjectUngroup;
-            this.btnMultiRoi.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.btnMultiRoi.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.btnMultiRoi.IconSize = 40;
-            this.btnMultiRoi.ImageAlign = System.Drawing.ContentAlignment.TopCenter;
-            this.btnMultiRoi.Location = new System.Drawing.Point(785, 7);
-            this.btnMultiRoi.Name = "btnMultiRoi";
-            this.btnMultiRoi.Size = new System.Drawing.Size(52, 52);
-            this.btnMultiRoi.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
-            this.btnMultiRoi.TabIndex = 2144;
-            this.btnMultiRoi.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnMultiRoi.UseVisualStyleBackColor = false;
-            this.btnMultiRoi.Click += new System.EventHandler(this.Onbtn_Click);
-            // 
-            // btnROI
-            // 
-            this.btnROI.BackColor = System.Drawing.Color.Transparent;
-            this.btnROI.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.btnROI.BorderRadius = 15;
-            this.btnROI.BorderSize = 3;
-            this.btnROI.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnROI.Design = RJCodeUI_M1.RJControls.ButtonDesign.Custom;
-            this.btnROI.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(234)))), ((int)(((byte)(79)))), ((int)(((byte)(82)))));
-            this.btnROI.FlatAppearance.BorderSize = 3;
-            this.btnROI.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(239)))), ((int)(((byte)(239)))), ((int)(((byte)(239)))));
-            this.btnROI.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.btnROI.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnROI.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnROI.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.btnROI.IconChar = FontAwesome.Sharp.IconChar.VectorSquare;
-            this.btnROI.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.btnROI.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.btnROI.IconSize = 40;
-            this.btnROI.ImageAlign = System.Drawing.ContentAlignment.TopCenter;
-            this.btnROI.Location = new System.Drawing.Point(669, 6);
-            this.btnROI.Name = "btnROI";
-            this.btnROI.Size = new System.Drawing.Size(52, 52);
-            this.btnROI.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
-            this.btnROI.TabIndex = 2143;
-            this.btnROI.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnROI.UseVisualStyleBackColor = false;
-            this.btnROI.Click += new System.EventHandler(this.Onbtn_Click);
-            // 
-            // btnSaveParameter
-            // 
-            this.btnSaveParameter.BackColor = System.Drawing.Color.White;
-            this.btnSaveParameter.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.btnSaveParameter.BorderRadius = 15;
-            this.btnSaveParameter.BorderSize = 3;
-            this.btnSaveParameter.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnSaveParameter.Design = RJCodeUI_M1.RJControls.ButtonDesign.Custom;
-            this.btnSaveParameter.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(234)))), ((int)(((byte)(79)))), ((int)(((byte)(82)))));
-            this.btnSaveParameter.FlatAppearance.BorderSize = 3;
-            this.btnSaveParameter.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(239)))), ((int)(((byte)(239)))), ((int)(((byte)(239)))));
-            this.btnSaveParameter.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.btnSaveParameter.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnSaveParameter.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnSaveParameter.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.btnSaveParameter.IconChar = FontAwesome.Sharp.IconChar.Save;
-            this.btnSaveParameter.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.btnSaveParameter.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.btnSaveParameter.IconSize = 40;
-            this.btnSaveParameter.ImageAlign = System.Drawing.ContentAlignment.TopCenter;
-            this.btnSaveParameter.Location = new System.Drawing.Point(843, 7);
-            this.btnSaveParameter.Name = "btnSaveParameter";
-            this.btnSaveParameter.Size = new System.Drawing.Size(52, 52);
-            this.btnSaveParameter.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
-            this.btnSaveParameter.TabIndex = 2145;
-            this.btnSaveParameter.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
-            this.btnSaveParameter.UseVisualStyleBackColor = false;
-            this.btnSaveParameter.Click += new System.EventHandler(this.btnCut_Click);
-            // 
             // propertygrid_Parameter
             // 
             this.propertygrid_Parameter.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
@@ -496,7 +332,6 @@ namespace OpenVisionLab
             // 
             // splitContainer1.Panel2
             // 
-            this.splitContainer1.Panel2.Controls.Add(this.groupBox1);
             this.splitContainer1.Panel2.Controls.Add(this.lbGV);
             this.splitContainer1.Panel2.Controls.Add(this.propertygrid_Parameter);
             this.splitContainer1.Panel2.Controls.Add(this.metroTile11);
@@ -520,36 +355,13 @@ namespace OpenVisionLab
             // 
             // splitContainer2.Panel1
             // 
-            this.splitContainer2.Panel1.Controls.Add(this.btnSaveParameter);
-            this.splitContainer2.Panel1.Controls.Add(this.btnMultiRoi);
-            this.splitContainer2.Panel1.Controls.Add(this.btnDrag);
-            this.splitContainer2.Panel1.Controls.Add(this.btnTrainROI);
-            this.splitContainer2.Panel1.Controls.Add(this.btnROI);
             // 
             // splitContainer2.Panel2
             // 
-            this.splitContainer2.Panel2.Controls.Add(this.ibSource);
+            this.splitContainer2.Panel2.Controls.Add(this.imageCanvasHost);
             this.splitContainer2.Size = new System.Drawing.Size(909, 843);
             this.splitContainer2.SplitterDistance = 64;
             this.splitContainer2.TabIndex = 0;
-            // 
-            // groupBox1
-            // 
-            this.groupBox1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
-            this.groupBox1.Controls.Add(this.ibTrainImage);
-            this.groupBox1.Location = new System.Drawing.Point(6, 414);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(336, 298);
-            this.groupBox1.TabIndex = 2164;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Train Image";
-            // 
-            // ibTrainImage
-            // 
-            this.ibTrainImage.Location = new System.Drawing.Point(6, 20);
-            this.ibTrainImage.Name = "ibTrainImage";
-            this.ibTrainImage.Size = new System.Drawing.Size(324, 272);
-            this.ibTrainImage.TabIndex = 2149;
             // 
             // FormImageEditView
             // 
@@ -579,7 +391,6 @@ namespace OpenVisionLab
             this.splitContainer2.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
             this.splitContainer2.ResumeLayout(false);
-            this.groupBox1.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -598,7 +409,6 @@ namespace OpenVisionLab
         private System.Windows.Forms.ToolStripButton toolStripButton9;
         private System.Windows.Forms.ToolStripButton btnFit;
         private System.Windows.Forms.ToolStripButton btnZoomIn;
-        private ImageBox ibSource;
         private System.Windows.Forms.Label lbGV;
         private System.Windows.Forms.Label metroTile11;
         private System.Windows.Forms.Label metroTile1;
@@ -608,17 +418,10 @@ namespace OpenVisionLab
         private System.Windows.Forms.Button btnMatrixView;
         private System.Windows.Forms.Button metroButton2;
         private System.Windows.Forms.Button metroButton3;
-        private System.Windows.Forms.Timer timer1;
-        private RJCodeUI_M1.RJControls.RJButton btnROI;
-        private RJCodeUI_M1.RJControls.RJButton btnMultiRoi;
-        private RJCodeUI_M1.RJControls.RJButton btnDrag;
-        private RJCodeUI_M1.RJControls.RJButton btnTrainROI;
-        private RJCodeUI_M1.RJControls.RJButton btnSaveParameter;
         private System.Windows.Forms.PropertyGrid propertygrid_Parameter;
         private System.Windows.Forms.SplitContainer splitContainer1;
         private System.Windows.Forms.SplitContainer splitContainer2;
-        private System.Windows.Forms.GroupBox groupBox1;
-        private ImageBox ibTrainImage;
+        private System.Windows.Forms.Integration.ElementHost imageCanvasHost;
     }
 }
 

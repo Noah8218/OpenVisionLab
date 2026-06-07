@@ -12,7 +12,7 @@ namespace OpenVisionLab
         /// </summary>
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
-        { 
+        {
             if (disposing && (components != null))
             {
                 components.Dispose();
@@ -36,6 +36,8 @@ namespace OpenVisionLab
 			biUserOptions = new RJCodeUI_M1.RJControls.RJMenuIcon();
 			dmUserOptions = new RJCodeUI_M1.RJControls.RJDropdownMenu(components);
 			miMyProfile = new FontAwesome.Sharp.IconMenuItem();
+			miTools = new FontAwesome.Sharp.IconMenuItem();
+			miImageCompare = new FontAwesome.Sharp.IconMenuItem();
 			miSettings = new FontAwesome.Sharp.IconMenuItem();
 			miTermsCond = new FontAwesome.Sharp.IconMenuItem();
 			miHelp = new FontAwesome.Sharp.IconMenuItem();
@@ -73,14 +75,14 @@ namespace OpenVisionLab
 			ddmDevice.SuspendLayout();
 			ddmCapture.SuspendLayout();
 			SuspendLayout();
-			// 
+			//
 			// timerAlarm
-			// 
+			//
 			timerAlarm.Enabled = true;
 			timerAlarm.Interval = 500;
-			// 
+			//
 			// mainLayoutPanel
-			// 
+			//
 			mainLayoutPanel.ColumnCount = 1;
 			mainLayoutPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
 			mainLayoutPanel.Controls.Add(pnlTitleBar, 0, 0);
@@ -96,9 +98,9 @@ namespace OpenVisionLab
 			mainLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 33F));
 			mainLayoutPanel.Size = new System.Drawing.Size(1924, 1061);
 			mainLayoutPanel.TabIndex = 1261;
-			// 
+			//
 			// pnlTitleBar
-			// 
+			//
 			pnlTitleBar.BackColor = System.Drawing.Color.Black;
 			pnlTitleBar.BorderRadius = 0;
 			pnlTitleBar.Controls.Add(biUserOptions);
@@ -116,9 +118,9 @@ namespace OpenVisionLab
 			pnlTitleBar.Name = "pnlTitleBar";
 			pnlTitleBar.Size = new System.Drawing.Size(1924, 50);
 			pnlTitleBar.TabIndex = 1260;
-			// 
+			//
 			// biUserOptions
-			// 
+			//
 			biUserOptions.BackColor = System.Drawing.Color.Transparent;
 			biUserOptions.BackIcon = false;
 			biUserOptions.Cursor = System.Windows.Forms.Cursors.Hand;
@@ -136,18 +138,18 @@ namespace OpenVisionLab
 			biUserOptions.TabIndex = 1267;
 			biUserOptions.TabStop = false;
 			biUserOptions.Click += biUserOptions_Click_1;
-			// 
+			//
 			// dmUserOptions
-			// 
+			//
 			dmUserOptions.ActiveMenuItem = false;
 			dmUserOptions.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
-			dmUserOptions.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miMyProfile, miSettings, miTermsCond, miHelp, miLogout, miExit });
+			dmUserOptions.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miMyProfile, miTools, miSettings, miTermsCond, miHelp, miLogout, miExit });
 			dmUserOptions.Name = "dmUserOptions";
 			dmUserOptions.OwnerIsMenuButton = false;
-			dmUserOptions.Size = new System.Drawing.Size(182, 136);
-			// 
+			dmUserOptions.Size = new System.Drawing.Size(182, 158);
+			//
 			// miMyProfile
-			// 
+			//
 			miMyProfile.IconChar = FontAwesome.Sharp.IconChar.UserAlt;
 			miMyProfile.IconColor = System.Drawing.Color.FromArgb(104, 85, 230);
 			miMyProfile.IconFont = FontAwesome.Sharp.IconFont.Auto;
@@ -155,10 +157,31 @@ namespace OpenVisionLab
 			miMyProfile.Name = "miMyProfile";
 			miMyProfile.Size = new System.Drawing.Size(181, 22);
 			miMyProfile.Text = "My Profile";
-			// 
-			// miSettings
-			// 
-			miSettings.IconChar = FontAwesome.Sharp.IconChar.Tools;
+			//
+			// miTools
+			//
+			miTools.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miImageCompare });
+			miTools.IconChar = FontAwesome.Sharp.IconChar.Tools;
+			miTools.IconColor = System.Drawing.Color.FromArgb(47, 168, 210);
+			miTools.IconFont = FontAwesome.Sharp.IconFont.Auto;
+			miTools.IconSize = 21;
+			miTools.Name = "miTools";
+			miTools.Size = new System.Drawing.Size(181, 22);
+			miTools.Text = "Tools";
+			//
+			// miImageCompare
+			//
+			miImageCompare.IconChar = FontAwesome.Sharp.IconChar.Images;
+			miImageCompare.IconColor = System.Drawing.Color.FromArgb(79, 94, 220);
+			miImageCompare.IconFont = FontAwesome.Sharp.IconFont.Auto;
+			miImageCompare.IconSize = 21;
+			miImageCompare.Name = "miImageCompare";
+			miImageCompare.Size = new System.Drawing.Size(180, 22);
+			miImageCompare.Text = "Image Compare";
+			miImageCompare.Click += miImageCompare_Click;
+			//			// miSettings
+			//
+			miSettings.IconChar = FontAwesome.Sharp.IconChar.Cog;
 			miSettings.IconColor = System.Drawing.Color.FromArgb(47, 168, 210);
 			miSettings.IconFont = FontAwesome.Sharp.IconFont.Auto;
 			miSettings.IconSize = 21;
@@ -166,9 +189,9 @@ namespace OpenVisionLab
 			miSettings.Size = new System.Drawing.Size(181, 22);
 			miSettings.Text = "Settings";
 			miSettings.Click += miSettings_Click;
-			// 
+			//
 			// miTermsCond
-			// 
+			//
 			miTermsCond.IconChar = FontAwesome.Sharp.IconChar.ShieldAlt;
 			miTermsCond.IconColor = System.Drawing.Color.FromArgb(70, 132, 235);
 			miTermsCond.IconFont = FontAwesome.Sharp.IconFont.Auto;
@@ -176,9 +199,9 @@ namespace OpenVisionLab
 			miTermsCond.Name = "miTermsCond";
 			miTermsCond.Size = new System.Drawing.Size(181, 22);
 			miTermsCond.Text = "Terms and Cond";
-			// 
+			//
 			// miHelp
-			// 
+			//
 			miHelp.IconChar = FontAwesome.Sharp.IconChar.QuestionCircle;
 			miHelp.IconColor = System.Drawing.Color.FromArgb(238, 96, 112);
 			miHelp.IconFont = FontAwesome.Sharp.IconFont.Auto;
@@ -186,9 +209,9 @@ namespace OpenVisionLab
 			miHelp.Name = "miHelp";
 			miHelp.Size = new System.Drawing.Size(181, 22);
 			miHelp.Text = "Help";
-			// 
+			//
 			// miLogout
-			// 
+			//
 			miLogout.IconChar = FontAwesome.Sharp.IconChar.SignOutAlt;
 			miLogout.IconColor = System.Drawing.Color.FromArgb(73, 84, 228);
 			miLogout.IconFont = FontAwesome.Sharp.IconFont.Auto;
@@ -196,9 +219,9 @@ namespace OpenVisionLab
 			miLogout.Name = "miLogout";
 			miLogout.Size = new System.Drawing.Size(181, 22);
 			miLogout.Text = "Logout";
-			// 
+			//
 			// miExit
-			// 
+			//
 			miExit.IconChar = FontAwesome.Sharp.IconChar.PowerOff;
 			miExit.IconColor = System.Drawing.Color.FromArgb(220, 37, 118);
 			miExit.IconFont = FontAwesome.Sharp.IconFont.Auto;
@@ -206,9 +229,9 @@ namespace OpenVisionLab
 			miExit.Name = "miExit";
 			miExit.Size = new System.Drawing.Size(181, 22);
 			miExit.Text = "Exit";
-			// 
+			//
 			// btnAuthoriztionName
-			// 
+			//
 			btnAuthoriztionName.BackColor = System.Drawing.Color.Black;
 			btnAuthoriztionName.BorderColor = System.Drawing.Color.FromArgb(90, 146, 246);
 			btnAuthoriztionName.BorderRadius = 10;
@@ -232,9 +255,9 @@ namespace OpenVisionLab
 			btnAuthoriztionName.TabIndex = 2647;
 			btnAuthoriztionName.Text = "Model";
 			btnAuthoriztionName.UseVisualStyleBackColor = false;
-			// 
+			//
 			// rjButton2
-			// 
+			//
 			rjButton2.BackColor = System.Drawing.Color.FromArgb(90, 146, 246);
 			rjButton2.BorderColor = System.Drawing.Color.FromArgb(90, 146, 246);
 			rjButton2.BorderRadius = 0;
@@ -261,9 +284,9 @@ namespace OpenVisionLab
 			rjButton2.UseVisualStyleBackColor = false;
 			rjButton2.Click += btnScreenCapture_Click;
 			rjButton2.MouseUp += btnScreenCapture_MouseUp;
-			// 
+			//
 			// btnCerrar
-			// 
+			//
 			btnCerrar.BackColor = System.Drawing.Color.Transparent;
 			btnCerrar.Cursor = System.Windows.Forms.Cursors.Hand;
 			btnCerrar.FlatAppearance.BorderColor = System.Drawing.Color.White;
@@ -284,9 +307,9 @@ namespace OpenVisionLab
 			btnCerrar.TabStop = false;
 			btnCerrar.UseVisualStyleBackColor = false;
 			btnCerrar.Click += btnCerrar_Click;
-			// 
+			//
 			// btnFullScreen
-			// 
+			//
 			btnFullScreen.BackColor = System.Drawing.Color.Transparent;
 			btnFullScreen.Cursor = System.Windows.Forms.Cursors.Hand;
 			btnFullScreen.FlatAppearance.BorderColor = System.Drawing.Color.White;
@@ -307,9 +330,9 @@ namespace OpenVisionLab
 			btnFullScreen.TabStop = false;
 			btnFullScreen.UseVisualStyleBackColor = false;
 			btnFullScreen.Click += btnFullScreen_Click;
-			// 
+			//
 			// btnAuthoriztion
-			// 
+			//
 			btnAuthoriztion.BackColor = System.Drawing.Color.FromArgb(90, 146, 246);
 			btnAuthoriztion.BorderColor = System.Drawing.Color.FromArgb(90, 146, 246);
 			btnAuthoriztion.BorderRadius = 0;
@@ -334,9 +357,9 @@ namespace OpenVisionLab
 			btnAuthoriztion.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
 			btnAuthoriztion.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
 			btnAuthoriztion.UseVisualStyleBackColor = false;
-			// 
+			//
 			// btnMinimizar
-			// 
+			//
 			btnMinimizar.BackColor = System.Drawing.Color.Transparent;
 			btnMinimizar.Cursor = System.Windows.Forms.Cursors.Hand;
 			btnMinimizar.FlatAppearance.BorderColor = System.Drawing.Color.White;
@@ -357,9 +380,9 @@ namespace OpenVisionLab
 			btnMinimizar.TabStop = false;
 			btnMinimizar.UseVisualStyleBackColor = false;
 			btnMinimizar.Click += btnMinimizar_Click;
-			// 
+			//
 			// rjLabel1
-			// 
+			//
 			rjLabel1.AutoSize = true;
 			rjLabel1.BackColor = System.Drawing.Color.Transparent;
 			rjLabel1.Font = new System.Drawing.Font("Verdana", 24.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
@@ -371,9 +394,9 @@ namespace OpenVisionLab
 			rjLabel1.Style = RJCodeUI_M1.RJControls.LabelStyle.Custom;
 			rjLabel1.TabIndex = 2133;
 			rjLabel1.Text = "비전 테스트 프로그램(룰베이스 기반)";
-			// 
+			//
 			// pnMDI
-			// 
+			//
 			pnMDI.BackColor = System.Drawing.Color.FromArgb(240, 245, 249);
 			pnMDI.Dock = System.Windows.Forms.DockStyle.Fill;
 			pnMDI.Location = new System.Drawing.Point(0, 50);
@@ -381,9 +404,9 @@ namespace OpenVisionLab
 			pnMDI.Name = "pnMDI";
 			pnMDI.Size = new System.Drawing.Size(1924, 978);
 			pnMDI.TabIndex = 1258;
-			// 
+			//
 			// pnStatusBar
-			// 
+			//
 			pnStatusBar.BackColor = System.Drawing.Color.Black;
 			pnStatusBar.BorderRadius = 0;
 			pnStatusBar.Controls.Add(pgbDriveD);
@@ -398,16 +421,16 @@ namespace OpenVisionLab
 			pnStatusBar.Name = "pnStatusBar";
 			pnStatusBar.Size = new System.Drawing.Size(1924, 33);
 			pnStatusBar.TabIndex = 0;
-			// 
+			//
 			// pgbDriveD
-			// 
+			//
 			pgbDriveD.Location = new System.Drawing.Point(268, 21);
 			pgbDriveD.Name = "pgbDriveD";
 			pgbDriveD.Size = new System.Drawing.Size(218, 10);
 			pgbDriveD.TabIndex = 2109;
-			// 
+			//
 			// lbDriveD
-			// 
+			//
 			lbDriveD.AutoSize = true;
 			lbDriveD.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
 			lbDriveD.ForeColor = System.Drawing.Color.White;
@@ -418,9 +441,9 @@ namespace OpenVisionLab
 			lbDriveD.Style = RJCodeUI_M1.RJControls.LabelStyle.Custom;
 			lbDriveD.TabIndex = 2111;
 			lbDriveD.Text = "(D:) : 00%    (000/000 GB)";
-			// 
+			//
 			// lbVersion
-			// 
+			//
 			lbVersion.AutoSize = true;
 			lbVersion.BackColor = System.Drawing.Color.Transparent;
 			lbVersion.Dock = System.Windows.Forms.DockStyle.Right;
@@ -433,16 +456,16 @@ namespace OpenVisionLab
 			lbVersion.Style = RJCodeUI_M1.RJControls.LabelStyle.Custom;
 			lbVersion.TabIndex = 2122;
 			lbVersion.Text = "Version 2.5 - 211007";
-			// 
+			//
 			// pgbDriveC
-			// 
+			//
 			pgbDriveC.Location = new System.Drawing.Point(10, 20);
 			pgbDriveC.Name = "pgbDriveC";
 			pgbDriveC.Size = new System.Drawing.Size(218, 10);
 			pgbDriveC.TabIndex = 2108;
-			// 
+			//
 			// lbDriveC
-			// 
+			//
 			lbDriveC.AutoSize = true;
 			lbDriveC.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
 			lbDriveC.ForeColor = System.Drawing.Color.White;
@@ -453,23 +476,23 @@ namespace OpenVisionLab
 			lbDriveC.Style = RJCodeUI_M1.RJControls.LabelStyle.Custom;
 			lbDriveC.TabIndex = 2110;
 			lbDriveC.Text = "(C:) : 00%    (000/000 GB)";
-			// 
+			//
 			// panel3
-			// 
+			//
 			panel3.Dock = System.Windows.Forms.DockStyle.Fill;
 			panel3.Location = new System.Drawing.Point(0, 0);
 			panel3.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
 			panel3.Name = "panel3";
 			panel3.Size = new System.Drawing.Size(1910, 47);
 			panel3.TabIndex = 1949;
-			// 
+			//
 			// timerConnection
-			// 
+			//
 			timerConnection.Enabled = true;
 			timerConnection.Tick += timerConnection_Tick;
-			// 
+			//
 			// ddmDevice
-			// 
+			//
 			ddmDevice.ActiveMenuItem = false;
 			ddmDevice.BackColor = System.Drawing.Color.White;
 			ddmDevice.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
@@ -477,27 +500,27 @@ namespace OpenVisionLab
 			ddmDevice.Name = "ddmDevice";
 			ddmDevice.OwnerIsMenuButton = false;
 			ddmDevice.Size = new System.Drawing.Size(134, 114);
-			// 
+			//
 			// iconMenuItem2
-			// 
+			//
 			iconMenuItem2.IconChar = FontAwesome.Sharp.IconChar.Camera;
 			iconMenuItem2.IconColor = System.Drawing.Color.Black;
 			iconMenuItem2.IconFont = FontAwesome.Sharp.IconFont.Auto;
 			iconMenuItem2.Name = "iconMenuItem2";
 			iconMenuItem2.Size = new System.Drawing.Size(133, 22);
 			iconMenuItem2.Text = "CAMERA";
-			// 
+			//
 			// iconMenuItem3
-			// 
+			//
 			iconMenuItem3.IconChar = FontAwesome.Sharp.IconChar.Lightbulb;
 			iconMenuItem3.IconColor = System.Drawing.Color.Black;
 			iconMenuItem3.IconFont = FontAwesome.Sharp.IconFont.Auto;
 			iconMenuItem3.Name = "iconMenuItem3";
 			iconMenuItem3.Size = new System.Drawing.Size(133, 22);
 			iconMenuItem3.Text = "LIGHT";
-			// 
+			//
 			// iconMenuItem4
-			// 
+			//
 			iconMenuItem4.IconChar = FontAwesome.Sharp.IconChar.None;
 			iconMenuItem4.IconColor = System.Drawing.Color.Black;
 			iconMenuItem4.IconFont = FontAwesome.Sharp.IconFont.Auto;
@@ -505,9 +528,9 @@ namespace OpenVisionLab
 			iconMenuItem4.Size = new System.Drawing.Size(133, 22);
 			iconMenuItem4.Text = "PLC";
 			iconMenuItem4.Visible = false;
-			// 
+			//
 			// iconMenuItem5
-			// 
+			//
 			iconMenuItem5.IconChar = FontAwesome.Sharp.IconChar.None;
 			iconMenuItem5.IconColor = System.Drawing.Color.Black;
 			iconMenuItem5.IconFont = FontAwesome.Sharp.IconFont.Auto;
@@ -515,18 +538,18 @@ namespace OpenVisionLab
 			iconMenuItem5.Size = new System.Drawing.Size(133, 22);
 			iconMenuItem5.Text = "I/O";
 			iconMenuItem5.Visible = false;
-			// 
+			//
 			// iconMenuItem6
-			// 
+			//
 			iconMenuItem6.IconChar = FontAwesome.Sharp.IconChar.Cog;
 			iconMenuItem6.IconColor = System.Drawing.Color.Black;
 			iconMenuItem6.IconFont = FontAwesome.Sharp.IconFont.Auto;
 			iconMenuItem6.Name = "iconMenuItem6";
 			iconMenuItem6.Size = new System.Drawing.Size(133, 22);
 			iconMenuItem6.Text = "UTIL";
-			// 
+			//
 			// ddmCapture
-			// 
+			//
 			ddmCapture.ActiveMenuItem = false;
 			ddmCapture.BackColor = System.Drawing.Color.White;
 			ddmCapture.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
@@ -534,18 +557,18 @@ namespace OpenVisionLab
 			ddmCapture.Name = "ddmCapture";
 			ddmCapture.OwnerIsMenuButton = false;
 			ddmCapture.Size = new System.Drawing.Size(155, 26);
-			// 
+			//
 			// iconMenuItem1
-			// 
+			//
 			iconMenuItem1.IconChar = FontAwesome.Sharp.IconChar.FolderOpen;
 			iconMenuItem1.IconColor = System.Drawing.Color.Black;
 			iconMenuItem1.IconFont = FontAwesome.Sharp.IconFont.Auto;
 			iconMenuItem1.Name = "iconMenuItem1";
 			iconMenuItem1.Size = new System.Drawing.Size(154, 22);
 			iconMenuItem1.Text = "Show Folder";
-			// 
+			//
 			// FormMetroFrame
-			// 
+			//
 			AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
 			AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			BackColor = System.Drawing.Color.Black;
@@ -590,6 +613,8 @@ namespace OpenVisionLab
         private System.Windows.Forms.Timer timerConnection;
         private RJCodeUI_M1.RJControls.RJDropdownMenu dmUserOptions;
         private FontAwesome.Sharp.IconMenuItem miMyProfile;
+        private FontAwesome.Sharp.IconMenuItem miTools;
+        private FontAwesome.Sharp.IconMenuItem miImageCompare;
         private FontAwesome.Sharp.IconMenuItem miSettings;
         private FontAwesome.Sharp.IconMenuItem miTermsCond;
         private FontAwesome.Sharp.IconMenuItem miHelp;

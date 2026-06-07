@@ -1,4 +1,4 @@
-namespace OpenVisionLab
+﻿namespace OpenVisionLab
 {
     partial class FormVision_NewPanel
     {
@@ -181,3 +181,5 @@ namespace OpenVisionLab
         private System.Windows.Forms.Timer timer1;
     }
 }
+
+

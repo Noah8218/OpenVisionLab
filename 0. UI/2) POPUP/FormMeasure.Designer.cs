@@ -1,5 +1,4 @@
 ﻿
-using Cyotek.Windows.Forms;
 
 namespace OpenVisionLab
 {
@@ -37,7 +36,7 @@ namespace OpenVisionLab
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
             this.label4 = new System.Windows.Forms.Label();
             this.tbPixelPermm = new RJCodeUI_M1.RJControls.RJTextBox();
-            this.ibSource = new Cyotek.Windows.Forms.ImageBox();
+            this.ibSource = new OpenVisionLab.VisionTestImageCanvas();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.lbMode = new System.Windows.Forms.ToolStripStatusLabel();
@@ -166,13 +165,10 @@ namespace OpenVisionLab
             // 
             this.ibSource.BackColor = System.Drawing.Color.Black;
             this.ibSource.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.ibSource.GridColor = System.Drawing.Color.Black;
-            this.ibSource.GridColorAlternate = System.Drawing.Color.Black;
             this.ibSource.Location = new System.Drawing.Point(0, 0);
             this.ibSource.Name = "ibSource";
             this.ibSource.Size = new System.Drawing.Size(958, 661);
             this.ibSource.TabIndex = 1038;
-            this.ibSource.VirtualSize = new System.Drawing.Size(256, 256);
             this.ibSource.Paint += new System.Windows.Forms.PaintEventHandler(this.ibSource_Paint);
             this.ibSource.KeyDown += new System.Windows.Forms.KeyEventHandler(this.pblImage_KeyDown);
             this.ibSource.KeyUp += new System.Windows.Forms.KeyEventHandler(this.ibSource_KeyUp);
@@ -332,7 +328,7 @@ namespace OpenVisionLab
 
         #endregion
         private System.Windows.Forms.SplitContainer splitContainer1;
-        private ImageBox ibSource;
+        private VisionTestImageCanvas ibSource;
         private System.Windows.Forms.Timer timerDisplay;
         private System.Windows.Forms.SplitContainer splitContainer2;
         private System.Windows.Forms.SplitContainer splitContainer3;

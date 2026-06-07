@@ -19,6 +19,8 @@ namespace OpenVisionLab
 
         FormImageEditView CreateImageEditView(Mat sourceImage, List<Rect> roi, string mode);
 
+        Rect LoadTemplateRoi(Mat sourceImage, string templatePath);
+
         string SaveTemplateImage(Mat sourceImage, Rect selectedRegion);
     }
 }

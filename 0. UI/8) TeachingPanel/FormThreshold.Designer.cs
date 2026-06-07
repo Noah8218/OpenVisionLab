@@ -1,5 +1,3 @@
-﻿using Cyotek.Windows.Forms;
-
 namespace OpenVisionLab
 {
     partial class FormThreshold

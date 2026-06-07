@@ -1,4 +1,3 @@
-﻿using Cyotek.Windows.Forms;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -23,8 +22,6 @@ namespace OpenVisionLab.DrawObject
         //DrawObject 의 선택 여부를 저장
         public bool Selected { get; set; } = false;
         public System.Drawing.Size OriginalSize { get; set; } = new System.Drawing.Size();
-
-        //public ImageBox _ib = new ImageBox();
 
         public System.Drawing.Region[] _rgAnchors = new Region[9];
 

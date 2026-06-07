@@ -1,311 +1,349 @@
 ﻿using System;
 using System.Drawing;
-using System.Windows.Forms;
 using System.Reflection;
-using Cyotek.Windows.Forms;
+using System.Windows.Forms;
 using Lib.Common;
-using System.Windows.Media;
+using OpenVisionLab.ImageCanvas;
+using OpenVisionLab.ImageCanvas.Canvas;
+using OpenVisionLab.ImageCanvas.Rendering;
+using CvMat = OpenCvSharp.Mat;
+using DrawingPoint = System.Drawing.Point;
+using DrawingSize = System.Drawing.Size;
 
 namespace OpenVisionLab
 {
-    public partial class FormImageCompare : RJCodeUI_M1.RJForms.RJChildForm
-    {
-        private float m_fImageScale { get; set; } = 5;
-
-        public CViewer ImageView = new CViewer();
-        public CViewer ImageViewCopy = new CViewer();
-
-        private enum CompareMode
-        {
-            Image1,
-            Image2
-        }
-
-        private CompareMode SelecteCompareMode = CompareMode.Image1;
-
-        public FormImageCompare()
-        {           
-            InitializeComponent();
-
-            //ImageView.LoadImageBox2(ibSource);
-            //ImageViewCopy.LoadImageBox2(ibSourceCopy);
-
-            ibSource.MouseWheel += new MouseEventHandler(MouseWheelEvent);
-            ibSourceCopy.MouseWheel += new MouseEventHandler(MouseWheelEvent);
-
-            base.SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
-            base.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
-            base.SetStyle(ControlStyles.ResizeRedraw, true);
-
-            System.Drawing.Color color = System.Drawing.Color.FromArgb(20, 20, 20);
-
-            ibSource.GridColor = color;
-            ibSource.GridColorAlternate = color;
-
-            ibSourceCopy.GridColor = color;
-            ibSourceCopy.GridColorAlternate = color;
-
-            ibSource.MouseDoubleClick += IbSource_MouseDoubleClick;
-            ibSourceCopy.MouseDoubleClick += IbSource_MouseDoubleClick;
-
-            ibSource.ShowPixelGrid = true;
-            ibSourceCopy.ShowPixelGrid = true;
-        }
-
-        private void IbSource_MouseDoubleClick(object sender, MouseEventArgs e)
-        {
-            for (int i = 0; i < 20; i++)
-            {
-                ibSource.ZoomOut();
-            }
-
-            ibSource.ZoomToFit();
-
-            for (int i = 0; i < 20; i++)
-            {
-                ibSourceCopy.ZoomOut();
-            }
-
-            ibSourceCopy.ZoomToFit();
-        }
-
-        private System.Drawing.Point UpdateCursorPosition(ImageBox imageBoxEx, System.Drawing.Point location)
-        {
-            System.Drawing.Point point;
-
-            if (imageBoxEx.IsPointInImage(location))
-            {
-                return point = location;
-            }
-
-            return point = imageBoxEx.PointToImage(location);
-        }
-
-        System.Drawing.Point PT = new System.Drawing.Point();
-        private void ibSource1_MouseMove(object sender, MouseEventArgs e)
-        {
-            PT = UpdateCursorPosition(ibSource, e.Location);
-            SelecteCompareMode = CompareMode.Image1;
-
-            if (ImageCompare1.Width == 10 || ImageCompare1.Height == 10) return;
-
-            System.Drawing.Point point = UpdateCursorPosition2(ibSource, e.Location);
-
-            if (ImageCompare1.Width == 10 || ImageCompare1.Height == 10) return;
-
-            if (point.X > ImageCompare1.Width || point.Y > ImageCompare1.Height) return;
-
-            try
-            {
-                System.Drawing.Color color = ImageCompare1.GetPixel(point.X, point.Y);
-                int nBright = (color.R + color.G + color.B) / 3;
-
-                lbRGB.Text = string.Format("R,G,B[{0},{1},{2}]", color.R, color.G, color.B);
-                lbXY.Text = string.Format("X,Y[{0},{1}]", point.X, point.Y);
-                lbGV.Text = string.Format("GV[{0}]", nBright);
-            }
-            catch
-            {
-            }
-
-        }
-
-        private void ibSource2_MouseMove(object sender, MouseEventArgs e)
-        {
-            PT = UpdateCursorPosition(ibSourceCopy, e.Location);
-            SelecteCompareMode = CompareMode.Image2;
-
-            if (ImageCompare2.Width == 10 || ImageCompare2.Height == 10) return;
-
-            System.Drawing.Point point = UpdateCursorPosition2(ibSourceCopy, e.Location);
-
-            if (ImageCompare2.Width == 10 || ImageCompare2.Height == 10) return;
-
-            if (point.X > ImageCompare2.Width || point.Y > ImageCompare2.Height) return;
-
-            try
-            {
-                System.Drawing.Color color = ImageCompare2.GetPixel(point.X, point.Y);
-                int nBright = (color.R + color.G + color.B) / 3;
-
-                lbRGB.Text = string.Format("R,G,B[{0},{1},{2}]", color.R, color.G, color.B);
-                lbXY.Text = string.Format("X,Y[{0},{1}]", point.X, point.Y);
-                lbGV.Text = string.Format("GV[{0}]", nBright);
-            }
-            catch
-            {
-
-            }
-
-        }
-
-        private void ibSource1_Scroll(object sender, ScrollEventArgs e)
-        {
-            //if (SelecteCompareMode == CompareMode.Image1)
-            //{
-            //    ibSourceCopy.AutoScrollPosition = new System.Drawing.Point();
-            //    ibSourceCopy.ScrollTo(ibSourceCopy.AutoScrollPosition.X, ibSourceCopy.AutoScrollPosition.Y, ibSource.AutoScrollPosition.X, ibSource.AutoScrollPosition.Y);
-            //}
-            //else
-            //{
-            //    ibSource.AutoScrollPosition = new System.Drawing.Point();
-            //    ibSource.ScrollTo(ibSource.AutoScrollPosition.X, ibSource.AutoScrollPosition.Y, ibSourceCopy.AutoScrollPosition.X, ibSourceCopy.AutoScrollPosition.Y);
-            //}
-
-        }
-
-        private void ibSource1_MouseUp(object sender, MouseEventArgs e)
-        {
-            if (SelecteCompareMode == CompareMode.Image1)
-            {
-                ibSourceCopy.AutoScrollPosition = new System.Drawing.Point();
-                ibSourceCopy.ScrollTo(ibSourceCopy.AutoScrollPosition.X, ibSourceCopy.AutoScrollPosition.Y, ibSource.AutoScrollPosition.X, ibSource.AutoScrollPosition.Y);
-            }
-            else
-            {
-                ibSource.AutoScrollPosition = new System.Drawing.Point();
-                ibSource.ScrollTo(ibSource.AutoScrollPosition.X, ibSource.AutoScrollPosition.Y, ibSourceCopy.AutoScrollPosition.X, ibSourceCopy.AutoScrollPosition.Y);
-                ibSource.Refresh();
-            }
-        }
-        private void ZoomInImage(ImageBox ImageBox)
-        {
-            ImageBox.ZoomIn();
-        }
-
-        private void ZoomOutImage(ImageBox ImageBox)
-        {
-            ImageBox.ZoomOut();
-        }
-
-        private object ob = new object();
-
-        private void MouseWheelEvent(object sender, MouseEventArgs e)
-        {
-            lock(ob)
-            {
-                ImageBox ImageBox = sender as ImageBox;
-
-                if ((e.Delta / 120) > 0)
-                {
-                    // up
-                    if (m_fImageScale > 1)
-                        m_fImageScale--;
-
-                    ZoomInImage(ImageBox);
-
-                    if (SelecteCompareMode == CompareMode.Image1)
-                    {                        
-                        ZoomInImage(ibSourceCopy);
-                        ZoomInImage(ibSourceCopy);
-                    }
-                    else
-                    {
-                        ZoomInImage(ibSource);
-                        ZoomInImage(ibSource);
-                    }
-                }
-                else
-                {
-                    // down
-                    m_fImageScale++;
-
-                    ZoomOutImage(ImageBox);
-
-                    if (SelecteCompareMode == CompareMode.Image1)
-                    {
-                        ZoomOutImage(ibSourceCopy);
-                        ZoomOutImage(ibSourceCopy);
-                    }
-                    else
-                    {
-                        ZoomOutImage(ibSource);
-                        ZoomOutImage(ibSource);
-                    }
-                }
-            }           
-        }
-
-        private void ibSource1_MouseDown(object sender, MouseEventArgs e)
-        {
-            SelecteCompareMode = CompareMode.Image1;
-        }
-
-        private void ibSource2_MouseDown(object sender, MouseEventArgs e)
-        {
-            SelecteCompareMode = CompareMode.Image2;
-        }
-
-        private void LayerDisplay_FormClosed(object sender, FormClosedEventArgs e)
-        {
-
-        }
-
-        private System.Drawing.Point UpdateCursorPosition2(ImageBox imageBoxEx, System.Drawing.Point location)
-        {
-            System.Drawing.Point point;
-
-            return point = imageBoxEx.PointToImage(location);
-        }
-
-
-        private void timePixelData_Tick(object sender, EventArgs e)
-        {
-            if (SelecteCompareMode == CompareMode.Image1)
-            {
-                var g = ibSourceCopy.CreateGraphics();
-
-                float fRectSize = 10;
-
-                float fTLX = Math.Abs(fRectSize / 2 - PT.X);
-                float fTLY = Math.Abs(fRectSize / 2 - PT.Y);
-
-                float fWidth = Math.Abs(fRectSize / 2 + PT.X);
-                float fHeight = Math.Abs(fRectSize / 2 + PT.Y);
-
-                g.DrawEllipse(new System.Drawing.Pen(System.Drawing.Color.Yellow, 30), fTLX, fTLY, fRectSize, fRectSize);
-                ibSourceCopy.Invalidate(true);
-
-                //g.Dispose();
-            }
-            else
-            {
-                var g = ibSource.CreateGraphics();
-
-                float fRectSize = 10;
-
-                float fTLX = Math.Abs(fRectSize / 2 - PT.X);
-                float fTLY = Math.Abs(fRectSize / 2 - PT.Y);
-
-                float fWidth = Math.Abs(fRectSize / 2 + PT.X);
-                float fHeight = Math.Abs(fRectSize / 2 + PT.Y);
-
-                g.DrawEllipse(new System.Drawing.Pen(System.Drawing.Color.Yellow, 30), fTLX, fTLY, fRectSize, fRectSize);
-                ibSource.Invalidate(true);
-            }
-        }
-        private Bitmap ImageCompare1 = new Bitmap(10, 10);
-        private Bitmap ImageCompare2 = new Bitmap(10, 10);
-        private void btnLoad_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                string[] strImagePath = CUtil.LoadImagesFilePath();
-
-                if (strImagePath == null) { return; }
-
-                ibSource.Image = new Bitmap(strImagePath[0]);
-                ibSourceCopy.Image = new Bitmap(strImagePath[1]);
-
-                ImageCompare1 = new Bitmap(strImagePath[0]);
-                ImageCompare2 = new Bitmap(strImagePath[1]);
-                ibSource.ZoomToFit();
-                ibSourceCopy.ZoomToFit();
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-            }
-        }
-    }
+	public partial class FormImageCompare : RJCodeUI_M1.RJForms.RJChildForm
+	{
+		private readonly object viewSyncLock = new object();
+
+		private ImageCanvasControl imageViewer1;
+		private ImageCanvasControl imageViewer2;
+		private Bitmap imageCompare1 = new Bitmap(10, 10);
+		private Bitmap imageCompare2 = new Bitmap(10, 10);
+		private DrawingSize imageSize1 = DrawingSize.Empty;
+		private DrawingSize imageSize2 = DrawingSize.Empty;
+		private bool isMarkerVisible = false;
+		private DrawingPoint markerImagePoint = DrawingPoint.Empty;
+
+		private enum CompareMode
+		{
+			Image1,
+			Image2
+		}
+
+		private CompareMode selectedCompareMode = CompareMode.Image1;
+
+		public FormImageCompare()
+		{
+			InitializeComponent();
+			ConfigureBottomBar();
+			InitializeImageViewers();
+
+			base.SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
+			base.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
+			base.SetStyle(ControlStyles.ResizeRedraw, true);
+		}
+
+		private void InitializeImageViewers()
+		{
+			imageViewer1 = CreateImageViewer(CompareMode.Image1);
+			imageViewer2 = CreateImageViewer(CompareMode.Image2);
+
+			splitContainer2.Panel1.Controls.Add(imageViewer1);
+			splitContainer2.Panel2.Controls.Add(imageViewer2);
+		}
+
+		private void ConfigureBottomBar()
+		{
+			splitContainer1.Panel2.BackColor = Color.FromArgb(15, 18, 23);
+			splitContainer1.Panel2.Padding = new Padding(8, 3, 8, 3);
+			splitContainer1.FixedPanel = FixedPanel.Panel2;
+			splitContainer1.IsSplitterFixed = true;
+			splitContainer1.SplitterWidth = 1;
+			splitContainer1.Resize += (sender, e) => LayoutBottomBar();
+
+			StyleStatusLabel(lbRGB, 180);
+			StyleStatusLabel(lbXY, 250);
+			StyleStatusLabel(lbGV, 250);
+
+			btnLoad.Dock = DockStyle.Right;
+			btnLoad.Width = 112;
+			btnLoad.Margin = Padding.Empty;
+			btnLoad.FlatStyle = FlatStyle.Flat;
+			btnLoad.FlatAppearance.BorderSize = 0;
+			btnLoad.FlatAppearance.MouseOverBackColor = Color.FromArgb(89, 105, 234);
+			btnLoad.FlatAppearance.MouseDownBackColor = Color.FromArgb(64, 78, 192);
+			btnLoad.BackColor = Color.FromArgb(72, 88, 214);
+			btnLoad.ForeColor = Color.White;
+			btnLoad.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold, GraphicsUnit.Point);
+			btnLoad.Text = "Load Images";
+
+			lbRGB.Text = "Hover -";
+			lbXY.Text = "LEFT X,Y[-,-] GV[-]";
+			lbGV.Text = "RIGHT X,Y[-,-] GV[-]";
+			LayoutBottomBar();
+		}
+
+		private void StyleStatusLabel(Label label, int width)
+		{
+			label.Dock = DockStyle.Left;
+			label.Width = width;
+			label.Padding = new Padding(7, 0, 7, 0);
+			label.Margin = Padding.Empty;
+			label.BorderStyle = BorderStyle.None;
+			label.BackColor = Color.FromArgb(15, 18, 23);
+			label.ForeColor = Color.FromArgb(218, 225, 235);
+			label.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
+			label.TextAlign = ContentAlignment.MiddleLeft;
+		}
+
+		private void LayoutBottomBar()
+		{
+			if (splitContainer1.Height <= 0) { return; }
+
+			int bottomHeight = 28;
+			splitContainer1.SplitterDistance = Math.Max(0, splitContainer1.Height - bottomHeight - splitContainer1.SplitterWidth);
+		}
+
+		private ImageCanvasControl CreateImageViewer(CompareMode mode)
+		{
+			ImageCanvasControl viewer = new ImageCanvasControl
+			{
+				Dock = DockStyle.Fill,
+				BackColor = Color.Black,
+				IsShowCrossLine = false
+			};
+
+			viewer.Draw += (sender, e) => DrawViewerContent(viewer, mode, e);
+			viewer.MouseDown += (sender, e) => OnViewerMouseDown(mode, viewer, e);
+			viewer.MouseMove += (sender, e) => OnViewerMouseMove(mode, viewer, e);
+			viewer.MouseUp += (sender, e) => OnViewerMouseUp(mode, viewer);
+			viewer.MouseWheel += (sender, e) => OnViewerMouseWheel(mode, viewer, e);
+			viewer.MouseDoubleClicked += (sender, e) => OnViewerMouseDoubleClicked(mode, viewer);
+			viewer.MouseLeave += (sender, e) => OnViewerMouseLeave();
+
+			return viewer;
+		}
+
+		private void DrawViewerContent(ImageCanvasControl viewer, CompareMode mode, CanvasRenderEventArgs e)
+		{
+			viewer.DrawContent();
+			DrawMarker(mode, viewer);
+		}
+
+		private void OnViewerMouseDown(CompareMode mode, ImageCanvasControl viewer, CanvasMouseEventArgs e)
+		{
+			selectedCompareMode = mode;
+			viewer.PreMousePos = viewer.GetCurrentRobotPos(e.X, e.Y);
+			viewer.SetViewMode(CanvasInteractionMode.Drag);
+		}
+
+		private void OnViewerMouseMove(CompareMode mode, ImageCanvasControl viewer, CanvasMouseEventArgs e)
+		{
+			selectedCompareMode = mode;
+			UpdateCompareStatus(mode, viewer, e.Location);
+
+			if (e.Button == MouseButtons.Left)
+			{
+				viewer.PreMousePos = viewer.GetCurrentRobotPos(e.X, e.Y);
+				SyncViewStateFrom(mode);
+			}
+		}
+
+		private void OnViewerMouseUp(CompareMode mode, ImageCanvasControl viewer)
+		{
+			selectedCompareMode = mode;
+			viewer.SetViewMode(CanvasInteractionMode.None);
+			SyncViewStateFrom(mode);
+		}
+
+		private void OnViewerMouseWheel(CompareMode mode, ImageCanvasControl viewer, CanvasMouseEventArgs e)
+		{
+			selectedCompareMode = mode;
+			viewer.ZoomAt(e.Location, e.Delta);
+			SyncViewStateFrom(mode);
+		}
+
+		private void OnViewerMouseDoubleClicked(CompareMode mode, ImageCanvasControl viewer)
+		{
+			selectedCompareMode = mode;
+			viewer.ZoomToFit();
+			SyncViewStateFrom(mode);
+		}
+
+		private void OnViewerMouseLeave()
+		{
+			isMarkerVisible = false;
+			lbRGB.Text = "Hover -";
+			RefreshMarkers();
+		}
+
+		private void SyncViewStateFrom(CompareMode sourceMode)
+		{
+			lock (viewSyncLock)
+			{
+				ImageCanvasControl source = GetViewer(sourceMode);
+				ImageCanvasControl target = GetOtherViewer(sourceMode);
+				if (source == null || target == null) { return; }
+
+				target.ApplyViewState(source.CaptureViewState());
+			}
+		}
+
+		private ImageCanvasControl GetViewer(CompareMode mode)
+		{
+			return mode == CompareMode.Image1 ? imageViewer1 : imageViewer2;
+		}
+
+		private ImageCanvasControl GetOtherViewer(CompareMode mode)
+		{
+			return mode == CompareMode.Image1 ? imageViewer2 : imageViewer1;
+		}
+
+		private Bitmap GetBitmap(CompareMode mode)
+		{
+			return mode == CompareMode.Image1 ? imageCompare1 : imageCompare2;
+		}
+
+		private void UpdateCompareStatus(CompareMode mode, ImageCanvasControl viewer, DrawingPoint mouseLocation)
+		{
+			Bitmap image = GetBitmap(mode);
+			if (image == null || image.Width <= 10 || image.Height <= 10)
+			{
+				isMarkerVisible = false;
+				lbRGB.Text = $"{GetModeText(mode)} no image";
+				lbXY.Text = "LEFT X,Y[-,-] GV[-]";
+				lbGV.Text = "RIGHT X,Y[-,-] GV[-]";
+				RefreshMarkers();
+				return;
+			}
+
+			DrawingPoint imagePoint = ToTopLeftImagePoint(viewer, image, mouseLocation);
+			if (!IsPointInBitmap(image, imagePoint))
+			{
+				isMarkerVisible = false;
+				lbRGB.Text = $"{GetModeText(mode)} out";
+				lbXY.Text = FormatViewerStatus("LEFT", imageCompare1, imagePoint);
+				lbGV.Text = FormatViewerStatus("RIGHT", imageCompare2, imagePoint);
+				RefreshMarkers();
+				return;
+			}
+
+			try
+			{
+				Color color = image.GetPixel(imagePoint.X, imagePoint.Y);
+
+				markerImagePoint = imagePoint;
+				isMarkerVisible = true;
+
+				lbRGB.Text = $"{GetModeText(mode)} RGB[{color.R},{color.G},{color.B}]";
+				lbXY.Text = FormatViewerStatus("LEFT", imageCompare1, imagePoint);
+				lbGV.Text = FormatViewerStatus("RIGHT", imageCompare2, imagePoint);
+				RefreshMarkers();
+			}
+			catch
+			{
+			}
+		}
+
+		private DrawingPoint ToTopLeftImagePoint(ImageCanvasControl viewer, Bitmap image, DrawingPoint mouseLocation)
+		{
+			DrawingPoint canvasPoint = viewer.GetCurrentRobotPos(mouseLocation.X, mouseLocation.Y);
+			return new DrawingPoint(canvasPoint.X, image.Height - canvasPoint.Y);
+		}
+
+		private string FormatViewerStatus(string name, Bitmap image, DrawingPoint imagePoint)
+		{
+			if (!IsPointInBitmap(image, imagePoint)) { return $"{name} X,Y[{imagePoint.X},{imagePoint.Y}] out"; }
+
+			Color color = image.GetPixel(imagePoint.X, imagePoint.Y);
+			int brightness = (color.R + color.G + color.B) / 3;
+			return $"{name} X,Y[{imagePoint.X},{imagePoint.Y}] GV[{brightness}]";
+		}
+
+		private static bool IsPointInBitmap(Bitmap image, DrawingPoint imagePoint)
+		{
+			return image != null &&
+				image.Width > 10 &&
+				image.Height > 10 &&
+				imagePoint.X >= 0 &&
+				imagePoint.Y >= 0 &&
+				imagePoint.X < image.Width &&
+				imagePoint.Y < image.Height;
+		}
+
+		private static string GetModeText(CompareMode mode)
+		{
+			return mode == CompareMode.Image1 ? "LEFT" : "RIGHT";
+		}
+
+		private void RefreshMarkers()
+		{
+			imageViewer1?.RefreshGL();
+			imageViewer2?.RefreshGL();
+		}
+
+		private void DrawMarker(CompareMode mode, ImageCanvasControl viewer)
+		{
+			if (!isMarkerVisible) { return; }
+
+			Bitmap image = GetBitmap(mode);
+			if (!IsPointInBitmap(image, markerImagePoint)) { return; }
+
+			viewer.DrawImagePointMarker(markerImagePoint, image.Height);
+		}
+
+		private void btnLoad_Click(object sender, EventArgs e)
+		{
+			try
+			{
+				string[] imagePaths = CUtil.LoadImagesFilePath();
+				if (imagePaths == null || imagePaths.Length < 2) { return; }
+
+				ReplaceBitmap(ref imageCompare1, imagePaths[0]);
+				ReplaceBitmap(ref imageCompare2, imagePaths[1]);
+
+				LoadBitmapToViewer(imageViewer1, imageCompare1, "CompareImage1", ref imageSize1);
+				LoadBitmapToViewer(imageViewer2, imageCompare2, "CompareImage2", ref imageSize2);
+				SyncViewStateFrom(CompareMode.Image1);
+				isMarkerVisible = false;
+				lbRGB.Text = "Hover -";
+				lbXY.Text = "LEFT X,Y[-,-] GV[-]";
+				lbGV.Text = "RIGHT X,Y[-,-] GV[-]";
+			}
+			catch (Exception desc)
+			{
+				CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Exception ==> {desc.Message}");
+			}
+		}
+
+		private static void ReplaceBitmap(ref Bitmap target, string imagePath)
+		{
+			Bitmap previous = target;
+			using (Bitmap fileBitmap = new Bitmap(imagePath))
+			{
+				target = (Bitmap)fileBitmap.Clone();
+			}
+			previous?.Dispose();
+		}
+
+		private static void LoadBitmapToViewer(ImageCanvasControl viewer, Bitmap bitmap, string imageName, ref DrawingSize imageSize)
+		{
+			if (viewer == null || bitmap == null) { return; }
+
+			viewer.ClearTexture();
+			using (CvMat mat = CImageConverter.ToMat(bitmap))
+			{
+				CanvasImageLoader.UploadMatAsTexture(viewer, mat, imageName, ref imageSize);
+			}
+		}
+
+		private void LayerDisplay_FormClosed(object sender, FormClosedEventArgs e)
+		{
+			imageViewer1?.ClearTexture();
+			imageViewer2?.ClearTexture();
+			imageCompare1?.Dispose();
+			imageCompare2?.Dispose();
+		}
+	}
 }

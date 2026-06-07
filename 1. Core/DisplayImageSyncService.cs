@@ -17,10 +17,10 @@ namespace OpenVisionLab._1._Core
         public void SetImage(int index, Bitmap image)
         {
             FormLayerDisplay display = layers.GetOrNull(index);
-            if (display == null) return;
+			if (display == null) return;
 
-            display.ibSource.Image = image;
-            imageSpace.SetImage(index, display.Text, image);
+			display.SetImage(image);
+			imageSpace.SetImage(index, display.Text, display.GetCurrentImage());
         }
 
         public void AcceptImageChanged(string title, int index)
@@ -28,7 +28,7 @@ namespace OpenVisionLab._1._Core
             FormLayerDisplay display = layers.GetOrNull(index);
             if (display != null)
             {
-                display.viewer._ImageChanged = false;
+                display.AcceptImageChanged();
             }
 
             imageSpace.AcceptImageChanged(title);
@@ -39,11 +39,11 @@ namespace OpenVisionLab._1._Core
             FormLayerDisplay display = layers.GetOrNull(index);
             if (display == null) return;
 
-            Bitmap image = display.viewer?._Ib?.Image as Bitmap;
+            Bitmap image = display.GetCurrentImage();
             imageSpace.SetImage(index, display.Text, image);
-            imageSpace.SetRoi(index, display.viewer?.Roi ?? Rectangle.Empty);
-            imageSpace.SetTrainRoi(index, display.viewer?.TrainROI ?? Rectangle.Empty);
-            imageSpace.MarkImageChanged(display.Text, display.viewer?._ImageChanged ?? false);
+            imageSpace.SetRoi(index, display.Roi);
+            imageSpace.SetTrainRoi(index, display.TrainROI);
+            imageSpace.MarkImageChanged(display.Text, display.ImageChanged);
         }
     }
 }

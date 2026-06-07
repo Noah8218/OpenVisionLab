@@ -13,9 +13,10 @@ using OpenVisionLab._1._Core;
 using Lib.Common;
 using OpenCvSharp;
 using System.Reflection;
-using System.Windows.Controls.WpfPropertyGrid;
+using System.Diagnostics;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using OpenVisionLab._2._Common;
+using OpenVisionLab.PropertyGrid;
 
 namespace RJCodeUI_M1.RJForms
 {
@@ -25,8 +26,6 @@ namespace RJCodeUI_M1.RJForms
         public CViewer source_2 = new CViewer();
         protected IDisplayManager displayManager;
         private readonly CWpgEvent wpgEvent;
-
-        public int panelCount = 0;
 
         #region Event Register        
         public EventHandler<DockDisplayEventArgs> eventUpdateDisplay;
@@ -39,7 +38,7 @@ namespace RJCodeUI_M1.RJForms
         public int destination_Index = 0;
 
         public System.Windows.Forms.Integration.ElementHost host = null;
-        public System.Windows.Controls.WpfPropertyGrid.PropertyGrid wpg = null;
+        public IPropertyGridView wpg = null;
 
         public int GetDisplayIndex(string strTitle)
         {
@@ -71,31 +70,286 @@ namespace RJCodeUI_M1.RJForms
             displayManager.SetLayerImage(index, image);
         }
 
-        protected void BindLayerToViewer(CViewer viewer, Cyotek.Windows.Forms.ImageBox imageBox, int index, bool updateActiveImage = false)
+        protected void InitializeLayerList(RJComboBox comboBox, int selectedIndex)
         {
-            Bitmap image = GetLayerImage(index);
-            viewer.Roi = GetLayerRoi(index);
-            viewer.TrainROI = GetLayerTrainRoi(index);
-            imageBox.Image = image;
-
-            if (updateActiveImage)
+            comboBox.Items.Clear();
+            for (int i = 0; i < displayManager.LayerCount; i++)
             {
-                displayManager.SetImageSrc(image);
+                comboBox.Items.Add(displayManager.GetLayerTitle(i));
+            }
+
+            if (comboBox.Items.Count <= 0) { return; }
+            comboBox.SelectedIndex = Math.Max(0, Math.Min(selectedIndex, comboBox.Items.Count - 1));
+        }
+
+        protected void InitializeSingleInputLayerList(RJComboBox sourceComboBox, RJComboBox destinationComboBox)
+        {
+            InitializeLayerList(sourceComboBox, source1_Index);
+            InitializeLayerList(destinationComboBox, destination_Index);
+        }
+
+        protected bool RegisterEscapeClose()
+        {
+            try
+            {
+                KeyPreview = true;
+                KeyDown += CloseOnEscape;
+                CLOG.NORMAL($"[OK] {GetType().Name}==>{nameof(RegisterEscapeClose)}");
+                return true;
+            }
+            catch (Exception desc)
+            {
+                CLOG.ABNORMAL($"[FAILED] {GetType().Name}==>{nameof(RegisterEscapeClose)}   Exception ==> {desc.Message}");
+                return false;
             }
         }
 
-        protected void RefreshViewerRoi(CViewer viewer, Control control, int index)
+        protected void ApplyVisionTestCompactStyle()
         {
-            Rectangle roi = GetLayerRoi(index);
-            Rectangle trainRoi = GetLayerTrainRoi(index);
+            BackColor = Color.FromArgb(238, 242, 246);
+            pnlClientArea.BackColor = Color.FromArgb(238, 242, 246);
+            ApplyVisionTestCompactStyle(this);
+        }
 
-            if (viewer.Roi != roi || viewer.TrainROI != trainRoi)
+        private void ApplyVisionTestCompactStyle(Control parent)
+        {
+            if (parent == null) { return; }
+
+            foreach (Control control in parent.Controls)
             {
-                control.Invalidate();
+                if (control is GroupBox groupBox)
+                {
+                    groupBox.BackColor = Color.FromArgb(238, 242, 246);
+                    groupBox.ForeColor = Color.FromArgb(36, 48, 64);
+                    groupBox.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+
+                    if (string.Equals(groupBox.Name, "groupBox3", StringComparison.OrdinalIgnoreCase)
+                        && !string.Equals(groupBox.Text, "Input A", StringComparison.OrdinalIgnoreCase))
+                    {
+                        groupBox.Text = "Input Layer";
+                    }
+                    else if (string.Equals(groupBox.Name, "groupBox4", StringComparison.OrdinalIgnoreCase))
+                    {
+                        groupBox.Text = "Output Layer";
+                    }
+                }
+                else if (control is RJPanel panel)
+                {
+                    panel.BackColor = Color.FromArgb(250, 252, 253);
+                    panel.BorderRadius = 3;
+                }
+                else if (control is RJComboBox comboBox)
+                {
+                    comboBox.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+                    comboBox.MinimumSize = new System.Drawing.Size(100, 28);
+                    comboBox.BackColor = Color.FromArgb(250, 252, 253);
+                    comboBox.ForeColor = Color.FromArgb(36, 48, 64);
+                    comboBox.BorderColor = Color.FromArgb(148, 161, 178);
+                    comboBox.DropDownTextColor = Color.FromArgb(36, 48, 64);
+                    comboBox.IconColor = Color.FromArgb(47, 111, 171);
+                    if (comboBox.Height > 32)
+                    {
+                        comboBox.Height = 32;
+                    }
+                }
+                else if (control is RJButton button)
+                {
+                    button.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+                    button.Design = ButtonDesign.Custom;
+                    button.Style = ControlStyle.Glass;
+                    button.BorderRadius = 3;
+                    button.BorderSize = 1;
+                    button.BorderColor = Color.FromArgb(47, 111, 171);
+                    button.FlatAppearance.BorderSize = 1;
+                    button.FlatAppearance.BorderColor = Color.FromArgb(47, 111, 171);
+                    button.BackColor = Color.FromArgb(250, 252, 253);
+                    button.ForeColor = Color.FromArgb(35, 85, 132);
+
+                    if (string.Equals(button.Name, "btnRun", StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(button.Text, "Run", StringComparison.OrdinalIgnoreCase))
+                    {
+                        button.Text = "Run";
+                    }
+                    else if (string.Equals(button.Name, "btnResult", StringComparison.OrdinalIgnoreCase))
+                    {
+                        button.Text = "Details";
+                    }
+                }
+
+                ApplyVisionTestCompactStyle(control);
+            }
+        }
+
+        protected void ActivateViewerLayer(int index, bool zoomToFit = false)
+        {
+            displayManager.ActivateLayer(index);
+            Focus();
+            TopLevel = true;
+            TopMost = true;
+
+            if (zoomToFit)
+            {
+                displayManager.ZoomLayerToFit(index);
+            }
+        }
+
+        protected void ActivateSourceLayer(bool zoomToFit = false)
+        {
+            ActivateViewerLayer(source1_Index, zoomToFit);
+        }
+
+        protected void ActivateDestinationLayer(bool zoomToFit = false)
+        {
+            ActivateViewerLayer(destination_Index, zoomToFit);
+        }
+
+        protected void AcceptUserImageChange(RJComboBox comboBox, VisionTestImageCanvas viewer, Action<int> setIndex)
+        {
+            if (comboBox.SelectedIndex < 0 || viewer.DisplayBitmap == null) { return; }
+
+            int index = comboBox.SelectedIndex;
+            setIndex(index);
+            SetLayerImage(index, viewer.DisplayBitmap);
+        }
+
+        protected void AcceptSourceImageChange(RJComboBox sourceComboBox, VisionTestImageCanvas sourceViewer)
+        {
+            AcceptUserImageChange(sourceComboBox, sourceViewer, index => source1_Index = index);
+        }
+
+        protected void AcceptDestinationImageChange(RJComboBox destinationComboBox, VisionTestImageCanvas destinationViewer)
+        {
+            AcceptUserImageChange(destinationComboBox, destinationViewer, index => destination_Index = index);
+        }
+
+        protected void SelectLayer(RJComboBox comboBox, CViewer viewerState, VisionTestImageCanvas viewer, Action<int> setIndex, bool updateActiveImage = false)
+        {
+            if (comboBox.SelectedIndex < 0) { return; }
+
+            int index = comboBox.SelectedIndex;
+            setIndex(index);
+            viewerState.Roi = GetLayerRoi(index);
+            viewerState.TrainROI = GetLayerTrainRoi(index);
+
+            Bitmap image = GetLayerImage(index);
+            viewer.DisplayImage = image;
+
+            if (updateActiveImage && image != null)
+            {
+                displayManager.SetImageSrc(CImageConverter.ToMat(image));
+            }
+        }
+
+        protected void SelectSourceLayer(RJComboBox sourceComboBox, VisionTestImageCanvas sourceViewer, bool updateActiveImage = false)
+        {
+            SelectLayer(sourceComboBox, source_1, sourceViewer, index => source1_Index = index, updateActiveImage);
+        }
+
+        protected void SelectDestinationLayer(RJComboBox destinationComboBox, VisionTestImageCanvas destinationViewer)
+        {
+            SelectLayer(destinationComboBox, destination, destinationViewer, index => destination_Index = index);
+        }
+
+        protected void CreateDestinationLayer(RJComboBox destinationComboBox, Action refreshLayerList, Action<int> setDestinationIndex)
+        {
+            displayManager.CreatePanel();
+            refreshLayerList();
+
+            int index = destinationComboBox.Items.Count - 1;
+            if (index < 0) { return; }
+
+            setDestinationIndex(index);
+            destinationComboBox.SelectedIndex = index;
+        }
+
+        protected void CreateSingleInputDestinationLayer(RJComboBox destinationComboBox, Action refreshLayerList)
+        {
+            CreateDestinationLayer(destinationComboBox, refreshLayerList, index => destination_Index = index);
+        }
+
+        protected void PublishResult(RJComboBox destinationComboBox, VisionTestImageCanvas destinationViewer, Bitmap result, string elapsedText)
+        {
+            if (destinationComboBox?.SelectedItem == null || result == null) { return; }
+
+            int displayIndex = GetDisplayIndex(destinationComboBox.SelectedItem.ToString());
+            SetLayerImage(displayIndex, result);
+            destinationViewer.DisplayImage = result;
+            eventUpdateDisplay?.Invoke(null, new DockDisplayEventArgs(result, displayIndex, elapsedText));
+        }
+
+        protected void InitializeSingleInputViewers(
+            Action initializeLayerList,
+            VisionTestImageCanvas sourceViewer,
+            VisionTestImageCanvas destinationViewer,
+            EventHandler sourceImageChanged,
+            EventHandler destinationImageChanged,
+            MouseEventHandler sourceMouseClick,
+            MouseEventHandler destinationMouseClick,
+            ToolTip toolTip = null,
+            Control destinationNewPanelControl = null)
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            RegisterEscapeClose();
+            ApplyVisionTestCompactStyle();
+            initializeLayerList();
+
+            sourceViewer.UserImageChanged += sourceImageChanged;
+            destinationViewer.UserImageChanged += destinationImageChanged;
+            sourceViewer.MouseClick += sourceMouseClick;
+            destinationViewer.MouseClick += destinationMouseClick;
+
+            if (toolTip != null && destinationNewPanelControl != null)
+            {
+                toolTip.SetToolTip(destinationNewPanelControl, "Create Output Layer");
             }
 
-            viewer.Roi = roi;
-            viewer.TrainROI = trainRoi;
+            stopwatch.Stop();
+            CLOG.NORMAL($"[PERF] {GetType().Name} viewer event init: {stopwatch.ElapsedMilliseconds}ms");
+
+            DeferInitialViewerLoad(() =>
+            {
+                sourceViewer.DisplayImage = GetLayerImage(DEFINE.Main);
+                destinationViewer.DisplayImage = GetLayerImage(DEFINE.Main);
+                sourceViewer.ZoomToFit();
+                destinationViewer.ZoomToFit();
+            }, "single input viewer image load");
+        }
+
+        protected void DeferInitialViewerLoad(Action action, string operationName)
+        {
+            if (action == null || IsDesignTime()) { return; }
+
+            Action wrappedAction = () =>
+            {
+                if (IsDisposed) { return; }
+
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                action();
+                stopwatch.Stop();
+                CLOG.NORMAL($"[PERF] {GetType().Name} {operationName}: {stopwatch.ElapsedMilliseconds}ms");
+            };
+
+            if (IsHandleCreated)
+            {
+                BeginInvoke(wrappedAction);
+                return;
+            }
+
+            EventHandler shownHandler = null;
+            shownHandler = (sender, e) =>
+            {
+                Shown -= shownHandler;
+                BeginInvoke(wrappedAction);
+            };
+            Shown += shownHandler;
+        }
+
+        private void CloseOnEscape(object sender, KeyEventArgs e)
+        {
+            if (e.KeyValue != (int)Keys.Escape) { return; }
+
+            DialogResult = DialogResult.Cancel;
+            Close();
         }
 
         /// This class inherits from the <see cref="RJBaseForm"/> class
@@ -149,17 +403,65 @@ namespace RJCodeUI_M1.RJForms
 
         public VisionTestForm(IDisplayManager displayManager)
         {
+            Stopwatch stopwatch = Stopwatch.StartNew();
             this.displayManager = displayManager ?? DisplayManagerService.Default;
             wpgEvent = new CWpgEvent(() => this.displayManager);
             InitializeItems();
+            stopwatch.Stop();
+            CLOG.NORMAL($"[PERF] {GetType().Name} constructor shell: {stopwatch.ElapsedMilliseconds}ms");
+        }
+
+        private void InitializePropertyGridHost()
+        {
+            if (host != null && wpg != null)
+            {
+                return;
+            }
+
             host = new System.Windows.Forms.Integration.ElementHost { Dock = DockStyle.Fill };
-            wpg = new System.Windows.Controls.WpfPropertyGrid.PropertyGrid
+            var propertyGrid = new System.Windows.Controls.WpfPropertyGrid.PropertyGrid
             {
                 Layout = new System.Windows.Controls.WpfPropertyGrid.Design.CategorizedLayout()
             };
-            host.Child = wpg;
+            host.Child = propertyGrid;
+            wpg = propertyGrid;
             wpg.PropertyValueChanged += wpgEvent.Wpg_PropertyValueChanged;
             wpg.SelectedObjectsChanged += wpgEvent.Wpg_SelectedObjectsChanged;
+        }
+
+        protected Control EnsurePropertyGridHost()
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            InitializePropertyGridHost();
+            stopwatch.Stop();
+            CLOG.NORMAL($"[PERF] {GetType().Name} property grid host: {stopwatch.ElapsedMilliseconds}ms");
+            return host;
+        }
+
+        protected void AttachPropertyGrid(Control targetPanel, object selectedObject)
+        {
+            if (IsDesignTime() || targetPanel == null) { return; }
+
+            Control propertyGridHost = EnsurePropertyGridHost();
+            wpg.SelectedObject = selectedObject;
+
+            if (propertyGridHost.Parent != targetPanel)
+            {
+                propertyGridHost.Parent?.Controls.Remove(propertyGridHost);
+                targetPanel.Controls.Add(propertyGridHost);
+            }
+        }
+
+        private static bool IsDesignTime()
+        {
+            if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
+            {
+                return true;
+            }
+
+            string processName = System.Diagnostics.Process.GetCurrentProcess().ProcessName;
+            return processName.IndexOf("devenv", StringComparison.OrdinalIgnoreCase) >= 0
+                || processName.IndexOf("DesignToolsServer", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         public void SetDisplayManager(IDisplayManager manager)
@@ -595,3 +897,4 @@ namespace RJCodeUI_M1.RJForms
         #endregion
     }
 }
+

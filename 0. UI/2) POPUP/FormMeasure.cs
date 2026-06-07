@@ -1,4 +1,4 @@
-using System;
+Ôªøusing System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Reflection;
@@ -15,7 +15,6 @@ namespace OpenVisionLab
         private Bitmap m_ImageOriginal = null;
         private Bitmap m_ImageDisplay = null;
 
-        private CViewer ImageView = new CViewer(false);
 
         private bool m_bFullScreen = false;
         private bool m_bUseMouseDown = false;
@@ -81,8 +80,6 @@ namespace OpenVisionLab
         {
             InitializeComponent();
 
-            ImageView.LoadImageBoxOnlyViewer(ibSource);
-            ImageView._Ib.Text = "";
             //this.Style = MetroColorStyle.Teal;
             //this.Theme = MetroThemeStyle.Dark;
 
@@ -101,7 +98,7 @@ namespace OpenVisionLab
 
                 Mode = SettingMode.Point;
 
-                ibSource.Image = m_ImageDisplay;                
+                ibSource.DisplayImage = m_ImageDisplay;                
             }
             catch
             {
@@ -318,7 +315,7 @@ namespace OpenVisionLab
                     m_nMouseMode = MOUSEMODE_IDLE;
 
                     m_ImageDisplay = (Bitmap)m_ImageOriginal.Clone();
-                    ibSource.Image = m_ImageDisplay;
+                    ibSource.DisplayImage = m_ImageDisplay;
                 }
 
                 DrawRectangle();                
@@ -392,7 +389,7 @@ namespace OpenVisionLab
 
                 using(Bitmap LoadImage =new Bitmap(strFilePath))
                 {
-                    ibSource.Image = (Bitmap)LoadImage.Clone();
+                    ibSource.DisplayImage = (Bitmap)LoadImage.Clone();
                 }
             }
         }
@@ -415,7 +412,7 @@ namespace OpenVisionLab
 
                     if (e.KeyCode == Keys.Enter)
                     {
-                        // ROI øµø™
+                        // ROI ÏòÅÏó≠
                         Rectangle rect = new Rectangle((int)ibSource.SelectionRegion.X, (int)ibSource.SelectionRegion.Y, (int)ibSource.SelectionRegion.Width, (int)ibSource.SelectionRegion.Height);
                         
                         //DrawRectangle(rect);
@@ -498,7 +495,7 @@ namespace OpenVisionLab
                     //(string.Format("Press Ctrl key to set the value."), FontNotice, BrushNotice, new PointF(0, 0));
                     //g.DrawString(string.Format("Press Enter to save the setting values."), FontNotice, BrushNotice, new PointF(0, 200));
 
-                    ibSource.Image = bitmap;
+                    ibSource.DisplayImage = bitmap;
                 }
 
                 FontNotice.Dispose();
@@ -603,14 +600,14 @@ namespace OpenVisionLab
             m_nMouseMode = MOUSEMODE_IDLE;
 
             m_ImageDisplay = (Bitmap)m_ImageOriginal.Clone();
-            ibSource.Image = m_ImageDisplay;
+            ibSource.DisplayImage = m_ImageDisplay;
 
             DrawRectangle();
         }
 
         private void ParameterSaveToolStripMenuItem3_Click(object sender, EventArgs e)
         {
-            // m_Points ∑πΩ√««∑Œ ª©∏Èµ 
+            // m_Points Î†àÏãúÌîºÎ°ú ÎπºÎ©¥Îê®
         }
 
         private void tbPixelPermm_Click(object sender, EventArgs e)
@@ -619,4 +616,5 @@ namespace OpenVisionLab
         }
     }
 }
+
 

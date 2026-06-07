@@ -1,6 +1,4 @@
-using Cyotek.Windows.Forms;
-
-namespace OpenVisionLab
+﻿namespace OpenVisionLab
 {
     partial class FormVision_Arithmetic
     {
@@ -31,18 +29,17 @@ namespace OpenVisionLab
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-                        this.ibSource1 = new Cyotek.Windows.Forms.ImageBox();
+                        this.ibSource1 = new OpenVisionLab.VisionTestImageCanvas();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.cbLayerList1 = new RJCodeUI_M1.RJControls.RJComboBox();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.cbLayerList_Dest = new RJCodeUI_M1.RJControls.RJComboBox();
             this.btnNewPanel_Desty = new RJCodeUI_M1.RJControls.RJMenuIcon();
-            this.ibDestination = new Cyotek.Windows.Forms.ImageBox();
+            this.ibDestination = new OpenVisionLab.VisionTestImageCanvas();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.gpSourceImage = new System.Windows.Forms.GroupBox();
             this.cbLayerList2 = new RJCodeUI_M1.RJControls.RJComboBox();
-            this.ibSource2 = new Cyotek.Windows.Forms.ImageBox();
+            this.ibSource2 = new OpenVisionLab.VisionTestImageCanvas();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.tip = new RJCodeUI_M1.RJControls.RJLabel();
             this.rjLabel1 = new RJCodeUI_M1.RJControls.RJLabel();
@@ -74,11 +71,8 @@ namespace OpenVisionLab
             // pnlClientArea
             // 
             this.pnlClientArea.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
-            this.pnlClientArea.Controls.Add(this.groupBox1);
-            this.pnlClientArea.Controls.Add(this.rdoSourceImage);
-            this.pnlClientArea.Controls.Add(this.rdoContrast);
             this.pnlClientArea.Location = new System.Drawing.Point(1, 41);
-            this.pnlClientArea.Size = new System.Drawing.Size(871, 437);
+            this.pnlClientArea.Size = new System.Drawing.Size(978, 637);
             // 
             // 
             // 
@@ -86,7 +80,7 @@ namespace OpenVisionLab
             // 
             this.ibSource1.Location = new System.Drawing.Point(6, 20);
             this.ibSource1.Name = "ibSource1";
-            this.ibSource1.Size = new System.Drawing.Size(270, 200);
+            this.ibSource1.Size = new System.Drawing.Size(294, 220);
             this.ibSource1.TabIndex = 2149;
             // 
             // groupBox3
@@ -94,12 +88,12 @@ namespace OpenVisionLab
             this.groupBox3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.groupBox3.Controls.Add(this.cbLayerList1);
             this.groupBox3.Controls.Add(this.ibSource1);
-            this.groupBox3.Location = new System.Drawing.Point(6, 67);
+            this.groupBox3.Location = new System.Drawing.Point(14, 58);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(284, 266);
+            this.groupBox3.Size = new System.Drawing.Size(310, 285);
             this.groupBox3.TabIndex = 2154;
             this.groupBox3.TabStop = false;
-            this.groupBox3.Text = "Source Image 1";
+            this.groupBox3.Text = "Input A";
             // 
             // cbLayerList1
             // 
@@ -107,7 +101,7 @@ namespace OpenVisionLab
             this.cbLayerList1.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.None;
             this.cbLayerList1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.cbLayerList1.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
-            this.cbLayerList1.BorderRadius = 0;
+            this.cbLayerList1.BorderRadius = 3;
             this.cbLayerList1.BorderSize = 2;
             this.cbLayerList1.Customizable = false;
             this.cbLayerList1.DataSource = null;
@@ -117,12 +111,12 @@ namespace OpenVisionLab
             this.cbLayerList1.Font = new System.Drawing.Font("Verdana", 15F);
             this.cbLayerList1.ForeColor = System.Drawing.Color.DimGray;
             this.cbLayerList1.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.cbLayerList1.Location = new System.Drawing.Point(8, 226);
+            this.cbLayerList1.Location = new System.Drawing.Point(8, 248);
             this.cbLayerList1.MinimumSize = new System.Drawing.Size(100, 30);
             this.cbLayerList1.Name = "cbLayerList1";
             this.cbLayerList1.Padding = new System.Windows.Forms.Padding(2);
             this.cbLayerList1.SelectedIndex = -1;
-            this.cbLayerList1.Size = new System.Drawing.Size(270, 33);
+            this.cbLayerList1.Size = new System.Drawing.Size(294, 32);
             this.cbLayerList1.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
             this.cbLayerList1.TabIndex = 2158;
             this.cbLayerList1.Texts = "";
@@ -134,12 +128,12 @@ namespace OpenVisionLab
             this.groupBox4.Controls.Add(this.cbLayerList_Dest);
             this.groupBox4.Controls.Add(this.btnNewPanel_Desty);
             this.groupBox4.Controls.Add(this.ibDestination);
-            this.groupBox4.Location = new System.Drawing.Point(586, 67);
+            this.groupBox4.Location = new System.Drawing.Point(654, 58);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(284, 266);
+            this.groupBox4.Size = new System.Drawing.Size(310, 285);
             this.groupBox4.TabIndex = 2155;
             this.groupBox4.TabStop = false;
-            this.groupBox4.Text = "Destination Image";
+            this.groupBox4.Text = "Output Layer";
             // 
             // cbLayerList_Dest
             // 
@@ -147,7 +141,7 @@ namespace OpenVisionLab
             this.cbLayerList_Dest.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.None;
             this.cbLayerList_Dest.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.cbLayerList_Dest.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
-            this.cbLayerList_Dest.BorderRadius = 0;
+            this.cbLayerList_Dest.BorderRadius = 3;
             this.cbLayerList_Dest.BorderSize = 2;
             this.cbLayerList_Dest.Customizable = false;
             this.cbLayerList_Dest.DataSource = null;
@@ -157,12 +151,12 @@ namespace OpenVisionLab
             this.cbLayerList_Dest.Font = new System.Drawing.Font("Verdana", 15F);
             this.cbLayerList_Dest.ForeColor = System.Drawing.Color.DimGray;
             this.cbLayerList_Dest.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.cbLayerList_Dest.Location = new System.Drawing.Point(6, 226);
+            this.cbLayerList_Dest.Location = new System.Drawing.Point(8, 248);
             this.cbLayerList_Dest.MinimumSize = new System.Drawing.Size(100, 30);
             this.cbLayerList_Dest.Name = "cbLayerList_Dest";
             this.cbLayerList_Dest.Padding = new System.Windows.Forms.Padding(2);
             this.cbLayerList_Dest.SelectedIndex = -1;
-            this.cbLayerList_Dest.Size = new System.Drawing.Size(221, 33);
+            this.cbLayerList_Dest.Size = new System.Drawing.Size(258, 32);
             this.cbLayerList_Dest.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
             this.cbLayerList_Dest.TabIndex = 2159;
             this.cbLayerList_Dest.Texts = "";
@@ -180,10 +174,10 @@ namespace OpenVisionLab
             this.btnNewPanel_Desty.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.btnNewPanel_Desty.IconFont = FontAwesome.Sharp.IconFont.Auto;
             this.btnNewPanel_Desty.IconSize = 30;
-            this.btnNewPanel_Desty.Location = new System.Drawing.Point(237, 226);
+            this.btnNewPanel_Desty.Location = new System.Drawing.Point(274, 250);
             this.btnNewPanel_Desty.Name = "btnNewPanel_Desty";
-            this.btnNewPanel_Desty.Size = new System.Drawing.Size(30, 30);
-            this.btnNewPanel_Desty.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
+            this.btnNewPanel_Desty.Size = new System.Drawing.Size(28, 28);
+            this.btnNewPanel_Desty.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
             this.btnNewPanel_Desty.TabIndex = 2157;
             this.btnNewPanel_Desty.TabStop = false;
             this.btnNewPanel_Desty.Click += new System.EventHandler(this.btnNewPanel_Desty_Click);
@@ -192,7 +186,7 @@ namespace OpenVisionLab
             // 
             this.ibDestination.Location = new System.Drawing.Point(6, 20);
             this.ibDestination.Name = "ibDestination";
-            this.ibDestination.Size = new System.Drawing.Size(270, 200);
+            this.ibDestination.Size = new System.Drawing.Size(294, 220);
             this.ibDestination.TabIndex = 2149;
             // 
             // toolTip1
@@ -202,18 +196,15 @@ namespace OpenVisionLab
             this.toolTip1.IsBalloon = true;
             this.toolTip1.ReshowDelay = 100;
             // 
-            // timer1
-            // 
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
             // gpSourceImage
             // 
             this.gpSourceImage.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.gpSourceImage.Controls.Add(this.cbLayerList2);
             this.gpSourceImage.Controls.Add(this.ibSource2);
-            this.gpSourceImage.Location = new System.Drawing.Point(296, 67);
+            this.gpSourceImage.Location = new System.Drawing.Point(334, 58);
             this.gpSourceImage.Name = "gpSourceImage";
-            this.gpSourceImage.Size = new System.Drawing.Size(284, 266);
+            this.gpSourceImage.Size = new System.Drawing.Size(310, 285);
             this.gpSourceImage.TabIndex = 2156;
             this.gpSourceImage.TabStop = false;
             // 
@@ -223,7 +214,7 @@ namespace OpenVisionLab
             this.cbLayerList2.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.None;
             this.cbLayerList2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.cbLayerList2.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
-            this.cbLayerList2.BorderRadius = 0;
+            this.cbLayerList2.BorderRadius = 3;
             this.cbLayerList2.BorderSize = 2;
             this.cbLayerList2.Customizable = false;
             this.cbLayerList2.DataSource = null;
@@ -233,12 +224,12 @@ namespace OpenVisionLab
             this.cbLayerList2.Font = new System.Drawing.Font("Verdana", 15F);
             this.cbLayerList2.ForeColor = System.Drawing.Color.DimGray;
             this.cbLayerList2.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.cbLayerList2.Location = new System.Drawing.Point(8, 226);
+            this.cbLayerList2.Location = new System.Drawing.Point(8, 248);
             this.cbLayerList2.MinimumSize = new System.Drawing.Size(100, 30);
             this.cbLayerList2.Name = "cbLayerList2";
             this.cbLayerList2.Padding = new System.Windows.Forms.Padding(2);
             this.cbLayerList2.SelectedIndex = -1;
-            this.cbLayerList2.Size = new System.Drawing.Size(270, 33);
+            this.cbLayerList2.Size = new System.Drawing.Size(294, 32);
             this.cbLayerList2.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
             this.cbLayerList2.TabIndex = 2159;
             this.cbLayerList2.Texts = "";
@@ -248,7 +239,7 @@ namespace OpenVisionLab
             // 
             this.ibSource2.Location = new System.Drawing.Point(6, 20);
             this.ibSource2.Name = "ibSource2";
-            this.ibSource2.Size = new System.Drawing.Size(270, 200);
+            this.ibSource2.Size = new System.Drawing.Size(294, 220);
             this.ibSource2.TabIndex = 2149;
             // 
             // groupBox2
@@ -257,9 +248,9 @@ namespace OpenVisionLab
             this.groupBox2.Controls.Add(this.tip);
             this.groupBox2.Controls.Add(this.rjLabel1);
             this.groupBox2.Controls.Add(this.cbArithmeticType);
-            this.groupBox2.Location = new System.Drawing.Point(586, 335);
+            this.groupBox2.Location = new System.Drawing.Point(14, 389);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(284, 78);
+            this.groupBox2.Size = new System.Drawing.Size(310, 96);
             this.groupBox2.TabIndex = 2165;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Operations";
@@ -298,7 +289,7 @@ namespace OpenVisionLab
             this.cbArithmeticType.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.None;
             this.cbArithmeticType.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.cbArithmeticType.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
-            this.cbArithmeticType.BorderRadius = 0;
+            this.cbArithmeticType.BorderRadius = 3;
             this.cbArithmeticType.BorderSize = 2;
             this.cbArithmeticType.Customizable = false;
             this.cbArithmeticType.DataSource = null;
@@ -328,9 +319,9 @@ namespace OpenVisionLab
             this.gpContrast.Controls.Add(this.tbGray);
             this.gpContrast.Controls.Add(this.rdoColor);
             this.gpContrast.Controls.Add(this.rdoGray);
-            this.gpContrast.Location = new System.Drawing.Point(296, 359);
+            this.gpContrast.Location = new System.Drawing.Point(334, 389);
             this.gpContrast.Name = "gpContrast";
-            this.gpContrast.Size = new System.Drawing.Size(284, 107);
+            this.gpContrast.Size = new System.Drawing.Size(310, 128);
             this.gpContrast.TabIndex = 2166;
             this.gpContrast.TabStop = false;
             // 
@@ -340,7 +331,7 @@ namespace OpenVisionLab
             this.tbB.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.tbB.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.tbB.BorderFocusColor = System.Drawing.Color.FromArgb(((int)(((byte)(108)))), ((int)(((byte)(120)))), ((int)(((byte)(218)))));
-            this.tbB.BorderRadius = 0;
+            this.tbB.BorderRadius = 3;
             this.tbB.BorderSize = 1;
             this.tbB.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.tbB.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
@@ -362,7 +353,7 @@ namespace OpenVisionLab
             this.tbG.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.tbG.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.tbG.BorderFocusColor = System.Drawing.Color.FromArgb(((int)(((byte)(108)))), ((int)(((byte)(120)))), ((int)(((byte)(218)))));
-            this.tbG.BorderRadius = 0;
+            this.tbG.BorderRadius = 3;
             this.tbG.BorderSize = 1;
             this.tbG.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.tbG.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
@@ -384,7 +375,7 @@ namespace OpenVisionLab
             this.tbR.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.tbR.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.tbR.BorderFocusColor = System.Drawing.Color.FromArgb(((int)(((byte)(108)))), ((int)(((byte)(120)))), ((int)(((byte)(218)))));
-            this.tbR.BorderRadius = 0;
+            this.tbR.BorderRadius = 3;
             this.tbR.BorderSize = 1;
             this.tbR.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.tbR.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
@@ -406,7 +397,7 @@ namespace OpenVisionLab
             this.tbGray.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.tbGray.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.tbGray.BorderFocusColor = System.Drawing.Color.FromArgb(((int)(((byte)(108)))), ((int)(((byte)(120)))), ((int)(((byte)(218)))));
-            this.tbGray.BorderRadius = 0;
+            this.tbGray.BorderRadius = 3;
             this.tbGray.BorderSize = 1;
             this.tbGray.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.tbGray.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
@@ -471,7 +462,7 @@ namespace OpenVisionLab
             this.rdoContrast.Customizable = true;
             this.rdoContrast.Font = new System.Drawing.Font("Verdana", 9.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.rdoContrast.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
-            this.rdoContrast.Location = new System.Drawing.Point(295, 294);
+            this.rdoContrast.Location = new System.Drawing.Point(334, 363);
             this.rdoContrast.MinimumSize = new System.Drawing.Size(0, 21);
             this.rdoContrast.Name = "rdoContrast";
             this.rdoContrast.Padding = new System.Windows.Forms.Padding(10, 0, 0, 0);
@@ -491,64 +482,64 @@ namespace OpenVisionLab
             this.rdoSourceImage.Customizable = true;
             this.rdoSourceImage.Font = new System.Drawing.Font("Verdana", 9.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.rdoSourceImage.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
-            this.rdoSourceImage.Location = new System.Drawing.Point(295, 3);
+            this.rdoSourceImage.Location = new System.Drawing.Point(14, 363);
             this.rdoSourceImage.MinimumSize = new System.Drawing.Size(0, 21);
             this.rdoSourceImage.Name = "rdoSourceImage";
             this.rdoSourceImage.Padding = new System.Windows.Forms.Padding(10, 0, 0, 0);
             this.rdoSourceImage.Size = new System.Drawing.Size(139, 21);
             this.rdoSourceImage.TabIndex = 2160;
-            this.rdoSourceImage.Text = "Source Image 2";
+            this.rdoSourceImage.Text = "Input B";
             this.rdoSourceImage.UnCheckedColor = System.Drawing.Color.FromArgb(((int)(((byte)(104)))), ((int)(((byte)(110)))), ((int)(((byte)(134)))));
             this.rdoSourceImage.UseVisualStyleBackColor = false;
             this.rdoSourceImage.CheckedChanged += new System.EventHandler(this.OnPara_CheckedChanged);
             // 
             // btnArithmeticRun
             // 
-            this.btnArithmeticRun.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            this.btnArithmeticRun.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
-            this.btnArithmeticRun.BorderRadius = 15;
-            this.btnArithmeticRun.BorderSize = 3;
+            this.btnArithmeticRun.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(250)))), ((int)(((byte)(252)))), ((int)(((byte)(253)))));
+            this.btnArithmeticRun.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(47)))), ((int)(((byte)(111)))), ((int)(((byte)(171)))));
+            this.btnArithmeticRun.BorderRadius = 3;
+            this.btnArithmeticRun.BorderSize = 1;
             this.btnArithmeticRun.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnArithmeticRun.Design = RJCodeUI_M1.RJControls.ButtonDesign.Custom;
-            this.btnArithmeticRun.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(234)))), ((int)(((byte)(79)))), ((int)(((byte)(82)))));
-            this.btnArithmeticRun.FlatAppearance.BorderSize = 3;
-            this.btnArithmeticRun.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(239)))), ((int)(((byte)(239)))), ((int)(((byte)(239)))));
-            this.btnArithmeticRun.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.btnArithmeticRun.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(47)))), ((int)(((byte)(111)))), ((int)(((byte)(171)))));
+            this.btnArithmeticRun.FlatAppearance.BorderSize = 1;
+            this.btnArithmeticRun.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(235)))), ((int)(((byte)(241)))), ((int)(((byte)(247)))));
+            this.btnArithmeticRun.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(241)))), ((int)(((byte)(246)))), ((int)(((byte)(251)))));
             this.btnArithmeticRun.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnArithmeticRun.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnArithmeticRun.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
-            this.btnArithmeticRun.IconChar = FontAwesome.Sharp.IconChar.Check;
-            this.btnArithmeticRun.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
+            this.btnArithmeticRun.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.btnArithmeticRun.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(85)))), ((int)(((byte)(132)))));
+            this.btnArithmeticRun.IconChar = FontAwesome.Sharp.IconChar.None;
+            this.btnArithmeticRun.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(85)))), ((int)(((byte)(132)))));
             this.btnArithmeticRun.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.btnArithmeticRun.IconSize = 24;
-            this.btnArithmeticRun.Location = new System.Drawing.Point(753, 412);
+            this.btnArithmeticRun.IconSize = 1;
+            this.btnArithmeticRun.Location = new System.Drawing.Point(14, 628);
             this.btnArithmeticRun.Name = "btnArithmeticRun";
-            this.btnArithmeticRun.Size = new System.Drawing.Size(117, 63);
+            this.btnArithmeticRun.Size = new System.Drawing.Size(950, 40);
             this.btnArithmeticRun.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
             this.btnArithmeticRun.TabIndex = 2164;
-            this.btnArithmeticRun.Text = "EXCUTE";
-            this.btnArithmeticRun.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnArithmeticRun.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnArithmeticRun.Text = "Run";
+            this.btnArithmeticRun.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.btnArithmeticRun.TextImageRelation = System.Windows.Forms.TextImageRelation.Overlay;
             this.btnArithmeticRun.UseVisualStyleBackColor = false;
             this.btnArithmeticRun.Click += new System.EventHandler(this.btnArithmeticRun_Click);
             // 
             // rjButton1
             // 
-            this.rjButton1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            this.rjButton1.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
-            this.rjButton1.BorderRadius = 15;
-            this.rjButton1.BorderSize = 3;
+            this.rjButton1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(250)))), ((int)(((byte)(252)))), ((int)(((byte)(253)))));
+            this.rjButton1.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(47)))), ((int)(((byte)(111)))), ((int)(((byte)(171)))));
+            this.rjButton1.BorderRadius = 3;
+            this.rjButton1.BorderSize = 1;
             this.rjButton1.Cursor = System.Windows.Forms.Cursors.Hand;
             this.rjButton1.Design = RJCodeUI_M1.RJControls.ButtonDesign.Custom;
-            this.rjButton1.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(234)))), ((int)(((byte)(79)))), ((int)(((byte)(82)))));
-            this.rjButton1.FlatAppearance.BorderSize = 3;
-            this.rjButton1.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(239)))), ((int)(((byte)(239)))), ((int)(((byte)(239)))));
-            this.rjButton1.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.rjButton1.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(47)))), ((int)(((byte)(111)))), ((int)(((byte)(171)))));
+            this.rjButton1.FlatAppearance.BorderSize = 1;
+            this.rjButton1.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(235)))), ((int)(((byte)(241)))), ((int)(((byte)(247)))));
+            this.rjButton1.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(241)))), ((int)(((byte)(246)))), ((int)(((byte)(251)))));
             this.rjButton1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.rjButton1.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.rjButton1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
+            this.rjButton1.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.rjButton1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(85)))), ((int)(((byte)(132)))));
             this.rjButton1.IconChar = FontAwesome.Sharp.IconChar.Check;
-            this.rjButton1.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
+            this.rjButton1.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(85)))), ((int)(((byte)(132)))));
             this.rjButton1.IconFont = FontAwesome.Sharp.IconFont.Auto;
             this.rjButton1.IconSize = 24;
             this.rjButton1.Location = new System.Drawing.Point(147, 42);
@@ -568,9 +559,9 @@ namespace OpenVisionLab
             this.groupBox1.Controls.Add(this.tbY);
             this.groupBox1.Controls.Add(this.rjButton1);
             this.groupBox1.Controls.Add(this.tbX);
-            this.groupBox1.Location = new System.Drawing.Point(11, 298);
+            this.groupBox1.Location = new System.Drawing.Point(654, 389);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(270, 107);
+            this.groupBox1.Size = new System.Drawing.Size(310, 128);
             this.groupBox1.TabIndex = 2167;
             this.groupBox1.TabStop = false;
             // 
@@ -580,7 +571,7 @@ namespace OpenVisionLab
             this.tbY.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.tbY.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.tbY.BorderFocusColor = System.Drawing.Color.FromArgb(((int)(((byte)(108)))), ((int)(((byte)(120)))), ((int)(((byte)(218)))));
-            this.tbY.BorderRadius = 0;
+            this.tbY.BorderRadius = 3;
             this.tbY.BorderSize = 1;
             this.tbY.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.tbY.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
@@ -602,7 +593,7 @@ namespace OpenVisionLab
             this.tbX.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.tbX.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.tbX.BorderFocusColor = System.Drawing.Color.FromArgb(((int)(((byte)(108)))), ((int)(((byte)(120)))), ((int)(((byte)(218)))));
-            this.tbX.BorderRadius = 0;
+            this.tbX.BorderRadius = 3;
             this.tbX.BorderSize = 1;
             this.tbX.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.tbX.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
@@ -627,7 +618,10 @@ namespace OpenVisionLab
             this.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
             this.BorderSize = 1;
             this.Caption = "Arithmetic";
-            this.ClientSize = new System.Drawing.Size(873, 479);
+            this.ClientSize = new System.Drawing.Size(980, 679);
+            this.Controls.Add(this.rdoContrast);
+            this.Controls.Add(this.rdoSourceImage);
+            this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.gpContrast);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.btnArithmeticRun);
@@ -664,18 +658,17 @@ namespace OpenVisionLab
         }
 
         #endregion
-        private ImageBox ibSource1;
+        private VisionTestImageCanvas ibSource1;
         private System.Windows.Forms.GroupBox groupBox4;
-        private ImageBox ibDestination;
+        private VisionTestImageCanvas ibDestination;
         private System.Windows.Forms.GroupBox groupBox3;
         private RJCodeUI_M1.RJControls.RJMenuIcon btnNewPanel_Desty;
         private System.Windows.Forms.ToolTip toolTip1;
-        private System.Windows.Forms.Timer timer1;
         private RJCodeUI_M1.RJControls.RJComboBox cbLayerList_Dest;
         private RJCodeUI_M1.RJControls.RJComboBox cbLayerList1;
         private System.Windows.Forms.GroupBox gpSourceImage;
         private RJCodeUI_M1.RJControls.RJComboBox cbLayerList2;
-        private ImageBox ibSource2;
+        private VisionTestImageCanvas ibSource2;
         private RJCodeUI_M1.RJControls.RJButton btnArithmeticRun;
         private System.Windows.Forms.GroupBox groupBox2;
         private RJCodeUI_M1.RJControls.RJLabel rjLabel1;
@@ -696,3 +689,7 @@ namespace OpenVisionLab
         private RJCodeUI_M1.RJControls.RJTextBox tbX;
     }
 }
+
+
+
+

@@ -4,6 +4,9 @@ namespace OpenVisionLab.PropertyGrid
 {
     public interface IPropertyGridView
     {
+        event EventHandler<PropertyGridPropertyValueChangedEventArgs> PropertyValueChanged;
+        event EventHandler SelectedObjectsChanged;
+
         object SelectedObject { get; set; }
         bool HasCategories { get; }
         IPropertyGridPropertyCollection Properties { get; }

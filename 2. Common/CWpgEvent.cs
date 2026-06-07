@@ -6,6 +6,7 @@ using OpenCvSharp;
 using System;
 using System.Drawing;
 using System.Reflection;
+using OpenVisionLab.PropertyGrid;
 
 namespace OpenVisionLab._2._Common
 {
@@ -25,11 +26,12 @@ namespace OpenVisionLab._2._Common
             Wpg_PropertyValueChanged(sender, null);
         }
 
-        public void Wpg_PropertyValueChanged(object sender, System.Windows.Controls.WpfPropertyGrid.PropertyValueChangedEventArgs e)
+        public void Wpg_PropertyValueChanged(object sender, PropertyGridPropertyValueChangedEventArgs e)
         {
             try
             {
-                var propertyGrid = (System.Windows.Controls.WpfPropertyGrid.PropertyGrid)sender;
+                var propertyGrid = sender as IPropertyGridView;
+                if (propertyGrid == null) { return; }
                 if (propertyGrid.SelectedObject == null) return;
                 if(e != null && propertyGrid.SelectedObject is COpenCVPropertyBase)
                 {
@@ -63,7 +65,7 @@ namespace OpenVisionLab._2._Common
             }
         }
 
-        private static void SetCPropertyMatching(System.Windows.Controls.WpfPropertyGrid.PropertyGrid propertyGrid)
+        private static void SetCPropertyMatching(IPropertyGridView propertyGrid)
         {
             if (propertyGrid.SelectedObject is CPropertyMatching)
             {
@@ -93,7 +95,7 @@ namespace OpenVisionLab._2._Common
                 }
             }
         }
-        private static void SetCPropertyContour(System.Windows.Controls.WpfPropertyGrid.PropertyGrid propertyGrid)
+        private static void SetCPropertyContour(IPropertyGridView propertyGrid)
         {
             if (propertyGrid.SelectedObject is CPropertyContour)
             {
@@ -119,7 +121,7 @@ namespace OpenVisionLab._2._Common
                 }
             }
         }
-        private static void SetCPropertyLineGuage(System.Windows.Controls.WpfPropertyGrid.PropertyGrid propertyGrid)
+        private static void SetCPropertyLineGuage(IPropertyGridView propertyGrid)
         {
             if (propertyGrid.SelectedObject is CPropertyLineGuage)
             {
@@ -137,7 +139,7 @@ namespace OpenVisionLab._2._Common
             }
         }
 
-        private static void SetCOpencvPropertyBase(System.Windows.Controls.WpfPropertyGrid.PropertyGrid propertyGrid)
+        private static void SetCOpencvPropertyBase(IPropertyGridView propertyGrid)
         {
             if (propertyGrid.SelectedObject is COpenCVPropertyBase)
             {

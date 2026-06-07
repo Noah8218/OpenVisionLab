@@ -1,0 +1,229 @@
+﻿<UserControl
+    x:Class="OpenVisionLab.ImageCanvas.Views.RoiImageCanvasView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converter="clr-namespace:OpenVisionLab.ImageCanvas"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    d:DesignHeight="250"
+    d:DesignWidth="500"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <converter:ColorToRGBConverter x:Key="colorToRGBConverter" />
+        <Geometry x:Key="IconRoiSelect">M3,5H5V3H3M3,9H5V7H3M3,13H5V11H3M3,17H5V15H3M3,21H5V19H3M7,5H9V3H7M11,5H13V3H11M15,5H17V3H15M19,5H21V3H19M19,9H21V7H19M19,13H21V11H19M19,17H21V15H19M19,21H21V19H19M15,21H17V19H15M11,21H13V19H11M7,21H9V19H7Z</Geometry>
+        <Geometry x:Key="IconStraighten">M21,6H3C1.89,6 1,6.89 1,8V16C1,17.11 1.89,18 3,18H21C22.11,18 23,17.11 23,16V8C23,6.89 22.11,6 21,6M21,16H3V8H5V11H7V8H9V12H11V8H13V11H15V8H17V12H19V8H21V16Z</Geometry>
+
+        <Style x:Key="MenuItemStyle" TargetType="{x:Type MenuItem}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type MenuItem}">
+                        <Border x:Name="Border">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <!--  아이콘 영역  -->
+                                    <ColumnDefinition Width="*" />
+                                    <!--  텍스트 영역  -->
+                                </Grid.ColumnDefinitions>
+                                <ContentControl Grid.Column="0" Content="{TemplateBinding Icon}" />
+                                <ContentPresenter Grid.Column="1" ContentSource="Header" />
+                            </Grid>
+                        </Border>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="Grid">
+            <Setter Property="Background" Value="#262626" />
+        </Style>
+
+        <Style x:Key="ViewerStatusLabelStyle" TargetType="{x:Type Label}">
+            <Setter Property="Foreground" Value="#F5F9FC" />
+            <Setter Property="Background" Value="#262626" />
+            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="ViewerToolButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Width" Value="35" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="ToolBar.OverflowMode" Value="Never" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#343434" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#404040" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ToolBarStyleWithoutOverflow" TargetType="{x:Type ToolBar}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ToolBar}">
+                        <Border
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}">
+                            <DockPanel>
+                                <WrapPanel IsItemsHost="True" Orientation="Vertical" />
+                            </DockPanel>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid x:Name="MainGrid">
+        <Grid.Resources>
+            <converter:BooleanToColorConverter x:Key="booleanToColorConverter" />
+        </Grid.Resources>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="35" />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*" />
+            <RowDefinition Height="20" />
+        </Grid.RowDefinitions>
+
+        <!--  우클릭 메뉴  -->
+        <Grid.ContextMenu>
+            <ContextMenu ItemContainerStyle="{StaticResource MenuItemStyle}" ItemsSource="{Binding MenuItems}">
+                <ContextMenu.ItemTemplate>
+                    <DataTemplate>
+                        <MenuItem
+                            Background="{Binding Background}"
+                            Command="{Binding Command}"
+                            CommandParameter="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ContextMenu}}}"
+                            Header="{Binding Header}"
+                            Visibility="{Binding IsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <MenuItem.Icon>
+                                <ContentControl>
+                                    <Path
+                                        Width="16"
+                                        Height="16"
+                                        Data="{Binding IconData}"
+                                        Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=MenuItem}}"
+                                        Stretch="Uniform" />
+                                </ContentControl>
+                            </MenuItem.Icon>
+                            <!--  하위 메뉴 아이템 설정  -->
+                            <MenuItem.ItemsSource>
+                                <Binding Path="Children" />
+                            </MenuItem.ItemsSource>
+                        </MenuItem>
+                    </DataTemplate>
+                </ContextMenu.ItemTemplate>
+
+            </ContextMenu>
+        </Grid.ContextMenu>
+
+        <!--  Viewer  -->
+        <WindowsFormsHost
+            x:Name="imageBoxCameraTwoD"
+            Grid.Row="0"
+            Grid.Column="0"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch" />
+
+        <!--  상태바  -->
+        <Viewbox
+            x:Name="statusbar"
+            Grid.Row="1"
+            Grid.Column="0"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Center"
+            Margin="4,0,0,0"
+            Stretch="None">
+            <WrapPanel Background="#262626">
+                <Label
+                    Grid.Column="4"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Content="{Binding RobotPos}"
+                    ContentStringFormat="{} Pos : ({0}) "
+                    Style="{StaticResource ViewerStatusLabelStyle}" />
+                <Label
+                    Grid.Column="3"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Content="{Binding GrayValue}"
+                    ContentStringFormat="{} Gv : ({0}) "
+                    Style="{StaticResource ViewerStatusLabelStyle}" />
+                <Label
+                    Grid.Column="5"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Content="{Binding PixelColor, Converter={StaticResource colorToRGBConverter}}"
+                    ContentStringFormat="{} Color : ({0}) "
+                    Style="{StaticResource ViewerStatusLabelStyle}" />
+
+            </WrapPanel>
+        </Viewbox>
+
+
+        <!--  툴바  -->
+        <ToolBarTray
+            Grid.Row="0"
+            Grid.Column="1"
+            Background="#262626"
+            IsLocked="True"
+            Orientation="Vertical">
+            <ToolBar
+                Background="#262626"
+                Foreground="White"
+                Style="{StaticResource ToolBarStyleWithoutOverflow}"
+                ToolBarTray.IsLocked="True">
+                <Button
+                    Command="{Binding TeachingCommand}"
+                    Style="{StaticResource ViewerToolButtonStyle}"
+                    ToolTip="ROI">
+                    <Path
+                        Width="21"
+                        Height="21"
+                        Data="{StaticResource IconRoiSelect}"
+                        Fill="{Binding DataContext.IsTeachingMode, Converter={StaticResource booleanToColorConverter}, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        Stretch="Uniform" />
+                </Button>
+
+                <Button
+                    Command="{Binding MeasureCommand}"
+                    Style="{StaticResource ViewerToolButtonStyle}"
+                    ToolTip="Measure">
+                    <Path
+                        Width="22"
+                        Height="22"
+                        Data="{StaticResource IconStraighten}"
+                        Fill="{Binding DataContext.IsShowMeasure, Converter={StaticResource booleanToColorConverter}, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        Stretch="Uniform" />
+                </Button>
+
+            </ToolBar>
+        </ToolBarTray>
+
+    </Grid>
+</UserControl>

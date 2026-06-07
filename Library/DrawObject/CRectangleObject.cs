@@ -1,5 +1,4 @@
 ﻿
-using Cyotek.Windows.Forms;
 using OpenCvSharp;
 using System;
 using System.Drawing;
@@ -171,13 +170,9 @@ namespace OpenVisionLab.DrawObject
             }
         }
 
-        public PosSizableRect GetNodeSelectable(System.Drawing.Point p, Rectangle rt, ImageBox ib)
+        public PosSizableRect GetNodeSelectable(System.Drawing.Point p, Rectangle rt)
         {
             if (rt.IsEmpty) { return PosSizableRect.None; }
-            Rectangle tempR = new Rectangle(rt.X - 1 / 2, rt.Y - 1 / 2, rt.Width + 1, rt.Height + 1);
-            System.Drawing.Size size = ib.GetScaledSize(tempR.Width, tempR.Height);
-            System.Drawing.Point location = ib.GetOffsetPoint(tempR.X, tempR.Y);
-            System.Drawing.Point offsetPt = ib.GetOffsetPoint(p);
 
             foreach (PosSizableRect r in Enum.GetValues(typeof(PosSizableRect)))
             {
@@ -186,7 +181,7 @@ namespace OpenVisionLab.DrawObject
                 {
                     if (_rgAnchors[(int)r] != null)
                     {
-                        if (_rgAnchors[(int)r].IsVisible(offsetPt))
+                        if (_rgAnchors[(int)r].IsVisible(p))
                         {
                             return r;
                         }
@@ -194,7 +189,7 @@ namespace OpenVisionLab.DrawObject
                 }
 
                 // 중심
-                if (_rgRect.IsVisible(offsetPt))
+                if (_rgRect.IsVisible(p))
                 {
                     return PosSizableRect.SizeAll;
                 }
@@ -203,7 +198,7 @@ namespace OpenVisionLab.DrawObject
             return PosSizableRect.None;
         }
 
-        public Cursor ChangeCursor(System.Drawing.Point p, Rectangle rt, ImageBox ib) => AnchorToCursor(GetNodeSelectable(p, rt, ib), this.Angle);
+        public Cursor ChangeCursor(System.Drawing.Point p, Rectangle rt) => AnchorToCursor(GetNodeSelectable(p, rt), this.Angle);
 
         private Rectangle GetRect(PosSizableRect p, Rectangle rect)
         {

@@ -1,6 +1,4 @@
-using Cyotek.Windows.Forms;
-
-namespace OpenVisionLab
+﻿namespace OpenVisionLab
 {
     partial class FormVision_HSV
     {
@@ -31,15 +29,14 @@ namespace OpenVisionLab
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-                        this.ibSource = new Cyotek.Windows.Forms.ImageBox();
+                        this.ibSource = new OpenVisionLab.VisionTestImageCanvas();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.cbLayerList = new RJCodeUI_M1.RJControls.RJComboBox();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.cbLayerList2 = new RJCodeUI_M1.RJControls.RJComboBox();
             this.btnNewPanel_Desty = new RJCodeUI_M1.RJControls.RJMenuIcon();
-            this.ibDestination = new Cyotek.Windows.Forms.ImageBox();
+            this.ibDestination = new OpenVisionLab.VisionTestImageCanvas();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.trbSatMin = new RJCodeUI_M1.RJControls.RJTrackBar();
             this.rjLabel4 = new RJCodeUI_M1.RJControls.RJLabel();
             this.rjLabel1 = new RJCodeUI_M1.RJControls.RJLabel();
@@ -78,15 +75,15 @@ namespace OpenVisionLab
             this.pnlClientArea.Controls.Add(this.rjLabel1);
             this.pnlClientArea.Controls.Add(this.trbSatMax);
             this.pnlClientArea.Location = new System.Drawing.Point(1, 41);
-            this.pnlClientArea.Size = new System.Drawing.Size(584, 708);
+            this.pnlClientArea.Size = new System.Drawing.Size(918, 613);
             // 
             // 
             // 
             // ibSource
             // 
-            this.ibSource.Location = new System.Drawing.Point(6, 20);
+            this.ibSource.Location = new System.Drawing.Point(8, 20);
             this.ibSource.Name = "ibSource";
-            this.ibSource.Size = new System.Drawing.Size(270, 200);
+            this.ibSource.Size = new System.Drawing.Size(374, 220);
             this.ibSource.TabIndex = 2149;
             // 
             // groupBox3
@@ -94,12 +91,12 @@ namespace OpenVisionLab
             this.groupBox3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.groupBox3.Controls.Add(this.cbLayerList);
             this.groupBox3.Controls.Add(this.ibSource);
-            this.groupBox3.Location = new System.Drawing.Point(6, 44);
+            this.groupBox3.Location = new System.Drawing.Point(16, 58);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(284, 268);
+            this.groupBox3.Size = new System.Drawing.Size(390, 285);
             this.groupBox3.TabIndex = 2154;
             this.groupBox3.TabStop = false;
-            this.groupBox3.Text = "Source Image";
+            this.groupBox3.Text = "Input Layer";
             // 
             // cbLayerList
             // 
@@ -107,7 +104,7 @@ namespace OpenVisionLab
             this.cbLayerList.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.None;
             this.cbLayerList.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.cbLayerList.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
-            this.cbLayerList.BorderRadius = 0;
+            this.cbLayerList.BorderRadius = 3;
             this.cbLayerList.BorderSize = 2;
             this.cbLayerList.Customizable = false;
             this.cbLayerList.DataSource = null;
@@ -117,12 +114,12 @@ namespace OpenVisionLab
             this.cbLayerList.Font = new System.Drawing.Font("Verdana", 15F);
             this.cbLayerList.ForeColor = System.Drawing.Color.DimGray;
             this.cbLayerList.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.cbLayerList.Location = new System.Drawing.Point(6, 226);
+            this.cbLayerList.Location = new System.Drawing.Point(8, 248);
             this.cbLayerList.MinimumSize = new System.Drawing.Size(100, 30);
             this.cbLayerList.Name = "cbLayerList";
             this.cbLayerList.Padding = new System.Windows.Forms.Padding(2);
             this.cbLayerList.SelectedIndex = -1;
-            this.cbLayerList.Size = new System.Drawing.Size(270, 35);
+            this.cbLayerList.Size = new System.Drawing.Size(374, 32);
             this.cbLayerList.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
             this.cbLayerList.TabIndex = 2158;
             this.cbLayerList.Texts = "";
@@ -134,12 +131,12 @@ namespace OpenVisionLab
             this.groupBox4.Controls.Add(this.cbLayerList2);
             this.groupBox4.Controls.Add(this.btnNewPanel_Desty);
             this.groupBox4.Controls.Add(this.ibDestination);
-            this.groupBox4.Location = new System.Drawing.Point(296, 44);
+            this.groupBox4.Location = new System.Drawing.Point(16, 360);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(284, 268);
+            this.groupBox4.Size = new System.Drawing.Size(390, 285);
             this.groupBox4.TabIndex = 2155;
             this.groupBox4.TabStop = false;
-            this.groupBox4.Text = "Destination Image";
+            this.groupBox4.Text = "Output Layer";
             // 
             // cbLayerList2
             // 
@@ -147,7 +144,7 @@ namespace OpenVisionLab
             this.cbLayerList2.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.None;
             this.cbLayerList2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.cbLayerList2.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
-            this.cbLayerList2.BorderRadius = 0;
+            this.cbLayerList2.BorderRadius = 3;
             this.cbLayerList2.BorderSize = 2;
             this.cbLayerList2.Customizable = false;
             this.cbLayerList2.DataSource = null;
@@ -157,12 +154,12 @@ namespace OpenVisionLab
             this.cbLayerList2.Font = new System.Drawing.Font("Verdana", 15F);
             this.cbLayerList2.ForeColor = System.Drawing.Color.DimGray;
             this.cbLayerList2.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
-            this.cbLayerList2.Location = new System.Drawing.Point(6, 226);
+            this.cbLayerList2.Location = new System.Drawing.Point(8, 248);
             this.cbLayerList2.MinimumSize = new System.Drawing.Size(100, 30);
             this.cbLayerList2.Name = "cbLayerList2";
             this.cbLayerList2.Padding = new System.Windows.Forms.Padding(2);
             this.cbLayerList2.SelectedIndex = -1;
-            this.cbLayerList2.Size = new System.Drawing.Size(221, 35);
+            this.cbLayerList2.Size = new System.Drawing.Size(338, 32);
             this.cbLayerList2.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
             this.cbLayerList2.TabIndex = 2159;
             this.cbLayerList2.Texts = "";
@@ -180,19 +177,19 @@ namespace OpenVisionLab
             this.btnNewPanel_Desty.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.btnNewPanel_Desty.IconFont = FontAwesome.Sharp.IconFont.Auto;
             this.btnNewPanel_Desty.IconSize = 30;
-            this.btnNewPanel_Desty.Location = new System.Drawing.Point(232, 226);
+            this.btnNewPanel_Desty.Location = new System.Drawing.Point(354, 250);
             this.btnNewPanel_Desty.Name = "btnNewPanel_Desty";
-            this.btnNewPanel_Desty.Size = new System.Drawing.Size(30, 30);
-            this.btnNewPanel_Desty.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
+            this.btnNewPanel_Desty.Size = new System.Drawing.Size(28, 28);
+            this.btnNewPanel_Desty.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
             this.btnNewPanel_Desty.TabIndex = 2157;
             this.btnNewPanel_Desty.TabStop = false;
             this.btnNewPanel_Desty.Click += new System.EventHandler(this.btnNewPanel_Desty_Click);
             // 
             // ibDestination
             // 
-            this.ibDestination.Location = new System.Drawing.Point(6, 20);
+            this.ibDestination.Location = new System.Drawing.Point(8, 20);
             this.ibDestination.Name = "ibDestination";
-            this.ibDestination.Size = new System.Drawing.Size(270, 200);
+            this.ibDestination.Size = new System.Drawing.Size(374, 220);
             this.ibDestination.TabIndex = 2149;
             // 
             // toolTip1
@@ -202,9 +199,6 @@ namespace OpenVisionLab
             this.toolTip1.IsBalloon = true;
             this.toolTip1.ReshowDelay = 100;
             // 
-            // timer1
-            // 
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
             // trbSatMin
             // 
@@ -213,12 +207,12 @@ namespace OpenVisionLab
             this.trbSatMin.ChannelColor = System.Drawing.Color.LightGray;
             this.trbSatMin.Customizable = true;
             this.trbSatMin.LargeChange = 1;
-            this.trbSatMin.Location = new System.Drawing.Point(6, 327);
+            this.trbSatMin.Location = new System.Drawing.Point(423, 36);
             this.trbSatMin.Maximum = 255;
             this.trbSatMin.Minimum = 1;
             this.trbSatMin.Name = "trbSatMin";
             this.trbSatMin.ShowValue = true;
-            this.trbSatMin.Size = new System.Drawing.Size(380, 46);
+            this.trbSatMin.Size = new System.Drawing.Size(488, 46);
             this.trbSatMin.SliderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
             this.trbSatMin.TabIndex = 2156;
             this.trbSatMin.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(162)))), ((int)(((byte)(160)))), ((int)(((byte)(162)))));
@@ -234,7 +228,7 @@ namespace OpenVisionLab
             this.rjLabel4.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.rjLabel4.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.rjLabel4.LinkLabel = false;
-            this.rjLabel4.Location = new System.Drawing.Point(3, 308);
+            this.rjLabel4.Location = new System.Drawing.Point(423, 17);
             this.rjLabel4.Name = "rjLabel4";
             this.rjLabel4.Size = new System.Drawing.Size(57, 16);
             this.rjLabel4.Style = RJCodeUI_M1.RJControls.LabelStyle.Normal;
@@ -249,7 +243,7 @@ namespace OpenVisionLab
             this.rjLabel1.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.rjLabel1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.rjLabel1.LinkLabel = false;
-            this.rjLabel1.Location = new System.Drawing.Point(2, 334);
+            this.rjLabel1.Location = new System.Drawing.Point(423, 105);
             this.rjLabel1.Name = "rjLabel1";
             this.rjLabel1.Size = new System.Drawing.Size(61, 16);
             this.rjLabel1.Style = RJCodeUI_M1.RJControls.LabelStyle.Normal;
@@ -263,12 +257,12 @@ namespace OpenVisionLab
             this.trbSatMax.ChannelColor = System.Drawing.Color.LightGray;
             this.trbSatMax.Customizable = true;
             this.trbSatMax.LargeChange = 1;
-            this.trbSatMax.Location = new System.Drawing.Point(5, 353);
+            this.trbSatMax.Location = new System.Drawing.Point(423, 124);
             this.trbSatMax.Maximum = 255;
             this.trbSatMax.Minimum = 1;
             this.trbSatMax.Name = "trbSatMax";
             this.trbSatMax.ShowValue = true;
-            this.trbSatMax.Size = new System.Drawing.Size(380, 46);
+            this.trbSatMax.Size = new System.Drawing.Size(488, 46);
             this.trbSatMax.SliderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
             this.trbSatMax.TabIndex = 2158;
             this.trbSatMax.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(162)))), ((int)(((byte)(160)))), ((int)(((byte)(162)))));
@@ -284,7 +278,7 @@ namespace OpenVisionLab
             this.rjLabel2.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.rjLabel2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.rjLabel2.LinkLabel = false;
-            this.rjLabel2.Location = new System.Drawing.Point(2, 462);
+            this.rjLabel2.Location = new System.Drawing.Point(423, 281);
             this.rjLabel2.Name = "rjLabel2";
             this.rjLabel2.Size = new System.Drawing.Size(63, 16);
             this.rjLabel2.Style = RJCodeUI_M1.RJControls.LabelStyle.Normal;
@@ -298,12 +292,12 @@ namespace OpenVisionLab
             this.trbHueMax.ChannelColor = System.Drawing.Color.LightGray;
             this.trbHueMax.Customizable = true;
             this.trbHueMax.LargeChange = 1;
-            this.trbHueMax.Location = new System.Drawing.Point(5, 481);
+            this.trbHueMax.Location = new System.Drawing.Point(423, 300);
             this.trbHueMax.Maximum = 255;
             this.trbHueMax.Minimum = 1;
             this.trbHueMax.Name = "trbHueMax";
             this.trbHueMax.ShowValue = true;
-            this.trbHueMax.Size = new System.Drawing.Size(380, 46);
+            this.trbHueMax.Size = new System.Drawing.Size(488, 46);
             this.trbHueMax.SliderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
             this.trbHueMax.TabIndex = 2162;
             this.trbHueMax.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(162)))), ((int)(((byte)(160)))), ((int)(((byte)(162)))));
@@ -319,7 +313,7 @@ namespace OpenVisionLab
             this.rjLabel3.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.rjLabel3.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.rjLabel3.LinkLabel = false;
-            this.rjLabel3.Location = new System.Drawing.Point(3, 401);
+            this.rjLabel3.Location = new System.Drawing.Point(423, 193);
             this.rjLabel3.Name = "rjLabel3";
             this.rjLabel3.Size = new System.Drawing.Size(59, 16);
             this.rjLabel3.Style = RJCodeUI_M1.RJControls.LabelStyle.Normal;
@@ -333,12 +327,12 @@ namespace OpenVisionLab
             this.trbHueMin.ChannelColor = System.Drawing.Color.LightGray;
             this.trbHueMin.Customizable = true;
             this.trbHueMin.LargeChange = 1;
-            this.trbHueMin.Location = new System.Drawing.Point(6, 420);
+            this.trbHueMin.Location = new System.Drawing.Point(423, 212);
             this.trbHueMin.Maximum = 255;
             this.trbHueMin.Minimum = 1;
             this.trbHueMin.Name = "trbHueMin";
             this.trbHueMin.ShowValue = true;
-            this.trbHueMin.Size = new System.Drawing.Size(380, 46);
+            this.trbHueMin.Size = new System.Drawing.Size(488, 46);
             this.trbHueMin.SliderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
             this.trbHueMin.TabIndex = 2160;
             this.trbHueMin.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(162)))), ((int)(((byte)(160)))), ((int)(((byte)(162)))));
@@ -354,7 +348,7 @@ namespace OpenVisionLab
             this.rjLabel5.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.rjLabel5.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.rjLabel5.LinkLabel = false;
-            this.rjLabel5.Location = new System.Drawing.Point(3, 590);
+            this.rjLabel5.Location = new System.Drawing.Point(423, 457);
             this.rjLabel5.Name = "rjLabel5";
             this.rjLabel5.Size = new System.Drawing.Size(57, 16);
             this.rjLabel5.Style = RJCodeUI_M1.RJControls.LabelStyle.Normal;
@@ -368,12 +362,12 @@ namespace OpenVisionLab
             this.trbValMax.ChannelColor = System.Drawing.Color.LightGray;
             this.trbValMax.Customizable = true;
             this.trbValMax.LargeChange = 1;
-            this.trbValMax.Location = new System.Drawing.Point(6, 609);
+            this.trbValMax.Location = new System.Drawing.Point(423, 476);
             this.trbValMax.Maximum = 255;
             this.trbValMax.Minimum = 1;
             this.trbValMax.Name = "trbValMax";
             this.trbValMax.ShowValue = true;
-            this.trbValMax.Size = new System.Drawing.Size(380, 46);
+            this.trbValMax.Size = new System.Drawing.Size(488, 46);
             this.trbValMax.SliderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
             this.trbValMax.TabIndex = 2166;
             this.trbValMax.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(162)))), ((int)(((byte)(160)))), ((int)(((byte)(162)))));
@@ -389,7 +383,7 @@ namespace OpenVisionLab
             this.rjLabel6.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.rjLabel6.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.rjLabel6.LinkLabel = false;
-            this.rjLabel6.Location = new System.Drawing.Point(4, 529);
+            this.rjLabel6.Location = new System.Drawing.Point(423, 369);
             this.rjLabel6.Name = "rjLabel6";
             this.rjLabel6.Size = new System.Drawing.Size(53, 16);
             this.rjLabel6.Style = RJCodeUI_M1.RJControls.LabelStyle.Normal;
@@ -403,12 +397,12 @@ namespace OpenVisionLab
             this.trbValMin.ChannelColor = System.Drawing.Color.LightGray;
             this.trbValMin.Customizable = true;
             this.trbValMin.LargeChange = 1;
-            this.trbValMin.Location = new System.Drawing.Point(7, 548);
+            this.trbValMin.Location = new System.Drawing.Point(423, 388);
             this.trbValMin.Maximum = 255;
             this.trbValMin.Minimum = 1;
             this.trbValMin.Name = "trbValMin";
             this.trbValMin.ShowValue = true;
-            this.trbValMin.Size = new System.Drawing.Size(380, 46);
+            this.trbValMin.Size = new System.Drawing.Size(488, 46);
             this.trbValMin.SliderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
             this.trbValMin.TabIndex = 2164;
             this.trbValMin.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(162)))), ((int)(((byte)(160)))), ((int)(((byte)(162)))));
@@ -424,7 +418,7 @@ namespace OpenVisionLab
             this.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
             this.BorderSize = 1;
             this.Caption = "HSV";
-            this.ClientSize = new System.Drawing.Size(586, 750);
+            this.ClientSize = new System.Drawing.Size(920, 655);
             this.Controls.Add(this.rjLabel4);
             this.Controls.Add(this.trbSatMin);
             this.Controls.Add(this.groupBox4);
@@ -457,13 +451,12 @@ namespace OpenVisionLab
         }
 
         #endregion
-        private ImageBox ibSource;
+        private VisionTestImageCanvas ibSource;
         private System.Windows.Forms.GroupBox groupBox4;
-        private ImageBox ibDestination;
+        private VisionTestImageCanvas ibDestination;
         private System.Windows.Forms.GroupBox groupBox3;
         private RJCodeUI_M1.RJControls.RJMenuIcon btnNewPanel_Desty;
         private System.Windows.Forms.ToolTip toolTip1;
-        private System.Windows.Forms.Timer timer1;
         private RJCodeUI_M1.RJControls.RJComboBox cbLayerList2;
         private RJCodeUI_M1.RJControls.RJComboBox cbLayerList;
         private RJCodeUI_M1.RJControls.RJTrackBar trbSatMin;
@@ -480,3 +473,6 @@ namespace OpenVisionLab
         private RJCodeUI_M1.RJControls.RJTrackBar trbValMin;
     }
 }
+
+
+

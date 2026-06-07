@@ -1,6 +1,4 @@
-using Cyotek.Windows.Forms;
-
-namespace OpenVisionLab
+﻿namespace OpenVisionLab
 {
     partial class FormVision_Line
     {
@@ -31,17 +29,15 @@ namespace OpenVisionLab
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.hostedComponent2 = new System.Windows.Controls.WpfPropertyGrid.PropertyGrid();
-                        this.ibSource = new Cyotek.Windows.Forms.ImageBox();
+                        this.ibSource = new OpenVisionLab.VisionTestImageCanvas();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.metroTabControl2 = new System.Windows.Forms.TabControl();
             this.cbLayerList = new RJCodeUI_M1.RJControls.RJComboBox();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.cbLayerList2 = new RJCodeUI_M1.RJControls.RJComboBox();
             this.btnNewPanel_Desty = new RJCodeUI_M1.RJControls.RJMenuIcon();
-            this.ibDestination = new Cyotek.Windows.Forms.ImageBox();
+            this.ibDestination = new OpenVisionLab.VisionTestImageCanvas();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.btnResult = new RJCodeUI_M1.RJControls.RJButton();
             this.btnRun = new RJCodeUI_M1.RJControls.RJButton();
             this.rdoLeftEdgePara = new RJCodeUI_M1.RJControls.RJRadioButton();
@@ -66,15 +62,15 @@ namespace OpenVisionLab
             this.pnlClientArea.Controls.Add(this.btnRun);
             this.pnlClientArea.Controls.Add(this.rdoRightEdgePara);
             this.pnlClientArea.Location = new System.Drawing.Point(1, 41);
-            this.pnlClientArea.Size = new System.Drawing.Size(601, 570);
+            this.pnlClientArea.Size = new System.Drawing.Size(918, 613);
             // 
             // 
             // 
             // ibSource
             // 
-            this.ibSource.Location = new System.Drawing.Point(6, 20);
+            this.ibSource.Location = new System.Drawing.Point(8, 20);
             this.ibSource.Name = "ibSource";
-            this.ibSource.Size = new System.Drawing.Size(270, 243);
+            this.ibSource.Size = new System.Drawing.Size(374, 220);
             this.ibSource.TabIndex = 2149;
             // 
             // groupBox3
@@ -83,12 +79,12 @@ namespace OpenVisionLab
             this.groupBox3.Controls.Add(this.metroTabControl2);
             this.groupBox3.Controls.Add(this.cbLayerList);
             this.groupBox3.Controls.Add(this.ibSource);
-            this.groupBox3.Location = new System.Drawing.Point(5, 45);
+            this.groupBox3.Location = new System.Drawing.Point(16, 58);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(284, 298);
+            this.groupBox3.Size = new System.Drawing.Size(390, 285);
             this.groupBox3.TabIndex = 2154;
             this.groupBox3.TabStop = false;
-            this.groupBox3.Text = "Source Image";
+            this.groupBox3.Text = "Input Layer";
             // 
             // metroTabControl2
             // 
@@ -103,7 +99,7 @@ namespace OpenVisionLab
             this.cbLayerList.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.None;
             this.cbLayerList.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.cbLayerList.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
-            this.cbLayerList.BorderRadius = 0;
+            this.cbLayerList.BorderRadius = 3;
             this.cbLayerList.BorderSize = 2;
             this.cbLayerList.Customizable = false;
             this.cbLayerList.DataSource = null;
@@ -113,12 +109,12 @@ namespace OpenVisionLab
             this.cbLayerList.Font = new System.Drawing.Font("Verdana", 15F);
             this.cbLayerList.ForeColor = System.Drawing.Color.DimGray;
             this.cbLayerList.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(90)))), ((int)(((byte)(146)))), ((int)(((byte)(246)))));
-            this.cbLayerList.Location = new System.Drawing.Point(6, 265);
+            this.cbLayerList.Location = new System.Drawing.Point(8, 248);
             this.cbLayerList.MinimumSize = new System.Drawing.Size(100, 30);
             this.cbLayerList.Name = "cbLayerList";
             this.cbLayerList.Padding = new System.Windows.Forms.Padding(2);
             this.cbLayerList.SelectedIndex = -1;
-            this.cbLayerList.Size = new System.Drawing.Size(270, 30);
+            this.cbLayerList.Size = new System.Drawing.Size(374, 32);
             this.cbLayerList.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
             this.cbLayerList.TabIndex = 2158;
             this.cbLayerList.Texts = "";
@@ -130,12 +126,12 @@ namespace OpenVisionLab
             this.groupBox4.Controls.Add(this.cbLayerList2);
             this.groupBox4.Controls.Add(this.btnNewPanel_Desty);
             this.groupBox4.Controls.Add(this.ibDestination);
-            this.groupBox4.Location = new System.Drawing.Point(295, 45);
+            this.groupBox4.Location = new System.Drawing.Point(16, 360);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(284, 298);
+            this.groupBox4.Size = new System.Drawing.Size(390, 285);
             this.groupBox4.TabIndex = 2155;
             this.groupBox4.TabStop = false;
-            this.groupBox4.Text = "Destination Image";
+            this.groupBox4.Text = "Output Layer";
             // 
             // cbLayerList2
             // 
@@ -143,7 +139,7 @@ namespace OpenVisionLab
             this.cbLayerList2.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.None;
             this.cbLayerList2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.cbLayerList2.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
-            this.cbLayerList2.BorderRadius = 0;
+            this.cbLayerList2.BorderRadius = 3;
             this.cbLayerList2.BorderSize = 2;
             this.cbLayerList2.Customizable = false;
             this.cbLayerList2.DataSource = null;
@@ -153,12 +149,12 @@ namespace OpenVisionLab
             this.cbLayerList2.Font = new System.Drawing.Font("Verdana", 15F);
             this.cbLayerList2.ForeColor = System.Drawing.Color.DimGray;
             this.cbLayerList2.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(90)))), ((int)(((byte)(146)))), ((int)(((byte)(246)))));
-            this.cbLayerList2.Location = new System.Drawing.Point(6, 265);
+            this.cbLayerList2.Location = new System.Drawing.Point(8, 248);
             this.cbLayerList2.MinimumSize = new System.Drawing.Size(100, 30);
             this.cbLayerList2.Name = "cbLayerList2";
             this.cbLayerList2.Padding = new System.Windows.Forms.Padding(2);
             this.cbLayerList2.SelectedIndex = -1;
-            this.cbLayerList2.Size = new System.Drawing.Size(221, 30);
+            this.cbLayerList2.Size = new System.Drawing.Size(338, 32);
             this.cbLayerList2.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
             this.cbLayerList2.TabIndex = 2159;
             this.cbLayerList2.Texts = "";
@@ -176,19 +172,19 @@ namespace OpenVisionLab
             this.btnNewPanel_Desty.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.btnNewPanel_Desty.IconFont = FontAwesome.Sharp.IconFont.Auto;
             this.btnNewPanel_Desty.IconSize = 30;
-            this.btnNewPanel_Desty.Location = new System.Drawing.Point(233, 265);
+            this.btnNewPanel_Desty.Location = new System.Drawing.Point(354, 250);
             this.btnNewPanel_Desty.Name = "btnNewPanel_Desty";
-            this.btnNewPanel_Desty.Size = new System.Drawing.Size(30, 30);
-            this.btnNewPanel_Desty.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
+            this.btnNewPanel_Desty.Size = new System.Drawing.Size(28, 28);
+            this.btnNewPanel_Desty.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
             this.btnNewPanel_Desty.TabIndex = 2157;
             this.btnNewPanel_Desty.TabStop = false;
             this.btnNewPanel_Desty.Click += new System.EventHandler(this.btnNewPanel_Desty_Click);
             // 
             // ibDestination
             // 
-            this.ibDestination.Location = new System.Drawing.Point(6, 20);
+            this.ibDestination.Location = new System.Drawing.Point(8, 20);
             this.ibDestination.Name = "ibDestination";
-            this.ibDestination.Size = new System.Drawing.Size(270, 243);
+            this.ibDestination.Size = new System.Drawing.Size(374, 220);
             this.ibDestination.TabIndex = 2149;
             // 
             // toolTip1
@@ -198,67 +194,64 @@ namespace OpenVisionLab
             this.toolTip1.IsBalloon = true;
             this.toolTip1.ReshowDelay = 100;
             // 
-            // timer1
-            // 
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
             // btnResult
             // 
-            this.btnResult.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            this.btnResult.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
-            this.btnResult.BorderRadius = 15;
-            this.btnResult.BorderSize = 3;
+            this.btnResult.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(250)))), ((int)(((byte)(252)))), ((int)(((byte)(253)))));
+            this.btnResult.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(47)))), ((int)(((byte)(111)))), ((int)(((byte)(171)))));
+            this.btnResult.BorderRadius = 3;
+            this.btnResult.BorderSize = 1;
             this.btnResult.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnResult.Design = RJCodeUI_M1.RJControls.ButtonDesign.Custom;
-            this.btnResult.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(234)))), ((int)(((byte)(79)))), ((int)(((byte)(82)))));
-            this.btnResult.FlatAppearance.BorderSize = 3;
-            this.btnResult.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(239)))), ((int)(((byte)(239)))), ((int)(((byte)(239)))));
-            this.btnResult.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.btnResult.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(47)))), ((int)(((byte)(111)))), ((int)(((byte)(171)))));
+            this.btnResult.FlatAppearance.BorderSize = 1;
+            this.btnResult.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(235)))), ((int)(((byte)(241)))), ((int)(((byte)(247)))));
+            this.btnResult.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(241)))), ((int)(((byte)(246)))), ((int)(((byte)(251)))));
             this.btnResult.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnResult.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnResult.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
-            this.btnResult.IconChar = FontAwesome.Sharp.IconChar.ClipboardList;
-            this.btnResult.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
+            this.btnResult.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.btnResult.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(85)))), ((int)(((byte)(132)))));
+            this.btnResult.IconChar = FontAwesome.Sharp.IconChar.None;
+            this.btnResult.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(85)))), ((int)(((byte)(132)))));
             this.btnResult.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.btnResult.IconSize = 30;
-            this.btnResult.Location = new System.Drawing.Point(441, 306);
+            this.btnResult.IconSize = 1;
+            this.btnResult.Location = new System.Drawing.Point(423, 407);
             this.btnResult.Name = "btnResult";
-            this.btnResult.Size = new System.Drawing.Size(138, 62);
+            this.btnResult.Size = new System.Drawing.Size(488, 40);
             this.btnResult.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
             this.btnResult.TabIndex = 2156;
-            this.btnResult.Text = "RESULT";
-            this.btnResult.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnResult.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnResult.Text = "Details";
+            this.btnResult.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.btnResult.TextImageRelation = System.Windows.Forms.TextImageRelation.Overlay;
             this.btnResult.UseVisualStyleBackColor = false;
             this.btnResult.Click += new System.EventHandler(this.btnResult_Click);
             // 
             // btnRun
             // 
-            this.btnRun.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            this.btnRun.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
-            this.btnRun.BorderRadius = 15;
-            this.btnRun.BorderSize = 3;
+            this.btnRun.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(250)))), ((int)(((byte)(252)))), ((int)(((byte)(253)))));
+            this.btnRun.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(47)))), ((int)(((byte)(111)))), ((int)(((byte)(171)))));
+            this.btnRun.BorderRadius = 3;
+            this.btnRun.BorderSize = 1;
             this.btnRun.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnRun.Design = RJCodeUI_M1.RJControls.ButtonDesign.Custom;
-            this.btnRun.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(234)))), ((int)(((byte)(79)))), ((int)(((byte)(82)))));
-            this.btnRun.FlatAppearance.BorderSize = 3;
-            this.btnRun.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(239)))), ((int)(((byte)(239)))), ((int)(((byte)(239)))));
-            this.btnRun.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.btnRun.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(47)))), ((int)(((byte)(111)))), ((int)(((byte)(171)))));
+            this.btnRun.FlatAppearance.BorderSize = 1;
+            this.btnRun.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(235)))), ((int)(((byte)(241)))), ((int)(((byte)(247)))));
+            this.btnRun.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(241)))), ((int)(((byte)(246)))), ((int)(((byte)(251)))));
             this.btnRun.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnRun.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnRun.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
-            this.btnRun.IconChar = FontAwesome.Sharp.IconChar.Check;
-            this.btnRun.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
+            this.btnRun.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.btnRun.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(85)))), ((int)(((byte)(132)))));
+            this.btnRun.IconChar = FontAwesome.Sharp.IconChar.None;
+            this.btnRun.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(85)))), ((int)(((byte)(132)))));
             this.btnRun.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.btnRun.IconSize = 24;
-            this.btnRun.Location = new System.Drawing.Point(441, 431);
+            this.btnRun.IconSize = 1;
+            this.btnRun.Location = new System.Drawing.Point(423, 503);
             this.btnRun.Name = "btnRun";
-            this.btnRun.Size = new System.Drawing.Size(137, 62);
+            this.btnRun.Size = new System.Drawing.Size(488, 40);
             this.btnRun.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
             this.btnRun.TabIndex = 2153;
-            this.btnRun.Text = "Intersection\r\n(Fit Line)\r\n";
-            this.btnRun.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnRun.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnRun.Text = "Fit Line";
+            this.btnRun.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.btnRun.TextImageRelation = System.Windows.Forms.TextImageRelation.Overlay;
             this.btnRun.UseVisualStyleBackColor = false;
             this.btnRun.Click += new System.EventHandler(this.btnRun_Click);
             // 
@@ -272,7 +265,7 @@ namespace OpenVisionLab
             this.rdoLeftEdgePara.Customizable = true;
             this.rdoLeftEdgePara.Font = new System.Drawing.Font("Verdana", 9.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.rdoLeftEdgePara.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
-            this.rdoLeftEdgePara.Location = new System.Drawing.Point(11, 308);
+            this.rdoLeftEdgePara.Location = new System.Drawing.Point(423, 17);
             this.rdoLeftEdgePara.MinimumSize = new System.Drawing.Size(0, 21);
             this.rdoLeftEdgePara.Name = "rdoLeftEdgePara";
             this.rdoLeftEdgePara.Padding = new System.Windows.Forms.Padding(10, 0, 0, 0);
@@ -293,7 +286,7 @@ namespace OpenVisionLab
             this.rdoRightEdgePara.Customizable = true;
             this.rdoRightEdgePara.Font = new System.Drawing.Font("Verdana", 9.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.rdoRightEdgePara.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
-            this.rdoRightEdgePara.Location = new System.Drawing.Point(103, 308);
+            this.rdoRightEdgePara.Location = new System.Drawing.Point(535, 17);
             this.rdoRightEdgePara.MinimumSize = new System.Drawing.Size(0, 21);
             this.rdoRightEdgePara.Name = "rdoRightEdgePara";
             this.rdoRightEdgePara.Padding = new System.Windows.Forms.Padding(10, 0, 0, 0);
@@ -306,61 +299,61 @@ namespace OpenVisionLab
             // 
             // rjButton1
             // 
-            this.rjButton1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            this.rjButton1.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
-            this.rjButton1.BorderRadius = 15;
-            this.rjButton1.BorderSize = 3;
+            this.rjButton1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(250)))), ((int)(((byte)(252)))), ((int)(((byte)(253)))));
+            this.rjButton1.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(47)))), ((int)(((byte)(111)))), ((int)(((byte)(171)))));
+            this.rjButton1.BorderRadius = 3;
+            this.rjButton1.BorderSize = 1;
             this.rjButton1.Cursor = System.Windows.Forms.Cursors.Hand;
             this.rjButton1.Design = RJCodeUI_M1.RJControls.ButtonDesign.Custom;
-            this.rjButton1.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(234)))), ((int)(((byte)(79)))), ((int)(((byte)(82)))));
-            this.rjButton1.FlatAppearance.BorderSize = 3;
-            this.rjButton1.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(239)))), ((int)(((byte)(239)))), ((int)(((byte)(239)))));
-            this.rjButton1.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.rjButton1.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(47)))), ((int)(((byte)(111)))), ((int)(((byte)(171)))));
+            this.rjButton1.FlatAppearance.BorderSize = 1;
+            this.rjButton1.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(235)))), ((int)(((byte)(241)))), ((int)(((byte)(247)))));
+            this.rjButton1.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(241)))), ((int)(((byte)(246)))), ((int)(((byte)(251)))));
             this.rjButton1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.rjButton1.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.rjButton1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
-            this.rjButton1.IconChar = FontAwesome.Sharp.IconChar.Check;
-            this.rjButton1.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
+            this.rjButton1.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.rjButton1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(85)))), ((int)(((byte)(132)))));
+            this.rjButton1.IconChar = FontAwesome.Sharp.IconChar.None;
+            this.rjButton1.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(85)))), ((int)(((byte)(132)))));
             this.rjButton1.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.rjButton1.IconSize = 24;
-            this.rjButton1.Location = new System.Drawing.Point(441, 369);
+            this.rjButton1.IconSize = 1;
+            this.rjButton1.Location = new System.Drawing.Point(423, 455);
             this.rjButton1.Name = "rjButton1";
-            this.rjButton1.Size = new System.Drawing.Size(137, 62);
+            this.rjButton1.Size = new System.Drawing.Size(488, 40);
             this.rjButton1.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
             this.rjButton1.TabIndex = 2163;
             this.rjButton1.Text = "Edge";
-            this.rjButton1.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.rjButton1.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.rjButton1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.rjButton1.TextImageRelation = System.Windows.Forms.TextImageRelation.Overlay;
             this.rjButton1.UseVisualStyleBackColor = false;
             this.rjButton1.Click += new System.EventHandler(this.btnEdgeRun_Click);
             // 
             // btnVerLineRun
             // 
-            this.btnVerLineRun.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            this.btnVerLineRun.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
-            this.btnVerLineRun.BorderRadius = 15;
-            this.btnVerLineRun.BorderSize = 3;
+            this.btnVerLineRun.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(250)))), ((int)(((byte)(252)))), ((int)(((byte)(253)))));
+            this.btnVerLineRun.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(47)))), ((int)(((byte)(111)))), ((int)(((byte)(171)))));
+            this.btnVerLineRun.BorderRadius = 3;
+            this.btnVerLineRun.BorderSize = 1;
             this.btnVerLineRun.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnVerLineRun.Design = RJCodeUI_M1.RJControls.ButtonDesign.Custom;
-            this.btnVerLineRun.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(234)))), ((int)(((byte)(79)))), ((int)(((byte)(82)))));
-            this.btnVerLineRun.FlatAppearance.BorderSize = 3;
-            this.btnVerLineRun.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(239)))), ((int)(((byte)(239)))), ((int)(((byte)(239)))));
-            this.btnVerLineRun.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.btnVerLineRun.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(47)))), ((int)(((byte)(111)))), ((int)(((byte)(171)))));
+            this.btnVerLineRun.FlatAppearance.BorderSize = 1;
+            this.btnVerLineRun.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(235)))), ((int)(((byte)(241)))), ((int)(((byte)(247)))));
+            this.btnVerLineRun.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(241)))), ((int)(((byte)(246)))), ((int)(((byte)(251)))));
             this.btnVerLineRun.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnVerLineRun.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnVerLineRun.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
-            this.btnVerLineRun.IconChar = FontAwesome.Sharp.IconChar.Check;
-            this.btnVerLineRun.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(159)))), ((int)(((byte)(113)))));
+            this.btnVerLineRun.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.btnVerLineRun.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(85)))), ((int)(((byte)(132)))));
+            this.btnVerLineRun.IconChar = FontAwesome.Sharp.IconChar.None;
+            this.btnVerLineRun.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(85)))), ((int)(((byte)(132)))));
             this.btnVerLineRun.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.btnVerLineRun.IconSize = 24;
-            this.btnVerLineRun.Location = new System.Drawing.Point(441, 493);
+            this.btnVerLineRun.IconSize = 1;
+            this.btnVerLineRun.Location = new System.Drawing.Point(423, 551);
             this.btnVerLineRun.Name = "btnVerLineRun";
-            this.btnVerLineRun.Size = new System.Drawing.Size(137, 62);
+            this.btnVerLineRun.Size = new System.Drawing.Size(488, 40);
             this.btnVerLineRun.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
             this.btnVerLineRun.TabIndex = 2164;
-            this.btnVerLineRun.Text = "Intersection\r\n(ver Line)\r\n";
-            this.btnVerLineRun.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnVerLineRun.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnVerLineRun.Text = "Vertical Line";
+            this.btnVerLineRun.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.btnVerLineRun.TextImageRelation = System.Windows.Forms.TextImageRelation.Overlay;
             this.btnVerLineRun.UseVisualStyleBackColor = false;
             this.btnVerLineRun.Click += new System.EventHandler(this.btnVerLineRun_Click);
             // 
@@ -369,9 +362,9 @@ namespace OpenVisionLab
             this.pnParameter.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(250)))), ((int)(((byte)(252)))), ((int)(((byte)(253)))));
             this.pnParameter.BorderRadius = 5;
             this.pnParameter.Customizable = false;
-            this.pnParameter.Location = new System.Drawing.Point(11, 335);
+            this.pnParameter.Location = new System.Drawing.Point(423, 49);
             this.pnParameter.Name = "pnParameter";
-            this.pnParameter.Size = new System.Drawing.Size(424, 220);
+            this.pnParameter.Size = new System.Drawing.Size(488, 342);
             this.pnParameter.TabIndex = 2165;
             // 
             // FormVision_Line
@@ -382,7 +375,7 @@ namespace OpenVisionLab
             this.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
             this.BorderSize = 1;
             this.Caption = "Line";
-            this.ClientSize = new System.Drawing.Size(603, 612);
+            this.ClientSize = new System.Drawing.Size(920, 655);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
             this.MaximizeBox = false;
@@ -404,14 +397,13 @@ namespace OpenVisionLab
         }
 
         #endregion
-        private ImageBox ibSource;
+        private VisionTestImageCanvas ibSource;
         private System.Windows.Forms.GroupBox groupBox4;
-        private ImageBox ibDestination;
+        private VisionTestImageCanvas ibDestination;
         private RJCodeUI_M1.RJControls.RJButton btnRun;
         private System.Windows.Forms.GroupBox groupBox3;
         private RJCodeUI_M1.RJControls.RJMenuIcon btnNewPanel_Desty;
         private System.Windows.Forms.ToolTip toolTip1;
-        private System.Windows.Forms.Timer timer1;
         private RJCodeUI_M1.RJControls.RJComboBox cbLayerList2;
         private RJCodeUI_M1.RJControls.RJComboBox cbLayerList;
         private RJCodeUI_M1.RJControls.RJButton btnResult;
@@ -420,8 +412,9 @@ namespace OpenVisionLab
         private RJCodeUI_M1.RJControls.RJRadioButton rdoRightEdgePara;
         private RJCodeUI_M1.RJControls.RJButton rjButton1;
         private RJCodeUI_M1.RJControls.RJButton btnVerLineRun;
-        public System.Windows.Controls.WpfPropertyGrid.PropertyGrid hostedComponent1;
         private RJCodeUI_M1.RJControls.RJPanel pnParameter;
-        public System.Windows.Controls.WpfPropertyGrid.PropertyGrid hostedComponent2;
     }
 }
+
+
+

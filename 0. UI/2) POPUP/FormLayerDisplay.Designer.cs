@@ -1,5 +1,3 @@
-﻿using Cyotek.Windows.Forms;
-
 namespace OpenVisionLab
 {
     partial class FormLayerDisplay
@@ -35,7 +33,6 @@ namespace OpenVisionLab
             this.timePixelData = new System.Windows.Forms.Timer(this.components);
             this.panel1 = new System.Windows.Forms.Panel();
             this.panel3 = new System.Windows.Forms.Panel();
-            this.ibSource = new Cyotek.Windows.Forms.ImageBox();
             this.panel2 = new System.Windows.Forms.Panel();
             this.lbZOOM = new RJCodeUI_M1.RJControls.RJLabel();
             this.lbGV = new RJCodeUI_M1.RJControls.RJLabel();
@@ -65,21 +62,11 @@ namespace OpenVisionLab
             // 
             // panel3
             // 
-            this.panel3.Controls.Add(this.ibSource);
             this.panel3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel3.Location = new System.Drawing.Point(0, 0);
             this.panel3.Name = "panel3";
             this.panel3.Size = new System.Drawing.Size(1255, 554);
             this.panel3.TabIndex = 1954;
-            // 
-            // ibSource
-            // 
-            this.ibSource.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.ibSource.Location = new System.Drawing.Point(0, 0);
-            this.ibSource.Margin = new System.Windows.Forms.Padding(0);
-            this.ibSource.Name = "ibSource";
-            this.ibSource.Size = new System.Drawing.Size(1255, 554);
-            this.ibSource.TabIndex = 1948;
             // 
             // panel2
             // 
@@ -183,7 +170,6 @@ namespace OpenVisionLab
         private RJCodeUI_M1.RJControls.RJLabel lbRGB;
         private RJCodeUI_M1.RJControls.RJLabel lbXY;
         private System.Windows.Forms.Panel panel1;
-        public ImageBox ibSource;
         private System.Windows.Forms.Panel panel2;
         private RJCodeUI_M1.RJControls.RJLabel lbZOOM;
         private RJCodeUI_M1.RJControls.RJLabel lbGV;

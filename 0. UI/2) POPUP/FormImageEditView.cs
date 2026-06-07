@@ -1,52 +1,70 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
+using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
 using OpenCvSharp;
-using Cyotek.Windows.Forms;
 using RJCodeUI_M1.RJForms;
-using static OpenVisionLab.DrawObject.CEnum;
-using OpenVisionLab.DrawObject;
 using Lib.Common;
 
 namespace OpenVisionLab
 {
+    public sealed class ImageCanvasStatusChangedEventArgs : EventArgs
+    {
+        public ImageCanvasStatusChangedEventArgs(PointF position, int grayValue, Color pixelColor)
+        {
+            Position = position;
+            GrayValue = grayValue;
+            PixelColor = pixelColor;
+        }
+
+        public PointF Position { get; }
+        public int GrayValue { get; }
+        public Color PixelColor { get; }
+    }
+
     public partial class FormImageEditView : RJChildForm
     {
         private CPropertyImageView PropertyImageView = new CPropertyImageView("IMAGE_VIEW");
 
         private Mat ImageSource = new Mat();        
         public Mat ImageProcess = new Mat();
-        private Bitmap ImageGrey = new Bitmap(10, 10);        
+        private Bitmap SourceBitmap = new Bitmap(10, 10);
         public Rect SelectedRegion = new Rect();
         public List<Rect> SelectedRegions = new List<Rect>();
-        private CViewer KtemViewer = new CViewer();
-        private CViewer Train = new CViewer();
+        private global::OpenVisionLab.ImageCanvas.Views.RoiImageCanvasView ImageCanvasView;
+        private global::OpenVisionLab.ImageCanvas.ViewModels.RoiImageCanvasViewModel ImageCanvasViewModel;
+        private Bitmap PendingImageCanvasImage;
+        private PatternMatchPreviewView PatternPreviewView;
+        private Rectangle ImageCanvasSelectedRegion = Rectangle.Empty;
+        private readonly Dictionary<string, Rectangle> ImageCanvasSelectedRegions = new Dictionary<string, Rectangle>();
+        private readonly List<Rectangle> PendingImageCanvasRois = new List<Rectangle>();
+        private Panel commandPanel;
+        private Button btnApplySelection;
+        private Button btnCancelSelection;
+        private string pendingPatternPreviewPath = string.Empty;
 
         private string Mode = "";
+
+        public event EventHandler<ImageCanvasStatusChangedEventArgs> ImageCanvasStatusChanged = delegate { };
 
         public FormImageEditView(Bitmap image, string strMode = "Drag")
         {
             InitializeComponent();
+            ApplyImageEditViewLayout(strMode);
+            SetSourceImage(image);
+            InitializeImageCanvas(image, strMode);
 
             try
             {
-                KtemViewer.LoadImageBox(ibSource);
-                Train.LoadImageBox(ibTrainImage);
-
-                KtemViewer.SetModeDrag();
                 Mode = strMode;
-
-                ImageGrey = (Bitmap)image;
-                ImageSource = Lib.Common.CImageConverter.ToMat(image);
-                ibSource.Image = image;
                 this.KeyPreview = true;
                 this.TopLevel = true;
                 this.TopMost = true;
 
                 propertygrid_Parameter.SelectedObject = PropertyImageView;
-                ibSource.ZoomToFit();
             }
             catch (Exception Desc)
             {
@@ -58,41 +76,21 @@ namespace OpenVisionLab
         public FormImageEditView(Bitmap image, Rectangle ROI,  string strMode = "")
         {
             InitializeComponent();
+            ApplyImageEditViewLayout(strMode);
+            SetSourceImage(image);
+            InitializeImageCanvas(image, strMode);
 
             try
-            {                                
-                KtemViewer.LoadImageBox(ibSource);
-                Train.LoadImageBox(ibTrainImage);
-
-                switch(strMode.ToUpper())
-                {
-                    case "ROI":
-                        KtemViewer.Roi = ROI;                        
-                        KtemViewer.SetModeRoi();
-                        break;
-                    case "TRAIN":
-                        KtemViewer.Roi = ROI;
-                        KtemViewer.SetModeTrainRoi();
-                        break;
-                    case "MULTI_ROI":
-                        KtemViewer.SetModeMultiRoi();
-                        break;
-                }
+            {
                 Mode = strMode;
+                AddPendingImageCanvasRoi(ROI);
 
-                ImageGrey = ( Bitmap ) image;
-                ImageSource = Lib.Common.CImageConverter.ToMat(image);
-                ibSource.Image = image;
                 this.KeyPreview = true;
                 this.TopLevel = true;
                 this.TopMost = true;
                 
 
                 propertygrid_Parameter.SelectedObject = PropertyImageView;
-
-                Rectangle rt = ibSource.RectangleToScreen(ROI);
-                ibSource.ZoomToRegion(rt.X, rt.Y, rt.Width, rt.Height);
-                ibSource.ScrollTo(ROI.X - (ROI.Width / 2), ROI.Y - (ROI.Height / 2), 1, 1);          
             }
             catch ( Exception Desc )
             {
@@ -104,27 +102,21 @@ namespace OpenVisionLab
         public FormImageEditView(Bitmap image, List<Rect> ROI, string strMode = "")
         {
             InitializeComponent();
+            ApplyImageEditViewLayout(strMode);
+            SetSourceImage(image);
+            InitializeImageCanvas(image, strMode);
 
             try
             {
-                KtemViewer.LoadImageBox(ibSource);
-                KtemViewer.SetModeMultiRoi();
-
-                for(int i = 0; i < ROI.Count; i++)
-                {                    
-                    CRectangleObject cRectangleOb = new CRectangleObject();
-                    cRectangleOb.Roi = new Rectangle(ROI[i].X, ROI[i].Y, ROI[i].Width, ROI[i].Height);
-                    KtemViewer._RoisOb.Add(cRectangleOb);
+                Mode = strMode;
+                foreach (Rect roi in ROI)
+                {
+                    AddPendingImageCanvasRoi(new Rectangle(roi.X, roi.Y, roi.Width, roi.Height));
                 }
 
-                Mode = strMode;
-                ImageGrey = (Bitmap)image.Clone();
-
-                ibSource.Image = image;
                 this.KeyPreview = true;
                 this.TopLevel = true;
                 this.TopMost = true;
-                ImageSource = Lib.Common.CImageConverter.ToMat(image);
 
                 propertygrid_Parameter.SelectedObject = PropertyImageView;
             }
@@ -135,45 +127,313 @@ namespace OpenVisionLab
             }
         }
 
+        private bool IsImageCanvasActive => ImageCanvasViewModel != null && imageCanvasHost != null && imageCanvasHost.Visible;
+
+        private void SetSourceImage(Bitmap image)
+        {
+            SourceBitmap?.Dispose();
+            ImageSource?.Dispose();
+
+            SourceBitmap = image == null ? new Bitmap(10, 10) : (Bitmap)image.Clone();
+            ImageSource = Lib.Common.CImageConverter.ToMat(SourceBitmap);
+        }
+
+        private void ApplyImageEditViewLayout(string mode)
+        {
+            CollapseLegacyToolbar();
+            ConfigureSidePanel(mode);
+            ConfigureCommandPanel(mode);
+        }
+
+        private void CollapseLegacyToolbar()
+        {
+            if (splitContainer2 != null)
+            {
+                splitContainer2.Panel1MinSize = 0;
+                splitContainer2.Panel1Collapsed = true;
+                splitContainer2.SplitterWidth = 1;
+            }
+
+        }
+
+        private void ConfigureSidePanel(string mode)
+        {
+            Color panelBackColor = Color.FromArgb(238, 243, 247);
+            splitContainer1.Panel2.BackColor = panelBackColor;
+
+            metroTile1.Visible = false;
+            metroTile11.Visible = false;
+            lbPosition.Visible = false;
+            lbGV.Visible = false;
+            propertygrid_Parameter.Visible = false;
+
+            bool showPatternPreview = IsPatternPreviewMode(mode);
+            splitContainer1.Panel2MinSize = 0;
+            splitContainer1.Panel2Collapsed = !showPatternPreview;
+
+            if (!showPatternPreview) { return; }
+
+            PatternPreviewView = new PatternMatchPreviewView
+            {
+                Dock = DockStyle.Fill
+            };
+
+            splitContainer1.Panel2.Controls.Add(PatternPreviewView);
+            PatternPreviewView.BringToFront();
+            LoadPatternPreviewImage(pendingPatternPreviewPath);
+        }
+
+        private static bool IsPatternPreviewMode(string mode) => string.Equals(mode, "TRAIN", StringComparison.OrdinalIgnoreCase);
+
+        public void LoadPatternPreviewImage(string imagePath)
+        {
+            pendingPatternPreviewPath = imagePath ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(pendingPatternPreviewPath) || PatternPreviewView == null) { return; }
+            if (!File.Exists(pendingPatternPreviewPath)) { return; }
+
+            using (Bitmap fileImage = new Bitmap(pendingPatternPreviewPath))
+            {
+                PatternPreviewView.SetPreview((Bitmap)fileImage.Clone());
+            }
+        }
+
+        private void ConfigureCommandPanel(string mode)
+        {
+            if (pnlClientArea == null) { return; }
+
+            if (commandPanel == null)
+            {
+                commandPanel = new Panel
+                {
+                    Dock = DockStyle.Bottom,
+                    Height = 48,
+                    BackColor = Color.FromArgb(28, 32, 38),
+                    Padding = new Padding(10, 7, 12, 7)
+                };
+
+                btnCancelSelection = CreateCommandButton("Cancel", Color.FromArgb(74, 82, 94), Color.White);
+                btnCancelSelection.Click += (sender, e) => CancelSelection();
+
+                btnApplySelection = CreateCommandButton(GetApplyButtonText(mode), Color.FromArgb(79, 94, 220), Color.White);
+                btnApplySelection.Click += btnCut_Click;
+
+                commandPanel.Controls.Add(btnCancelSelection);
+                commandPanel.Controls.Add(btnApplySelection);
+                pnlClientArea.Controls.Add(commandPanel);
+            }
+
+            btnApplySelection.Text = GetApplyButtonText(mode);
+            splitContainer1.Dock = DockStyle.Fill;
+            commandPanel.BringToFront();
+        }
+
+        private static Button CreateCommandButton(string text, Color backColor, Color foreColor)
+        {
+            return new Button
+            {
+                Dock = DockStyle.Right,
+                Width = 108,
+                Margin = new Padding(6, 0, 0, 0),
+                Text = text,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = backColor,
+                ForeColor = foreColor,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point),
+                UseVisualStyleBackColor = false
+            };
+        }
+
+        private static string GetApplyButtonText(string mode)
+        {
+            return string.Equals(mode, "TRAIN", StringComparison.OrdinalIgnoreCase) ? "Use Pattern" : "OK";
+        }
+
+        private void CancelSelection()
+        {
+            DialogResult = DialogResult.Cancel;
+            Close();
+        }
+
 
         #region Display
-        private void ZoomInImage() { ibSource.ZoomIn(); }
-        private void ZoomOutImage() { ibSource.ZoomOut(); }
-        private void ZoomFitImage() { ibSource.ZoomToFit(); }
-        private void FormImageView_FormClosing(object sender, FormClosingEventArgs e) { ImageSource.Dispose(); }
+        private void ZoomInImage() { }
+        private void ZoomOutImage() { }
+        private void ZoomFitImage() { }
+        private void FormImageView_FormClosing(object sender, FormClosingEventArgs e) 
+        { 
+            if (ImageCanvasViewModel != null)
+            {
+                ImageCanvasViewModel.PropertyChanged -= ImageCanvasViewModel_PropertyChanged;
+            }
+
+            ImageSource.Dispose();
+            SourceBitmap?.Dispose();
+            PendingImageCanvasImage?.Dispose();
+            PatternPreviewView?.ClearPreview();
+        }
         private void btnZoomOut_Click(object sender, EventArgs e) { ZoomOutImage(); }
         private void btnZoomIn_Click(object sender, EventArgs e) { ZoomInImage(); }
         private void btnFit_Click(object sender, EventArgs e) { ZoomFitImage(); }       
         #endregion
 
-        private System.Drawing.Point GreyPoint = new System.Drawing.Point();
-        private void ibSource_MouseMove(object sender, MouseEventArgs e)
-        {            
-            
-            GreyPoint = UpdateCursorPosition(e.Location);
-            lbPosition.Text = $"{GreyPoint.X},{GreyPoint.Y}";
+        private void InitializeImageCanvas(Bitmap image, string mode)
+        {
+            if (imageCanvasHost == null) { return; }
 
-            int nGreyValue = 0;
-
-            if (GreyPoint.X + 10 < ImageGrey.Width && GreyPoint.Y + 10 < ImageGrey.Height)
+            try
             {
-                if (GreyPoint.X > 0 && GreyPoint.Y > 0)
+                ImageCanvasViewModel = new global::OpenVisionLab.ImageCanvas.ViewModels.RoiImageCanvasViewModel("ImageEditView");
+                ImageCanvasViewModel.RoiAdded += ImageCanvas_RoiChanged;
+                ImageCanvasViewModel.RoiMouseUp += ImageCanvas_RoiChanged;
+                ImageCanvasViewModel.RoiEditingCompleted += ImageCanvas_RoiChanged;
+                ImageCanvasViewModel.PropertyChanged += ImageCanvasViewModel_PropertyChanged;
+                ImageCanvasViewModel.IsTeachingMode = IsImageCanvasDrawingMode(mode);
+                ImageCanvasViewModel.ShowGroupNames = false;
+                ImageCanvasViewModel.ShowRoiItemNames = false;
+                ImageCanvasViewModel.ShowGroupBounds = false;
+                ImageCanvasViewModel.ReplaceExistingRoiOnDraw = IsImageCanvasDrawingMode(mode) && !string.Equals(mode, "MULTI_ROI", StringComparison.OrdinalIgnoreCase);
+
+                ImageCanvasView = new global::OpenVisionLab.ImageCanvas.Views.RoiImageCanvasView
                 {
-                    System.Drawing.Color color = ImageGrey.GetPixel(GreyPoint.X, GreyPoint.Y);
-                    nGreyValue = (color.R + color.G + color.B) / 3;
-                    lbGV.Text = string.Format("{0}", nGreyValue.ToString());
+                    DataContext = ImageCanvasViewModel
+                };
+
+                imageCanvasHost.Child = ImageCanvasView;
+                imageCanvasHost.Visible = true;
+                imageCanvasHost.BringToFront();
+
+                PendingImageCanvasImage?.Dispose();
+                PendingImageCanvasImage = image == null ? null : (Bitmap)image.Clone();
+
+                Shown -= FormImageEditView_Shown;
+                Shown += FormImageEditView_Shown;
+            }
+            catch (Exception desc)
+            {
+                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Exception ==> {desc.Message}");
+                imageCanvasHost.Visible = false;
+                Close();
+            }
+        }
+
+        private static bool IsImageCanvasDrawingMode(string mode)
+        {
+            string editMode = mode?.ToUpper() ?? string.Empty;
+            return editMode == "ROI" || editMode == "TRAIN" || editMode == "MULTI_ROI";
+        }
+
+        private void FormImageEditView_Shown(object sender, EventArgs e)
+        {
+            LoadPendingImageCanvasImage();
+        }
+
+        private void LoadPendingImageCanvasImage()
+        {
+            if (ImageCanvasViewModel == null || PendingImageCanvasImage == null) { return; }
+
+            try
+            {
+                using (Mat mat = Lib.Common.CImageConverter.ToMat(PendingImageCanvasImage))
+                {
+                    ImageCanvasViewModel.LoadImage(mat, "Source");
                 }
+
+                ApplyPendingImageCanvasRois();
             }
-            if (!KtemViewer.TrainROI.IsEmpty)
+            catch (Exception desc)
             {
-                ibSource.Invalidate();
-                Rectangle r = KtemViewer.TrainROI;
-                if(r.Width > 5 || r.Height > 5)
-                {
-                    Bitmap ImageTemplate = Lib.Common.CBitmapProcessing.CropAtRect((Bitmap)ibSource.Image, r).Result;
-                    ibTrainImage.Image = ImageTemplate;
-                }                
+                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Exception ==> {desc.Message}");
             }
+            finally
+            {
+                PendingImageCanvasImage.Dispose();
+                PendingImageCanvasImage = null;
+            }
+        }
+
+        private void AddPendingImageCanvasRoi(Rectangle roi)
+        {
+            if (roi.IsEmpty || roi.Width <= 0 || roi.Height <= 0) { return; }
+
+            PendingImageCanvasRois.Add(roi);
+            ImageCanvasSelectedRegion = roi;
+        }
+
+        private void ApplyPendingImageCanvasRois()
+        {
+            if (ImageCanvasViewModel == null || PendingImageCanvasRois.Count == 0) { return; }
+
+            foreach (Rectangle roi in PendingImageCanvasRois)
+            {
+                ImageCanvasViewModel.AddInitialRoi(roi);
+            }
+
+            PendingImageCanvasRois.Clear();
+        }
+
+        private void ImageCanvas_RoiChanged(object sender, global::OpenVisionLab.ImageCanvas.Model.RoiChangedEventArgs e)
+        {
+            if (e?.RoiRect == null || e.RoiRect.IsEmpty()) { return; }
+
+            Rectangle rect = ToImageRectangle(e.RoiRect);
+            if (rect.IsEmpty) { return; }
+
+            ImageCanvasSelectedRegion = rect;
+            if (Mode.Equals("TRAIN", StringComparison.OrdinalIgnoreCase))
+            {
+                UpdateTrainPreview(rect);
+            }
+
+            if (Mode.Equals("MULTI_ROI", StringComparison.OrdinalIgnoreCase))
+            {
+                string uniqueId = string.IsNullOrWhiteSpace(e.RoiRect.UniqueId) ? Guid.NewGuid().ToString() : e.RoiRect.UniqueId;
+                ImageCanvasSelectedRegions[uniqueId] = rect;
+            }
+        }
+
+        private void ImageCanvasViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (ImageCanvasViewModel == null) { return; }
+            if (e.PropertyName != "RobotPos" && e.PropertyName != "GrayValue" && e.PropertyName != "PixelColor") { return; }
+
+            PointF position = ImageCanvasViewModel.RobotPos;
+            int grayValue = ImageCanvasViewModel.GrayValue;
+            Color pixelColor = ImageCanvasViewModel.PixelColor;
+
+            lbPosition.Text = $"{position.X:F0},{position.Y:F0}";
+            lbGV.Text = grayValue.ToString();
+            ImageCanvasStatusChanged(this, new ImageCanvasStatusChangedEventArgs(position, grayValue, pixelColor));
+        }
+
+        private Rectangle ToImageRectangle(global::OpenVisionLab.ImageCanvas.CanvasShapes.CanvasRect<float> rect)
+        {
+            if (rect == null || rect.IsEmpty()) { return Rectangle.Empty; }
+
+            int x = (int)Math.Round(rect.Left);
+            int y = SourceBitmap == null
+                ? (int)Math.Round(rect.Bottom)
+                : SourceBitmap.Height - (int)Math.Round(rect.Top);
+            int width = Math.Max(0, (int)Math.Round(rect.Width));
+            int height = Math.Max(0, (int)Math.Round(rect.Height));
+
+            return ClampToSourceBounds(new Rectangle(x, y, width, height));
+        }
+
+        private void UpdateTrainPreview(Rectangle roi)
+        {
+            if (SourceBitmap == null || roi.IsEmpty) { return; }
+
+            Rectangle cropRect = ClampToSourceBounds(roi);
+            if (cropRect.Width <= 5 || cropRect.Height <= 5) { return; }
+
+            Bitmap imageTemplate = Lib.Common.CBitmapProcessing.CropAtRect(SourceBitmap, cropRect).Result;
+            if (PatternPreviewView != null)
+            {
+                PatternPreviewView.SetPreview(imageTemplate);
+                return;
+            }
+
+            imageTemplate.Dispose();
         }
 
         private void Form_KeyDown(object sender, KeyEventArgs e)
@@ -181,8 +441,7 @@ namespace OpenVisionLab
             switch((Keys)e.KeyValue)
             {
                 case Keys.Escape:
-                    this.DialogResult = DialogResult.Cancel;
-                    this.Close();
+                    CancelSelection();
                     break;
                 case Keys.Enter:
                     btnCut_Click(null, null);
@@ -190,16 +449,9 @@ namespace OpenVisionLab
             }
         }
 
-        private System.Drawing.Point UpdateCursorPosition(System.Drawing.Point location)
-        {
-            return ibSource.PointToImage(location);
-        }
-
         private void btnSelectionMode_Click(object sender, EventArgs e)
-        {            
-            ibSource.SelectionMode = ImageBoxSelectionMode.Rectangle;
-            ibSource.SelectionRegion = new RectangleF(ibSource.Image.Width / 2, ibSource.Image.Height / 2, ibSource.Image.Width / 8, ibSource.Image.Height / 8);
-            ibSource.SelectionMode = ImageBoxSelectionMode.None;
+        {
+            ImageCanvasSelectedRegion = GetDefaultSourceRoi();
         }
 
         private void btnCut_Click(object sender, EventArgs e)
@@ -209,7 +461,7 @@ namespace OpenVisionLab
                 switch (Mode)
                 {
                     case "ROI":
-                        SelectedRegion = CConverter.RectToCVRect(KtemViewer.Roi);
+                        SelectedRegion = CConverter.RectToCVRect(GetSelectedRoi());
                         if (SelectedRegion.X < 0)
                         {
                             SelectedRegion.X = 0;
@@ -222,7 +474,7 @@ namespace OpenVisionLab
                         }
                         break;
                     case "TRAIN":
-                        SelectedRegion = CConverter.RectToCVRect(KtemViewer.TrainROI);
+                        SelectedRegion = CConverter.RectToCVRect(GetSelectedRoi());
                         if (SelectedRegion.X < 0)
                         {
                             SelectedRegion.X = 0;
@@ -235,20 +487,17 @@ namespace OpenVisionLab
                         }
                         break;                                           
                     case "MULTI_ROI":
-                        foreach(var ROI in KtemViewer._RoisOb)
+                        if (ImageCanvasSelectedRegions.Count > 0)
                         {
-                            Rect r = CConverter.RectangleToRect(ROI.Roi);
-                            if (r.X < 0)
+                            foreach (Rectangle ROI in ImageCanvasSelectedRegions.Values)
                             {
-                                r.Width = r.Width - r.X;
-                                r.X = 0;                                
+                                Rectangle clampedRoi = ClampToSourceBounds(ROI);
+                                if (clampedRoi.IsEmpty) { continue; }
+
+                                Rect r = CConverter.RectangleToRect(clampedRoi);
+                                SelectedRegions.Add(r);
                             }
-                            if (r.Y < 0)
-                            {
-                                r.Height = r.Height - r.Y;
-                                r.Y = 0;                                
-                            }
-                            SelectedRegions.Add(r);
+                            break;
                         }
                         
                         break;
@@ -261,36 +510,72 @@ namespace OpenVisionLab
             }
         }
 
+        private Rectangle GetSelectedRoi()
+        {
+            if (!ImageCanvasSelectedRegion.IsEmpty)
+            {
+                return ClampToSourceBounds(ImageCanvasSelectedRegion);
+            }
+
+            return Rectangle.Empty;
+        }
+
+        private Rectangle GetAnalysisRoi()
+        {
+            if (!ImageCanvasSelectedRegion.IsEmpty)
+            {
+                return ClampToSourceBounds(ImageCanvasSelectedRegion);
+            }
+
+            return Rectangle.Empty;
+        }
+
+        private Rectangle GetDefaultSourceRoi()
+        {
+            if (SourceBitmap == null) { return Rectangle.Empty; }
+
+            return new Rectangle(
+                SourceBitmap.Width / 2,
+                SourceBitmap.Height / 2,
+                Math.Max(1, SourceBitmap.Width / 8),
+                Math.Max(1, SourceBitmap.Height / 8));
+        }
+
+        private Rectangle ClampToSourceBounds(Rectangle roi)
+        {
+            if (SourceBitmap == null || SourceBitmap.Width <= 0 || SourceBitmap.Height <= 0) { return Rectangle.Empty; }
+
+            Rectangle imageBounds = new Rectangle(0, 0, SourceBitmap.Width, SourceBitmap.Height);
+            return Rectangle.Intersect(imageBounds, roi);
+        }
+
         private void metroButton1_Click(object sender, EventArgs e)
         {
-            ibSource.SelectionMode = ImageBoxSelectionMode.None;
+            ImageCanvasSelectedRegion = Rectangle.Empty;
         }
 
         private void btnMean_Click(object sender, EventArgs e)
         {
-            using (Mat ImageSrc = Lib.Common.CImageConverter.ToMat((Bitmap)ibSource.Image).Clone())
+            Rectangle roi = GetAnalysisRoi();
+            if (roi.IsEmpty) { return; }
+
+            using (Mat ImageSrc = ImageSource.Clone())
             {
-                Rect rtSubmat = new Rect(
-                    (int)ibSource.SelectionRegion.X,
-                    (int)ibSource.SelectionRegion.Y,
-                    (int)ibSource.SelectionRegion.Width,
-                    (int)ibSource.SelectionRegion.Height);
+                Rect rtSubmat = CConverter.RectangleToRect(roi);
 
                 double dMean = Cv2.Mean(ImageSrc.SubMat(rtSubmat)).Val0;
                 btnMean.Text = $"Mean : {dMean.ToString("F2")}";
-                ibSource.SelectionMode = ImageBoxSelectionMode.None;
             }
         }
 
         private void btnMatrixView_Click(object sender, EventArgs e)
         {
-            Rect rtSubmatOrg = new Rect(
-                    (int)ibSource.SelectionRegion.X,
-                    (int)ibSource.SelectionRegion.Y,
-                    (int)ibSource.SelectionRegion.Width,
-                    (int)ibSource.SelectionRegion.Height);
+            Rectangle roi = GetAnalysisRoi();
+            if (roi.IsEmpty) { return; }
 
-            using (Mat ImageSrc = Lib.Common.CImageConverter.ToMat((Bitmap)ibSource.Image).Clone())
+            Rect rtSubmatOrg = CConverter.RectangleToRect(roi);
+
+            using (Mat ImageSrc = ImageSource.Clone())
             using (Mat ImageSub = ImageSrc.SubMat(rtSubmatOrg).Clone())
             {
                 Bitmap imageDisplay = Lib.Common.CImageConverter.ToBitmap(ImageSub);
@@ -333,60 +618,9 @@ namespace OpenVisionLab
 
                         }
                     }
-                    ibSource.SelectionMode = ImageBoxSelectionMode.None;
                 }
 
-                ibSource.Image = imageDisplay;
-            }
-
-            ibSource.SelectionMode = ImageBoxSelectionMode.None;
-            ibSource.SelectionRegion = new RectangleF();
-        }
-
-        private void timer1_Tick(object sender, EventArgs e)
-        {
-            switch(KtemViewer._Mode)
-            {
-                case RoiMode.Drag:
-                    ibSource.Text = "DRAG MODE";
-                    break;
-                case RoiMode.ROI:
-                    ibSource.Text = "ROI MODE";
-                    break;
-                case RoiMode.MultiROI:
-                    ibSource.Text = "MULTI ROI MODE";
-                    break;
-                case RoiMode.Train:
-                    ibSource.Text = "TRAIN ROI MODE";
-                    break;
-            }
-            //if (!KtemViewer.TrainROI.IsEmpty)
-            //{
-            //    ibSource.Invalidate();                
-            //    Rectangle r = KtemViewer.TrainROI;                
-            //    Bitmap ImageTemplate = Lib.Common.CBitmapProcessing.CropAtRect((Bitmap)ibSource.Image, r).Result;                
-            //    ibTrainImage.Image = ImageTemplate;
-            //}
-        }
-
-        private void Onbtn_Click(object sender, EventArgs e)
-        {
-            string strIndex = ((RJCodeUI_M1.RJControls.RJButton)sender).Name;
-
-            switch(strIndex)
-            {
-                case "btnDrag":
-                    KtemViewer.SetModeDrag();
-                    break;
-                case "btnROI":
-                    KtemViewer.SetModeRoi();
-                    break;
-                case "btnMultiRoi":
-                    KtemViewer.SetModeMultiRoi();
-                    break;
-                case "btnTrainROI":
-                    KtemViewer.SetModeTrainRoi();
-                    break;                    
+                imageDisplay.Dispose();
             }
         }
     }

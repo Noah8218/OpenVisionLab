@@ -102,7 +102,7 @@ namespace OpenVisionLab._1._Core
         public void RefreshLayer(int index)
         {
             FormLayerDisplay display = layers.GetOrNull(index);
-            display?.ibSource.Refresh();
+            display?.RefreshViewer();
         }
 
         public void ActivateLayer(string title)
@@ -124,7 +124,7 @@ namespace OpenVisionLab._1._Core
         public void ZoomLayerToFit(int index)
         {
             FormLayerDisplay display = layers.GetOrNull(index);
-            display?.ibSource.ZoomToFit();
+            display?.ZoomToFit();
         }
 
         public void AcceptLayerImageChanged(string title)
@@ -147,10 +147,10 @@ namespace OpenVisionLab._1._Core
         {
             if (host.DockPanel == null) return;
 
-            FormLayerDisplay display = layers.Create(imageSource, useClose, title, displayManager);
-            imageSpace.SetImage(display.nIndex, title, imageSource);
-            display.Show(host.DockPanel, DockState.Document);
-            display.ibSource.ZoomToFit();
+			FormLayerDisplay display = layers.Create(imageSource, useClose, title, displayManager);
+			imageSpace.SetImage(display.nIndex, title, display.GetCurrentImage());
+			display.Show(host.DockPanel, DockState.Document);
+			display.ZoomToFit();
         }
 
         private void UpdateLayerDisplay(int displayIndex, Bitmap imageSource, string title)
@@ -158,10 +158,10 @@ namespace OpenVisionLab._1._Core
             FormLayerDisplay display = layers.GetOrNull(displayIndex);
             if (display == null) return;
 
-            display.viewer._Ib.Image = imageSource;
-            imageSpace.SetImage(displayIndex, title, imageSource);
+			display.SetImage(imageSource);
+			imageSpace.SetImage(displayIndex, title, display.GetCurrentImage());
 
-            if (host.ActiveDocumentTitle != title)
+			if (host.ActiveDocumentTitle != title)
             {
                 display.Activate();
             }

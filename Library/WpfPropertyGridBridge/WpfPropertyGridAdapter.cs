@@ -72,7 +72,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
             };
         }
 
-        public event EventHandler<PropertyValueChangedEventArgs> PropertyValueChanged;
+        public event EventHandler<PropertyGridPropertyValueChangedEventArgs> PropertyValueChanged;
         public event EventHandler SelectedObjectsChanged;
 
         public object SelectedObject
