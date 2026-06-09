@@ -22,6 +22,7 @@ namespace OpenVisionLab
 		private Bitmap imageCompare2 = new Bitmap(10, 10);
 		private DrawingSize imageSize1 = DrawingSize.Empty;
 		private DrawingSize imageSize2 = DrawingSize.Empty;
+		private Panel colorSwatch;
 		private bool isMarkerVisible = false;
 		private DrawingPoint markerImagePoint = DrawingPoint.Empty;
 
@@ -63,8 +64,18 @@ namespace OpenVisionLab
 			splitContainer1.Resize += (sender, e) => LayoutBottomBar();
 
 			StyleStatusLabel(lbRGB, 180);
-			StyleStatusLabel(lbXY, 250);
-			StyleStatusLabel(lbGV, 250);
+			StyleStatusLabel(lbXY, 300);
+			StyleStatusLabel(lbGV, 300);
+
+			colorSwatch = new Panel
+			{
+				Dock = DockStyle.Left,
+				Width = 22,
+				BackColor = Color.Black,
+				BorderStyle = BorderStyle.FixedSingle
+			};
+			splitContainer1.Panel2.Controls.Add(colorSwatch);
+			splitContainer1.Panel2.Controls.SetChildIndex(colorSwatch, splitContainer1.Panel2.Controls.GetChildIndex(lbRGB));
 
 			btnLoad.Dock = DockStyle.Right;
 			btnLoad.Width = 112;
@@ -78,9 +89,9 @@ namespace OpenVisionLab
 			btnLoad.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold, GraphicsUnit.Point);
 			btnLoad.Text = "Load Images";
 
-			lbRGB.Text = "Hover -";
-			lbXY.Text = "LEFT X,Y[-,-] GV[-]";
-			lbGV.Text = "RIGHT X,Y[-,-] GV[-]";
+			lbRGB.Text = "색상 : -";
+			lbXY.Text = "LEFT 이미지좌표(좌상)[-,-] GV[-]";
+			lbGV.Text = "RIGHT 이미지좌표(좌상)[-,-] GV[-]";
 			LayoutBottomBar();
 		}
 
@@ -174,7 +185,8 @@ namespace OpenVisionLab
 		private void OnViewerMouseLeave()
 		{
 			isMarkerVisible = false;
-			lbRGB.Text = "Hover -";
+			lbRGB.Text = "색상 : -";
+			if (colorSwatch != null) { colorSwatch.BackColor = Color.Black; }
 			RefreshMarkers();
 		}
 
@@ -212,8 +224,9 @@ namespace OpenVisionLab
 			{
 				isMarkerVisible = false;
 				lbRGB.Text = $"{GetModeText(mode)} no image";
-				lbXY.Text = "LEFT X,Y[-,-] GV[-]";
-				lbGV.Text = "RIGHT X,Y[-,-] GV[-]";
+				if (colorSwatch != null) { colorSwatch.BackColor = Color.Black; }
+				lbXY.Text = "LEFT 이미지좌표(좌상)[-,-] GV[-]";
+				lbGV.Text = "RIGHT 이미지좌표(좌상)[-,-] GV[-]";
 				RefreshMarkers();
 				return;
 			}
@@ -223,6 +236,7 @@ namespace OpenVisionLab
 			{
 				isMarkerVisible = false;
 				lbRGB.Text = $"{GetModeText(mode)} out";
+				if (colorSwatch != null) { colorSwatch.BackColor = Color.Black; }
 				lbXY.Text = FormatViewerStatus("LEFT", imageCompare1, imagePoint);
 				lbGV.Text = FormatViewerStatus("RIGHT", imageCompare2, imagePoint);
 				RefreshMarkers();
@@ -236,7 +250,8 @@ namespace OpenVisionLab
 				markerImagePoint = imagePoint;
 				isMarkerVisible = true;
 
-				lbRGB.Text = $"{GetModeText(mode)} RGB[{color.R},{color.G},{color.B}]";
+				lbRGB.Text = $"색상 : RGB({color.R},{color.G},{color.B})";
+				if (colorSwatch != null) { colorSwatch.BackColor = color; }
 				lbXY.Text = FormatViewerStatus("LEFT", imageCompare1, imagePoint);
 				lbGV.Text = FormatViewerStatus("RIGHT", imageCompare2, imagePoint);
 				RefreshMarkers();
@@ -254,11 +269,11 @@ namespace OpenVisionLab
 
 		private string FormatViewerStatus(string name, Bitmap image, DrawingPoint imagePoint)
 		{
-			if (!IsPointInBitmap(image, imagePoint)) { return $"{name} X,Y[{imagePoint.X},{imagePoint.Y}] out"; }
+			if (!IsPointInBitmap(image, imagePoint)) { return $"{name} 이미지좌표(좌상)[{imagePoint.X},{imagePoint.Y}] out"; }
 
 			Color color = image.GetPixel(imagePoint.X, imagePoint.Y);
 			int brightness = (color.R + color.G + color.B) / 3;
-			return $"{name} X,Y[{imagePoint.X},{imagePoint.Y}] GV[{brightness}]";
+			return $"{name} 이미지좌표(좌상)[{imagePoint.X},{imagePoint.Y}] GV[{brightness}]";
 		}
 
 		private static bool IsPointInBitmap(Bitmap image, DrawingPoint imagePoint)
@@ -295,9 +310,7 @@ namespace OpenVisionLab
 
 		private void btnLoad_Click(object sender, EventArgs e)
 		{
-			try
-			{
-				string[] imagePaths = CUtil.LoadImagesFilePath();
+							string[] imagePaths = AppUtil.LoadImagesFilePath();
 				if (imagePaths == null || imagePaths.Length < 2) { return; }
 
 				ReplaceBitmap(ref imageCompare1, imagePaths[0]);
@@ -307,14 +320,11 @@ namespace OpenVisionLab
 				LoadBitmapToViewer(imageViewer2, imageCompare2, "CompareImage2", ref imageSize2);
 				SyncViewStateFrom(CompareMode.Image1);
 				isMarkerVisible = false;
-				lbRGB.Text = "Hover -";
-				lbXY.Text = "LEFT X,Y[-,-] GV[-]";
-				lbGV.Text = "RIGHT X,Y[-,-] GV[-]";
-			}
-			catch (Exception desc)
-			{
-				CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Exception ==> {desc.Message}");
-			}
+				lbRGB.Text = "색상 : -";
+				if (colorSwatch != null) { colorSwatch.BackColor = Color.Black; }
+				lbXY.Text = "LEFT 이미지좌표(좌상)[-,-] GV[-]";
+				lbGV.Text = "RIGHT 이미지좌표(좌상)[-,-] GV[-]";
+			
 		}
 
 		private static void ReplaceBitmap(ref Bitmap target, string imagePath)
@@ -332,7 +342,7 @@ namespace OpenVisionLab
 			if (viewer == null || bitmap == null) { return; }
 
 			viewer.ClearTexture();
-			using (CvMat mat = CImageConverter.ToMat(bitmap))
+			using (CvMat mat = BitmapImageConverter.ToMat(bitmap))
 			{
 				CanvasImageLoader.UploadMatAsTexture(viewer, mat, imageName, ref imageSize);
 			}

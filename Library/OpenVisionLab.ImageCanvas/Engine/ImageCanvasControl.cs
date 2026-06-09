@@ -114,6 +114,7 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 		private readonly object _pixelDatalock = new object();
 
 		private System.Drawing.PointF _pixelPos;
+		private System.Drawing.PointF _imagePixelPos;
 		private System.Drawing.Color _pixelColor;
 		private int _grayValue;
 		private bool _isShowCrossLine = false;
@@ -148,6 +149,12 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 		{
 			get => _pixelPos;
 			set => _pixelPos = value;
+		}
+
+		public System.Drawing.PointF ImagePixelPos
+		{
+			get => _imagePixelPos;
+			set => _imagePixelPos = value;
 		}
 
 		public System.Drawing.Color PixelColor
@@ -534,18 +541,7 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 		{
 			if (_textureAreas.ContainsKey(imageName))
 			{
-				uint[] textureIds = _textureAreas[imageName].Select(x => x.OriTextureId).ToArray();
-				uint[] backBonetextureIds = _textureAreas[imageName].Select(x => x.OriBackgroundTextureId).ToArray();
-				uint[] maskTextureIds = _textureAreas[imageName].Select(x => x.MaskTextureId).ToArray();
-				uint[] maskBackBoneTextureIds = _textureAreas[imageName].Select(x => x.MaskBackgroundMaskTextureId).ToArray();
-				uint[] ThresholdTextureIdIds = _textureAreas[imageName].Select(x => x.ThresholdTextureId).ToArray();
-
-				// OpenGL 텍스처를 생성합니다.
-				openGLControl.OpenGL.DeleteTextures(textureIds.Length, textureIds);
-				openGLControl.OpenGL.DeleteTextures(backBonetextureIds.Length, backBonetextureIds);
-				openGLControl.OpenGL.DeleteTextures(maskTextureIds.Length, maskTextureIds);
-				openGLControl.OpenGL.DeleteTextures(maskBackBoneTextureIds.Length, maskBackBoneTextureIds);
-				openGLControl.OpenGL.DeleteTextures(ThresholdTextureIdIds.Length, ThresholdTextureIdIds);
+				ImageCanvasTextureStore.DeleteTextures(openGLControl.OpenGL, ImageCanvasTextureStore.CollectTextureIds(_textureAreas[imageName]));
 				List<OpenGlTextureDrawingParam> glTextureDrawingParams = new List<OpenGlTextureDrawingParam>();
 				_textureAreas.TryRemove(imageName, out glTextureDrawingParams);
 				_textureKeysOrder.Remove(imageName);
@@ -556,7 +552,7 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 
 		public void DeleteTexture(List<uint> textureIds)
 		{
-			openGLControl.OpenGL.DeleteTextures(textureIds.Count, textureIds.ToArray());
+			ImageCanvasTextureStore.DeleteTextures(openGLControl.OpenGL, textureIds);
 		}
 
 		public uint? GetTextureIdAtPoint(int mouseX, int mouseY)
@@ -842,11 +838,17 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			RefreshGL();
 		}
 
-		public float GetRoateToTexture(string imageName)
+		public float GetRotateToTexture(string imageName)
 		{
 			return _textureAreas
 				.SelectMany(kv => kv.Value)
 				.Where(param => param.ImageName == imageName).FirstOrDefault().RotationAngle;
+		}
+
+		[Obsolete("Use GetRotateToTexture instead.")]
+		public float GetRoateToTexture(string imageName)
+		{
+			return GetRotateToTexture(imageName);
 		}
 
 		public float GetTransparencyToTexture(string imageName)
@@ -894,105 +896,9 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			return _eraserParameters;
 		}
 
-		public void FitToRect(System.Drawing.RectangleF rect)
-		{
-			SetZoomValue(rect);
-			UpdateView(rect);
-		}
-
-		public void ZoomToFit()
-		{
-			if (_fitRect.IsEmpty) return;
-			SetZoomValue(_fitRect);
-			UpdateView(_fitRect);
-		}
-		public CanvasViewState CaptureViewState()
-		{
-			return new CanvasViewState(_zoom, _offsetSize);
-		}
-
-		public void ApplyViewState(CanvasViewState viewState)
-		{
-			if (viewState == null) { return; }
-
-			_zoom = viewState.Zoom;
-			_offsetSize = viewState.OffsetSize;
-			Reshape();
-			RefreshGL();
-		}
-
-		public void ZoomAt(System.Drawing.Point mousePos, int delta)
-		{
-			float oldZoom = UpdateZoom(delta);
-			if (oldZoom == 0) { return; }
-
-			AdjustOffsetForZoom(mousePos, oldZoom);
-			Reshape();
-			RefreshGL();
-		}
-
-		public void UpdateView(System.Drawing.RectangleF rect)
-		{
-			Reshape();
-			Move(new System.Drawing.PointF(rect.Left + rect.Width / 2, rect.Y + rect.Height / 2));
-		}
 		#endregion
 
 		#region // private methods
-		private new void Move(System.Drawing.PointF pt)
-		{
-			// 2024-01-03 noah: Fit 시 엉뚱한 위치로 이동하던 버그를 수정했습니다.
-			_aspectRatio = ((float)this.openGLControl.Width) / this.openGLControl.Height;
-			_xSpan = _zoom;
-			_ySpan = _zoom;
-
-			if (_aspectRatio > 1)
-			{
-				_xSpan *= _aspectRatio;
-			}
-			else
-			{
-				_ySpan /= _aspectRatio;
-			}
-
-			_offsetSize.Width = _xSpan / 2 - pt.X;
-			_offsetSize.Height = _ySpan / 2 - pt.Y;
-			openGLControl.Refresh();
-		}
-
-		private void SetZoomValue(System.Drawing.RectangleF rect)
-		{
-			float scaleWidth = (float)openGLControl.Width / rect.Width;
-			float scaleHeight = (float)openGLControl.Height / rect.Height;
-
-			float zoomFactor = 1.1f; // 줌 관련 값입니다.
-
-			if (scaleHeight < scaleWidth)
-			{
-				_zoom = rect.Height * zoomFactor;
-			}
-			else
-			{
-				_zoom = rect.Height * (rect.Width / rect.Height) * zoomFactor;
-			}
-		}
-
-		private void ResetMousePositions()
-		{
-			//ViewMode = CanvasInteractionMode.None;
-			PreMousePos = new System.Drawing.Point();
-			PostMousePos = new System.Drawing.Point();
-		}
-		private void DragViewMovement(MouseEventArgs e)
-		{
-			var currentRobotyPos = GetCurrentRobotPos(e.X, e.Y);
-			// 이미지 영역을 좌하단 기준으로 설정합니다.
-			float dx = currentRobotyPos.X - _preMousePos.X;
-			float dy = currentRobotyPos.Y - _preMousePos.Y;
-			_offsetSize.Width += dx;
-			_offsetSize.Height += dy;
-		}
-
 		private void UpdatePixelStatus(MouseEventArgs e, float scale = 1f)
 		{
 			lock (_pixelDatalock)
@@ -1001,6 +907,7 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 				PixelColor = GetScreenColor(openGLControl.OpenGL, (int)(e.X / scale), (int)(e.Y / scale));
 				PixelPos = GetRoundPointF(GetCurrentRobotPos((int)(e.X / scale), (int)(e.Y / scale)));
 				PixelPos = new System.Drawing.PointF(PixelPos.X, PixelPos.Y);
+				ImagePixelPos = GetRoundPointF(ConvertOpenGlToImagePoint(PixelPos));
 
 				//Console.WriteLine($"UpdatePixelStatus Ori: {e.X},{e.Y}");
 				//Console.WriteLine($"UpdatePixelStatus Curr: {PixelPos.X},{PixelPos.Y}");
@@ -1322,7 +1229,7 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			gl.DeleteRenderbuffersEXT(1, renderBuffer);
 			gl.BindTexture(OpenGL.GL_TEXTURE_2D, 0);
 
-			ReshapeNonRefrsh();
+			ReshapeNonRefresh();
 
 			int bytesPerPixel = 4; // RGBA 형식 기준입니다.
 			int stride = width * bytesPerPixel;
@@ -1424,7 +1331,7 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			gl.DeleteRenderbuffersEXT(1, renderBuffer);
 			gl.BindTexture(OpenGL.GL_TEXTURE_2D, 0);
 
-			ReshapeNonRefrsh();
+			ReshapeNonRefresh();
 
 			int bytesPerPixel = 4; // RGBA 형식 기준입니다.
 			int stride = width * bytesPerPixel;
@@ -1532,81 +1439,6 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			return colors;
 		}
 
-		public float UpdateZoom(int delta)
-		{
-			float oldZoom = _zoom;
-			if (float.IsNaN(oldZoom))
-			{
-				return 0;
-			}
-			_zoom *= (delta < 0) ? 1.20F : 0.80F;
-			if (_zoom <= 0.0f)
-				_zoom = MIN_ZOOM_SCALE;
-			_zoom = (float)Math.Round((decimal)_zoom, 3);
-
-			OpenGlDrawing.ZoomFactor = ZoomScale;
-
-			return oldZoom;
-		}
-
-		public void AdjustOffsetForZoom(System.Drawing.Point mousePos, float oldZoom)
-		{
-			int x = mousePos.X / 2 - this.openGLControl.Size.Width / 2;
-			int y = this.openGLControl.Size.Height / 2 - mousePos.Y / 2;
-
-			float oldImageX = mousePos.X * (oldZoom / GetControlMinSize());
-			float oldImageY = (mousePos.Y - this.openGLControl.Size.Height) * (oldZoom / GetControlMinSize());
-
-			float newImageX = mousePos.X * (_zoom / GetControlMinSize());
-			float newImageY = (mousePos.Y - this.openGLControl.Size.Height) * (_zoom / GetControlMinSize());
-
-			_offsetSize.Width += newImageX - oldImageX;
-			_offsetSize.Height += oldImageY - newImageY;
-		}
-
-		public System.Drawing.PointF GetRoundPointF(System.Drawing.PointF pt, int digit = 1)
-		{
-			System.Drawing.PointF result = pt;
-
-			// 마우스 이동량을 계산합니다.
-			result.X = (float)Math.Round(result.X, digit);
-			result.Y = (float)Math.Round(result.Y, digit);
-
-			return result;
-		}
-
-		public System.Drawing.PointF GetCurrentRobotPosf(int mouseLocationX, int mouseLocationY)
-		{
-			var robotPos = new System.Drawing.PointF((mouseLocationX * _zoom / GetControlMinSize() - _offsetSize.Width),
-				((this.openGLControl.Size.Height - mouseLocationY) * _zoom / GetControlMinSize()) - _offsetSize.Height);
-			return new System.Drawing.PointF((robotPos.X), (robotPos.Y));
-		}
-
-		public System.Drawing.PointF GetScreenPosFromPixelCoordf(int pixelX, int pixelY)
-		{
-			// OpenGL은 좌하단을 원점으로 사용하므로 y 좌표를 계산하거나 반전합니다.
-			float screenX = ((pixelX + _offsetSize.Width) * GetControlMinSize() / _zoom);
-			float screenY = (this.openGLControl.Size.Height - ((pixelY + _offsetSize.Height) * GetControlMinSize() / _zoom));
-
-			return new System.Drawing.PointF(screenX, screenY);
-		}
-
-		public System.Drawing.Point GetCurrentRobotPos(int mouseLocationX, int mouseLocationY)
-		{
-			var robotPos = new System.Drawing.Point((int)((mouseLocationX * _zoom / GetControlMinSize() - _offsetSize.Width)),
-				(int)(((this.openGLControl.Size.Height - mouseLocationY) * _zoom / GetControlMinSize()) - _offsetSize.Height));
-			return new System.Drawing.Point((robotPos.X), (robotPos.Y));
-		}
-
-		public System.Drawing.Point GetScreenPosFromPixelCoord(int pixelX, int pixelY)
-		{
-			// OpenGL은 좌하단을 원점으로 사용하므로 y 좌표를 계산하거나 반전합니다.
-			int screenX = (int)((pixelX + _offsetSize.Width) * GetControlMinSize() / _zoom);
-			int screenY = (int)(this.openGLControl.Size.Height - ((pixelY + _offsetSize.Height) * GetControlMinSize() / _zoom));
-
-			return new System.Drawing.Point(screenX, screenY);
-		}
-
 		/// <summary>
 		/// 뷰포트를 설정합니다.
 		/// </summary>
@@ -1652,13 +1484,13 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			}
 		}
 
-		public void ReshapeNonRefrsh()
+		public void ReshapeNonRefresh()
 		{
 			if (this.InvokeRequired)
 			{
 				this.BeginInvoke(new MethodInvoker(() =>
 				{
-					ReshapeNonRefrsh();
+					ReshapeNonRefresh();
 				}));
 			}
 			else
@@ -1696,6 +1528,12 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 				gl.MatrixMode(MatrixMode.Modelview);
 				gl.LoadIdentity();
 			}
+		}
+
+		[Obsolete("Use ReshapeNonRefresh instead.")]
+		public void ReshapeNonRefrsh()
+		{
+			ReshapeNonRefresh();
 		}
 
 		/// <summary>
@@ -1755,24 +1593,11 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 					return;
 				}
 
-				List<uint> textureIds = _textureAreas.Values
-					.SelectMany(textureParams => textureParams)
-					.SelectMany(param => new[]
-					{
-						param.OriTextureId,
-						param.OriBackgroundTextureId,
-						param.MaskTextureId,
-						param.MaskBackgroundMaskTextureId,
-						param.TransparentBackgroundTextureId,
-						param.ThresholdTextureId
-					})
-					.Where(textureId => textureId != 0)
-					.Distinct()
-					.ToList();
+				List<uint> textureIds = ImageCanvasTextureStore.CollectTextureIds(_textureAreas.Values);
 
 				if (textureIds.Count > 0 && openGLControl != null && !openGLControl.IsDisposed)
 				{
-					openGLControl.OpenGL.DeleteTextures(textureIds.Count, textureIds.ToArray());
+					ImageCanvasTextureStore.DeleteTextures(openGLControl.OpenGL, textureIds);
 				}
 
 				clearState();

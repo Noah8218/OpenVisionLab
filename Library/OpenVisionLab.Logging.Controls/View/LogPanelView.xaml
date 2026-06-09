@@ -1,0 +1,180 @@
+<UserControl x:Class="OpenVisionLab.Logging.Controls.View.LogPanelView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converter="clr-namespace:OpenVisionLab.Logging.Controls.Converter"
+             MinWidth="360"
+             MinHeight="320">
+    <UserControl.Resources>
+        <converter:BooleanToInverseConverter x:Key="BooleanToInverseConverter" />
+        <converter:LogToneBrushConverter x:Key="LogToneBrushConverter" />
+
+        <SolidColorBrush x:Key="ShellBrush" Color="#151A22" />
+        <SolidColorBrush x:Key="PanelBrush" Color="#202631" />
+        <SolidColorBrush x:Key="ListBrush" Color="#0D1219" />
+        <SolidColorBrush x:Key="RowBrush" Color="#121923" />
+        <SolidColorBrush x:Key="LineBrush" Color="#313A47" />
+        <SolidColorBrush x:Key="PrimaryTextBrush" Color="#EEF3F8" />
+        <SolidColorBrush x:Key="SecondaryTextBrush" Color="#AEB9C7" />
+        <SolidColorBrush x:Key="ActionBrush" Color="#2F5D67" />
+
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style TargetType="ComboBox">
+            <Setter Property="Height" Value="24" />
+            <Setter Property="MinWidth" Value="82" />
+            <Setter Property="Margin" Value="4,0,8,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style TargetType="Button">
+            <Setter Property="Height" Value="25" />
+            <Setter Property="Padding" Value="10,1" />
+            <Setter Property="Margin" Value="5,0,0,0" />
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="{StaticResource ActionBrush}" />
+            <Setter Property="BorderBrush" Value="#417B88" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Height" Value="25" />
+            <Setter Property="MinWidth" Value="120" />
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="#111821" />
+            <Setter Property="BorderBrush" Value="#3B4654" />
+            <Setter Property="CaretBrush" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Padding" Value="6,2" />
+        </Style>
+
+        <Style TargetType="ListBox">
+            <Setter Property="Background" Value="{StaticResource ListBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+            <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
+            <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+        </Style>
+
+        <Style TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Background" Value="{StaticResource ListBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource ShellBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource LineBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="7,6">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <DockPanel Grid.Row="0" LastChildFill="True">
+                    <Button DockPanel.Dock="Right"
+                            MinWidth="72"
+                            Content="Logs"
+                            Command="{Binding OpenDirectoryCommand}" />
+                    <Button DockPanel.Dock="Right"
+                            MinWidth="58"
+                            Content="Reset"
+                            Command="{Binding ResetCommand}" />
+                    <CheckBox DockPanel.Dock="Right"
+                              Content="Follow"
+                              IsChecked="{Binding AutoScroll}" />
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                </DockPanel>
+
+                <WrapPanel Grid.Row="1" Margin="0,6,0,0">
+                    <CheckBox Content="Stream"
+                              IsChecked="{Binding ShowEntireStream}" />
+                    <TextBlock Text="Area" Foreground="{StaticResource SecondaryTextBrush}" />
+                    <ComboBox IsEnabled="{Binding ShowEntireStream, Converter={StaticResource BooleanToInverseConverter}}"
+                              ItemsSource="{Binding Areas}"
+                              SelectedItem="{Binding SelectedArea}" />
+                    <TextBlock Text="Signal" Foreground="{StaticResource SecondaryTextBrush}" />
+                    <ComboBox IsEnabled="{Binding ShowEntireStream, Converter={StaticResource BooleanToInverseConverter}}"
+                              ItemsSource="{Binding Signals}"
+                              SelectedItem="{Binding SelectedSignal}" />
+                </WrapPanel>
+            </Grid>
+        </Border>
+
+        <ListBox x:Name="LogList"
+                 Grid.Row="1"
+                 ItemsSource="{Binding FilteredLogs}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Border Background="{StaticResource RowBrush}"
+                            BorderBrush="#1F2A36"
+                            BorderThickness="0,0,0,1">
+                        <Grid MinHeight="28">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="4" />
+                                <ColumnDefinition Width="92" />
+                                <ColumnDefinition Width="86" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0"
+                                    Background="{Binding Level, Converter={StaticResource LogToneBrushConverter}}" />
+
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding DisplayTime}"
+                                       Foreground="{StaticResource SecondaryTextBrush}"
+                                       Margin="7,0,5,0"
+                                       FontSize="11" />
+
+                            <StackPanel Grid.Column="2"
+                                        Orientation="Vertical"
+                                        Margin="0,3,5,3">
+                                <TextBlock Text="{Binding Level}"
+                                           Foreground="{Binding Level, Converter={StaticResource LogToneBrushConverter}}"
+                                           FontWeight="SemiBold"
+                                           FontSize="11" />
+                                <TextBlock Text="{Binding Category}"
+                                           Foreground="{StaticResource SecondaryTextBrush}"
+                                           FontSize="10" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="3"
+                                        Orientation="Vertical"
+                                        Margin="0,3,8,3">
+                                <TextBlock Text="{Binding Source}"
+                                           Foreground="#7FD6E7"
+                                           FontSize="10" />
+                                <TextBlock Text="{Binding Message}"
+                                           Foreground="{Binding Level, Converter={StaticResource LogToneBrushConverter}}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</UserControl>

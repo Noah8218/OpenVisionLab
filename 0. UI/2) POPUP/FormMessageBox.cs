@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -146,7 +146,7 @@ namespace OpenVisionLab
         //        fm.RightToLeftLayout = false;
         //        fm.Opacity = 0d;
         //        tm.Interval = 50;
-        //        // ³ªÅ¸³ª´Â ¼Óµµ¸¦ Á¶Á¤ÇÔ. ? ?
+        //        // ë‚˜íƒ€ë‚˜ëŠ” ì†ë„ë¥¼ ì¡°ì •í•¨. ? ?
         //        tm.Tick += delegate (object obj, EventArgs e)
         //        {
         //            if ((cnt + 1 > opacity.Length) || fm == null)

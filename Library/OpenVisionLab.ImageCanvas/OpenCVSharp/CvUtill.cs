@@ -128,21 +128,18 @@ namespace OpenVisionLab.ImageCanvas.OpenCVSharp
 		{
 			if (image == null)
 			{
-				//CLog.Write(CLog.EnumLogLevel.Abnormal, "Image is null");
 				Debug.WriteLine("Image is null");
 				return true;
 			}
 
 			if (image.IsDisposed)
 			{
-				//CLog.Write(CLog.EnumLogLevel.Abnormal, "Image Disposed");
 				Debug.WriteLine("Image Disposed");
 				return true;
 			}
 
 			if (image.Width == 0 || image.Height == 0)
 			{
-				//CLog.Write(CLog.EnumLogLevel.Abnormal, "Image Size Empty");
 				Debug.WriteLine("Image Size Empty");
 				return true;
 			}

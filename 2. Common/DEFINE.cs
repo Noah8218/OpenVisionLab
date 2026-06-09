@@ -149,7 +149,8 @@ namespace OpenVisionLab
             CONTOUR,
             PROPERTY,
             THRESHOLD,
-            TEACHING
+            TEACHING,
+            LOG
         }
 
         public enum VISION_MENU

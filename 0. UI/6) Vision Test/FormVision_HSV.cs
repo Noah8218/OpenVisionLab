@@ -60,7 +60,7 @@ namespace OpenVisionLab
         }
         private void FormSettings_Camera_Load(object sender, EventArgs e)
         {
-            CUtil.InitDirectory("TEST");
+            AppUtil.InitDirectory("TEST");
             InitializeSingleInputViewers(
                 InitLayListItem,
                 ibSource,
@@ -90,52 +90,47 @@ namespace OpenVisionLab
         private void trbHsv_Scroll(object sender, EventArgs e)
         {
 
-            try
-            {
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
+                        Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
 
-                using (Mat ImageCVSource = Lib.Common.CImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
+            using (Mat ImageCVSource = Lib.Common.BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
+            {
+                //if (ImageCVSource.Channels() == 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.BGR2HSV);
+                //if (ImageCVSource.Channels() != 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.BGR2HSV);
+
+                Bitmap Result = new Bitmap(10, 10);
+                
+                List<int> mins = new List<int>();
+                mins.Add(trbHueMin.Value);
+                mins.Add(trbSatMin.Value);
+                mins.Add(trbValMin.Value);
+
+                int min = mins.Min();
+
+                List<int> maxs = new List<int>();
+                maxs.Add(trbHueMax.Value);
+                maxs.Add(trbSatMax.Value);
+                maxs.Add(trbValMax.Value);
+
+                int max = maxs.Max();
+
+                
+                Cv2.InRange(ImageCVSource, new Scalar(100, 100 , 100), new Scalar(200 , 255, 200), ImageCVSource);
+
+                Mat and = new Mat();
+
+                using (Mat sourceMat = Lib.Common.BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
                 {
-                    //if (ImageCVSource.Channels() == 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.BGR2HSV);
-                    //if (ImageCVSource.Channels() != 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.BGR2HSV);
-
-                    Bitmap Result = new Bitmap(10, 10);
-                    
-                    List<int> mins = new List<int>();
-                    mins.Add(trbHueMin.Value);
-                    mins.Add(trbSatMin.Value);
-                    mins.Add(trbValMin.Value);
-
-                    int min = mins.Min();
-
-                    List<int> maxs = new List<int>();
-                    maxs.Add(trbHueMax.Value);
-                    maxs.Add(trbSatMax.Value);
-                    maxs.Add(trbValMax.Value);
-
-                    int max = maxs.Max();
-
-                    
-                    Cv2.InRange(ImageCVSource, new Scalar(100, 100 , 100), new Scalar(200 , 255, 200), ImageCVSource);
-
-                    Mat and = new Mat();
-
-                    Mat sourc1 = Lib.Common.CImageConverter.ToMat(ibSource.DisplayBitmap).Clone();
-                    //if (sourc1.Channels() != 1) Cv2.CvtColor(sourc1, sourc1, ColorConversionCodes.BGR2GRAY);
-
-                    Cv2.BitwiseAnd(sourc1, sourc1, and, ImageCVSource);
-
-                    if (and.Channels() != 3) Cv2.CvtColor(and, and, ColorConversionCodes.GRAY2RGB);
-
-                    Result = Lib.Common.CImageConverter.ToBitmap(and);
-                    PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
+                    //if (sourceMat.Channels() != 1) Cv2.CvtColor(sourceMat, sourceMat, ColorConversionCodes.BGR2GRAY);
+                    Cv2.BitwiseAnd(sourceMat, sourceMat, and, ImageCVSource);
                 }
+
+                if (and.Channels() != 3) Cv2.CvtColor(and, and, ColorConversionCodes.GRAY2RGB);
+
+                Result = Lib.Common.BitmapImageConverter.ToBitmap(and);
+                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
             }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-            }
+        
 
         }
 

@@ -1,4 +1,4 @@
-namespace OpenVisionLab._1._Core
+﻿namespace OpenVisionLab._1._Core
 {
     public sealed class VisionRuntimeState
     {

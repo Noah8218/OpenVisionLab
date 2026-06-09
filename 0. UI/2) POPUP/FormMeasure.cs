@@ -102,7 +102,6 @@ namespace OpenVisionLab
             }
             catch
             {
-               // CLog.Error( "[FAILED] {0}==>{1} Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
             }
         }
 
@@ -147,28 +146,28 @@ namespace OpenVisionLab
                     m_ptBase = new OpenCvSharp.Point(GreyPoint.X, GreyPoint.Y);
                     
                     OpenCvSharp.Point ptImageSize = new OpenCvSharp.Point(m_ImageOriginal.Width, m_ImageOriginal.Height);
-                    CLineVertical.GetLineCoef(ptStart, ptEnd, m_ptBase, ptImageSize, out List<OpenCvSharp.Point> listPtVertical);
+                    VerticalLineCalculator.GetLineCoef(ptStart, ptEnd, m_ptBase, ptImageSize, out List<OpenCvSharp.Point> listPtVertical);
 
-                    bool bInterSectionStart = CFormula.CrossCheck(ptStart, ptEnd, m_ptBase, listPtVertical[0]);
-                    bool bInterSectionEnd = CFormula.CrossCheck(ptStart, ptEnd, m_ptBase, listPtVertical[listPtVertical.Count - 1]);
+                    bool bInterSectionStart = FormulaUtil.CrossCheck(ptStart, ptEnd, m_ptBase, listPtVertical[0]);
+                    bool bInterSectionEnd = FormulaUtil.CrossCheck(ptStart, ptEnd, m_ptBase, listPtVertical[listPtVertical.Count - 1]);
                     if (bInterSectionStart || bInterSectionEnd)
                     {
-                        CLine line = new CLine(ptStart, ptEnd);
-                        CLine lineVerical = new CLine();
+                        LineSegment2D line = new LineSegment2D(ptStart, ptEnd);
+                        LineSegment2D lineVerical = new LineSegment2D();
                         if (bInterSectionStart)
                         {
-                            lineVerical = new CLine(m_ptBase, listPtVertical[0]);
+                            lineVerical = new LineSegment2D(m_ptBase, listPtVertical[0]);
                         }
                         else
                         {
-                            lineVerical = new CLine(m_ptBase, listPtVertical[listPtVertical.Count - 1]);
+                            lineVerical = new LineSegment2D(m_ptBase, listPtVertical[listPtVertical.Count - 1]);
                         }
 
-                        CFormula.FindIntersection(lineVerical, line, out m_ptVertical);
+                        FormulaUtil.FindIntersection(lineVerical, line, out m_ptVertical);
 
                         OpenCvSharp.Point ptBase = new OpenCvSharp.Point(m_ptBase.X, m_ptBase.Y);
                         OpenCvSharp.Point ptVertical = new OpenCvSharp.Point(m_ptVertical.X, m_ptVertical.Y);
-                        CLine lineCalVertical = new CLine(ptBase, ptVertical);                        
+                        LineSegment2D lineCalVertical = new LineSegment2D(ptBase, ptVertical);                        
 
                         lbVertical.Text = (lineCalVertical.Distance() * dPixelPermm).ToString("F4");
                     }
@@ -177,21 +176,21 @@ namespace OpenVisionLab
                         bool bInterSectionVertical = false;
                         for (int nIndex = 0; nIndex < listPtVertical.Count - 1; nIndex++)
                         {
-                            bInterSectionVertical = CFormula.CrossCheck(ptStart, ptEnd, m_ptBase, listPtVertical[nIndex]);
+                            bInterSectionVertical = FormulaUtil.CrossCheck(ptStart, ptEnd, m_ptBase, listPtVertical[nIndex]);
                             if (bInterSectionVertical)
                             {
                                 if (bInterSectionVertical)
                                 {
-                                    CLine line = new CLine(ptStart, ptEnd);
-                                    CLine lineVerical = new CLine(m_ptBase, listPtVertical[nIndex]);
+                                    LineSegment2D line = new LineSegment2D(ptStart, ptEnd);
+                                    LineSegment2D lineVerical = new LineSegment2D(m_ptBase, listPtVertical[nIndex]);
 
-                                    CFormula.FindIntersection(lineVerical, line, out m_ptVertical);
+                                    FormulaUtil.FindIntersection(lineVerical, line, out m_ptVertical);
                                 }
 
                                 OpenCvSharp.Point ptBase = new OpenCvSharp.Point(m_ptBase.X, m_ptBase.Y);
                                 OpenCvSharp.Point ptVertical = new OpenCvSharp.Point(m_ptVertical.X, m_ptVertical.Y);
 
-                                CLine lineCalVertical = new CLine(ptBase, ptVertical);
+                                LineSegment2D lineCalVertical = new LineSegment2D(ptBase, ptVertical);
 
                                 lbVertical.Text = (lineCalVertical.Distance() * dPixelPermm).ToString("F4");
                                 break;
@@ -207,7 +206,6 @@ namespace OpenVisionLab
             }
             catch
             {
-              //  CLog.Error( "[FAILED] {0}==>{1} Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
             }
         }
 
@@ -239,7 +237,7 @@ namespace OpenVisionLab
 
                             ptEnd = DrawLine(ptStart.X, ptStart.Y, m_ptEnd.X, m_ptEnd.Y);
 
-                            CLine line = new CLine(ptStart, ptEnd);
+                            LineSegment2D line = new LineSegment2D(ptStart, ptEnd);
 
                             lbVertical.Text = (line.Distance() * dPixelPermm).ToString("F4");
                         }
@@ -251,28 +249,28 @@ namespace OpenVisionLab
                             m_ptBase = new OpenCvSharp.Point(point.X, point.Y);
                             OpenCvSharp.Point ptImageSize = new OpenCvSharp.Point(m_ImageOriginal.Width, m_ImageOriginal.Height);
 
-                            CLineVertical.GetLineCoef(ptStart, ptEnd, m_ptBase, ptImageSize, out List<OpenCvSharp.Point> listPtVertical);
+                            VerticalLineCalculator.GetLineCoef(ptStart, ptEnd, m_ptBase, ptImageSize, out List<OpenCvSharp.Point> listPtVertical);
 
-                            bool bInterSectionStart = CFormula.CrossCheck(ptStart, ptEnd, m_ptBase, listPtVertical[0]);
-                            bool bInterSectionEnd = CFormula.CrossCheck(ptStart, ptEnd, m_ptBase, listPtVertical[listPtVertical.Count - 1]);
+                            bool bInterSectionStart = FormulaUtil.CrossCheck(ptStart, ptEnd, m_ptBase, listPtVertical[0]);
+                            bool bInterSectionEnd = FormulaUtil.CrossCheck(ptStart, ptEnd, m_ptBase, listPtVertical[listPtVertical.Count - 1]);
                             if (bInterSectionStart || bInterSectionEnd)
                             {
-                                CLine line = new CLine(ptStart, ptEnd);
-                                CLine lineVerical = new CLine();
+                                LineSegment2D line = new LineSegment2D(ptStart, ptEnd);
+                                LineSegment2D lineVerical = new LineSegment2D();
                                 if (bInterSectionStart)
                                 {
-                                    lineVerical = new CLine(m_ptBase, listPtVertical[0]);
+                                    lineVerical = new LineSegment2D(m_ptBase, listPtVertical[0]);
                                 }
                                 else
                                 {
-                                    lineVerical = new CLine(m_ptBase, listPtVertical[listPtVertical.Count - 1]);
+                                    lineVerical = new LineSegment2D(m_ptBase, listPtVertical[listPtVertical.Count - 1]);
                                 }
 
-                                CFormula.FindIntersection(lineVerical, line, out m_ptVertical);
+                                FormulaUtil.FindIntersection(lineVerical, line, out m_ptVertical);
                                 
                                 OpenCvSharp.Point ptBase = new OpenCvSharp.Point(m_ptBase.X, m_ptBase.Y);
                                 OpenCvSharp.Point ptVertical = new OpenCvSharp.Point(m_ptVertical.X, m_ptVertical.Y);
-                                CLine lineCalVertical = new CLine(ptBase, ptVertical);
+                                LineSegment2D lineCalVertical = new LineSegment2D(ptBase, ptVertical);
 
                                 lbVertical.Text = (lineCalVertical.Distance() * dPixelPermm).ToString("F4");
                             }
@@ -281,21 +279,21 @@ namespace OpenVisionLab
                                 bool bInterSectionVertical = false;
                                 for (int nIndex = 0; nIndex < listPtVertical.Count - 1; nIndex++)
                                 {
-                                    bInterSectionVertical = CFormula.CrossCheck(ptStart, ptEnd, m_ptBase, listPtVertical[nIndex]);
+                                    bInterSectionVertical = FormulaUtil.CrossCheck(ptStart, ptEnd, m_ptBase, listPtVertical[nIndex]);
                                     if (bInterSectionVertical)
                                     {
                                         if (bInterSectionVertical)
                                         {
-                                            CLine line = new CLine(ptStart, ptEnd);
-                                            CLine lineVerical = new CLine(m_ptBase, listPtVertical[nIndex]);
+                                            LineSegment2D line = new LineSegment2D(ptStart, ptEnd);
+                                            LineSegment2D lineVerical = new LineSegment2D(m_ptBase, listPtVertical[nIndex]);
 
-                                            CFormula.FindIntersection(lineVerical, line, out m_ptVertical);
+                                            FormulaUtil.FindIntersection(lineVerical, line, out m_ptVertical);
                                         }
 
                                         OpenCvSharp.Point ptBase = new OpenCvSharp.Point(m_ptBase.X, m_ptBase.Y);
                                         OpenCvSharp.Point ptVertical = new OpenCvSharp.Point(m_ptVertical.X, m_ptVertical.Y);
 
-                                        CLine lineCalVertical = new CLine(ptBase, ptVertical);
+                                        LineSegment2D lineCalVertical = new LineSegment2D(ptBase, ptVertical);
 
                                         lbVertical.Text = (lineCalVertical.Distance() * dPixelPermm).ToString("F4");
                                         break;
@@ -418,13 +416,12 @@ namespace OpenVisionLab
                         //DrawRectangle(rect);
 
                        // Logger.WriteLog(LOG.Normal, "[Success] Success ROI");
-                        CCommon.ShowMessageBox("[Success]!!", "Success ROI", FormMessageBox.MESSAGEBOX_TYPE.Info);
+                        AppCommon.ShowMessageBox("[Success]!!", "Success ROI", FormMessageBox.MESSAGEBOX_TYPE.Info);
                     }
                 }
             }
             catch
             {
-              //  CLog.Error( "[FAILED] {0}==>{1} Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
             }
 
         }
@@ -506,7 +503,7 @@ namespace OpenVisionLab
             catch (Exception Desc)
             {
                 //Logger.WriteLog(LOG.Normal, "[FAILED] {0}==>{1}   Ex ==> {2}", MethodBase.GetCurrentMethod().ReflectedType.Name, MethodBase.GetCurrentMethod().Name, Desc.Message);
-                CCommon.ShowdialogMessageBox("EXCEPTION", Desc.Message, FormMessageBox.MESSAGEBOX_TYPE.Waring);
+                AppCommon.ShowdialogMessageBox("EXCEPTION", Desc.Message, FormMessageBox.MESSAGEBOX_TYPE.Waring);
             }
         }
 

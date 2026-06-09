@@ -1,4 +1,4 @@
-namespace OpenVisionLab
+﻿namespace OpenVisionLab
 {
     partial class FormTeachingVision
     {
@@ -29,8 +29,6 @@ namespace OpenVisionLab
 		private void InitializeComponent()
 		{
 			components = new System.ComponentModel.Container();
-			timerStatus = new System.Windows.Forms.Timer(components);
-			label2 = new System.Windows.Forms.Label();
 			splitContainer1 = new System.Windows.Forms.SplitContainer();
 			TeachingPanel = new System.Windows.Forms.Panel();
 			panel1 = new System.Windows.Forms.Panel();
@@ -57,11 +55,7 @@ namespace OpenVisionLab
 			lineToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			meanToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			timer1 = new System.Windows.Forms.Timer(components);
-			timeragin = new System.Windows.Forms.Timer(components);
 			toolTip1 = new System.Windows.Forms.ToolTip(components);
-			rjButton3 = new RJCodeUI_M1.RJControls.RJButton();
-			rjButton2 = new RJCodeUI_M1.RJControls.RJButton();
-			rjButton1 = new RJCodeUI_M1.RJControls.RJButton();
 			((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
 			splitContainer1.Panel1.SuspendLayout();
 			splitContainer1.Panel2.SuspendLayout();
@@ -70,17 +64,6 @@ namespace OpenVisionLab
 			((System.ComponentModel.ISupportInitialize)btnNewPanel).BeginInit();
 			menuStrip1.SuspendLayout();
 			SuspendLayout();
-			// 
-			// timerStatus
-			// 
-			timerStatus.Enabled = true;
-			// 
-			// label2
-			// 
-			label2.Location = new System.Drawing.Point(0, 0);
-			label2.Name = "label2";
-			label2.Size = new System.Drawing.Size(100, 23);
-			label2.TabIndex = 2176;
 			// 
 			// splitContainer1
 			// 
@@ -391,10 +374,6 @@ namespace OpenVisionLab
 			timer1.Enabled = true;
 			timer1.Tick += timer1_Tick;
 			// 
-			// timeragin
-			// 
-			timeragin.Interval = 300;
-			// 
 			// toolTip1
 			// 
 			toolTip1.AutoPopDelay = 5000;
@@ -402,100 +381,12 @@ namespace OpenVisionLab
 			toolTip1.IsBalloon = true;
 			toolTip1.ReshowDelay = 100;
 			// 
-			// rjButton3
-			// 
-			rjButton3.BackColor = System.Drawing.Color.White;
-			rjButton3.BorderColor = System.Drawing.Color.FromArgb(83, 97, 212);
-			rjButton3.BorderRadius = 15;
-			rjButton3.BorderSize = 3;
-			rjButton3.Cursor = System.Windows.Forms.Cursors.Hand;
-			rjButton3.Design = RJCodeUI_M1.RJControls.ButtonDesign.Custom;
-			rjButton3.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(234, 79, 82);
-			rjButton3.FlatAppearance.BorderSize = 3;
-			rjButton3.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(239, 239, 239);
-			rjButton3.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(224, 224, 224);
-			rjButton3.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-			rjButton3.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
-			rjButton3.ForeColor = System.Drawing.Color.FromArgb(83, 97, 212);
-			rjButton3.IconChar = FontAwesome.Sharp.IconChar.Youtube;
-			rjButton3.IconColor = System.Drawing.Color.FromArgb(83, 97, 212);
-			rjButton3.IconFont = FontAwesome.Sharp.IconFont.Auto;
-			rjButton3.IconSize = 80;
-			rjButton3.ImageAlign = System.Drawing.ContentAlignment.TopCenter;
-			rjButton3.Location = new System.Drawing.Point(208, 121);
-			rjButton3.Name = "rjButton3";
-			rjButton3.Size = new System.Drawing.Size(150, 112);
-			rjButton3.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
-			rjButton3.TabIndex = 2138;
-			rjButton3.Text = "LIVE";
-			rjButton3.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
-			rjButton3.UseVisualStyleBackColor = false;
-			// 
-			// rjButton2
-			// 
-			rjButton2.BackColor = System.Drawing.Color.FromArgb(255, 255, 255);
-			rjButton2.BorderColor = System.Drawing.Color.FromArgb(55, 159, 113);
-			rjButton2.BorderRadius = 15;
-			rjButton2.BorderSize = 3;
-			rjButton2.Cursor = System.Windows.Forms.Cursors.Hand;
-			rjButton2.Design = RJCodeUI_M1.RJControls.ButtonDesign.Custom;
-			rjButton2.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(234, 79, 82);
-			rjButton2.FlatAppearance.BorderSize = 3;
-			rjButton2.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(239, 239, 239);
-			rjButton2.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(224, 224, 224);
-			rjButton2.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-			rjButton2.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
-			rjButton2.ForeColor = System.Drawing.Color.FromArgb(55, 159, 113);
-			rjButton2.IconChar = FontAwesome.Sharp.IconChar.Check;
-			rjButton2.IconColor = System.Drawing.Color.FromArgb(55, 159, 113);
-			rjButton2.IconFont = FontAwesome.Sharp.IconFont.Auto;
-			rjButton2.IconSize = 24;
-			rjButton2.Location = new System.Drawing.Point(396, 234);
-			rjButton2.Name = "rjButton2";
-			rjButton2.Size = new System.Drawing.Size(117, 96);
-			rjButton2.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
-			rjButton2.TabIndex = 2139;
-			rjButton2.Text = "EXCUTE";
-			rjButton2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-			rjButton2.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-			rjButton2.UseVisualStyleBackColor = false;
-			// 
-			// rjButton1
-			// 
-			rjButton1.BackColor = System.Drawing.Color.White;
-			rjButton1.BorderColor = System.Drawing.Color.FromArgb(83, 97, 212);
-			rjButton1.BorderRadius = 15;
-			rjButton1.BorderSize = 3;
-			rjButton1.Cursor = System.Windows.Forms.Cursors.Hand;
-			rjButton1.Design = RJCodeUI_M1.RJControls.ButtonDesign.Custom;
-			rjButton1.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(234, 79, 82);
-			rjButton1.FlatAppearance.BorderSize = 3;
-			rjButton1.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(239, 239, 239);
-			rjButton1.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(224, 224, 224);
-			rjButton1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-			rjButton1.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
-			rjButton1.ForeColor = System.Drawing.Color.FromArgb(83, 97, 212);
-			rjButton1.IconChar = FontAwesome.Sharp.IconChar.Camera;
-			rjButton1.IconColor = System.Drawing.Color.FromArgb(83, 97, 212);
-			rjButton1.IconFont = FontAwesome.Sharp.IconFont.Auto;
-			rjButton1.IconSize = 80;
-			rjButton1.ImageAlign = System.Drawing.ContentAlignment.TopCenter;
-			rjButton1.Location = new System.Drawing.Point(52, 121);
-			rjButton1.Name = "rjButton1";
-			rjButton1.Size = new System.Drawing.Size(150, 112);
-			rjButton1.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
-			rjButton1.TabIndex = 2137;
-			rjButton1.Text = "GRAB";
-			rjButton1.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
-			rjButton1.UseVisualStyleBackColor = false;
-			// 
 			// FormTeachingVision
 			// 
 			AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
 			ClientSize = new System.Drawing.Size(1924, 1000);
 			ControlBox = false;
 			Controls.Add(splitContainer1);
-			Controls.Add(label2);
 			FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
 			MaximizeBox = false;
 			MinimizeBox = false;
@@ -515,17 +406,11 @@ namespace OpenVisionLab
 		}
 
 		#endregion
-		private System.Windows.Forms.Timer timerStatus;
-        private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.SplitContainer splitContainer1;
         public System.Windows.Forms.Panel TeachingPanel;
         private System.Windows.Forms.Timer timer1;
-        private System.Windows.Forms.Timer timeragin;
         private System.Windows.Forms.ToolTip toolTip1;
         private RJCodeUI_M1.RJControls.RJLabel rjLabel3;
-        private RJCodeUI_M1.RJControls.RJButton rjButton3;
-        private RJCodeUI_M1.RJControls.RJButton rjButton2;
-        private RJCodeUI_M1.RJControls.RJButton rjButton1;
         private System.Windows.Forms.Label lbTackTime;
         private RJCodeUI_M1.RJControls.RJCheckBox chkUseLayerImage;
         private RJCodeUI_M1.RJControls.RJMenuIcon btnNewPanel;

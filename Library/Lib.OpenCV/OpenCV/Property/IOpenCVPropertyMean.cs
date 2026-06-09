@@ -1,4 +1,4 @@
-﻿using static Lib.OpenCV.Tool.CVMean;
+﻿using static Lib.OpenCV.Tool.MeanTool;
 
 namespace Lib.OpenCV.Property
 {

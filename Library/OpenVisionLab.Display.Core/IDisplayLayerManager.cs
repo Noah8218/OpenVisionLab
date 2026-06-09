@@ -1,4 +1,4 @@
-using OpenVisionLab.ImageSpace.Core;
+﻿using OpenVisionLab.ImageSpace.Core;
 using System.Collections.Generic;
 
 namespace OpenVisionLab._1._Core

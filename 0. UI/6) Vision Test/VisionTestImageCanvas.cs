@@ -1,4 +1,4 @@
-using Lib.Common;
+﻿using Lib.Common;
 using OpenVisionLab.ImageCanvas;
 using OpenVisionLab.ImageCanvas.Canvas;
 using OpenVisionLab.ImageCanvas.Rendering;
@@ -158,7 +158,6 @@ namespace OpenVisionLab
 
 			Controls.Add(imageViewer);
 			stopwatch.Stop();
-			CLOG.NORMAL($"[PERF] {nameof(VisionTestImageCanvas)} create GL viewer: {stopwatch.ElapsedMilliseconds}ms");
 
 			return imageViewer;
 		}
@@ -182,19 +181,18 @@ namespace OpenVisionLab
 				imageViewer.ClearTexture();
 
 				Stopwatch stopwatch = Stopwatch.StartNew();
-				using (CvMat mat = CImageConverter.ToMat(image))
+				using (CvMat mat = BitmapImageConverter.ToMat(image))
 				{
 					CanvasImageLoader.UploadMatAsTexture(imageViewer, mat, TextureName, ref imageSize);
 				}
 				stopwatch.Stop();
-				CLOG.NORMAL($"[PERF] {nameof(VisionTestImageCanvas)} texture upload {image.Width}x{image.Height}: {stopwatch.ElapsedMilliseconds}ms");
 
 				imageViewer.RefreshGL();
 			}
-			catch (Exception desc)
+			catch (Exception)
 			{
 				pendingImageLoad = true;
-				CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Exception ==> {desc.Message}");
+
 			}
 		}
 
@@ -237,7 +235,7 @@ namespace OpenVisionLab
 
 		private void OnImageLoadClicked(object sender, EventArgs e)
 		{
-			string imagePath = CUtil.LoadImageFilePath();
+			string imagePath = AppUtil.LoadImageFilePath();
 			if (string.IsNullOrEmpty(imagePath)) { return; }
 
 			using (Bitmap loadedImage = new Bitmap(imagePath))
@@ -252,7 +250,7 @@ namespace OpenVisionLab
 		{
 			if (image == null || image.Width <= 10 || image.Height <= 10) { return; }
 
-			string imagePath = CUtil.SaveImageFilePath();
+			string imagePath = AppUtil.SaveImageFilePath();
 			if (string.IsNullOrEmpty(imagePath)) { return; }
 
 			image.Save(imagePath);

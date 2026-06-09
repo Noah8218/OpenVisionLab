@@ -1,4 +1,4 @@
-extern alias WpfPropertyGridOriginal;
+﻿extern alias WpfPropertyGridOriginal;
 
 using System;
 using System.Collections;

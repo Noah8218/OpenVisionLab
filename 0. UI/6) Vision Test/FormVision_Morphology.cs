@@ -64,7 +64,7 @@ namespace OpenVisionLab
         }
         private void FormSettings_Camera_Load(object sender, EventArgs e)
         {
-            CUtil.InitDirectory("TEST");
+            AppUtil.InitDirectory("TEST");
             InitializeSingleInputViewers(
                 InitLayListItem,
                 ibSource,
@@ -90,70 +90,47 @@ namespace OpenVisionLab
 
         private void btnMorpRun_Click(object sender, EventArgs e)
         {
-            try
-            {                
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
+                        
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
 
-                using (Mat ImageCVSource = Lib.Common.CImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
-                {
-                    if (ImageCVSource.Channels() == 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.RGB2GRAY);
+            if (tbMorpW.Text == "") { tbMorpW.Text = "3"; }
+            if (tbMorpH.Text == "") { tbMorpH.Text = "3"; }
 
-                    if (tbMorpW.Text == "") { tbMorpW.Text = "3"; }
-                    if (tbMorpH.Text == "") { tbMorpH.Text = "3"; }
-
-                    int W = int.Parse(tbMorpW.Text);
-                    int H = int.Parse(tbMorpH.Text);
-                    Bitmap Result = new Bitmap(10, 10); 
-                    Mat Kernel = Cv2.GetStructuringElement(CUtil.ParseEnum<MorphShapes>(Shapes), new OpenCvSharp.Size(W, H));
-                    if (displayManager.IsLayerRoiEmpty(source1_Index))
-                    {
-                        Cv2.MorphologyEx(ImageCVSource, ImageCVSource, CUtil.ParseEnum<MorphTypes>(Operator), Kernel, new OpenCvSharp.Point(-1, -1), 1);
-                        Result = Lib.Common.CImageConverter.ToBitmap(ImageCVSource);                        
-                    }
-                    else
-                    {
-                        Rect r = CConverter.RectangleToRect(GetLayerRoi(source1_Index));
-                        Mat ImageRoi = ImageCVSource.SubMat(r);
-                        Cv2.MorphologyEx(ImageRoi, ImageRoi, CUtil.ParseEnum<MorphTypes>(Operator), Kernel, new OpenCvSharp.Point(-1, -1), 1);
-                        Result = Lib.Common.CBitmapProcessing.OverlayImage(Lib.Common.CImageConverter.ToBitmap(ImageCVSource), Lib.Common.CImageConverter.ToBitmap(ImageRoi), r.Left, r.Top);                        
-                    }
-                    PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-                }
-            }
-            catch (Exception Desc)
+            int W = int.Parse(tbMorpW.Text);
+            int H = int.Parse(tbMorpH.Text);
+            using (Mat Kernel = Cv2.GetStructuringElement(AppUtil.ParseEnum<MorphShapes>(Shapes), new OpenCvSharp.Size(W, H)))
             {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
+                Bitmap Result = CreateSingleInputResult(ibSource, image =>
+                {
+                    Cv2.MorphologyEx(image, image, AppUtil.ParseEnum<MorphTypes>(Operator), Kernel, new OpenCvSharp.Point(-1, -1), 1);
+                });
+                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
             }
+        
         }
 
         private void OnShapes_CheckedChanged(object sender, EventArgs e)
         {
-            try
-            {
-                RJCodeUI_M1.RJControls.RJRadioButton rdoButton = (RJCodeUI_M1.RJControls.RJRadioButton)sender;
+                        RJCodeUI_M1.RJControls.RJRadioButton rdoButton = (RJCodeUI_M1.RJControls.RJRadioButton)sender;
 
-                if (rdoButton.Checked)
+            if (rdoButton.Checked)
+            {
+                switch (rdoButton.Text)
                 {
-                    switch (rdoButton.Text)
-                    {
-                        case "Ellipse":
-                        case "Cross":
-                        case "Rect":
-                            Shapes = rdoButton.Text;
-                            break;
-                        default:
-                            Operator = rdoButton.Text;
-                            break;
-                    }
-                    
+                    case "Ellipse":
+                    case "Cross":
+                    case "Rect":
+                        Shapes = rdoButton.Text;
+                        break;
+                    default:
+                        Operator = rdoButton.Text;
+                        break;
                 }
+                
+            }
 
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-            }
+        
         }
             }
  }

@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>OpenVisionLab.Logging</AssemblyName>
+    <RootNamespace>OpenVisionLab.Logging</RootNamespace>
+    <Platforms>AnyCPU;x64</Platforms>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="LogEnums.cs" />
+    <Compile Include="CLog.cs" />
+    <Compile Include="CleanUp\LogRetentionPruner.cs" />
+    <Compile Include="CleanUp\LogRetentionService.cs" />
+    <Compile Include="Model\RuntimeLogSink.cs" />
+    <Compile Include="Model\RuntimeLogStream.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="log4net" Version="3.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="log4net.config" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

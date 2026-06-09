@@ -1,4 +1,4 @@
-namespace OpenVisionLab
+﻿namespace OpenVisionLab
 {
     partial class FormThreshold
     {

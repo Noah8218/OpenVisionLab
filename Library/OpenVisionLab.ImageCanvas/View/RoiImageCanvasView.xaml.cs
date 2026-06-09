@@ -1,4 +1,4 @@
-using OpenVisionLab.ImageCanvas.ViewModels;
+﻿using OpenVisionLab.ImageCanvas.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;

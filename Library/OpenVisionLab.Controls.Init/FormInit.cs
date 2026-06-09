@@ -53,11 +53,11 @@ namespace OpenVisionLab
 
         private void FormInit_Load(object sender, EventArgs e)
         {
-            //IntPtr ip = CUtil.CreateRoundRectRgn(0, 0, circularProgressBar5.Width, circularProgressBar5.Height, 150, 150);
-            //CUtil.SetWindowRgn(circularProgressBar5.Handle, ip, true);
+            //IntPtr ip = AppUtil.CreateRoundRectRgn(0, 0, circularProgressBar5.Width, circularProgressBar5.Height, 150, 150);
+            //AppUtil.SetWindowRgn(circularProgressBar5.Handle, ip, true);
 
-            //IntPtr ip2 = CUtil.CreateRoundRectRgn(0, 0, this.Width, this.Height, 150, 150);
-            //CUtil.SetWindowRgn(this.Handle, ip2, true);
+            //IntPtr ip2 = AppUtil.CreateRoundRectRgn(0, 0, this.Width, this.Height, 150, 150);
+            //AppUtil.SetWindowRgn(this.Handle, ip2, true);
 
             lbVersion.Text = VersionText;
             VersionLogAction?.Invoke(VersionText);

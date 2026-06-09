@@ -1,4 +1,4 @@
-using OpenVisionLab.ImageSpace.Core;
+﻿using OpenVisionLab.ImageSpace.Core;
 using System.Drawing;
 
 namespace OpenVisionLab._1._Core

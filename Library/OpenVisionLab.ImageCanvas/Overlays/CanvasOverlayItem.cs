@@ -1,4 +1,4 @@
-using OpenVisionLab.ImageCanvas;
+﻿using OpenVisionLab.ImageCanvas;
 using OpenVisionLab.ImageCanvas.CanvasShapes;
 using System;
 using System.Collections.Generic;

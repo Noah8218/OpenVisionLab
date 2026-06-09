@@ -21,8 +21,8 @@ namespace OpenVisionLab
 {
     public partial class FormVision_Line : VisionTestForm
     {
-        private CPropertyLineGuage Property_Line_L = new CPropertyLineGuage("Line_L");
-        private CPropertyLineGuage Property_Line_R = new CPropertyLineGuage("Line_R");
+        private LineGaugeProperty Property_Line_L = new LineGaugeProperty("Line_L");
+        private LineGaugeProperty Property_Line_R = new LineGaugeProperty("Line_R");
         private void InitLayListItem()
         {
             InitializeSingleInputLayerList(cbLayerList, cbLayerList2);
@@ -69,9 +69,9 @@ namespace OpenVisionLab
         }
         private void FormSettings_Camera_Load(object sender, EventArgs e)
         {
-            CUtil.InitDirectory("TEST");
-            Property_Line_L = Property_Line_L.LoadTestConfig(Application.StartupPath + "\\TEST\\" + Property_Line_L.NAME + ".xml");
-            Property_Line_R = Property_Line_R.LoadTestConfig(Application.StartupPath + "\\TEST\\" + Property_Line_R.NAME + ".xml");
+            AppUtil.InitDirectory("TEST");
+            Property_Line_L = Property_Line_L.LoadTestConfig(AppPathService.GetTestConfigPath(Property_Line_L.NAME));
+            Property_Line_R = Property_Line_R.LoadTestConfig(AppPathService.GetTestConfigPath(Property_Line_R.NAME));
             AttachPropertyGrid(pnParameter, Property_Line_L);
             InitializeSingleInputViewers(
                 InitLayListItem,
@@ -131,141 +131,113 @@ namespace OpenVisionLab
             }
         }
 
-        private List<CResultBlob> cResultBlobs = new List<CResultBlob>();
+        private List<BlobResult> cResultBlobs = new List<BlobResult>();
 
         private void btnRun_Click(object sender, EventArgs e)
         {
-            try
+                        Stopwatch stopwatch = Stopwatch.StartNew();
+            
+            using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
             {
-                Stopwatch stopwatch = Stopwatch.StartNew();
-                
-                using (Mat ImageCVSource = Lib.Common.CImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
-                {
-                    Bitmap Result = CDrawBitmap.GetBitmapFormat24bppRgb(ibSource.DisplayBitmap);
-                    COpenCVHelper.SetImageChannel1(ImageCVSource);
-                    var intersectionLine = CInspectionAlgorithm.RunIntersectionFittingLines(ImageCVSource, Property_Line_L, Property_Line_R);
-                    using (Graphics g = Graphics.FromImage(Result))
-                    {                        
-                        CDrawBitmap.DrawFitLinesInstersectionLines(g, intersectionLine.Item1, intersectionLine.Item2, intersectionLine.Item3);
+                var intersectionLine = InspectionAlgorithm.RunIntersectionFittingLines(ImageCVSource, Property_Line_L, Property_Line_R);
+                using (Graphics g = Graphics.FromImage(Result))
+                {                        
+                    BitmapDrawing.DrawFitLinesInstersectionLines(g, intersectionLine.Item1, intersectionLine.Item2, intersectionLine.Item3);
 
-                        stopwatch.Stop();
-                    PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-                    }
+                    stopwatch.Stop();
+                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
                 }
+            }
 
-                Property_Line_L.SaveTestConfig(Application.StartupPath + "\\TEST\\" + Property_Line_L.NAME + ".xml");
-                Property_Line_R.SaveTestConfig(Application.StartupPath + "\\TEST\\" + Property_Line_R.NAME + ".xml");
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-            }
+            Property_Line_L.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_L.NAME));
+            Property_Line_R.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_R.NAME));
+        
         }
 
         private void OnPara_CheckedChanged(object sender, EventArgs e)
         {
-            try
-            {
-                RJCodeUI_M1.RJControls.RJRadioButton rdoButton = (RJCodeUI_M1.RJControls.RJRadioButton)sender;
+                        RJCodeUI_M1.RJControls.RJRadioButton rdoButton = (RJCodeUI_M1.RJControls.RJRadioButton)sender;
 
-                if (rdoButton.Checked)
+            if (rdoButton.Checked)
+            {
+                switch (rdoButton.Text)
                 {
-                    switch (rdoButton.Text)
-                    {
-                        case "Edge(L)":
-                            wpg.SelectedObject = Property_Line_L;
-                            break;
-                        case "Edge(R)":
-                            wpg.SelectedObject = Property_Line_R;
-                            break;
-                    }
+                    case "Edge(L)":
+                        wpg.SelectedObject = Property_Line_L;
+                        break;
+                    case "Edge(R)":
+                        wpg.SelectedObject = Property_Line_R;
+                        break;
                 }
+            }
 
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-            }
+        
         }
         private void btnExit_Click(object sender, EventArgs e)
         {
             this.Close();
         }
 
-        private void btnMinimizar_Click(object sender, EventArgs e)
+        private void btnMinimize_Click(object sender, EventArgs e)
         {
             this.WindowState = FormWindowState.Minimized;
         }
 
         private void btnResult_Click(object sender, EventArgs e)
         {
-            FormVision_Result formVision_Blob_Result = new FormVision_Result(cResultBlobs);
-            formVision_Blob_Result.StartPosition = FormStartPosition.CenterScreen;
+            FormVision_Result resultForm = new FormVision_Result(cResultBlobs);
+            resultForm.StartPosition = FormStartPosition.CenterScreen;
 
-            if (!CUtil.OpenCheckForm(formVision_Blob_Result)) return;
-            formVision_Blob_Result.Show();
+            if (!AppUtil.OpenCheckForm(resultForm)) return;
+            resultForm.Show();
         }
 
         private void btnEdgeRun_Click(object sender, EventArgs e)
         {
-            try
-            {
-                Stopwatch stopwatch = Stopwatch.StartNew();
+                        Stopwatch stopwatch = Stopwatch.StartNew();
 
-                using (Mat imageCVSource = Lib.Common.CImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
+            using (Mat imageCVSource = Lib.Common.BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
+            {
+                Bitmap Result = BitmapDrawing.GetBitmapFormat24bppRgb(ibSource.DisplayBitmap);
+                using (Graphics g = Graphics.FromImage(Result))
                 {
-                    Bitmap Result = CDrawBitmap.GetBitmapFormat24bppRgb(ibSource.DisplayBitmap);
-                    using (Graphics g = Graphics.FromImage(Result))
-                    {
-                        CVLineGuage edgeTool = new CVLineGuage();
-                        edgeTool.SetSourceImage(imageCVSource);                        
-                        edgeTool.SetProperty(rdoLeftEdgePara.Checked ? (CPropertyLineGuage)Property_Line_L.DeepCopy() : (CPropertyLineGuage)Property_Line_R.DeepCopy());
-                        edgeTool.Run();
+                    LineGaugeTool edgeTool = new LineGaugeTool();
+                    edgeTool.SetSourceImage(imageCVSource);                        
+                    edgeTool.SetProperty(rdoLeftEdgePara.Checked ? (LineGaugeProperty)Property_Line_L.DeepCopy() : (LineGaugeProperty)Property_Line_R.DeepCopy());
+                    edgeTool.Run();
 
-                        CDrawBitmap.DrawCVLineGuage(g, edgeTool);
+                    BitmapDrawing.DrawLineGauge(g, edgeTool);
  
-                        stopwatch.Stop();
-                    PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-                    }                    
-                }
+                    stopwatch.Stop();
+                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
+                }                    
+            }
 
-                CUtil.InitDirectory("TEST");                
-                Property_Line_L.SaveTestConfig(Application.StartupPath + "\\TEST\\" + Property_Line_L.NAME + ".xml");
-                Property_Line_R.SaveTestConfig(Application.StartupPath + "\\TEST\\" + Property_Line_R.NAME + ".xml");
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-            }
+            AppUtil.InitDirectory("TEST");                
+            Property_Line_L.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_L.NAME));
+            Property_Line_R.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_R.NAME));
+        
         }
 
         private void btnVerLineRun_Click(object sender, EventArgs e)
         {
-            try
+                        Stopwatch stopwatch = Stopwatch.StartNew();
+            using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
             {
-                Stopwatch stopwatch = Stopwatch.StartNew();
-                using (Mat ImageCVSource = Lib.Common.CImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
+                var intersectionLine = InspectionAlgorithm.RunIntersectionLines(ImageCVSource, Property_Line_L, Property_Line_R);
+
+                using (Graphics g = Graphics.FromImage(Result))
                 {
-                    Bitmap Result = CDrawBitmap.GetBitmapFormat24bppRgb(ibSource.DisplayBitmap);
-                    COpenCVHelper.SetImageChannel1(ImageCVSource);
-                    var intersectionLine = CInspectionAlgorithm.RunIntersectionLines(ImageCVSource, Property_Line_L, Property_Line_R);
+                    BitmapDrawing.DrawInstersectionLines(g, intersectionLine.Item1, intersectionLine.Item2, intersectionLine.Item3);
 
-                    using (Graphics g = Graphics.FromImage(Result))
-                    {
-                        CDrawBitmap.DrawInstersectionLines(g, intersectionLine.Item1, intersectionLine.Item2, intersectionLine.Item3);
-
-                        stopwatch.Stop();
-                    PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-                    }
+                    stopwatch.Stop();
+                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
                 }
-                
-                Property_Line_L.SaveTestConfig(Application.StartupPath + "\\TEST\\" + Property_Line_L.NAME + ".xml");
-                Property_Line_R.SaveTestConfig(Application.StartupPath + "\\TEST\\" + Property_Line_R.NAME + ".xml");
             }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-            }
+            
+            Property_Line_L.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_L.NAME));
+            Property_Line_R.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_R.NAME));
+        
         }
     }
  }

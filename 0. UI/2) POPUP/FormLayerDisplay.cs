@@ -1,4 +1,4 @@
-using Lib.Common;
+﻿using Lib.Common;
 using OpenVisionLab._1._Core;
 using OpenVisionLab.ImageCanvas;
 using OpenVisionLab.ImageCanvas.Canvas;
@@ -20,6 +20,7 @@ namespace OpenVisionLab
 		private readonly IDisplayManager displayManager;
 		private ImageCanvasControl imageViewer;
 		private ContextMenuStrip imageContextMenu;
+		private Panel colorSwatch;
 		private Bitmap currentImage;
 		private Size imageSize = Size.Empty;
 		private bool pendingImageLoad;
@@ -149,7 +150,7 @@ namespace OpenVisionLab
 				imageViewer.ClearTexture();
 
 				using (Bitmap textureImage = CreateCanvasBitmap(currentImage))
-				using (CvMat mat = CImageConverter.ToMat(textureImage))
+				using (CvMat mat = BitmapImageConverter.ToMat(textureImage))
 				{
 					CanvasImageLoader.UploadMatAsTexture(imageViewer, mat, LayerImageName, ref imageSize);
 				}
@@ -159,10 +160,10 @@ namespace OpenVisionLab
 					imageViewer.ZoomToFit();
 				}
 			}
-			catch (Exception desc)
+			catch (Exception)
 			{
 				pendingImageLoad = true;
-				CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Exception ==> {desc.Message}");
+
 			}
 		}
 
@@ -199,7 +200,7 @@ namespace OpenVisionLab
 
 		private void OnImageLoadClicked(object sender, EventArgs e)
 		{
-			string imagePath = CUtil.LoadImageFilePath();
+			string imagePath = AppUtil.LoadImageFilePath();
 			if (string.IsNullOrEmpty(imagePath)) { return; }
 
 			using (Bitmap loadedImage = new Bitmap(imagePath))
@@ -214,7 +215,7 @@ namespace OpenVisionLab
 		{
 			if (currentImage == null || currentImage.Width <= 10 || currentImage.Height <= 10) { return; }
 
-			string imagePath = CUtil.SaveImageFilePath();
+			string imagePath = AppUtil.SaveImageFilePath();
 			if (string.IsNullOrEmpty(imagePath)) { return; }
 
 			currentImage.Save(imagePath);
@@ -236,16 +237,27 @@ namespace OpenVisionLab
 			panel2.BackColor = Color.FromArgb(38, 38, 38);
 			panel2.Padding = new Padding(4, 0, 0, 0);
 
-			ConfigureViewerStatusLabel(lbXY, 190, " Pos : ((X=0, Y=0)) ");
+			ConfigureViewerStatusLabel(lbXY, 220, " 좌표(좌하) : X=0, Y=0 ");
+			ConfigureViewerStatusLabel(lbZOOM, 260, " 이미지좌표(좌상) : X=0, Y=0 ");
 			ConfigureViewerStatusLabel(lbGV, 90, " Gv : (0) ");
-			ConfigureViewerStatusLabel(lbRGB, 210, " Color : (RGB(0,0,0)) ");
+			ConfigureViewerStatusLabel(lbRGB, 190, " 색상 : RGB(0,0,0) ");
 
-			lbZOOM.Visible = false;
-			lbZOOM.Width = 0;
+			colorSwatch = new Panel
+			{
+				Dock = DockStyle.Left,
+				Width = 22,
+				Height = 14,
+				Margin = Padding.Empty,
+				Padding = Padding.Empty,
+				BackColor = Color.Black,
+				BorderStyle = BorderStyle.FixedSingle
+			};
 
 			panel2.Controls.Clear();
 			panel2.Controls.Add(lbRGB);
+			panel2.Controls.Add(colorSwatch);
 			panel2.Controls.Add(lbGV);
+			panel2.Controls.Add(lbZOOM);
 			panel2.Controls.Add(lbXY);
 		}
 
@@ -312,21 +324,21 @@ namespace OpenVisionLab
 
 		private void timePixelData_Tick(object sender, EventArgs e)
 		{
-			try
-			{
-				if (imageViewer == null) { return; }
+							if (imageViewer == null) { return; }
 
 				Color color = imageViewer.PixelColor;
 				PointF pos = imageViewer.PixelPos;
+				PointF imagePos = imageViewer.ImagePixelPos;
 
-				lbXY.Text = string.Format(" Pos : ((X={0}, Y={1})) ", (int)pos.X, (int)pos.Y);
+				lbXY.Text = string.Format(" 좌표(좌하) : X={0}, Y={1} ", (int)pos.X, (int)pos.Y);
+				lbZOOM.Text = string.Format(" 이미지좌표(좌상) : X={0}, Y={1} ", (int)imagePos.X, (int)imagePos.Y);
 				lbGV.Text = string.Format(" Gv : ({0}) ", imageViewer.GrayValue);
-				lbRGB.Text = string.Format(" Color : (RGB({0},{1},{2})) ", color.R, color.G, color.B);
-			}
-			catch (Exception desc)
-			{
-				CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Exception ==> {desc.Message}");
-			}
+				lbRGB.Text = string.Format(" 색상 : RGB({0},{1},{2}) ", color.R, color.G, color.B);
+				if (colorSwatch != null)
+				{
+					colorSwatch.BackColor = color;
+				}
+			
 		}
 
 		private void FormLayerDisplay_VisibleChanged(object sender, EventArgs e)

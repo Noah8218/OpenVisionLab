@@ -1,4 +1,4 @@
-namespace OpenVisionLab.ImageCanvas.Canvas
+﻿namespace OpenVisionLab.ImageCanvas.Canvas
 {
 	public enum CanvasInteractionMode
 	{

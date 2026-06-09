@@ -67,7 +67,7 @@ namespace OpenVisionLab
         }
         private void FormSettings_Camera_Load(object sender, EventArgs e)
         {
-            CUtil.InitDirectory("TEST");
+            AppUtil.InitDirectory("TEST");
             foreach (FilterType filterType in Enum.GetValues(typeof(FilterType)))
             {
                 cbFilterType.Items.Add(filterType);
@@ -105,85 +105,47 @@ namespace OpenVisionLab
         }
         private void btnFilterRun_Click(object sender, EventArgs e)
         {
-            try
-            {
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
+                        Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
 
-                using (Mat ImageCVSource = Lib.Common.CImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
+            if (tbFilterW.Text == "") { tbFilterW.Text = "3"; }
+            if (tbFilterH.Text == "") { tbFilterH.Text = "3"; }
+            if (tbKernalFilter.Text == "") { tbKernalFilter.Text = "3"; }
+            if (tbDiameter.Text == "") { tbDiameter.Text = "3"; }
+            if (tbSigmaColor.Text == "") { tbSigmaColor.Text = "3"; }
+            if (tbSigmaSpace.Text == "") { tbSigmaSpace.Text = "3"; }
+
+            int W = int.Parse(tbFilterW.Text);
+            int H = int.Parse(tbFilterH.Text);
+            int Diameter = int.Parse(tbDiameter.Text);
+            int sigmaColor = int.Parse(tbSigmaColor.Text);
+            int sigmaSpace = int.Parse(tbSigmaSpace.Text);
+            BorderTypes borderType = AppUtil.ParseEnum<BorderTypes>(cbFilterBorderType.SelectedItem.ToString());
+            FilterType filterType = AppUtil.ParseEnum<FilterType>(cbFilterType.SelectedItem.ToString());
+
+            Bitmap Result = CreateSingleInputResult(ibSource, image =>
+            {
+                switch (filterType)
                 {
-                    if (ImageCVSource.Channels() == 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.RGB2GRAY);
-
-                    if (tbFilterW.Text == "") { tbFilterW.Text = "3"; }
-                    if (tbFilterH.Text == "") { tbFilterH.Text = "3"; }
-                    if (tbKernalFilter.Text == "") { tbKernalFilter.Text = "3"; }
-                    if (tbDiameter.Text == "") { tbDiameter.Text = "3"; }
-                    if (tbSigmaColor.Text == "") { tbSigmaColor.Text = "3"; }
-                    if (tbSigmaSpace.Text == "") { tbSigmaSpace.Text = "3"; }
-
-                    int W = int.Parse(tbFilterW.Text);
-                    int H = int.Parse(tbFilterH.Text);
-                    int Diameter = int.Parse(tbDiameter.Text);
-                    int sigmaColor = int.Parse(tbSigmaColor.Text);
-                    int sigmaSpace = int.Parse(tbSigmaSpace.Text);
-                    Bitmap Result = new Bitmap(10, 10);
-
-                    if (displayManager.IsLayerRoiEmpty(source1_Index))
-                    {
-                        switch (CUtil.ParseEnum<FilterType>(cbFilterType.SelectedItem.ToString()))
-                        {
-                            case FilterType.Blur:
-                                Cv2.Blur(ImageCVSource, ImageCVSource, new OpenCvSharp.Size(W, H), new OpenCvSharp.Point(-1, -1), CUtil.ParseEnum<BorderTypes>(cbFilterBorderType.SelectedItem.ToString()));
-                                break;
-                            case FilterType.GaussianBlur:
-                                Cv2.GaussianBlur(ImageCVSource, ImageCVSource, new OpenCvSharp.Size(W, H), 1, 1, CUtil.ParseEnum<BorderTypes>(cbFilterBorderType.SelectedItem.ToString()));
-                                break;
-                            case FilterType.MedianBlur:
-                                Cv2.MedianBlur(ImageCVSource, ImageCVSource, int.Parse(tbKernalFilter.Text));
-                                break;
-                            case FilterType.BoxFilter:
-                                Cv2.BoxFilter(ImageCVSource, ImageCVSource, MatType.CV_8UC3, new OpenCvSharp.Size(W, H), new OpenCvSharp.Point(-1, -1));
-                                break;
-                            case FilterType.BilateralFilter:
-                                Cv2.BilateralFilter(ImageCVSource, ImageCVSource, Diameter, sigmaColor, sigmaSpace, CUtil.ParseEnum<BorderTypes>(cbFilterBorderType.SelectedItem.ToString()));
-                                break;
-                        }
-                        Result = Lib.Common.CImageConverter.ToBitmap(ImageCVSource);
-                    }
-                    else
-                    {
-                        Rect r = CConverter.RectangleToRect(GetLayerRoi(source1_Index));
-                        Mat ImageRoi = ImageCVSource.SubMat(r);
-
-                        switch (CUtil.ParseEnum<FilterType>(cbFilterType.SelectedItem.ToString()))
-                        {
-                            case FilterType.Blur:
-                                Cv2.Blur(ImageRoi, ImageRoi, new OpenCvSharp.Size(W, H), new OpenCvSharp.Point(-1, -1), CUtil.ParseEnum<BorderTypes>(cbFilterBorderType.SelectedItem.ToString()));
-                                break;
-                            case FilterType.GaussianBlur:
-                                Cv2.GaussianBlur(ImageRoi, ImageRoi, new OpenCvSharp.Size(W, H), 1, 1, CUtil.ParseEnum<BorderTypes>(cbFilterBorderType.SelectedItem.ToString()));
-                                break;
-                            case FilterType.MedianBlur:
-                                Cv2.MedianBlur(ImageRoi, ImageRoi, int.Parse(tbKernalFilter.Text));
-                                break;
-                            case FilterType.BoxFilter:
-                                Cv2.BoxFilter(ImageRoi, ImageRoi, MatType.CV_8UC3, new OpenCvSharp.Size(W, H), new OpenCvSharp.Point(-1, -1));
-                                break;
-                            case FilterType.BilateralFilter:
-                                Cv2.BilateralFilter(ImageRoi, ImageRoi, Diameter, sigmaColor, sigmaSpace, CUtil.ParseEnum<BorderTypes>(cbFilterBorderType.SelectedItem.ToString()));
-                                break;
-                        }
-
-                        Result = Lib.Common.CBitmapProcessing.OverlayImage(Lib.Common.CImageConverter.ToBitmap(ImageCVSource), Lib.Common.CImageConverter.ToBitmap(ImageRoi), r.Left, r.Top);
-                    }
-                    PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
+                    case FilterType.Blur:
+                        Cv2.Blur(image, image, new OpenCvSharp.Size(W, H), new OpenCvSharp.Point(-1, -1), borderType);
+                        break;
+                    case FilterType.GaussianBlur:
+                        Cv2.GaussianBlur(image, image, new OpenCvSharp.Size(W, H), 1, 1, borderType);
+                        break;
+                    case FilterType.MedianBlur:
+                        Cv2.MedianBlur(image, image, int.Parse(tbKernalFilter.Text));
+                        break;
+                    case FilterType.BoxFilter:
+                        Cv2.BoxFilter(image, image, MatType.CV_8UC3, new OpenCvSharp.Size(W, H), new OpenCvSharp.Point(-1, -1));
+                        break;
+                    case FilterType.BilateralFilter:
+                        Cv2.BilateralFilter(image, image, Diameter, sigmaColor, sigmaSpace, borderType);
+                        break;
                 }
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-                CCommon.ShowMessageBox("ALARM", $"{Desc}");
-            }
+            });
+            PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
+        
         }
 
         private void cbFilterType_OnSelectedIndexChanged(object sender, EventArgs e)
@@ -198,7 +160,7 @@ namespace OpenVisionLab
             tbSigmaColor.Enabled = false;
             tbSigmaSpace.Enabled = false;
 
-            switch (CUtil.ParseEnum<FilterType>(Index))
+            switch (AppUtil.ParseEnum<FilterType>(Index))
             {
                 case FilterType.Blur:                
                 case FilterType.GaussianBlur:

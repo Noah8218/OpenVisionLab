@@ -27,7 +27,7 @@ namespace OpenVisionLab
 
     public partial class FormImageEditView : RJChildForm
     {
-        private CPropertyImageView PropertyImageView = new CPropertyImageView("IMAGE_VIEW");
+        private ImageViewProperty PropertyImageView = new ImageViewProperty("IMAGE_VIEW");
 
         private Mat ImageSource = new Mat();        
         public Mat ImageProcess = new Mat();
@@ -57,20 +57,13 @@ namespace OpenVisionLab
             SetSourceImage(image);
             InitializeImageCanvas(image, strMode);
 
-            try
-            {
-                Mode = strMode;
-                this.KeyPreview = true;
-                this.TopLevel = true;
-                this.TopMost = true;
+                        Mode = strMode;
+            this.KeyPreview = true;
+            this.TopLevel = true;
+            this.TopMost = true;
 
-                propertygrid_Parameter.SelectedObject = PropertyImageView;
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Execption ==> {Desc.Message}");
-                this.Close();
-            }
+            propertygrid_Parameter.SelectedObject = PropertyImageView;
+        
         }
 
         public FormImageEditView(Bitmap image, Rectangle ROI,  string strMode = "")
@@ -80,23 +73,16 @@ namespace OpenVisionLab
             SetSourceImage(image);
             InitializeImageCanvas(image, strMode);
 
-            try
-            {
-                Mode = strMode;
-                AddPendingImageCanvasRoi(ROI);
+                        Mode = strMode;
+            AddPendingImageCanvasRoi(ROI);
 
-                this.KeyPreview = true;
-                this.TopLevel = true;
-                this.TopMost = true;
-                
+            this.KeyPreview = true;
+            this.TopLevel = true;
+            this.TopMost = true;
+            
 
-                propertygrid_Parameter.SelectedObject = PropertyImageView;
-            }
-            catch ( Exception Desc )
-            {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Execption ==> {Desc.Message}");
-                this.Close( );
-            }            
+            propertygrid_Parameter.SelectedObject = PropertyImageView;
+                    
         }
 
         public FormImageEditView(Bitmap image, List<Rect> ROI, string strMode = "")
@@ -106,25 +92,18 @@ namespace OpenVisionLab
             SetSourceImage(image);
             InitializeImageCanvas(image, strMode);
 
-            try
+                        Mode = strMode;
+            foreach (Rect roi in ROI)
             {
-                Mode = strMode;
-                foreach (Rect roi in ROI)
-                {
-                    AddPendingImageCanvasRoi(new Rectangle(roi.X, roi.Y, roi.Width, roi.Height));
-                }
-
-                this.KeyPreview = true;
-                this.TopLevel = true;
-                this.TopMost = true;
-
-                propertygrid_Parameter.SelectedObject = PropertyImageView;
+                AddPendingImageCanvasRoi(new Rectangle(roi.X, roi.Y, roi.Width, roi.Height));
             }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Exception ==> {Desc.Message}");
-                this.Close();
-            }
+
+            this.KeyPreview = true;
+            this.TopLevel = true;
+            this.TopMost = true;
+
+            propertygrid_Parameter.SelectedObject = PropertyImageView;
+        
         }
 
         private bool IsImageCanvasActive => ImageCanvasViewModel != null && imageCanvasHost != null && imageCanvasHost.Visible;
@@ -135,7 +114,7 @@ namespace OpenVisionLab
             ImageSource?.Dispose();
 
             SourceBitmap = image == null ? new Bitmap(10, 10) : (Bitmap)image.Clone();
-            ImageSource = Lib.Common.CImageConverter.ToMat(SourceBitmap);
+            ImageSource = Lib.Common.BitmapImageConverter.ToMat(SourceBitmap);
         }
 
         private void ApplyImageEditViewLayout(string mode)
@@ -280,40 +259,32 @@ namespace OpenVisionLab
         {
             if (imageCanvasHost == null) { return; }
 
-            try
+                        ImageCanvasViewModel = new global::OpenVisionLab.ImageCanvas.ViewModels.RoiImageCanvasViewModel("ImageEditView");
+            ImageCanvasViewModel.RoiAdded += ImageCanvas_RoiChanged;
+            ImageCanvasViewModel.RoiMouseUp += ImageCanvas_RoiChanged;
+            ImageCanvasViewModel.RoiEditingCompleted += ImageCanvas_RoiChanged;
+            ImageCanvasViewModel.PropertyChanged += ImageCanvasViewModel_PropertyChanged;
+            ImageCanvasViewModel.IsTeachingMode = IsImageCanvasDrawingMode(mode);
+            ImageCanvasViewModel.ShowGroupNames = false;
+            ImageCanvasViewModel.ShowRoiItemNames = false;
+            ImageCanvasViewModel.ShowGroupBounds = false;
+            ImageCanvasViewModel.ReplaceExistingRoiOnDraw = IsImageCanvasDrawingMode(mode) && !string.Equals(mode, "MULTI_ROI", StringComparison.OrdinalIgnoreCase);
+
+            ImageCanvasView = new global::OpenVisionLab.ImageCanvas.Views.RoiImageCanvasView
             {
-                ImageCanvasViewModel = new global::OpenVisionLab.ImageCanvas.ViewModels.RoiImageCanvasViewModel("ImageEditView");
-                ImageCanvasViewModel.RoiAdded += ImageCanvas_RoiChanged;
-                ImageCanvasViewModel.RoiMouseUp += ImageCanvas_RoiChanged;
-                ImageCanvasViewModel.RoiEditingCompleted += ImageCanvas_RoiChanged;
-                ImageCanvasViewModel.PropertyChanged += ImageCanvasViewModel_PropertyChanged;
-                ImageCanvasViewModel.IsTeachingMode = IsImageCanvasDrawingMode(mode);
-                ImageCanvasViewModel.ShowGroupNames = false;
-                ImageCanvasViewModel.ShowRoiItemNames = false;
-                ImageCanvasViewModel.ShowGroupBounds = false;
-                ImageCanvasViewModel.ReplaceExistingRoiOnDraw = IsImageCanvasDrawingMode(mode) && !string.Equals(mode, "MULTI_ROI", StringComparison.OrdinalIgnoreCase);
+                DataContext = ImageCanvasViewModel
+            };
 
-                ImageCanvasView = new global::OpenVisionLab.ImageCanvas.Views.RoiImageCanvasView
-                {
-                    DataContext = ImageCanvasViewModel
-                };
+            imageCanvasHost.Child = ImageCanvasView;
+            imageCanvasHost.Visible = true;
+            imageCanvasHost.BringToFront();
 
-                imageCanvasHost.Child = ImageCanvasView;
-                imageCanvasHost.Visible = true;
-                imageCanvasHost.BringToFront();
+            PendingImageCanvasImage?.Dispose();
+            PendingImageCanvasImage = image == null ? null : (Bitmap)image.Clone();
 
-                PendingImageCanvasImage?.Dispose();
-                PendingImageCanvasImage = image == null ? null : (Bitmap)image.Clone();
-
-                Shown -= FormImageEditView_Shown;
-                Shown += FormImageEditView_Shown;
-            }
-            catch (Exception desc)
-            {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Exception ==> {desc.Message}");
-                imageCanvasHost.Visible = false;
-                Close();
-            }
+            Shown -= FormImageEditView_Shown;
+            Shown += FormImageEditView_Shown;
+        
         }
 
         private static bool IsImageCanvasDrawingMode(string mode)
@@ -333,16 +304,12 @@ namespace OpenVisionLab
 
             try
             {
-                using (Mat mat = Lib.Common.CImageConverter.ToMat(PendingImageCanvasImage))
+                using (Mat mat = Lib.Common.BitmapImageConverter.ToMat(PendingImageCanvasImage))
                 {
                     ImageCanvasViewModel.LoadImage(mat, "Source");
                 }
 
                 ApplyPendingImageCanvasRois();
-            }
-            catch (Exception desc)
-            {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Exception ==> {desc.Message}");
             }
             finally
             {
@@ -426,7 +393,7 @@ namespace OpenVisionLab
             Rectangle cropRect = ClampToSourceBounds(roi);
             if (cropRect.Width <= 5 || cropRect.Height <= 5) { return; }
 
-            Bitmap imageTemplate = Lib.Common.CBitmapProcessing.CropAtRect(SourceBitmap, cropRect).Result;
+            Bitmap imageTemplate = Lib.Common.BitmapProcessing.CropAtRect(SourceBitmap, cropRect).Result;
             if (PatternPreviewView != null)
             {
                 PatternPreviewView.SetPreview(imageTemplate);
@@ -461,7 +428,7 @@ namespace OpenVisionLab
                 switch (Mode)
                 {
                     case "ROI":
-                        SelectedRegion = CConverter.RectToCVRect(GetSelectedRoi());
+                        SelectedRegion = CommonConverter.RectToCVRect(GetSelectedRoi());
                         if (SelectedRegion.X < 0)
                         {
                             SelectedRegion.X = 0;
@@ -474,7 +441,7 @@ namespace OpenVisionLab
                         }
                         break;
                     case "TRAIN":
-                        SelectedRegion = CConverter.RectToCVRect(GetSelectedRoi());
+                        SelectedRegion = CommonConverter.RectToCVRect(GetSelectedRoi());
                         if (SelectedRegion.X < 0)
                         {
                             SelectedRegion.X = 0;
@@ -494,7 +461,7 @@ namespace OpenVisionLab
                                 Rectangle clampedRoi = ClampToSourceBounds(ROI);
                                 if (clampedRoi.IsEmpty) { continue; }
 
-                                Rect r = CConverter.RectangleToRect(clampedRoi);
+                                Rect r = CommonConverter.RectangleToRect(clampedRoi);
                                 SelectedRegions.Add(r);
                             }
                             break;
@@ -561,7 +528,7 @@ namespace OpenVisionLab
 
             using (Mat ImageSrc = ImageSource.Clone())
             {
-                Rect rtSubmat = CConverter.RectangleToRect(roi);
+                Rect rtSubmat = CommonConverter.RectangleToRect(roi);
 
                 double dMean = Cv2.Mean(ImageSrc.SubMat(rtSubmat)).Val0;
                 btnMean.Text = $"Mean : {dMean.ToString("F2")}";
@@ -573,12 +540,12 @@ namespace OpenVisionLab
             Rectangle roi = GetAnalysisRoi();
             if (roi.IsEmpty) { return; }
 
-            Rect rtSubmatOrg = CConverter.RectangleToRect(roi);
+            Rect rtSubmatOrg = CommonConverter.RectangleToRect(roi);
 
             using (Mat ImageSrc = ImageSource.Clone())
             using (Mat ImageSub = ImageSrc.SubMat(rtSubmatOrg).Clone())
             {
-                Bitmap imageDisplay = Lib.Common.CImageConverter.ToBitmap(ImageSub);
+                Bitmap imageDisplay = Lib.Common.BitmapImageConverter.ToBitmap(ImageSub);
 
                 double dMean = Cv2.Mean(ImageSub).Val0-10;
 

@@ -146,147 +146,141 @@ namespace OpenVisionLab
         }
         private void btnArithmeticRun_Click(object sender, EventArgs e)
         {
-            try
-            {
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
+                        Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
 
-                using (Mat ImageCVSource1 = Lib.Common.CImageConverter.ToMat(ibSource1.DisplayBitmap).Clone())
-                using (Mat ImageCVSource2 = Lib.Common.CImageConverter.ToMat(ibSource2.DisplayBitmap).Clone())
+            using (Mat ImageCVSource1 = Lib.Common.BitmapImageConverter.ToMat(ibSource1.DisplayBitmap).Clone())
+            using (Mat ImageCVSource2 = Lib.Common.BitmapImageConverter.ToMat(ibSource2.DisplayBitmap).Clone())
+            {
+                // bgr��
+                if (tbGray.Text == "") { tbGray.Text = "1"; }
+                if (tbR.Text == "") { tbR.Text = "1"; }
+                if (tbB.Text == "") { tbB.Text = "1"; }
+                if (tbG.Text == "") { tbG.Text = "1"; }
+
+                Mat val = new Mat();
+
+                if (rdoContrast.Checked)
                 {
-                    // bgr��
-                    if (tbGray.Text == "") { tbGray.Text = "1"; }
-                    if (tbR.Text == "") { tbR.Text = "1"; }
-                    if (tbB.Text == "") { tbB.Text = "1"; }
-                    if (tbG.Text == "") { tbG.Text = "1"; }
+                    int Gray = int.Parse(tbGray.Text);
+                    int B = int.Parse(tbB.Text);
+                    int G = int.Parse(tbG.Text);
+                    int R = int.Parse(tbR.Text);
 
-                    Mat val = new Mat();
-
-                    if (rdoContrast.Checked)
+                    if (rdoGray.Checked)
                     {
-                        int Gray = int.Parse(tbGray.Text);
-                        int B = int.Parse(tbB.Text);
-                        int G = int.Parse(tbG.Text);
-                        int R = int.Parse(tbR.Text);
-
-                        if (rdoGray.Checked)
-                        {
-                            if (ImageCVSource1.Channels() == 3) Cv2.CvtColor(ImageCVSource1, ImageCVSource1, ColorConversionCodes.RGB2GRAY);
-                            val = new Mat(ImageCVSource1.Size(), MatType.CV_8UC1, new Scalar(Gray, Gray, Gray));
-                        }
-                        else if (rdoColor.Checked)
-                        {
-                            if (ImageCVSource1.Channels() == 1) Cv2.CvtColor(ImageCVSource1, ImageCVSource1, ColorConversionCodes.GRAY2BGR);
-                            val = new Mat(ImageCVSource1.Size(), MatType.CV_8UC3, new Scalar(B, G, R));
-                        }
-                        val.CopyTo(ImageCVSource2);
-                        //ImageCVSource2.CopyTo(val);
+                        if (ImageCVSource1.Channels() == 3) Cv2.CvtColor(ImageCVSource1, ImageCVSource1, ColorConversionCodes.RGB2GRAY);
+                        val = new Mat(ImageCVSource1.Size(), MatType.CV_8UC1, new Scalar(Gray, Gray, Gray));
                     }
-
-                    Mat ResultImage = new Mat();
-                    Bitmap Result = new Bitmap(10, 10);
-                    if (displayManager.IsLayerRoiEmpty(source1_Index))
+                    else if (rdoColor.Checked)
                     {
-                        if (ImageCVSource1.Channels() != 1) Cv2.CvtColor(ImageCVSource1, ImageCVSource1, ColorConversionCodes.RGB2GRAY);
-                        if (ImageCVSource2.Channels() != 1) Cv2.CvtColor(ImageCVSource2, ImageCVSource2, ColorConversionCodes.RGB2GRAY);
-
-                        switch (CUtil.ParseEnum<Arithmetic>(cbArithmeticType.SelectedItem.ToString()))
-                        {
-                            case Arithmetic.Bitwise_AND:
-                                Cv2.BitwiseAnd(ImageCVSource1, ImageCVSource2, ResultImage);
-                                break;
-                            case Arithmetic.Bitwise_OR:
-                                Cv2.BitwiseOr(ImageCVSource1, ImageCVSource2, ResultImage);
-                                break;
-                            case Arithmetic.Bitwise_XOR:
-                                Cv2.BitwiseXor(ImageCVSource1, ImageCVSource2, ResultImage);
-                                break;
-                            case Arithmetic.Bitwise_NOT:
-                                Cv2.BitwiseNot(ImageCVSource1, ResultImage);
-                                break;
-                            case Arithmetic.ADD:
-                                Cv2.Add(ImageCVSource1, ImageCVSource2, ResultImage);
-                                break;
-                            case Arithmetic.SUBTRACT:
-                                Cv2.Subtract(ImageCVSource1, ImageCVSource2, ResultImage);
-                                break;
-                            case Arithmetic.MULTIPLY:
-                                Cv2.Multiply(ImageCVSource1, ImageCVSource2, ResultImage);
-                                break;
-                            case Arithmetic.DIVIDE:
-                                Cv2.Divide(ImageCVSource1, ImageCVSource2, ResultImage);
-                                break;
-                            case Arithmetic.MAX:
-                                Cv2.Max(ImageCVSource1, ImageCVSource2, ResultImage);
-                                break;
-                            case Arithmetic.MIN:
-                                Cv2.Min(ImageCVSource1, ImageCVSource2, ResultImage);
-                                break;
-                            case Arithmetic.ABSDIFF:
-                                Cv2.Absdiff(ImageCVSource1, ImageCVSource2, ResultImage);
-                                break;
-                            case Arithmetic.ABS:
-                                ResultImage = Cv2.Abs(ImageCVSource1);
-                                break;
-                        }
-
-                        Result = Lib.Common.CImageConverter.ToBitmap(ResultImage);
+                        if (ImageCVSource1.Channels() == 1) Cv2.CvtColor(ImageCVSource1, ImageCVSource1, ColorConversionCodes.GRAY2BGR);
+                        val = new Mat(ImageCVSource1.Size(), MatType.CV_8UC3, new Scalar(B, G, R));
                     }
-                    else
-                    {
-                        Rect r = CConverter.RectangleToRect(GetLayerRoi(source1_Index));
-                        Mat ImageRoi = ImageCVSource1.SubMat(r);
-                        Mat ImageRoi2 = ImageCVSource2.SubMat(r);
-
-                        switch (CUtil.ParseEnum<Arithmetic>(cbArithmeticType.SelectedItem.ToString()))
-                        {
-                            case Arithmetic.Bitwise_AND:
-                                Cv2.BitwiseAnd(ImageRoi, ImageRoi2, ResultImage);
-                                break;
-                            case Arithmetic.Bitwise_OR:
-                                Cv2.BitwiseOr(ImageRoi, ImageRoi2, ResultImage);
-                                break;
-                            case Arithmetic.Bitwise_XOR:
-                                Cv2.BitwiseXor(ImageRoi, ImageRoi2, ResultImage);
-                                break;
-                            case Arithmetic.Bitwise_NOT:
-                                Cv2.BitwiseNot(ImageRoi, ResultImage);
-                                break;
-                            case Arithmetic.ADD:
-                                Cv2.Add(ImageRoi, ImageRoi2, ResultImage);
-                                break;
-                            case Arithmetic.SUBTRACT:
-                                Cv2.Subtract(ImageRoi, ImageRoi2, ResultImage);
-                                break;
-                            case Arithmetic.MULTIPLY:
-                                Cv2.Multiply(ImageRoi, ImageRoi2, ResultImage);
-                                break;
-                            case Arithmetic.DIVIDE:
-                                Cv2.Divide(ImageRoi, ImageRoi2, ResultImage);
-                                break;
-                            case Arithmetic.MAX:
-                                Cv2.Max(ImageRoi, ImageRoi2, ResultImage);
-                                break;
-                            case Arithmetic.MIN:
-                                Cv2.Min(ImageRoi, ImageRoi2, ResultImage);
-                                break;
-                            case Arithmetic.ABSDIFF:
-                                Cv2.Absdiff(ImageRoi, ImageRoi2, ResultImage);
-                                break;
-                            case Arithmetic.ABS:
-                                ResultImage = Cv2.Abs(ImageRoi);
-                                break;
-                        }
-
-                        Result = Lib.Common.CBitmapProcessing.OverlayImage(Lib.Common.CImageConverter.ToBitmap(ImageCVSource1), Lib.Common.CImageConverter.ToBitmap(ResultImage), r.Left, r.Top);
-                    }
-                    PublishResult(cbLayerList_Dest, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
+                    val.CopyTo(ImageCVSource2);
+                    //ImageCVSource2.CopyTo(val);
                 }
+
+                Mat ResultImage = new Mat();
+                Bitmap Result = new Bitmap(10, 10);
+                if (displayManager.IsLayerRoiEmpty(source1_Index))
+                {
+                    if (ImageCVSource1.Channels() != 1) Cv2.CvtColor(ImageCVSource1, ImageCVSource1, ColorConversionCodes.RGB2GRAY);
+                    if (ImageCVSource2.Channels() != 1) Cv2.CvtColor(ImageCVSource2, ImageCVSource2, ColorConversionCodes.RGB2GRAY);
+
+                    switch (AppUtil.ParseEnum<Arithmetic>(cbArithmeticType.SelectedItem.ToString()))
+                    {
+                        case Arithmetic.Bitwise_AND:
+                            Cv2.BitwiseAnd(ImageCVSource1, ImageCVSource2, ResultImage);
+                            break;
+                        case Arithmetic.Bitwise_OR:
+                            Cv2.BitwiseOr(ImageCVSource1, ImageCVSource2, ResultImage);
+                            break;
+                        case Arithmetic.Bitwise_XOR:
+                            Cv2.BitwiseXor(ImageCVSource1, ImageCVSource2, ResultImage);
+                            break;
+                        case Arithmetic.Bitwise_NOT:
+                            Cv2.BitwiseNot(ImageCVSource1, ResultImage);
+                            break;
+                        case Arithmetic.ADD:
+                            Cv2.Add(ImageCVSource1, ImageCVSource2, ResultImage);
+                            break;
+                        case Arithmetic.SUBTRACT:
+                            Cv2.Subtract(ImageCVSource1, ImageCVSource2, ResultImage);
+                            break;
+                        case Arithmetic.MULTIPLY:
+                            Cv2.Multiply(ImageCVSource1, ImageCVSource2, ResultImage);
+                            break;
+                        case Arithmetic.DIVIDE:
+                            Cv2.Divide(ImageCVSource1, ImageCVSource2, ResultImage);
+                            break;
+                        case Arithmetic.MAX:
+                            Cv2.Max(ImageCVSource1, ImageCVSource2, ResultImage);
+                            break;
+                        case Arithmetic.MIN:
+                            Cv2.Min(ImageCVSource1, ImageCVSource2, ResultImage);
+                            break;
+                        case Arithmetic.ABSDIFF:
+                            Cv2.Absdiff(ImageCVSource1, ImageCVSource2, ResultImage);
+                            break;
+                        case Arithmetic.ABS:
+                            ResultImage = Cv2.Abs(ImageCVSource1);
+                            break;
+                    }
+
+                    Result = Lib.Common.BitmapImageConverter.ToBitmap(ResultImage);
+                }
+                else
+                {
+                    Rect r = CommonConverter.RectangleToRect(GetLayerRoi(source1_Index));
+                    Mat ImageRoi = ImageCVSource1.SubMat(r);
+                    Mat ImageRoi2 = ImageCVSource2.SubMat(r);
+
+                    switch (AppUtil.ParseEnum<Arithmetic>(cbArithmeticType.SelectedItem.ToString()))
+                    {
+                        case Arithmetic.Bitwise_AND:
+                            Cv2.BitwiseAnd(ImageRoi, ImageRoi2, ResultImage);
+                            break;
+                        case Arithmetic.Bitwise_OR:
+                            Cv2.BitwiseOr(ImageRoi, ImageRoi2, ResultImage);
+                            break;
+                        case Arithmetic.Bitwise_XOR:
+                            Cv2.BitwiseXor(ImageRoi, ImageRoi2, ResultImage);
+                            break;
+                        case Arithmetic.Bitwise_NOT:
+                            Cv2.BitwiseNot(ImageRoi, ResultImage);
+                            break;
+                        case Arithmetic.ADD:
+                            Cv2.Add(ImageRoi, ImageRoi2, ResultImage);
+                            break;
+                        case Arithmetic.SUBTRACT:
+                            Cv2.Subtract(ImageRoi, ImageRoi2, ResultImage);
+                            break;
+                        case Arithmetic.MULTIPLY:
+                            Cv2.Multiply(ImageRoi, ImageRoi2, ResultImage);
+                            break;
+                        case Arithmetic.DIVIDE:
+                            Cv2.Divide(ImageRoi, ImageRoi2, ResultImage);
+                            break;
+                        case Arithmetic.MAX:
+                            Cv2.Max(ImageRoi, ImageRoi2, ResultImage);
+                            break;
+                        case Arithmetic.MIN:
+                            Cv2.Min(ImageRoi, ImageRoi2, ResultImage);
+                            break;
+                        case Arithmetic.ABSDIFF:
+                            Cv2.Absdiff(ImageRoi, ImageRoi2, ResultImage);
+                            break;
+                        case Arithmetic.ABS:
+                            ResultImage = Cv2.Abs(ImageRoi);
+                            break;
+                    }
+
+                    Result = Lib.Common.BitmapProcessing.OverlayImage(Lib.Common.BitmapImageConverter.ToBitmap(ImageCVSource1), Lib.Common.BitmapImageConverter.ToBitmap(ResultImage), r.Left, r.Top);
+                }
+                PublishResult(cbLayerList_Dest, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
             }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-            }
+        
         }
 
         private void cbArithmeticType_OnSelectedIndexChanged(object sender, EventArgs e)
@@ -296,7 +290,7 @@ namespace OpenVisionLab
             ibSource2.Enabled = false;
             cbLayerList2.Enabled = false;
 
-            switch (CUtil.ParseEnum<Arithmetic>(Index))
+            switch (AppUtil.ParseEnum<Arithmetic>(Index))
             {
                 case Arithmetic.Bitwise_AND:
                 case Arithmetic.Bitwise_OR:
@@ -318,7 +312,7 @@ namespace OpenVisionLab
                     break;
             }
 
-            switch (CUtil.ParseEnum<Arithmetic>(Index))
+            switch (AppUtil.ParseEnum<Arithmetic>(Index))
             {
                 case Arithmetic.Bitwise_AND:
                     toolTip1.SetToolTip(tip, "�迭�� �迭 �Ǵ� �迭�� ��Į���� ��Һ� ������� ����Ѵ�.\r\n\r\nCv2.BitwiseAnd(���� �迭 1, ���� �迭 2, ��� �迭)�� ������� �����Ѵ�.\r\n\r\n�������� ǥ���� ��� dst = src1 & src2;�� ���¸� ���´�.");
@@ -361,42 +355,36 @@ namespace OpenVisionLab
 
         private void OnPara_CheckedChanged(object sender, EventArgs e)
         {
-            try
-            {
-                RJCodeUI_M1.RJControls.RJRadioButton rdoButton = (RJCodeUI_M1.RJControls.RJRadioButton)sender;
+                        RJCodeUI_M1.RJControls.RJRadioButton rdoButton = (RJCodeUI_M1.RJControls.RJRadioButton)sender;
 
-                if (rdoButton.Checked)
+            if (rdoButton.Checked)
+            {
+                switch (rdoButton.Text)
                 {
-                    switch (rdoButton.Text)
-                    {
-                        case "Input B":
-                            gpSourceImage.Enabled = true;
-                            gpContrast.Enabled = false;
-                            break;
-                        case "Contrast":
-                            gpSourceImage.Enabled = false;
-                            gpContrast.Enabled = true;
-                            break;
-                        case "Gray Scale":
-                            tbGray.Enabled = true;
-                            tbR.Enabled = false;
-                            tbG.Enabled = false;
-                            tbB.Enabled = false;
-                            break;
-                        case "Color":
-                            tbGray.Enabled = false;
-                            tbR.Enabled = true;
-                            tbG.Enabled = true;
-                            tbB.Enabled = true;
-                            break;
-                    }
+                    case "Input B":
+                        gpSourceImage.Enabled = true;
+                        gpContrast.Enabled = false;
+                        break;
+                    case "Contrast":
+                        gpSourceImage.Enabled = false;
+                        gpContrast.Enabled = true;
+                        break;
+                    case "Gray Scale":
+                        tbGray.Enabled = true;
+                        tbR.Enabled = false;
+                        tbG.Enabled = false;
+                        tbB.Enabled = false;
+                        break;
+                    case "Color":
+                        tbGray.Enabled = false;
+                        tbR.Enabled = true;
+                        tbG.Enabled = true;
+                        tbB.Enabled = true;
+                        break;
                 }
+            }
 
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-            }
+        
         }
 
         private void FormVision_Arithmetic_Click(object sender, EventArgs e)
@@ -406,57 +394,51 @@ namespace OpenVisionLab
 
         private void rjButton1_Click(object sender, EventArgs e)
         {
-            try
+                        Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            using (Mat ImageCVSource1 = Lib.Common.BitmapImageConverter.ToMat(ibSource1.DisplayBitmap).Clone())
             {
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
+                Mat val = new Mat();
 
-                using (Mat ImageCVSource1 = Lib.Common.CImageConverter.ToMat(ibSource1.DisplayBitmap).Clone())
-                {
-                    Mat val = new Mat();
+                if (tbX.Text == "") { tbX.Text = "1"; }
+                if (tbY.Text == "") { tbY.Text = "1"; }
 
-                    if (tbX.Text == "") { tbX.Text = "1"; }
-                    if (tbY.Text == "") { tbY.Text = "1"; }
+                int x = int.Parse(tbX.Text);
+                int y = int.Parse(tbY.Text);
 
-                    int x = int.Parse(tbX.Text);
-                    int y = int.Parse(tbY.Text);
+                Mat ResultImage = new Mat();
+                Bitmap Result = new Bitmap(10, 10);
+                if (ImageCVSource1.Channels() != 1) Cv2.CvtColor(ImageCVSource1, ImageCVSource1, ColorConversionCodes.RGB2GRAY);
 
-                    Mat ResultImage = new Mat();
-                    Bitmap Result = new Bitmap(10, 10);
-                    if (ImageCVSource1.Channels() != 1) Cv2.CvtColor(ImageCVSource1, ImageCVSource1, ColorConversionCodes.RGB2GRAY);
+                OpenCvSharp.Point ptOffset = new OpenCvSharp.Point(x, y);
+                Mat SrcImg = ImageCVSource1;
+                Mat DstImg = new Mat(SrcImg.Size(), SrcImg.Type());
+                OpenCvSharp.Size ImgSize = new OpenCvSharp.Size(SrcImg.Width, SrcImg.Height);
 
-                    OpenCvSharp.Point ptOffset = new OpenCvSharp.Point(x, y);
-                    Mat SrcImg = ImageCVSource1;
-                    Mat DstImg = new Mat(SrcImg.Size(), SrcImg.Type());
-                    OpenCvSharp.Size ImgSize = new OpenCvSharp.Size(SrcImg.Width, SrcImg.Height);
+                // �̹��� ī�� ���� ���
+                OpenCvSharp.Point ptSrcLt;
+                OpenCvSharp.Point ptDstLt;
+                OpenCvSharp.Size cpSize;
+                ptSrcLt.X = ptOffset.X <= 0 ? 0 : ptOffset.X;
+                ptSrcLt.Y = ptOffset.Y <= 0 ? 0 : ptOffset.Y;
 
-                    // �̹��� ī�� ���� ���
-                    OpenCvSharp.Point ptSrcLt;
-                    OpenCvSharp.Point ptDstLt;
-                    OpenCvSharp.Size cpSize;
-                    ptSrcLt.X = ptOffset.X <= 0 ? 0 : ptOffset.X;
-                    ptSrcLt.Y = ptOffset.Y <= 0 ? 0 : ptOffset.Y;
+                cpSize.Width = ImgSize.Width - Math.Abs(ptOffset.X);
+                cpSize.Height = ImgSize.Height - Math.Abs(ptOffset.Y);
 
-                    cpSize.Width = ImgSize.Width - Math.Abs(ptOffset.X);
-                    cpSize.Height = ImgSize.Height - Math.Abs(ptOffset.Y);
+                ptDstLt.X = ptOffset.X <= 0 ? -ptOffset.X : 0;
+                ptDstLt.Y = ptOffset.Y <= 0 ? -ptOffset.Y : 0;
 
-                    ptDstLt.X = ptOffset.X <= 0 ? -ptOffset.X : 0;
-                    ptDstLt.Y = ptOffset.Y <= 0 ? -ptOffset.Y : 0;
+                // �̹��� ī��                    
+                OpenCvSharp.Rect srcRect = new OpenCvSharp.Rect(ptSrcLt.X, ptSrcLt.Y, cpSize.Width, cpSize.Height);
+                OpenCvSharp.Rect DstRect = new OpenCvSharp.Rect(ptDstLt.X, ptDstLt.Y, cpSize.Width, cpSize.Height);
 
-                    // �̹��� ī��                    
-                    OpenCvSharp.Rect srcRect = new OpenCvSharp.Rect(ptSrcLt.X, ptSrcLt.Y, cpSize.Width, cpSize.Height);
-                    OpenCvSharp.Rect DstRect = new OpenCvSharp.Rect(ptDstLt.X, ptDstLt.Y, cpSize.Width, cpSize.Height);
+                SrcImg[srcRect].CopyTo(DstImg[DstRect]);
 
-                    SrcImg[srcRect].CopyTo(DstImg[DstRect]);
-
-                    Result = Lib.Common.CImageConverter.ToBitmap(DstImg);
-                    PublishResult(cbLayerList_Dest, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-                }
+                Result = Lib.Common.BitmapImageConverter.ToBitmap(DstImg);
+                PublishResult(cbLayerList_Dest, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
             }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-            }
+        
         }
     }
 }

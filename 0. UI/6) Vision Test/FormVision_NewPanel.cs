@@ -77,17 +77,9 @@ namespace OpenVisionLab
 
         private bool InitEvent()
         {
-            try
-            {
-                this.KeyPreview = true;
-                this.KeyDown += Form_KeyDown;
-                CLOG.NORMAL( $"[OK] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}");
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-                return false;
-            }
+                        this.KeyPreview = true;
+            this.KeyDown += Form_KeyDown;
+        
 
             return true;
         }
@@ -114,7 +106,6 @@ namespace OpenVisionLab
             //catch (Exception Desc)
             //{
 
-            //    CLog.Error( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");                
             //}
         }
     }

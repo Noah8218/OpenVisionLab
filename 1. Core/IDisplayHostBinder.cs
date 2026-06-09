@@ -1,4 +1,4 @@
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
 using WeifenLuo.WinFormsUI.Docking;
 
 namespace OpenVisionLab._1._Core

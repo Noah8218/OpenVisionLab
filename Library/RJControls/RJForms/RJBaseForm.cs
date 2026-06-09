@@ -74,8 +74,6 @@ namespace RJCodeUI_M1.RJForms
             btnClose.Size = new Size(35, 40);
             btnClose.UseVisualStyleBackColor = true;
             btnClose.Click += new System.EventHandler(Close_Click);
-            btnClose.MouseEnter += new EventHandler(btnClose_MouseEnter);
-            btnClose.MouseLeave += new EventHandler(btnClose_MouseLeave);
             // 
             // Button: Maximize
             // 
@@ -87,8 +85,6 @@ namespace RJCodeUI_M1.RJForms
             btnMaximize.Size = new Size(35, 40);
             btnMaximize.UseVisualStyleBackColor = true;
             btnMaximize.Click += new System.EventHandler(MaximizeRestore_Click);
-            btnMaximize.MouseEnter += new EventHandler(btnMaximize_MouseEnter);
-            btnMaximize.MouseLeave += new EventHandler(btnMaximize_MouseLeave);
             // 
             // Button: Minimize
             // 
@@ -100,8 +96,6 @@ namespace RJCodeUI_M1.RJForms
             btnMinimize.Size = new Size(35, 40);
             btnMinimize.UseVisualStyleBackColor = true;
             btnMinimize.Click += new System.EventHandler(Minimize_Click);
-            btnMinimize.MouseEnter += new EventHandler(btnMinimize_MouseEnter);
-            btnMinimize.MouseLeave += new EventHandler(btnMinimize_MouseLeave);
             #endregion
 
             #region -Snap Window
@@ -300,34 +294,6 @@ namespace RJCodeUI_M1.RJForms
 
         #region -> Private methods
 
-        private void SetMaximizeRestoreIcon()
-        {
-            if (isPrimaryForm)//If it is a primary form (e.g LoginForm and MainForm)
-            {
-                //if (UIAppearance.Style == UIStyle.Supernova && UIAppearance.Theme == UITheme.Light) //If the style is supernova and the theme is light: Sets the icon to a dark color
-                //{
-                //    if (this.WindowState == FormWindowState.Normal)
-                //        btnMaximize.Image = Properties.Resources.MaximizeDark;
-                //    else
-                //        btnMaximize.Image = Properties.Resources.RestoreDark;
-                //}
-                //else //If it is any other theme or style: Sets the icon to a light color
-                //{
-                //    if (this.WindowState == FormWindowState.Normal)
-                //        btnMaximize.Image = Properties.Resources.MaximizeWhite;
-                //    else
-                //        btnMaximize.Image = Properties.Resources.RestoreWhite;
-                //}
-            }
-            else //If it is a child form: Sets the icon to a light color
-            {
-                //if (this.WindowState == FormWindowState.Normal)
-                //    btnMaximize.Image = Properties.Resources.MaximizeWhite;
-                //else
-                //    btnMaximize.Image = Properties.Resources.RestoreWhite;
-            }
-        }
-
         private void FadeInEffect()
         {//Fade-In effect-> The form appears gradually
             //this.Opacity = 0.0;
@@ -344,9 +310,6 @@ namespace RJCodeUI_M1.RJForms
                 {
                     if (UIAppearance.Theme == UITheme.Light)//if the theme is LIGHT, set the maximize, minimize and close buttons to black.
                     {
-                        //this.btnClose.Image = Properties.Resources.CloseDark;
-                        //this.btnMaximize.Image = Properties.Resources.MaximizeDark;
-                        //this.btnMinimize.Image = Properties.Resources.MinimizeDark;
                     }
                 }
             }
@@ -394,7 +357,6 @@ namespace RJCodeUI_M1.RJForms
             {
                 this.WindowState = FormWindowState.Normal;
             }
-            SetMaximizeRestoreIcon();
         }
         protected void SnapWindowLeft()
         {/*Dock the form to the left of the desktop: Widht = Half the width of the desktop area, Height = Height of the desktop area*/
@@ -560,46 +522,12 @@ namespace RJCodeUI_M1.RJForms
             {
                 isMaximized = false;
                 BorderSize = UIAppearance.FormBorderSize;
-                SetMaximizeRestoreIcon();
             }
             ///<Note>If the variable isMaximized does not exist, 
             ///the above code will always be executed when the form changes size, 
             ///location or dragged point by point, that could slow down a bit. 
             ///So with the above condition the code snippet will only be executed once</Note> 
         }
-        //If it is primary form and the style is supernova and the theme is lighten, 
-        //change the icon color when the mouse enters and leaves the button to maximize, minimize or close.
-        private void btnMinimize_MouseEnter(object sender, EventArgs e)
-        {
-            //if (isPrimaryForm && UIAppearance.Style == UIStyle.Supernova && UIAppearance.Theme == UITheme.Light)
-              //  btnMinimize.Image = Properties.Resources.MinimizeWhite;
-        }
-        private void btnMinimize_MouseLeave(object sender, EventArgs e)
-        {
-            //if (isPrimaryForm && UIAppearance.Style == UIStyle.Supernova && UIAppearance.Theme == UITheme.Light)
-                //btnMinimize.Image = Properties.Resources.MinimizeDark;
-        }
-        private void btnMaximize_MouseEnter(object sender, EventArgs e)
-        {
-            //if (isPrimaryForm && UIAppearance.Style == UIStyle.Supernova && UIAppearance.Theme == UITheme.Light)
-               // btnMaximize.Image = Properties.Resources.MaximizeWhite;
-        }
-        private void btnMaximize_MouseLeave(object sender, EventArgs e)
-        {
-            //if (isPrimaryForm && UIAppearance.Style == UIStyle.Supernova && UIAppearance.Theme == UITheme.Light)
-            //    btnMaximize.Image = Properties.Resources.MaximizeDark;
-        }
-        private void btnClose_MouseEnter(object sender, EventArgs e)
-        {
-         //   if (isPrimaryForm && UIAppearance.Style == UIStyle.Supernova && UIAppearance.Theme == UITheme.Light)
-            //    btnClose.Image = Properties.Resources.CloseWhite;
-        }
-        private void btnClose_MouseLeave(object sender, EventArgs e)
-        {
-         //   if (isPrimaryForm && UIAppearance.Style == UIStyle.Supernova && UIAppearance.Theme == UITheme.Light)
-            //    btnClose.Image = Properties.Resources.CloseDark;
-        }
-
         #endregion
     }
 }

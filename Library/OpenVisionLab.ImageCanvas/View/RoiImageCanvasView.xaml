@@ -12,6 +12,7 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <converter:ColorToRGBConverter x:Key="colorToRGBConverter" />
+        <converter:DrawingColorToBrushConverter x:Key="drawingColorToBrushConverter" />
         <Geometry x:Key="IconRoiSelect">M3,5H5V3H3M3,9H5V7H3M3,13H5V11H3M3,17H5V15H3M3,21H5V19H3M7,5H9V3H7M11,5H13V3H11M15,5H17V3H15M19,5H21V3H19M19,9H21V7H19M19,13H21V11H19M19,17H21V15H19M19,21H21V19H19M15,21H17V19H15M11,21H13V19H11M7,21H9V19H7Z</Geometry>
         <Geometry x:Key="IconStraighten">M21,6H3C1.89,6 1,6.89 1,8V16C1,17.11 1.89,18 3,18H21C22.11,18 23,17.11 23,16V8C23,6.89 22.11,6 21,6M21,16H3V8H5V11H7V8H9V12H11V8H13V11H15V8H17V12H19V8H21V16Z</Geometry>
 
@@ -165,7 +166,13 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Content="{Binding RobotPos}"
-                    ContentStringFormat="{} Pos : ({0}) "
+                    ContentStringFormat="{} 좌표(좌하) : {0} "
+                    Style="{StaticResource ViewerStatusLabelStyle}" />
+                <Label
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Content="{Binding ImagePos}"
+                    ContentStringFormat="{} 이미지좌표(좌상) : {0} "
                     Style="{StaticResource ViewerStatusLabelStyle}" />
                 <Label
                     Grid.Column="3"
@@ -174,12 +181,19 @@
                     Content="{Binding GrayValue}"
                     ContentStringFormat="{} Gv : ({0}) "
                     Style="{StaticResource ViewerStatusLabelStyle}" />
+                <Border
+                    Width="16"
+                    Height="12"
+                    Margin="6,4,2,4"
+                    BorderBrush="#E5EAF0"
+                    BorderThickness="1"
+                    Background="{Binding PixelColor, Converter={StaticResource drawingColorToBrushConverter}}" />
                 <Label
                     Grid.Column="5"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Content="{Binding PixelColor, Converter={StaticResource colorToRGBConverter}}"
-                    ContentStringFormat="{} Color : ({0}) "
+                    ContentStringFormat="{} 색상 : {0} "
                     Style="{StaticResource ViewerStatusLabelStyle}" />
 
             </WrapPanel>

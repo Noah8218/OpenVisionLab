@@ -1,4 +1,4 @@
-using Lib.Common;
+﻿using Lib.Common;
 using OpenCvSharp;
 using OpenVisionLab._1._Core;
 using System;
@@ -201,7 +201,7 @@ namespace OpenVisionLab
                 return new Bitmap(10, 10);
             }
 
-            return CImageConverter.ToBitmap(sourceImage);
+            return BitmapImageConverter.ToBitmap(sourceImage);
         }
     }
 }

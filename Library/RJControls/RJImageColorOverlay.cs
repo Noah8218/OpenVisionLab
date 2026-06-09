@@ -38,7 +38,6 @@ namespace RJCodeUI_M1.RJControls
                                        ControlStyles.UserPaint |
                                        ControlStyles.OptimizedDoubleBuffer,
                                        true);
-            //this.BackgroundImage = Properties.Resources.BackImage; // Set default image
             this.BackgroundImageLayout = ImageLayout.Stretch; // Set the default image layout
             this.TabStop = false;
             this.Size = new System.Drawing.Size(250, 250);

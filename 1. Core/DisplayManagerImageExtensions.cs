@@ -1,4 +1,4 @@
-using OpenCvSharp;
+﻿using OpenCvSharp;
 using System.Drawing;
 
 namespace OpenVisionLab._1._Core

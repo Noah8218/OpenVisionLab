@@ -12,7 +12,7 @@ using Keys = System.Windows.Forms.Keys;
 using OpenVisionLab._2._Common;
 using RJCodeUI_M1.RJForms;
 using Vila.Win32;
-using static OpenVisionLab._2._Common.CParameterManager;
+using static OpenVisionLab._2._Common.ParameterManager;
 using Lib.OpenCV;
 using Lib.OpenCV.Result;
 using Lib.OpenCV.Blob;
@@ -22,23 +22,23 @@ namespace OpenVisionLab
 {
     public partial class FormVision_Result : RJChildForm
     {
-        public FormVision_Result(List<CResultBlob> cResultBlobs)
+        public FormVision_Result(List<BlobResult> cResultBlobs)
         {
             InitializeComponent();                        
             this.TopLevel = true;
             this.TopMost = true;
 
-            //dgvResult.DataSource = new CDefectList_Result().GetBlobList(cResultBlobs);
+            //dgvResult.DataSource = new DefectListResult().GetBlobList(cResultBlobs);
             //dgvResult.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
             dgvResult.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
             dgvResult.ColumnHeadersVisible = false;
-            dgvResult.DataSource = new CDefectList_Result().GetBlobList(cResultBlobs);
+            dgvResult.DataSource = new DefectListResult().GetBlobList(cResultBlobs);
             dgvResult.ColumnHeadersVisible = true;
             //dgvResult.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
 
         }
 
-        public FormVision_Result(List<CResultContour> cResultCounts)
+        public FormVision_Result(List<ContourResult> cResultCounts)
         {
             InitializeComponent();
             this.TopLevel = true;
@@ -46,7 +46,7 @@ namespace OpenVisionLab
 
             dgvResult.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
             dgvResult.ColumnHeadersVisible = false;
-            dgvResult.DataSource = new CDefectList_Result().GetContourList(cResultCounts);
+            dgvResult.DataSource = new DefectListResult().GetContourList(cResultCounts);
             dgvResult.ColumnHeadersVisible = true;
         }
 
@@ -57,13 +57,13 @@ namespace OpenVisionLab
             this.TopMost = true;
         }
 
-        public void SetBindingRois(List<CRectangle> Rois)
+        public void SetBindingRois(List<SpecRectangle> Rois)
         {
             this.TopLevel = true;
             this.TopMost = true;
             this.Text = "ROIS";
 
-            BindingList<CRectangle> binding = new BindingList<CRectangle>();
+            BindingList<SpecRectangle> binding = new BindingList<SpecRectangle>();
 
             for (int i = 0; i < Rois.Count; i++) { binding.Add(Rois[i]); }
 
@@ -71,13 +71,13 @@ namespace OpenVisionLab
             dgvResult.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
         }
 
-        public void SetBindingRoi(CRectangle Roi)
+        public void SetBindingRoi(SpecRectangle Roi)
         {
             this.TopLevel = true;
             this.TopMost = true;
             this.Text = "ROI";
 
-            BindingList<CRectangle> binding = new BindingList<CRectangle>();
+            BindingList<SpecRectangle> binding = new BindingList<SpecRectangle>();
 
             binding.Add(Roi);
 
@@ -117,17 +117,9 @@ namespace OpenVisionLab
 
         private bool InitEvent()
         {
-            try
-            {
-                this.KeyPreview = true;
-                this.KeyDown += Form_KeyDown;
-                CLOG.NORMAL( $"[OK] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}");
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-                return false;
-            }
+                        this.KeyPreview = true;
+            this.KeyDown += Form_KeyDown;
+        
 
             return true;
         }

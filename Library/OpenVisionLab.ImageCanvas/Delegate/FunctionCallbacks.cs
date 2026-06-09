@@ -1,4 +1,4 @@
-using OpenVisionLab.ImageCanvas.CanvasShapes;
+﻿using OpenVisionLab.ImageCanvas.CanvasShapes;
 using OpenVisionLab.ImageCanvas.Overlays;
 
 namespace OpenVisionLab.ImageCanvas

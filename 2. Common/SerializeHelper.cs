@@ -1,11 +1,7 @@
 ﻿using Lib.Common;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -13,134 +9,67 @@ namespace OpenVisionLab
 {
     public static class SerializeHelper
     {
-        public static string ToString<T>(this T toSerialize)
+        public static bool TryLoadFromXmlFile<T>(string path, out T value)
         {
-            //XmlSerializer xmlSerializer = new XmlSerializer(toSerialize.GetType());
+            value = default(T);
 
-            //MemoryStream ms = new MemoryStream();
-            //XmlTextWriter xmlTextWriter = new XmlTextWriter(ms, Encoding.UTF8);
+                        if (!File.Exists(path))
+            {
+                return false;
+            }
 
-            //xmlTextWriter.Formatting = Formatting.Indented;
+            using (Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                XmlSerializer serializer = new XmlSerializer(typeof(T));
+                value = (T)serializer.Deserialize(stream);
+            }
 
-            //xmlSerializer.Serialize(xmlTextWriter, toSerialize);
-
-            return Encoding.UTF8.GetString(ToByte<T>(toSerialize));
+            return value != null;
+        
         }
 
-        public static byte[] ToByte<T>(this T toSerialize)
+        public static T LoadOrCreateXmlFile<T>(string path, T defaultValue, out bool loaded)
         {
-            try
+            if (TryLoadFromXmlFile(path, out T loadedValue) && loadedValue != null)
             {
-                XmlSerializer xmlSerializer = new XmlSerializer(toSerialize.GetType());
-
-                MemoryStream ms = new MemoryStream();
-                XmlTextWriter xmlTextWriter = new XmlTextWriter(ms, Encoding.UTF8);
-
-                xmlTextWriter.Formatting = Formatting.Indented;
-
-                xmlSerializer.Serialize(xmlTextWriter, toSerialize);
-
-                return ((MemoryStream)xmlTextWriter.BaseStream).ToArray();
-            }
-            catch (Exception Desc)
-            {
-                //VTS.Logger.Error(ex, string.Format("[VTS.MySerialize.ToByte] error. type({0})", typeof(T).ToString()));
-
-                CLOG.ABNORMAL( $"[{MethodBase.GetCurrentMethod().ReflectedType.Name}]==>{MethodBase.GetCurrentMethod().Name}]   Ex = {Desc.Message}");
-
+                loaded = true;
+                return loadedValue;
             }
 
-            return null;
+            loaded = false;
+            if (!File.Exists(path))
+            {
+                SaveXmlFile(path, defaultValue);
+            }
+
+            return defaultValue;
         }
 
-        public static T Deserialize<T>(string xml)
+        public static bool SaveXmlFile<T>(string path, T value)
         {
-            try
+                        string directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrWhiteSpace(directory))
             {
-                if (!string.IsNullOrEmpty(xml))
-                {
-                    XmlSerializer serializer = new XmlSerializer(typeof(T));
-                    byte[] byteArr = System.Text.Encoding.UTF8.GetBytes(xml);
-
-                    using (MemoryStream ms = new MemoryStream(byteArr))
-                    {
-                        XmlTextReader xmlTextReader = new XmlTextReader(ms);
-                        return (T)serializer.Deserialize(xmlTextReader);
-                    }
-
-                }
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL( $"[{MethodBase.GetCurrentMethod().ReflectedType.Name}]==>{MethodBase.GetCurrentMethod().Name}]   Ex = {Desc.Message}");
+                Directory.CreateDirectory(directory);
             }
 
-            return default(T);
+            XmlWriterSettings settings = new XmlWriterSettings
+            {
+                Indent = true,
+                IndentChars = "\t",
+                NewLineChars = "\r\n",
+                NewLineOnAttributes = true
+            };
 
-            //XmlReaderSettings settings = new XmlReaderSettings();
-            // No settings need modifying here
+            using (XmlWriter writer = XmlWriter.Create(path, settings))
+            {
+                XmlSerializer serializer = new XmlSerializer(typeof(T));
+                serializer.Serialize(writer, value);
+            }
 
-            //using (StringReader textReader = new StringReader(xml))
-            //{
-            //    using (XmlReader xmlReader = XmlReader.Create(textReader, settings))
-            //    {
-            //        return (T)serializer.Deserialize(xmlReader);
-            //    }
-            //}
+            return true;
+        
         }
-
-        public static T FromXmlFile<T>(string path)
-        {
-            try
-            {
-                using (
-                    System.IO.StreamReader sr = new StreamReader(path)
-                )
-                {
-                    XmlSerializer reader =
-                    new XmlSerializer(typeof(T));
-
-                    T np = (T)reader.Deserialize(sr);
-
-                    return np;
-                }
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL( $"[{MethodBase.GetCurrentMethod().ReflectedType.Name}]==>{MethodBase.GetCurrentMethod().Name}], type({typeof(T).ToString()}), path={path}, Ex = {Desc.Message}");
-                //VTS.Logger.Error(ex, string.Format(
-                //    "[VTS.MySerialize.FromXmlFile] error. type({0}), path={1}",
-                //    typeof(T).ToString(), path));
-                CCommon.ShowMessageBox("EXCEPTION", string.Format($"[{MethodBase.GetCurrentMethod().ReflectedType.Name}]==>{MethodBase.GetCurrentMethod().Name}], type({typeof(T).ToString()}), path={path}, Ex = {Desc.Message}"), FormMessageBox.MESSAGEBOX_TYPE.Waring);
-            }
-
-            return default(T);
-        }
-
-        public static bool ToXmlFile<T>(string path, T val)
-        {
-            try
-            {
-                using (Stream savestream = new FileStream(path, FileMode.Create))
-                {
-                    XmlSerializer writer = new XmlSerializer(val.GetType());
-                    writer.Serialize(savestream, val);
-
-                }
-                return true;
-            }
-            catch (Exception Desc)
-            {                
-                CLOG.ABNORMAL( $"[{MethodBase.GetCurrentMethod().ReflectedType.Name}]==>{MethodBase.GetCurrentMethod().Name}], type({typeof(T).ToString()}), path={path}, Ex = {Desc.Message}");
-
-                //CCommon.ShowMessageBox("EXCEPTION", string.Format($"[{MethodBase.GetCurrentMethod().ReflectedType.Name}]==>{MethodBase.GetCurrentMethod().Name}], type({typeof(T).ToString()}), path={path}, Ex = {Desc.Message}"), FormMessageBox.MESSAGEBOX_TYPE.Waring);
-                //VTS.Logger.Error(ex, string.Format(
-                //    "[VTS.MySerialize.ToXmlFile] error. type({0}), path={1}",
-                //    typeof(T).ToString(), path));
-            }
-            return false;
-        }
-
 
     }
 

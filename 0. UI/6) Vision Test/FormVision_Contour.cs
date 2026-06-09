@@ -16,7 +16,7 @@ namespace OpenVisionLab
 {
     public partial class FormVision_Contour : VisionTestForm
     {
-        private CPropertyContour Property_Contour = new CPropertyContour("Contour");
+        private ContourProperty Property_Contour = new ContourProperty("Contour");
         private void InitLayListItem()
         {
             InitializeSingleInputLayerList(cbLayerList, cbLayerList2);
@@ -63,8 +63,8 @@ namespace OpenVisionLab
         }
         private void FormSettings_Camera_Load(object sender, EventArgs e)
         {
-            CUtil.InitDirectory("TEST");
-            Property_Contour = Property_Contour.LoadTestConfig(Application.StartupPath + "\\TEST\\" + Property_Contour.NAME + ".xml");
+            AppUtil.InitDirectory("TEST");
+            Property_Contour = Property_Contour.LoadTestConfig(AppPathService.GetTestConfigPath(Property_Contour.NAME));
             AttachPropertyGrid(pnParameter, Property_Contour);
             InitializeSingleInputViewers(
                 InitLayListItem,
@@ -124,59 +124,51 @@ namespace OpenVisionLab
             }
         }
 
-        private List<CResultContour> cResultContours = new List<CResultContour>();
+        private List<ContourResult> cResultContours = new List<ContourResult>();
 
         private void btnRun_Click(object sender, EventArgs e)
         {
-            try
+                        if (!ValidateDrawOption())
             {
-                if (!ValidateDrawOption())
+                return;
+            }
+
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
+            {
+
+                ContourTool contourTool = new ContourTool();
+                contourTool.SetProperty(Property_Contour);
+                contourTool.SetSourceImage(ImageCVSource);
+                contourTool.Run();
+
+                if (!Property_Contour.USE_DRAW_IMAGE)
                 {
-                    return;
-                }
+                    Graphics g = Graphics.FromImage(Result);
 
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-
-                using (Mat ImageCVSource = Lib.Common.CImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
-                {                    
-                    Bitmap Result = CDrawBitmap.GetBitmapFormat24bppRgb(ibSource.DisplayBitmap);
-                    COpenCVHelper.SetImageChannel1(ImageCVSource);
-
-                    CVContour cIVT_CVContour = new CVContour();
-                    cIVT_CVContour.SetProperty(Property_Contour);
-                    cIVT_CVContour.SetSourceImage(ImageCVSource);
-                    cIVT_CVContour.Run();
-
-                    if (!Property_Contour.USE_DRAW_IMAGE)
+                    foreach (var item in contourTool.results)
                     {
-                        Graphics g = Graphics.FromImage(Result);
-
-                        foreach (var item in cIVT_CVContour.results)
-                        {
-                            g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Blue, 1), item.Bounding);
-                        }
-
-                        if (cIVT_CVContour.results.Count == 0)
-                        {
-                            g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Orange, 5), CConverter.CVRectToRect(cIVT_CVContour.property.CvROI));
-                            g.DrawString("1", new Font("Arial", 10, FontStyle.Bold), new SolidBrush(System.Drawing.Color.OrangeRed), (int)cIVT_CVContour.property.CvROI.X - 20, (int)cIVT_CVContour.property.CvROI.Y - 20);
-                        }
+                        g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Blue, 1), item.Bounding);
                     }
-                    else { Result = Lib.Common.CImageConverter.ToBitmap(cIVT_CVContour.imageResult); }
 
-                    cResultContours = cIVT_CVContour.results;
-                    PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
+                    if (contourTool.results.Count == 0)
+                    {
+                        g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Orange, 5), CommonConverter.CVRectToRect(contourTool.property.CvROI));
+                        g.DrawString("1", new Font("Arial", 10, FontStyle.Bold), new SolidBrush(System.Drawing.Color.OrangeRed), (int)contourTool.property.CvROI.X - 20, (int)contourTool.property.CvROI.Y - 20);
+                    }
                 }
+                else { Result = Lib.Common.BitmapImageConverter.ToBitmap(contourTool.imageResult); }
 
-                CUtil.InitDirectory("TEST");
-                string strPath = Application.StartupPath + "\\TEST\\" + Property_Contour.NAME + ".xml";
-                Property_Contour.SaveTestConfig(strPath);
+                cResultContours = contourTool.results;
+                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
             }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-            }
+
+            AppUtil.InitDirectory("TEST");
+            string strPath = AppPathService.GetTestConfigPath(Property_Contour.NAME);
+            Property_Contour.SaveTestConfig(strPath);
+        
         }
 
         private bool ValidateDrawOption()
@@ -191,7 +183,7 @@ namespace OpenVisionLab
                 return true;
             }
 
-            CCommon.ShowMessageBox("ALARM", "DrawColor is empty. Please select a draw color before running contour inspection.", FormMessageBox.MESSAGEBOX_TYPE.Waring);
+            AppCommon.ShowMessageBox("ALARM", "DrawColor is empty. Please select a draw color before running contour inspection.", FormMessageBox.MESSAGEBOX_TYPE.Waring);
             return false;
         }
         private void btnExit_Click(object sender, EventArgs e)
@@ -199,18 +191,18 @@ namespace OpenVisionLab
             this.Close();
         }
 
-        private void btnMinimizar_Click(object sender, EventArgs e)
+        private void btnMinimize_Click(object sender, EventArgs e)
         {
             this.WindowState = FormWindowState.Minimized;
         }
 
         private void btnResult_Click(object sender, EventArgs e)
         {
-            FormVision_Result formVision_Blob_Result = new FormVision_Result(cResultContours);
-            formVision_Blob_Result.StartPosition = FormStartPosition.CenterScreen;
+            FormVision_Result resultForm = new FormVision_Result(cResultContours);
+            resultForm.StartPosition = FormStartPosition.CenterScreen;
 
-            if (!CUtil.OpenCheckForm(formVision_Blob_Result)) return;
-            formVision_Blob_Result.Show();
+            if (!AppUtil.OpenCheckForm(resultForm)) return;
+            resultForm.Show();
         }
     }
  }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace OpenVisionLab._1._Core
 {
@@ -7,14 +7,14 @@ namespace OpenVisionLab._1._Core
         private static readonly Lazy<ApplicationRuntimeContext> defaultContext =
             new Lazy<ApplicationRuntimeContext>(CreateDefaultContext);
 
-        public ApplicationRuntimeContext(CGlobal global, IDisplayManager displayManager, IDisplayHostBinder displayHostBinder)
+        public ApplicationRuntimeContext(GlobalState global, IDisplayManager displayManager, IDisplayHostBinder displayHostBinder)
         {
             Global = global ?? throw new ArgumentNullException(nameof(global));
             DisplayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
             DisplayHostBinder = displayHostBinder ?? throw new ArgumentNullException(nameof(displayHostBinder));
         }
 
-        public CGlobal Global { get; }
+        public GlobalState Global { get; }
         public IDisplayManager DisplayManager { get; }
         public IDisplayHostBinder DisplayHostBinder { get; }
 
@@ -26,7 +26,7 @@ namespace OpenVisionLab._1._Core
         private static ApplicationRuntimeContext CreateDefaultContext()
         {
             DisplayManagerService displayManager = DisplayManagerService.Default;
-            return new ApplicationRuntimeContext(new CGlobal(), displayManager, displayManager);
+            return new ApplicationRuntimeContext(new GlobalState(), displayManager, displayManager);
         }
     }
 }

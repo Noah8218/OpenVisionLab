@@ -1,6 +1,6 @@
 ﻿using Lib.Common;
-using log4net;
 using OpenVisionLab._1._Core;
+using OpenVisionLab.Logging;
 using RJCodeUI_M1;
 using RJCodeUI_M1.Settings;
 using System;
@@ -37,32 +37,29 @@ namespace OpenVisionLab
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
 
-                try
-                {
-                    //UIAppearance.FormBorderSize = 5;
+                //UIAppearance.FormBorderSize = 5;
 
-                    SettingsManager.LoadApperanceSettings();//Load current appearance settings.
+                SettingsManager.LoadApperanceSettings();//Load current appearance settings.
 
-                    StartupSplashScreen splashScreen = StartupSplashScreen.Start(
-                        $"VERSION : {CVersion.VERSION} - {CVersion.DATETIME_UPDATED} ({CVersion.MANAGER})",
-                        text => CLOG.NORMAL(text));
+                ApplicationRuntimeContext runtimeContext = ApplicationRuntimeContext.CreateDefault();
+                runtimeContext.Global.System.ApplyLogConfig();
+                CLog.Write(LogCategory.Info, LogLevel.Main, $"Application ready. Version {AppVersion.VERSION}");
+
+                StartupSplashScreen splashScreen = StartupSplashScreen.Start(
+                    $"VERSION : {AppVersion.VERSION} - {AppVersion.DATETIME_UPDATED} ({AppVersion.MANAGER})",
+                    null);
 #if Release
 
 #endif
-                    ApplicationRuntimeContext runtimeContext = ApplicationRuntimeContext.CreateDefault();
-                    Application.Run(new FormMetroFrame(splashScreen.Form, runtimeContext));
-                    splashScreen.Dispose();
-                }
-                catch (Exception Desc)
-                {
-                    CLOG.ABNORMAL( "Ex ==> {0}", Desc.Message);
-                }
+                Application.Run(new FormMainFrame(splashScreen.Form, runtimeContext));
+                CLog.Write(LogCategory.Info, LogLevel.Main, "Application shutdown.");
+                splashScreen.Dispose();
 
                 mutex.ReleaseMutex();
             }
             else
             {
-                CCommon.ShowdialogMessageBox("Program Already Running", "Check Job Process");
+                AppCommon.ShowdialogMessageBox("Program Already Running", "Check Job Process");
 
                 Application.Exit();
             }
@@ -70,12 +67,12 @@ namespace OpenVisionLab
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            //CLog.Error( "Ex ==> {0}", e.ToString());
+            CLog.Write(LogCategory.Fatal, LogLevel.Abnormal, e.ExceptionObject?.ToString() ?? "Unhandled domain exception.");
         }
 
         private static void Application_ThreadException(object sender, ThreadExceptionEventArgs e)
         {
-            //CLog.Error( "Ex ==> {0}", e.ToString());
+            CLog.Write(LogCategory.Fatal, LogLevel.Abnormal, e.Exception?.ToString() ?? "Unhandled UI thread exception.");
         }
 
         private sealed class StartupSplashScreen : IDisposable

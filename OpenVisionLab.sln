@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32811.315
@@ -26,6 +26,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenVisionLab.ImageSpace.Core", "Library\OpenVisionLab.ImageSpace.Core\OpenVisionLab.ImageSpace.Core.csproj", "{D8F5F4E6-15A9-4B86-81B9-2EAF12C20491}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenVisionLab.ImageCanvas", "Library\OpenVisionLab.ImageCanvas\OpenVisionLab.ImageCanvas.csproj", "{7C4F1BE2-3D8A-46F1-9A4F-847D0D4A75D6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenVisionLab.Logging", "Library\OpenVisionLab.Logging\OpenVisionLab.Logging.csproj", "{ECA155DA-6FE3-4C95-80E1-1430FC62A586}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenVisionLab.Logging.Controls", "Library\OpenVisionLab.Logging.Controls\OpenVisionLab.Logging.Controls.csproj", "{34993D8F-E584-429B-930F-1E557EAB3102}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -169,6 +173,30 @@ Global
 		{7C4F1BE2-3D8A-46F1-9A4F-847D0D4A75D6}.Release|x64.Build.0 = Release|Any CPU
 		{7C4F1BE2-3D8A-46F1-9A4F-847D0D4A75D6}.Release|x86.ActiveCfg = Release|Any CPU
 		{7C4F1BE2-3D8A-46F1-9A4F-847D0D4A75D6}.Release|x86.Build.0 = Release|Any CPU
+		{ECA155DA-6FE3-4C95-80E1-1430FC62A586}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECA155DA-6FE3-4C95-80E1-1430FC62A586}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECA155DA-6FE3-4C95-80E1-1430FC62A586}.Debug|x64.ActiveCfg = Debug|x64
+		{ECA155DA-6FE3-4C95-80E1-1430FC62A586}.Debug|x64.Build.0 = Debug|x64
+		{ECA155DA-6FE3-4C95-80E1-1430FC62A586}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{ECA155DA-6FE3-4C95-80E1-1430FC62A586}.Debug|x86.Build.0 = Debug|Any CPU
+		{ECA155DA-6FE3-4C95-80E1-1430FC62A586}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECA155DA-6FE3-4C95-80E1-1430FC62A586}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECA155DA-6FE3-4C95-80E1-1430FC62A586}.Release|x64.ActiveCfg = Release|x64
+		{ECA155DA-6FE3-4C95-80E1-1430FC62A586}.Release|x64.Build.0 = Release|x64
+		{ECA155DA-6FE3-4C95-80E1-1430FC62A586}.Release|x86.ActiveCfg = Release|Any CPU
+		{ECA155DA-6FE3-4C95-80E1-1430FC62A586}.Release|x86.Build.0 = Release|Any CPU
+		{34993D8F-E584-429B-930F-1E557EAB3102}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34993D8F-E584-429B-930F-1E557EAB3102}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34993D8F-E584-429B-930F-1E557EAB3102}.Debug|x64.ActiveCfg = Debug|x64
+		{34993D8F-E584-429B-930F-1E557EAB3102}.Debug|x64.Build.0 = Debug|x64
+		{34993D8F-E584-429B-930F-1E557EAB3102}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{34993D8F-E584-429B-930F-1E557EAB3102}.Debug|x86.Build.0 = Debug|Any CPU
+		{34993D8F-E584-429B-930F-1E557EAB3102}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34993D8F-E584-429B-930F-1E557EAB3102}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34993D8F-E584-429B-930F-1E557EAB3102}.Release|x64.ActiveCfg = Release|x64
+		{34993D8F-E584-429B-930F-1E557EAB3102}.Release|x64.Build.0 = Release|x64
+		{34993D8F-E584-429B-930F-1E557EAB3102}.Release|x86.ActiveCfg = Release|Any CPU
+		{34993D8F-E584-429B-930F-1E557EAB3102}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -180,6 +208,8 @@ Global
 		{5258B030-A7F4-4B96-B5EE-FC70434CB404} = {50A17DA1-3556-4046-CEDC-33EB466D9C32}
 		{D8F5F4E6-15A9-4B86-81B9-2EAF12C20491} = {50A17DA1-3556-4046-CEDC-33EB466D9C32}
 		{7C4F1BE2-3D8A-46F1-9A4F-847D0D4A75D6} = {50A17DA1-3556-4046-CEDC-33EB466D9C32}
+		{ECA155DA-6FE3-4C95-80E1-1430FC62A586} = {50A17DA1-3556-4046-CEDC-33EB466D9C32}
+		{34993D8F-E584-429B-930F-1E557EAB3102} = {50A17DA1-3556-4046-CEDC-33EB466D9C32}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B6BCC3D2-D39A-48EE-950C-07D87629A137}

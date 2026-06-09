@@ -72,104 +72,81 @@ namespace OpenVisionLab
             InitThresholdMenu();
         }
 
-        private void trbThreshold_Scroll(object sender, EventArgs e)
+        private Bitmap CreateLayerOperationResult(Action<Mat> processImage, Action<Mat> prepareSource = null, bool convertFullImageToGray = false)
         {
-            try
+            using (Mat imageSrc = displayManager.SelectedItem != DEFINE.Threshold
+                ? displayManager.GetImageSrc().Clone()
+                : Lib.Common.BitmapImageConverter.ToMat(displayManager.GetLayerImage("Main")).Clone())
             {
-                if (COpenCVHelper.IsImageEmpty(displayManager.GetImageSrc())) return;
+                prepareSource?.Invoke(imageSrc);
 
-                using (Mat imageSrc = displayManager.SelectedItem != DEFINE.Threshold ? displayManager.GetImageSrc().Clone() : Lib.Common.CImageConverter.ToMat(displayManager.GetLayerImage("Main")).Clone())
+                if (displayManager.IsLayerRoiEmpty(displayManager.SelectedItem))
                 {
-                    if (displayManager.IsLayerRoiEmpty(displayManager.SelectedItem))
+                    if (convertFullImageToGray && imageSrc.Channels() != 1)
                     {
-                        if (imageSrc.Channels() != 1) Cv2.CvtColor(imageSrc, imageSrc, ColorConversionCodes.RGB2GRAY);
-
-                        Cv2.Threshold(imageSrc, imageSrc, trbThreshold.Value, 255, CUtil.ParseEnum<ThresholdTypes>(cbThresholdMenu.SelectedItem.ToString()));
-                        displayManager.CreateLayerDisplay(Lib.Common.CImageConverter.ToBitmap(imageSrc), DEFINE.Threshold, false);
+                        Cv2.CvtColor(imageSrc, imageSrc, ColorConversionCodes.RGB2GRAY);
                     }
-                    else
+
+                    processImage(imageSrc);
+                    return Lib.Common.BitmapImageConverter.ToBitmap(imageSrc);
+                }
+
+                Rect roi = CommonConverter.RectangleToRect(displayManager.GetLayerRoi(displayManager.SelectedItem));
+                using (Mat imageRoi = imageSrc.SubMat(roi))
+                {
+                    processImage(imageRoi);
+                    using (Bitmap sourceBitmap = Lib.Common.BitmapImageConverter.ToBitmap(imageSrc))
+                    using (Bitmap roiBitmap = Lib.Common.BitmapImageConverter.ToBitmap(imageRoi))
                     {
-                        Rect r = CConverter.RectangleToRect(displayManager.GetLayerRoi(displayManager.SelectedItem));
-                        Mat ImageRoi = imageSrc.SubMat(r);
-                        Cv2.Threshold(ImageRoi, ImageRoi, trbThreshold.Value, 255, CUtil.ParseEnum<ThresholdTypes>(cbThresholdMenu.SelectedItem.ToString()));
-                        Bitmap Reuslt = Lib.Common.CBitmapProcessing.OverlayImage(Lib.Common.CImageConverter.ToBitmap(imageSrc), Lib.Common.CImageConverter.ToBitmap(ImageRoi), r.Left, r.Top);
-                        displayManager.CreateLayerDisplay(Reuslt, DEFINE.Threshold, false);
+                        return Lib.Common.BitmapProcessing.OverlayImage(sourceBitmap, roiBitmap, roi.Left, roi.Top);
                     }
                 }
             }
-            catch (Exception Desc)
+        }
+
+        private void trbThreshold_Scroll(object sender, EventArgs e)
+        {
+                        if (OpenCvHelper.IsImageEmpty(displayManager.GetImageSrc())) return;
+
+            Bitmap result = CreateLayerOperationResult(image =>
             {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-            }
+                Cv2.Threshold(image, image, trbThreshold.Value, 255, AppUtil.ParseEnum<ThresholdTypes>(cbThresholdMenu.SelectedItem.ToString()));
+            }, convertFullImageToGray: true);
+            displayManager.CreateLayerDisplay(result, DEFINE.Threshold, false);
+        
         }
 
         private void trbDoubleThresholdMax_Scroll(object sender, EventArgs e)
         {
-            try
-            {
-                if (COpenCVHelper.IsImageEmpty(displayManager.GetImageSrc())) return;
+                        if (OpenCvHelper.IsImageEmpty(displayManager.GetImageSrc())) return;
 
-                int Min = trbDoubleThresholdMin.Value;
-                int Max = trbDoubleThresholdMax.Value;
+            int Min = trbDoubleThresholdMin.Value;
+            int Max = trbDoubleThresholdMax.Value;
 
-                using (Mat imageSrc = displayManager.SelectedItem != DEFINE.Threshold ? displayManager.GetImageSrc().Clone() : Lib.Common.CImageConverter.ToMat(displayManager.GetLayerImage("Main")).Clone())
-                {
-                    if (displayManager.IsLayerRoiEmpty(displayManager.SelectedItem))
-                    {
-                        Cv2.InRange(imageSrc, new Scalar(Min, Min, Min), new Scalar(Max, Max, Max), imageSrc);
-                        displayManager.CreateLayerDisplay(Lib.Common.CImageConverter.ToBitmap(imageSrc), DEFINE.Threshold, false);
-                    }
-                    else
-                    {
-                        Rect r = CConverter.RectangleToRect(displayManager.GetLayerRoi(displayManager.SelectedItem));
-                        Mat ImageRoi = imageSrc.SubMat(r);
-                        Cv2.InRange(ImageRoi, new Scalar(Min, Min, Min), new Scalar(Max, Max, Max), ImageRoi);
-                        Bitmap Reuslt = Lib.Common.CBitmapProcessing.OverlayImage(Lib.Common.CImageConverter.ToBitmap(imageSrc), Lib.Common.CImageConverter.ToBitmap(ImageRoi), r.Left, r.Top);
-                        displayManager.CreateLayerDisplay(Reuslt, DEFINE.Threshold, false);
-                    }
-                }
-            }
-            catch (Exception Desc)
+            Bitmap result = CreateLayerOperationResult(image =>
             {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-            }
+                Cv2.InRange(image, new Scalar(Min, Min, Min), new Scalar(Max, Max, Max), image);
+            });
+            displayManager.CreateLayerDisplay(result, DEFINE.Threshold, false);
+        
         }
 
         private void trbAdaptiveThreshold_Scroll(object sender, EventArgs e)
         {
-            try
+                        if (OpenCvHelper.IsImageEmpty(displayManager.GetImageSrc())) return;
+
+            if (tbBlockSize.Text == "") { tbBlockSize.Text = "25"; }
+            if (tbWeight.Text == "") { tbWeight.Text = "5"; }
+
+            int Block = int.Parse(tbBlockSize.Text);
+            int Weight = int.Parse(tbWeight.Text);
+
+            Bitmap result = CreateLayerOperationResult(image =>
             {
-                if (COpenCVHelper.IsImageEmpty(displayManager.GetImageSrc())) return;
-
-                if (tbBlockSize.Text == "") { tbBlockSize.Text = "25"; }
-                if (tbWeight.Text == "") { tbWeight.Text = "5"; }
-
-                int Block = int.Parse(tbBlockSize.Text);
-                int Weight = int.Parse(tbWeight.Text);
-
-                using (Mat imageSrc = displayManager.SelectedItem != DEFINE.Threshold ? displayManager.GetImageSrc().Clone() : Lib.Common.CImageConverter.ToMat(displayManager.GetLayerImage("Main")).Clone())
-                {
-                    COpenCVHelper.SetImageChannel1(imageSrc);
-                    
-                    if (displayManager.IsLayerRoiEmpty(displayManager.SelectedItem))
-                    {
-                        Cv2.AdaptiveThreshold(imageSrc, imageSrc, trbAdaptiveThreshold.Value, CUtil.ParseEnum<AdaptiveThresholdTypes>(cbAdaptiveType.SelectedItem.ToString()), CUtil.ParseEnum<ThresholdTypes>(cbAdaptiveThresholdMenu.SelectedItem.ToString()), Block, Weight);
-                        displayManager.CreateLayerDisplay(Lib.Common.CImageConverter.ToBitmap(imageSrc), DEFINE.Threshold, false);
-                    }
-                    else
-                    {
-                        Rect r = CConverter.RectangleToRect(displayManager.GetLayerRoi(displayManager.SelectedItem));
-                        Mat ImageRoi = imageSrc.SubMat(r);
-                        Cv2.AdaptiveThreshold(ImageRoi, ImageRoi, trbAdaptiveThreshold.Value, CUtil.ParseEnum<AdaptiveThresholdTypes>(cbAdaptiveType.SelectedItem.ToString()), CUtil.ParseEnum<ThresholdTypes>(cbAdaptiveThresholdMenu.SelectedItem.ToString()), Block, Weight);                        
-                        Bitmap Reuslt = Lib.Common.CBitmapProcessing.OverlayImage(Lib.Common.CImageConverter.ToBitmap(imageSrc), Lib.Common.CImageConverter.ToBitmap(ImageRoi), r.Left, r.Top);
-                        displayManager.CreateLayerDisplay(Reuslt, DEFINE.Threshold, false);
-                    }
-                }
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-            }
+                Cv2.AdaptiveThreshold(image, image, trbAdaptiveThreshold.Value, AppUtil.ParseEnum<AdaptiveThresholdTypes>(cbAdaptiveType.SelectedItem.ToString()), AppUtil.ParseEnum<ThresholdTypes>(cbAdaptiveThresholdMenu.SelectedItem.ToString()), Block, Weight);
+            }, image => OpenCvHelper.SetImageChannel1(image));
+            displayManager.CreateLayerDisplay(result, DEFINE.Threshold, false);
+        
         }
     }
 }

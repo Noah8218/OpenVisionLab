@@ -59,7 +59,7 @@ namespace OpenVisionLab
         }
         private void FormSettings_Camera_Load(object sender, EventArgs e)
         {
-            CUtil.InitDirectory("TEST");
+            AppUtil.InitDirectory("TEST");
             InitializeSingleInputViewers(
                 InitLayListItem,
                 ibSource,
@@ -89,49 +89,38 @@ namespace OpenVisionLab
 
         private void btnMorpRun_Click(object sender, EventArgs e)
         {
-            try
-            {                
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
+                        
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
 
-                using (Mat ImageCVSource = Lib.Common.CImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
-                {
-                    if (ImageCVSource.Channels() == 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.RGB2GRAY);
-                   
-                    Bitmap Result = new Bitmap(10, 10);
-                    //Cv2.MorphologyEx(ImageCVSource, ImageCVSource, CUtil.ParseEnum<MorphTypes>(Operator), Kernel, new OpenCvSharp.Point(-1, -1), 1);
-                    //Result = CConverter.ToBitmap(ImageCVSource);
-                    PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-                }
-            }
-            catch (Exception Desc)
+            using (Mat ImageCVSource = Lib.Common.BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
             {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
+                if (ImageCVSource.Channels() == 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.RGB2GRAY);
+               
+                Bitmap Result = new Bitmap(10, 10);
+                //Cv2.MorphologyEx(ImageCVSource, ImageCVSource, AppUtil.ParseEnum<MorphTypes>(Operator), Kernel, new OpenCvSharp.Point(-1, -1), 1);
+                //Result = CommonConverter.ToBitmap(ImageCVSource);
+                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
             }
+        
         }
         private void trbRotate_Scroll(object sender, EventArgs e)
         {
 
-            try
-            {
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
+                        Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
 
-                using (Mat ImageCVSource = Lib.Common.CImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
-                {
-                    if (ImageCVSource.Channels() == 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.RGB2GRAY);
-
-                    Bitmap Result = new Bitmap(10, 10);
-                    Mat ImageRotate = Rotate(ImageCVSource, trbRotate.Value);
-                    //Cv2.MorphologyEx(ImageCVSource, ImageCVSource, CUtil.ParseEnum<MorphTypes>(Operator), Kernel, new OpenCvSharp.Point(-1, -1), 1);
-                    Result = Lib.Common.CImageConverter.ToBitmap(ImageRotate);
-                    PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-                }
-            }
-            catch (Exception Desc)
+            using (Mat ImageCVSource = Lib.Common.BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
             {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
+                if (ImageCVSource.Channels() == 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.RGB2GRAY);
+
+                Bitmap Result = new Bitmap(10, 10);
+                Mat ImageRotate = Rotate(ImageCVSource, trbRotate.Value);
+                //Cv2.MorphologyEx(ImageCVSource, ImageCVSource, AppUtil.ParseEnum<MorphTypes>(Operator), Kernel, new OpenCvSharp.Point(-1, -1), 1);
+                Result = Lib.Common.BitmapImageConverter.ToBitmap(ImageRotate);
+                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
             }
+        
 
         }
 
@@ -146,26 +135,20 @@ namespace OpenVisionLab
         private void rjButton1_Click(object sender, EventArgs e)
         {
 
-            try
-            {
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
+                        Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
 
-                using (Mat ImageCVSource = Lib.Common.CImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
-                {
-                    if (ImageCVSource.Channels() == 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.RGB2GRAY);
-
-                    Bitmap Result = new Bitmap(10, 10);
-                    Mat ImageRotate = Rotate(ImageCVSource, double.Parse(tbRotate.Text));
-                    //Cv2.MorphologyEx(ImageCVSource, ImageCVSource, CUtil.ParseEnum<MorphTypes>(Operator), Kernel, new OpenCvSharp.Point(-1, -1), 1);
-                    Result = Lib.Common.CImageConverter.ToBitmap(ImageRotate);
-                    PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-                }
-            }
-            catch (Exception Desc)
+            using (Mat ImageCVSource = Lib.Common.BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
             {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
+                if (ImageCVSource.Channels() == 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.RGB2GRAY);
+
+                Bitmap Result = new Bitmap(10, 10);
+                Mat ImageRotate = Rotate(ImageCVSource, double.Parse(tbRotate.Text));
+                //Cv2.MorphologyEx(ImageCVSource, ImageCVSource, AppUtil.ParseEnum<MorphTypes>(Operator), Kernel, new OpenCvSharp.Point(-1, -1), 1);
+                Result = Lib.Common.BitmapImageConverter.ToBitmap(ImageRotate);
+                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
             }
+        
         }
     }
  }

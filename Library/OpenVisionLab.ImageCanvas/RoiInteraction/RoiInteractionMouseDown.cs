@@ -1,4 +1,4 @@
-using OpenVisionLab.ImageCanvas.Canvas;
+﻿using OpenVisionLab.ImageCanvas.Canvas;
 using OpenVisionLab.ImageCanvas.CanvasShapes;
 using OpenVisionLab.ImageCanvas.Overlays;
 using OpenVisionLab.ImageCanvas.OpenGLRendering;
@@ -12,7 +12,7 @@ namespace OpenVisionLab.ImageCanvas
 	public class RoiInteractionMouseDown
 	{
 		/// <summary>
-		/// Viewer�??�릭 ?�을 ??초기 Mode?� RoiRect�??�당?�니??
+		/// Viewer瑜??대┃ ?덉쓣 ??珥덇린 Mode? RoiRect瑜??좊떦?⑸땲??
 		/// </summary>
 		/// <param name="viewModel"></param>
 		/// <param name="activeRoiRect"></param>
@@ -31,10 +31,10 @@ namespace OpenVisionLab.ImageCanvas
 			activeRoiRect.SetEditingType(imageViewer.PreMousePos.X, imageViewer.PreMousePos.Y, imageViewer.ZoomScale, imageViewer.HandleSize);
 			openGLControl.Cursor = RoiInteractionCursor.GetCursorFromType(activeRoiRect, imageViewer.PreMousePos, imageViewer.ZoomScale, imageViewer.HandleSize);
 
-			// ?�당 ?�인?�에 ?�이?�그?�이 ?�는지 ?�인
+			// ?대떦 ?ъ씤?몄뿉 ?ㅼ씠?닿렇?⑥씠 ?덈뒗吏 ?뺤씤
 			//imageViewer._targetGroupOverlay = null;
 			var (targetOverlay, isGroupOverlay) = GetLeftClickOverlay(imageViewer, e);
-			activeRoiRect.IsChanged = true; // ?�전???�아?�는 Drawing ???�이?��? 초기???�야??
+			activeRoiRect.IsChanged = true; // ?댁쟾???⑥븘?덈뒗 Drawing ???곗씠?곕? 珥덇린???댁빞??
 			activeRoiRect = targetOverlay == null ? new CanvasRect<float>() : targetOverlay;
 			activeRoiRect.SetEditingType(imageViewer.PreMousePos.X, imageViewer.PreMousePos.Y, imageViewer.ZoomScale, imageViewer.HandleSize);
 			openGLControl.Cursor = RoiInteractionCursor.GetCursorFromType(activeRoiRect, imageViewer.PreMousePos, imageViewer.ZoomScale, imageViewer.HandleSize);
@@ -70,7 +70,7 @@ namespace OpenVisionLab.ImageCanvas
 		{
 			List<CanvasOverlayItem> overlayItems = imageViewer.GetVisibleUnlockedOverlays();
 
-			// ?�용?��? 직접 ?�집?????�는 ?�제 Window ROI�??�색?�니??
+			// ?ъ슜?먭? 吏곸젒 ?몄쭛?????덈뒗 ?ㅼ젣 Window ROI留??먯깋?⑸땲??
 			CanvasRect<float> targetOverlay = overlayItems
 				.Where(x => !x.IsGroupRectangle && x.ItemType == EnumItemType.Window)
 				.Select(x => x.Shape)
@@ -93,7 +93,7 @@ namespace OpenVisionLab.ImageCanvas
 
 				if (targetOverlay != null)
 				{
-					isGroupOverlay = true; // ??경우?�만 isGroupRectangle??true�??�정
+					isGroupOverlay = true; // ??寃쎌슦?먮쭔 isGroupRectangle??true濡??ㅼ젙
 				}
 			}
 			else

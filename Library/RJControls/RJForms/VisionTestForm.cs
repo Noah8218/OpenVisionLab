@@ -11,6 +11,7 @@ using RJCodeUI_M1.RJControls;
 using OpenVisionLab;
 using OpenVisionLab._1._Core;
 using Lib.Common;
+using Lib.OpenCV;
 using OpenCvSharp;
 using System.Reflection;
 using System.Diagnostics;
@@ -22,23 +23,30 @@ namespace RJCodeUI_M1.RJForms
 {
     public class VisionTestForm : RJBaseForm
     {
-        public CViewer source_1 = new CViewer();
-        public CViewer source_2 = new CViewer();
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        protected readonly LayerViewerState source_1 = new LayerViewerState();
+
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        protected readonly LayerViewerState source_2 = new LayerViewerState();
         protected IDisplayManager displayManager;
-        private readonly CWpgEvent wpgEvent;
+        private readonly PropertyGridEventBinder wpgEvent;
 
         #region Event Register        
-        public EventHandler<DockDisplayEventArgs> eventUpdateDisplay;
+        protected EventHandler<DockDisplayEventArgs> eventUpdateDisplay;
         #endregion
 
-        public CViewer destination = new CViewer();
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        protected readonly LayerViewerState destination = new LayerViewerState();
 
-        public int source1_Index = 0;
-        public int source2_Index = 0;
-        public int destination_Index = 0;
+        protected int source1_Index = 0;
+        protected int source2_Index = 0;
+        protected int destination_Index = 0;
 
-        public System.Windows.Forms.Integration.ElementHost host = null;
-        public IPropertyGridView wpg = null;
+        protected System.Windows.Forms.Integration.ElementHost host = null;
+        protected IPropertyGridView wpg = null;
 
         public int GetDisplayIndex(string strTitle)
         {
@@ -90,18 +98,10 @@ namespace RJCodeUI_M1.RJForms
 
         protected bool RegisterEscapeClose()
         {
-            try
-            {
-                KeyPreview = true;
-                KeyDown += CloseOnEscape;
-                CLOG.NORMAL($"[OK] {GetType().Name}==>{nameof(RegisterEscapeClose)}");
-                return true;
-            }
-            catch (Exception desc)
-            {
-                CLOG.ABNORMAL($"[FAILED] {GetType().Name}==>{nameof(RegisterEscapeClose)}   Exception ==> {desc.Message}");
-                return false;
-            }
+                        KeyPreview = true;
+            KeyDown += CloseOnEscape;
+            return true;
+        
         }
 
         protected void ApplyVisionTestCompactStyle()
@@ -222,7 +222,7 @@ namespace RJCodeUI_M1.RJForms
             AcceptUserImageChange(destinationComboBox, destinationViewer, index => destination_Index = index);
         }
 
-        protected void SelectLayer(RJComboBox comboBox, CViewer viewerState, VisionTestImageCanvas viewer, Action<int> setIndex, bool updateActiveImage = false)
+        protected void SelectLayer(RJComboBox comboBox, LayerViewerState viewerState, VisionTestImageCanvas viewer, Action<int> setIndex, bool updateActiveImage = false)
         {
             if (comboBox.SelectedIndex < 0) { return; }
 
@@ -236,7 +236,7 @@ namespace RJCodeUI_M1.RJForms
 
             if (updateActiveImage && image != null)
             {
-                displayManager.SetImageSrc(CImageConverter.ToMat(image));
+                displayManager.SetImageSrc(BitmapImageConverter.ToMat(image));
             }
         }
 
@@ -277,6 +277,88 @@ namespace RJCodeUI_M1.RJForms
             eventUpdateDisplay?.Invoke(null, new DockDisplayEventArgs(result, displayIndex, elapsedText));
         }
 
+        protected Mat CreateRunSourceMat(VisionTestImageCanvas sourceViewer, out Bitmap resultBitmap)
+        {
+            if (sourceViewer?.DisplayBitmap == null)
+            {
+                throw new InvalidOperationException("Source image is not loaded.");
+            }
+
+            Mat sourceMat = BitmapImageConverter.ToMat(sourceViewer.DisplayBitmap).Clone();
+            resultBitmap = BitmapDrawing.GetBitmapFormat24bppRgb(sourceViewer.DisplayBitmap);
+            OpenCvHelper.SetImageChannel1(sourceMat);
+
+            return sourceMat;
+        }
+
+        protected Bitmap CreateSingleInputResult(VisionTestImageCanvas sourceViewer, Action<Mat> processImage)
+        {
+            if (processImage == null)
+            {
+                throw new ArgumentNullException(nameof(processImage));
+            }
+
+            using (Mat sourceMat = CreateRunSourceMat(sourceViewer, out Bitmap initialResult))
+            {
+                initialResult.Dispose();
+                return CreateSingleInputResult(sourceMat, processImage);
+            }
+        }
+
+        protected Bitmap CreateSingleInputResult(VisionTestImageCanvas sourceViewer, Action<Mat, bool> processImage)
+        {
+            if (processImage == null)
+            {
+                throw new ArgumentNullException(nameof(processImage));
+            }
+
+            using (Mat sourceMat = CreateRunSourceMat(sourceViewer, out Bitmap initialResult))
+            {
+                initialResult.Dispose();
+                return CreateSingleInputResult(sourceMat, processImage);
+            }
+        }
+
+        protected Bitmap CreateSingleInputResult(Mat sourceMat, Action<Mat> processImage)
+        {
+            if (processImage == null)
+            {
+                throw new ArgumentNullException(nameof(processImage));
+            }
+
+            return CreateSingleInputResult(sourceMat, (image, isRoi) => processImage(image));
+        }
+
+        protected Bitmap CreateSingleInputResult(Mat sourceMat, Action<Mat, bool> processImage)
+        {
+            if (sourceMat == null)
+            {
+                throw new ArgumentNullException(nameof(sourceMat));
+            }
+
+            if (processImage == null)
+            {
+                throw new ArgumentNullException(nameof(processImage));
+            }
+
+            if (displayManager.IsLayerRoiEmpty(source1_Index))
+            {
+                processImage(sourceMat, false);
+                return BitmapImageConverter.ToBitmap(sourceMat);
+            }
+
+            Rect roiRect = CommonConverter.RectangleToRect(GetLayerRoi(source1_Index));
+            using (Mat imageRoi = sourceMat.SubMat(roiRect))
+            {
+                processImage(imageRoi, true);
+                using (Bitmap sourceBitmap = BitmapImageConverter.ToBitmap(sourceMat))
+                using (Bitmap roiBitmap = BitmapImageConverter.ToBitmap(imageRoi))
+                {
+                    return BitmapProcessing.OverlayImage(sourceBitmap, roiBitmap, roiRect.Left, roiRect.Top);
+                }
+            }
+        }
+
         protected void InitializeSingleInputViewers(
             Action initializeLayerList,
             VisionTestImageCanvas sourceViewer,
@@ -304,7 +386,6 @@ namespace RJCodeUI_M1.RJForms
             }
 
             stopwatch.Stop();
-            CLOG.NORMAL($"[PERF] {GetType().Name} viewer event init: {stopwatch.ElapsedMilliseconds}ms");
 
             DeferInitialViewerLoad(() =>
             {
@@ -326,7 +407,6 @@ namespace RJCodeUI_M1.RJForms
                 Stopwatch stopwatch = Stopwatch.StartNew();
                 action();
                 stopwatch.Stop();
-                CLOG.NORMAL($"[PERF] {GetType().Name} {operationName}: {stopwatch.ElapsedMilliseconds}ms");
             };
 
             if (IsHandleCreated)
@@ -405,10 +485,9 @@ namespace RJCodeUI_M1.RJForms
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
             this.displayManager = displayManager ?? DisplayManagerService.Default;
-            wpgEvent = new CWpgEvent(() => this.displayManager);
+            wpgEvent = new PropertyGridEventBinder(() => this.displayManager);
             InitializeItems();
             stopwatch.Stop();
-            CLOG.NORMAL($"[PERF] {GetType().Name} constructor shell: {stopwatch.ElapsedMilliseconds}ms");
         }
 
         private void InitializePropertyGridHost()
@@ -434,7 +513,6 @@ namespace RJCodeUI_M1.RJForms
             Stopwatch stopwatch = Stopwatch.StartNew();
             InitializePropertyGridHost();
             stopwatch.Stop();
-            CLOG.NORMAL($"[PERF] {GetType().Name} property grid host: {stopwatch.ElapsedMilliseconds}ms");
             return host;
         }
 
@@ -470,7 +548,7 @@ namespace RJCodeUI_M1.RJForms
             source_1.SetDisplayManager(displayManager);
             source_2.SetDisplayManager(displayManager);
             destination.SetDisplayManager(displayManager);
-            CPropertyGridEditor.SetRuntimeContext(() => displayManager);
+            PropertyGridEditorFactory.SetRuntimeContext(() => displayManager);
         }
 
         /// Initialize Component

@@ -20,7 +20,7 @@ using Model = OpenVisionLab.ImageCanvas.Model;
 
 namespace OpenVisionLab.ImageCanvas.ViewModels
 {
-	public class RoiImageCanvasViewModel : ObservableObject
+	public partial class RoiImageCanvasViewModel : ObservableObject
 	{
 		#region Event
 		public event EventHandler<object> LoadImageRequested = delegate { };
@@ -207,6 +207,15 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 			}
 		}
 
+		public System.Drawing.PointF ImagePos
+		{
+			get
+			{
+				if (_imageViewer != null) { return _imageViewer.ImagePixelPos; }
+				return new System.Drawing.PointF();
+			}
+		}
+
 		public float HeightValue
 		{
 			get
@@ -370,7 +379,7 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 					break;
 			}
 
-			UpdatePiexelProperty();
+			UpdatePixelProperty();
 		}
 
 		private void OnMouseUp(object sender, CanvasMouseEventArgs e)
@@ -487,18 +496,6 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 
 		}
 
-		public void StartDrawingTimer()
-		{
-			if (_refreshTimer == null) { return; }
-			_refreshTimer.Start();
-		}
-
-		private void _dataTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
-		{
-			_refreshTimer.Stop();
-			_imageViewer.Reshape();
-		}
-
 		private CanvasRect<float> GetActiveInteractionRect()
 		{
 			return _imageViewer.GetViewMode() == CanvasInteractionMode.Drawing ? _drawingRect : _selectedRect;
@@ -605,163 +602,19 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 			_selectedRect = new CanvasRect<float>();
 		}
 
-		private void OnMouseRightClick(CanvasContextMenuMode t)
-		{
-			//AllOffVisiblility();
-			ExecuteRightClickCommand();
-		}
-
-		private void AllOffVisiblility()
-		{
-			foreach (var item in MenuItems)
-			{
-				item.IsVisible = false;
-			}
-		}
-
-		private void InitCommand()
-		{
-			LoadedCommand = new RelayCommand(() => Loaded());
-			SaveImageCommand = new RelayCommand(() => OnSaveIamge());
-			RightClickCommand = new RelayCommand(ExecuteRightClickCommand);
-			LoadImageCommand = new RelayCommand(OpenLoadImage);
-			TeachingCommand = new RelayCommand(ChangeTeachingMode);
-			AddingArrayCommand = new RelayCommand(ChangeAddingRoiArrayMode);
-			ShowPreviewCommand = new RelayCommand(ChangePreviewMode);
-			ShowCrossLineCommand = new RelayCommand(ShowCrossLine);
-			MeasureCommand = new RelayCommand(ExecuteMeasure);
-			PreviewKeyDownCommand = new RelayCommand<KeyEventArgs>((x) => OnPreviewKeyDown(x));
-			KeyUpCommand = new RelayCommand<KeyEventArgs>((x) => OnPreviewKeyUp(x));
-		}
-
-		private void OnSaveIamge()
-		{
-			//using (Bitmap bitmap = ViewCamera.TextureToBitmap())
-			//{
-			//	string savePath = $"{System.Windows.Forms.Application.StartupPath}\\_{DateTime.Now.ToString("yyyyMMdd_HHmmss")}.png";
-			//	bitmap.Save(savePath);
-			//}
-		}
-
-		private void OnPreviewKeyUp(KeyEventArgs args)
-		{
-			if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
-			{
-				switch (args.Key)
-				{
-					// ?? Control + C
-					case Key.C:
-						break;
-					// ?? Control + V
-					case Key.V:
-						break;
-					case Key.S:
-
-						break;
-				}
-			}
-		}
-
-		private void OnPreviewKeyDown(KeyEventArgs args)
-		{
-			if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
-			{
-
-			}
-			else
-			{
-				switch (args.Key)
-				{
-					case Key.Delete:
-						RemoveSelectedOverlay();
-						args.Handled = true;
-						break;
-					case Key.F2:
-						break;
-					case Key.Enter:
-						break;
-				}
-			}
-		}
-
-		private void ShowCrossLine() => IsShowCrossLine = !IsShowCrossLine;
-		private void ExecuteMeasure()
-		{
-			bool enableMeasure = !IsShowMeasure;
-			if (enableMeasure)
-			{
-				IsTeachingMode = false;
-				IsAddRoiArrayMode = false;
-			}
-
-			IsShowMeasure = enableMeasure;
-			OnWindowsChanged?.Invoke();
-		}
-		private void ChangePreviewMode() => IsPreviewMode = !IsPreviewMode;
-		private void ChangeAddingRoiArrayMode()
-		{
-			if (IsAddRoiArrayMode)
-			{
-				IsAddRoiArrayMode = false;
-				OnWindowsChanged?.Invoke();
-			}
-		}
-		private void ChangeTeachingMode()
-		{
-			bool enableTeaching = !IsTeachingMode;
-			if (enableTeaching)
-			{
-				IsShowMeasure = false;
-				IsAddRoiArrayMode = false;
-			}
-
-			IsTeachingMode = enableTeaching;
-			OnWindowsChanged?.Invoke();
-		}
-		private void ExecuteRightClickCommand()
-		{
-			if (ContextMenu != null)
-			{
-				if (IsShowMeasure || IsTeachingMode || IsAddRoiArrayMode)
-				{
-					IsShowMeasure = false;
-					IsTeachingMode = false;
-					IsAddRoiArrayMode = false;
-					OnWindowsChanged?.Invoke();
-					return;
-				}
-
-				ContextMenu.IsOpen = true;
-			}
-		}
-
-		private void OpenLoadImage()
-		{
-			OpenFileDialog openFileDialog = new OpenFileDialog();
-
-			// 2D ?��?지 ?�일 ?�식???�???�터 ?�정
-			openFileDialog.Filter = "Image files (*.bmp;*.jpg;*.jpeg;*.png;*.gif)|*.bmp;*.jpg;*.jpeg;*.png;*.gif|All files (*.*)|*.*";
-
-			if (openFileDialog.ShowDialog() == true)
-			{
-				string fileName = openFileDialog.FileName;
-				Stopwatch stopwatch = Stopwatch.StartNew();
-				using (var mat = CanvasImageLoader.LoadMatFromFile(fileName))
-				{
-					Console.WriteLine($"LoadMatFromFile : {stopwatch.ElapsedMilliseconds}");
-					Stopwatch stopwatch2 = Stopwatch.StartNew();
-					LoadImage(mat, fileName);
-					Console.WriteLine($"LoadImage : {stopwatch2.ElapsedMilliseconds}");
-				}
-			}
-		}
-
-		public void UpdatePiexelProperty()
+		public void UpdatePixelProperty()
 		{
 			OnPropertyChanged(nameof(GrayValue));
 			OnPropertyChanged(nameof(RobotPos));
+			OnPropertyChanged(nameof(ImagePos));
 			OnPropertyChanged(nameof(PixelColor));
 			OnPropertyChanged(nameof(HeightValue));
+		}
+
+		[Obsolete("Use UpdatePixelProperty instead.")]
+		public void UpdatePiexelProperty()
+		{
+			UpdatePixelProperty();
 		}
 
 		public void LoadImage(Mat mat, string fileName)

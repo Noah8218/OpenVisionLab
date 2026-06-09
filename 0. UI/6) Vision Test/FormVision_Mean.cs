@@ -16,7 +16,7 @@ namespace OpenVisionLab
 {
     public partial class FormVision_Mean : VisionTestForm
     {        
-        private CPropertyMean cPropertyMean = new CPropertyMean();
+        private MeanProperty cPropertyMean = new MeanProperty();
         private void InitLayListItem()
         {
             InitializeSingleInputLayerList(cbLayerList, cbLayerList2);
@@ -63,8 +63,8 @@ namespace OpenVisionLab
         }
         private void FormSettings_Camera_Load(object sender, EventArgs e)
         {
-            CUtil.InitDirectory("TEST");
-            cPropertyMean = cPropertyMean.LoadTestConfig(Application.StartupPath + "\\TEST\\" + cPropertyMean.NAME + ".xml");
+            AppUtil.InitDirectory("TEST");
+            cPropertyMean = cPropertyMean.LoadTestConfig(AppPathService.GetTestConfigPath(cPropertyMean.NAME));
             AttachPropertyGrid(pnParameter, cPropertyMean);
             InitializeSingleInputViewers(
                 InitLayListItem,
@@ -86,38 +86,29 @@ namespace OpenVisionLab
         }
         private void btnRun_Click(object sender, EventArgs e)
         {
-            try
-            {
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
+                        Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
 
-                using (Mat ImageCVSource = Lib.Common.CImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
+            using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
+            {
+
+                MeanTool CvMean = new MeanTool();
+                CvMean.SetProperty(cPropertyMean);                    
+                CvMean.SetSourceImage(ImageCVSource);
+                CvMean.Run();
+
+                Graphics g = Graphics.FromImage(Result);
+
+                foreach (var item in CvMean.results)
                 {
-                    Bitmap Result = CDrawBitmap.GetBitmapFormat24bppRgb(ibSource.DisplayBitmap);
-                    COpenCVHelper.SetImageChannel1(ImageCVSource);
-
-                    CVMean CvMean = new CVMean();
-                    CvMean.SetProperty(cPropertyMean);                    
-                    CvMean.SetSourceImage(ImageCVSource);
-                    CvMean.Run();
-
-                    Graphics g = Graphics.FromImage(Result);
-
-                    foreach (var item in CvMean.results)
-                    {
-                        g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Blue, 1), item.Bounding);
-                        g.DrawString($"Mean : {item.meanValue}", new Font("Arial", 3, FontStyle.Regular), new SolidBrush(System.Drawing.Color.Blue), (int)item.Center.X - 20, (int)item.Center.Y - 20);
-                    }
-                    PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
+                    g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Blue, 1), item.Bounding);
+                    g.DrawString($"Mean : {item.meanValue}", new Font("Arial", 3, FontStyle.Regular), new SolidBrush(System.Drawing.Color.Blue), (int)item.Center.X - 20, (int)item.Center.Y - 20);
                 }
-                wpg.SelectedObject = cPropertyMean;                
-                cPropertyMean.SaveTestConfig(Application.StartupPath + "\\TEST\\" + cPropertyMean.NAME + ".xml");
+                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
             }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-                CCommon.ShowMessageBox("ALARM", $"{Desc}");
-            }
+            wpg.SelectedObject = cPropertyMean;                
+            cPropertyMean.SaveTestConfig(AppPathService.GetTestConfigPath(cPropertyMean.NAME));
+        
         }
 
         private void toolTip1_Popup(object sender, PopupEventArgs e)

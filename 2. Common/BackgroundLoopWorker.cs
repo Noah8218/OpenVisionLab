@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Lib.Common;
@@ -36,7 +36,6 @@ namespace OpenVisionLab
             {
                 if (workerTask != null && !workerTask.IsCompleted)
                 {
-                    CLOG.NORMAL($"[BACKGROUND] {name} already running");
                     return false;
                 }
 
@@ -46,7 +45,6 @@ namespace OpenVisionLab
 
                 workerTask = Task.Run(async () =>
                 {
-                    CLOG.NORMAL($"[BACKGROUND] {name} start");
 
                     try
                     {
@@ -55,13 +53,12 @@ namespace OpenVisionLab
                     catch (OperationCanceledException) when (token.IsCancellationRequested)
                     {
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-                        CLOG.ABNORMAL($"[BACKGROUND] {name} error ==> {ex}");
+
                     }
                     finally
                     {
-                        CLOG.NORMAL($"[BACKGROUND] {name} stop");
                     }
                 }, token);
 

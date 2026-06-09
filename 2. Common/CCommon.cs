@@ -70,7 +70,7 @@ namespace OpenVisionLab
         private static Form GetMessageBoxOwner()
         {
             return Application.OpenForms
-                .OfType<FormMetroFrame>()
+                .OfType<FormMainFrame>()
                 .FirstOrDefault(form => form.Visible && !form.IsDisposed)
                 ?? Form.ActiveForm
                 ?? Application.OpenForms
