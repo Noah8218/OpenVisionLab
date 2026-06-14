@@ -72,7 +72,7 @@ namespace OpenVisionLab
             AppUtil.InitDirectory("TEST");
             Property_Line_L = Property_Line_L.LoadTestConfig(AppPathService.GetTestConfigPath(Property_Line_L.NAME));
             Property_Line_R = Property_Line_R.LoadTestConfig(AppPathService.GetTestConfigPath(Property_Line_R.NAME));
-            AttachPropertyGrid(pnParameter, Property_Line_L);
+            AttachPropertyGridWithThresholdPreview(pnParameter, Property_Line_L, cbLayerList2, ibSource, ibDestination);
             InitializeSingleInputViewers(
                 InitLayListItem,
                 ibSource,
@@ -83,6 +83,7 @@ namespace OpenVisionLab
                 IbDestination_MouseClick,
                 toolTip1,
                 btnNewPanel_Desty);
+            VisionPipelineFormBridge.AttachAddButton(btnRun, () => rdoLeftEdgePara.Checked ? Property_Line_L : Property_Line_R, cbLayerList, cbLayerList2);
         }
 
         public FormVision_Line(IDisplayManager displayManager, EventHandler<DockDisplayEventArgs> EventUpdateDisplay)
@@ -135,23 +136,23 @@ namespace OpenVisionLab
 
         private void btnRun_Click(object sender, EventArgs e)
         {
-                        Stopwatch stopwatch = Stopwatch.StartNew();
-            
-            using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
+            RunVisionStep("Line Intersection", () =>
             {
-                var intersectionLine = InspectionAlgorithm.RunIntersectionFittingLines(ImageCVSource, Property_Line_L, Property_Line_R);
-                using (Graphics g = Graphics.FromImage(Result))
-                {                        
-                    BitmapDrawing.DrawFitLinesInstersectionLines(g, intersectionLine.Item1, intersectionLine.Item2, intersectionLine.Item3);
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
-                    stopwatch.Stop();
-                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
+                using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
+                {
+                    var intersectionLine = InspectionAlgorithm.RunIntersectionFittingLines(ImageCVSource, Property_Line_L, Property_Line_R);
+                    using (Graphics g = Graphics.FromImage(Result))
+                    {
+                        BitmapDrawing.DrawFitLinesInstersectionLines(g, intersectionLine.Item1, intersectionLine.Item2, intersectionLine.Item3);
+                        PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
+                    }
                 }
-            }
 
-            Property_Line_L.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_L.NAME));
-            Property_Line_R.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_R.NAME));
-        
+                Property_Line_L.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_L.NAME));
+                Property_Line_R.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_R.NAME));
+            });
         }
 
         private void OnPara_CheckedChanged(object sender, EventArgs e)
@@ -194,50 +195,51 @@ namespace OpenVisionLab
 
         private void btnEdgeRun_Click(object sender, EventArgs e)
         {
-                        Stopwatch stopwatch = Stopwatch.StartNew();
-
-            using (Mat imageCVSource = Lib.Common.BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
+            RunVisionStep("Line Edge", () =>
             {
-                Bitmap Result = BitmapDrawing.GetBitmapFormat24bppRgb(ibSource.DisplayBitmap);
-                using (Graphics g = Graphics.FromImage(Result))
+                Stopwatch stopwatch = Stopwatch.StartNew();
+
+                using (Mat imageCVSource = Lib.Common.BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
                 {
-                    LineGaugeTool edgeTool = new LineGaugeTool();
-                    edgeTool.SetSourceImage(imageCVSource);                        
-                    edgeTool.SetProperty(rdoLeftEdgePara.Checked ? (LineGaugeProperty)Property_Line_L.DeepCopy() : (LineGaugeProperty)Property_Line_R.DeepCopy());
-                    edgeTool.Run();
+                    Bitmap Result = BitmapDrawing.GetBitmapFormat24bppRgb(ibSource.DisplayBitmap);
+                    using (Graphics g = Graphics.FromImage(Result))
+                    {
+                        LineGaugeTool edgeTool = new LineGaugeTool();
+                        edgeTool.SetSourceImage(imageCVSource);
+                        edgeTool.SetProperty(rdoLeftEdgePara.Checked ? (LineGaugeProperty)Property_Line_L.DeepCopy() : (LineGaugeProperty)Property_Line_R.DeepCopy());
+                        edgeTool.Run();
 
-                    BitmapDrawing.DrawLineGauge(g, edgeTool);
- 
-                    stopwatch.Stop();
-                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-                }                    
-            }
+                        BitmapDrawing.DrawLineGauge(g, edgeTool);
+                        PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
+                    }
+                }
 
-            AppUtil.InitDirectory("TEST");                
-            Property_Line_L.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_L.NAME));
-            Property_Line_R.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_R.NAME));
-        
+                AppUtil.InitDirectory("TEST");
+                Property_Line_L.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_L.NAME));
+                Property_Line_R.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_R.NAME));
+            });
         }
 
         private void btnVerLineRun_Click(object sender, EventArgs e)
         {
-                        Stopwatch stopwatch = Stopwatch.StartNew();
-            using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
+            RunVisionStep("Vertical Line Intersection", () =>
             {
-                var intersectionLine = InspectionAlgorithm.RunIntersectionLines(ImageCVSource, Property_Line_L, Property_Line_R);
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
-                using (Graphics g = Graphics.FromImage(Result))
+                using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
                 {
-                    BitmapDrawing.DrawInstersectionLines(g, intersectionLine.Item1, intersectionLine.Item2, intersectionLine.Item3);
+                    var intersectionLine = InspectionAlgorithm.RunIntersectionLines(ImageCVSource, Property_Line_L, Property_Line_R);
 
-                    stopwatch.Stop();
-                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
+                    using (Graphics g = Graphics.FromImage(Result))
+                    {
+                        BitmapDrawing.DrawInstersectionLines(g, intersectionLine.Item1, intersectionLine.Item2, intersectionLine.Item3);
+                        PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
+                    }
                 }
-            }
-            
-            Property_Line_L.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_L.NAME));
-            Property_Line_R.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_R.NAME));
-        
+
+                Property_Line_L.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_L.NAME));
+                Property_Line_R.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Line_R.NAME));
+            });
         }
     }
  }

@@ -30,9 +30,9 @@ namespace OpenVisionLab
         }
         private void InitLayListItem()
         {
-            InitializeLayerList(cbLayerList1, source1_Index);
-            InitializeLayerList(cbLayerList2, source2_Index);
-            InitializeLayerList(cbLayerList_Dest, destination_Index);
+            InitializeLayerList(cbLayerList1, source1_Index, true);
+            InitializeLayerList(cbLayerList2, source2_Index, true);
+            InitializeLayerList(cbLayerList_Dest, destination_Index, true);
         }
 
         private void IbSource2_MouseClick(object sender, MouseEventArgs e)
@@ -107,14 +107,28 @@ namespace OpenVisionLab
 
             rdoSourceImage.Checked = true;
 
+            ibSource1.EmptyTitle = "No input A";
+            ibSource1.EmptyDescription = "Select input A layer.";
+            ibSource2.EmptyTitle = "No input B";
+            ibSource2.EmptyDescription = "Select input B layer.";
+            ibDestination.EmptyTitle = "No output yet";
+            ibDestination.EmptyDescription = "Run the tool to view the result.";
+
             DeferInitialViewerLoad(() =>
             {
-                ibSource1.DisplayImage = GetLayerImage(DEFINE.Main);
-                ibSource2.DisplayImage = GetLayerImage(DEFINE.Main);
-                ibDestination.DisplayImage = GetLayerImage(DEFINE.Main);
-                ibSource1.ZoomToFit();
-                ibSource2.ZoomToFit();
-                ibDestination.ZoomToFit();
+                ibSource1.DisplayImage = GetLayerImage(source1_Index);
+                ibSource2.DisplayImage = GetLayerImage(source2_Index);
+
+                if (destination_Index >= 0
+                    && destination_Index != source1_Index
+                    && destination_Index != source2_Index)
+                {
+                    ibDestination.DisplayImage = GetLayerImage(destination_Index);
+                }
+
+                if (ibSource1.DisplayBitmap != null) { ibSource1.ZoomToFit(); }
+                if (ibSource2.DisplayBitmap != null) { ibSource2.ZoomToFit(); }
+                if (ibDestination.DisplayBitmap != null) { ibDestination.ZoomToFit(); }
             }, "arithmetic viewer image load");
         }
 
@@ -146,7 +160,9 @@ namespace OpenVisionLab
         }
         private void btnArithmeticRun_Click(object sender, EventArgs e)
         {
-                        Stopwatch stopwatch = new Stopwatch();
+            RunVisionStep("Arithmetic", () =>
+            {
+            Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
             using (Mat ImageCVSource1 = Lib.Common.BitmapImageConverter.ToMat(ibSource1.DisplayBitmap).Clone())
@@ -280,6 +296,7 @@ namespace OpenVisionLab
                 }
                 PublishResult(cbLayerList_Dest, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
             }
+            });
         
         }
 
@@ -394,7 +411,9 @@ namespace OpenVisionLab
 
         private void rjButton1_Click(object sender, EventArgs e)
         {
-                        Stopwatch stopwatch = new Stopwatch();
+            RunVisionStep("Arithmetic Offset", () =>
+            {
+            Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
             using (Mat ImageCVSource1 = Lib.Common.BitmapImageConverter.ToMat(ibSource1.DisplayBitmap).Clone())
@@ -438,6 +457,7 @@ namespace OpenVisionLab
                 Result = Lib.Common.BitmapImageConverter.ToBitmap(DstImg);
                 PublishResult(cbLayerList_Dest, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
             }
+            });
         
         }
     }

@@ -65,7 +65,7 @@ namespace OpenVisionLab
         {
             AppUtil.InitDirectory("TEST");
             cPropertyMean = cPropertyMean.LoadTestConfig(AppPathService.GetTestConfigPath(cPropertyMean.NAME));
-            AttachPropertyGrid(pnParameter, cPropertyMean);
+            AttachPropertyGridWithThresholdPreview(pnParameter, cPropertyMean, cbLayerList2, ibSource, ibDestination);
             InitializeSingleInputViewers(
                 InitLayListItem,
                 ibSource,
@@ -76,6 +76,7 @@ namespace OpenVisionLab
                 IbDestination_MouseClick,
                 toolTip1,
                 btnNewPanel_Desty);
+            VisionPipelineFormBridge.AttachAddButton(btnRun, () => cPropertyMean, cbLayerList, cbLayerList2);
         }
 
         public FormVision_Mean(IDisplayManager displayManager, EventHandler<DockDisplayEventArgs> EventUpdateDisplay)
@@ -86,29 +87,32 @@ namespace OpenVisionLab
         }
         private void btnRun_Click(object sender, EventArgs e)
         {
-                        Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
-            using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
+            RunVisionStep("Mean", () =>
             {
-
-                MeanTool CvMean = new MeanTool();
-                CvMean.SetProperty(cPropertyMean);                    
-                CvMean.SetSourceImage(ImageCVSource);
-                CvMean.Run();
-
-                Graphics g = Graphics.FromImage(Result);
-
-                foreach (var item in CvMean.results)
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
                 {
-                    g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Blue, 1), item.Bounding);
-                    g.DrawString($"Mean : {item.meanValue}", new Font("Arial", 3, FontStyle.Regular), new SolidBrush(System.Drawing.Color.Blue), (int)item.Center.X - 20, (int)item.Center.Y - 20);
+
+                    MeanTool CvMean = new MeanTool();
+                    CvMean.SetProperty(cPropertyMean);
+                    CvMean.SetSourceImage(ImageCVSource);
+                    CvMean.Run();
+
+                    using (Graphics g = Graphics.FromImage(Result))
+                    {
+                        foreach (var item in CvMean.results)
+                        {
+                            g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Blue, 1), item.Bounding);
+                            g.DrawString($"Mean : {item.meanValue}", new Font("Arial", 3, FontStyle.Regular), new SolidBrush(System.Drawing.Color.Blue), (int)item.Center.X - 20, (int)item.Center.Y - 20);
+                        }
+                    }
+
+                    PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
                 }
-                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-            }
-            wpg.SelectedObject = cPropertyMean;                
-            cPropertyMean.SaveTestConfig(AppPathService.GetTestConfigPath(cPropertyMean.NAME));
-        
+
+                wpg.SelectedObject = cPropertyMean;
+                cPropertyMean.SaveTestConfig(AppPathService.GetTestConfigPath(cPropertyMean.NAME));
+            });
         }
 
         private void toolTip1_Popup(object sender, PopupEventArgs e)

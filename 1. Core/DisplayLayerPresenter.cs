@@ -46,6 +46,14 @@ namespace OpenVisionLab._1._Core
             return layers.GetTitle(index);
         }
 
+        public FormLayerDisplay GetLayerDisplayOrNull(string title)
+        {
+            lock (displaySync)
+            {
+                return layers.GetByTitleOrFirst(title);
+            }
+        }
+
         public int FindIndex(string title)
         {
             return layers.FindIndex(title);
@@ -113,7 +121,10 @@ namespace OpenVisionLab._1._Core
         public void ActivateLayer(int index)
         {
             FormLayerDisplay display = layers.GetOrNull(index);
-            display?.Activate();
+            if (display == null) { return; }
+
+            display.Activate();
+            displayManager.FocusItem = display.Text;
         }
 
         public void ZoomLayerToFit(string title)
@@ -147,10 +158,10 @@ namespace OpenVisionLab._1._Core
         {
             if (host.DockPanel == null) return;
 
-			FormLayerDisplay display = layers.Create(imageSource, useClose, title, displayManager);
-			imageSpace.SetImage(display.nIndex, title, display.GetCurrentImage());
+			FormLayerDisplay display = layers.Create(null, useClose, title, displayManager);
 			display.Show(host.DockPanel, DockState.Document);
-			display.ZoomToFit();
+			display.SetImage(imageSource);
+			imageSpace.SetImage(display.nIndex, title, display.GetCurrentImage());
         }
 
         private void UpdateLayerDisplay(int displayIndex, Bitmap imageSource, string title)

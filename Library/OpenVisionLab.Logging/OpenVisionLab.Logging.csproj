@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <Compile Include="LogEnums.cs" />
-    <Compile Include="CLog.cs" />
+    <Compile Include="OVLog.cs" />
     <Compile Include="CleanUp\LogRetentionPruner.cs" />
     <Compile Include="CleanUp\LogRetentionService.cs" />
     <Compile Include="Model\RuntimeLogSink.cs" />

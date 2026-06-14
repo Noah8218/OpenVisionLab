@@ -91,7 +91,9 @@ namespace OpenVisionLab
         }
         private void btnFilterRun_Click(object sender, EventArgs e)
         {
-                        Stopwatch stopwatch = new Stopwatch();
+            RunVisionStep("Histogram", () =>
+            {
+            Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
             if (tbClipLimit.Text == "") { tbClipLimit.Text = "3"; }
@@ -127,6 +129,7 @@ namespace OpenVisionLab
                 }
             });
             PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
+            });
         
         }
 

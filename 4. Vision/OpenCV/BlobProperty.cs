@@ -3,6 +3,7 @@ using System.Windows.Controls.WpfPropertyGrid;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using Lib.OpenCV.Blob;
 using Lib.OpenCV.Property;
+using static OpenVisionLab.PropertyGridEditorFactory;
 
 namespace OpenVisionLab
 {
@@ -12,12 +13,14 @@ namespace OpenVisionLab
     {
         [PropertyOrder(1)]
         [Browsable(true)]
-        [CategoryAttribute("Blob Parameter"), DescriptionAttribute("Area(가로*세로) 최소 사이즈입니다. 그 이하는 필터링 됩니다."), DisplayNameAttribute("MIN AREA")]
+        [PropertyEditor(typeof(WpgRangeEditor))]
+        [RangeEditor(0, 1000000, 10, 0, nameof(MIN_AREA), nameof(MAX_AREA))]
+        [CategoryAttribute("Blob Parameter"), DescriptionAttribute("Blob으로 인정할 Area(가로*세로) 범위입니다."), DisplayNameAttribute("Area range")]
         public  int MIN_AREA { get; set; } = 200;
 
         [PropertyOrder(2)]
-        [Browsable(true)]
-        [CategoryAttribute("Blob Parameter"), DescriptionAttribute("Area(가로*세로) 최대 사이즈입니다. 그 이상는 필터링 됩니다."), DisplayNameAttribute("MAX AREA")]
+        [Browsable(false)]
+        [CategoryAttribute("Blob Parameter"), DescriptionAttribute("Area(가로*세로) 최대 사이즈입니다. 그 이상는 필터링 됩니다."), DisplayNameAttribute("Max area")]
         public int MAX_AREA { get; set; } = 1000000;
 
         public BlobProperty(string strName)

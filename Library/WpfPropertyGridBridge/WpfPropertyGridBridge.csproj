@@ -6,6 +6,11 @@
     <AssemblyName>WpfPropertyGridBridge</AssemblyName>
     <UseWPF>true</UseWPF>
     <Deterministic>false</Deterministic>
+    <WpgCustomBuildEnabled Condition="'$(WpgCustomBuildEnabled)' == ''">true</WpgCustomBuildEnabled>
+    <WpgCustomSourceRoot Condition="'$(WpgCustomSourceRoot)' == ''">$(MSBuildProjectDirectory)\..\..\..\WPG-CUSTOM</WpgCustomSourceRoot>
+    <WpgCustomProject>$(WpgCustomSourceRoot)\Main\WpfPropertyGrid\WpfPropertyGrid.csproj</WpgCustomProject>
+    <WpgCustomOutputDir>$(WpgCustomSourceRoot)\Main\WpfPropertyGrid\bin\$(Configuration)\</WpgCustomOutputDir>
+    <WpgCustomTargetDir>$(MSBuildProjectDirectory)\..\..\dll\</WpgCustomTargetDir>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
@@ -32,4 +37,25 @@
   <ItemGroup>
     <ProjectReference Include="..\PropertyGrid.Abstractions\PropertyGrid.Abstractions.csproj" />
   </ItemGroup>
+
+  <Target Name="BuildAndCopyWpgCustomPropertyGrid"
+          BeforeTargets="ResolveReferences"
+          Condition="'$(WpgCustomBuildEnabled)' == 'true' and '$(DesignTimeBuild)' != 'true' and Exists('$(WpgCustomProject)')">
+    <MSBuild Projects="$(WpgCustomProject)"
+             Targets="Build"
+             Properties="Configuration=$(Configuration);Platform=AnyCPU;RestorePackages=false"
+             RemoveProperties="OutDir;OutputPath;TargetFramework;TargetFrameworks;RuntimeIdentifier;RuntimeIdentifiers" />
+
+    <ItemGroup>
+      <WpgCustomArtifacts Include="$(WpgCustomOutputDir)System.Windows.Controls.WpfPropertyGrid.dll"
+                          Condition="Exists('$(WpgCustomOutputDir)System.Windows.Controls.WpfPropertyGrid.dll')" />
+      <WpgCustomArtifacts Include="$(WpgCustomOutputDir)System.Windows.Controls.WpfPropertyGrid.xml"
+                          Condition="Exists('$(WpgCustomOutputDir)System.Windows.Controls.WpfPropertyGrid.xml')" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(WpgCustomArtifacts)"
+          DestinationFolder="$(WpgCustomTargetDir)"
+          SkipUnchangedFiles="true"
+          Condition="'@(WpgCustomArtifacts)' != ''" />
+  </Target>
 </Project>

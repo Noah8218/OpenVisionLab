@@ -10,6 +10,28 @@ namespace OpenVisionLab.PropertyGrid
         object SelectedObject { get; set; }
         bool HasCategories { get; }
         IPropertyGridPropertyCollection Properties { get; }
+        void ApplyDisplayOptions(PropertyGridDisplayOptions options);
+    }
+
+    public sealed class PropertyGridDisplayOptions
+    {
+        public double PropertyNameColumnWidth { get; set; } = 160;
+        public double EditorColumnMinWidth { get; set; } = 160;
+        public bool ShowSearchBox { get; set; } = true;
+
+        public static PropertyGridDisplayOptions ToolForm => new PropertyGridDisplayOptions
+        {
+            PropertyNameColumnWidth = 150,
+            EditorColumnMinWidth = 165,
+            ShowSearchBox = true
+        };
+
+        public static PropertyGridDisplayOptions Pipeline => new PropertyGridDisplayOptions
+        {
+            PropertyNameColumnWidth = 145,
+            EditorColumnMinWidth = 360,
+            ShowSearchBox = true
+        };
     }
 
     public interface IPropertyGridPropertyCollection

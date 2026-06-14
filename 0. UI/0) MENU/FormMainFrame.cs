@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using RJCodeUI_M1.RJControls;
 using OpenVisionLab._1._Core;
+using OpenVisionLab.MessageDialogs;
 using static OpenVisionLab.DEFINE;
 using Lib.Common;
 
@@ -15,6 +16,14 @@ namespace OpenVisionLab
         #region MENU
         private FormTeachingVision FrmVision = null;
         private FormInit formInit = null;
+        private Label lblWorkbenchSubtitle = null;
+        private Panel statusBarTopLine = null;
+        private Panel driveCTrack = null;
+        private Panel driveCFill = null;
+        private Panel driveDTrack = null;
+        private Panel driveDFill = null;
+        private ToolTip statusBarToolTip = null;
+        private bool startupSplashClosed = false;
         #endregion
 
         public FormMainFrame(FormInit formInit)
@@ -38,28 +47,76 @@ namespace OpenVisionLab
 
         private void FormMainFrame_Load(object sender, EventArgs e)
         {
-            pnlTitleBar.BackColor = Color.FromArgb(64, 73, 108);
-            pnStatusBar.BackColor = Color.FromArgb(64, 73, 108);
-            //pnSideUtil.BackColor = Color.FromArgb(49, 42, 81);
-            //icoBanner.OverlayColor = UIAppearance.StyleColor;
-            this.BackColor = Color.FromArgb(64, 73, 108);
-            btnAuthorizationIcon.BackColor = Color.FromArgb(64, 73, 108);
-            btnScreenCapture.BackColor = Color.FromArgb(64, 73, 108);
+            try
+            {
+                ApplyMainFrameChrome();
+                //pnSideUtil.BackColor = Color.FromArgb(49, 42, 81);
+                //icoBanner.OverlayColor = UIAppearance.StyleColor;
 
-            InitUI();
-            InitMenu();
+                InitUI();
+                InitMenu();
 
-            Global.System.Menu = SystemState.MenuKind.VISION;
+                Global.System.Menu = SystemState.MenuKind.VISION;
+            }
+            finally
+            {
+                CloseStartupSplash();
+            }
 
         }
 
         private void FormMainFrame_Shown(object sender, EventArgs e)
         {
-            formInit?.OnInitEnd();
+            CloseStartupSplash();
             BeginInvoke(new System.Windows.Forms.MethodInvoker(EnsureStartupWindowVisible));
         }
 
         #region INIT
+
+        private void ApplyMainFrameChrome()
+        {
+            Color chromeColor = Color.FromArgb(56, 66, 101);
+            Color chromeAccent = Color.FromArgb(132, 178, 245);
+
+            Text = "OpenVisionLab";
+            pnlTitleBar.BackColor = chromeColor;
+            pnStatusBar.BackColor = Color.FromArgb(30, 40, 63);
+            BackColor = chromeColor;
+            btnAuthorizationIcon.BackColor = chromeColor;
+            btnScreenCapture.BackColor = chromeColor;
+
+            btnAuthorizationName.Text = Global.System.Authorization.ToString();
+            btnAuthorizationName.BackColor = Color.FromArgb(64, 76, 116);
+            btnAuthorizationName.ForeColor = Color.FromArgb(205, 222, 249);
+            btnAuthorizationName.BorderColor = chromeAccent;
+
+            rjLabel1.AutoSize = false;
+            rjLabel1.Text = "OpenVisionLab";
+            rjLabel1.Font = new Font("Segoe UI", 19F, FontStyle.Bold, GraphicsUnit.Point);
+            rjLabel1.ForeColor = Color.White;
+            rjLabel1.TextAlign = ContentAlignment.MiddleLeft;
+            rjLabel1.SetBounds(196, 5, 220, 40);
+
+            if (lblWorkbenchSubtitle == null)
+            {
+                lblWorkbenchSubtitle = new Label
+                {
+                    AutoSize = false,
+                    BackColor = Color.Transparent,
+                    ForeColor = Color.FromArgb(198, 211, 237),
+                    Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
+                    Text = "Rule-based Vision Workbench",
+                    TextAlign = ContentAlignment.MiddleLeft
+                };
+                lblWorkbenchSubtitle.MouseDown += TitleBar_MouseDown;
+                lblWorkbenchSubtitle.MouseMove += TitleBar_MouseMove;
+                lblWorkbenchSubtitle.MouseUp += TitleBar_MouseUp;
+                pnlTitleBar.Controls.Add(lblWorkbenchSubtitle);
+            }
+
+            lblWorkbenchSubtitle.SetBounds(rjLabel1.Right + 10, 18, 260, 20);
+            lblWorkbenchSubtitle.BringToFront();
+        }
 
         private bool InitUI()
         {
@@ -70,18 +127,36 @@ namespace OpenVisionLab
                 FitToCurrentScreen();
                 this.IsMdiContainer = true;
 
-                lbVersion.Text = $"VERSION : {AppVersion.VERSION} - {AppVersion.DATETIME_UPDATED} ({AppVersion.MANAGER})";
+                lbVersion.Text = $"OpenVisionLab {AppVersion.VERSION} | Updated {AppVersion.DATETIME_UPDATED} | {AppVersion.MANAGER}";
                 LayoutStatusBar();
                 if (FrmVision != null && !FrmVision.Visible) FrmVision.Show();
 
             }
             catch (Exception Desc)
             {
-                System.Windows.Forms.MessageBox.Show(Desc.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                VisionMessageBox.Error(this, "Error", Desc.Message, Desc.ToString());
                 return false;
             }
 
             return true;
+        }
+
+        private void CloseStartupSplash()
+        {
+            if (startupSplashClosed)
+            {
+                return;
+            }
+
+            startupSplashClosed = true;
+            try
+            {
+                formInit?.OnInitEnd();
+            }
+            finally
+            {
+                formInit = null;
+            }
         }
 
         private bool InitEvent()

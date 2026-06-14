@@ -1,4 +1,5 @@
 ﻿using Lib.Common;
+using OpenVisionLab.MessageDialogs;
 using RJCodeUI_M1.RJControls;
 using System;
 using System.Collections.Generic;
@@ -75,7 +76,7 @@ namespace OpenVisionLab
                 ?? Form.ActiveForm
                 ?? Application.OpenForms
                     .Cast<Form>()
-                    .FirstOrDefault(form => form.Visible && !form.IsDisposed && !(form is FormMessageBox));
+                    .FirstOrDefault(form => form.Visible && !form.IsDisposed && !(form is FormMessageBox) && !(form is VisionMessageBoxForm));
         }
 
         public static void SetButtonBlue(RJButton rJButton)

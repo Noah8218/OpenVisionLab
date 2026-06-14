@@ -2,6 +2,7 @@
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using Lib.Common;
 using Lib.OpenCV;
+using Lib.OpenCV.Property;
 using OpenCvSharp;
 using System;
 using System.Drawing;
@@ -23,40 +24,26 @@ namespace OpenVisionLab._2._Common
 
         public void Wpg_SelectedObjectsChanged(object sender, EventArgs e)
         {
-            Wpg_PropertyValueChanged(sender, null);
+            ApplyVisibilityRules(sender as IPropertyGridView);
         }
 
         public void Wpg_PropertyValueChanged(object sender, PropertyGridPropertyValueChangedEventArgs e)
         {
-                        var propertyGrid = sender as IPropertyGridView;
+            ApplyVisibilityRules(sender as IPropertyGridView);
+        }
+
+        public void ApplyVisibilityRules(IPropertyGridView propertyGrid)
+        {
             if (propertyGrid == null) { return; }
             if (propertyGrid.SelectedObject == null) return;
-            if(e != null && propertyGrid.SelectedObject is OpenCvPropertyBase)
-            {
-                var Prop = (OpenCvPropertyBase)propertyGrid.SelectedObject;
-                switch (e.Property.Name.ToUpper())
-                {
-                    case nameof(Prop.THRESHOLD):
-                        RunThreshold(Prop, Prop.THRESHOLD);
-                        break;
-                    case nameof(Prop.ADAPTIVE_THRESHOLD):
-                        RunAdaptiveThreshold(Prop, Prop.ADAPTIVE_THRESHOLD);
-                        break;
-                        //case "BLACK_THRESHOLD":                        
-                        //    var Prop2 = (BlobProperty)propertyGrid.SelectedObject;
-                        //    RunThreshold(Prop, Prop2.BLACK_THRESHOLD);
-                        //    break;
-                        //case "WHITE_THRESHOLD":
-                        //    Prop2 = (BlobProperty)propertyGrid.SelectedObject;
-                        //    RunThreshold(Prop, Prop2.WHITE_THRESHOLD);
-                        //    break;
-                }
-            }                
             SetCOpencvPropertyBase(propertyGrid);
             SetLineGaugePropertyVisibility(propertyGrid);
             SetCPropertyMatching(propertyGrid);
-            SetCPropertyContour(propertyGrid);      
-        
+            SetCPropertyContour(propertyGrid);
+            SetThresholdToolPropertyVisibility(propertyGrid);
+            SetFilterToolPropertyVisibility(propertyGrid);
+            SetEdgeDetectionToolPropertyVisibility(propertyGrid);
+            SetPipelineStepAcceptanceVisibility(propertyGrid);
         }
 
         private static void SetCPropertyMatching(IPropertyGridView propertyGrid)
@@ -115,6 +102,100 @@ namespace OpenVisionLab._2._Common
                 }
             }
         }
+
+        private static void SetThresholdToolPropertyVisibility(IPropertyGridView propertyGrid)
+        {
+            if (!(propertyGrid.SelectedObject is ThresholdToolProperty threshold))
+            {
+                return;
+            }
+
+            bool useThreshold = threshold.Mode == ThresholdToolMode.Threshold;
+            bool useRange = threshold.Mode == ThresholdToolMode.Range;
+            bool useAdaptive = threshold.Mode == ThresholdToolMode.Adaptive;
+
+            SetBrowsable(propertyGrid, nameof(threshold.Threshold), useThreshold);
+            SetBrowsable(propertyGrid, nameof(threshold.ThresholdType), useThreshold);
+            SetBrowsable(propertyGrid, nameof(threshold.MaxValue), useThreshold || useAdaptive);
+            SetBrowsable(propertyGrid, nameof(threshold.RangeMin), useRange);
+            SetBrowsable(propertyGrid, nameof(threshold.RangeMax), useRange);
+            SetBrowsable(propertyGrid, nameof(threshold.Invert), useRange);
+            SetBrowsable(propertyGrid, nameof(threshold.AdaptiveType), useAdaptive);
+            SetBrowsable(propertyGrid, nameof(threshold.AdaptiveThresholdType), useAdaptive);
+            SetBrowsable(propertyGrid, nameof(threshold.BlockSize), useAdaptive);
+            SetBrowsable(propertyGrid, nameof(threshold.Weight), useAdaptive);
+        }
+
+        private static void SetFilterToolPropertyVisibility(IPropertyGridView propertyGrid)
+        {
+            if (!(propertyGrid.SelectedObject is FilterToolProperty filter))
+            {
+                return;
+            }
+
+            bool usesKernel = filter.FilterType == FilterToolType.Blur
+                || filter.FilterType == FilterToolType.GaussianBlur
+                || filter.FilterType == FilterToolType.BoxFilter;
+            bool usesMedian = filter.FilterType == FilterToolType.MedianBlur;
+            bool usesBilateral = filter.FilterType == FilterToolType.BilateralFilter;
+            bool usesBorder = filter.FilterType == FilterToolType.Blur
+                || filter.FilterType == FilterToolType.GaussianBlur
+                || filter.FilterType == FilterToolType.BilateralFilter;
+
+            SetBrowsable(propertyGrid, nameof(filter.KernelWidth), usesKernel);
+            SetBrowsable(propertyGrid, nameof(filter.KernelHeight), usesKernel);
+            SetBrowsable(propertyGrid, nameof(filter.MedianKernelSize), usesMedian);
+            SetBrowsable(propertyGrid, nameof(filter.Diameter), usesBilateral);
+            SetBrowsable(propertyGrid, nameof(filter.SigmaColor), usesBilateral);
+            SetBrowsable(propertyGrid, nameof(filter.SigmaSpace), usesBilateral);
+            SetBrowsable(propertyGrid, nameof(filter.BorderType), usesBorder);
+        }
+
+        private static void SetEdgeDetectionToolPropertyVisibility(IPropertyGridView propertyGrid)
+        {
+            if (!(propertyGrid.SelectedObject is EdgeDetectionToolProperty edge))
+            {
+                return;
+            }
+
+            bool usesCanny = edge.EdgeType == EdgeDetectionToolType.Canny;
+            bool usesSobel = edge.EdgeType == EdgeDetectionToolType.Sobel;
+            bool usesScharr = edge.EdgeType == EdgeDetectionToolType.Scharr;
+            bool usesLaplacian = edge.EdgeType == EdgeDetectionToolType.Laplacian;
+
+            SetBrowsable(propertyGrid, nameof(edge.CannyThresholdLow), usesCanny);
+            SetBrowsable(propertyGrid, nameof(edge.CannyThresholdHigh), usesCanny);
+            SetBrowsable(propertyGrid, nameof(edge.CannyApertureSize), usesCanny);
+            SetBrowsable(propertyGrid, nameof(edge.UseL2Gradient), usesCanny);
+            SetBrowsable(propertyGrid, nameof(edge.SobelDegreeX), usesSobel);
+            SetBrowsable(propertyGrid, nameof(edge.SobelDegreeY), usesSobel);
+            SetBrowsable(propertyGrid, nameof(edge.SobelKernelSize), usesSobel);
+            SetBrowsable(propertyGrid, nameof(edge.ScharrDegreeX), usesScharr);
+            SetBrowsable(propertyGrid, nameof(edge.ScharrDegreeY), usesScharr);
+            SetBrowsable(propertyGrid, nameof(edge.LaplacianKernelSize), usesLaplacian);
+        }
+
+        private static void SetPipelineStepAcceptanceVisibility(IPropertyGridView propertyGrid)
+        {
+            object selected = propertyGrid.SelectedObject;
+            if (selected == null || !HasProperty(selected, "UseAcceptance"))
+            {
+                return;
+            }
+
+            bool useAcceptance = GetBoolProperty(selected, "UseAcceptance");
+            bool useMetricRange = useAcceptance && !string.IsNullOrWhiteSpace(GetStringProperty(selected, "AcceptanceMetricName"));
+
+            SetBrowsable(propertyGrid, "ExpectedSuccess", useAcceptance);
+            SetBrowsable(propertyGrid, "MaxElapsedMilliseconds", useAcceptance);
+            SetBrowsable(propertyGrid, "RequiredMessageText", useAcceptance);
+            SetBrowsable(propertyGrid, "AcceptanceMetricName", useAcceptance);
+            SetBrowsable(propertyGrid, "UseAcceptanceMetricMinimum", false);
+            SetBrowsable(propertyGrid, "AcceptanceMetricMinimum", useMetricRange);
+            SetBrowsable(propertyGrid, "UseAcceptanceMetricMaximum", false);
+            SetBrowsable(propertyGrid, "AcceptanceMetricMaximum", false);
+        }
+
         private static void SetLineGaugePropertyVisibility(IPropertyGridView propertyGrid)
         {
             if (propertyGrid.SelectedObject is LineGaugeProperty)
@@ -130,6 +211,34 @@ namespace OpenVisionLab._2._Common
                     propertyGrid.Properties[nameof(line.MANUAL_ANGLE_VALUE)].IsBrowsable = false;
                     propertyGrid.Properties[nameof(line.POINT_RANGE)].IsBrowsable = true;
                 }
+            }
+        }
+
+        private static bool HasProperty(object target, string propertyName)
+        {
+            return target?.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public) != null;
+        }
+
+        private static bool GetBoolProperty(object target, string propertyName)
+        {
+            PropertyInfo property = target?.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
+            object value = property?.GetValue(target, null);
+            return value is bool boolValue && boolValue;
+        }
+
+        private static string GetStringProperty(object target, string propertyName)
+        {
+            PropertyInfo property = target?.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
+            object value = property?.GetValue(target, null);
+            return value?.ToString() ?? string.Empty;
+        }
+
+        private static void SetBrowsable(IPropertyGridView propertyGrid, string propertyName, bool isBrowsable)
+        {
+            var property = propertyGrid?.Properties?[propertyName];
+            if (property != null)
+            {
+                property.IsBrowsable = isBrowsable;
             }
         }
 
@@ -191,27 +300,5 @@ namespace OpenVisionLab._2._Common
             }        
         }
 
-        private void RunThreshold(OpenCvPropertyBase editor, double value)
-        {
-            if (OpenCvHelper.IsImageEmpty(DisplayManager.GetImageSrc())) return;
-
-            using (Mat imageSrc = DisplayManager.SelectedItem != DEFINE.Threshold ? DisplayManager.GetImageSrc().Clone() : Lib.Common.BitmapImageConverter.ToMat(DisplayManager.GetLayerImage("Main")).Clone())
-            {
-                Cv2.Threshold(imageSrc, imageSrc, (int)value, 255, AppUtil.ParseEnum<ThresholdTypes>(editor.THRESHOLD_TYPES.ToString()));
-                DisplayManager.CreateLayerDisplay(Lib.Common.BitmapImageConverter.ToBitmap(imageSrc), DEFINE.Threshold, false);
-            }
-        }
-
-        private void RunAdaptiveThreshold(OpenCvPropertyBase editor, double value)
-        {
-            if (OpenCvHelper.IsImageEmpty(DisplayManager.GetImageSrc())) return;
-
-            using (Mat imageSrc = DisplayManager.SelectedItem != nameof(DEFINE.AdaptiveThreshold) ? DisplayManager.GetImageSrc().Clone() : Lib.Common.BitmapImageConverter.ToMat(DisplayManager.GetLayerImage("Main")).Clone())
-            {
-                OpenCvHelper.SetImageChannel1(imageSrc);
-                Cv2.AdaptiveThreshold(imageSrc, imageSrc, (int)value, editor.ADAPTIVE_THRESHOLD_ALGORITHM, editor.ADAPTIVE_THRESHOLD_TYPES, editor.BlockSize, editor.Weight);
-                DisplayManager.CreateLayerDisplay(Lib.Common.BitmapImageConverter.ToBitmap(imageSrc), nameof(DEFINE.AdaptiveThreshold), false);
-            }
-        }
     }
 }

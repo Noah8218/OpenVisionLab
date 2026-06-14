@@ -1,4 +1,5 @@
 ﻿using OpenVisionLab.Vision._1._Tools.OpenCV;
+using OpenVisionLab.MessageDialogs;
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
@@ -32,7 +33,7 @@ namespace OpenVisionLab
             }
             catch (Exception Desc)
             {
-                MessageBox.Show(Desc.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                VisionMessageBox.Error("Error", Desc.Message, Desc.ToString());
                 return false;
             }
 
@@ -47,7 +48,7 @@ namespace OpenVisionLab
             }
             catch (Exception Desc)
             {
-                MessageBox.Show(Desc.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                VisionMessageBox.Error("Error", Desc.Message, Desc.ToString());
                 return false;
             }
 

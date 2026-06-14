@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using System.Reflection;
-using System.Diagnostics;
 using OpenCvSharp;
 using OpenVisionLab._1._Core;
 using RJCodeUI_M1.RJForms;
-using System.Linq;
 using Lib.Common;
 
 namespace OpenVisionLab
@@ -60,6 +56,8 @@ namespace OpenVisionLab
         }
         private void FormSettings_Camera_Load(object sender, EventArgs e)
         {
+            if (displayManager == null) { return; }
+
             AppUtil.InitDirectory("TEST");
             InitializeSingleInputViewers(
                 InitLayListItem,
@@ -81,7 +79,7 @@ namespace OpenVisionLab
 
         public FormVision_HSV()
         {
-
+            InitializeComponent();
         }
         private void btnNewPanel_Source_Click(object sender, EventArgs e)
         {     
@@ -89,49 +87,92 @@ namespace OpenVisionLab
         }     
         private void trbHsv_Scroll(object sender, EventArgs e)
         {
+            ScheduleHsvPreview();
+        }
 
-                        Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
+        private void ScheduleHsvPreview()
+        {
+            if (ibSource.DisplayBitmap == null) { return; }
 
-            using (Mat ImageCVSource = Lib.Common.BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
+            hsvPreviewTimer.Stop();
+            hsvPreviewTimer.Start();
+        }
+
+        private void hsvPreviewTimer_Tick(object sender, EventArgs e)
+        {
+            hsvPreviewTimer.Stop();
+            PublishHsvPreview();
+        }
+
+        private void PublishHsvPreview()
+        {
+            if (ibSource.DisplayBitmap == null || cbLayerList2.SelectedItem == null) { return; }
+
+            try
             {
-                //if (ImageCVSource.Channels() == 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.BGR2HSV);
-                //if (ImageCVSource.Channels() != 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.BGR2HSV);
-
-                Bitmap Result = new Bitmap(10, 10);
-                
-                List<int> mins = new List<int>();
-                mins.Add(trbHueMin.Value);
-                mins.Add(trbSatMin.Value);
-                mins.Add(trbValMin.Value);
-
-                int min = mins.Min();
-
-                List<int> maxs = new List<int>();
-                maxs.Add(trbHueMax.Value);
-                maxs.Add(trbSatMax.Value);
-                maxs.Add(trbValMax.Value);
-
-                int max = maxs.Max();
-
-                
-                Cv2.InRange(ImageCVSource, new Scalar(100, 100 , 100), new Scalar(200 , 255, 200), ImageCVSource);
-
-                Mat and = new Mat();
-
-                using (Mat sourceMat = Lib.Common.BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
+                using (Bitmap preview = CreateHsvPreviewBitmap())
                 {
-                    //if (sourceMat.Channels() != 1) Cv2.CvtColor(sourceMat, sourceMat, ColorConversionCodes.BGR2GRAY);
-                    Cv2.BitwiseAnd(sourceMat, sourceMat, and, ImageCVSource);
+                    PublishPreviewBitmap(cbLayerList2, ibDestination, preview);
+                }
+            }
+            catch
+            {
+                hsvPreviewTimer.Stop();
+            }
+        }
+
+        private Bitmap CreateHsvPreviewBitmap()
+        {
+            using (Mat source = BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
+            using (Mat hsv = ConvertToHsv(source))
+            using (Mat mask = new Mat())
+            using (Mat preview = new Mat())
+            {
+                int hueMin = Math.Min(trbHueMin.Value, trbHueMax.Value);
+                int hueMax = Math.Max(trbHueMin.Value, trbHueMax.Value);
+                int satMin = Math.Min(trbSatMin.Value, trbSatMax.Value);
+                int satMax = Math.Max(trbSatMin.Value, trbSatMax.Value);
+                int valMin = Math.Min(trbValMin.Value, trbValMax.Value);
+                int valMax = Math.Max(trbValMin.Value, trbValMax.Value);
+
+                Cv2.InRange(
+                    hsv,
+                    new Scalar(hueMin, satMin, valMin),
+                    new Scalar(hueMax, satMax, valMax),
+                    mask);
+                Cv2.BitwiseAnd(source, source, preview, mask);
+
+                return BitmapImageConverter.ToBitmap(preview);
+            }
+        }
+
+        private static Mat ConvertToHsv(Mat source)
+        {
+            Mat hsv = new Mat();
+            if (source.Channels() == 1)
+            {
+                using (Mat rgb = new Mat())
+                {
+                    Cv2.CvtColor(source, rgb, ColorConversionCodes.GRAY2RGB);
+                    Cv2.CvtColor(rgb, hsv, ColorConversionCodes.RGB2HSV);
                 }
 
-                if (and.Channels() != 3) Cv2.CvtColor(and, and, ColorConversionCodes.GRAY2RGB);
-
-                Result = Lib.Common.BitmapImageConverter.ToBitmap(and);
-                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
+                return hsv;
             }
-        
 
+            if (source.Channels() == 4)
+            {
+                using (Mat rgb = new Mat())
+                {
+                    Cv2.CvtColor(source, rgb, ColorConversionCodes.RGBA2RGB);
+                    Cv2.CvtColor(rgb, hsv, ColorConversionCodes.RGB2HSV);
+                }
+
+                return hsv;
+            }
+
+            Cv2.CvtColor(source, hsv, ColorConversionCodes.RGB2HSV);
+            return hsv;
         }
 
         public Mat Rotate(Mat src, double angle)

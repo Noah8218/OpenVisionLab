@@ -5,6 +5,35 @@ namespace OpenVisionLab._1._Core
 {
     public static class DisplayManagerImageExtensions
     {
+        private const int PlaceholderImageMaxSize = 10;
+
+        public static bool IsPlaceholderBitmap(Bitmap image)
+        {
+            if (image == null) return true;
+            if (image.Width > PlaceholderImageMaxSize || image.Height > PlaceholderImageMaxSize) return false;
+
+            try
+            {
+                for (int y = 0; y < image.Height; y++)
+                {
+                    for (int x = 0; x < image.Width; x++)
+                    {
+                        Color pixel = image.GetPixel(x, y);
+                        if (pixel.R > 2 || pixel.G > 2 || pixel.B > 2)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         public static Mat GetImageSrc(this IDisplayManager displayManager)
         {
             Bitmap image = displayManager?.ImageSpace?.GetActiveImage();

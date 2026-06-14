@@ -114,12 +114,12 @@ namespace OpenVisionLab
             LogConfig = LogConfig?.Normalize() ?? new LogConfig().Normalize();
             Directory.CreateDirectory(LogConfig.LogDirectory);
 
-            CLog.ApplyFilePolicy(
+            OVLog.ApplyFilePolicy(
                 LogConfig.LogDirectory,
                 LogConfig.MaxBackupFileCount,
                 LogConfig.MaximumFileSizeMB);
 
-            CLog.ApplyRetentionPolicy(
+            OVLog.ApplyRetentionPolicy(
                 LogConfig.LogDirectory,
                 LogConfig.RetentionDays);
         }
@@ -230,3 +230,5 @@ namespace OpenVisionLab
         #endregion
     }
 }
+
+

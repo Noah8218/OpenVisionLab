@@ -99,15 +99,26 @@ namespace OpenVisionLab
 
         private void InitStatusBarLayout()
         {
+            if (mainLayoutPanel.RowStyles.Count > 2)
+            {
+                mainLayoutPanel.RowStyles[2].Height = 31F;
+            }
+
+            EnsureStatusBarChrome();
+
             lbVersion.Dock = DockStyle.None;
             lbVersion.AutoSize = false;
             lbVersion.TextAlign = ContentAlignment.MiddleRight;
             lbVersion.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            StyleStatusBarLabel(lbVersion, ContentAlignment.MiddleRight);
 
             lbDriveC.Anchor = AnchorStyles.Top | AnchorStyles.Left;
             lbDriveD.Anchor = AnchorStyles.Top | AnchorStyles.Left;
-            pgbDriveC.Anchor = AnchorStyles.Left | AnchorStyles.Bottom;
-            pgbDriveD.Anchor = AnchorStyles.Left | AnchorStyles.Bottom;
+            StyleStatusBarLabel(lbDriveC, ContentAlignment.MiddleLeft);
+            StyleStatusBarLabel(lbDriveD, ContentAlignment.MiddleLeft);
+
+            pgbDriveC.Visible = false;
+            pgbDriveD.Visible = false;
 
             LayoutStatusBar();
         }
@@ -135,19 +146,143 @@ namespace OpenVisionLab
         {
             if (pnStatusBar.ClientSize.Width <= 0) return;
 
-            int margin = 8;
-            int progressTop = Math.Max(0, pnStatusBar.ClientSize.Height - pgbDriveC.Height - 2);
+            EnsureStatusBarChrome();
 
-            lbDriveC.Location = new Point(margin, 4);
-            pgbDriveC.Location = new Point(margin + 2, progressTop);
+            int margin = 10;
+            int gap = 22;
+            int driveWidth = 236;
+            int barWidth = 214;
+            int labelHeight = 17;
+            int trackHeight = 5;
+            int labelTop = 4;
+            int trackTop = pnStatusBar.ClientSize.Height - trackHeight - 5;
 
-            lbDriveD.Location = new Point(265, 4);
-            pgbDriveD.Location = new Point(268, progressTop);
+            statusBarTopLine.SetBounds(0, 0, pnStatusBar.ClientSize.Width, 1);
 
-            int versionLeft = Math.Max(500, pgbDriveD.Right + 20);
+            LayoutDriveStatus(lbDriveC, driveCTrack, driveWidth, barWidth, margin, labelTop, trackTop, labelHeight, trackHeight);
+            LayoutDriveStatus(lbDriveD, driveDTrack, driveWidth, barWidth, margin + driveWidth + gap, labelTop, trackTop, labelHeight, trackHeight);
+
+            int versionLeft = Math.Max(535, driveDTrack.Right + 20);
             int versionWidth = Math.Max(220, pnStatusBar.ClientSize.Width - versionLeft - margin);
-            lbVersion.SetBounds(versionLeft, 0, versionWidth, pnStatusBar.ClientSize.Height);
-            FitLabelFontToWidth(lbVersion, 12f, 8f);
+            lbVersion.SetBounds(versionLeft, 4, versionWidth, 22);
+            FitLabelFontToWidth(lbVersion, 11f, 8f);
+        }
+
+        private void EnsureStatusBarChrome()
+        {
+            if (statusBarToolTip == null)
+            {
+                statusBarToolTip = new ToolTip
+                {
+                    AutoPopDelay = 6000,
+                    InitialDelay = 250,
+                    ReshowDelay = 100,
+                    ShowAlways = true
+                };
+            }
+
+            pnStatusBar.BackColor = Color.FromArgb(30, 40, 63);
+
+            if (statusBarTopLine == null) statusBarTopLine = CreateStatusBarPanel(Color.FromArgb(74, 91, 132));
+            if (driveCTrack == null) driveCTrack = CreateDriveTrack();
+            if (driveCFill == null) driveCFill = CreateDriveFill(driveCTrack);
+            if (driveDTrack == null) driveDTrack = CreateDriveTrack();
+            if (driveDFill == null) driveDFill = CreateDriveFill(driveDTrack);
+
+            EnsureParent(statusBarTopLine, pnStatusBar);
+            EnsureParent(driveCTrack, pnStatusBar);
+            EnsureParent(driveDTrack, pnStatusBar);
+            EnsureParent(driveCFill, driveCTrack);
+            EnsureParent(driveDFill, driveDTrack);
+
+            statusBarTopLine.BringToFront();
+            lbDriveC.BringToFront();
+            lbDriveD.BringToFront();
+            lbVersion.BringToFront();
+        }
+
+        private static Panel CreateStatusBarPanel(Color backColor)
+        {
+            return new Panel
+            {
+                BackColor = backColor,
+                Margin = Padding.Empty
+            };
+        }
+
+        private static Panel CreateDriveTrack()
+        {
+            return new Panel
+            {
+                BackColor = Color.FromArgb(62, 75, 106),
+                Margin = Padding.Empty
+            };
+        }
+
+        private static Panel CreateDriveFill(Control parent)
+        {
+            return new Panel
+            {
+                BackColor = Color.FromArgb(37, 191, 115),
+                Location = Point.Empty,
+                Margin = Padding.Empty,
+                Height = parent?.Height ?? 5
+            };
+        }
+
+        private static void EnsureParent(Control child, Control parent)
+        {
+            if (child == null || parent == null || child.Parent == parent)
+            {
+                return;
+            }
+
+            parent.Controls.Add(child);
+        }
+
+        private void StyleStatusBarLabel(Label label, ContentAlignment alignment)
+        {
+            label.BackColor = Color.Transparent;
+            label.ForeColor = Color.FromArgb(230, 238, 255);
+            label.Font = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point);
+            label.TextAlign = alignment;
+        }
+
+        private void LayoutDriveStatus(Label label, Panel track, int containerWidth, int trackWidth, int left, int labelTop, int trackTop, int labelHeight, int trackHeight)
+        {
+            label.SetBounds(left, labelTop, containerWidth, labelHeight);
+            track.SetBounds(left + 1, trackTop, trackWidth, trackHeight);
+            track.BringToFront();
+        }
+
+        private void UpdateDriveBar(Panel fill, Panel track, double percent)
+        {
+            if (fill == null || track == null) return;
+
+            double clampedPercent = Math.Max(0D, Math.Min(100D, percent));
+            fill.Height = track.ClientSize.Height;
+            fill.Width = (int)Math.Round(track.ClientSize.Width * clampedPercent / 100D);
+            fill.BackColor = GetDriveUsageColor(clampedPercent);
+        }
+
+        private static Color GetDriveUsageColor(double percent)
+        {
+            if (percent >= 90D)
+            {
+                return Color.FromArgb(236, 89, 89);
+            }
+
+            if (percent >= 75D)
+            {
+                return Color.FromArgb(245, 179, 69);
+            }
+
+            return Color.FromArgb(37, 191, 115);
+        }
+
+        private void SetStatusBarToolTip(Control control, string text)
+        {
+            statusBarToolTip?.SetToolTip(control, text);
         }
 
         private void FitLabelFontToWidth(Label label, float maxSize, float minSize)

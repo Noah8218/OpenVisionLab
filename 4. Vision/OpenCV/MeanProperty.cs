@@ -3,6 +3,7 @@ using System.Windows.Controls.WpfPropertyGrid;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using Lib.OpenCV;
 using Lib.OpenCV.Property;
+using static OpenVisionLab.PropertyGridEditorFactory;
 
 namespace OpenVisionLab
 {
@@ -10,12 +11,19 @@ namespace OpenVisionLab
     [System.Xml.Serialization.XmlRoot("CPropertyMean")]
     public class MeanProperty : OpenCvPropertyBase, IOpenCVPropertyMean, IOpenCvConfigurableProperty<MeanProperty>
     {        
-        [CategoryAttribute("Mean"), DescriptionAttribute(""), DisplayNameAttribute("MEAN_MAX")]
+        [PropertyOrder(1)]
+        [Browsable(false)]
+        [CategoryAttribute("Mean"), DescriptionAttribute(""), DisplayNameAttribute("Max mean")]
         public int MEAN_MAX { get; set; } = 240;
-        [CategoryAttribute("Mean"), DescriptionAttribute(""), DisplayNameAttribute("MEAN_MIN")]
+
+        [PropertyOrder(0)]
+        [PropertyEditor(typeof(WpgRangeEditor))]
+        [RangeEditor(0, 255, 1, 0, nameof(MEAN_MIN), nameof(MEAN_MAX))]
+        [CategoryAttribute("Mean"), DescriptionAttribute("Mean 판정에 사용할 GV 범위입니다."), DisplayNameAttribute("Mean range")]
         public int MEAN_MIN { get; set; } = 100;
 
-        [CategoryAttribute("Mean"), DescriptionAttribute(""), DisplayNameAttribute("MEAN_TYPES")]
+        [PropertyOrder(2)]
+        [CategoryAttribute("Mean"), DescriptionAttribute(""), DisplayNameAttribute("Mean type")]
         public MeanType MEAN_TYPES { get; set; } = MeanType.Mean;
         
         public MeanProperty(string strName) { NAME = strName; }        

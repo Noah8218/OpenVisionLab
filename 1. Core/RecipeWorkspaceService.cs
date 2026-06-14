@@ -1,5 +1,6 @@
 ﻿using Lib.Common;
 using System.IO;
+using System.Linq;
 
 namespace OpenVisionLab
 {
@@ -73,6 +74,81 @@ namespace OpenVisionLab
             return Path.Combine(AppPathService.StartupPath, RecipeRoot, recipeName, "VISION.xml");
         }
 
+        public static string GetVisionPipelinePath(string recipeName, string pipelineName)
+        {
+            EnsureVisionWorkspace(recipeName);
+
+            string safeName = string.IsNullOrWhiteSpace(pipelineName) ? "Pipeline" : pipelineName;
+            return Path.Combine(GetVisionDirectory(recipeName), EnsureXmlExtension(safeName));
+        }
+
+        public static string GetVisionPipelineImageDirectory(string recipeName, string pipelineName)
+        {
+            EnsureVisionWorkspace(recipeName);
+
+            string safeName = string.IsNullOrWhiteSpace(pipelineName) ? "Pipeline" : pipelineName;
+            string directory = Path.Combine(GetVisionDirectory(recipeName), "PipelineImages", safeName);
+            Directory.CreateDirectory(directory);
+            return directory;
+        }
+
+        public static string GetVisionPipelineRunDirectory(string recipeName, string pipelineName, string runName)
+        {
+            EnsureVisionWorkspace(recipeName);
+
+            string safePipelineName = SanitizePathSegment(string.IsNullOrWhiteSpace(pipelineName) ? "Pipeline" : pipelineName);
+            string safeRunName = SanitizePathSegment(string.IsNullOrWhiteSpace(runName) ? "Run" : runName);
+            string directory = Path.Combine(GetVisionDirectory(recipeName), "PipelineRuns", safePipelineName, safeRunName);
+            Directory.CreateDirectory(directory);
+            return directory;
+        }
+
+        public static string GetVisionPipelineRunRootDirectory(string recipeName, string pipelineName)
+        {
+            EnsureVisionWorkspace(recipeName);
+
+            string safePipelineName = SanitizePathSegment(string.IsNullOrWhiteSpace(pipelineName) ? "Pipeline" : pipelineName);
+            string directory = Path.Combine(GetVisionDirectory(recipeName), "PipelineRuns", safePipelineName);
+            Directory.CreateDirectory(directory);
+            return directory;
+        }
+
+        public static string GetVisionPipelineSampleSetRootDirectory(string recipeName, string pipelineName)
+        {
+            EnsureVisionWorkspace(recipeName);
+
+            string safePipelineName = SanitizePathSegment(string.IsNullOrWhiteSpace(pipelineName) ? "Pipeline" : pipelineName);
+            string directory = Path.Combine(GetVisionDirectory(recipeName), "PipelineSamples", safePipelineName);
+            Directory.CreateDirectory(directory);
+            return directory;
+        }
+
+        public static string GetVisionPipelineSampleSetDirectory(string recipeName, string pipelineName, string sampleSetName)
+        {
+            string safeSampleSetName = SanitizePathSegment(string.IsNullOrWhiteSpace(sampleSetName) ? "Sample" : sampleSetName);
+            string directory = Path.Combine(GetVisionPipelineSampleSetRootDirectory(recipeName, pipelineName), safeSampleSetName);
+            Directory.CreateDirectory(directory);
+            return directory;
+        }
+
+        public static string GetVisionPipelineBatchRunRootDirectory(string recipeName, string pipelineName)
+        {
+            EnsureVisionWorkspace(recipeName);
+
+            string safePipelineName = SanitizePathSegment(string.IsNullOrWhiteSpace(pipelineName) ? "Pipeline" : pipelineName);
+            string directory = Path.Combine(GetVisionDirectory(recipeName), "PipelineBatchRuns", safePipelineName);
+            Directory.CreateDirectory(directory);
+            return directory;
+        }
+
+        public static string GetVisionPipelineBatchRunDirectory(string recipeName, string pipelineName, string batchName)
+        {
+            string safeBatchName = SanitizePathSegment(string.IsNullOrWhiteSpace(batchName) ? "Batch" : batchName);
+            string directory = Path.Combine(GetVisionPipelineBatchRunRootDirectory(recipeName, pipelineName), safeBatchName);
+            Directory.CreateDirectory(directory);
+            return directory;
+        }
+
         private static string GetRecipeDirectory(string recipeName)
         {
             if (string.IsNullOrWhiteSpace(recipeName))
@@ -116,6 +192,16 @@ namespace OpenVisionLab
 
             AppUtil.InitDirectory($@"{RecipeRoot}\{recipeName}\{childDirectory}");
             return Path.Combine(AppPathService.StartupPath, RecipeRoot, recipeName, childDirectory);
+        }
+
+        private static string SanitizePathSegment(string value)
+        {
+            char[] invalidChars = Path.GetInvalidFileNameChars();
+            string sanitized = new string((value ?? string.Empty)
+                .Select(ch => invalidChars.Contains(ch) ? '_' : ch)
+                .ToArray());
+
+            return string.IsNullOrWhiteSpace(sanitized) ? "Item" : sanitized;
         }
     }
 }

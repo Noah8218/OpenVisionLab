@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using System.Reflection;
 using System.Diagnostics;
+using System.Globalization;
 using OpenCvSharp;
 using OpenVisionLab._1._Core;
 using RJCodeUI_M1.RJForms;
@@ -12,7 +11,9 @@ using Lib.Common;
 namespace OpenVisionLab
 {
     public partial class FormVision_RotateAndScale : VisionTestForm
-    {                
+    {
+        private bool suppressTransformPreview;
+
         private void InitLayListItem()
         {
             InitializeSingleInputLayerList(cbLayerList, cbLayerList2);
@@ -59,6 +60,8 @@ namespace OpenVisionLab
         }
         private void FormSettings_Camera_Load(object sender, EventArgs e)
         {
+            if (displayManager == null) { return; }
+
             AppUtil.InitDirectory("TEST");
             InitializeSingleInputViewers(
                 InitLayListItem,
@@ -70,6 +73,7 @@ namespace OpenVisionLab
                 IbDestination_MouseClick,
                 toolTip1,
                 btnNewPanel_Desty);
+            InitializeTransformControls();
         }
         public FormVision_RotateAndScale(IDisplayManager displayManager, EventHandler<DockDisplayEventArgs> EventUpdateDisplay)
         {
@@ -80,7 +84,7 @@ namespace OpenVisionLab
 
         public FormVision_RotateAndScale()
         {
-
+            InitializeComponent();
         }
         private void btnNewPanel_Source_Click(object sender, EventArgs e)
         {     
@@ -89,66 +93,190 @@ namespace OpenVisionLab
 
         private void btnMorpRun_Click(object sender, EventArgs e)
         {
-                        
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
-            using (Mat ImageCVSource = Lib.Common.BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
-            {
-                if (ImageCVSource.Channels() == 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.RGB2GRAY);
-               
-                Bitmap Result = new Bitmap(10, 10);
-                //Cv2.MorphologyEx(ImageCVSource, ImageCVSource, AppUtil.ParseEnum<MorphTypes>(Operator), Kernel, new OpenCvSharp.Point(-1, -1), 1);
-                //Result = CommonConverter.ToBitmap(ImageCVSource);
-                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-            }
-        
+            RunRotateAndScale(true);
         }
+
         private void trbRotate_Scroll(object sender, EventArgs e)
         {
+            if (suppressTransformPreview) { return; }
 
-                        Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
+            SyncTransformTextBoxesFromTrackBars();
+            ScheduleTransformPreview();
+        }
 
-            using (Mat ImageCVSource = Lib.Common.BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
+        private void trbScale_Scroll(object sender, EventArgs e)
+        {
+            if (suppressTransformPreview) { return; }
+
+            SyncTransformTextBoxesFromTrackBars();
+            ScheduleTransformPreview();
+        }
+
+        private void InitializeTransformControls()
+        {
+            suppressTransformPreview = true;
+            try
             {
-                if (ImageCVSource.Channels() == 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.RGB2GRAY);
-
-                Bitmap Result = new Bitmap(10, 10);
-                Mat ImageRotate = Rotate(ImageCVSource, trbRotate.Value);
-                //Cv2.MorphologyEx(ImageCVSource, ImageCVSource, AppUtil.ParseEnum<MorphTypes>(Operator), Kernel, new OpenCvSharp.Point(-1, -1), 1);
-                Result = Lib.Common.BitmapImageConverter.ToBitmap(ImageRotate);
-                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
+                trbRotate.Value = ClampTrackValue(trbRotate, trbRotate.Value);
+                trbScaleX.Value = ClampTrackValue(trbScaleX, trbScaleX.Value == 0 ? 100 : trbScaleX.Value);
+                trbScaleY.Value = ClampTrackValue(trbScaleY, trbScaleY.Value == 0 ? 100 : trbScaleY.Value);
+                SyncTransformTextBoxesFromTrackBars();
             }
-        
+            finally
+            {
+                suppressTransformPreview = false;
+            }
+        }
 
+        private void SyncTransformTextBoxesFromTrackBars()
+        {
+            tbRotate.Text = trbRotate.Value.ToString(CultureInfo.InvariantCulture);
+            tbScaleX.Text = trbScaleX.Value.ToString(CultureInfo.InvariantCulture);
+            tbScaleY.Text = trbScaleY.Value.ToString(CultureInfo.InvariantCulture);
+        }
+
+        private void SyncTrackBarsFromTextBoxes()
+        {
+            suppressTransformPreview = true;
+            try
+            {
+                trbRotate.Value = ClampTrackValue(trbRotate, (int)Math.Round(ReadNumber(tbRotate.Text, trbRotate.Value)));
+                trbScaleX.Value = ClampTrackValue(trbScaleX, (int)Math.Round(ReadNumber(tbScaleX.Text, trbScaleX.Value)));
+                trbScaleY.Value = ClampTrackValue(trbScaleY, (int)Math.Round(ReadNumber(tbScaleY.Text, trbScaleY.Value)));
+                SyncTransformTextBoxesFromTrackBars();
+            }
+            finally
+            {
+                suppressTransformPreview = false;
+            }
+        }
+
+        private void RunRotateAndScale(bool writeLifecycleLog)
+        {
+            transformPreviewTimer.Stop();
+            SyncTrackBarsFromTextBoxes();
+
+            RunVisionStep(writeLifecycleLog ? "Rotate / Scale" : "Rotate / Scale Preview", () =>
+            {
+                if (ibSource.DisplayBitmap == null)
+                {
+                    throw new InvalidOperationException("Input image is empty.");
+                }
+
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                double angle = ReadNumber(tbRotate.Text, trbRotate.Value);
+                double scaleX = ReadScalePercent(tbScaleX.Text, trbScaleX.Value) / 100d;
+                double scaleY = ReadScalePercent(tbScaleY.Text, trbScaleY.Value) / 100d;
+
+                using (Mat source = BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
+                using (Mat transformed = RotateAndScale(source, angle, scaleX, scaleY))
+                {
+                    Bitmap result = BitmapImageConverter.ToBitmap(transformed);
+                    PublishResult(cbLayerList2, ibDestination, result, FormatElapsed(stopwatch));
+                }
+            }, writeLifecycleLog);
+        }
+
+        private void ScheduleTransformPreview()
+        {
+            if (ibSource.DisplayBitmap == null) { return; }
+
+            transformPreviewTimer.Stop();
+            transformPreviewTimer.Start();
+        }
+
+        private void transformPreviewTimer_Tick(object sender, EventArgs e)
+        {
+            transformPreviewTimer.Stop();
+            PublishRotateAndScalePreview();
+        }
+
+        private void PublishRotateAndScalePreview()
+        {
+            if (ibSource.DisplayBitmap == null || cbLayerList2.SelectedItem == null) { return; }
+
+            try
+            {
+                SyncTrackBarsFromTextBoxes();
+                double angle = ReadNumber(tbRotate.Text, trbRotate.Value);
+                double scaleX = ReadScalePercent(tbScaleX.Text, trbScaleX.Value) / 100d;
+                double scaleY = ReadScalePercent(tbScaleY.Text, trbScaleY.Value) / 100d;
+
+                using (Mat source = BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
+                using (Mat transformed = RotateAndScale(source, angle, scaleX, scaleY))
+                using (Bitmap result = BitmapImageConverter.ToBitmap(transformed))
+                {
+                    PublishPreviewBitmap(cbLayerList2, ibDestination, result);
+                }
+            }
+            catch
+            {
+                transformPreviewTimer.Stop();
+            }
         }
 
         public Mat Rotate(Mat src, double angle)
         {
-            Mat rotate = new Mat(src.Size(), MatType.CV_8UC1);
-            Mat matrix = Cv2.GetRotationMatrix2D(new Point2f(src.Width / 2, src.Height / 2), angle, 1);
-            Cv2.WarpAffine(src, rotate, matrix, src.Size(), InterpolationFlags.Linear);
-            return rotate;
+            return RotateAndScale(src, angle, 1d, 1d);
+        }
+
+        public Mat RotateAndScale(Mat src, double angle, double scaleX, double scaleY)
+        {
+            if (src == null || src.Empty())
+            {
+                throw new ArgumentException("Source image is empty.", nameof(src));
+            }
+
+            scaleX = Math.Max(0.01d, scaleX);
+            scaleY = Math.Max(0.01d, scaleY);
+            int width = Math.Max(1, (int)Math.Round(src.Width * scaleX));
+            int height = Math.Max(1, (int)Math.Round(src.Height * scaleY));
+
+            Mat scaled = new Mat();
+            if (width != src.Width || height != src.Height)
+            {
+                Cv2.Resize(src, scaled, new OpenCvSharp.Size(width, height), 0d, 0d, InterpolationFlags.Linear);
+            }
+            else
+            {
+                scaled = src.Clone();
+            }
+
+            if (Math.Abs(angle) < 0.0001d)
+            {
+                return scaled;
+            }
+
+            Mat rotated = new Mat(scaled.Size(), scaled.Type());
+            using (Mat matrix = Cv2.GetRotationMatrix2D(new Point2f(scaled.Width / 2f, scaled.Height / 2f), angle, 1d))
+            {
+                Cv2.WarpAffine(scaled, rotated, matrix, scaled.Size(), InterpolationFlags.Linear, BorderTypes.Constant);
+            }
+
+            scaled.Dispose();
+            return rotated;
         }
 
         private void rjButton1_Click(object sender, EventArgs e)
         {
+            RunRotateAndScale(true);
+        }
 
-                        Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
+        private static int ClampTrackValue(TrackBar trackBar, int value)
+        {
+            return Math.Min(trackBar.Maximum, Math.Max(trackBar.Minimum, value));
+        }
 
-            using (Mat ImageCVSource = Lib.Common.BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
-            {
-                if (ImageCVSource.Channels() == 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.RGB2GRAY);
+        private static double ReadNumber(string text, double fallback)
+        {
+            return double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double value)
+                ? value
+                : fallback;
+        }
 
-                Bitmap Result = new Bitmap(10, 10);
-                Mat ImageRotate = Rotate(ImageCVSource, double.Parse(tbRotate.Text));
-                //Cv2.MorphologyEx(ImageCVSource, ImageCVSource, AppUtil.ParseEnum<MorphTypes>(Operator), Kernel, new OpenCvSharp.Point(-1, -1), 1);
-                Result = Lib.Common.BitmapImageConverter.ToBitmap(ImageRotate);
-                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-            }
-        
+        private static double ReadScalePercent(string text, double fallback)
+        {
+            return Math.Min(300d, Math.Max(10d, ReadNumber(text, fallback)));
         }
     }
  }

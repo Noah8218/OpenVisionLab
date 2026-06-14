@@ -30,6 +30,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\OpenVisionLab.MessageBox\OpenVisionLab.MessageBox.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="RJChart.cs" />
     <Compile Remove="RJForms\VisionTestForm.cs" />
     <Compile Remove="Settings\UIAppearanceSettings1.Designer.cs" />
@@ -115,12 +119,6 @@
     <Compile Update="RJForms\RJSettingsForm.Designer.cs">
       <DependentUpon>RJSettingsForm.cs</DependentUpon>
     </Compile>
-    <Compile Update="RJForms\Private\RJMessageForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="RJForms\Private\RJMessageForm.designer.cs">
-      <DependentUpon>RJMessageForm.cs</DependentUpon>
-    </Compile>
     <Compile Update="Settings\UIAppearanceSettings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
@@ -134,9 +132,6 @@
     </EmbeddedResource>
     <EmbeddedResource Update="RJForms\RJSettingsForm.resx">
       <DependentUpon>RJSettingsForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Update="RJForms\Private\RJMessageForm.resx">
-      <DependentUpon>RJMessageForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Update="Settings\UIAppearanceSettings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

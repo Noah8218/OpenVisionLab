@@ -65,7 +65,7 @@ namespace OpenVisionLab
         {
             AppUtil.InitDirectory("TEST");
             Property_Contour = Property_Contour.LoadTestConfig(AppPathService.GetTestConfigPath(Property_Contour.NAME));
-            AttachPropertyGrid(pnParameter, Property_Contour);
+            AttachPropertyGridWithThresholdPreview(pnParameter, Property_Contour, cbLayerList2, ibSource, ibDestination);
             InitializeSingleInputViewers(
                 InitLayListItem,
                 ibSource,
@@ -76,6 +76,7 @@ namespace OpenVisionLab
                 IbDestination_MouseClick,
                 toolTip1,
                 btnNewPanel_Desty);
+            VisionPipelineFormBridge.AttachAddButton(btnRun, () => Property_Contour, cbLayerList, cbLayerList2);
         }
 
         public FormVision_Contour(IDisplayManager displayManager, EventHandler<DockDisplayEventArgs> EventUpdateDisplay)
@@ -128,47 +129,53 @@ namespace OpenVisionLab
 
         private void btnRun_Click(object sender, EventArgs e)
         {
-                        if (!ValidateDrawOption())
+            if (!ValidateDrawOption())
             {
                 return;
             }
 
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
-            using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
+            RunVisionStep("Contour", () =>
             {
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
-                ContourTool contourTool = new ContourTool();
-                contourTool.SetProperty(Property_Contour);
-                contourTool.SetSourceImage(ImageCVSource);
-                contourTool.Run();
-
-                if (!Property_Contour.USE_DRAW_IMAGE)
+                using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
                 {
-                    Graphics g = Graphics.FromImage(Result);
+                    ContourTool contourTool = new ContourTool();
+                    contourTool.SetProperty(Property_Contour);
+                    contourTool.SetSourceImage(ImageCVSource);
+                    contourTool.Run();
 
-                    foreach (var item in contourTool.results)
+                    if (!Property_Contour.USE_DRAW_IMAGE)
                     {
-                        g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Blue, 1), item.Bounding);
+                        using (Graphics g = Graphics.FromImage(Result))
+                        {
+                            foreach (var item in contourTool.results)
+                            {
+                                g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Blue, 1), item.Bounding);
+                            }
+
+                            if (contourTool.results.Count == 0)
+                            {
+                                g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Orange, 5), CommonConverter.CVRectToRect(contourTool.property.CvROI));
+                                g.DrawString("1", new Font("Arial", 10, FontStyle.Bold), new SolidBrush(System.Drawing.Color.OrangeRed), (int)contourTool.property.CvROI.X - 20, (int)contourTool.property.CvROI.Y - 20);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Result.Dispose();
+                        Bitmap drawResult = Lib.Common.BitmapImageConverter.ToBitmap(contourTool.imageResult);
+                        Result = drawResult;
                     }
 
-                    if (contourTool.results.Count == 0)
-                    {
-                        g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Orange, 5), CommonConverter.CVRectToRect(contourTool.property.CvROI));
-                        g.DrawString("1", new Font("Arial", 10, FontStyle.Bold), new SolidBrush(System.Drawing.Color.OrangeRed), (int)contourTool.property.CvROI.X - 20, (int)contourTool.property.CvROI.Y - 20);
-                    }
+                    cResultContours = contourTool.results;
+                    PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
                 }
-                else { Result = Lib.Common.BitmapImageConverter.ToBitmap(contourTool.imageResult); }
 
-                cResultContours = contourTool.results;
-                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-            }
-
-            AppUtil.InitDirectory("TEST");
-            string strPath = AppPathService.GetTestConfigPath(Property_Contour.NAME);
-            Property_Contour.SaveTestConfig(strPath);
-        
+                AppUtil.InitDirectory("TEST");
+                string strPath = AppPathService.GetTestConfigPath(Property_Contour.NAME);
+                Property_Contour.SaveTestConfig(strPath);
+            });
         }
 
         private bool ValidateDrawOption()

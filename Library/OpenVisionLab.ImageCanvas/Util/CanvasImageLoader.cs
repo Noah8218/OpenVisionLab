@@ -24,41 +24,46 @@ namespace OpenVisionLab.ImageCanvas
 			return img;
 		}
 
-		public static void UploadMatAsTexture(OpenVisionLab.ImageCanvas.Rendering.ImageCanvasControl imageViewer, OpenCvSharp.Mat mat, string imageName, ref System.Drawing.Size imageSize)
+		public static void UploadMatAsTexture(OpenVisionLab.ImageCanvas.Rendering.ImageCanvasControl imageViewer, OpenCvSharp.Mat mat, string imageName, ref System.Drawing.Size imageSize, bool zoomToFit = true)
 		{
-			imageViewer.DeleteTexture(imageName);
-			//_imageViewer.ClearTexture();
-			// 31800 * 96800 사이즈
-			//  X,Y,W,H가 (0,0,31800,32768),  (0,32768,31800,32768), (0,64032,31800,31264)
-			imageSize = new System.Drawing.Size(mat.Size().Width, mat.Size().Height);
-			System.Drawing.Size maxSize = imageViewer.GetMaxTextureSize();
-			//System.Drawing.Size maxSize = new System.Drawing.Size(10240, 10240);
-			int tileWidth = 5000;
-			int tileHeight = 5000;
-
-			int offsetHeight = imageSize.Height;
-
-			for (int actualY = 0; actualY < mat.Rows; actualY += tileHeight)
+			using (imageViewer.SuppressRefresh())
 			{
-				int actualTileHeight = Math.Min(tileHeight, mat.Rows - actualY);
-				for (int actualX = 0; actualX < mat.Cols; actualX += tileWidth)
+				imageViewer.DeleteTexture(imageName);
+				//_imageViewer.ClearTexture();
+				// 31800 * 96800 사이즈
+				//  X,Y,W,H가 (0,0,31800,32768),  (0,32768,31800,32768), (0,64032,31800,31264)
+				imageSize = new System.Drawing.Size(mat.Size().Width, mat.Size().Height);
+				System.Drawing.Size maxSize = imageViewer.GetMaxTextureSize();
+				//System.Drawing.Size maxSize = new System.Drawing.Size(10240, 10240);
+				int tileWidth = 5000;
+				int tileHeight = 5000;
+
+				int offsetHeight = imageSize.Height;
+
+				for (int actualY = 0; actualY < mat.Rows; actualY += tileHeight)
 				{
-					int actualTileWidth = Math.Min(tileWidth, mat.Cols - actualX);
-					// 분할된 영역의 Mat 객체 생성						
-					OpenCvSharp.Rect tileRect = new OpenCvSharp.Rect(actualX, actualY, actualTileWidth, actualTileHeight);
-
-					using (Mat tileMat = mat.SubMat(tileRect))
+					int actualTileHeight = Math.Min(tileHeight, mat.Rows - actualY);
+					for (int actualX = 0; actualX < mat.Cols; actualX += tileWidth)
 					{
-						uint oriBpp = tileMat.Type() == MatType.CV_8UC1 ? (uint)1 : (uint)3;
-						System.Drawing.Size titleSize = new System.Drawing.Size(tileWidth, tileHeight);
+						int actualTileWidth = Math.Min(tileWidth, mat.Cols - actualX);
+						// 분할된 영역의 Mat 객체 생성						
+						OpenCvSharp.Rect tileRect = new OpenCvSharp.Rect(actualX, actualY, actualTileWidth, actualTileHeight);
 
-						imageViewer.AddTexture(tileMat.Clone().Data, actualX, actualY, actualTileWidth, actualTileHeight, tileMat.Width, tileMat.Height, offsetHeight, oriBpp,
-							 imageName, imageSize, titleSize);
+						using (Mat tileMat = mat.SubMat(tileRect))
+						{
+							uint oriBpp = tileMat.Type() == MatType.CV_8UC1 ? (uint)1 : (uint)3;
+							System.Drawing.Size titleSize = new System.Drawing.Size(tileWidth, tileHeight);
+
+							imageViewer.AddTexture(tileMat.Clone().Data, actualX, actualY, actualTileWidth, actualTileHeight, tileMat.Width, tileMat.Height, offsetHeight, oriBpp,
+								 imageName, imageSize, titleSize);
+						}
 					}
 				}
 			}
-			imageViewer.ZoomToFit();
-			GC.Collect();
+			if (zoomToFit)
+			{
+				imageViewer.ZoomToFit();
+			}
 		}
 
 

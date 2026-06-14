@@ -9,17 +9,19 @@ namespace OpenVisionLab
 {
     public sealed class FormLogViewer : DockContent
     {
+        private const string DockTitle = "실행 로그";
         private readonly ElementHost logHost;
 
         public FormLogViewer()
         {
-            Text = "Log";
-            TabText = "Log";
-            MinimumSize = new Size(420, 520);
+            Text = DockTitle;
+            TabText = DockTitle;
+            MinimumSize = new Size(420, 90);
             BackColor = Color.FromArgb(18, 22, 29);
             CloseButton = false;
             CloseButtonVisible = false;
             HideOnClose = true;
+            ToolTipText = DockTitle;
 
             logHost = new ElementHost
             {
@@ -28,6 +30,18 @@ namespace OpenVisionLab
             };
 
             Controls.Add(logHost);
+        }
+
+        public void SetDockTitleVisible(bool visible)
+        {
+            Text = DockTitle;
+            TabText = DockTitle;
+            ToolTipText = DockTitle;
+        }
+
+        protected override string GetPersistString()
+        {
+            return typeof(FormLogViewer).FullName;
         }
 
         protected override void Dispose(bool disposing)

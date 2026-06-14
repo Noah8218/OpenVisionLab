@@ -18,6 +18,7 @@ namespace OpenVisionLab._1._Core
         public event EventHandler<EventArgs> UpdateParameter;
         public event EventHandler<EventArgs> UpdateResult;
         public event EventHandler<EventArgs> UpdateCam;
+        public event EventHandler<VisionToolRunEventArgs> VisionToolRunUpdated;
 
         public DisplayManagerService()
         {
@@ -52,6 +53,16 @@ namespace OpenVisionLab._1._Core
             UpdateParameter?.Invoke(null, EventArgs.Empty);
         }
 
+        public void NotifyVisionToolRunUpdated(VisionToolRunEventArgs args)
+        {
+            if (args == null)
+            {
+                return;
+            }
+
+            VisionToolRunUpdated?.Invoke(this, args);
+        }
+
         public void CreatePanel(ImageSpaceFrame frame = null)
         {
             layerPresenter.CreatePanel(frame);
@@ -65,6 +76,11 @@ namespace OpenVisionLab._1._Core
         public string GetLayerTitle(int index)
         {
             return layerPresenter.GetLayerTitle(index);
+        }
+
+        internal FormLayerDisplay GetLayerDisplayOrNull(string title)
+        {
+            return layerPresenter.GetLayerDisplayOrNull(title);
         }
 
         public int FindIndex(string title)

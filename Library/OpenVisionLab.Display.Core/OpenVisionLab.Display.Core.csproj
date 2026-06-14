@@ -3,6 +3,7 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
+    <LibraryNoahSourceRoot Condition="'$(LibraryNoahSourceRoot)' == ''">$(MSBuildProjectDirectory)\..\..\..\Library-Noah</LibraryNoahSourceRoot>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,7 +12,7 @@
     <PackageReference Include="System.Drawing.Common" Version="8.0.27" />
 
     <Reference Include="OpenCvSharp">
-      <HintPath>..\Lib.Common\DLL\OpenCvSharp.dll</HintPath>
+      <HintPath>$(LibraryNoahSourceRoot)\Lib.Common\DLL\OpenCvSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>

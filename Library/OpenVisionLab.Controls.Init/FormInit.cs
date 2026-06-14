@@ -104,13 +104,18 @@ namespace OpenVisionLab
 
         public void OnInitEnd(object sender = null, EventArgs e = null)
         {
+            if (IsDisposed || Disposing)
+            {
+                return;
+            }
+
             if (this.InvokeRequired)
             {
                 try
                 {
                     this.BeginInvoke(new MethodInvoker(() =>
                     {
-                        OnInitEnd(sender, e);
+                        CloseSafely();
                     }));
                 }
                 catch
@@ -120,7 +125,26 @@ namespace OpenVisionLab
             }
             else
             {
-                this.Close();
+                CloseSafely();
+            }
+        }
+
+        private void CloseSafely()
+        {
+            if (IsDisposed || Disposing)
+            {
+                return;
+            }
+
+            try
+            {
+                timerTackTime?.Stop();
+                TopMost = false;
+                Hide();
+                Close();
+            }
+            catch
+            {
             }
         }
 

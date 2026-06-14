@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using OpenVisionLab;
+using OpenVisionLab.MessageDialogs;
 using RJCodeUI_M1.RJForms;
 using RJCodeUI_M1.Settings;
 using RJCodeUI_M1.Utils;
@@ -110,10 +111,10 @@ namespace RJCodeUI_M1.RJForms
                                                             tbIconMenuItem.Checked,/*Form icon in activated menu item*/
                                                             tbMultiChildForms.Checked);/*Multiple child forms*/
             //Show restart message
-            var result = MessageBox.Show("Please Restart the application to view changes\nRestart now?",
-                                           "Message",
-                                            MessageBoxButtons.YesNo,
-                                            MessageBoxIcon.Question);
+            var result = VisionMessageBox.Confirm(
+                this,
+                "Message",
+                "Please restart the application to view changes.\r\nRestart now?");
 
             if (result == DialogResult.Yes)//Restart application
             {

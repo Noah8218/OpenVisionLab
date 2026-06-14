@@ -49,14 +49,22 @@ namespace OpenVisionLab.Vision._1._Tools.OpenCV
 
         public FeatureMatchingProperty LoadTestConfig(string path)
         {
-            return LoadTestConfigFile<FeatureMatchingProperty>(path, LoadTemplateImage);
+            return LoadTestConfigFile<FeatureMatchingProperty>(path);
         }
 
         private static void LoadTemplateImage(FeatureMatchingProperty property)
         {
-            if (System.IO.File.Exists(property.PATTERN_PATH))
+            property.ReloadTemplateImage();
+        }
+
+        public void ReloadTemplateImage()
+        {
+            ImageTemplate?.Dispose();
+            ImageTemplate = new Mat();
+
+            if (System.IO.File.Exists(PATTERN_PATH))
             {
-                property.ImageTemplate = Cv2.ImRead(property.PATTERN_PATH);
+                ImageTemplate = Cv2.ImRead(PATTERN_PATH);
             }
         }
     }

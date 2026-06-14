@@ -66,7 +66,7 @@ namespace OpenVisionLab
         {
             AppUtil.InitDirectory("TEST");
             Property_Blob = Property_Blob.LoadTestConfig(AppPathService.GetTestConfigPath(Property_Blob.NAME));
-            AttachPropertyGrid(pnParameter, Property_Blob);
+            AttachPropertyGridWithThresholdPreview(pnParameter, Property_Blob, cbLayerList2, ibSource, ibDestination);
             InitializeSingleInputViewers(
                 InitLayListItem,
                 ibSource,
@@ -77,6 +77,7 @@ namespace OpenVisionLab
                 IbDestination_MouseClick,
                 toolTip1,
                 btnNewPanel_Desty);
+            VisionPipelineFormBridge.AttachAddButton(btnRun, () => Property_Blob, cbLayerList, cbLayerList2);
         }
 
         public FormVision_Blob(IDisplayManager displayManager, EventHandler<DockDisplayEventArgs> EventUpdateDisplay)
@@ -99,42 +100,42 @@ namespace OpenVisionLab
         private List<BlobResult> cResultBlobs = new List<BlobResult>();
         private void btnRun_Click(object sender, EventArgs e)
         {
-                        Stopwatch stopwatch = Stopwatch.StartNew();
-
-            using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
+            RunVisionStep("Blob", () =>
             {
-                Stopwatch stopwatch1 = Stopwatch.StartNew();
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
-                BlobTool CvBlob = new BlobTool();
-                CvBlob.SetProperty(Property_Blob);
-                CvBlob.SetSourceImage(ImageCVSource);
-                CvBlob.Run();
-
-                Graphics g = Graphics.FromImage(Result);
-
-                foreach (var item in CvBlob.results)
+                using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
                 {
-                    g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Blue, 1), item.Bounding);
-                    //  g.DrawString((Count + 1).ToString(), new Font("Arial", 1, FontStyle.Bold), new SolidBrush(System.Drawing.Color.Lime), (int)item.Bounding.X - 10, (int)item.Bounding.Y - 10);
-                    // g.DrawString(item.Area.ToString(), new Font("Arial", 1, FontStyle.Bold), new SolidBrush(System.Drawing.Color.Blue), (int)item.Center.X, (int)item.Center.Y);
+                    BlobTool CvBlob = new BlobTool();
+                    CvBlob.SetProperty(Property_Blob);
+                    CvBlob.SetSourceImage(ImageCVSource);
+                    CvBlob.Run();
+
+                    using (Graphics g = Graphics.FromImage(Result))
+                    {
+                        foreach (var item in CvBlob.results)
+                        {
+                            g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Blue, 1), item.Bounding);
+                            //  g.DrawString((Count + 1).ToString(), new Font("Arial", 1, FontStyle.Bold), new SolidBrush(System.Drawing.Color.Lime), (int)item.Bounding.X - 10, (int)item.Bounding.Y - 10);
+                            // g.DrawString(item.Area.ToString(), new Font("Arial", 1, FontStyle.Bold), new SolidBrush(System.Drawing.Color.Blue), (int)item.Center.X, (int)item.Center.Y);
+                        }
+
+                        if (CvBlob.results.Count == 0)
+                        {
+                            g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Orange, 5), CommonConverter.CVRectToRect(CvBlob.property.CvROI));
+                            g.DrawString("1", new Font("Arial", 10, FontStyle.Bold), new SolidBrush(System.Drawing.Color.OrangeRed), (int)CvBlob.property.CvROI.X - 20, (int)CvBlob.property.CvROI.Y - 20);
+                        }
+                    }
+
+                    cResultBlobs = CvBlob.results;
+                    PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
                 }
 
-                if (CvBlob.results.Count == 0)
-                {
-                    g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Orange, 5), CommonConverter.CVRectToRect(CvBlob.property.CvROI));
-                    g.DrawString("1", new Font("Arial", 10, FontStyle.Bold), new SolidBrush(System.Drawing.Color.OrangeRed), (int)CvBlob.property.CvROI.X - 20, (int)CvBlob.property.CvROI.Y - 20);
-                }
+                wpg.SelectedObject = Property_Blob;
 
-                cResultBlobs = CvBlob.results;
-                stopwatch1.Stop();
-                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-            }
-
-            wpg.SelectedObject = Property_Blob;
-
-            AppUtil.InitDirectory("TEST");
-            Property_Blob.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Blob.NAME));
-        
+                AppUtil.InitDirectory("TEST");
+                Property_Blob.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Blob.NAME));
+            });
         }
         private void btnExit_Click(object sender, EventArgs e)
         {

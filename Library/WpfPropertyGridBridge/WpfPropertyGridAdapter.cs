@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using OpenVisionLab.PropertyGrid;
 
 namespace System.Windows.Controls.WpfPropertyGrid
@@ -46,11 +47,121 @@ namespace System.Windows.Controls.WpfPropertyGrid
         public Type EditorType { get; }
     }
 
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
+    public sealed class NumberRangeAttribute : Attribute
+    {
+        public NumberRangeAttribute(double minimum, double maximum, double tick)
+            : this(minimum, maximum, tick, 0)
+        {
+        }
+
+        public NumberRangeAttribute(double minimum, double maximum, double tick, double precision)
+        {
+            Minimum = minimum;
+            Maximum = maximum;
+            Tick = tick;
+            Precision = precision;
+        }
+
+        public double Minimum { get; }
+        public double Maximum { get; }
+        public double Tick { get; }
+        public double Precision { get; }
+    }
+
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
+    public sealed class ThresholdEditorAttribute : Attribute
+    {
+        public ThresholdEditorAttribute(double minimum, double maximum, double tick)
+            : this(minimum, maximum, tick, 0, null)
+        {
+        }
+
+        public ThresholdEditorAttribute(double minimum, double maximum, double tick, double precision)
+            : this(minimum, maximum, tick, precision, null)
+        {
+        }
+
+        public ThresholdEditorAttribute(double minimum, double maximum, double tick, double precision, string invertPropertyName)
+        {
+            Minimum = minimum;
+            Maximum = maximum;
+            Tick = tick;
+            Precision = precision;
+            InvertPropertyName = invertPropertyName;
+        }
+
+        public double Minimum { get; }
+        public double Maximum { get; }
+        public double Tick { get; }
+        public double Precision { get; }
+        public string InvertPropertyName { get; }
+    }
+
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
+    public sealed class RangeEditorAttribute : Attribute
+    {
+        public RangeEditorAttribute(double minimum, double maximum, double tick, string minPropertyName, string maxPropertyName)
+            : this(minimum, maximum, tick, 0, minPropertyName, maxPropertyName, null)
+        {
+        }
+
+        public RangeEditorAttribute(double minimum, double maximum, double tick, double precision, string minPropertyName, string maxPropertyName)
+            : this(minimum, maximum, tick, precision, minPropertyName, maxPropertyName, null)
+        {
+        }
+
+        public RangeEditorAttribute(double minimum, double maximum, double tick, double precision, string minPropertyName, string maxPropertyName, string invertPropertyName)
+        {
+            Minimum = minimum;
+            Maximum = maximum;
+            Tick = tick;
+            Precision = precision;
+            MinPropertyName = minPropertyName;
+            MaxPropertyName = maxPropertyName;
+            InvertPropertyName = invertPropertyName;
+        }
+
+        public double Minimum { get; }
+        public double Maximum { get; }
+        public double Tick { get; }
+        public double Precision { get; }
+        public string MinPropertyName { get; }
+        public string MaxPropertyName { get; }
+        public string InvertPropertyName { get; }
+    }
+
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
+    public sealed class MetricRangeEditorAttribute : Attribute
+    {
+        public MetricRangeEditorAttribute(string useMinPropertyName, string minPropertyName, string useMaxPropertyName, string maxPropertyName)
+            : this(3, useMinPropertyName, minPropertyName, useMaxPropertyName, maxPropertyName)
+        {
+        }
+
+        public MetricRangeEditorAttribute(double precision, string useMinPropertyName, string minPropertyName, string useMaxPropertyName, string maxPropertyName)
+        {
+            Precision = precision;
+            UseMinPropertyName = useMinPropertyName;
+            MinPropertyName = minPropertyName;
+            UseMaxPropertyName = useMaxPropertyName;
+            MaxPropertyName = maxPropertyName;
+        }
+
+        public double Precision { get; }
+        public string UseMinPropertyName { get; }
+        public string MinPropertyName { get; }
+        public string UseMaxPropertyName { get; }
+        public string MaxPropertyName { get; }
+    }
+
     public class PropertyGrid : UserControl, IPropertyGridView
     {
         private readonly WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyGrid innerPropertyGrid;
         private readonly HashSet<string> registeredPropertyEditors = new HashSet<string>();
         private bool suppressSelectedObjectsChanged;
+        private static readonly object originalResourceLock = new object();
+        private static bool originalResourcesRegistered;
         private static readonly object browsabilityLock = new object();
         private static readonly HashSet<Type> registeredBrowsableProviderTypes = new HashSet<Type>();
         private static readonly Dictionary<Type, HashSet<string>> hiddenPropertiesByType = new Dictionary<Type, HashSet<string>>();
@@ -59,7 +170,9 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
         public PropertyGrid()
         {
+            EnsureOriginalWpfResources();
             innerPropertyGrid = new WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyGrid();
+            RegisterDefaultCategoryEditorTemplate(innerPropertyGrid.Resources);
             Content = innerPropertyGrid;
 
             innerPropertyGrid.PropertyValueChanged += InnerPropertyGrid_PropertyValueChanged;
@@ -69,6 +182,91 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 {
                     SelectedObjectsChanged?.Invoke(this, EventArgs.Empty);
                 }
+            };
+        }
+
+        private static void EnsureOriginalWpfResources()
+        {
+            lock (originalResourceLock)
+            {
+                Application application = Application.Current;
+                if (application == null)
+                {
+                    application = new Application
+                    {
+                        ShutdownMode = ShutdownMode.OnExplicitShutdown
+                    };
+                }
+
+                if (originalResourcesRegistered)
+                {
+                    return;
+                }
+
+                TryMergeOriginalResourceDictionary(
+                    application.Resources,
+                    "/System.Windows.Controls.WpfPropertyGrid;component/Themes/Generic.xaml");
+                RegisterDefaultCategoryEditorTemplate(application.Resources);
+                originalResourcesRegistered = true;
+            }
+        }
+
+        private static void TryMergeOriginalResourceDictionary(ResourceDictionary resources, string source)
+        {
+            if (resources == null || string.IsNullOrWhiteSpace(source))
+            {
+                return;
+            }
+
+            foreach (ResourceDictionary dictionary in resources.MergedDictionaries)
+            {
+                if (dictionary.Source != null
+                    && string.Equals(dictionary.Source.OriginalString, source, StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+
+            try
+            {
+                resources.MergedDictionaries.Add(new ResourceDictionary
+                {
+                    Source = new Uri(source, UriKind.Relative)
+                });
+            }
+            catch
+            {
+                // The fallback category editor below prevents internal type names
+                // from leaking even if the original resource dictionary is absent.
+            }
+        }
+
+        private static void RegisterDefaultCategoryEditorTemplate(ResourceDictionary resources)
+        {
+            if (resources == null)
+            {
+                return;
+            }
+
+            object key = WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.EditorKeys.DefaultCategoryEditorKey;
+            if (resources.Contains(key) && resources[key] is DataTemplate)
+            {
+                return;
+            }
+
+            resources[key] = CreateDefaultCategoryEditorTemplate();
+        }
+
+        private static DataTemplate CreateDefaultCategoryEditorTemplate()
+        {
+            FrameworkElementFactory factory = new FrameworkElementFactory(
+                typeof(WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.Design.PropertyItemsLayout));
+            factory.SetValue(Grid.IsSharedSizeScopeProperty, true);
+            factory.SetBinding(ItemsControl.ItemsSourceProperty, new Binding("Properties"));
+
+            return new DataTemplate
+            {
+                VisualTree = factory
             };
         }
 
@@ -94,10 +292,40 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
         IPropertyGridPropertyCollection IPropertyGridView.Properties => Properties;
 
+        public void ApplyDisplayOptions(PropertyGridDisplayOptions options)
+        {
+            options = options ?? new PropertyGridDisplayOptions();
+
+            TrySetInnerProperty("PropertyNameColumnWidth", new GridLength(Math.Max(80, options.PropertyNameColumnWidth)));
+            TrySetInnerProperty("EditorColumnMinWidth", Math.Max(80, options.EditorColumnMinWidth));
+            TrySetInnerProperty("PropertyFilterVisibility", options.ShowSearchBox ? Visibility.Visible : Visibility.Collapsed);
+
+            innerPropertyGrid.InvalidateMeasure();
+            innerPropertyGrid.InvalidateArrange();
+        }
+
         public object Layout
         {
             get { return innerPropertyGrid.Layout; }
             set { innerPropertyGrid.Layout = OriginalValue.Unwrap(value) as Control; }
+        }
+
+        private void TrySetInnerProperty(string propertyName, object value)
+        {
+            PropertyInfo property = innerPropertyGrid.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
+            if (property == null || !property.CanWrite)
+            {
+                return;
+            }
+
+            try
+            {
+                property.SetValue(innerPropertyGrid, value, null);
+            }
+            catch
+            {
+                // Older property-grid DLLs do not expose every display option.
+            }
         }
 
         private void InnerPropertyGrid_PropertyValueChanged(
@@ -779,6 +1007,9 @@ namespace System.Windows.Controls.WpfPropertyGrid
     public static class EditorKeys
     {
         public static object SliderEditorKey => WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.EditorKeys.SliderEditorKey;
+        public static object ThresholdEditorKey => WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.EditorKeys.ThresholdEditorKey;
+        public static object RangeEditorKey => WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.EditorKeys.RangeEditorKey;
+        public static object MetricRangeEditorKey => WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.EditorKeys.MetricRangeEditorKey;
         public static object DoubleEditorKey => WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.EditorKeys.DoubleEditorKey;
         public static object BrushEditorKey => WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.EditorKeys.BrushEditorKey;
         public static object FilePathPickerEditorKey => WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.EditorKeys.FilePathPickerEditorKey;

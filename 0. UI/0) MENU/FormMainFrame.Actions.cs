@@ -84,11 +84,20 @@ namespace OpenVisionLab
             double drivePercentC = AppUtil.DrivePercent("C:\\", out double driveTotalSizeC, out double driveUsedSizeC);
             double drivePercentD = AppUtil.DrivePercent("D:\\", out double driveTotalSizeD, out double driveUsedSizeD);
 
-            lbDriveC.Text = $"Drive (C:) : {drivePercentC:F1}%  ({driveUsedSizeC:F1}/ {driveTotalSizeC:F1} GB)";
-            lbDriveD.Text = $"Drive (D:) : {drivePercentD:F1}%  ({driveUsedSizeD:F1}/ {driveTotalSizeD:F1} GB)";
+            lbDriveC.Text = $"C: {drivePercentC:F1}%   {driveUsedSizeC:F1}/{driveTotalSizeC:F1} GB";
+            lbDriveD.Text = $"D: {drivePercentD:F1}%   {driveUsedSizeD:F1}/{driveTotalSizeD:F1} GB";
 
-            pgbDriveC.Value = (int)drivePercentC;
-            pgbDriveD.Value = (int)drivePercentD;
+            int driveValueC = Math.Max(0, Math.Min(100, (int)Math.Round(drivePercentC)));
+            int driveValueD = Math.Max(0, Math.Min(100, (int)Math.Round(drivePercentD)));
+
+            pgbDriveC.Value = driveValueC;
+            pgbDriveD.Value = driveValueD;
+            UpdateDriveBar(driveCFill, driveCTrack, drivePercentC);
+            UpdateDriveBar(driveDFill, driveDTrack, drivePercentD);
+
+            SetStatusBarToolTip(lbDriveC, $"Drive C\r\nUsed: {driveUsedSizeC:F1} GB\r\nTotal: {driveTotalSizeC:F1} GB\r\nUsage: {drivePercentC:F1}%");
+            SetStatusBarToolTip(lbDriveD, $"Drive D\r\nUsed: {driveUsedSizeD:F1} GB\r\nTotal: {driveTotalSizeD:F1} GB\r\nUsage: {drivePercentD:F1}%");
+            SetStatusBarToolTip(lbVersion, lbVersion.Text);
         }
 
         private void miSettings_Click(object sender, EventArgs e)

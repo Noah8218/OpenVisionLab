@@ -2,20 +2,24 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:converter="clr-namespace:OpenVisionLab.Logging.Controls.Converter"
-             MinWidth="360"
-             MinHeight="320">
+             MinWidth="280"
+             MinHeight="80">
     <UserControl.Resources>
         <converter:BooleanToInverseConverter x:Key="BooleanToInverseConverter" />
         <converter:LogToneBrushConverter x:Key="LogToneBrushConverter" />
 
-        <SolidColorBrush x:Key="ShellBrush" Color="#151A22" />
-        <SolidColorBrush x:Key="PanelBrush" Color="#202631" />
+        <SolidColorBrush x:Key="ShellBrush" Color="#111821" />
+        <SolidColorBrush x:Key="PanelBrush" Color="#1D2532" />
         <SolidColorBrush x:Key="ListBrush" Color="#0D1219" />
-        <SolidColorBrush x:Key="RowBrush" Color="#121923" />
-        <SolidColorBrush x:Key="LineBrush" Color="#313A47" />
+        <SolidColorBrush x:Key="RowBrush" Color="#121A25" />
+        <SolidColorBrush x:Key="LineBrush" Color="#2B3645" />
         <SolidColorBrush x:Key="PrimaryTextBrush" Color="#EEF3F8" />
         <SolidColorBrush x:Key="SecondaryTextBrush" Color="#AEB9C7" />
-        <SolidColorBrush x:Key="ActionBrush" Color="#2F5D67" />
+        <SolidColorBrush x:Key="MutedTextBrush" Color="#78879A" />
+        <SolidColorBrush x:Key="ActionBrush" Color="#285A70" />
+        <SolidColorBrush x:Key="ActionBorderBrush" Color="#4B8DA4" />
+        <SolidColorBrush x:Key="InputBrush" Color="#101722" />
+        <SolidColorBrush x:Key="BadgeBrush" Color="#263348" />
 
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
@@ -24,15 +28,36 @@
         </Style>
 
         <Style TargetType="ComboBox">
-            <Setter Property="Height" Value="24" />
-            <Setter Property="MinWidth" Value="82" />
-            <Setter Property="Margin" Value="4,0,8,0" />
+            <Setter Property="Height" Value="25" />
+            <Setter Property="MinWidth" Value="92" />
+            <Setter Property="Margin" Value="5,0,10,0" />
             <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="#142033" />
+            <Setter Property="Background" Value="#EEF3F8" />
+            <Setter Property="BorderBrush" Value="#6D89A8" />
+            <Setter Property="Padding" Value="6,1" />
+            <Setter Property="ToolTip" Value="Disable All Logs to use this filter." />
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Foreground" Value="#142033" />
+                        <Setter Property="Background" Value="#EEF3F8" />
+                    </Style>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.38" />
+                    <Setter Property="Foreground" Value="#546273" />
+                    <Setter Property="Background" Value="#CBD4E0" />
+                    <Setter Property="BorderBrush" Value="#596779" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <Style TargetType="CheckBox">
             <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
-            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Margin" Value="0,0,10,0" />
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
@@ -43,7 +68,7 @@
             <Setter Property="Margin" Value="5,0,0,0" />
             <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
             <Setter Property="Background" Value="{StaticResource ActionBrush}" />
-            <Setter Property="BorderBrush" Value="#417B88" />
+            <Setter Property="BorderBrush" Value="{StaticResource ActionBorderBrush}" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
@@ -51,17 +76,17 @@
             <Setter Property="Height" Value="25" />
             <Setter Property="MinWidth" Value="120" />
             <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
-            <Setter Property="Background" Value="#111821" />
+            <Setter Property="Background" Value="{StaticResource InputBrush}" />
             <Setter Property="BorderBrush" Value="#3B4654" />
             <Setter Property="CaretBrush" Value="{StaticResource PrimaryTextBrush}" />
-            <Setter Property="Padding" Value="6,2" />
+            <Setter Property="Padding" Value="7,2" />
         </Style>
 
         <Style TargetType="ListBox">
             <Setter Property="Background" Value="{StaticResource ListBrush}" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="FontFamily" Value="Consolas" />
-            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas" />
+            <Setter Property="FontSize" Value="11" />
             <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
             <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
             <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
@@ -75,6 +100,56 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         </Style>
+
+        <Style x:Key="DetailedOnlyVisibilityStyle" TargetType="FrameworkElement">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsDetailedMode}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="DetailedOnlyTextVisibilityStyle" TargetType="TextBlock">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding DataContext.IsDetailedMode, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="LogMessageTextStyle"
+               TargetType="TextBlock"
+               BasedOn="{StaticResource {x:Type TextBlock}}">
+            <Setter Property="TextWrapping" Value="NoWrap" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding DataContext.IsCompactLayout, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="False">
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="EmptyLogTextVisibilityStyle" TargetType="TextBlock">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasVisibleLogs}" Value="False">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="FilterLabelTextStyle"
+               TargetType="TextBlock"
+               BasedOn="{StaticResource {x:Type TextBlock}}">
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+            <Setter Property="Margin" Value="0,0,0,0" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding ShowEntireStream}" Value="True">
+                    <Setter Property="Opacity" Value="0.42" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
 
     <Grid Background="{StaticResource ShellBrush}">
@@ -87,94 +162,154 @@
                 Background="{StaticResource PanelBrush}"
                 BorderBrush="{StaticResource LineBrush}"
                 BorderThickness="0,0,0,1"
-                Padding="7,6">
+                Padding="10,6">
             <Grid>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <DockPanel Grid.Row="0" LastChildFill="True">
                     <Button DockPanel.Dock="Right"
-                            MinWidth="72"
-                            Content="Logs"
-                            Command="{Binding OpenDirectoryCommand}" />
-                    <Button DockPanel.Dock="Right"
-                            MinWidth="58"
-                            Content="Reset"
-                            Command="{Binding ResetCommand}" />
-                    <CheckBox DockPanel.Dock="Right"
-                              Content="Follow"
-                              IsChecked="{Binding AutoScroll}" />
-                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                            MinWidth="62"
+                            Content="{Binding ModeButtonText}"
+                            Command="{Binding ToggleDetailCommand}"
+                            ToolTip="Switch summary and detail mode." />
+                    <Border DockPanel.Dock="Right"
+                            Background="{StaticResource BadgeBrush}"
+                            BorderBrush="#34445C"
+                            BorderThickness="1"
+                            MinWidth="54"
+                            Height="22"
+                            Margin="8,0,0,0"
+                            Padding="8,0">
+                        <TextBlock Text="{Binding SummaryText}"
+                                   Foreground="{StaticResource SecondaryTextBrush}"
+                                   FontSize="11"
+                                   HorizontalAlignment="Center" />
+                    </Border>
+                    <TextBlock DockPanel.Dock="Right"
+                               Text="{Binding ActiveFilterText}"
+                               Foreground="{StaticResource MutedTextBrush}"
+                               FontSize="11"
+                               Margin="10,0,2,0" />
+                    <TextBlock Text="{Binding HeaderText}"
+                               FontSize="13"
+                               FontWeight="SemiBold" />
                 </DockPanel>
 
-                <WrapPanel Grid.Row="1" Margin="0,6,0,0">
-                    <CheckBox Content="Stream"
-                              IsChecked="{Binding ShowEntireStream}" />
-                    <TextBlock Text="Area" Foreground="{StaticResource SecondaryTextBrush}" />
+                <TextBlock Grid.Row="1"
+                           Text="{Binding LatestSummaryText}"
+                           Foreground="{StaticResource SecondaryTextBrush}"
+                           FontSize="11"
+                           Margin="0,5,0,0"
+                           TextTrimming="CharacterEllipsis" />
+
+                <DockPanel Grid.Row="2"
+                           LastChildFill="True"
+                           Style="{StaticResource DetailedOnlyVisibilityStyle}"
+                           Margin="0,5,0,0">
+                    <Button DockPanel.Dock="Right"
+                            MinWidth="58"
+                            Content="Clear"
+                            Command="{Binding ResetCommand}"
+                            ToolTip="Clear the current log list." />
+                    <Button DockPanel.Dock="Right"
+                            MinWidth="58"
+                            Content="Folder"
+                            Command="{Binding OpenDirectoryCommand}"
+                            ToolTip="Open the log folder." />
+                    <CheckBox DockPanel.Dock="Right"
+                              Content="Auto Scroll"
+                              IsChecked="{Binding AutoScroll}"
+                              ToolTip="Move to the latest log line automatically." />
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="Search log message, area, level, or source." />
+                </DockPanel>
+
+                <WrapPanel Grid.Row="3"
+                           Margin="0,6,0,0"
+                           Style="{StaticResource DetailedOnlyVisibilityStyle}">
+                    <CheckBox Content="All Logs"
+                              IsChecked="{Binding ShowEntireStream}"
+                              ToolTip="When enabled, level and area filters are ignored." />
+                    <TextBlock Text="Level"
+                               Style="{StaticResource FilterLabelTextStyle}" />
                     <ComboBox IsEnabled="{Binding ShowEntireStream, Converter={StaticResource BooleanToInverseConverter}}"
-                              ItemsSource="{Binding Areas}"
-                              SelectedItem="{Binding SelectedArea}" />
-                    <TextBlock Text="Signal" Foreground="{StaticResource SecondaryTextBrush}" />
+                              ItemsSource="{Binding Levels}"
+                              SelectedItem="{Binding SelectedLevel}" />
+                    <TextBlock Text="Area"
+                               Style="{StaticResource FilterLabelTextStyle}" />
                     <ComboBox IsEnabled="{Binding ShowEntireStream, Converter={StaticResource BooleanToInverseConverter}}"
-                              ItemsSource="{Binding Signals}"
-                              SelectedItem="{Binding SelectedSignal}" />
+                              ItemsSource="{Binding Types}"
+                              SelectedItem="{Binding SelectedType}" />
                 </WrapPanel>
             </Grid>
         </Border>
 
-        <ListBox x:Name="LogList"
-                 Grid.Row="1"
-                 ItemsSource="{Binding FilteredLogs}">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <Border Background="{StaticResource RowBrush}"
-                            BorderBrush="#1F2A36"
-                            BorderThickness="0,0,0,1">
-                        <Grid MinHeight="28">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="4" />
-                                <ColumnDefinition Width="92" />
-                                <ColumnDefinition Width="86" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+        <Grid Grid.Row="1">
+            <ListBox x:Name="LogList"
+                     ItemsSource="{Binding FilteredLogs}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="{StaticResource RowBrush}"
+                                BorderBrush="#1F2A36"
+                                BorderThickness="0,0,0,1"
+                                ToolTip="{Binding RawText}">
+                            <Grid MinHeight="26">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="5" />
+                                    <ColumnDefinition Width="90" />
+                                    <ColumnDefinition Width="78" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="0"
-                                    Background="{Binding Level, Converter={StaticResource LogToneBrushConverter}}" />
+                                <Border Grid.Column="0"
+                                        Background="{Binding Level, Converter={StaticResource LogToneBrushConverter}}" />
 
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding DisplayTime}"
-                                       Foreground="{StaticResource SecondaryTextBrush}"
-                                       Margin="7,0,5,0"
-                                       FontSize="11" />
-
-                            <StackPanel Grid.Column="2"
-                                        Orientation="Vertical"
-                                        Margin="0,3,5,3">
-                                <TextBlock Text="{Binding Level}"
-                                           Foreground="{Binding Level, Converter={StaticResource LogToneBrushConverter}}"
-                                           FontWeight="SemiBold"
-                                           FontSize="11" />
-                                <TextBlock Text="{Binding Category}"
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding DisplayTime}"
                                            Foreground="{StaticResource SecondaryTextBrush}"
-                                           FontSize="10" />
-                            </StackPanel>
+                                           Margin="8,0,6,0"
+                                           FontSize="10.5" />
 
-                            <StackPanel Grid.Column="3"
-                                        Orientation="Vertical"
-                                        Margin="0,3,8,3">
-                                <TextBlock Text="{Binding Source}"
-                                           Foreground="#7FD6E7"
-                                           FontSize="10" />
-                                <TextBlock Text="{Binding Message}"
-                                           Foreground="{Binding Level, Converter={StaticResource LogToneBrushConverter}}"
-                                           TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+                                <StackPanel Grid.Column="2"
+                                            Orientation="Vertical"
+                                            Margin="0,3,7,3">
+                                    <TextBlock Text="{Binding Level}"
+                                               Foreground="{Binding Level, Converter={StaticResource LogToneBrushConverter}}"
+                                               FontWeight="SemiBold"
+                                               FontSize="10.5" />
+                                    <TextBlock Text="{Binding Category}"
+                                               Foreground="{StaticResource MutedTextBrush}"
+                                               FontSize="9.5" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="3"
+                                            Orientation="Vertical"
+                                            Margin="0,3,10,3">
+                                    <TextBlock Text="{Binding Source}"
+                                               Foreground="#7FD6E7"
+                                               FontSize="9.5"
+                                               Style="{StaticResource DetailedOnlyTextVisibilityStyle}" />
+                                    <TextBlock Text="{Binding Message}"
+                                               Foreground="{Binding Level, Converter={StaticResource LogToneBrushConverter}}"
+                                               Style="{StaticResource LogMessageTextStyle}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <TextBlock Text="No execution logs to display."
+                       Style="{StaticResource EmptyLogTextVisibilityStyle}"
+                       Foreground="{StaticResource SecondaryTextBrush}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       FontSize="12" />
+        </Grid>
     </Grid>
 </UserControl>

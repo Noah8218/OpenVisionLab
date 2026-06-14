@@ -24,35 +24,29 @@ namespace OpenVisionLab.Logging.Controls.Converter
         {
             if (string.IsNullOrWhiteSpace(levelName))
             {
-                return LogLevel.Normal;
+                return LogLevel.Info;
             }
 
             return Enum.TryParse(levelName, true, out LogLevel level)
                 ? level
-                : LogLevel.Normal;
+                : LogLevel.Info;
         }
 
         private static Brush GetBrush(LogLevel level)
         {
             switch (level)
             {
-                case LogLevel.Abnormal:
+                case LogLevel.Error:
                     return Brushes.IndianRed;
+                case LogLevel.Warning:
+                    return Brushes.Khaki;
                 case LogLevel.Debug:
                     return Brushes.LightSteelBlue;
-                case LogLevel.Grab:
-                case LogLevel.Vision:
-                    return Brushes.GreenYellow;
-                case LogLevel.Network:
-                    return Brushes.LightSkyBlue;
-                case LogLevel.DB:
-                case LogLevel.Config:
-                    return Brushes.Khaki;
-                case LogLevel.Inspect:
-                    return Brushes.LightGreen;
                 default:
                     return Brushes.WhiteSmoke;
             }
         }
     }
 }
+
+

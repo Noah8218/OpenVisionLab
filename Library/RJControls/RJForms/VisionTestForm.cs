@@ -18,6 +18,7 @@ using System.Diagnostics;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using OpenVisionLab._2._Common;
 using OpenVisionLab.PropertyGrid;
+using OpenVisionLab.Logging;
 
 namespace RJCodeUI_M1.RJForms
 {
@@ -47,6 +48,17 @@ namespace RJCodeUI_M1.RJForms
 
         protected System.Windows.Forms.Integration.ElementHost host = null;
         protected IPropertyGridView wpg = null;
+        private readonly Timer thresholdPreviewTimer = new Timer();
+        private RJComboBox thresholdPreviewDestinationComboBox;
+        private VisionTestImageCanvas thresholdPreviewSourceViewer;
+        private VisionTestImageCanvas thresholdPreviewDestinationViewer;
+        private OpenCvPropertyBase thresholdPreviewProperty;
+        private bool thresholdPreviewEventAttached;
+        private string activeRunStepName;
+        private string activeRunSourceLayer;
+        private Stopwatch activeRunStopwatch;
+        private bool activeRunPublished;
+        private bool suppressLayerSelectionSideEffects;
 
         public int GetDisplayIndex(string strTitle)
         {
@@ -80,6 +92,11 @@ namespace RJCodeUI_M1.RJForms
 
         protected void InitializeLayerList(RJComboBox comboBox, int selectedIndex)
         {
+            InitializeLayerList(comboBox, selectedIndex, false);
+        }
+
+        protected void InitializeLayerList(RJComboBox comboBox, int selectedIndex, bool suppressSelectionSideEffects)
+        {
             comboBox.Items.Clear();
             for (int i = 0; i < displayManager.LayerCount; i++)
             {
@@ -87,13 +104,23 @@ namespace RJCodeUI_M1.RJForms
             }
 
             if (comboBox.Items.Count <= 0) { return; }
-            comboBox.SelectedIndex = Math.Max(0, Math.Min(selectedIndex, comboBox.Items.Count - 1));
+
+            bool previousSuppressState = suppressLayerSelectionSideEffects;
+            suppressLayerSelectionSideEffects = suppressSelectionSideEffects;
+            try
+            {
+                comboBox.SelectedIndex = Math.Max(0, Math.Min(selectedIndex, comboBox.Items.Count - 1));
+            }
+            finally
+            {
+                suppressLayerSelectionSideEffects = previousSuppressState;
+            }
         }
 
         protected void InitializeSingleInputLayerList(RJComboBox sourceComboBox, RJComboBox destinationComboBox)
         {
-            InitializeLayerList(sourceComboBox, source1_Index);
-            InitializeLayerList(destinationComboBox, destination_Index);
+            InitializeLayerList(sourceComboBox, source1_Index, true);
+            InitializeLayerList(destinationComboBox, destination_Index, true);
         }
 
         protected bool RegisterEscapeClose()
@@ -231,6 +258,8 @@ namespace RJCodeUI_M1.RJForms
             viewerState.Roi = GetLayerRoi(index);
             viewerState.TrainROI = GetLayerTrainRoi(index);
 
+            if (suppressLayerSelectionSideEffects) { return; }
+
             Bitmap image = GetLayerImage(index);
             viewer.DisplayImage = image;
 
@@ -271,10 +300,181 @@ namespace RJCodeUI_M1.RJForms
         {
             if (destinationComboBox?.SelectedItem == null || result == null) { return; }
 
+            string outputLayer = destinationComboBox.SelectedItem.ToString();
             int displayIndex = GetDisplayIndex(destinationComboBox.SelectedItem.ToString());
             SetLayerImage(displayIndex, result);
             destinationViewer.DisplayImage = result;
             eventUpdateDisplay?.Invoke(null, new DockDisplayEventArgs(result, displayIndex, elapsedText));
+            OVLog.Write(
+                LogCategory.Vision, LogLevel.Info,
+                BuildVisionLog(
+                    "ToolResultPublished",
+                    LogField("Tool", activeRunStepName),
+                    LogField("Output", outputLayer),
+                    LogField("Size", $"{result.Width}x{result.Height}"),
+                    LogField("Time", elapsedText)));
+            activeRunPublished = true;
+            NotifyVisionToolRunUpdated(
+                VisionToolRunStatus.Completed,
+                activeRunStepName,
+                outputLayer,
+                activeRunStopwatch?.Elapsed.TotalMilliseconds ?? 0d,
+                result.Width,
+                result.Height,
+                $"결과 표시 완료: {outputLayer}");
+        }
+
+        protected string FormatElapsed(Stopwatch stopwatch)
+        {
+            if (stopwatch == null) { return string.Empty; }
+
+            if (stopwatch.IsRunning)
+            {
+                stopwatch.Stop();
+            }
+
+            return $"{stopwatch.Elapsed.TotalSeconds:0.000}s";
+        }
+
+        private static string BuildVisionLog(string eventName, params string[] fields)
+        {
+            string log = $"Event={SanitizeLogValue(eventName)}";
+            if (fields == null)
+            {
+                return log;
+            }
+
+            foreach (string field in fields)
+            {
+                if (!string.IsNullOrWhiteSpace(field))
+                {
+                    log += $", {field}";
+                }
+            }
+
+            return log;
+        }
+
+        private static string LogField(string name, object value)
+        {
+            return $"{name}={SanitizeLogValue(value)}";
+        }
+
+        private static string SanitizeLogValue(object value)
+        {
+            string text = value?.ToString() ?? "-";
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return "-";
+            }
+
+            return text.Replace(Environment.NewLine, " | ").Replace("\r", " ").Replace("\n", " ").Trim();
+        }
+
+        protected bool RunVisionStep(string stepName, Action action, bool writeLifecycleLog = true)
+        {
+            if (action == null)
+            {
+                throw new ArgumentNullException(nameof(action));
+            }
+
+            string title = string.IsNullOrWhiteSpace(stepName) ? "Vision Step" : stepName;
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            activeRunStepName = title;
+            activeRunSourceLayer = displayManager?.SelectedItem ?? string.Empty;
+            activeRunStopwatch = stopwatch;
+            activeRunPublished = false;
+            try
+            {
+                if (writeLifecycleLog)
+                {
+                    OVLog.Write(
+                        LogCategory.Vision, LogLevel.Info,
+                        BuildVisionLog(
+                            "ToolRunStarted",
+                            LogField("Tool", title),
+                            LogField("Source", activeRunSourceLayer)));
+                }
+
+                NotifyVisionToolRunUpdated(VisionToolRunStatus.Started, title, string.Empty, 0d, 0, 0, "실행 중");
+                action();
+                stopwatch.Stop();
+                if (!activeRunPublished)
+                {
+                    NotifyVisionToolRunUpdated(VisionToolRunStatus.Completed, title, string.Empty, stopwatch.Elapsed.TotalMilliseconds, 0, 0, "실행 완료");
+                }
+
+                if (writeLifecycleLog)
+                {
+                    OVLog.Write(
+                        LogCategory.Vision, LogLevel.Info,
+                        BuildVisionLog(
+                            "ToolRunCompleted",
+                            LogField("Tool", title),
+                            LogField("Source", activeRunSourceLayer),
+                            LogField("TimeMs", stopwatch.Elapsed.TotalMilliseconds.ToString("0.0"))));
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                string message = ex.Message;
+                Exception root = ex.GetBaseException();
+                if (root != null && !ReferenceEquals(root, ex) && !string.Equals(root.Message, ex.Message, StringComparison.Ordinal))
+                {
+                    message = $"{message}\r\n{root.Message}";
+                }
+
+                OVLog.Write(
+                    LogCategory.Vision, LogLevel.Error,
+                    BuildVisionLog(
+                        "ToolRunFailed",
+                        LogField("Tool", title),
+                        LogField("Source", activeRunSourceLayer),
+                        LogField("TimeMs", stopwatch.Elapsed.TotalMilliseconds.ToString("0.0")),
+                        LogField("Error", message)));
+                NotifyVisionToolRunUpdated(VisionToolRunStatus.Failed, title, string.Empty, stopwatch.Elapsed.TotalMilliseconds, 0, 0, message);
+                AppCommon.ShowMessageBox("ALARM", $"{title} failed.\r\n{message}", FormMessageBox.MESSAGEBOX_TYPE.Waring);
+                return false;
+            }
+            finally
+            {
+                activeRunStepName = null;
+                activeRunSourceLayer = null;
+                activeRunStopwatch = null;
+                activeRunPublished = false;
+            }
+        }
+
+        private void NotifyVisionToolRunUpdated(
+            VisionToolRunStatus status,
+            string toolName,
+            string outputLayer,
+            double elapsedMilliseconds,
+            int resultWidth,
+            int resultHeight,
+            string message)
+        {
+            if (!(displayManager is DisplayManagerService service))
+            {
+                return;
+            }
+
+            service.NotifyVisionToolRunUpdated(new VisionToolRunEventArgs
+            {
+                Status = status,
+                ToolName = toolName ?? string.Empty,
+                SourceLayer = string.IsNullOrWhiteSpace(activeRunSourceLayer)
+                    ? displayManager?.SelectedItem ?? string.Empty
+                    : activeRunSourceLayer,
+                OutputLayer = outputLayer ?? string.Empty,
+                ElapsedMilliseconds = elapsedMilliseconds,
+                ResultWidth = resultWidth,
+                ResultHeight = resultHeight,
+                Message = message ?? string.Empty
+            });
         }
 
         protected Mat CreateRunSourceMat(VisionTestImageCanvas sourceViewer, out Bitmap resultBitmap)
@@ -374,6 +574,10 @@ namespace RJCodeUI_M1.RJForms
             RegisterEscapeClose();
             ApplyVisionTestCompactStyle();
             initializeLayerList();
+            sourceViewer.EmptyTitle = "No input image";
+            sourceViewer.EmptyDescription = "Select an input layer.";
+            destinationViewer.EmptyTitle = "No output yet";
+            destinationViewer.EmptyDescription = "Run the tool to view the result.";
 
             sourceViewer.UserImageChanged += sourceImageChanged;
             destinationViewer.UserImageChanged += destinationImageChanged;
@@ -389,10 +593,19 @@ namespace RJCodeUI_M1.RJForms
 
             DeferInitialViewerLoad(() =>
             {
-                sourceViewer.DisplayImage = GetLayerImage(DEFINE.Main);
-                destinationViewer.DisplayImage = GetLayerImage(DEFINE.Main);
+                Bitmap sourceImage = GetLayerImage(source1_Index);
+                sourceViewer.DisplayImage = sourceImage;
+
+                if (destination_Index >= 0 && destination_Index != source1_Index)
+                {
+                    destinationViewer.DisplayImage = GetLayerImage(destination_Index);
+                }
+
                 sourceViewer.ZoomToFit();
-                destinationViewer.ZoomToFit();
+                if (destinationViewer.DisplayBitmap != null)
+                {
+                    destinationViewer.ZoomToFit();
+                }
             }, "single input viewer image load");
         }
 
@@ -486,6 +699,8 @@ namespace RJCodeUI_M1.RJForms
             Stopwatch stopwatch = Stopwatch.StartNew();
             this.displayManager = displayManager ?? DisplayManagerService.Default;
             wpgEvent = new PropertyGridEventBinder(() => this.displayManager);
+            thresholdPreviewTimer.Interval = 15;
+            thresholdPreviewTimer.Tick += ThresholdPreviewTimer_Tick;
             InitializeItems();
             stopwatch.Stop();
         }
@@ -504,6 +719,7 @@ namespace RJCodeUI_M1.RJForms
             };
             host.Child = propertyGrid;
             wpg = propertyGrid;
+            wpg.ApplyDisplayOptions(PropertyGridDisplayOptions.ToolForm);
             wpg.PropertyValueChanged += wpgEvent.Wpg_PropertyValueChanged;
             wpg.SelectedObjectsChanged += wpgEvent.Wpg_SelectedObjectsChanged;
         }
@@ -520,6 +736,34 @@ namespace RJCodeUI_M1.RJForms
         {
             if (IsDesignTime() || targetPanel == null) { return; }
 
+            if (!Visible && !IsDisposed)
+            {
+                DeferPropertyGridAttach(targetPanel, selectedObject);
+                return;
+            }
+
+            AttachPropertyGridImmediate(targetPanel, selectedObject);
+        }
+
+        private void DeferPropertyGridAttach(Control targetPanel, object selectedObject)
+        {
+            EventHandler shownHandler = null;
+            shownHandler = (sender, e) =>
+            {
+                Shown -= shownHandler;
+                if (IsDisposed) { return; }
+
+                BeginInvoke(new Action(() =>
+                {
+                    if (IsDisposed || targetPanel.IsDisposed) { return; }
+                    AttachPropertyGridImmediate(targetPanel, selectedObject);
+                }));
+            };
+            Shown += shownHandler;
+        }
+
+        private void AttachPropertyGridImmediate(Control targetPanel, object selectedObject)
+        {
             Control propertyGridHost = EnsurePropertyGridHost();
             wpg.SelectedObject = selectedObject;
 
@@ -528,6 +772,156 @@ namespace RJCodeUI_M1.RJForms
                 propertyGridHost.Parent?.Controls.Remove(propertyGridHost);
                 targetPanel.Controls.Add(propertyGridHost);
             }
+
+            AttachThresholdPreviewHandlerIfReady();
+        }
+
+        protected void AttachPropertyGridWithThresholdPreview(
+            Control targetPanel,
+            OpenCvPropertyBase selectedObject,
+            RJComboBox destinationComboBox,
+            VisionTestImageCanvas sourceViewer,
+            VisionTestImageCanvas destinationViewer)
+        {
+            thresholdPreviewProperty = selectedObject;
+            thresholdPreviewDestinationComboBox = destinationComboBox;
+            thresholdPreviewSourceViewer = sourceViewer;
+            thresholdPreviewDestinationViewer = destinationViewer;
+
+            AttachPropertyGrid(targetPanel, selectedObject);
+            AttachThresholdPreviewHandlerIfReady();
+        }
+
+        private void AttachThresholdPreviewHandlerIfReady()
+        {
+            if (wpg != null && !thresholdPreviewEventAttached)
+            {
+                wpg.PropertyValueChanged += Wpg_ThresholdPreviewPropertyValueChanged;
+                thresholdPreviewEventAttached = true;
+            }
+        }
+
+        private void Wpg_ThresholdPreviewPropertyValueChanged(object sender, PropertyGridPropertyValueChangedEventArgs e)
+        {
+            string propertyName = e?.Property?.Name ?? string.Empty;
+            if (!IsThresholdPreviewProperty(propertyName)) { return; }
+
+            OpenCvPropertyBase selectedProperty = wpg?.SelectedObject as OpenCvPropertyBase;
+            if (selectedProperty == null || !ReferenceEquals(selectedProperty, thresholdPreviewProperty)) { return; }
+
+            thresholdPreviewTimer.Stop();
+            thresholdPreviewTimer.Start();
+        }
+
+        private static bool IsThresholdPreviewProperty(string propertyName)
+        {
+            if (string.IsNullOrWhiteSpace(propertyName)) { return false; }
+
+            return string.Equals(propertyName, nameof(OpenCvPropertyBase.THRESHOLD), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(propertyName, nameof(OpenCvPropertyBase.THRESHOLD_TYPES), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(propertyName, nameof(OpenCvPropertyBase.USE_THRESHOLD), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(propertyName, nameof(OpenCvPropertyBase.USE_BITWISENOT), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(propertyName, nameof(OpenCvPropertyBase.ADAPTIVE_THRESHOLD), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(propertyName, nameof(OpenCvPropertyBase.ADAPTIVE_THRESHOLD_TYPES), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(propertyName, nameof(OpenCvPropertyBase.ADAPTIVE_THRESHOLD_ALGORITHM), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(propertyName, nameof(OpenCvPropertyBase.USE_ADAPTIVE_THRESHOLD), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(propertyName, nameof(OpenCvPropertyBase.BlockSize), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(propertyName, nameof(OpenCvPropertyBase.Weight), StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void ThresholdPreviewTimer_Tick(object sender, EventArgs e)
+        {
+            thresholdPreviewTimer.Stop();
+            PublishThresholdPreviewToDestination();
+        }
+
+        private void PublishThresholdPreviewToDestination()
+        {
+            if (thresholdPreviewProperty == null
+                || thresholdPreviewSourceViewer?.DisplayBitmap == null
+                || thresholdPreviewDestinationViewer == null
+                || thresholdPreviewDestinationComboBox?.SelectedItem == null)
+            {
+                return;
+            }
+
+            using (Mat source = BitmapImageConverter.ToMat(thresholdPreviewSourceViewer.DisplayBitmap).Clone())
+            using (Mat preview = CreateThresholdPreview(source, thresholdPreviewProperty))
+            using (Bitmap previewBitmap = BitmapImageConverter.ToBitmap(preview))
+            {
+                PublishPreviewBitmap(thresholdPreviewDestinationComboBox, thresholdPreviewDestinationViewer, previewBitmap);
+            }
+        }
+
+        private Mat CreateThresholdPreview(Mat source, OpenCvPropertyBase property)
+        {
+            OpenCvHelper.SetImageChannel1(source);
+
+            if (!property.USE_THRESHOLD && !property.USE_ADAPTIVE_THRESHOLD)
+            {
+                return source.Clone();
+            }
+
+            if (displayManager.IsLayerRoiEmpty(source1_Index))
+            {
+                return CreateThresholdPreviewImage(source, property);
+            }
+
+            Rect roi = CommonConverter.RectangleToRect(GetLayerRoi(source1_Index));
+            using (Mat sourceRoi = source.SubMat(roi))
+            using (Mat roiPreview = CreateThresholdPreviewImage(sourceRoi, property))
+            using (Bitmap sourceBitmap = BitmapImageConverter.ToBitmap(source))
+            using (Bitmap roiBitmap = BitmapImageConverter.ToBitmap(roiPreview))
+            using (Bitmap overlay = BitmapProcessing.OverlayImage(sourceBitmap, roiBitmap, roi.Left, roi.Top))
+            {
+                return BitmapImageConverter.ToMat(overlay).Clone();
+            }
+        }
+
+        private static Mat CreateThresholdPreviewImage(Mat source, OpenCvPropertyBase property)
+        {
+            Mat result = new Mat();
+            if (property.USE_ADAPTIVE_THRESHOLD)
+            {
+                Cv2.AdaptiveThreshold(
+                    source,
+                    result,
+                    property.ADAPTIVE_THRESHOLD,
+                    property.ADAPTIVE_THRESHOLD_ALGORITHM,
+                    property.ADAPTIVE_THRESHOLD_TYPES,
+                    NormalizeAdaptiveBlockSize(property.BlockSize),
+                    property.Weight);
+            }
+            else
+            {
+                Cv2.Threshold(source, result, property.THRESHOLD, 255, property.THRESHOLD_TYPES);
+            }
+
+            if (property.USE_BITWISENOT)
+            {
+                Cv2.BitwiseNot(result, result);
+            }
+
+            return result;
+        }
+
+        private static int NormalizeAdaptiveBlockSize(int blockSize)
+        {
+            int normalized = Math.Max(3, blockSize);
+            return normalized % 2 == 0 ? normalized + 1 : normalized;
+        }
+
+        protected void PublishPreviewBitmap(RJComboBox destinationComboBox, VisionTestImageCanvas destinationViewer, Bitmap previewBitmap)
+        {
+            if (previewBitmap == null || destinationComboBox?.SelectedItem == null) { return; }
+
+            int displayIndex = GetDisplayIndex(destinationComboBox.SelectedItem.ToString());
+            using (Bitmap layerBitmap = new Bitmap(previewBitmap))
+            {
+                SetLayerImage(displayIndex, layerBitmap);
+            }
+
+            destinationViewer.DisplayImage = previewBitmap;
         }
 
         private static bool IsDesignTime()
@@ -868,9 +1262,22 @@ namespace RJCodeUI_M1.RJForms
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing && (components != null))
+            if (disposing)
             {
-                components.Dispose();//Dispose components
+                thresholdPreviewTimer.Stop();
+                thresholdPreviewTimer.Tick -= ThresholdPreviewTimer_Tick;
+                thresholdPreviewTimer.Dispose();
+
+                if (wpg != null && thresholdPreviewEventAttached)
+                {
+                    wpg.PropertyValueChanged -= Wpg_ThresholdPreviewPropertyValueChanged;
+                    thresholdPreviewEventAttached = false;
+                }
+
+                if (components != null)
+                {
+                    components.Dispose();//Dispose components
+                }
             }
             base.Dispose(disposing);
         }
@@ -975,4 +1382,9 @@ namespace RJCodeUI_M1.RJForms
         #endregion
     }
 }
+
+
+
+
+
 

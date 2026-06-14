@@ -37,22 +37,30 @@
             this.btnNewPanel_Desty = new RJCodeUI_M1.RJControls.RJMenuIcon();
             this.ibDestination = new OpenVisionLab.VisionTestImageCanvas();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.transformPreviewTimer = new System.Windows.Forms.Timer(this.components);
             this.trbRotate = new RJCodeUI_M1.RJControls.RJTrackBar();
             this.rjLabel4 = new RJCodeUI_M1.RJControls.RJLabel();
             this.tbRotate = new RJCodeUI_M1.RJControls.RJTextBox();
+            this.trbScaleX = new RJCodeUI_M1.RJControls.RJTrackBar();
+            this.rjLabelScaleX = new RJCodeUI_M1.RJControls.RJLabel();
+            this.tbScaleX = new RJCodeUI_M1.RJControls.RJTextBox();
+            this.trbScaleY = new RJCodeUI_M1.RJControls.RJTrackBar();
+            this.rjLabelScaleY = new RJCodeUI_M1.RJControls.RJLabel();
+            this.tbScaleY = new RJCodeUI_M1.RJControls.RJTextBox();
             this.rjButton1 = new RJCodeUI_M1.RJControls.RJButton();
             this.pnlClientArea.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.btnNewPanel_Desty)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trbRotate)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.trbScaleX)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.trbScaleY)).BeginInit();
             this.SuspendLayout();            
             // 
             // pnlClientArea
             // 
             this.pnlClientArea.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
             this.pnlClientArea.Controls.Add(this.rjButton1);
-            this.pnlClientArea.Controls.Add(this.tbRotate);
             this.pnlClientArea.Location = new System.Drawing.Point(1, 41);
             this.pnlClientArea.Size = new System.Drawing.Size(918, 613);
             // 
@@ -178,6 +186,11 @@
             this.toolTip1.IsBalloon = true;
             this.toolTip1.ReshowDelay = 100;
             // 
+            // transformPreviewTimer
+            // 
+            this.transformPreviewTimer.Interval = 80;
+            this.transformPreviewTimer.Tick += new System.EventHandler(this.transformPreviewTimer_Tick);
+            // 
             // 
             // trbRotate
             // 
@@ -186,7 +199,7 @@
             this.trbRotate.ChannelColor = System.Drawing.Color.LightGray;
             this.trbRotate.Customizable = true;
             this.trbRotate.LargeChange = 1;
-            this.trbRotate.Location = new System.Drawing.Point(423, 42);
+            this.trbRotate.Location = new System.Drawing.Point(423, 89);
             this.trbRotate.Maximum = 180;
             this.trbRotate.Minimum = -180;
             this.trbRotate.Name = "trbRotate";
@@ -206,7 +219,7 @@
             this.rjLabel4.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.rjLabel4.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.rjLabel4.LinkLabel = false;
-            this.rjLabel4.Location = new System.Drawing.Point(423, 17);
+            this.rjLabel4.Location = new System.Drawing.Point(423, 64);
             this.rjLabel4.Name = "rjLabel4";
             this.rjLabel4.Size = new System.Drawing.Size(51, 16);
             this.rjLabel4.Style = RJCodeUI_M1.RJControls.LabelStyle.Normal;
@@ -223,7 +236,7 @@
             this.tbRotate.BorderSize = 2;
             this.tbRotate.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.tbRotate.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
-            this.tbRotate.Location = new System.Drawing.Point(793, 42);
+            this.tbRotate.Location = new System.Drawing.Point(793, 89);
             this.tbRotate.MultiLine = false;
             this.tbRotate.Name = "tbRotate";
             this.tbRotate.Padding = new System.Windows.Forms.Padding(10, 7, 10, 7);
@@ -234,6 +247,120 @@
             this.tbRotate.Size = new System.Drawing.Size(118, 31);
             this.tbRotate.Style = RJCodeUI_M1.RJControls.TextBoxStyle.MatteBorder;
             this.tbRotate.TabIndex = 0;
+            // 
+            // trbScaleX
+            // 
+            this.trbScaleX.AutoSize = false;
+            this.trbScaleX.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
+            this.trbScaleX.ChannelColor = System.Drawing.Color.LightGray;
+            this.trbScaleX.Customizable = true;
+            this.trbScaleX.LargeChange = 1;
+            this.trbScaleX.Location = new System.Drawing.Point(423, 189);
+            this.trbScaleX.Maximum = 300;
+            this.trbScaleX.Minimum = 10;
+            this.trbScaleX.Name = "trbScaleX";
+            this.trbScaleX.ShowValue = true;
+            this.trbScaleX.Size = new System.Drawing.Size(360, 46);
+            this.trbScaleX.SliderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
+            this.trbScaleX.TabIndex = 2158;
+            this.trbScaleX.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(162)))), ((int)(((byte)(160)))), ((int)(((byte)(162)))));
+            this.trbScaleX.TickStyle = System.Windows.Forms.TickStyle.TopLeft;
+            this.trbScaleX.Value = 100;
+            this.trbScaleX.Scroll += new System.EventHandler(this.trbScale_Scroll);
+            // 
+            // rjLabelScaleX
+            // 
+            this.rjLabelScaleX.AutoSize = true;
+            this.rjLabelScaleX.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
+            this.rjLabelScaleX.Cursor = System.Windows.Forms.Cursors.Arrow;
+            this.rjLabelScaleX.Font = new System.Drawing.Font("Verdana", 9.5F);
+            this.rjLabelScaleX.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
+            this.rjLabelScaleX.LinkLabel = false;
+            this.rjLabelScaleX.Location = new System.Drawing.Point(423, 164);
+            this.rjLabelScaleX.Name = "rjLabelScaleX";
+            this.rjLabelScaleX.Size = new System.Drawing.Size(74, 16);
+            this.rjLabelScaleX.Style = RJCodeUI_M1.RJControls.LabelStyle.Normal;
+            this.rjLabelScaleX.TabIndex = 2159;
+            this.rjLabelScaleX.Text = "Scale X (%)";
+            // 
+            // tbScaleX
+            // 
+            this.tbScaleX._Customizable = false;
+            this.tbScaleX.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
+            this.tbScaleX.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
+            this.tbScaleX.BorderFocusColor = System.Drawing.Color.FromArgb(((int)(((byte)(114)))), ((int)(((byte)(162)))), ((int)(((byte)(247)))));
+            this.tbScaleX.BorderRadius = 3;
+            this.tbScaleX.BorderSize = 2;
+            this.tbScaleX.Font = new System.Drawing.Font("Verdana", 9.5F);
+            this.tbScaleX.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
+            this.tbScaleX.Location = new System.Drawing.Point(793, 189);
+            this.tbScaleX.MultiLine = false;
+            this.tbScaleX.Name = "tbScaleX";
+            this.tbScaleX.Padding = new System.Windows.Forms.Padding(10, 7, 10, 7);
+            this.tbScaleX.PasswordChar = false;
+            this.tbScaleX.PlaceHolderColor = System.Drawing.Color.DarkGray;
+            this.tbScaleX.PlaceHolderText = null;
+            this.tbScaleX.ScrollBars = System.Windows.Forms.ScrollBars.None;
+            this.tbScaleX.Size = new System.Drawing.Size(118, 31);
+            this.tbScaleX.Style = RJCodeUI_M1.RJControls.TextBoxStyle.MatteBorder;
+            this.tbScaleX.TabIndex = 2;
+            // 
+            // trbScaleY
+            // 
+            this.trbScaleY.AutoSize = false;
+            this.trbScaleY.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
+            this.trbScaleY.ChannelColor = System.Drawing.Color.LightGray;
+            this.trbScaleY.Customizable = true;
+            this.trbScaleY.LargeChange = 1;
+            this.trbScaleY.Location = new System.Drawing.Point(423, 289);
+            this.trbScaleY.Maximum = 300;
+            this.trbScaleY.Minimum = 10;
+            this.trbScaleY.Name = "trbScaleY";
+            this.trbScaleY.ShowValue = true;
+            this.trbScaleY.Size = new System.Drawing.Size(360, 46);
+            this.trbScaleY.SliderColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(97)))), ((int)(((byte)(212)))));
+            this.trbScaleY.TabIndex = 2161;
+            this.trbScaleY.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(162)))), ((int)(((byte)(160)))), ((int)(((byte)(162)))));
+            this.trbScaleY.TickStyle = System.Windows.Forms.TickStyle.TopLeft;
+            this.trbScaleY.Value = 100;
+            this.trbScaleY.Scroll += new System.EventHandler(this.trbScale_Scroll);
+            // 
+            // rjLabelScaleY
+            // 
+            this.rjLabelScaleY.AutoSize = true;
+            this.rjLabelScaleY.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
+            this.rjLabelScaleY.Cursor = System.Windows.Forms.Cursors.Arrow;
+            this.rjLabelScaleY.Font = new System.Drawing.Font("Verdana", 9.5F);
+            this.rjLabelScaleY.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
+            this.rjLabelScaleY.LinkLabel = false;
+            this.rjLabelScaleY.Location = new System.Drawing.Point(423, 264);
+            this.rjLabelScaleY.Name = "rjLabelScaleY";
+            this.rjLabelScaleY.Size = new System.Drawing.Size(74, 16);
+            this.rjLabelScaleY.Style = RJCodeUI_M1.RJControls.LabelStyle.Normal;
+            this.rjLabelScaleY.TabIndex = 2162;
+            this.rjLabelScaleY.Text = "Scale Y (%)";
+            // 
+            // tbScaleY
+            // 
+            this.tbScaleY._Customizable = false;
+            this.tbScaleY.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
+            this.tbScaleY.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
+            this.tbScaleY.BorderFocusColor = System.Drawing.Color.FromArgb(((int)(((byte)(114)))), ((int)(((byte)(162)))), ((int)(((byte)(247)))));
+            this.tbScaleY.BorderRadius = 3;
+            this.tbScaleY.BorderSize = 2;
+            this.tbScaleY.Font = new System.Drawing.Font("Verdana", 9.5F);
+            this.tbScaleY.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
+            this.tbScaleY.Location = new System.Drawing.Point(793, 289);
+            this.tbScaleY.MultiLine = false;
+            this.tbScaleY.Name = "tbScaleY";
+            this.tbScaleY.Padding = new System.Windows.Forms.Padding(10, 7, 10, 7);
+            this.tbScaleY.PasswordChar = false;
+            this.tbScaleY.PlaceHolderColor = System.Drawing.Color.DarkGray;
+            this.tbScaleY.PlaceHolderText = null;
+            this.tbScaleY.ScrollBars = System.Windows.Forms.ScrollBars.None;
+            this.tbScaleY.Size = new System.Drawing.Size(118, 31);
+            this.tbScaleY.Style = RJCodeUI_M1.RJControls.TextBoxStyle.MatteBorder;
+            this.tbScaleY.TabIndex = 3;
             // 
             // rjButton1
             // 
@@ -257,7 +384,7 @@
             this.rjButton1.Size = new System.Drawing.Size(488, 40);
             this.rjButton1.Style = RJCodeUI_M1.RJControls.ControlStyle.Glass;
             this.rjButton1.TabIndex = 1;
-            this.rjButton1.Text = "Rotate";
+            this.rjButton1.Text = "Run Rotate / Scale";
             this.rjButton1.UseVisualStyleBackColor = false;
             this.rjButton1.Click += new System.EventHandler(this.rjButton1_Click);
             // 
@@ -270,6 +397,13 @@
             this.BorderSize = 1;
             this.Caption = "Rotate / Scale";
             this.ClientSize = new System.Drawing.Size(920, 655);
+            this.Controls.Add(this.tbScaleY);
+            this.Controls.Add(this.rjLabelScaleY);
+            this.Controls.Add(this.trbScaleY);
+            this.Controls.Add(this.tbScaleX);
+            this.Controls.Add(this.rjLabelScaleX);
+            this.Controls.Add(this.trbScaleX);
+            this.Controls.Add(this.tbRotate);
             this.Controls.Add(this.rjLabel4);
             this.Controls.Add(this.trbRotate);
             this.Controls.Add(this.groupBox4);
@@ -284,12 +418,21 @@
             this.Controls.SetChildIndex(this.groupBox4, 0);
             this.Controls.SetChildIndex(this.trbRotate, 0);
             this.Controls.SetChildIndex(this.rjLabel4, 0);
+            this.Controls.SetChildIndex(this.tbRotate, 0);
+            this.Controls.SetChildIndex(this.trbScaleX, 0);
+            this.Controls.SetChildIndex(this.rjLabelScaleX, 0);
+            this.Controls.SetChildIndex(this.tbScaleX, 0);
+            this.Controls.SetChildIndex(this.trbScaleY, 0);
+            this.Controls.SetChildIndex(this.rjLabelScaleY, 0);
+            this.Controls.SetChildIndex(this.tbScaleY, 0);
             this.pnlClientArea.ResumeLayout(false);
             this.groupBox3.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.btnNewPanel_Desty)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.trbRotate)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.trbScaleX)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.trbScaleY)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -304,10 +447,17 @@
         private System.Windows.Forms.ToolTip toolTip1;
         private RJCodeUI_M1.RJControls.RJComboBox cbLayerList2;
         private RJCodeUI_M1.RJControls.RJComboBox cbLayerList;
+        private System.Windows.Forms.Timer transformPreviewTimer;
         private RJCodeUI_M1.RJControls.RJTrackBar trbRotate;
         private RJCodeUI_M1.RJControls.RJLabel rjLabel4;
         private RJCodeUI_M1.RJControls.RJButton rjButton1;
         private RJCodeUI_M1.RJControls.RJTextBox tbRotate;
+        private RJCodeUI_M1.RJControls.RJTrackBar trbScaleX;
+        private RJCodeUI_M1.RJControls.RJLabel rjLabelScaleX;
+        private RJCodeUI_M1.RJControls.RJTextBox tbScaleX;
+        private RJCodeUI_M1.RJControls.RJTrackBar trbScaleY;
+        private RJCodeUI_M1.RJControls.RJLabel rjLabelScaleY;
+        private RJCodeUI_M1.RJControls.RJTextBox tbScaleY;
     }
 }
 

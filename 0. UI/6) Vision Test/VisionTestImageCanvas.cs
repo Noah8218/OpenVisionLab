@@ -39,6 +39,8 @@ namespace OpenVisionLab
 
 		public Bitmap DisplayBitmap => image;
 		public bool ShowPixelGrid { get; set; }
+		public string EmptyTitle { get; set; } = "No image";
+		public string EmptyDescription { get; set; } = "Select a layer or load an image.";
 		public RectangleF SelectionRegion
 		{
 			get => selectionRegion;
@@ -102,11 +104,16 @@ namespace OpenVisionLab
 			{
 				imageSourceReference = null;
 				pendingImageLoad = false;
-				imageViewer?.ClearTexture();
+				if (imageViewer != null)
+				{
+					imageViewer.ClearTexture();
+					imageViewer.Visible = false;
+				}
+				base.Invalidate();
 			}
 			else
 			{
-				EnsureImageViewer();
+				EnsureImageViewer().Visible = true;
 
 				if (!CanLoadTexture())
 				{
@@ -122,6 +129,39 @@ namespace OpenVisionLab
 			{
 				UserImageChanged(this, EventArgs.Empty);
 			}
+		}
+
+		protected override void OnPaint(PaintEventArgs e)
+		{
+			base.OnPaint(e);
+			if (image != null) { return; }
+
+			using Font titleFont = new Font("Segoe UI", 10F, FontStyle.Bold, GraphicsUnit.Point);
+			using Font descriptionFont = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point);
+			using Brush titleBrush = new SolidBrush(Color.FromArgb(220, 230, 240));
+			using Brush descriptionBrush = new SolidBrush(Color.FromArgb(140, 155, 170));
+			using Pen framePen = new Pen(Color.FromArgb(68, 82, 98), 1F);
+
+			Rectangle iconRect = new Rectangle((Width - 42) / 2, Math.Max(18, Height / 2 - 46), 42, 34);
+			e.Graphics.DrawRectangle(framePen, iconRect);
+			e.Graphics.DrawLine(framePen, iconRect.Left + 8, iconRect.Bottom - 8, iconRect.Left + 18, iconRect.Top + 18);
+			e.Graphics.DrawLine(framePen, iconRect.Left + 18, iconRect.Top + 18, iconRect.Left + 27, iconRect.Bottom - 10);
+			e.Graphics.DrawEllipse(framePen, iconRect.Right - 13, iconRect.Top + 7, 5, 5);
+
+			DrawCenteredText(e.Graphics, EmptyTitle, titleFont, titleBrush, iconRect.Bottom + 10);
+			if (!string.IsNullOrWhiteSpace(EmptyDescription))
+			{
+				DrawCenteredText(e.Graphics, EmptyDescription, descriptionFont, descriptionBrush, iconRect.Bottom + 32);
+			}
+		}
+
+		private void DrawCenteredText(Graphics graphics, string text, Font font, Brush brush, int top)
+		{
+			if (string.IsNullOrWhiteSpace(text)) { return; }
+
+			SizeF textSize = graphics.MeasureString(text, font);
+			float left = Math.Max(4, (Width - textSize.Width) / 2F);
+			graphics.DrawString(text, font, brush, left, top);
 		}
 
 		private bool CanLoadTexture()
@@ -168,7 +208,6 @@ namespace OpenVisionLab
 			if (!CanLoadTexture()) { return; }
 
 			LoadCurrentImage();
-			ZoomToFit();
 		}
 
 		private void LoadCurrentImage()
@@ -178,12 +217,15 @@ namespace OpenVisionLab
 			try
 			{
 				pendingImageLoad = false;
-				imageViewer.ClearTexture();
 
 				Stopwatch stopwatch = Stopwatch.StartNew();
 				using (CvMat mat = BitmapImageConverter.ToMat(image))
 				{
-					CanvasImageLoader.UploadMatAsTexture(imageViewer, mat, TextureName, ref imageSize);
+					using (imageViewer.SuppressRefresh())
+					{
+						CanvasImageLoader.UploadMatAsTexture(imageViewer, mat, TextureName, ref imageSize, false);
+						imageViewer.ZoomToFit();
+					}
 				}
 				stopwatch.Stop();
 

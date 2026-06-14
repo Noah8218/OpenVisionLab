@@ -8,19 +8,14 @@ using OpenCvSharp;
 using OpenVisionLab._1._Core;
 using RJCodeUI_M1.RJForms;
 using Lib.Common;
+using Lib.OpenCV;
+using Lib.OpenCV.Property;
+using Lib.OpenCV.Tool;
 
 namespace OpenVisionLab
 {
     public partial class FormVision_Filter : VisionTestForm
     {
-        private enum FilterType
-        {
-            Blur,
-            BoxFilter,
-            MedianBlur,
-            GaussianBlur,
-            BilateralFilter
-        }
         private void InitLayListItem()
         {
             InitializeSingleInputLayerList(cbLayerList, cbLayerList2);
@@ -68,7 +63,7 @@ namespace OpenVisionLab
         private void FormSettings_Camera_Load(object sender, EventArgs e)
         {
             AppUtil.InitDirectory("TEST");
-            foreach (FilterType filterType in Enum.GetValues(typeof(FilterType)))
+            foreach (FilterToolType filterType in Enum.GetValues(typeof(FilterToolType)))
             {
                 cbFilterType.Items.Add(filterType);
             }
@@ -84,6 +79,13 @@ namespace OpenVisionLab
                 IbDestination_MouseClick,
                 toolTip1,
                 btnNewPanel_Desty);
+            VisionPipelineFormBridge.AttachAddButton(
+                btnFilterRun,
+                () => VisionPipelineStepBuilder.FromFilterProperty(
+                    CreateFilterProperty(),
+                    "Filter",
+                    Convert.ToString(cbLayerList.SelectedItem),
+                    Convert.ToString(cbLayerList2.SelectedItem)));
         }
 
         public FormVision_Filter(IDisplayManager displayManager, EventHandler<DockDisplayEventArgs> EventUpdateDisplay)
@@ -105,9 +107,26 @@ namespace OpenVisionLab
         }
         private void btnFilterRun_Click(object sender, EventArgs e)
         {
-                        Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
+            RunVisionStep("Filter", () =>
+            {
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
+                FilterToolProperty property = CreateFilterProperty();
+
+                Bitmap Result = CreateSingleInputResult(ibSource, image =>
+                {
+                    FilterTool tool = new FilterTool();
+                    tool.SetProperty(property);
+                    tool.SetSourceImage(image);
+                    tool.Run();
+                    tool.imageResult.CopyTo(image);
+                });
+                PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
+            });
+        }
+
+        private FilterToolProperty CreateFilterProperty()
+        {
             if (tbFilterW.Text == "") { tbFilterW.Text = "3"; }
             if (tbFilterH.Text == "") { tbFilterH.Text = "3"; }
             if (tbKernalFilter.Text == "") { tbKernalFilter.Text = "3"; }
@@ -115,37 +134,17 @@ namespace OpenVisionLab
             if (tbSigmaColor.Text == "") { tbSigmaColor.Text = "3"; }
             if (tbSigmaSpace.Text == "") { tbSigmaSpace.Text = "3"; }
 
-            int W = int.Parse(tbFilterW.Text);
-            int H = int.Parse(tbFilterH.Text);
-            int Diameter = int.Parse(tbDiameter.Text);
-            int sigmaColor = int.Parse(tbSigmaColor.Text);
-            int sigmaSpace = int.Parse(tbSigmaSpace.Text);
-            BorderTypes borderType = AppUtil.ParseEnum<BorderTypes>(cbFilterBorderType.SelectedItem.ToString());
-            FilterType filterType = AppUtil.ParseEnum<FilterType>(cbFilterType.SelectedItem.ToString());
-
-            Bitmap Result = CreateSingleInputResult(ibSource, image =>
+            return new FilterToolProperty
             {
-                switch (filterType)
-                {
-                    case FilterType.Blur:
-                        Cv2.Blur(image, image, new OpenCvSharp.Size(W, H), new OpenCvSharp.Point(-1, -1), borderType);
-                        break;
-                    case FilterType.GaussianBlur:
-                        Cv2.GaussianBlur(image, image, new OpenCvSharp.Size(W, H), 1, 1, borderType);
-                        break;
-                    case FilterType.MedianBlur:
-                        Cv2.MedianBlur(image, image, int.Parse(tbKernalFilter.Text));
-                        break;
-                    case FilterType.BoxFilter:
-                        Cv2.BoxFilter(image, image, MatType.CV_8UC3, new OpenCvSharp.Size(W, H), new OpenCvSharp.Point(-1, -1));
-                        break;
-                    case FilterType.BilateralFilter:
-                        Cv2.BilateralFilter(image, image, Diameter, sigmaColor, sigmaSpace, borderType);
-                        break;
-                }
-            });
-            PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-        
+                FilterType = AppUtil.ParseEnum<FilterToolType>(cbFilterType.SelectedItem.ToString()),
+                KernelWidth = int.Parse(tbFilterW.Text),
+                KernelHeight = int.Parse(tbFilterH.Text),
+                MedianKernelSize = int.Parse(tbKernalFilter.Text),
+                Diameter = int.Parse(tbDiameter.Text),
+                SigmaColor = int.Parse(tbSigmaColor.Text),
+                SigmaSpace = int.Parse(tbSigmaSpace.Text),
+                BorderType = AppUtil.ParseEnum<BorderTypes>(cbFilterBorderType.SelectedItem.ToString())
+            };
         }
 
         private void cbFilterType_OnSelectedIndexChanged(object sender, EventArgs e)
@@ -160,18 +159,18 @@ namespace OpenVisionLab
             tbSigmaColor.Enabled = false;
             tbSigmaSpace.Enabled = false;
 
-            switch (AppUtil.ParseEnum<FilterType>(Index))
+            switch (AppUtil.ParseEnum<FilterToolType>(Index))
             {
-                case FilterType.Blur:                
-                case FilterType.GaussianBlur:
-                case FilterType.BoxFilter:                    
+                case FilterToolType.Blur:                
+                case FilterToolType.GaussianBlur:
+                case FilterToolType.BoxFilter:                    
                     tbFilterW.Enabled = true;                    
                     tbFilterH.Enabled = true;                                        
                     break;
-                case FilterType.MedianBlur:
+                case FilterToolType.MedianBlur:
                     tbKernalFilter.Enabled = true;
                     break;
-                case FilterType.BilateralFilter:
+                case FilterToolType.BilateralFilter:
                     tbDiameter.Enabled = true;
                     tbSigmaColor.Enabled = true;
                     tbSigmaSpace.Enabled = true;

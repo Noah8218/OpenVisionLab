@@ -37,6 +37,7 @@
             this.btnNewPanel_Desty = new RJCodeUI_M1.RJControls.RJMenuIcon();
             this.ibDestination = new OpenVisionLab.VisionTestImageCanvas();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.hsvPreviewTimer = new System.Windows.Forms.Timer(this.components);
             this.trbSatMin = new RJCodeUI_M1.RJControls.RJTrackBar();
             this.rjLabel4 = new RJCodeUI_M1.RJControls.RJLabel();
             this.rjLabel1 = new RJCodeUI_M1.RJControls.RJLabel();
@@ -64,6 +65,8 @@
             // pnlClientArea
             // 
             this.pnlClientArea.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
+            this.pnlClientArea.Controls.Add(this.rjLabel4);
+            this.pnlClientArea.Controls.Add(this.trbSatMin);
             this.pnlClientArea.Controls.Add(this.rjLabel5);
             this.pnlClientArea.Controls.Add(this.trbValMax);
             this.pnlClientArea.Controls.Add(this.rjLabel6);
@@ -199,6 +202,11 @@
             this.toolTip1.IsBalloon = true;
             this.toolTip1.ReshowDelay = 100;
             // 
+            // hsvPreviewTimer
+            // 
+            this.hsvPreviewTimer.Interval = 80;
+            this.hsvPreviewTimer.Tick += new System.EventHandler(this.hsvPreviewTimer_Tick);
+            // 
             // 
             // trbSatMin
             // 
@@ -207,9 +215,9 @@
             this.trbSatMin.ChannelColor = System.Drawing.Color.LightGray;
             this.trbSatMin.Customizable = true;
             this.trbSatMin.LargeChange = 1;
-            this.trbSatMin.Location = new System.Drawing.Point(423, 36);
+            this.trbSatMin.Location = new System.Drawing.Point(423, 202);
             this.trbSatMin.Maximum = 255;
-            this.trbSatMin.Minimum = 1;
+            this.trbSatMin.Minimum = 0;
             this.trbSatMin.Name = "trbSatMin";
             this.trbSatMin.ShowValue = true;
             this.trbSatMin.Size = new System.Drawing.Size(488, 46);
@@ -217,7 +225,7 @@
             this.trbSatMin.TabIndex = 2156;
             this.trbSatMin.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(162)))), ((int)(((byte)(160)))), ((int)(((byte)(162)))));
             this.trbSatMin.TickStyle = System.Windows.Forms.TickStyle.TopLeft;
-            this.trbSatMin.Value = 1;
+            this.trbSatMin.Value = 0;
             this.trbSatMin.Scroll += new System.EventHandler(this.trbHsv_Scroll);
             // 
             // rjLabel4
@@ -228,12 +236,12 @@
             this.rjLabel4.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.rjLabel4.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.rjLabel4.LinkLabel = false;
-            this.rjLabel4.Location = new System.Drawing.Point(423, 17);
+            this.rjLabel4.Location = new System.Drawing.Point(423, 183);
             this.rjLabel4.Name = "rjLabel4";
-            this.rjLabel4.Size = new System.Drawing.Size(57, 16);
+            this.rjLabel4.Size = new System.Drawing.Size(101, 16);
             this.rjLabel4.Style = RJCodeUI_M1.RJControls.LabelStyle.Normal;
             this.rjLabel4.TabIndex = 2157;
-            this.rjLabel4.Text = "Sat Min";
+            this.rjLabel4.Text = "Saturation Min";
             // 
             // rjLabel1
             // 
@@ -243,12 +251,12 @@
             this.rjLabel1.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.rjLabel1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.rjLabel1.LinkLabel = false;
-            this.rjLabel1.Location = new System.Drawing.Point(423, 105);
+            this.rjLabel1.Location = new System.Drawing.Point(423, 247);
             this.rjLabel1.Name = "rjLabel1";
-            this.rjLabel1.Size = new System.Drawing.Size(61, 16);
+            this.rjLabel1.Size = new System.Drawing.Size(105, 16);
             this.rjLabel1.Style = RJCodeUI_M1.RJControls.LabelStyle.Normal;
             this.rjLabel1.TabIndex = 2159;
-            this.rjLabel1.Text = "Sat Max";
+            this.rjLabel1.Text = "Saturation Max";
             // 
             // trbSatMax
             // 
@@ -257,9 +265,9 @@
             this.trbSatMax.ChannelColor = System.Drawing.Color.LightGray;
             this.trbSatMax.Customizable = true;
             this.trbSatMax.LargeChange = 1;
-            this.trbSatMax.Location = new System.Drawing.Point(423, 124);
+            this.trbSatMax.Location = new System.Drawing.Point(423, 266);
             this.trbSatMax.Maximum = 255;
-            this.trbSatMax.Minimum = 1;
+            this.trbSatMax.Minimum = 0;
             this.trbSatMax.Name = "trbSatMax";
             this.trbSatMax.ShowValue = true;
             this.trbSatMax.Size = new System.Drawing.Size(488, 46);
@@ -267,7 +275,7 @@
             this.trbSatMax.TabIndex = 2158;
             this.trbSatMax.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(162)))), ((int)(((byte)(160)))), ((int)(((byte)(162)))));
             this.trbSatMax.TickStyle = System.Windows.Forms.TickStyle.TopLeft;
-            this.trbSatMax.Value = 1;
+            this.trbSatMax.Value = 255;
             this.trbSatMax.Scroll += new System.EventHandler(this.trbHsv_Scroll);
             // 
             // rjLabel2
@@ -278,7 +286,7 @@
             this.rjLabel2.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.rjLabel2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.rjLabel2.LinkLabel = false;
-            this.rjLabel2.Location = new System.Drawing.Point(423, 281);
+            this.rjLabel2.Location = new System.Drawing.Point(423, 87);
             this.rjLabel2.Name = "rjLabel2";
             this.rjLabel2.Size = new System.Drawing.Size(63, 16);
             this.rjLabel2.Style = RJCodeUI_M1.RJControls.LabelStyle.Normal;
@@ -292,9 +300,9 @@
             this.trbHueMax.ChannelColor = System.Drawing.Color.LightGray;
             this.trbHueMax.Customizable = true;
             this.trbHueMax.LargeChange = 1;
-            this.trbHueMax.Location = new System.Drawing.Point(423, 300);
-            this.trbHueMax.Maximum = 255;
-            this.trbHueMax.Minimum = 1;
+            this.trbHueMax.Location = new System.Drawing.Point(423, 106);
+            this.trbHueMax.Maximum = 179;
+            this.trbHueMax.Minimum = 0;
             this.trbHueMax.Name = "trbHueMax";
             this.trbHueMax.ShowValue = true;
             this.trbHueMax.Size = new System.Drawing.Size(488, 46);
@@ -302,7 +310,7 @@
             this.trbHueMax.TabIndex = 2162;
             this.trbHueMax.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(162)))), ((int)(((byte)(160)))), ((int)(((byte)(162)))));
             this.trbHueMax.TickStyle = System.Windows.Forms.TickStyle.TopLeft;
-            this.trbHueMax.Value = 1;
+            this.trbHueMax.Value = 179;
             this.trbHueMax.Scroll += new System.EventHandler(this.trbHsv_Scroll);
             // 
             // rjLabel3
@@ -313,7 +321,7 @@
             this.rjLabel3.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.rjLabel3.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.rjLabel3.LinkLabel = false;
-            this.rjLabel3.Location = new System.Drawing.Point(423, 193);
+            this.rjLabel3.Location = new System.Drawing.Point(423, 23);
             this.rjLabel3.Name = "rjLabel3";
             this.rjLabel3.Size = new System.Drawing.Size(59, 16);
             this.rjLabel3.Style = RJCodeUI_M1.RJControls.LabelStyle.Normal;
@@ -327,9 +335,9 @@
             this.trbHueMin.ChannelColor = System.Drawing.Color.LightGray;
             this.trbHueMin.Customizable = true;
             this.trbHueMin.LargeChange = 1;
-            this.trbHueMin.Location = new System.Drawing.Point(423, 212);
-            this.trbHueMin.Maximum = 255;
-            this.trbHueMin.Minimum = 1;
+            this.trbHueMin.Location = new System.Drawing.Point(423, 42);
+            this.trbHueMin.Maximum = 179;
+            this.trbHueMin.Minimum = 0;
             this.trbHueMin.Name = "trbHueMin";
             this.trbHueMin.ShowValue = true;
             this.trbHueMin.Size = new System.Drawing.Size(488, 46);
@@ -337,7 +345,7 @@
             this.trbHueMin.TabIndex = 2160;
             this.trbHueMin.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(162)))), ((int)(((byte)(160)))), ((int)(((byte)(162)))));
             this.trbHueMin.TickStyle = System.Windows.Forms.TickStyle.TopLeft;
-            this.trbHueMin.Value = 1;
+            this.trbHueMin.Value = 0;
             this.trbHueMin.Scroll += new System.EventHandler(this.trbHsv_Scroll);
             // 
             // rjLabel5
@@ -348,12 +356,12 @@
             this.rjLabel5.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.rjLabel5.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.rjLabel5.LinkLabel = false;
-            this.rjLabel5.Location = new System.Drawing.Point(423, 457);
+            this.rjLabel5.Location = new System.Drawing.Point(423, 407);
             this.rjLabel5.Name = "rjLabel5";
-            this.rjLabel5.Size = new System.Drawing.Size(57, 16);
+            this.rjLabel5.Size = new System.Drawing.Size(75, 16);
             this.rjLabel5.Style = RJCodeUI_M1.RJControls.LabelStyle.Normal;
             this.rjLabel5.TabIndex = 2167;
-            this.rjLabel5.Text = "Val Max";
+            this.rjLabel5.Text = "Value Max";
             // 
             // trbValMax
             // 
@@ -362,9 +370,9 @@
             this.trbValMax.ChannelColor = System.Drawing.Color.LightGray;
             this.trbValMax.Customizable = true;
             this.trbValMax.LargeChange = 1;
-            this.trbValMax.Location = new System.Drawing.Point(423, 476);
+            this.trbValMax.Location = new System.Drawing.Point(423, 426);
             this.trbValMax.Maximum = 255;
-            this.trbValMax.Minimum = 1;
+            this.trbValMax.Minimum = 0;
             this.trbValMax.Name = "trbValMax";
             this.trbValMax.ShowValue = true;
             this.trbValMax.Size = new System.Drawing.Size(488, 46);
@@ -372,7 +380,7 @@
             this.trbValMax.TabIndex = 2166;
             this.trbValMax.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(162)))), ((int)(((byte)(160)))), ((int)(((byte)(162)))));
             this.trbValMax.TickStyle = System.Windows.Forms.TickStyle.TopLeft;
-            this.trbValMax.Value = 1;
+            this.trbValMax.Value = 255;
             this.trbValMax.Scroll += new System.EventHandler(this.trbHsv_Scroll);
             // 
             // rjLabel6
@@ -383,12 +391,12 @@
             this.rjLabel6.Font = new System.Drawing.Font("Verdana", 9.5F);
             this.rjLabel6.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(132)))), ((int)(((byte)(129)))), ((int)(((byte)(132)))));
             this.rjLabel6.LinkLabel = false;
-            this.rjLabel6.Location = new System.Drawing.Point(423, 369);
+            this.rjLabel6.Location = new System.Drawing.Point(423, 343);
             this.rjLabel6.Name = "rjLabel6";
-            this.rjLabel6.Size = new System.Drawing.Size(53, 16);
+            this.rjLabel6.Size = new System.Drawing.Size(71, 16);
             this.rjLabel6.Style = RJCodeUI_M1.RJControls.LabelStyle.Normal;
             this.rjLabel6.TabIndex = 2165;
-            this.rjLabel6.Text = "Val Min";
+            this.rjLabel6.Text = "Value Min";
             // 
             // trbValMin
             // 
@@ -397,9 +405,9 @@
             this.trbValMin.ChannelColor = System.Drawing.Color.LightGray;
             this.trbValMin.Customizable = true;
             this.trbValMin.LargeChange = 1;
-            this.trbValMin.Location = new System.Drawing.Point(423, 388);
+            this.trbValMin.Location = new System.Drawing.Point(423, 362);
             this.trbValMin.Maximum = 255;
-            this.trbValMin.Minimum = 1;
+            this.trbValMin.Minimum = 0;
             this.trbValMin.Name = "trbValMin";
             this.trbValMin.ShowValue = true;
             this.trbValMin.Size = new System.Drawing.Size(488, 46);
@@ -407,7 +415,7 @@
             this.trbValMin.TabIndex = 2164;
             this.trbValMin.TextColor = System.Drawing.Color.FromArgb(((int)(((byte)(162)))), ((int)(((byte)(160)))), ((int)(((byte)(162)))));
             this.trbValMin.TickStyle = System.Windows.Forms.TickStyle.TopLeft;
-            this.trbValMin.Value = 1;
+            this.trbValMin.Value = 0;
             this.trbValMin.Scroll += new System.EventHandler(this.trbHsv_Scroll);
             // 
             // FormVision_HSV
@@ -419,8 +427,6 @@
             this.BorderSize = 1;
             this.Caption = "HSV";
             this.ClientSize = new System.Drawing.Size(920, 655);
-            this.Controls.Add(this.rjLabel4);
-            this.Controls.Add(this.trbSatMin);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
             this.MaximizeBox = false;
@@ -431,8 +437,6 @@
             this.Controls.SetChildIndex(this.pnlClientArea, 0);
             this.Controls.SetChildIndex(this.groupBox3, 0);
             this.Controls.SetChildIndex(this.groupBox4, 0);
-            this.Controls.SetChildIndex(this.trbSatMin, 0);
-            this.Controls.SetChildIndex(this.rjLabel4, 0);
             this.pnlClientArea.ResumeLayout(false);
             this.pnlClientArea.PerformLayout();
             this.groupBox3.ResumeLayout(false);
@@ -457,6 +461,7 @@
         private System.Windows.Forms.GroupBox groupBox3;
         private RJCodeUI_M1.RJControls.RJMenuIcon btnNewPanel_Desty;
         private System.Windows.Forms.ToolTip toolTip1;
+        private System.Windows.Forms.Timer hsvPreviewTimer;
         private RJCodeUI_M1.RJControls.RJComboBox cbLayerList2;
         private RJCodeUI_M1.RJControls.RJComboBox cbLayerList;
         private RJCodeUI_M1.RJControls.RJTrackBar trbSatMin;

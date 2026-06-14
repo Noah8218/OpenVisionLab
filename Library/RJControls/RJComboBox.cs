@@ -31,6 +31,8 @@ namespace RJCodeUI_M1.RJControls
         private int borderSize = 1; // Gets or sets the border size.
         private int borderRadius = 0; // Gets or sets the border radius.
         private bool customizable; // Gets or sets if the control is customizable.
+        private Color dropDownSelectedBackColor = Color.Empty;
+        private Color dropDownSelectedTextColor = Color.White;
         // Controls
         private ComboBox comboList; // Gets or sets the Combo Box (not visible, but can show dropdown)
         private IconButton btnIcon; // Gets or sets the Dropdown Arrow Icon (button to show dropdown list)
@@ -46,6 +48,9 @@ namespace RJCodeUI_M1.RJControls
 
         [Category("RJ Code Advance")]
         public event EventHandler OnSelectedIndexChanged; // Main event of the combo box
+
+        [Category("RJ Code Advance")]
+        public event EventHandler DropDownOpening;
 
         #endregion
 
@@ -64,9 +69,14 @@ namespace RJCodeUI_M1.RJControls
             comboList.Font = new Font("Microsoft Sans Serif", 9.5F);
             comboList.FormattingEnabled = true;
             comboList.Size = new Size(170, 21);
+            comboList.Visible = false;
             comboList.SelectedIndexChanged += new EventHandler(ComboBox_SelectedIndexChanged); // Subscribe the SelectedIndexChanged event of the control and attach it to the previously defined OnSelectedIndexChanged default event (see method definition).
             comboList.DropDownClosed += new EventHandler(ComboBox_DropDownClosed);
             comboList.TextChanged += new EventHandler(ComboBox_TextChanged);
+            comboList.DrawMode = DrawMode.OwnerDrawFixed;
+            comboList.ItemHeight = 24;
+            comboList.DrawItem += new DrawItemEventHandler(ComboBox_DrawItem);
+            comboList.FlatStyle = FlatStyle.Flat;
             //
             // IconButton: Dropdown Arrow Icon
             //
@@ -118,6 +128,8 @@ namespace RJCodeUI_M1.RJControls
             this.Controls.Add(label); // Fill in the remaining space (display the text of the combo box)           
             this.Controls.Add(comboList); // It's in the background, behind the label (not visible, but shows the drop-down list).
             // This order is important, the last controls are added first (from bottom to top).
+            comboList.SendToBack();
+            label.BringToFront();
             this.ResumeLayout(false);
             SetComboComponentLocation();
         }
@@ -250,6 +262,36 @@ namespace RJCodeUI_M1.RJControls
         {
             get { return comboList.ForeColor; }
             set { comboList.ForeColor = value; }
+        }
+
+        [Category("RJ Code - Appearance")]
+        [Description("Gets or sets the selected row background color of the drop-down list")]
+        public Color DropDownSelectedBackColor
+        {
+            get { return dropDownSelectedBackColor; }
+            set { dropDownSelectedBackColor = value; }
+        }
+
+        [Category("RJ Code - Appearance")]
+        [Description("Gets or sets the selected row text color of the drop-down list")]
+        public Color DropDownSelectedTextColor
+        {
+            get { return dropDownSelectedTextColor; }
+            set { dropDownSelectedTextColor = value; }
+        }
+
+        [Category("RJ Code - Appearance")]
+        [Description("Gets or sets the drop-down list item height")]
+        public int DropDownItemHeight
+        {
+            get { return comboList.ItemHeight; }
+            set
+            {
+                if (value >= 18)
+                {
+                    comboList.ItemHeight = value;
+                }
+            }
         }
 
 
@@ -457,11 +499,21 @@ namespace RJCodeUI_M1.RJControls
         private void SetComboComponentLocation()
         {
             //Update the size and location of the ComboBox
-            comboList.Width = label.Width - btnIcon.Width;
-            if (borderRadius > 2)
-                comboList.Location = new Point(this.Width - comboList.Width - this.Padding.Right - (borderRadius / 2) - 2, label.Bottom - comboList.Height);
-            else
-                comboList.Location = new Point(this.Width - comboList.Width - this.Padding.Right, label.Bottom - comboList.Height);
+            comboList.Width = Math.Max(1, label.Width);
+            comboList.DropDownWidth = comboList.Width;
+            comboList.Location = new Point(label.Left, label.Bottom - comboList.Height);
+            comboList.SendToBack();
+            label.BringToFront();
+        }
+
+        private void ShowDropDownList()
+        {
+            DropDownOpening?.Invoke(this, EventArgs.Empty);
+            SetComboComponentLocation();
+            comboList.Visible = true;
+            comboList.BringToFront();
+            comboList.Select();
+            comboList.DroppedDown = true;
         }
         #endregion
 
@@ -490,24 +542,89 @@ namespace RJCodeUI_M1.RJControls
         private void RJComboBox_Click(object sender, EventArgs e)
         {// Attach the click event of the user control (RJComboBox) to this click event of the tag (dateText).
             this.OnClick(e);
-            comboList.Select();
             /* This event method is subscribed to the tag's click event (remember that the tag represents
              most of the user control), so when the tag is clicked,
              the click event of the user control will be executed.
              This scenario is the same as the default OnSelectedIndexChanged event created. */
             if (DropDownStyle == ComboBoxStyle.DropDownList) // When the style is DropDownList, the drop-down list must be opened when clicking anywhere in the control (In the same way as in a traditional ComboBox).
-                comboList.DroppedDown = true; // Set the DroppedDown property to true to display the dropdown list.
+                ShowDropDownList(); // Set the DroppedDown property to true to display the dropdown list.
         }
         private void ComboBox_TextChanged(object sender, EventArgs e)
         {
             label.Text = comboList.Text;
             // When an item is selected or the dropdown text changes, update the label text.
         }
+
+        private void ComboBox_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            if (e.Bounds.Width <= 0 || e.Bounds.Height <= 0)
+            {
+                return;
+            }
+
+            bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
+            bool disabled = (e.State & DrawItemState.Disabled) == DrawItemState.Disabled;
+            Color backColor = selected ? ResolveDropDownSelectedBackColor() : comboList.BackColor;
+            Color textColor = disabled
+                ? SystemColors.GrayText
+                : selected ? dropDownSelectedTextColor : comboList.ForeColor;
+
+            using (SolidBrush backBrush = new SolidBrush(backColor))
+            {
+                e.Graphics.FillRectangle(backBrush, e.Bounds);
+            }
+
+            string text = e.Index >= 0 && e.Index < comboList.Items.Count
+                ? comboList.GetItemText(comboList.Items[e.Index])
+                : comboList.Text;
+
+            Rectangle textBounds = new Rectangle(
+                e.Bounds.Left + 9,
+                e.Bounds.Top,
+                Math.Max(0, e.Bounds.Width - 18),
+                e.Bounds.Height);
+
+            TextRenderer.DrawText(
+                e.Graphics,
+                text,
+                comboList.Font,
+                textBounds,
+                textColor,
+                TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+
+            if ((e.State & DrawItemState.Focus) == DrawItemState.Focus)
+            {
+                using (Pen focusPen = new Pen(Utils.ColorEditor.Darken(backColor, selected ? (ushort)12 : (ushort)20)))
+                {
+                    Rectangle focusBounds = Rectangle.Inflate(e.Bounds, -1, -1);
+                    e.Graphics.DrawRectangle(focusPen, focusBounds);
+                }
+            }
+        }
+
+        private Color ResolveDropDownSelectedBackColor()
+        {
+            if (!dropDownSelectedBackColor.IsEmpty)
+            {
+                return dropDownSelectedBackColor;
+            }
+
+            if (!borderColor.IsEmpty)
+            {
+                return borderColor;
+            }
+
+            if (!iconColor.IsEmpty)
+            {
+                return iconColor;
+            }
+
+            return Color.FromArgb(47, 111, 171);
+        }
         private void BtnIcon_Click(object sender, EventArgs e)
         {// When the drop-down arrow icon button is clicked, display the drop-down combo box.
 
-            comboList.Select(); // As a precaution, the combobox must be focused before, sometimes some problems happen.
-            comboList.DroppedDown = true; // Set the DroppedDown property to true to display the dropdown list.
+            ShowDropDownList(); // Set the DroppedDown property to true to display the dropdown list.
             if (customizable) // If it is customizable
             {
                 switch (style) // Apply a highlight to the drop-down arrow icon button.
@@ -554,6 +671,9 @@ namespace RJCodeUI_M1.RJControls
                 ApplyAppearanceSettings(); // Refresh the appearance to disable the highlighting of the flyout icon button.
             }
 
+            comboList.Visible = false;
+            comboList.SendToBack();
+            label.BringToFront();
         }
 
         //-> Attach events: Label -> UserControl
@@ -592,6 +712,7 @@ namespace RJCodeUI_M1.RJControls
             ApplyAppearanceSettings(); // Apply UI appearance settings
             this.Visible = true;
             SetComboComponentLocation();
+            comboList.Visible = false;
         }
 
         protected override void OnPaint(PaintEventArgs e)

@@ -10,6 +10,12 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <BaseOutputPath>C:\실행폴더</BaseOutputPath>
     <ProduceReferenceAssembly>True</ProduceReferenceAssembly>
+    <WpgCustomBuildEnabled Condition="'$(WpgCustomBuildEnabled)' == ''">true</WpgCustomBuildEnabled>
+    <WpgCustomSourceRoot Condition="'$(WpgCustomSourceRoot)' == ''">$(MSBuildProjectDirectory)\..\WPG-CUSTOM</WpgCustomSourceRoot>
+    <WpgCustomProject>$(WpgCustomSourceRoot)\Main\WpfPropertyGrid\WpfPropertyGrid.csproj</WpgCustomProject>
+    <WpgCustomOutputDir>$(WpgCustomSourceRoot)\Main\WpfPropertyGrid\bin\$(Configuration)\</WpgCustomOutputDir>
+    <WpgCustomTargetDir>$(MSBuildProjectDirectory)\dll\</WpgCustomTargetDir>
+    <LibraryNoahSourceRoot Condition="'$(LibraryNoahSourceRoot)' == ''">$(MSBuildProjectDirectory)\..\Library-Noah</LibraryNoahSourceRoot>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>x64</PlatformTarget>
@@ -82,7 +88,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="OpenCvSharp">
-      <HintPath>Library\Lib.Common\DLL\OpenCvSharp.dll</HintPath>
+      <HintPath>$(LibraryNoahSourceRoot)\Lib.Common\DLL\OpenCvSharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Compile Update="Library\LayerViewerState.cs">
@@ -91,13 +97,43 @@
     <Compile Update="Library\RichTextBoxEx.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Update="0. UI\6) Vision Test\FormVisionPipelineAddStep.Designer.cs">
+      <DependentUpon>FormVisionPipelineAddStep.cs</DependentUpon>
+    </Compile>
+    <Compile Update="0. UI\6) Vision Test\FormVisionPipelineTextPrompt.Designer.cs">
+      <DependentUpon>FormVisionPipelineTextPrompt.cs</DependentUpon>
+    </Compile>
+    <Compile Update="0. UI\6) Vision Test\FormVisionPipelineSamples.Designer.cs">
+      <DependentUpon>FormVisionPipelineSamples.cs</DependentUpon>
+    </Compile>
+    <Compile Update="0. UI\6) Vision Test\FormVisionPipelineHistory.Designer.cs">
+      <DependentUpon>FormVisionPipelineHistory.cs</DependentUpon>
+    </Compile>
+    <Compile Update="0. UI\6) Vision Test\FormVisionPipelineBatch.Designer.cs">
+      <DependentUpon>FormVisionPipelineBatch.cs</DependentUpon>
+    </Compile>
+    <Compile Update="0. UI\6) Vision Test\FormVisionPipelineBatchHistory.Designer.cs">
+      <DependentUpon>FormVisionPipelineBatchHistory.cs</DependentUpon>
+    </Compile>
+    <Compile Update="0. UI\6) Vision Test\FormVisionPipelinePromptPreview.Designer.cs">
+      <DependentUpon>FormVisionPipelinePromptPreview.cs</DependentUpon>
+    </Compile>
+    <Compile Update="0. UI\6) Vision Test\FormVisionPipelineLlmRecipe.Designer.cs">
+      <DependentUpon>FormVisionPipelineLlmRecipe.cs</DependentUpon>
+    </Compile>
+    <Compile Update="0. UI\6) Vision Test\FormVisionPipelineImageViewer.Designer.cs">
+      <DependentUpon>FormVisionPipelineImageViewer.cs</DependentUpon>
+    </Compile>
+    <Compile Update="0. UI\6) Vision Test\FormVision_Pipeline.Designer.cs">
+      <DependentUpon>FormVision_Pipeline.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Library\RJControls\RJControls.csproj" />
     <ProjectReference Include="Library\OpenVisionLab.Controls.Init\OpenVisionLab.Controls.Init.csproj" />
-    <ProjectReference Include="Library\Lib.Common\Lib.Common.csproj" />
-    <ProjectReference Include="Library\Lib.OpenCV\Lib.OpenCV.csproj" />
-    <ProjectReference Include="Library\Lib.OpenCV.Blob\Lib.OpenCV.Blob.csproj" />
+    <ProjectReference Include="$(LibraryNoahSourceRoot)\Lib.Common\Lib.Common.csproj" />
+    <ProjectReference Include="$(LibraryNoahSourceRoot)\Lib.OpenCV\Lib.OpenCV.csproj" />
+    <ProjectReference Include="$(LibraryNoahSourceRoot)\Lib.OpenCV.Blob\Lib.OpenCV.Blob.csproj" />
     <ProjectReference Include="Library\PropertyGrid.Abstractions\PropertyGrid.Abstractions.csproj" />
     <ProjectReference Include="Library\WpfPropertyGridBridge\WpfPropertyGridBridge.csproj" />
     <ProjectReference Include="Library\OpenVisionLab.Display.Core\OpenVisionLab.Display.Core.csproj" />
@@ -105,11 +141,15 @@
     <ProjectReference Include="Library\OpenVisionLab.ImageCanvas\OpenVisionLab.ImageCanvas.csproj" />
     <ProjectReference Include="Library\OpenVisionLab.Logging\OpenVisionLab.Logging.csproj" />
     <ProjectReference Include="Library\OpenVisionLab.Logging.Controls\OpenVisionLab.Logging.Controls.csproj" />
+    <ProjectReference Include="Library\OpenVisionLab.Pipeline.Controls\OpenVisionLab.Pipeline.Controls.csproj" />
+    <ProjectReference Include="Library\OpenVisionLab.MessageBox\OpenVisionLab.MessageBox.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Library\OpenVisionLab.ImageCanvas\**\*.cs" />
     <Compile Remove="Library\OpenVisionLab.Logging\**\*.cs" />
     <Compile Remove="Library\OpenVisionLab.Logging.Controls\**\*.cs" />
+    <Compile Remove="Library\OpenVisionLab.Pipeline.Controls\**\*.cs" />
+    <Compile Remove="Library\OpenVisionLab.MessageBox\**\*.cs" />
     <Compile Remove="Library\Controls.Viewer2D\**\*.cs" />
     <Compile Remove="Library\Lib.Common\**\*.cs" />
     <Compile Remove="Library\Lib.OpenCV\**\*.cs" />
@@ -121,24 +161,19 @@
     <Compile Remove="Library\PropertyGrid.Abstractions\**\*.cs" />
     <Compile Remove="Library\WpfPropertyGridBridge\**\*.cs" />
     <Compile Remove="tools\**\*.cs" />
-    <EmbeddedResource Remove="Library\Lib.Common\**\*.resx" />
-    <EmbeddedResource Remove="Library\Lib.OpenCV\**\*.resx" />
-    <EmbeddedResource Remove="Library\Lib.OpenCV.Blob\**\*.resx" />
     <EmbeddedResource Remove="Library\RJControls\**\*.resx" />
     <EmbeddedResource Remove="Library\OpenVisionLab.Controls.Init\**\*.resx" />
     <EmbeddedResource Remove="Library\OpenVisionLab.ImageSpace.Core\**\*.resx" />
     <EmbeddedResource Remove="Library\OpenVisionLab.ImageCanvas\**\*.resx" />
     <EmbeddedResource Remove="Library\OpenVisionLab.Logging\**\*.resx" />
     <EmbeddedResource Remove="Library\OpenVisionLab.Logging.Controls\**\*.resx" />
+    <EmbeddedResource Remove="Library\OpenVisionLab.MessageBox\**\*.resx" />
     <EmbeddedResource Remove="Library\Controls.Viewer2D\**\*.resx" />
     <EmbeddedResource Remove="0. UI\0) MENU\FormMainFrame.*.resx" />
     <Page Remove="Library\OpenVisionLab.ImageCanvas\**\*.xaml" />
     <Page Remove="Library\OpenVisionLab.Logging\**\*.xaml" />
     <Page Remove="Library\OpenVisionLab.Logging.Controls\**\*.xaml" />
     <Page Remove="Library\Controls.Viewer2D\**\*.xaml" />
-    <None Remove="Library\Lib.Common\**\*" />
-    <None Remove="Library\Lib.OpenCV\**\*" />
-    <None Remove="Library\Lib.OpenCV.Blob\**\*" />
     <None Remove="Library\RJControls\**\*" />
     <None Remove="Library\OpenVisionLab.Controls.Init\**\*" />
     <None Remove="Library\OpenVisionLab.Display.Core\**\*" />
@@ -148,7 +183,12 @@
     <None Remove="Library\OpenVisionLab.ImageCanvas\**\*" />
     <None Remove="Library\OpenVisionLab.Logging\**\*" />
     <None Remove="Library\OpenVisionLab.Logging.Controls\**\*" />
+    <None Remove="Library\OpenVisionLab.Pipeline.Controls\**\*" />
+    <None Remove="Library\OpenVisionLab.MessageBox\**\*" />
     <None Remove="Library\Controls.Viewer2D\**\*" />
+    <None Remove="Library\Lib.Common\**\*" />
+    <None Remove="Library\Lib.OpenCV\**\*" />
+    <None Remove="Library\Lib.OpenCV.Blob\**\*" />
     <None Remove="tools\**\*" />
   </ItemGroup>
   <ItemGroup>
@@ -157,19 +197,19 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Library\Lib.Common\DLL\OpenCvSharp.dll">
+    <Content Include="$(LibraryNoahSourceRoot)\Lib.Common\DLL\OpenCvSharp.dll">
       <Link>OpenCvSharp.dll</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Library\Lib.Common\DLL\OpenCvSharp.Blob.dll">
+    <Content Include="$(LibraryNoahSourceRoot)\Lib.Common\DLL\OpenCvSharp.Blob.dll">
       <Link>OpenCvSharp.Blob.dll</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Library\Lib.Common\DLL\OpenCvSharp.Extensions.dll">
+    <Content Include="$(LibraryNoahSourceRoot)\Lib.Common\DLL\OpenCvSharp.Extensions.dll">
       <Link>OpenCvSharp.Extensions.dll</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Library\Lib.Common\DLL\OpenCvSharpExtern.dll">
+    <Content Include="$(LibraryNoahSourceRoot)\Lib.Common\DLL\OpenCvSharpExtern.dll">
       <Link>OpenCvSharpExtern.dll</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -181,4 +221,24 @@
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
+  <Target Name="BuildAndCopyWpgCustomPropertyGrid" BeforeTargets="ResolveReferences" Condition="'$(WpgCustomBuildEnabled)' == 'true' and '$(DesignTimeBuild)' != 'true' and Exists('$(WpgCustomProject)')">
+    <MSBuild Projects="$(WpgCustomProject)" Targets="Build" Properties="Configuration=$(Configuration);Platform=AnyCPU;RestorePackages=false" RemoveProperties="OutDir;OutputPath;TargetFramework;TargetFrameworks;RuntimeIdentifier;RuntimeIdentifiers" />
+
+    <ItemGroup>
+      <WpgCustomArtifacts Include="$(WpgCustomOutputDir)System.Windows.Controls.WpfPropertyGrid.dll" Condition="Exists('$(WpgCustomOutputDir)System.Windows.Controls.WpfPropertyGrid.dll')" />
+      <WpgCustomArtifacts Include="$(WpgCustomOutputDir)System.Windows.Controls.WpfPropertyGrid.xml" Condition="Exists('$(WpgCustomOutputDir)System.Windows.Controls.WpfPropertyGrid.xml')" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(WpgCustomArtifacts)" DestinationFolder="$(WpgCustomTargetDir)" SkipUnchangedFiles="true" Condition="'@(WpgCustomArtifacts)' != ''" />
+  </Target>
+
+  <Target Name="CopyWpgPropertyGridToRuntimeOutput" AfterTargets="CopyFilesToOutputDirectory" Condition="Exists('$(WpgCustomTargetDir)System.Windows.Controls.WpfPropertyGrid.dll')">
+    <ItemGroup>
+      <WpgRuntimeArtifacts Include="$(WpgCustomTargetDir)System.Windows.Controls.WpfPropertyGrid.dll" />
+      <WpgRuntimeArtifacts Include="$(WpgCustomTargetDir)System.Windows.Controls.WpfPropertyGrid.xml" Condition="Exists('$(WpgCustomTargetDir)System.Windows.Controls.WpfPropertyGrid.xml')" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(WpgRuntimeArtifacts)" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="false" />
+  </Target>
+
 </Project>

@@ -21,35 +21,38 @@ namespace OpenVisionLab
         private Color m_DrawColor = Color.FromArgb(0, 0, 0);
 
         [PropertyOrder(0)]
-        [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("USE_APPROXPOLYDP")]
+        [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("Use approx poly")]
         public bool USE_APPROXPOLYDP { get; set; } = false;
 
         [PropertyOrder(1)]
-        [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("USE_DRAW_IMAGE")]
+        [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("Draw result")]
         public bool USE_DRAW_IMAGE { get; set; } = false;
 
         [PropertyOrder(2)]
-        [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("ApproximationModes")]
+        [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("Approximation")]
         public ContourApproximationModes ApproximationModes { get; set; } = ContourApproximationModes.ApproxSimple;
 
         [PropertyOrder(3)]
-        [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("DetectMode")]
+        [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("Retrieval mode")]
         public RetrievalModes DetectMode { get; set; } = RetrievalModes.List;
 
         [PropertyOrder(4)]
-        [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("EPSILON")]
+        [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("Approx epsilon")]
         public double EPSILON { get; set; } = 0.01;
 
         [PropertyOrder(5)]
-        [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("MIN_AREA")]
+        [PropertyEditor(typeof(WpgRangeEditor))]
+        [RangeEditor(0, 1000000, 10, 0, nameof(MIN_AREA), nameof(MAX_AREA))]
+        [CategoryAttribute("Contour"), DescriptionAttribute("Contour로 인정할 Area(가로*세로) 범위입니다."), DisplayNameAttribute("Area range")]
         public int MIN_AREA { get; set; } = 200;
 
         [PropertyOrder(6)]
-        [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("MAX_AREA")]
+        [Browsable(false)]
+        [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("Max area")]
         public int MAX_AREA { get; set; } = 1000000;
 
         [PropertyOrder(7)]
-        [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("Draw_Color")]
+        [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("Draw color")]
         [PropertyEditor(typeof(WpgColorEditor))]
         [XmlIgnore]
         public System.Drawing.Color DrawColor
@@ -59,7 +62,7 @@ namespace OpenVisionLab
         }
 
         [PropertyOrder(8)]
-        [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("Draw_Thickness")]
+        [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("Draw thickness")]
         public int DrawThickness { get; set; } = 2;
 
         [Browsable(false)]

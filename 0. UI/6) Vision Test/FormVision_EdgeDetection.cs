@@ -8,18 +8,14 @@ using OpenCvSharp;
 using OpenVisionLab._1._Core;
 using RJCodeUI_M1.RJForms;
 using Lib.Common;
+using Lib.OpenCV;
+using Lib.OpenCV.Property;
+using Lib.OpenCV.Tool;
 
 namespace OpenVisionLab
 {
     public partial class FormVision_EdgeDetection : VisionTestForm
-    {        
-        private enum EdgeDetector
-        {
-            Canny,
-            Sobel,
-            Scharr,
-            Laplacian
-        }
+    {
         private void InitLayListItem()
         {
             InitializeSingleInputLayerList(cbLayerList, cbLayerList2);
@@ -67,7 +63,7 @@ namespace OpenVisionLab
         private void FormSettings_Camera_Load(object sender, EventArgs e)
         {
             AppUtil.InitDirectory("TEST");
-            foreach (EdgeDetector edgeDetector in Enum.GetValues(typeof(EdgeDetector)))
+            foreach (EdgeDetectionToolType edgeDetector in Enum.GetValues(typeof(EdgeDetectionToolType)))
             {
                 cbEdgeType.Items.Add(edgeDetector);
             }
@@ -82,6 +78,13 @@ namespace OpenVisionLab
                 IbDestination_MouseClick,
                 toolTip1,
                 btnNewPanel_Desty);
+            VisionPipelineFormBridge.AttachAddButton(
+                btnFilterRun,
+                () => VisionPipelineStepBuilder.FromEdgeDetectionProperty(
+                    CreateEdgeDetectionProperty(),
+                    "EdgeDetection",
+                    Convert.ToString(cbLayerList.SelectedItem),
+                    Convert.ToString(cbLayerList2.SelectedItem)));
         }
 
         public FormVision_EdgeDetection(IDisplayManager displayManager, EventHandler<DockDisplayEventArgs> EventUpdateDisplay)
@@ -92,46 +95,44 @@ namespace OpenVisionLab
         }
         private void btnFilterRun_Click(object sender, EventArgs e)
         {
-                        Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
+            RunVisionStep("Edge Detection", () =>
+            {
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
+                EdgeDetectionToolProperty property = CreateEdgeDetectionProperty();
+
+                Bitmap Result = CreateSingleInputResult(ibSource, image =>
+                {
+                    EdgeDetectionTool tool = new EdgeDetectionTool();
+                    tool.SetProperty(property);
+                    tool.SetSourceImage(image);
+                    tool.Run();
+                    tool.imageResult.CopyTo(image);
+                });
+                PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
+            });
+        }
+
+        private EdgeDetectionToolProperty CreateEdgeDetectionProperty()
+        {
             if (tbThresholdHight.Text == "") { tbThresholdHight.Text = "200"; }
             if (tbThresholdLow.Text == "") { tbThresholdLow.Text = "100"; }
             if (tbSobelMask.Text == "") { tbSobelMask.Text = "3"; }
 
-            int High = int.Parse(tbThresholdHight.Text);
-            int Low = int.Parse(tbThresholdLow.Text);
-            int Sobel = int.Parse(tbSobelMask.Text);
-
-            int SobelDegreeX = int.Parse(nudDegreeX.Value.ToString());
-            int SobelDegreeY = int.Parse(nudDegreeY.Value.ToString());
-            int Kernel = int.Parse(nudKernel.Value.ToString());
-
-            int ScharrDegreeX = int.Parse(nudScharrDegreeX.Value.ToString());
-            int ScharrDegreeY = int.Parse(nudScharrDegreeY.Value.ToString());
-            int LaplacianKernel = int.Parse(nudLaplacianKernel.Value.ToString());
-            EdgeDetector edgeDetector = AppUtil.ParseEnum<EdgeDetector>(cbEdgeType.SelectedItem.ToString());
-
-            Bitmap Result = CreateSingleInputResult(ibSource, image =>
+            return new EdgeDetectionToolProperty
             {
-                switch (edgeDetector)
-                {
-                    case EdgeDetector.Canny:
-                        Cv2.Canny(image, image, Low, High, Sobel, chkUseL2.Check);
-                        break;
-                    case EdgeDetector.Sobel:
-                        Cv2.Sobel(image, image, MatType.CV_8U, SobelDegreeX, SobelDegreeY, Kernel, 1, 0, BorderTypes.Default);
-                        break;
-                    case EdgeDetector.Scharr:
-                        Cv2.Scharr(image, image, MatType.CV_8U, ScharrDegreeX, ScharrDegreeY, 1, 0, BorderTypes.Default);
-                        break;
-                    case EdgeDetector.Laplacian:
-                        Cv2.Laplacian(image, image, MatType.CV_8U, LaplacianKernel, 1, 0, BorderTypes.Default);
-                        break;
-                }
-            });
-            PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-        
+                EdgeType = AppUtil.ParseEnum<EdgeDetectionToolType>(cbEdgeType.SelectedItem.ToString()),
+                CannyThresholdLow = int.Parse(tbThresholdLow.Text),
+                CannyThresholdHigh = int.Parse(tbThresholdHight.Text),
+                CannyApertureSize = int.Parse(tbSobelMask.Text),
+                UseL2Gradient = chkUseL2.Check,
+                SobelDegreeX = int.Parse(nudDegreeX.Value.ToString()),
+                SobelDegreeY = int.Parse(nudDegreeY.Value.ToString()),
+                SobelKernelSize = int.Parse(nudKernel.Value.ToString()),
+                ScharrDegreeX = int.Parse(nudScharrDegreeX.Value.ToString()),
+                ScharrDegreeY = int.Parse(nudScharrDegreeY.Value.ToString()),
+                LaplacianKernelSize = int.Parse(nudLaplacianKernel.Value.ToString())
+            };
         }
 
         private void cbFilterType_OnSelectedIndexChanged(object sender, EventArgs e)
@@ -146,18 +147,18 @@ namespace OpenVisionLab
             //tbSigmaColor.Enabled = false;
             //tbSigmaSpace.Enabled = false;
 
-            switch (AppUtil.ParseEnum<EdgeDetector>(Index))
+            switch (AppUtil.ParseEnum<EdgeDetectionToolType>(Index))
             {
-                case EdgeDetector.Canny:
+                case EdgeDetectionToolType.Canny:
                     Tab.SelectedIndex = 0;
                     break;
-                case EdgeDetector.Sobel:
+                case EdgeDetectionToolType.Sobel:
                     Tab.SelectedIndex = 1;
                     break;
-                case EdgeDetector.Scharr:
+                case EdgeDetectionToolType.Scharr:
                     Tab.SelectedIndex = 2;
                     break;
-                case EdgeDetector.Laplacian:
+                case EdgeDetectionToolType.Laplacian:
                     Tab.SelectedIndex = 3;
                     break;
             }

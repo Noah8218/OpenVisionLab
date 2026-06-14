@@ -36,6 +36,11 @@ namespace OpenVisionLab
             runtime.SetRecipeNameContext(recipeNameAccessor);
         }
 
+        public static string GetRecipeName()
+        {
+            return runtime.RecipeNameAccessor?.Invoke() ?? string.Empty;
+        }
+
         internal static void SetImageEditorService(IPropertyGridImageEditorService service)
         {
             runtime.SetImageEditorService(service);
@@ -190,6 +195,30 @@ namespace OpenVisionLab
             public WpgSliderEditor()
             {
                 if (this.InlineTemplate == null) { this.InlineTemplate = EditorKeys.SliderEditorKey; }                
+            }
+        }
+
+        public class WpgThresholdEditor : Editor
+        {
+            public WpgThresholdEditor()
+            {
+                if (this.InlineTemplate == null) { this.InlineTemplate = EditorKeys.ThresholdEditorKey; }
+            }
+        }
+
+        public class WpgRangeEditor : Editor
+        {
+            public WpgRangeEditor()
+            {
+                if (this.InlineTemplate == null) { this.InlineTemplate = EditorKeys.RangeEditorKey; }
+            }
+        }
+
+        public class WpgMetricRangeEditor : Editor
+        {
+            public WpgMetricRangeEditor()
+            {
+                if (this.InlineTemplate == null) { this.InlineTemplate = EditorKeys.MetricRangeEditorKey; }
             }
         }
 

@@ -13,7 +13,6 @@ using Lib.OpenCV;
 using Lib.OpenCV.Result;
 using Lib.OpenCV.Tool;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
-using System.IO;
 
 namespace OpenVisionLab
 {
@@ -68,7 +67,7 @@ namespace OpenVisionLab
         {
             AppUtil.InitDirectory("TEST");
             Property_FeatureMatching = Property_FeatureMatching.LoadTestConfig(AppPathService.GetTestConfigPath(Property_FeatureMatching.NAME));
-            AttachPropertyGrid(pnParameter, Property_FeatureMatching);
+            AttachPropertyGridWithThresholdPreview(pnParameter, Property_FeatureMatching, cbLayerList2, ibSource, ibDestination);
             InitializeSingleInputViewers(
                 InitLayListItem,
                 ibSource,
@@ -79,6 +78,7 @@ namespace OpenVisionLab
                 IbDestination_MouseClick,
                 toolTip1,
                 btnNewPanel_Desty);
+            VisionPipelineFormBridge.AttachAddButton(btnRun, () => Property_FeatureMatching, cbLayerList, cbLayerList2);
         }
         
         public FormVision_FeatureMatching(IDisplayManager displayManager, EventHandler<DockDisplayEventArgs> EventUpdateDisplay)
@@ -128,38 +128,37 @@ namespace OpenVisionLab
 
         private void btnRun_Click(object sender, EventArgs e)
         {
-                        Stopwatch stopwatch = Stopwatch.StartNew();
-
-            using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
+            RunVisionStep("Feature Matching", () =>
             {
-                
-                SiftTool cVSIFT = new SiftTool();
-                cVSIFT.SetSourceImage(ImageCVSource);
-                if (File.Exists(Property_FeatureMatching.PATTERN_PATH))
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
                 {
-                    Property_FeatureMatching.ImageTemplate = Cv2.ImRead(Property_FeatureMatching.PATTERN_PATH);
-                }
-                cVSIFT.SetTemplateImage(Property_FeatureMatching.ImageTemplate);
-                cVSIFT.SetProperty(Property_FeatureMatching);
-                cVSIFT.Run();
 
-                using (Graphics g = Graphics.FromImage(Result))
-                {
-                    foreach (var item in cVSIFT.results)
-                    {
-                        RotateDraw(g, item, (float)item.Angle, new System.Drawing.Pen(System.Drawing.Color.Red, 1));
-                    }
+                    SiftTool cVSIFT = new SiftTool();
+                    cVSIFT.SetSourceImage(ImageCVSource);
+                    Property_FeatureMatching.ReloadTemplateImage();
+                    cVSIFT.SetTemplateImage(Property_FeatureMatching.ImageTemplate);
+                    cVSIFT.SetProperty(Property_FeatureMatching);
+                    cVSIFT.Run();
 
-                    if (cVSIFT.results.Count == 0)
+                    using (Graphics g = Graphics.FromImage(Result))
                     {
-                        g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Orange, 5), CommonConverter.CVRectToRect(cVSIFT.property.CvROI));
-                        g.DrawString("1", new Font("Arial", 10, FontStyle.Bold), new SolidBrush(System.Drawing.Color.OrangeRed), (int)cVSIFT.property.CvROI.X - 20, (int)cVSIFT.property.CvROI.Y - 20);
+                        foreach (var item in cVSIFT.results)
+                        {
+                            RotateDraw(g, item, (float)item.Angle, new System.Drawing.Pen(System.Drawing.Color.Red, 1));
+                        }
+
+                        if (cVSIFT.results.Count == 0)
+                        {
+                            g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Orange, 5), CommonConverter.CVRectToRect(cVSIFT.property.CvROI));
+                            g.DrawString("1", new Font("Arial", 10, FontStyle.Bold), new SolidBrush(System.Drawing.Color.OrangeRed), (int)cVSIFT.property.CvROI.X - 20, (int)cVSIFT.property.CvROI.Y - 20);
+                        }
                     }
+                    PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
                 }
-                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-            }
-            Property_FeatureMatching.SaveTestConfig(AppPathService.GetTestConfigPath(Property_FeatureMatching.NAME));
-        
+
+                Property_FeatureMatching.SaveTestConfig(AppPathService.GetTestConfigPath(Property_FeatureMatching.NAME));
+            });
         }
 
         public void RotateDraw(Graphics g, MatchingResult item, float angle, System.Drawing.Pen pen)

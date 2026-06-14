@@ -66,7 +66,7 @@ namespace OpenVisionLab
         {
             AppUtil.InitDirectory("TEST");
             Property_Matching = Property_Matching.LoadTestConfig(AppPathService.GetTestConfigPath(Property_Matching.NAME));
-            AttachPropertyGrid(pnParameter, Property_Matching);
+            AttachPropertyGridWithThresholdPreview(pnParameter, Property_Matching, cbLayerList2, ibSource, ibDestination);
             InitializeSingleInputViewers(
                 InitLayListItem,
                 ibSource,
@@ -77,6 +77,7 @@ namespace OpenVisionLab
                 IbDestination_MouseClick,
                 toolTip1,
                 btnNewPanel_Desty);
+            VisionPipelineFormBridge.AttachAddButton(btnRun, () => Property_Matching, cbLayerList, cbLayerList2);
         }
         
         public FormVision_Matching(IDisplayManager displayManager, EventHandler<DockDisplayEventArgs> EventUpdateDisplay)
@@ -126,36 +127,38 @@ namespace OpenVisionLab
 
         private void btnRun_Click(object sender, EventArgs e)
         {
-                        Stopwatch stopwatch = Stopwatch.StartNew();
-            
-            using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
+            RunVisionStep("Matching", () =>
             {
-                
-                MatchingTool Matching = new MatchingTool();
-                Matching.SetProperty(Property_Matching);
-                Matching.SetTemplateImage(Property_Matching.ImageTemplate);
-                Matching.SetSourceImage(ImageCVSource);
-                Matching.Run();
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
-                cResultMatchings = Matching.results;
-
-                using (Graphics g = Graphics.FromImage(Result))
+                using (Mat ImageCVSource = CreateRunSourceMat(ibSource, out Bitmap Result))
                 {
-                    foreach (var item in cResultMatchings)
-                    {
-                        RotateDraw(g, item, (float)item.Angle, new System.Drawing.Pen(System.Drawing.Color.Red, 1));
-                    }
+                    MatchingTool Matching = new MatchingTool();
+                    Matching.SetProperty(Property_Matching);
+                    Property_Matching.ReloadTemplateImage();
+                    Matching.SetTemplateImage(Property_Matching.ImageTemplate);
+                    Matching.SetSourceImage(ImageCVSource);
+                    Matching.Run();
 
-                    if (Matching.results.Count == 0)
+                    cResultMatchings = Matching.results;
+
+                    using (Graphics g = Graphics.FromImage(Result))
                     {
-                        g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Orange, 5), CommonConverter.CVRectToRect(Matching.property.CvROI));
-                        g.DrawString("1", new Font("Arial", 10, FontStyle.Bold), new SolidBrush(System.Drawing.Color.OrangeRed), (int)Matching.property.CvROI.X - 20, (int)Matching.property.CvROI.Y - 20);
+                        foreach (var item in cResultMatchings)
+                        {
+                            RotateDraw(g, item, (float)item.Angle, new System.Drawing.Pen(System.Drawing.Color.Red, 1));
+                        }
+
+                        if (Matching.results.Count == 0)
+                        {
+                            g.DrawRectangle(new System.Drawing.Pen(System.Drawing.Color.Orange, 5), CommonConverter.CVRectToRect(Matching.property.CvROI));
+                            g.DrawString("1", new Font("Arial", 10, FontStyle.Bold), new SolidBrush(System.Drawing.Color.OrangeRed), (int)Matching.property.CvROI.X - 20, (int)Matching.property.CvROI.Y - 20);
+                        }
                     }
+                    PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
                 }
-                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-            }
-            Property_Matching.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Matching.NAME));
-        
+                Property_Matching.SaveTestConfig(AppPathService.GetTestConfigPath(Property_Matching.NAME));
+            });
         }
 
         public void RotateDraw(Graphics g, MatchingResult item, float angle, System.Drawing.Pen pen)

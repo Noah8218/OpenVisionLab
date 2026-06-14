@@ -16,7 +16,13 @@ namespace OpenVisionLab.Logging.Controls.View
             viewModel = new LogPanelViewModel();
             DataContext = viewModel;
             viewModel.FilteredLogs.CollectionChanged += FilteredLogs_CollectionChanged;
+            SizeChanged += LogPanelView_SizeChanged;
             Unloaded += LogPanelView_Unloaded;
+        }
+
+        private void LogPanelView_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            viewModel.IsCompactLayout = ActualHeight < 190 || ActualWidth < 720;
         }
 
         private void FilteredLogs_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -41,6 +47,7 @@ namespace OpenVisionLab.Logging.Controls.View
         private void LogPanelView_Unloaded(object sender, RoutedEventArgs e)
         {
             viewModel.FilteredLogs.CollectionChanged -= FilteredLogs_CollectionChanged;
+            SizeChanged -= LogPanelView_SizeChanged;
             viewModel.Dispose();
         }
     }

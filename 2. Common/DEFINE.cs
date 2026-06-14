@@ -167,7 +167,8 @@ namespace OpenVisionLab
             Histogram,
             Mean,
             HSV,
-            FeatureMatching
+            FeatureMatching,
+            Pipeline
         }
 
         public enum PROCESS_TYPES

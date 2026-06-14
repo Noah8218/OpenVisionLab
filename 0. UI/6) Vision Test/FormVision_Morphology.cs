@@ -11,6 +11,8 @@ using OpenCvSharp;
 using OpenVisionLab._1._Core;
 using RJCodeUI_M1.RJForms;
 using Lib.Common;
+using Lib.OpenCV.Property;
+using Lib.OpenCV.Tool;
 
 namespace OpenVisionLab
 {
@@ -75,6 +77,13 @@ namespace OpenVisionLab
                 IbDestination_MouseClick,
                 toolTip1,
                 btnNewPanel_Desty);
+            VisionPipelineFormBridge.AttachAddButton(
+                btnMorpRun,
+                () => VisionPipelineStepBuilder.FromMorphologyProperty(
+                    CreateMorphologyProperty(),
+                    "Morphology",
+                    Convert.ToString(cbLayerList.SelectedItem),
+                    Convert.ToString(cbLayerList2.SelectedItem)));
         }
 
         public FormVision_Morphology(IDisplayManager displayManager, EventHandler<DockDisplayEventArgs> EventUpdateDisplay)
@@ -90,24 +99,37 @@ namespace OpenVisionLab
 
         private void btnMorpRun_Click(object sender, EventArgs e)
         {
-                        
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
+            RunVisionStep("Morphology", () =>
+            {
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
+                MorphologyToolProperty property = CreateMorphologyProperty();
+
+                Bitmap Result = CreateSingleInputResult(ibSource, image =>
+                {
+                    MorphologyTool tool = new MorphologyTool();
+                    tool.SetProperty(property);
+                    tool.SetSourceImage(image);
+                    tool.Run();
+                    tool.imageResult.CopyTo(image);
+                });
+                PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
+            });
+        }
+
+        private MorphologyToolProperty CreateMorphologyProperty()
+        {
             if (tbMorpW.Text == "") { tbMorpW.Text = "3"; }
             if (tbMorpH.Text == "") { tbMorpH.Text = "3"; }
 
-            int W = int.Parse(tbMorpW.Text);
-            int H = int.Parse(tbMorpH.Text);
-            using (Mat Kernel = Cv2.GetStructuringElement(AppUtil.ParseEnum<MorphShapes>(Shapes), new OpenCvSharp.Size(W, H)))
+            return new MorphologyToolProperty
             {
-                Bitmap Result = CreateSingleInputResult(ibSource, image =>
-                {
-                    Cv2.MorphologyEx(image, image, AppUtil.ParseEnum<MorphTypes>(Operator), Kernel, new OpenCvSharp.Point(-1, -1), 1);
-                });
-                PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
-            }
-        
+                Shape = AppUtil.ParseEnum<MorphShapes>(Shapes),
+                Operator = AppUtil.ParseEnum<MorphTypes>(Operator),
+                KernelWidth = int.Parse(tbMorpW.Text),
+                KernelHeight = int.Parse(tbMorpH.Text),
+                Iterations = 1
+            };
         }
 
         private void OnShapes_CheckedChanged(object sender, EventArgs e)

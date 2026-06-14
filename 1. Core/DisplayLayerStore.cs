@@ -26,10 +26,10 @@ namespace OpenVisionLab._1._Core
         {
             for (int i = 0; i < layers.Count; i++)
             {
-                if (layers[i].Text == title) return i;
+                if (string.Equals(layers[i].Text, title, System.StringComparison.OrdinalIgnoreCase)) return i;
             }
 
-            return 0;
+            return -1;
         }
 
         public FormLayerDisplay Create(Bitmap imageSource, bool useClose, string title, IDisplayManager displayManager)
@@ -54,6 +54,20 @@ namespace OpenVisionLab._1._Core
         {
             if (index < 0 || index >= layers.Count) return null;
             return layers[index];
+        }
+
+        public FormLayerDisplay GetByTitleOrFirst(string title)
+        {
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                FormLayerDisplay match = layers.FirstOrDefault(display => display.Text == title && !display.IsDisposed);
+                if (match != null)
+                {
+                    return match;
+                }
+            }
+
+            return layers.FirstOrDefault(display => !display.IsDisposed);
         }
     }
 }

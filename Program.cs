@@ -43,7 +43,7 @@ namespace OpenVisionLab
 
                 ApplicationRuntimeContext runtimeContext = ApplicationRuntimeContext.CreateDefault();
                 runtimeContext.Global.System.ApplyLogConfig();
-                CLog.Write(LogCategory.Info, LogLevel.Main, $"Application ready. Version {AppVersion.VERSION}");
+                OVLog.Write(LogCategory.System, LogLevel.Info, $"Application ready. Version {AppVersion.VERSION}");
 
                 StartupSplashScreen splashScreen = StartupSplashScreen.Start(
                     $"VERSION : {AppVersion.VERSION} - {AppVersion.DATETIME_UPDATED} ({AppVersion.MANAGER})",
@@ -52,7 +52,7 @@ namespace OpenVisionLab
 
 #endif
                 Application.Run(new FormMainFrame(splashScreen.Form, runtimeContext));
-                CLog.Write(LogCategory.Info, LogLevel.Main, "Application shutdown.");
+                OVLog.Write(LogCategory.System, LogLevel.Info, "Application shutdown.");
                 splashScreen.Dispose();
 
                 mutex.ReleaseMutex();
@@ -67,12 +67,12 @@ namespace OpenVisionLab
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            CLog.Write(LogCategory.Fatal, LogLevel.Abnormal, e.ExceptionObject?.ToString() ?? "Unhandled domain exception.");
+            OVLog.Write(LogCategory.System, LogLevel.Error, e.ExceptionObject?.ToString() ?? "Unhandled domain exception.");
         }
 
         private static void Application_ThreadException(object sender, ThreadExceptionEventArgs e)
         {
-            CLog.Write(LogCategory.Fatal, LogLevel.Abnormal, e.Exception?.ToString() ?? "Unhandled UI thread exception.");
+            OVLog.Write(LogCategory.System, LogLevel.Error, e.Exception?.ToString() ?? "Unhandled UI thread exception.");
         }
 
         private sealed class StartupSplashScreen : IDisposable
@@ -160,3 +160,6 @@ namespace OpenVisionLab
         }
     }
 }
+
+
+

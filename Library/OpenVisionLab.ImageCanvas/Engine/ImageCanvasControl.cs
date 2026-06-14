@@ -126,6 +126,7 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 
 		private CanvasOverlayManager _overlayManager = new CanvasOverlayManager();
 		private List<CanvasShape> _shapesViewPort = new List<CanvasShape>();
+		private bool _suppressRefresh;
 
 		public float PixelPermm { get; set; } = 0.001f;
 		public float HandleSize = 10; // 기본 핸들 크기
@@ -279,7 +280,6 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 
 		public OpenGlTextDrawOptions GetOpenGlTextDrawOptions()
 		{
-			Console.WriteLine($"{ZoomScale}");
 			return new OpenGlTextDrawOptions(_fontBitmapEntries, _xSpan, _ySpan, _offsetSize, ZoomScale);
 		}
 
@@ -290,13 +290,16 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			int[] maxTextureSize = new int[1];
 			gl.GetInteger(OpenGL.GL_MAX_TEXTURE_SIZE, maxTextureSize);
 
-			Console.WriteLine($"Maximum texture size: {maxTextureSize[0]} x {maxTextureSize[0]}");
-
 			return new System.Drawing.Size(maxTextureSize[0], maxTextureSize[0]);
 		}
 
 		public void RefreshGL()
 		{
+			if (_suppressRefresh)
+			{
+				return;
+			}
+
 			if (this.InvokeRequired)
 			{
 				this.BeginInvoke(new MethodInvoker(() =>
@@ -1627,6 +1630,29 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			catch (InvalidOperationException)
 			{
 				clearState();
+			}
+		}
+
+		public IDisposable SuppressRefresh()
+		{
+			return new RefreshScope(this);
+		}
+
+		private sealed class RefreshScope : IDisposable
+		{
+			private readonly ImageCanvasControl owner;
+			private readonly bool previousSuppressRefresh;
+
+			public RefreshScope(ImageCanvasControl owner)
+			{
+				this.owner = owner;
+				previousSuppressRefresh = owner._suppressRefresh;
+				owner._suppressRefresh = true;
+			}
+
+			public void Dispose()
+			{
+				owner._suppressRefresh = previousSuppressRefresh;
 			}
 		}
 
