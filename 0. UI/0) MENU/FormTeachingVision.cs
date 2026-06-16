@@ -1540,8 +1540,8 @@ namespace OpenVisionLab
             }
 
             int reservedForInputs = narrow ? 430 : compact ? 500 : 560;
-            int preferredWidth = narrow ? 200 : compact ? 260 : 330;
-            int minWidth = narrow ? 160 : compact ? 210 : 280;
+            int preferredWidth = narrow ? 250 : compact ? 330 : 410;
+            int minWidth = narrow ? 210 : compact ? 280 : 340;
             int maxWidth = availableWidth - reservedForInputs;
             if (maxWidth < minWidth)
             {
@@ -1795,6 +1795,8 @@ namespace OpenVisionLab
             imageProcessingToolStripMenuItem.Text = "이미지 처리";
             imageProcessingToolStripMenuItem.Click -= OnToolStripMenuItem_Click;
             algorithmToolStripMenuItem.Text = "알고리즘";
+            guideToolStripMenuItem.Text = "Guide";
+            guideToolStripMenuItem.ToolTipText = "OpenVisionLab 튜토리얼 열기";
             ApplyVisionMenuLabels();
 
             viewToolStripMenuItem = new ToolStripMenuItem
@@ -4616,11 +4618,15 @@ namespace OpenVisionLab
                 HasResultImage = e.ResultWidth > 0 && e.ResultHeight > 0,
                 ResultImageWidth = e.ResultWidth,
                 ResultImageHeight = e.ResultHeight,
-                OverlayCount = 0,
-                MetricCount = 0,
+                OverlayCount = e.OverlayCount,
+                MetricCount = e.MetricCount,
                 ParameterCount = step?.Parameters?.Count ?? 0,
                 ElapsedMilliseconds = e.ElapsedMilliseconds,
-                Message = message
+                Message = message,
+                ErrorCode = e.ErrorCode,
+                ErrorName = string.IsNullOrWhiteSpace(e.ErrorName) && e.ErrorCode == 0 ? "None" : e.ErrorName,
+                ResultStatus = e.ResultStatus,
+                IsToolError = e.Status == VisionToolRunStatus.Failed && e.ErrorCode != 0
             };
         }
 
@@ -4632,9 +4638,13 @@ namespace OpenVisionLab
                 case VisionToolRunStatus.Started:
                     return $"{toolName} RUN";
                 case VisionToolRunStatus.Completed:
-                    return $"{toolName} OK";
+                    return string.IsNullOrWhiteSpace(e.ResultStatus)
+                        ? $"{toolName} OK"
+                        : $"{toolName} OK ({e.ResultStatus})";
                 case VisionToolRunStatus.Failed:
-                    return $"{toolName} NG";
+                    return e.ErrorCode == 0
+                        ? $"{toolName} NG"
+                        : $"{toolName} NG ({e.ErrorCode}:{e.ErrorName})";
                 default:
                     return $"{toolName} 갱신";
             }
@@ -4847,6 +4857,72 @@ namespace OpenVisionLab
                     RefreshPipelineWorkspace();
                     break;
             }
+        }
+
+        private void OnGuideToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string path = ResolveDocumentationPath("OPENVISIONLAB_TUTORIAL.html");
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            {
+                path = ResolveDocumentationPath("OPENVISIONLAB_TUTORIAL.md");
+            }
+
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            {
+                VisionMessageBox.Warning(
+                    this,
+                    "OpenVisionLab Guide",
+                    "Tutorial document was not found.\r\nExpected file: docs\\OPENVISIONLAB_TUTORIAL.html");
+                OVLog.Write(LogCategory.Main, LogLevel.Warning, "Guide open failed. Tutorial document was not found.");
+                return;
+            }
+
+            try
+            {
+                Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+                OVLog.Write(LogCategory.Main, LogLevel.Info, $"Guide opened. Path={path}");
+                RefreshToolbarStatus("Guide 열기");
+            }
+            catch (Exception ex)
+            {
+                VisionMessageBox.Warning(
+                    this,
+                    "OpenVisionLab Guide",
+                    "Tutorial document could not be opened.\r\n" + ex.GetBaseException().Message);
+                OVLog.Write(LogCategory.Main, LogLevel.Warning, $"Guide open failed. {ex.GetBaseException().Message}");
+            }
+        }
+
+        private static string ResolveDocumentationPath(string fileName)
+        {
+            string[] startPaths =
+            {
+                Directory.GetCurrentDirectory(),
+                AppContext.BaseDirectory,
+                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+            };
+
+            foreach (string startPath in startPaths)
+            {
+                if (string.IsNullOrWhiteSpace(startPath))
+                {
+                    continue;
+                }
+
+                DirectoryInfo directory = new DirectoryInfo(startPath);
+                for (int depth = 0; directory != null && depth < 8; depth++)
+                {
+                    string candidate = Path.Combine(directory.FullName, "docs", fileName);
+                    if (File.Exists(candidate))
+                    {
+                        return candidate;
+                    }
+
+                    directory = directory.Parent;
+                }
+            }
+
+            return string.Empty;
         }
 
         private sealed class MainRunCommandAvailability

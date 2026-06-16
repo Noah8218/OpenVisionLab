@@ -1,3 +1,4 @@
+using Lib.OpenCV.Pipeline;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,6 +8,9 @@ namespace OpenVisionLab
 {
     internal sealed class VisionPipelineSampleCatalogItem
     {
+        private string cachedToolFlowText;
+        private string pipelineFullPath = string.Empty;
+
         public string SampleName { get; set; } = string.Empty;
         public string ImagePath { get; set; } = string.Empty;
         public int Width { get; set; }
@@ -19,8 +23,20 @@ namespace OpenVisionLab
         public string ExpectedMetricMinimum { get; set; } = string.Empty;
         public string ExpectedMetricMaximum { get; set; } = string.Empty;
         public string Notes { get; set; } = string.Empty;
+        public string ReferenceImagePath { get; set; } = string.Empty;
         public string ImageFullPath { get; set; } = string.Empty;
-        public string PipelineFullPath { get; set; } = string.Empty;
+        public string PipelineFullPath
+        {
+            get => pipelineFullPath;
+            set
+            {
+                pipelineFullPath = value ?? string.Empty;
+                cachedToolFlowText = null;
+            }
+        }
+        public string ReferenceImageFullPath { get; set; } = string.Empty;
+
+        public IReadOnlyList<VisionPipelineSampleExpectedMetric> ExpectedMetrics => BuildExpectedMetrics();
 
         public bool CanOpen => !string.IsNullOrWhiteSpace(ImageFullPath)
             && File.Exists(ImageFullPath)
@@ -36,17 +52,153 @@ namespace OpenVisionLab
                     return "-";
                 }
 
-                string minimum = string.IsNullOrWhiteSpace(ExpectedMetricMinimum) ? string.Empty : $" min {ExpectedMetricMinimum}";
-                string maximum = string.IsNullOrWhiteSpace(ExpectedMetricMaximum) ? string.Empty : $" max {ExpectedMetricMaximum}";
-                return $"{ExpectedMetricName}{minimum}{maximum}";
+                List<VisionPipelineSampleExpectedMetric> metrics = BuildExpectedMetrics();
+                return metrics.Count == 0
+                    ? "-"
+                    : string.Join("; ", metrics.Select(metric => metric.Text));
+            }
+        }
+
+        public string CatalogListText
+        {
+            get
+            {
+                string state = CanOpen ? "Ready" : "Missing";
+                return $"{SampleName} | {state}";
+            }
+        }
+
+        public string ToolFlowText
+        {
+            get
+            {
+                if (cachedToolFlowText == null)
+                {
+                    string flow = ResolvePipelineToolFlow(PipelineFullPath);
+                    cachedToolFlowText = string.IsNullOrWhiteSpace(flow) ? "-" : flow;
+                }
+
+                return cachedToolFlowText;
+            }
+        }
+
+        public string LearningText
+        {
+            get
+            {
+                string category = string.IsNullOrWhiteSpace(Category) ? "Recipe" : Category.Trim();
+                string flow = ToolFlowText;
+                return flow == "-"
+                    ? $"Learn: {category}"
+                    : $"Learn: {category} | Flow: {flow}";
+            }
+        }
+
+        public string RecipeGuideText
+        {
+            get
+            {
+                List<string> parts = new List<string>();
+                if (!string.IsNullOrWhiteSpace(Goal))
+                {
+                    parts.Add($"Goal: {Goal.Trim()}");
+                }
+
+                string flow = ToolFlowText;
+                if (flow != "-")
+                {
+                    parts.Add($"Flow: {flow}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(ExpectedText) && ExpectedText != "-")
+                {
+                    parts.Add($"Expected: {ExpectedText}");
+                }
+
+                string checkGuide = CheckGuideText;
+                if (!string.IsNullOrWhiteSpace(checkGuide) && checkGuide != "-")
+                {
+                    parts.Add(checkGuide);
+                }
+
+                return parts.Count == 0 ? "-" : string.Join(" | ", parts);
+            }
+        }
+
+        public string CheckGuideText
+        {
+            get
+            {
+                IReadOnlyList<VisionPipelineSampleExpectedMetric> metrics = ExpectedMetrics;
+                if (metrics.Count == 0)
+                {
+                    return "-";
+                }
+
+                List<string> checks = new List<string>();
+                HashSet<string> names = new HashSet<string>(
+                    metrics.Select(metric => metric.Name ?? string.Empty),
+                    StringComparer.OrdinalIgnoreCase);
+
+                if (names.Contains("MergeOverlayCount") || names.Contains("MergeSourceCount"))
+                {
+                    checks.Add("final merged review overlay");
+                }
+
+                if (names.Contains("ResultCount"))
+                {
+                    checks.Add("detected object count");
+                }
+
+                if (names.Contains("AreaMax") || names.Contains("AreaAvg"))
+                {
+                    checks.Add("defect/object area range");
+                }
+
+                if (names.Contains("BoundsWidthMax") || names.Contains("BoundsWidthMmMax") || names.Contains("BoundsWidthAvg"))
+                {
+                    checks.Add("object width in px/mm");
+                }
+
+                if (names.Contains("EdgeCount") || names.Contains("EdgePointCount"))
+                {
+                    checks.Add("edge point count");
+                }
+
+                if (names.Contains("LineLengthMax") || names.Contains("LineLengthMmMax") || names.Contains("LineAngleAvg"))
+                {
+                    checks.Add("fitted line length/angle");
+                }
+
+                if (names.Contains("ScoreMax"))
+                {
+                    checks.Add("matching score and result count");
+                }
+
+                if (names.Contains("MeanValueAvg"))
+                {
+                    checks.Add("mean brightness value");
+                }
+
+                if (names.Contains("ResultImageWidth") || names.Contains("ResultImageHeight"))
+                {
+                    checks.Add("output image size");
+                }
+
+                if (checks.Count == 0)
+                {
+                    checks.Add(string.Join(", ", metrics.Select(metric => metric.Name).Where(name => !string.IsNullOrWhiteSpace(name))));
+                }
+
+                return checks.Count == 0
+                    ? "-"
+                    : $"Check: {string.Join(", ", checks.Distinct(StringComparer.OrdinalIgnoreCase))}";
             }
         }
 
         public override string ToString()
         {
-            return string.IsNullOrWhiteSpace(Category)
-                ? SampleName
-                : $"{SampleName}  [{Category}]";
+            return CatalogListText;
         }
 
         public static List<VisionPipelineSampleCatalogItem> LoadRunnable()
@@ -87,7 +239,8 @@ namespace OpenVisionLab
                     ExpectedMetricName = GetValue(row, "ExpectedMetricName"),
                     ExpectedMetricMinimum = GetValue(row, "ExpectedMetricMinimum"),
                     ExpectedMetricMaximum = GetValue(row, "ExpectedMetricMaximum"),
-                    Notes = GetValue(row, "Notes")
+                    Notes = GetValue(row, "Notes"),
+                    ReferenceImagePath = GetValue(row, "ReferenceImagePath")
                 };
 
                 if (string.IsNullOrWhiteSpace(item.BaselinePipeline))
@@ -97,10 +250,60 @@ namespace OpenVisionLab
 
                 item.ImageFullPath = ResolveRelativePath(repoRoot, item.ImagePath);
                 item.PipelineFullPath = ResolveRelativePath(repoRoot, item.BaselinePipeline);
+                item.ReferenceImageFullPath = ResolveRelativePath(repoRoot, item.ReferenceImagePath);
                 items.Add(item);
             }
 
             return items;
+        }
+
+        public static List<VisionPipelineSampleFolderCoverageItem> LoadFolderCoverage()
+        {
+            string catalogPath = ResolveWorkspacePath("docs", "samples", "OpenVisionLab.SampleCatalog.csv");
+            if (string.IsNullOrWhiteSpace(catalogPath) || !File.Exists(catalogPath))
+            {
+                return new List<VisionPipelineSampleFolderCoverageItem>();
+            }
+
+            string repoRoot = ResolveRepoRoot(Path.GetDirectoryName(catalogPath));
+            string sampleRoot = Path.Combine(repoRoot, "Sample");
+            if (!Directory.Exists(sampleRoot))
+            {
+                return new List<VisionPipelineSampleFolderCoverageItem>();
+            }
+
+            HashSet<string> catalogTopFolders = new HashSet<string>(
+                LoadRunnable()
+                    .Select(item => GetCatalogTopFolder(item.ImagePath))
+                    .Where(folder => !string.IsNullOrWhiteSpace(folder)),
+                StringComparer.OrdinalIgnoreCase);
+
+            string[] imageExtensions =
+            {
+                ".bmp",
+                ".jpg",
+                ".jpeg",
+                ".png",
+                ".tif",
+                ".tiff"
+            };
+
+            return Directory
+                .EnumerateFiles(sampleRoot, "*.*", SearchOption.AllDirectories)
+                .Where(file => imageExtensions.Contains(Path.GetExtension(file), StringComparer.OrdinalIgnoreCase))
+                .GroupBy(file => GetSampleTopFolder(sampleRoot, file), StringComparer.OrdinalIgnoreCase)
+                .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
+                .Select(group =>
+                {
+                    bool covered = catalogTopFolders.Contains(group.Key);
+                    return new VisionPipelineSampleFolderCoverageItem
+                    {
+                        Folder = group.Key,
+                        ImageCount = group.Count(),
+                        IsCovered = covered
+                    };
+                })
+                .ToList();
         }
 
         private static Dictionary<string, string> CreateRow(List<string> headers, List<string> values)
@@ -117,6 +320,56 @@ namespace OpenVisionLab
         private static string GetValue(Dictionary<string, string> row, string key)
         {
             return row.TryGetValue(key, out string value) ? value?.Trim() ?? string.Empty : string.Empty;
+        }
+
+        private List<VisionPipelineSampleExpectedMetric> BuildExpectedMetrics()
+        {
+            string[] names = SplitMetricParts(ExpectedMetricName);
+            string[] minimums = SplitMetricParts(ExpectedMetricMinimum);
+            string[] maximums = SplitMetricParts(ExpectedMetricMaximum);
+            List<VisionPipelineSampleExpectedMetric> metrics = new List<VisionPipelineSampleExpectedMetric>();
+
+            for (int i = 0; i < names.Length; i++)
+            {
+                string name = names[i]?.Trim() ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    continue;
+                }
+
+                metrics.Add(new VisionPipelineSampleExpectedMetric
+                {
+                    Name = name,
+                    Minimum = ResolveMetricPart(minimums, i),
+                    Maximum = ResolveMetricPart(maximums, i)
+                });
+            }
+
+            return metrics;
+        }
+
+        private static string[] SplitMetricParts(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? Array.Empty<string>()
+                : value.Split(new[] { ';' }, StringSplitOptions.None)
+                    .Select(part => part.Trim())
+                    .ToArray();
+        }
+
+        private static string ResolveMetricPart(string[] values, int index)
+        {
+            if (values == null || values.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            if (index >= 0 && index < values.Length)
+            {
+                return values[index]?.Trim() ?? string.Empty;
+            }
+
+            return values.Length == 1 ? values[0]?.Trim() ?? string.Empty : string.Empty;
         }
 
         private static int ParseInt(string value)
@@ -164,6 +417,56 @@ namespace OpenVisionLab
 
             values.Add(value.ToString());
             return values;
+        }
+
+        private static string ResolvePipelineToolFlow(string pipelinePath)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(pipelinePath) || !File.Exists(pipelinePath))
+                {
+                    return string.Empty;
+                }
+
+                string xml = File.ReadAllText(pipelinePath);
+                if (!SerializeHelper.TryLoadFromXmlText(xml, out VisionPipeline pipeline, out _)
+                    || pipeline?.Steps == null
+                    || pipeline.Steps.Count == 0)
+                {
+                    return string.Empty;
+                }
+
+                return string.Join(" -> ", pipeline.Steps
+                    .Where(step => step != null && !string.IsNullOrWhiteSpace(step.ToolType))
+                    .Select(step => step.ToolType.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase));
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private static string GetCatalogTopFolder(string imagePath)
+        {
+            if (string.IsNullOrWhiteSpace(imagePath)
+                || !imagePath.StartsWith("Sample\\", StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Empty;
+            }
+
+            string relativePath = imagePath.Substring("Sample\\".Length)
+                .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+            int separatorIndex = relativePath.IndexOf(Path.DirectorySeparatorChar);
+            return separatorIndex < 0 ? "." : relativePath.Substring(0, separatorIndex);
+        }
+
+        private static string GetSampleTopFolder(string sampleRoot, string imagePath)
+        {
+            string relativePath = Path.GetRelativePath(sampleRoot, imagePath)
+                .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+            int separatorIndex = relativePath.IndexOf(Path.DirectorySeparatorChar);
+            return separatorIndex < 0 ? "." : relativePath.Substring(0, separatorIndex);
         }
 
         private static string ResolveRelativePath(string repoRoot, string path)
@@ -231,6 +534,32 @@ namespace OpenVisionLab
                     yield return directory.FullName;
                     directory = directory.Parent;
                 }
+            }
+        }
+    }
+
+    internal sealed class VisionPipelineSampleFolderCoverageItem
+    {
+        public string Folder { get; set; } = string.Empty;
+        public int ImageCount { get; set; }
+        public bool IsCovered { get; set; }
+
+        public string StatusText => IsCovered ? "Covered" : "Backlog";
+    }
+
+    internal sealed class VisionPipelineSampleExpectedMetric
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Minimum { get; set; } = string.Empty;
+        public string Maximum { get; set; } = string.Empty;
+
+        public string Text
+        {
+            get
+            {
+                string minimum = string.IsNullOrWhiteSpace(Minimum) ? string.Empty : $" min {Minimum}";
+                string maximum = string.IsNullOrWhiteSpace(Maximum) ? string.Empty : $" max {Maximum}";
+                return $"{Name}{minimum}{maximum}";
             }
         }
     }

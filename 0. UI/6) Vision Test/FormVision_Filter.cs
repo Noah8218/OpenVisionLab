@@ -117,9 +117,7 @@ namespace OpenVisionLab
                 {
                     FilterTool tool = new FilterTool();
                     tool.SetProperty(property);
-                    tool.SetSourceImage(image);
-                    tool.Run();
-                    tool.imageResult.CopyTo(image);
+                    CopyVisionToolResultImage(image, ExecuteVisionTool(tool, image));
                 });
                 PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
             });

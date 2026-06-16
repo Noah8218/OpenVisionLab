@@ -1,6 +1,7 @@
 using Lib.OpenCV.Pipeline;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace OpenVisionLab
 {
@@ -13,6 +14,16 @@ namespace OpenVisionLab
 
     internal static class VisionPipelineNormalizer
     {
+        public static IReadOnlyList<VisionPipelineNormalizationChange> NormalizeForRun(VisionPipeline pipeline)
+        {
+            IReadOnlyList<VisionPipelineNormalizationChange> linkChanges = NormalizeLikelySequentialLinks(pipeline);
+            IReadOnlyList<VisionPipelineNormalizationChange> preprocessingChanges = NormalizeChainedInspectionPreprocessing(pipeline);
+            return linkChanges
+                .Concat(preprocessingChanges)
+                .OrderBy(change => change.StepIndex)
+                .ToList();
+        }
+
         public static IReadOnlyList<VisionPipelineNormalizationChange> NormalizeChainedInspectionPreprocessing(VisionPipeline pipeline)
         {
             List<VisionPipelineNormalizationChange> changes = new List<VisionPipelineNormalizationChange>();
@@ -31,6 +42,65 @@ namespace OpenVisionLab
             }
 
             return changes;
+        }
+
+        public static IReadOnlyList<VisionPipelineNormalizationChange> NormalizeLikelySequentialLinks(VisionPipeline pipeline)
+        {
+            List<VisionPipelineNormalizationChange> changes = new List<VisionPipelineNormalizationChange>();
+            if (pipeline?.Steps == null || pipeline.Steps.Count == 0)
+            {
+                return changes;
+            }
+
+            for (int i = 1; i < pipeline.Steps.Count; i++)
+            {
+                VisionPipelineNormalizationChange change = NormalizeLikelySequentialLink(pipeline, pipeline.Steps[i], i);
+                if (change != null)
+                {
+                    changes.Add(change);
+                }
+            }
+
+            return changes;
+        }
+
+        public static VisionPipelineNormalizationChange NormalizeLikelySequentialLink(
+            VisionPipeline pipeline,
+            VisionPipelineStep step,
+            int stepIndex)
+        {
+            if (pipeline == null
+                || step == null
+                || !step.Enabled
+                || string.IsNullOrWhiteSpace(step.InputLayer)
+                || !IsPrimarySourceLayer(step.InputLayer)
+                || !TryGetPreviousEnabledStep(pipeline, stepIndex, out VisionPipelineStep previousStep)
+                || string.IsNullOrWhiteSpace(previousStep?.OutputLayer))
+            {
+                return null;
+            }
+
+            string currentTool = NormalizeToolType(step.ToolType);
+            string previousTool = NormalizeToolType(previousStep.ToolType);
+            if (!IsPreprocessingTool(previousTool) || !IsInspectionTool(currentTool))
+            {
+                return null;
+            }
+
+            string previousOutput = previousStep.OutputLayer.Trim();
+            if (string.Equals(step.InputLayer.Trim(), previousOutput, StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            string oldInput = step.InputLayer.Trim();
+            step.InputLayer = previousOutput;
+            return new VisionPipelineNormalizationChange
+            {
+                StepIndex = stepIndex,
+                Step = step,
+                Message = $"CHAIN LINK | {step.Name} | Input {oldInput} -> {previousOutput}. Previous preprocessing output is used as this inspection input."
+            };
         }
 
         public static VisionPipelineNormalizationChange NormalizeChainedInspectionPreprocessing(
@@ -79,6 +149,18 @@ namespace OpenVisionLab
         public static bool TryGetPreviousEnabledOutput(VisionPipeline pipeline, int stepIndex, out string previousOutput)
         {
             previousOutput = string.Empty;
+            if (!TryGetPreviousEnabledStep(pipeline, stepIndex, out VisionPipelineStep previousStep))
+            {
+                return false;
+            }
+
+            previousOutput = previousStep.OutputLayer.Trim();
+            return true;
+        }
+
+        public static bool TryGetPreviousEnabledStep(VisionPipeline pipeline, int stepIndex, out VisionPipelineStep previousStep)
+        {
+            previousStep = null;
             if (pipeline?.Steps == null || stepIndex <= 0)
             {
                 return false;
@@ -86,13 +168,13 @@ namespace OpenVisionLab
 
             for (int i = stepIndex - 1; i >= 0; i--)
             {
-                VisionPipelineStep previousStep = pipeline.Steps[i];
-                if (previousStep == null || !previousStep.Enabled || string.IsNullOrWhiteSpace(previousStep.OutputLayer))
+                VisionPipelineStep candidate = pipeline.Steps[i];
+                if (candidate == null || !candidate.Enabled || string.IsNullOrWhiteSpace(candidate.OutputLayer))
                 {
                     continue;
                 }
 
-                previousOutput = previousStep.OutputLayer.Trim();
+                previousStep = candidate;
                 return true;
             }
 
@@ -119,6 +201,41 @@ namespace OpenVisionLab
                 default:
                     return false;
             }
+        }
+
+        public static bool IsPreprocessingTool(string normalizedToolType)
+        {
+            switch (normalizedToolType)
+            {
+                case "threshold":
+                case "morphology":
+                case "filter":
+                case "edgedetection":
+                case "edge":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        public static bool IsInspectionTool(string normalizedToolType)
+        {
+            switch (normalizedToolType)
+            {
+                case "blob":
+                case "contour":
+                case "line":
+                case "linegauge":
+                case "mean":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsPrimarySourceLayer(string inputLayer)
+        {
+            return string.Equals(inputLayer?.Trim(), "Main", StringComparison.OrdinalIgnoreCase);
         }
 
         public static string NormalizeToolType(string toolType)

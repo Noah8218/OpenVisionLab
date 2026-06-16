@@ -6,6 +6,7 @@ namespace OpenVisionLab.Pipeline.Controls
         Running,
         Passed,
         Failed,
+        Error,
         Loaded,
         Skipped,
         Canceled,

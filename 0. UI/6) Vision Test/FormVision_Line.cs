@@ -146,6 +146,7 @@ namespace OpenVisionLab
                     using (Graphics g = Graphics.FromImage(Result))
                     {
                         BitmapDrawing.DrawFitLinesInstersectionLines(g, intersectionLine.Item1, intersectionLine.Item2, intersectionLine.Item3);
+                        RecordDirectVisionToolPassed(Result, stopwatch);
                         PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
                     }
                 }
@@ -205,9 +206,8 @@ namespace OpenVisionLab
                     using (Graphics g = Graphics.FromImage(Result))
                     {
                         LineGaugeTool edgeTool = new LineGaugeTool();
-                        edgeTool.SetSourceImage(imageCVSource);
                         edgeTool.SetProperty(rdoLeftEdgePara.Checked ? (LineGaugeProperty)Property_Line_L.DeepCopy() : (LineGaugeProperty)Property_Line_R.DeepCopy());
-                        edgeTool.Run();
+                        ExecuteVisionTool(edgeTool, imageCVSource);
 
                         BitmapDrawing.DrawLineGauge(g, edgeTool);
                         PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
@@ -233,6 +233,7 @@ namespace OpenVisionLab
                     using (Graphics g = Graphics.FromImage(Result))
                     {
                         BitmapDrawing.DrawInstersectionLines(g, intersectionLine.Item1, intersectionLine.Item2, intersectionLine.Item3);
+                        RecordDirectVisionToolPassed(Result, stopwatch);
                         PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
                     }
                 }

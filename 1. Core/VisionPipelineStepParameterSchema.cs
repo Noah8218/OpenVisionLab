@@ -23,6 +23,7 @@ namespace OpenVisionLab
             ["Operator"] = typeof(MorphTypes),
             ["FilterType"] = typeof(FilterToolType),
             ["BorderType"] = typeof(BorderTypes),
+            ["Interpolation"] = typeof(InterpolationFlags),
             ["EdgeType"] = typeof(EdgeDetectionToolType),
             ["ApproximationModes"] = typeof(ContourApproximationModes),
             ["DetectMode"] = typeof(RetrievalModes),
@@ -68,7 +69,8 @@ namespace OpenVisionLab
             "SobelKernelSize",
             "ScharrDegreeX",
             "ScharrDegreeY",
-            "LaplacianKernelSize"
+            "LaplacianKernelSize",
+            "MaxPoints"
         };
 
         private static readonly HashSet<string> DoubleParameters = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -87,7 +89,10 @@ namespace OpenVisionLab
             "RANSAC_REPROJ_THRESHOLD",
             "AVERAGE_Diff",
             "Threshold",
-            "MaxValue"
+            "MaxValue",
+            "Angle",
+            "ScaleXPercent",
+            "ScaleYPercent"
         };
 
         public static bool TryGetParameterType(string key, out Type type)
@@ -189,6 +194,9 @@ namespace OpenVisionLab
                 && (key.StartsWith("USE_", StringComparison.OrdinalIgnoreCase)
                     || key.StartsWith("SHOW_", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, "Invert", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(key, "BurnIn", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(key, "DrawLabels", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(key, "AllowEmpty", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, "UseL2Gradient", StringComparison.OrdinalIgnoreCase));
         }
     }

@@ -36,6 +36,8 @@ namespace OpenVisionLab.MessageDialogs
             messageLabel.Text = string.IsNullOrWhiteSpace(options.Message) ? "-" : options.Message;
             detailsTextBox.Text = options.Details ?? string.Empty;
             detailsButton.Visible = !string.IsNullOrWhiteSpace(options.Details);
+            detailsButton.Text = "Technical Details";
+            copyDetailsButton.Text = "Copy Details";
             detailsPanel.Visible = false;
             TopMost = options.TopMost;
 
@@ -229,7 +231,7 @@ namespace OpenVisionLab.MessageDialogs
         private void DetailsButton_Click(object sender, EventArgs e)
         {
             detailsPanel.Visible = !detailsPanel.Visible;
-            detailsButton.Text = detailsPanel.Visible ? "Hide details" : "Details";
+            detailsButton.Text = detailsPanel.Visible ? "Hide Details" : "Technical Details";
             ResizeForMessage();
         }
 

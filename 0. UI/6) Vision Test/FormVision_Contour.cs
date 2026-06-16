@@ -142,8 +142,7 @@ namespace OpenVisionLab
                 {
                     ContourTool contourTool = new ContourTool();
                     contourTool.SetProperty(Property_Contour);
-                    contourTool.SetSourceImage(ImageCVSource);
-                    contourTool.Run();
+                    ExecuteVisionTool(contourTool, ImageCVSource);
 
                     if (!Property_Contour.USE_DRAW_IMAGE)
                     {

@@ -26,6 +26,7 @@ namespace OpenVisionLab
             rootLayout = new TableLayoutPanel();
             toolbarPanel = new Panel();
             chkBoxes = new CheckBox();
+            chkRoi = new CheckBox();
             labelModeLabel = new Label();
             cbLabelMode = new ComboBox();
             pointsLabel = new Label();
@@ -77,6 +78,7 @@ namespace OpenVisionLab
             // toolbarPanel
             // 
             toolbarPanel.Controls.Add(chkBoxes);
+            toolbarPanel.Controls.Add(chkRoi);
             toolbarPanel.Controls.Add(labelModeLabel);
             toolbarPanel.Controls.Add(cbLabelMode);
             toolbarPanel.Controls.Add(pointsLabel);
@@ -106,11 +108,23 @@ namespace OpenVisionLab
             chkBoxes.TabIndex = 0;
             chkBoxes.Text = "Boxes";
             // 
+            // chkRoi
+            // 
+            chkRoi.AutoSize = true;
+            chkRoi.Checked = true;
+            chkRoi.CheckState = CheckState.Checked;
+            chkRoi.ForeColor = Color.FromArgb(35, 85, 132);
+            chkRoi.Location = new Point(62, 8);
+            chkRoi.Name = "chkRoi";
+            chkRoi.Size = new Size(46, 19);
+            chkRoi.TabIndex = 1;
+            chkRoi.Text = "ROI";
+            // 
             // labelModeLabel
             // 
             labelModeLabel.AutoSize = true;
             labelModeLabel.ForeColor = Color.FromArgb(35, 85, 132);
-            labelModeLabel.Location = new Point(76, 9);
+            labelModeLabel.Location = new Point(126, 9);
             labelModeLabel.Name = "labelModeLabel";
             labelModeLabel.Size = new Size(35, 15);
             labelModeLabel.TabIndex = 1;
@@ -122,7 +136,7 @@ namespace OpenVisionLab
             cbLabelMode.FlatStyle = FlatStyle.Flat;
             cbLabelMode.FormattingEnabled = true;
             cbLabelMode.Items.AddRange(new object[] { "None", "No", "Details" });
-            cbLabelMode.Location = new Point(120, 5);
+            cbLabelMode.Location = new Point(170, 5);
             cbLabelMode.Name = "cbLabelMode";
             cbLabelMode.SelectedIndex = 1;
             cbLabelMode.Size = new Size(92, 23);
@@ -132,7 +146,7 @@ namespace OpenVisionLab
             // 
             pointsLabel.AutoSize = true;
             pointsLabel.ForeColor = Color.FromArgb(35, 85, 132);
-            pointsLabel.Location = new Point(226, 9);
+            pointsLabel.Location = new Point(276, 9);
             pointsLabel.Name = "pointsLabel";
             pointsLabel.Size = new Size(40, 15);
             pointsLabel.TabIndex = 3;
@@ -141,7 +155,7 @@ namespace OpenVisionLab
             // nudPointLimit
             // 
             nudPointLimit.Increment = 50;
-            nudPointLimit.Location = new Point(276, 5);
+            nudPointLimit.Location = new Point(326, 5);
             nudPointLimit.Maximum = 5000;
             nudPointLimit.Name = "nudPointLimit";
             nudPointLimit.Size = new Size(72, 23);
@@ -154,7 +168,7 @@ namespace OpenVisionLab
             btnFit.FlatAppearance.BorderColor = Color.FromArgb(47, 111, 171);
             btnFit.FlatStyle = FlatStyle.Flat;
             btnFit.ForeColor = Color.FromArgb(35, 85, 132);
-            btnFit.Location = new Point(370, 4);
+            btnFit.Location = new Point(420, 4);
             btnFit.Name = "btnFit";
             btnFit.Size = new Size(58, 26);
             btnFit.TabIndex = 5;
@@ -168,7 +182,7 @@ namespace OpenVisionLab
             btnActual.FlatAppearance.BorderColor = Color.FromArgb(47, 111, 171);
             btnActual.FlatStyle = FlatStyle.Flat;
             btnActual.ForeColor = Color.FromArgb(35, 85, 132);
-            btnActual.Location = new Point(426, 4);
+            btnActual.Location = new Point(476, 4);
             btnActual.Name = "btnActual";
             btnActual.Size = new Size(58, 26);
             btnActual.TabIndex = 6;
@@ -182,7 +196,7 @@ namespace OpenVisionLab
             btnDouble.FlatAppearance.BorderColor = Color.FromArgb(47, 111, 171);
             btnDouble.FlatStyle = FlatStyle.Flat;
             btnDouble.ForeColor = Color.FromArgb(35, 85, 132);
-            btnDouble.Location = new Point(492, 4);
+            btnDouble.Location = new Point(542, 4);
             btnDouble.Name = "btnDouble";
             btnDouble.Size = new Size(58, 26);
             btnDouble.TabIndex = 7;
@@ -194,7 +208,7 @@ namespace OpenVisionLab
             // 
             toneLabel.AutoSize = true;
             toneLabel.ForeColor = Color.FromArgb(35, 85, 132);
-            toneLabel.Location = new Point(570, 9);
+            toneLabel.Location = new Point(620, 9);
             toneLabel.Name = "toneLabel";
             toneLabel.Size = new Size(36, 15);
             toneLabel.TabIndex = 8;
@@ -206,7 +220,7 @@ namespace OpenVisionLab
             cbOverlayTone.FlatStyle = FlatStyle.Flat;
             cbOverlayTone.FormattingEnabled = true;
             cbOverlayTone.Items.AddRange(new object[] { "Green", "Cyan", "Orange", "Magenta" });
-            cbOverlayTone.Location = new Point(614, 5);
+            cbOverlayTone.Location = new Point(664, 5);
             cbOverlayTone.Name = "cbOverlayTone";
             cbOverlayTone.SelectedIndex = 0;
             cbOverlayTone.Size = new Size(90, 23);
@@ -216,7 +230,7 @@ namespace OpenVisionLab
             // 
             strokeLabel.AutoSize = true;
             strokeLabel.ForeColor = Color.FromArgb(35, 85, 132);
-            strokeLabel.Location = new Point(718, 9);
+            strokeLabel.Location = new Point(768, 9);
             strokeLabel.Name = "strokeLabel";
             strokeLabel.Size = new Size(29, 15);
             strokeLabel.TabIndex = 10;
@@ -224,7 +238,7 @@ namespace OpenVisionLab
             // 
             // nudStrokeWidth
             // 
-            nudStrokeWidth.Location = new Point(754, 5);
+            nudStrokeWidth.Location = new Point(804, 5);
             nudStrokeWidth.Maximum = 8;
             nudStrokeWidth.Minimum = 1;
             nudStrokeWidth.Name = "nudStrokeWidth";
@@ -384,6 +398,7 @@ namespace OpenVisionLab
             StartPosition = FormStartPosition.CenterParent;
             Text = "Pipeline Preview";
             chkBoxes.CheckedChanged += OnOptionChanged;
+            chkRoi.CheckedChanged += OnOptionChanged;
             cbLabelMode.SelectedIndexChanged += OnOptionChanged;
             nudPointLimit.ValueChanged += OnOptionChanged;
             cbOverlayTone.SelectedIndexChanged += OnOptionChanged;

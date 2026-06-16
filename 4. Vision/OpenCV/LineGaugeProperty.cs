@@ -4,6 +4,7 @@ using OpenVisionLab.Vision._1._Tools.OpenCV;
 using Lib.OpenCV;
 using Lib.OpenCV.Property;
 using static Lib.Common.FormulaUtil;
+using static OpenVisionLab.PropertyGridEditorFactory;
 
 namespace OpenVisionLab
 {
@@ -35,16 +36,22 @@ namespace OpenVisionLab
 
         [PropertyOrder(3)]
         [Browsable(true)]
+        [PropertyEditor(typeof(WpgSliderEditor))]
+        [NumberRange(0, 255, 1, 0)]
         [CategoryAttribute("Edge"), DescriptionAttribute("픽셀간의 차이이며, 값이 30일시 현재 픽셀과 이전 픽셀의 차이가 30이 차이면 엣지로 결정합니다."), DisplayNameAttribute("Contrast")]
         public double CONTRAST { get; set; } = 30;
 
         [PropertyOrder(4)]
         [Browsable(true)]
+        [PropertyEditor(typeof(WpgSliderEditor))]
+        [NumberRange(1, 50, 1, 0)]
         [CategoryAttribute("Edge"), DescriptionAttribute("연속성 검사 파라미터이며, 값이 10일시 10개가 연속해서 CONTRAST차이가 나면 엣ㅅ지로 결정합니다."), DisplayNameAttribute("Thickness")]        
         public double THICKNESS { get; set; } = 5;
 
         [PropertyOrder(5)]
         [Browsable(true)]
+        [PropertyEditor(typeof(WpgSliderEditor))]
+        [NumberRange(1, 100, 1, 0)]
         [CategoryAttribute("Edge"), DescriptionAttribute("엣지의 간격 파라미터이며, 10개일시 10픽셀마다 엣지를 검출합니다."), DisplayNameAttribute("Sampling step")]
         public double SAMPLING_STEP { get; set; } = 10;
 
@@ -53,6 +60,8 @@ namespace OpenVisionLab
         public PROJECTION_DIR VER_PRJ_DIR { get; set; } = PROJECTION_DIR.X_LTOR;
 
         [Browsable(true)]
+        [PropertyEditor(typeof(WpgSliderEditor))]
+        [NumberRange(1, 100, 1, 0)]
         [CategoryAttribute("Vertical Line"), DescriptionAttribute("수직선의 각도를 결정합니다. 값이 10일시 10개의 픽셀의 각도로 수직선을 생성합니다."), DisplayNameAttribute("Point range")]
         public int POINT_RANGE { get; set; } = 10;
 
@@ -62,6 +71,8 @@ namespace OpenVisionLab
         public bool USE_MANUAL_ANGLE { get; set; }
 
         [Browsable(true)]
+        [PropertyEditor(typeof(WpgSliderEditor))]
+        [NumberRange(-180, 180, 1, 0)]
         [CategoryAttribute("Vertical Line"), DescriptionAttribute(""), DisplayNameAttribute("Manual angle")]
         public double MANUAL_ANGLE_VALUE { get; set; } = 0;
 
@@ -70,10 +81,14 @@ namespace OpenVisionLab
         public bool USE_EXTEND_FIT_LINE { get; set; } = false;
 
         [Browsable(true)]
+        [PropertyEditor(typeof(WpgSliderEditor))]
+        [NumberRange(0, 1000, 10, 0)]
         [CategoryAttribute("Fit Line"), DescriptionAttribute("해당 값(pixel)만큼 Fitting Line에 길이를 늘립니다. "), DisplayNameAttribute("Extend length")]
         public int EXTEND_FIT_LINE_VALUE { get; set; } = 100;
 
         [Browsable(true)]
+        [PropertyEditor(typeof(WpgSliderEditor))]
+        [NumberRange(0, 255, 1, 0)]
         [CategoryAttribute("Filter"), DescriptionAttribute("평균 엣지 필터링 차이값입니다. 평균값과 엣지 값의 차이가 설정값이상 나온다면 필터링 합니다."), DisplayNameAttribute("Average diff")]
         public double AVERAGE_Diff { get; set; } = 100;
 

@@ -24,7 +24,15 @@ namespace OpenVisionLab
         public int ParameterCount { get; set; }
         public double ElapsedMilliseconds { get; set; }
         public string Message { get; set; } = string.Empty;
+        public int ErrorCode { get; set; }
+        public string ErrorName { get; set; } = string.Empty;
+        public string ResultStatus { get; set; } = string.Empty;
+        public bool IsToolError { get; set; }
+        public bool IsAcceptanceNg { get; set; }
+        public string AcceptanceMessage { get; set; } = string.Empty;
         public string MetricsText { get; set; } = string.Empty;
+        public string DiagnosticHint { get; set; } = string.Empty;
+        public string SuggestedFix { get; set; } = string.Empty;
         public Dictionary<string, double> Metrics { get; set; } = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
         public string ResultImageSizeText => HasResultImage
             ? $"{ResultImageWidth} x {ResultImageHeight}"
@@ -45,6 +53,7 @@ namespace OpenVisionLab
         {
             VisionPipelineStep step = stepResult?.Step;
             VisionToolResult toolResult = stepResult?.ToolResult;
+            string resolvedMessage = ResolveMessage(stepResult);
             return new VisionPipelineStepResultSummary
             {
                 Index = index,
@@ -62,8 +71,16 @@ namespace OpenVisionLab
                 MetricCount = toolResult?.Metrics?.Count ?? 0,
                 ParameterCount = step?.Parameters?.Count ?? 0,
                 ElapsedMilliseconds = toolResult?.Elapsed.TotalMilliseconds ?? 0d,
-                Message = ResolveMessage(stepResult),
+                Message = resolvedMessage,
+                ErrorCode = toolResult?.ErrorCodeValue ?? 0,
+                ErrorName = toolResult?.ErrorName ?? VisionToolErrorCode.None.ToString(),
+                ResultStatus = toolResult?.ResultStatusName ?? string.Empty,
+                IsToolError = toolResult != null && !toolResult.Success,
+                IsAcceptanceNg = toolResult != null && toolResult.Success && stepResult?.AcceptancePassed == false,
+                AcceptanceMessage = stepResult?.AcceptanceMessage ?? string.Empty,
                 MetricsText = VisionPipelineKnownMetrics.FormatMetrics(toolResult?.Metrics),
+                DiagnosticHint = VisionPipelineStepDiagnosticService.ResolveDiagnosticHint(stepResult, resolvedMessage),
+                SuggestedFix = VisionPipelineStepDiagnosticService.ResolveSuggestedFix(stepResult, resolvedMessage),
                 Metrics = VisionPipelineKnownMetrics.OrderMetrics(toolResult?.Metrics)
                     .ToDictionary(metric => metric.Key, metric => metric.Value, StringComparer.OrdinalIgnoreCase)
             };
@@ -110,18 +127,15 @@ namespace OpenVisionLab
 
             if (!stepResult.ToolResult.Success)
             {
-                string message = stepResult.ToolResult.Message ?? string.Empty;
-                if (message.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) >= 0)
+                switch (stepResult.ToolResult.ErrorCode)
                 {
-                    return "TIMEOUT";
+                    case VisionToolErrorCode.StepTimeout:
+                        return "TIMEOUT";
+                    case VisionToolErrorCode.StepCanceled:
+                        return "CANCEL";
+                    default:
+                        return "ERROR";
                 }
-
-                if (message.IndexOf("cancel", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    return "CANCEL";
-                }
-
-                return "NG";
             }
 
             return stepResult.AcceptancePassed ? "OK" : "NG";
@@ -134,9 +148,180 @@ namespace OpenVisionLab
                 return string.Empty;
             }
 
-            return string.IsNullOrWhiteSpace(stepResult.ToolResult?.Message)
-                ? stepResult.AcceptanceMessage ?? string.Empty
-                : stepResult.ToolResult.Message;
+            string toolMessage = stepResult.ToolResult?.Message ?? string.Empty;
+            string acceptanceMessage = stepResult.AcceptanceMessage ?? string.Empty;
+            string noDetectionMessage = ResolveNoDetectionMessage(stepResult);
+
+            if (stepResult.ToolResult != null && !stepResult.ToolResult.Success)
+            {
+                return string.IsNullOrWhiteSpace(toolMessage) ? acceptanceMessage : toolMessage;
+            }
+
+            if (stepResult.ToolResult != null
+                && stepResult.ToolResult.Success
+                && stepResult.AcceptancePassed == false)
+            {
+                string friendlyMessage = ResolveAcceptanceFailureMessage(stepResult, acceptanceMessage);
+                return string.IsNullOrWhiteSpace(friendlyMessage) ? toolMessage : friendlyMessage;
+            }
+
+            if (!string.IsNullOrWhiteSpace(toolMessage))
+            {
+                return toolMessage;
+            }
+
+            if (!string.IsNullOrWhiteSpace(noDetectionMessage))
+            {
+                return noDetectionMessage;
+            }
+
+            return acceptanceMessage;
+        }
+
+        private static string ResolveAcceptanceFailureMessage(VisionPipelineStepResult stepResult, string fallbackMessage)
+        {
+            VisionPipelineStep step = stepResult?.Step;
+            VisionToolResult toolResult = stepResult?.ToolResult;
+            if (step == null)
+            {
+                return fallbackMessage ?? string.Empty;
+            }
+
+            List<string> parts = new List<string>();
+            bool actualSuccess = toolResult != null && toolResult.Success;
+            if (actualSuccess != step.ExpectedSuccess)
+            {
+                parts.Add($"Expected success {step.ExpectedSuccess}, actual {actualSuccess}");
+            }
+
+            if (step.MaxElapsedMilliseconds > 0
+                && toolResult != null
+                && toolResult.Elapsed.TotalMilliseconds > step.MaxElapsedMilliseconds)
+            {
+                parts.Add($"Elapsed {toolResult.Elapsed.TotalMilliseconds:0.0} ms exceeds {step.MaxElapsedMilliseconds:0.0} ms");
+            }
+
+            if (!string.IsNullOrWhiteSpace(step.RequiredMessageText))
+            {
+                string toolMessage = toolResult?.Message ?? string.Empty;
+                if (toolMessage.IndexOf(step.RequiredMessageText, StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    parts.Add($"Message missing '{step.RequiredMessageText}'");
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(step.AcceptanceMetricName)
+                && (step.UseAcceptanceMetricMinimum || step.UseAcceptanceMetricMaximum))
+            {
+                string displayName = VisionPipelineKnownMetrics.GetDisplayName(step.AcceptanceMetricName);
+                if (toolResult == null || !toolResult.Metrics.TryGetValue(step.AcceptanceMetricName, out double metricValue))
+                {
+                    parts.Add($"{displayName} was not produced");
+                }
+                else
+                {
+                    if (step.UseAcceptanceMetricMinimum && metricValue < step.AcceptanceMetricMinimum)
+                    {
+                        parts.Add($"{displayName}: {metricValue:0.###} is below target {step.AcceptanceMetricMinimum:0.###}");
+                    }
+
+                    if (step.UseAcceptanceMetricMaximum && metricValue > step.AcceptanceMetricMaximum)
+                    {
+                        parts.Add($"{displayName}: {metricValue:0.###} is above target {step.AcceptanceMetricMaximum:0.###}");
+                    }
+                }
+            }
+
+            string noDetectionMessage = ResolveNoDetectionMessage(stepResult);
+            if (!string.IsNullOrWhiteSpace(noDetectionMessage))
+            {
+                parts.Add(noDetectionMessage);
+            }
+
+            return parts.Count == 0
+                ? fallbackMessage ?? string.Empty
+                : string.Join("; ", parts.Distinct());
+        }
+
+        private static string ResolveNoDetectionMessage(VisionPipelineStepResult stepResult)
+        {
+            VisionPipelineStep step = stepResult?.Step;
+            VisionToolResult toolResult = stepResult?.ToolResult;
+            if (step == null || toolResult?.Metrics == null)
+            {
+                return string.Empty;
+            }
+
+            switch (NormalizeToolType(step.ToolType))
+            {
+                case "blob":
+                    if (!HasZeroMetric(toolResult, VisionPipelineKnownMetrics.ResultCount))
+                    {
+                        return string.Empty;
+                    }
+
+                    return "No blob was detected. Check threshold polarity, morphology, ROI, MIN_AREA, and MAX_AREA.";
+                case "contour":
+                    if (!HasZeroMetric(toolResult, VisionPipelineKnownMetrics.ResultCount))
+                    {
+                        return string.Empty;
+                    }
+
+                    return "No contour was detected. Check threshold polarity, morphology, ROI, MIN_AREA, MAX_AREA, and retrieval mode.";
+                case "feature":
+                case "featurematching":
+                case "sift":
+                    if (!HasZeroMetric(toolResult, VisionPipelineKnownMetrics.ResultCount))
+                    {
+                        return string.Empty;
+                    }
+
+                    return "No feature match was detected. Check template features, ROI, preprocessing, SCORE_MIN, and RANSAC settings.";
+                case "line":
+                case "linegauge":
+                    if (!HasZeroMetric(toolResult, VisionPipelineKnownMetrics.ResultCount)
+                        && HasPositiveMetric(toolResult, VisionPipelineKnownMetrics.EdgePointCount))
+                    {
+                        return string.Empty;
+                    }
+
+                    return "No line edge was detected. Check ROI, projection direction, polarity, contrast, sampling step, and preprocessing.";
+                case "matching":
+                case "templatematching":
+                    if (!HasZeroMetric(toolResult, VisionPipelineKnownMetrics.ResultCount))
+                    {
+                        return string.Empty;
+                    }
+
+                    return "No template match was detected. Check template image, ROI, preprocessing, score threshold, and angle/scale search settings.";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static bool HasZeroMetric(VisionToolResult toolResult, string metricName)
+        {
+            return toolResult?.Metrics != null
+                && toolResult.Metrics.TryGetValue(metricName, out double value)
+                && Math.Abs(value) <= 0.000001;
+        }
+
+        private static bool HasPositiveMetric(VisionToolResult toolResult, string metricName)
+        {
+            return toolResult?.Metrics != null
+                && toolResult.Metrics.TryGetValue(metricName, out double value)
+                && value > 0.000001;
+        }
+
+        private static string NormalizeToolType(string toolType)
+        {
+            string value = (toolType ?? string.Empty).Trim();
+            if (value.EndsWith("Tool", StringComparison.OrdinalIgnoreCase))
+            {
+                value = value.Substring(0, value.Length - 4);
+            }
+
+            return value.Replace(" ", string.Empty).Replace("_", string.Empty).ToLowerInvariant();
         }
     }
 }

@@ -36,7 +36,7 @@
             <Setter Property="Background" Value="#EEF3F8" />
             <Setter Property="BorderBrush" Value="#6D89A8" />
             <Setter Property="Padding" Value="6,1" />
-            <Setter Property="ToolTip" Value="Disable All Logs to use this filter." />
+            <Setter Property="ToolTip" Value="Turn off All Logs to choose Level or Area." />
             <Setter Property="ItemContainerStyle">
                 <Setter.Value>
                     <Style TargetType="ComboBoxItem">
@@ -234,15 +234,15 @@
                            Style="{StaticResource DetailedOnlyVisibilityStyle}">
                     <CheckBox Content="All Logs"
                               IsChecked="{Binding ShowEntireStream}"
-                              ToolTip="When enabled, level and area filters are ignored." />
+                              ToolTip="Show every log line. Level and Area filters are disabled while this is on." />
                     <TextBlock Text="Level"
                                Style="{StaticResource FilterLabelTextStyle}" />
-                    <ComboBox IsEnabled="{Binding ShowEntireStream, Converter={StaticResource BooleanToInverseConverter}}"
+                    <ComboBox IsEnabled="{Binding IsFilterControlsEnabled}"
                               ItemsSource="{Binding Levels}"
                               SelectedItem="{Binding SelectedLevel}" />
                     <TextBlock Text="Area"
                                Style="{StaticResource FilterLabelTextStyle}" />
-                    <ComboBox IsEnabled="{Binding ShowEntireStream, Converter={StaticResource BooleanToInverseConverter}}"
+                    <ComboBox IsEnabled="{Binding IsFilterControlsEnabled}"
                               ItemsSource="{Binding Types}"
                               SelectedItem="{Binding SelectedType}" />
                 </WrapPanel>

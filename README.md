@@ -104,24 +104,43 @@ Main image
   -> Metrics + Overlays + Acceptance
   -> Summary Preview
   -> Publish Result or save XML
+```
+
 중요한 UX 규칙:
 
-Run Preview는 예기치 않게 메인 워크스페이스를 덮어쓰지 않아야 합니다.
+- `Run Preview`는 예기치 않게 메인 워크스페이스를 덮어쓰지 않아야 합니다.
+- `Publish Result`는 결과 레이어를 다시 기록하는 명시적인 동작입니다.
+- 단계(Step)는 기본적으로 이전의 활성화된 단계의 출력을 읽습니다.
+- 브랜치(Branch) 단계는 Main 또는 다른 레이어를 읽을 수 있지만, 사용자에게 시각적으로 표시되어야 합니다.
+- 최종 리뷰에서는 여러 브랜치가 관련된 경우 통합된 검출 결과를 하나의 이미지에 표시해야 합니다.
 
-Publish Result는 결과 레이어를 다시 기록하는 명시적인 동작입니다.
+---
 
-단계(Step)는 기본적으로 이전의 활성화된 단계의 출력을 읽습니다.
+## 📘 튜토리얼과 운영 문서 (Tutorial And Operating Docs)
 
-브랜치(Branch) 단계는 Main 또는 다른 레이어를 읽을 수 있지만, 사용자에게 시각적으로 표시되어야 합니다.
+처음 사용하는 사용자는 아래 순서로 문서를 보는 것이 좋습니다.
 
-최종 리뷰에서는 여러 브랜치가 관련된 경우 통합된 검출 결과를 하나의 이미지에 표시해야 합니다.
+- [OpenVisionLab Tutorial - User HTML](docs/OPENVISIONLAB_TUTORIAL.html)
+- [OpenVisionLab Tutorial - Portable Single File](docs/OPENVISIONLAB_TUTORIAL_PORTABLE.html)
+- [OpenVisionLab Tutorial - Markdown Source](docs/OPENVISIONLAB_TUTORIAL.md)
+- [Scenario Validation Checklist](docs/OPENVISIONLAB_SCENARIO_VALIDATION.md)
+- [12:00 Work Report](docs/OPENVISIONLAB_1200_WORK_REPORT.md)
+- [Current Status And Next Steps](docs/OPENVISIONLAB_STATUS_AND_NEXT_STEPS.md)
+- [AI Recipe Interactive Edit Plan](docs/OPENVISIONLAB_AI_RECIPE_INTERACTIVE_EDIT_PLAN.md)
+- [External Reference Policy](docs/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md)
 
-🤖 AI 레시피 방향성 (AI Recipe Direction)
+프로그램 실행 후 상단 `Guide` 메뉴에서도 이미지가 포함된 HTML 튜토리얼을 바로 열 수 있습니다.
+HTML 파일 하나만 다른 PC나 폴더로 복사해야 할 때는 이미지가 내장된 `docs/OPENVISIONLAB_TUTORIAL_PORTABLE.html`을 사용하십시오.
+
+---
+
+## 🤖 AI 레시피 방향성 (AI Recipe Direction)
+
 AI/LLM 연동은 최종 결정권자가 아닌 '레시피 어시스턴트(보조자)'로 취급됩니다.
 
 권장되는 워크플로우:
 
-Plaintext
+```text
 사용자 이미지 + 검사 목표
   -> LLM이 VisionPipeline XML 제안
   -> OpenVisionLab에서 XML 유효성 검증
@@ -130,147 +149,186 @@ Plaintext
   -> 사용자가 파라미터 튜닝
   -> OpenVisionLab에서 최종 승인된 레시피 저장
   -> VisionRecipeRunner가 UI 없이 승인된 XML 실행
+```
+
 LLM 레시피는 Import 가능한 VisionPipeline XML을 생성해야 합니다. OpenVisionLab은 유효성 검증, 미리보기, 튜닝, 샘플 체크 및 최종 승인을 담당합니다.
 
 관련 문서:
 
-LLM Recipe Contract
+- [LLM Recipe Contract](docs/VISION_PIPELINE_LLM_RECIPE_CONTRACT.md)
+- [Pipeline Recipe Spec](docs/VISION_PIPELINE_RECIPE_SPEC.md)
+- [Pipeline Recipe Schema](docs/VISION_PIPELINE_RECIPE_SCHEMA.xsd)
 
-Pipeline Recipe Spec
+---
 
-Pipeline Recipe Schema
+## 📁 샘플 카탈로그 (Sample Catalog)
 
-📁 샘플 카탈로그 (Sample Catalog)
 샘플 카탈로그는 샘플 이미지, 기준(Baseline) 레시피, 그리고 예상되는 측정값(Metrics)을 연결합니다.
 
 참조:
 
-Sample Catalog
-
-Sample Pipelines
+- [Sample Catalog](docs/samples/OpenVisionLab.SampleCatalog.csv)
+- [Sample Pipelines](docs/samples)
 
 현재 지원하는 샘플 패밀리:
 
-Contour 기반 텍스트/심볼 검출
+- Contour 기반 텍스트/심볼 검출
+- 텍스트, 심볼 및 희미한 저대조도 컨트롤을 위한 LLM Contour 레시피
+- 쌀알(Rice particle) Contour/Blob 검출
+- 핀(Pin) 특징 Contour/LineGauge 검출
+- 휜 핀(Bent-pin) 정상/불량 shaft-width 검증
+- 다이 패드(Die-pad) 표면 Contour 기준 레시피
+- Surface defect edge-contour 검증
+- Mean, RotateScale 같은 기본 Tool 샘플
 
-텍스트, 심볼 및 희미한 저대조도 컨트롤을 위한 LLM Contour 레시피
+---
 
-쌀알(Rice particle) Contour 검출
+## ⚙️ 외부 라이브러리 참조 (External Library References)
 
-핀(Pin) 특징 Contour 검출
-
-휜 핀(Bent-pin) Contour 기준 레시피
-
-다이 패드(Die-pad) 표면 Contour 기준 레시피
-
-⚙️ 외부 라이브러리 참조 (External Library References)
 전체 개발 솔루션을 빌드하기 위해서는 두 개의 외부 소스 루트(Source Root)가 필요합니다.
 
-1. Library-Noah
+### 1. Library-Noah
+
 Library-Noah는 OpenVisionLab에서 원래 사용하던 비전/코어 라이브러리의 외부 소스 루트입니다.
 
 메인 프로젝트 참조:
 
-Lib.Common
-
-Lib.OpenCV
-
-Lib.OpenCV.Blob
+- `Lib.Common`
+- `Lib.OpenCV`
+- `Lib.OpenCV.Blob`
 
 OpenVisionLab.csproj의 기본 경로:
 
-XML
+```xml
 $(MSBuildProjectDirectory)\..\Library-Noah
+```
+
 권장되는 개발 디렉토리 구조:
 
-Plaintext
+```text
 C:\Git\
   ├── OpenVisionLab_Dev\
   └── Library-Noah\
-2. WPG-CUSTOM
+```
+
+### 2. WPG-CUSTOM
+
 WPG-CUSTOM은 OpenVisionLab 프로퍼티 에디터 브릿지에서 사용하는 커스텀 WPF PropertyGrid 소스입니다.
 
 OpenVisionLab.csproj의 기본 경로:
 
-XML
+```xml
 $(MSBuildProjectDirectory)\..\WPG-CUSTOM
+```
+
 권장되는 개발 디렉토리 구조:
 
-Plaintext
+```text
 C:\Git\
   ├── OpenVisionLab_Dev\
   └── WPG-CUSTOM\
+```
+
 외부 라이브러리 경로가 다를 경우 MSBuild 속성으로 덮어쓸 수 있습니다:
 
-PowerShell
+```powershell
 dotnet build OpenVisionLab.csproj `
   -p:LibraryNoahSourceRoot="D:\Work\Library-Noah" `
   -p:WpgCustomSourceRoot="D:\Work\WPG-CUSTOM"
+```
+
 WPG 바이너리가 이미 dll 파일로 준비되어 있다면 소스 빌드를 건너뛸 수 있습니다:
 
-PowerShell
+```powershell
 dotnet build OpenVisionLab.csproj -p:WpgCustomBuildEnabled=false
-💻 개발 환경 (Development Environment)
-Windows
+```
 
-Visual Studio 2022
+상세 정책:
 
-.NET 8 Windows Desktop (net8.0-windows)
+- [External Reference Policy](docs/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md)
 
-Windows Forms + WPF interop
+---
 
-OpenGL-based image canvas
+## 💻 개발 환경 (Development Environment)
 
-OpenCvSharp4
+- Windows
+- Visual Studio 2022
+- .NET 8 Windows Desktop (`net8.0-windows`)
+- Windows Forms + WPF interop
+- OpenGL-based image canvas
+- OpenCvSharp4
+- x64 권장
 
-x64 권장
+---
 
-🛠 빌드 (Build)
-PowerShell
+## 🛠 빌드 (Build)
+
+```powershell
 dotnet build OpenVisionLab.csproj --configuration Debug
+```
+
 외부 WPG 소스를 재빌드하지 않고 검증 빌드만 수행할 경우:
 
-PowerShell
+```powershell
 dotnet build OpenVisionLab.csproj --configuration Debug -p:WpgCustomBuildEnabled=false
-✅ 검증 (Validation)
+```
+
+---
+
+## ✅ 검증 (Validation)
+
 샘플 카탈로그 검증 실행:
 
-PowerShell
+```powershell
 powershell -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1
+```
+
 플랫폼 Precheck 실행:
 
-PowerShell
+```powershell
 powershell -ExecutionPolicy Bypass -File tools\RunVisionPlatformPrecheck.ps1
+```
+
 하나의 UI 영역만 변경되었을 때 범위가 지정된 UI Precheck 실행:
 
-PowerShell
+```powershell
 powershell -ExecutionPolicy Bypass -File tools\RunUiPrecheck.ps1 -Targets main_workspace
+```
+
+UI Precheck는 기본적으로 offscreen quiet render로 실행되어 작업자 화면에 테스트 폼을 띄우지 않습니다. 실제 화면 캡처가 필요할 때만 `-VisibleCapture`를 사용합니다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\RunUiPrecheck.ps1 -Targets main_workspace -VisibleCapture
+```
+
 UI 없이 외부 러너(Runner)로 레시피 단독 실행:
 
-PowerShell
+```powershell
 tools\VisionRecipeRunnerSmoke\bin\Debug\net8.0-windows\VisionRecipeRunnerSmoke.exe `
   Sample\Contour.jpg `
   docs\samples\Contour_AllSymbolsAndFaint_LLM.pipeline.xml `
   output.png `
   --all-overlay-image output_all_overlays.png
-🚀 향후 과제 (Current Focus)
+```
+
+---
+
+## 🚀 향후 과제 (Current Focus)
+
 현재 프로젝트는 단순한 툴 모음에서 통합 레시피 플랫폼으로 활발히 전환 중입니다.
 
 단기 우선순위:
 
-모든 툴이 동일한 툴/결과/파이프라인 규약을 따르도록 통일.
+- 모든 툴이 동일한 툴/결과/파이프라인 규약을 따르도록 통일.
+- 파이프라인 입력/출력 UX를 명확하고 예측 가능하게 유지.
+- 다중 브랜치(Multi-branch) 레시피의 Summary Preview 및 Publish 동작 개선.
+- 샘플 기반 알고리즘의 신뢰성 강화.
+- 폼 디자이너 친화적인 구조를 유지하면서 Threshold/WPG 에디터 UX 개선.
+- AI 레시피 Import, 유효성 검증 및 interactive tuning workflow 견고화.
+- 승인된 XML이 UI 외부에서 실행될 수 있도록 외부 러너/DLL 경로 준비.
 
-파이프라인 입력/출력 UX를 명확하고 예측 가능하게 유지.
+---
 
-다중 브랜치(Multi-branch) 레시피에 대한 요약 미리보기(Summary Preview) 및 내보내기(Publish) 동작 개선.
+## 📄 License
 
-샘플 기반 알고리즘의 신뢰성 강화.
-
-폼 디자이너 친화적인 구조를 유지하면서 Threshold/WPG 에디터 UX 개선.
-
-AI 레시피 Import, 유효성 검증 및 튜닝 워크플로우 견고화.
-
-승인된 XML이 UI 외부에서 실행될 수 있도록 외부 러너/DLL 경로 준비.
-
-📄 License
 이 프로젝트는 Apache License 2.0을 따릅니다. 자세한 내용은 LICENSE 파일을 참조하세요.

@@ -95,8 +95,7 @@ namespace OpenVisionLab
 
                     MeanTool CvMean = new MeanTool();
                     CvMean.SetProperty(cPropertyMean);
-                    CvMean.SetSourceImage(ImageCVSource);
-                    CvMean.Run();
+                    ExecuteVisionTool(CvMean, ImageCVSource);
 
                     using (Graphics g = Graphics.FromImage(Result))
                     {

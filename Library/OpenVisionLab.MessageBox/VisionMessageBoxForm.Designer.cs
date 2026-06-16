@@ -233,11 +233,11 @@ namespace OpenVisionLab.MessageDialogs
             copyDetailsButton.FlatStyle = FlatStyle.Flat;
             copyDetailsButton.Font = new Font("Segoe UI", 8F, FontStyle.Bold, GraphicsUnit.Point);
             copyDetailsButton.ForeColor = Color.FromArgb(50, 73, 111);
-            copyDetailsButton.Location = new Point(470, 0);
+            copyDetailsButton.Location = new Point(452, 0);
             copyDetailsButton.Name = "copyDetailsButton";
-            copyDetailsButton.Size = new Size(100, 30);
+            copyDetailsButton.Size = new Size(118, 30);
             copyDetailsButton.TabIndex = 1;
-            copyDetailsButton.Text = "Copy";
+            copyDetailsButton.Text = "Copy Details";
             copyDetailsButton.UseVisualStyleBackColor = true;
             copyDetailsButton.Click += CopyDetailsButton_Click;
             // 
@@ -282,9 +282,9 @@ namespace OpenVisionLab.MessageDialogs
             detailsButton.ForeColor = Color.FromArgb(50, 73, 111);
             detailsButton.Location = new Point(24, 15);
             detailsButton.Name = "detailsButton";
-            detailsButton.Size = new Size(120, 34);
+            detailsButton.Size = new Size(138, 34);
             detailsButton.TabIndex = 1;
-            detailsButton.Text = "Details";
+            detailsButton.Text = "Technical Details";
             detailsButton.UseVisualStyleBackColor = true;
             detailsButton.Visible = false;
             detailsButton.Click += DetailsButton_Click;

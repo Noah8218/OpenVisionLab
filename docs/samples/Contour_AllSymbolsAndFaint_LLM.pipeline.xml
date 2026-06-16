@@ -399,5 +399,42 @@
       <UseAcceptanceMetricMaximum>true</UseAcceptanceMetricMaximum>
       <AcceptanceMetricMaximum>10</AcceptanceMetricMaximum>
     </Step>
+    <Step>
+      <Name>10 Merge All Detections</Name>
+      <ToolType>OverlayMerge</ToolType>
+      <Enabled>true</Enabled>
+      <InputLayer>Main</InputLayer>
+      <OutputLayer>AllSymbols_Overlay</OutputLayer>
+      <Parameters>
+        <Parameter>
+          <Key>SourceLayers</Key>
+          <Value>TextSymbol_Contour;FaintTop_Contour;FaintPhone_Contour</Value>
+        </Parameter>
+        <Parameter>
+          <Key>BurnIn</Key>
+          <Value>true</Value>
+        </Parameter>
+        <Parameter>
+          <Key>DrawLabels</Key>
+          <Value>false</Value>
+        </Parameter>
+        <Parameter>
+          <Key>AllowEmpty</Key>
+          <Value>false</Value>
+        </Parameter>
+        <Parameter>
+          <Key>MaxPoints</Key>
+          <Value>300</Value>
+        </Parameter>
+      </Parameters>
+      <UseAcceptance>true</UseAcceptance>
+      <ExpectedSuccess>true</ExpectedSuccess>
+      <MaxElapsedMilliseconds>1000</MaxElapsedMilliseconds>
+      <AcceptanceMetricName>MergeOverlayCount</AcceptanceMetricName>
+      <UseAcceptanceMetricMinimum>true</UseAcceptanceMetricMinimum>
+      <AcceptanceMetricMinimum>37</AcceptanceMetricMinimum>
+      <UseAcceptanceMetricMaximum>true</UseAcceptanceMetricMaximum>
+      <AcceptanceMetricMaximum>100</AcceptanceMetricMaximum>
+    </Step>
   </Steps>
 </VisionPipeline>

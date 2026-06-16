@@ -162,6 +162,19 @@ namespace OpenVisionLab
             return step;
         }
 
+        public static VisionPipelineStep FromRotateScaleProperty(RotateScaleToolProperty property, string name, string inputLayer, string outputLayer)
+        {
+            if (property == null) { throw new ArgumentNullException(nameof(property)); }
+
+            VisionPipelineStep step = CreateStep(name, "RotateScale", inputLayer, outputLayer);
+            Add(step.Parameters, nameof(RotateScaleToolProperty.Angle), property.Angle);
+            Add(step.Parameters, nameof(RotateScaleToolProperty.ScaleXPercent), property.ScaleXPercent);
+            Add(step.Parameters, nameof(RotateScaleToolProperty.ScaleYPercent), property.ScaleYPercent);
+            Add(step.Parameters, nameof(RotateScaleToolProperty.Interpolation), property.Interpolation);
+            Add(step.Parameters, nameof(RotateScaleToolProperty.BorderType), property.BorderType);
+            return step;
+        }
+
         private static VisionPipelineStep CreateStep(string name, string toolType, string inputLayer, string outputLayer)
         {
             return new VisionPipelineStep

@@ -2,9 +2,10 @@ param(
     [string]$Configuration = "Debug",
     [string]$Platform = "Any CPU",
     [string]$OutputDir = "C:\Users\Public\Documents\ESTsoft\CreatorTemp\openvisionlab_ui_smoke",
-    [string]$Targets = "pipeline_form,pipeline_add_step_form,pipeline_add_step_branch_form,threshold_form",
-    [int]$TimeoutSeconds = 90,
-    [switch]$All
+    [string]$Targets = "pipeline_form,pipeline_designable_forms,pipeline_add_step_form,pipeline_add_step_branch_form,pipeline_property_grid_contract_check,log_panel_contract_check,pipeline_sample_open_preview,pipeline_sample_llm_open_preview,threshold_form",
+    [int]$TimeoutSeconds = 120,
+    [switch]$All,
+    [switch]$VisibleCapture
 )
 
 $ErrorActionPreference = "Stop"
@@ -35,9 +36,17 @@ else {
     @("--target", $Targets, $OutputDir)
 }
 
+if ($VisibleCapture) {
+    $arguments += "--visible-capture"
+}
+else {
+    $arguments += "--quiet"
+}
+
 Write-Host "== UI Screenshot Smoke =="
 Write-Host "Targets: $(if ($All) { 'ALL' } else { $Targets })"
 Write-Host "Timeout: $TimeoutSeconds sec"
+Write-Host "Capture: $(if ($VisibleCapture) { 'visible screen capture' } else { 'quiet offscreen render' })"
 
 Remove-Item -LiteralPath $stdoutPath, $stderrPath -ErrorAction SilentlyContinue
 $process = Start-Process -FilePath $exe -ArgumentList $arguments -NoNewWindow -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath

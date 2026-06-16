@@ -175,6 +175,16 @@ namespace OpenVisionLab
                         MEAN_MIN = GetInt(step.Parameters, nameof(MeanProperty.MEAN_MIN), 100),
                         MEAN_TYPES = GetEnum(step.Parameters, nameof(MeanProperty.MEAN_TYPES), MeanType.Mean)
                     }, step.Parameters), name, step.InputLayer, step.OutputLayer);
+                case "rotatescale":
+                case "rotateandscale":
+                    return AttachStepMetadata(new PipelineRotateScaleToolProperty
+                    {
+                        Angle = GetDouble(step.Parameters, nameof(RotateScaleToolProperty.Angle), 0d),
+                        ScaleXPercent = GetDouble(step.Parameters, nameof(RotateScaleToolProperty.ScaleXPercent), 100d),
+                        ScaleYPercent = GetDouble(step.Parameters, nameof(RotateScaleToolProperty.ScaleYPercent), 100d),
+                        Interpolation = GetEnum(step.Parameters, nameof(RotateScaleToolProperty.Interpolation), InterpolationFlags.Linear),
+                        BorderType = GetEnum(step.Parameters, nameof(RotateScaleToolProperty.BorderType), BorderTypes.Constant)
+                    }, name, step.InputLayer, step.OutputLayer);
                 case "feature":
                 case "featurematching":
                 case "sift":
@@ -244,6 +254,10 @@ namespace OpenVisionLab
             else if (property is EdgeDetectionToolProperty edgeDetection)
             {
                 mapped = VisionPipelineStepBuilder.FromEdgeDetectionProperty(edgeDetection, GetPropertyName(property, target.Name), inputLayer, outputLayer);
+            }
+            else if (property is RotateScaleToolProperty rotateScale)
+            {
+                mapped = VisionPipelineStepBuilder.FromRotateScaleProperty(rotateScale, GetPropertyName(property, target.Name), inputLayer, outputLayer);
             }
 
             if (mapped == null)
@@ -514,6 +528,8 @@ namespace OpenVisionLab
                     return "Filter";
                 case PipelineEdgeDetectionToolProperty _:
                     return "EdgeDetection";
+                case PipelineRotateScaleToolProperty _:
+                    return "RotateScale";
                 default:
                     return string.Empty;
             }
@@ -542,12 +558,14 @@ namespace OpenVisionLab
             [PropertyOrder(-2)]
             [Category("Step")]
             [DisplayName("Input Layer")]
+            [Description("Layer image used as this step input. Linked steps normally use the previous step output.")]
             [TypeConverter(typeof(PipelineLayerNameConverter))]
             public string InputLayer { get; set; } = "Main";
 
             [PropertyOrder(-1)]
             [Category("Step")]
             [DisplayName("Output Layer")]
+            [Description("Layer name that stores this step result. Use a unique name when the result must be reviewed later.")]
             [TypeConverter(typeof(PipelineLayerNameConverter))]
             public string OutputLayer { get; set; } = "Pipeline_Output";
 
@@ -631,12 +649,14 @@ namespace OpenVisionLab
             [PropertyOrder(-2)]
             [Category("Step")]
             [DisplayName("Input Layer")]
+            [Description("Layer image used as this step input. Linked steps normally use the previous step output.")]
             [TypeConverter(typeof(PipelineLayerNameConverter))]
             public string InputLayer { get; set; } = "Main";
 
             [PropertyOrder(-1)]
             [Category("Step")]
             [DisplayName("Output Layer")]
+            [Description("Layer name that stores this step result. Use a unique name when the result must be reviewed later.")]
             [TypeConverter(typeof(PipelineLayerNameConverter))]
             public string OutputLayer { get; set; } = "Pipeline_Output";
 
@@ -1038,16 +1058,14 @@ namespace OpenVisionLab
         }
 
         [CategoryOrder("Step", -1)]
+        [CategoryOrder("Transform", 0)]
         [CategoryOrder("Acceptance", 20)]
-        [CategoryOrder("Threshold", 0)]
-        [CategoryOrder("Range", 1)]
-        [CategoryOrder("Adaptive Threshold", 2)]
-        private sealed class PipelineThresholdToolProperty : ThresholdToolProperty, IPipelineStepMetadata
+        private sealed class PipelineRotateScaleToolProperty : RotateScaleToolProperty, IPipelineStepMetadata
         {
             [PropertyOrder(-3)]
             [Category("Step")]
             [DisplayName("Step Name")]
-            public string NAME { get; set; } = "Threshold";
+            public string NAME { get; set; } = "RotateScale";
 
             [Browsable(false)]
             public string PipelineStepName
@@ -1074,8 +1092,153 @@ namespace OpenVisionLab
             public bool Enabled { get; set; } = true;
 
             [PropertyOrder(0)]
+            [Category("Transform")]
+            [DisplayName("Angle")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(-180, 180, 1, 1)]
+            [Description("Rotation angle in degrees. Use small changes while previewing alignment-sensitive images.")]
+            public new double Angle
+            {
+                get => base.Angle;
+                set => base.Angle = value;
+            }
+
+            [PropertyOrder(1)]
+            [Category("Transform")]
+            [DisplayName("Scale X (%)")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(1, 300, 1, 1)]
+            [Description("Horizontal scale percent. Values must stay greater than 0.")]
+            public new double ScaleXPercent
+            {
+                get => base.ScaleXPercent;
+                set => base.ScaleXPercent = value;
+            }
+
+            [PropertyOrder(2)]
+            [Category("Transform")]
+            [DisplayName("Scale Y (%)")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(1, 300, 1, 1)]
+            [Description("Vertical scale percent. Values must stay greater than 0.")]
+            public new double ScaleYPercent
+            {
+                get => base.ScaleYPercent;
+                set => base.ScaleYPercent = value;
+            }
+
+            [PropertyOrder(3)]
+            [Category("Transform")]
+            [DisplayName("Interpolation")]
+            public new InterpolationFlags Interpolation
+            {
+                get => base.Interpolation;
+                set => base.Interpolation = value;
+            }
+
+            [PropertyOrder(4)]
+            [Category("Transform")]
+            [DisplayName("Border type")]
+            public new BorderTypes BorderType
+            {
+                get => base.BorderType;
+                set => base.BorderType = value;
+            }
+
+            [PropertyOrder(1)]
+            [Category("Acceptance")]
+            [DisplayName("Use Acceptance")]
+            public bool UseAcceptance { get; set; }
+
+            [PropertyOrder(2)]
+            [Category("Acceptance")]
+            [DisplayName("Expected Success")]
+            public bool ExpectedSuccess { get; set; } = true;
+
+            [PropertyOrder(3)]
+            [Category("Acceptance")]
+            [DisplayName("Max Elapsed (ms)")]
+            public double MaxElapsedMilliseconds { get; set; }
+
+            [PropertyOrder(4)]
+            [Category("Acceptance")]
+            [DisplayName("Required Message")]
+            public string RequiredMessageText { get; set; } = string.Empty;
+
+            [PropertyOrder(5)]
+            [Category("Acceptance")]
+            [DisplayName("Acceptance Metric")]
+            [TypeConverter(typeof(PipelineMetricNameConverter))]
+            public string AcceptanceMetricName { get; set; } = string.Empty;
+
+            [PropertyOrder(6)]
+            [Browsable(false)]
+            [Category("Acceptance")]
+            [DisplayName("Use Metric Min")]
+            public bool UseAcceptanceMetricMinimum { get; set; }
+
+            [PropertyOrder(7)]
+            [PropertyEditor(typeof(WpgMetricRangeEditor))]
+            [MetricRangeEditor(3, nameof(UseAcceptanceMetricMinimum), nameof(AcceptanceMetricMinimum), nameof(UseAcceptanceMetricMaximum), nameof(AcceptanceMetricMaximum))]
+            [Category("Acceptance")]
+            [DisplayName("Metric range")]
+            public double AcceptanceMetricMinimum { get; set; }
+
+            [PropertyOrder(8)]
+            [Browsable(false)]
+            [Category("Acceptance")]
+            [DisplayName("Use Metric Max")]
+            public bool UseAcceptanceMetricMaximum { get; set; }
+
+            [PropertyOrder(9)]
+            [Browsable(false)]
+            [Category("Acceptance")]
+            [DisplayName("Metric Max")]
+            public double AcceptanceMetricMaximum { get; set; }
+        }
+
+        [CategoryOrder("Step", -1)]
+        [CategoryOrder("Acceptance", 20)]
+        [CategoryOrder("Threshold", 0)]
+        [CategoryOrder("Range", 1)]
+        [CategoryOrder("Adaptive Threshold", 2)]
+        private sealed class PipelineThresholdToolProperty : ThresholdToolProperty, IPipelineStepMetadata
+        {
+            [PropertyOrder(-3)]
+            [Category("Step")]
+            [DisplayName("Step Name")]
+            public string NAME { get; set; } = "Threshold";
+
+            [Browsable(false)]
+            public string PipelineStepName
+            {
+                get => NAME;
+                set => NAME = value;
+            }
+
+            [PropertyOrder(-2)]
+            [Category("Step")]
+            [DisplayName("Input Layer")]
+            [Description("Layer image used as this step input. Linked steps normally use the previous step output.")]
+            [TypeConverter(typeof(PipelineLayerNameConverter))]
+            public string InputLayer { get; set; } = "Main";
+
+            [PropertyOrder(-1)]
+            [Category("Step")]
+            [DisplayName("Output Layer")]
+            [Description("Layer name that stores this step result. Use a unique name when the result must be reviewed later.")]
+            [TypeConverter(typeof(PipelineLayerNameConverter))]
+            public string OutputLayer { get; set; } = "Pipeline_Output";
+
+            [PropertyOrder(0)]
+            [Category("Step")]
+            [DisplayName("Enabled")]
+            public bool Enabled { get; set; } = true;
+
+            [PropertyOrder(0)]
             [Category("Threshold")]
             [DisplayName("Mode")]
+            [Description("Threshold uses one gray value, Range uses lower and upper gray limits, Adaptive calculates a local threshold.")]
             public new ThresholdToolMode Mode
             {
                 get => base.Mode;
@@ -1088,6 +1251,7 @@ namespace OpenVisionLab
             [NumberRange(0, 255, 1, 0)]
             [Category("Threshold")]
             [DisplayName("Threshold")]
+            [Description("Single threshold value. Pixels are classified by this gray level and the selected threshold type.")]
             public new double Threshold
             {
                 get => base.Threshold;
@@ -1119,6 +1283,7 @@ namespace OpenVisionLab
             [RangeEditor(0, 255, 1, 0, nameof(RangeMin), nameof(RangeMax), nameof(Invert))]
             [Category("Range")]
             [DisplayName("Range min")]
+            [Description("Combined range threshold. Adjust Min and Max together; Invert selects pixels outside the range.")]
             public new int RangeMin
             {
                 get => base.RangeMin;
@@ -1148,6 +1313,7 @@ namespace OpenVisionLab
             [PropertyOrder(0)]
             [Category("Adaptive Threshold")]
             [DisplayName("Algorithm")]
+            [Description("Adaptive threshold algorithm. MeanC is stable for broad lighting changes; GaussianC gives more local weighting.")]
             public new AdaptiveThresholdTypes AdaptiveType
             {
                 get => base.AdaptiveType;
@@ -1166,6 +1332,9 @@ namespace OpenVisionLab
             [PropertyOrder(2)]
             [Category("Adaptive Threshold")]
             [DisplayName("Block size")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(3, 255, 2, 0)]
+            [Description("Adaptive window size. Use odd values; larger windows are smoother and slower.")]
             public new int BlockSize
             {
                 get => base.BlockSize;
@@ -1175,6 +1344,9 @@ namespace OpenVisionLab
             [PropertyOrder(3)]
             [Category("Adaptive Threshold")]
             [DisplayName("Weight")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(-50, 50, 1, 0)]
+            [Description("Adaptive correction value. Positive values make the result stricter.")]
             public new int Weight
             {
                 get => base.Weight;
@@ -1288,6 +1460,9 @@ namespace OpenVisionLab
             [PropertyOrder(2)]
             [Category("Morphology")]
             [DisplayName("Kernel width")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(1, 99, 1, 0)]
+            [Description("Morphology kernel width. Increase to connect nearby pixels or remove wider noise.")]
             public new int KernelWidth
             {
                 get => base.KernelWidth;
@@ -1297,6 +1472,9 @@ namespace OpenVisionLab
             [PropertyOrder(3)]
             [Category("Morphology")]
             [DisplayName("Kernel height")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(1, 99, 1, 0)]
+            [Description("Morphology kernel height. Increase to connect vertical gaps or remove taller noise.")]
             public new int KernelHeight
             {
                 get => base.KernelHeight;
@@ -1306,6 +1484,9 @@ namespace OpenVisionLab
             [PropertyOrder(4)]
             [Category("Morphology")]
             [DisplayName("Iterations")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(1, 20, 1, 0)]
+            [Description("Number of repeated morphology operations. Keep this low unless the preview proves it is needed.")]
             public new int Iterations
             {
                 get => base.Iterations;
@@ -1421,6 +1602,9 @@ namespace OpenVisionLab
             [PropertyOrder(0)]
             [Category("Kernel")]
             [DisplayName("Kernel width")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(1, 99, 1, 0)]
+            [Description("Filter kernel width used by blur-like filters.")]
             public new int KernelWidth
             {
                 get => base.KernelWidth;
@@ -1430,6 +1614,9 @@ namespace OpenVisionLab
             [PropertyOrder(1)]
             [Category("Kernel")]
             [DisplayName("Kernel height")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(1, 99, 1, 0)]
+            [Description("Filter kernel height used by blur-like filters.")]
             public new int KernelHeight
             {
                 get => base.KernelHeight;
@@ -1439,6 +1626,9 @@ namespace OpenVisionLab
             [PropertyOrder(2)]
             [Category("Kernel")]
             [DisplayName("Median kernel size")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(3, 99, 2, 0)]
+            [Description("Median blur kernel size. Use odd values such as 3, 5, 7.")]
             public new int MedianKernelSize
             {
                 get => base.MedianKernelSize;
@@ -1448,6 +1638,9 @@ namespace OpenVisionLab
             [PropertyOrder(0)]
             [Category("Bilateral")]
             [DisplayName("Diameter")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(1, 99, 1, 0)]
+            [Description("Bilateral filter neighborhood diameter.")]
             public new int Diameter
             {
                 get => base.Diameter;
@@ -1457,6 +1650,9 @@ namespace OpenVisionLab
             [PropertyOrder(1)]
             [Category("Bilateral")]
             [DisplayName("Sigma color")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(0, 255, 1, 0)]
+            [Description("Bilateral color sigma. Larger values smooth across stronger intensity differences.")]
             public new int SigmaColor
             {
                 get => base.SigmaColor;
@@ -1466,6 +1662,9 @@ namespace OpenVisionLab
             [PropertyOrder(2)]
             [Category("Bilateral")]
             [DisplayName("Sigma space")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(0, 255, 1, 0)]
+            [Description("Bilateral spatial sigma. Larger values use a wider spatial neighborhood.")]
             public new int SigmaSpace
             {
                 get => base.SigmaSpace;
@@ -1574,6 +1773,8 @@ namespace OpenVisionLab
             [PropertyOrder(0)]
             [Category("Canny")]
             [DisplayName("Low threshold")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(0, 255, 1, 0)]
             public new int CannyThresholdLow
             {
                 get => base.CannyThresholdLow;
@@ -1583,6 +1784,8 @@ namespace OpenVisionLab
             [PropertyOrder(1)]
             [Category("Canny")]
             [DisplayName("High threshold")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(0, 255, 1, 0)]
             public new int CannyThresholdHigh
             {
                 get => base.CannyThresholdHigh;
@@ -1592,6 +1795,8 @@ namespace OpenVisionLab
             [PropertyOrder(2)]
             [Category("Canny")]
             [DisplayName("Aperture size")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(3, 7, 2, 0)]
             public new int CannyApertureSize
             {
                 get => base.CannyApertureSize;
@@ -1610,6 +1815,8 @@ namespace OpenVisionLab
             [PropertyOrder(0)]
             [Category("Sobel")]
             [DisplayName("Degree X")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(0, 2, 1, 0)]
             public new int SobelDegreeX
             {
                 get => base.SobelDegreeX;
@@ -1619,6 +1826,8 @@ namespace OpenVisionLab
             [PropertyOrder(1)]
             [Category("Sobel")]
             [DisplayName("Degree Y")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(0, 2, 1, 0)]
             public new int SobelDegreeY
             {
                 get => base.SobelDegreeY;
@@ -1628,6 +1837,8 @@ namespace OpenVisionLab
             [PropertyOrder(2)]
             [Category("Sobel")]
             [DisplayName("Kernel size")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(1, 31, 2, 0)]
             public new int SobelKernelSize
             {
                 get => base.SobelKernelSize;
@@ -1637,6 +1848,8 @@ namespace OpenVisionLab
             [PropertyOrder(0)]
             [Category("Scharr")]
             [DisplayName("Degree X")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(0, 1, 1, 0)]
             public new int ScharrDegreeX
             {
                 get => base.ScharrDegreeX;
@@ -1646,6 +1859,8 @@ namespace OpenVisionLab
             [PropertyOrder(1)]
             [Category("Scharr")]
             [DisplayName("Degree Y")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(0, 1, 1, 0)]
             public new int ScharrDegreeY
             {
                 get => base.ScharrDegreeY;
@@ -1655,6 +1870,8 @@ namespace OpenVisionLab
             [PropertyOrder(0)]
             [Category("Laplacian")]
             [DisplayName("Kernel size")]
+            [PropertyEditor(typeof(WpgSliderEditor))]
+            [NumberRange(1, 31, 2, 0)]
             public new int LaplacianKernelSize
             {
                 get => base.LaplacianKernelSize;

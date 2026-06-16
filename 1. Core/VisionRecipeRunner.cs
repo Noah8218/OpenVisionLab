@@ -89,6 +89,11 @@ namespace OpenVisionLab
             }
 
             string sourceLayer = string.IsNullOrWhiteSpace(inputLayerName) ? DefaultInputLayer : inputLayerName;
+            List<string> normalizationMessages = VisionPipelineNormalizer.NormalizeForRun(pipeline)
+                .Select(change => change.Message)
+                .Where(message => !string.IsNullOrWhiteSpace(message))
+                .ToList();
+
             using (VisionPipelineContext context = new VisionPipelineContext())
             {
                 context.SetLayer(sourceLayer, sourceImage);
@@ -101,7 +106,7 @@ namespace OpenVisionLab
                         stepTimeoutMilliseconds,
                         cancellationToken);
 
-                    return CreateResult(pipeline, context, runResult);
+                    return CreateResult(pipeline, context, runResult, normalizationMessages);
                 }
                 finally
                 {
@@ -113,7 +118,8 @@ namespace OpenVisionLab
         private static VisionRecipeRunResult CreateResult(
             VisionPipeline pipeline,
             VisionPipelineContext context,
-            VisionPipelineRunResult runResult)
+            VisionPipelineRunResult runResult,
+            IEnumerable<string> normalizationMessages)
         {
             List<VisionRecipeStepRunSummary> steps = CreateStepSummaries(runResult);
             VisionRecipeStepRunSummary lastOutputStep = steps
@@ -144,7 +150,8 @@ namespace OpenVisionLab
                 ResultImageWidth = resultImage != null && !resultImage.Empty() ? resultImage.Width : 0,
                 ResultImageHeight = resultImage != null && !resultImage.Empty() ? resultImage.Height : 0,
                 TotalMilliseconds = steps.Sum(step => step.ElapsedMilliseconds),
-                Steps = steps
+                Steps = steps,
+                NormalizationMessages = (normalizationMessages ?? Enumerable.Empty<string>()).ToList()
             };
         }
 
@@ -156,6 +163,12 @@ namespace OpenVisionLab
             {
                 VisionPipelineStepResult stepResult = stepResults[i];
                 VisionPipelineStep step = stepResult?.Step;
+                string resolvedMessage = VisionPipelineResultSummaryService.ResolveMessage(stepResult);
+                List<VisionRecipeOverlaySummary> overlays = CreateOverlaySummaries(stepResult?.ToolResult?.Overlays);
+                Dictionary<string, double> metrics = VisionPipelineMetricEnrichmentService.CreateEnrichedMetrics(
+                    stepResult?.ToolResult?.Metrics,
+                    stepResult?.ToolResult?.Overlays,
+                    step);
                 summaries.Add(new VisionRecipeStepRunSummary
                 {
                     Index = i + 1,
@@ -169,7 +182,12 @@ namespace OpenVisionLab
                     AcceptancePassed = stepResult?.AcceptancePassed == true,
                     AcceptanceMessage = stepResult?.AcceptanceMessage ?? string.Empty,
                     ElapsedMilliseconds = stepResult?.ToolResult?.Elapsed.TotalMilliseconds ?? 0d,
-                    Message = VisionPipelineResultSummaryService.ResolveMessage(stepResult),
+                    Message = resolvedMessage,
+                    ErrorCode = stepResult?.ToolResult?.ErrorCodeValue ?? 0,
+                    ErrorName = stepResult?.ToolResult?.ErrorName ?? VisionToolErrorCode.None.ToString(),
+                    ResultStatus = stepResult?.ToolResult?.ResultStatusName ?? string.Empty,
+                    DiagnosticHint = VisionPipelineStepDiagnosticService.ResolveDiagnosticHint(stepResult, resolvedMessage),
+                    SuggestedFix = VisionPipelineStepDiagnosticService.ResolveSuggestedFix(stepResult, resolvedMessage),
                     HasResultImage = stepResult?.ToolResult?.ResultImage != null
                         && !stepResult.ToolResult.ResultImage.Empty(),
                     ResultImageWidth = stepResult?.ToolResult?.ResultImage != null
@@ -180,13 +198,19 @@ namespace OpenVisionLab
                         && !stepResult.ToolResult.ResultImage.Empty()
                             ? stepResult.ToolResult.ResultImage.Height
                             : 0,
+                    ResultImageChannelCount = stepResult?.ToolResult?.ResultImage != null
+                        && !stepResult.ToolResult.ResultImage.Empty()
+                            ? stepResult.ToolResult.ResultImage.Channels()
+                            : 0,
                     OverlayCount = stepResult?.ToolResult?.Overlays?.Count ?? 0,
-                    MetricCount = stepResult?.ToolResult?.Metrics?.Count ?? 0,
+                    MetricCount = metrics.Count,
                     ParameterCount = step?.Parameters?.Count ?? 0,
-                    Metrics = VisionPipelineKnownMetrics.OrderMetrics(stepResult?.ToolResult?.Metrics)
-                        .ToDictionary(metric => metric.Key, metric => metric.Value, StringComparer.OrdinalIgnoreCase),
-                    MetricsText = VisionPipelineKnownMetrics.FormatMetrics(stepResult?.ToolResult?.Metrics),
-                    Overlays = CreateOverlaySummaries(stepResult?.ToolResult?.Overlays)
+                    Parameters = new Dictionary<string, string>(
+                        step?.Parameters ?? new Dictionary<string, string>(),
+                        StringComparer.OrdinalIgnoreCase),
+                    Metrics = metrics,
+                    MetricsText = VisionPipelineKnownMetrics.FormatMetrics(metrics),
+                    Overlays = overlays
                 });
             }
 
@@ -212,7 +236,14 @@ namespace OpenVisionLab
                     EndX = overlay.End.X,
                     EndY = overlay.End.Y,
                     Angle = overlay.Angle,
-                    PointCount = overlay.Points?.Count ?? 0
+                    PointCount = overlay.Points?.Count ?? 0,
+                    Points = (overlay.Points ?? new List<System.Drawing.PointF>())
+                        .Select(point => new VisionRecipeOverlayPointSummary
+                        {
+                            X = point.X,
+                            Y = point.Y
+                        })
+                        .ToList()
                 })
                 .ToList();
         }
@@ -253,6 +284,7 @@ namespace OpenVisionLab
 
     public sealed class VisionRecipeRunResult : IDisposable
     {
+        public string SchemaVersion { get; set; } = "1.2";
         public string PipelineName { get; set; } = string.Empty;
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -264,9 +296,127 @@ namespace OpenVisionLab
         public int ResultImageHeight { get; set; }
         public double TotalMilliseconds { get; set; }
         public List<VisionRecipeStepRunSummary> Steps { get; set; } = new List<VisionRecipeStepRunSummary>();
+        public List<string> NormalizationMessages { get; set; } = new List<string>();
+        public int StepCount => Steps?.Count ?? 0;
+        public int PassedStepCount => Steps?.Count(step => step.Success && !step.Skipped) ?? 0;
+        public int FailedStepCount => Steps?.Count(step => !step.Success && !step.Skipped) ?? 0;
+        public int SkippedStepCount => Steps?.Count(step => step.Skipped) ?? 0;
+        public VisionRecipeStepRunSummary FirstFailedStep => Steps?.FirstOrDefault(step => !step.Success && !step.Skipped);
+        public bool HasFailedStep => FirstFailedStep != null;
+        public VisionRecipeStepRunSummary FinalStepSummary => Steps?.LastOrDefault(step => !step.Skipped);
+        public int FirstFailedStepIndex => FirstFailedStep?.Index ?? 0;
+        public string FirstFailedStepName => FirstFailedStep?.Name ?? string.Empty;
+        public int FirstFailedErrorCode => FirstFailedStep?.ErrorCode ?? 0;
+        public string FirstFailedErrorName => FirstFailedStep?.ErrorName ?? string.Empty;
+        public string FirstFailedResultStatus => FirstFailedStep?.ResultStatus ?? string.Empty;
+        public string FirstFailedDiagnosticHint => FirstFailedStep?.DiagnosticHint ?? string.Empty;
+        public string FirstFailedSuggestedFix => FirstFailedStep?.SuggestedFix ?? string.Empty;
+        public string FirstFailedSummaryText
+        {
+            get
+            {
+                if (!HasFailedStep)
+                {
+                    return "None";
+                }
+
+                string stepText = string.IsNullOrWhiteSpace(FirstFailedStepName)
+                    ? FirstFailedStepIndex.ToString()
+                    : $"{FirstFailedStepIndex}:{FirstFailedStepName}";
+                string errorText = FirstFailedErrorCode == 0 && string.IsNullOrWhiteSpace(FirstFailedErrorName)
+                    ? "Error=-"
+                    : $"Error={FirstFailedErrorCode}:{FirstFailedErrorName}";
+                string statusText = string.IsNullOrWhiteSpace(FirstFailedResultStatus)
+                    ? "Status=-"
+                    : $"Status={FirstFailedResultStatus}";
+                string hintText = string.IsNullOrWhiteSpace(FirstFailedDiagnosticHint)
+                    ? string.Empty
+                    : $" | Hint={FirstFailedDiagnosticHint}";
+                string fixText = string.IsNullOrWhiteSpace(FirstFailedSuggestedFix)
+                    ? string.Empty
+                    : $" | Fix={FirstFailedSuggestedFix}";
+
+                return $"{stepText} | {errorText} | {statusText}{hintText}{fixText}";
+            }
+        }
+        public int FinalMetricCount => FinalStepSummary?.MetricCount ?? 0;
+        public int FinalOverlayCount => FinalStepSummary?.OverlayCount ?? 0;
+        public string FinalMetricsText => FinalStepSummary?.MetricsText ?? string.Empty;
+        public bool HasFinalResultImage => ResultImage != null && !ResultImage.Empty();
+        public string OutcomeText => Success ? "OK" : "NG";
+        public string NormalizationText => NormalizationMessages == null || NormalizationMessages.Count == 0
+            ? string.Empty
+            : string.Join(" | ", NormalizationMessages);
         public string ResultImageSizeText => ResultImageWidth > 0 && ResultImageHeight > 0
             ? $"{ResultImageWidth} x {ResultImageHeight}"
             : string.Empty;
+        public string SummaryText
+        {
+            get
+            {
+                string finalText = string.IsNullOrWhiteSpace(FinalLayer)
+                    ? "Final=-"
+                    : $"Final={FinalLayer}";
+                string metricText = string.IsNullOrWhiteSpace(FinalMetricsText)
+                    ? $"Metrics={FinalMetricCount}"
+                    : FinalMetricsText;
+                string failureText = FirstFailedStepIndex > 0
+                    ? $" | Failed={FirstFailedStepIndex}:{FirstFailedStepName} {FirstFailedErrorCode}:{FirstFailedErrorName}"
+                    : string.Empty;
+                return $"{OutcomeText} | {finalText} | Steps={PassedStepCount}/{StepCount} | {metricText} | Overlays={FinalOverlayCount}{failureText}";
+            }
+        }
+        public string ActionSummaryText
+        {
+            get
+            {
+                if (Success)
+                {
+                    string finalText = string.IsNullOrWhiteSpace(FinalLayer)
+                        ? "final result"
+                        : $"final layer '{FinalLayer}'";
+                    return $"Preview OK. Review {finalText}, metrics, and overlays.";
+                }
+
+                if (HasFailedStep)
+                {
+                    string stepText = string.IsNullOrWhiteSpace(FirstFailedStepName)
+                        ? $"step {FirstFailedStepIndex:00}"
+                        : $"step {FirstFailedStepIndex:00} '{FirstFailedStepName}'";
+                    string fixText = !string.IsNullOrWhiteSpace(FirstFailedSuggestedFix)
+                        ? FirstFailedSuggestedFix
+                        : !string.IsNullOrWhiteSpace(FirstFailedDiagnosticHint)
+                            ? FirstFailedDiagnosticHint
+                            : Message;
+                    return string.IsNullOrWhiteSpace(fixText)
+                        ? $"Preview NG. Fix {stepText}."
+                        : $"Preview NG. Fix {stepText}: {fixText}";
+                }
+
+                return string.IsNullOrWhiteSpace(Message)
+                    ? "Preview NG. Check pipeline validation and run log."
+                    : $"Preview NG. {Message}";
+            }
+        }
+        public string StepSummaryText => Steps == null || Steps.Count == 0
+            ? string.Empty
+            : string.Join(" | ", Steps.Select(FormatStepSummary));
+
+        private static string FormatStepSummary(VisionRecipeStepRunSummary step)
+        {
+            if (step == null)
+            {
+                return string.Empty;
+            }
+
+            string status = string.IsNullOrWhiteSpace(step.Status) ? "-" : step.Status;
+            string name = string.IsNullOrWhiteSpace(step.Name) ? "Step" : step.Name;
+            string tool = string.IsNullOrWhiteSpace(step.ToolType) ? "-" : step.ToolType;
+            string input = string.IsNullOrWhiteSpace(step.InputLayer) ? "-" : step.InputLayer;
+            string output = string.IsNullOrWhiteSpace(step.OutputLayer) ? "-" : step.OutputLayer;
+            string error = step.ErrorCode == 0 ? string.Empty : $" Error={step.ErrorCode}:{step.ErrorName}";
+            return $"{step.Index:00} {status} {name} [{tool}] {input}->{output}{error}";
+        }
 
         public void Dispose()
         {
@@ -289,12 +439,20 @@ namespace OpenVisionLab
         public string AcceptanceMessage { get; set; } = string.Empty;
         public double ElapsedMilliseconds { get; set; }
         public string Message { get; set; } = string.Empty;
+        public int ErrorCode { get; set; }
+        public string ErrorName { get; set; } = string.Empty;
+        public string ResultStatus { get; set; } = string.Empty;
+        public string DiagnosticHint { get; set; } = string.Empty;
+        public string SuggestedFix { get; set; } = string.Empty;
+        public bool HasError => ErrorCode != 0;
         public bool HasResultImage { get; set; }
         public int ResultImageWidth { get; set; }
         public int ResultImageHeight { get; set; }
+        public int ResultImageChannelCount { get; set; }
         public int OverlayCount { get; set; }
         public int MetricCount { get; set; }
         public int ParameterCount { get; set; }
+        public Dictionary<string, string> Parameters { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         public Dictionary<string, double> Metrics { get; set; } = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
         public string MetricsText { get; set; } = string.Empty;
         public List<VisionRecipeOverlaySummary> Overlays { get; set; } = new List<VisionRecipeOverlaySummary>();
@@ -319,5 +477,12 @@ namespace OpenVisionLab
         public float EndY { get; set; }
         public double Angle { get; set; }
         public int PointCount { get; set; }
+        public List<VisionRecipeOverlayPointSummary> Points { get; set; } = new List<VisionRecipeOverlayPointSummary>();
+    }
+
+    public sealed class VisionRecipeOverlayPointSummary
+    {
+        public float X { get; set; }
+        public float Y { get; set; }
     }
 }

@@ -10,7 +10,21 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\OpenVisionLab.csproj" />
+    <ProjectReference Include="..\..\Library\OpenVisionLab.Logging\OpenVisionLab.Logging.csproj" />
+    <ProjectReference Include="..\..\Library\OpenVisionLab.Logging.Controls\OpenVisionLab.Logging.Controls.csproj" />
     <ProjectReference Include="..\..\Library\OpenVisionLab.MessageBox\OpenVisionLab.MessageBox.csproj" />
+    <ProjectReference Include="..\..\..\Library-Noah\Lib.Common\Lib.Common.csproj" />
     <ProjectReference Include="..\..\..\Library-Noah\Lib.OpenCV\Lib.OpenCV.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="OpenCvSharp">
+      <HintPath>..\..\..\Library-Noah\Lib.Common\DLL\OpenCvSharp.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="OpenCvSharp.Extensions">
+      <HintPath>..\..\..\Library-Noah\Lib.Common\DLL\OpenCvSharp.Extensions.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
   </ItemGroup>
 </Project>

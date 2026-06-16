@@ -160,6 +160,8 @@
     <Compile Remove="Library\OpenVisionLab.ImageSpace.Core\**\*.cs" />
     <Compile Remove="Library\PropertyGrid.Abstractions\**\*.cs" />
     <Compile Remove="Library\WpfPropertyGridBridge\**\*.cs" />
+    <Compile Remove="0. UI\6) Vision Test\FormVision_EdgeDection.cs" />
+    <Compile Remove="0. UI\6) Vision Test\FormVision_EdgeDection.Designer.cs" />
     <Compile Remove="tools\**\*.cs" />
     <EmbeddedResource Remove="Library\RJControls\**\*.resx" />
     <EmbeddedResource Remove="Library\OpenVisionLab.Controls.Init\**\*.resx" />
@@ -169,6 +171,7 @@
     <EmbeddedResource Remove="Library\OpenVisionLab.Logging.Controls\**\*.resx" />
     <EmbeddedResource Remove="Library\OpenVisionLab.MessageBox\**\*.resx" />
     <EmbeddedResource Remove="Library\Controls.Viewer2D\**\*.resx" />
+    <EmbeddedResource Remove="0. UI\6) Vision Test\FormVision_EdgeDection.resx" />
     <EmbeddedResource Remove="0. UI\0) MENU\FormMainFrame.*.resx" />
     <Page Remove="Library\OpenVisionLab.ImageCanvas\**\*.xaml" />
     <Page Remove="Library\OpenVisionLab.Logging\**\*.xaml" />

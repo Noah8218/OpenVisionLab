@@ -105,9 +105,7 @@ namespace OpenVisionLab
                 {
                     EdgeDetectionTool tool = new EdgeDetectionTool();
                     tool.SetProperty(property);
-                    tool.SetSourceImage(image);
-                    tool.Run();
-                    tool.imageResult.CopyTo(image);
+                    CopyVisionToolResultImage(image, ExecuteVisionTool(tool, image));
                 });
                 PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
             });

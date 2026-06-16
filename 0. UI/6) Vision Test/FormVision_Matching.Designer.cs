@@ -40,15 +40,26 @@
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.btnRun = new RJCodeUI_M1.RJControls.RJButton();
             this.pnParameter = new RJCodeUI_M1.RJControls.RJPanel();
+            this.groupBoxMatchReview = new System.Windows.Forms.GroupBox();
+            this.pbTemplate = new System.Windows.Forms.PictureBox();
+            this.pbDetectedCrop = new System.Windows.Forms.PictureBox();
+            this.lblTemplateTitle = new System.Windows.Forms.Label();
+            this.lblDetectedTitle = new System.Windows.Forms.Label();
+            this.lblMatchSummaryTitle = new System.Windows.Forms.Label();
+            this.lblMatchSummary = new System.Windows.Forms.Label();
             this.pnlClientArea.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.btnNewPanel_Desty)).BeginInit();
+            this.groupBoxMatchReview.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pbTemplate)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbDetectedCrop)).BeginInit();
             this.SuspendLayout();
             // 
             // pnlClientArea
             // 
             this.pnlClientArea.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
+            this.pnlClientArea.Controls.Add(this.groupBoxMatchReview);
             this.pnlClientArea.Controls.Add(this.pnParameter);
             this.pnlClientArea.Controls.Add(this.btnRun);
             this.pnlClientArea.Location = new System.Drawing.Point(1, 41);
@@ -222,8 +233,94 @@
             this.pnParameter.Customizable = false;
             this.pnParameter.Location = new System.Drawing.Point(423, 17);
             this.pnParameter.Name = "pnParameter";
-            this.pnParameter.Size = new System.Drawing.Size(488, 484);
+            this.pnParameter.Size = new System.Drawing.Size(488, 327);
             this.pnParameter.TabIndex = 2162;
+            // 
+            // groupBoxMatchReview
+            // 
+            this.groupBoxMatchReview.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(245)))), ((int)(((byte)(249)))));
+            this.groupBoxMatchReview.Controls.Add(this.lblMatchSummary);
+            this.groupBoxMatchReview.Controls.Add(this.lblMatchSummaryTitle);
+            this.groupBoxMatchReview.Controls.Add(this.lblDetectedTitle);
+            this.groupBoxMatchReview.Controls.Add(this.lblTemplateTitle);
+            this.groupBoxMatchReview.Controls.Add(this.pbDetectedCrop);
+            this.groupBoxMatchReview.Controls.Add(this.pbTemplate);
+            this.groupBoxMatchReview.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.groupBoxMatchReview.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(85)))), ((int)(((byte)(132)))));
+            this.groupBoxMatchReview.Location = new System.Drawing.Point(423, 350);
+            this.groupBoxMatchReview.Name = "groupBoxMatchReview";
+            this.groupBoxMatchReview.Size = new System.Drawing.Size(488, 197);
+            this.groupBoxMatchReview.TabIndex = 2163;
+            this.groupBoxMatchReview.TabStop = false;
+            this.groupBoxMatchReview.Text = "Match Review";
+            // 
+            // pbTemplate
+            // 
+            this.pbTemplate.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(18)))), ((int)(((byte)(20)))), ((int)(((byte)(24)))));
+            this.pbTemplate.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pbTemplate.Location = new System.Drawing.Point(13, 45);
+            this.pbTemplate.Name = "pbTemplate";
+            this.pbTemplate.Size = new System.Drawing.Size(136, 139);
+            this.pbTemplate.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.pbTemplate.TabIndex = 0;
+            this.pbTemplate.TabStop = false;
+            // 
+            // pbDetectedCrop
+            // 
+            this.pbDetectedCrop.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(18)))), ((int)(((byte)(20)))), ((int)(((byte)(24)))));
+            this.pbDetectedCrop.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pbDetectedCrop.Location = new System.Drawing.Point(164, 45);
+            this.pbDetectedCrop.Name = "pbDetectedCrop";
+            this.pbDetectedCrop.Size = new System.Drawing.Size(136, 139);
+            this.pbDetectedCrop.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.pbDetectedCrop.TabIndex = 1;
+            this.pbDetectedCrop.TabStop = false;
+            // 
+            // lblTemplateTitle
+            // 
+            this.lblTemplateTitle.AutoSize = true;
+            this.lblTemplateTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.lblTemplateTitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(85)))), ((int)(((byte)(132)))));
+            this.lblTemplateTitle.Location = new System.Drawing.Point(13, 23);
+            this.lblTemplateTitle.Name = "lblTemplateTitle";
+            this.lblTemplateTitle.Size = new System.Drawing.Size(110, 13);
+            this.lblTemplateTitle.TabIndex = 2;
+            this.lblTemplateTitle.Text = "Template to Match";
+            // 
+            // lblDetectedTitle
+            // 
+            this.lblDetectedTitle.AutoSize = true;
+            this.lblDetectedTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.lblDetectedTitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(85)))), ((int)(((byte)(132)))));
+            this.lblDetectedTitle.Location = new System.Drawing.Point(164, 23);
+            this.lblDetectedTitle.Name = "lblDetectedTitle";
+            this.lblDetectedTitle.Size = new System.Drawing.Size(82, 13);
+            this.lblDetectedTitle.TabIndex = 3;
+            this.lblDetectedTitle.Text = "Detected Crop";
+            // 
+            // lblMatchSummaryTitle
+            // 
+            this.lblMatchSummaryTitle.AutoSize = true;
+            this.lblMatchSummaryTitle.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.lblMatchSummaryTitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(35)))), ((int)(((byte)(85)))), ((int)(((byte)(132)))));
+            this.lblMatchSummaryTitle.Location = new System.Drawing.Point(316, 23);
+            this.lblMatchSummaryTitle.Name = "lblMatchSummaryTitle";
+            this.lblMatchSummaryTitle.Size = new System.Drawing.Size(77, 13);
+            this.lblMatchSummaryTitle.TabIndex = 4;
+            this.lblMatchSummaryTitle.Text = "Match Result";
+            // 
+            // lblMatchSummary
+            // 
+            this.lblMatchSummary.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(250)))), ((int)(((byte)(252)))), ((int)(((byte)(253)))));
+            this.lblMatchSummary.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.lblMatchSummary.Font = new System.Drawing.Font("Consolas", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.lblMatchSummary.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(42)))), ((int)(((byte)(54)))), ((int)(((byte)(68)))));
+            this.lblMatchSummary.Location = new System.Drawing.Point(316, 45);
+            this.lblMatchSummary.Name = "lblMatchSummary";
+            this.lblMatchSummary.Padding = new System.Windows.Forms.Padding(6);
+            this.lblMatchSummary.Size = new System.Drawing.Size(157, 139);
+            this.lblMatchSummary.TabIndex = 5;
+            this.lblMatchSummary.Text = "Template: -\r\nCrop: -\r\nOverlay: Output";
             // 
             // FormVision_Matching
             // 
@@ -249,6 +346,10 @@
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.btnNewPanel_Desty)).EndInit();
+            this.groupBoxMatchReview.ResumeLayout(false);
+            this.groupBoxMatchReview.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pbTemplate)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbDetectedCrop)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -265,6 +366,13 @@
         private RJCodeUI_M1.RJControls.RJComboBox cbLayerList;
         private System.Windows.Forms.TabControl metroTabControl2;
         private RJCodeUI_M1.RJControls.RJPanel pnParameter;
+        private System.Windows.Forms.GroupBox groupBoxMatchReview;
+        private System.Windows.Forms.PictureBox pbTemplate;
+        private System.Windows.Forms.PictureBox pbDetectedCrop;
+        private System.Windows.Forms.Label lblTemplateTitle;
+        private System.Windows.Forms.Label lblDetectedTitle;
+        private System.Windows.Forms.Label lblMatchSummaryTitle;
+        private System.Windows.Forms.Label lblMatchSummary;
     }
 }
 

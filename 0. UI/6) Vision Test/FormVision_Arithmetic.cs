@@ -294,6 +294,7 @@ namespace OpenVisionLab
 
                     Result = Lib.Common.BitmapProcessing.OverlayImage(Lib.Common.BitmapImageConverter.ToBitmap(ImageCVSource1), Lib.Common.BitmapImageConverter.ToBitmap(ResultImage), r.Left, r.Top);
                 }
+                RecordDirectVisionToolPassed(Result, stopwatch);
                 PublishResult(cbLayerList_Dest, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
             }
             });
@@ -455,6 +456,7 @@ namespace OpenVisionLab
                 SrcImg[srcRect].CopyTo(DstImg[DstRect]);
 
                 Result = Lib.Common.BitmapImageConverter.ToBitmap(DstImg);
+                RecordDirectVisionToolPassed(Result, stopwatch);
                 PublishResult(cbLayerList_Dest, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
             }
             });

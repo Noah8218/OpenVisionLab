@@ -109,9 +109,7 @@ namespace OpenVisionLab
                 {
                     MorphologyTool tool = new MorphologyTool();
                     tool.SetProperty(property);
-                    tool.SetSourceImage(image);
-                    tool.Run();
-                    tool.imageResult.CopyTo(image);
+                    CopyVisionToolResultImage(image, ExecuteVisionTool(tool, image));
                 });
                 PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
             });

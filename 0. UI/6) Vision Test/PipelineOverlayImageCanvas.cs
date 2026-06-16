@@ -2,6 +2,7 @@ using Lib.OpenCV.Tool;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -18,6 +19,7 @@ namespace OpenVisionLab
     {
         private Bitmap image;
         private List<VisionToolOverlay> overlays = new List<VisionToolOverlay>();
+        private List<RectangleF> roiBounds = new List<RectangleF>();
         private float zoom = 1F;
         private Point pan = Point.Empty;
         private bool dragging;
@@ -42,6 +44,8 @@ namespace OpenVisionLab
 
         public bool ShowBoxes { get; set; } = true;
 
+        public bool ShowRoi { get; set; } = true;
+
         public PipelineOverlayLabelMode LabelMode { get; set; } = PipelineOverlayLabelMode.Number;
 
         public int PointLimit { get; set; } = 300;
@@ -54,7 +58,7 @@ namespace OpenVisionLab
 
         public float Zoom => zoom;
 
-        public void SetContent(Bitmap image, List<VisionToolOverlay> overlays)
+        public void SetContent(Bitmap image, List<VisionToolOverlay> overlays, IEnumerable<RectangleF> roiBounds = null)
         {
             if (ownsImage)
             {
@@ -73,6 +77,9 @@ namespace OpenVisionLab
             }
 
             this.overlays = overlays ?? new List<VisionToolOverlay>();
+            this.roiBounds = (roiBounds ?? Enumerable.Empty<RectangleF>())
+                .Where(bounds => bounds.Width > 0 && bounds.Height > 0)
+                .ToList();
             SelectedOverlayIndex = -1;
             Invalidate();
         }
@@ -149,7 +156,32 @@ namespace OpenVisionLab
             e.Graphics.TranslateTransform(pan.X, pan.Y);
             e.Graphics.ScaleTransform(zoom, zoom);
             e.Graphics.DrawImage(image, 0, 0, image.Width, image.Height);
+            DrawRois(e.Graphics);
             DrawOverlays(e.Graphics);
+        }
+
+        private void DrawRois(Graphics graphics)
+        {
+            if (!ShowRoi || roiBounds.Count == 0)
+            {
+                return;
+            }
+
+            float penWidth = Math.Max(1.5F / zoom, 1F / zoom);
+            using (Pen roiPen = new Pen(Color.FromArgb(235, 54, 200, 255), penWidth))
+            using (Brush textBrush = new SolidBrush(Color.White))
+            using (Brush textBackBrush = new SolidBrush(Color.FromArgb(220, 12, 92, 118)))
+            using (Font font = new Font("Segoe UI", Math.Max(7F, 10F / zoom), FontStyle.Bold, GraphicsUnit.Pixel))
+            {
+                roiPen.DashStyle = DashStyle.Dash;
+                roiPen.DashPattern = new[] { 4F, 3F };
+
+                foreach (RectangleF bounds in roiBounds)
+                {
+                    graphics.DrawRectangle(roiPen, bounds.X, bounds.Y, bounds.Width, bounds.Height);
+                    DrawLabel(graphics, "ROI", bounds.Location, textBrush, textBackBrush, font);
+                }
+            }
         }
 
         private void DrawOverlays(Graphics graphics)

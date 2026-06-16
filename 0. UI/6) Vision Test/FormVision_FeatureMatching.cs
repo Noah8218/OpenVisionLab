@@ -6,7 +6,9 @@ using System.Reflection;
 using OpenCvSharp;
 using System.Diagnostics;
 using System.Drawing.Imaging;
+using System.IO;
 using OpenVisionLab._1._Core;
+using OpenVisionLab.PropertyGrid;
 using RJCodeUI_M1.RJForms;
 using Lib.Common;
 using Lib.OpenCV;
@@ -19,6 +21,8 @@ namespace OpenVisionLab
     public partial class FormVision_FeatureMatching : VisionTestForm
     {
         private FeatureMatchingProperty Property_FeatureMatching = new FeatureMatchingProperty("FeatureMatching");
+        private bool featureReviewPropertyEventAttached;
+
         private void InitLayListItem()
         {
             InitializeSingleInputLayerList(cbLayerList, cbLayerList2);
@@ -68,6 +72,12 @@ namespace OpenVisionLab
             AppUtil.InitDirectory("TEST");
             Property_FeatureMatching = Property_FeatureMatching.LoadTestConfig(AppPathService.GetTestConfigPath(Property_FeatureMatching.NAME));
             AttachPropertyGridWithThresholdPreview(pnParameter, Property_FeatureMatching, cbLayerList2, ibSource, ibDestination);
+            BeginInvoke(new Action(() =>
+            {
+                AttachFeatureReviewPropertyEvent();
+                UpdateFeatureReviewTemplate();
+                ClearFeatureReviewResult("Run feature matching to compare.");
+            }));
             InitializeSingleInputViewers(
                 InitLayListItem,
                 ibSource,
@@ -139,7 +149,8 @@ namespace OpenVisionLab
                     Property_FeatureMatching.ReloadTemplateImage();
                     cVSIFT.SetTemplateImage(Property_FeatureMatching.ImageTemplate);
                     cVSIFT.SetProperty(Property_FeatureMatching);
-                    cVSIFT.Run();
+                    UpdateFeatureReviewTemplate();
+                    ExecuteVisionTool(cVSIFT, ImageCVSource);
 
                     using (Graphics g = Graphics.FromImage(Result))
                     {
@@ -154,6 +165,7 @@ namespace OpenVisionLab
                             g.DrawString("1", new Font("Arial", 10, FontStyle.Bold), new SolidBrush(System.Drawing.Color.OrangeRed), (int)cVSIFT.property.CvROI.X - 20, (int)cVSIFT.property.CvROI.Y - 20);
                         }
                     }
+                    UpdateFeatureReview(cVSIFT.results, ibSource.DisplayBitmap);
                     PublishResult(cbLayerList2, ibDestination, Result, FormatElapsed(stopwatch));
                 }
 
@@ -176,7 +188,223 @@ namespace OpenVisionLab
                 g.ResetTransform();
             }
         }
+        
+        private void AttachFeatureReviewPropertyEvent()
+        {
+            if (featureReviewPropertyEventAttached || wpg == null)
+            {
+                return;
             }
+
+            wpg.PropertyValueChanged += Wpg_FeatureReviewPropertyValueChanged;
+            featureReviewPropertyEventAttached = true;
+        }
+
+        private void Wpg_FeatureReviewPropertyValueChanged(object sender, PropertyGridPropertyValueChangedEventArgs e)
+        {
+            string propertyName = e?.Property?.Name ?? string.Empty;
+            if (!string.Equals(propertyName, nameof(FeatureMatchingProperty.PATTERN_PATH), StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            BeginInvoke(new Action(() =>
+            {
+                UpdateFeatureReviewTemplate();
+                ClearFeatureReviewResult("Template changed.");
+            }));
+        }
+
+        private void UpdateFeatureReview(List<MatchingResult> results, Bitmap sourceBitmap)
+        {
+            if (results == null || results.Count == 0)
+            {
+                ClearFeatureReviewResult("No feature match.");
+                return;
+            }
+
+            MatchingResult best = SelectBestFeatureMatch(results);
+            Bitmap detectedCrop = CreateDetectedCrop(sourceBitmap, best.Bounding);
+            SetPreviewImage(pbDetectedCrop, detectedCrop);
+
+            lblFeatureSummary.Text =
+                $"Score: {best.Score:0.000}\r\n" +
+                $"Center: {best.Center.X:0}, {best.Center.Y:0}\r\n" +
+                $"Size: {best.Bounding.Width:0} x {best.Bounding.Height:0}\r\n" +
+                $"Count: {results.Count}\r\n" +
+                $"Angle: {best.Angle:0.0}\r\n" +
+                "Overlay: Output";
+        }
+
+        private static MatchingResult SelectBestFeatureMatch(List<MatchingResult> results)
+        {
+            MatchingResult best = results[0];
+            for (int i = 1; i < results.Count; i++)
+            {
+                if (results[i].Score > best.Score)
+                {
+                    best = results[i];
+                }
+            }
+
+            return best;
+        }
+
+        private void ClearFeatureReviewResult(string message)
+        {
+            SetPreviewImage(pbDetectedCrop, null);
+            lblFeatureSummary.Text =
+                $"Template: {GetPatternDisplayName()}\r\n" +
+                "Crop: -\r\n" +
+                "Score: -\r\n" +
+                "Center: -\r\n" +
+                "Overlay: Output\r\n" +
+                $"State: {message}";
+        }
+
+        private void UpdateFeatureReviewTemplate()
+        {
+            string path = ResolvePatternImagePath(Property_FeatureMatching?.PATTERN_PATH);
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                SetPreviewImage(pbTemplate, null);
+                return;
+            }
+
+            try
+            {
+                using (Image loaded = Image.FromFile(path))
+                {
+                    SetPreviewImage(pbTemplate, new Bitmap(loaded));
+                }
+            }
+            catch
+            {
+                SetPreviewImage(pbTemplate, null);
+            }
+        }
+
+        private string GetPatternDisplayName()
+        {
+            string path = ResolvePatternImagePath(Property_FeatureMatching?.PATTERN_PATH);
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return "-";
+            }
+
+            return Path.GetFileName(path);
+        }
+
+        private static string ResolvePatternImagePath(string patternPath)
+        {
+            if (string.IsNullOrWhiteSpace(patternPath))
+            {
+                return string.Empty;
+            }
+
+            if (File.Exists(patternPath))
+            {
+                return patternPath;
+            }
+
+            if (Path.IsPathRooted(patternPath))
+            {
+                return string.Empty;
+            }
+
+            string[] roots =
+            {
+                Application.StartupPath,
+                AppDomain.CurrentDomain.BaseDirectory,
+                Directory.GetCurrentDirectory()
+            };
+
+            foreach (string root in roots)
+            {
+                string found = FindRelativePatternPath(root, patternPath);
+                if (!string.IsNullOrWhiteSpace(found))
+                {
+                    return found;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static string FindRelativePatternPath(string root, string patternPath)
+        {
+            if (string.IsNullOrWhiteSpace(root))
+            {
+                return string.Empty;
+            }
+
+            DirectoryInfo directory;
+            try
+            {
+                directory = new DirectoryInfo(root);
+            }
+            catch
+            {
+                return string.Empty;
+            }
+
+            for (int i = 0; i < 8 && directory != null; i++)
+            {
+                string candidate = Path.Combine(directory.FullName, patternPath);
+                if (File.Exists(candidate))
+                {
+                    return candidate;
+                }
+
+                directory = directory.Parent;
+            }
+
+            return string.Empty;
+        }
+
+        private static Bitmap CreateDetectedCrop(Bitmap sourceBitmap, RectangleF bounds)
+        {
+            if (sourceBitmap == null)
+            {
+                return null;
+            }
+
+            Rectangle cropBounds = Rectangle.Round(bounds);
+            cropBounds.Intersect(new Rectangle(System.Drawing.Point.Empty, sourceBitmap.Size));
+            if (cropBounds.Width <= 0 || cropBounds.Height <= 0)
+            {
+                return null;
+            }
+
+            Bitmap crop = new Bitmap(cropBounds.Width, cropBounds.Height, PixelFormat.Format24bppRgb);
+            using (Graphics graphics = Graphics.FromImage(crop))
+            {
+                graphics.DrawImage(
+                    sourceBitmap,
+                    new Rectangle(System.Drawing.Point.Empty, cropBounds.Size),
+                    cropBounds,
+                    GraphicsUnit.Pixel);
+            }
+
+            return crop;
+        }
+
+        private static void SetPreviewImage(PictureBox pictureBox, Image image)
+        {
+            if (pictureBox == null)
+            {
+                image?.Dispose();
+                return;
+            }
+
+            Image previousImage = pictureBox.Image;
+            pictureBox.Image = image;
+            if (previousImage != null && !ReferenceEquals(previousImage, image))
+            {
+                previousImage.Dispose();
+            }
+        }
+    }
 }
 
 

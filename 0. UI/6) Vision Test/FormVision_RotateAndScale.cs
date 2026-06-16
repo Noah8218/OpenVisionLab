@@ -7,6 +7,7 @@ using OpenCvSharp;
 using OpenVisionLab._1._Core;
 using RJCodeUI_M1.RJForms;
 using Lib.Common;
+using Lib.OpenCV.Tool;
 
 namespace OpenVisionLab
 {
@@ -171,6 +172,7 @@ namespace OpenVisionLab
                 using (Mat source = BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
                 using (Mat transformed = RotateAndScale(source, angle, scaleX, scaleY))
                 {
+                    RecordDirectVisionToolPassed(transformed, stopwatch);
                     Bitmap result = BitmapImageConverter.ToBitmap(transformed);
                     PublishResult(cbLayerList2, ibDestination, result, FormatElapsed(stopwatch));
                 }
@@ -229,32 +231,13 @@ namespace OpenVisionLab
 
             scaleX = Math.Max(0.01d, scaleX);
             scaleY = Math.Max(0.01d, scaleY);
-            int width = Math.Max(1, (int)Math.Round(src.Width * scaleX));
-            int height = Math.Max(1, (int)Math.Round(src.Height * scaleY));
-
-            Mat scaled = new Mat();
-            if (width != src.Width || height != src.Height)
-            {
-                Cv2.Resize(src, scaled, new OpenCvSharp.Size(width, height), 0d, 0d, InterpolationFlags.Linear);
-            }
-            else
-            {
-                scaled = src.Clone();
-            }
-
-            if (Math.Abs(angle) < 0.0001d)
-            {
-                return scaled;
-            }
-
-            Mat rotated = new Mat(scaled.Size(), scaled.Type());
-            using (Mat matrix = Cv2.GetRotationMatrix2D(new Point2f(scaled.Width / 2f, scaled.Height / 2f), angle, 1d))
-            {
-                Cv2.WarpAffine(scaled, rotated, matrix, scaled.Size(), InterpolationFlags.Linear, BorderTypes.Constant);
-            }
-
-            scaled.Dispose();
-            return rotated;
+            return RotateScaleTool.Transform(
+                src,
+                angle,
+                scaleX * 100d,
+                scaleY * 100d,
+                InterpolationFlags.Linear,
+                BorderTypes.Constant);
         }
 
         private void rjButton1_Click(object sender, EventArgs e)

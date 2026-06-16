@@ -192,7 +192,11 @@ namespace OpenVisionLab
             double metricValue = 0d;
             bool hasValue = summary?.Metrics != null && summary.Metrics.TryGetValue(metricName, out metricValue);
             string valueText = hasValue ? metricValue.ToString("0.###", CultureInfo.InvariantCulture) : "N/A";
-            return $"{metricName}={valueText}{BuildAcceptanceCriteriaText(step, metricName)}";
+            string label = VisionPipelineKnownMetrics.GetDisplayName(metricName);
+            string criteriaText = BuildAcceptanceCriteriaText(step, metricName);
+            return string.IsNullOrWhiteSpace(criteriaText)
+                ? $"{label}: {valueText}"
+                : $"{label}: {valueText} ({criteriaText})";
         }
 
         private static string ResolveMetricName(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
@@ -234,20 +238,20 @@ namespace OpenVisionLab
             {
                 if (Math.Abs(step.AcceptanceMetricMinimum - step.AcceptanceMetricMaximum) < 0.000001)
                 {
-                    return $" = {step.AcceptanceMetricMinimum:0.###}";
+                    return $"target = {step.AcceptanceMetricMinimum:0.###}";
                 }
 
-                return $" [{step.AcceptanceMetricMinimum:0.###}..{step.AcceptanceMetricMaximum:0.###}]";
+                return $"target {step.AcceptanceMetricMinimum:0.###}..{step.AcceptanceMetricMaximum:0.###}";
             }
 
             if (hasMinimum)
             {
-                return $" >= {step.AcceptanceMetricMinimum:0.###}";
+                return $"target >= {step.AcceptanceMetricMinimum:0.###}";
             }
 
             if (hasMaximum)
             {
-                return $" <= {step.AcceptanceMetricMaximum:0.###}";
+                return $"target <= {step.AcceptanceMetricMaximum:0.###}";
             }
 
             return string.Empty;

@@ -16,6 +16,7 @@ namespace OpenVisionLab
 			toolTypeLabel = new Label();
 			inputLayerLabel = new Label();
 			outputLayerLabel = new Label();
+			sampleContextLabel = new Label();
 			tbPipelineName = new TextBox();
 			cbToolType = new ComboBox();
 			cbInputLayer = new ComboBox();
@@ -39,6 +40,12 @@ namespace OpenVisionLab
 			tbStepOutputLayer = new TextBox();
 			btnStepChainInput = new Button();
 			stepIoStatusLabel = new Label();
+			stepAcceptancePanel = new TableLayoutPanel();
+			stepAcceptanceCaption = new Label();
+			stepAcceptanceStatusLabel = new Label();
+			cbStepAcceptancePreset = new ComboBox();
+			btnApplyStepAcceptancePreset = new Button();
+			btnClearStepAcceptance = new Button();
 			propertyGridHost = new System.Windows.Forms.Integration.ElementHost();
 			runLogPanel = new TableLayoutPanel();
 			runLogCaption = new Label();
@@ -52,8 +59,16 @@ namespace OpenVisionLab
 			cbOverlayLabelMode = new ComboBox();
 			overlayPointLimitLabel = new Label();
 			nudOverlayPointLimit = new NumericUpDown();
+			chkOverlayRoi = new CheckBox();
 			btnOpenPreview = new Button();
 			previewBox = new PictureBox();
+			matchingReviewPanel = new Panel();
+			matchingTemplateTitle = new Label();
+			matchingDetectedTitle = new Label();
+			matchingReviewTitle = new Label();
+			matchingTemplateBox = new PictureBox();
+			matchingDetectedBox = new PictureBox();
+			matchingReviewSummary = new Label();
 			resultCaption = new Label();
 			resultGrid = new DataGridView();
 			footerPanel = new Panel();
@@ -72,6 +87,7 @@ namespace OpenVisionLab
 			btnImport = new Button();
 			btnValidate = new Button();
 			chkPublishAllLayers = new CheckBox();
+			workflowHintLabel = new Label();
 			pipelineToolTip = new ToolTip();
 			pnlClientArea.SuspendLayout();
 			rootLayout.SuspendLayout();
@@ -79,10 +95,14 @@ namespace OpenVisionLab
 			bodyLayout.SuspendLayout();
 			stepTreePanel.SuspendLayout();
 			editorPanel.SuspendLayout();
+			stepAcceptancePanel.SuspendLayout();
 			runLogPanel.SuspendLayout();
 			previewPanel.SuspendLayout();
 			((ISupportInitialize)nudOverlayPointLimit).BeginInit();
 			((ISupportInitialize)previewBox).BeginInit();
+			matchingReviewPanel.SuspendLayout();
+			((ISupportInitialize)matchingTemplateBox).BeginInit();
+			((ISupportInitialize)matchingDetectedBox).BeginInit();
 			((ISupportInitialize)resultGrid).BeginInit();
 			footerPanel.SuspendLayout();
 			SuspendLayout();
@@ -121,6 +141,7 @@ namespace OpenVisionLab
 			headerPanel.Controls.Add(toolTypeLabel);
 			headerPanel.Controls.Add(inputLayerLabel);
 			headerPanel.Controls.Add(outputLayerLabel);
+			headerPanel.Controls.Add(sampleContextLabel);
 			headerPanel.Controls.Add(tbPipelineName);
 			headerPanel.Controls.Add(cbToolType);
 			headerPanel.Controls.Add(cbInputLayer);
@@ -179,6 +200,21 @@ namespace OpenVisionLab
 			outputLayerLabel.Text = "Output Layer";
 			outputLayerLabel.Visible = false;
 			// 
+			// sampleContextLabel
+			// 
+			sampleContextLabel.AutoEllipsis = true;
+			sampleContextLabel.BackColor = Color.FromArgb(224, 238, 251);
+			sampleContextLabel.BorderStyle = BorderStyle.FixedSingle;
+			sampleContextLabel.Font = new Font("Segoe UI", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+			sampleContextLabel.ForeColor = Color.FromArgb(35, 85, 132);
+			sampleContextLabel.Location = new DrawingPoint(704, 21);
+			sampleContextLabel.Name = "sampleContextLabel";
+			sampleContextLabel.Padding = new Padding(8, 0, 8, 0);
+			sampleContextLabel.Size = new DrawingSize(424, 28);
+			sampleContextLabel.TabIndex = 10;
+			sampleContextLabel.TextAlign = ContentAlignment.MiddleLeft;
+			sampleContextLabel.Visible = false;
+			// 
 			// tbPipelineName
 			// 
 			tbPipelineName.Location = new DrawingPoint(0, 23);
@@ -192,7 +228,7 @@ namespace OpenVisionLab
 			// 
 			cbToolType.DropDownStyle = ComboBoxStyle.DropDownList;
 			cbToolType.FormattingEnabled = true;
-			cbToolType.Items.AddRange(new object[] { "Threshold", "Morphology", "Filter", "EdgeDetection", "Blob", "Contour", "LineGauge", "Matching", "FeatureMatching", "Mean" });
+			cbToolType.Items.AddRange(new object[] { "Threshold", "Morphology", "Filter", "EdgeDetection", "Blob", "Contour", "LineGauge", "RotateScale", "Matching", "FeatureMatching", "Mean", "OverlayMerge" });
 			cbToolType.Location = new DrawingPoint(320, 22);
 			cbToolType.Name = "cbToolType";
 			cbToolType.Size = new DrawingSize(220, 24);
@@ -358,13 +394,15 @@ namespace OpenVisionLab
 			editorPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
 			editorPanel.Controls.Add(propertiesCaption, 0, 0);
 			editorPanel.Controls.Add(stepIoPanel, 0, 1);
-			editorPanel.Controls.Add(propertyGridHost, 0, 2);
+			editorPanel.Controls.Add(stepAcceptancePanel, 0, 2);
+			editorPanel.Controls.Add(propertyGridHost, 0, 3);
 			editorPanel.Dock = DockStyle.Fill;
 			editorPanel.Location = new DrawingPoint(343, 3);
 			editorPanel.Name = "editorPanel";
-			editorPanel.RowCount = 3;
+			editorPanel.RowCount = 4;
 			editorPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 22F));
 			editorPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 94F));
+			editorPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 86F));
 			editorPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 			editorPanel.Size = new DrawingSize(522, 494);
 			editorPanel.TabIndex = 1;
@@ -477,12 +515,13 @@ namespace OpenVisionLab
 			btnStepChainInput.Name = "btnStepChainInput";
 			btnStepChainInput.Size = new DrawingSize(88, 26);
 			btnStepChainInput.TabIndex = 5;
-			btnStepChainInput.Text = "Chain";
+			btnStepChainInput.Text = "Link Prev";
 			btnStepChainInput.UseVisualStyleBackColor = false;
 			btnStepChainInput.Click += OnChainSelectedStepInputClicked;
 			// 
 			// stepIoStatusLabel
 			// 
+			stepIoStatusLabel.AutoEllipsis = true;
 			stepIoStatusLabel.BackColor = Color.FromArgb(236, 244, 252);
 			stepIoStatusLabel.Dock = DockStyle.Fill;
 			stepIoStatusLabel.Font = new Font("Segoe UI", 8.3F, FontStyle.Bold, GraphicsUnit.Point);
@@ -496,14 +535,105 @@ namespace OpenVisionLab
 			stepIoStatusLabel.Text = "Select a step to edit image flow.";
 			stepIoStatusLabel.TextAlign = ContentAlignment.MiddleLeft;
 			// 
+			// stepAcceptancePanel
+			// 
+			stepAcceptancePanel.BackColor = Color.FromArgb(247, 250, 253);
+			stepAcceptancePanel.ColumnCount = 4;
+			stepAcceptancePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+			stepAcceptancePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 86F));
+			stepAcceptancePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 8F));
+			stepAcceptancePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 72F));
+			stepAcceptancePanel.Controls.Add(stepAcceptanceCaption, 0, 0);
+			stepAcceptancePanel.Controls.Add(cbStepAcceptancePreset, 0, 1);
+			stepAcceptancePanel.Controls.Add(btnApplyStepAcceptancePreset, 1, 1);
+			stepAcceptancePanel.Controls.Add(btnClearStepAcceptance, 3, 1);
+			stepAcceptancePanel.Controls.Add(stepAcceptanceStatusLabel, 0, 2);
+			stepAcceptancePanel.Dock = DockStyle.Fill;
+			stepAcceptancePanel.Location = new DrawingPoint(3, 119);
+			stepAcceptancePanel.Name = "stepAcceptancePanel";
+			stepAcceptancePanel.Padding = new Padding(8, 5, 8, 5);
+			stepAcceptancePanel.RowCount = 3;
+			stepAcceptancePanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 22F));
+			stepAcceptancePanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 32F));
+			stepAcceptancePanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 22F));
+			stepAcceptancePanel.SetColumnSpan(stepAcceptanceCaption, 4);
+			stepAcceptancePanel.SetColumnSpan(stepAcceptanceStatusLabel, 4);
+			stepAcceptancePanel.Size = new DrawingSize(516, 80);
+			stepAcceptancePanel.TabIndex = 2;
+			// 
+			// stepAcceptanceCaption
+			// 
+			stepAcceptanceCaption.Dock = DockStyle.Fill;
+			stepAcceptanceCaption.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
+			stepAcceptanceCaption.ForeColor = Color.FromArgb(35, 85, 132);
+			stepAcceptanceCaption.Location = new DrawingPoint(11, 5);
+			stepAcceptanceCaption.Name = "stepAcceptanceCaption";
+			stepAcceptanceCaption.Size = new DrawingSize(494, 22);
+			stepAcceptanceCaption.TabIndex = 0;
+			stepAcceptanceCaption.Text = "RECOMMENDED ACCEPTANCE";
+			stepAcceptanceCaption.TextAlign = ContentAlignment.MiddleLeft;
+			// 
+			// stepAcceptanceStatusLabel
+			// 
+			stepAcceptanceStatusLabel.AutoEllipsis = true;
+			stepAcceptanceStatusLabel.Dock = DockStyle.Fill;
+			stepAcceptanceStatusLabel.Font = new Font("Segoe UI", 8.3F, FontStyle.Bold, GraphicsUnit.Point);
+			stepAcceptanceStatusLabel.ForeColor = Color.FromArgb(92, 98, 108);
+			stepAcceptanceStatusLabel.Location = new DrawingPoint(11, 59);
+			stepAcceptanceStatusLabel.Name = "stepAcceptanceStatusLabel";
+			stepAcceptanceStatusLabel.Size = new DrawingSize(494, 22);
+			stepAcceptanceStatusLabel.TabIndex = 1;
+			stepAcceptanceStatusLabel.Text = "No acceptance";
+			stepAcceptanceStatusLabel.TextAlign = ContentAlignment.MiddleLeft;
+			// 
+			// cbStepAcceptancePreset
+			// 
+			cbStepAcceptancePreset.Dock = DockStyle.Fill;
+			cbStepAcceptancePreset.DropDownStyle = ComboBoxStyle.DropDownList;
+			cbStepAcceptancePreset.FlatStyle = FlatStyle.Flat;
+			cbStepAcceptancePreset.FormattingEnabled = true;
+			cbStepAcceptancePreset.Location = new DrawingPoint(11, 30);
+			cbStepAcceptancePreset.Name = "cbStepAcceptancePreset";
+			cbStepAcceptancePreset.Size = new DrawingSize(336, 24);
+			cbStepAcceptancePreset.TabIndex = 2;
+			cbStepAcceptancePreset.SelectedIndexChanged += OnStepAcceptancePresetSelectionChanged;
+			// 
+			// btnApplyStepAcceptancePreset
+			// 
+			btnApplyStepAcceptancePreset.BackColor = Color.FromArgb(250, 252, 253);
+			btnApplyStepAcceptancePreset.Dock = DockStyle.Fill;
+			btnApplyStepAcceptancePreset.FlatStyle = FlatStyle.Flat;
+			btnApplyStepAcceptancePreset.ForeColor = Color.FromArgb(35, 85, 132);
+			btnApplyStepAcceptancePreset.Location = new DrawingPoint(353, 30);
+			btnApplyStepAcceptancePreset.Name = "btnApplyStepAcceptancePreset";
+			btnApplyStepAcceptancePreset.Size = new DrawingSize(80, 26);
+			btnApplyStepAcceptancePreset.TabIndex = 3;
+			btnApplyStepAcceptancePreset.Text = "Apply";
+			btnApplyStepAcceptancePreset.UseVisualStyleBackColor = false;
+			btnApplyStepAcceptancePreset.Click += OnApplyStepAcceptancePresetClicked;
+			// 
+			// btnClearStepAcceptance
+			// 
+			btnClearStepAcceptance.BackColor = Color.FromArgb(250, 252, 253);
+			btnClearStepAcceptance.Dock = DockStyle.Fill;
+			btnClearStepAcceptance.FlatStyle = FlatStyle.Flat;
+			btnClearStepAcceptance.ForeColor = Color.FromArgb(92, 98, 108);
+			btnClearStepAcceptance.Location = new DrawingPoint(447, 30);
+			btnClearStepAcceptance.Name = "btnClearStepAcceptance";
+			btnClearStepAcceptance.Size = new DrawingSize(58, 26);
+			btnClearStepAcceptance.TabIndex = 4;
+			btnClearStepAcceptance.Text = "Clear";
+			btnClearStepAcceptance.UseVisualStyleBackColor = false;
+			btnClearStepAcceptance.Click += OnClearAcceptanceClicked;
+			// 
 			// propertyGridHost
 			// 
 			propertyGridHost.BackColor = Color.White;
 			propertyGridHost.Dock = DockStyle.Fill;
-			propertyGridHost.Location = new DrawingPoint(3, 119);
+			propertyGridHost.Location = new DrawingPoint(3, 205);
 			propertyGridHost.Name = "propertyGridHost";
-			propertyGridHost.Size = new DrawingSize(516, 372);
-			propertyGridHost.TabIndex = 2;
+			propertyGridHost.Size = new DrawingSize(516, 286);
+			propertyGridHost.TabIndex = 3;
 			propertyGridHost.Text = "propertyGridHost";
 			// 
 			// runLogPanel
@@ -553,15 +683,17 @@ namespace OpenVisionLab
 			previewPanel.Controls.Add(previewCaption, 0, 0);
 			previewPanel.Controls.Add(previewOptionsPanel, 0, 1);
 			previewPanel.Controls.Add(previewBox, 0, 2);
-			previewPanel.Controls.Add(resultCaption, 0, 3);
-			previewPanel.Controls.Add(resultGrid, 0, 4);
+			previewPanel.Controls.Add(matchingReviewPanel, 0, 3);
+			previewPanel.Controls.Add(resultCaption, 0, 4);
+			previewPanel.Controls.Add(resultGrid, 0, 5);
 			previewPanel.Dock = DockStyle.Fill;
 			previewPanel.Location = new DrawingPoint(871, 3);
 			previewPanel.Name = "previewPanel";
-			previewPanel.RowCount = 5;
+			previewPanel.RowCount = 6;
 			previewPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 22F));
-			previewPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30F));
+			previewPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 56F));
 			previewPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+			previewPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 0F));
 			previewPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 22F));
 			previewPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 132F));
 			previewPanel.Size = new DrawingSize(374, 494);
@@ -589,11 +721,12 @@ namespace OpenVisionLab
 			previewOptionsPanel.Controls.Add(cbOverlayLabelMode);
 			previewOptionsPanel.Controls.Add(overlayPointLimitLabel);
 			previewOptionsPanel.Controls.Add(nudOverlayPointLimit);
+			previewOptionsPanel.Controls.Add(chkOverlayRoi);
 			previewOptionsPanel.Controls.Add(btnOpenPreview);
 			previewOptionsPanel.Dock = DockStyle.Fill;
 			previewOptionsPanel.Location = new DrawingPoint(3, 25);
 			previewOptionsPanel.Name = "previewOptionsPanel";
-			previewOptionsPanel.Size = new DrawingSize(368, 24);
+			previewOptionsPanel.Size = new DrawingSize(368, 50);
 			previewOptionsPanel.TabIndex = 1;
 			// 
 			// cbPreviewImageMode
@@ -606,7 +739,7 @@ namespace OpenVisionLab
 			cbPreviewImageMode.Items.AddRange(new object[] { "Summary", "Input", "Output", "Overlay" });
 			cbPreviewImageMode.Location = new DrawingPoint(0, 2);
 			cbPreviewImageMode.Name = "cbPreviewImageMode";
-			cbPreviewImageMode.Size = new DrawingSize(96, 24);
+			cbPreviewImageMode.Size = new DrawingSize(128, 24);
 			cbPreviewImageMode.TabIndex = 0;
 			cbPreviewImageMode.SelectedIndex = 0;
 			cbPreviewImageMode.SelectedIndexChanged += OnOverlayOptionChanged;
@@ -620,7 +753,7 @@ namespace OpenVisionLab
 			previewModeLabel.ForeColor = Color.White;
 			previewModeLabel.Location = new DrawingPoint(0, 2);
 			previewModeLabel.Name = "previewModeLabel";
-			previewModeLabel.Size = new DrawingSize(96, 22);
+			previewModeLabel.Size = new DrawingSize(128, 22);
 			previewModeLabel.TabIndex = 0;
 			previewModeLabel.Text = "Overlay";
 			previewModeLabel.TextAlign = ContentAlignment.MiddleCenter;
@@ -630,7 +763,7 @@ namespace OpenVisionLab
 			// 
 			overlayLabelModeLabel.AutoSize = true;
 			overlayLabelModeLabel.ForeColor = Color.FromArgb(35, 85, 132);
-			overlayLabelModeLabel.Location = new DrawingPoint(104, 5);
+			overlayLabelModeLabel.Location = new DrawingPoint(0, 31);
 			overlayLabelModeLabel.Name = "overlayLabelModeLabel";
 			overlayLabelModeLabel.Size = new DrawingSize(36, 16);
 			overlayLabelModeLabel.TabIndex = 1;
@@ -641,9 +774,9 @@ namespace OpenVisionLab
 			cbOverlayLabelMode.DropDownStyle = ComboBoxStyle.DropDownList;
 			cbOverlayLabelMode.FormattingEnabled = true;
 			cbOverlayLabelMode.Items.AddRange(new object[] { "None", "No", "Details" });
-			cbOverlayLabelMode.Location = new DrawingPoint(142, 2);
+			cbOverlayLabelMode.Location = new DrawingPoint(44, 28);
 			cbOverlayLabelMode.Name = "cbOverlayLabelMode";
-			cbOverlayLabelMode.Size = new DrawingSize(72, 24);
+			cbOverlayLabelMode.Size = new DrawingSize(76, 24);
 			cbOverlayLabelMode.TabIndex = 2;
 			cbOverlayLabelMode.SelectedIndex = 1;
 			cbOverlayLabelMode.SelectedIndexChanged += OnOverlayOptionChanged;
@@ -652,7 +785,7 @@ namespace OpenVisionLab
 			// 
 			overlayPointLimitLabel.AutoSize = true;
 			overlayPointLimitLabel.ForeColor = Color.FromArgb(35, 85, 132);
-			overlayPointLimitLabel.Location = new DrawingPoint(222, 5);
+			overlayPointLimitLabel.Location = new DrawingPoint(130, 31);
 			overlayPointLimitLabel.Name = "overlayPointLimitLabel";
 			overlayPointLimitLabel.Size = new DrawingSize(41, 16);
 			overlayPointLimitLabel.TabIndex = 3;
@@ -661,20 +794,34 @@ namespace OpenVisionLab
 			// nudOverlayPointLimit
 			// 
 			nudOverlayPointLimit.Increment = new decimal(new int[] { 50, 0, 0, 0 });
-			nudOverlayPointLimit.Location = new DrawingPoint(264, 2);
+			nudOverlayPointLimit.Location = new DrawingPoint(178, 28);
 			nudOverlayPointLimit.Maximum = new decimal(new int[] { 5000, 0, 0, 0 });
 			nudOverlayPointLimit.Name = "nudOverlayPointLimit";
-			nudOverlayPointLimit.Size = new DrawingSize(54, 22);
+			nudOverlayPointLimit.Size = new DrawingSize(58, 22);
 			nudOverlayPointLimit.TabIndex = 4;
 			nudOverlayPointLimit.Value = new decimal(new int[] { 300, 0, 0, 0 });
 			nudOverlayPointLimit.ValueChanged += OnOverlayOptionChanged;
+			// 
+			// chkOverlayRoi
+			// 
+			chkOverlayRoi.AutoSize = true;
+			chkOverlayRoi.Checked = true;
+			chkOverlayRoi.CheckState = CheckState.Checked;
+			chkOverlayRoi.ForeColor = Color.FromArgb(35, 85, 132);
+			chkOverlayRoi.Location = new DrawingPoint(246, 31);
+			chkOverlayRoi.Name = "chkOverlayRoi";
+			chkOverlayRoi.Size = new DrawingSize(46, 20);
+			chkOverlayRoi.TabIndex = 5;
+			chkOverlayRoi.Text = "ROI";
+			chkOverlayRoi.UseVisualStyleBackColor = true;
+			chkOverlayRoi.CheckedChanged += OnOverlayOptionChanged;
 			// 
 			// btnOpenPreview
 			// 
 			btnOpenPreview.BackColor = Color.FromArgb(250, 252, 253);
 			btnOpenPreview.FlatStyle = FlatStyle.Flat;
 			btnOpenPreview.ForeColor = Color.FromArgb(35, 85, 132);
-			btnOpenPreview.Location = new DrawingPoint(320, 1);
+			btnOpenPreview.Location = new DrawingPoint(304, 2);
 			btnOpenPreview.Name = "btnOpenPreview";
 			btnOpenPreview.Size = new DrawingSize(32, 24);
 			btnOpenPreview.TabIndex = 5;
@@ -688,13 +835,102 @@ namespace OpenVisionLab
 			previewBox.BackColor = Color.Black;
 			previewBox.BorderStyle = BorderStyle.FixedSingle;
 			previewBox.Dock = DockStyle.Fill;
-			previewBox.Location = new DrawingPoint(3, 55);
+			previewBox.Location = new DrawingPoint(3, 81);
 			previewBox.Name = "previewBox";
-			previewBox.Size = new DrawingSize(368, 286);
+			previewBox.Size = new DrawingSize(368, 260);
 			previewBox.SizeMode = PictureBoxSizeMode.Zoom;
 			previewBox.TabIndex = 2;
 			previewBox.TabStop = false;
 			previewBox.DoubleClick += OnOpenPreviewClicked;
+			// 
+			// matchingReviewPanel
+			// 
+			matchingReviewPanel.BackColor = Color.FromArgb(247, 250, 253);
+			matchingReviewPanel.BorderStyle = BorderStyle.FixedSingle;
+			matchingReviewPanel.Controls.Add(matchingTemplateTitle);
+			matchingReviewPanel.Controls.Add(matchingDetectedTitle);
+			matchingReviewPanel.Controls.Add(matchingReviewTitle);
+			matchingReviewPanel.Controls.Add(matchingTemplateBox);
+			matchingReviewPanel.Controls.Add(matchingDetectedBox);
+			matchingReviewPanel.Controls.Add(matchingReviewSummary);
+			matchingReviewPanel.Dock = DockStyle.Fill;
+			matchingReviewPanel.Location = new DrawingPoint(3, 347);
+			matchingReviewPanel.Name = "matchingReviewPanel";
+			matchingReviewPanel.Size = new DrawingSize(368, 0);
+			matchingReviewPanel.TabIndex = 3;
+			matchingReviewPanel.Visible = false;
+			// 
+			// matchingTemplateTitle
+			// 
+			matchingTemplateTitle.AutoSize = true;
+			matchingTemplateTitle.Font = new Font("Segoe UI", 8F, FontStyle.Bold);
+			matchingTemplateTitle.ForeColor = Color.FromArgb(35, 85, 132);
+			matchingTemplateTitle.Location = new DrawingPoint(8, 6);
+			matchingTemplateTitle.Name = "matchingTemplateTitle";
+			matchingTemplateTitle.Size = new DrawingSize(56, 13);
+			matchingTemplateTitle.TabIndex = 0;
+			matchingTemplateTitle.Text = "Template";
+			// 
+			// matchingDetectedTitle
+			// 
+			matchingDetectedTitle.AutoSize = true;
+			matchingDetectedTitle.Font = new Font("Segoe UI", 8F, FontStyle.Bold);
+			matchingDetectedTitle.ForeColor = Color.FromArgb(35, 85, 132);
+			matchingDetectedTitle.Location = new DrawingPoint(102, 6);
+			matchingDetectedTitle.Name = "matchingDetectedTitle";
+			matchingDetectedTitle.Size = new DrawingSize(79, 13);
+			matchingDetectedTitle.TabIndex = 1;
+			matchingDetectedTitle.Text = "Detected Crop";
+			// 
+			// matchingReviewTitle
+			// 
+			matchingReviewTitle.AutoSize = true;
+			matchingReviewTitle.Font = new Font("Segoe UI", 8F, FontStyle.Bold);
+			matchingReviewTitle.ForeColor = Color.FromArgb(35, 85, 132);
+			matchingReviewTitle.Location = new DrawingPoint(198, 6);
+			matchingReviewTitle.Name = "matchingReviewTitle";
+			matchingReviewTitle.Size = new DrawingSize(43, 13);
+			matchingReviewTitle.TabIndex = 2;
+			matchingReviewTitle.Text = "Review";
+			// 
+			// matchingTemplateBox
+			// 
+			matchingTemplateBox.BackColor = Color.FromArgb(18, 20, 24);
+			matchingTemplateBox.BorderStyle = BorderStyle.FixedSingle;
+			matchingTemplateBox.Location = new DrawingPoint(8, 25);
+			matchingTemplateBox.Name = "matchingTemplateBox";
+			matchingTemplateBox.Size = new DrawingSize(84, 78);
+			matchingTemplateBox.SizeMode = PictureBoxSizeMode.Zoom;
+			matchingTemplateBox.TabIndex = 3;
+			matchingTemplateBox.TabStop = false;
+			matchingTemplateBox.Cursor = Cursors.Hand;
+			matchingTemplateBox.DoubleClick += OnMatchingReviewImageDoubleClick;
+			// 
+			// matchingDetectedBox
+			// 
+			matchingDetectedBox.BackColor = Color.FromArgb(18, 20, 24);
+			matchingDetectedBox.BorderStyle = BorderStyle.FixedSingle;
+			matchingDetectedBox.Location = new DrawingPoint(102, 25);
+			matchingDetectedBox.Name = "matchingDetectedBox";
+			matchingDetectedBox.Size = new DrawingSize(84, 78);
+			matchingDetectedBox.SizeMode = PictureBoxSizeMode.Zoom;
+			matchingDetectedBox.TabIndex = 4;
+			matchingDetectedBox.TabStop = false;
+			matchingDetectedBox.Cursor = Cursors.Hand;
+			matchingDetectedBox.DoubleClick += OnMatchingReviewImageDoubleClick;
+			// 
+			// matchingReviewSummary
+			// 
+			matchingReviewSummary.BackColor = Color.White;
+			matchingReviewSummary.BorderStyle = BorderStyle.FixedSingle;
+			matchingReviewSummary.Font = new Font("Consolas", 8F, FontStyle.Regular, GraphicsUnit.Point);
+			matchingReviewSummary.ForeColor = Color.FromArgb(42, 54, 68);
+			matchingReviewSummary.Location = new DrawingPoint(198, 25);
+			matchingReviewSummary.Name = "matchingReviewSummary";
+			matchingReviewSummary.Padding = new Padding(5);
+			matchingReviewSummary.Size = new DrawingSize(136, 78);
+			matchingReviewSummary.TabIndex = 5;
+			matchingReviewSummary.Text = "Template: -\r\nCrop: -";
 			// 
 			// resultCaption
 			// 
@@ -742,6 +978,7 @@ namespace OpenVisionLab
 			footerPanel.Controls.Add(btnUp);
 			footerPanel.Controls.Add(btnDown);
 			footerPanel.Controls.Add(chkPublishAllLayers);
+			footerPanel.Controls.Add(workflowHintLabel);
 			footerPanel.Controls.Add(btnMore);
 			footerPanel.Controls.Add(btnValidate);
 			footerPanel.Controls.Add(btnSave);
@@ -803,6 +1040,21 @@ namespace OpenVisionLab
 			chkPublishAllLayers.TabIndex = 3;
 			chkPublishAllLayers.Text = "Publish all";
 			chkPublishAllLayers.UseVisualStyleBackColor = true;
+			// 
+			// workflowHintLabel
+			// 
+			workflowHintLabel.AutoEllipsis = true;
+			workflowHintLabel.BackColor = Color.FromArgb(232, 241, 250);
+			workflowHintLabel.BorderStyle = BorderStyle.FixedSingle;
+			workflowHintLabel.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold, GraphicsUnit.Point);
+			workflowHintLabel.ForeColor = Color.FromArgb(35, 85, 132);
+			workflowHintLabel.Location = new DrawingPoint(362, 9);
+			workflowHintLabel.Name = "workflowHintLabel";
+			workflowHintLabel.Padding = new Padding(8, 0, 8, 0);
+			workflowHintLabel.Size = new DrawingSize(530, 26);
+			workflowHintLabel.TabIndex = 14;
+			workflowHintLabel.Text = "Preview only -> Publish workspace";
+			workflowHintLabel.TextAlign = ContentAlignment.MiddleLeft;
 			// 
 			// btnMore
 			// 
@@ -970,6 +1222,7 @@ namespace OpenVisionLab
 			bodyLayout.ResumeLayout(false);
 			stepTreePanel.ResumeLayout(false);
 			editorPanel.ResumeLayout(false);
+			stepAcceptancePanel.ResumeLayout(false);
 			runLogPanel.ResumeLayout(false);
 			runLogPanel.PerformLayout();
 			previewPanel.ResumeLayout(false);
@@ -977,6 +1230,10 @@ namespace OpenVisionLab
 			previewOptionsPanel.PerformLayout();
 			((ISupportInitialize)nudOverlayPointLimit).EndInit();
 			((ISupportInitialize)previewBox).EndInit();
+			matchingReviewPanel.ResumeLayout(false);
+			matchingReviewPanel.PerformLayout();
+			((ISupportInitialize)matchingTemplateBox).EndInit();
+			((ISupportInitialize)matchingDetectedBox).EndInit();
 			((ISupportInitialize)resultGrid).EndInit();
 			footerPanel.ResumeLayout(false);
 			ConfigurePipelineButtonIcons();

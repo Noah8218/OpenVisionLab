@@ -128,6 +128,7 @@ namespace OpenVisionLab
                         break;
                 }
             });
+            RecordDirectVisionToolPassed(Result, stopwatch);
             PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
             });
         

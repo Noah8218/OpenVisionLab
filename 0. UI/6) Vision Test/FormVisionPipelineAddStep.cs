@@ -50,7 +50,7 @@ namespace OpenVisionLab
 
         public FormVisionPipelineAddStep()
             : this(
-                  new[] { "Threshold", "Morphology", "Contour" },
+                  new[] { "Threshold", "Morphology", "Contour", "RotateScale", "OverlayMerge" },
                   new[] { "Main", "TextSymbol_Binary", "TextSymbol_Clean" },
                   "Threshold",
                   "Main",

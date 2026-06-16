@@ -39,6 +39,11 @@ namespace OpenVisionLab
         public string AcceptanceMessage { get; set; } = string.Empty;
         public double ElapsedMilliseconds { get; set; }
         public string Message { get; set; } = string.Empty;
+        public int ErrorCode { get; set; }
+        public string ErrorName { get; set; } = string.Empty;
+        public string ResultStatus { get; set; } = string.Empty;
+        public string DiagnosticHint { get; set; } = string.Empty;
+        public string SuggestedFix { get; set; } = string.Empty;
         public string ResultImageFile { get; set; } = string.Empty;
         public string OverlayImageFile { get; set; } = string.Empty;
         public int ResultImageWidth { get; set; }
@@ -198,10 +203,15 @@ namespace OpenVisionLab
                 OutputLayer = step?.OutputLayer ?? string.Empty,
                 Status = summary.Status,
                 ToolSuccess = toolResult?.Success == true,
-                AcceptancePassed = stepResult?.AcceptancePassed != false,
+                AcceptancePassed = stepResult?.AcceptancePassed == true,
                 AcceptanceMessage = stepResult?.AcceptanceMessage ?? string.Empty,
                 ElapsedMilliseconds = summary.ElapsedMilliseconds,
                 Message = summary.Message,
+                ErrorCode = summary.ErrorCode,
+                ErrorName = summary.ErrorName,
+                ResultStatus = summary.ResultStatus,
+                DiagnosticHint = summary.DiagnosticHint,
+                SuggestedFix = summary.SuggestedFix,
                 ResultImageFile = imageFile,
                 OverlayImageFile = overlayImageFile,
                 ResultImageWidth = summary.ResultImageWidth,

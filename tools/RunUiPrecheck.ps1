@@ -2,10 +2,11 @@ param(
     [string]$Configuration = "Debug",
     [string]$Platform = "Any CPU",
     [string]$OutputDir = "C:\Users\Public\Documents\ESTsoft\CreatorTemp\openvisionlab_ui_smoke",
-    [string]$Targets = "main_workspace,pipeline_form,pipeline_form_branch,pipeline_add_step_form,pipeline_add_step_branch_form,threshold_form,ai_recipe_form",
+    [string]$Targets = "main_workspace,pipeline_form,pipeline_form_branch,pipeline_designable_forms,pipeline_add_step_form,pipeline_add_step_branch_form,pipeline_property_grid_contract_check,log_panel_contract_check,pipeline_sample_open_preview,pipeline_sample_llm_open_preview,threshold_form,ai_recipe_form,ai_recipe_prompt_contract_check",
     [int]$TimeoutSeconds = 120,
     [switch]$All,
-    [switch]$FailOnWarn
+    [switch]$FailOnWarn,
+    [switch]$VisibleCapture
 )
 
 $ErrorActionPreference = "Stop"
@@ -45,9 +46,17 @@ else {
     @("--target", $Targets, $OutputDir)
 }
 
+if ($VisibleCapture) {
+    $arguments += "--visible-capture"
+}
+else {
+    $arguments += "--quiet"
+}
+
 Write-Host "== UI Screenshot Smoke =="
 Write-Host "Targets: $(if ($All) { 'ALL' } else { $Targets })"
 Write-Host "Timeout: $TimeoutSeconds sec"
+Write-Host "Capture: $(if ($VisibleCapture) { 'visible screen capture' } else { 'quiet offscreen render' })"
 
 Remove-Item -LiteralPath $stdoutPath, $stderrPath -ErrorAction SilentlyContinue
 $process = Start-Process -FilePath $smokeExe -ArgumentList $arguments -NoNewWindow -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
@@ -115,6 +124,7 @@ $report.Add("- Time: $now") | Out-Null
 $report.Add("- Build: $Configuration / $Platform") | Out-Null
 $report.Add("- Targets: $(if ($All) { 'ALL' } else { $Targets })") | Out-Null
 $report.Add("- Timeout: $TimeoutSeconds sec") | Out-Null
+$report.Add("- Capture: $(if ($VisibleCapture) { 'visible screen capture' } else { 'quiet offscreen render' })") | Out-Null
 $report.Add("- Output: ``$OutputDir``") | Out-Null
 $report.Add("") | Out-Null
 $report.Add("| Target | Status | Check | Colors | Flat | Layout | Text | Internal | Size | Image |") | Out-Null

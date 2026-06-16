@@ -12,7 +12,7 @@ namespace OpenVisionLab.Pipeline.Controls
     {
         private static readonly Brush SurfaceBrush = new SolidColorBrush(Color.FromRgb(255, 255, 255));
         private static readonly Brush PanelBrush = new SolidColorBrush(Color.FromRgb(244, 248, 252));
-        private static readonly Brush BorderBrush = new SolidColorBrush(Color.FromRgb(205, 217, 229));
+        private static readonly Brush FlowBorderBrush = new SolidColorBrush(Color.FromRgb(205, 217, 229));
         private static readonly Brush AccentBrush = new SolidColorBrush(Color.FromRgb(35, 85, 132));
         private static readonly Brush MutedBrush = new SolidColorBrush(Color.FromRgb(92, 111, 130));
         private static readonly Brush SelectedBrush = new SolidColorBrush(Color.FromRgb(230, 243, 255));
@@ -156,7 +156,7 @@ namespace OpenVisionLab.Pipeline.Controls
             Grid.SetColumn(arrow, 1);
             layerFlow.Children.Add(arrow);
 
-            Border output = CreateLayerPill("OUT", step.OutputLayer, step.HasOutputImage, false, false, null);
+            Border output = CreateLayerPill("OUTPUT", step.OutputLayer, step.HasOutputImage, false, false, null);
             Grid.SetColumn(output, 2);
             layerFlow.Children.Add(output);
 
@@ -236,19 +236,40 @@ namespace OpenVisionLab.Pipeline.Controls
                 TextAlignment = TextAlignment.Center,
                 TextTrimming = TextTrimming.CharacterEllipsis
             });
+            content.Children.Add(new TextBlock
+            {
+                Text = ResolveLayerActionText(hasImage, isInput),
+                Foreground = foreground,
+                FontSize = 9,
+                FontWeight = FontWeights.Normal,
+                TextAlignment = TextAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                Margin = new Thickness(0, 1, 0, 0),
+                Opacity = hasImage ? 0.95 : 0.75
+            });
 
             return new Border
             {
                 Background = background,
-                BorderBrush = isBranch ? BranchBrush : hasImage ? foreground : BorderBrush,
+                BorderBrush = isBranch ? BranchBrush : hasImage ? foreground : FlowBorderBrush,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(4),
-                MinHeight = 36,
+                MinHeight = 48,
                 Padding = new Thickness(6, 4, 6, 4),
                 Cursor = Cursors.Hand,
                 ToolTip = BuildLayerToolTip(label, layerName, isInput, isBranch, expectedInputLayer),
                 Child = content
             };
+        }
+
+        private static string ResolveLayerActionText(bool hasImage, bool isInput)
+        {
+            if (!hasImage)
+            {
+                return "Run Preview required";
+            }
+
+            return isInput ? "View input image" : "View output image";
         }
 
         private static TextBlock CreateArrow(bool isBranch)
@@ -277,7 +298,7 @@ namespace OpenVisionLab.Pipeline.Controls
             }
 
             return string.IsNullOrWhiteSpace(step.ExpectedInputLayer)
-                ? "SOURCE"
+                ? "SOURCE IMG"
                 : "PREV OUT";
         }
 
@@ -340,6 +361,7 @@ namespace OpenVisionLab.Pipeline.Controls
                     FontSize = 10,
                     FontWeight = FontWeights.SemiBold,
                     TextTrimming = TextTrimming.CharacterEllipsis,
+                    ToolTip = step.FlowStateText.Trim(),
                     Margin = new Thickness(0, 3, 0, 0)
                 };
                 Grid.SetColumn(flowState, 0);
@@ -351,7 +373,7 @@ namespace OpenVisionLab.Pipeline.Controls
             return new Border
             {
                 Background = SurfaceBrush,
-                BorderBrush = BorderBrush,
+                BorderBrush = FlowBorderBrush,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(4),
                 MinHeight = 56,
@@ -416,7 +438,7 @@ namespace OpenVisionLab.Pipeline.Controls
                 if (cardBorders.TryGetValue(step.Index, out Border card))
                 {
                     bool overlaySelected = selected && SelectedPreviewMode == PipelineFlowPreviewMode.Overlay;
-                    card.BorderBrush = overlaySelected ? SelectedBorderBrush : step.IsBranch ? BranchBrush : BorderBrush;
+                    card.BorderBrush = overlaySelected ? SelectedBorderBrush : step.IsBranch ? BranchBrush : FlowBorderBrush;
                     card.BorderThickness = overlaySelected ? new Thickness(2) : new Thickness(step.IsBranch ? 1.5 : 1);
                 }
 
@@ -464,7 +486,7 @@ namespace OpenVisionLab.Pipeline.Controls
 
             if (!hasImage)
             {
-                return BorderBrush;
+                return FlowBorderBrush;
             }
 
             return isInput
@@ -478,6 +500,8 @@ namespace OpenVisionLab.Pipeline.Controls
             {
                 case PipelineFlowStepStatus.Passed:
                     return new SolidColorBrush(Color.FromRgb(0, 150, 85));
+                case PipelineFlowStepStatus.Error:
+                    return new SolidColorBrush(Color.FromRgb(210, 45, 45));
                 case PipelineFlowStepStatus.Failed:
                 case PipelineFlowStepStatus.Timeout:
                     return new SolidColorBrush(Color.FromRgb(205, 58, 58));
@@ -500,6 +524,8 @@ namespace OpenVisionLab.Pipeline.Controls
             {
                 case PipelineFlowStepStatus.Passed:
                     return "OK";
+                case PipelineFlowStepStatus.Error:
+                    return "ERR";
                 case PipelineFlowStepStatus.Failed:
                     return "NG";
                 case PipelineFlowStepStatus.Running:
@@ -524,10 +550,10 @@ namespace OpenVisionLab.Pipeline.Controls
 
         private static string BuildLayerToolTip(string label, string layerName, bool isInput, bool isBranch, string expectedInputLayer)
         {
-            string text = $"{label}: {SafeText(layerName, "-")} - click to inspect input/output image";
+            string text = $"{label}: {SafeText(layerName, "-")} - click to inspect this image";
             if (isInput && isBranch)
             {
-                text += $"\nBranch input. Previous output is {SafeText(expectedInputLayer, "-")}.";
+                text += $"\nBranch input. This step reads {SafeText(layerName, "-")} instead of previous output {SafeText(expectedInputLayer, "-")}.";
             }
 
             return text;
@@ -543,7 +569,7 @@ namespace OpenVisionLab.Pipeline.Controls
             string text = "Click to inspect overlay preview";
             if (step.IsBranch)
             {
-                text += $"\nBranch step. Input '{SafeText(step.InputLayer, "-")}' does not follow previous output '{SafeText(step.ExpectedInputLayer, "-")}'.";
+                text += $"\nBranch step. This step reads '{SafeText(step.InputLayer, "-")}' instead of previous output '{SafeText(step.ExpectedInputLayer, "-")}'. Use Link Prev if this was not intentional.";
             }
 
             return text;

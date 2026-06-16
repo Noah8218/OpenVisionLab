@@ -24,15 +24,31 @@ OpenVisionLab rules:
 - Output a complete VisionPipeline XML.
 - Use only supported ToolType values:
   Threshold, Morphology, Filter, EdgeDetection, Blob, Contour, LineGauge,
-  Matching, Mean, FeatureMatching.
+  RotateScale, Matching, Mean, FeatureMatching, OverlayMerge.
+- Do not output form-only or demo-only features as pipeline ToolType:
+  HSV, Histogram, Arithmetic, Color, Barcode, QR, OCR, EasyBarCode,
+  EasyQRCode, EasyOcr, or semantic decoders.
+- If the requested target needs a decoder or classifier that the pipeline runner
+  does not support yet, generate only the supported candidate-detection steps
+  and state the gap in the summary.
 - Use stable InputLayer and OutputLayer names.
 - The first step usually reads from Main.
 - Later steps should read from the previous output layer.
+- Do not overwrite Main unless the user explicitly requests it.
+- If a later step reads Main after preprocessing, verify that this is intentional. Otherwise change it to the previous OutputLayer.
+- If a later inspection reads Main after preprocessing, treat it as an intentional branch and explain why.
+- If the recipe uses independent branches, add a final OverlayMerge step.
+- OverlayMerge should read the base review layer, usually Main, and write one final review layer.
+- OverlayMerge SourceLayers must list branch result layers separated by semicolons.
+- The final review image should contain all branch detections in one output layer.
+- Users should not need to inspect multiple branch output images to judge the result.
 - Use invariant culture numbers.
 - Use C# enum names.
 - Do not invent parameter names.
 - Do not embed image data.
 - Use acceptance rules only when they are conservative.
+- Prefer sample-backed metric gates from the Sample Catalog. If no close sample exists, keep acceptance loose and explain which metric should be tuned.
+- When Good/Bad sample pairs exist, use them to set acceptance gates that pass the good sample and fail the bad sample for an explainable metric.
 
 Return only:
 1. Recipe summary
@@ -57,6 +73,9 @@ Matching
 
 Feature-like target:
 FeatureMatching
+
+Independent branch review:
+Branch A + Branch B + ... -> OverlayMerge
 ```
 
 ## Tuning Checklist Examples
@@ -66,7 +85,12 @@ FeatureMatching
 - If objects are broken, increase Morphology `KernelWidth`, `KernelHeight`, or `Iterations`.
 - If objects are merged, use Morphology `Open` or reduce kernel size.
 - If runtime is too slow, add ROI and tighten area limits.
+- For branched recipes, tune each branch first, then check final `MergeOverlayCount`.
 
 ## Reference Sample
 
 Use `docs/samples/Contour_TextSymbols.pipeline.xml` as the baseline for text, number, and symbol candidate detection.
+
+Use `docs/samples/Contour_AllSymbolsAndFaint_LLM.pipeline.xml` when the target needs multiple branches but the user must review one final overlay image.
+
+Use `docs/samples/Feature_Template_Review.pipeline.xml` when the target needs a feature/template review path with template image, detected crop, score, and overlay confirmation.

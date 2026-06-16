@@ -8,6 +8,7 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -20,6 +21,10 @@ namespace OpenVisionLab
     {
         private readonly List<string> currentSourceLayers;
         private readonly Func<VisionPipelineContext> currentContextFactory;
+        private TextBox tbOverview;
+        private TextBox tbFlow;
+        private TextBox tbFeedback;
+        private TextBox tbPatch;
         private TextBox tbXml;
         private TextBox tbLog;
         private DataGridView validationGrid;
@@ -34,6 +39,8 @@ namespace OpenVisionLab
         private Button btnLoadImage;
         private Button btnUseCurrent;
         private Button btnRunPreview;
+        private Button btnCopyFeedback;
+        private Button btnCopyPatch;
         private Button btnApply;
         private Button btnClose;
         private Bitmap testImage;
@@ -41,8 +48,15 @@ namespace OpenVisionLab
         private Bitmap previewRawImage;
         private List<VisionToolOverlay> previewOverlays = new List<VisionToolOverlay>();
         private VisionPipelineStepResultSummary previewSummary;
+        private List<VisionPipelineStepResultSummary> latestRunSummaries = new List<VisionPipelineStepResultSummary>();
         private string previewTitle = "AI Preview";
         private VisionPipeline parsedPipeline;
+        private IReadOnlyList<VisionPipelineNormalizationChange> latestNormalizationChanges = Array.Empty<VisionPipelineNormalizationChange>();
+        private VisionPipelineValidationResult latestValidationResult = new VisionPipelineValidationResult();
+        private string latestFeedbackText = string.Empty;
+        private bool latestFeedbackHasRunResult;
+        private bool latestValidationSuccess;
+        private bool isBusy;
 
         public VisionPipeline ImportedPipeline { get; private set; }
 
@@ -60,6 +74,7 @@ namespace OpenVisionLab
 
             InitializeComponent();
             UpdateImageStatus();
+            UpdateRecipeGuide();
             AppendLog("Paste an LLM-generated VisionPipeline XML, then Validate.");
         }
 
@@ -94,6 +109,7 @@ namespace OpenVisionLab
             }
 
             tbXml.Text = Clipboard.GetText();
+            MoveCaretToStart(tbXml);
             AppendLog("PASTE | Clipboard text loaded.");
         }
 
@@ -110,6 +126,7 @@ namespace OpenVisionLab
                 }
 
                 tbXml.Text = File.ReadAllText(dialog.FileName);
+                MoveCaretToStart(tbXml);
                 AppendLog($"OPEN XML | {Path.GetFileName(dialog.FileName)}");
             }
         }
@@ -124,6 +141,7 @@ namespace OpenVisionLab
             }
 
             tbXml.Text = File.ReadAllText(xmlPath);
+            MoveCaretToStart(tbXml);
             AppendLog($"SAMPLE | {Path.GetFileName(xmlPath)}");
 
             string imagePath = FindWorkspaceFile("Sample", "Contour.jpg");
@@ -150,7 +168,8 @@ namespace OpenVisionLab
                 if (VisionPipelineDialogService.ShowDialog(preview, this) == DialogResult.OK)
                 {
                     Clipboard.SetText(preview.PromptText);
-                    AppendLog("PROMPT | Copied AI Recipe request to clipboard.");
+                    string feedbackNote = latestFeedbackHasRunResult ? " Latest Run Preview feedback included." : string.Empty;
+                    AppendLog($"PROMPT | Copied AI Recipe request to clipboard.{feedbackNote}");
                 }
                 else
                 {
@@ -192,7 +211,10 @@ namespace OpenVisionLab
             testImage?.Dispose();
             testImage = null;
             ClearPreviewResult();
+            stepGrid.Rows.Clear();
+            latestRunSummaries.Clear();
             UpdateImageStatus();
+            UpdateRecipeGuide();
             AppendLog("IMAGE | Current display layers will be used.");
         }
 
@@ -205,7 +227,9 @@ namespace OpenVisionLab
 
             SetBusy(true);
             stepGrid.Rows.Clear();
+            latestRunSummaries.Clear();
             ClearPreviewResult();
+            UpdateRecipeGuide();
             AppendLog("RUN | Preview started.");
 
             VisionPipelineRunResult runResult = null;
@@ -229,16 +253,32 @@ namespace OpenVisionLab
                     CachePreviewResult(context, runResult);
                 }
 
+                latestFeedbackText = BuildLlmFeedback(parsedPipeline, runResult, latestValidationResult, latestNormalizationChanges, string.Empty);
+                latestFeedbackHasRunResult = true;
+                UpdateFeedbackButton();
+                UpdateRecipeGuide(runResult, runResult?.Success == true ? "Run Preview OK" : "Run Preview NG");
                 AppendLog($"{(runResult?.Success == true ? "RUN OK" : "RUN NG")} | {BuildRunSummary(runResult)}");
             }
             catch (Exception ex)
             {
-                AppendLog($"RUN NG | {ex.GetBaseException().Message}");
+                string message = ex.GetBaseException().Message;
+                latestFeedbackText = BuildLlmFeedback(parsedPipeline, runResult, latestValidationResult, latestNormalizationChanges, message);
+                latestFeedbackHasRunResult = true;
+                UpdateFeedbackButton();
+                UpdateRecipeGuide(runResult, "Run Preview ERROR");
+                AppendLog($"RUN NG | {message}");
             }
             finally
             {
+                if (!IsUiClosing && runResult != null)
+                {
+                    UpdateRecipeGuide(runResult, runResult.Success ? "Run Preview OK" : "Run Preview NG");
+                    RefreshPatchPreview();
+                }
+
                 DisposeRunResultImages(runResult);
                 SetBusy(false);
+                UpdateFeedbackButton();
             }
         }
 
@@ -254,6 +294,46 @@ namespace OpenVisionLab
             importedPreviewImage = testImage == null ? null : new Bitmap(testImage);
             DialogResult = DialogResult.OK;
             Close();
+        }
+
+        private void OnCopyFeedbackClicked(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(latestFeedbackText))
+            {
+                latestFeedbackText = BuildLlmFeedback(parsedPipeline, null, latestValidationResult, latestNormalizationChanges, "Run Preview has not been executed yet.");
+            }
+
+            try
+            {
+                Clipboard.SetText(latestFeedbackText);
+                AppendLog("FEEDBACK | Copied AI tuning feedback to clipboard.");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"FEEDBACK NG | {ex.GetBaseException().Message}");
+            }
+        }
+
+        private void OnCopyPatchClicked(object sender, EventArgs e)
+        {
+            string patchRequest = BuildPatchRequestText(GetPatchTargetSummary());
+            if (string.IsNullOrWhiteSpace(patchRequest))
+            {
+                AppendLog("PATCH NG | Run Preview before copying a patch request.");
+                return;
+            }
+
+            try
+            {
+                Clipboard.SetText(patchRequest);
+                VisionPipelineStepResultSummary summary = GetPatchTargetSummary();
+                string stepText = summary == null ? "-" : $"{summary.Index:00} {summary.Name}";
+                AppendLog($"PATCH | Copied XML patch request. Step={stepText}");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"PATCH NG | {ex.GetBaseException().Message}");
+            }
         }
 
         private void OnPreviewBoxDoubleClick(object sender, EventArgs e)
@@ -289,7 +369,32 @@ namespace OpenVisionLab
             importedPreviewImage?.Dispose();
             importedPreviewImage = null;
             ClearPreviewResult();
+            latestValidationSuccess = false;
+            latestValidationResult = new VisionPipelineValidationResult();
+            latestNormalizationChanges = Array.Empty<VisionPipelineNormalizationChange>();
+            latestFeedbackText = string.Empty;
+            latestFeedbackHasRunResult = false;
+            latestRunSummaries.Clear();
             btnApply.Enabled = false;
+            UpdateFeedbackButton();
+            UpdateRecipeGuide();
+        }
+
+        private void OnStepGridSelectionChanged(object sender, EventArgs e)
+        {
+            RefreshPatchPreview();
+        }
+
+        private void RefreshPatchPreview()
+        {
+            if (IsUiClosing || tbPatch == null || latestRunSummaries == null || latestRunSummaries.Count == 0)
+            {
+                return;
+            }
+
+            tbPatch.Text = BuildPatchPreviewText();
+            MoveCaretToStart(tbPatch);
+            UpdateFeedbackButton();
         }
 
         private bool ValidateXml(bool showLog)
@@ -297,11 +402,24 @@ namespace OpenVisionLab
             validationGrid.Rows.Clear();
             parsedPipeline = null;
             btnApply.Enabled = false;
+            latestValidationSuccess = false;
+            latestValidationResult = new VisionPipelineValidationResult();
+            latestNormalizationChanges = Array.Empty<VisionPipelineNormalizationChange>();
+            latestFeedbackText = string.Empty;
+            latestFeedbackHasRunResult = false;
+            latestRunSummaries.Clear();
+            UpdateFeedbackButton();
+            UpdateRecipeGuide();
 
             string xml = ExtractXmlPayload(tbXml.Text);
             if (!SerializeHelper.TryLoadFromXmlText(xml, out VisionPipeline pipeline, out string loadError) || pipeline == null)
             {
                 AddValidationRow("Error", loadError);
+                latestValidationResult.Errors.Add(loadError);
+                latestFeedbackText = BuildLlmFeedback(null, null, latestValidationResult, latestNormalizationChanges, loadError);
+                latestFeedbackHasRunResult = false;
+                UpdateFeedbackButton();
+                UpdateRecipeGuide(null, "Validation NG");
                 if (showLog)
                 {
                     AppendLog($"VALIDATE NG | {loadError}");
@@ -315,7 +433,15 @@ namespace OpenVisionLab
                 pipeline.Name = $"AI_Recipe_{DateTime.Now:HHmmss}";
             }
 
+            IReadOnlyList<VisionPipelineNormalizationChange> normalizationChanges = NormalizePipelineFlow(pipeline);
+            latestNormalizationChanges = normalizationChanges.ToList();
+            foreach (VisionPipelineNormalizationChange change in normalizationChanges)
+            {
+                AddValidationRow("Auto Fix", change.Message);
+            }
+
             VisionPipelineValidationResult validation = VisionPipelineValidator.Validate(pipeline, GetValidationSourceLayers());
+            latestValidationResult = validation;
             foreach (string error in validation.Errors)
             {
                 AddValidationRow("Error", error);
@@ -332,13 +458,28 @@ namespace OpenVisionLab
             }
 
             parsedPipeline = pipeline;
+            latestValidationSuccess = validation.Success;
+            latestFeedbackText = BuildLlmFeedback(pipeline, null, validation, latestNormalizationChanges, string.Empty);
+            latestFeedbackHasRunResult = false;
+            UpdateFeedbackButton();
+            UpdateRecipeGuide(null, validation.Success ? "Validation OK" : "Validation NG");
             btnApply.Enabled = validation.Success;
             if (showLog)
             {
+                foreach (VisionPipelineNormalizationChange change in normalizationChanges)
+                {
+                    AppendLog(change.Message);
+                }
+
                 AppendLog($"{(validation.Success ? "VALIDATE OK" : "VALIDATE NG")} | {pipeline.Name} | Steps={pipeline.Steps.Count} | Errors={validation.Errors.Count} | Warnings={validation.Warnings.Count}");
             }
 
             return validation.Success;
+        }
+
+        private static IReadOnlyList<VisionPipelineNormalizationChange> NormalizePipelineFlow(VisionPipeline pipeline)
+        {
+            return VisionPipelineNormalizer.NormalizeForRun(pipeline);
         }
 
         private VisionPipelineContext CreateRunContext()
@@ -370,7 +511,9 @@ namespace OpenVisionLab
         private void PopulateRunResult(VisionPipelineRunResult runResult)
         {
             stepGrid.Rows.Clear();
-            foreach (VisionPipelineStepResultSummary summary in VisionPipelineResultSummaryService.CreateStepSummaries(runResult))
+            latestRunSummaries = VisionPipelineResultSummaryService.CreateStepSummaries(runResult);
+            int firstFailedRow = -1;
+            foreach (VisionPipelineStepResultSummary summary in latestRunSummaries)
             {
                 int rowIndex = stepGrid.Rows.Add(
                     summary.Index.ToString(CultureInfo.InvariantCulture),
@@ -380,6 +523,32 @@ namespace OpenVisionLab
                     summary.MetricsText);
                 DataGridViewRow row = stepGrid.Rows[rowIndex];
                 row.DefaultCellStyle.ForeColor = ResolveStatusColor(summary.Status);
+                if (!summary.Success && firstFailedRow < 0)
+                {
+                    firstFailedRow = rowIndex;
+                }
+
+                if (!summary.Success)
+                {
+                    row.DefaultCellStyle.BackColor = Color.FromArgb(255, 244, 238);
+                    row.DefaultCellStyle.SelectionBackColor = Color.FromArgb(206, 84, 64);
+                    row.DefaultCellStyle.Font = new Font(stepGrid.Font, FontStyle.Bold);
+                }
+            }
+
+            if (firstFailedRow >= 0 && firstFailedRow < stepGrid.Rows.Count)
+            {
+                stepGrid.ClearSelection();
+                stepGrid.Rows[firstFailedRow].Selected = true;
+                stepGrid.CurrentCell = stepGrid.Rows[firstFailedRow].Cells[0];
+                stepGrid.FirstDisplayedScrollingRowIndex = firstFailedRow;
+                VisionPipelineStepResultSummary failedSummary = latestRunSummaries[firstFailedRow];
+                RefreshPatchPreview();
+                AppendLog($"FOCUS | First failed step {failedSummary.Index:00} selected. Review AI Feedback for the suggested fix.");
+            }
+            else
+            {
+                RefreshPatchPreview();
             }
         }
 
@@ -704,6 +873,7 @@ namespace OpenVisionLab
                 return;
             }
 
+            isBusy = busy;
             btnPaste.Enabled = !busy;
             btnOpenXml.Enabled = !busy;
             btnSample.Enabled = !busy;
@@ -712,8 +882,33 @@ namespace OpenVisionLab
             btnLoadImage.Enabled = !busy;
             btnUseCurrent.Enabled = !busy;
             btnRunPreview.Enabled = !busy;
-            btnApply.Enabled = !busy && parsedPipeline != null && ValidateXml(showLog: false);
+            btnCopyFeedback.Enabled = !busy && !string.IsNullOrWhiteSpace(latestFeedbackText);
+            btnCopyPatch.Enabled = !busy && CanCopyPatchRequest();
+            btnApply.Enabled = !busy && parsedPipeline != null && latestValidationSuccess;
             Cursor = busy ? Cursors.WaitCursor : Cursors.Default;
+        }
+
+        private void UpdateFeedbackButton()
+        {
+            if (IsUiClosing)
+            {
+                return;
+            }
+
+            if (btnCopyFeedback != null)
+            {
+                btnCopyFeedback.Enabled = !isBusy && !string.IsNullOrWhiteSpace(latestFeedbackText);
+            }
+
+            if (btnPrompt != null)
+            {
+                btnPrompt.Text = latestFeedbackHasRunResult ? "Retry Prompt" : "Build Prompt";
+            }
+
+            if (btnCopyPatch != null)
+            {
+                btnCopyPatch.Enabled = !isBusy && CanCopyPatchRequest();
+            }
         }
 
         private void UpdateImageStatus()
@@ -725,6 +920,368 @@ namespace OpenVisionLab
             }
 
             imageStatusLabel.Text = $"Preview source: current layers ({string.Join(", ", currentSourceLayers.Take(4))})";
+        }
+
+        private void UpdateRecipeGuide(VisionPipelineRunResult runResult = null, string statusText = "")
+        {
+            if (IsUiClosing || tbOverview == null || tbFlow == null || tbFeedback == null || tbPatch == null)
+            {
+                return;
+            }
+
+            tbOverview.Text = BuildOverviewText(parsedPipeline, latestValidationResult, runResult, statusText);
+            tbFlow.Text = BuildFlowText(parsedPipeline);
+            tbFeedback.Text = BuildFeedbackPreviewText();
+            tbPatch.Text = BuildPatchPreviewText();
+            MoveCaretToStart(tbOverview);
+            MoveCaretToStart(tbFlow);
+            MoveCaretToStart(tbFeedback);
+            MoveCaretToStart(tbPatch);
+            UpdateFeedbackButton();
+        }
+
+        private static void MoveCaretToStart(TextBox textBox)
+        {
+            if (textBox == null || textBox.IsDisposed)
+            {
+                return;
+            }
+
+            textBox.SelectionStart = 0;
+            textBox.SelectionLength = 0;
+        }
+
+        private string BuildOverviewText(
+            VisionPipeline pipeline,
+            VisionPipelineValidationResult validation,
+            VisionPipelineRunResult runResult,
+            string statusText)
+        {
+            string source = testImage == null
+                ? $"Current layers: {string.Join(", ", currentSourceLayers.Take(4))}"
+                : $"Preview image: Main ({testImage.Width} x {testImage.Height})";
+
+            if (pipeline == null)
+            {
+                return string.Join(
+                    Environment.NewLine,
+                    "Status: Waiting for recipe XML",
+                    source,
+                    "",
+                    "Use: Paste/Open XML or load Sample.",
+                    "Next: Validate -> Run Preview -> Copy Feedback.");
+            }
+
+            string validationText = validation == null
+                ? "-"
+                : validation.Success
+                    ? "OK"
+                    : $"NG ({validation.Errors.Count} error)";
+            string runText = runResult == null
+                ? "-"
+                : runResult.Success ? "OK" : "NG";
+            string autoFixText = latestNormalizationChanges == null || latestNormalizationChanges.Count == 0
+                ? "0"
+                : latestNormalizationChanges.Count.ToString(CultureInfo.InvariantCulture);
+
+            return string.Join(
+                Environment.NewLine,
+                $"Pipeline: {pipeline.Name}",
+                $"Status: {(string.IsNullOrWhiteSpace(statusText) ? "Validated" : statusText)}",
+                source,
+                $"Steps: {pipeline.Steps.Count}",
+                $"Validation: {validationText}",
+                $"Run Preview: {runText}",
+                $"Auto Fixes: {autoFixText}");
+        }
+
+        private string BuildFlowText(VisionPipeline pipeline)
+        {
+            if (pipeline?.Steps == null || pipeline.Steps.Count == 0)
+            {
+                return string.Join(
+                    Environment.NewLine,
+                    "Validate a recipe to see the step chain.",
+                    "",
+                    "Expected flow:",
+                    "01 Threshold | Main -> Binary",
+                    "02 Morphology | Binary -> Clean",
+                    "03 Contour | Clean -> Result");
+            }
+
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < pipeline.Steps.Count; i++)
+            {
+                VisionPipelineStep step = pipeline.Steps[i];
+                string status = ResolveFlowStatus(i);
+                builder.AppendLine($"{i + 1:00}. {status} {step?.Name ?? "Step"}");
+                builder.AppendLine($"    {step?.ToolType ?? "-"} | {step?.InputLayer ?? "-"} -> {step?.OutputLayer ?? "-"}");
+            }
+
+            return builder.ToString().TrimEnd();
+        }
+
+        private string ResolveFlowStatus(int index)
+        {
+            if (latestRunSummaries == null || index < 0 || index >= latestRunSummaries.Count)
+            {
+                return "--";
+            }
+
+            string status = latestRunSummaries[index]?.Status ?? string.Empty;
+            return string.IsNullOrWhiteSpace(status) ? "--" : status;
+        }
+
+        private string BuildFeedbackPreviewText()
+        {
+            if (string.IsNullOrWhiteSpace(latestFeedbackText))
+            {
+                return string.Join(
+                    Environment.NewLine,
+                    "Run Preview creates AI tuning feedback.",
+                    "Copy Feedback sends validation, auto-fix, metrics, and failed-step context to the clipboard.",
+                    "",
+                    "Prompt will include the latest Run Preview feedback after a preview has run.");
+            }
+
+            string header = latestFeedbackHasRunResult
+                ? "Ready for LLM retry:"
+                : "Validation feedback:";
+            List<string> priorityLines = BuildFeedbackPriorityLines(latestFeedbackText);
+            return string.Join(Environment.NewLine, new[] { header }.Concat(priorityLines));
+        }
+
+        private static List<string> BuildFeedbackPriorityLines(string feedbackText)
+        {
+            List<string> sourceLines = (feedbackText ?? string.Empty)
+                .Split(new[] { "\r\n", "\n" }, StringSplitOptions.None)
+                .Select(line => line.TrimEnd())
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+                .ToList();
+            List<string> lines = new List<string>();
+
+            AddMatchingFeedbackLines(lines, sourceLines, "Preview Result:");
+            AddMatchingFeedbackLines(lines, sourceLines, "First Failed Step:");
+            AddMatchingFeedbackLines(lines, sourceLines, "- Status:");
+            AddMatchingFeedbackLines(lines, sourceLines, "- Flow:");
+            AddMatchingFeedbackLines(lines, sourceLines, "- Direct Dependents:");
+            AddMatchingFeedbackLines(lines, sourceLines, "- Message:");
+            AddMatchingFeedbackLines(lines, sourceLines, "- Diagnostic:");
+            AddMatchingFeedbackLines(lines, sourceLines, "- Suggested Fix:");
+            AddMatchingFeedbackLines(lines, sourceLines, "- Patch Proposal:");
+            AddMatchingFeedbackLines(lines, sourceLines, "- Change Scope:");
+            AddMatchingFeedbackLines(lines, sourceLines, "Final Review Contract:");
+            AddMatchingFeedbackLines(lines, sourceLines, "- NG:");
+            AddMatchingFeedbackLines(lines, sourceLines, "- Final layer:");
+            AddMatchingFeedbackLines(lines, sourceLines, "- MergeOverlayCount:");
+            AddMatchingFeedbackLines(lines, sourceLines, "- MergeSourceCount:");
+            AddMatchingFeedbackLines(lines, sourceLines, "Suggested Next LLM Request:");
+            AddMatchingFeedbackLines(lines, sourceLines, "- Change scope:");
+            AddMatchingFeedbackLines(lines, sourceLines, "- Fix step ");
+            AddMatchingFeedbackLines(lines, sourceLines, "- Add or repair a final OverlayMerge");
+
+            if (lines.Count == 0)
+            {
+                lines.AddRange(sourceLines.Take(14));
+                return lines;
+            }
+
+            lines.Add(string.Empty);
+            lines.Add("Full feedback is copied by Copy AI Feedback.");
+            return lines.Take(28).ToList();
+        }
+
+        private static void AddMatchingFeedbackLines(List<string> target, List<string> source, string prefix)
+        {
+            foreach (string line in source)
+            {
+                string trimmed = line.TrimStart();
+                if (!trimmed.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                    || target.Any(existing => string.Equals(existing, line, StringComparison.Ordinal)))
+                {
+                    continue;
+                }
+
+                target.Add(line);
+            }
+        }
+
+        private string BuildPatchPreviewText()
+        {
+            VisionPipelineStepResultSummary summary = GetPatchTargetSummary();
+            if (summary == null)
+            {
+                return string.Join(
+                    Environment.NewLine,
+                    "Run Preview creates an XML Patch Request.",
+                    "Select a failed step to focus the request.",
+                    "Copy Patch Request asks the LLM to return a full VisionPipeline XML.");
+            }
+
+            List<string> lines = new List<string>
+            {
+                "XML Patch Request target:",
+                FormatPatchStepTitle(summary),
+                $"Status: {summary.Status}",
+                $"Flow: {summary.InputLayer} -> {summary.OutputLayer}",
+                $"Patch: {BuildRetryPatchProposal(summary)}",
+                "",
+                "Copy Patch Request includes the current step XML and asks for a full VisionPipeline XML."
+            };
+
+            return string.Join(Environment.NewLine, lines);
+        }
+
+        private string BuildPatchRequestText(VisionPipelineStepResultSummary summary)
+        {
+            if (parsedPipeline == null || summary == null)
+            {
+                return string.Empty;
+            }
+
+            VisionPipelineStep step = GetStepBySummary(summary);
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("OpenVisionLab AI Recipe XML Patch Request");
+            builder.AppendLine($"Pipeline: {parsedPipeline.Name}");
+            builder.AppendLine($"Target Step: {FormatPatchStepTitle(summary)}");
+            builder.AppendLine($"Status: {summary.Status}");
+            builder.AppendLine($"Flow: {summary.InputLayer} -> {summary.OutputLayer}");
+            builder.AppendLine($"Message: {(string.IsNullOrWhiteSpace(summary.Message) ? "-" : summary.Message)}");
+            builder.AppendLine($"Diagnostic: {(string.IsNullOrWhiteSpace(summary.DiagnosticHint) ? "-" : summary.DiagnosticHint)}");
+            builder.AppendLine($"Suggested Fix: {(string.IsNullOrWhiteSpace(summary.SuggestedFix) ? "-" : summary.SuggestedFix)}");
+            builder.AppendLine($"Patch Proposal: {BuildRetryPatchProposal(summary)}");
+            if (!string.IsNullOrWhiteSpace(summary.MetricsText))
+            {
+                builder.AppendLine($"Metrics: {summary.MetricsText}");
+            }
+
+            builder.AppendLine();
+            builder.AppendLine("Patch Scope:");
+            if (summary.Success)
+            {
+                builder.AppendLine("- This selected step is currently OK. Modify it only if the visual result has false positives or misses.");
+            }
+            else
+            {
+                builder.AppendLine("- Modify the target failed step and directly dependent steps only.");
+            }
+
+            builder.AppendLine("- Preserve successful previous steps and stable output layer names unless the layer flow is wrong.");
+            builder.AppendLine("- Keep Main as the source image. Do not use Main as an output layer unless explicitly requested.");
+            builder.AppendLine("- If this step is after preprocessing, verify whether InputLayer should be the previous OutputLayer instead of Main.");
+            builder.AppendLine("- Do not remove final OverlayMerge review layers when branch detections must be visible together.");
+            builder.AppendLine();
+            builder.AppendLine("Current Step XML Reference:");
+            builder.AppendLine(BuildStepXmlReference(step, summary));
+            builder.AppendLine();
+            builder.AppendLine("Return Format:");
+            builder.AppendLine("- Return the full <VisionPipeline> XML that OpenVisionLab can paste/import directly.");
+            builder.AppendLine("- Do not return only the step fragment.");
+            builder.AppendLine("- Keep unsupported fields out of the XML.");
+            builder.AppendLine("- After generating the XML, explain which fields changed and why in 3 lines or fewer.");
+            return builder.ToString().TrimEnd();
+        }
+
+        private static string FormatPatchStepTitle(VisionPipelineStepResultSummary summary)
+        {
+            if (summary == null)
+            {
+                return "-";
+            }
+
+            string indexText = summary.Index.ToString("00", CultureInfo.InvariantCulture);
+            string name = string.IsNullOrWhiteSpace(summary.Name) ? "Step" : summary.Name.Trim();
+            if (name.StartsWith(indexText + " ", StringComparison.Ordinal)
+                || name.StartsWith(indexText + ".", StringComparison.Ordinal))
+            {
+                name = name.Substring(indexText.Length).TrimStart(' ', '.', '-');
+            }
+
+            return $"{indexText}. {name} [{summary.ToolType}]";
+        }
+
+        private VisionPipelineStepResultSummary GetPatchTargetSummary()
+        {
+            if (latestRunSummaries == null || latestRunSummaries.Count == 0)
+            {
+                return null;
+            }
+
+            int selectedIndex = stepGrid?.CurrentRow?.Index ?? -1;
+            if (selectedIndex >= 0 && selectedIndex < latestRunSummaries.Count)
+            {
+                return latestRunSummaries[selectedIndex];
+            }
+
+            return latestRunSummaries.FirstOrDefault(summary => summary != null && !summary.Success)
+                ?? latestRunSummaries.LastOrDefault();
+        }
+
+        private bool CanCopyPatchRequest()
+        {
+            return latestFeedbackHasRunResult
+                && parsedPipeline != null
+                && GetPatchTargetSummary() != null;
+        }
+
+        private VisionPipelineStep GetStepBySummary(VisionPipelineStepResultSummary summary)
+        {
+            int index = (summary?.Index ?? 0) - 1;
+            if (parsedPipeline?.Steps == null || index < 0 || index >= parsedPipeline.Steps.Count)
+            {
+                return null;
+            }
+
+            return parsedPipeline.Steps[index];
+        }
+
+        private static string BuildStepXmlReference(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("<VisionPipelineStep>");
+            AppendXmlElement(builder, 1, "Name", step?.Name ?? summary?.Name ?? string.Empty);
+            AppendXmlElement(builder, 1, "ToolType", step?.ToolType ?? summary?.ToolType ?? string.Empty);
+            AppendXmlElement(builder, 1, "Enabled", FormatXmlBool(step?.Enabled ?? true));
+            AppendXmlElement(builder, 1, "InputLayer", step?.InputLayer ?? summary?.InputLayer ?? string.Empty);
+            AppendXmlElement(builder, 1, "OutputLayer", step?.OutputLayer ?? summary?.OutputLayer ?? string.Empty);
+            AppendXmlElement(builder, 1, "UseAcceptance", FormatXmlBool(step?.UseAcceptance ?? false));
+            AppendXmlElement(builder, 1, "ExpectedSuccess", FormatXmlBool(step?.ExpectedSuccess ?? true));
+            AppendXmlElement(builder, 1, "AcceptanceMetricName", step?.AcceptanceMetricName ?? string.Empty);
+            AppendXmlElement(builder, 1, "UseAcceptanceMetricMinimum", FormatXmlBool(step?.UseAcceptanceMetricMinimum ?? false));
+            AppendXmlElement(builder, 1, "AcceptanceMetricMinimum", (step?.AcceptanceMetricMinimum ?? 0).ToString("0.###", CultureInfo.InvariantCulture));
+            AppendXmlElement(builder, 1, "UseAcceptanceMetricMaximum", FormatXmlBool(step?.UseAcceptanceMetricMaximum ?? false));
+            AppendXmlElement(builder, 1, "AcceptanceMetricMaximum", (step?.AcceptanceMetricMaximum ?? 0).ToString("0.###", CultureInfo.InvariantCulture));
+            builder.AppendLine("\t<Parameters>");
+            foreach (KeyValuePair<string, string> parameter in (step?.Parameters ?? new Dictionary<string, string>()).OrderBy(item => item.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                builder.AppendLine($"\t\t<Parameter Key=\"{EscapeXml(parameter.Key)}\" Value=\"{EscapeXml(parameter.Value)}\" />");
+            }
+
+            builder.AppendLine("\t</Parameters>");
+            builder.AppendLine("</VisionPipelineStep>");
+            return builder.ToString().TrimEnd();
+        }
+
+        private static void AppendXmlElement(StringBuilder builder, int indent, string name, string value)
+        {
+            builder.Append('\t', indent);
+            builder.Append('<');
+            builder.Append(name);
+            builder.Append('>');
+            builder.Append(EscapeXml(value));
+            builder.Append("</");
+            builder.Append(name);
+            builder.AppendLine(">");
+        }
+
+        private static string EscapeXml(string value)
+        {
+            return System.Security.SecurityElement.Escape(value ?? string.Empty) ?? string.Empty;
+        }
+
+        private static string FormatXmlBool(bool value)
+        {
+            return value ? "true" : "false";
         }
 
         private void AppendLog(string message)
@@ -744,6 +1301,508 @@ namespace OpenVisionLab
             tbLog.ScrollToCaret();
         }
 
+        private static string BuildLlmFeedback(
+            VisionPipeline pipeline,
+            VisionPipelineRunResult runResult,
+            VisionPipelineValidationResult validation,
+            IEnumerable<VisionPipelineNormalizationChange> normalizationChanges,
+            string exceptionMessage)
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("OpenVisionLab AI Recipe Feedback");
+            builder.AppendLine($"Pipeline: {pipeline?.Name ?? "-"}");
+
+            if (runResult != null)
+            {
+                builder.AppendLine($"Preview Result: {(runResult.Success ? "OK" : "NG")}");
+                builder.AppendLine($"Executed Steps: {runResult.StepResults?.Count ?? 0}");
+            }
+            else if (validation != null)
+            {
+                builder.AppendLine($"Validation Result: {(validation.Success ? "OK" : "NG")}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(exceptionMessage))
+            {
+                builder.AppendLine($"Exception: {exceptionMessage}");
+            }
+
+            AppendValidationFeedback(builder, validation);
+            AppendNormalizationFeedback(builder, normalizationChanges);
+            AppendPipelineFlowFeedback(builder, pipeline);
+            AppendRunFeedback(builder, runResult);
+            AppendFinalReviewFeedback(builder, runResult);
+            AppendNextInstruction(builder, pipeline, runResult, validation, exceptionMessage);
+            return builder.ToString().TrimEnd();
+        }
+
+        private static void AppendValidationFeedback(StringBuilder builder, VisionPipelineValidationResult validation)
+        {
+            if (validation == null)
+            {
+                return;
+            }
+
+            if (validation.Errors.Count > 0)
+            {
+                builder.AppendLine();
+                builder.AppendLine("Validation Errors:");
+                foreach (string error in validation.Errors)
+                {
+                    builder.AppendLine($"- {error}");
+                }
+            }
+
+            if (validation.Warnings.Count > 0)
+            {
+                builder.AppendLine();
+                builder.AppendLine("Validation Warnings:");
+                foreach (string warning in validation.Warnings)
+                {
+                    builder.AppendLine($"- {warning}");
+                }
+            }
+        }
+
+        private static void AppendFinalReviewFeedback(StringBuilder builder, VisionPipelineRunResult runResult)
+        {
+            if (runResult == null)
+            {
+                return;
+            }
+
+            List<VisionPipelineStepResultSummary> summaries = VisionPipelineResultSummaryService.CreateStepSummaries(runResult);
+            List<VisionPipelineStepResultSummary> reviewSteps = summaries
+                .Where(step => IsOverlayReviewTool(step.ToolType) && step.OverlayCount > 0)
+                .ToList();
+            List<VisionPipelineStepResultSummary> mergeSteps = summaries
+                .Where(step => VisionPipelineOverlayMergeService.IsMergeTool(step.ToolType))
+                .ToList();
+
+            builder.AppendLine();
+            builder.AppendLine("Final Review Contract:");
+            if (mergeSteps.Count == 0)
+            {
+                if (reviewSteps.Count >= 2)
+                {
+                    builder.AppendLine("- NG: Multiple inspection result steps produced overlays, but no final OverlayMerge step exists.");
+                    builder.AppendLine("- Fix: keep the branch steps, then add a final OverlayMerge layer so the user can review all detections in one image.");
+                }
+                else if (reviewSteps.Count == 1)
+                {
+                    VisionPipelineStepResultSummary reviewStep = reviewSteps[0];
+                    builder.AppendLine($"- OK: Single inspection result step '{reviewStep.Name}' writes '{reviewStep.OutputLayer}'. OverlayMerge is optional.");
+                }
+                else
+                {
+                    builder.AppendLine("- Review: no overlay-producing inspection result was detected in this preview.");
+                }
+
+                return;
+            }
+
+            VisionPipelineStepResultSummary finalMerge = mergeSteps.LastOrDefault();
+            if (finalMerge == null)
+            {
+                return;
+            }
+
+            string mergeCount = finalMerge.Metrics.TryGetValue(VisionPipelineKnownMetrics.MergeOverlayCount, out double overlayCount)
+                ? overlayCount.ToString("0", CultureInfo.InvariantCulture)
+                : "-";
+            string sourceCount = finalMerge.Metrics.TryGetValue(VisionPipelineKnownMetrics.MergeSourceCount, out double mergeSourceCount)
+                ? mergeSourceCount.ToString("0", CultureInfo.InvariantCulture)
+                : "-";
+            builder.AppendLine($"- Final layer: {finalMerge.OutputLayer}");
+            builder.AppendLine($"- MergeOverlayCount: {mergeCount}");
+            builder.AppendLine($"- MergeSourceCount: {sourceCount}");
+
+            if (!finalMerge.Success || !finalMerge.HasResultImage || finalMerge.OverlayCount <= 0)
+            {
+                builder.AppendLine("- NG: Final OverlayMerge did not produce a usable review image with overlays.");
+                builder.AppendLine("- Fix: check SourceLayers, branch output layer names, and branch contour/blob/matching outputs.");
+            }
+            else if (summaries.LastOrDefault() != finalMerge)
+            {
+                builder.AppendLine("- Review: OverlayMerge produced a result, but it is not the final enabled step. Put the final review layer last when it is the user-facing answer.");
+            }
+            else
+            {
+                builder.AppendLine("- OK: Final OverlayMerge produced one review image for combined visual confirmation.");
+            }
+        }
+
+        private static void AppendNormalizationFeedback(
+            StringBuilder builder,
+            IEnumerable<VisionPipelineNormalizationChange> normalizationChanges)
+        {
+            List<VisionPipelineNormalizationChange> changes = (normalizationChanges ?? Enumerable.Empty<VisionPipelineNormalizationChange>()).ToList();
+            if (changes.Count == 0)
+            {
+                return;
+            }
+
+            builder.AppendLine();
+            builder.AppendLine("OpenVisionLab Auto Fixes Applied:");
+            foreach (VisionPipelineNormalizationChange change in changes)
+            {
+                builder.AppendLine($"- {change.Message}");
+            }
+        }
+
+        private static void AppendPipelineFlowFeedback(StringBuilder builder, VisionPipeline pipeline)
+        {
+            if (pipeline?.Steps == null || pipeline.Steps.Count == 0)
+            {
+                return;
+            }
+
+            builder.AppendLine();
+            builder.AppendLine("Recipe Flow:");
+            for (int i = 0; i < pipeline.Steps.Count; i++)
+            {
+                VisionPipelineStep step = pipeline.Steps[i];
+                builder.AppendLine($"{i + 1:00}. {step?.Name ?? "Step"} [{step?.ToolType ?? "-"}] | {step?.InputLayer ?? "-"} -> {step?.OutputLayer ?? "-"}");
+            }
+        }
+
+        private static void AppendRunFeedback(StringBuilder builder, VisionPipelineRunResult runResult)
+        {
+            if (runResult == null)
+            {
+                return;
+            }
+
+            List<VisionPipelineStepResultSummary> summaries = VisionPipelineResultSummaryService.CreateStepSummaries(runResult);
+            builder.AppendLine();
+            builder.AppendLine("Run Step Results:");
+            foreach (VisionPipelineStepResultSummary summary in summaries)
+            {
+                string elapsed = summary.ElapsedMilliseconds <= 0
+                    ? "-"
+                    : $"{summary.ElapsedMilliseconds.ToString("0.0", CultureInfo.InvariantCulture)} ms";
+                builder.AppendLine($"{summary.Index:00}. {summary.Status} | {summary.Name} [{summary.ToolType}] | {summary.InputLayer} -> {summary.OutputLayer} | {elapsed}");
+                if (!string.IsNullOrWhiteSpace(summary.Message))
+                {
+                    builder.AppendLine($"    Message: {summary.Message}");
+                }
+
+                if (summary.IsToolError)
+                {
+                    builder.AppendLine($"    Tool Error: {summary.ErrorCode}:{summary.ErrorName} | ResultStatus={summary.ResultStatus}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(summary.DiagnosticHint))
+                {
+                    builder.AppendLine($"    Diagnostic: {summary.DiagnosticHint}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(summary.SuggestedFix))
+                {
+                    builder.AppendLine($"    Suggested Fix: {summary.SuggestedFix}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(summary.MetricsText))
+                {
+                    builder.AppendLine($"    Metrics: {summary.MetricsText}");
+                }
+
+                if (summary.OverlayCount > 0 || summary.HasResultImage)
+                {
+                    builder.AppendLine($"    Visual: Overlays={summary.OverlayCount}, Image={summary.ResultImageSizeText}");
+                }
+            }
+
+            VisionPipelineStepResult failed = VisionPipelineResultSummaryService.FindFirstFailedStep(runResult);
+            if (failed != null)
+            {
+                VisionPipelineStepResultSummary failedSummary = VisionPipelineResultSummaryService.CreateStepSummary(
+                    Math.Max(1, runResult.StepResults.IndexOf(failed) + 1),
+                    failed);
+                builder.AppendLine();
+                builder.AppendLine("First Failed Step:");
+                builder.AppendLine($"- {failedSummary.Index:00}. {failedSummary.Name} [{failedSummary.ToolType}]");
+                builder.AppendLine($"- Status: {failedSummary.Status}");
+                if (failedSummary.IsToolError)
+                {
+                    builder.AppendLine($"- Tool Error: {failedSummary.ErrorCode}:{failedSummary.ErrorName}");
+                    builder.AppendLine($"- Result Status: {failedSummary.ResultStatus}");
+                }
+                builder.AppendLine($"- Flow: {failedSummary.InputLayer} -> {failedSummary.OutputLayer}");
+                builder.AppendLine($"- Direct Dependents: {BuildDirectDependentStepText(summaries, failedSummary)}");
+                builder.AppendLine($"- Message: {(string.IsNullOrWhiteSpace(failedSummary.Message) ? "-" : failedSummary.Message)}");
+                builder.AppendLine($"- Diagnostic: {(string.IsNullOrWhiteSpace(failedSummary.DiagnosticHint) ? "-" : failedSummary.DiagnosticHint)}");
+                builder.AppendLine($"- Suggested Fix: {(string.IsNullOrWhiteSpace(failedSummary.SuggestedFix) ? "-" : failedSummary.SuggestedFix)}");
+                builder.AppendLine($"- Patch Proposal: {BuildRetryPatchProposal(failedSummary)}");
+                if (!string.IsNullOrWhiteSpace(failedSummary.MetricsText))
+                {
+                    builder.AppendLine($"- Metrics: {failedSummary.MetricsText}");
+                }
+
+                builder.AppendLine("- Change Scope: keep successful previous steps unchanged. Modify this failed step and directly dependent steps only unless the flow itself is wrong.");
+            }
+        }
+
+        private static void AppendNextInstruction(
+            StringBuilder builder,
+            VisionPipeline pipeline,
+            VisionPipelineRunResult runResult,
+            VisionPipelineValidationResult validation,
+            string exceptionMessage)
+        {
+            builder.AppendLine();
+            builder.AppendLine("Suggested Next LLM Request:");
+
+            if (!string.IsNullOrWhiteSpace(exceptionMessage))
+            {
+                builder.AppendLine("- Fix the XML or step parameters so OpenVisionLab can run the preview without throwing an exception.");
+                return;
+            }
+
+            if (validation?.Success == false)
+            {
+                builder.AppendLine("- Fix the validation errors first. Keep the same goal, but correct layer names, supported tool names, and parameter names.");
+                return;
+            }
+
+            if (runResult == null)
+            {
+                builder.AppendLine("- Validate the recipe first, then run preview. If the target is missed, return this feedback with the image goal and ask for revised thresholds, ROI, morphology, or contour area limits.");
+                return;
+            }
+
+            if (NeedsFinalOverlayMerge(runResult))
+            {
+                builder.AppendLine("- Add or repair a final OverlayMerge step so all branch detections are visible in one final review image.");
+                builder.AppendLine("- Preserve successful branch steps and stable output layer names. Only connect their final result layers through OverlayMerge SourceLayers.");
+                return;
+            }
+
+            if (runResult.Success)
+            {
+                builder.AppendLine("- The recipe runs successfully. If there are false positives, tighten ROI, contour area range, aspect ratio, or acceptance metrics while preserving the current layer chain.");
+                return;
+            }
+
+            List<VisionPipelineStepResultSummary> summaries = VisionPipelineResultSummaryService.CreateStepSummaries(runResult);
+            VisionPipelineStepResult failed = VisionPipelineResultSummaryService.FindFirstFailedStep(runResult);
+            VisionPipelineStepResultSummary failedSummary = failed == null
+                ? null
+                : VisionPipelineResultSummaryService.CreateStepSummary(
+                    Math.Max(1, runResult.StepResults.IndexOf(failed) + 1),
+                    failed);
+            AppendRetryScopeInstruction(builder, summaries, failedSummary);
+            if (!string.IsNullOrWhiteSpace(failedSummary?.SuggestedFix))
+            {
+                builder.AppendLine($"- Fix step {failedSummary.Index:00} '{failedSummary.Name}': {failedSummary.SuggestedFix}");
+                return;
+            }
+
+            string toolType = failed?.Step?.ToolType ?? string.Empty;
+            if (string.Equals(toolType, "Contour", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(toolType, "Blob", StringComparison.OrdinalIgnoreCase))
+            {
+                builder.AppendLine("- Adjust contour/blob area limits, threshold polarity, morphology cleanup, ROI, and ResultCount acceptance based on the failed step metrics.");
+            }
+            else if (string.Equals(toolType, "Threshold", StringComparison.OrdinalIgnoreCase))
+            {
+                builder.AppendLine("- Revise threshold mode/value/range/adaptive settings. Keep the output layer readable and feed the next preprocessing step from that output.");
+            }
+            else
+            {
+                builder.AppendLine("- Fix the failed step while preserving the successful previous steps and the input/output layer chain.");
+            }
+        }
+
+        private static void AppendRetryScopeInstruction(
+            StringBuilder builder,
+            IReadOnlyList<VisionPipelineStepResultSummary> summaries,
+            VisionPipelineStepResultSummary failedSummary)
+        {
+            if (failedSummary == null)
+            {
+                return;
+            }
+
+            builder.AppendLine($"- Change scope: keep successful previous steps unchanged. Modify step {failedSummary.Index:00} '{failedSummary.Name}' and directly dependent steps only unless the input/output flow itself is wrong.");
+            builder.AppendLine($"- Direct dependents: {BuildDirectDependentStepText(summaries, failedSummary)}");
+            builder.AppendLine($"- Patch proposal: {BuildRetryPatchProposal(failedSummary)}");
+            builder.AppendLine("- Keep stable output layer names so saved previews, reports, and downstream steps remain comparable.");
+        }
+
+        private static string BuildRetryPatchProposal(VisionPipelineStepResultSummary failedSummary)
+        {
+            if (failedSummary == null)
+            {
+                return "Review the failed step parameters and input/output layer flow.";
+            }
+
+            string toolType = VisionPipelineNormalizer.NormalizeToolType(failedSummary.ToolType);
+            string stepText = $"step {failedSummary.Index:00} '{failedSummary.Name}'";
+            string xmlFields = BuildRetryPatchFieldText(toolType);
+            string metricContext = BuildRetryPatchMetricText(failedSummary);
+            string acceptanceContext = BuildRetryAcceptanceText(failedSummary);
+            string suffix = $" XML fields: {xmlFields}. {metricContext}{acceptanceContext}";
+            if (toolType == "threshold")
+            {
+                return $"Tune threshold mode/value/range on {stepText}; keep input '{failedSummary.InputLayer}' and output '{failedSummary.OutputLayer}' stable unless the layer flow is wrong.{suffix}";
+            }
+
+            if (toolType == "morphology")
+            {
+                return $"Tune kernel size, iteration count, and operator on {stepText}; verify it reads the previous clean binary layer.{suffix}";
+            }
+
+            if (toolType == "contour" || toolType == "blob")
+            {
+                return $"Tune area/count acceptance, ROI, and preprocessing input for {stepText}; avoid rewriting successful preprocessing steps first.{suffix}";
+            }
+
+            if (toolType == "line" || toolType == "linegauge")
+            {
+                return $"Tune edge polarity, scan region, threshold, and length/angle acceptance on {stepText}.{suffix}";
+            }
+
+            if (toolType == "matching" || toolType == "templatematching" || toolType == "feature" || toolType == "featurematching")
+            {
+                return $"Tune score threshold, ROI, template/source layer, and expected match count on {stepText}.{suffix}";
+            }
+
+            if (toolType == "overlaymerge" || toolType == "resultmerge")
+            {
+                return $"Check SourceLayers and branch output layer names on {stepText}; do not merge old or empty layers.{suffix}";
+            }
+
+            return $"Tune parameters and layer flow on {stepText}; preserve successful previous steps.{suffix}";
+        }
+
+        private static string BuildRetryPatchFieldText(string normalizedToolType)
+        {
+            string common = "InputLayer, OutputLayer, AcceptanceMetricName, AcceptanceMetricMinimum, AcceptanceMetricMaximum";
+            switch (normalizedToolType)
+            {
+                case "threshold":
+                    return $"{common}, Parameters.Mode, Parameters.Threshold, Parameters.RangeMin, Parameters.RangeMax, Parameters.ThresholdType, Parameters.Invert, Parameters.BlockSize, Parameters.Weight";
+                case "morphology":
+                    return $"{common}, Parameters.Operator, Parameters.KernelWidth, Parameters.KernelHeight, Parameters.Iterations";
+                case "filter":
+                    return $"{common}, Parameters.FilterType, Parameters.KernelWidth, Parameters.KernelHeight, Parameters.MedianKernelSize";
+                case "edgedetection":
+                    return $"{common}, Parameters.EdgeType, Parameters.CannyThresholdLow, Parameters.CannyThresholdHigh, Parameters.CannyApertureSize, Parameters.UseL2Gradient";
+                case "blob":
+                case "contour":
+                    return $"{common}, Parameters.MIN_AREA, Parameters.MAX_AREA, Parameters.USE_ROI, Parameters.CvROI, Parameters.USE_THRESHOLD, Parameters.THRESHOLD, Parameters.THRESHOLD_TYPES";
+                case "line":
+                case "linegauge":
+                    return $"{common}, Parameters.PRJ_DIR, Parameters.PRJ_PORALITY, Parameters.CONTRAST, Parameters.THICKNESS, Parameters.SAMPLING_STEP, Parameters.USE_ROI, Parameters.CvROI";
+                case "matching":
+                case "templatematching":
+                case "feature":
+                case "featurematching":
+                case "sift":
+                    return $"{common}, Parameters.SCORE_MIN, Parameters.PATTERN_PATH, Parameters.MATCH_MODE, Parameters.USE_ROI, Parameters.CvROI";
+                case "overlaymerge":
+                case "resultmerge":
+                case "mergeresult":
+                    return $"{common}, Parameters.SourceLayers";
+                case "rotatescale":
+                    return $"{common}, Parameters.Angle, Parameters.ScaleXPercent, Parameters.ScaleYPercent, Parameters.Interpolation";
+                case "mean":
+                    return $"{common}, Parameters.USE_ROI, Parameters.CvROI";
+                default:
+                    return $"{common}, Parameters";
+            }
+        }
+
+        private static string BuildRetryPatchMetricText(VisionPipelineStepResultSummary failedSummary)
+        {
+            if (failedSummary?.Metrics == null || failedSummary.Metrics.Count == 0)
+            {
+                return "Metric context: no metrics were produced, so first check input layer, ROI, and tool parameter validity.";
+            }
+
+            string metrics = string.Join(
+                ", ",
+                VisionPipelineKnownMetrics.OrderMetrics(failedSummary.Metrics)
+                    .Take(6)
+                    .Select(metric => $"{VisionPipelineKnownMetrics.GetDisplayName(metric.Key)}={metric.Value.ToString("0.###", CultureInfo.InvariantCulture)}"));
+            return $"Metric context: {metrics}.";
+        }
+
+        private static string BuildRetryAcceptanceText(VisionPipelineStepResultSummary failedSummary)
+        {
+            if (failedSummary == null || !failedSummary.IsAcceptanceNg)
+            {
+                return string.Empty;
+            }
+
+            string message = failedSummary.Message ?? string.Empty;
+            if (message.IndexOf("below target", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return " Acceptance hint: the measured value is too low; either tune detection to produce more/stronger results or lower the minimum only if the visual result is acceptable.";
+            }
+
+            if (message.IndexOf("above target", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return " Acceptance hint: the measured value is too high; tighten ROI/area/score/threshold filters or raise the maximum only if the visual result is acceptable.";
+            }
+
+            return " Acceptance hint: compare the failed metric with the visual overlay before changing pass/fail limits.";
+        }
+
+        private static bool NeedsFinalOverlayMerge(VisionPipelineRunResult runResult)
+        {
+            if (runResult == null)
+            {
+                return false;
+            }
+
+            List<VisionPipelineStepResultSummary> summaries = VisionPipelineResultSummaryService.CreateStepSummaries(runResult);
+            bool hasMergeStep = summaries.Any(summary => VisionPipelineOverlayMergeService.IsMergeTool(summary.ToolType));
+            if (hasMergeStep)
+            {
+                return false;
+            }
+
+            int reviewStepCount = summaries.Count(summary =>
+                IsOverlayReviewTool(summary.ToolType)
+                && summary.OverlayCount > 0);
+            return reviewStepCount >= 2;
+        }
+
+        private static string BuildDirectDependentStepText(
+            IReadOnlyList<VisionPipelineStepResultSummary> summaries,
+            VisionPipelineStepResultSummary failedSummary)
+        {
+            if (summaries == null || failedSummary == null || string.IsNullOrWhiteSpace(failedSummary.OutputLayer))
+            {
+                return "none";
+            }
+
+            List<string> dependents = summaries
+                .Where(summary => summary != null
+                    && summary.Index > failedSummary.Index
+                    && string.Equals(summary.InputLayer, failedSummary.OutputLayer, StringComparison.OrdinalIgnoreCase))
+                .Select(summary => $"{summary.Index:00} {summary.Name} [{summary.ToolType}]")
+                .ToList();
+
+            return dependents.Count == 0 ? "none" : string.Join(", ", dependents);
+        }
+
+        private static bool IsOverlayReviewTool(string toolType)
+        {
+            string normalized = VisionPipelineNormalizer.NormalizeToolType(toolType);
+            return normalized == "blob"
+                || normalized == "contour"
+                || normalized == "line"
+                || normalized == "linegauge"
+                || normalized == "matching"
+                || normalized == "templatematching"
+                || normalized == "feature"
+                || normalized == "featurematching"
+                || normalized == "sift";
+        }
+
         private bool IsUiClosing => IsDisposed || Disposing;
 
         private string BuildLlmPrompt(string goal)
@@ -757,7 +1816,7 @@ namespace OpenVisionLab
                 ? "Use the current OpenVisionLab display layers."
                 : $"Preview image loaded as Main ({testImage.Width} x {testImage.Height}).";
 
-            return string.Join(
+            string prompt = string.Join(
                 Environment.NewLine,
                 "You are generating an OpenVisionLab VisionPipeline XML recipe.",
                 "",
@@ -775,12 +1834,11 @@ namespace OpenVisionLab
                 "- Polarity: infer from the image if visible; otherwise choose conservative threshold values",
                 "",
                 "Reference sample catalog:",
-                "- Contour_TextSymbols: keypad text, numbers, symbols, and small printed shapes. Preferred chain: Threshold -> Morphology -> Contour.",
-                "- Rice_Particle: particle-count tuning with BinaryInv threshold, morphology open, and contour count acceptance.",
-                "- Pins_Feature: repeated small pin feature count with threshold, morphology close, and contour count acceptance.",
-                "- BentPin_Large: first bent-pin defect baseline using large contour regions; line/angle checks may be needed for final defect judgment.",
-                "- DiePad*_Surface: die-pad surface contour benchmarks; ROI, area, edge, and shape checks are the next refinement.",
-                "- Use these examples as first-pass recipe patterns, not as fixed final parameters.",
+                BuildSampleCatalogPromptText(),
+                "- Required examples are stable validation contracts. Treat their expected metrics as the way OpenVisionLab decides OK/NG.",
+                "- Explore examples are coverage examples. Use their chains as starting patterns, but do not claim semantic decoding/OCR unless the ToolType actually supports it.",
+                "- For a new image, copy the closest sample's chain shape first, then tune threshold, morphology, ROI, area/count, score, or edge metrics for the new target.",
+                "- Prefer sample-backed metric gates. If no close sample exists, keep acceptance loose and explain the expected tuning metric.",
                 "",
                 "Supported ToolType values:",
                 "- Threshold",
@@ -790,16 +1848,30 @@ namespace OpenVisionLab
                 "- Blob",
                 "- Contour",
                 "- LineGauge",
+                "- RotateScale",
                 "- Matching",
                 "- Mean",
                 "- FeatureMatching",
+                "- OverlayMerge",
+                "",
+                "Unsupported pipeline ToolType guard:",
+                "- Do not output HSV, Histogram, Arithmetic, Color, Barcode, QR, OCR, EasyBarCode, EasyQRCode, EasyOcr, or any form-only/demo feature as ToolType.",
+                "- If the user's goal mentions a form-only/demo feature, describe it in the summary as future manual form work and generate only the closest supported rule-based pipeline.",
+                "- Do not invent semantic decoding. If Barcode, QR, OCR, or color classification is needed, use current tools only for candidate region detection and state the decoder/classifier gap.",
                 "",
                 "OpenVisionLab XML rules:",
                 "- Output a complete VisionPipeline XML document.",
                 "- Every Step must include Name, ToolType, Enabled, InputLayer, OutputLayer, and Parameters.",
                 "- The first step should normally read from Main.",
                 "- Each later step should normally read from the previous step output.",
+                "- Never overwrite Main unless the user explicitly requests it. Use a named output layer for every processing step.",
+                "- If a later inspection must use the original image, mark it as an independent branch and explain why in the summary.",
                 "- Do not branch back to Main or another older layer unless the user's goal explicitly requires an independent branch.",
+                "- If independent branches are used, add a final OverlayMerge step that reads Main and writes one final review layer.",
+                "- OverlayMerge SourceLayers must list the branch result output layers separated by semicolon.",
+                "- The final OverlayMerge review layer must contain all branch detections in one image. Intermediate branch images are for tuning only.",
+                "- Users should not need to inspect several separate branch images to know whether the recipe worked.",
+                "- Do not use broad ROI-sized rectangles as final detections. Final overlays should be object-level boxes, lines, or points.",
                 "- Name output layers so the flow is readable, for example TextSymbol_Binary, TextSymbol_Clean, TextSymbol_Contour.",
                 "- Parameter values must use invariant culture.",
                 "- Boolean values must be true or false.",
@@ -813,13 +1885,154 @@ namespace OpenVisionLab
                 "- Use ResultCount for Blob/Contour count checks.",
                 "- Use AreaMin, AreaMax, and AreaAvg for Blob/Contour sanity checks.",
                 "- Use ScoreMax or ScoreAvg for Matching and FeatureMatching.",
-                "- Use EdgeCount or EdgePointCount for LineGauge.",
+                "- Use EdgeCount or EdgePointCount for LineGauge edge detection.",
+                "- Use LineLengthMmMax or BoundsWidthMmMax when PIXELPERMM is available and the goal is distance or size measurement.",
+                "- Use MergeOverlayCount for OverlayMerge.",
                 "- Do not make acceptance too tight in the first recipe.",
+                "",
+                "OpenVisionLab validation loop:",
+                "- After import, OpenVisionLab will validate the XML, run preview, and review step metrics, overlays, result image, overlay image, and raw log.",
+                "- A usable recipe should be able to produce GateStatus=OK, ArtifactIssueCount=0, and MetadataIssueCount=0 in automated sample checks.",
+                "- If preview is NG, use the first failed step, error code, diagnostic hint, suggested fix, and metrics to revise the smallest necessary part of the pipeline.",
+                "- If a detection step reads Main after an image-processing step, check whether it should instead read the previous output layer.",
+                "- If Run Preview reports Final Review Contract NG, add or repair a final OverlayMerge instead of leaving separate branch result images.",
+                "- Preserve successful previous steps and stable output layer names unless the failed step proves the flow is wrong.",
+                "- Change only the first failed step and directly dependent steps unless the layer flow itself is the root cause.",
                 "",
                 "Return only:",
                 "1. Recipe summary",
                 "2. Complete VisionPipeline XML",
                 "3. Tuning checklist with 3 to 5 concrete parameters");
+
+            if (latestFeedbackHasRunResult && !string.IsNullOrWhiteSpace(latestFeedbackText))
+            {
+                prompt = string.Join(
+                    Environment.NewLine,
+                    prompt,
+                    "",
+                    "Previous OpenVisionLab Run Preview feedback:",
+                    "```text",
+                    latestFeedbackText,
+                    "```",
+                    "",
+                "Revision request:",
+                "- Revise the VisionPipeline XML using the feedback above.",
+                "- Preserve every successful step and stable output layer name.",
+                "- Do not change Main. Keep output layers separate from input layers.",
+                "- Change only the first failed step and directly dependent steps unless the layer flow itself is wrong.",
+                "- Fix the first failed step first, then tune false positives/false negatives.",
+                "- If several branches detect separate targets, keep the branch steps but return one final OverlayMerge review layer for the user.");
+            }
+
+            return prompt;
+        }
+
+        private static string BuildSampleCatalogPromptText()
+        {
+            List<VisionPipelineSampleCatalogItem> samples = VisionPipelineSampleCatalogItem.LoadRunnable()
+                .Where(sample => sample.CanOpen)
+                .Where(sample => !string.Equals(sample.ValidationMode, "Reference", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (samples.Count == 0)
+            {
+                return string.Join(
+                    Environment.NewLine,
+                    "- Contour_TextSymbols: keypad text, numbers, symbols, and small printed shapes. Preferred chain: Threshold -> Morphology -> Contour.",
+                    "- Use these examples as first-pass recipe patterns, not as fixed final parameters.");
+            }
+
+            List<VisionPipelineSampleCatalogItem> promptSamples = SelectSampleCatalogPromptItems(samples);
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine($"- Catalog examples shown: {promptSamples.Count}/{samples.Count}. Required recipes are listed first; Explore recipes are representative only.");
+            foreach (VisionPipelineSampleCatalogItem sample in promptSamples)
+            {
+                string goal = string.IsNullOrWhiteSpace(sample.Goal) ? sample.Category : sample.Goal;
+                string flow = string.IsNullOrWhiteSpace(sample.ToolFlowText) ? "-" : sample.ToolFlowText;
+                string expected = string.IsNullOrWhiteSpace(sample.ExpectedText) ? "-" : sample.ExpectedText;
+                string notes = string.IsNullOrWhiteSpace(sample.Notes) ? string.Empty : $" {TruncatePromptText(sample.Notes, 110)}";
+                string mode = string.IsNullOrWhiteSpace(sample.ValidationMode) ? "Sample" : sample.ValidationMode.Trim();
+                builder.AppendLine($"- [{mode}] {sample.SampleName}: {TruncatePromptText(goal, 120)} Chain: {flow}. Expected gate: {expected}.{notes}");
+            }
+
+            builder.Append("- Use these examples as first-pass recipe patterns, not as fixed final parameters. Preserve their input/output layer clarity and final review image pattern. Use Good/Bad sample pairs to define conservative acceptance gates, not only detection. Use Feature_TemplateReview when a feature/template review path is needed.");
+            return builder.ToString();
+        }
+
+        private static List<VisionPipelineSampleCatalogItem> SelectSampleCatalogPromptItems(List<VisionPipelineSampleCatalogItem> samples)
+        {
+            List<VisionPipelineSampleCatalogItem> selected = new List<VisionPipelineSampleCatalogItem>();
+            HashSet<string> selectedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (VisionPipelineSampleCatalogItem sample in samples.Where(IsRequiredCatalogSample))
+            {
+                AddPromptSample(selected, selectedNames, sample);
+            }
+
+            HashSet<string> exploreGroups = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (VisionPipelineSampleCatalogItem sample in samples.Where(IsExploreCatalogSample))
+            {
+                string group = ResolvePromptSampleGroup(sample);
+                if (exploreGroups.Add(group))
+                {
+                    AddPromptSample(selected, selectedNames, sample);
+                }
+
+                if (selected.Count >= 20)
+                {
+                    break;
+                }
+            }
+
+            return selected;
+        }
+
+        private static void AddPromptSample(
+            List<VisionPipelineSampleCatalogItem> selected,
+            HashSet<string> selectedNames,
+            VisionPipelineSampleCatalogItem sample)
+        {
+            if (sample == null || !selectedNames.Add(sample.SampleName))
+            {
+                return;
+            }
+
+            selected.Add(sample);
+        }
+
+        private static bool IsRequiredCatalogSample(VisionPipelineSampleCatalogItem sample)
+        {
+            return string.Equals(sample?.ValidationMode, "Required", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsExploreCatalogSample(VisionPipelineSampleCatalogItem sample)
+        {
+            return string.Equals(sample?.ValidationMode, "Explore", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string ResolvePromptSampleGroup(VisionPipelineSampleCatalogItem sample)
+        {
+            string category = sample?.Category ?? string.Empty;
+            int separatorIndex = category.IndexOf('/');
+            if (separatorIndex >= 0)
+            {
+                return category.Substring(0, separatorIndex).Trim();
+            }
+
+            return string.IsNullOrWhiteSpace(category) ? sample?.SampleName ?? string.Empty : category.Trim();
+        }
+
+        private static string TruncatePromptText(string text, int maxLength)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return string.Empty;
+            }
+
+            string normalized = text.Replace("\r", " ").Replace("\n", " ").Trim();
+            return normalized.Length <= maxLength
+                ? normalized
+                : normalized.Substring(0, Math.Max(0, maxLength - 3)) + "...";
         }
 
         private void LoadPreviewImage(string path, string logPrefix)
@@ -832,7 +2045,9 @@ namespace OpenVisionLab
 
             ClearPreviewResult();
             stepGrid.Rows.Clear();
+            latestRunSummaries.Clear();
             UpdateImageStatus();
+            UpdateRecipeGuide();
             AppendLog($"{logPrefix} | {Path.GetFileName(path)} | {testImage.Width} x {testImage.Height}");
         }
 

@@ -118,8 +118,8 @@ namespace OpenVisionLab._2._Common
             SetBrowsable(propertyGrid, nameof(threshold.ThresholdType), useThreshold);
             SetBrowsable(propertyGrid, nameof(threshold.MaxValue), useThreshold || useAdaptive);
             SetBrowsable(propertyGrid, nameof(threshold.RangeMin), useRange);
-            SetBrowsable(propertyGrid, nameof(threshold.RangeMax), useRange);
-            SetBrowsable(propertyGrid, nameof(threshold.Invert), useRange);
+            SetBrowsable(propertyGrid, nameof(threshold.RangeMax), false);
+            SetBrowsable(propertyGrid, nameof(threshold.Invert), false);
             SetBrowsable(propertyGrid, nameof(threshold.AdaptiveType), useAdaptive);
             SetBrowsable(propertyGrid, nameof(threshold.AdaptiveThresholdType), useAdaptive);
             SetBrowsable(propertyGrid, nameof(threshold.BlockSize), useAdaptive);

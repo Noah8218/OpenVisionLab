@@ -2,6 +2,7 @@ using Lib.Common;
 using Lib.OpenCV;
 using Lib.OpenCV.Blob;
 using Lib.OpenCV.Pipeline;
+using Lib.OpenCV.Property;
 using Lib.OpenCV.Tool;
 using OpenCvSharp;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
@@ -39,6 +40,9 @@ namespace OpenVisionLab
                     return CreateMatchingTool(step.Parameters);
                 case "mean":
                     return CreateMeanTool(step.Parameters);
+                case "rotatescale":
+                case "rotateandscale":
+                    return CreateRotateScaleTool(step.Parameters);
                 case "feature":
                 case "featurematching":
                 case "sift":
@@ -165,6 +169,22 @@ namespace OpenVisionLab
             ApplyCommonOpenCvProperty(property, parameters);
 
             MeanTool tool = new MeanTool();
+            tool.SetProperty(property);
+            return tool;
+        }
+
+        private static IVisionTool CreateRotateScaleTool(IDictionary<string, string> parameters)
+        {
+            RotateScaleToolProperty property = new RotateScaleToolProperty
+            {
+                Angle = GetDouble(parameters, nameof(RotateScaleToolProperty.Angle), 0d),
+                ScaleXPercent = GetDouble(parameters, nameof(RotateScaleToolProperty.ScaleXPercent), 100d),
+                ScaleYPercent = GetDouble(parameters, nameof(RotateScaleToolProperty.ScaleYPercent), 100d),
+                Interpolation = GetEnum(parameters, nameof(RotateScaleToolProperty.Interpolation), InterpolationFlags.Linear),
+                BorderType = GetEnum(parameters, nameof(RotateScaleToolProperty.BorderType), BorderTypes.Constant)
+            };
+
+            RotateScaleTool tool = new RotateScaleTool();
             tool.SetProperty(property);
             return tool;
         }

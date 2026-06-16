@@ -14,58 +14,17 @@ namespace OpenVisionLab
 {
     public static class InspectionAlgorithm
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="g"></param>
-        /// <param name="ImageCVSource"></param>
-        /// <param name="line1"></param>
-        /// <param name="line2"></param>
-        /// <param name="USE_MULTI_INSPECTION"></param>
-        /// <param name="UseSpec"></param>
-        /// <returns></returns>
         public static (LineGaugeTool, LineGaugeTool, OpenCvSharp.Point) RunIntersectionFittingLines(Mat ImageCVSource, LineGaugeProperty line1, LineGaugeProperty line2)
         {
-            LineGaugeTool edgeToolL = new LineGaugeTool();
-            LineGaugeTool edgeToolR = new LineGaugeTool();
-            edgeToolL.SetProperty((LineGaugeProperty)line1.DeepCopy());
-            edgeToolR.SetProperty((LineGaugeProperty)line2.DeepCopy());
-            edgeToolL.SetSourceImage(ImageCVSource);
-            edgeToolR.SetSourceImage(ImageCVSource);
-            var lineTask = Task.Run(() =>
-            {
-                edgeToolL.Run();
-            });
-
-            var lineTask2 = Task.Run(() =>
-            {
-                edgeToolR.Run();
-            });
-
-            Task.WaitAll(lineTask, lineTask2);
-
+            (LineGaugeTool edgeToolL, LineGaugeTool edgeToolR) = RunLineGaugePair(ImageCVSource, line1, line2);
+            EnsurePairedLineGaugeResults(edgeToolL, edgeToolR);
             return (edgeToolL, edgeToolR, VerticalLineCalculator.GetIntersectionLines(edgeToolL.resultList[0].FitLine, edgeToolR.resultList[0].FitLine));
         }
 
         public static (LineGaugeTool, LineGaugeTool, List<LineGaugeVerticalLines>) RunIntersectionLines(Mat ImageCVSource, LineGaugeProperty line1, LineGaugeProperty line2)
         {
-            LineGaugeTool edgeToolL = new LineGaugeTool();
-            LineGaugeTool edgeToolR = new LineGaugeTool();
-            edgeToolL.SetProperty((LineGaugeProperty)line1.DeepCopy());
-            edgeToolR.SetProperty((LineGaugeProperty)line2.DeepCopy());
-            edgeToolL.SetSourceImage(ImageCVSource);
-            edgeToolR.SetSourceImage(ImageCVSource);
-            var lineTask = Task.Run(() =>
-            {
-                edgeToolL.Run();
-            });
-
-            var lineTask2 = Task.Run(() =>
-            {
-                edgeToolR.Run();
-            });
-
-            Task.WaitAll(lineTask, lineTask2);
+            (LineGaugeTool edgeToolL, LineGaugeTool edgeToolR) = RunLineGaugePair(ImageCVSource, line1, line2);
+            EnsurePairedLineGaugeResults(edgeToolL, edgeToolR);
 
             List<LineGaugeVerticalLines> intersectionLines = new List<LineGaugeVerticalLines>();
             for (int i = 0; i < edgeToolL.resultList.Count; i++)
@@ -95,29 +54,67 @@ namespace OpenVisionLab
             return (edgeToolL, edgeToolR, intersectionLines);
         }
 
-    public static List<LineGaugeResult> RunEdge(Graphics g, Mat ImageCVSource, LineGaugeProperty line1, System.Drawing.Size size, bool USE_MULTI_INSPECTION = false)
-    {
-        LineGaugeTool edgeTool = new LineGaugeTool();
-        edgeTool.SetProperty((LineGaugeProperty)line1.DeepCopy());
-        edgeTool.SetSourceImage(ImageCVSource);
+        public static List<LineGaugeResult> RunEdge(Graphics g, Mat ImageCVSource, LineGaugeProperty line1, System.Drawing.Size size, bool USE_MULTI_INSPECTION = false)
+        {
+            LineGaugeTool edgeTool = new LineGaugeTool();
+            edgeTool.SetProperty((LineGaugeProperty)line1.DeepCopy());
 
-        if (!USE_MULTI_INSPECTION)
-        {
-            edgeTool.Run();
-            //edgeTool.Draw(g, edgeTool.resultList[0].edgeList, size);
-        }
-        else
-        {
-            for (int j = 0; j < edgeTool.property.CvROIS.Count; j++)
+            if (USE_MULTI_INSPECTION)
             {
-                edgeTool.property.CvROI = edgeTool.property.CvROIS[j];
-                edgeTool.Run();
-                //edgeTool.Draw(g, edgeTool.resultList[j].edgeList, size);
+                edgeTool.property.USE_MULTI_ROI = true;
+            }
+
+            ExecuteLineGauge(edgeTool, ImageCVSource);
+            EnsureLineGaugeResults(edgeTool, nameof(RunEdge));
+            return edgeTool.resultList;
+        }
+
+        private static (LineGaugeTool Left, LineGaugeTool Right) RunLineGaugePair(Mat source, LineGaugeProperty leftProperty, LineGaugeProperty rightProperty)
+        {
+            LineGaugeTool leftTool = new LineGaugeTool();
+            LineGaugeTool rightTool = new LineGaugeTool();
+            leftTool.SetProperty((LineGaugeProperty)leftProperty.DeepCopy());
+            rightTool.SetProperty((LineGaugeProperty)rightProperty.DeepCopy());
+
+            Task leftTask = Task.Run(() => ExecuteLineGauge(leftTool, source));
+            Task rightTask = Task.Run(() => ExecuteLineGauge(rightTool, source));
+            Task.WaitAll(leftTask, rightTask);
+
+            return (leftTool, rightTool);
+        }
+
+        private static void ExecuteLineGauge(LineGaugeTool tool, Mat source)
+        {
+            VisionToolResult result = tool.Execute(source);
+            if (result.Success)
+            {
+                return;
+            }
+
+            throw new InvalidOperationException($"[{result.ErrorCodeValue}:{result.ErrorName}] {result.ResultStatusName}\r\n{result.Message}");
+        }
+
+        private static void EnsurePairedLineGaugeResults(LineGaugeTool leftTool, LineGaugeTool rightTool)
+        {
+            EnsureLineGaugeResults(leftTool, "Left line gauge");
+            EnsureLineGaugeResults(rightTool, "Right line gauge");
+
+            if (leftTool.resultList.Count != rightTool.resultList.Count)
+            {
+                throw new InvalidOperationException(
+                    $"Line gauge result count mismatch. Left={leftTool.resultList.Count}, Right={rightTool.resultList.Count}");
             }
         }
 
-        return edgeTool.resultList;
-    }
+        private static void EnsureLineGaugeResults(LineGaugeTool tool, string context)
+        {
+            if (tool?.resultList != null && tool.resultList.Count > 0)
+            {
+                return;
+            }
+
+            throw new InvalidOperationException($"{context}: line gauge produced no result.");
+        }
 
     //public static (List<BlobResult>, List<BlobResult>, List<BlobResult>) RunSlitterBlob(Graphics g, Mat ImageCVSource, BlobProperty BlobProperty, Rectangle filterBound)
     //{

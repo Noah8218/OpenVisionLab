@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VisionPipeline>
+  <Name>Contour_MeanBrightness</Name>
+  <Steps>
+    <Step>
+      <Name>01 Mean Brightness</Name>
+      <ToolType>Mean</ToolType>
+      <Enabled>true</Enabled>
+      <InputLayer>Main</InputLayer>
+      <OutputLayer>Mean_Result</OutputLayer>
+      <Parameters>
+        <Parameter>
+          <Key>Name</Key>
+          <Value>Mean_Brightness</Value>
+        </Parameter>
+        <Parameter>
+          <Key>MEAN_TYPES</Key>
+          <Value>Mean</Value>
+        </Parameter>
+        <Parameter>
+          <Key>USE_ROI</Key>
+          <Value>false</Value>
+        </Parameter>
+        <Parameter>
+          <Key>USE_MULTI_ROI</Key>
+          <Value>false</Value>
+        </Parameter>
+      </Parameters>
+      <UseAcceptance>true</UseAcceptance>
+      <ExpectedSuccess>true</ExpectedSuccess>
+      <AcceptanceMetricName>MeanValueAvg</AcceptanceMetricName>
+      <UseAcceptanceMetricMinimum>true</UseAcceptanceMetricMinimum>
+      <AcceptanceMetricMinimum>250</AcceptanceMetricMinimum>
+      <UseAcceptanceMetricMaximum>true</UseAcceptanceMetricMaximum>
+      <AcceptanceMetricMaximum>256</AcceptanceMetricMaximum>
+      <MaxElapsedMilliseconds>300</MaxElapsedMilliseconds>
+    </Step>
+  </Steps>
+</VisionPipeline>

@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.ComponentModel.Design;
 using System.Drawing.Design;
 using System.Drawing;
+using System.Collections.Generic;
 using FontAwesome.Sharp;
 using RJCodeUI_M1.Settings;
 using RJCodeUI_M1.Utils;
@@ -12,6 +13,7 @@ using OpenVisionLab;
 using OpenVisionLab._1._Core;
 using Lib.Common;
 using Lib.OpenCV;
+using Lib.OpenCV.Tool;
 using OpenCvSharp;
 using System.Reflection;
 using System.Diagnostics;
@@ -58,6 +60,7 @@ namespace RJCodeUI_M1.RJForms
         private string activeRunSourceLayer;
         private Stopwatch activeRunStopwatch;
         private bool activeRunPublished;
+        private VisionToolResult activeRunToolResult;
         private bool suppressLayerSelectionSideEffects;
 
         public int GetDisplayIndex(string strTitle)
@@ -121,6 +124,48 @@ namespace RJCodeUI_M1.RJForms
         {
             InitializeLayerList(sourceComboBox, source1_Index, true);
             InitializeLayerList(destinationComboBox, destination_Index, true);
+            EnsureDistinctSingleInputDestinationLayer(sourceComboBox, destinationComboBox);
+        }
+
+        private void EnsureDistinctSingleInputDestinationLayer(RJComboBox sourceComboBox, RJComboBox destinationComboBox)
+        {
+            if (sourceComboBox == null
+                || destinationComboBox == null
+                || sourceComboBox.SelectedItem == null
+                || destinationComboBox.Items.Count <= 1)
+            {
+                return;
+            }
+
+            string sourceLayer = sourceComboBox.SelectedItem.ToString();
+            string destinationLayer = destinationComboBox.SelectedItem?.ToString();
+            if (!string.Equals(sourceLayer, destinationLayer, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            for (int i = 0; i < destinationComboBox.Items.Count; i++)
+            {
+                string candidate = destinationComboBox.Items[i]?.ToString();
+                if (string.Equals(candidate, sourceLayer, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                bool previousSuppressState = suppressLayerSelectionSideEffects;
+                suppressLayerSelectionSideEffects = true;
+                try
+                {
+                    destinationComboBox.SelectedIndex = i;
+                    destination_Index = i;
+                }
+                finally
+                {
+                    suppressLayerSelectionSideEffects = previousSuppressState;
+                }
+
+                return;
+            }
         }
 
         protected bool RegisterEscapeClose()
@@ -311,6 +356,8 @@ namespace RJCodeUI_M1.RJForms
                     "ToolResultPublished",
                     LogField("Tool", activeRunStepName),
                     LogField("Output", outputLayer),
+                    LogField("ResultStatus", activeRunToolResult?.ResultStatusName),
+                    LogField("ErrorCode", activeRunToolResult?.ErrorCodeValue ?? 0),
                     LogField("Size", $"{result.Width}x{result.Height}"),
                     LogField("Time", elapsedText)));
             activeRunPublished = true;
@@ -321,7 +368,8 @@ namespace RJCodeUI_M1.RJForms
                 activeRunStopwatch?.Elapsed.TotalMilliseconds ?? 0d,
                 result.Width,
                 result.Height,
-                $"결과 표시 완료: {outputLayer}");
+                $"결과 표시 완료: {outputLayer}",
+                activeRunToolResult);
         }
 
         protected string FormatElapsed(Stopwatch stopwatch)
@@ -401,7 +449,7 @@ namespace RJCodeUI_M1.RJForms
                 stopwatch.Stop();
                 if (!activeRunPublished)
                 {
-                    NotifyVisionToolRunUpdated(VisionToolRunStatus.Completed, title, string.Empty, stopwatch.Elapsed.TotalMilliseconds, 0, 0, "실행 완료");
+                    NotifyVisionToolRunUpdated(VisionToolRunStatus.Completed, title, string.Empty, stopwatch.Elapsed.TotalMilliseconds, 0, 0, "실행 완료", activeRunToolResult);
                 }
 
                 if (writeLifecycleLog)
@@ -412,6 +460,8 @@ namespace RJCodeUI_M1.RJForms
                             "ToolRunCompleted",
                             LogField("Tool", title),
                             LogField("Source", activeRunSourceLayer),
+                            LogField("ResultStatus", activeRunToolResult?.ResultStatusName),
+                            LogField("ErrorCode", activeRunToolResult?.ErrorCodeValue ?? 0),
                             LogField("TimeMs", stopwatch.Elapsed.TotalMilliseconds.ToString("0.0"))));
                 }
 
@@ -427,6 +477,15 @@ namespace RJCodeUI_M1.RJForms
                     message = $"{message}\r\n{root.Message}";
                 }
 
+                if (activeRunToolResult == null)
+                {
+                    activeRunToolResult = VisionToolResult.Failed(
+                        VisionToolErrorCode.ToolExecutionException,
+                        message,
+                        stopwatch.Elapsed,
+                        root ?? ex);
+                }
+
                 OVLog.Write(
                     LogCategory.Vision, LogLevel.Error,
                     BuildVisionLog(
@@ -434,8 +493,11 @@ namespace RJCodeUI_M1.RJForms
                         LogField("Tool", title),
                         LogField("Source", activeRunSourceLayer),
                         LogField("TimeMs", stopwatch.Elapsed.TotalMilliseconds.ToString("0.0")),
+                        LogField("ResultStatus", activeRunToolResult?.ResultStatusName),
+                        LogField("ErrorCode", activeRunToolResult?.ErrorCodeValue ?? 0),
+                        LogField("ErrorName", activeRunToolResult?.ErrorName),
                         LogField("Error", message)));
-                NotifyVisionToolRunUpdated(VisionToolRunStatus.Failed, title, string.Empty, stopwatch.Elapsed.TotalMilliseconds, 0, 0, message);
+                NotifyVisionToolRunUpdated(VisionToolRunStatus.Failed, title, string.Empty, stopwatch.Elapsed.TotalMilliseconds, 0, 0, message, activeRunToolResult);
                 AppCommon.ShowMessageBox("ALARM", $"{title} failed.\r\n{message}", FormMessageBox.MESSAGEBOX_TYPE.Waring);
                 return false;
             }
@@ -445,6 +507,7 @@ namespace RJCodeUI_M1.RJForms
                 activeRunSourceLayer = null;
                 activeRunStopwatch = null;
                 activeRunPublished = false;
+                activeRunToolResult = null;
             }
         }
 
@@ -455,7 +518,8 @@ namespace RJCodeUI_M1.RJForms
             double elapsedMilliseconds,
             int resultWidth,
             int resultHeight,
-            string message)
+            string message,
+            VisionToolResult toolResult = null)
         {
             if (!(displayManager is DisplayManagerService service))
             {
@@ -473,8 +537,77 @@ namespace RJCodeUI_M1.RJForms
                 ElapsedMilliseconds = elapsedMilliseconds,
                 ResultWidth = resultWidth,
                 ResultHeight = resultHeight,
+                OverlayCount = toolResult?.Overlays?.Count ?? 0,
+                MetricCount = toolResult?.Metrics?.Count ?? 0,
+                ErrorCode = toolResult?.ErrorCodeValue ?? 0,
+                ErrorName = toolResult?.ErrorName ?? string.Empty,
+                ResultStatus = toolResult?.ResultStatusName ?? string.Empty,
                 Message = message ?? string.Empty
             });
+        }
+
+        protected VisionToolResult RecordDirectVisionToolPassed(Mat resultImage, Stopwatch stopwatch = null, IDictionary<string, double> metrics = null)
+        {
+            Dictionary<string, double> resolvedMetrics = CreateDirectResultMetrics(resultImage, metrics);
+            VisionToolResult result = VisionToolResult.Passed(
+                null,
+                stopwatch?.Elapsed ?? activeRunStopwatch?.Elapsed ?? TimeSpan.Zero,
+                resolvedMetrics);
+            activeRunToolResult = result;
+            return result;
+        }
+
+        protected VisionToolResult RecordDirectVisionToolPassed(Bitmap resultImage, Stopwatch stopwatch = null, IDictionary<string, double> metrics = null)
+        {
+            Dictionary<string, double> resolvedMetrics = CreateDirectResultMetrics(resultImage, metrics);
+            VisionToolResult result = VisionToolResult.Passed(
+                null,
+                stopwatch?.Elapsed ?? activeRunStopwatch?.Elapsed ?? TimeSpan.Zero,
+                resolvedMetrics);
+            activeRunToolResult = result;
+            return result;
+        }
+
+        private static Dictionary<string, double> CreateDirectResultMetrics(Mat resultImage, IDictionary<string, double> metrics)
+        {
+            Dictionary<string, double> resolvedMetrics = CopyMetrics(metrics);
+            if (resultImage != null && !resultImage.Empty())
+            {
+                resolvedMetrics["ResultImageWidth"] = resultImage.Width;
+                resolvedMetrics["ResultImageHeight"] = resultImage.Height;
+                resolvedMetrics["ResultImageChannels"] = resultImage.Channels();
+            }
+
+            return resolvedMetrics;
+        }
+
+        private static Dictionary<string, double> CreateDirectResultMetrics(Bitmap resultImage, IDictionary<string, double> metrics)
+        {
+            Dictionary<string, double> resolvedMetrics = CopyMetrics(metrics);
+            if (resultImage != null)
+            {
+                resolvedMetrics["ResultImageWidth"] = resultImage.Width;
+                resolvedMetrics["ResultImageHeight"] = resultImage.Height;
+            }
+
+            return resolvedMetrics;
+        }
+
+        private static Dictionary<string, double> CopyMetrics(IDictionary<string, double> metrics)
+        {
+            Dictionary<string, double> resolvedMetrics = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+            if (metrics == null)
+            {
+                return resolvedMetrics;
+            }
+
+            foreach (KeyValuePair<string, double> metric in metrics)
+            {
+                if (string.IsNullOrWhiteSpace(metric.Key)) { continue; }
+                resolvedMetrics[metric.Key] = metric.Value;
+            }
+
+            return resolvedMetrics;
         }
 
         protected Mat CreateRunSourceMat(VisionTestImageCanvas sourceViewer, out Bitmap resultBitmap)
@@ -489,6 +622,49 @@ namespace RJCodeUI_M1.RJForms
             OpenCvHelper.SetImageChannel1(sourceMat);
 
             return sourceMat;
+        }
+
+        protected VisionToolResult ExecuteVisionTool(IVisionTool tool, Mat source)
+        {
+            if (tool == null)
+            {
+                throw new ArgumentNullException(nameof(tool));
+            }
+
+            VisionToolResult result = tool.Execute(source);
+            if (result == null)
+            {
+                throw new InvalidOperationException("Vision tool returned no result.");
+            }
+
+            activeRunToolResult = result;
+            if (!result.Success)
+            {
+                throw new InvalidOperationException(FormatVisionToolFailure(result));
+            }
+
+            return result;
+        }
+
+        protected void CopyVisionToolResultImage(Mat destination, VisionToolResult result)
+        {
+            if (destination == null)
+            {
+                throw new ArgumentNullException(nameof(destination));
+            }
+
+            if (result?.ResultImage == null || result.ResultImage.Empty())
+            {
+                throw new InvalidOperationException("Vision tool result image is empty.");
+            }
+
+            result.ResultImage.CopyTo(destination);
+        }
+
+        private static string FormatVisionToolFailure(VisionToolResult result)
+        {
+            string message = string.IsNullOrWhiteSpace(result.Message) ? "Tool execution failed." : result.Message;
+            return $"[{result.ErrorCodeValue}:{result.ErrorName}] {result.ResultStatusName}\r\n{message}";
         }
 
         protected Bitmap CreateSingleInputResult(VisionTestImageCanvas sourceViewer, Action<Mat> processImage)

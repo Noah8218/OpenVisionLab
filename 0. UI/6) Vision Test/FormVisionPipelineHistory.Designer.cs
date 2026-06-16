@@ -18,8 +18,12 @@ namespace OpenVisionLab
         private DataGridViewTextBoxColumn stepImageColumn;
         private DataGridViewTextBoxColumn stepOverlayColumn;
         private DataGridViewTextBoxColumn stepMetricColumn;
+        private DataGridViewTextBoxColumn stepErrorColumn;
+        private DataGridViewTextBoxColumn stepResultStatusColumn;
         private DataGridViewTextBoxColumn stepMessageColumn;
         private DataGridViewTextBoxColumn stepAcceptanceMessageColumn;
+        private DataGridViewTextBoxColumn stepDiagnosticHintColumn;
+        private DataGridViewTextBoxColumn stepSuggestedFixColumn;
         private DataGridViewTextBoxColumn metricNameColumn;
         private DataGridViewTextBoxColumn metricValueColumn;
 
@@ -40,8 +44,12 @@ namespace OpenVisionLab
             stepImageColumn = new DataGridViewTextBoxColumn();
             stepOverlayColumn = new DataGridViewTextBoxColumn();
             stepMetricColumn = new DataGridViewTextBoxColumn();
+            stepErrorColumn = new DataGridViewTextBoxColumn();
+            stepResultStatusColumn = new DataGridViewTextBoxColumn();
             stepMessageColumn = new DataGridViewTextBoxColumn();
             stepAcceptanceMessageColumn = new DataGridViewTextBoxColumn();
+            stepDiagnosticHintColumn = new DataGridViewTextBoxColumn();
+            stepSuggestedFixColumn = new DataGridViewTextBoxColumn();
             metricNameColumn = new DataGridViewTextBoxColumn();
             metricValueColumn = new DataGridViewTextBoxColumn();
             previewBox = new PictureBox();
@@ -124,7 +132,7 @@ namespace OpenVisionLab
             stepGrid.AllowUserToDeleteRows = false;
             stepGrid.AutoGenerateColumns = false;
             stepGrid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            stepGrid.Columns.AddRange(new DataGridViewColumn[] { stepIndexColumn, stepStatusColumn, stepAcceptanceColumn, stepNameColumn, stepToolColumn, stepElapsedColumn, stepImageColumn, stepOverlayColumn, stepMetricColumn, stepMessageColumn, stepAcceptanceMessageColumn });
+            stepGrid.Columns.AddRange(new DataGridViewColumn[] { stepIndexColumn, stepStatusColumn, stepAcceptanceColumn, stepNameColumn, stepToolColumn, stepElapsedColumn, stepImageColumn, stepOverlayColumn, stepMetricColumn, stepErrorColumn, stepResultStatusColumn, stepMessageColumn, stepAcceptanceMessageColumn, stepDiagnosticHintColumn, stepSuggestedFixColumn });
             stepGrid.Dock = DockStyle.Fill;
             stepGrid.Location = new Point(11, 113);
             stepGrid.MultiSelect = false;
@@ -214,6 +222,20 @@ namespace OpenVisionLab
             stepMetricColumn.Name = "stepMetricColumn";
             stepMetricColumn.Width = 64;
             // 
+            // stepErrorColumn
+            // 
+            stepErrorColumn.DataPropertyName = "ErrorName";
+            stepErrorColumn.HeaderText = "Error";
+            stepErrorColumn.Name = "stepErrorColumn";
+            stepErrorColumn.Width = 130;
+            // 
+            // stepResultStatusColumn
+            // 
+            stepResultStatusColumn.DataPropertyName = "ResultStatus";
+            stepResultStatusColumn.HeaderText = "Result";
+            stepResultStatusColumn.Name = "stepResultStatusColumn";
+            stepResultStatusColumn.Width = 96;
+            // 
             // stepMessageColumn
             // 
             stepMessageColumn.DataPropertyName = "Message";
@@ -227,6 +249,20 @@ namespace OpenVisionLab
             stepAcceptanceMessageColumn.HeaderText = "Acceptance";
             stepAcceptanceMessageColumn.Name = "stepAcceptanceMessageColumn";
             stepAcceptanceMessageColumn.Width = 220;
+            // 
+            // stepDiagnosticHintColumn
+            // 
+            stepDiagnosticHintColumn.DataPropertyName = "DiagnosticHint";
+            stepDiagnosticHintColumn.HeaderText = "Diagnostic";
+            stepDiagnosticHintColumn.Name = "stepDiagnosticHintColumn";
+            stepDiagnosticHintColumn.Width = 260;
+            // 
+            // stepSuggestedFixColumn
+            // 
+            stepSuggestedFixColumn.DataPropertyName = "SuggestedFix";
+            stepSuggestedFixColumn.HeaderText = "Suggested Fix";
+            stepSuggestedFixColumn.Name = "stepSuggestedFixColumn";
+            stepSuggestedFixColumn.Width = 280;
             // 
             // metricNameColumn
             // 

@@ -55,6 +55,7 @@
 			lineToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			meanToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			pipelineToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			guideToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			timer1 = new System.Windows.Forms.Timer(components);
 			toolTip1 = new System.Windows.Forms.ToolTip(components);
 			((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
@@ -251,10 +252,10 @@
 			menuStrip1.BackColor = System.Drawing.Color.FromArgb(68, 79, 116);
 			menuStrip1.Dock = System.Windows.Forms.DockStyle.None;
 			menuStrip1.ForeColor = System.Drawing.Color.WhiteSmoke;
-			menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { imageProcessingToolStripMenuItem, algorithmToolStripMenuItem });
+			menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { imageProcessingToolStripMenuItem, algorithmToolStripMenuItem, guideToolStripMenuItem });
 			menuStrip1.Location = new System.Drawing.Point(0, 3);
 			menuStrip1.Name = "menuStrip1";
-			menuStrip1.Size = new System.Drawing.Size(242, 28);
+			menuStrip1.Size = new System.Drawing.Size(300, 28);
 			menuStrip1.TabIndex = 2165;
 			menuStrip1.Text = "menuStrip1";
 			// 
@@ -377,6 +378,16 @@
 			pipelineToolStripMenuItem.Text = "Pipeline";
 			pipelineToolStripMenuItem.Click += OnToolStripMenuItem_Click;
 			// 
+			// guideToolStripMenuItem
+			// 
+			guideToolStripMenuItem.BackColor = System.Drawing.Color.FromArgb(68, 79, 116);
+			guideToolStripMenuItem.Font = new System.Drawing.Font("Verdana", 9.5F);
+			guideToolStripMenuItem.ForeColor = System.Drawing.Color.WhiteSmoke;
+			guideToolStripMenuItem.Name = "guideToolStripMenuItem";
+			guideToolStripMenuItem.Size = new System.Drawing.Size(58, 24);
+			guideToolStripMenuItem.Text = "Guide";
+			guideToolStripMenuItem.Click += OnGuideToolStripMenuItem_Click;
+			// 
 			// timer1
 			// 
 			timer1.Enabled = true;
@@ -439,6 +450,7 @@
 		private System.Windows.Forms.ToolStripMenuItem lineToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem meanToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem pipelineToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem guideToolStripMenuItem;
 		private RJCodeUI_M1.RJControls.RJComboBox cbCamera;
 		private RJCodeUI_M1.RJControls.RJComboBox cbLayerList;
 		public System.Windows.Forms.Panel panel1;

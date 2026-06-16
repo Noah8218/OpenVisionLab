@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using System.Reflection;
 using System.Diagnostics;
 using OpenCvSharp;
 using OpenVisionLab._1._Core;
@@ -92,12 +91,12 @@ namespace OpenVisionLab
         }
         private void btnFilterRun_Click(object sender, EventArgs e)
         {
-            try
+            RunVisionStep("Edge Detection", () =>
             {
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                using (Mat ImageCVSource = Lib.Common.CImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
+                using (Mat ImageCVSource = BitmapImageConverter.ToMat(ibSource.DisplayBitmap).Clone())
                 {
                     if (ImageCVSource.Channels() == 3) Cv2.CvtColor(ImageCVSource, ImageCVSource, ColorConversionCodes.RGB2GRAY);
 
@@ -138,11 +137,11 @@ namespace OpenVisionLab
                                 break;
                         }
                         //ImageCVSource.ConvertTo(ImageCVSource, MatType.CV_8UC1);
-                        Result = Lib.Common.CImageConverter.ToBitmap(ImageCVSource);
+                        Result = BitmapImageConverter.ToBitmap(ImageCVSource);
                     }
                     else
                     {
-                        Rect r = CConverter.RectangleToRect(GetLayerRoi(source1_Index));
+                        Rect r = CommonConverter.RectangleToRect(GetLayerRoi(source1_Index));
                         Mat ImageRoi = ImageCVSource.SubMat(r);
 
                         switch (CUtil.ParseEnum<EdgeDetector>(cbEdgeType.SelectedItem.ToString()))
@@ -161,16 +160,13 @@ namespace OpenVisionLab
                                 break;
                         }
 
-                        Result = Lib.Common.CBitmapProcessing.OverlayImage(Lib.Common.CImageConverter.ToBitmap(ImageCVSource), Lib.Common.CImageConverter.ToBitmap(ImageRoi), r.Left, r.Top);
+                        Result = BitmapProcessing.OverlayImage(BitmapImageConverter.ToBitmap(ImageCVSource), BitmapImageConverter.ToBitmap(ImageRoi), r.Left, r.Top);
                     }
+
+                    RecordDirectVisionToolPassed(Result, stopwatch);
                     PublishResult(cbLayerList2, ibDestination, Result, stopwatch.Elapsed.TotalSeconds.ToString() + "s");
                 }
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
-                CCommon.ShowMessageBox("ALARM", $"{Desc}");
-            }
+            });
         }
 
         private void cbFilterType_OnSelectedIndexChanged(object sender, EventArgs e)

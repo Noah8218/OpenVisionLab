@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media;
 using OpenVisionLab.PropertyGrid;
 
 namespace System.Windows.Controls.WpfPropertyGrid
@@ -173,6 +174,8 @@ namespace System.Windows.Controls.WpfPropertyGrid
             EnsureOriginalWpfResources();
             innerPropertyGrid = new WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyGrid();
             RegisterDefaultCategoryEditorTemplate(innerPropertyGrid.Resources);
+            ApplyBridgeVisualStyle(innerPropertyGrid.Resources);
+            ApplyBridgeSurfaceStyle(innerPropertyGrid);
             Content = innerPropertyGrid;
 
             innerPropertyGrid.PropertyValueChanged += InnerPropertyGrid_PropertyValueChanged;
@@ -207,6 +210,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
                     application.Resources,
                     "/System.Windows.Controls.WpfPropertyGrid;component/Themes/Generic.xaml");
                 RegisterDefaultCategoryEditorTemplate(application.Resources);
+                ApplyBridgeVisualStyle(application.Resources);
                 originalResourcesRegistered = true;
             }
         }
@@ -268,6 +272,86 @@ namespace System.Windows.Controls.WpfPropertyGrid
             {
                 VisualTree = factory
             };
+        }
+
+        private static void ApplyBridgeVisualStyle(ResourceDictionary resources)
+        {
+            if (resources == null)
+            {
+                return;
+            }
+
+            resources[typeof(TextBox)] = CreateTextBoxStyle();
+            resources[typeof(ComboBox)] = CreateComboBoxStyle();
+            resources[typeof(CheckBox)] = CreateCheckBoxStyle();
+            resources[typeof(Slider)] = CreateSliderStyle();
+        }
+
+        private static void ApplyBridgeSurfaceStyle(Control control)
+        {
+            if (control == null)
+            {
+                return;
+            }
+
+            control.Background = BrushFromRgb(238, 244, 250);
+            control.BorderBrush = BrushFromRgb(194, 210, 226);
+            control.BorderThickness = new Thickness(1);
+            control.Padding = new Thickness(2);
+        }
+
+        private static Style CreateTextBoxStyle()
+        {
+            Style style = new Style(typeof(TextBox));
+            style.Setters.Add(new Setter(Control.FontFamilyProperty, new FontFamily("Segoe UI")));
+            style.Setters.Add(new Setter(Control.FontSizeProperty, 12D));
+            style.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(22, 64, 103)));
+            style.Setters.Add(new Setter(Control.BackgroundProperty, BrushFromRgb(250, 252, 253)));
+            style.Setters.Add(new Setter(Control.BorderBrushProperty, BrushFromRgb(175, 197, 221)));
+            style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+            style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 3, 8, 3)));
+            style.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 2, 0, 2)));
+            return style;
+        }
+
+        private static Style CreateComboBoxStyle()
+        {
+            Style style = new Style(typeof(ComboBox));
+            style.Setters.Add(new Setter(Control.FontFamilyProperty, new FontFamily("Segoe UI")));
+            style.Setters.Add(new Setter(Control.FontSizeProperty, 12D));
+            style.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(22, 64, 103)));
+            style.Setters.Add(new Setter(Control.BackgroundProperty, BrushFromRgb(250, 252, 253)));
+            style.Setters.Add(new Setter(Control.BorderBrushProperty, BrushFromRgb(175, 197, 221)));
+            style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+            style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(6, 2, 6, 2)));
+            style.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 2, 0, 2)));
+            return style;
+        }
+
+        private static Style CreateCheckBoxStyle()
+        {
+            Style style = new Style(typeof(CheckBox));
+            style.Setters.Add(new Setter(Control.FontFamilyProperty, new FontFamily("Segoe UI")));
+            style.Setters.Add(new Setter(Control.FontSizeProperty, 12D));
+            style.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(22, 64, 103)));
+            style.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 4, 0, 4)));
+            return style;
+        }
+
+        private static Style CreateSliderStyle()
+        {
+            Style style = new Style(typeof(Slider));
+            style.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(47, 111, 171)));
+            style.Setters.Add(new Setter(Control.BackgroundProperty, BrushFromRgb(218, 230, 241)));
+            style.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 4, 8, 4)));
+            return style;
+        }
+
+        private static SolidColorBrush BrushFromRgb(byte red, byte green, byte blue)
+        {
+            SolidColorBrush brush = new SolidColorBrush(Color.FromRgb(red, green, blue));
+            brush.Freeze();
+            return brush;
         }
 
         public event EventHandler<PropertyGridPropertyValueChangedEventArgs> PropertyValueChanged;

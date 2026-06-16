@@ -35,6 +35,7 @@ namespace OpenVisionLab
             Running,
             Passed,
             Failed,
+            Error,
             Timeout,
             Canceled,
             Skipped,
@@ -64,7 +65,9 @@ namespace OpenVisionLab
             Overlay,
             PreviewInput,
             PreviewOutput,
-            PreviewOverlay
+            PreviewOverlay,
+            MatchingTemplate,
+            MatchingDetectedCrop
         }
 
         private sealed class ResultGridRowTag
@@ -77,6 +80,37 @@ namespace OpenVisionLab
 
             public ResultGridRowAction Action { get; }
             public int OverlayIndex { get; }
+        }
+
+        private sealed class AcceptancePresetListItem
+        {
+            public AcceptancePresetListItem(VisionPipelineAcceptancePreset preset)
+            {
+                Preset = preset;
+                Text = BuildAcceptancePresetMenuText(preset);
+            }
+
+            public VisionPipelineAcceptancePreset Preset { get; }
+            public string Text { get; }
+
+            public override string ToString()
+            {
+                return Text;
+            }
+        }
+
+        private sealed class PipelineSamplePreviewResult
+        {
+            public string SampleName { get; set; } = string.Empty;
+            public string Status { get; set; } = string.Empty;
+            public string MetricText { get; set; } = string.Empty;
+            public string FinalLayerText { get; set; } = string.Empty;
+            public string OverlayCountText { get; set; } = string.Empty;
+            public string ExpectedText { get; set; } = string.Empty;
+            public string Message { get; set; } = string.Empty;
+            public string HintText { get; set; } = string.Empty;
+            public string ContextText { get; set; } = string.Empty;
+            public double ElapsedMilliseconds { get; set; }
         }
 
         private readonly IDisplayManager displayManager;
@@ -98,7 +132,14 @@ namespace OpenVisionLab
         private Bitmap pipelineSummarySourceImage;
         private Bitmap pipelineSummaryPreviewImage;
         private readonly List<VisionToolOverlay> pipelineSummaryOverlays = new List<VisionToolOverlay>();
+        private readonly List<RectangleF> pipelineSummaryRoiBounds = new List<RectangleF>();
         private bool isUpdatingPreviewImageMode;
+        private VisionPipelineSampleCatalogItem activeCatalogSample;
+        private string activeSampleStatusText = string.Empty;
+        private string activeSampleMetricText = string.Empty;
+        private string activeSampleFinalLayerText = string.Empty;
+        private string activeSampleOverlayCountText = string.Empty;
+        private string pendingPreviewHeaderLog;
 
         private TextBox tbPipelineName;
         private ComboBox cbToolType;
@@ -120,9 +161,17 @@ namespace OpenVisionLab
         private ComboBox cbOverlayLabelMode;
         private Label overlayPointLimitLabel;
         private NumericUpDown nudOverlayPointLimit;
+        private CheckBox chkOverlayRoi;
         private Button btnOpenPreview;
         private Label resultCaption;
         private DataGridView resultGrid;
+        private Panel matchingReviewPanel;
+        private PictureBox matchingTemplateBox;
+        private PictureBox matchingDetectedBox;
+        private Label matchingTemplateTitle;
+        private Label matchingDetectedTitle;
+        private Label matchingReviewTitle;
+        private Label matchingReviewSummary;
         private TextBox tbRunLog;
         private Button btnAdd;
         private Button btnAiRecipe;
@@ -169,6 +218,7 @@ namespace OpenVisionLab
         private Label toolTypeLabel;
         private Label inputLayerLabel;
         private Label outputLayerLabel;
+        private Label sampleContextLabel;
         private TableLayoutPanel bodyLayout;
         private TableLayoutPanel stepTreePanel;
         private Label stepTreeCaption;
@@ -182,11 +232,19 @@ namespace OpenVisionLab
         private TextBox tbStepOutputLayer;
         private Button btnStepChainInput;
         private Label stepIoStatusLabel;
+        private TableLayoutPanel stepAcceptancePanel;
+        private Label stepAcceptanceCaption;
+        private ComboBox cbStepAcceptancePreset;
+        private Button btnApplyStepAcceptancePreset;
+        private Button btnClearStepAcceptance;
+        private Label stepAcceptanceStatusLabel;
         private TableLayoutPanel runLogPanel;
         private Label runLogCaption;
         private TableLayoutPanel previewPanel;
         private Panel footerPanel;
+        private Label workflowHintLabel;
         private bool isUpdatingStepIoPanel;
+        private bool isUpdatingStepAcceptancePanel;
 
         public FormVision_Pipeline()
             : this(DisplayManagerService.Default, "Default")
@@ -313,15 +371,7 @@ namespace OpenVisionLab
             menuAddAfter = new ToolStripMenuItem("Add Step After...", null, OnAddAfterSelectedClicked);
             menuInsertBefore = new ToolStripMenuItem("Insert Step Before...", null, OnInsertBeforeSelectedClicked);
             menuAcceptancePreset = new ToolStripMenuItem("Acceptance Preset");
-            foreach (VisionPipelineAcceptancePreset preset in VisionPipelineKnownMetrics.GetPresets())
-            {
-                VisionPipelineAcceptancePreset capturedPreset = preset;
-                menuAcceptancePreset.DropDownItems.Add(new ToolStripMenuItem(
-                    preset.Name,
-                    null,
-                    (sender, e) => ApplyAcceptancePreset(capturedPreset)));
-            }
-
+            RebuildAcceptancePresetMenu(null);
             menuClearAcceptance = new ToolStripMenuItem("Clear Acceptance", null, OnClearAcceptanceClicked);
             menuChainStepInput = new ToolStripMenuItem("Use Previous Output as Input", null, OnChainSelectedStepInputClicked);
             menuCopyStep = new ToolStripMenuItem("Copy Step", null, OnCopyStepClicked);
@@ -364,6 +414,7 @@ namespace OpenVisionLab
             moreCommandMenu.Items.Add(new ToolStripMenuItem("Sample Images", null, OnSamplesClicked));
             moreCommandMenu.Items.Add(new ToolStripMenuItem("Batch Test", null, OnBatchClicked));
             moreCommandMenu.Items.Add(new ToolStripMenuItem("AI Recipe...", null, OnAiRecipeClicked));
+            moreCommandMenu.Items.Add(new ToolStripMenuItem("Open Tutorial...", null, OnOpenTutorialClicked));
             moreCommandMenu.Items.Add(new ToolStripSeparator());
             menuMoreChainStepInput = new ToolStripMenuItem("Use Previous Output as Input", null, OnChainSelectedStepInputClicked);
             moreCommandMenu.Items.Add(menuMoreChainStepInput);
@@ -418,6 +469,11 @@ namespace OpenVisionLab
                 failures.Add("main controls");
             }
 
+            if (stepAcceptancePanel == null || cbStepAcceptancePreset == null || btnApplyStepAcceptancePreset == null || btnClearStepAcceptance == null)
+            {
+                failures.Add("acceptance preset controls");
+            }
+
             if (stepContextMenu == null || menuAcceptancePreset == null || menuAcceptancePreset.DropDownItems.Count == 0)
             {
                 failures.Add("step context menu");
@@ -426,6 +482,14 @@ namespace OpenVisionLab
             if (btnMore == null || moreCommandMenu == null || btnHistory == null || btnSamples == null || btnBatch == null || btnImport == null || btnValidate == null || btnRun == null || btnPublish == null || btnCancel == null || btnAiRecipe == null)
             {
                 failures.Add("footer commands");
+            }
+
+            if (moreCommandMenu == null
+                || !moreCommandMenu.Items
+                    .OfType<ToolStripMenuItem>()
+                    .Any(item => string.Equals(item.Text, "Open Tutorial...", StringComparison.Ordinal)))
+            {
+                failures.Add("pipeline tutorial menu");
             }
 
             if (nameLabel == null || toolTypeLabel == null || inputLayerLabel == null || outputLayerLabel == null || cbToolType == null || cbToolType.Items.Count == 0 || cbInputLayer == null)
@@ -499,17 +563,30 @@ namespace OpenVisionLab
             pipelineToolTip.SetToolTip(btnAdd, "Open Add Step to confirm tool, step name, input, and output.");
             pipelineToolTip.SetToolTip(btnAiRecipe, "Create pipeline steps from an AI recipe.");
             pipelineToolTip.SetToolTip(cbPreviewImageMode, "Choose Summary for the full detection view, or Input/Output/Overlay for the selected step.");
+            pipelineToolTip.SetToolTip(cbOverlayLabelMode, "Choose how overlay labels are drawn.");
+            pipelineToolTip.SetToolTip(nudOverlayPointLimit, "Limit dense point overlays so LineGauge and edge views stay readable.");
+            pipelineToolTip.SetToolTip(chkOverlayRoi, "Show the ROI configured on the selected step. Full-image ROI is hidden.");
             pipelineToolTip.SetToolTip(previewModeLabel, "Current preview mode. Click Step, IN, or OUT in Pipeline Flow to change it.");
             pipelineToolTip.SetToolTip(btnOpenPreview, "Open a zoomable preview. Mouse wheel zooms, drag pans.");
             pipelineToolTip.SetToolTip(previewBox, "Double-click to open the zoomable preview.");
+            pipelineToolTip.SetToolTip(matchingTemplateBox, "Double-click to inspect the template in the zoomable viewer.");
+            pipelineToolTip.SetToolTip(matchingDetectedBox, "Double-click to inspect the detected crop in the zoomable viewer.");
             pipelineToolTip.SetToolTip(btnRun, "Run Preview executes inside this window. The main workspace is not updated.");
             pipelineToolTip.SetToolTip(btnPublish, "Publish Summary or the selected step result to the main workspace.");
             pipelineToolTip.SetToolTip(btnSave, "Save pipeline XML, workspace images, and step preview images.");
             pipelineToolTip.SetToolTip(chkPublishAllLayers, "Publish every cached step output instead of only the selected or latest result.");
+            pipelineToolTip.SetToolTip(workflowHintLabel, "Run Preview is sandboxed inside Pipeline. Publish Result is the explicit step that updates the main workspace.");
+            pipelineToolTip.SetToolTip(sampleContextLabel, "Shows the sample image and recipe currently opened from Sample Catalog.");
         }
 
         private void SetRunLogHint(string hint = null)
         {
+            if (InvokeRequired)
+            {
+                TryPostToUi(() => SetRunLogHint(hint));
+                return;
+            }
+
             if (runLogCaption == null)
             {
                 return;
@@ -518,6 +595,72 @@ namespace OpenVisionLab
             runLogCaption.Text = string.IsNullOrWhiteSpace(hint)
                 ? "Run Log - Run Preview stays here; Publish Result updates the main workspace."
                 : $"Run Log - {hint}";
+        }
+
+        private void SetSampleContextHint(string hint = null)
+        {
+            if (InvokeRequired)
+            {
+                TryPostToUi(() => SetSampleContextHint(hint));
+                return;
+            }
+
+            if (sampleContextLabel == null)
+            {
+                return;
+            }
+
+            sampleContextLabel.Text = string.IsNullOrWhiteSpace(hint) ? string.Empty : hint;
+            sampleContextLabel.Visible = !string.IsNullOrWhiteSpace(hint);
+        }
+
+        private void SetWorkflowHint(string hint = null)
+        {
+            if (InvokeRequired)
+            {
+                TryPostToUi(() => SetWorkflowHint(hint));
+                return;
+            }
+
+            if (workflowHintLabel == null)
+            {
+                return;
+            }
+
+            workflowHintLabel.Text = string.IsNullOrWhiteSpace(hint)
+                ? "Preview only -> Publish workspace"
+                : hint;
+        }
+
+        private static string BuildSampleWorkflowHint(VisionPipelineSampleCatalogItem sample)
+        {
+            if (sample == null)
+            {
+                return "Preview only -> Publish workspace";
+            }
+
+            string flow = string.IsNullOrWhiteSpace(sample.ToolFlowText) || sample.ToolFlowText == "-"
+                ? "Sample recipe"
+                : sample.ToolFlowText.Replace(" -> ", " > ");
+            return $"Preview -> Publish | {flow}";
+        }
+
+        private bool TryPostToUi(Action action)
+        {
+            if (action == null || IsDisposed || !IsHandleCreated)
+            {
+                return false;
+            }
+
+            try
+            {
+                BeginInvoke(action);
+                return true;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
         }
 
         private static void ApplyMaterialButtonIcon(Button button, string iconText, string labelText, Color iconColor, int width)
@@ -561,6 +704,17 @@ namespace OpenVisionLab
             Button[] rightButtons = new[] { btnMore, btnValidate, btnSave, btnRun, btnPublish, btnCancel };
             int rightWidth = rightButtons.Where(button => button != null).Sum(button => button.Width) + Math.Max(0, rightButtons.Count(button => button != null) - 1) * 4;
             int rightX = Math.Max(x + 10, footerPanel.ClientSize.Width - rightWidth);
+
+            if (workflowHintLabel != null)
+            {
+                int hintWidth = rightX - x - 14;
+                workflowHintLabel.Visible = hintWidth >= 150;
+                if (workflowHintLabel.Visible)
+                {
+                    workflowHintLabel.Location = new DrawingPoint(x, 9);
+                    workflowHintLabel.Size = new DrawingSize(hintWidth, 26);
+                }
+            }
 
             int actionX = rightX;
             PositionFooterButton(btnMore, ref actionX, 4);
@@ -1206,6 +1360,7 @@ namespace OpenVisionLab
             VisionPipelineKnownMetrics.ApplyPreset(SelectedStep, preset);
             BindStepProperty(SelectedStep);
             UpdateSelectedTreeNodeText();
+            RefreshSelectedStepAcceptancePanel();
             AppendLog($"PRESET | {SelectedStep.Name} | {preset.Name}");
         }
 
@@ -1219,7 +1374,27 @@ namespace OpenVisionLab
             VisionPipelineKnownMetrics.ClearAcceptance(SelectedStep);
             BindStepProperty(SelectedStep);
             UpdateSelectedTreeNodeText();
+            RefreshSelectedStepAcceptancePanel();
             AppendLog($"PRESET | {SelectedStep.Name} | Acceptance cleared.");
+        }
+
+        private void OnApplyStepAcceptancePresetClicked(object sender, EventArgs e)
+        {
+            if (cbStepAcceptancePreset?.SelectedItem is AcceptancePresetListItem item)
+            {
+                ApplyAcceptancePreset(item.Preset);
+            }
+        }
+
+        private void OnStepAcceptancePresetSelectionChanged(object sender, EventArgs e)
+        {
+            if (isUpdatingStepAcceptancePanel || btnApplyStepAcceptancePreset == null)
+            {
+                return;
+            }
+
+            btnApplyStepAcceptancePreset.Enabled = SelectedStep != null
+                && cbStepAcceptancePreset?.SelectedItem is AcceptancePresetListItem;
         }
 
         private void OnChainSelectedStepInputClicked(object sender, EventArgs e)
@@ -1299,10 +1474,10 @@ namespace OpenVisionLab
 
         private int NormalizeChainedInspectionPreprocessingForPipeline(bool appendLog, bool invalidateResults = true)
         {
-            IReadOnlyList<VisionPipelineNormalizationChange> changes =
-                VisionPipelineNormalizer.NormalizeChainedInspectionPreprocessing(pipeline);
+            IReadOnlyList<VisionPipelineNormalizationChange> allChanges =
+                VisionPipelineNormalizer.NormalizeForRun(pipeline);
 
-            foreach (VisionPipelineNormalizationChange change in changes)
+            foreach (VisionPipelineNormalizationChange change in allChanges)
             {
                 if (appendLog)
                 {
@@ -1310,17 +1485,17 @@ namespace OpenVisionLab
                 }
             }
 
-            if (appendLog && changes.Count > 0)
+            if (appendLog && allChanges.Count > 0)
             {
-                AppendLog($"AUTO FIX | Normalized {changes.Count} chained inspection step(s). Save Project to keep these settings.");
+                AppendLog($"AUTO FIX | Normalized {allChanges.Count} pipeline flow setting(s). Save Project to keep these settings.");
             }
 
-            if (invalidateResults && changes.Count > 0)
+            if (invalidateResults && allChanges.Count > 0)
             {
-                InvalidateStepResultsFrom(changes[0].StepIndex);
+                InvalidateStepResultsFrom(allChanges[0].StepIndex);
             }
 
-            return changes.Count;
+            return allChanges.Count;
         }
 
         private void RefreshAfterPipelineNormalization(int changedCount)
@@ -1351,11 +1526,12 @@ namespace OpenVisionLab
         {
             bool hasStep = SelectedStep != null;
             bool canChain = CanChainSelectedStepInput(out string previousOutput, out _);
+            RebuildAcceptancePresetMenu(SelectedStep?.ToolType);
             menuInsertBefore.Enabled = hasStep;
             menuCopyStep.Enabled = hasStep;
             menuPasteAfter.Enabled = copiedStep != null;
             menuDuplicateStep.Enabled = hasStep;
-            menuAcceptancePreset.Enabled = hasStep;
+            menuAcceptancePreset.Enabled = hasStep && HasAcceptancePresetMenuItem();
             menuClearAcceptance.Enabled = hasStep;
             menuChainStepInput.Enabled = canChain;
             menuChainStepInput.Text = canChain
@@ -1364,6 +1540,67 @@ namespace OpenVisionLab
             menuToggleStepEnabled.Enabled = hasStep;
             menuRemoveStep.Enabled = hasStep;
             menuToggleStepEnabled.Text = hasStep && SelectedStep.Enabled ? "Disable Step" : "Enable Step";
+        }
+
+        private void RebuildAcceptancePresetMenu(string toolType)
+        {
+            if (menuAcceptancePreset == null)
+            {
+                return;
+            }
+
+            menuAcceptancePreset.DropDownItems.Clear();
+            IReadOnlyList<VisionPipelineAcceptancePreset> presets = string.IsNullOrWhiteSpace(toolType)
+                ? VisionPipelineKnownMetrics.GetPresets()
+                : VisionPipelineKnownMetrics.GetPresetsForTool(toolType);
+
+            if (!string.IsNullOrWhiteSpace(toolType))
+            {
+                menuAcceptancePreset.DropDownItems.Add(new ToolStripMenuItem($"Recommended for {toolType}") { Enabled = false });
+                menuAcceptancePreset.DropDownItems.Add(new ToolStripSeparator());
+            }
+
+            foreach (VisionPipelineAcceptancePreset preset in presets)
+            {
+                VisionPipelineAcceptancePreset capturedPreset = preset;
+                menuAcceptancePreset.DropDownItems.Add(new ToolStripMenuItem(
+                    BuildAcceptancePresetMenuText(preset),
+                    null,
+                    (sender, e) => ApplyAcceptancePreset(capturedPreset))
+                {
+                    Tag = capturedPreset
+                });
+            }
+
+            if (presets.Count == 0)
+            {
+                menuAcceptancePreset.DropDownItems.Add(new ToolStripMenuItem("No preset for this tool") { Enabled = false });
+            }
+        }
+
+        private static string BuildAcceptancePresetMenuText(VisionPipelineAcceptancePreset preset)
+        {
+            if (preset == null)
+            {
+                return string.Empty;
+            }
+
+            if (string.IsNullOrWhiteSpace(preset.MetricName))
+            {
+                return preset.Name;
+            }
+
+            string metricName = VisionPipelineKnownMetrics.GetDisplayName(preset.MetricName);
+            return string.IsNullOrWhiteSpace(metricName)
+                ? preset.Name
+                : $"{preset.Name} ({metricName})";
+        }
+
+        private bool HasAcceptancePresetMenuItem()
+        {
+            return menuAcceptancePreset?.DropDownItems
+                .OfType<ToolStripMenuItem>()
+                .Any(item => item.Tag is VisionPipelineAcceptancePreset) == true;
         }
 
         private void OnMoreCommandMenuOpening(object sender, CancelEventArgs e)
@@ -1434,6 +1671,15 @@ namespace OpenVisionLab
                     break;
                 case "mean":
                     step.Parameters["MEAN_TYPES"] = "Mean";
+                    break;
+                case "overlaymerge":
+                case "resultmerge":
+                case "mergeresult":
+                    step.Parameters["SourceLayers"] = string.Empty;
+                    step.Parameters["BurnIn"] = "True";
+                    step.Parameters["DrawLabels"] = "False";
+                    step.Parameters["AllowEmpty"] = "False";
+                    step.Parameters["MaxPoints"] = "300";
                     break;
             }
 
@@ -1557,6 +1803,72 @@ namespace OpenVisionLab
             moreCommandMenu.Show(btnMore, new DrawingPoint(0, btnMore.Height));
         }
 
+        private void OnOpenTutorialClicked(object sender, EventArgs e)
+        {
+            string path = ResolvePipelineDocumentationPath("OPENVISIONLAB_TUTORIAL.html");
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            {
+                path = ResolvePipelineDocumentationPath("OPENVISIONLAB_TUTORIAL.md");
+            }
+
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            {
+                VisionMessageBox.Warning(
+                    this,
+                    "OpenVisionLab Tutorial",
+                    "Tutorial document was not found.\r\nExpected file: docs\\OPENVISIONLAB_TUTORIAL.html");
+                AppendLog("GUIDE NG | Tutorial document was not found.");
+                return;
+            }
+
+            try
+            {
+                Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+                AppendLog($"GUIDE | Tutorial opened. Path={path}");
+            }
+            catch (Exception ex)
+            {
+                VisionMessageBox.Warning(
+                    this,
+                    "OpenVisionLab Tutorial",
+                    "Tutorial document could not be opened.\r\n" + ex.GetBaseException().Message);
+                AppendLog($"GUIDE NG | {ex.GetBaseException().Message}");
+            }
+        }
+
+        private static string ResolvePipelineDocumentationPath(string fileName)
+        {
+            string assemblyDirectory = Path.GetDirectoryName(typeof(FormVision_Pipeline).Assembly.Location);
+            string[] startPaths =
+            {
+                Directory.GetCurrentDirectory(),
+                AppContext.BaseDirectory,
+                assemblyDirectory
+            };
+
+            foreach (string startPath in startPaths)
+            {
+                if (string.IsNullOrWhiteSpace(startPath))
+                {
+                    continue;
+                }
+
+                DirectoryInfo directory = new DirectoryInfo(startPath);
+                for (int depth = 0; directory != null && depth < 8; depth++)
+                {
+                    string candidate = Path.Combine(directory.FullName, "docs", fileName);
+                    if (File.Exists(candidate))
+                    {
+                        return candidate;
+                    }
+
+                    directory = directory.Parent;
+                }
+            }
+
+            return string.Empty;
+        }
+
         private void OnLoadClicked(object sender, EventArgs e)
         {
             UpdatePipelineFromView();
@@ -1575,6 +1887,7 @@ namespace OpenVisionLab
             pipeline = VisionPipelineStorage.Load(recipeName, requestedPipelineName);
             VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
             tbRunLog.Clear();
+            SetSampleContextHint();
             ClearStepPreviewImages();
             int normalizedCount = NormalizeChainedInspectionPreprocessingForPipeline(appendLog: true);
             BindPipeline();
@@ -1632,6 +1945,10 @@ namespace OpenVisionLab
             }
 
             tbRunLog.Clear();
+            activeCatalogSample = null;
+            ClearActiveSamplePreviewResult();
+            SetSampleContextHint();
+            SetWorkflowHint();
             ClearStepPreviewImages();
             ResetStepStatuses();
             int normalizedCount = NormalizeChainedInspectionPreprocessingForPipeline(appendLog: true);
@@ -1853,18 +2170,159 @@ namespace OpenVisionLab
                     return;
                 }
 
+                activeCatalogSample = sample;
+                ClearActiveSamplePreviewResult();
+                string sampleOpenLog = $"SAMPLE OPEN | {sample.SampleName} | {Path.GetFileName(sample.ImageFullPath)} | {Path.GetFileName(sample.PipelineFullPath)} | Expected {sample.ExpectedText}";
+                string sampleGuideLog = $"SAMPLE GUIDE | {sample.SampleName} | {sample.RecipeGuideText}";
                 SetRunLogHint($"Sample ready. Expected {sample.ExpectedText}. Run Preview stays in this window.");
-                AppendLog($"SAMPLE OPEN | {sample.SampleName} | {Path.GetFileName(sample.ImageFullPath)} | {Path.GetFileName(sample.PipelineFullPath)} | Expected {sample.ExpectedText}");
-                if (HasRunnablePipelineInputImage())
-                {
-                    BeginInvoke(new Action(() => OnRunClicked(this, EventArgs.Empty)));
-                }
+                SetSampleContextHint($"Sample: {sample.SampleName} | {FormatSampleExpectedText(sample.ExpectedText)}");
+                SetWorkflowHint(BuildSampleWorkflowHint(sample));
+                AppendLog(sampleOpenLog);
+                AppendLog(sampleGuideLog);
+                pendingPreviewHeaderLog = sampleOpenLog;
+                BeginInvoke(new Action(() => OnRunClicked(this, EventArgs.Empty)));
             }
             catch (Exception ex)
             {
                 VisionMessageBox.Error(this, "Pipeline Samples", ex.GetBaseException().Message, ex.ToString());
                 AppendLog($"SAMPLE NG | {sample.SampleName} | {ex.GetBaseException().Message}");
             }
+        }
+
+        private void ClearActiveSamplePreviewResult()
+        {
+            activeSampleStatusText = string.Empty;
+            activeSampleMetricText = string.Empty;
+            activeSampleFinalLayerText = string.Empty;
+            activeSampleOverlayCountText = string.Empty;
+        }
+
+        private PipelineSamplePreviewResult UpdateActiveSamplePreviewResult(
+            VisionPipelineRunResult runResult,
+            TimeSpan elapsed)
+        {
+            if (activeCatalogSample == null)
+            {
+                return null;
+            }
+
+            PipelineSamplePreviewResult sampleResult = BuildActiveSamplePreviewResult(activeCatalogSample, runResult, elapsed);
+            activeSampleStatusText = sampleResult.Status;
+            activeSampleMetricText = sampleResult.MetricText;
+            activeSampleFinalLayerText = sampleResult.FinalLayerText;
+            activeSampleOverlayCountText = sampleResult.OverlayCountText;
+            SetSampleContextHint(sampleResult.ContextText);
+            AppendLog($"SAMPLE RESULT {sampleResult.Status} | {sampleResult.SampleName} | {sampleResult.MetricText} | Final={sampleResult.FinalLayerText} | Overlays={sampleResult.OverlayCountText}");
+            return sampleResult;
+        }
+
+        private static PipelineSamplePreviewResult BuildActiveSamplePreviewResult(
+            VisionPipelineSampleCatalogItem sample,
+            VisionPipelineRunResult runResult,
+            TimeSpan elapsed)
+        {
+            string status = runResult?.Success == true ? "OK" : "NG";
+            string metricText = "no metric gate";
+            string message = runResult?.Success == true ? string.Empty : ResolveFirstFailedSampleMessage(runResult);
+
+            IReadOnlyList<VisionPipelineSampleExpectedMetric> expectedMetrics = sample?.ExpectedMetrics ?? Array.Empty<VisionPipelineSampleExpectedMetric>();
+            if (expectedMetrics.Count > 0)
+            {
+                List<string> metricParts = new List<string>();
+                foreach (VisionPipelineSampleExpectedMetric expectedMetric in expectedMetrics)
+                {
+                    if (string.IsNullOrWhiteSpace(expectedMetric.Name))
+                    {
+                        continue;
+                    }
+
+                    if (!TryFindPipelineMetric(runResult, expectedMetric.Name, out double metricValue))
+                    {
+                        status = "NG";
+                        metricParts.Add($"{expectedMetric.Name}=missing");
+                        message = $"Expected metric '{expectedMetric.Name}' was not produced.";
+                        continue;
+                    }
+
+                    metricParts.Add($"{expectedMetric.Name}={metricValue:0.###}");
+                    if (!string.IsNullOrWhiteSpace(expectedMetric.Minimum)
+                        && metricValue < ParseDouble(expectedMetric.Minimum))
+                    {
+                        status = "NG";
+                        message = $"{expectedMetric.Name} {metricValue:0.###} < {expectedMetric.Minimum}.";
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(expectedMetric.Maximum)
+                        && metricValue > ParseDouble(expectedMetric.Maximum))
+                    {
+                        status = "NG";
+                        message = $"{expectedMetric.Name} {metricValue:0.###} > {expectedMetric.Maximum}.";
+                    }
+                }
+
+                metricText = metricParts.Count == 0 ? "no metric gate" : string.Join("; ", metricParts);
+            }
+
+            VisionPipelineStepResult finalStepResult = runResult?.StepResults?
+                .LastOrDefault(result => result?.Step != null);
+            string finalLayer = string.IsNullOrWhiteSpace(finalStepResult?.Step?.OutputLayer)
+                ? "-"
+                : finalStepResult.Step.OutputLayer;
+            int overlayCount = finalStepResult?.ToolResult?.Overlays?.Count ?? 0;
+            string expectedText = string.IsNullOrWhiteSpace(sample?.ExpectedText) ? "-" : sample.ExpectedText;
+            string sampleName = string.IsNullOrWhiteSpace(sample?.SampleName) ? "Sample" : sample.SampleName;
+
+            return new PipelineSamplePreviewResult
+            {
+                SampleName = sampleName,
+                Status = status,
+                MetricText = metricText,
+                FinalLayerText = finalLayer,
+                OverlayCountText = overlayCount.ToString(CultureInfo.InvariantCulture),
+                ExpectedText = expectedText,
+                Message = message ?? string.Empty,
+                HintText = $"{sampleName} {status}. Expected {expectedText}; actual {metricText}; final {finalLayer}. Main workspace unchanged.",
+                ContextText = $"Sample: {sampleName} | {status} {metricText} | Final {finalLayer}",
+                ElapsedMilliseconds = elapsed.TotalMilliseconds
+            };
+        }
+
+        private static bool TryFindPipelineMetric(
+            VisionPipelineRunResult runResult,
+            string metricName,
+            out double value)
+        {
+            value = 0;
+            if (runResult == null || string.IsNullOrWhiteSpace(metricName))
+            {
+                return false;
+            }
+
+            foreach (VisionPipelineStepResult stepResult in runResult.StepResults.AsEnumerable().Reverse())
+            {
+                if (stepResult?.ToolResult?.Metrics != null
+                    && stepResult.ToolResult.Metrics.TryGetValue(metricName, out value))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string ResolveFirstFailedSampleMessage(VisionPipelineRunResult runResult)
+        {
+            VisionPipelineStepResult failed = VisionPipelineResultSummaryService.FindFirstFailedStep(runResult);
+            if (failed == null)
+            {
+                return string.Empty;
+            }
+
+            string message = VisionPipelineResultSummaryService.ResolveMessage(failed);
+            string stepName = failed.Step?.Name ?? "Step";
+            return string.IsNullOrWhiteSpace(message)
+                ? stepName
+                : $"{stepName}: {message}";
         }
 
         private void OnBatchClicked(object sender, EventArgs e)
@@ -1888,6 +2346,18 @@ namespace OpenVisionLab
 
             UpdatePipelineFromView();
             tbRunLog.Clear();
+            string previewHeaderLog = pendingPreviewHeaderLog;
+            pendingPreviewHeaderLog = null;
+            if (!string.IsNullOrWhiteSpace(previewHeaderLog))
+            {
+                AppendLog(previewHeaderLog);
+            }
+
+            if (activeCatalogSample != null)
+            {
+                AppendLog($"SAMPLE GUIDE | {activeCatalogSample.SampleName} | {activeCatalogSample.RecipeGuideText}");
+            }
+
             int normalizedCount = NormalizeChainedInspectionPreprocessingForPipeline(appendLog: true);
             RefreshAfterPipelineNormalization(normalizedCount);
             SetRunLogHint("Preview is running. Main workspace is unchanged.");
@@ -1955,18 +2425,22 @@ namespace OpenVisionLab
                 return;
             }
 
+            PipelineSamplePreviewResult samplePreviewResult = UpdateActiveSamplePreviewResult(result, stopwatch.Elapsed);
+
             if (last != null && !IsStepResultPassed(last))
             {
-                string message = string.IsNullOrWhiteSpace(last.ToolResult?.Message)
-                    ? last.AcceptanceMessage
-                    : last.ToolResult.Message;
-                SetRunLogHint("Preview failed. Check the selected step details.");
+                string message = VisionPipelineResultSummaryService.ResolveMessage(last);
+                SetRunLogHint(samplePreviewResult == null
+                    ? "Preview failed. Check the selected step details."
+                    : samplePreviewResult.HintText);
                 AppendLog($"PREVIEW NG | {last.Step?.Name} | {message}");
                 return;
             }
 
             SetCurrentPreviewImageMode(StepPreviewImageMode.Summary, refresh: true);
-            SetRunLogHint("Preview ready. Summary shows all detections; Publish Result writes it to the main workspace.");
+            SetRunLogHint(samplePreviewResult == null
+                ? "Preview ready. Summary shows all detections; Publish Result writes it to the main workspace."
+                : samplePreviewResult.HintText);
             AppendLog($"PREVIEW OK | Summary ready. Main workspace unchanged until Publish Result. | {stopwatch.Elapsed.TotalMilliseconds:0.0} ms");
         }
 
@@ -2735,6 +3209,7 @@ namespace OpenVisionLab
             UpdatePipelineFromView();
             UpdateSelectedTreeNodeText();
             RefreshSelectedStepIoPanel();
+            RefreshSelectedStepAcceptancePanel();
             ShowStepPreview(SelectedStep);
             RefreshPipelineFlowPreview();
         }
@@ -2769,6 +3244,12 @@ namespace OpenVisionLab
 
         private void SetCurrentPreviewImageMode(StepPreviewImageMode mode, bool refresh = true)
         {
+            if (InvokeRequired)
+            {
+                TryPostToUi(() => SetCurrentPreviewImageMode(mode, refresh));
+                return;
+            }
+
             currentPreviewImageMode = mode;
             if (cbPreviewImageMode != null)
             {
@@ -2788,7 +3269,7 @@ namespace OpenVisionLab
             }
 
             ApplyPreviewModeState();
-            pipelineFlowView?.SelectStep(SelectedStepIndex, ToPipelineFlowPreviewMode(mode));
+            SelectPipelineFlowStepSafely(SelectedStepIndex, ToPipelineFlowPreviewMode(mode));
             if (refresh)
             {
                 RefreshCachedStepPreviewImages();
@@ -2826,11 +3307,26 @@ namespace OpenVisionLab
             {
                 nudOverlayPointLimit.Enabled = showOverlay;
             }
+
+            if (chkOverlayRoi != null)
+            {
+                chkOverlayRoi.Enabled = showOverlay;
+            }
+        }
+
+        private bool ShouldShowRoiOverlay()
+        {
+            return chkOverlayRoi == null || chkOverlayRoi.Checked;
         }
 
         private void OnOpenPreviewClicked(object sender, EventArgs e)
         {
             OpenSelectedStepPreview();
+        }
+
+        private void OnMatchingReviewImageDoubleClick(object sender, EventArgs e)
+        {
+            OpenMatchingReviewImage(ReferenceEquals(sender, matchingTemplateBox));
         }
 
         private void OnResultGridCellDoubleClick(object sender, DataGridViewCellEventArgs e)
@@ -2895,6 +3391,20 @@ namespace OpenVisionLab
                     break;
                 case ResultGridRowAction.PreviewOverlay:
                     SwitchSelectedStepPreviewMode(StepPreviewImageMode.Overlay, openViewer);
+                    break;
+                case ResultGridRowAction.MatchingTemplate:
+                    if (openViewer)
+                    {
+                        OpenMatchingReviewImage(template: true);
+                    }
+
+                    break;
+                case ResultGridRowAction.MatchingDetectedCrop:
+                    if (openViewer)
+                    {
+                        OpenMatchingReviewImage(template: false);
+                    }
+
                     break;
                 default:
                     if (openViewer)
@@ -2965,9 +3475,60 @@ namespace OpenVisionLab
                 summary,
                 GetCurrentOverlayLabelMode(),
                 nudOverlayPointLimit == null ? 300 : (int)nudOverlayPointLimit.Value,
-                mode == StepPreviewImageMode.Overlay ? initialOverlayIndex : -1))
+                mode == StepPreviewImageMode.Overlay ? initialOverlayIndex : -1,
+                ShouldShowRoiOverlay() ? ResolveStepRoiBounds(step, source.Size) : Enumerable.Empty<RectangleF>()))
             {
                 VisionPipelineDialogService.ShowDialog(viewer, this);
+            }
+        }
+
+        private void OpenMatchingReviewImage(bool template)
+        {
+            VisionPipelineStep step = SelectedStep;
+            if (!IsMatchingStep(step))
+            {
+                AppendLog("VIEW | Select a template-based matching step before opening the review image.");
+                return;
+            }
+
+            Bitmap image = null;
+            try
+            {
+                string title;
+                if (template)
+                {
+                    image = TryLoadBitmap(ResolveMatchingTemplatePath(step));
+                    title = $"{step.Name} - Template";
+                }
+                else
+                {
+                    image = TryCreateMatchingDetectedCrop(step, out _);
+                    title = $"{step.Name} - Detected Crop";
+                }
+
+                if (image == null)
+                {
+                    AppendLog(template
+                        ? "VIEW | Template image is not available."
+                        : "VIEW | Detected crop is not available. Run Preview first.");
+                    return;
+                }
+
+                stepResultSummaries.TryGetValue(step, out VisionPipelineStepResultSummary summary);
+                using (FormVisionPipelineImageViewer viewer = new FormVisionPipelineImageViewer(
+                    title,
+                    image,
+                    Enumerable.Empty<VisionToolOverlay>(),
+                    summary,
+                    GetCurrentOverlayLabelMode(),
+                    nudOverlayPointLimit == null ? 300 : (int)nudOverlayPointLimit.Value))
+                {
+                    VisionPipelineDialogService.ShowDialog(viewer, this);
+                }
+            }
+            finally
+            {
+                image?.Dispose();
             }
         }
 
@@ -2987,7 +3548,8 @@ namespace OpenVisionLab
                 null,
                 GetCurrentOverlayLabelMode(),
                 nudOverlayPointLimit == null ? 300 : (int)nudOverlayPointLimit.Value,
-                -1))
+                -1,
+                ShouldShowRoiOverlay() ? pipelineSummaryRoiBounds : Enumerable.Empty<RectangleF>()))
             {
                 VisionPipelineDialogService.ShowDialog(viewer, this);
             }
@@ -3074,6 +3636,7 @@ namespace OpenVisionLab
                 ApplyPipelinePropertyGridVisibility();
                 propertiesCaption.Text = step == null ? "Properties" : $"Properties - {step.Name}";
                 RefreshSelectedStepIoPanel();
+                RefreshSelectedStepAcceptancePanel();
             }
             finally
             {
@@ -3141,6 +3704,104 @@ namespace OpenVisionLab
             }
         }
 
+        private void RefreshSelectedStepAcceptancePanel()
+        {
+            if (stepAcceptancePanel == null
+                || cbStepAcceptancePreset == null
+                || btnApplyStepAcceptancePreset == null
+                || btnClearStepAcceptance == null
+                || stepAcceptanceStatusLabel == null)
+            {
+                return;
+            }
+
+            VisionPipelineStep step = SelectedStep;
+            isUpdatingStepAcceptancePanel = true;
+            try
+            {
+                bool hasStep = step != null;
+                stepAcceptancePanel.Enabled = hasStep;
+                cbStepAcceptancePreset.Items.Clear();
+
+                if (hasStep)
+                {
+                    int selectedIndex = -1;
+                    foreach (VisionPipelineAcceptancePreset preset in VisionPipelineKnownMetrics.GetPresetsForTool(step.ToolType))
+                    {
+                        int index = cbStepAcceptancePreset.Items.Add(new AcceptancePresetListItem(preset));
+                        if (selectedIndex < 0 && IsPresetEquivalentToStep(step, preset))
+                        {
+                            selectedIndex = index;
+                        }
+                    }
+
+                    if (cbStepAcceptancePreset.Items.Count > 0)
+                    {
+                        cbStepAcceptancePreset.SelectedIndex = selectedIndex >= 0 ? selectedIndex : 0;
+                    }
+                }
+
+                btnApplyStepAcceptancePreset.Enabled = hasStep && cbStepAcceptancePreset.SelectedItem is AcceptancePresetListItem;
+                btnClearStepAcceptance.Enabled = hasStep && step.UseAcceptance;
+                SetStepAcceptanceStatus(BuildStepAcceptanceStatusText(step));
+            }
+            finally
+            {
+                isUpdatingStepAcceptancePanel = false;
+            }
+        }
+
+        private string BuildStepAcceptanceStatusText(VisionPipelineStep step)
+        {
+            if (step == null)
+            {
+                return "Select a step";
+            }
+
+            if (!step.UseAcceptance)
+            {
+                return "No acceptance";
+            }
+
+            stepResultSummaries.TryGetValue(step, out VisionPipelineStepResultSummary summary);
+            string metricText = BuildStepMetricBadgeText(step, summary);
+            return string.IsNullOrWhiteSpace(metricText)
+                ? FormatAcceptanceConfiguration(step)
+                : metricText;
+        }
+
+        private void SetStepAcceptanceStatus(string text)
+        {
+            if (stepAcceptanceStatusLabel == null)
+            {
+                return;
+            }
+
+            string statusText = string.IsNullOrWhiteSpace(text) ? "No acceptance" : text;
+            stepAcceptanceStatusLabel.Text = statusText;
+            pipelineToolTip?.SetToolTip(stepAcceptanceStatusLabel, statusText);
+        }
+
+        private static bool IsPresetEquivalentToStep(VisionPipelineStep step, VisionPipelineAcceptancePreset preset)
+        {
+            if (step == null || preset == null || !step.UseAcceptance)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(preset.MetricName))
+            {
+                return string.IsNullOrWhiteSpace(step.AcceptanceMetricName)
+                    && Math.Abs(step.MaxElapsedMilliseconds - preset.MaxElapsedMilliseconds) < 0.000001;
+            }
+
+            return string.Equals(step.AcceptanceMetricName ?? string.Empty, preset.MetricName ?? string.Empty, StringComparison.OrdinalIgnoreCase)
+                && step.UseAcceptanceMetricMinimum == preset.UseMinimum
+                && Math.Abs(step.AcceptanceMetricMinimum - preset.Minimum) < 0.000001
+                && step.UseAcceptanceMetricMaximum == preset.UseMaximum
+                && Math.Abs(step.AcceptanceMetricMaximum - preset.Maximum) < 0.000001;
+        }
+
         private void UpdateStepIoStateView(VisionPipelineStep step, bool hasStep, string previousOutput, bool canChain, bool isLinked)
         {
             if (btnStepChainInput == null)
@@ -3173,7 +3834,7 @@ namespace OpenVisionLab
             {
                 btnStepChainInput.Text = "Linked";
                 ApplyStepIoStateStyle(linkedBackColor, linkedForeColor);
-                SetStepIoStatus($"Linked: INPUT follows previous OUTPUT '{previousOutput}'.", linkedBackColor, linkedForeColor);
+                SetStepIoStatus($"Linked input: this step uses previous output '{previousOutput}'.", linkedBackColor, linkedForeColor);
                 return;
             }
 
@@ -3181,13 +3842,13 @@ namespace OpenVisionLab
             {
                 btnStepChainInput.Text = "Link Prev";
                 ApplyStepIoStateStyle(branchBackColor, branchForeColor);
-                SetStepIoStatus($"Branch: INPUT reads '{inputLayer}' instead of previous OUTPUT '{previousOutput}'.", branchBackColor, branchForeColor);
+                SetStepIoStatus(BuildStepIoBranchStatusText(step, inputLayer, previousOutput), branchBackColor, branchForeColor);
                 return;
             }
 
             btnStepChainInput.Text = "Source";
             ApplyStepIoStateStyle(sourceBackColor, sourceForeColor);
-            SetStepIoStatus($"Source: INPUT starts from '{inputLayer}'.", sourceBackColor, sourceForeColor);
+            SetStepIoStatus($"Source input: this step starts from '{inputLayer}'.", sourceBackColor, sourceForeColor);
         }
 
         private void ApplyStepIoStateStyle(Color backColor, Color foreColor)
@@ -3212,6 +3873,51 @@ namespace OpenVisionLab
             stepIoStatusLabel.Text = text;
             stepIoStatusLabel.BackColor = backColor;
             stepIoStatusLabel.ForeColor = foreColor;
+            pipelineToolTip?.SetToolTip(stepIoStatusLabel, text);
+        }
+
+        private static string BuildStepIoBranchStatusText(VisionPipelineStep step, string inputLayer, string previousOutput)
+        {
+            string source = string.IsNullOrWhiteSpace(inputLayer) ? "Input?" : inputLayer.Trim();
+            string previous = string.IsNullOrWhiteSpace(previousOutput) ? "previous output" : previousOutput.Trim();
+
+            if (string.Equals(source, "Main", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"Review branch: reads Main instead of previous output '{previous}'. Use Link Prev unless this step intentionally starts from the original image.";
+            }
+
+            string toolType = VisionPipelineNormalizer.NormalizeToolType(step?.ToolType);
+            if (IsLikelyChainedTool(toolType))
+            {
+                return $"Branch input: reads '{source}' instead of previous output '{previous}'. Use Link Prev unless this is an intentional branch.";
+            }
+
+            return $"Branch input: reads '{source}' instead of previous output '{previous}'.";
+        }
+
+        private static bool IsLikelyChainedTool(string normalizedToolType)
+        {
+            switch (normalizedToolType)
+            {
+                case "threshold":
+                case "morphology":
+                case "filter":
+                case "edgedetection":
+                case "contour":
+                case "blob":
+                case "line":
+                case "linegauge":
+                case "matching":
+                case "featurematching":
+                case "mean":
+                case "histogram":
+                case "hsv":
+                case "arithmetic":
+                case "rotateandscale":
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private void ApplyPipelinePropertyGridVisibility()
@@ -3413,6 +4119,7 @@ namespace OpenVisionLab
         {
             ClearPipelineSummaryPreviewImage();
             pipelineSummaryOverlays.Clear();
+            pipelineSummaryRoiBounds.Clear();
 
             if (!TryGetPipelineSummaryBaseImage(out Bitmap source) || source == null)
             {
@@ -3467,6 +4174,15 @@ namespace OpenVisionLab
                         Math.Max(0, overlayColor.R - 35),
                         Math.Max(0, overlayColor.G - 35),
                         Math.Max(0, overlayColor.B - 35));
+                    List<RectangleF> roiBounds = ShouldShowRoiOverlay()
+                        ? ResolveStepRoiBounds(step, preview.Size)
+                        : new List<RectangleF>();
+                    if (roiBounds.Count > 0)
+                    {
+                        pipelineSummaryRoiBounds.AddRange(roiBounds);
+                        DrawRoiBounds(graphics, roiBounds, preview.Size, labelMode, $"{overlayGroupCount:00} ROI");
+                    }
+
                     DrawOverlays(graphics, visibleOverlays, preview.Size, labelMode, pointLimit, overlayColor, textBackColor);
                 }
 
@@ -3579,6 +4295,7 @@ namespace OpenVisionLab
             pipelineSummarySourceImage = null;
             pipelineSummaryPreviewImage?.Dispose();
             pipelineSummaryPreviewImage = null;
+            pipelineSummaryRoiBounds.Clear();
         }
 
         private Bitmap RenderStepPreviewBitmap(VisionPipelineStep step, Bitmap source)
@@ -3598,6 +4315,10 @@ namespace OpenVisionLab
                 graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 Color overlayColor = ResolveOverlayColor(status);
                 Color textBackColor = ResolveOverlayTextBackColor(status);
+                if (ShouldShowRoiOverlay())
+                {
+                    DrawRoiBounds(graphics, ResolveStepRoiBounds(step, preview.Size), preview.Size, labelMode, "ROI");
+                }
                 if (overlays != null && overlays.Count > 0)
                 {
                     DrawOverlays(graphics, overlays, preview.Size, labelMode, pointLimit, overlayColor, textBackColor);
@@ -3675,6 +4396,161 @@ namespace OpenVisionLab
                     }
                 }
             }
+        }
+
+        private static void DrawRoiBounds(
+            Graphics graphics,
+            IEnumerable<RectangleF> roiBounds,
+            DrawingSize imageSize,
+            OverlayLabelMode labelMode,
+            string label)
+        {
+            List<RectangleF> boundsList = (roiBounds ?? Enumerable.Empty<RectangleF>())
+                .Select(bounds => ClampRectangle(bounds, imageSize))
+                .Where(bounds => bounds.Width > 0 && bounds.Height > 0)
+                .ToList();
+            if (boundsList.Count == 0)
+            {
+                return;
+            }
+
+            using (Pen roiPen = new Pen(Color.FromArgb(235, 54, 200, 255), 1.5F))
+            using (Brush textBrush = new SolidBrush(Color.White))
+            using (Brush textBackBrush = new SolidBrush(Color.FromArgb(220, 12, 92, 118)))
+            using (Font font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Pixel))
+            {
+                roiPen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+                roiPen.DashPattern = new[] { 4F, 3F };
+
+                foreach (RectangleF bounds in boundsList)
+                {
+                    graphics.DrawRectangle(roiPen, bounds.X, bounds.Y, bounds.Width, bounds.Height);
+                    if (labelMode != OverlayLabelMode.None)
+                    {
+                        DrawOverlayLabel(graphics, label, bounds.Location, imageSize, textBrush, textBackBrush, font);
+                    }
+                }
+            }
+        }
+
+        private static List<RectangleF> ResolveStepRoiBounds(VisionPipelineStep step, DrawingSize imageSize)
+        {
+            IDictionary<string, string> parameters = step?.Parameters;
+            if (!GetBoolParameter(parameters, "USE_ROI", false))
+            {
+                return new List<RectangleF>();
+            }
+
+            List<RectangleF> roiBounds = new List<RectangleF>();
+            bool useMultiRoi = GetBoolParameter(parameters, "USE_MULTI_ROI", false);
+            if (useMultiRoi)
+            {
+                string text = GetParameterValue(parameters, "CvROIS");
+                foreach (string part in (text ?? string.Empty).Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (TryParseRoiBounds(part, out RectangleF bounds) && IsVisibleRoiBounds(bounds, imageSize))
+                    {
+                        roiBounds.Add(bounds);
+                    }
+                }
+            }
+            else if (TryParseRoiBounds(GetParameterValue(parameters, "CvROI"), out RectangleF bounds)
+                && IsVisibleRoiBounds(bounds, imageSize))
+            {
+                roiBounds.Add(bounds);
+            }
+
+            return roiBounds;
+        }
+
+        private static bool GetBoolParameter(IDictionary<string, string> parameters, string key, bool defaultValue)
+        {
+            string value = GetParameterValue(parameters, key);
+            return bool.TryParse(value, out bool result) ? result : defaultValue;
+        }
+
+        private static string GetParameterValue(IDictionary<string, string> parameters, string key)
+        {
+            if (parameters == null || string.IsNullOrWhiteSpace(key))
+            {
+                return null;
+            }
+
+            foreach (KeyValuePair<string, string> parameter in parameters)
+            {
+                if (string.Equals(parameter.Key, key, StringComparison.OrdinalIgnoreCase))
+                {
+                    return parameter.Value;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool TryParseRoiBounds(string value, out RectangleF bounds)
+        {
+            bounds = RectangleF.Empty;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            string[] parts = value.Split(',');
+            if (parts.Length != 4)
+            {
+                return false;
+            }
+
+            if (!float.TryParse(parts[0].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out float x)
+                || !float.TryParse(parts[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out float y)
+                || !float.TryParse(parts[2].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out float width)
+                || !float.TryParse(parts[3].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out float height))
+            {
+                return false;
+            }
+
+            bounds = new RectangleF(x, y, width, height);
+            return true;
+        }
+
+        private static bool IsVisibleRoiBounds(RectangleF bounds, DrawingSize imageSize)
+        {
+            if (bounds.Width <= 0 || bounds.Height <= 0)
+            {
+                return false;
+            }
+
+            if (imageSize.Width > 0
+                && imageSize.Height > 0
+                && bounds.X <= 0
+                && bounds.Y <= 0
+                && bounds.Width >= imageSize.Width
+                && bounds.Height >= imageSize.Height)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static string FormatRoiBounds(IReadOnlyList<RectangleF> roiBounds)
+        {
+            if (roiBounds == null || roiBounds.Count == 0)
+            {
+                return "-";
+            }
+
+            RectangleF first = roiBounds[0];
+            string firstText = string.Format(
+                CultureInfo.InvariantCulture,
+                "x:{0:0} y:{1:0} w:{2:0} h:{3:0}",
+                first.X,
+                first.Y,
+                first.Width,
+                first.Height);
+            return roiBounds.Count == 1
+                ? firstText
+                : $"{roiBounds.Count} ROIs | {firstText}";
         }
 
         private OverlayLabelMode GetCurrentOverlayLabelMode()
@@ -3940,7 +4816,10 @@ namespace OpenVisionLab
             bool hasValue = summary?.Metrics != null && summary.Metrics.TryGetValue(metricName, out metricValue);
             string valueText = hasValue ? metricValue.ToString("0.###", CultureInfo.InvariantCulture) : "N/A";
             string criteriaText = BuildAcceptanceCriteriaText(step, metricName);
-            return $"{metricName}={valueText}{criteriaText}";
+            string label = VisionPipelineKnownMetrics.GetDisplayName(metricName);
+            return string.IsNullOrWhiteSpace(criteriaText)
+                ? $"{label}: {valueText}"
+                : $"{label}: {valueText} ({criteriaText})";
         }
 
         private static string ResolveBadgeMetricName(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
@@ -3982,20 +4861,20 @@ namespace OpenVisionLab
             {
                 if (Math.Abs(step.AcceptanceMetricMinimum - step.AcceptanceMetricMaximum) < 0.000001)
                 {
-                    return $" = {step.AcceptanceMetricMinimum:0.###}";
+                    return $"target = {step.AcceptanceMetricMinimum:0.###}";
                 }
 
-                return $" [{step.AcceptanceMetricMinimum:0.###}..{step.AcceptanceMetricMaximum:0.###}]";
+                return $"target {step.AcceptanceMetricMinimum:0.###}..{step.AcceptanceMetricMaximum:0.###}";
             }
 
             if (hasMinimum)
             {
-                return $" >= {step.AcceptanceMetricMinimum:0.###}";
+                return $"target >= {step.AcceptanceMetricMinimum:0.###}";
             }
 
             if (hasMaximum)
             {
-                return $" <= {step.AcceptanceMetricMaximum:0.###}";
+                return $"target <= {step.AcceptanceMetricMaximum:0.###}";
             }
 
             return string.Empty;
@@ -4038,6 +4917,7 @@ namespace OpenVisionLab
             {
                 case PipelineStepRunStatus.Passed:
                     return Color.FromArgb(0, 210, 120);
+                case PipelineStepRunStatus.Error:
                 case PipelineStepRunStatus.Failed:
                 case PipelineStepRunStatus.Timeout:
                     return Color.FromArgb(235, 60, 60);
@@ -4062,6 +4942,7 @@ namespace OpenVisionLab
         private static bool IsFailureStatus(PipelineStepRunStatus status)
         {
             return status == PipelineStepRunStatus.Failed
+                || status == PipelineStepRunStatus.Error
                 || status == PipelineStepRunStatus.Timeout
                 || status == PipelineStepRunStatus.Canceled;
         }
@@ -4134,6 +5015,7 @@ namespace OpenVisionLab
         {
             SetPreviewImage(null);
             ShowStepResultDetails(step);
+            UpdateMatchingReviewPanel(step);
             UpdatePreviewActionState(step);
 
             if (GetCurrentPreviewImageMode() == StepPreviewImageMode.Summary)
@@ -4237,6 +5119,276 @@ namespace OpenVisionLab
             return previewLayerImages.TryGetValue(step.InputLayer.Trim(), out bitmap) && bitmap != null;
         }
 
+        private void UpdateMatchingReviewPanel(VisionPipelineStep step)
+        {
+            if (matchingReviewPanel == null || previewPanel == null || previewPanel.RowStyles.Count <= 3)
+            {
+                return;
+            }
+
+            bool show = IsMatchingStep(step);
+            matchingReviewPanel.Visible = show;
+            previewPanel.RowStyles[3].Height = show ? 112F : 0F;
+
+            if (!show)
+            {
+                SetPictureBoxImage(matchingTemplateBox, null);
+                SetPictureBoxImage(matchingDetectedBox, null);
+                if (matchingReviewSummary != null)
+                {
+                    matchingReviewSummary.Text = string.Empty;
+                }
+
+                return;
+            }
+
+            string templatePath = ResolveMatchingTemplatePath(step);
+            Bitmap templateImage = TryLoadBitmap(templatePath);
+            SetPictureBoxImage(matchingTemplateBox, templateImage);
+
+            Bitmap detectedCrop = TryCreateMatchingDetectedCrop(step, out VisionToolOverlay selectedOverlay);
+            SetPictureBoxImage(matchingDetectedBox, detectedCrop);
+
+            matchingReviewSummary.Text = BuildMatchingReviewText(step, templatePath, templateImage, detectedCrop, selectedOverlay);
+        }
+
+        private static bool IsMatchingStep(VisionPipelineStep step)
+        {
+            if (step == null)
+            {
+                return false;
+            }
+
+            string toolType = (step.ToolType ?? string.Empty).Replace(" ", string.Empty);
+            return string.Equals(toolType, "Matching", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(toolType, "FeatureMatching", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(toolType, "Feature", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(toolType, "Sift", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private string BuildMatchingReviewText(
+            VisionPipelineStep step,
+            string templatePath,
+            Bitmap templateImage,
+            Bitmap detectedCrop,
+            VisionToolOverlay overlay)
+        {
+            stepResultSummaries.TryGetValue(step, out VisionPipelineStepResultSummary summary);
+            string score = summary?.Metrics != null && summary.Metrics.TryGetValue("ScoreMax", out double scoreMax)
+                ? scoreMax.ToString("0.###", CultureInfo.InvariantCulture)
+                : "-";
+            string center = overlay == null
+                ? "-"
+                : string.Format(CultureInfo.InvariantCulture, "{0:0}, {1:0}", overlay.Center.X, overlay.Center.Y);
+            string bounds = overlay == null
+                ? "-"
+                : string.Format(CultureInfo.InvariantCulture, "{0:0}x{1:0}", overlay.Bounds.Width, overlay.Bounds.Height);
+
+            return string.Join(
+                Environment.NewLine,
+                $"Template: {FormatBitmapSize(templateImage)}",
+                $"Crop: {FormatBitmapSize(detectedCrop)}",
+                $"Score: {score}",
+                $"Center: {center}",
+                $"Size: {bounds}");
+        }
+
+        private static string FormatImageShortName(string path, Bitmap image)
+        {
+            string name = string.IsNullOrWhiteSpace(path) ? "-" : Path.GetFileName(path);
+            string size = FormatBitmapSize(image);
+            return string.IsNullOrWhiteSpace(size) || size == "-" ? name : $"{name} | {size}";
+        }
+
+        private Bitmap TryCreateMatchingDetectedCrop(VisionPipelineStep step, out VisionToolOverlay selectedOverlay)
+        {
+            selectedOverlay = ResolvePrimaryRectangleOverlay(step);
+            if (selectedOverlay == null)
+            {
+                return null;
+            }
+
+            if (!TryGetMatchingSourceImage(step, out Bitmap source) || source == null)
+            {
+                return null;
+            }
+
+            return CreateDetectedCrop(source, selectedOverlay.Bounds);
+        }
+
+        private bool TryGetMatchingSourceImage(VisionPipelineStep step, out Bitmap source)
+        {
+            source = null;
+            if (step == null)
+            {
+                return false;
+            }
+
+            if (stepInputImages.TryGetValue(step, out source) && source != null)
+            {
+                return true;
+            }
+
+            return TryResolveInputImageFromLayerCache(step, out source) && source != null;
+        }
+
+        private VisionToolOverlay ResolvePrimaryRectangleOverlay(VisionPipelineStep step)
+        {
+            if (step == null
+                || !stepOverlays.TryGetValue(step, out List<VisionToolOverlay> overlays)
+                || overlays == null)
+            {
+                return null;
+            }
+
+            return overlays.FirstOrDefault(overlay =>
+                overlay != null
+                && overlay.Kind == VisionToolOverlayKind.Rectangle
+                && overlay.Bounds.Width > 0
+                && overlay.Bounds.Height > 0);
+        }
+
+        private string ResolveMatchingTemplatePath(VisionPipelineStep step)
+        {
+            string path = GetParameterValue(step?.Parameters, nameof(MatchingProperty.PATTERN_PATH));
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                path = GetParameterValue(step?.Parameters, "TemplatePath");
+            }
+
+            return ResolveImagePath(path);
+        }
+
+        private static string ResolveImagePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return string.Empty;
+            }
+
+            if (File.Exists(path))
+            {
+                return path;
+            }
+
+            if (Path.IsPathRooted(path))
+            {
+                return string.Empty;
+            }
+
+            string[] roots =
+            {
+                Application.StartupPath,
+                AppDomain.CurrentDomain.BaseDirectory,
+                Directory.GetCurrentDirectory()
+            };
+
+            foreach (string root in roots)
+            {
+                string found = FindRelativeImagePath(root, path);
+                if (!string.IsNullOrWhiteSpace(found))
+                {
+                    return found;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static string FindRelativeImagePath(string root, string path)
+        {
+            if (string.IsNullOrWhiteSpace(root))
+            {
+                return string.Empty;
+            }
+
+            DirectoryInfo directory;
+            try
+            {
+                directory = new DirectoryInfo(root);
+            }
+            catch
+            {
+                return string.Empty;
+            }
+
+            for (int i = 0; i < 8 && directory != null; i++)
+            {
+                string candidate = Path.Combine(directory.FullName, path);
+                if (File.Exists(candidate))
+                {
+                    return candidate;
+                }
+
+                directory = directory.Parent;
+            }
+
+            return string.Empty;
+        }
+
+        private static Bitmap TryLoadBitmap(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            {
+                return null;
+            }
+
+            try
+            {
+                using (Image image = Image.FromFile(path))
+                {
+                    return new Bitmap(image);
+                }
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static Bitmap CreateDetectedCrop(Bitmap source, RectangleF bounds)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            Rectangle cropBounds = Rectangle.Round(bounds);
+            cropBounds.Intersect(new Rectangle(DrawingPoint.Empty, source.Size));
+            if (cropBounds.Width <= 0 || cropBounds.Height <= 0)
+            {
+                return null;
+            }
+
+            Bitmap crop = new Bitmap(cropBounds.Width, cropBounds.Height, PixelFormat.Format24bppRgb);
+            using (Graphics graphics = Graphics.FromImage(crop))
+            {
+                graphics.DrawImage(
+                    source,
+                    new Rectangle(DrawingPoint.Empty, cropBounds.Size),
+                    cropBounds,
+                    GraphicsUnit.Pixel);
+            }
+
+            return crop;
+        }
+
+        private static void SetPictureBoxImage(PictureBox pictureBox, Image image)
+        {
+            if (pictureBox == null)
+            {
+                image?.Dispose();
+                return;
+            }
+
+            Image previous = pictureBox.Image;
+            pictureBox.Image = image;
+            if (previous != null && !ReferenceEquals(previous, image))
+            {
+                previous.Dispose();
+            }
+        }
+
         private static string FormatMissingPreviewDetail(VisionPipelineStep step, StepPreviewImageMode mode)
         {
             if (step == null)
@@ -4300,6 +5452,15 @@ namespace OpenVisionLab
             stepResultSummaries.TryGetValue(step, out VisionPipelineStepResultSummary summary);
 
             AddResultRow("Status", FormatStepResultStatus(status));
+            if (summary?.IsToolError == true)
+            {
+                AddResultRow("Decision", "Tool Error");
+            }
+            else if (summary?.IsAcceptanceNg == true)
+            {
+                AddResultRow("Decision", "Acceptance NG");
+            }
+
             AddResultRow("Viewing", FormatCurrentPreviewValue(step), CreatePreviewActionTag(GetCurrentPreviewImageMode()));
             AddResultRow("Result", BuildStepResultHeadline(step, summary));
 
@@ -4308,9 +5469,28 @@ namespace OpenVisionLab
                 AddResultRow("Elapsed", $"{summary.ElapsedMilliseconds:0.0} ms");
             }
 
+            if (summary?.ErrorCode > 0)
+            {
+                AddResultRow("Tool error", $"{summary.ErrorCode} | {summary.ErrorName}");
+            }
+
+            if (summary?.IsToolError == true && !string.IsNullOrWhiteSpace(summary.ResultStatus))
+            {
+                AddResultRow("Result status", summary.ResultStatus);
+            }
+
             AddResultRow("Flow", FormatPipelineFlow(step.InputLayer, step.OutputLayer));
             AddResultRow("Input image", FormatLayerImageValue(step.InputLayer, FormatStepPreviewImageState(step, StepPreviewImageMode.Input)), new ResultGridRowTag(ResultGridRowAction.PreviewInput));
             AddResultRow("Output image", FormatLayerImageValue(step.OutputLayer, FormatStepPreviewImageState(step, StepPreviewImageMode.Output)), new ResultGridRowTag(ResultGridRowAction.PreviewOutput));
+            AddMatchingReviewRows(step);
+            if (TryGetStepPreviewSource(step, StepPreviewImageMode.Input, out Bitmap roiSource) && roiSource != null)
+            {
+                List<RectangleF> roiBounds = ResolveStepRoiBounds(step, roiSource.Size);
+                if (roiBounds.Count > 0)
+                {
+                    AddResultRow("ROI", FormatRoiBounds(roiBounds));
+                }
+            }
 
             if (step.UseAcceptance)
             {
@@ -4343,12 +5523,40 @@ namespace OpenVisionLab
 
             if (!string.IsNullOrWhiteSpace(summary.Message))
             {
-                AddResultRow("Message", TruncateText(summary.Message, 96));
+                AddResultRow(summary.IsAcceptanceNg ? "Reason" : "Message", TruncateText(summary.Message, 96));
             }
 
             AddOverlayDetailRows(step);
             AddResultRow("Tool", step.ToolType);
             AddResultRow("Parameters", summary.ParameterCount.ToString(CultureInfo.InvariantCulture));
+        }
+
+        private void AddMatchingReviewRows(VisionPipelineStep step)
+        {
+            if (!IsMatchingStep(step))
+            {
+                return;
+            }
+
+            string templatePath = ResolveMatchingTemplatePath(step);
+            Bitmap templateImage = null;
+            Bitmap detectedCrop = null;
+            try
+            {
+                templateImage = TryLoadBitmap(templatePath);
+                detectedCrop = TryCreateMatchingDetectedCrop(step, out VisionToolOverlay overlay);
+
+                AddResultRow("Template", FormatImageShortName(templatePath, templateImage), new ResultGridRowTag(ResultGridRowAction.MatchingTemplate));
+                AddResultRow("Detected crop", FormatBitmapSize(detectedCrop), new ResultGridRowTag(ResultGridRowAction.MatchingDetectedCrop));
+                AddResultRow("Match center", overlay == null
+                    ? "-"
+                    : string.Format(CultureInfo.InvariantCulture, "{0:0}, {1:0}", overlay.Center.X, overlay.Center.Y));
+            }
+            finally
+            {
+                templateImage?.Dispose();
+                detectedCrop?.Dispose();
+            }
         }
 
         private void ShowPipelineSummaryDetails()
@@ -4359,6 +5567,7 @@ namespace OpenVisionLab
             int overlaySteps = stepOverlays.Count(pair => pair.Value != null && pair.Value.Count > 0);
             int overlayCount = pipelineSummaryOverlays.Count;
 
+            AddActiveSampleResultRows();
             AddResultRow("Status", pipelineSummaryPreviewImage == null ? "Run Preview required." : "Ready");
             AddResultRow("Viewing", $"Summary | {FormatBitmapSize(pipelineSummaryPreviewImage)}");
             AddResultRow("Overlay steps", $"{overlaySteps} / {totalSteps}");
@@ -4383,6 +5592,39 @@ namespace OpenVisionLab
             }
         }
 
+        private void AddActiveSampleResultRows()
+        {
+            if (activeCatalogSample == null)
+            {
+                return;
+            }
+
+            AddResultRow("Sample", activeCatalogSample.SampleName);
+            if (!string.IsNullOrWhiteSpace(activeSampleStatusText))
+            {
+                AddResultRow("Check", activeSampleStatusText);
+            }
+
+            if (!string.IsNullOrWhiteSpace(activeSampleMetricText))
+            {
+                AddResultRow("Actual", activeSampleMetricText);
+            }
+
+            AddResultRow("Expected", activeCatalogSample.ExpectedText);
+            AddResultRow("Recipe flow", activeCatalogSample.ToolFlowText);
+            AddResultRow("Goal", string.IsNullOrWhiteSpace(activeCatalogSample.Goal) ? "-" : activeCatalogSample.Goal);
+
+            if (!string.IsNullOrWhiteSpace(activeSampleFinalLayerText))
+            {
+                AddResultRow("Final layer", activeSampleFinalLayerText);
+            }
+
+            if (!string.IsNullOrWhiteSpace(activeSampleOverlayCountText))
+            {
+                AddResultRow("Final overlays", activeSampleOverlayCountText);
+            }
+        }
+
         private static string BuildStepResultHeadline(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
         {
             if (summary == null)
@@ -4392,15 +5634,44 @@ namespace OpenVisionLab
 
             if (!summary.Success && !string.IsNullOrWhiteSpace(summary.Message))
             {
+                if (summary.IsToolError && summary.ErrorCode > 0)
+                {
+                    return $"ERROR {summary.ErrorCode}: {summary.ErrorName} - {TruncateText(summary.Message, 64)}";
+                }
+
+                if (summary.IsAcceptanceNg)
+                {
+                    return $"Acceptance NG - {TruncateText(summary.Message, 78)}";
+                }
+
                 return TruncateText(summary.Message, 96);
             }
 
             if (summary.Metrics != null && summary.Metrics.TryGetValue(VisionPipelineKnownMetrics.ResultCount, out double resultCount))
             {
-                string countText = FormatMetricValue(resultCount);
-                return summary.OverlayCount > 0
-                    ? $"{countText} results, {summary.OverlayCount} overlays"
-                    : $"{countText} results";
+                List<string> parts = new List<string>
+                {
+                    FormatResultCountText(resultCount)
+                };
+
+                if (IsScoreMetricTool(step?.ToolType)
+                    && summary.Metrics.TryGetValue(VisionPipelineKnownMetrics.ScoreMax, out double scoreMax))
+                {
+                    parts.Add($"Score {FormatMetricValue(scoreMax)}");
+                }
+
+                if (summary.Metrics.TryGetValue(VisionPipelineKnownMetrics.AngleAvg, out double angleAvg)
+                    && Math.Abs(angleAvg) > 0.000001)
+                {
+                    parts.Add($"Angle {FormatMetricValue(angleAvg)}");
+                }
+
+                if (summary.OverlayCount > 0)
+                {
+                    parts.Add($"{summary.OverlayCount} overlays");
+                }
+
+                return string.Join(", ", parts);
             }
 
             if (summary.OverlayCount > 0)
@@ -4419,6 +5690,29 @@ namespace OpenVisionLab
             }
 
             return string.IsNullOrWhiteSpace(summary.Status) ? "-" : summary.Status;
+        }
+
+        private static string FormatResultCountText(double resultCount)
+        {
+            string countText = FormatMetricValue(resultCount);
+            return Math.Abs(resultCount - 1d) < 0.000001
+                ? $"{countText} result"
+                : $"{countText} results";
+        }
+
+        private static bool IsScoreMetricTool(string toolType)
+        {
+            switch (NormalizeToolType(toolType))
+            {
+                case "matching":
+                case "templatematching":
+                case "feature":
+                case "featurematching":
+                case "sift":
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private static string FormatPipelineFlow(string inputLayer, string outputLayer)
@@ -4520,7 +5814,7 @@ namespace OpenVisionLab
                 case VisionPipelineKnownMetrics.EdgePointCount:
                     return "Edge points";
                 default:
-                    return metricName;
+                    return VisionPipelineKnownMetrics.GetDisplayName(metricName);
             }
         }
 
@@ -4703,7 +5997,8 @@ namespace OpenVisionLab
             row.Tag = tag;
             row.Cells[0].ToolTipText = name;
             row.Cells[1].ToolTipText = value ?? string.Empty;
-            if (string.Equals(name, "Status", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(name, "Status", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(name, "Check", StringComparison.OrdinalIgnoreCase))
             {
                 row.DefaultCellStyle.Font = new Font(resultGrid.Font, FontStyle.Bold);
                 row.DefaultCellStyle.ForeColor = ResolveResultRowColor(value);
@@ -4825,6 +6120,7 @@ namespace OpenVisionLab
             if (ReferenceEquals(SelectedStep, step))
             {
                 ShowStepResultDetails(step);
+                UpdateMatchingReviewPanel(step);
             }
         }
 
@@ -4900,6 +6196,7 @@ namespace OpenVisionLab
             stepResultSummaries.Clear();
             stepOverlays.Clear();
             ShowStepResultDetails(SelectedStep);
+            UpdateMatchingReviewPanel(SelectedStep);
         }
 
         private void AppendStepLog(VisionPipelineStepResult stepResult)
@@ -4910,12 +6207,36 @@ namespace OpenVisionLab
             VisionPipelineStepResultSummary summary = VisionPipelineResultSummaryService.CreateStepSummary(index, stepResult);
             string elapsed = summary.ElapsedMilliseconds <= 0 ? string.Empty : $"{summary.ElapsedMilliseconds:0.0} ms";
             string message = string.IsNullOrWhiteSpace(summary.Message) ? string.Empty : $" - {summary.Message}";
+            string errorText = summary.ErrorCode <= 0 ? string.Empty : $" | ToolError={summary.ErrorCode}:{summary.ErrorName}";
+            string resultStatusText = summary.IsToolError && !string.IsNullOrWhiteSpace(summary.ResultStatus)
+                ? $" | ResultStatus={summary.ResultStatus}"
+                : string.Empty;
             string metricText = string.IsNullOrWhiteSpace(summary.MetricsText) ? string.Empty : $" | {summary.MetricsText}";
-            AppendLog($"{summary.Status} | {summary.Name} | {summary.InputLayer} -> {summary.OutputLayer} | {elapsed}{message}{metricText}");
+            AppendLog($"{summary.Status} | {summary.Name} | {summary.InputLayer} -> {summary.OutputLayer} | {elapsed}{message}{errorText}{resultStatusText}{metricText}");
+        }
+
+        private static string FormatSampleExpectedText(string expectedText)
+        {
+            if (string.IsNullOrWhiteSpace(expectedText))
+            {
+                return "Expected ready";
+            }
+
+            string compact = expectedText.Trim()
+                .Replace("ResultCount min ", "Count ", StringComparison.OrdinalIgnoreCase)
+                .Replace(" max ", "-", StringComparison.OrdinalIgnoreCase);
+
+            return compact.Length <= 36 ? compact : compact.Substring(0, 33) + "...";
         }
 
         private void AppendLog(string message)
         {
+            if (InvokeRequired)
+            {
+                TryPostToUi(() => AppendLog(message));
+                return;
+            }
+
             string logMessage = message ?? string.Empty;
             if (tbRunLog.TextLength > 0)
             {
@@ -4951,6 +6272,9 @@ namespace OpenVisionLab
             }
 
             if (message.StartsWith("WARN", StringComparison.OrdinalIgnoreCase)
+                || message.StartsWith("AUTO FIX", StringComparison.OrdinalIgnoreCase)
+                || message.StartsWith("CHAIN AUTO", StringComparison.OrdinalIgnoreCase)
+                || message.StartsWith("CHAIN LINK", StringComparison.OrdinalIgnoreCase)
                 || message.StartsWith("CHECK WARN", StringComparison.OrdinalIgnoreCase)
                 || message.StartsWith("CHECK REVIEW", StringComparison.OrdinalIgnoreCase)
                 || message.StartsWith("SAVE WARN", StringComparison.OrdinalIgnoreCase)
@@ -5014,6 +6338,8 @@ namespace OpenVisionLab
                     return PipelineStepRunStatus.Timeout;
                 case "CANCEL":
                     return PipelineStepRunStatus.Canceled;
+                case "ERROR":
+                    return PipelineStepRunStatus.Error;
                 default:
                     return PipelineStepRunStatus.Failed;
             }
@@ -5034,6 +6360,7 @@ namespace OpenVisionLab
                 case PipelineStepRunStatus.Passed:
                     node.ForeColor = Color.FromArgb(0, 128, 72);
                     break;
+                case PipelineStepRunStatus.Error:
                 case PipelineStepRunStatus.Failed:
                 case PipelineStepRunStatus.Timeout:
                     node.ForeColor = Color.FromArgb(190, 32, 32);
@@ -5167,8 +6494,61 @@ namespace OpenVisionLab
                 }
             }
 
-            pipelineFlowView.SetSteps(items);
-            pipelineFlowView.SelectStep(SelectedStepIndex, ToPipelineFlowPreviewMode(GetCurrentPreviewImageMode()));
+            SetPipelineFlowStepsSafely(items);
+            SelectPipelineFlowStepSafely(SelectedStepIndex, ToPipelineFlowPreviewMode(GetCurrentPreviewImageMode()));
+        }
+
+        private void SetPipelineFlowStepsSafely(IEnumerable<PipelineFlowStepItem> items)
+        {
+            PipelineFlowView view = pipelineFlowView;
+            if (view == null)
+            {
+                return;
+            }
+
+            List<PipelineFlowStepItem> snapshot = (items ?? Enumerable.Empty<PipelineFlowStepItem>())
+                .Where(item => item != null)
+                .ToList();
+            InvokePipelineFlowView(view, () => view.SetSteps(snapshot));
+        }
+
+        private void SelectPipelineFlowStepSafely(int index, PipelineFlowPreviewMode mode)
+        {
+            PipelineFlowView view = pipelineFlowView;
+            if (view == null)
+            {
+                return;
+            }
+
+            InvokePipelineFlowView(view, () => view.SelectStep(index, mode));
+        }
+
+        private static void InvokePipelineFlowView(PipelineFlowView view, Action action)
+        {
+            if (view == null || action == null)
+            {
+                return;
+            }
+
+            try
+            {
+                if (view.Dispatcher == null || view.Dispatcher.HasShutdownStarted || view.Dispatcher.HasShutdownFinished)
+                {
+                    return;
+                }
+
+                if (view.Dispatcher.CheckAccess())
+                {
+                    action();
+                }
+                else
+                {
+                    view.Dispatcher.BeginInvoke(action);
+                }
+            }
+            catch (InvalidOperationException)
+            {
+            }
         }
 
         private static string ResolveFlowRelationText(VisionPipelineStep step, bool isBranch, string expectedInputLayer)
@@ -5186,12 +6566,22 @@ namespace OpenVisionLab
             string inputLayer = FormatFlowLayerName(step.InputLayer, "Input?");
             if (string.IsNullOrWhiteSpace(expectedInputLayer))
             {
-                return $"Source input: {inputLayer}";
+                return $"Input: source image {inputLayer}";
             }
 
             return isBranch
-                ? $"Branch input: {inputLayer} (previous output: {expectedInputLayer})"
-                : $"Linked input: previous output {expectedInputLayer}";
+                ? BuildFlowRelationBranchText(inputLayer, expectedInputLayer)
+                : $"Input: previous output {expectedInputLayer}";
+        }
+
+        private static string BuildFlowRelationBranchText(string inputLayer, string expectedInputLayer)
+        {
+            if (string.Equals(inputLayer, "Main", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"Branch: reads Main instead of {expectedInputLayer}. Link Prev if this is not intentional.";
+            }
+
+            return $"Branch: reads {inputLayer} instead of {expectedInputLayer}";
         }
 
         private static PipelineFlowStepStatus ToPipelineFlowStatus(VisionPipelineStep step, PipelineStepRunStatus status)
@@ -5207,6 +6597,8 @@ namespace OpenVisionLab
                     return PipelineFlowStepStatus.Running;
                 case PipelineStepRunStatus.Passed:
                     return PipelineFlowStepStatus.Passed;
+                case PipelineStepRunStatus.Error:
+                    return PipelineFlowStepStatus.Error;
                 case PipelineStepRunStatus.Failed:
                     return PipelineFlowStepStatus.Failed;
                 case PipelineStepRunStatus.Timeout:
@@ -5249,7 +6641,7 @@ namespace OpenVisionLab
             {
                 return string.IsNullOrWhiteSpace(expectedInputLayer)
                     ? "BRANCH"
-                    : $"BRANCH expected {expectedInputLayer}";
+                    : $"BRANCH from {FormatFlowLayerName(step.InputLayer, "Input?")}";
             }
 
             string status = FormatStepStatus(GetStepStatus(step));
@@ -5390,6 +6782,10 @@ namespace OpenVisionLab
                 node.EnsureVisible();
             }
 
+            BindStepProperty(step);
+            RefreshSelectedStepIoPanel();
+            ShowStepPreview(step);
+            RefreshPipelineFlowPreview();
             pipelineFlowView?.SelectStep(pipeline?.Steps?.IndexOf(step) ?? -1, ToPipelineFlowPreviewMode(GetCurrentPreviewImageMode()));
         }
 
@@ -5524,6 +6920,8 @@ namespace OpenVisionLab
                     return "RUN";
                 case PipelineStepRunStatus.Passed:
                     return "OK";
+                case PipelineStepRunStatus.Error:
+                    return "ERROR";
                 case PipelineStepRunStatus.Failed:
                     return "NG";
                 case PipelineStepRunStatus.Timeout:

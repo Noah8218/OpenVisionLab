@@ -39,9 +39,14 @@ namespace OpenVisionLab
             "matching",
             "templatematching",
             "mean",
+            "rotatescale",
+            "rotateandscale",
             "feature",
             "featurematching",
-            "sift"
+            "sift",
+            "overlaymerge",
+            "resultmerge",
+            "mergeresult"
         };
 
         public static VisionPipelineValidationResult Validate(VisionPipeline pipeline, IEnumerable<string> sourceLayers)
@@ -65,6 +70,7 @@ namespace OpenVisionLab
 
             HashSet<string> stepNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             HashSet<string> outputLayers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            List<VisionPipelineStep> enabledSteps = new List<VisionPipelineStep>();
             bool hasEnabledStep = false;
             VisionPipelineStep previousEnabledStep = null;
 
@@ -104,10 +110,18 @@ namespace OpenVisionLab
                 }
 
                 hasEnabledStep = true;
+                enabledSteps.Add(step);
                 ValidateAcceptance(result, label, step);
                 ValidateParameters(result, label, step);
 
-                if (previousEnabledStep != null
+                bool isMergeStep = VisionPipelineOverlayMergeService.IsMergeTool(step.ToolType);
+                if (isMergeStep)
+                {
+                    ValidateOverlayMergeSources(result, label, step, availableLayers, stepNames);
+                }
+
+                if (!isMergeStep
+                    && previousEnabledStep != null
                     && !string.IsNullOrWhiteSpace(previousEnabledStep.OutputLayer)
                     && !string.IsNullOrWhiteSpace(step.InputLayer)
                     && !string.Equals(step.InputLayer, previousEnabledStep.OutputLayer, StringComparison.OrdinalIgnoreCase))
@@ -115,7 +129,8 @@ namespace OpenVisionLab
                     result.Warnings.Add(
                         $"{label} '{step.Name}': Review branch input. This step reads '{step.InputLayer}' while the previous step outputs '{previousEnabledStep.OutputLayer}'. Keep this only when the step should intentionally start from that layer.");
                 }
-                else if (previousEnabledStep != null
+                else if (!isMergeStep
+                    && previousEnabledStep != null
                     && !string.IsNullOrWhiteSpace(previousEnabledStep.OutputLayer)
                     && !string.IsNullOrWhiteSpace(step.InputLayer)
                     && string.Equals(step.InputLayer, previousEnabledStep.OutputLayer, StringComparison.OrdinalIgnoreCase)
@@ -161,6 +176,8 @@ namespace OpenVisionLab
             {
                 result.Errors.Add("Pipeline has no enabled steps.");
             }
+
+            ValidateFinalReviewIntent(result, enabledSteps);
 
             return result;
         }
@@ -219,11 +236,121 @@ namespace OpenVisionLab
             ValidateMinMax(result, label, step, "MIN_AREA", "MAX_AREA");
             ValidateMinMax(result, label, step, "RangeMin", "RangeMax");
             ValidateMinMax(result, label, step, "MEAN_MIN", "MEAN_MAX");
+            ValidateGrayValueRange(result, label, step, "Threshold");
+            ValidateGrayValueRange(result, label, step, "MaxValue");
+            ValidateGrayValueRange(result, label, step, "RangeMin");
+            ValidateGrayValueRange(result, label, step, "RangeMax");
+            ValidateGrayValueRange(result, label, step, "CannyThresholdLow");
+            ValidateGrayValueRange(result, label, step, "CannyThresholdHigh");
+            ValidateMinMax(result, label, step, "CannyThresholdLow", "CannyThresholdHigh");
             ValidatePositiveInt(result, label, step, "BlockSize", oddOnly: true);
             ValidatePositiveInt(result, label, step, "KernelWidth", oddOnly: false);
             ValidatePositiveInt(result, label, step, "KernelHeight", oddOnly: false);
             ValidatePositiveInt(result, label, step, "Iterations", oddOnly: false);
+            ValidatePositiveInt(result, label, step, "MedianKernelSize", oddOnly: true);
+            ValidatePositiveInt(result, label, step, "Diameter", oddOnly: false);
+            ValidatePositiveInt(result, label, step, "SigmaColor", oddOnly: false);
+            ValidatePositiveInt(result, label, step, "SigmaSpace", oddOnly: false);
+            ValidateCannyApertureSize(result, label, step);
+            ValidateDerivativePair(result, label, step, "SobelDegreeX", "SobelDegreeY");
+            ValidateDerivativePair(result, label, step, "ScharrDegreeX", "ScharrDegreeY");
+            ValidateOddKernelInRange(result, label, step, "SobelKernelSize", 1, 31);
+            ValidatePositiveInt(result, label, step, "LaplacianKernelSize", oddOnly: true);
             ValidatePositiveDouble(result, label, step, "PIXELPERMM");
+            ValidatePositiveDouble(result, label, step, "ScaleXPercent");
+            ValidatePositiveDouble(result, label, step, "ScaleYPercent");
+        }
+
+        private static void ValidateOverlayMergeSources(
+            VisionPipelineValidationResult result,
+            string label,
+            VisionPipelineStep step,
+            HashSet<string> availableLayers,
+            HashSet<string> knownStepNames)
+        {
+            List<string> sourceLayers = ReadListParameter(step, "SourceLayers").ToList();
+            List<string> sourceSteps = ReadListParameter(step, "SourceSteps").ToList();
+            if (sourceLayers.Count == 0 && sourceSteps.Count == 0)
+            {
+                result.Warnings.Add($"{label} '{step.Name}': OverlayMerge has no SourceLayers or SourceSteps filter. It will merge every previous overlay result, which may be broader than intended.");
+            }
+
+            foreach (string sourceLayer in sourceLayers)
+            {
+                if (!availableLayers.Contains(sourceLayer))
+                {
+                    result.Errors.Add($"{label} '{step.Name}': OverlayMerge SourceLayer '{sourceLayer}' does not exist before this step.");
+                }
+            }
+
+            foreach (string sourceStep in sourceSteps)
+            {
+                if (!knownStepNames.Contains(sourceStep))
+                {
+                    result.Errors.Add($"{label} '{step.Name}': OverlayMerge SourceStep '{sourceStep}' does not exist before this step.");
+                }
+            }
+        }
+
+        private static void ValidateFinalReviewIntent(
+            VisionPipelineValidationResult result,
+            IReadOnlyList<VisionPipelineStep> enabledSteps)
+        {
+            if (enabledSteps == null || enabledSteps.Count == 0)
+            {
+                return;
+            }
+
+            List<VisionPipelineStep> reviewOutputSteps = enabledSteps
+                .Where(step => IsOverlayReviewTool(step?.ToolType))
+                .ToList();
+            List<VisionPipelineStep> mergeSteps = enabledSteps
+                .Where(step => VisionPipelineOverlayMergeService.IsMergeTool(step?.ToolType))
+                .ToList();
+
+            if (reviewOutputSteps.Count >= 2 && mergeSteps.Count == 0)
+            {
+                result.Warnings.Add("Pipeline review: multiple inspection result steps exist, but no OverlayMerge step is configured. Add a final OverlayMerge when the user should verify all detections in one review image.");
+                return;
+            }
+
+            if (mergeSteps.Count == 0)
+            {
+                return;
+            }
+
+            VisionPipelineStep lastEnabledStep = enabledSteps[enabledSteps.Count - 1];
+            if (!VisionPipelineOverlayMergeService.IsMergeTool(lastEnabledStep.ToolType))
+            {
+                result.Warnings.Add($"Pipeline review: OverlayMerge exists, but the final enabled step is '{lastEnabledStep.Name}'. Put the final OverlayMerge last when it is the user-facing review result.");
+            }
+        }
+
+        private static bool IsOverlayReviewTool(string toolType)
+        {
+            string normalized = VisionPipelineNormalizer.NormalizeToolType(toolType);
+            return normalized == "blob"
+                || normalized == "contour"
+                || normalized == "line"
+                || normalized == "linegauge"
+                || normalized == "matching"
+                || normalized == "templatematching"
+                || normalized == "feature"
+                || normalized == "featurematching"
+                || normalized == "sift";
+        }
+
+        private static void ValidateGrayValueRange(VisionPipelineValidationResult result, string label, VisionPipelineStep step, string key)
+        {
+            if (!TryGetDouble(step, key, out double value))
+            {
+                return;
+            }
+
+            if (value < 0 || value > 255)
+            {
+                result.Warnings.Add($"{label} '{step.Name}': {key} is usually expected to be in the 0..255 grayscale range. Current value is {value.ToString(CultureInfo.InvariantCulture)}.");
+            }
         }
 
         private static void ValidateMinMax(VisionPipelineValidationResult result, string label, VisionPipelineStep step, string minKey, string maxKey)
@@ -256,6 +383,49 @@ namespace OpenVisionLab
             }
         }
 
+        private static void ValidateCannyApertureSize(VisionPipelineValidationResult result, string label, VisionPipelineStep step)
+        {
+            if (!TryGetInt(step, "CannyApertureSize", out int value))
+            {
+                return;
+            }
+
+            if (value != 3 && value != 5 && value != 7)
+            {
+                result.Warnings.Add($"{label} '{step.Name}': CannyApertureSize should usually be 3, 5, or 7. The runtime will normalize unsupported values.");
+            }
+        }
+
+        private static void ValidateDerivativePair(VisionPipelineValidationResult result, string label, VisionPipelineStep step, string xKey, string yKey)
+        {
+            if (!TryGetInt(step, xKey, out int x) || !TryGetInt(step, yKey, out int y))
+            {
+                return;
+            }
+
+            if (x == 0 && y == 0)
+            {
+                result.Errors.Add($"{label} '{step.Name}': {xKey} and {yKey} cannot both be 0.");
+            }
+        }
+
+        private static void ValidateOddKernelInRange(VisionPipelineValidationResult result, string label, VisionPipelineStep step, string key, int minimum, int maximum)
+        {
+            if (!TryGetInt(step, key, out int value))
+            {
+                return;
+            }
+
+            if (value < minimum || value > maximum)
+            {
+                result.Warnings.Add($"{label} '{step.Name}': {key} should usually be between {minimum} and {maximum}. The runtime may clamp unsupported values.");
+            }
+            else if (value % 2 == 0)
+            {
+                result.Warnings.Add($"{label} '{step.Name}': {key} should usually be odd for this OpenCV operation.");
+            }
+        }
+
         private static void ValidatePositiveDouble(VisionPipelineValidationResult result, string label, VisionPipelineStep step, string key)
         {
             if (TryGetDouble(step, key, out double value) && value <= 0)
@@ -276,6 +446,21 @@ namespace OpenVisionLab
             value = 0;
             return step.Parameters.TryGetValue(key, out string text)
                 && double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
+        }
+
+        private static IEnumerable<string> ReadListParameter(VisionPipelineStep step, string key)
+        {
+            if (step?.Parameters == null
+                || !step.Parameters.TryGetValue(key, out string text)
+                || string.IsNullOrWhiteSpace(text))
+            {
+                return Enumerable.Empty<string>();
+            }
+
+            return text
+                .Split(new[] { ';', ',', '|', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(item => item.Trim())
+                .Where(item => !string.IsNullOrWhiteSpace(item));
         }
 
     }

@@ -329,14 +329,30 @@ namespace OpenVisionLab
 
         private void UpdateLayerFlowSummary()
         {
+            string inputLayer = ResolveInputLayerName();
+            string modeName = GetModeDisplayName(currentMode);
+            string outputLayer = DEFINE.Threshold;
             if (lblOutputLayerValue != null)
             {
-                lblOutputLayerValue.Text = DEFINE.Threshold;
+                lblOutputLayerValue.Text = $"{outputLayer} (Preview)";
+            }
+
+            if (lblPreviewTitle != null)
+            {
+                lblPreviewTitle.Text = $"Preview - {modeName}";
             }
 
             if (lblPreviewDescription != null)
             {
-                lblPreviewDescription.Text = $"Preview writes {ResolveInputLayerName()} -> {DEFINE.Threshold}.";
+                string flowText = string.Equals(inputLayer, outputLayer, StringComparison.OrdinalIgnoreCase)
+                    ? $"Input/Output {outputLayer}"
+                    : $"Input {inputLayer} -> Output {outputLayer}";
+                lblPreviewDescription.Text = $"{flowText} | {GetModePurposeText(currentMode)}";
+            }
+
+            if (btnAddToPipeline != null)
+            {
+                btnAddToPipeline.Text = $"+ Add {modeName} Step";
             }
         }
 
@@ -344,6 +360,7 @@ namespace OpenVisionLab
         {
             currentMode = mode;
             UpdateModeHeaderState(mode);
+            UpdateLayerFlowSummary();
             ScheduleThresholdPreview(mode);
         }
 
@@ -377,6 +394,26 @@ namespace OpenVisionLab
             {
                 hintLabel.ForeColor = active ? activeAccent : idleHint;
             }
+        }
+
+        private static string GetModeDisplayName(ThresholdToolMode mode)
+        {
+            return mode switch
+            {
+                ThresholdToolMode.Range => "Range Threshold",
+                ThresholdToolMode.Adaptive => "Adaptive Threshold",
+                _ => "Basic Threshold"
+            };
+        }
+
+        private static string GetModePurposeText(ThresholdToolMode mode)
+        {
+            return mode switch
+            {
+                ThresholdToolMode.Range => "keeps only pixels inside the Min-Max brightness band.",
+                ThresholdToolMode.Adaptive => "uses local brightness, useful for uneven lighting.",
+                _ => "uses one cutoff, useful for clear foreground/background contrast."
+            };
         }
 
         private void ScheduleThresholdPreview(ThresholdToolMode mode)
@@ -482,9 +519,13 @@ namespace OpenVisionLab
         {
             ThresholdTool tool = new ThresholdTool();
             tool.SetProperty(property);
-            tool.SetSourceImage(image);
-            tool.Run();
-            return tool.imageResult;
+            VisionToolResult result = tool.Execute(image);
+            if (!result.Success)
+            {
+                throw new InvalidOperationException($"[{result.ErrorCodeValue}:{result.ErrorName}] {result.ResultStatusName}\r\n{result.Message}");
+            }
+
+            return result.ResultImage;
         }
 
         private void BtnAddToPipeline_Click(object sender, EventArgs e)

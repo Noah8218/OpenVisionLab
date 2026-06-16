@@ -12,11 +12,13 @@ namespace OpenVisionLab
     {
         private readonly Bitmap sourceImage;
         private readonly List<VisionToolOverlay> overlays;
+        private readonly List<RectangleF> roiBounds;
         private readonly VisionPipelineStepResultSummary summary;
         private PipelineOverlayImageCanvas canvas;
         private ComboBox cbLabelMode;
         private ComboBox cbOverlayTone;
         private CheckBox chkBoxes;
+        private CheckBox chkRoi;
         private NumericUpDown nudPointLimit;
         private NumericUpDown nudStrokeWidth;
         private DataGridView overlayGrid;
@@ -42,17 +44,21 @@ namespace OpenVisionLab
             VisionPipelineStepResultSummary summary,
             FormVision_Pipeline.OverlayLabelMode labelMode,
             int pointLimit,
-            int initialOverlayIndex = -1)
+            int initialOverlayIndex = -1,
+            IEnumerable<RectangleF> roiBounds = null)
         {
             sourceImage = image == null ? new Bitmap(16, 16) : new Bitmap(image);
             this.overlays = (overlays ?? Enumerable.Empty<VisionToolOverlay>())
                 .Where(item => item != null)
                 .Select(CloneOverlay)
                 .ToList();
+            this.roiBounds = (roiBounds ?? Enumerable.Empty<RectangleF>())
+                .Where(bounds => bounds.Width > 0 && bounds.Height > 0)
+                .ToList();
             this.summary = summary;
 
             InitializeComponent();
-            canvas.SetContent(sourceImage, this.overlays);
+            canvas.SetContent(sourceImage, this.overlays, this.roiBounds);
             Text = string.IsNullOrWhiteSpace(title) ? "Pipeline Preview" : $"Pipeline Preview - {title}";
             cbLabelMode.SelectedIndex = Math.Max(0, Math.Min(2, (int)labelMode));
             nudPointLimit.Value = Math.Max(0, Math.Min(5000, pointLimit));
@@ -85,6 +91,7 @@ namespace OpenVisionLab
         private void OnOptionChanged(object sender, EventArgs e)
         {
             canvas.ShowBoxes = chkBoxes.Checked;
+            canvas.ShowRoi = chkRoi == null || chkRoi.Checked;
             canvas.LabelMode = GetCanvasLabelMode();
             canvas.PointLimit = (int)nudPointLimit.Value;
             canvas.OverlayColor = ResolveOverlayColor();
@@ -182,6 +189,9 @@ namespace OpenVisionLab
             string selectedText = canvas.SelectedOverlayIndex >= 0
                 ? $" | Selected {canvas.SelectedOverlayIndex + 1}/{overlays.Count}"
                 : string.Empty;
+            string roiText = roiBounds.Count > 0
+                ? $" | ROI {roiBounds.Count}"
+                : string.Empty;
             statusLabel.Text = string.Format(
                 CultureInfo.InvariantCulture,
                 "Image {0} x {1} | Zoom {2:0}% | Overlays {3}{4}{5}",
@@ -190,7 +200,7 @@ namespace OpenVisionLab
                 canvas.Zoom * 100F,
                 overlays.Count,
                 selectedText,
-                string.IsNullOrWhiteSpace(metrics) ? string.Empty : " | " + metrics);
+                roiText + (string.IsNullOrWhiteSpace(metrics) ? string.Empty : " | " + metrics));
         }
 
         private void PopulateOverlayGrid()

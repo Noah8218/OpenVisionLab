@@ -108,8 +108,7 @@ namespace OpenVisionLab
                 {
                     BlobTool CvBlob = new BlobTool();
                     CvBlob.SetProperty(Property_Blob);
-                    CvBlob.SetSourceImage(ImageCVSource);
-                    CvBlob.Run();
+                    ExecuteVisionTool(CvBlob, ImageCVSource);
 
                     using (Graphics g = Graphics.FromImage(Result))
                     {

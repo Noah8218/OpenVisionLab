@@ -25,6 +25,12 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
     {
         private const int MaxLogsCount = 3000;
         private const string AnyFilter = "Any";
+        private static readonly string[] VisibleLevelNames =
+        {
+            nameof(LogLevel.Info),
+            nameof(LogLevel.Warning),
+            nameof(LogLevel.Error)
+        };
         private static event Action<LogPanelQuickFilterRequest> QuickFilterRequested;
 
         private readonly RuntimeLogStream logBufferReader;
@@ -44,7 +50,7 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
         public LogPanelViewModel()
         {
             logBufferReader = new RuntimeLogStream();
-            Levels = new ObservableCollection<string>(new[] { AnyFilter }.Concat(Enum.GetNames(typeof(LogLevel))));
+            Levels = new ObservableCollection<string>(new[] { AnyFilter }.Concat(VisibleLevelNames));
             Types = new ObservableCollection<string>(
                 new[] { AnyFilter }.Concat(
                     Enum.GetNames(typeof(LogCategory))
@@ -131,11 +137,14 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
             {
                 if (SetProperty(ref showEntireStream, value))
                 {
+                    OnPropertyChanged(nameof(IsFilterControlsEnabled));
                     OnPropertyChanged(nameof(ActiveFilterText));
                     RebuildFilteredLogs();
                 }
             }
         }
+
+        public bool IsFilterControlsEnabled => !ShowEntireStream;
 
         public bool AutoScroll
         {
@@ -476,20 +485,22 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
             if (ShowEntireStream)
             {
                 parts.Add("All Logs");
+                parts.Add("Filters off");
             }
             else
             {
+                parts.Add("Filtered view");
                 if (!IsAnyFilterText(SelectedType))
                 {
-                    parts.Add(SelectedType);
+                    parts.Add($"Area: {SelectedType}");
                 }
 
                 if (!IsAnyFilterText(SelectedLevel))
                 {
-                    parts.Add(SelectedLevel);
+                    parts.Add($"Level: {SelectedLevel}");
                 }
 
-                if (parts.Count == 0)
+                if (parts.Count == 1)
                 {
                     parts.Add("No filter");
                 }

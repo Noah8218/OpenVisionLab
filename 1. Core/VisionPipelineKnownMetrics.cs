@@ -16,6 +16,7 @@ namespace OpenVisionLab
     {
         public string Name { get; set; } = string.Empty;
         public string MetricName { get; set; } = string.Empty;
+        public string[] ToolTypes { get; set; } = Array.Empty<string>();
         public bool UseMinimum { get; set; }
         public double Minimum { get; set; }
         public bool UseMaximum { get; set; }
@@ -40,6 +41,35 @@ namespace OpenVisionLab
         public const string MeanValueAvg = "MeanValueAvg";
         public const string EdgeCount = "EdgeCount";
         public const string EdgePointCount = "EdgePointCount";
+        public const string LineLengthMin = "LineLengthMin";
+        public const string LineLengthMax = "LineLengthMax";
+        public const string LineLengthAvg = "LineLengthAvg";
+        public const string LineLengthMmMin = "LineLengthMmMin";
+        public const string LineLengthMmMax = "LineLengthMmMax";
+        public const string LineLengthMmAvg = "LineLengthMmAvg";
+        public const string LineAngleMin = "LineAngleMin";
+        public const string LineAngleMax = "LineAngleMax";
+        public const string LineAngleAvg = "LineAngleAvg";
+        public const string MergeOverlayCount = "MergeOverlayCount";
+        public const string MergeSourceCount = "MergeSourceCount";
+        public const string BoundsWidthMin = "BoundsWidthMin";
+        public const string BoundsWidthMax = "BoundsWidthMax";
+        public const string BoundsWidthAvg = "BoundsWidthAvg";
+        public const string BoundsWidthMmMin = "BoundsWidthMmMin";
+        public const string BoundsWidthMmMax = "BoundsWidthMmMax";
+        public const string BoundsWidthMmAvg = "BoundsWidthMmAvg";
+        public const string BoundsHeightMin = "BoundsHeightMin";
+        public const string BoundsHeightMax = "BoundsHeightMax";
+        public const string BoundsHeightAvg = "BoundsHeightAvg";
+        public const string BoundsHeightMmMin = "BoundsHeightMmMin";
+        public const string BoundsHeightMmMax = "BoundsHeightMmMax";
+        public const string BoundsHeightMmAvg = "BoundsHeightMmAvg";
+        public const string SourceImageWidth = "SourceImageWidth";
+        public const string SourceImageHeight = "SourceImageHeight";
+        public const string SourceImageChannels = "SourceImageChannels";
+        public const string ResultImageWidth = "ResultImageWidth";
+        public const string ResultImageHeight = "ResultImageHeight";
+        public const string ResultImageChannels = "ResultImageChannels";
 
         private static readonly VisionPipelineMetricDefinition[] MetricDefinitions =
         {
@@ -57,39 +87,124 @@ namespace OpenVisionLab
             new VisionPipelineMetricDefinition { Name = MeanValueMax, DisplayName = "Mean Max", Description = "Maximum mean value." },
             new VisionPipelineMetricDefinition { Name = MeanValueAvg, DisplayName = "Mean Avg", Description = "Average mean value." },
             new VisionPipelineMetricDefinition { Name = EdgeCount, DisplayName = "Edge Count", Description = "Number of edge groups." },
-            new VisionPipelineMetricDefinition { Name = EdgePointCount, DisplayName = "Edge Point Count", Description = "Total number of edge points." }
+            new VisionPipelineMetricDefinition { Name = EdgePointCount, DisplayName = "Edge Point Count", Description = "Total number of edge points." },
+            new VisionPipelineMetricDefinition { Name = LineLengthMin, DisplayName = "Line Length Min", Description = "Minimum fitted line overlay length." },
+            new VisionPipelineMetricDefinition { Name = LineLengthMax, DisplayName = "Line Length Max", Description = "Maximum fitted line overlay length." },
+            new VisionPipelineMetricDefinition { Name = LineLengthAvg, DisplayName = "Line Length Avg", Description = "Average fitted line overlay length." },
+            new VisionPipelineMetricDefinition { Name = LineLengthMmMin, DisplayName = "Line Length Min (mm)", Description = "Minimum fitted line overlay length converted by PIXELPERMM." },
+            new VisionPipelineMetricDefinition { Name = LineLengthMmMax, DisplayName = "Line Length Max (mm)", Description = "Maximum fitted line overlay length converted by PIXELPERMM." },
+            new VisionPipelineMetricDefinition { Name = LineLengthMmAvg, DisplayName = "Line Length Avg (mm)", Description = "Average fitted line overlay length converted by PIXELPERMM." },
+            new VisionPipelineMetricDefinition { Name = LineAngleMin, DisplayName = "Line Angle Min", Description = "Minimum fitted line overlay angle in degrees." },
+            new VisionPipelineMetricDefinition { Name = LineAngleMax, DisplayName = "Line Angle Max", Description = "Maximum fitted line overlay angle in degrees." },
+            new VisionPipelineMetricDefinition { Name = LineAngleAvg, DisplayName = "Line Angle Avg", Description = "Average fitted line overlay angle in degrees." },
+            new VisionPipelineMetricDefinition { Name = MergeOverlayCount, DisplayName = "Merge Overlay Count", Description = "Number of overlays collected into the merged result." },
+            new VisionPipelineMetricDefinition { Name = MergeSourceCount, DisplayName = "Merge Source Count", Description = "Number of previous steps that contributed overlays." },
+            new VisionPipelineMetricDefinition { Name = BoundsWidthMin, DisplayName = "Bounds Width Min", Description = "Minimum rectangle overlay width." },
+            new VisionPipelineMetricDefinition { Name = BoundsWidthMax, DisplayName = "Bounds Width Max", Description = "Maximum rectangle overlay width." },
+            new VisionPipelineMetricDefinition { Name = BoundsWidthAvg, DisplayName = "Bounds Width Avg", Description = "Average rectangle overlay width." },
+            new VisionPipelineMetricDefinition { Name = BoundsWidthMmMin, DisplayName = "Bounds Width Min (mm)", Description = "Minimum rectangle overlay width converted by PIXELPERMM." },
+            new VisionPipelineMetricDefinition { Name = BoundsWidthMmMax, DisplayName = "Bounds Width Max (mm)", Description = "Maximum rectangle overlay width converted by PIXELPERMM." },
+            new VisionPipelineMetricDefinition { Name = BoundsWidthMmAvg, DisplayName = "Bounds Width Avg (mm)", Description = "Average rectangle overlay width converted by PIXELPERMM." },
+            new VisionPipelineMetricDefinition { Name = BoundsHeightMin, DisplayName = "Bounds Height Min", Description = "Minimum rectangle overlay height." },
+            new VisionPipelineMetricDefinition { Name = BoundsHeightMax, DisplayName = "Bounds Height Max", Description = "Maximum rectangle overlay height." },
+            new VisionPipelineMetricDefinition { Name = BoundsHeightAvg, DisplayName = "Bounds Height Avg", Description = "Average rectangle overlay height." },
+            new VisionPipelineMetricDefinition { Name = BoundsHeightMmMin, DisplayName = "Bounds Height Min (mm)", Description = "Minimum rectangle overlay height converted by PIXELPERMM." },
+            new VisionPipelineMetricDefinition { Name = BoundsHeightMmMax, DisplayName = "Bounds Height Max (mm)", Description = "Maximum rectangle overlay height converted by PIXELPERMM." },
+            new VisionPipelineMetricDefinition { Name = BoundsHeightMmAvg, DisplayName = "Bounds Height Avg (mm)", Description = "Average rectangle overlay height converted by PIXELPERMM." },
+            new VisionPipelineMetricDefinition { Name = SourceImageWidth, DisplayName = "Source Width", Description = "Input image width used by the tool." },
+            new VisionPipelineMetricDefinition { Name = SourceImageHeight, DisplayName = "Source Height", Description = "Input image height used by the tool." },
+            new VisionPipelineMetricDefinition { Name = SourceImageChannels, DisplayName = "Source Channels", Description = "Input image channel count used by the tool." },
+            new VisionPipelineMetricDefinition { Name = ResultImageWidth, DisplayName = "Result Width", Description = "Result image width returned by the tool." },
+            new VisionPipelineMetricDefinition { Name = ResultImageHeight, DisplayName = "Result Height", Description = "Result image height returned by the tool." },
+            new VisionPipelineMetricDefinition { Name = ResultImageChannels, DisplayName = "Result Channels", Description = "Result image channel count returned by the tool." }
+        };
+
+        private static readonly string[] ImageMetricNames =
+        {
+            SourceImageWidth,
+            SourceImageHeight,
+            SourceImageChannels,
+            ResultImageWidth,
+            ResultImageHeight,
+            ResultImageChannels
+        };
+
+        private static readonly string[] RectangleOverlayMetricNames =
+        {
+            BoundsWidthMin,
+            BoundsWidthMax,
+            BoundsWidthAvg,
+            BoundsWidthMmMin,
+            BoundsWidthMmMax,
+            BoundsWidthMmAvg,
+            BoundsHeightMin,
+            BoundsHeightMax,
+            BoundsHeightAvg,
+            BoundsHeightMmMin,
+            BoundsHeightMmMax,
+            BoundsHeightMmAvg
+        };
+
+        private static readonly string[] LineOverlayMetricNames =
+        {
+            LineLengthMin,
+            LineLengthMax,
+            LineLengthAvg,
+            LineLengthMmMin,
+            LineLengthMmMax,
+            LineLengthMmAvg,
+            LineAngleMin,
+            LineAngleMax,
+            LineAngleAvg
         };
 
         private static readonly Dictionary<string, string[]> ToolMetricNames = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
         {
-            ["blob"] = new[] { ResultCount, AreaMin, AreaMax, AreaAvg, AngleMin, AngleMax, AngleAvg },
-            ["contour"] = new[] { ResultCount, AreaMin, AreaMax, AreaAvg, AngleMin, AngleMax, AngleAvg },
-            ["corner"] = new[] { ResultCount, AreaMin, AreaMax, AreaAvg },
-            ["matching"] = new[] { ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg },
-            ["templatematching"] = new[] { ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg },
-            ["feature"] = new[] { ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg },
-            ["featurematching"] = new[] { ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg },
-            ["sift"] = new[] { ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg },
-            ["mean"] = new[] { ResultCount, MeanValueMin, MeanValueMax, MeanValueAvg },
-            ["line"] = new[] { ResultCount, EdgeCount, EdgePointCount },
-            ["linegauge"] = new[] { ResultCount, EdgeCount, EdgePointCount },
-            ["threshold"] = Array.Empty<string>(),
-            ["morphology"] = Array.Empty<string>(),
-            ["filter"] = Array.Empty<string>(),
-            ["edgedetection"] = Array.Empty<string>(),
-            ["edge"] = Array.Empty<string>()
+            ["blob"] = WithImageAndRectangleMetrics(ResultCount, AreaMin, AreaMax, AreaAvg, AngleMin, AngleMax, AngleAvg),
+            ["contour"] = WithImageAndRectangleMetrics(ResultCount, AreaMin, AreaMax, AreaAvg, AngleMin, AngleMax, AngleAvg),
+            ["corner"] = WithImageAndRectangleMetrics(ResultCount, AreaMin, AreaMax, AreaAvg),
+            ["matching"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg),
+            ["templatematching"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg),
+            ["feature"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg),
+            ["featurematching"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg),
+            ["sift"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg),
+            ["mean"] = WithImageAndRectangleMetrics(ResultCount, MeanValueMin, MeanValueMax, MeanValueAvg),
+            ["line"] = WithImageAndLineMetrics(ResultCount, EdgeCount, EdgePointCount),
+            ["linegauge"] = WithImageAndLineMetrics(ResultCount, EdgeCount, EdgePointCount),
+            ["threshold"] = ImageMetricNames,
+            ["morphology"] = ImageMetricNames,
+            ["filter"] = ImageMetricNames,
+            ["edgedetection"] = ImageMetricNames,
+            ["edge"] = ImageMetricNames,
+            ["rotatescale"] = ImageMetricNames,
+            ["rotateandscale"] = ImageMetricNames,
+            ["overlaymerge"] = WithImageAndRectangleMetrics(ResultCount, MergeOverlayCount, MergeSourceCount),
+            ["resultmerge"] = WithImageAndRectangleMetrics(ResultCount, MergeOverlayCount, MergeSourceCount),
+            ["mergeresult"] = WithImageAndRectangleMetrics(ResultCount, MergeOverlayCount, MergeSourceCount)
         };
 
         private static readonly VisionPipelineAcceptancePreset[] Presets =
         {
-            new VisionPipelineAcceptancePreset { Name = "Detect Count >= 1", MetricName = ResultCount, UseMinimum = true, Minimum = 1 },
-            new VisionPipelineAcceptancePreset { Name = "Detect Count = 0", MetricName = ResultCount, UseMinimum = true, Minimum = 0, UseMaximum = true, Maximum = 0 },
-            new VisionPipelineAcceptancePreset { Name = "Text/Symbol Count 35..80", MetricName = ResultCount, UseMinimum = true, Minimum = 35, UseMaximum = true, Maximum = 80, MaxElapsedMilliseconds = 1000 },
-            new VisionPipelineAcceptancePreset { Name = "Area Avg 150..600", MetricName = AreaAvg, UseMinimum = true, Minimum = 150, UseMaximum = true, Maximum = 600 },
             new VisionPipelineAcceptancePreset { Name = "Fast Step <= 100 ms", MaxElapsedMilliseconds = 100 },
-            new VisionPipelineAcceptancePreset { Name = "Best Score >= 80", MetricName = ScoreMax, UseMinimum = true, Minimum = 80 },
-            new VisionPipelineAcceptancePreset { Name = "Mean <= 180", MetricName = MeanValueAvg, UseMaximum = true, Maximum = 180 },
-            new VisionPipelineAcceptancePreset { Name = "Line Edge Count >= 1", MetricName = EdgeCount, UseMinimum = true, Minimum = 1 }
+            new VisionPipelineAcceptancePreset { Name = "Detect Count >= 1", MetricName = ResultCount, ToolTypes = new[] { "blob", "contour", "corner", "matching", "templatematching", "feature", "featurematching", "sift" }, UseMinimum = true, Minimum = 1 },
+            new VisionPipelineAcceptancePreset { Name = "Detect Count = 0", MetricName = ResultCount, ToolTypes = new[] { "blob", "contour", "corner", "matching", "templatematching", "feature", "featurematching", "sift" }, UseMinimum = true, Minimum = 0, UseMaximum = true, Maximum = 0 },
+            new VisionPipelineAcceptancePreset { Name = "Text/Symbol Count 35..80", MetricName = ResultCount, ToolTypes = new[] { "contour", "blob" }, UseMinimum = true, Minimum = 35, UseMaximum = true, Maximum = 80, MaxElapsedMilliseconds = 1000 },
+            new VisionPipelineAcceptancePreset { Name = "Area Avg 150..600", MetricName = AreaAvg, ToolTypes = new[] { "blob", "contour", "corner" }, UseMinimum = true, Minimum = 150, UseMaximum = true, Maximum = 600 },
+            new VisionPipelineAcceptancePreset { Name = "Max Bounds Width <= 20 px", MetricName = BoundsWidthMax, ToolTypes = new[] { "blob", "contour", "corner", "matching", "templatematching", "feature", "featurematching", "sift" }, UseMaximum = true, Maximum = 20 },
+            new VisionPipelineAcceptancePreset { Name = "Max Bounds Width >= 20 px", MetricName = BoundsWidthMax, ToolTypes = new[] { "blob", "contour", "corner", "matching", "templatematching", "feature", "featurematching", "sift" }, UseMinimum = true, Minimum = 20 },
+            new VisionPipelineAcceptancePreset { Name = "Max Bounds Height <= 20 px", MetricName = BoundsHeightMax, ToolTypes = new[] { "blob", "contour", "corner", "matching", "templatematching", "feature", "featurematching", "sift" }, UseMaximum = true, Maximum = 20 },
+            new VisionPipelineAcceptancePreset { Name = "Max Bounds Height >= 20 px", MetricName = BoundsHeightMax, ToolTypes = new[] { "blob", "contour", "corner", "matching", "templatematching", "feature", "featurematching", "sift" }, UseMinimum = true, Minimum = 20 },
+            new VisionPipelineAcceptancePreset { Name = "Best Score >= 80", MetricName = ScoreMax, ToolTypes = new[] { "matching", "templatematching", "feature", "featurematching", "sift" }, UseMinimum = true, Minimum = 80 },
+            new VisionPipelineAcceptancePreset { Name = "Best Score >= 60", MetricName = ScoreMax, ToolTypes = new[] { "feature", "featurematching", "sift" }, UseMinimum = true, Minimum = 60 },
+            new VisionPipelineAcceptancePreset { Name = "Mean <= 180", MetricName = MeanValueAvg, ToolTypes = new[] { "mean" }, UseMaximum = true, Maximum = 180 },
+            new VisionPipelineAcceptancePreset { Name = "Line Edge Count >= 1", MetricName = EdgeCount, ToolTypes = new[] { "line", "linegauge" }, UseMinimum = true, Minimum = 1 },
+            new VisionPipelineAcceptancePreset { Name = "Fitted Line Length >= 100 px", MetricName = LineLengthMax, ToolTypes = new[] { "line", "linegauge" }, UseMinimum = true, Minimum = 100 },
+            new VisionPipelineAcceptancePreset { Name = "Fitted Line Length >= 3 mm", MetricName = LineLengthMmMax, ToolTypes = new[] { "line", "linegauge" }, UseMinimum = true, Minimum = 3 },
+            new VisionPipelineAcceptancePreset { Name = "Max Bounds Width <= 0.12 mm", MetricName = BoundsWidthMmMax, ToolTypes = new[] { "blob", "contour", "corner" }, UseMaximum = true, Maximum = 0.12 },
+            new VisionPipelineAcceptancePreset { Name = "Max Bounds Width >= 0.12 mm", MetricName = BoundsWidthMmMax, ToolTypes = new[] { "blob", "contour", "corner" }, UseMinimum = true, Minimum = 0.12 },
+            new VisionPipelineAcceptancePreset { Name = "Max Bounds Height <= 0.12 mm", MetricName = BoundsHeightMmMax, ToolTypes = new[] { "blob", "contour", "corner" }, UseMaximum = true, Maximum = 0.12 },
+            new VisionPipelineAcceptancePreset { Name = "Max Bounds Height >= 0.12 mm", MetricName = BoundsHeightMmMax, ToolTypes = new[] { "blob", "contour", "corner" }, UseMinimum = true, Minimum = 0.12 },
+            new VisionPipelineAcceptancePreset { Name = "Merged Overlay Count >= 1", MetricName = MergeOverlayCount, ToolTypes = new[] { "overlaymerge", "resultmerge", "mergeresult" }, UseMinimum = true, Minimum = 1 }
         };
 
         public static IReadOnlyList<string> GetMetricNames()
@@ -97,9 +212,49 @@ namespace OpenVisionLab
             return MetricDefinitions.Select(metric => metric.Name).ToArray();
         }
 
+        private static string[] WithImageMetrics(params string[] metricNames)
+        {
+            return (metricNames ?? Array.Empty<string>())
+                .Concat(ImageMetricNames)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        private static string[] WithImageAndRectangleMetrics(params string[] metricNames)
+        {
+            return (metricNames ?? Array.Empty<string>())
+                .Concat(RectangleOverlayMetricNames)
+                .Concat(ImageMetricNames)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        private static string[] WithImageAndLineMetrics(params string[] metricNames)
+        {
+            return (metricNames ?? Array.Empty<string>())
+                .Concat(LineOverlayMetricNames)
+                .Concat(ImageMetricNames)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
         public static IReadOnlyList<VisionPipelineMetricDefinition> GetMetricDefinitions()
         {
             return MetricDefinitions;
+        }
+
+        public static string GetDisplayName(string metricName)
+        {
+            if (string.IsNullOrWhiteSpace(metricName))
+            {
+                return string.Empty;
+            }
+
+            VisionPipelineMetricDefinition definition = MetricDefinitions.FirstOrDefault(metric =>
+                string.Equals(metric.Name, metricName, StringComparison.OrdinalIgnoreCase));
+            return string.IsNullOrWhiteSpace(definition?.DisplayName)
+                ? metricName
+                : definition.DisplayName;
         }
 
         public static IReadOnlyList<string> GetMetricNamesForTool(string toolType)
@@ -144,6 +299,14 @@ namespace OpenVisionLab
             return Presets;
         }
 
+        public static IReadOnlyList<VisionPipelineAcceptancePreset> GetPresetsForTool(string toolType)
+        {
+            string normalized = NormalizeToolType(toolType);
+            return Presets
+                .Where(preset => AppliesToTool(preset, normalized))
+                .ToArray();
+        }
+
         public static void ApplyPreset(VisionPipelineStep step, VisionPipelineAcceptancePreset preset)
         {
             if (step == null || preset == null)
@@ -152,6 +315,8 @@ namespace OpenVisionLab
             }
 
             step.UseAcceptance = true;
+            step.ExpectedSuccess = true;
+            step.RequiredMessageText = string.Empty;
             step.AcceptanceMetricName = preset.MetricName;
             step.UseAcceptanceMetricMinimum = preset.UseMinimum;
             step.AcceptanceMetricMinimum = preset.Minimum;
@@ -206,6 +371,22 @@ namespace OpenVisionLab
                 .Where(metric => !string.IsNullOrWhiteSpace(metric.Key))
                 .OrderBy(metric => orderMap.TryGetValue(metric.Key, out int index) ? index : int.MaxValue)
                 .ThenBy(metric => metric.Key);
+        }
+
+        private static bool AppliesToTool(VisionPipelineAcceptancePreset preset, string normalizedToolType)
+        {
+            if (preset == null)
+            {
+                return false;
+            }
+
+            if (preset.ToolTypes == null || preset.ToolTypes.Length == 0)
+            {
+                return true;
+            }
+
+            return preset.ToolTypes.Any(toolType =>
+                string.Equals(NormalizeToolType(toolType), normalizedToolType, StringComparison.OrdinalIgnoreCase));
         }
 
         private static string NormalizeToolType(string toolType)

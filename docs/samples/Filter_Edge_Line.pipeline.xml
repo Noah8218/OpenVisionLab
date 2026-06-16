@@ -84,6 +84,14 @@
           <Value>10</Value>
         </Parameter>
         <Parameter>
+          <Key>USE_ROI</Key>
+          <Value>true</Value>
+        </Parameter>
+        <Parameter>
+          <Key>CvROI</Key>
+          <Value>0,0,768,576</Value>
+        </Parameter>
+        <Parameter>
           <Key>SHOW_FITLINE</Key>
           <Value>true</Value>
         </Parameter>
