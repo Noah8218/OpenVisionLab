@@ -1,6 +1,6 @@
 # OpenVisionLab Next Session Handoff
 
-Updated: 2026-07-03 20:01 KST
+Updated: 2026-07-03 20:17 KST
 
 This document is the minimum handoff needed to continue without re-discovering the current state. Work starts in `C:\Git\OpenVisionLab_Dev`; only reviewed and stabilized changes are imported into the original repo at `C:\Git\OpenVisionLab`. Do not run `git push` unless the user explicitly requests `PUSH`.
 
@@ -17,27 +17,14 @@ This document is the minimum handoff needed to continue without re-discovering t
 
 `C:\Git\OpenVisionLab` is clean at these latest stable commits:
 
-- `6ca54d3 Add public sample review smoke runner`
+- `470f863 Localize pipeline review metric explanations`
+- `ee63d29 Record current product review flow evaluation`
+- `889e9f7 Update handoff after metric wording polish`
 - `dabf398 Localize pipeline review result count metric`
 - `9b20cec Record latest sample catalog audit`
-- `2ed377a Move line test configuration into controller`
-- `61466b0 Update handoff with final review smokes`
-- `031c347 Update OpenVisionLab self evaluation evidence`
-- `811c2b2 Update handoff after final catalog check`
-- `4278e43 Trim unused filter morphology usings`
-- `da392e8 Update handoff after pipeline copy polish`
-- `5f76663 Shorten pipeline review next-action copy`
-- `853da22 Update handoff after review smoke restore`
-- `0a2e026 Restore filter morphology layout smoke`
-- `567fefc Share kernel preset click handling`
-- `8c6c992 Update OpenVisionLab handoff evidence`
-- `01c7aa4 Fix Korean duplicate key detection`
-- `bab969e Clear stale contour review before teaching preview`
-- `9966a81 Update handoff after sample review checks`
-- `b0da050 Allow product sample NG review smoke`
-- `b011ee2 Expose pair review hint in sample workflow`
-- `667e454 Update OpenVisionLab handoff status`
-- `e98a0b2 Clarify NG review fix guidance`
+- `cf8c891 Refresh handoff next priorities`
+- `a05d6d4 Update handoff after catalog regression`
+- `dbb7f9e Update handoff after line controller cleanup`
 
 ## Completed On 2026-07-03
 
@@ -107,6 +94,11 @@ This document is the minimum handoff needed to continue without re-discovering t
   - The bottom workflow strip shows product group, Good/Bad direction, NG/OK counterpart action, Pipeline Review, and first-step action.
   - Pipeline Review shows Good/Bad pair context, metric check, checklist, and explicit counterpart-open action.
   - No additional UI change was made in this pass.
+- Pipeline Review sample metric explanations were localized.
+  - `ResultCount`, `MeanValueAvg`, and `DistanceMmAvg` now use localized display names in Pipeline Review result detail, Good/Bad pair text, metric check, and checklist text.
+  - Mean NG fix detail no longer repeats raw `AcceptanceMessage`; it points the operator to input layer, ROI, Mean type, lighting/brightness drift, and target range.
+  - `PipelineViewerScreenshotSmoke` now rejects raw expected metric keys in localized guide/detail/pair text.
+  - Original commit: `470f863`
 
 ## Verification Evidence
 
@@ -114,6 +106,9 @@ This document is the minimum handoff needed to continue without re-discovering t
   - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` passed.
 - Original build:
   - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` passed.
+- Smoke tool build:
+  - Dev: `dotnet build tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug` passed.
+  - Original: `dotnet build tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug` passed.
 - Readiness:
   - `dotnet run --project tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj -c Debug -- "C:\Git\OpenVisionLab_Dev"` passed.
   - `dotnet run --project tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj -c Debug -- "C:\Git\OpenVisionLab"` passed.
@@ -133,6 +128,14 @@ This document is the minimum handoff needed to continue without re-discovering t
   - Original re-run after Pipeline Review copy shortening: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\sample_review_ui_smoke_after_pipeline_copy_short_20260703_1915` passed.
   - Original final re-run: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\sample_review_ui_smoke_final_20260703_1930` passed.
   - Product sample NG after `ResultCount` wording: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_product_sample_review_ng artifacts\product_sample_review_ng_metric_display_after_original_20260703_1948` passed.
+  - Dev Product OK after metric display cleanup: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_product_sample_review artifacts\metric_display_product_ok_after_dev2_20260703_2030` passed.
+  - Dev Product NG after metric display cleanup: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_product_sample_review_ng artifacts\metric_display_product_ng_after_dev2_20260703_2031` passed.
+  - Dev Mean NG after metric display cleanup: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_sample_pipeline_review_ng_metrics artifacts\metric_display_mean_after_dev6_20260703_2031` passed.
+  - Dev Line NG after metric display cleanup: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_sample_pipeline_review_line_ng_metrics artifacts\metric_display_line_after_dev3_20260703_2031` passed.
+  - Original Product OK after metric display cleanup: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_product_sample_review artifacts\metric_display_product_ok_after_original_20260703_2038` passed.
+  - Original Product NG after metric display cleanup: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_product_sample_review_ng artifacts\metric_display_product_ng_after_original_20260703_2038` passed.
+  - Original Mean NG after metric display cleanup: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_sample_pipeline_review_ng_metrics artifacts\metric_display_mean_after_original_20260703_2039` passed.
+  - Original Line NG after metric display cleanup: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_sample_pipeline_review_line_ng_metrics artifacts\metric_display_line_after_original_20260703_2039` passed.
 - Filter/Morphology guard:
   - Dev: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_filter_morphology_layout_guard artifacts\filter_morphology_layout_guard_after_dev_20260703_1903` passed.
   - Original: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_filter_morphology_layout_guard artifacts\filter_morphology_layout_guard_after_original_20260703_1908` passed.
@@ -183,6 +186,15 @@ This document is the minimum handoff needed to continue without re-discovering t
 - MainView/Product sample current-flow evaluation:
   - Dev Product focus: `C:\Git\OpenVisionLab_Dev\artifacts\sample_review_user_flow_eval_20260703_1959\wpf_shell_host_workspace_sample_product_focus_open.png`
   - Dev Product pair handoff: `C:\Git\OpenVisionLab_Dev\artifacts\sample_review_user_flow_eval_20260703_1959\wpf_shell_host_workspace_product_sample_pair_open.png`
+- Pipeline Review metric explanation cleanup:
+  - Mean before: `C:\Git\OpenVisionLab\artifacts\metric_display_mean_before_original_20260703_2002\wpf_shell_host_workspace_sample_pipeline_review_ng_metrics.png`
+  - Line before: `C:\Git\OpenVisionLab\artifacts\metric_display_line_before_original_20260703_2002\wpf_shell_host_workspace_sample_pipeline_review_line_ng_metrics.png`
+  - Dev Mean after: `C:\Git\OpenVisionLab_Dev\artifacts\metric_display_mean_after_dev6_20260703_2031\wpf_shell_host_workspace_sample_pipeline_review_ng_metrics.png`
+  - Dev Line after: `C:\Git\OpenVisionLab_Dev\artifacts\metric_display_line_after_dev3_20260703_2031\wpf_shell_host_workspace_sample_pipeline_review_line_ng_metrics.png`
+  - Original Mean after: `C:\Git\OpenVisionLab\artifacts\metric_display_mean_after_original_20260703_2039\wpf_shell_host_workspace_sample_pipeline_review_ng_metrics.png`
+  - Original Line after: `C:\Git\OpenVisionLab\artifacts\metric_display_line_after_original_20260703_2039\wpf_shell_host_workspace_sample_pipeline_review_line_ng_metrics.png`
+  - Original Product OK after: `C:\Git\OpenVisionLab\artifacts\metric_display_product_ok_after_original_20260703_2038\wpf_shell_host_workspace_product_sample_review.png`
+  - Original Product NG after: `C:\Git\OpenVisionLab\artifacts\metric_display_product_ng_after_original_20260703_2038\wpf_shell_host_workspace_product_sample_review_ng.png`
 
 ## Start Checklist
 
