@@ -180,13 +180,13 @@ git log --oneline -5
 ## Next Priorities
 
 1. Pipeline/Recipe operator review UX polish
-   - Current OK/NG smoke passes. Next value is small readability polish, especially where top summary cards truncate long detail text.
+   - Current OK/NG smoke passes and top-card copy now fits. Next value is step-level clarity: keep failed metric, expected/actual range, suggested fix, and relevant parameter location close together.
 2. Tool View code-behind cleanup
-   - Continue only where existing controller/runtime patterns already fit. Avoid broad base-class or interface refactors.
+   - Filter/Morphology preset handling and Line test configuration have moved into controllers. Continue only where existing controller/runtime patterns already fit; avoid broad base-class or interface refactors.
 3. MainView/Product sample review flow
    - Current six-target sample review smoke passes. Re-check actual screenshots before changing UI copy or layout.
 4. Product sample catalog quality
-   - Current 84-pair audit is PASS. More samples are lower priority than improving explanation and review affordance.
+   - Current 84-pair audit and final 168-row catalog gate are PASS. More samples are lower priority than improving explanation and review affordance.
 
 ## Cautions
 
