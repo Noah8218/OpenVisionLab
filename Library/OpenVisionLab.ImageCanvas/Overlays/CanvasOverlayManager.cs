@@ -125,7 +125,7 @@ namespace OpenVisionLab.ImageCanvas.Overlays
 			return null; // 해당 그룹을 찾지 못한 경우
 		}
 
-		public string GetNewname(CanvasOverlayItem overlayItem)
+		public string GetNewName(CanvasOverlayItem overlayItem)
 		{
 			string newName = "";
 			int count = 0;

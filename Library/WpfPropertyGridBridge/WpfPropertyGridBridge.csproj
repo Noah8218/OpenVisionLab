@@ -1,16 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
     <OutputType>Library</OutputType>
     <RootNamespace>WpfPropertyGridBridge</RootNamespace>
     <AssemblyName>WpfPropertyGridBridge</AssemblyName>
     <UseWPF>true</UseWPF>
     <Deterministic>false</Deterministic>
-    <WpgCustomBuildEnabled Condition="'$(WpgCustomBuildEnabled)' == ''">true</WpgCustomBuildEnabled>
-    <WpgCustomSourceRoot Condition="'$(WpgCustomSourceRoot)' == ''">$(MSBuildProjectDirectory)\..\..\..\WPG-CUSTOM</WpgCustomSourceRoot>
-    <WpgCustomProject>$(WpgCustomSourceRoot)\Main\WpfPropertyGrid\WpfPropertyGrid.csproj</WpgCustomProject>
-    <WpgCustomOutputDir>$(WpgCustomSourceRoot)\Main\WpfPropertyGrid\bin\$(Configuration)\</WpgCustomOutputDir>
-    <WpgCustomTargetDir>$(MSBuildProjectDirectory)\..\..\dll\</WpgCustomTargetDir>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
@@ -28,7 +23,7 @@
 
   <ItemGroup>
     <Reference Include="System.Windows.Controls.WpfPropertyGrid">
-      <HintPath>..\..\dll\System.Windows.Controls.WpfPropertyGrid.dll</HintPath>
+      <HintPath>$(OpenVisionLabDllRoot)System.Windows.Controls.WpfPropertyGrid.dll</HintPath>
       <Private>True</Private>
       <Aliases>WpfPropertyGridOriginal</Aliases>
     </Reference>
@@ -36,26 +31,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PropertyGrid.Abstractions\PropertyGrid.Abstractions.csproj" />
+    <ProjectReference Include="..\OpenVisionLab.Localization\OpenVisionLab.Localization.csproj" />
   </ItemGroup>
 
-  <Target Name="BuildAndCopyWpgCustomPropertyGrid"
+  <Target Name="ValidateWpgPropertyGridReference"
           BeforeTargets="ResolveReferences"
-          Condition="'$(WpgCustomBuildEnabled)' == 'true' and '$(DesignTimeBuild)' != 'true' and Exists('$(WpgCustomProject)')">
-    <MSBuild Projects="$(WpgCustomProject)"
-             Targets="Build"
-             Properties="Configuration=$(Configuration);Platform=AnyCPU;RestorePackages=false"
-             RemoveProperties="OutDir;OutputPath;TargetFramework;TargetFrameworks;RuntimeIdentifier;RuntimeIdentifiers" />
-
-    <ItemGroup>
-      <WpgCustomArtifacts Include="$(WpgCustomOutputDir)System.Windows.Controls.WpfPropertyGrid.dll"
-                          Condition="Exists('$(WpgCustomOutputDir)System.Windows.Controls.WpfPropertyGrid.dll')" />
-      <WpgCustomArtifacts Include="$(WpgCustomOutputDir)System.Windows.Controls.WpfPropertyGrid.xml"
-                          Condition="Exists('$(WpgCustomOutputDir)System.Windows.Controls.WpfPropertyGrid.xml')" />
-    </ItemGroup>
-
-    <Copy SourceFiles="@(WpgCustomArtifacts)"
-          DestinationFolder="$(WpgCustomTargetDir)"
-          SkipUnchangedFiles="true"
-          Condition="'@(WpgCustomArtifacts)' != ''" />
+          Condition="'$(DesignTimeBuild)' != 'true' and !Exists('$(OpenVisionLabDllRoot)System.Windows.Controls.WpfPropertyGrid.dll')">
+    <Error Text="Missing WPG runtime: $(OpenVisionLabDllRoot)System.Windows.Controls.WpfPropertyGrid.dll. Restore the prepared WPG DLL from the repository." />
   </Target>
 </Project>

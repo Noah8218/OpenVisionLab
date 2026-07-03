@@ -1,0 +1,179 @@
+﻿AssetPath,SourceType,SourceName,SourceUrl,License,Attribution,GeneratedBy,Notes
+docs/samples/public/product/Battery_TabGap_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery tab gap OK sample
+docs/samples/public/product/Battery_TabGap_Narrow_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery tab gap drift NG sample
+docs/samples/public/product/Battery_WeldSpatter_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery weld spatter OK sample
+docs/samples/public/product/Battery_WeldSpatter_Heavy_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery weld spatter NG sample
+docs/samples/public/product/Battery_WeldOverburn_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery weld overburn OK sample
+docs/samples/public/product/Battery_WeldOverburn_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery weld overburn NG sample
+docs/samples/public/product/Battery_TabTear_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery tab tear OK sample
+docs/samples/public/product/Battery_TabTear_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery tab tear NG sample
+docs/samples/public/product/Battery_TabPlatingPeel_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery tab plating peel OK sample
+docs/samples/public/product/Battery_TabPlatingPeel_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery tab plating peel NG sample
+docs/samples/public/product/Battery_ElectrolyteStain_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery electrolyte stain OK sample
+docs/samples/public/product/Battery_ElectrolyteStain_Heavy_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery electrolyte stain NG sample
+docs/samples/public/product/Battery_SeparatorWrinkle_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery separator wrinkle OK sample
+docs/samples/public/product/Battery_SeparatorWrinkle_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery separator wrinkle NG sample
+docs/samples/public/product/Battery_SeparatorPinhole_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery separator pinhole OK sample
+docs/samples/public/product/Battery_SeparatorPinhole_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery separator pinhole NG sample
+docs/samples/public/product/Battery_CoatingGap_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery coating gap OK sample
+docs/samples/public/product/Battery_CoatingGap_Narrow_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery coating gap narrow NG sample
+docs/samples/public/product/Battery_ForeignObject_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery foreign object OK sample
+docs/samples/public/product/Battery_ForeignObject_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery foreign object NG sample
+docs/samples/public/product/Battery_EdgeBurr_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery coating edge burr OK sample
+docs/samples/public/product/Battery_EdgeBurr_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery coating edge burr NG sample
+docs/samples/public/product/Battery_TabOffset_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery tab offset OK sample
+docs/samples/public/product/Battery_TabOffset_Shifted_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery tab offset shifted NG sample
+docs/samples/public/product/Battery_SealWidth_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery seal width OK sample
+docs/samples/public/product/Battery_SealWidth_Narrow_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery narrow seal width NG sample
+docs/samples/public/product/Battery_TabWeldVoid_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery tab weld void OK sample
+docs/samples/public/product/Battery_TabWeldVoid_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery tab weld void NG sample
+docs/samples/public/product/Battery_PouchEdgeFold_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery pouch edge fold OK sample
+docs/samples/public/product/Battery_PouchEdgeFold_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery pouch edge fold NG sample
+docs/samples/public/product/Battery_PouchSealBurn_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery pouch seal burn OK sample
+docs/samples/public/product/Battery_PouchSealBurn_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery pouch seal burn NG sample
+docs/samples/public/product/Battery_PouchSealBubble_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery pouch seal bubble OK sample
+docs/samples/public/product/Battery_PouchSealBubble_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery pouch seal bubble NG sample
+docs/samples/public/product/Battery_SealEdgeDelamination_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery seal edge delamination OK sample
+docs/samples/public/product/Battery_SealEdgeDelamination_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery seal edge delamination NG sample
+docs/samples/public/product/Battery_TabOxidation_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery tab oxidation OK sample
+docs/samples/public/product/Battery_TabOxidation_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery tab oxidation NG sample
+docs/samples/public/product/Battery_TabDiscoloration_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery tab discoloration OK sample
+docs/samples/public/product/Battery_TabDiscoloration_Dark_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery tab discoloration NG sample
+docs/samples/public/product/Battery_SealContamination_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery seal contamination OK sample
+docs/samples/public/product/Battery_SealContamination_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery seal contamination NG sample
+docs/samples/public/product/Battery_LaserMark_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery laser mark OK sample
+docs/samples/public/product/Battery_LaserMark_Missing_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery missing laser mark NG sample
+docs/samples/public/product/templates/Battery_LaserMark_Template.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Template crop from Battery_LaserMark_OK.png
+docs/samples/public/product/Battery_TabDateCode_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery tab date-code OK sample
+docs/samples/public/product/Battery_TabDateCode_Wrong_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery wrong tab date-code NG sample
+docs/samples/public/product/templates/Battery_TabDateCode_Template.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Template crop from Battery_TabDateCode_OK.png
+docs/samples/public/product/Battery_ElectrolyteFillLine_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery electrolyte fill-line OK sample
+docs/samples/public/product/Battery_ElectrolyteFillLine_Low_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery low electrolyte fill-line NG sample
+docs/samples/public/product/Battery_CellVentAlignment_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery cell vent alignment OK sample
+docs/samples/public/product/Battery_CellVentAlignment_Shifted_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery shifted cell vent alignment NG sample
+docs/samples/public/product/Battery_PouchTabSkew_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery pouch tab skew OK sample
+docs/samples/public/product/Battery_PouchTabSkew_Shifted_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery shifted pouch tab skew NG sample
+docs/samples/public/product/Battery_CurrentCollectorBurr_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery current collector burr OK sample
+docs/samples/public/product/Battery_CurrentCollectorBurr_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery current collector burr NG sample
+docs/samples/public/product/Battery_SeparatorEdgeTear_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery separator edge tear OK sample
+docs/samples/public/product/Battery_SeparatorEdgeTear_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Secondary battery separator edge tear NG sample
+docs/samples/public/product/Display_PixelDefect_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display pixel defect OK sample
+docs/samples/public/product/Display_PixelDefect_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display pixel defect count NG sample
+docs/samples/public/product/Display_Alignment_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display alignment mark OK sample
+docs/samples/public/product/Display_Alignment_Wrong_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display wrong alignment mark NG sample
+docs/samples/public/product/templates/Display_Alignment_Template.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Template crop from Display_Alignment_OK.png
+docs/samples/public/product/Display_Scratch_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display scratch OK sample
+docs/samples/public/product/Display_Scratch_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display scratch count NG sample
+docs/samples/public/product/Display_BrightnessBand_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display brightness band OK sample
+docs/samples/public/product/Display_BrightnessBand_Bright_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display brightness band NG sample
+docs/samples/public/product/Display_Particle_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display particle OK sample
+docs/samples/public/product/Display_Particle_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display particle count NG sample
+docs/samples/public/product/Display_MuraVariation_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display mura variation OK sample
+docs/samples/public/product/Display_MuraVariation_Uneven_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display uneven mura variation NG sample
+docs/samples/public/product/Display_EdgeChip_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display edge chip OK sample
+docs/samples/public/product/Display_EdgeChip_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display edge chip count NG sample
+docs/samples/public/product/Display_BezelChip_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display bezel chip OK sample
+docs/samples/public/product/Display_BezelChip_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display bezel chip count NG sample
+docs/samples/public/product/Display_CornerCrack_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display corner crack OK sample
+docs/samples/public/product/Display_CornerCrack_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display corner crack NG sample
+docs/samples/public/product/Display_AlignmentOffset_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display alignment offset OK sample
+docs/samples/public/product/Display_AlignmentOffset_Shifted_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display alignment offset NG sample
+docs/samples/public/product/Display_ColorFilterShift_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display color-filter shift OK sample
+docs/samples/public/product/Display_ColorFilterShift_Shifted_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display color-filter shift NG sample
+docs/samples/public/product/Display_LineStain_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display line stain OK sample
+docs/samples/public/product/Display_LineStain_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display line stain NG sample
+docs/samples/public/product/Display_SubpixelBridge_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display subpixel bridge OK sample
+docs/samples/public/product/Display_SubpixelBridge_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display subpixel bridge NG sample
+docs/samples/public/product/Display_PadBridge_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display pad bridge OK sample
+docs/samples/public/product/Display_PadBridge_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display pad bridge NG sample
+docs/samples/public/product/Display_PolarizerBubble_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display polarizer bubble OK sample
+docs/samples/public/product/Display_PolarizerBubble_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display polarizer bubble NG sample
+docs/samples/public/product/Display_SealContamination_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display seal contamination OK sample
+docs/samples/public/product/Display_SealContamination_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display seal contamination NG sample
+docs/samples/public/product/Display_SealCornerContamination_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display seal corner contamination OK sample
+docs/samples/public/product/Display_SealCornerContamination_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display seal corner contamination NG sample
+docs/samples/public/product/Display_PolarizerEdgeLift_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display polarizer edge lift OK sample
+docs/samples/public/product/Display_PolarizerEdgeLift_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display polarizer edge lift NG sample
+docs/samples/public/product/Display_CofBondParticle_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display COF bond particle OK sample
+docs/samples/public/product/Display_CofBondParticle_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display COF bond particle NG sample
+docs/samples/public/product/Display_FpcAlignmentMark_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display FPC alignment mark OK sample
+docs/samples/public/product/Display_FpcAlignmentMark_Wrong_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display wrong FPC alignment mark NG sample
+docs/samples/public/product/templates/Display_FpcAlignmentMark_Template.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Template crop from Display_FpcAlignmentMark_OK.png
+docs/samples/public/product/Display_CornerLightLeak_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display corner light leak OK sample
+docs/samples/public/product/Display_CornerLightLeak_Bright_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display corner light leak NG sample
+docs/samples/public/product/Display_BlackMatrixScratch_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display black matrix scratch OK sample
+docs/samples/public/product/Display_BlackMatrixScratch_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display black matrix scratch NG sample
+docs/samples/public/product/Display_LineDropout_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display line dropout OK sample
+docs/samples/public/product/Display_LineDropout_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display line dropout NG sample
+docs/samples/public/product/Display_MuraSpotCluster_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display mura spot cluster OK sample
+docs/samples/public/product/Display_MuraSpotCluster_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display mura spot cluster NG sample
+docs/samples/public/product/Display_MuraRing_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display mura ring OK sample
+docs/samples/public/product/Display_MuraRing_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display mura ring NG sample
+docs/samples/public/product/Display_PolarizerScratch_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display polarizer scratch OK sample
+docs/samples/public/product/Display_PolarizerScratch_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display polarizer scratch NG sample
+docs/samples/public/product/Display_PolarizerCrease_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display polarizer crease OK sample
+docs/samples/public/product/Display_PolarizerCrease_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display polarizer crease NG sample
+docs/samples/public/product/Display_SealWidth_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display seal width OK sample
+docs/samples/public/product/Display_SealWidth_Narrow_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Display narrow seal width NG sample
+docs/samples/public/product/Semiconductor_Fiducial_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor fiducial edge OK sample
+docs/samples/public/product/Semiconductor_Fiducial_Wrong_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor wrong fiducial NG sample
+docs/samples/public/product/templates/Semiconductor_Fiducial_Template.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Template crop from Semiconductor_Fiducial_OK.png
+docs/samples/public/product/Semiconductor_BondMark_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor feature mark OK sample
+docs/samples/public/product/Semiconductor_BondMark_Wrong_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor wrong feature mark NG sample
+docs/samples/public/product/templates/Semiconductor_BondMark_Template.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Template crop from Semiconductor_BondMark_OK.png
+docs/samples/public/product/Semiconductor_PadContamination_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor pad contamination OK sample
+docs/samples/public/product/Semiconductor_PadContamination_Heavy_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor pad contamination NG sample
+docs/samples/public/product/Semiconductor_DieContamination_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor die contamination OK sample
+docs/samples/public/product/Semiconductor_DieContamination_Heavy_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor die contamination NG sample
+docs/samples/public/product/Semiconductor_UnderfillVoid_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor underfill void OK sample
+docs/samples/public/product/Semiconductor_UnderfillVoid_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor underfill void NG sample
+docs/samples/public/product/Semiconductor_PackageVoid_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor package void OK sample
+docs/samples/public/product/Semiconductor_PackageVoid_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor package void NG sample
+docs/samples/public/product/Semiconductor_SolderBridge_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor solder bridge OK sample
+docs/samples/public/product/Semiconductor_SolderBridge_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor solder bridge NG sample
+docs/samples/public/product/Semiconductor_PadScratch_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor pad scratch OK sample
+docs/samples/public/product/Semiconductor_PadScratch_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor pad scratch NG sample
+docs/samples/public/product/Semiconductor_BondPadNick_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor bond-pad nick OK sample
+docs/samples/public/product/Semiconductor_BondPadNick_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor bond-pad nick NG sample
+docs/samples/public/product/Semiconductor_WireBondLift_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor wire-bond lift OK sample
+docs/samples/public/product/Semiconductor_WireBondLift_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor wire-bond lift NG sample
+docs/samples/public/product/Semiconductor_WireSweepAlignment_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor wire sweep alignment OK sample
+docs/samples/public/product/Semiconductor_WireSweepAlignment_Shifted_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor shifted wire sweep alignment NG sample
+docs/samples/public/product/Semiconductor_BondPadCorrosion_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor bond-pad corrosion OK sample
+docs/samples/public/product/Semiconductor_BondPadCorrosion_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor bond-pad corrosion NG sample
+docs/samples/public/product/Semiconductor_PadPitch_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor pad pitch OK sample
+docs/samples/public/product/Semiconductor_PadPitch_Narrow_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor pad pitch NG sample
+docs/samples/public/product/Semiconductor_RotationMark_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor rotation mark OK sample
+docs/samples/public/product/Semiconductor_RotationMark_Rotated_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor rotation mark NG sample
+docs/samples/public/product/templates/Semiconductor_RotationMark_Template.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Template crop from Semiconductor_RotationMark_OK.png
+docs/samples/public/product/Semiconductor_LeadAlignment_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor lead alignment OK sample
+docs/samples/public/product/Semiconductor_LeadAlignment_Shifted_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor shifted lead alignment NG sample
+docs/samples/public/product/Semiconductor_LeadWidth_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor lead width OK sample
+docs/samples/public/product/Semiconductor_LeadWidth_Narrow_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor narrow lead width NG sample
+docs/samples/public/product/Semiconductor_LeadCoplanarity_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor lead coplanarity OK sample
+docs/samples/public/product/Semiconductor_LeadCoplanarity_Shifted_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor shifted lead coplanarity NG sample
+docs/samples/public/product/Semiconductor_ProbeMark_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor probe mark OK sample
+docs/samples/public/product/Semiconductor_ProbeMark_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor probe mark NG sample
+docs/samples/public/product/Semiconductor_DieEdgeChip_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor die edge chip OK sample
+docs/samples/public/product/Semiconductor_DieEdgeChip_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor die edge chip NG sample
+docs/samples/public/product/Semiconductor_MoldingFlash_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor molding flash OK sample
+docs/samples/public/product/Semiconductor_MoldingFlash_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor molding flash NG sample
+docs/samples/public/product/Semiconductor_PackageCrack_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor package crack OK sample
+docs/samples/public/product/Semiconductor_PackageCrack_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor package crack NG sample
+docs/samples/public/product/Semiconductor_PackageCornerChip_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor package corner chip OK sample
+docs/samples/public/product/Semiconductor_PackageCornerChip_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor package corner chip NG sample
+docs/samples/public/product/Semiconductor_LeadBurr_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor lead burr OK sample
+docs/samples/public/product/Semiconductor_LeadBurr_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor lead burr NG sample
+docs/samples/public/product/Semiconductor_LeadCrack_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor lead crack OK sample
+docs/samples/public/product/Semiconductor_LeadCrack_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor lead crack NG sample
+docs/samples/public/product/Semiconductor_LeadOxidation_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor lead oxidation OK sample
+docs/samples/public/product/Semiconductor_LeadOxidation_Many_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor lead oxidation NG sample
+docs/samples/public/product/Semiconductor_PackagePolarity_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor package polarity OK sample
+docs/samples/public/product/Semiconductor_PackagePolarity_Missing_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor missing package polarity NG sample
+docs/samples/public/product/templates/Semiconductor_PackagePolarity_Template.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Template crop from Semiconductor_PackagePolarity_OK.png
+docs/samples/public/product/Semiconductor_PackageLaserText_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor package laser text OK sample
+docs/samples/public/product/Semiconductor_PackageLaserText_Missing_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor missing package laser text NG sample
+docs/samples/public/product/templates/Semiconductor_PackageLaserText_Template.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Template crop from Semiconductor_PackageLaserText_OK.png
+docs/samples/public/product/Semiconductor_WaferDieMark_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor wafer die mark OK sample
+docs/samples/public/product/Semiconductor_WaferDieMark_Wrong_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Semiconductor wrong wafer die mark NG sample
+docs/samples/public/product/templates/Semiconductor_WaferDieMark_Template.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionProductSamples.ps1,Template crop from Semiconductor_WaferDieMark_OK.png

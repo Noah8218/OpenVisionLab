@@ -20,10 +20,12 @@ These values are valid for `VisionPipeline` XML and can be executed by the recip
 | `Matching` | Template matching and score metrics |
 | `Mean` | Brightness/intensity measurement |
 | `FeatureMatching` | Feature/template style matching and score metrics |
+| `EdgeBasedMatching` | Edge template matching and contour-based candidate/score metrics |
 | `OverlayMerge` | Merge branch overlays into one final review image |
 
 Aliases accepted by validation/factory logic include `Line`, `TemplateMatching`,
-`RotateAndScale`, `Feature`, `Sift`, `ResultMerge`, and `MergeResult`.
+`RotateAndScale`, `Feature`, `Sift`, `EdgeTemplateMatching`, `EdgeTemplate`, `EdgeBased`,
+`ResultMerge`, and `MergeResult`.
 Prefer the canonical names above in new XML.
 
 ## Form-Only Or Demo-Only Features

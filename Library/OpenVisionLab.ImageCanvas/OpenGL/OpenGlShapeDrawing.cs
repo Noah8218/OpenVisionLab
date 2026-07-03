@@ -141,7 +141,6 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 
 		public static void DrawRectangle(OpenGL gl, PointF start, PointF end, float lineWidth, EnumFillMode enumFillMode, System.Windows.Media.SolidColorBrush color, SizeF textureSize = new SizeF())
 		{
-			//if (start.IsEmpty || end.IsEmpty) { return; }
 			if (start.Equals(end)) { return; }
 
 			gl.Enable(OpenGL.GL_BLEND);
@@ -246,7 +245,7 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 			System.Drawing.PointF start = new PointF(rect.Left, rect.Bottom);
 			System.Drawing.PointF end = new PointF(rect.Right, rect.Top);
 
-			DrawRectangle(gl, start, end, lineWidth, enumFillMode, CvUtill.ConvertToSolidColorBrush(color));
+			DrawRectangle(gl, start, end, lineWidth, enumFillMode, CvUtils.ConvertToSolidColorBrush(color));
 		}
 
 		public static void DrawRectangle(OpenGL gl, Rectangle rect, float lineWidth, bool isFillMode, System.Drawing.Color color, bool isInFill = true)
@@ -256,7 +255,7 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 			System.Drawing.PointF start = new PointF(rect.Left, rect.Bottom);
 			System.Drawing.PointF end = new PointF(rect.Right, rect.Top);
 
-			DrawRectangle(gl, start, end, lineWidth, EnumFillMode.InFill, CvUtill.ConvertToSolidColorBrush(color));
+			DrawRectangle(gl, start, end, lineWidth, EnumFillMode.InFill, CvUtils.ConvertToSolidColorBrush(color));
 		}
 
 		public static void DrawRectangle(OpenGL gl, Rectangle rect, float lineWidth, EnumFillMode enumFillMode, System.Windows.Media.SolidColorBrush color)
@@ -400,15 +399,6 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 			for (int i = 0; i < array.Length; ++i)
 			{
 				gl.Vertex(array[i].X, array[i].Y);
-				//if (i < 3)
-				//if (i < array.Length - 1)
-				//{
-				//	gl.Vertex(array[i + 1].X, array[i + 1].Y);
-				//}
-				//else
-				//{
-				//	gl.Vertex(array[0].X, array[0].Y);
-				//}
 			}
 			gl.End();
 		}
@@ -561,8 +551,6 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 
 			float r, g, b, a;
 			(r, g, b, a) = ConvertColorToOpenGLRGB(color);
-
-			//gl.Enable(OpenGL.GL_BLEND);
 
 			List<PointF> pointList;
 			if (Math.Abs(endPoint.X - startPoint.X) > Math.Abs(endPoint.Y - startPoint.Y))
@@ -1002,7 +990,6 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 				DrawCirclePoints((int)centerX, (int)centerY, x1, y2);
 			}
 
-			//return allPoints;
 			return allPoints.Distinct().ToList();
 		}
 
@@ -1256,8 +1243,6 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 		{
 			gl.LineWidth(lineWidth);
 			gl.Color(lineColorRGB);
-			//gl.Enable(OpenGL.GL_BLEND);
-			//gl.BlendFunc(SharpGL.Enumerations.BlendingSourceFactor.OneMinusDestinationColor, SharpGL.Enumerations.BlendingDestinationFactor.OneMinusSourceColor);
 			gl.Begin(OpenGL.GL_LINE_LOOP);
 			{
 				foreach (var pt in points)

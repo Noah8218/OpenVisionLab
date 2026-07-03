@@ -268,7 +268,15 @@ namespace OpenVisionLab
                     }
 
                     return "No contour was detected. Check threshold polarity, morphology, ROI, MIN_AREA, MAX_AREA, and retrieval mode.";
-                case "feature":
+                case "edgebasedmatching":
+                case "edgebasedtemplatematching":
+                case "edgetemplatematching":
+                    if (!HasZeroMetric(toolResult, VisionPipelineKnownMetrics.ResultCount))
+                    {
+                        return string.Empty;
+                    }
+
+                    return "No edge based template match was detected. Check template edge contrast, ROI, Canny thresholds, search step, and score threshold.";                case "feature":
                 case "featurematching":
                 case "sift":
                     if (!HasZeroMetric(toolResult, VisionPipelineKnownMetrics.ResultCount))
@@ -279,6 +287,8 @@ namespace OpenVisionLab
                     return "No feature match was detected. Check template features, ROI, preprocessing, SCORE_MIN, and RANSAC settings.";
                 case "line":
                 case "linegauge":
+                case "linedistance":
+                case "linedistancegauge":
                     if (!HasZeroMetric(toolResult, VisionPipelineKnownMetrics.ResultCount)
                         && HasPositiveMetric(toolResult, VisionPipelineKnownMetrics.EdgePointCount))
                     {

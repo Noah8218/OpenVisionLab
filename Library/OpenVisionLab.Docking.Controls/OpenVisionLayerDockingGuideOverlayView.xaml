@@ -1,0 +1,320 @@
+<UserControl x:Class="OpenVisionLab.Docking.Controls.OpenVisionLayerDockingGuideOverlayView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:local="clr-namespace:OpenVisionLab.Docking.Controls">
+    <UserControl.Resources>
+        <DataTemplate x:Key="DockingGuideZoneContentTemplate">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <iconPacks:PackIconMaterial Kind="{Binding IconKind}"
+                                            Width="{Binding IconSize}"
+                                            Height="{Binding IconSize}"
+                                            Foreground="{Binding IconBrush}"
+                                            HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding Title}"
+                           Foreground="{Binding TitleBrush}"
+                           FontWeight="{Binding TitleFontWeight}"
+                           HorizontalAlignment="Center"
+                           Margin="0,5,0,0" />
+                <TextBlock Text="{Binding Detail}"
+                           Foreground="{Binding DetailBrush}"
+                           FontSize="{Binding DetailFontSize}"
+                           HorizontalAlignment="Center"
+                           Margin="0,2,0,0">
+                    <TextBlock.Style>
+                        <Style TargetType="{x:Type TextBlock}">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Style.Triggers>
+                                <Trigger Property="Text" Value="">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </StackPanel>
+        </DataTemplate>
+
+        <Style x:Key="DockingGuideZoneBorderStyle" TargetType="{x:Type Border}">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Background" Value="#CC10242A" />
+            <Setter Property="BorderBrush" Value="#6AAFB7" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="AutomationProperties.AutomationId" Value="DockingGuideZone" />
+        </Style>
+
+        <Style x:Key="GlobalDockingGuideZoneBorderStyle"
+               TargetType="{x:Type Border}"
+               BasedOn="{StaticResource DockingGuideZoneBorderStyle}">
+            <Setter Property="Width" Value="132" />
+            <Setter Property="Height" Value="54" />
+        </Style>
+
+        <Style x:Key="PaneDockingGuideZoneBorderStyle"
+               TargetType="{x:Type Border}"
+               BasedOn="{StaticResource DockingGuideZoneBorderStyle}">
+            <Setter Property="Width" Value="70" />
+            <Setter Property="Height" Value="54" />
+        </Style>
+
+        <Style x:Key="PaneDockingGuideCenterZoneBorderStyle"
+               TargetType="{x:Type Border}"
+               BasedOn="{StaticResource PaneDockingGuideZoneBorderStyle}">
+            <Setter Property="Width" Value="84" />
+            <Setter Property="Height" Value="66" />
+        </Style>
+
+        <Style x:Key="PaneDockingGuideRegionStyle" TargetType="{x:Type Border}">
+            <Setter Property="Background" Value="#55157C86" />
+            <Setter Property="BorderBrush" Value="#A8D7DA" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Margin" Value="4" />
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Setter Property="AutomationProperties.AutomationId" Value="DockingGuideActiveRegion" />
+        </Style>
+
+        <Style x:Key="GlobalDockingGuideRegionStyle" TargetType="{x:Type Border}">
+            <Setter Property="Background" Value="#4A157C86" />
+            <Setter Property="BorderBrush" Value="#B8D7DA" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Margin" Value="6" />
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Setter Property="AutomationProperties.AutomationId" Value="DockingGuideActiveRegion" />
+        </Style>
+    </UserControl.Resources>
+
+    <Border Background="#1805090A"
+            BorderThickness="0"
+            AutomationProperties.AutomationId="DockingGuideOverlay">
+        <Grid>
+            <Grid x:Name="globalDockingGuideOverlay"
+                  Margin="26">
+                <Grid x:Name="globalDockingGuideRegionOverlay"
+                      Panel.ZIndex="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="20*" />
+                        <RowDefinition Height="60*" />
+                        <RowDefinition Height="20*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="20*" />
+                        <ColumnDefinition Width="60*" />
+                        <ColumnDefinition Width="20*" />
+                    </Grid.ColumnDefinitions>
+                    <Border x:Name="dockGuideGlobalTopRegion"
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="3"
+                            Style="{StaticResource GlobalDockingGuideRegionStyle}" />
+                    <Border x:Name="dockGuideGlobalLeftRegion"
+                            Grid.Row="0"
+                            Grid.RowSpan="3"
+                            Grid.Column="0"
+                            Style="{StaticResource GlobalDockingGuideRegionStyle}" />
+                    <Border x:Name="dockGuideGlobalRightRegion"
+                            Grid.Row="0"
+                            Grid.RowSpan="3"
+                            Grid.Column="2"
+                            Style="{StaticResource GlobalDockingGuideRegionStyle}" />
+                    <Border x:Name="dockGuideGlobalBottomRegion"
+                            Grid.Row="2"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="3"
+                            Style="{StaticResource GlobalDockingGuideRegionStyle}" />
+                </Grid>
+                <Border x:Name="dockGuideGlobalTopZone"
+                        Panel.ZIndex="1"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Top"
+                        Style="{StaticResource GlobalDockingGuideZoneBorderStyle}">
+                    <ContentControl ContentTemplate="{StaticResource DockingGuideZoneContentTemplate}">
+                        <ContentControl.Content>
+                            <local:OpenVisionDockingGuideZoneContent IconKind="DockTop"
+                                                                     IconSize="22"
+                                                                     IconBrush="#8AD7DA"
+                                                                     Title="전체 위"
+                                                                     TitleBrush="#D7ECEE" />
+                        </ContentControl.Content>
+                    </ContentControl>
+                </Border>
+                <Border x:Name="dockGuideGlobalLeftZone"
+                        Panel.ZIndex="1"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource GlobalDockingGuideZoneBorderStyle}">
+                    <ContentControl ContentTemplate="{StaticResource DockingGuideZoneContentTemplate}">
+                        <ContentControl.Content>
+                            <local:OpenVisionDockingGuideZoneContent IconKind="DockLeft"
+                                                                     IconSize="22"
+                                                                     IconBrush="#8AD7DA"
+                                                                     Title="전체 왼쪽"
+                                                                     TitleBrush="#D7ECEE" />
+                        </ContentControl.Content>
+                    </ContentControl>
+                </Border>
+                <Border x:Name="dockGuideGlobalRightZone"
+                        Panel.ZIndex="1"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource GlobalDockingGuideZoneBorderStyle}">
+                    <ContentControl ContentTemplate="{StaticResource DockingGuideZoneContentTemplate}">
+                        <ContentControl.Content>
+                            <local:OpenVisionDockingGuideZoneContent IconKind="DockRight"
+                                                                     IconSize="22"
+                                                                     IconBrush="#8AD7DA"
+                                                                     Title="전체 오른쪽"
+                                                                     TitleBrush="#D7ECEE" />
+                        </ContentControl.Content>
+                    </ContentControl>
+                </Border>
+                <Border x:Name="dockGuideGlobalBottomZone"
+                        Panel.ZIndex="1"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Bottom"
+                        Style="{StaticResource GlobalDockingGuideZoneBorderStyle}">
+                    <ContentControl ContentTemplate="{StaticResource DockingGuideZoneContentTemplate}">
+                        <ContentControl.Content>
+                            <local:OpenVisionDockingGuideZoneContent IconKind="DockBottom"
+                                                                     IconSize="22"
+                                                                     IconBrush="#8AD7DA"
+                                                                     Title="전체 아래"
+                                                                     TitleBrush="#D7ECEE" />
+                        </ContentControl.Content>
+                    </ContentControl>
+                </Border>
+            </Grid>
+            <Grid x:Name="paneDockingGuideOverlay"
+                  Panel.ZIndex="1"
+                  Margin="22">
+                <Grid x:Name="paneDockingGuideRegionOverlay"
+                      Panel.ZIndex="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="24*" />
+                        <RowDefinition Height="52*" />
+                        <RowDefinition Height="24*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="24*" />
+                        <ColumnDefinition Width="52*" />
+                        <ColumnDefinition Width="24*" />
+                    </Grid.ColumnDefinitions>
+                    <Border x:Name="dockGuideTopRegion"
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="3"
+                            Style="{StaticResource PaneDockingGuideRegionStyle}" />
+                    <Border x:Name="dockGuideLeftRegion"
+                            Grid.Row="0"
+                            Grid.RowSpan="3"
+                            Grid.Column="0"
+                            Style="{StaticResource PaneDockingGuideRegionStyle}" />
+                    <Border x:Name="dockGuideCenterRegion"
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Style="{StaticResource PaneDockingGuideRegionStyle}" />
+                    <Border x:Name="dockGuideRightRegion"
+                            Grid.Row="0"
+                            Grid.RowSpan="3"
+                            Grid.Column="2"
+                            Style="{StaticResource PaneDockingGuideRegionStyle}" />
+                    <Border x:Name="dockGuideBottomRegion"
+                            Grid.Row="2"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="3"
+                            Style="{StaticResource PaneDockingGuideRegionStyle}" />
+                </Grid>
+                <Grid x:Name="paneDockingGuideCompass"
+                      Panel.ZIndex="1"
+                      Width="244"
+                      Height="178"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="56" />
+                        <RowDefinition Height="66" />
+                        <RowDefinition Height="56" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="78" />
+                        <ColumnDefinition Width="88" />
+                        <ColumnDefinition Width="78" />
+                    </Grid.ColumnDefinitions>
+                    <Border x:Name="dockGuideTopZone"
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Style="{StaticResource PaneDockingGuideZoneBorderStyle}">
+                        <ContentControl ContentTemplate="{StaticResource DockingGuideZoneContentTemplate}">
+                            <ContentControl.Content>
+                                <local:OpenVisionDockingGuideZoneContent IconKind="DockTop"
+                                                                         IconBrush="#8AD7DA"
+                                                                         Title="위"
+                                                                         TitleBrush="#EAF5F7" />
+                            </ContentControl.Content>
+                        </ContentControl>
+                    </Border>
+                    <Border x:Name="dockGuideLeftZone"
+                            Grid.Row="1"
+                            Grid.Column="0"
+                            Style="{StaticResource PaneDockingGuideZoneBorderStyle}">
+                        <ContentControl ContentTemplate="{StaticResource DockingGuideZoneContentTemplate}">
+                            <ContentControl.Content>
+                                <local:OpenVisionDockingGuideZoneContent IconKind="DockLeft"
+                                                                         IconBrush="#8AD7DA"
+                                                                         Title="왼쪽"
+                                                                         TitleBrush="#EAF5F7" />
+                            </ContentControl.Content>
+                        </ContentControl>
+                    </Border>
+                    <Border x:Name="dockGuideCenterZone"
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Style="{StaticResource PaneDockingGuideCenterZoneBorderStyle}">
+                        <ContentControl ContentTemplate="{StaticResource DockingGuideZoneContentTemplate}">
+                            <ContentControl.Content>
+                                <local:OpenVisionDockingGuideZoneContent IconKind="TabPlus"
+                                                                         IconSize="28"
+                                                                         IconBrush="#DFFBFF"
+                                                                         Title="탭"
+                                                                         TitleBrush="#FFFFFF"
+                                                                         TitleFontWeight="Bold"
+                                                                         Detail="같은 패널"
+                                                                         DetailBrush="#BFDDE1" />
+                            </ContentControl.Content>
+                        </ContentControl>
+                    </Border>
+                    <Border x:Name="dockGuideRightZone"
+                            Grid.Row="1"
+                            Grid.Column="2"
+                            Style="{StaticResource PaneDockingGuideZoneBorderStyle}">
+                        <ContentControl ContentTemplate="{StaticResource DockingGuideZoneContentTemplate}">
+                            <ContentControl.Content>
+                                <local:OpenVisionDockingGuideZoneContent IconKind="DockRight"
+                                                                         IconBrush="#8AD7DA"
+                                                                         Title="오른쪽"
+                                                                         TitleBrush="#EAF5F7" />
+                            </ContentControl.Content>
+                        </ContentControl>
+                    </Border>
+                    <Border x:Name="dockGuideBottomZone"
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            Style="{StaticResource PaneDockingGuideZoneBorderStyle}">
+                        <ContentControl ContentTemplate="{StaticResource DockingGuideZoneContentTemplate}">
+                            <ContentControl.Content>
+                                <local:OpenVisionDockingGuideZoneContent IconKind="DockBottom"
+                                                                         IconBrush="#8AD7DA"
+                                                                         Title="아래"
+                                                                         TitleBrush="#EAF5F7" />
+                            </ContentControl.Content>
+                        </ContentControl>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

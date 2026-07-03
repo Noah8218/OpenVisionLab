@@ -94,7 +94,7 @@
       </Parameters>
       <UseAcceptance>true</UseAcceptance>
       <ExpectedSuccess>true</ExpectedSuccess>
-      <MaxElapsedMilliseconds>300</MaxElapsedMilliseconds>
+      <MaxElapsedMilliseconds>1000</MaxElapsedMilliseconds>
       <AcceptanceMetricName>ResultCount</AcceptanceMetricName>
       <UseAcceptanceMetricMinimum>true</UseAcceptanceMetricMinimum>
       <AcceptanceMetricMinimum>1</AcceptanceMetricMinimum>

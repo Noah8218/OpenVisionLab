@@ -35,6 +35,7 @@ namespace OpenVisionLab.ImageCanvas
 
 			// MouseUp ?대깽??泥섎━瑜??꾪븳 異붽? 濡쒖쭅
 			callbackRoiAdded?.Invoke(activeRoiRect, parentOverlay);
+			imageViewer.RefreshGL();
 			return true;
 		}
 
@@ -54,7 +55,7 @@ namespace OpenVisionLab.ImageCanvas
 				data.RowSpacing = float.Parse(addRoiArrayVm.RowSpacing);
 				data.ColumnSpacing = float.Parse(addRoiArrayVm.ColumnSpacing);
 
-				AddRectangleToOverlayArray(imageViewer, data, imageViewer.PreMousePos, imageViewer.PostMousePos, imageViewer.PixelPermm, callbackRoiAdded);
+				AddRectangleToOverlayArray(imageViewer, data, imageViewer.PreMousePos, imageViewer.PostMousePos, imageViewer.PixelPerMm, callbackRoiAdded);
 			}
 			catch
 			{

@@ -25,14 +25,23 @@ namespace OpenVisionLab
             ["BorderType"] = typeof(BorderTypes),
             ["Interpolation"] = typeof(InterpolationFlags),
             ["EdgeType"] = typeof(EdgeDetectionToolType),
+            ["DrawMode"] = typeof(ContourDrawMode),
             ["ApproximationModes"] = typeof(ContourApproximationModes),
             ["DetectMode"] = typeof(RetrievalModes),
             ["PRJ_PORALITY"] = typeof(FormulaUtil.PROJECTION_POLARITY),
             ["PRJ_POLARITY"] = typeof(FormulaUtil.PROJECTION_POLARITY),
             ["PRJ_DIR"] = typeof(FormulaUtil.PROJECTION_DIR),
             ["VER_PRJ_DIR"] = typeof(FormulaUtil.PROJECTION_DIR),
+            ["LeftPRJ_PORALITY"] = typeof(FormulaUtil.PROJECTION_POLARITY),
+            ["LeftPRJ_DIR"] = typeof(FormulaUtil.PROJECTION_DIR),
+            ["LeftVER_PRJ_DIR"] = typeof(FormulaUtil.PROJECTION_DIR),
+            ["RightPRJ_PORALITY"] = typeof(FormulaUtil.PROJECTION_POLARITY),
+            ["RightPRJ_DIR"] = typeof(FormulaUtil.PROJECTION_DIR),
+            ["RightVER_PRJ_DIR"] = typeof(FormulaUtil.PROJECTION_DIR),
             ["AVERAGE_FILTER_TYPE"] = typeof(LineGaugeProperty.AVERAGE_FILTER_TYPES),
             ["MATCH_MODE"] = typeof(TemplateMatchModes),
+            ["CONTOUR_RETRIEVAL_MODE"] = typeof(RetrievalModes),
+            ["CONTOUR_APPROXIMATION_MODE"] = typeof(ContourApproximationModes),
             ["MEAN_TYPES"] = typeof(MeanType)
         };
 
@@ -42,12 +51,21 @@ namespace OpenVisionLab
             "MAX_AREA",
             "DrawThickness",
             "POINT_RANGE",
+            "LeftPOINT_RANGE",
+            "RightPOINT_RANGE",
             "EXTEND_FIT_LINE_VALUE",
+            "LeftEXTEND_FIT_LINE_VALUE",
+            "RightEXTEND_FIT_LINE_VALUE",
             "NUM_MATCH",
             "FIND_ANGLE_MAX",
             "FIND_ANGLE_MIN",
+            "COARSE_ANGLE_TOP_K",
             "CANNY_HIGH",
             "CANNY_LOW",
+            "CANNY_APERTURE_SIZE",
+            "SEARCH_STEP",
+            "HYBRID_VERIFY_TOP_N",
+            "MAX_TEMPLATE_POINTS",
             "MEAN_MAX",
             "MEAN_MIN",
             "RangeMin",
@@ -70,7 +88,13 @@ namespace OpenVisionLab
             "ScharrDegreeX",
             "ScharrDegreeY",
             "LaplacianKernelSize",
-            "MaxPoints"
+            "MaxPoints",
+            VisionPipelineArithmeticStep.ParameterGray,
+            VisionPipelineArithmeticStep.ParameterB,
+            VisionPipelineArithmeticStep.ParameterG,
+            VisionPipelineArithmeticStep.ParameterR,
+            VisionPipelineArithmeticStep.ParameterOffsetX,
+            VisionPipelineArithmeticStep.ParameterOffsetY
         };
 
         private static readonly HashSet<string> DoubleParameters = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -83,10 +107,24 @@ namespace OpenVisionLab
             "THICKNESS",
             "SAMPLING_STEP",
             "MANUAL_ANGLE_VALUE",
+            "LeftPIXELPERMM",
+            "LeftCONTRAST",
+            "LeftTHICKNESS",
+            "LeftSAMPLING_STEP",
+            "LeftMANUAL_ANGLE_VALUE",
+            "RightPIXELPERMM",
+            "RightCONTRAST",
+            "RightTHICKNESS",
+            "RightSAMPLING_STEP",
+            "RightMANUAL_ANGLE_VALUE",
             "SCORE_MIN",
             "MAGNIFIATION",
             "FIND_ANGLE",
+            "COARSE_ANGLE_STEP",
             "RANSAC_REPROJ_THRESHOLD",
+            "GREEDINESS",
+            "HYBRID_VERIFY_IMAGE_WEIGHT",
+            "MIN_GRADIENT_MAGNITUDE",
             "AVERAGE_Diff",
             "Threshold",
             "MaxValue",
@@ -193,10 +231,16 @@ namespace OpenVisionLab
             return !string.IsNullOrWhiteSpace(key)
                 && (key.StartsWith("USE_", StringComparison.OrdinalIgnoreCase)
                     || key.StartsWith("SHOW_", StringComparison.OrdinalIgnoreCase)
+                    || key.StartsWith("LeftUSE_", StringComparison.OrdinalIgnoreCase)
+                    || key.StartsWith("LeftSHOW_", StringComparison.OrdinalIgnoreCase)
+                    || key.StartsWith("RightUSE_", StringComparison.OrdinalIgnoreCase)
+                    || key.StartsWith("RightSHOW_", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, "Invert", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, "BurnIn", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, "DrawLabels", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, "AllowEmpty", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(key, VisionPipelineArithmeticStep.ParameterUseConstantInput, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(key, VisionPipelineArithmeticStep.ParameterUseColorConstant, StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, "UseL2Gradient", StringComparison.OrdinalIgnoreCase));
         }
     }

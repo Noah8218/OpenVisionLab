@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls.WpfPropertyGrid;
-using System.Windows.Forms;
 using System.Xml.Linq;
 using static OpenVisionLab.PropertyGridEditorFactory;
 using System.Xml.Serialization;
@@ -15,23 +14,28 @@ using Lib.OpenCV.Property;
 
 namespace OpenVisionLab.Vision._1._Tools.OpenCV
 {
+    [CategoryOrder("Parameter", 0)]
+    [CategoryOrder("Matching", 1)]
+    [CategoryOrder("ROI", 2)]
+    [CategoryOrder("Threshold", 3)]
+    [CategoryOrder("Image Process", 4)]
     [System.Xml.Serialization.XmlRoot("CPropertyFeatureMatching")]
     public class FeatureMatchingProperty : OpenCvPropertyBase, IOpenCVPropertyFeatureSIFT, IOpenCvConfigurableProperty<FeatureMatchingProperty>
     {
         [PropertyOrder(1)]
-        [CategoryAttribute("Matching"), DescriptionAttribute(""), DisplayNameAttribute("SCORE_MIN")]
+        [CategoryAttribute("Matching"), DescriptionAttribute("Minimum feature matching score. Higher values reject weak matches."), DisplayNameAttribute("Min score")]
         public double SCORE_MIN { get; set; } = 0.6D;
 
-        [PropertyOrder(4)]
-        [CategoryAttribute("Matching"), DescriptionAttribute(""), DisplayNameAttribute("RANSAC_REPROJ_THRESHOLD")]
+        [PropertyOrder(2)]
+        [CategoryAttribute("Matching"), DescriptionAttribute("RANSAC reprojection tolerance in pixels. Higher values accept more geometric variation."), DisplayNameAttribute("RANSAC tolerance")]
         public double RANSAC_REPROJ_THRESHOLD { get; set; } = 3D;
 
-        [PropertyOrder(8)]
+        [PropertyOrder(0)]
         [PropertyEditor(typeof(WpgMatchEditor))]
-        [CategoryAttribute("Matching"), DescriptionAttribute(""), DisplayNameAttribute("PATTERN PATH")]
+        [CategoryAttribute("Matching"), DescriptionAttribute("Feature template image path used for teaching and matching."), DisplayNameAttribute("Feature template path")]
         public string PATTERN_PATH { get; set; } = "";
 
-        [XmlIgnore] public Mat ImageTemplate = new Mat();
+        internal Mat ImageTemplate { get; set; } = new Mat();
 
         public FeatureMatchingProperty(string strName)
         {

@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls.WpfPropertyGrid;
-using System.Windows.Forms;
 using System.Xml.Linq;
 
 namespace OpenVisionLab.Vision._1._Tools.OpenCV

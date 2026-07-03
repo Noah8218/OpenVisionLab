@@ -8,6 +8,7 @@ namespace OpenVisionLab.ImageCanvas
 		[Description("Load Image")] LoadImage,
 		[Description("Load Swath Image")] LoadSwathImage,
 		[Description("Save Image")] SaveImage,
+		[Description("Fit Image")] FitImage,
 		[Description("OnOff Group Move")] OnOffGroupMove,
 		[Description("Clear Draw Result")] ClearDrawResult,
 	}

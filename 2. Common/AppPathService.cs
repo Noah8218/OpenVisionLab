@@ -1,12 +1,13 @@
 ﻿using System;
 using System.IO;
-using System.Windows.Forms;
 
 namespace OpenVisionLab
 {
     public static class AppPathService
     {
-        public static string StartupPath => Application.StartupPath;
+        public static string StartupPath => AppContext.BaseDirectory.TrimEnd(
+            Path.DirectorySeparatorChar,
+            Path.AltDirectorySeparatorChar);
 
         public static string CaptureDirectory => EnsureDirectory("CAPTURE");
 

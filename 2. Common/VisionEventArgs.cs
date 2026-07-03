@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using Lib.OpenCV.Blob;
@@ -147,17 +147,29 @@ namespace OpenVisionLab
         }
     }
 
-    public class DockDisplayEventArgs : EventArgs
+    public sealed class DockDisplayEventArgs : EventArgs, IDisposable
     {
+        private bool disposed;
+
         public Bitmap Image = new Bitmap(10, 10);
         public int Index;
         public string TackTime = "";
 
         public DockDisplayEventArgs(Bitmap bitmap, int nIndex, string tackTime)
         {
+            Image?.Dispose();
             Image = bitmap;
             Index = nIndex;
             TackTime = tackTime;
+        }
+
+        public void Dispose()
+        {
+            if (disposed) { return; }
+            disposed = true;
+            Image?.Dispose();
+            Image = null;
+            GC.SuppressFinalize(this);
         }
     }
 

@@ -32,6 +32,7 @@ namespace OpenVisionLab
             {
                 Add(step.Parameters, nameof(ContourProperty.USE_APPROXPOLYDP), contour.USE_APPROXPOLYDP);
                 Add(step.Parameters, nameof(ContourProperty.USE_DRAW_IMAGE), contour.USE_DRAW_IMAGE);
+                Add(step.Parameters, nameof(ContourProperty.DrawMode), contour.DrawMode);
                 Add(step.Parameters, nameof(ContourProperty.ApproximationModes), contour.ApproximationModes);
                 Add(step.Parameters, nameof(ContourProperty.DetectMode), contour.DetectMode);
                 Add(step.Parameters, nameof(ContourProperty.EPSILON), contour.EPSILON);
@@ -71,12 +72,44 @@ namespace OpenVisionLab
                 Add(step.Parameters, nameof(MatchingProperty.FIND_ANGLE), matching.FIND_ANGLE);
                 Add(step.Parameters, nameof(MatchingProperty.FIND_ANGLE_MAX), matching.FIND_ANGLE_MAX);
                 Add(step.Parameters, nameof(MatchingProperty.FIND_ANGLE_MIN), matching.FIND_ANGLE_MIN);
+                Add(step.Parameters, nameof(MatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH), matching.USE_COARSE_TO_FINE_ANGLE_SEARCH);
+                Add(step.Parameters, nameof(MatchingProperty.COARSE_ANGLE_STEP), matching.COARSE_ANGLE_STEP);
+                Add(step.Parameters, nameof(MatchingProperty.COARSE_ANGLE_TOP_K), matching.COARSE_ANGLE_TOP_K);
                 Add(step.Parameters, nameof(MatchingProperty.PATTERN_PATH), matching.PATTERN_PATH);
                 Add(step.Parameters, "TemplatePath", matching.PATTERN_PATH);
                 Add(step.Parameters, nameof(MatchingProperty.USE_CANNY), matching.USE_CANNY);
                 Add(step.Parameters, nameof(MatchingProperty.CANNY_HIGH), matching.CANNY_HIGH);
                 Add(step.Parameters, nameof(MatchingProperty.CANNY_LOW), matching.CANNY_LOW);
                 Add(step.Parameters, nameof(MatchingProperty.USE_PADDING_COLOR_WHITE), matching.USE_PADDING_COLOR_WHITE);
+            }
+            else if (property is EdgeBasedMatchingProperty edgeMatching)
+            {
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.SCORE_MIN), edgeMatching.SCORE_MIN);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.NUM_MATCH), edgeMatching.NUM_MATCH);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.PATTERN_PATH), edgeMatching.PATTERN_PATH);
+                Add(step.Parameters, "TemplatePath", edgeMatching.PATTERN_PATH);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_FIND_ANGLE), edgeMatching.USE_FIND_ANGLE);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.FIND_ANGLE), edgeMatching.FIND_ANGLE);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.FIND_ANGLE_MAX), edgeMatching.FIND_ANGLE_MAX);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.FIND_ANGLE_MIN), edgeMatching.FIND_ANGLE_MIN);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH), edgeMatching.USE_COARSE_TO_FINE_ANGLE_SEARCH);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.COARSE_ANGLE_STEP), edgeMatching.COARSE_ANGLE_STEP);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.COARSE_ANGLE_TOP_K), edgeMatching.COARSE_ANGLE_TOP_K);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.CANNY_LOW), edgeMatching.CANNY_LOW);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.CANNY_HIGH), edgeMatching.CANNY_HIGH);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.CANNY_APERTURE_SIZE), edgeMatching.CANNY_APERTURE_SIZE);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_L2_GRADIENT), edgeMatching.USE_L2_GRADIENT);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.CONTOUR_RETRIEVAL_MODE), edgeMatching.CONTOUR_RETRIEVAL_MODE);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.CONTOUR_APPROXIMATION_MODE), edgeMatching.CONTOUR_APPROXIMATION_MODE);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.GREEDINESS), edgeMatching.GREEDINESS);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.SEARCH_STEP), edgeMatching.SEARCH_STEP);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_POSITION_REFINE), edgeMatching.USE_POSITION_REFINE);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_HYBRID_VERIFY), edgeMatching.USE_HYBRID_VERIFY);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.HYBRID_VERIFY_TOP_N), edgeMatching.HYBRID_VERIFY_TOP_N);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.HYBRID_VERIFY_IMAGE_WEIGHT), edgeMatching.HYBRID_VERIFY_IMAGE_WEIGHT);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.MAX_TEMPLATE_POINTS), edgeMatching.MAX_TEMPLATE_POINTS);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.MIN_GRADIENT_MAGNITUDE), edgeMatching.MIN_GRADIENT_MAGNITUDE);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_DRAW_IMAGE), edgeMatching.USE_DRAW_IMAGE);
             }
             else if (property is MeanProperty mean)
             {
@@ -92,6 +125,32 @@ namespace OpenVisionLab
                 Add(step.Parameters, "TemplatePath", feature.PATTERN_PATH);
             }
 
+            return step;
+        }
+
+        public static VisionPipelineStep FromLineGaugePair(
+            string name,
+            string toolType,
+            LineGaugeProperty left,
+            LineGaugeProperty right,
+            string inputLayer,
+            string outputLayer,
+            string purpose)
+        {
+            if (left == null)
+            {
+                throw new ArgumentNullException(nameof(left));
+            }
+
+            if (right == null)
+            {
+                throw new ArgumentNullException(nameof(right));
+            }
+
+            VisionPipelineStep step = CreateStep(name, string.IsNullOrWhiteSpace(toolType) ? "LineDistance" : toolType, inputLayer, outputLayer);
+            Add(step.Parameters, "LinePurpose", string.IsNullOrWhiteSpace(purpose) ? toolType : purpose);
+            AddPrefixedLineGaugeParameters(step.Parameters, "Left", left);
+            AddPrefixedLineGaugeParameters(step.Parameters, "Right", right);
             return step;
         }
 
@@ -175,6 +234,37 @@ namespace OpenVisionLab
             return step;
         }
 
+        public static VisionPipelineStep FromArithmetic(
+            string name,
+            string operation,
+            string inputLayerA,
+            string inputLayerB,
+            string outputLayer,
+            bool useConstantInput,
+            bool useColorConstant,
+            int gray,
+            int b,
+            int g,
+            int r,
+            int offsetX,
+            int offsetY,
+            string mode = VisionPipelineArithmeticStep.ModeOperation)
+        {
+            VisionPipelineStep step = CreateStep(name, VisionPipelineArithmeticStep.ToolType, inputLayerA, outputLayer);
+            Add(step.Parameters, VisionPipelineArithmeticStep.ParameterMode, string.IsNullOrWhiteSpace(mode) ? VisionPipelineArithmeticStep.ModeOperation : mode);
+            Add(step.Parameters, VisionPipelineArithmeticStep.ParameterOperation, string.IsNullOrWhiteSpace(operation) ? "Bitwise_AND" : operation);
+            Add(step.Parameters, VisionPipelineArithmeticStep.ParameterInputLayerB, inputLayerB ?? string.Empty);
+            Add(step.Parameters, VisionPipelineArithmeticStep.ParameterUseConstantInput, useConstantInput);
+            Add(step.Parameters, VisionPipelineArithmeticStep.ParameterUseColorConstant, useColorConstant);
+            Add(step.Parameters, VisionPipelineArithmeticStep.ParameterGray, gray);
+            Add(step.Parameters, VisionPipelineArithmeticStep.ParameterB, b);
+            Add(step.Parameters, VisionPipelineArithmeticStep.ParameterG, g);
+            Add(step.Parameters, VisionPipelineArithmeticStep.ParameterR, r);
+            Add(step.Parameters, VisionPipelineArithmeticStep.ParameterOffsetX, offsetX);
+            Add(step.Parameters, VisionPipelineArithmeticStep.ParameterOffsetY, offsetY);
+            return step;
+        }
+
         private static VisionPipelineStep CreateStep(string name, string toolType, string inputLayer, string outputLayer)
         {
             return new VisionPipelineStep
@@ -202,9 +292,55 @@ namespace OpenVisionLab
             Add(parameters, nameof(property.Weight), property.Weight);
             Add(parameters, nameof(property.USE_ROI), property.USE_ROI);
             Add(parameters, nameof(property.USE_MULTI_ROI), property.USE_MULTI_ROI);
+            Add(parameters, nameof(property.USE_MASKING), property.USE_MASKING || property.CvMASKS?.Count > 0);
             Add(parameters, nameof(property.CvROI), RectToText(property.CvROI));
             Add(parameters, nameof(property.CvROIS), RectListToText(property.CvROIS));
             Add(parameters, nameof(property.CvMASKS), RectListToText(property.CvMASKS));
+        }
+
+        private static void AddPrefixedCommonOpenCvParameters(IDictionary<string, string> parameters, string prefix, OpenCvPropertyBase property)
+        {
+            Add(parameters, prefix + "Name", property.NAME);
+            Add(parameters, prefix + nameof(property.PIXELPERMM), property.PIXELPERMM);
+            Add(parameters, prefix + nameof(property.USE_THRESHOLD), property.USE_THRESHOLD);
+            Add(parameters, prefix + nameof(property.USE_BITWISENOT), property.USE_BITWISENOT);
+            Add(parameters, prefix + nameof(property.THRESHOLD_TYPES), property.THRESHOLD_TYPES);
+            Add(parameters, prefix + nameof(property.THRESHOLD), property.THRESHOLD);
+            Add(parameters, prefix + nameof(property.USE_ADAPTIVE_THRESHOLD), property.USE_ADAPTIVE_THRESHOLD);
+            Add(parameters, prefix + nameof(property.ADAPTIVE_THRESHOLD), property.ADAPTIVE_THRESHOLD);
+            Add(parameters, prefix + nameof(property.ADAPTIVE_THRESHOLD_TYPES), property.ADAPTIVE_THRESHOLD_TYPES);
+            Add(parameters, prefix + nameof(property.ADAPTIVE_THRESHOLD_ALGORITHM), property.ADAPTIVE_THRESHOLD_ALGORITHM);
+            Add(parameters, prefix + nameof(property.BlockSize), property.BlockSize);
+            Add(parameters, prefix + nameof(property.Weight), property.Weight);
+            Add(parameters, prefix + nameof(property.USE_ROI), property.USE_ROI);
+            Add(parameters, prefix + nameof(property.USE_MULTI_ROI), property.USE_MULTI_ROI);
+            Add(parameters, prefix + nameof(property.USE_MASKING), property.USE_MASKING || property.CvMASKS?.Count > 0);
+            Add(parameters, prefix + nameof(property.CvROI), RectToText(property.CvROI));
+            Add(parameters, prefix + nameof(property.CvROIS), RectListToText(property.CvROIS));
+            Add(parameters, prefix + nameof(property.CvMASKS), RectListToText(property.CvMASKS));
+        }
+
+        private static void AddPrefixedLineGaugeParameters(IDictionary<string, string> parameters, string prefix, LineGaugeProperty line)
+        {
+            AddPrefixedCommonOpenCvParameters(parameters, prefix, line);
+            Add(parameters, prefix + nameof(LineGaugeProperty.PRJ_PORALITY), line.PRJ_PORALITY);
+            Add(parameters, prefix + nameof(LineGaugeProperty.PRJ_DIR), line.PRJ_DIR);
+            Add(parameters, prefix + nameof(LineGaugeProperty.CONTRAST), line.CONTRAST);
+            Add(parameters, prefix + nameof(LineGaugeProperty.THICKNESS), line.THICKNESS);
+            Add(parameters, prefix + nameof(LineGaugeProperty.SAMPLING_STEP), line.SAMPLING_STEP);
+            Add(parameters, prefix + nameof(LineGaugeProperty.VER_PRJ_DIR), line.VER_PRJ_DIR);
+            Add(parameters, prefix + nameof(LineGaugeProperty.POINT_RANGE), line.POINT_RANGE);
+            Add(parameters, prefix + nameof(LineGaugeProperty.USE_MANUAL_ANGLE), line.USE_MANUAL_ANGLE);
+            Add(parameters, prefix + nameof(LineGaugeProperty.MANUAL_ANGLE_VALUE), line.MANUAL_ANGLE_VALUE);
+            Add(parameters, prefix + nameof(LineGaugeProperty.USE_EXTEND_FIT_LINE), line.USE_EXTEND_FIT_LINE);
+            Add(parameters, prefix + nameof(LineGaugeProperty.EXTEND_FIT_LINE_VALUE), line.EXTEND_FIT_LINE_VALUE);
+            Add(parameters, prefix + nameof(LineGaugeProperty.AVERAGE_Diff), line.AVERAGE_Diff);
+            Add(parameters, prefix + nameof(LineGaugeProperty.USE_AVERAGE_FILTER), line.USE_AVERAGE_FILTER);
+            Add(parameters, prefix + nameof(LineGaugeProperty.AVERAGE_FILTER_TYPE), line.AVERAGE_FILTER_TYPE);
+            Add(parameters, prefix + nameof(LineGaugeProperty.SHOW_VERTICAL_LINE), line.SHOW_VERTICAL_LINE);
+            Add(parameters, prefix + nameof(LineGaugeProperty.SHOW_EDGE), line.SHOW_EDGE);
+            Add(parameters, prefix + nameof(LineGaugeProperty.SHOW_CONTOUR), line.SHOW_CONTOUR);
+            Add(parameters, prefix + nameof(LineGaugeProperty.SHOW_FITLINE), line.SHOW_FITLINE);
         }
 
         private static string GetToolType(OpenCvPropertyBase property)
@@ -213,6 +349,7 @@ namespace OpenVisionLab
             if (property is ContourProperty) { return "Contour"; }
             if (property is LineGaugeProperty) { return "LineGauge"; }
             if (property is MatchingProperty) { return "Matching"; }
+            if (property is EdgeBasedMatchingProperty) { return "EdgeBasedMatching"; }
             if (property is MeanProperty) { return "Mean"; }
             if (property is FeatureMatchingProperty) { return "FeatureMatching"; }
             return property.GetType().Name;

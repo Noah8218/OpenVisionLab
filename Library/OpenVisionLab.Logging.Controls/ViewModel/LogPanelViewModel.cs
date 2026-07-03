@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows.Input;
@@ -44,8 +45,8 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
         private bool isCompactLayout = true;
         private bool hasVisibleLogs;
         private string searchText = string.Empty;
-        private string summaryText = "0건";
-        private string latestSummaryText = "최근 이벤트 없음";
+        private string summaryText;
+        private string latestSummaryText;
 
         public LogPanelViewModel()
         {
@@ -57,6 +58,8 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
                         .Where(name => !string.Equals(name, LogCategory.All.ToString(), StringComparison.OrdinalIgnoreCase))));
             SelectedLevel = AnyFilter;
             SelectedType = AnyFilter;
+            summaryText = FormatCount(0);
+            latestSummaryText = T("Log.NoRecentEvent");
 
             OpenDirectoryCommand = new UiCommand(OpenLogFolder);
             ResetCommand = new UiCommand(Reset);
@@ -67,6 +70,7 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
             refreshTimer.Tick += RefreshTimer_Tick;
             refreshTimer.Start();
             QuickFilterRequested += OnQuickFilterRequested;
+            OpenVisionLanguageService.LanguageChanged += OnLanguageChanged;
         }
 
         public BulkObservableCollection<LogLine> Logs { get; } = new BulkObservableCollection<LogLine>();
@@ -98,11 +102,53 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
             }
         }
 
-        public string ModeButtonText => IsDetailedMode ? "요약" : "상세";
+        public string ModeButtonText => IsDetailedMode ? T("Log.SummaryMode") : T("Log.DetailMode");
 
-        public string HeaderText => IsDetailedMode ? "실행 로그 - 상세" : "실행 로그 - 요약";
+        public string HeaderText => IsDetailedMode ? T("Log.HeaderDetail") : T("Log.HeaderSummary");
 
         public string ActiveFilterText => BuildActiveFilterText();
+
+        public string ClearText => T("Log.Clear");
+
+        public string FolderText => T("Log.Folder");
+
+        public string AutoScrollText => T("Log.AutoScroll");
+
+        public string AllLogsText => T("Log.AllLogs");
+
+        public string LevelText => T("Log.Level");
+
+        public string AreaText => T("Log.Area");
+
+        public string EmptyText => T("Log.Empty");
+
+        public string EmptyTitleText => T("Log.EmptyTitle", LocalText("실행 로그 대기", "Run log is waiting"));
+
+        public string EmptyDetailText => T(
+            "Log.EmptyDetail",
+            LocalText(
+                "이미지 로드, Preview, Run, 도구 검증 이벤트가 여기에 표시됩니다.",
+                "Image load, Preview, Run, and tool verification events appear here."));
+
+        public string EmptyActionHintText => T(
+            "Log.EmptyActionHint",
+            LocalText(
+                "오류나 경고가 있으면 상세 모드에서 필터링할 수 있습니다.",
+                "Use Details mode to filter warnings and errors."));
+
+        public string ModeToolTip => T("Log.Tooltip.Mode");
+
+        public string ClearToolTip => T("Log.Tooltip.Clear");
+
+        public string FolderToolTip => T("Log.Tooltip.Folder");
+
+        public string AutoScrollToolTip => T("Log.Tooltip.AutoScroll");
+
+        public string SearchToolTip => T("Log.Tooltip.Search");
+
+        public string AllLogsToolTip => T("Log.Tooltip.AllLogs");
+
+        public string FilterComboToolTip => T("Log.Tooltip.FilterCombo");
 
         public string SelectedLevel
         {
@@ -203,9 +249,35 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
         public void Dispose()
         {
             QuickFilterRequested -= OnQuickFilterRequested;
+            OpenVisionLanguageService.LanguageChanged -= OnLanguageChanged;
             refreshTimer.Stop();
             refreshTimer.Tick -= RefreshTimer_Tick;
             logBufferReader.Dispose();
+        }
+
+        private void OnLanguageChanged(object sender, EventArgs e)
+        {
+            OnPropertyChanged(nameof(ModeButtonText));
+            OnPropertyChanged(nameof(HeaderText));
+            OnPropertyChanged(nameof(ActiveFilterText));
+            OnPropertyChanged(nameof(ClearText));
+            OnPropertyChanged(nameof(FolderText));
+            OnPropertyChanged(nameof(AutoScrollText));
+            OnPropertyChanged(nameof(AllLogsText));
+            OnPropertyChanged(nameof(LevelText));
+            OnPropertyChanged(nameof(AreaText));
+            OnPropertyChanged(nameof(EmptyText));
+            OnPropertyChanged(nameof(EmptyTitleText));
+            OnPropertyChanged(nameof(EmptyDetailText));
+            OnPropertyChanged(nameof(EmptyActionHintText));
+            OnPropertyChanged(nameof(ModeToolTip));
+            OnPropertyChanged(nameof(ClearToolTip));
+            OnPropertyChanged(nameof(FolderToolTip));
+            OnPropertyChanged(nameof(AutoScrollToolTip));
+            OnPropertyChanged(nameof(SearchToolTip));
+            OnPropertyChanged(nameof(AllLogsToolTip));
+            OnPropertyChanged(nameof(FilterComboToolTip));
+            UpdateSummaryText();
         }
 
         private void OnQuickFilterRequested(LogPanelQuickFilterRequest request)
@@ -451,8 +523,8 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
         {
             HasVisibleLogs = FilteredLogs.Count > 0;
             SummaryText = ShowEntireStream && string.IsNullOrWhiteSpace(SearchText)
-                ? $"{Logs.Count:0}건"
-                : $"{FilteredLogs.Count:0}/{Logs.Count:0}건";
+                ? FormatCount(Logs.Count)
+                : string.Format(CultureInfo.CurrentCulture, T("Log.FilteredCountFormat"), FilteredLogs.Count, Logs.Count);
             LatestSummaryText = BuildLatestSummaryText();
             OnPropertyChanged(nameof(ActiveFilterText));
         }
@@ -462,7 +534,7 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
             LogLine latest = FilteredLogs.LastOrDefault();
             if (latest == null)
             {
-                return "최근 이벤트 없음";
+                return T("Log.NoRecentEvent");
             }
 
             string category = latest.Category;
@@ -484,25 +556,25 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
             List<string> parts = new List<string>();
             if (ShowEntireStream)
             {
-                parts.Add("All Logs");
-                parts.Add("Filters off");
+                parts.Add(T("Log.AllLogs"));
+                parts.Add(T("Log.FiltersOff"));
             }
             else
             {
-                parts.Add("Filtered view");
+                parts.Add(T("Log.FilteredView"));
                 if (!IsAnyFilterText(SelectedType))
                 {
-                    parts.Add($"Area: {SelectedType}");
+                    parts.Add(string.Format(CultureInfo.CurrentCulture, T("Log.AreaFormat"), SelectedType));
                 }
 
                 if (!IsAnyFilterText(SelectedLevel))
                 {
-                    parts.Add($"Level: {SelectedLevel}");
+                    parts.Add(string.Format(CultureInfo.CurrentCulture, T("Log.LevelFormat"), SelectedLevel));
                 }
 
                 if (parts.Count == 1)
                 {
-                    parts.Add("No filter");
+                    parts.Add(T("Log.NoFilter"));
                 }
             }
 
@@ -514,10 +586,35 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
                     keyword = keyword.Substring(0, 24) + "...";
                 }
 
-                parts.Add($"Search: {keyword}");
+                parts.Add(string.Format(CultureInfo.CurrentCulture, T("Log.SearchFormat"), keyword));
             }
 
             return string.Join(" · ", parts);
+        }
+
+        private static string FormatCount(int count)
+        {
+            return string.Format(CultureInfo.CurrentCulture, T("Log.CountFormat"), count);
+        }
+
+        private static string T(string key)
+        {
+            return OpenVisionLanguageService.T(key);
+        }
+
+        private static string T(string key, string fallback)
+        {
+            string text = OpenVisionLanguageService.T(key);
+            return string.Equals(text, key, StringComparison.OrdinalIgnoreCase)
+                ? fallback ?? string.Empty
+                : text;
+        }
+
+        private static string LocalText(string korean, string english)
+        {
+            return OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.English
+                ? english ?? string.Empty
+                : korean ?? string.Empty;
         }
     }
 }

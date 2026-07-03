@@ -59,7 +59,7 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 								gl.Enable(OpenGL.GL_BLEND);
 								gl.BlendFunc(OpenGL.GL_SRC_ALPHA, OpenGL.GL_ONE_MINUS_SRC_ALPHA);
 
-								gl.Color(1f, 1f, 1f, param.IsTransParency ? param.TransParency : 1.0f);
+								gl.Color(1f, 1f, 1f, param.IsTransparent ? param.Opacity : 1.0f);
 								gl.BindTexture(OpenGL.GL_TEXTURE_2D, param.OriBackgroundTextureId);
 								DrawQuad(gl, param.GLDrawingTextureArea);
 
@@ -102,7 +102,6 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 						{
 							if (param.IsVisible)
 							{
-								//gl.Color(1.0f, 1.0f, 1.0f, param.IsTransParency ? param.TransParency : 1.0f);
 								gl.Color(1.0f, 1.0f, 1.0f, 1.0f);
 								if (param.IsRotated)
 								{

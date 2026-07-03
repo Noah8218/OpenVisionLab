@@ -15,12 +15,15 @@ AI Recipe의 목표는 LLM이 만든 XML을 그대로 신뢰하는 것이 아닙
 - ErrorCode, DiagnosticHint, SuggestedFix를 제공한다.
 - 직접 영향을 받는 dependent Step을 표시한다.
 - Copy AI Feedback으로 LLM에게 재시도 요청할 정보를 제공한다.
+- Safe Fix grid에서 적용 가능한 구조/파라미터 수정 후보를 체크하고 적용할 수 있다.
+- `Apply Fix`, `Apply + Preview` 흐름으로 XML을 직접 고치지 않고 재검증할 수 있다.
+- Acceptance limit 변경 후보는 기본 선택하지 않고, 사용자가 결과를 확인한 뒤 명시적으로 선택해야 한다.
 
 현재 한계:
 
-- 수정은 아직 text feedback 중심이다.
-- 사용자가 실패 Step의 핵심 파라미터를 바로 고치는 interactive surface가 부족하다.
-- Layer Flow 오류와 parameter 오류가 UI 상에서 같은 무게로 보일 수 있다.
+- Safe mechanical fix 중심이며, ROI 이동/확장이나 score/acceptance 완화 같은 의미 변경은 자동 적용하지 않는다.
+- 실패 유형별 전용 editor는 아직 제한적이다.
+- Good/Bad sample pair 기반으로 “이 수정이 실제로 맞는지” 자동 판정하는 흐름은 더 필요하다.
 
 ## Target UX
 
@@ -119,13 +122,13 @@ AI Recipe interactive edit은 다음 smoke/contract가 필요합니다.
 
 ## Implementation Order
 
-1. Add a read-only failed-step quick-fix panel.
-2. Add `Use Previous Output` and `Keep Branch` flow buttons.
-3. Add parameter patch fields for Threshold, Morphology, Contour, Blob, LineGauge.
-4. Add Apply Patch without rerun.
-5. Add Apply And Preview.
-6. Add smoke target for failed-step quick fix.
-7. Add LLM feedback contract for stable prior steps.
+1. Closed: read-only failed-step quick-fix context.
+2. Closed: `Use Previous Output`, `Keep Branch`, layer flow controls.
+3. Closed / Watch: safe mechanical parameter fixes for threshold/range/kernel/scale/sampling.
+4. Closed / Watch: Apply Fix without rerun.
+5. Closed / Watch: Apply + Preview.
+6. Next: failed-step quick fix contract should verify safe-fix grid state and default selection policy.
+7. Next: Good/Bad pair validation should guard any acceptance/score/ROI tuning suggestion.
 
 ## Non-goals
 

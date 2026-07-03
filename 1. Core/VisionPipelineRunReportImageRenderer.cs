@@ -20,18 +20,27 @@ namespace OpenVisionLab
             }
 
             Bitmap preview = new Bitmap(source);
+            RenderInPlace(preview, stepResult, index);
+            return preview;
+        }
+
+        public static void RenderInPlace(Bitmap target, VisionPipelineStepResult stepResult, int index)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
             VisionPipelineStepResultSummary summary = VisionPipelineResultSummaryService.CreateStepSummary(index, stepResult);
             Color overlayColor = ResolveOverlayColor(summary.Status);
             Color textBackColor = ResolveOverlayTextBackColor(summary.Status);
 
-            using (Graphics graphics = Graphics.FromImage(preview))
+            using (Graphics graphics = Graphics.FromImage(target))
             {
                 graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                DrawOverlays(graphics, stepResult?.ToolResult?.Overlays, preview.Size, overlayColor, textBackColor);
-                DrawStepBadge(graphics, stepResult?.Step, summary, preview.Size, textBackColor);
+                DrawOverlays(graphics, stepResult?.ToolResult?.Overlays, target.Size, overlayColor, textBackColor);
+                DrawStepBadge(graphics, stepResult?.Step, summary, target.Size, textBackColor);
             }
-
-            return preview;
         }
 
         private static void DrawOverlays(Graphics graphics, IEnumerable<VisionToolOverlay> overlays, Size imageSize, Color overlayColor, Color textBackColor)

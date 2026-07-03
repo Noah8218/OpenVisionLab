@@ -26,6 +26,24 @@ namespace OpenVisionLab
             AppUtil.InitDirectory($@"{RecipeRoot}\{recipeName}\PATTERN");
         }
 
+        public static string[] GetRecipeNames()
+        {
+            EnsureRoot();
+            string root = Path.Combine(AppPathService.StartupPath, RecipeRoot);
+            if (!Directory.Exists(root))
+            {
+                return new[] { "Default" };
+            }
+
+            string[] names = Directory.GetDirectories(root)
+                .Select(Path.GetFileName)
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .OrderBy(name => name, System.StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            return names.Length == 0 ? new[] { "Default" } : names;
+        }
+
         public static string GetPatternDirectory(string recipeName)
         {
             EnsureVisionWorkspace(recipeName);

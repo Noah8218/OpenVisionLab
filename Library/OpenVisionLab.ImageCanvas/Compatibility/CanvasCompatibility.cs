@@ -177,44 +177,46 @@ namespace OpenVisionLab.ImageCanvas.CanvasShapes
 
 		public void SetEditingType(float x, float y, float zoomScale, float handleSize)
 		{
-			float tolerance = GetHitTolerance(zoomScale, handleSize);
+			float cornerTolerance = GetCornerHitTolerance(zoomScale, handleSize);
+			float edgeTolerance = GetEdgeHitTolerance(zoomScale, handleSize);
 
-			if (Distance(x, y, Left, Top) <= tolerance)
-			{
-				EditingType = EditingType.LeftTop;
-			}
-			else if (Distance(x, y, Right, Top) <= tolerance)
-			{
-				EditingType = EditingType.RightTop;
-			}
-			else if (Distance(x, y, Right, Bottom) <= tolerance)
-			{
-				EditingType = EditingType.RightBottom;
-			}
-			else if (Distance(x, y, Left, Bottom) <= tolerance)
-			{
-				EditingType = EditingType.LeftBottom;
-			}
-			else if (Math.Abs(x - Left) <= tolerance && IsWithinVerticalRange(y, tolerance))
-			{
-				EditingType = EditingType.Left;
-			}
-			else if (Math.Abs(x - Right) <= tolerance && IsWithinVerticalRange(y, tolerance))
-			{
-				EditingType = EditingType.Right;
-			}
-			else if (Math.Abs(y - Top) <= tolerance && IsWithinHorizontalRange(x, tolerance))
-			{
-				EditingType = EditingType.Top;
-			}
-			else if (Math.Abs(y - Bottom) <= tolerance && IsWithinHorizontalRange(x, tolerance))
-			{
-				EditingType = EditingType.Bottom;
-			}
-			else if (Contain(x, y))
+			if (IsInsideRoiBody(x, y))
 			{
 				EditingType = EditingType.Move;
 			}
+			else if (Distance(x, y, Left, Top) <= cornerTolerance)
+			{
+				EditingType = EditingType.LeftTop;
+			}
+			else if (Distance(x, y, Right, Top) <= cornerTolerance)
+			{
+				EditingType = EditingType.RightTop;
+			}
+			else if (Distance(x, y, Right, Bottom) <= cornerTolerance)
+			{
+				EditingType = EditingType.RightBottom;
+			}
+			else if (Distance(x, y, Left, Bottom) <= cornerTolerance)
+			{
+				EditingType = EditingType.LeftBottom;
+			}
+			else if (Math.Abs(x - Left) <= edgeTolerance && IsWithinVerticalRange(y, edgeTolerance))
+			{
+				EditingType = EditingType.Left;
+			}
+			else if (Math.Abs(x - Right) <= edgeTolerance && IsWithinVerticalRange(y, edgeTolerance))
+			{
+				EditingType = EditingType.Right;
+			}
+			else if (Math.Abs(y - Top) <= edgeTolerance && IsWithinHorizontalRange(x, edgeTolerance))
+			{
+				EditingType = EditingType.Top;
+			}
+			else if (Math.Abs(y - Bottom) <= edgeTolerance && IsWithinHorizontalRange(x, edgeTolerance))
+			{
+				EditingType = EditingType.Bottom;
+			}
+			else if (Contain(x, y)) { EditingType = EditingType.Move; }
 			else
 			{
 				EditingType = EditingType.None;
@@ -232,13 +234,15 @@ namespace OpenVisionLab.ImageCanvas.CanvasShapes
 		{
 			if (IsEmpty()) return LineOverType.None;
 
-			float tolerance = GetHitTolerance(zoomScale, handleSize);
-			if (Distance(x, y, Left, Top) <= tolerance) return LineOverType.SizeNWSE;
-			if (Distance(x, y, Right, Bottom) <= tolerance) return LineOverType.SizeNWSE;
-			if (Distance(x, y, Right, Top) <= tolerance) return LineOverType.SizeNESE;
-			if (Distance(x, y, Left, Bottom) <= tolerance) return LineOverType.SizeNESE;
-			if ((Math.Abs(x - Left) <= tolerance || Math.Abs(x - Right) <= tolerance) && IsWithinVerticalRange(y, tolerance)) return LineOverType.VSplit;
-			if ((Math.Abs(y - Top) <= tolerance || Math.Abs(y - Bottom) <= tolerance) && IsWithinHorizontalRange(x, tolerance)) return LineOverType.HSplit;
+			float cornerTolerance = GetCornerHitTolerance(zoomScale, handleSize);
+			float edgeTolerance = GetEdgeHitTolerance(zoomScale, handleSize);
+			if (IsInsideRoiBody(x, y)) return LineOverType.Move2D;
+			if (Distance(x, y, Left, Top) <= cornerTolerance) return LineOverType.SizeNWSE;
+			if (Distance(x, y, Right, Bottom) <= cornerTolerance) return LineOverType.SizeNWSE;
+			if (Distance(x, y, Right, Top) <= cornerTolerance) return LineOverType.SizeNESE;
+			if (Distance(x, y, Left, Bottom) <= cornerTolerance) return LineOverType.SizeNESE;
+			if ((Math.Abs(x - Left) <= edgeTolerance || Math.Abs(x - Right) <= edgeTolerance) && IsWithinVerticalRange(y, edgeTolerance)) return LineOverType.VSplit;
+			if ((Math.Abs(y - Top) <= edgeTolerance || Math.Abs(y - Bottom) <= edgeTolerance) && IsWithinHorizontalRange(x, edgeTolerance)) return LineOverType.HSplit;
 			return Contain(x, y) ? LineOverType.Move2D : LineOverType.None;
 		}
 
@@ -272,14 +276,28 @@ namespace OpenVisionLab.ImageCanvas.CanvasShapes
 
 		private static float Clamp(float value, float min, float max) => Math.Max(min, Math.Min(max, value));
 		private static float Distance(float x1, float y1, float x2, float y2) => (float)Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2));
+		private bool IsInsideRoiBody(float x, float y) => x > Left && x < Right && y > Bottom && y < Top;
 		private bool IsWithinHorizontalRange(float x, float tolerance) => x >= Left - tolerance && x <= Right + tolerance;
 		private bool IsWithinVerticalRange(float y, float tolerance) => y >= Bottom - tolerance && y <= Top + tolerance;
 
-		private float GetHitTolerance(float zoomScale, float handleSize)
+		private float GetBaseHitTolerance(float zoomScale, float handleSize)
 		{
 			float effectiveHandleSize = Math.Max(handleSize, LineWidth);
 			float scaleAdjustedSize = effectiveHandleSize / Math.Max(zoomScale, 0.0001f);
-			return Math.Max(8.0f, scaleAdjustedSize);
+			float desiredSize = Math.Max(4.0f, scaleAdjustedSize);
+			float roiLimitedSize = Math.Max(1.0f, Math.Min(Width, Height) * 0.22f);
+			return Math.Min(desiredSize, roiLimitedSize);
+		}
+
+		private float GetCornerHitTolerance(float zoomScale, float handleSize)
+		{
+			return Math.Min(GetBaseHitTolerance(zoomScale, handleSize), 10.0f);
+		}
+
+		private float GetEdgeHitTolerance(float zoomScale, float handleSize)
+		{
+			float roiLimitedSize = Math.Max(1.0f, Math.Min(Width, Height) * 0.12f);
+			return Math.Min(Math.Min(GetBaseHitTolerance(zoomScale, handleSize), roiLimitedSize), 6.0f);
 		}
 
 		private static EditingType GetEditingTypeFromLineOver(LineOverType type)

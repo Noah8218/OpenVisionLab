@@ -14,6 +14,8 @@ namespace OpenVisionLab
 
     internal static class VisionPipelineNormalizer
     {
+        public const string AllowBranchInputParameter = "ALLOW_BRANCH_INPUT";
+
         public static IReadOnlyList<VisionPipelineNormalizationChange> NormalizeForRun(VisionPipeline pipeline)
         {
             IReadOnlyList<VisionPipelineNormalizationChange> linkChanges = NormalizeLikelySequentialLinks(pipeline);
@@ -73,6 +75,7 @@ namespace OpenVisionLab
                 || step == null
                 || !step.Enabled
                 || string.IsNullOrWhiteSpace(step.InputLayer)
+                || IsBranchInputAllowed(step)
                 || !IsPrimarySourceLayer(step.InputLayer)
                 || !TryGetPreviousEnabledStep(pipeline, stepIndex, out VisionPipelineStep previousStep)
                 || string.IsNullOrWhiteSpace(previousStep?.OutputLayer))
@@ -188,6 +191,12 @@ namespace OpenVisionLab
                 || GetBool(step, "USE_BITWISENOT", defaultValue: false);
         }
 
+        public static bool IsBranchInputAllowed(VisionPipelineStep step)
+        {
+            return GetBool(step, AllowBranchInputParameter, defaultValue: false)
+                || GetBool(step, "AllowBranchInput", defaultValue: false);
+        }
+
         public static bool IsOpenCvInspectionToolWithInternalThreshold(string normalizedToolType)
         {
             switch (normalizedToolType)
@@ -196,6 +205,13 @@ namespace OpenVisionLab
                 case "contour":
                 case "line":
                 case "linegauge":
+                case "linedistance":
+                case "linedistancegauge":
+                case "lineintersection":
+                case "lineintersectiongauge":
+                case "edgebasedmatching":
+                case "edgebasedtemplatematching":
+                case "edgetemplatematching":
                 case "mean":
                     return true;
                 default:
@@ -212,6 +228,7 @@ namespace OpenVisionLab
                 case "filter":
                 case "edgedetection":
                 case "edge":
+                case "arithmetic":
                     return true;
                 default:
                     return false;
@@ -226,6 +243,11 @@ namespace OpenVisionLab
                 case "contour":
                 case "line":
                 case "linegauge":
+                case "linedistance":
+                case "linedistancegauge":
+                case "edgebasedmatching":
+                case "edgebasedtemplatematching":
+                case "edgetemplatematching":
                 case "mean":
                     return true;
                 default:

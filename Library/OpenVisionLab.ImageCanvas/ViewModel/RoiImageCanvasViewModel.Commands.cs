@@ -5,6 +5,7 @@ using OpenVisionLab.ImageCanvas.Commands;
 using OpenVisionLab.ImageCanvas.SharedViewModels;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Windows.Input;
 
 namespace OpenVisionLab.ImageCanvas.ViewModels
@@ -28,6 +29,7 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 		{
 			LoadedCommand = new RelayCommand(() => Loaded());
 			SaveImageCommand = new RelayCommand(() => OnSaveIamge());
+			FitImageCommand = new RelayCommand(FitImageToView);
 			RightClickCommand = new RelayCommand(ExecuteRightClickCommand);
 			LoadImageCommand = new RelayCommand(OpenLoadImage);
 			TeachingCommand = new RelayCommand(ChangeTeachingMode);
@@ -41,7 +43,30 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 
 		private void OnSaveIamge()
 		{
-			// Reserved for a future texture/image export command.
+			if (_currentImageMat == null || _currentImageMat.Empty())
+			{
+				return;
+			}
+
+			SaveFileDialog saveFileDialog = new SaveFileDialog
+			{
+				Title = "Save Image",
+				Filter = "PNG (*.png)|*.png|Bitmap (*.bmp)|*.bmp|JPEG (*.jpg)|*.jpg;*.jpeg|TIFF (*.tif)|*.tif;*.tiff",
+				FileName = CreateDefaultSaveFileName(),
+				InitialDirectory = ResolveImageDialogDirectory(),
+				AddExtension = true,
+				DefaultExt = ".png"
+			};
+
+			if (saveFileDialog.ShowDialog() != true)
+			{
+				return;
+			}
+
+			if (SaveCurrentImage(saveFileDialog.FileName))
+			{
+				lastImageDirectory = Path.GetDirectoryName(saveFileDialog.FileName);
+			}
 		}
 
 		private void OnPreviewKeyUp(KeyEventArgs args)
@@ -142,7 +167,8 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 		{
 			OpenFileDialog openFileDialog = new OpenFileDialog
 			{
-				Filter = "Image files (*.bmp;*.jpg;*.jpeg;*.png;*.gif)|*.bmp;*.jpg;*.jpeg;*.png;*.gif|All files (*.*)|*.*"
+				Filter = "Image files (*.bmp;*.jpg;*.jpeg;*.png;*.gif;*.tif;*.tiff)|*.bmp;*.jpg;*.jpeg;*.png;*.gif;*.tif;*.tiff|All files (*.*)|*.*",
+				InitialDirectory = ResolveImageDialogDirectory()
 			};
 
 			if (openFileDialog.ShowDialog() != true)
@@ -157,8 +183,77 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 				Console.WriteLine($"LoadMatFromFile : {stopwatch.ElapsedMilliseconds}");
 				Stopwatch stopwatch2 = Stopwatch.StartNew();
 				LoadImage(mat, fileName);
+				lastImageDirectory = Path.GetDirectoryName(fileName);
 				Console.WriteLine($"LoadImage : {stopwatch2.ElapsedMilliseconds}");
 			}
+		}
+
+		private static string lastImageDirectory;
+
+		private string CreateDefaultSaveFileName()
+		{
+			string name = string.IsNullOrWhiteSpace(_currentImageName) ? "Image" : _currentImageName;
+			foreach (char invalid in Path.GetInvalidFileNameChars())
+			{
+				name = name.Replace(invalid, '_');
+			}
+
+			return name + ".png";
+		}
+
+		private static string ResolveImageDialogDirectory()
+		{
+			if (IsDirectory(lastImageDirectory))
+			{
+				return lastImageDirectory;
+			}
+
+			string sampleDirectory = ResolveSampleImageDirectory();
+			if (IsDirectory(sampleDirectory))
+			{
+				return sampleDirectory;
+			}
+
+			if (IsDirectory(AppDomain.CurrentDomain.BaseDirectory))
+			{
+				return AppDomain.CurrentDomain.BaseDirectory;
+			}
+
+			string pictures = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+			return IsDirectory(pictures) ? pictures : Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+		}
+
+		private static string ResolveSampleImageDirectory()
+		{
+			foreach (string root in new[] { AppDomain.CurrentDomain.BaseDirectory, Directory.GetCurrentDirectory() })
+			{
+				if (!IsDirectory(root))
+				{
+					continue;
+				}
+
+				DirectoryInfo directory = new DirectoryInfo(root);
+				while (directory != null)
+				{
+					foreach (string sampleName in new[] { "Sample", "Samples", "samples" })
+					{
+						string candidate = Path.Combine(directory.FullName, sampleName);
+						if (IsDirectory(candidate))
+						{
+							return candidate;
+						}
+					}
+
+					directory = directory.Parent;
+				}
+			}
+
+			return null;
+		}
+
+		private static bool IsDirectory(string path)
+		{
+			return !string.IsNullOrWhiteSpace(path) && Directory.Exists(path);
 		}
 	}
 }

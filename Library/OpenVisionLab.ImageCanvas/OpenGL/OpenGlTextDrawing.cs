@@ -17,7 +17,8 @@ using System.Windows.Media;
 namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 {
 	public static partial class OpenGlDrawing
-	{		public static void DrawText(OpenGL gl, List<OpenGlFontBitmapEntry> fontBitmapEntries, float xSpan, float ySpan, SizeF offsetSize, float x, float y, System.Drawing.Color color, string faceName, float baseFontSize, string text)
+	{
+		public static void DrawText(OpenGL gl, List<OpenGlFontBitmapEntry> fontBitmapEntries, float xSpan, float ySpan, SizeF offsetSize, float x, float y, System.Drawing.Color color, string faceName, float baseFontSize, string text)
 		{
 			float r, g, b, a = 1.0f;
 			(r, g, b, a) = ConvertColorToOpenGLRGB(color);
@@ -68,7 +69,6 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 
 			//  Call the lists for the string.
 			gl.CallLists(lists.Length, lists);
-			//gl.Flush();
 
 			//  Reset the list bit.
 			gl.PopAttrib();
@@ -245,11 +245,5 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 			gl.DrawText(x, y, r, g, b, faceName, fontSize / zoomScale, text);
 		}
 
-		public static void DrawText(OpenGL gl, int x, int y, string text)
-		{
-			//var LocationX = (x + _offsetSize.Width) / _zoom * GetControlMinSize();
-			//var LocationY = -1 * (_offsetSize.Height - y) / _zoom * GetControlMinSize();
-			//gl.DrawText((int)LocationX, (int)LocationY, 0.0f, 256.0f, 0.0f, "Arial", 10, text);
-		}
 	}
 }

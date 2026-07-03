@@ -18,6 +18,7 @@ namespace OpenVisionLab
                 repository.Lines_R.Add(new LineGaugeProperty($"Line(R)_{i + 1}").LoadConfig(recipeName));
                 repository.Lines_TOP.Add(new LineGaugeProperty($"Line(TOP)_{i + 1}").LoadConfig(recipeName));
                 repository.Matchings.Add(new MatchingProperty($"Matching_{i + 1}").LoadConfig(recipeName));
+                repository.EdgeBasedMatchings.Add(new EdgeBasedMatchingProperty($"EdgeBasedMatching_{i + 1}").LoadConfig(recipeName));
                 repository.Features.Add(new FeatureMatchingProperty($"Feature_{i + 1}").LoadConfig(recipeName));
             }
 
@@ -61,6 +62,11 @@ namespace OpenVisionLab
                 property.SaveConfig(recipeName);
             }
 
+            foreach (EdgeBasedMatchingProperty property in repository.EdgeBasedMatchings)
+            {
+                property.SaveConfig(recipeName);
+            }
+
             repository.PropertyVision.SaveConfig(recipeName);
         }
 
@@ -72,6 +78,7 @@ namespace OpenVisionLab
             repository.Lines_R.Clear();
             repository.Lines_TOP.Clear();
             repository.Matchings.Clear();
+            repository.EdgeBasedMatchings.Clear();
             repository.Features.Clear();
         }
     }

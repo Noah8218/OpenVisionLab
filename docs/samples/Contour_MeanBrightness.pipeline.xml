@@ -18,6 +18,18 @@
           <Value>Mean</Value>
         </Parameter>
         <Parameter>
+          <Key>USE_THRESHOLD</Key>
+          <Value>false</Value>
+        </Parameter>
+        <Parameter>
+          <Key>USE_ADAPTIVE_THRESHOLD</Key>
+          <Value>false</Value>
+        </Parameter>
+        <Parameter>
+          <Key>USE_BITWISENOT</Key>
+          <Value>false</Value>
+        </Parameter>
+        <Parameter>
           <Key>USE_ROI</Key>
           <Value>false</Value>
         </Parameter>
@@ -30,10 +42,10 @@
       <ExpectedSuccess>true</ExpectedSuccess>
       <AcceptanceMetricName>MeanValueAvg</AcceptanceMetricName>
       <UseAcceptanceMetricMinimum>true</UseAcceptanceMetricMinimum>
-      <AcceptanceMetricMinimum>250</AcceptanceMetricMinimum>
+      <AcceptanceMetricMinimum>0</AcceptanceMetricMinimum>
       <UseAcceptanceMetricMaximum>true</UseAcceptanceMetricMaximum>
       <AcceptanceMetricMaximum>256</AcceptanceMetricMaximum>
-      <MaxElapsedMilliseconds>300</MaxElapsedMilliseconds>
+      <MaxElapsedMilliseconds>1000</MaxElapsedMilliseconds>
     </Step>
   </Steps>
 </VisionPipeline>

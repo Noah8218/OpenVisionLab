@@ -149,7 +149,8 @@ Result-list metrics should expose both the total count and aggregate values wher
 - Score tools: `ScoreMin`, `ScoreMax`, `ScoreAvg`
 - Angle tools: `AngleMin`, `AngleMax`, `AngleAvg`
 - Line tools: `EdgeCount`, `EdgeCountMin`, `EdgeCountMax`, `EdgeCountAvg`, `EdgePointCount`, `EdgePointCountMin`, `EdgePointCountMax`, `EdgePointCountAvg`, `LineLengthMin`, `LineLengthMax`, `LineLengthAvg`, `LineLengthMmMin`, `LineLengthMmMax`, `LineLengthMmAvg`
-- Measurement metrics: when `PIXELPERMM` is available, rectangle and line overlays also expose `BoundsWidthMm*`, `BoundsHeightMm*`, and `LineLengthMm*` values.
+- LineDistance tools: `DistanceCount`, `DistancePxMin`, `DistancePxMax`, `DistancePxAvg`, `DistanceMmMin`, `DistanceMmMax`, `DistanceMmAvg`
+- Measurement metrics: when `PIXELPERMM` is available, rectangle and line overlays also expose `BoundsWidthMm*`, `BoundsHeightMm*`, and `LineLengthMm*` values. Use `LineLengthMm*` for fitted line length only; use `DistanceMm*` for edge-to-edge spacing.
 
 Matching must not report the same physical location repeatedly when `NUM_MATCH > 1`. Candidate suppression should remove the matched region before the next search, and high-score candidates from flat/background regions should be rejected when the candidate image differs too much from the template.
 
@@ -163,7 +164,7 @@ Acceptance should use standard metrics only. A first-pass recipe should prefer l
 - Text/symbol candidates: `ResultCount` loose range
 - Matching: `ScoreMax >= threshold`
 - Line/edge: `EdgeCount >= 1`
-- Distance/size: `LineLengthMmMax`, `BoundsWidthMmMax`, or `BoundsHeightMmMax` after `PIXELPERMM` is set
+- Distance/size: `DistanceMmAvg` or `DistanceMmMin/Max` for edge-to-edge spacing, `BoundsWidthMmMax` or `BoundsHeightMmMax` for object box size, and `LineLengthMmMax` only for fitted line length after `PIXELPERMM` is set
 - Brightness: `MeanValueAvg` min/max
 
 ## Status Meaning

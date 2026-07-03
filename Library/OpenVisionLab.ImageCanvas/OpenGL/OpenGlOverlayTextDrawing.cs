@@ -97,47 +97,6 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 
 				return gtexture[0];
 			}
-
-			//SizeF textSize;
-			//using (var tempBitmap = new Bitmap(1, 1))
-			//{
-			//	using (var g = Graphics.FromImage(tempBitmap))
-			//	{
-			//		textSize = g.MeasureString(text, font);
-			//	}
-			//}
-
-			//using (Bitmap bitmap = new Bitmap((int)textSize.Width, (int)textSize.Height))
-			//{
-			//	using (Graphics graphics = Graphics.FromImage(bitmap))
-			//	{
-			//		graphics.Clear(Color.Transparent);
-
-			//		using (Brush brush = new SolidBrush(textColor))
-			//		{
-			//			graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-			//			StringFormat stringFormat = new StringFormat();
-			//			stringFormat.FormatFlags = StringFormatFlags.NoClip;
-			//			//graphics.DrawString(text, font, brush, new PointF(0, 0), stringFormat);
-			//			TextRenderer.DrawText(graphics, text, font, new Point(0, 0), textColor);
-			//		}
-			//	}
-			//	bitmap.RotateFlip(RotateFlipType.RotateNoneFlipY);
-
-			//	uint[] gtexture = new uint[1];
-			//	gl.GenTextures(1, gtexture);
-			//	gl.BindTexture(OpenGL.GL_TEXTURE_2D, gtexture[0]);
-
-			//	gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MIN_FILTER, OpenGL.GL_LINEAR);
-			//	gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MAG_FILTER, OpenGL.GL_LINEAR);
-			//	gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_WRAP_S, OpenGL.GL_CLAMP_TO_EDGE);
-			//	gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_WRAP_T, OpenGL.GL_CLAMP_TO_EDGE);
-
-			//	BitmapData data = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-			//	gl.TexImage2D(OpenGL.GL_TEXTURE_2D, 0, (int)OpenGL.GL_RGBA, bitmap.Width, bitmap.Height, 0, OpenGL.GL_BGRA, OpenGL.GL_UNSIGNED_BYTE, data.Scan0);
-			//	bitmap.UnlockBits(data);
-
-			//}
 		}
 	}
 }

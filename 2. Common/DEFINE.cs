@@ -1,4 +1,3 @@
-﻿using RJCodeUI_M1.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -162,13 +161,15 @@ namespace OpenVisionLab
             Blob,
             Contour,
             Matching,
+            EdgeBasedMatching,
             Line,
             RotateAndScale,
             Histogram,
             Mean,
             HSV,
             FeatureMatching,
-            Pipeline
+            Pipeline,
+            Threshold
         }
 
         public enum PROCESS_TYPES

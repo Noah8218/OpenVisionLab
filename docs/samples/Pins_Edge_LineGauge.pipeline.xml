@@ -110,11 +110,11 @@
       </Parameters>
       <UseAcceptance>true</UseAcceptance>
       <ExpectedSuccess>true</ExpectedSuccess>
-      <AcceptanceMetricName>EdgeCount</AcceptanceMetricName>
+      <AcceptanceMetricName>LineAngleAvg</AcceptanceMetricName>
       <UseAcceptanceMetricMinimum>true</UseAcceptanceMetricMinimum>
-      <AcceptanceMetricMinimum>20</AcceptanceMetricMinimum>
+      <AcceptanceMetricMinimum>-2</AcceptanceMetricMinimum>
       <UseAcceptanceMetricMaximum>true</UseAcceptanceMetricMaximum>
-      <AcceptanceMetricMaximum>60</AcceptanceMetricMaximum>
+      <AcceptanceMetricMaximum>2</AcceptanceMetricMaximum>
       <MaxElapsedMilliseconds>300</MaxElapsedMilliseconds>
     </Step>
   </Steps>

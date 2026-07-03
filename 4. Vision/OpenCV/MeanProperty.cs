@@ -12,14 +12,14 @@ namespace OpenVisionLab
     public class MeanProperty : OpenCvPropertyBase, IOpenCVPropertyMean, IOpenCvConfigurableProperty<MeanProperty>
     {        
         [PropertyOrder(1)]
-        [Browsable(false)]
+        [Browsable(true)]
         [CategoryAttribute("Mean"), DescriptionAttribute(""), DisplayNameAttribute("Max mean")]
         public int MEAN_MAX { get; set; } = 240;
 
         [PropertyOrder(0)]
         [PropertyEditor(typeof(WpgRangeEditor))]
         [RangeEditor(0, 255, 1, 0, nameof(MEAN_MIN), nameof(MEAN_MAX))]
-        [CategoryAttribute("Mean"), DescriptionAttribute("Mean 판정에 사용할 GV 범위입니다."), DisplayNameAttribute("Mean range")]
+        [CategoryAttribute("Mean"), DescriptionAttribute("Mean 판정에 사용할 최소 GV 값입니다."), DisplayNameAttribute("Min mean")]
         public int MEAN_MIN { get; set; } = 100;
 
         [PropertyOrder(2)]

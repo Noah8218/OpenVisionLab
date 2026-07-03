@@ -28,16 +28,48 @@ namespace OpenVisionLab
             }
 
             string recipeName = PropertyGridEditorFactory.GetRecipeName();
-            if (string.IsNullOrWhiteSpace(recipeName))
+            return AddStep(step, recipeName, DefaultPipelineName);
+        }
+
+        public static VisionPipelineStep AddStep(VisionPipelineStep step, OpenVisionRecipeContext recipeContext)
+        {
+            if (recipeContext == null)
             {
-                recipeName = "Default";
+                return AddStep(step);
             }
 
-            VisionPipeline pipeline = VisionPipelineStorage.Load(recipeName, DefaultPipelineName);
+            return AddStep(step, recipeContext.Name, recipeContext.PipelineName);
+        }
+
+        public static VisionPipelineStep AddStep(VisionPipelineStep step, string recipeName, string pipelineName)
+        {
+            if (step == null)
+            {
+                throw new ArgumentNullException(nameof(step));
+            }
+
+            string targetRecipeName = Normalize(recipeName, "Default");
+            string targetPipelineName = Normalize(pipelineName, DefaultPipelineName);
+            VisionPipeline pipeline = VisionPipelineStorage.Load(targetRecipeName, targetPipelineName);
+            if (pipeline == null)
+            {
+                pipeline = new VisionPipeline { Name = targetPipelineName };
+            }
+
+            if (string.IsNullOrWhiteSpace(pipeline.Name))
+            {
+                pipeline.Name = targetPipelineName;
+            }
+
             EnsureUniqueStepName(pipeline, step);
             pipeline.Steps.Add(step);
-            VisionPipelineStorage.Save(recipeName, pipeline);
+            VisionPipelineStorage.Save(targetRecipeName, pipeline);
             return step;
+        }
+
+        private static string Normalize(string value, string fallback)
+        {
+            return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
         }
 
         private static void EnsureUniqueStepName(VisionPipeline pipeline, VisionPipelineStep step)

@@ -1,143 +1,256 @@
-# OpenVisionLab Tutorial
+# OpenVisionLab 튜토리얼 가이드
 
-Updated: 2026-06-16
+Updated: 2026-07-02
 
-OpenVisionLab은 OpenCVSharp 기반의 Rule-based Vision Workbench입니다. 이 튜토리얼은 처음 사용하는 사용자가 이미지 한 장을 불러오고, Tool을 조정하고, Pipeline Recipe로 저장한 뒤, 결과를 검증하는 기본 흐름을 설명합니다.
+이 문서는 OpenVisionLab을 처음 실행한 사용자가 샘플 이미지를 열고, Tool을 실행하고, Pipeline Review에서 OK/NG 이유를 확인할 수 있도록 정리한 가이드입니다.
 
-사용자에게 보여줄 기본 문서는 이미지가 포함된 `OPENVISIONLAB_TUTORIAL.html`입니다. 이 Markdown 문서는 내용 유지보수와 Git diff 확인을 위한 원본 성격으로 둡니다.
+OpenVisionLab은 OpenCvSharp4 기반의 룰베이스 비전 검사 워크벤치입니다.
+핵심은 “검사가 됐다/안 됐다”에서 끝내는 것이 아니라, 어떤 이미지에서 어떤 Tool을 어떤 순서로 적용했고 어떤 metric 때문에 OK/NG가 되었는지 설명하는 것입니다.
 
-## 0. 처음 보는 순서
+이 문서를 따라 하면 다음 흐름을 익힐 수 있습니다.
 
-처음 사용하는 사용자는 모든 기능을 한 번에 보려고 하지 말고 아래 순서로 확인하는 것이 좋습니다.
+```text
+샘플 열기
+  -> Layer 확인
+  -> Tool 선택
+  -> Preview 실행
+  -> Output Layer 확인
+  -> Pipeline Review 실행
+  -> Good/Bad 샘플로 기준 확인
+```
 
-| 순서 | 화면 | 목적 |
-| --- | --- | --- |
-| 1 | Main Workspace | 이미지를 불러오고 현재 Layer, 결과, 로그 위치를 이해한다. |
-| 2 | Threshold Tool | Input Source와 Output Result를 나누어 전처리 결과를 만든다. |
-| 3 | 검사 Form | Contour, Blob, Matching, FeatureMatching, LineGauge 같은 Tool을 단독으로 티칭한다. |
-| 4 | Pipeline Form | 티칭한 조건을 Step으로 연결하고 Input/Output 흐름을 확인한다. |
-| 5 | Sample Catalog | 샘플 이미지, 추천 Pipeline, 기대 Metric을 함께 열어 기준 결과를 검증한다. |
-| 6 | AI Recipe | 이미지와 요구사항으로 생성된 XML을 Import하고 Preview로 검증한다. |
+## 1. 화면 구성 보기
 
-가장 중요한 규칙은 단순합니다.
+프로그램을 처음 열면 왼쪽에는 Tool 목록, 가운데에는 이미지 workspace, 상단에는 Layer와 실행 상태 영역이 보입니다.
 
-- `Main`은 기준 원본으로 유지한다.
-- Tool 결과는 별도 Output Layer에 만든다.
-- Pipeline에서는 이전 Step의 Output을 다음 Step의 Input으로 연결한다.
-- Preview는 확인이고 Publish는 Main Workspace 반영이다.
+![Main workspace walkthrough](assets/tutorial/annotated/main_workspace_callouts.png)
 
-## 1. 기본 개념
+위 화면은 다음 순서로 보면 됩니다.
 
-OpenVisionLab에서 가장 중요한 개념은 세 가지입니다.
+1. `Tool List`: 사용할 Tool을 선택합니다.
+2. `Layer Input`: 현재 기준 Layer가 무엇인지 확인합니다.
+3. `Image View`: 실제 이미지를 보고 zoom/pan으로 검사 위치를 확인합니다.
+4. `Run Status`: 선택한 Tool의 상태와 예상 output 경로를 봅니다.
+5. `Quick Actions`: 현재 Layer에서 바로 실행할 수 있는 주요 Tool과 Pipeline 추가 흐름을 확인합니다.
 
-| 개념 | 설명 |
-| --- | --- |
-| Layer | 원본 이미지나 처리 결과 이미지를 담는 화면 단위입니다. |
-| Tool | Threshold, Morphology, Contour, Blob, Line 같은 단일 OpenCV 처리 또는 검사 기능입니다. |
-| Pipeline | 여러 Tool Step을 순서대로 연결한 검사 Recipe입니다. XML로 저장하고 다시 실행할 수 있습니다. |
+실행 로그는 기본적으로 접힌 상태로 둡니다.
+최근 상태만 보고 작업 공간을 넓게 쓰다가, 실패 원인이나 실행 이력이 필요할 때만 `로그 열기`로 펼쳐서 확인합니다.
 
-사용자는 항상 다음을 확인해야 합니다.
+![Run log collapsed walkthrough](assets/tutorial/annotated/run_log_collapsed_callouts.png)
 
-- 현재 어떤 Layer를 보고 있는가?
-- 현재 Step은 어떤 Input Layer를 읽는가?
-- 현재 Step은 어떤 Output Layer를 만드는가?
-- Run Preview인지, Publish Result인지?
-- 결과가 OK인지 NG인지, 그 이유는 무엇인지?
+1. `Run Log`: 실행 이벤트를 모아 보는 영역입니다.
+2. `Recent Summary`: 최근 이벤트의 요약을 접힌 상태에서도 확인합니다.
+3. `Log Count`: 현재 표시되는 로그 개수를 확인합니다.
+4. `Open Log`: 상세 로그가 필요할 때만 펼칩니다.
 
-## 2. 이미지 불러오기
+![Run log open walkthrough](assets/tutorial/annotated/run_log_open_callouts.png)
 
-1. Main Workspace를 연다.
-2. Main 레이어에 이미지를 불러온다.
-3. 오른쪽 `레이어 / 결과` 영역에서 Main 레이어와 이미지 크기를 확인한다.
-4. 필요하면 새 레이어를 만든다.
-5. 상단 상태바에서 활성 레이어와 입력 기준을 확인한다.
+1. `Run Log`: 상세 실행 로그가 열린 상태입니다.
+2. `Recent Events`: 이미지 로드, Preview, Run, Tool 검증 이벤트를 확인합니다.
+3. `Log Count`: 필터링된 로그 개수를 봅니다.
+4. `Close Log`: 확인이 끝나면 다시 접어서 workspace를 넓게 씁니다.
 
-기대 상태:
+처음에는 직접 이미지를 고르기보다 공개용 샘플로 시작하는 편이 좋습니다.
+샘플에는 이미지, 추천 Pipeline, expected metric, Good/Bad 기준이 같이 들어 있어서 어떤 결과가 정상인지 바로 확인할 수 있습니다.
 
-- Main 레이어가 기준 이미지로 표시된다.
-- 이미지 크기가 오른쪽 레이어 목록에 보인다.
-- 하단 로그에는 이미지 로드 또는 레이어 변경 로그가 남는다.
+## 2. 샘플로 시작하기
 
-## 2-1. 여러 레이어로 이미지 비교하기
+Sample Catalog는 OpenVisionLab의 학습과 검증 기준입니다.
+공개 튜토리얼에서는 `docs/samples/public` 아래의 synthetic 샘플을 사용합니다.
 
-OpenVisionLab은 하나의 이미지만 보는 프로그램이 아니라, 원본과 처리 결과를 여러 레이어로 나누어 비교하는 프로그램입니다.
+현재 공개 catalog는 `docs/samples/OpenVisionLab.PublicSampleCatalog.csv`입니다.
+8개 Tool 흐름마다 Good/Bad pair를 가지고 있어서, 같은 Pipeline으로 정상 OK와 controlled NG 사유를 함께 확인할 수 있습니다.
 
-기본 비교 흐름:
+| 배우고 싶은 내용 | Good 샘플 | Bad 샘플 | 보는 metric |
+| --- | --- | --- | --- |
+| Matching으로 대상 찾기 | `Public_Matching_DiePad_Good` | `Public_Matching_DiePad_NoTarget_Bad` | `ResultCount`, `ScoreMax` |
+| Blob으로 여러 입자 세기 | `Public_Blob_Particles_Good` | `Public_Blob_Particles_Sparse_Bad` | `ResultCount` |
+| Contour로 모양 개수 보기 | `Public_Contour_Shapes_Good` | `Public_Contour_Shapes_Missing_Bad` | `ResultCount` |
+| Threshold로 밝은 pad 분리 | `Public_Threshold_BandPads_Good` | `Public_Threshold_BandPads_Missing_Bad` | `ResultCount` |
+| Mean으로 밝기 drift 보기 | `Public_Mean_Brightness_Good` | `Public_Mean_Brightness_Dark_Bad` | `MeanValueAvg` |
+| FeatureMatching 점수 비교 | `Public_Feature_Card_Good` | `Public_Feature_Card_Wrong_Bad` | `ScoreMax`, `ResultCount` |
+| EdgeBasedMatching 형상 비교 | `Public_Edge_Fiducial_Good` | `Public_Edge_Fiducial_Wrong_Bad` | `ScoreMax`, `ResultCount` |
+| LineGauge로 거리 보기 | `Public_Line_Pins_Good` | `Public_Line_Pins_WidePin_Bad` | `DistanceMmAvg` |
 
-1. `Main` 레이어에는 기준 원본 이미지를 유지한다.
-2. Threshold 결과는 `Threshold`, `TextSymbol_Binary`, `Pin_Edge`처럼 별도 Output Layer에 만든다.
-3. Morphology 결과는 `Clean`, `Morphology`, `TextSymbol_Clean`처럼 다음 레이어에 만든다.
-4. Contour, Blob, LineGauge, Matching 결과는 `*_Contour`, `*_Blob`, `*_Line`, `*_Match`처럼 검출 목적이 드러나는 이름으로 만든다.
-5. 오른쪽 `레이어 / 결과` 목록에서 각 레이어를 선택해 원본, 전처리 결과, 최종 검출 결과를 비교한다.
+![Public sample catalog walkthrough](assets/tutorial/annotated/sample_catalog_public_callouts.png)
 
-레이어 비교 시 확인할 것:
+Sample Catalog 화면은 다음 순서로 봅니다.
 
-- 원본 `Main`이 의도 없이 덮어써지지 않았는가?
-- Threshold 결과가 검출 대상과 배경을 제대로 분리했는가?
-- Morphology 결과에서 노이즈는 줄었지만 필요한 대상이 사라지지 않았는가?
-- 최종 검사 결과 레이어에 Overlay, Box, Line, Score, Metric이 남는가?
-- Pipeline의 각 Step이 이전 Step Output을 읽는지, 의도적으로 Branch를 만드는지 이해되는가?
+1. `Public Source`: 공개 튜토리얼에서 사용할 수 있는 샘플 기준입니다.
+2. `Learn Path`: Matching, Blob, LineGauge, Good/Bad 비교처럼 처음 볼 흐름을 좁힙니다.
+3. `Good/Bad List`: 같은 Pipeline으로 비교할 정상/불량 샘플을 고릅니다.
+4. `Preview`: 선택한 샘플 이미지를 먼저 확인합니다.
+5. `Decision Guide`: 어떤 metric으로 OK/NG를 볼지 확인합니다.
+6. `Open Sample`: 샘플과 권장 Pipeline을 현재 workspace에 엽니다.
 
-권장 레이어 이름:
+샘플을 열었다고 바로 Preview/Run이 실행되는 것은 아닙니다.
+Tool Preview나 Pipeline Review는 사용자가 직접 실행해야 결과가 계산됩니다.
 
-| 목적 | 예시 |
-| --- | --- |
-| 원본 | `Main` |
-| 이진화 | `Text_Binary`, `Pin_Binary`, `Surface_Binary` |
-| 노이즈 정리 | `Text_Clean`, `Pin_Clean`, `Surface_Clean` |
-| 최종 검출 | `Text_Contour`, `Pin_Line`, `Part_Blob`, `Mark_Match` |
-| 최종 확인 이미지 | `Review`, `Overlay`, `Final_Result` |
+툴별로 따라 할 때는 아래 Learn 문서를 먼저 보는 것이 좋습니다.
 
-중요한 원칙:
+- [Matching 배우기](learn/LEARN_MATCHING.md)
+- [Blob으로 입자 세기](learn/LEARN_BLOB.md)
+- [Contour로 모양 개수 보기](learn/LEARN_CONTOUR.md)
+- [Threshold로 밝은 영역 분리](learn/LEARN_THRESHOLD.md)
+- [Mean으로 밝기 drift 보기](learn/LEARN_MEAN.md)
+- [FeatureMatching 점수 비교](learn/LEARN_FEATURE_MATCHING.md)
+- [EdgeBasedMatching 형상 비교](learn/LEARN_EDGE_BASED_MATCHING.md)
+- [LineGauge로 거리 보기](learn/LEARN_LINE.md)
 
-- Tool Form에서 테스트할 때도 Input Layer와 Output Layer를 명확히 나눈다.
-- Pipeline에서는 Step마다 Input/Output pill을 보고 흐름을 확인한다.
-- 사용자가 결과를 비교해야 하는 경우에는 원본, 전처리, 최종 검출 레이어를 모두 남겨둔다.
+## 3. Matching 샘플 따라 하기
 
-## 3. Threshold Tool로 전처리하기
+처음에는 Matching 샘플이 전체 흐름을 이해하기 쉽습니다.
 
-Threshold Tool은 가장 기본적인 전처리 도구입니다.
+1. Sample Catalog에서 `Public_Matching_DiePad_Good`를 선택합니다.
+2. 샘플을 열어 `Main` Layer에 이미지가 들어왔는지 확인합니다.
+3. Tool List에서 `매칭`을 선택합니다.
+4. Input Layer가 `Main`인지 확인합니다.
+5. Output Layer를 `Matching_Preview`처럼 원본과 다른 이름으로 둡니다.
+6. Template 준비 상태를 확인합니다.
+7. `미리보기 실행`을 눌러 결과를 만듭니다.
+8. Output Layer와 overlay box가 실제 대상 위에 붙었는지 확인합니다.
+9. 괜찮으면 Pipeline Step으로 추가합니다.
+10. Pipeline Review에서 `리뷰 실행`을 눌러 같은 결과가 재현되는지 확인합니다.
 
-1. `Image Processing` 또는 Tool 메뉴에서 Threshold를 연다.
-2. `Input Source`를 선택한다.
-3. `Output Result`를 확인한다.
-4. 모드를 선택한다.
-   - `Basic`: 하나의 기준값으로 foreground/background를 나눈다.
-   - `Range`: Min/Max 범위 안의 밝기만 남긴다.
-   - `Adaptive`: 조명이 균일하지 않은 이미지에서 지역 밝기 기준으로 나눈다.
-5. TrackBar를 조정하며 Preview를 확인한다.
-6. 결과가 적절하면 `Add Pipeline Step`을 누른다.
+![Matching tool walkthrough](assets/tutorial/annotated/tool_matching_form_callouts.png)
 
-주의:
+Matching은 Score만 높다고 좋은 결과가 아닙니다.
+아래처럼 실제 Preview 결과에서 overlay box와 중심점이 대상 위에 붙는지 봐야 “정확히 잡혔다”고 판단할 수 있습니다.
 
-- Tool Form의 Preview는 지정된 Output Layer에 반영되어야 합니다.
-- Main 원본이 의도 없이 덮어써지면 안 됩니다.
-- Range/Adaptive 값은 이미지마다 다르므로 Sample Catalog 기준값을 참고합니다.
+![Actual Matching preview result](assets/tutorial/current/matching_preview_actual_current.png)
 
-## 4. Pipeline 만들기
+확인할 metric:
 
-Pipeline은 반복 가능한 검사 Recipe입니다.
+- `ScoreMax`
+- `ResultCount`
+- Center / Box / Angle
 
-권장 기본 흐름:
+## 4. Tool View 공통 사용법
+
+Tool View는 대체로 다음 구조를 가집니다.
+
+```text
+Input Layer
+Output Layer
+Input Preview
+Output Preview
+PropertyGrid
+Preset / Result Explanation
+Preview / Run / Add Pipeline
+```
+
+사용 순서는 다음과 같습니다.
+
+1. `Input Layer`를 확인합니다. 처음에는 보통 `Main`입니다.
+2. `Output Layer`를 정합니다. 원본과 같은 이름을 쓰지 않는 것이 좋습니다.
+3. PropertyGrid에서 파라미터를 조정합니다.
+4. 필요한 경우 Basic/Fast/Precise 같은 preset을 적용합니다.
+5. `Preview` 또는 `Run`을 명시적으로 실행합니다.
+6. Output Preview와 result explanation을 확인합니다.
+7. 괜찮으면 Pipeline Step으로 추가합니다.
+
+PropertyGrid는 OpenVisionLab Tool 구조의 핵심입니다.
+Tool마다 별도의 임시 UI를 만드는 대신, Tool 모델의 property를 그대로 보여주고 저장합니다.
+이 구조 덕분에 UI에서 조정한 값이 Recipe XML과 샘플 검증 흐름으로 이어집니다.
+
+## 5. Layer를 보고 이해하기
+
+OpenVisionLab은 한 장의 이미지만 보는 프로그램이 아닙니다.
+원본, 전처리 결과, 최종 검출 결과를 각각 Layer로 나누어 비교합니다.
+
+기본 흐름은 다음과 같습니다.
 
 ```text
 Main
-  -> Threshold
-  -> Morphology
-  -> Contour / Blob / Line / Matching
-  -> Overlay / Metrics
-  -> Summary Preview
+  -> Binary
+  -> Clean
+  -> Contour / Blob / Match / Line
+  -> Review Result
 ```
 
-Step 추가 순서:
+Layer 이름은 가능한 한 역할이 보이게 짓는 것이 좋습니다.
 
-1. Pipeline Form을 연다.
-2. 첫 Step으로 Threshold를 추가한다.
-3. 두 번째 Step으로 Morphology를 추가한다.
-4. 세 번째 Step으로 Contour 또는 Blob을 추가한다.
-5. 각 Step의 Input/Output pill을 확인한다.
+| 목적 | 예시 이름 |
+| --- | --- |
+| 원본 | `Main` |
+| 이진화 결과 | `Pin_Binary`, `Text_Binary`, `FilmSpot_Binary` |
+| 노이즈 정리 | `Pin_Clean`, `Text_Clean`, `FilmSpot_Clean` |
+| 최종 검출 | `PinShaft_Contour`, `BlobPair_Result`, `Feature_Result` |
+| 최종 확인 | `Review`, `Final_Result`, `Overlay` |
 
-정상 체인 예:
+Layer Docking을 사용하면 원본과 결과를 나란히 놓고 볼 수 있습니다.
+
+![Layer docking walkthrough](assets/tutorial/annotated/layer_docking_callouts.png)
+
+검사 결과가 이상하면 최종 결과만 보지 말고, 바로 이전 Layer를 같이 봐야 합니다.
+Threshold가 잘못된 것인지, Morphology에서 객체가 붙어버린 것인지, 마지막 검출 조건이 너무 빡빡한 것인지 단계별로 확인할 수 있습니다.
+
+## 6. Tool별 확인 포인트
+
+### Threshold
+
+Threshold는 전처리의 시작점입니다.
+
+확인할 것:
+
+- 대상과 배경이 잘 분리되는가
+- 너무 많은 배경 noise가 남지 않는가
+- 다음 Morphology나 Blob/Contour가 읽기 좋은 결과인가
+
+### Blob
+
+Blob은 연결된 객체를 세고, 면적이나 box 크기를 확인할 때 사용합니다.
+
+![Blob tool walkthrough](assets/tutorial/annotated/tool_blob_form_callouts.png)
+
+확인할 metric:
+
+- `ResultCount`
+- `AreaMax`, `AreaAvg`
+- `BoundsWidthAvg`, `BoundsWidthMax`
+
+### Contour
+
+Contour는 객체 외곽, 문자, 결함 후보를 찾을 때 사용합니다.
+
+확인할 것:
+
+- 실제 대상에 box/overlay가 붙는가
+- ROI 전체가 통째로 잡히지 않는가
+- `MIN_AREA`, `MAX_AREA`가 너무 넓거나 좁지 않은가
+
+### Pattern Matching / FeatureMatching
+
+Matching 계열은 기준 template과 비슷한 대상을 찾는 데 사용합니다.
+Template, detected crop, overlay box를 같이 봐야 합니다.
+
+### EdgeDetection
+
+EdgeDetection은 Canny 같은 edge image를 만들고, LineGauge나 surface defect 검사에 넘기는 전처리 Tool입니다.
+
+확인할 것:
+
+- 필요한 경계가 충분히 남는가
+- 배경 noise가 과하지 않은가
+- 이후 LineGauge나 Contour가 읽기 좋은 edge image인가
+
+### LineGauge
+
+LineGauge는 edge, 거리, 교차점, 각도 확인에 사용합니다.
+
+![Line tool walkthrough](assets/tutorial/annotated/tool_line_form_callouts.png)
+
+확인할 것:
+
+- ROI가 필요한 edge만 포함하는가
+- polarity와 scan direction이 맞는가
+- `LineAngleAvg`, `LineLengthMax`, `DistanceMmAvg` 같은 metric이 안정적인가
+
+## 7. Pipeline 만들기
+
+Pipeline은 Tool을 순서대로 연결한 검사 Recipe입니다.
+
+가장 기본적인 흐름:
 
 ```text
 01 Threshold: Main -> Text_Binary
@@ -145,300 +258,127 @@ Step 추가 순서:
 03 Contour: Text_Clean -> Text_Contour
 ```
 
-Branch 예:
+의도적인 branch 예시:
 
 ```text
 01 Threshold: Main -> Text_Binary
 02 Morphology: Text_Binary -> Text_Clean
-03 Contour: Main -> Text_Contour
+03 Matching: Main -> Matching_Result
+04 Contour: Text_Clean -> Text_Contour
 ```
 
-세 번째 Step이 다시 Main을 읽으면 Branch입니다. Branch가 항상 나쁜 것은 아니지만, 사용자가 의도했는지 확인해야 합니다.
+Branch는 잘못된 것이 아닙니다.
+다만 사용자가 왜 다시 `Main`을 읽는지 이해할 수 있어야 합니다.
+Pipeline Review에서 input/output layer를 꼭 확인해야 합니다.
 
-## 5. Preview와 Publish 구분
+## 8. Pipeline Review에서 결과 보기
 
-Pipeline Form에서 가장 중요한 UX 규칙입니다.
+Pipeline Review는 Recipe가 실제로 제대로 동작하는지 확인하는 화면입니다.
 
-| 동작 | 의미 |
-| --- | --- |
-| Run Preview | Pipeline Form 내부에서 결과를 미리 계산합니다. Main Workspace를 자동으로 덮어쓰지 않습니다. |
-| Publish Result | Preview 결과를 Main Workspace의 결과 Layer로 명시적으로 내보냅니다. |
+여기서 확인할 것:
 
-권장 사용 순서:
+1. Step 흐름이 의도한 순서인가
+2. 각 Step의 input/output layer가 맞는가
+3. Preview가 아니라 실제 Review 실행 결과인가
+4. OK/NG가 어떤 metric 기준으로 결정되었는가
+5. NG라면 어느 Step에서 왜 실패했는가
 
-1. Run Preview를 누른다.
-2. Step별 결과와 Summary Preview를 확인한다.
-3. Metrics와 Overlay를 확인한다.
-4. 결과가 맞으면 Publish Result를 누른다.
-5. Main Workspace에서 결과 Layer를 확인한다.
+![Pipeline matching review walkthrough](assets/tutorial/annotated/pipeline_matching_review_callouts.png)
 
-## 6. 결과 판단하기
+Pipeline Review는 아래 번호 순서로 확인합니다.
 
-OpenVisionLab은 단순히 이미지가 보이는 것보다 결과 판단 근거를 중요하게 다룹니다.
+1. `Step Flow`: Tool이 어떤 순서로 연결되었는지 봅니다.
+2. `Guide Strip`: 현재 단계에서 무엇을 확인해야 하는지 안내를 봅니다.
+3. `Input/Output`: 현재 Step이 읽고 쓰는 Layer가 맞는지 확인합니다.
+4. `Validation`: OK/NG 기준과 통과 여부를 봅니다.
+5. `Parameters`: 실제 실행에 사용된 Tool 파라미터를 확인합니다.
+6. `Run Review`: Review 실행은 사용자가 명시적으로 선택합니다.
 
-확인할 항목:
-
-- `Status`: OK / NG / Error / Needs Preview
-- `Metrics`: ResultCount, Area, BoundsWidth, LineLength, Score 등
-- `Overlay`: 검출 위치, 박스, 선, 점
-- `Message`: 실패 또는 성공 요약
-- `DiagnosticHint`: 왜 실패했는지
-- `SuggestedFix`: 무엇을 수정해야 하는지
-
-예:
+예시:
 
 ```text
-Status: NG
-ErrorCode: ThresholdInvalidRange
-DiagnosticHint: RangeMin is greater than RangeMax.
-SuggestedFix: Set RangeMin lower than RangeMax.
+NG 원인: Result Count
+측정값: 28
+목표: 120 - 170
+해석: 검출은 되었지만 정상 particle density보다 너무 적음
+먼저 볼 것: Threshold, ROI, MIN_AREA/MAX_AREA
 ```
 
-## 7. Sample Catalog 사용하기
+이런 식으로 결과를 해석할 수 있어야 실제 검사 Recipe로 쓸 수 있습니다.
 
-Sample Catalog는 OpenVisionLab을 학습하고 검증하는 기준입니다.
+## 9. Good/Bad pair로 기준 잡기
 
-1. Pipeline Form에서 Samples를 연다.
-2. Recipe Catalog를 선택한다.
-3. Required Sample을 선택한다.
-4. Open + Preview를 실행한다.
-5. Expected Metric과 Actual Metric을 비교한다.
+룰베이스 검사는 정상 이미지에서 OK가 나오는 것만으로는 부족합니다.
+불량 이미지에서 어떤 metric이 벗어나는지도 같이 확인해야 합니다.
 
-Sample Catalog가 좋은 이유:
+현재 OpenVisionLab은 Good/Bad pair를 카탈로그로 관리합니다.
 
-- 어떤 이미지에 어떤 Pipeline이 적절한지 확인할 수 있다.
-- 기대 ResultCount, Area, BoundsWidth 같은 기준값이 있다.
-- LLM Recipe가 참고할 수 있는 안정적인 예제가 된다.
-- 내부 개발 중 기능 회귀를 빠르게 찾을 수 있다.
+| Public Pair | Good에서 보는 것 | Bad에서 보는 것 |
+| --- | --- | --- |
+| Matching die pad | template 대상 3개 검출 | no-target 이미지에서 `ResultCount=0` |
+| Blob particles | 입자가 충분히 많이 검출됨 | sparse 이미지에서 `ResultCount`가 낮아짐 |
+| Contour shapes | 5개 shape가 검출됨 | missing-shape 이미지에서 `ResultCount=2` |
+| Threshold band pads | 밝은 pad 4개가 분리됨 | missing-pad 이미지에서 `ResultCount=1` |
+| Mean brightness | 평균 밝기가 정상 band 안에 있음 | dark 이미지에서 `MeanValueAvg`가 낮아짐 |
+| Feature card | feature score가 기준 이상 | wrong card에서 `ScoreMax`가 낮아짐 |
+| Edge fiducial | edge fiducial이 1개 검출됨 | wrong fiducial에서 `ResultCount=0` |
+| Line pins | pin 간격이 정상 범위 | wide-pin 이미지에서 `DistanceMmAvg`가 낮아짐 |
 
-## 8. AI Recipe 사용 흐름
+Bad 샘플 중 일부는 controlled NG입니다.
+이 경우 Tool은 결과 이미지를 만들 수 있지만, acceptance metric이 기준을 벗어나 Pipeline Review에서 NG로 표시됩니다.
 
-AI Recipe는 최종 결정자가 아니라 Recipe Assistant입니다.
+## 10. Recipe 저장과 전환
 
-권장 흐름:
+검증된 Pipeline은 XML Recipe로 저장합니다.
 
-```text
-사용자 이미지 + 검사 목표
-  -> LLM이 Pipeline XML 제안
-  -> OpenVisionLab에서 Import
-  -> XML Validation
-  -> Run Preview
-  -> 실패 Step 확인
-  -> 파라미터 또는 Layer Flow 수정
-  -> 다시 Preview
-  -> 최종 승인 후 Save
-```
+Recipe를 저장하기 전에 최소한 하나의 Good 샘플과 하나의 Bad 샘플로 확인하는 것이 좋습니다.
+룰베이스 검사의 신뢰도는 다양한 정상/불량 샘플에서 같은 기준이 반복해서 설명되는지에 달려 있습니다.
 
-AI Recipe에서 반드시 확인할 것:
+Recipe를 바꿀 때는 다음을 확인합니다.
 
-- 마지막 결과가 하나의 review image로 합쳐지는가?
-- Branch가 의도적인가?
-- 실패 Step만 수정해도 되는가?
-- 성공한 이전 Step을 불필요하게 바꾸지 않았는가?
+- 전환한 Recipe의 Pipeline이 맞는가
+- Tool View와 Pipeline Review가 현재 Recipe context를 기준으로 동작하는가
+- Recipe 전환만으로 Preview/Run이 실행되지 않았는가
+- Input/Output route가 사용자의 의도와 맞는가
 
-## 9. Tool별 테스트 가이드
+## 11. 문제가 생겼을 때 보는 순서
 
-각 Tool은 단독으로 파라미터를 이해한 뒤 Pipeline Step으로 연결해서 검증하는 방식이 가장 안전합니다.
+결과가 이상할 때는 아래 순서로 보는 것이 가장 빠릅니다.
 
-### 검사 폼 기반 티칭 공통 흐름
+1. 현재 보고 있는 Layer가 맞는가
+2. Tool의 Input Layer가 맞는가
+3. Output Layer가 비어 있거나 다른 결과로 덮이지 않았는가
+4. Preview/Run을 실제로 실행했는가
+5. Threshold 결과가 대상과 배경을 잘 나누는가
+6. Morphology에서 필요한 객체가 사라지거나 붙지 않았는가
+7. Blob/Contour의 area 조건이 너무 좁거나 넓지 않은가
+8. Matching template이 너무 크거나 배경을 많이 포함하지 않는가
+9. ROI가 너무 넓어 후보가 많아지지 않았는가
+10. Pipeline Review의 NG metric과 목표 범위를 확인했는가
 
-각 검사 폼은 “파라미터를 찾는 공간”입니다. 처음부터 Pipeline XML만 수정하는 것보다, 검사 폼에서 실제 이미지와 레이어를 보면서 티칭한 뒤 Pipeline Step으로 넘기는 흐름이 사용자에게 더 직관적입니다.
+## 12. 추천 학습 순서
 
-공통 티칭 순서:
+처음 OpenVisionLab을 익힐 때는 아래 순서가 좋습니다.
 
-1. Main Workspace에서 원본 이미지를 `Main` 레이어에 불러온다.
-2. 검사 폼을 연다. 예: Threshold, Contour, Blob, Matching, EdgeDetection, LineGauge.
-3. 검사 폼의 `Input Layer`를 선택한다.
-   - 첫 전처리는 보통 `Main`.
-   - 두 번째 이후 검사는 이전 Output Layer를 선택한다.
-4. 검사 폼의 `Output Layer`를 지정한다.
-   - 원본과 비교할 수 있도록 Input과 다른 이름을 사용한다.
-5. ROI가 필요하면 먼저 ROI를 잡는다.
-6. TrackBar, ComboBox, Numeric 설정을 바꾸며 Preview를 확인한다.
-7. 검출 Overlay와 Metric이 기대 수준이면 Pipeline Step으로 추가한다.
-8. Main Workspace 또는 Pipeline Preview에서 Input/Output 레이어를 다시 비교한다.
+1. public synthetic Matching 샘플로 template matching 결과 보기
+2. public synthetic Blob 샘플로 Blob count 흐름 보기
+3. public synthetic LineGauge 샘플로 ROI와 distance 결과 보기
+4. public synthetic Good/Bad pair로 controlled NG 확인
+5. 직접 이미지를 불러와 같은 흐름을 적용
+6. Pipeline XML 저장
+7. Pipeline Review에서 다시 검증
 
-검출이 됐다고 판단하는 기준:
+## 13. 정리
 
-- 결과 이미지에 대상 위치가 명확히 표시된다.
-- Box, Line, Cross, Label 같은 Overlay가 실제 대상 위에 올라간다.
-- `ResultCount`, `Area`, `Score`, `LineLength`, `Angle`, `BoundsWidth` 같은 Metric이 기대 범위에 있다.
-- 로그에 ErrorCode가 없고 ResultStatus가 OK/Passed 흐름으로 남는다.
-- 같은 설정을 Pipeline Run Preview에서도 실행했을 때 같은 결과가 나온다.
+OpenVisionLab을 사용할 때는 “이미지를 처리한다”보다 “검사 기준을 만든다”는 관점으로 보는 것이 좋습니다.
 
-검사 폼에서 Pipeline으로 넘길 때 주의할 점:
+좋은 Recipe는 다음 조건을 만족합니다.
 
-- 검사 폼에서 잘 보였던 Output Layer 이름을 Pipeline Step에도 그대로 쓰는 것이 좋다.
-- Contour/Blob/LineGauge 같은 검사 폼 내부에 Threshold 옵션이 켜져 있다면, 별도 Threshold Step을 이미 사용 중인지 확인한다.
-- 별도 Threshold/Morphology Step이 있다면 검사 Tool 내부 Threshold는 끄는 편이 흐름을 이해하기 쉽다.
-- 반대로 단일 Tool만 빠르게 테스트하려는 경우에는 내부 Threshold 옵션을 사용할 수 있다.
+- 어떤 Layer를 읽고 쓰는지 명확하다.
+- Preview와 실제 반영이 구분된다.
+- 결과 이미지와 overlay가 기준 위치를 보여준다.
+- OK/NG 이유가 metric으로 설명된다.
+- Good/Bad 샘플에서 같은 기준으로 반복 검증된다.
+- XML로 저장한 뒤에도 같은 결과가 나온다.
 
-| Tool | 추천 샘플 | 기본 테스트 흐름 | 확인할 Metric / Overlay |
-| --- | --- | --- | --- |
-| Contour | `Contour_TextSymbols`, `DiePad_Surface` | `Main -> Threshold -> Morphology -> Contour` | `ResultCount`, `AreaMin/Max/Avg`, Object Box Overlay |
-| Blob | `Rice_Particle_Blob` | `Main -> Threshold -> Morphology -> Blob` | `ResultCount`, `BoundsWidthAvg`, `AreaAvg` |
-| Pattern Matching | `Contour_TemplateMatching` | `Main -> Matching` 또는 ROI 지정 후 Matching | `ScoreMax`, `ResultCount`, Match Box Overlay |
-| FeatureMatching | `Feature_TemplateReview` | `Main -> FeatureMatching` | `ScoreMax`, `ResultCount`, Homography Box Overlay, Detected Crop |
-| EdgeDetection | `Pins_LineGauge`, `SurfaceDefect_Edge` | `Main -> Filter -> EdgeDetection` | Edge 이미지 연결성, 배경 노이즈 |
-| LineGauge | `Pins_LineGauge` | `Main -> Filter -> EdgeDetection -> LineGauge` | `EdgeCount`, `LineLengthMax`, `LineLengthMmMax`, `LineAngleAvg`, Fit Line Overlay |
-| 거리 / 치수 측정 | `BentPin_GoodShaft`, `BentPin_BadShaft`, `Pins_LineGauge` | Contour/Blob/LineGauge 결과에서 폭, 높이, 길이, 각도, Edge 간격 비교 | `BoundsWidthMax`, `BoundsWidthMmMax`, `BoundsHeightMmMax`, `LineLengthMmMax`, `LineAngleAvg`, `PIXELPERMM` |
-
-### 검사 폼과 검출 결과 예시
-
-검사 폼은 파라미터를 찾는 곳이고, Sample/Pipeline Preview는 그 파라미터가 실제 검출로 이어지는지 확인하는 곳입니다. 아래 검사 폼 이미지는 좌측 Input/Output 이미지와 우측 Property를 함께 보여주는 전체 Form 기준입니다.
-
-#### Contour
-
-- 폼에서 볼 것: Input 이미지, Output 이미지, Input/Output Layer, Threshold, ROI, Area 조건.
-- 결과에서 볼 것: 전체 영역이 아니라 문자/숫자/도형 단위로 Overlay가 올라오는지.
-
-![Contour Tool Form](assets/tutorial/tool_contour_form.png)
-![Contour Result Example](assets/tutorial/tool_contour_result.png)
-
-#### Blob
-
-- 폼에서 볼 것: Input 이미지, Output 이미지, Threshold, ROI, Blob 조건.
-- 결과에서 볼 것: 이진화된 객체가 붙거나 끊기지 않고 Count와 Area 기준이 안정적인지.
-
-![Blob Tool Form](assets/tutorial/tool_blob_form.png)
-![Blob Result Example](assets/tutorial/tool_blob_result.png)
-
-#### Pattern Matching
-
-- 폼에서 볼 것: Input 이미지, Output 이미지, 기준 패턴, 검출 Crop, ROI, Score 기준.
-- 기준 패턴은 찾으려는 형상만 타이트하게 crop한다. 넓은 배경이나 주변 버튼이 포함되면 사용자가 오검출로 판단하기 쉽다.
-- 결과에서 볼 것: Template과 Detected crop이 같은 대상인지, Overlay 박스와 중심점이 실제 대상 위에 올라오는지.
-- 박스만 보면 맞는 위치도 오검출처럼 보일 수 있으므로 Template, Detected crop, Overlay result를 함께 확인한다.
-
-![Matching Tool Form](assets/tutorial/tool_matching_form.png)
-![Matching Template Image](assets/tutorial/tool_matching_template.png)
-![Matching Detected Crop](assets/tutorial/tool_matching_detected_crop.png)
-![Matching Overlay Result](assets/tutorial/tool_matching_result.png)
-![Pipeline Matching Review](assets/tutorial/pipeline_matching_review.png)
-
-Pipeline Matching Review에서는 Run Preview 후 선택한 Matching Step의 Template, Detected crop, Score, Center, Size를 한 화면에서 확인한다. 작은 Template/Crop 이미지는 더블클릭해서 확대 뷰어로 다시 확인할 수 있다.
-
-#### FeatureMatching
-
-- 폼에서 볼 것: Input 이미지, Output 이미지, 기준 feature template, 검출 Crop, ROI, Score 기준, RANSAC 조건.
-- 결과에서 볼 것: Template과 Detected crop이 같은 특징 패턴인지, Homography Box와 중심점이 실제 대상 위에 올라오는지.
-- 회전, 스케일, 원근 변화가 있는 대상은 단순 Matching보다 FeatureMatching 결과가 더 안정적일 수 있다.
-
-![FeatureMatching Tool Form](assets/tutorial/tool_feature_matching_form.png)
-![Pipeline FeatureMatching Review](assets/tutorial/pipeline_feature_matching_review.png)
-![FeatureMatching Source Sample](assets/tutorial/feature_template_source.png)
-![FeatureMatching Template](assets/tutorial/feature_template_template.png)
-![FeatureMatching Result](assets/tutorial/feature_template_result.png)
-
-FeatureMatching Form에서는 feature template과 검출 crop을 직접 비교하며 Score, Center, Size, Angle을 확인한다. Pipeline FeatureMatching Review에서는 같은 정보를 Step 결과 기준으로 다시 확인한다. 작은 이미지는 더블클릭해서 확대 뷰어로 다시 확인할 수 있다.
-
-FeatureMatching 샘플 재현 순서:
-
-1. Pipeline Form에서 Samples를 연다.
-2. `Feature_TemplateReview`를 선택한다.
-3. `Open + Preview` 또는 `Run Preview`를 실행한다.
-4. 결과가 `Feature_Result` 레이어에 생성되는지 확인한다.
-5. `ScoreMax`, `ResultCount`, Template, Detected crop, Overlay가 같은 대상을 가리키는지 확인한다.
-
-#### EdgeDetection
-
-- 폼에서 볼 것: Input 이미지와 Output Edge 이미지가 함께 보이는지, 후속 LineGauge나 치수 측정에 넘길 Edge가 충분한지.
-- 결과에서 볼 것: 필요한 결함 또는 경계만 남고 배경 노이즈가 과도하지 않은지.
-
-![Edge Detection Tool Form](assets/tutorial/tool_edge_detection_form.png)
-![Edge Detection Result Example](assets/tutorial/tool_edge_result.png)
-
-#### LineGauge / 치수 측정
-
-- 폼에서 볼 것: Input 이미지, Output Line/Edge 결과, Edge 방향, Threshold, Pixel/mm, ROI 조건.
-- 결과에서 볼 것: Edge 후보가 충분히 남아 직선 길이와 각도 Metric을 신뢰할 수 있는지.
-
-![Line Tool Form](assets/tutorial/tool_line_form.png)
-![Line Gauge Result Example](assets/tutorial/tool_line_result.png)
-
-### 수직선 라인을 이용한 거리측정 흐름
-
-거리측정은 단순히 Edge 이미지를 보는 것으로 끝나지 않습니다. 측정 ROI 안에 여러 개의 수직 스캔 라인을 배치하고, 각 라인에서 Edge 후보를 찾은 뒤 Pixel/mm 보정값으로 실제 치수 Metric을 계산해야 합니다.
-
-1. `Pixel/mm` 값을 먼저 확인한다.
-   - 보정값이 틀리면 mm 단위 결과도 모두 틀어진다.
-2. 측정할 영역을 가로지르는 ROI를 지정한다.
-3. EdgeDetection 또는 Tool 내부 Threshold로 측정 대상의 경계를 분리한다.
-4. ROI 안에 여러 수직 스캔 라인을 만들고, 각 라인에서 위/아래 또는 좌/우 Edge 후보를 찾는다.
-5. 노이즈 후보를 제외하고 유효 Edge 포인트만 남긴 뒤 평균 거리, 최대 거리, 최소 거리, 각도 Metric을 계산한다.
-6. `LineLengthMmMax`, `BoundsWidthMmMax`, `BoundsHeightMmMax`, `LineAngleAvg` 같은 Metric으로 OK/NG 기준을 만든다.
-
-![Vertical Line Measurement Result Example](assets/tutorial/tool_vertical_measurement_result.png)
-
-Contour 테스트 순서:
-
-1. Threshold로 대상이 흰색 또는 검정색으로 분리되는지 확인한다.
-2. Morphology로 작은 노이즈를 줄이되 대상이 붙어버리지 않는지 확인한다.
-3. Contour의 Min/Max Area를 조정해 필요한 도형, 글자, 숫자만 남긴다.
-4. Overlay Box가 ROI 전체가 아니라 실제 object 단위로 그려지는지 확인한다.
-
-Blob 테스트 순서:
-
-1. 연결된 객체를 세야 하는 이미지에서 사용한다.
-2. Threshold/Morphology 결과가 객체별로 분리되어 있는지 먼저 확인한다.
-3. `ResultCount`와 평균 폭/면적 Metric이 기대 범위에 들어오는지 확인한다.
-
-Pattern Matching 테스트 순서:
-
-1. 찾을 기준 패턴 이미지는 대상 형상만 타이트하게 잘라 등록한다.
-2. ROI를 좁혀 오검출 가능성을 줄인다.
-3. `ScoreMax`가 충분히 높은지 확인하고, 여러 후보가 나오면 Score와 위치를 함께 본다.
-
-Edge / Line / 거리 측정 테스트 순서:
-
-1. Filter로 노이즈를 줄인 뒤 EdgeDetection을 적용한다.
-2. LineGauge는 Edge 이미지 또는 원본 이미지에서 scan 방향, polarity, ROI를 조정한다.
-3. 거리/치수 측정은 Pixel/mm 보정값을 먼저 확인한 뒤 `BoundsWidthMmMax`, `BoundsHeightMmMax`, `LineLengthMmMax`, 각도 Metric으로 OK/NG 기준을 만든다.
-
-## 10. XML 저장과 외부 실행
-
-검증된 Pipeline은 XML로 저장합니다.
-
-이 XML은 다음 경로에서 재사용되어야 합니다.
-
-- OpenVisionLab Pipeline Form
-- Batch Test
-- Sample Catalog
-- AI Recipe Import
-- VisionRecipeRunner
-- 외부 DLL/API 호출 구조
-
-즉, UI에서 만든 Recipe는 UI 밖에서도 실행 가능해야 합니다.
-
-## 11. 권장 연습 순서
-
-처음 사용하는 사용자는 아래 순서로 연습하는 것이 좋습니다.
-
-1. `Contour_TextSymbols` 샘플을 연다.
-2. Threshold Step의 Input/Output을 확인한다.
-3. Morphology Step이 이전 Output을 읽는지 확인한다.
-4. Contour Step이 어떤 Layer를 읽는지 확인한다.
-5. Run Preview를 실행한다.
-6. Summary Preview에서 모든 검출 Overlay를 확인한다.
-7. Publish Result를 눌러 Main Workspace에 결과를 보낸다.
-8. XML로 저장한다.
-9. 저장한 XML을 다시 Load한다.
-10. 같은 결과가 나오는지 확인한다.
-
-## 12. 문제가 생겼을 때 보는 순서
-
-1. Step Flow에서 Input Layer가 맞는지 본다.
-2. Output Layer가 비어 있거나 이전 Step을 덮어쓰는지 본다.
-3. Preview가 실행되었는지 확인한다.
-4. Result grid의 Status와 Message를 본다.
-5. Run Log의 첫 번째 NG Step을 본다.
-6. DiagnosticHint와 SuggestedFix를 확인한다.
-7. Sample Catalog의 비슷한 Recipe를 참고한다.
-
-## 13. 핵심 원칙
-
-- Preview는 확인용이고 Publish는 반영용입니다.
-- Step은 기본적으로 이전 Output을 읽어야 합니다.
-- Branch는 허용되지만 명확히 표시되어야 합니다.
-- 최종 검출 결과는 사용자가 한눈에 확인할 수 있어야 합니다.
-- 실패는 단순히 NG가 아니라 이유와 수정 방향이 있어야 합니다.
+이 흐름이 OpenVisionLab의 핵심입니다.

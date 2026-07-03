@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Library\OpenVisionLab.History\OpenVisionLab.History.csproj" />
+    <ProjectReference Include="..\..\Library\OpenVisionLab.ImageSpace.Core\OpenVisionLab.ImageSpace.Core.csproj" />
+  </ItemGroup>
+</Project>

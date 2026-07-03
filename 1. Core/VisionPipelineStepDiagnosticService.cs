@@ -1,6 +1,7 @@
 using Lib.OpenCV.Pipeline;
 using Lib.OpenCV.Tool;
 using System;
+using System.Collections.Generic;
 
 namespace OpenVisionLab
 {
@@ -258,11 +259,20 @@ namespace OpenVisionLab
                 return "Tool executed, but the acceptance rule failed.";
             }
 
+            if (step.MaxElapsedMilliseconds > 0
+                && toolResult != null
+                && toolResult.Elapsed.TotalMilliseconds > step.MaxElapsedMilliseconds)
+            {
+                return $"Tool executed, but elapsed time {toolResult.Elapsed.TotalMilliseconds:0.0} ms exceeded MaxElapsedMilliseconds {step.MaxElapsedMilliseconds:0.0} ms.";
+            }
+
             if (!string.IsNullOrWhiteSpace(step.AcceptanceMetricName)
                 && (step.UseAcceptanceMetricMinimum || step.UseAcceptanceMetricMaximum))
             {
                 string metric = VisionPipelineKnownMetrics.GetDisplayName(step.AcceptanceMetricName);
-                return $"Tool executed, but acceptance metric '{metric}' is outside the configured range.";
+                string valueText = FormatMetricValue(toolResult, step.AcceptanceMetricName);
+                string rangeText = FormatAcceptanceMetricRange(step);
+                return $"Tool executed, but acceptance metric '{metric}' value {valueText} is outside target {rangeText}.";
             }
 
             return string.IsNullOrWhiteSpace(resolvedMessage)
@@ -277,10 +287,20 @@ namespace OpenVisionLab
                 return "Review the failed acceptance rule and compare it with produced metrics.";
             }
 
+            if (step.MaxElapsedMilliseconds > 0
+                && toolResult != null
+                && toolResult.Elapsed.TotalMilliseconds > step.MaxElapsedMilliseconds)
+            {
+                return "Reduce ROI/search range, optimize preprocessing, or increase MaxElapsedMilliseconds after confirming the result is correct.";
+            }
+
             if (!string.IsNullOrWhiteSpace(step.AcceptanceMetricName))
             {
                 string metric = VisionPipelineKnownMetrics.GetDisplayName(step.AcceptanceMetricName);
-                return $"Inspect produced metrics and tune '{metric}' min/max, ROI, threshold, morphology, or area limits.";
+                string valueText = FormatMetricValue(toolResult, step.AcceptanceMetricName);
+                string rangeText = FormatAcceptanceMetricRange(step);
+                string tuningGuidance = ResolveAcceptanceMetricTuningGuidance(step, step.AcceptanceMetricName);
+                return $"Review '{metric}' value {valueText} against target {rangeText}. {tuningGuidance} Only change acceptance min/max after confirming the measured result is valid.";
             }
 
             return "Adjust ExpectedSuccess, RequiredMessageText, MaxElapsedMilliseconds, or use a metric-based acceptance rule.";
@@ -291,19 +311,25 @@ namespace OpenVisionLab
             switch (NormalizeToolType(step?.ToolType))
             {
                 case "contour":
-                    return $"Contour produced no accepted objects from input layer '{ResolveInputLayerText(step)}'.";
+                    return $"Contour produced no accepted objects from input layer '{ResolveInputLayerText(step)}'.{FormatDiagnosticMetricSuffix(step, toolResult)}";
                 case "blob":
-                    return $"Blob labeling produced no accepted objects from input layer '{ResolveInputLayerText(step)}'.";
+                    return $"Blob labeling produced no accepted objects from input layer '{ResolveInputLayerText(step)}'.{FormatDiagnosticMetricSuffix(step, toolResult)}";
                 case "line":
                 case "linegauge":
-                    return $"LineGauge did not find enough edge points or could not fit a line from input layer '{ResolveInputLayerText(step)}'.";
+                case "linedistance":
+                case "linedistancegauge":
+                    return $"LineGauge did not find enough edge points or could not fit a line from input layer '{ResolveInputLayerText(step)}'.{FormatDiagnosticMetricSuffix(step, toolResult)}";
                 case "matching":
                 case "templatematching":
-                    return $"Template matching did not find a match above the score threshold from input layer '{ResolveInputLayerText(step)}'.";
+                    return $"Template matching did not find a match above the score threshold from input layer '{ResolveInputLayerText(step)}'.{FormatDiagnosticMetricSuffix(step, toolResult)}";
+                case "edgebasedmatching":
+                case "edgebasedtemplatematching":
+                case "edgetemplatematching":
+                    return $"Edge based template matching did not find a match above the score threshold from input layer '{ResolveInputLayerText(step)}'.{FormatDiagnosticMetricSuffix(step, toolResult)}";
                 case "feature":
                 case "featurematching":
                 case "sift":
-                    return $"Feature matching did not find enough stable keypoints/matches from input layer '{ResolveInputLayerText(step)}'.";
+                    return $"Feature matching did not find enough stable keypoints/matches from input layer '{ResolveInputLayerText(step)}'.{FormatDiagnosticMetricSuffix(step, toolResult)}";
                 default:
                     return string.IsNullOrWhiteSpace(toolResult?.Message)
                         ? "Tool produced no accepted result."
@@ -321,10 +347,16 @@ namespace OpenVisionLab
                     return "Check whether InputLayer should be the previous preprocessing output, then tune threshold polarity, morphology, ROI, MIN_AREA, MAX_AREA, and blob labeling options.";
                 case "line":
                 case "linegauge":
+                case "linedistance":
+                case "linedistancegauge":
                     return "Check whether InputLayer is the edge/preprocessed layer expected by LineGauge, then tune ROI, projection direction, polarity, contrast, sampling interval, and threshold.";
                 case "matching":
                 case "templatematching":
                     return "Check template image and whether InputLayer is the intended source/preprocessed layer, then tune ROI, score threshold, angle search, and scale search.";
+                case "edgebasedmatching":
+                case "edgebasedtemplatematching":
+                case "edgetemplatematching":
+                    return "Check template edge contrast and whether InputLayer is the intended source/preprocessed layer, then tune ROI, Canny thresholds, score threshold, search step, and max template points.";
                 case "feature":
                 case "featurematching":
                 case "sift":
@@ -355,11 +387,177 @@ namespace OpenVisionLab
             }
         }
 
+        private static string ResolveAcceptanceMetricTuningGuidance(VisionPipelineStep step, string metricName)
+        {
+            string normalizedTool = NormalizeToolType(step?.ToolType);
+            string normalizedMetric = (metricName ?? string.Empty).Trim().ToLowerInvariant();
+            switch (normalizedTool)
+            {
+                case "contour":
+                    return "For contour count/size metrics, first check InputLayer chaining, threshold polarity/value, morphology cleanup, ROI, MIN_AREA, and MAX_AREA.";
+                case "blob":
+                    return "For blob count/size metrics, first check InputLayer chaining, threshold polarity/value, morphology cleanup, ROI, MIN_AREA, MAX_AREA, and labeling connectivity.";
+                case "line":
+                case "linegauge":
+                case "linedistance":
+                case "linedistancegauge":
+                    return "For line metrics, first check ROI placement, edge layer selection, polarity/contrast, sampling interval, projection direction, and Pixel/mm calibration.";
+                case "matching":
+                case "templatematching":
+                    return normalizedMetric.Contains("score")
+                        ? "For matching score metrics, first check template crop, ROI, preprocessing mode, SCORE_MIN, angle search, and scale search."
+                        : "For matching count/geometry metrics, first check template crop, ROI, preprocessing mode, score gate, angle search, and scale search.";
+                case "edgebasedmatching":
+                case "edgebasedtemplatematching":
+                case "edgetemplatematching":
+                    return normalizedMetric.Contains("score")
+                        ? "For edge matching score metrics, first check template edge quality, ROI, Canny thresholds, SCORE_MIN, search step, and max template points."
+                        : "For edge matching count/geometry metrics, first check template edge quality, ROI, score gate, search step, and candidate suppression.";
+                case "feature":
+                case "featurematching":
+                case "sift":
+                    return normalizedMetric.Contains("score")
+                        ? "For feature score metrics, first check template feature richness, ROI, SCORE_MIN, match count, homography, and RANSAC settings."
+                        : "For feature count/geometry metrics, first check template feature richness, ROI, match count, homography, and RANSAC settings.";
+                case "mean":
+                    return "For mean/brightness metrics, first check ROI, lighting/reference image, threshold options, and whether the metric should be measured on Main or a processed layer.";
+                case "threshold":
+                    return "For threshold image metrics, first check mode, threshold value/range, adaptive block size, adaptive weight, and output polarity.";
+                case "edgedetection":
+                case "edge":
+                    return "For edge metrics, first check input contrast, low/high thresholds, derivative mode, kernel size, and preprocessing filter.";
+                default:
+                    return "Tune the inspection parameters first while preserving the intended InputLayer/OutputLayer chain.";
+            }
+        }
+
         private static string ResolveInputLayerText(VisionPipelineStep step)
         {
             return string.IsNullOrWhiteSpace(step?.InputLayer)
                 ? "-"
                 : step.InputLayer.Trim();
+        }
+
+        private static string FormatMetricValue(VisionToolResult toolResult, string metricName)
+        {
+            if (toolResult?.Metrics == null || string.IsNullOrWhiteSpace(metricName))
+            {
+                return "missing";
+            }
+
+            return toolResult.Metrics.TryGetValue(metricName, out double value)
+                ? value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)
+                : "missing";
+        }
+
+        private static string FormatDiagnosticMetricSuffix(VisionPipelineStep step, VisionToolResult toolResult)
+        {
+            if (toolResult?.Metrics == null || toolResult.Metrics.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            string[] metricNames = GetDiagnosticMetricNames(step);
+            List<string> parts = new List<string>();
+            foreach (string metricName in metricNames)
+            {
+                if (toolResult.Metrics.TryGetValue(metricName, out double value))
+                {
+                    parts.Add(string.Format(
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        "{0}={1:0.###}",
+                        VisionPipelineKnownMetrics.GetDisplayName(metricName),
+                        value));
+                }
+            }
+
+            if (parts.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            return " Metrics: " + string.Join(", ", parts) + ".";
+        }
+
+        private static string[] GetDiagnosticMetricNames(VisionPipelineStep step)
+        {
+            switch (NormalizeToolType(step?.ToolType))
+            {
+                case "contour":
+                case "blob":
+                    return new[]
+                    {
+                        VisionPipelineKnownMetrics.ResultCount,
+                        VisionPipelineKnownMetrics.AreaMin,
+                        VisionPipelineKnownMetrics.AreaMax,
+                        VisionPipelineKnownMetrics.BoundsWidthMax,
+                        VisionPipelineKnownMetrics.BoundsHeightMax
+                    };
+                case "line":
+                case "linegauge":
+                case "linedistance":
+                case "linedistancegauge":
+                    return new[]
+                    {
+                        VisionPipelineKnownMetrics.EdgeCount,
+                        VisionPipelineKnownMetrics.EdgePointCount,
+                        VisionPipelineKnownMetrics.DistanceMmAvg,
+                        VisionPipelineKnownMetrics.DistancePxAvg,
+                        VisionPipelineKnownMetrics.LineLengthMax
+                    };
+                case "matching":
+                case "templatematching":
+                case "edgebasedmatching":
+                case "edgebasedtemplatematching":
+                case "edgetemplatematching":
+                case "feature":
+                case "featurematching":
+                case "sift":
+                    return new[]
+                    {
+                        VisionPipelineKnownMetrics.ResultCount,
+                        VisionPipelineKnownMetrics.ScoreMax,
+                        VisionPipelineKnownMetrics.ScoreAvg,
+                        VisionPipelineKnownMetrics.BoundsWidthMax,
+                        VisionPipelineKnownMetrics.BoundsHeightMax
+                    };
+                default:
+                    return new[] { VisionPipelineKnownMetrics.ResultCount };
+            }
+        }
+
+        private static string FormatAcceptanceMetricRange(VisionPipelineStep step)
+        {
+            if (step == null)
+            {
+                return "-";
+            }
+
+            if (step.UseAcceptanceMetricMinimum && step.UseAcceptanceMetricMaximum)
+            {
+                if (Math.Abs(step.AcceptanceMetricMinimum - step.AcceptanceMetricMaximum) < 0.000001)
+                {
+                    return step.AcceptanceMetricMinimum.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+                }
+
+                return string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    "{0:0.###}..{1:0.###}",
+                    step.AcceptanceMetricMinimum,
+                    step.AcceptanceMetricMaximum);
+            }
+
+            if (step.UseAcceptanceMetricMinimum)
+            {
+                return string.Format(System.Globalization.CultureInfo.InvariantCulture, ">= {0:0.###}", step.AcceptanceMetricMinimum);
+            }
+
+            if (step.UseAcceptanceMetricMaximum)
+            {
+                return string.Format(System.Globalization.CultureInfo.InvariantCulture, "<= {0:0.###}", step.AcceptanceMetricMaximum);
+            }
+
+            return "-";
         }
 
         private static string NormalizeToolType(string toolType)

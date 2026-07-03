@@ -13,14 +13,6 @@ namespace OpenVisionLab.ImageCanvas.Views
 			InitializeComponent();
 
 			this.Loaded += AddRoiArrayView_Loaded;
-
-			//this.KeyDown += (sender, e) =>
-			//{
-			//	if (e.Key == Key.Escape)
-			//	{
-			//		this.Close();
-			//	}
-			//};
 		}
 
 		private void AddRoiArrayView_Loaded(object sender, RoutedEventArgs e)

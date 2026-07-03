@@ -2,7 +2,6 @@
 using OpenVisionLab.MessageDialogs;
 using System;
 using System.Collections.Generic;
-using System.Windows.Forms;
 
 namespace OpenVisionLab
 {
@@ -22,6 +21,7 @@ namespace OpenVisionLab
         public List<LineGaugeProperty> Lines_R { get; } = new List<LineGaugeProperty>();
         public List<LineGaugeProperty> Lines_TOP { get; } = new List<LineGaugeProperty>();
         public List<MatchingProperty> Matchings { get; } = new List<MatchingProperty>();
+        public List<EdgeBasedMatchingProperty> EdgeBasedMatchings { get; } = new List<EdgeBasedMatchingProperty>();
         public VisionProperty PropertyVision { get; internal set; } = new VisionProperty("VisionPara");
         public List<FeatureMatchingProperty> Features { get; } = new List<FeatureMatchingProperty>();
 

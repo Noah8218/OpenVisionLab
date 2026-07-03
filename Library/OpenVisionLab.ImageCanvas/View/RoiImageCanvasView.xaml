@@ -7,6 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     d:DesignHeight="250"
     d:DesignWidth="500"
+    ClipToBounds="True"
     mc:Ignorable="d">
 
     <UserControl.Resources>
@@ -96,19 +97,19 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid x:Name="MainGrid">
+    <Grid x:Name="MainGrid" ClipToBounds="True">
         <Grid.Resources>
             <converter:BooleanToColorConverter x:Key="booleanToColorConverter" />
         </Grid.Resources>
 
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*" />
-            <ColumnDefinition Width="35" />
+            <ColumnDefinition x:Name="toolBarColumn" Width="35" />
         </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
             <RowDefinition Height="1*" />
-            <RowDefinition Height="20" />
+            <RowDefinition x:Name="statusBarRow" Height="20" />
         </Grid.RowDefinitions>
 
         <!--  우클릭 메뉴  -->
@@ -148,6 +149,7 @@
             x:Name="imageBoxCameraTwoD"
             Grid.Row="0"
             Grid.Column="0"
+            ClipToBounds="True"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch" />
 
@@ -165,7 +167,7 @@
                     Grid.Column="4"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Content="{Binding RobotPos}"
+                    Content="{Binding CanvasPos}"
                     ContentStringFormat="{} 좌표(좌하) : {0} "
                     Style="{StaticResource ViewerStatusLabelStyle}" />
                 <Label
@@ -202,6 +204,7 @@
 
         <!--  툴바  -->
         <ToolBarTray
+            x:Name="viewerToolBarTray"
             Grid.Row="0"
             Grid.Column="1"
             Background="#262626"

@@ -14,12 +14,12 @@ namespace OpenVisionLab
         [PropertyOrder(1)]
         [Browsable(true)]
         [PropertyEditor(typeof(WpgRangeEditor))]
-        [RangeEditor(0, 1000000, 10, 0, nameof(MIN_AREA), nameof(MAX_AREA))]
-        [CategoryAttribute("Blob Parameter"), DescriptionAttribute("Blob으로 인정할 Area(가로*세로) 범위입니다."), DisplayNameAttribute("Area range")]
+        [RangeEditor(0, 1000000, 100, 0, nameof(MIN_AREA), nameof(MAX_AREA))]
+        [CategoryAttribute("Blob Parameter"), DescriptionAttribute("Blob으로 인정할 Area(가로*세로) 최소 사이즈입니다."), DisplayNameAttribute("Min area")]
         public  int MIN_AREA { get; set; } = 200;
 
         [PropertyOrder(2)]
-        [Browsable(false)]
+        [Browsable(true)]
         [CategoryAttribute("Blob Parameter"), DescriptionAttribute("Area(가로*세로) 최대 사이즈입니다. 그 이상는 필터링 됩니다."), DisplayNameAttribute("Max area")]
         public int MAX_AREA { get; set; } = 1000000;
 

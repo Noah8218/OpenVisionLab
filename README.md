@@ -1,334 +1,177 @@
-# OpenVisionLab (오픈비전 랩)
+# OpenVisionLab
 
-OpenVisionLab은 OpenCV/OpenCvSharp 검사 레시피를 구축, 테스트, 검증 및 재사용하기 위한 Rule-base 기반의 비전 워크벤치(Workbench)입니다.
+OpenVisionLab은 **OpenCvSharp4 기반의 룰베이스 비전 검사 워크벤치**입니다.
 
-이 프로젝트의 목표는 단순히 내부적인 이미지 처리 툴을 제공하는 것에 그치지 않습니다. 비전 개발의 접근성을 높이는 것이 핵심입니다. 이미지를 불러오고, OpenCV 파라미터를 튜닝하며, 파이프라인을 구축하고, 오버레이와 측정값(Metrics)으로 결과를 검증한 뒤, 이를 XML로 저장하여 UI, 배치(Batch) 작업, AI 레시피 Import, 또는 외부 러너(DLL) 등에서 동일하게 재사용할 수 있도록 지원합니다.
+이미지를 불러와서 Tool을 적용하는 데서 끝나는 프로그램이 아니라, 사용자가 검사 흐름을 직접 만들고 결과가 왜 OK/NG인지 확인할 수 있게 만드는 것이 목표입니다.
 
-![OpenVisionLab main workspace](docs/assets/readme/main-workspace.png)
+![OpenVisionLab main workspace walkthrough](docs/assets/tutorial/annotated/main_workspace_callouts.png)
 
-## 🎯 개발 방향성 (Direction)
+처음 화면은 위 번호 순서로 보면 됩니다.
 
-OpenVisionLab은 OpenCvSharp 검사 레시피 플랫폼으로 진화하고 있습니다. 
-사용자가 다음 네 가지 질문에 빠르게 답을 얻을 수 있도록 돕습니다:
+1. `Tool List`: 왼쪽에서 사용할 Tool을 고릅니다.
+2. `Layer Input`: 현재 기준으로 볼 Layer를 확인합니다.
+3. `Image View`: 원본, 전처리, 결과 이미지를 직접 확인합니다.
+4. `Run Status`: 선택한 Tool의 실행 상태와 예상 경로를 봅니다.
+5. `Quick Actions`: 현재 Layer에서 바로 실행할 수 있는 주요 Tool과 Pipeline 추가 흐름을 확인합니다.
 
-- 이 단계(Step)는 어떤 이미지나 레이어를 읽고 있는가?
-- 이 단계는 어떤 출력 레이어를 생성하는가?
-- 툴이 예상한 대상을 정확히 검출했는가? 그리고 그 이유는 무엇인가?
-- 검증된 이 레시피를 UI 외부에서도 재사용할 수 있는가?
+## 프로그램 방향
 
-장기적인 개발 방향성은 다음과 같습니다:
-1. **메인 워크스페이스**를 사용하여 이미지 로드, 레이어 리뷰, ROI, 좌표, 픽셀 정보, 확대/축소, GV 및 RGB 검사를 수행합니다.
-2. 각 **비전 툴 폼**을 활용해 OpenCV 파라미터를 빠르게 튜닝하고 즉각적으로 미리보기를 확인합니다.
-3. **Pipeline 폼**을 사용하여 툴들을 반복 가능한 레시피로 결합합니다.
-4. 측정값(Metrics), 오버레이, 합격 기준(Acceptance rules), 로그 및 리포트를 통해 결과를 검증합니다.
-5. 승인된 파이프라인을 **XML로 저장**합니다.
-6. 저장된 XML을 OpenVisionLab 내부, 샘플/배치 검증, AI 레시피 Import 또는 외부 러너(DLL)를 통해 동일하게 실행합니다.
+OpenVisionLab은 카메라, 조명, PLC를 직접 제어하는 장비 통합 프로그램이 아닙니다.
+현재의 핵심은 **이미지 기반 검사 알고리즘을 학습하고, 튜닝하고, 검증하는 개발 환경**입니다.
 
----
+룰베이스 비전 검사를 만들 때 처음 막히는 지점은 보통 다음과 같습니다.
 
-## 🖥 현재 UI (Current UI)
+- 지금 보고 있는 이미지가 원본인지, 전처리 결과인지 헷갈린다.
+- Tool 결과가 다음 Tool의 입력으로 제대로 연결되었는지 확인하기 어렵다.
+- Score, Count, Area 같은 값이 나와도 그 값으로 OK/NG를 설명하기 어렵다.
+- Preview에서 본 결과와 저장된 Recipe 결과가 달라질 수 있다.
+- 정상/불량 샘플을 바꿔가며 같은 기준으로 검증하는 과정이 번거롭다.
 
-### 메인 워크스페이스 (Main Workspace)
-메인 화면은 레이어 기반의 이미지 워크스페이스입니다. 원본 및 결과 이미지를 검사하고 현재 파이프라인 상태, 단계별 상태, 레이어, 로그 및 픽셀 정보를 리뷰하는 데 사용됩니다.
-![Main workspace](docs/assets/readme/main-workspace.png)
-
-### 파이프라인 워크벤치 (Pipeline Workbench)
-Pipeline 폼은 현재 플랫폼 방향성의 중심입니다. 각 단계는 명시적인 입력 레이어와 출력 레이어를 가집니다. 일반적인 체인형 단계는 이전 출력값을 따르며, 브랜치(Branch) 단계도 허용되지만 의도적이어야 하고 리뷰가 가능해야 합니다.
-
-`Run Preview`는 결과를 Pipeline 폼 내부에만 유지합니다. `Publish Result`는 선택된 결과 또는 요약(Summary) 결과를 메인 워크스페이스로 내보냅니다.
-![Pipeline workbench](docs/assets/readme/pipeline-workbench.png)
-
-### Threshold 툴 (Threshold Tool)
-툴 폼은 OpenCV의 동작을 가장 빠르게 이해하고 튜닝할 수 있는 방법이므로 여전히 중요합니다. Threshold, Range Threshold, Adaptive Threshold, Morphology, Contour, Blob, Line, Matching 등의 툴들이 동일한 `RunVisionStep` 및 파이프라인 단계 규격에 맞춰 정렬되고 있습니다.
-![Threshold tool](docs/assets/readme/threshold-tool.png)
-
-### AI / LLM 레시피 요약 (AI / LLM Recipe Summary)
-LLM은 이미지와 검사 목표를 바탕으로 1차 파이프라인 XML을 제안할 수 있습니다. 이후 OpenVisionLab은 해당 XML을 Import하고, 유효성을 검증하며, 미리보기를 실행하고 튜닝합니다. 최종 리뷰 화면에서는 마지막 단계뿐만 아니라 감지된 모든 오버레이를 하나의 이미지에 통합하여 보여줍니다.
-![LLM recipe summary](docs/assets/readme/llm-recipe-summary.png)
-
----
-
-## 💡 주요 기능 (Core Features)
-
-- 이미지 로드, 레이어 디스플레이, 줌/팬, ROI, 좌표, 픽셀, GV, RGB 검사.
-- 직접적인 파라미터 튜닝을 위한 OpenCV/OpenCvSharp 툴 폼 제공.
-- 명시적인 입력/출력 레이어를 갖춘 파이프라인 단계 편집.
-- 파이프라인의 **미리보기(Preview)**와 **내보내기(Publish)** 기능 분리.
-- 여러 검출 단계의 오버레이를 하나의 리뷰 이미지로 결합하는 **요약 미리보기(Summary Preview)**.
-- `ResultCount`, 면적, 각도, 점수, 엣지 수, 평균값 등의 측정 기준 및 합격 판정 룰 지원.
-- 파이프라인 XML Import/Load/Save.
-- 반복적인 '이미지 + 레시피 + 예상 결과값' 검증을 위한 샘플 카탈로그.
-- LLM이 생성한 `VisionPipeline` XML을 위한 AI 레시피 Import 플로우.
-- `VisionRecipeRunner`를 통한 UI 독립적인 레시피 실행.
-- 로깅, 메시지 다이얼로그 및 실행 리포트 인프라.
-
----
-
-## 🔍 비전 검사 툴 (Vision Tools)
-
-현재 파이프라인은 다음의 툴 패밀리를 지원합니다:
-
-| 툴 (Tool) | 목적 (Purpose) |
-| :--- | :--- |
-| `Threshold` | 이진화, 다중 범위(Range), 적응형(Adaptive) 이진화 전처리 |
-| `Morphology` | Erode, Dilate, Open, Close 및 그래디언트 스타일 이미지 정리 |
-| `Filter` | Blur 및 스무딩 연산 |
-| `EdgeDetection` | 엣지 맵 생성 |
-| `Blob` | 연결된 객체 검출 및 면적 필터링 |
-| `Contour` | 도형, 텍스트, 심볼 후보군 검출 |
-| `LineGauge` / `Line` | 엣지 및 라인 기반의 정밀 길이 측정 및 교차점 검사 |
-| `Matching` | 템플릿 기반 패턴 매칭 |
-| `FeatureMatching` | 특징점 기반 매칭 |
-| `Mean` / `Histogram` / `HSV` | 명도 및 컬러 스페이스 검사 |
-| `RotateAndScale` / `Arithmetic` | 이미지 변환 및 병합 유틸리티 |
-
-플랫폼에 적용되는 모든 툴은 다음 규칙을 따릅니다:
-- 공통 실행 경로를 통해 툴 폼에서 실행 가능해야 합니다.
-- 프로퍼티 값을 `VisionPipelineStep.Parameters`로 변환해야 합니다.
-- 파이프라인 런타임에서 실행 가능해야 합니다.
-- 적용 가능한 경우 결과 이미지를 반환해야 합니다.
-- 사용자가 결과를 판단할 수 있도록 측정값(Metrics)과 오버레이를 반환해야 합니다.
-- XML을 통해 정확하게 저장/로드되어야 합니다.
-
----
-
-## 🔗 파이프라인 컨셉 (Pipeline Concept)
-
-파이프라인 XML은 재사용 가능한 검사 레시피입니다.
+OpenVisionLab은 이 문제를 줄이기 위해 Layer, Tool, Pipeline, Recipe, Pipeline Review, Sample Catalog를 하나의 흐름으로 묶습니다.
 
 ```text
-Main image
-  -> Threshold
-  -> Morphology
-  -> Contour / Blob / Matching / Line
-  -> Metrics + Overlays + Acceptance
-  -> Summary Preview
-  -> Publish Result or save XML
+이미지 로드
+  -> Layer 확인
+  -> Tool 선택
+  -> PropertyGrid에서 파라미터 조정
+  -> Preview / Run
+  -> Output Layer 확인
+  -> Pipeline Step 추가
+  -> Pipeline Review에서 OK/NG와 metric 확인
+  -> Recipe XML 저장
+  -> Good/Bad 샘플로 재검증
 ```
 
-중요한 UX 규칙:
+## 주요 기능
 
-- `Run Preview`는 예기치 않게 메인 워크스페이스를 덮어쓰지 않아야 합니다.
-- `Publish Result`는 결과 레이어를 다시 기록하는 명시적인 동작입니다.
-- 단계(Step)는 기본적으로 이전의 활성화된 단계의 출력을 읽습니다.
-- 브랜치(Branch) 단계는 Main 또는 다른 레이어를 읽을 수 있지만, 사용자에게 시각적으로 표시되어야 합니다.
-- 최종 리뷰에서는 여러 브랜치가 관련된 경우 통합된 검출 결과를 하나의 이미지에 표시해야 합니다.
+| 영역 | 내용 |
+| --- | --- |
+| Main Workspace | 이미지 로드, Layer 관리, zoom/pan, pixel/GV/RGB 상태 확인 |
+| Layer Docking | 원본, 중간 결과, 최종 결과를 탭/분할 형태로 비교 |
+| Tool View | Threshold, Filter, Morphology, Blob, Contour, Matching, FeatureMatching, Line, Mean 등 |
+| PropertyGrid 기반 설정 | Tool 모델의 property를 그대로 편집 UI로 사용 |
+| Preview / Run | 사용자가 명시적으로 실행할 때만 결과 생성 |
+| Pipeline / Recipe | 여러 Tool을 Step으로 연결하고 XML로 저장 |
+| Pipeline Review | Step별 input/output, metric, OK/NG, log, result image 확인 |
+| Sample Catalog | 샘플 이미지와 baseline pipeline, expected metric 관리 |
+| Good/Bad Pair | 정상/불량 샘플을 같은 metric으로 비교 |
+| Learn Mode | Matching, Blob, Contour, Threshold, Mean, FeatureMatching, EdgeBasedMatching, Line 학습 문서 |
+| Localization | 한국어/영어 전환 구조 |
 
----
+## 샘플로 시작하기
 
-## 📘 튜토리얼과 운영 문서 (Tutorial And Operating Docs)
+처음에는 직접 이미지를 고르기보다 공개용 synthetic 샘플로 시작하는 것이 좋습니다.
+공개 샘플은 `docs/samples/public` 아래에 있고, 각 샘플은 이미지, 추천 Pipeline, expected metric, Good/Bad 기준을 함께 제공합니다.
 
-처음 사용하는 사용자는 아래 순서로 문서를 보는 것이 좋습니다.
+공개 배포 기준 catalog는 `docs/samples/OpenVisionLab.PublicSampleCatalog.csv`와
+`docs/samples/OpenVisionLab.ProductSampleCatalog.csv`입니다.
+루트 `Sample/` 폴더는 로컬/vendor 샘플 보관 영역이며 공개 배포 대상이 아닙니다.
 
-- [OpenVisionLab Tutorial - User HTML](docs/OPENVISIONLAB_TUTORIAL.html)
-- [OpenVisionLab Tutorial - Portable Single File](docs/OPENVISIONLAB_TUTORIAL_PORTABLE.html)
-- [OpenVisionLab Tutorial - Markdown Source](docs/OPENVISIONLAB_TUTORIAL.md)
-- [Scenario Validation Checklist](docs/OPENVISIONLAB_SCENARIO_VALIDATION.md)
-- [12:00 Work Report](docs/OPENVISIONLAB_1200_WORK_REPORT.md)
-- [Current Status And Next Steps](docs/OPENVISIONLAB_STATUS_AND_NEXT_STEPS.md)
-- [AI Recipe Interactive Edit Plan](docs/OPENVISIONLAB_AI_RECIPE_INTERACTIVE_EDIT_PLAN.md)
-- [External Reference Policy](docs/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md)
+![Public sample catalog walkthrough](docs/assets/tutorial/annotated/sample_catalog_public_callouts.png)
 
-프로그램 실행 후 상단 `Guide` 메뉴에서도 이미지가 포함된 HTML 튜토리얼을 바로 열 수 있습니다.
-HTML 파일 하나만 다른 PC나 폴더로 복사해야 할 때는 이미지가 내장된 `docs/OPENVISIONLAB_TUTORIAL_PORTABLE.html`을 사용하십시오.
+대표 흐름은 다음과 같습니다.
 
----
+| 배우고 싶은 내용 | Good 샘플 | Bad 샘플 | 보는 metric |
+| --- | --- | --- | --- |
+| Matching으로 대상 찾기 | `Public_Matching_DiePad_Good` | `Public_Matching_DiePad_NoTarget_Bad` | `ResultCount`, `ScoreMax` |
+| Blob으로 여러 입자 세기 | `Public_Blob_Particles_Good` | `Public_Blob_Particles_Sparse_Bad` | `ResultCount` |
+| Contour로 모양 개수 보기 | `Public_Contour_Shapes_Good` | `Public_Contour_Shapes_Missing_Bad` | `ResultCount` |
+| Threshold로 밝은 pad 분리 | `Public_Threshold_BandPads_Good` | `Public_Threshold_BandPads_Missing_Bad` | `ResultCount` |
+| Mean으로 밝기 drift 보기 | `Public_Mean_Brightness_Good` | `Public_Mean_Brightness_Dark_Bad` | `MeanValueAvg` |
+| FeatureMatching 점수 비교 | `Public_Feature_Card_Good` | `Public_Feature_Card_Wrong_Bad` | `ScoreMax`, `ResultCount` |
+| EdgeBasedMatching 형상 비교 | `Public_Edge_Fiducial_Good` | `Public_Edge_Fiducial_Wrong_Bad` | `ScoreMax`, `ResultCount` |
+| Line으로 거리 보기 | `Public_Line_Pins_Good` | `Public_Line_Pins_WidePin_Bad` | `DistanceMmAvg` |
 
-## 🤖 AI 레시피 방향성 (AI Recipe Direction)
+## Tool 설계
 
-AI/LLM 연동은 최종 결정권자가 아닌 '레시피 어시스턴트(보조자)'로 취급됩니다.
-
-권장되는 워크플로우:
+OpenVisionLab의 알고리즘 Tool은 PropertyGrid 기반 구조를 유지합니다.
 
 ```text
-사용자 이미지 + 검사 목표
-  -> LLM이 VisionPipeline XML 제안
-  -> OpenVisionLab에서 XML 유효성 검증
-  -> OpenVisionLab에서 실제 이미지로 Preview 실행
-  -> 사용자가 오버레이 및 측정값 리뷰
-  -> 사용자가 파라미터 튜닝
-  -> OpenVisionLab에서 최종 승인된 레시피 저장
-  -> VisionRecipeRunner가 UI 없이 승인된 XML 실행
+Tool Property Model
+  -> PropertyGrid SelectedObject
+  -> Preview / Run
+  -> VisionToolResult
+  -> Metrics / Overlays / Logs
+  -> Pipeline Step XML
 ```
 
-LLM 레시피는 Import 가능한 VisionPipeline XML을 생성해야 합니다. OpenVisionLab은 유효성 검증, 미리보기, 튜닝, 샘플 체크 및 최종 승인을 담당합니다.
+이 구조를 유지하는 이유는 Tool이 늘어나도 설정 UI와 Recipe 저장 구조를 일관되게 유지하기 위해서입니다.
+초보자는 Basic/Fast/Precise 같은 preset과 결과 해석 문구로 시작하고, 숙련자는 PropertyGrid에서 세부 파라미터를 직접 조정할 수 있습니다.
 
-관련 문서:
+## Pipeline Review
 
-- [LLM Recipe Contract](docs/VISION_PIPELINE_LLM_RECIPE_CONTRACT.md)
-- [Pipeline Recipe Spec](docs/VISION_PIPELINE_RECIPE_SPEC.md)
-- [Pipeline Recipe Schema](docs/VISION_PIPELINE_RECIPE_SCHEMA.xsd)
+Pipeline Review는 OpenVisionLab에서 가장 중요한 검증 화면 중 하나입니다.
 
----
+여기서는 Step별로 다음 정보를 확인합니다.
 
-## 📁 샘플 카탈로그 (Sample Catalog)
+- 현재 Step이 읽는 input layer
+- 현재 Step이 쓰는 output layer
+- 이전 Step과 연결된 chain인지, 의도적인 branch인지
+- 결과 image와 overlay
+- ResultCount, AreaMax, ScoreMax, LineAngleAvg 같은 metric
+- acceptance 기준과 실제 측정값
+- OK/NG 판단 이유
+- 다음에 확인해야 할 파라미터 방향
 
-샘플 카탈로그는 샘플 이미지, 기준(Baseline) 레시피, 그리고 예상되는 측정값(Metrics)을 연결합니다.
+![Pipeline review walkthrough](docs/assets/tutorial/annotated/pipeline_matching_review_callouts.png)
 
-참조:
+## 빌드
 
-- [Sample Catalog](docs/samples/OpenVisionLab.SampleCatalog.csv)
-- [Sample Pipelines](docs/samples)
-
-현재 지원하는 샘플 패밀리:
-
-- Contour 기반 텍스트/심볼 검출
-- 텍스트, 심볼 및 희미한 저대조도 컨트롤을 위한 LLM Contour 레시피
-- 쌀알(Rice particle) Contour/Blob 검출
-- 핀(Pin) 특징 Contour/LineGauge 검출
-- 휜 핀(Bent-pin) 정상/불량 shaft-width 검증
-- 다이 패드(Die-pad) 표면 Contour 기준 레시피
-- Surface defect edge-contour 검증
-- Mean, RotateScale 같은 기본 Tool 샘플
-
----
-
-## ⚙️ 외부 라이브러리 참조 (External Library References)
-
-전체 개발 솔루션을 빌드하기 위해서는 두 개의 외부 소스 루트(Source Root)가 필요합니다.
-
-### 1. Library-Noah
-
-Library-Noah는 OpenVisionLab에서 원래 사용하던 비전/코어 라이브러리의 외부 소스 루트입니다.
-
-메인 프로젝트 참조:
-
-- `Lib.Common`
-- `Lib.OpenCV`
-- `Lib.OpenCV.Blob`
-
-OpenVisionLab.csproj의 기본 경로:
-
-```xml
-$(MSBuildProjectDirectory)\..\Library-Noah
+```powershell
+dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
 ```
 
-권장되는 개발 디렉토리 구조:
+실행 파일:
+
+```powershell
+.\bin\Debug\OpenVisionLab.exe
+```
+
+## 검증
+
+기본 빌드 확인:
+
+```powershell
+dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
+```
+
+Readiness contract:
+
+```powershell
+dotnet run --project "tools/OpenVisionReadinessCheck/OpenVisionReadinessCheck.csproj" -c Debug -- "C:\Git\OpenVisionLab_Dev"
+```
+
+공개 샘플 확인:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestPublicSampleAssets.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.PublicSampleCatalog.csv -OutputDir artifacts\public_sample_catalog
+```
+
+## 문서
+
+- [튜토리얼 가이드](docs/OPENVISIONLAB_TUTORIAL.md)
+- [Learn Mode 가이드](docs/learn/README.md)
+- [안정 기능 계약](docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md)
+- [제품 정체성과 로드맵](docs/OPENVISIONLAB_PRODUCT_IDENTITY_AND_ROADMAP.md)
+- [공개용 샘플 카탈로그](docs/samples/OpenVisionLab.PublicSampleCatalog.csv)
+- [제품형 샘플 카탈로그](docs/samples/OpenVisionLab.ProductSampleCatalog.csv)
+
+## 라이선스와 저작권 고지
+
+OpenVisionLab은 루트의 [LICENSE](LICENSE) 파일에 적힌 Apache License 2.0을 따릅니다.
+
+이 프로젝트에는 최노아(Noah-Choi)가 개발한 소프트웨어가 포함되어 있습니다.
 
 ```text
-C:\Git\
-  ├── OpenVisionLab_Dev\
-  └── Library-Noah\
+This project includes software developed by 최노아(Noah-Choi).
+Copyright (c) 2026 최노아(Noah-Choi).
 ```
 
-### 2. WPG-CUSTOM
+상업적 사용, 수정, 재배포는 라이선스 조건에 따라 가능합니다.
+다만 소프트웨어의 복사본이나 중요한 부분을 재배포할 때는 `LICENSE`, `NOTICE`, 저작권 표시, 저작자 표시를 제거하거나 가리지 말아야 합니다.
 
-WPG-CUSTOM은 OpenVisionLab 프로퍼티 에디터 브릿지에서 사용하는 커스텀 WPF PropertyGrid 소스입니다.
+## 정리
 
-OpenVisionLab.csproj의 기본 경로:
-
-```xml
-$(MSBuildProjectDirectory)\..\WPG-CUSTOM
-```
-
-권장되는 개발 디렉토리 구조:
-
-```text
-C:\Git\
-  ├── OpenVisionLab_Dev\
-  └── WPG-CUSTOM\
-```
-
-외부 라이브러리 경로가 다를 경우 MSBuild 속성으로 덮어쓸 수 있습니다:
-
-```powershell
-dotnet build OpenVisionLab.csproj `
-  -p:LibraryNoahSourceRoot="D:\Work\Library-Noah" `
-  -p:WpgCustomSourceRoot="D:\Work\WPG-CUSTOM"
-```
-
-WPG 바이너리가 이미 dll 파일로 준비되어 있다면 소스 빌드를 건너뛸 수 있습니다:
-
-```powershell
-dotnet build OpenVisionLab.csproj -p:WpgCustomBuildEnabled=false
-```
-
-상세 정책:
-
-- [External Reference Policy](docs/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md)
-
----
-
-## 💻 개발 환경 (Development Environment)
-
-- Windows
-- Visual Studio 2022
-- .NET 8 Windows Desktop (`net8.0-windows`)
-- Windows Forms + WPF interop
-- OpenGL-based image canvas
-- OpenCvSharp4
-- x64 권장
-
----
-
-## 🛠 빌드 (Build)
-
-```powershell
-dotnet build OpenVisionLab.csproj --configuration Debug
-```
-
-외부 WPG 소스를 재빌드하지 않고 검증 빌드만 수행할 경우:
-
-```powershell
-dotnet build OpenVisionLab.csproj --configuration Debug -p:WpgCustomBuildEnabled=false
-```
-
----
-
-## ✅ 검증 (Validation)
-
-샘플 카탈로그 검증 실행:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1
-```
-
-플랫폼 Precheck 실행:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File tools\RunVisionPlatformPrecheck.ps1
-```
-
-하나의 UI 영역만 변경되었을 때 범위가 지정된 UI Precheck 실행:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File tools\RunUiPrecheck.ps1 -Targets main_workspace
-```
-
-UI Precheck는 기본적으로 offscreen quiet render로 실행되어 작업자 화면에 테스트 폼을 띄우지 않습니다. 실제 화면 캡처가 필요할 때만 `-VisibleCapture`를 사용합니다.
-
-```powershell
-powershell -ExecutionPolicy Bypass -File tools\RunUiPrecheck.ps1 -Targets main_workspace -VisibleCapture
-```
-
-UI 없이 외부 러너(Runner)로 레시피 단독 실행:
-
-```powershell
-tools\VisionRecipeRunnerSmoke\bin\Debug\net8.0-windows\VisionRecipeRunnerSmoke.exe `
-  Sample\Contour.jpg `
-  docs\samples\Contour_AllSymbolsAndFaint_LLM.pipeline.xml `
-  output.png `
-  --all-overlay-image output_all_overlays.png
-```
-
----
-
-## 🚀 향후 과제 (Current Focus)
-
-현재 프로젝트는 단순한 툴 모음에서 통합 레시피 플랫폼으로 활발히 전환 중입니다.
-
-단기 우선순위:
-
-- 모든 툴이 동일한 툴/결과/파이프라인 규약을 따르도록 통일.
-- 파이프라인 입력/출력 UX를 명확하고 예측 가능하게 유지.
-- 다중 브랜치(Multi-branch) 레시피의 Summary Preview 및 Publish 동작 개선.
-- 샘플 기반 알고리즘의 신뢰성 강화.
-- 폼 디자이너 친화적인 구조를 유지하면서 Threshold/WPG 에디터 UX 개선.
-- AI 레시피 Import, 유효성 검증 및 interactive tuning workflow 견고화.
-- 승인된 XML이 UI 외부에서 실행될 수 있도록 외부 러너/DLL 경로 준비.
-
----
-
-## 📄 License
-
-이 프로젝트는 Apache License 2.0을 따릅니다. 자세한 내용은 LICENSE 파일을 참조하세요.
+OpenVisionLab의 방향은 명확합니다.
+초보자는 샘플을 따라 하면서 룰베이스 비전의 흐름을 배우고, 숙련자는 같은 구조 안에서 실제 검사 Recipe를 빠르게 만들고 검증할 수 있는 프로그램입니다.

@@ -1,73 +1,111 @@
-﻿using System.Collections.Generic;
-using System.Drawing;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace OpenVisionLab._1._Core
 {
     internal sealed class DisplayLayerStore
     {
-        private readonly List<FormLayerDisplay> layers = new List<FormLayerDisplay>();
+        private readonly List<DisplayLayerMetadata> layers = new List<DisplayLayerMetadata>();
 
         public int Count => layers.Count;
 
         public IReadOnlyList<DisplayLayerInfo> GetInfos()
         {
             return layers
-                .Select((display, index) => new DisplayLayerInfo(index, display.Text))
+                .Select((layer, index) => new DisplayLayerInfo(index, layer.Title))
                 .ToList();
         }
 
         public string GetTitle(int index)
         {
-            return GetOrNull(index)?.Text ?? string.Empty;
+            if (index < 0 || index >= layers.Count)
+            {
+                return string.Empty;
+            }
+
+            return layers[index].Title ?? string.Empty;
         }
 
         public int FindIndex(string title)
         {
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                return -1;
+            }
+
             for (int i = 0; i < layers.Count; i++)
             {
-                if (string.Equals(layers[i].Text, title, System.StringComparison.OrdinalIgnoreCase)) return i;
+                if (string.Equals(layers[i].Title, title, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
             }
 
             return -1;
         }
 
-        public FormLayerDisplay Create(Bitmap imageSource, bool useClose, string title, IDisplayManager displayManager)
+        public int Create(string title, bool useClose, int? insertIndex = null)
         {
-            FormLayerDisplay display = new FormLayerDisplay(imageSource, layers.Count, layers, useClose, title, false, displayManager);
-            layers.Add(display);
-            return display;
+            int index = insertIndex.GetValueOrDefault(layers.Count);
+            if (index < 0 || index > layers.Count)
+            {
+                index = layers.Count;
+            }
+
+            layers.Insert(index, new DisplayLayerMetadata
+            {
+                Title = title ?? string.Empty,
+                UseClose = useClose
+            });
+            return index;
+        }
+
+        public bool Rename(string oldTitle, string newTitle)
+        {
+            int index = FindIndex(oldTitle);
+            if (index < 0 || string.IsNullOrWhiteSpace(newTitle) || FindIndex(newTitle) >= 0)
+            {
+                return false;
+            }
+
+            layers[index].Title = newTitle.Trim();
+            return true;
+        }
+
+        public void Remove(string title)
+        {
+            int index = FindIndex(title);
+            if (index >= 0)
+            {
+                layers.RemoveAt(index);
+            }
         }
 
         public void RemoveEmpty()
         {
             for (int i = layers.Count - 1; i >= 0; i--)
             {
-                if (layers[i].Text == string.Empty)
+                if (string.IsNullOrEmpty(layers[i].Title))
                 {
                     layers.RemoveAt(i);
                 }
             }
         }
 
-        public FormLayerDisplay GetOrNull(int index)
+        public bool GetUseClose(int index)
         {
-            if (index < 0 || index >= layers.Count) return null;
-            return layers[index];
-        }
-
-        public FormLayerDisplay GetByTitleOrFirst(string title)
-        {
-            if (!string.IsNullOrWhiteSpace(title))
+            if (index < 0 || index >= layers.Count)
             {
-                FormLayerDisplay match = layers.FirstOrDefault(display => display.Text == title && !display.IsDisposed);
-                if (match != null)
-                {
-                    return match;
-                }
+                return true;
             }
 
-            return layers.FirstOrDefault(display => !display.IsDisposed);
+            return layers[index].UseClose;
+        }
+
+        private sealed class DisplayLayerMetadata
+        {
+            public string Title { get; set; } = string.Empty;
+            public bool UseClose { get; set; } = true;
         }
     }
 }

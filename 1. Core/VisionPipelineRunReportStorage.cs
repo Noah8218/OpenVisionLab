@@ -264,9 +264,9 @@ namespace OpenVisionLab
             string fileName = $"{index:00}_{SanitizeFileName(step?.Name)}_{SanitizeFileName(step?.OutputLayer)}_overlay.png";
             string path = Path.Combine(directory, fileName);
             using (Bitmap bitmap = BitmapImageConverter.ToBitmap(image))
-            using (Bitmap overlay = VisionPipelineRunReportImageRenderer.Render(bitmap, stepResult, index))
             {
-                overlay?.Save(path, ImageFormat.Png);
+                VisionPipelineRunReportImageRenderer.RenderInPlace(bitmap, stepResult, index);
+                bitmap.Save(path, ImageFormat.Png);
             }
 
             return File.Exists(path) ? fileName : string.Empty;

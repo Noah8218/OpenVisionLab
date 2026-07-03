@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace OpenVisionLab.PropertyGrid
 {
@@ -11,6 +11,8 @@ namespace OpenVisionLab.PropertyGrid
         bool HasCategories { get; }
         IPropertyGridPropertyCollection Properties { get; }
         void ApplyDisplayOptions(PropertyGridDisplayOptions options);
+        void SetPropertyBrowsable(string propertyName, bool isBrowsable);
+        void RefreshSelectedObject();
     }
 
     public sealed class PropertyGridDisplayOptions
@@ -22,7 +24,7 @@ namespace OpenVisionLab.PropertyGrid
         public static PropertyGridDisplayOptions ToolForm => new PropertyGridDisplayOptions
         {
             PropertyNameColumnWidth = 150,
-            EditorColumnMinWidth = 165,
+            EditorColumnMinWidth = 300,
             ShowSearchBox = true
         };
 
@@ -48,11 +50,26 @@ namespace OpenVisionLab.PropertyGrid
 
     public class PropertyGridPropertyValueChangedEventArgs : EventArgs
     {
+        private readonly string propertyName;
+
         public PropertyGridPropertyValueChangedEventArgs(IPropertyGridProperty property)
+            : this(property, null, null, null)
+        {
+        }
+
+        public PropertyGridPropertyValueChangedEventArgs(IPropertyGridProperty property, object targetObject, object oldValue, object newValue)
         {
             Property = property;
+            TargetObject = targetObject;
+            OldValue = oldValue;
+            NewValue = newValue;
+            propertyName = property?.Name ?? string.Empty;
         }
 
         public IPropertyGridProperty Property { get; }
+        public object TargetObject { get; }
+        public object OldValue { get; }
+        public object NewValue { get; }
+        public string PropertyName => propertyName;
     }
 }

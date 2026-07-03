@@ -21,6 +21,7 @@ mono_crash.*
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+dist/
 x64/
 x86/
 [Aa][Rr][Mm]/
@@ -60,6 +61,15 @@ BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
 artifacts/
+.artifacts/
+
+# Codex/local smoke output and temporary performance artifacts.
+.codex/
+tmp/
+docs/samples/generated/
+
+# Local/vendor sample assets are not public-safe. Use docs/samples/public instead.
+[Ss]ample/
 
 # StyleCop
 StyleCopReport.xml

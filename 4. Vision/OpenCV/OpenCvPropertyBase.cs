@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Windows;
 using System.Xml.Serialization;
 using static OpenVisionLab.PropertyGridEditorFactory;
 using System.Windows.Controls.WpfPropertyGrid;
@@ -42,9 +41,10 @@ namespace OpenVisionLab.Vision._1._Tools.OpenCV
     [CategoryOrder("Threshold", 1)]
     [CategoryOrder("ROI", 2)]
     [CategoryOrder("Image Process", 5)]
-    public class OpenCvPropertyBase : DependencyObject, IOpenCVPropertyBase
+    // Algorithm properties are plain configuration models; WPF behavior belongs in views/adapters.
+    public class OpenCvPropertyBase : IOpenCVPropertyBase
     {
-        public OpenCvPropertyBase(string strName) : base()
+        public OpenCvPropertyBase(string strName)
         {
             NAME = strName;
         }
@@ -65,48 +65,49 @@ namespace OpenVisionLab.Vision._1._Tools.OpenCV
         [CategoryAttribute("Threshold"), DescriptionAttribute("검사를 하기전 이진화처리를 하고 검사를 할지 결정합니다."), DisplayNameAttribute("Use threshold")]
         public virtual bool USE_THRESHOLD { get; set; } = true;
 
-        [PropertyOrder(2)]
+        [PropertyOrder(3)]
         [Browsable(true)]
         [CategoryAttribute("Threshold"), DescriptionAttribute("True시 이미지를 반전합니다. White -> Black / Black -> White"), DisplayNameAttribute("Invert result")]
         public bool USE_BITWISENOT { get; set; } = false;
 
-        [PropertyOrder(3)]
+        [PropertyOrder(1)]
         [CategoryAttribute("Threshold"), DescriptionAttribute("이진화의 알고리즘의 타입입니다. 옵션에 따라 이진화 결과가 틀립니다."), DisplayNameAttribute("Threshold type")]
         public virtual ThresholdTypes THRESHOLD_TYPES { get; set; } = ThresholdTypes.Binary;
 
-        [PropertyOrder(4)]
+        [PropertyOrder(2)]
         [PropertyEditor(typeof(WpgThresholdEditor))]
         [ThresholdEditor(0, 255, 1, 0, nameof(USE_BITWISENOT))]
         [NumberRange(0, 255, 1, 0)]
         [CategoryAttribute("Threshold"), DescriptionAttribute(""), DisplayNameAttribute("Threshold")]
         public virtual double THRESHOLD { get; set; }
         
-        [PropertyOrder(1)]
+        [PropertyOrder(4)]
         [Browsable(true)]
         [CategoryAttribute("Threshold"), DescriptionAttribute("검사를 하기전 적응형 이진화처리를 하고 검사를 할지 결정합니다."), DisplayNameAttribute("Use adaptive threshold")]
         public bool USE_ADAPTIVE_THRESHOLD { get; set; } = false;
 
-        [PropertyOrder(6)]
-        [PropertyEditor(typeof(WpgSliderEditor))]
+        [PropertyOrder(7)]
+        [PropertyEditor(typeof(WpgThresholdEditor))]
+        [ThresholdEditor(0, 255, 1, 0, nameof(USE_BITWISENOT))]
         [NumberRange(0, 255, 1, 0)]
         [CategoryAttribute("Threshold"), DescriptionAttribute(""), DisplayNameAttribute("Adaptive threshold")]
         public virtual double ADAPTIVE_THRESHOLD { get; set; }
 
-        [PropertyOrder(7)]
+        [PropertyOrder(5)]
         [CategoryAttribute("Threshold"), DescriptionAttribute("이진화의 알고리즘의 타입입니다. 옵션에 따라 이진화 결과가 틀립니다."), DisplayNameAttribute("Adaptive type")]
         public virtual ThresholdTypes ADAPTIVE_THRESHOLD_TYPES { get; set; } = ThresholdTypes.Binary;
 
-        [PropertyOrder(8)]
+        [PropertyOrder(6)]
         [Browsable(true)]
         [CategoryAttribute("Threshold"), DescriptionAttribute("적응형 이진화의 알고리즘의 타입입니다. 옵션에 따라 이진화 결과가 틀립니다."), DisplayNameAttribute("Adaptive algorithm")]
         public AdaptiveThresholdTypes ADAPTIVE_THRESHOLD_ALGORITHM { get; set; } = AdaptiveThresholdTypes.GaussianC;
 
-        [PropertyOrder(9)]
+        [PropertyOrder(8)]
         [Browsable(true)]
         [CategoryAttribute("Threshold"), DescriptionAttribute("적응형 이진화의 사이즈(픽셀)입니다. 홀수만 가능합니다."), DisplayNameAttribute("Block size")]
         public int BlockSize { get; set; } = 25;
 
-        [PropertyOrder(10)]
+        [PropertyOrder(9)]
         [Browsable(true)]
         [CategoryAttribute("Threshold"), DescriptionAttribute("적응형 이진화의 가중치값 입니다. BlockSize에서 추출한 값에 가중치값을 더합니다."), DisplayNameAttribute("Weight")]
         public int Weight { get; set; } = 5;
@@ -116,12 +117,12 @@ namespace OpenVisionLab.Vision._1._Tools.OpenCV
         [CategoryAttribute("ROI"), DescriptionAttribute("사용시 지정한 ROI로 검사하며, 미사용시 이미지 전체를 대상으로 검사합니다."), DisplayNameAttribute("Use ROI")]
         public bool USE_ROI { get; set; } = true;
 
-        [PropertyOrder(1)]
+        [PropertyOrder(2)]
         [Browsable(true)]
         [CategoryAttribute("ROI"), DescriptionAttribute("사용시 여러개의 ROI로 검사하며, 미사용시 ROI 1개로 검사합니다."), DisplayNameAttribute("Use multi ROI")]
         public bool USE_MULTI_ROI { get; set; } = false;
 
-        [PropertyOrder(2)]
+        [PropertyOrder(1)]
         [Browsable(true)]
         [PropertyEditor(typeof(WpgROIEditor))]
         [CategoryAttribute("ROI"), DescriptionAttribute(""), DisplayNameAttribute("ROI")]
@@ -137,6 +138,11 @@ namespace OpenVisionLab.Vision._1._Tools.OpenCV
         public List<OpenCvSharp.Rect> CvROIS { get; set; } = new List<OpenCvSharp.Rect>();
 
         [PropertyOrder(4)]
+        [Browsable(true)]
+        [CategoryAttribute("ROI"), DescriptionAttribute("사용시 마스킹 영역을 편집하고 검사에서 제외합니다."), DisplayNameAttribute("Use masking")]
+        public bool USE_MASKING { get; set; } = false;
+
+        [PropertyOrder(5)]
         [PropertyEditor(typeof(WpgMultiROIEditor))]
         [TypeConverter(typeof(ListTypeConverter))]// 
         [CategoryAttribute("ROI"), DescriptionAttribute("마스킹 영역입니다. 해당 영역에 이물이 검출시 필터링 됩니다."), DisplayNameAttribute("Masking")]
@@ -169,7 +175,11 @@ namespace OpenVisionLab.Vision._1._Tools.OpenCV
         public List<XmlCvRect> CvMASKSXml
         {
             get => CvMASKS?.Select(rect => new XmlCvRect(rect)).ToList() ?? new List<XmlCvRect>();
-            set => CvMASKS = value?.Select(rect => rect?.ToRect() ?? new OpenCvSharp.Rect()).ToList() ?? new List<OpenCvSharp.Rect>();
+            set
+            {
+                CvMASKS = value?.Select(rect => rect?.ToRect() ?? new OpenCvSharp.Rect()).ToList() ?? new List<OpenCvSharp.Rect>();
+                USE_MASKING = CvMASKS.Count > 0;
+            }
         }
 
         #region CONFIG BY XML              

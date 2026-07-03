@@ -79,6 +79,14 @@ Every pipeline step should preserve:
    - Expose `VisionRecipeRunner` as the first stable API.
    - Use smoke tests to prove that UI-created XML works outside the UI.
 
+6. Migrate the app toward WPF.
+   - Move from the inside out: Tool Views, shared panels, document hosts, then the main shell.
+   - Keep runtime contracts stable while WinForms compatibility remains.
+   - Keep the current PropertyGrid UX frozen unless a PropertyGrid-specific change is explicitly requested.
+   - Put new UX investment into WPF surfaces instead of broad WinForms redesign.
+   - Reuse the `OpenVisionToolWindowFactory` and WPF shell command catalog as the migration bridge for menu routing.
+   - Use `docs/OPENVISIONLAB_WPF_MIGRATION_PLAN.md` as the staged full-app migration guide.
+
 ## Validation Baseline
 
 Use this command as the platform-level smoke check:
@@ -87,12 +95,19 @@ Use this command as the platform-level smoke check:
 powershell -ExecutionPolicy Bypass -File tools\RunVisionPlatformPrecheck.ps1 -FailOnUiWarn
 ```
 
+For WPF migration work, run the WPF-expanded gate:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\RunVisionPlatformPrecheck.ps1 -FailOnUiWarn -WpfTools
+```
+
 This checks:
 
 - OpenVisionLab build.
 - XML compatibility and sample XML deserialization.
-- `VisionRecipeRunner` with `Sample\Contour.jpg` and the runnable contour sample recipes.
+- `VisionRecipeRunner` with public synthetic contour samples and runnable contour sample recipes.
 - UI screenshot smoke checks unless `-SkipUi` is used.
+- WPF shell/tool-view screenshot and parity checks when `-WpfTools` is supplied.
 
 ## AI Recipe Direction
 

@@ -128,7 +128,9 @@ namespace OpenVisionLab
                 Task<VisionToolResult> runTask = Task.Run(() =>
                     VisionPipelineOverlayMergeService.IsMergeTool(step.ToolType)
                         ? VisionPipelineOverlayMergeService.Execute(step, input, runResult)
-                        : ExecuteStep(step, input));
+                        : VisionPipelineArithmeticStep.IsArithmetic(step)
+                            ? VisionPipelineArithmeticStep.Execute(step, input, context)
+                            : ExecuteStep(step, input));
                 Task delayTask = Task.Delay(stepTimeoutMilliseconds, cancellationToken);
                 Task completedTask = await Task.WhenAny(runTask, delayTask);
 

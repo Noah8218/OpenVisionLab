@@ -7,8 +7,11 @@ namespace OpenVisionLab.ImageSpace.Core
         void SetActiveImage(Bitmap image);
         Bitmap GetActiveImage();
         void SetImage(int index, string title, Bitmap image);
+        void InsertImage(int index, string title, Bitmap image);
         Bitmap GetImage(int index);
         Bitmap GetImage(string title);
+        void RemoveImage(int index);
+        void RemoveImage(string title);
         void SetRoi(int index, Rectangle roi);
         Rectangle GetRoi(int index);
         Rectangle GetRoi(string title);

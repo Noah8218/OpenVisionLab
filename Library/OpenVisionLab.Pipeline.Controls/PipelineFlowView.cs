@@ -1,22 +1,24 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shapes;
 
 namespace OpenVisionLab.Pipeline.Controls
 {
     public sealed class PipelineFlowView : UserControl
     {
         private static readonly Brush SurfaceBrush = new SolidColorBrush(Color.FromRgb(255, 255, 255));
-        private static readonly Brush PanelBrush = new SolidColorBrush(Color.FromRgb(244, 248, 252));
-        private static readonly Brush FlowBorderBrush = new SolidColorBrush(Color.FromRgb(205, 217, 229));
-        private static readonly Brush AccentBrush = new SolidColorBrush(Color.FromRgb(35, 85, 132));
+        private static readonly Brush PanelBrush = new SolidColorBrush(Color.FromRgb(243, 246, 248));
+        private static readonly Brush FlowBorderBrush = new SolidColorBrush(Color.FromRgb(214, 225, 230));
+        private static readonly Brush AccentBrush = new SolidColorBrush(Color.FromRgb(21, 124, 134));
         private static readonly Brush MutedBrush = new SolidColorBrush(Color.FromRgb(92, 111, 130));
-        private static readonly Brush SelectedBrush = new SolidColorBrush(Color.FromRgb(230, 243, 255));
-        private static readonly Brush SelectedBorderBrush = new SolidColorBrush(Color.FromRgb(47, 111, 171));
+        private static readonly Brush SelectedBrush = new SolidColorBrush(Color.FromRgb(216, 236, 238));
+        private static readonly Brush SelectedBorderBrush = new SolidColorBrush(Color.FromRgb(21, 124, 134));
         private static readonly Brush BranchBrush = new SolidColorBrush(Color.FromRgb(173, 96, 0));
         private static readonly Brush BranchBackgroundBrush = new SolidColorBrush(Color.FromRgb(255, 244, 224));
 
@@ -27,6 +29,7 @@ namespace OpenVisionLab.Pipeline.Controls
         private readonly Dictionary<int, Border> inputBorders = new Dictionary<int, Border>();
         private readonly Dictionary<int, Border> outputBorders = new Dictionary<int, Border>();
         private readonly List<PipelineFlowStepItem> steps = new List<PipelineFlowStepItem>();
+        private bool languageChangedSubscribed;
 
         public event EventHandler<PipelineFlowStepSelectedEventArgs> StepSelected;
 
@@ -53,7 +56,7 @@ namespace OpenVisionLab.Pipeline.Controls
 
             emptyText = new TextBlock
             {
-                Text = "No pipeline steps",
+                Text = OpenVisionLanguageService.T("PipelineFlow.NoSteps"),
                 Foreground = MutedBrush,
                 FontSize = 12,
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -64,6 +67,10 @@ namespace OpenVisionLab.Pipeline.Controls
             scrollViewer.Content = stepPanel;
             root.Children.Add(scrollViewer);
             Content = root;
+
+            SubscribeLanguageChanged();
+            Loaded += (sender, e) => SubscribeLanguageChanged();
+            Unloaded += (sender, e) => UnsubscribeLanguageChanged();
         }
 
         public int SelectedIndex { get; private set; } = -1;
@@ -120,6 +127,34 @@ namespace OpenVisionLab.Pipeline.Controls
             UpdateSelectionVisuals();
         }
 
+        private void OnLanguageChanged(object sender, EventArgs e)
+        {
+            emptyText.Text = OpenVisionLanguageService.T("PipelineFlow.NoSteps");
+            Rebuild();
+        }
+
+        private void SubscribeLanguageChanged()
+        {
+            if (languageChangedSubscribed)
+            {
+                return;
+            }
+
+            OpenVisionLanguageService.LanguageChanged += OnLanguageChanged;
+            languageChangedSubscribed = true;
+        }
+
+        private void UnsubscribeLanguageChanged()
+        {
+            if (!languageChangedSubscribed)
+            {
+                return;
+            }
+
+            OpenVisionLanguageService.LanguageChanged -= OnLanguageChanged;
+            languageChangedSubscribed = false;
+        }
+
         private FrameworkElement CreateStepRow(PipelineFlowStepItem step)
         {
             Border row = new Border
@@ -152,11 +187,11 @@ namespace OpenVisionLab.Pipeline.Controls
             Grid.SetColumn(input, 0);
             layerFlow.Children.Add(input);
 
-            TextBlock arrow = CreateArrow(step.IsBranch);
+            FrameworkElement arrow = CreateArrow(step.IsBranch);
             Grid.SetColumn(arrow, 1);
             layerFlow.Children.Add(arrow);
 
-            Border output = CreateLayerPill("OUTPUT", step.OutputLayer, step.HasOutputImage, false, false, null);
+            Border output = CreateLayerPill(OpenVisionLanguageService.T("PipelineFlow.Output"), step.OutputLayer, step.HasOutputImage, false, false, null);
             Grid.SetColumn(output, 2);
             layerFlow.Children.Add(output);
 
@@ -206,7 +241,7 @@ namespace OpenVisionLab.Pipeline.Controls
         {
             Brush background = ResolveLayerBackgroundBrush(hasImage, isInput, isBranch);
             Brush foreground = hasImage
-                ? (isInput ? new SolidColorBrush(Color.FromRgb(18, 116, 76)) : new SolidColorBrush(Color.FromRgb(39, 89, 145)))
+                ? (isInput ? new SolidColorBrush(Color.FromRgb(13, 122, 85)) : new SolidColorBrush(Color.FromRgb(21, 124, 134)))
                 : MutedBrush;
             if (isInput && isBranch)
             {
@@ -266,22 +301,31 @@ namespace OpenVisionLab.Pipeline.Controls
         {
             if (!hasImage)
             {
-                return "Run Preview required";
+                return OpenVisionLanguageService.T("PipelineFlow.RunPreviewRequired");
             }
 
-            return isInput ? "View input image" : "View output image";
+            return isInput
+                ? OpenVisionLanguageService.T("PipelineFlow.ViewInputImage")
+                : OpenVisionLanguageService.T("PipelineFlow.ViewOutputImage");
         }
 
-        private static TextBlock CreateArrow(bool isBranch)
+        private static FrameworkElement CreateArrow(bool isBranch)
         {
-            return new TextBlock
+            Brush brush = isBranch ? BranchBrush : MutedBrush;
+            return new Path
             {
-                Text = "->",
-                Foreground = isBranch ? BranchBrush : MutedBrush,
-                FontSize = 12,
-                FontWeight = FontWeights.Bold,
+                Data = Geometry.Parse("M 4 9 H 15 M 11 5 L 16 9 L 11 13"),
+                Stroke = brush,
+                StrokeThickness = 1.6,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round,
+                StrokeLineJoin = PenLineJoin.Round,
+                Width = 20,
+                Height = 18,
+                Stretch = Stretch.None,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
+                VerticalAlignment = VerticalAlignment.Center,
+                UseLayoutRounding = true
             };
         }
 
@@ -289,17 +333,17 @@ namespace OpenVisionLab.Pipeline.Controls
         {
             if (step == null)
             {
-                return "INPUT";
+                return OpenVisionLanguageService.T("PipelineFlow.Input");
             }
 
             if (step.IsBranch)
             {
-                return "BRANCH IN";
+                return OpenVisionLanguageService.T("PipelineFlow.BranchInput");
             }
 
             return string.IsNullOrWhiteSpace(step.ExpectedInputLayer)
-                ? "SOURCE IMG"
-                : "PREV OUT";
+                ? OpenVisionLanguageService.T("PipelineFlow.SourceImage")
+                : OpenVisionLanguageService.T("PipelineFlow.PreviousOutput");
         }
 
         private static Border CreateStepCard(PipelineFlowStepItem step)
@@ -331,7 +375,7 @@ namespace OpenVisionLab.Pipeline.Controls
             };
             if (step.IsBranch)
             {
-                badgePanel.Children.Add(CreateFlowBadge("BRANCH"));
+                badgePanel.Children.Add(CreateFlowBadge(OpenVisionLanguageService.T("PipelineFlow.Branch")));
             }
 
             badgePanel.Children.Add(CreateStatusBadge(step.Status, step.StatusText));
@@ -360,7 +404,7 @@ namespace OpenVisionLab.Pipeline.Controls
                     Foreground = step.IsBranch ? BranchBrush : MutedBrush,
                     FontSize = 10,
                     FontWeight = FontWeights.SemiBold,
-                    TextTrimming = TextTrimming.CharacterEllipsis,
+                    TextWrapping = TextWrapping.Wrap,
                     ToolTip = step.FlowStateText.Trim(),
                     Margin = new Thickness(0, 3, 0, 0)
                 };
@@ -473,8 +517,8 @@ namespace OpenVisionLab.Pipeline.Controls
             }
 
             return isInput
-                ? new SolidColorBrush(Color.FromRgb(226, 247, 236))
-                : new SolidColorBrush(Color.FromRgb(231, 240, 255));
+                ? new SolidColorBrush(Color.FromRgb(225, 246, 235))
+                : new SolidColorBrush(Color.FromRgb(216, 236, 238));
         }
 
         private static Brush ResolveLayerBorderBrush(bool hasImage, bool isInput, bool isBranch)
@@ -490,8 +534,8 @@ namespace OpenVisionLab.Pipeline.Controls
             }
 
             return isInput
-                ? new SolidColorBrush(Color.FromRgb(18, 116, 76))
-                : new SolidColorBrush(Color.FromRgb(39, 89, 145));
+                ? new SolidColorBrush(Color.FromRgb(13, 122, 85))
+                : new SolidColorBrush(Color.FromRgb(21, 124, 134));
         }
 
         private static Brush ResolveStatusBrush(PipelineFlowStepStatus status)
@@ -499,7 +543,7 @@ namespace OpenVisionLab.Pipeline.Controls
             switch (status)
             {
                 case PipelineFlowStepStatus.Passed:
-                    return new SolidColorBrush(Color.FromRgb(0, 150, 85));
+                    return new SolidColorBrush(Color.FromRgb(13, 122, 85));
                 case PipelineFlowStepStatus.Error:
                     return new SolidColorBrush(Color.FromRgb(210, 45, 45));
                 case PipelineFlowStepStatus.Failed:
@@ -510,7 +554,7 @@ namespace OpenVisionLab.Pipeline.Controls
                 case PipelineFlowStepStatus.Running:
                     return new SolidColorBrush(Color.FromRgb(220, 135, 30));
                 case PipelineFlowStepStatus.Loaded:
-                    return new SolidColorBrush(Color.FromRgb(47, 111, 171));
+                    return new SolidColorBrush(Color.FromRgb(21, 124, 134));
                 case PipelineFlowStepStatus.Skipped:
                     return new SolidColorBrush(Color.FromRgb(120, 128, 138));
                 default:
@@ -550,10 +594,22 @@ namespace OpenVisionLab.Pipeline.Controls
 
         private static string BuildLayerToolTip(string label, string layerName, bool isInput, bool isBranch, string expectedInputLayer)
         {
-            string text = $"{label}: {SafeText(layerName, "-")} - click to inspect this image";
+            string text = string.Format(
+                CultureInfo.CurrentCulture,
+                OpenVisionLanguageService.T("PipelineFlow.LayerTooltip"),
+                label,
+                SafeText(layerName, "-"));
+            text += Environment.NewLine + (isInput
+                ? OpenVisionLanguageService.T("PipelineFlow.ViewInputImage")
+                : OpenVisionLanguageService.T("PipelineFlow.ViewOutputImage"));
+
             if (isInput && isBranch)
             {
-                text += $"\nBranch input. This step reads {SafeText(layerName, "-")} instead of previous output {SafeText(expectedInputLayer, "-")}.";
+                text += Environment.NewLine + string.Format(
+                    CultureInfo.CurrentCulture,
+                    OpenVisionLanguageService.T("PipelineFlow.BranchInputTooltip"),
+                    SafeText(layerName, "-"),
+                    SafeText(expectedInputLayer, "-"));
             }
 
             return text;
@@ -563,13 +619,17 @@ namespace OpenVisionLab.Pipeline.Controls
         {
             if (step == null)
             {
-                return "Click to inspect overlay preview";
+                return OpenVisionLanguageService.T("PipelineFlow.OverlayTooltip");
             }
 
-            string text = "Click to inspect overlay preview";
+            string text = OpenVisionLanguageService.T("PipelineFlow.OverlayTooltip");
             if (step.IsBranch)
             {
-                text += $"\nBranch step. This step reads '{SafeText(step.InputLayer, "-")}' instead of previous output '{SafeText(step.ExpectedInputLayer, "-")}'. Use Link Prev if this was not intentional.";
+                text += Environment.NewLine + string.Format(
+                    CultureInfo.CurrentCulture,
+                    OpenVisionLanguageService.T("PipelineFlow.BranchStepTooltip"),
+                    SafeText(step.InputLayer, "-"),
+                    SafeText(step.ExpectedInputLayer, "-"));
             }
 
             return text;

@@ -1,6 +1,8 @@
-# Contour_TextSymbols Sample
+# Contour_TextSymbols Local Reference
 
-This sample is a reference pipeline for detecting text, numbers, and simple symbols in `Sample/Contour.jpg`.
+This is a local-only legacy reference pipeline for detecting text, numbers, and simple symbols. It was kept as a development note for machines that still have the ignored local sample folder.
+
+Do not use this reference for README, public tutorials, Learn captures, required public smoke evidence, or GitHub sample assets. Public-facing demos should use the generated synthetic catalogs under `docs/samples/public` and `docs/samples/public/product`.
 
 ## Pipeline
 

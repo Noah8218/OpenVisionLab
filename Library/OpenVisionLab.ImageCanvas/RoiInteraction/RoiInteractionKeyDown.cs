@@ -79,10 +79,10 @@ namespace OpenVisionLab.ImageCanvas
 			return newRect;
 		}
 
-		private static void AddNewOverlay(OpenVisionLab.ImageCanvas.Rendering.ImageCanvasControl imageViewer, string groupType, string groupNewName, CanvasRect<float> shape, string uniqueId, EnumInspWindowType inspWindowType, EnumItemType itemType, bool isExtentionRectange = false)
+		private static void AddNewOverlay(OpenVisionLab.ImageCanvas.Rendering.ImageCanvasControl imageViewer, string groupType, string groupNewName, CanvasRect<float> shape, string uniqueId, EnumInspWindowType inspWindowType, EnumItemType itemType, bool isExtensionRectangle = false)
 		{
 			bool isGroupRectangle = itemType == EnumItemType.Group ? true : false;
-			imageViewer.AddOverlay(groupType, groupNewName, shape, uniqueId, inspWindowType, itemType, isExtentionRectange, isGroupRectangle);
+			imageViewer.AddOverlay(groupType, groupNewName, shape, uniqueId, inspWindowType, itemType, isExtensionRectangle, isGroupRectangle);
 		}
 	}
 }

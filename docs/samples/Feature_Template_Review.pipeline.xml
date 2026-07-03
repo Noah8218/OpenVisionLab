@@ -45,11 +45,11 @@
       <UseAcceptance>true</UseAcceptance>
       <ExpectedSuccess>true</ExpectedSuccess>
       <MaxElapsedMilliseconds>3000</MaxElapsedMilliseconds>
-      <AcceptanceMetricName>ResultCount</AcceptanceMetricName>
+      <AcceptanceMetricName>ScoreMax</AcceptanceMetricName>
       <UseAcceptanceMetricMinimum>true</UseAcceptanceMetricMinimum>
-      <AcceptanceMetricMinimum>1</AcceptanceMetricMinimum>
+      <AcceptanceMetricMinimum>90</AcceptanceMetricMinimum>
       <UseAcceptanceMetricMaximum>true</UseAcceptanceMetricMaximum>
-      <AcceptanceMetricMaximum>3</AcceptanceMetricMaximum>
+      <AcceptanceMetricMaximum>100</AcceptanceMetricMaximum>
     </Step>
   </Steps>
 </VisionPipeline>

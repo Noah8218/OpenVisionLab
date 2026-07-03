@@ -1,0 +1,89 @@
+<UserControl x:Class="OpenVisionLab.VisionToolVerificationGuideView"
+             x:Name="root"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:local="clr-namespace:OpenVisionLab"
+             AutomationProperties.AutomationId="VisionToolVerificationGuideView">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <local:SharedResourceDictionary Source="VisionToolWpfTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Border x:Name="guideChrome"
+            Background="{StaticResource VisionTool.PanelBrush}"
+            BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="4"
+            Padding="8,5">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0"
+                    Background="{StaticResource VisionTool.AccentBrush}"
+                    CornerRadius="2" />
+
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition x:Name="rowHeader" Height="Auto" />
+                    <RowDefinition x:Name="rowHeaderGap" Height="1" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="1" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition x:Name="rowNextActionGap" Height="1" />
+                    <RowDefinition x:Name="rowNextAction" Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid x:Name="headerGrid"
+                      Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="6" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <iconPacks:PackIconMaterial Grid.Column="0"
+                                                Kind="ClipboardCheckOutline"
+                                                Width="14"
+                                                Height="14"
+                                                VerticalAlignment="Center"
+                                                Foreground="{StaticResource VisionTool.AccentBrush}" />
+                    <TextBlock Grid.Column="2"
+                               Text="{Binding HeaderText, ElementName=root}"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource VisionTool.ActionTextBrush}"
+                               TextTrimming="CharacterEllipsis" />
+                </Grid>
+
+                <TextBlock Grid.Row="2"
+                           AutomationProperties.AutomationId="VisionToolVerificationGuideState"
+                           Text="{Binding StateText, ElementName=root}"
+                           ToolTip="{Binding StateText, ElementName=root}"
+                           FontWeight="SemiBold"
+                           Foreground="{Binding StateBrush, ElementName=root, TargetNullValue={StaticResource VisionTool.SecondaryTextBrush}}"
+                           TextTrimming="CharacterEllipsis" />
+
+                <TextBlock Grid.Row="4"
+                           AutomationProperties.AutomationId="VisionToolVerificationGuideCriteria"
+                           Text="{Binding CriteriaText, ElementName=root}"
+                           ToolTip="{Binding CriteriaText, ElementName=root}"
+                           Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
+                           TextTrimming="CharacterEllipsis" />
+
+                <TextBlock Grid.Row="6"
+                           x:Name="txtNextAction"
+                           AutomationProperties.AutomationId="VisionToolVerificationGuideNextAction"
+                           Text="{Binding NextActionText, ElementName=root}"
+                           ToolTip="{Binding NextActionText, ElementName=root}"
+                           Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
+                           TextTrimming="CharacterEllipsis" />
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

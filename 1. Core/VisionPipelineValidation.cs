@@ -36,14 +36,22 @@ namespace OpenVisionLab
             "contour",
             "line",
             "linegauge",
+            "linedistance",
+            "linedistancegauge",
+            "lineintersection",
+            "lineintersectiongauge",
             "matching",
             "templatematching",
+            "edgebasedmatching",
+            "edgebasedtemplatematching",
+            "edgetemplatematching",
             "mean",
             "rotatescale",
             "rotateandscale",
             "feature",
             "featurematching",
             "sift",
+            "arithmetic",
             "overlaymerge",
             "resultmerge",
             "mergeresult"
@@ -124,6 +132,7 @@ namespace OpenVisionLab
                     && previousEnabledStep != null
                     && !string.IsNullOrWhiteSpace(previousEnabledStep.OutputLayer)
                     && !string.IsNullOrWhiteSpace(step.InputLayer)
+                    && !VisionPipelineNormalizer.IsBranchInputAllowed(step)
                     && !string.Equals(step.InputLayer, previousEnabledStep.OutputLayer, StringComparison.OrdinalIgnoreCase))
                 {
                     result.Warnings.Add(
@@ -149,6 +158,8 @@ namespace OpenVisionLab
                 {
                     result.Errors.Add($"{label} '{step.Name}': input layer '{step.InputLayer}' does not exist before this step.");
                 }
+
+                ValidateArithmeticInputLayerB(result, label, step, availableLayers);
 
                 if (string.IsNullOrWhiteSpace(step.OutputLayer))
                 {
@@ -240,7 +251,9 @@ namespace OpenVisionLab
             ValidateGrayValueRange(result, label, step, "MaxValue");
             ValidateGrayValueRange(result, label, step, "RangeMin");
             ValidateGrayValueRange(result, label, step, "RangeMax");
-            ValidateGrayValueRange(result, label, step, "CannyThresholdLow");
+            ValidateGrayValueRange(result, label, step, "CANNY_LOW");
+            ValidateGrayValueRange(result, label, step, "CANNY_HIGH");
+            ValidateMinMax(result, label, step, "CANNY_LOW", "CANNY_HIGH");            ValidateGrayValueRange(result, label, step, "CannyThresholdLow");
             ValidateGrayValueRange(result, label, step, "CannyThresholdHigh");
             ValidateMinMax(result, label, step, "CannyThresholdLow", "CannyThresholdHigh");
             ValidatePositiveInt(result, label, step, "BlockSize", oddOnly: true);
@@ -251,6 +264,10 @@ namespace OpenVisionLab
             ValidatePositiveInt(result, label, step, "Diameter", oddOnly: false);
             ValidatePositiveInt(result, label, step, "SigmaColor", oddOnly: false);
             ValidatePositiveInt(result, label, step, "SigmaSpace", oddOnly: false);
+            ValidatePositiveInt(result, label, step, "NUM_MATCH", oddOnly: false);
+            ValidatePositiveInt(result, label, step, "SEARCH_STEP", oddOnly: false);
+            ValidatePositiveInt(result, label, step, "MAX_TEMPLATE_POINTS", oddOnly: false);
+            ValidateOddKernelInRange(result, label, step, "CANNY_APERTURE_SIZE", 3, 7);
             ValidateCannyApertureSize(result, label, step);
             ValidateDerivativePair(result, label, step, "SobelDegreeX", "SobelDegreeY");
             ValidateDerivativePair(result, label, step, "ScharrDegreeX", "ScharrDegreeY");
@@ -259,6 +276,70 @@ namespace OpenVisionLab
             ValidatePositiveDouble(result, label, step, "PIXELPERMM");
             ValidatePositiveDouble(result, label, step, "ScaleXPercent");
             ValidatePositiveDouble(result, label, step, "ScaleYPercent");
+            ValidateArithmeticParameters(result, label, step);
+        }
+
+        private static void ValidateArithmeticInputLayerB(
+            VisionPipelineValidationResult result,
+            string label,
+            VisionPipelineStep step,
+            HashSet<string> availableLayers)
+        {
+            if (!VisionPipelineArithmeticStep.RequiresInputLayerB(step))
+            {
+                return;
+            }
+
+            string inputLayerB = VisionPipelineArithmeticStep.GetInputLayerB(step);
+            if (string.IsNullOrWhiteSpace(inputLayerB))
+            {
+                result.Errors.Add($"{label} '{step.Name}': InputLayerB is required for Arithmetic operation '{ReadParameter(step, VisionPipelineArithmeticStep.ParameterOperation)}'.");
+            }
+            else if (!availableLayers.Contains(inputLayerB))
+            {
+                result.Errors.Add($"{label} '{step.Name}': input layer B '{inputLayerB}' does not exist before this step.");
+            }
+        }
+
+        private static void ValidateArithmeticParameters(VisionPipelineValidationResult result, string label, VisionPipelineStep step)
+        {
+            if (!VisionPipelineArithmeticStep.IsArithmetic(step))
+            {
+                return;
+            }
+
+            string mode = ReadParameter(step, VisionPipelineArithmeticStep.ParameterMode, VisionPipelineArithmeticStep.ModeOperation);
+            if (!string.Equals(mode, VisionPipelineArithmeticStep.ModeOperation, StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(mode, VisionPipelineArithmeticStep.ModeOffset, StringComparison.OrdinalIgnoreCase))
+            {
+                result.Errors.Add($"{label} '{step.Name}': ArithmeticMode expects Operation or Offset.");
+            }
+
+            string operation = ReadParameter(step, VisionPipelineArithmeticStep.ParameterOperation, "Bitwise_AND");
+            string[] operations =
+            {
+                "Bitwise_AND",
+                "Bitwise_OR",
+                "Bitwise_XOR",
+                "Bitwise_NOT",
+                "ADD",
+                "SUBTRACT",
+                "MULTIPLY",
+                "DIVIDE",
+                "MAX",
+                "MIN",
+                "ABS",
+                "ABSDIFF"
+            };
+            if (!operations.Any(item => string.Equals(item, operation, StringComparison.OrdinalIgnoreCase)))
+            {
+                result.Errors.Add($"{label} '{step.Name}': unsupported ArithmeticOperation '{operation}'.");
+            }
+
+            ValidateGrayValueRange(result, label, step, VisionPipelineArithmeticStep.ParameterGray);
+            ValidateGrayValueRange(result, label, step, VisionPipelineArithmeticStep.ParameterB);
+            ValidateGrayValueRange(result, label, step, VisionPipelineArithmeticStep.ParameterG);
+            ValidateGrayValueRange(result, label, step, VisionPipelineArithmeticStep.ParameterR);
         }
 
         private static void ValidateOverlayMergeSources(
@@ -335,6 +416,9 @@ namespace OpenVisionLab
                 || normalized == "linegauge"
                 || normalized == "matching"
                 || normalized == "templatematching"
+                || normalized == "edgebasedmatching"
+                || normalized == "edgebasedtemplatematching"
+                || normalized == "edgetemplatematching"
                 || normalized == "feature"
                 || normalized == "featurematching"
                 || normalized == "sift";
@@ -446,6 +530,19 @@ namespace OpenVisionLab
             value = 0;
             return step.Parameters.TryGetValue(key, out string text)
                 && double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
+        }
+
+        private static string ReadParameter(VisionPipelineStep step, string key, string defaultValue = "")
+        {
+            if (step?.Parameters == null
+                || string.IsNullOrWhiteSpace(key)
+                || !step.Parameters.TryGetValue(key, out string text)
+                || string.IsNullOrWhiteSpace(text))
+            {
+                return defaultValue ?? string.Empty;
+            }
+
+            return text;
         }
 
         private static IEnumerable<string> ReadListParameter(VisionPipelineStep step, string key)

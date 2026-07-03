@@ -1,0 +1,21 @@
+﻿AssetPath,SourceType,SourceName,SourceUrl,License,Attribution,GeneratedBy,Notes
+docs/samples/public/Workspace_Inspection_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated workspace overview sample for public tutorial captures
+docs/samples/public/Matching_DiePad_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated grayscale matching source image
+docs/samples/public/Matching_DiePad_Synthetic_NoTarget_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated matching no-target negative sample
+docs/samples/public/templates/Matching_DiePad_Synthetic_Template.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated template crop from Matching_DiePad_Synthetic_OK.png
+docs/samples/public/Blob_Particles_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated blob particle source image
+docs/samples/public/Blob_Particles_Synthetic_Sparse_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated sparse blob negative sample
+docs/samples/public/Contour_Shapes_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated contour shape-count source image
+docs/samples/public/Contour_Shapes_Synthetic_Missing_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated contour missing-shape negative sample
+docs/samples/public/Threshold_BandPads_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated basic threshold source image
+docs/samples/public/Threshold_BandPads_Synthetic_Missing_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated basic threshold missing-pad negative sample
+docs/samples/public/Mean_Brightness_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated mean brightness normal sample
+docs/samples/public/Mean_Brightness_Synthetic_Dark_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated mean brightness dark drift negative sample
+docs/samples/public/Feature_Card_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated feature matching source image
+docs/samples/public/Feature_Card_Synthetic_Wrong_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated feature matching wrong-target negative sample
+docs/samples/public/templates/Feature_Card_Synthetic_Template.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated template crop from Feature_Card_Synthetic_OK.png
+docs/samples/public/Edge_Fiducial_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated edge-based matching source image
+docs/samples/public/Edge_Fiducial_Synthetic_Wrong_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated edge-based matching wrong-target negative sample
+docs/samples/public/templates/Edge_Fiducial_Synthetic_Template.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated template crop from Edge_Fiducial_Synthetic_OK.png
+docs/samples/public/Line_Pins_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated line gauge pin source image
+docs/samples/public/Line_Pins_Synthetic_WidePin_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated line width drift negative sample

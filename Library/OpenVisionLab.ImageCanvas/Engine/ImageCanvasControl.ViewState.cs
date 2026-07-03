@@ -96,11 +96,20 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 
 		private void DragViewMovement(MouseEventArgs e)
 		{
-			Point currentRobotyPos = GetCurrentRobotPos(e.X, e.Y);
-			float dx = currentRobotyPos.X - _preMousePos.X;
-			float dy = currentRobotyPos.Y - _preMousePos.Y;
+			Point currentImagePos = GetCurrentCanvasPosition(e.X, e.Y);
+			float dx = currentImagePos.X - _preMousePos.X;
+			float dy = currentImagePos.Y - _preMousePos.Y;
 			_offsetSize.Width += dx;
 			_offsetSize.Height += dy;
+		}
+
+		public void PanToKeepPointAtMouse(PointF anchorPoint, Point mousePos)
+		{
+			PointF currentPoint = GetCurrentCanvasPositionF(mousePos.X, mousePos.Y);
+			_offsetSize.Width += currentPoint.X - anchorPoint.X;
+			_offsetSize.Height += currentPoint.Y - anchorPoint.Y;
+			Reshape();
+			RefreshGL();
 		}
 
 		public float UpdateZoom(int delta)
@@ -143,12 +152,12 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			return result;
 		}
 
-		public PointF GetCurrentRobotPosf(int mouseLocationX, int mouseLocationY)
+		public PointF GetCurrentCanvasPositionF(int mouseLocationX, int mouseLocationY)
 		{
-			PointF robotPos = new PointF(
+			PointF canvasPos = new PointF(
 				mouseLocationX * _zoom / GetControlMinSize() - _offsetSize.Width,
 				(openGLControl.Size.Height - mouseLocationY) * _zoom / GetControlMinSize() - _offsetSize.Height);
-			return new PointF(robotPos.X, robotPos.Y);
+			return new PointF(canvasPos.X, canvasPos.Y);
 		}
 
 		public PointF GetScreenPosFromPixelCoordf(int pixelX, int pixelY)
@@ -159,12 +168,12 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			return new PointF(screenX, screenY);
 		}
 
-		public Point GetCurrentRobotPos(int mouseLocationX, int mouseLocationY)
+		public Point GetCurrentCanvasPosition(int mouseLocationX, int mouseLocationY)
 		{
-			Point robotPos = new Point(
+			Point canvasPos = new Point(
 				(int)(mouseLocationX * _zoom / GetControlMinSize() - _offsetSize.Width),
 				(int)((openGLControl.Size.Height - mouseLocationY) * _zoom / GetControlMinSize() - _offsetSize.Height));
-			return new Point(robotPos.X, robotPos.Y);
+			return new Point(canvasPos.X, canvasPos.Y);
 		}
 
 		public PointF ConvertOpenGlToImagePoint(PointF openGlPoint)

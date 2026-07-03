@@ -13,13 +13,13 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 	public static class OpenGlOverlayExtensions
 	{
 		#region Overlay
-		public static void AddOverlay(this ImageCanvasControl canvasViewer, string parentType, string childType, CanvasShape shape, string uniqueId, EnumInspWindowType InspType = EnumInspWindowType.Unit, EnumItemType itemType = EnumItemType.Window, bool isExtentionRectange = false, bool isGroupRectangle = false)
+		public static void AddOverlay(this ImageCanvasControl canvasViewer, string parentType, string childType, CanvasShape shape, string uniqueId, EnumInspWindowType inspectionWindowType = EnumInspWindowType.Unit, EnumItemType itemType = EnumItemType.Window, bool isExtensionRectangle = false, bool isGroupRectangle = false)
 		{
 			shape.UniqueId = uniqueId;
 			shape.GroupType = childType;
 
 			// 새로운 Shape를 추가합니다.
-			canvasViewer.GetCanvasOverlayManager().AddOverlayItem(parentType, CreateNewCanvasOverlayItem(canvasViewer, childType, shape, InspType, itemType, isExtentionRectange, isGroupRectangle));
+			canvasViewer.GetCanvasOverlayManager().AddOverlayItem(parentType, CreateNewCanvasOverlayItem(canvasViewer, childType, shape, inspectionWindowType, itemType, isExtensionRectangle, isGroupRectangle));
 
 			// 추가한 Group(Type)에 여러 ROI들이 들어가 있는 상황입니다.
 			// 해당 Group Roi 사이즈를 다시 계산합니다.
@@ -28,16 +28,16 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 			ResizeGroupRectangle(canvasViewer, EnumInspWindowType.Panel.ToString());
 		}
 
-		private static CanvasOverlayItem CreateNewCanvasOverlayItem(ImageCanvasControl canvasViewer, string childType, CanvasShape shape, EnumInspWindowType InspType, EnumItemType itemType, bool isExtentionRectange, bool isGroupRectangle)
+		private static CanvasOverlayItem CreateNewCanvasOverlayItem(ImageCanvasControl canvasViewer, string childType, CanvasShape shape, EnumInspWindowType inspectionWindowType, EnumItemType itemType, bool isExtensionRectangle, bool isGroupRectangle)
 		{
 			System.Drawing.Color drawColor = System.Drawing.Color.White;
 			// Group별 색을 설정합니다.
-			if (canvasViewer.GetCanvasOverlayManager().GroupBrushes.TryGetValue(InspType, out System.Windows.Media.SolidColorBrush brush))
+			if (canvasViewer.GetCanvasOverlayManager().GroupBrushes.TryGetValue(inspectionWindowType, out System.Windows.Media.SolidColorBrush brush))
 			{
 				drawColor = System.Drawing.Color.FromArgb(brush.Color.A, brush.Color.R, brush.Color.G, brush.Color.B);
 			}
 
-			CanvasOverlayItem newObject = new CanvasOverlayItem { GroupType = childType, Shape = shape, ItemType = itemType, InspWindowType = InspType, IsExtentionRectange = isExtentionRectange, IsGroupRectangle = isGroupRectangle, Color = drawColor };
+			CanvasOverlayItem newObject = new CanvasOverlayItem { GroupType = childType, Shape = shape, ItemType = itemType, InspWindowType = inspectionWindowType, IsExtensionRectangle = isExtensionRectangle, IsGroupRectangle = isGroupRectangle, Color = drawColor };
 			ConnectOverlayCallback(newObject, canvasViewer.GetOpenGL());
 
 			return newObject;
@@ -67,6 +67,7 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 				}
 			};
 			newObject.Shape.IsChanged = true;
+			newObject.Shape.OnChanged?.Invoke();
 		}
 
 		public static void DeleteOverlay(this ImageCanvasControl canvasViewer, string uniqueId = "", string groupName = "")
@@ -224,7 +225,7 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 		public static CanvasOverlayItem GetGroupToType(this ImageCanvasControl canvasViewer, string childType) => canvasViewer.GetCanvasOverlayManager().GetGroupToType(childType);
 		public static CanvasOverlayItem GetOverlayByUniqueId(this ImageCanvasControl canvasViewer, string uniqueid) => canvasViewer.GetCanvasOverlayManager().GetOverlayByUniqueId(uniqueid);
 		public static CanvasOverlayItem GetParentToType(this ImageCanvasControl canvasViewer, string childType) => canvasViewer.GetCanvasOverlayManager().GetParentToType(childType);
-		public static string GetNewOverlayName(this ImageCanvasControl canvasViewer, CanvasOverlayItem overlayItem) => canvasViewer.GetCanvasOverlayManager().GetNewname(overlayItem);
+		public static string GetNewOverlayName(this ImageCanvasControl canvasViewer, CanvasOverlayItem overlayItem) => canvasViewer.GetCanvasOverlayManager().GetNewName(overlayItem);
 		public static void ClearOverlays(this ImageCanvasControl canvasViewer)
 		{
 			ReleaseDisplayLists(canvasViewer);

@@ -3,7 +3,10 @@ param(
     [string]$Platform = "Any CPU",
     [string]$CatalogPath = "docs\samples\OpenVisionLab.SampleCatalog.csv",
     [string]$OutputDir = "C:\Users\Public\Documents\ESTsoft\CreatorTemp\openvisionlab_sample_catalog",
-    [switch]$FailOnExplore
+    [string]$LibraryNoahSourceRoot = "",
+    [switch]$FailOnExplore,
+    [switch]$SkipRestore,
+    [switch]$SkipRunnerBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -12,13 +15,44 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $catalogFullPath = if ([System.IO.Path]::IsPathRooted($CatalogPath)) { $CatalogPath } else { Join-Path $repoRoot $CatalogPath }
 $runnerProject = Join-Path $repoRoot "tools\VisionRecipeRunnerSmoke\VisionRecipeRunnerSmoke.csproj"
 $runnerExeCandidates = @(
+    (Join-Path $repoRoot "tools\VisionRecipeRunnerSmoke\bin\$Platform\$Configuration\net8.0-windows7.0\VisionRecipeRunnerSmoke.exe"),
     (Join-Path $repoRoot "tools\VisionRecipeRunnerSmoke\bin\$Platform\$Configuration\net8.0-windows\VisionRecipeRunnerSmoke.exe"),
-    (Join-Path $repoRoot "tools\VisionRecipeRunnerSmoke\bin\$Configuration\net8.0-windows\VisionRecipeRunnerSmoke.exe")
+    (Join-Path $repoRoot "tools\VisionRecipeRunnerSmoke\bin\$Configuration\net8.0-windows7.0\VisionRecipeRunnerSmoke.exe"),
+    (Join-Path $repoRoot "tools\VisionRecipeRunnerSmoke\bin\$Configuration\net8.0-windows\VisionRecipeRunnerSmoke.exe"),
+    (Join-Path $repoRoot "tools\VisionRecipeRunnerSmoke\bin\net8.0-windows7.0\VisionRecipeRunnerSmoke.exe"),
+    (Join-Path $repoRoot "tools\VisionRecipeRunnerSmoke\bin\net8.0-windows\VisionRecipeRunnerSmoke.exe")
 )
-$msBuild = "C:\Program Files\Microsoft Visual Studio\2022\Professional\Msbuild\Current\Bin\MSBuild.exe"
+$msBuildCandidates = @(
+    "C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe",
+    "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe",
+    "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+)
+$msBuild = $msBuildCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
 $reportPath = Join-Path $OutputDir "sample_catalog_report.md"
 $summaryJsonPath = Join-Path $OutputDir "sample_catalog_summary.json"
 $catalogStartedAt = Get-Date
+$sampleCatalogDurationsSeconds = [ordered]@{
+    RunnerRestoreSeconds = 0
+    RunnerBuildSeconds = 0
+    SampleExecutionSeconds = 0
+}
+
+function Invoke-Stage {
+    param(
+        [string]$Name,
+        [scriptblock]$Action
+    )
+
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    try {
+        & $Action
+    }
+    finally {
+        $stopwatch.Stop()
+        $script:sampleCatalogDurationsSeconds[$Name] = [Math]::Round($stopwatch.Elapsed.TotalSeconds, 3)
+        Write-Host "== $Name duration: $($script:sampleCatalogDurationsSeconds[$Name]) sec"
+    }
+}
 
 Add-Type -AssemblyName System.Drawing
 
@@ -195,6 +229,7 @@ function Add-CatalogCategoryStat {
             Total = 0
             Required = 0
             Explore = 0
+            ExpectedFailure = 0
             OK = 0
             NG = 0
         }
@@ -208,6 +243,9 @@ function Add-CatalogCategoryStat {
     }
     elseif ([string]::Equals($Mode, "Explore", [StringComparison]::OrdinalIgnoreCase)) {
         $bucket["Explore"]++
+    }
+    elseif ([string]::Equals($Mode, "ExpectedFailure", [StringComparison]::OrdinalIgnoreCase)) {
+        $bucket["ExpectedFailure"]++
     }
 
     if ([string]::Equals($Status, "OK", [StringComparison]::OrdinalIgnoreCase)) {
@@ -292,12 +330,80 @@ if (-not (Test-Path -LiteralPath $catalogFullPath)) {
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 
 Write-Host "== Build VisionRecipeRunnerSmoke =="
-& $msBuild $runnerProject /t:Build /p:Configuration=$Configuration "/p:Platform=$Platform" /p:WpgCustomBuildEnabled=false /clp:ErrorsOnly /v:minimal
-if ($LASTEXITCODE -ne 0) {
-    throw "VisionRecipeRunnerSmoke build failed."
+$runnerBuildProperties = @(
+    "/p:Configuration=$Configuration",
+    "/p:Platform=$Platform",
+    "/p:WpgCustomBuildEnabled=false"
+)
+
+if (-not $SkipRunnerBuild) {
+    Write-Host "== Restore VisionRecipeRunnerSmoke =="
+    if ($SkipRestore) {
+        Write-Host "Restore skipped by -SkipRestore."
+        $sampleCatalogDurationsSeconds["RunnerRestoreSeconds"] = 0
+    }
+    else {
+        Invoke-Stage -Name "RunnerRestoreSeconds" -Action {
+            & dotnet restore $runnerProject @runnerBuildProperties
+            if ($LASTEXITCODE -ne 0) {
+                throw "VisionRecipeRunnerSmoke restore failed."
+            }
+        }
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($msBuild)) {
+        Invoke-Stage -Name "RunnerBuildSeconds" -Action {
+            & $msBuild $runnerProject /t:Build @runnerBuildProperties /m /p:RestorePackages=false /p:Restore=false /clp:ErrorsOnly /v:minimal
+            if ($LASTEXITCODE -ne 0) {
+                throw "VisionRecipeRunnerSmoke build failed."
+            }
+        }
+    }
+    else {
+        $dotnetBuildArguments = @(
+            "build",
+            $runnerProject,
+            "-c",
+            $Configuration,
+            "/p:Platform=$Platform",
+            "/p:WpgCustomBuildEnabled=false",
+            "--no-restore",
+            "--maxcpucount"
+        )
+        Invoke-Stage -Name "RunnerBuildSeconds" -Action {
+            & dotnet @dotnetBuildArguments
+            if ($LASTEXITCODE -ne 0) {
+                throw "VisionRecipeRunnerSmoke build failed."
+            }
+        }
+    }
 }
 
-$runnerExe = $runnerExeCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+function Resolve-RunnerExecutable {
+    param(
+        [string[]]$Candidates,
+        [string]$ProjectName,
+        [string]$ProjectPath
+    )
+
+    $directHit = $Candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+    if (-not [string]::IsNullOrWhiteSpace($directHit)) {
+        return $directHit
+    }
+
+    $projectDir = Split-Path -Parent $ProjectPath
+    $fallback = Get-ChildItem -LiteralPath $projectDir -Filter $ProjectName -Recurse -File -ErrorAction SilentlyContinue |
+        Sort-Object FullName |
+        Select-Object -First 1
+
+    if ($null -ne $fallback) {
+        return $fallback.FullName
+    }
+
+    return ""
+}
+
+$runnerExe = Resolve-RunnerExecutable -Candidates $runnerExeCandidates -ProjectName "VisionRecipeRunnerSmoke.exe" -ProjectPath $runnerProject
 if ([string]::IsNullOrWhiteSpace($runnerExe)) {
     throw "VisionRecipeRunnerSmoke executable was not found. Checked: $($runnerExeCandidates -join '; ')"
 }
@@ -311,6 +417,7 @@ $okRows = 0
 $ngRows = 0
 $requiredRows = 0
 $exploreRows = 0
+$expectedFailureRows = 0
 $categoryStats = @{}
 $sampleFolderCoverage = @()
 $uncoveredSampleFolders = @()
@@ -350,16 +457,21 @@ $report.Add("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |") | O
 
 $failures = New-Object System.Collections.Generic.List[string]
 $resultRows = New-Object System.Collections.Generic.List[object]
+$sampleExecutionStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
 foreach ($row in $runRows) {
     $totalRows++
     $isRequired = [string]::Equals($row.ValidationMode, "Required", [StringComparison]::OrdinalIgnoreCase)
     $isExplore = [string]::Equals($row.ValidationMode, "Explore", [StringComparison]::OrdinalIgnoreCase)
+    $isExpectedFailure = [string]::Equals($row.ValidationMode, "ExpectedFailure", [StringComparison]::OrdinalIgnoreCase)
     if ($isRequired) {
         $requiredRows++
     }
     elseif ($isExplore) {
         $exploreRows++
+    }
+    elseif ($isExpectedFailure) {
+        $expectedFailureRows++
     }
 
     $imagePath = Join-Path $repoRoot $row.ImagePath
@@ -463,7 +575,12 @@ foreach ($row in $runRows) {
 
     $resultFailureMessages = New-Object System.Collections.Generic.List[string]
     $artifactFailures = New-Object System.Collections.Generic.List[string]
-    if ($exitCode -ne 0) {
+    if ($isExpectedFailure) {
+        if ($exitCode -eq 0) {
+            $resultFailureMessages.Add("Expected failure did not occur.") | Out-Null
+        }
+    }
+    elseif ($exitCode -ne 0) {
         $resultFailureMessages.Add("Runner exit code $exitCode.") | Out-Null
     }
 
@@ -517,33 +634,40 @@ foreach ($row in $runRows) {
         LogPath = $rawLogPath
     }) | Out-Null
 
-    if ($exitCode -ne 0 -and ($isRequired -or ($FailOnExplore -and $isExplore))) {
+    if ($isExpectedFailure -and $exitCode -eq 0) {
+        $failures.Add("$($row.SampleName) was expected to fail, but runner returned OK. See $rawLogPath") | Out-Null
+    }
+
+    if ($exitCode -ne 0 -and -not $isExpectedFailure -and ($isRequired -or ($FailOnExplore -and $isExplore))) {
         $failures.Add("$($row.SampleName) failed with exit code $exitCode. See $rawLogPath") | Out-Null
     }
 
-    if ($metricFailures.Count -gt 0 -and ($isRequired -or ($FailOnExplore -and $isExplore))) {
+    if ($metricFailures.Count -gt 0 -and ($isRequired -or $isExpectedFailure -or ($FailOnExplore -and $isExplore))) {
         foreach ($metricFailure in $metricFailures) {
             $failures.Add("$($row.SampleName): $metricFailure See $rawLogPath") | Out-Null
         }
     }
 
-    if ($artifactFailures.Count -gt 0 -and ($isRequired -or ($FailOnExplore -and $isExplore))) {
+    if ($artifactFailures.Count -gt 0 -and ($isRequired -or $isExpectedFailure -or ($FailOnExplore -and $isExplore))) {
         foreach ($artifactFailure in $artifactFailures) {
             $failures.Add("$($row.SampleName): $artifactFailure See $rawLogPath") | Out-Null
         }
     }
 
-    if ($metadataFailures.Count -gt 0 -and ($isRequired -or ($FailOnExplore -and $isExplore))) {
+    if ($metadataFailures.Count -gt 0 -and ($isRequired -or $isExpectedFailure -or ($FailOnExplore -and $isExplore))) {
         foreach ($metadataFailure in $metadataFailures) {
             $failures.Add("$($row.SampleName): $metadataFailure See $rawLogPath") | Out-Null
         }
     }
 }
+$sampleExecutionStopwatch.Stop()
+$sampleCatalogDurationsSeconds.SampleExecutionSeconds = [Math]::Round($sampleExecutionStopwatch.Elapsed.TotalSeconds, 3)
 
 $summaryLines = @(
     "- Runnable rows: $totalRows",
     "- Required rows: $requiredRows",
     "- Explore rows: $exploreRows",
+    "- Expected-failure rows: $expectedFailureRows",
     "- OK rows: $okRows",
     "- NG rows: $ngRows",
     ""
@@ -555,11 +679,11 @@ for ($i = $summaryLines.Count - 1; $i -ge 0; $i--) {
 $report.Add("") | Out-Null
 $report.Add("## Category Summary") | Out-Null
 $report.Add("") | Out-Null
-$report.Add("| Category | Total | Required | Explore | OK | NG |") | Out-Null
-$report.Add("| --- | ---: | ---: | ---: | ---: | ---: |") | Out-Null
+$report.Add("| Category | Total | Required | Explore | Expected Failure | OK | NG |") | Out-Null
+$report.Add("| --- | ---: | ---: | ---: | ---: | ---: | ---: |") | Out-Null
 foreach ($categoryName in ($categoryStats.Keys | Sort-Object)) {
     $bucket = $categoryStats[$categoryName]
-    $report.Add("| $categoryName | $($bucket["Total"]) | $($bucket["Required"]) | $($bucket["Explore"]) | $($bucket["OK"]) | $($bucket["NG"]) |") | Out-Null
+    $report.Add("| $categoryName | $($bucket["Total"]) | $($bucket["Required"]) | $($bucket["Explore"]) | $($bucket["ExpectedFailure"]) | $($bucket["OK"]) | $($bucket["NG"]) |") | Out-Null
 }
 
 $report.Add("") | Out-Null
@@ -660,11 +784,15 @@ $summaryPayload = [ordered]@{
     CatalogPath = $catalogFullPath
     OutputDir = $OutputDir
     RunnerPath = $runnerExe
+    RunnerRestoreDurationSeconds = $sampleCatalogDurationsSeconds.RunnerRestoreSeconds
+    RunnerBuildDurationSeconds = $sampleCatalogDurationsSeconds.RunnerBuildSeconds
+    SampleExecutionDurationSeconds = $sampleCatalogDurationsSeconds.SampleExecutionSeconds
     GateStatus = $gateStatus
     GateMessage = $gateMessage
     RunnableRows = $totalRows
     RequiredRows = $requiredRows
     ExploreRows = $exploreRows
+    ExpectedFailureRows = $expectedFailureRows
     OKRows = $okRows
     NGRows = $ngRows
     Categories = @($categorySummary)

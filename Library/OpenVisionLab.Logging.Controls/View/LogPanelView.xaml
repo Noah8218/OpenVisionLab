@@ -20,6 +20,8 @@
         <SolidColorBrush x:Key="ActionBorderBrush" Color="#4B8DA4" />
         <SolidColorBrush x:Key="InputBrush" Color="#101722" />
         <SolidColorBrush x:Key="BadgeBrush" Color="#263348" />
+        <SolidColorBrush x:Key="ComboArrowBrush" Color="#AEB9C7" />
+        <SolidColorBrush x:Key="ComboHoverBrush" Color="#172332" />
 
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
@@ -32,24 +34,104 @@
             <Setter Property="MinWidth" Value="92" />
             <Setter Property="Margin" Value="5,0,10,0" />
             <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Foreground" Value="#142033" />
-            <Setter Property="Background" Value="#EEF3F8" />
-            <Setter Property="BorderBrush" Value="#6D89A8" />
-            <Setter Property="Padding" Value="6,1" />
-            <Setter Property="ToolTip" Value="Turn off All Logs to choose Level or Area." />
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="{StaticResource InputBrush}" />
+            <Setter Property="BorderBrush" Value="#3B4654" />
+            <Setter Property="Padding" Value="8,2,28,2" />
+            <Setter Property="ToolTip" Value="{Binding FilterComboToolTip}" />
             <Setter Property="ItemContainerStyle">
                 <Setter.Value>
                     <Style TargetType="ComboBoxItem">
-                        <Setter Property="Foreground" Value="#142033" />
-                        <Setter Property="Background" Value="#EEF3F8" />
+                        <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+                        <Setter Property="Background" Value="{StaticResource InputBrush}" />
+                        <Setter Property="Padding" Value="8,4" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ComboBoxItem}">
+                                    <Border x:Name="itemChrome"
+                                            Background="{TemplateBinding Background}"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsHighlighted" Value="True">
+                                            <Setter TargetName="itemChrome" Property="Background" Value="{StaticResource ActionBrush}" />
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="itemChrome" Property="Background" Value="{StaticResource BadgeBrush}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
                     </Style>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBox}">
+                        <Grid>
+                            <Border x:Name="comboChrome"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="2" />
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center"
+                                              HorizontalAlignment="Left"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+                                              IsHitTestVisible="False" />
+                            <ToggleButton HorizontalAlignment="Right"
+                                          Width="24"
+                                          Background="Transparent"
+                                          BorderThickness="0"
+                                          Focusable="False"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <Path Width="8"
+                                      Height="5"
+                                      Data="M 0 0 L 4 5 L 8 0 Z"
+                                      Fill="{StaticResource ComboArrowBrush}"
+                                      Stretch="Fill" />
+                            </ToggleButton>
+                            <Popup x:Name="PART_Popup"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   Placement="Bottom"
+                                   PopupAnimation="Fade">
+                                <Border MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                                        MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                        Background="{StaticResource InputBrush}"
+                                        BorderBrush="{StaticResource LineBrush}"
+                                        BorderThickness="1">
+                                    <ScrollViewer CanContentScroll="True">
+                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="comboChrome" Property="Background" Value="{StaticResource ComboHoverBrush}" />
+                                <Setter TargetName="comboChrome" Property="BorderBrush" Value="{StaticResource ActionBorderBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="comboChrome" Property="BorderBrush" Value="{StaticResource ActionBorderBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="comboChrome" Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsEnabled" Value="False">
                     <Setter Property="Opacity" Value="0.38" />
-                    <Setter Property="Foreground" Value="#546273" />
-                    <Setter Property="Background" Value="#CBD4E0" />
+                    <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+                    <Setter Property="Background" Value="#182130" />
                     <Setter Property="BorderBrush" Value="#596779" />
                 </Trigger>
             </Style.Triggers>
@@ -139,6 +221,15 @@
             </Style.Triggers>
         </Style>
 
+        <Style x:Key="EmptyLogVisibilityStyle" TargetType="FrameworkElement">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasVisibleLogs}" Value="False">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="FilterLabelTextStyle"
                TargetType="TextBlock"
                BasedOn="{StaticResource {x:Type TextBlock}}">
@@ -176,7 +267,7 @@
                             MinWidth="62"
                             Content="{Binding ModeButtonText}"
                             Command="{Binding ToggleDetailCommand}"
-                            ToolTip="Switch summary and detail mode." />
+                            ToolTip="{Binding ModeToolTip}" />
                     <Border DockPanel.Dock="Right"
                             Background="{StaticResource BadgeBrush}"
                             BorderBrush="#34445C"
@@ -213,34 +304,34 @@
                            Margin="0,5,0,0">
                     <Button DockPanel.Dock="Right"
                             MinWidth="58"
-                            Content="Clear"
+                            Content="{Binding ClearText}"
                             Command="{Binding ResetCommand}"
-                            ToolTip="Clear the current log list." />
+                            ToolTip="{Binding ClearToolTip}" />
                     <Button DockPanel.Dock="Right"
                             MinWidth="58"
-                            Content="Folder"
+                            Content="{Binding FolderText}"
                             Command="{Binding OpenDirectoryCommand}"
-                            ToolTip="Open the log folder." />
+                            ToolTip="{Binding FolderToolTip}" />
                     <CheckBox DockPanel.Dock="Right"
-                              Content="Auto Scroll"
+                              Content="{Binding AutoScrollText}"
                               IsChecked="{Binding AutoScroll}"
-                              ToolTip="Move to the latest log line automatically." />
+                              ToolTip="{Binding AutoScrollToolTip}" />
                     <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             ToolTip="Search log message, area, level, or source." />
+                             ToolTip="{Binding SearchToolTip}" />
                 </DockPanel>
 
                 <WrapPanel Grid.Row="3"
                            Margin="0,6,0,0"
                            Style="{StaticResource DetailedOnlyVisibilityStyle}">
-                    <CheckBox Content="All Logs"
+                    <CheckBox Content="{Binding AllLogsText}"
                               IsChecked="{Binding ShowEntireStream}"
-                              ToolTip="Show every log line. Level and Area filters are disabled while this is on." />
-                    <TextBlock Text="Level"
+                              ToolTip="{Binding AllLogsToolTip}" />
+                    <TextBlock Text="{Binding LevelText}"
                                Style="{StaticResource FilterLabelTextStyle}" />
                     <ComboBox IsEnabled="{Binding IsFilterControlsEnabled}"
                               ItemsSource="{Binding Levels}"
                               SelectedItem="{Binding SelectedLevel}" />
-                    <TextBlock Text="Area"
+                    <TextBlock Text="{Binding AreaText}"
                                Style="{StaticResource FilterLabelTextStyle}" />
                     <ComboBox IsEnabled="{Binding IsFilterControlsEnabled}"
                               ItemsSource="{Binding Types}"
@@ -304,12 +395,57 @@
                 </ListBox.ItemTemplate>
             </ListBox>
 
-            <TextBlock Text="No execution logs to display."
-                       Style="{StaticResource EmptyLogTextVisibilityStyle}"
-                       Foreground="{StaticResource SecondaryTextBrush}"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       FontSize="12" />
+            <Border AutomationProperties.AutomationId="LogPanelEmptyState"
+                    Style="{StaticResource EmptyLogVisibilityStyle}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Width="520"
+                    MaxWidth="620"
+                    Padding="14,10"
+                    Background="#141F2A"
+                    BorderBrush="#3A6572"
+                    BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0"
+                            Width="28"
+                            Height="28"
+                            Background="#20333D"
+                            BorderBrush="#4B8DA4"
+                            BorderThickness="1">
+                        <TextBlock Text="i"
+                                   Foreground="#8AD7DA"
+                                   FontWeight="Bold"
+                                   FontSize="15"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock AutomationProperties.AutomationId="LogPanelEmptyTitle"
+                                   Text="{Binding EmptyTitleText}"
+                                   Foreground="{StaticResource PrimaryTextBrush}"
+                                   FontWeight="SemiBold"
+                                   FontSize="12.5" />
+                        <TextBlock Text="{Binding EmptyDetailText}"
+                                   Foreground="{StaticResource SecondaryTextBrush}"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   TextTrimming="None"
+                                   Margin="0,3,0,0" />
+                        <TextBlock AutomationProperties.AutomationId="LogPanelEmptyActionHint"
+                                   Text="{Binding EmptyActionHintText}"
+                                   Foreground="{StaticResource MutedTextBrush}"
+                                   FontSize="10.5"
+                                   TextWrapping="Wrap"
+                                   TextTrimming="None"
+                                   Margin="0,3,0,0" />
+                    </StackPanel>
+                </Grid>
+            </Border>
         </Grid>
     </Grid>
 </UserControl>

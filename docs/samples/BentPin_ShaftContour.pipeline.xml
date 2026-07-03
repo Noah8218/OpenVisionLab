@@ -127,11 +127,11 @@
       <UseAcceptance>true</UseAcceptance>
       <ExpectedSuccess>true</ExpectedSuccess>
       <MaxElapsedMilliseconds>1000</MaxElapsedMilliseconds>
-      <AcceptanceMetricName>ResultCount</AcceptanceMetricName>
+      <AcceptanceMetricName>BoundsWidthMax</AcceptanceMetricName>
       <UseAcceptanceMetricMinimum>true</UseAcceptanceMetricMinimum>
-      <AcceptanceMetricMinimum>10</AcceptanceMetricMinimum>
+      <AcceptanceMetricMinimum>0</AcceptanceMetricMinimum>
       <UseAcceptanceMetricMaximum>true</UseAcceptanceMetricMaximum>
-      <AcceptanceMetricMaximum>20</AcceptanceMetricMaximum>
+      <AcceptanceMetricMaximum>18</AcceptanceMetricMaximum>
     </Step>
   </Steps>
 </VisionPipeline>

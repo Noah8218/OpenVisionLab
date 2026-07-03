@@ -42,7 +42,7 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 					}
 					else
 					{
-						if (newObject.IsExtentionRectange)
+						if (newObject.IsExtensionRectangle)
 						{
 							DrawShape(gl, canvasRect.ExtendedRectangle, newColor, true, false);
 						}

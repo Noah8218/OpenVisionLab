@@ -21,7 +21,7 @@ namespace OpenVisionLab.ImageCanvas
 		public static void InitializeMouseDownState(OpenVisionLab.ImageCanvas.Rendering.ImageCanvasControl imageViewer, ref CanvasRect<float> activeRoiRect, OpenGLControl openGLControl, CanvasMouseEventArgs e)
 		{
 			if (activeRoiRect == null) { activeRoiRect = new CanvasRect<float>(); }
-			imageViewer.PreMousePos = imageViewer.GetCurrentRobotPos(e.X, e.Y);
+			imageViewer.PreMousePos = imageViewer.GetCurrentCanvasPosition(e.X, e.Y);
 			imageViewer.PostMousePos = imageViewer.PreMousePos;
 
 			CanvasRect<float> previousRoiRect = activeRoiRect;
@@ -66,7 +66,7 @@ namespace OpenVisionLab.ImageCanvas
 			}
 		}
 
-		public static (CanvasRect<float> Overlay, bool IsGroupOverlay) FindOverlayAtPosition(OpenVisionLab.ImageCanvas.Rendering.ImageCanvasControl imageViewer, System.Drawing.PointF currentRobotyPos, bool includeGroupRectangles = false)
+		public static (CanvasRect<float> Overlay, bool IsGroupOverlay) FindOverlayAtPosition(OpenVisionLab.ImageCanvas.Rendering.ImageCanvasControl imageViewer, System.Drawing.PointF currentImagePos, bool includeGroupRectangles = false)
 		{
 			List<CanvasOverlayItem> overlayItems = imageViewer.GetVisibleUnlockedOverlays();
 
@@ -75,8 +75,8 @@ namespace OpenVisionLab.ImageCanvas
 				.Where(x => !x.IsGroupRectangle && x.ItemType == EnumItemType.Window)
 				.Select(x => x.Shape)
 				.OfType<CanvasRect<float>>()
-				.Where(rect => rect.CheckHandleContainsPosition(currentRobotyPos.X, currentRobotyPos.Y, imageViewer.ZoomScale, imageViewer.HandleSize) != LineOverType.None)
-				.OrderBy(rect => Math.Sqrt(Math.Pow(rect.Center.X - currentRobotyPos.X, 2) + Math.Pow(rect.Center.Y - currentRobotyPos.Y, 2)))
+				.Where(rect => rect.CheckHandleContainsPosition(currentImagePos.X, currentImagePos.Y, imageViewer.ZoomScale, imageViewer.HandleSize) != LineOverType.None)
+				.OrderBy(rect => Math.Sqrt(Math.Pow(rect.Center.X - currentImagePos.X, 2) + Math.Pow(rect.Center.Y - currentImagePos.Y, 2)))
 				.FirstOrDefault();
 
 			bool isGroupOverlay = false;
@@ -87,8 +87,8 @@ namespace OpenVisionLab.ImageCanvas
 					.Where(x => x.IsGroupRectangle)
 					.Select(x => x.Shape)
 					.OfType<CanvasRect<float>>()
-					.Where(rect => rect.CheckHandleContainsPosition(currentRobotyPos.X, currentRobotyPos.Y, imageViewer.ZoomScale, imageViewer.HandleSize) != LineOverType.None)
-					.OrderBy(rect => CalculateDistanceToRectangle(currentRobotyPos, new System.Drawing.RectangleF(rect.Left, rect.Top, rect.Width, rect.Height)))
+					.Where(rect => rect.CheckHandleContainsPosition(currentImagePos.X, currentImagePos.Y, imageViewer.ZoomScale, imageViewer.HandleSize) != LineOverType.None)
+					.OrderBy(rect => CalculateDistanceToRectangle(currentImagePos, new System.Drawing.RectangleF(rect.Left, rect.Top, rect.Width, rect.Height)))
 					.FirstOrDefault();
 
 				if (targetOverlay != null)
@@ -106,9 +106,8 @@ namespace OpenVisionLab.ImageCanvas
 
 		private static (CanvasRect<float>, bool) GetLeftClickOverlay(OpenVisionLab.ImageCanvas.Rendering.ImageCanvasControl imageViewer, CanvasMouseEventArgs e)
 		{
-			//if (!IsEdittingDrawing) { return (null, false); }
-			var currentRobotyPos = imageViewer.GetCurrentRobotPos(e.X, e.Y);
-			var (targetOverlay, isGroupOverlay) = FindOverlayAtPosition(imageViewer, currentRobotyPos);
+			var currentImagePos = imageViewer.GetCurrentCanvasPosition(e.X, e.Y);
+			var (targetOverlay, isGroupOverlay) = FindOverlayAtPosition(imageViewer, currentImagePos);
 			return (targetOverlay, isGroupOverlay);
 		}
 

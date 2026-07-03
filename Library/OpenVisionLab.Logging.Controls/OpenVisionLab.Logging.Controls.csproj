@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
     <UseWPF>true</UseWPF>
     <AssemblyName>OpenVisionLab.Logging.Controls</AssemblyName>
     <RootNamespace>OpenVisionLab.Logging.Controls</RootNamespace>
@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OpenVisionLab.Logging\OpenVisionLab.Logging.csproj" />
+    <ProjectReference Include="..\OpenVisionLab.Localization\OpenVisionLab.Localization.csproj" />
   </ItemGroup>
 
 </Project>
