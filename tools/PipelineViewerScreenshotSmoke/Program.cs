@@ -1562,10 +1562,11 @@ internal static class Program
 
     private static CaptureResult CaptureShellHostWorkspaceSamplePipelineReviewMetrics(string outputPath)
     {
-        const string sampleName = "Blob_RiceParticle_Good";
+        const string sampleName = "Public_Blob_Particles_Good";
 
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
         VisionPipelineSampleCatalogItem sample = FindRunnableCatalogSample(sampleName);
+        AssertSampleSourceKind(sample, sampleName, VisionPipelineSampleCatalogSourceKind.Public);
         VisionPipelineSampleCheckResult sampleCheck = VisionPipelineSampleCheckService.RunSampleCheckSafe(sample);
         if (!sampleCheck.Success)
         {
@@ -1574,7 +1575,7 @@ internal static class Program
                 + $"Sample={sampleName}, Status={sampleCheck.Status}, Message={sampleCheck.Message}, Metrics={sampleCheck.MetricText}");
         }
 
-        foreach (string metricName in new[] { "ResultCount", "AreaAvg", "BoundsWidthAvg" })
+        foreach (string metricName in new[] { "ResultCount" })
         {
             if (!sampleCheck.MetricText.Contains(metricName, StringComparison.OrdinalIgnoreCase))
             {
@@ -1823,10 +1824,10 @@ internal static class Program
     {
         return CaptureShellHostWorkspaceSamplePipelineReviewControlledNgMetrics(
             outputPath,
-            "Mean_Brightness_DimBad",
+            "Public_Mean_Brightness_Dark_Bad",
             "MeanValueAvg",
             "Mean",
-            "Mean brightness",
+            "Public mean brightness",
             "Smoke_WpfShellHostWorkspaceSampleReviewNgMetrics",
             "WPF workspace sample review NG metrics",
             minStepCount: 1);
@@ -1836,10 +1837,10 @@ internal static class Program
     {
         return CaptureShellHostWorkspaceSamplePipelineReviewControlledNgMetrics(
             outputPath,
-            "Feature_TemplateReview_LowScoreSwitch",
+            "Public_Feature_Card_Wrong_Bad",
             "ScoreMax",
             "Score",
-            "Feature score",
+            "Public feature score",
             "Smoke_WpfShellHostWorkspaceSampleReviewFeatureNgMetrics",
             "WPF workspace sample review Feature NG metrics",
             minStepCount: 1);
@@ -1849,10 +1850,10 @@ internal static class Program
     {
         return CaptureShellHostWorkspaceSamplePipelineReviewControlledNgMetrics(
             outputPath,
-            "LineGauge_PinsTilted_Bad",
-            "LineAngleAvg",
-            "Angle",
-            "LineGauge angle",
+            "Public_Line_Pins_WidePin_Bad",
+            "DistanceMmAvg",
+            "Distance",
+            "Public line distance",
             "Smoke_WpfShellHostWorkspaceSampleReviewLineNgMetrics",
             "WPF workspace sample review LineGauge NG metrics",
             minStepCount: 1);
@@ -1862,10 +1863,10 @@ internal static class Program
     {
         return CaptureShellHostWorkspaceSamplePipelineReviewControlledNgMetrics(
             outputPath,
-            "Blob_Bacteria_SparseBad",
+            "Public_Blob_Particles_Sparse_Bad",
             "ResultCount",
             "Result",
-            "Blob density",
+            "Public blob particles",
             "Smoke_WpfShellHostWorkspaceSampleReviewBlobNgMetrics",
             "WPF workspace sample review Blob NG metrics",
             minStepCount: 2);
@@ -1875,26 +1876,26 @@ internal static class Program
     {
         return CaptureShellHostWorkspaceSamplePipelineReviewControlledNgMetrics(
             outputPath,
-            "BentPin_BadShaft",
-            "BoundsWidthMax",
-            "Bounds Width Max",
-            "BentPin shaft width",
+            "Public_Contour_Shapes_Missing_Bad",
+            "ResultCount",
+            "Result",
+            "Public contour shapes",
             "Smoke_WpfShellHostWorkspaceSampleReviewBentPinNgMetrics",
             "WPF workspace sample review BentPin NG metrics",
-            minStepCount: 2);
+            minStepCount: 1);
     }
 
     private static CaptureResult CaptureShellHostWorkspaceSamplePipelineReviewFilmNgMetrics(string outputPath)
     {
         return CaptureShellHostWorkspaceSamplePipelineReviewControlledNgMetrics(
             outputPath,
-            "EasyObject_FilmBad_DarkSpot",
-            "AreaMax",
-            "Area Max",
-            "Film dark-spot area",
+            "Public_Threshold_BandPads_Missing_Bad",
+            "ResultCount",
+            "Result",
+            "Public threshold band pads",
             "Smoke_WpfShellHostWorkspaceSampleReviewFilmNgMetrics",
             "WPF workspace sample review Film NG metrics",
-            minStepCount: 2);
+            minStepCount: 1);
     }
 
     private static CaptureResult CaptureShellHostWorkspaceSamplePipelineReviewControlledNgMetrics(
@@ -1909,6 +1910,7 @@ internal static class Program
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
         VisionPipelineSampleCatalogItem sample = FindRunnableCatalogSample(sampleName);
+        AssertSampleSourceKind(sample, sampleName, VisionPipelineSampleCatalogSourceKind.Public);
         VisionPipelineSampleCheckResult sampleCheck = VisionPipelineSampleCheckService.RunSampleCheckSafe(sample);
         if (!sample.ExpectsFailure || !sampleCheck.Success)
         {
@@ -1981,6 +1983,19 @@ internal static class Program
         return VisionPipelineSampleCatalogItem.LoadRunnable()
             .FirstOrDefault(item => string.Equals(item.SampleName, sampleName, StringComparison.OrdinalIgnoreCase))
             ?? throw new InvalidOperationException("Workspace sample review target could not find sample: " + sampleName);
+    }
+
+    private static void AssertSampleSourceKind(
+        VisionPipelineSampleCatalogItem sample,
+        string sampleName,
+        VisionPipelineSampleCatalogSourceKind expectedSourceKind)
+    {
+        if (sample.CatalogSourceKind != expectedSourceKind)
+        {
+            throw new InvalidOperationException(
+                "Workspace sample smoke target is bound to the wrong catalog source. "
+                + $"Sample={sample.SampleName}, Requested={sampleName}, Source={sample.CatalogSourceKind}, Expected={expectedSourceKind}");
+        }
     }
 
     private static (string ActivePipelineName, int ActivePipelineStepCount, int NativePreviewRunsBefore) OpenWorkspaceSamplePipelineReviewForSmoke(
@@ -2956,9 +2971,11 @@ internal static class Program
                 $"{classification,-16} | {sample.PairGroup,-28} | {sample.SampleName,-42} | {result.MetricText}");
         }
 
-        if (!badSamples.Any(item => string.Equals(item.SampleName, "Mean_Brightness_DimBad", StringComparison.OrdinalIgnoreCase) && item.ExpectsFailure))
+        if (!badSamples.Any(item => string.Equals(item.SampleName, "Public_Mean_Brightness_Dark_Bad", StringComparison.OrdinalIgnoreCase)
+            && item.ExpectsFailure
+            && item.CatalogSourceKind == VisionPipelineSampleCatalogSourceKind.Public))
         {
-            throw new InvalidOperationException("Bad reference audit requires Mean_Brightness_DimBad to remain a controlled NG ExpectedFailure sample.");
+            throw new InvalidOperationException("Bad reference audit requires Public_Mean_Brightness_Dark_Bad to remain a public controlled NG ExpectedFailure sample.");
         }
 
         if (controlledNgCount == 0 || comparativeBadCount == 0)

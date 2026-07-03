@@ -147,6 +147,16 @@ internal static class Program
         RequireContains(sampleSmoke, "wpf_shell_host_workspace_product_sample_review_ng", "Screenshot smoke covers the Product sample catalog WPF controlled-NG review flow.");
         RequireContains(sampleSmoke, "Product_Display_Particle_Good", "Product sample smoke opens a concrete Product catalog Good sample.");
         RequireContains(sampleSmoke, "Product_Display_Particle_Many_Bad", "Product sample smoke opens a concrete Product catalog controlled-NG sample.");
+        RequireContains(sampleSmoke, "Public_Blob_Particles_Good", "Generic sample smoke opens a public-safe Blob Good sample.");
+        RequireContains(sampleSmoke, "Public_Blob_Particles_Sparse_Bad", "Generic sample smoke opens a public-safe Blob controlled-NG sample.");
+        RequireContains(sampleSmoke, "Public_Mean_Brightness_Dark_Bad", "Generic sample smoke opens a public-safe Mean controlled-NG sample.");
+        RequireNotContains(sampleSmoke, "Blob_RiceParticle_Good", "Generic sample smoke must not require the local legacy root Sample catalog.");
+        RequireNotContains(sampleSmoke, "Blob_Bacteria_SparseBad", "Generic sample smoke must not require the local legacy root Sample catalog.");
+        RequireNotContains(sampleSmoke, "Mean_Brightness_DimBad", "Generic sample smoke must not require the local legacy root Sample catalog.");
+        RequireNotContains(sampleSmoke, "Feature_TemplateReview_LowScoreSwitch", "Generic sample smoke must not require the local legacy root Sample catalog.");
+        RequireNotContains(sampleSmoke, "LineGauge_PinsTilted_Bad", "Generic sample smoke must not require the local legacy root Sample catalog.");
+        RequireNotContains(sampleSmoke, "BentPin_BadShaft", "Generic sample smoke must not require the local legacy root Sample catalog.");
+        RequireNotContains(sampleSmoke, "EasyObject_FilmBad_DarkSpot", "Generic sample smoke must not require the local legacy root Sample catalog.");
         RequireContains(sampleSmoke, "LEARN_PRODUCT_SAMPLES.md", "Product sample smoke verifies the Product Learn document route.");
 
         string localization = Read(repoRoot, @"Library\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv");
