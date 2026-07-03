@@ -1,6 +1,6 @@
 # OpenVisionLab Next Session Handoff
 
-Updated: 2026-07-03 18:55 KST
+Updated: 2026-07-03 19:10 KST
 
 This document is the minimum handoff needed to continue without re-discovering the current state. Work starts in `C:\Git\OpenVisionLab_Dev`; only reviewed and stabilized changes are imported into the original repo at `C:\Git\OpenVisionLab`. Do not run `git push` unless the user explicitly requests `PUSH`.
 
@@ -18,6 +18,9 @@ This document is the minimum handoff needed to continue without re-discovering t
 `C:\Git\OpenVisionLab` is clean at these latest stable commits:
 
 - `6ca54d3 Add public sample review smoke runner`
+- `0a2e026 Restore filter morphology layout smoke`
+- `567fefc Share kernel preset click handling`
+- `8c6c992 Update OpenVisionLab handoff evidence`
 - `01c7aa4 Fix Korean duplicate key detection`
 - `bab969e Clear stale contour review before teaching preview`
 - `9966a81 Update handoff after sample review checks`
@@ -60,6 +63,14 @@ This document is the minimum handoff needed to continue without re-discovering t
   - Required pair coverage now uses public/product representative groups instead of legacy root-only sample groups.
   - Bad-reference audit now requires controlled NG samples and treats legacy comparative bad references as optional/private.
   - Original commit: `6ca54d3`
+- Tool View code-behind cleanup continued.
+  - `VisionToolKernelSizeController` now owns shared kernel preset click parsing for Filter and Morphology.
+  - Filter/Morphology views now use the same Tag-based preset click path instead of separate 3/5/7 handlers.
+  - Original commit: `567fefc`
+- Filter/Morphology layout smoke was restored.
+  - `SelectComboBoxItemText` now accepts the already-selected value as a valid selection.
+  - The layout guard now clicks Filter and Morphology kernel preset buttons, so the shared preset handler is covered by smoke.
+  - Original commit: `0a2e026`
 
 ## Verification Evidence
 
@@ -78,6 +89,13 @@ This document is the minimum handoff needed to continue without re-discovering t
 - Sample review UI smoke runner:
   - Dev: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\sample_review_ui_smoke_script_after_auditfix_20260703_1918` passed.
   - Original: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\original_sample_review_ui_smoke_script_after_auditfix_20260703_1919` passed.
+  - Original re-run after layout smoke restore: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\sample_review_ui_smoke_after_layout_guard_restore_20260703_1903` passed.
+- Filter/Morphology guard:
+  - Dev: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_filter_morphology_layout_guard artifacts\filter_morphology_layout_guard_after_dev_20260703_1903` passed.
+  - Original: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_filter_morphology_layout_guard artifacts\filter_morphology_layout_guard_after_original_20260703_1908` passed.
+- Pipeline Review OK/NG:
+  - Original OK: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_pipeline_review artifacts\pipeline_review_ok_after_smoke_restore_20260703_1906` passed.
+  - Original NG: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_pipeline_review_ng artifacts\pipeline_review_ng_after_smoke_restore_20260703_1906` passed.
 
 ## Screenshot Evidence
 
@@ -93,6 +111,12 @@ This document is the minimum handoff needed to continue without re-discovering t
 - PropertyGrid duplicate-key smoke after:
   - Dev: `C:\Git\OpenVisionLab_Dev\artifacts\property_grid_duplicate_key_string_after_20260703_1855\wpf_property_grid_matching_combo.png`
   - Original: `C:\Git\OpenVisionLab\artifacts\original_property_grid_duplicate_key_string_after_20260703_1857\wpf_property_grid_matching_combo.png`
+- Filter/Morphology layout guard after:
+  - Dev: `C:\Git\OpenVisionLab_Dev\artifacts\filter_morphology_layout_guard_after_dev_20260703_1903\wpf_filter_morphology_layout_guard.png`
+  - Original: `C:\Git\OpenVisionLab\artifacts\filter_morphology_layout_guard_after_original_20260703_1908\wpf_filter_morphology_layout_guard.png`
+- Pipeline review OK/NG after:
+  - OK: `C:\Git\OpenVisionLab\artifacts\pipeline_review_ok_after_smoke_restore_20260703_1906\wpf_shell_host_pipeline_review.png`
+  - NG: `C:\Git\OpenVisionLab\artifacts\pipeline_review_ng_after_smoke_restore_20260703_1906\wpf_shell_host_pipeline_review_ng.png`
 
 ## Start Checklist
 
@@ -109,13 +133,12 @@ git log --oneline -5
 
 ## Next Priorities
 
-1. Pipeline/Recipe operator review UX
-   - Re-run Product sample Good -> Review -> open NG/OK counterpart -> Run Review with current EXE screenshots.
-   - Check whether failed metric, expected/actual values, and suggested action are readable enough on-screen.
-2. MainView/Product sample review flow
-   - Re-check Sample Picker -> Open Sample -> Pipeline Review -> Good/Bad pair comparison as an actual user flow.
-3. Tool View code-behind cleanup
-   - Continue after Line/Arithmetic by finding remaining repeated wiring that can move into existing controller/runtime patterns without changing PropertyGrid behavior.
+1. Pipeline/Recipe operator review UX polish
+   - Current OK/NG smoke passes. Next value is small readability polish, especially where top summary cards truncate long detail text.
+2. Tool View code-behind cleanup
+   - Continue only where existing controller/runtime patterns already fit. Avoid broad base-class or interface refactors.
+3. MainView/Product sample review flow
+   - Current six-target sample review smoke passes. Re-check actual screenshots before changing UI copy or layout.
 4. Product sample catalog quality
    - Current 84-pair audit is PASS. More samples are lower priority than improving explanation and review affordance.
 
