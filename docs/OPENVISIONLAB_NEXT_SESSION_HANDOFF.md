@@ -1,6 +1,6 @@
 # OpenVisionLab Next Session Handoff
 
-Updated: 2026-07-03 19:42 KST
+Updated: 2026-07-03 19:49 KST
 
 This document is the minimum handoff needed to continue without re-discovering the current state. Work starts in `C:\Git\OpenVisionLab_Dev`; only reviewed and stabilized changes are imported into the original repo at `C:\Git\OpenVisionLab`. Do not run `git push` unless the user explicitly requests `PUSH`.
 
@@ -18,6 +18,8 @@ This document is the minimum handoff needed to continue without re-discovering t
 `C:\Git\OpenVisionLab` is clean at these latest stable commits:
 
 - `6ca54d3 Add public sample review smoke runner`
+- `dabf398 Localize pipeline review result count metric`
+- `9b20cec Record latest sample catalog audit`
 - `2ed377a Move line test configuration into controller`
 - `61466b0 Update handoff with final review smokes`
 - `031c347 Update OpenVisionLab self evaluation evidence`
@@ -97,6 +99,10 @@ This document is the minimum handoff needed to continue without re-discovering t
 - Line tool code-behind cleanup continued.
   - Test-only selected-line configuration now lives in `LineToolInteractionController`; `LineToolWpfView` keeps the public test hooks as thin wrappers.
   - Original commit: `2ed377a`
+- Pipeline Review metric wording was clarified.
+  - `ResultCount` now displays as `결과 수` in Korean Pipeline Review NG guidance.
+  - The Product sample NG review smoke now asserts localized metric display text in the guide detail.
+  - Original commit: `dabf398`
 
 ## Verification Evidence
 
@@ -121,6 +127,7 @@ This document is the minimum handoff needed to continue without re-discovering t
   - Original re-run after layout smoke restore: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\sample_review_ui_smoke_after_layout_guard_restore_20260703_1903` passed.
   - Original re-run after Pipeline Review copy shortening: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\sample_review_ui_smoke_after_pipeline_copy_short_20260703_1915` passed.
   - Original final re-run: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\sample_review_ui_smoke_final_20260703_1930` passed.
+  - Product sample NG after `ResultCount` wording: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_product_sample_review_ng artifacts\product_sample_review_ng_metric_display_after_original_20260703_1948` passed.
 - Filter/Morphology guard:
   - Dev: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_filter_morphology_layout_guard artifacts\filter_morphology_layout_guard_after_dev_20260703_1903` passed.
   - Original: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_filter_morphology_layout_guard artifacts\filter_morphology_layout_guard_after_original_20260703_1908` passed.
@@ -164,6 +171,10 @@ This document is the minimum handoff needed to continue without re-discovering t
   - Sample runner: `C:\Git\OpenVisionLab\artifacts\sample_review_ui_smoke_final_20260703_1930`
   - Pipeline OK: `C:\Git\OpenVisionLab\artifacts\pipeline_review_ok_final_20260703_1931\wpf_shell_host_pipeline_review.png`
   - Pipeline NG: `C:\Git\OpenVisionLab\artifacts\pipeline_review_ng_final_20260703_1931\wpf_shell_host_pipeline_review_ng.png`
+- Product sample NG metric wording after:
+  - Before: `C:\Git\OpenVisionLab\artifacts\sample_review_ui_smoke_final_20260703_1930\wpf_shell_host_workspace_product_sample_review_ng.png`
+  - Dev after: `C:\Git\OpenVisionLab_Dev\artifacts\product_sample_review_ng_metric_display_after_dev_20260703_1946\wpf_shell_host_workspace_product_sample_review_ng.png`
+  - Original after: `C:\Git\OpenVisionLab\artifacts\product_sample_review_ng_metric_display_after_original_20260703_1948\wpf_shell_host_workspace_product_sample_review_ng.png`
 
 ## Start Checklist
 
