@@ -420,6 +420,17 @@
                                                    TextWrapping="Wrap"
                                                    TextTrimming="None"
                                                    Margin="0,4,0,0" />
+                                        <TextBlock Grid.Row="2"
+                                                   Grid.ColumnSpan="2"
+                                                   AutomationProperties.AutomationId="WorkspaceSamplePickerExploreGuide"
+                                                   Text="{Binding ExploratoryGuideText}"
+                                                   Foreground="{StaticResource SamplePicker.AccentBrush}"
+                                                   FontWeight="SemiBold"
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="None"
+                                                   MaxHeight="44"
+                                                   Margin="0,7,0,0"
+                                                   Visibility="{Binding ExploratoryGuideVisibility}" />
                                         <Grid Grid.Row="2"
                                               Grid.ColumnSpan="2"
                                               Margin="0,7,0,0"

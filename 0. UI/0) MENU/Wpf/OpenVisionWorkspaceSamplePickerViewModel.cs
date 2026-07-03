@@ -271,6 +271,8 @@ namespace OpenVisionLab
                 OnPropertyChanged(nameof(PairDecisionQuickActionText));
                 OnPropertyChanged(nameof(PairDecisionQuickWorkflowText));
                 OnPropertyChanged(nameof(PairDecisionWorkflowText));
+                OnPropertyChanged(nameof(ExploratoryGuideVisibility));
+                OnPropertyChanged(nameof(ExploratoryGuideText));
                 OnPropertyChanged(nameof(SelectCounterpartSampleButtonText));
                 OnPropertyChanged(nameof(LearnModeText));
                 OnPropertyChanged(nameof(RecommendedStartText));
@@ -344,6 +346,11 @@ namespace OpenVisionLab
                     return "-";
                 }
 
+                if (IsExploreSample(SelectedSample))
+                {
+                    return LocalText("Explore \uc0d8\ud50c", "Explore sample");
+                }
+
                 if (SelectedSample.ExpectsFailure
                     || string.Equals(SelectedSample.PairRole?.Trim(), "Bad", StringComparison.OrdinalIgnoreCase))
                 {
@@ -371,6 +378,14 @@ namespace OpenVisionLab
                 string expected = SelectedSample.ExpectedText;
                 if (!string.IsNullOrWhiteSpace(expected) && expected != "-")
                 {
+                    if (IsExploreSample(SelectedSample))
+                    {
+                        return string.Format(
+                            CultureInfo.CurrentCulture,
+                            LocalText("\ucc38\uace0 metric: {0}. \uace0\uc815 OK/NG \uae30\uc900\uc774 \uc544\ub2c8\ub77c \ub808\uc2dc\ud53c \ucd08\uc548 \ud655\uc778\uc6a9\uc785\ub2c8\ub2e4.", "Reference metric: {0}. Use it for recipe setup, not fixed OK/NG acceptance."),
+                            expected);
+                    }
+
                     return string.Format(
                         CultureInfo.CurrentCulture,
                         LocalText("기준: {0}", "Criteria: {0}"),
@@ -524,6 +539,12 @@ namespace OpenVisionLab
         }
 
         public string PairDecisionWorkflowText => PairDecisionGuide.WorkflowText;
+
+        public Visibility ExploratoryGuideVisibility => IsExploreSample(SelectedSample) ? Visibility.Visible : Visibility.Collapsed;
+
+        public string ExploratoryGuideText => IsExploreSample(SelectedSample)
+            ? LocalText("\ud0d0\uc0c9 \uc0d8\ud50c: Good/Bad \ud310\uc815\uc30d\uc774 \uc544\ub2d9\ub2c8\ub2e4. \ucd9c\ub825 \uc774\ubbf8\uc9c0\uc640 metric\uc744 \ubcf4\uba70 ROI, \ud30c\ub77c\ubbf8\ud130, \uae30\uc900 \ubc94\uc704\ub97c \uc7a1\uc73c\uc138\uc694.", "Explore sample: not a Good/Bad decision pair. Inspect output image and metrics, then set ROI, parameters, and target ranges.")
+            : string.Empty;
 
         public string LearnModeText
         {
@@ -899,6 +920,11 @@ namespace OpenVisionLab
             return item != null
                 && (item.ExpectsFailure
                     || string.Equals(item.PairRole?.Trim(), "Bad", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool IsExploreSample(VisionPipelineSampleCatalogItem item)
+        {
+            return string.Equals(item?.ValidationMode?.Trim(), "Explore", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool ContainsAny(string text, string secondText, params string[] tokens)

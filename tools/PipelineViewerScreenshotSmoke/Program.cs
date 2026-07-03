@@ -44,6 +44,7 @@ internal static class Program
         ["wpf_shell_host_workspace_image_load"] = CaptureShellHostWorkspaceImageLoad,
         ["wpf_shell_host_workspace_sample_picker"] = CaptureShellHostWorkspaceSamplePicker,
         ["wpf_shell_host_workspace_sample_product_focus_picker"] = CaptureShellHostWorkspaceSampleProductFocusPicker,
+        ["wpf_shell_host_workspace_sample_product_field_focus_picker"] = CaptureShellHostWorkspaceSampleProductFieldFocusPicker,
         ["wpf_shell_host_workspace_sample_product_focus_open"] = CaptureShellHostWorkspaceSampleProductFocusOpen,
         ["wpf_shell_host_workspace_sample_learn_paths"] = CaptureShellHostWorkspaceSampleLearnPaths,
         ["wpf_shell_host_workspace_sample_pair_picker"] = CaptureShellHostWorkspaceSamplePairPicker,
@@ -1973,6 +1974,7 @@ internal static class Program
                 || string.IsNullOrWhiteSpace(shellHost.PipelineReviewRunLogText)
                 || !shellHost.PipelineReviewGuideResultDecisionText.Contains("NG", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuideNextActionText.Contains(ngNextAction, StringComparison.Ordinal)
+                || !shellHost.PipelineReviewGuideNextActionText.Contains(expectedGuideMetricName, StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuidePairText.Contains("Good/Bad", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairText.Contains(sampleName, StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairText.Contains(expectedGuideMetricName, StringComparison.Ordinal)
@@ -2480,6 +2482,92 @@ internal static class Program
                 "WPF workspace product sample focus benchmark",
                 "WorkspaceSamplePickerBenchmarkStrip",
                 "WorkspaceSamplePickerPairDecisionQuickWorkflow");
+        });
+    }
+
+    private static CaptureResult CaptureShellHostWorkspaceSampleProductFieldFocusPicker(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        List<VisionPipelineSampleCatalogItem> samples = VisionPipelineSampleCatalogItem.LoadRunnable()
+            .Where(item => item.CanOpen)
+            .ToList();
+        if (samples.Count == 0)
+        {
+            throw new InvalidOperationException("Workspace product field sample focus picker could not find any runnable catalog samples.");
+        }
+
+        OpenVisionWorkspaceSamplePickerViewModel viewModel = new(samples);
+        OpenVisionWorkspaceSamplePickerWindow window = new(viewModel);
+        return CaptureStandaloneWindow(window, outputPath, 1040, 700, () =>
+        {
+            OpenVisionWorkspaceSampleCatalogSourceOption? productSource = viewModel.CatalogSourceOptions
+                .FirstOrDefault(option => string.Equals(option.Id, "product", StringComparison.OrdinalIgnoreCase));
+            if (productSource == null)
+            {
+                throw new InvalidOperationException("Workspace product field sample focus picker did not expose the Product catalog source.");
+            }
+
+            viewModel.SelectedCatalogSourceOption = productSource;
+            Pump(40);
+
+            OpenVisionWorkspaceSampleFocusOption? fieldFocus = viewModel.SampleFocusOptions
+                .FirstOrDefault(option => string.Equals(option.Id, "field", StringComparison.OrdinalIgnoreCase));
+            if (fieldFocus == null)
+            {
+                throw new InvalidOperationException(
+                    "Workspace product field sample focus picker is missing the Field focus option. "
+                    + "Found=" + string.Join(",", viewModel.SampleFocusOptions.Select(option => option.Id)));
+            }
+
+            viewModel.SelectedSampleFocusOption = fieldFocus;
+            Pump(40);
+
+            if (viewModel.SelectedSample == null
+                || viewModel.SelectedSample.CatalogSourceKind != VisionPipelineSampleCatalogSourceKind.Product
+                || !fieldFocus.Matches(viewModel.SelectedSample)
+                || !string.Equals(viewModel.SelectedSample.ValidationMode, "Explore", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Workspace product field sample focus picker did not select a Product Explore field sample. "
+                    + $"Selected={viewModel.SelectedSample?.SampleName ?? "-"}, "
+                    + $"Mode={viewModel.SelectedSample?.ValidationMode ?? "-"}");
+            }
+
+            string visibleText = string.Join(
+                " | ",
+                FindVisualChildren<TextBlock>(window)
+                    .Select(item => item.Text)
+                    .Where(text => !string.IsNullOrWhiteSpace(text)));
+            string[] requiredTokens =
+            {
+                productSource.DisplayName,
+                fieldFocus.DisplayName,
+                viewModel.ActiveSampleFocusText,
+                viewModel.SelectedSample.SampleName,
+                viewModel.BenchmarkLabelText,
+                viewModel.BenchmarkOutcomeText,
+                viewModel.BenchmarkSummaryText,
+                viewModel.ExploratoryGuideText,
+                viewModel.SelectedSample.ExpectedText
+            };
+            string? missing = requiredTokens.FirstOrDefault(token => !visibleText.Contains(token, StringComparison.Ordinal));
+            if (!string.IsNullOrWhiteSpace(missing))
+            {
+                throw new InvalidOperationException(
+                    "Workspace product field sample focus picker did not show expected token '" + missing + "'. Text='" + visibleText + "'");
+            }
+
+            AssertVisibleAutomationIds(
+                window,
+                "WPF workspace product field sample focus picker",
+                "WorkspaceSamplePickerView",
+                "WorkspaceSamplePickerSampleFocusList",
+                "WorkspaceSamplePickerSampleFocusSummary",
+                "WorkspaceSamplePickerBenchmarkStrip",
+                "WorkspaceSamplePickerExploreGuide",
+                "WorkspaceSamplePickerPreviewImage",
+                "WorkspaceSamplePickerOpenButton",
+                "WorkspaceSamplePickerCancelButton");
         });
     }
 
@@ -5260,6 +5348,7 @@ internal static class Program
                 || !shellHost.PipelineReviewResultSummaryText.Contains("NG", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuideResultDecisionText.Contains("NG", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuideNextActionText.Contains(ngNextAction, StringComparison.Ordinal)
+                || !shellHost.PipelineReviewGuideNextActionText.Contains(resultWidthMetricText, StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains("NG", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuideDetailText.Contains(fixDetailPrefix, StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains(parameterLocationPrefix, StringComparison.Ordinal)
@@ -5268,8 +5357,10 @@ internal static class Program
                 || !shellHost.PipelineReviewGuideParameterFocusText.Contains("파라미터 패널", StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains(resultWidthMetricText, StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains("<= 1", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewGuideDetailText.Contains("511", StringComparison.Ordinal)
                 || shellHost.PipelineReviewGuideDetailText.Contains("Result Width", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewResultDetailText.Contains(resultWidthMetricText, StringComparison.Ordinal)
+                || !shellHost.PipelineReviewResultDetailText.Contains("511", StringComparison.Ordinal)
                 || shellHost.PipelineReviewResultDetailText.Contains("Result Width", StringComparison.OrdinalIgnoreCase)
                 || string.IsNullOrWhiteSpace(shellHost.PipelineReviewRunLogText))
             {

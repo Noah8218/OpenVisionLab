@@ -92,8 +92,8 @@ namespace OpenVisionLab
                         "로컬 SDK/Sample 폴더 참조입니다. 사용 권리 확인 전에는 공개 문서에 쓰지 않습니다.",
                         "Local SDK/sample-folder references. Do not use for public docs until cleared."),
                     VisionPipelineSampleCatalogSourceKind.Product => LocalText(
-                        "이차전지, 디스플레이, 반도체 synthetic Good/Bad 샘플입니다.",
-                        "Product-domain synthetic Good/Bad samples for battery, display, and semiconductor flows."),
+                        "제품군 Good/Bad 샘플과 현장형 Explore 샘플입니다.",
+                        "Product-domain Good/Bad samples plus field-style Explore samples for recipe setup."),
                     _ => LocalText("카탈로그 출처를 확인할 수 없습니다.", "Catalog source is unknown.")
                 };
             }

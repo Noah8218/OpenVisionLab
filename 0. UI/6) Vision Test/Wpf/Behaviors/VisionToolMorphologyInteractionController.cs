@@ -3,27 +3,50 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Lib.OpenCV.Property;
 using OpenVisionLab.Services;
 
 namespace OpenVisionLab
 {
     internal sealed class VisionToolMorphologyInteractionController
     {
+        private static readonly Dictionary<string, string> OperationLocalizationKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Erode"] = "Morphology.Operation.Erode",
+            ["Dilate"] = "Morphology.Operation.Dilate",
+            ["Open"] = "Morphology.Operation.Open",
+            ["Close"] = "Morphology.Operation.Close",
+            ["TopHat"] = "Morphology.Operation.TopHat",
+            ["BlackHat"] = "Morphology.Operation.BlackHat",
+            ["HitMiss"] = "Morphology.Operation.HitMiss",
+            ["Gradient"] = "Morphology.Operation.Gradient"
+        };
+
+        private static readonly Dictionary<string, string> ShapeLocalizationKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Rect"] = "Morphology.Shape.Rect",
+            ["Ellipse"] = "Morphology.Shape.Ellipse",
+            ["Cross"] = "Morphology.Shape.Cross"
+        };
+
         private readonly MorphologyToolPresenter presenter;
         private readonly VisionToolParameterChangeController parameterChangeController;
         private readonly FrameworkElement resourceOwner;
         private readonly IReadOnlyList<Button> operationButtons;
+        private readonly IReadOnlyList<RadioButton> shapeButtons;
 
         public VisionToolMorphologyInteractionController(
             MorphologyToolPresenter presenter,
             VisionToolParameterChangeController parameterChangeController,
             FrameworkElement resourceOwner,
-            IReadOnlyList<Button> operationButtons)
+            IReadOnlyList<Button> operationButtons,
+            IReadOnlyList<RadioButton> shapeButtons)
         {
             this.presenter = presenter ?? throw new ArgumentNullException(nameof(presenter));
             this.parameterChangeController = parameterChangeController ?? throw new ArgumentNullException(nameof(parameterChangeController));
             this.resourceOwner = resourceOwner ?? throw new ArgumentNullException(nameof(resourceOwner));
             this.operationButtons = operationButtons ?? throw new ArgumentNullException(nameof(operationButtons));
+            this.shapeButtons = shapeButtons ?? throw new ArgumentNullException(nameof(shapeButtons));
         }
 
         public void HandleOperationClick(object sender)
@@ -61,6 +84,40 @@ namespace OpenVisionLab
                 button.Foreground = selected ? GetBrush("VisionTool.SelectedButtonTextBrush") : GetBrush("VisionTool.PrimaryTextBrush");
                 button.BorderBrush = selected ? GetBrush("VisionTool.AccentBrush") : GetBrush("VisionTool.LineBrush");
             }
+        }
+
+        public void RefreshLabels()
+        {
+            foreach (Button button in operationButtons)
+            {
+                button.Content = ResolveDisplayText(Convert.ToString(button.Tag), OperationLocalizationKeys);
+            }
+
+            foreach (RadioButton radioButton in shapeButtons)
+            {
+                radioButton.Content = ResolveDisplayText(Convert.ToString(radioButton.Tag), ShapeLocalizationKeys);
+            }
+        }
+
+        public string CreateSummary()
+        {
+            MorphologyToolProperty property = presenter.CreateProperty();
+            return $"{ResolveDisplayText(property.Operator.ToString(), OperationLocalizationKeys)} / {ResolveDisplayText(property.Shape.ToString(), ShapeLocalizationKeys)} / {property.KernelWidth} x {property.KernelHeight}";
+        }
+
+        private static string ResolveDisplayText(string value, IReadOnlyDictionary<string, string> localizationKeys)
+        {
+            if (!string.IsNullOrWhiteSpace(value)
+                && localizationKeys.TryGetValue(value, out string localizationKey))
+            {
+                string localizedText = OpenVisionLanguageService.T(localizationKey);
+                if (!string.IsNullOrWhiteSpace(localizedText) && !string.Equals(localizedText, localizationKey, StringComparison.Ordinal))
+                {
+                    return localizedText;
+                }
+            }
+
+            return value ?? string.Empty;
         }
 
         private Brush GetBrush(string resourceKey)

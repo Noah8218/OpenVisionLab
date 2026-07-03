@@ -207,7 +207,7 @@ namespace OpenVisionLab
 
             if (!summary.Success || summary.IsAcceptanceNg)
             {
-                return T("PipelineReview.Guide.NgNext", "Tune parameters/route, then rerun review");
+                return ResolveNgNextActionText(step, summary);
             }
 
             return displayIndex >= stepCount
@@ -369,6 +369,60 @@ namespace OpenVisionLab
             return T("PipelineReview.Guide.GenericFix", "Check the input layer, route, ROI, and parameters before changing acceptance limits.");
         }
 
+        private static string ResolveNgNextActionText(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
+        {
+            string baseText = T("PipelineReview.Guide.NgNext", "Tune parameters/route, then rerun review");
+            string focusText = ResolveNgNextActionFocusText(step, summary);
+            return string.IsNullOrWhiteSpace(focusText)
+                ? baseText
+                : string.Format(CultureInfo.CurrentCulture, "{0} / {1}", focusText, baseText);
+        }
+
+        private static string ResolveNgNextActionFocusText(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
+        {
+            if (summary?.IsAcceptanceNg == true && !string.IsNullOrWhiteSpace(step?.AcceptanceMetricName))
+            {
+                return string.Format(
+                    CultureInfo.CurrentCulture,
+                    LocalText("{0} \uae30\uc900 \ud655\uc778", "Check {0} limit"),
+                    ResolveMetricDisplayName(step.AcceptanceMetricName));
+            }
+
+            string toolType = SafeText(step?.ToolType, SafeText(step?.Name, string.Empty));
+            if (toolType.IndexOf("Threshold", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return LocalText("\uc784\uacc4\uac12/ROI \ud655\uc778", "Check threshold/ROI");
+            }
+
+            if (toolType.IndexOf("Blob", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return LocalText("Blob \uadf9\uc131/\uba74\uc801/ROI \ud655\uc778", "Check blob polarity/area/ROI");
+            }
+
+            if (toolType.IndexOf("Contour", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return LocalText("Contour \uadf9\uc131/\uba74\uc801/ROI \ud655\uc778", "Check contour polarity/area/ROI");
+            }
+
+            if (toolType.IndexOf("Line", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return LocalText("Line ROI/\uadf9\uc131/\ubc29\ud5a5 \ud655\uc778", "Check line ROI/polarity/direction");
+            }
+
+            if (toolType.IndexOf("Mean", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return LocalText("\ud3c9\uade0/ROI/\ubc1d\uae30 \uae30\uc900 \ud655\uc778", "Check mean/ROI/brightness limit");
+            }
+
+            if (toolType.IndexOf("Matching", StringComparison.OrdinalIgnoreCase) >= 0
+                || toolType.IndexOf("Feature", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return LocalText("\ud15c\ud50c\ub9bf/\uc810\uc218/\ud0d0\uc0c9 \ubc94\uc704 \ud655\uc778", "Check template/score/search range");
+            }
+
+            return string.Empty;
+        }
+
         private static string ResolveParameterFocusText(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
         {
             if (step == null || summary == null || (summary.Success && !summary.IsAcceptanceNg))
@@ -436,12 +490,17 @@ namespace OpenVisionLab
                 return string.Empty;
             }
 
-            return TF(
+            string baseText = TF(
                 "PipelineReview.Guide.AcceptanceMetricNgDetailFormat",
                 "{0}: measured {1}, target {2}.",
                 ResolveMetricDisplayName(step.AcceptanceMetricName),
                 FormatMetricValue(value),
                 target);
+
+            string gapText = FormatAcceptanceMetricGapText(step, value);
+            return string.IsNullOrWhiteSpace(gapText)
+                ? baseText
+                : baseText.TrimEnd('.') + " / " + gapText + ".";
         }
 
         private static string FormatAcceptanceTargetText(VisionPipelineStep step)
@@ -471,6 +530,32 @@ namespace OpenVisionLab
             return hasMaximum
                 ? "<= " + FormatMetricValue(step.AcceptanceMetricMaximum)
                 : string.Empty;
+        }
+
+        private static string FormatAcceptanceMetricGapText(VisionPipelineStep step, double value)
+        {
+            if (step == null)
+            {
+                return string.Empty;
+            }
+
+            if (step.UseAcceptanceMetricMinimum && value < step.AcceptanceMetricMinimum)
+            {
+                return string.Format(
+                    CultureInfo.CurrentCulture,
+                    LocalText("\uae30\uc900\ubcf4\ub2e4 {0} \ubd80\uc871", "below target by {0}"),
+                    FormatMetricValue(step.AcceptanceMetricMinimum - value));
+            }
+
+            if (step.UseAcceptanceMetricMaximum && value > step.AcceptanceMetricMaximum)
+            {
+                return string.Format(
+                    CultureInfo.CurrentCulture,
+                    LocalText("\uae30\uc900\ubcf4\ub2e4 {0} \ucd08\uacfc", "above target by {0}"),
+                    FormatMetricValue(value - step.AcceptanceMetricMaximum));
+            }
+
+            return string.Empty;
         }
 
         private static string ResolveMetricDisplayName(string metricName)
@@ -516,6 +601,13 @@ namespace OpenVisionLab
             return string.IsNullOrWhiteSpace(value) || string.Equals(value, key, StringComparison.Ordinal)
                 ? fallbackText ?? string.Empty
                 : value;
+        }
+
+        private static string LocalText(string koreanText, string englishText)
+        {
+            return OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.English
+                ? englishText ?? string.Empty
+                : koreanText ?? string.Empty;
         }
 
         private static string TF(string key, string fallbackFormat, params object[] args)

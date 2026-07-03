@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VisionPipeline>
+  <Name>Product_Field_SurfaceMean</Name>
+  <Steps>
+    <Step>
+      <Name>01 Field Surface Mean</Name>
+      <ToolType>Mean</ToolType>
+      <Enabled>true</Enabled>
+      <InputLayer>Main</InputLayer>
+      <OutputLayer>Field_SurfaceMean_Preview</OutputLayer>
+      <Parameters>
+        <Parameter><Key>Name</Key><Value>Product_Field_SurfaceMean</Value></Parameter>
+        <Parameter><Key>MEAN_TYPES</Key><Value>Mean</Value></Parameter>
+        <Parameter><Key>USE_THRESHOLD</Key><Value>false</Value></Parameter>
+        <Parameter><Key>USE_ADAPTIVE_THRESHOLD</Key><Value>false</Value></Parameter>
+        <Parameter><Key>USE_BITWISENOT</Key><Value>false</Value></Parameter>
+        <Parameter><Key>USE_ROI</Key><Value>false</Value></Parameter>
+        <Parameter><Key>USE_MULTI_ROI</Key><Value>false</Value></Parameter>
+      </Parameters>
+    </Step>
+  </Steps>
+</VisionPipeline>

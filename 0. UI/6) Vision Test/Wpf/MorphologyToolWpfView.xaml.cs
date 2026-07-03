@@ -11,25 +11,6 @@ namespace OpenVisionLab
 {
     public partial class MorphologyToolWpfView : UserControl, ISingleInputPropertyVisionToolWpfView<MorphologyToolProperty>, IVisionToolPreviewImageCommands, IVisionToolViewLifetime
     {
-        private static readonly Dictionary<string, string> OperationLocalizationKeys = new(StringComparer.OrdinalIgnoreCase)
-        {
-            ["Erode"] = "Morphology.Operation.Erode",
-            ["Dilate"] = "Morphology.Operation.Dilate",
-            ["Open"] = "Morphology.Operation.Open",
-            ["Close"] = "Morphology.Operation.Close",
-            ["TopHat"] = "Morphology.Operation.TopHat",
-            ["BlackHat"] = "Morphology.Operation.BlackHat",
-            ["HitMiss"] = "Morphology.Operation.HitMiss",
-            ["Gradient"] = "Morphology.Operation.Gradient"
-        };
-
-        private static readonly Dictionary<string, string> ShapeLocalizationKeys = new(StringComparer.OrdinalIgnoreCase)
-        {
-            ["Rect"] = "Morphology.Shape.Rect",
-            ["Ellipse"] = "Morphology.Shape.Ellipse",
-            ["Cross"] = "Morphology.Shape.Cross"
-        };
-
         private readonly MorphologyToolPresenter presenter;
 
         private readonly VisionToolSingleInputCustomToolController toolController;
@@ -66,6 +47,12 @@ namespace OpenVisionLab
                     btnMorphOperationBlackHat,
                     btnMorphOperationHitMiss,
                     btnMorphOperationGradient
+                },
+                new[]
+                {
+                    rdoShapeRect,
+                    rdoShapeEllipse,
+                    rdoShapeCross
                 });
             toolController = VisionToolSingleInputCustomToolController.Attach(
                 this,
@@ -150,17 +137,7 @@ namespace OpenVisionLab
             lblKernelWidth.Text = OpenVisionLanguageService.T("PropertyGrid.Property.KernelWidth.DisplayName");
             lblKernelHeight.Text = OpenVisionLanguageService.T("PropertyGrid.Property.KernelHeight.DisplayName");
             lblShape.Text = OpenVisionLanguageService.T("PropertyGrid.Property.Shape.DisplayName");
-            btnMorphOperationErode.Content = ResolveDisplayText("Erode", OperationLocalizationKeys);
-            btnMorphOperationDilate.Content = ResolveDisplayText("Dilate", OperationLocalizationKeys);
-            btnMorphOperationOpen.Content = ResolveDisplayText("Open", OperationLocalizationKeys);
-            btnMorphOperationClose.Content = ResolveDisplayText("Close", OperationLocalizationKeys);
-            btnMorphOperationTopHat.Content = ResolveDisplayText("TopHat", OperationLocalizationKeys);
-            btnMorphOperationBlackHat.Content = ResolveDisplayText("BlackHat", OperationLocalizationKeys);
-            btnMorphOperationHitMiss.Content = ResolveDisplayText("HitMiss", OperationLocalizationKeys);
-            btnMorphOperationGradient.Content = ResolveDisplayText("Gradient", OperationLocalizationKeys);
-            rdoShapeRect.Content = ResolveDisplayText("Rect", ShapeLocalizationKeys);
-            rdoShapeEllipse.Content = ResolveDisplayText("Ellipse", ShapeLocalizationKeys);
-            rdoShapeCross.Content = ResolveDisplayText("Cross", ShapeLocalizationKeys);
+            morphologyInteractionController.RefreshLabels();
         }
         public void SetLayerList(IEnumerable<string> layerNames, string selectedInputLayer, string selectedOutputLayer)
         {
@@ -220,25 +197,8 @@ namespace OpenVisionLab
             }
 
             FlushParameterBindings();
-            MorphologyToolProperty property = presenter.CreateProperty();
-            string summary = $"{ResolveDisplayText(property.Operator.ToString(), OperationLocalizationKeys)} / {ResolveDisplayText(property.Shape.ToString(), ShapeLocalizationKeys)} / {property.KernelWidth} x {property.KernelHeight}";
-            toolController.SetSummaryText(summary);
+            toolController.SetSummaryText(morphologyInteractionController.CreateSummary());
         }
-
-        private static string ResolveDisplayText(string value, IReadOnlyDictionary<string, string> localizationKeys)
-        {
-            if (localizationKeys.TryGetValue(value, out string localizationKey))
-            {
-                string localizedText = OpenVisionLanguageService.T(localizationKey);
-                if (!string.IsNullOrWhiteSpace(localizedText) && !string.Equals(localizedText, localizationKey, StringComparison.Ordinal))
-                {
-                    return localizedText;
-                }
-            }
-
-            return value;
-        }
-
 
         private void FlushParameterBindings()
         {

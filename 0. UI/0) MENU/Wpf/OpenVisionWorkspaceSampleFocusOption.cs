@@ -50,6 +50,7 @@ namespace OpenVisionLab
             AddIfNotEmpty(options, source, "battery", LocalText("\uc774\ucc28\uc804\uc9c0", "Battery"), LocalText("\ud0ed, \uc6a9\uc811, \ud30c\uc6b0\uce58, \uc804\uadf9 \uac80\uc0ac \uc0d8\ud50c\uc785\ub2c8\ub2e4.", "Tab, weld, pouch, and electrode inspection samples."));
             AddIfNotEmpty(options, source, "display", LocalText("\ub514\uc2a4\ud50c\ub808\uc774", "Display"), LocalText("\ud328\ub110, \uc5bc\ub77c\uc778, \uc2a4\ud06c\ub798\uce58, \ud328\ub4dc \uac80\uc0ac \uc0d8\ud50c\uc785\ub2c8\ub2e4.", "Panel, alignment, scratch, and pad inspection samples."));
             AddIfNotEmpty(options, source, "semiconductor", LocalText("\ubc18\ub3c4\uccb4", "Semiconductor"), LocalText("\ud328\ub4dc, \ub9ac\ub4dc, \ud328\ud0a4\uc9c0, \uc6e8\uc774\ud37c \uac80\uc0ac \uc0d8\ud50c\uc785\ub2c8\ub2e4.", "Pad, lead, package, and wafer inspection samples."));
+            AddIfNotEmpty(options, source, "field", LocalText("\ud604\uc7a5\ud615", "Field"), LocalText("\ud604\uc7a5\uac10 \uc788\ub294 \uc81c\ud488 \uc774\ubbf8\uc9c0\ub85c \ub808\uc2dc\ud53c \ucd08\uc548\uc744 \uc7a1\ub294 Explore \uc0d8\ud50c\uc785\ub2c8\ub2e4.", "Field-style Explore samples for initial recipe setup."));
             AddIfNotEmpty(options, source, "matching", LocalText("\ub9e4\uce6d", "Matching"), LocalText("\uc774\ubbf8\uc9c0/\uc5e3\uc9c0/\ud2b9\uc9d5 \ub9e4\uce6d \uacc4\uc5f4 \uc0d8\ud50c\uc785\ub2c8\ub2e4.", "Image, edge, and feature matching samples."));
             AddIfNotEmpty(options, source, "blob", LocalText("\ube14\ub78d", "Blob"), LocalText("\uc785\uc790, \uc5bc\ub8e9, \ud6c4\ubcf4 \uac1c\uc218 \uac80\uc0ac \uc0d8\ud50c\uc785\ub2c8\ub2e4.", "Particle, stain, and candidate-count samples."));
             AddIfNotEmpty(options, source, "contour", LocalText("\ucee8\ud22c\uc5b4", "Contour"), LocalText("\ud615\uc0c1, \uc2a4\ud06c\ub798\uce58, \uce69, \uc724\uacfd \uac80\uc0ac \uc0d8\ud50c\uc785\ub2c8\ub2e4.", "Shape, scratch, chip, and outline samples."));
@@ -90,6 +91,12 @@ namespace OpenVisionLab
             if (string.Equals(id, "semiconductor", StringComparison.OrdinalIgnoreCase))
             {
                 return ContainsAny(category, name, goal, "Semiconductor", "Semiconductor_");
+            }
+
+            if (string.Equals(id, "field", StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Equals(sample.ValidationMode?.Trim(), "Explore", StringComparison.OrdinalIgnoreCase)
+                    && ContainsAny(category, name, goal, "Product Field", "Field_", "field");
             }
 
             return OpenVisionWorkspaceSampleLearnPathClassifier.Matches(id, sample)
