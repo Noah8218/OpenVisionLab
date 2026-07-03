@@ -1946,6 +1946,7 @@ internal static class Program
             Pump(80);
 
             string ngNextAction = OpenVisionLanguageService.T("PipelineReview.Guide.NgNext");
+            string parameterLocationPrefix = OpenVisionLanguageService.T("PipelineReview.Guide.ParameterLocationPrefix");
             string metricDisplayKey = "PipelineReview.Metric." + expectedMetricName;
             string metricDisplayName = OpenVisionLanguageService.T(metricDisplayKey);
             bool hasLocalizedMetricDisplayName = !string.IsNullOrWhiteSpace(metricDisplayName)
@@ -1982,6 +1983,8 @@ internal static class Program
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("기준 밖", StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains("NG", StringComparison.OrdinalIgnoreCase)
                 || (hasLocalizedMetricDisplayName && !shellHost.PipelineReviewGuideDetailText.Contains(metricDisplayName, StringComparison.Ordinal))
+                || !shellHost.PipelineReviewGuideDetailText.Contains(parameterLocationPrefix, StringComparison.Ordinal)
+                || !shellHost.PipelineReviewGuideDetailText.Contains("파라미터 패널", StringComparison.Ordinal)
                 || (hasLocalizedMetricDisplayName && shellHost.PipelineReviewGuideDetailText.Contains(expectedMetricName, StringComparison.OrdinalIgnoreCase))
                 || (hasLocalizedMetricDisplayName && shellHost.PipelineReviewGuidePairText.Contains(expectedMetricName, StringComparison.OrdinalIgnoreCase))
                 || (hasLocalizedMetricDisplayName && shellHost.PipelineReviewGuidePairMetricText.Contains(expectedMetricName, StringComparison.OrdinalIgnoreCase))
@@ -5248,6 +5251,7 @@ internal static class Program
             Pump(32);
             string ngNextAction = OpenVisionLanguageService.T("PipelineReview.Guide.NgNext");
             string fixDetailPrefix = OpenVisionLanguageService.T("PipelineReview.Guide.FixDetailPrefix");
+            string parameterLocationPrefix = OpenVisionLanguageService.T("PipelineReview.Guide.ParameterLocationPrefix");
             string resultWidthMetricText = OpenVisionLanguageService.T("PipelineReview.Metric.ResultImageWidth");
             if (string.IsNullOrWhiteSpace(shellHost.PipelineReviewValidationStatusText)
                 || !shellHost.PipelineReviewResultSummaryText.Contains("NG", StringComparison.OrdinalIgnoreCase)
@@ -5255,6 +5259,8 @@ internal static class Program
                 || !shellHost.PipelineReviewGuideNextActionText.Contains(ngNextAction, StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains("NG", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuideDetailText.Contains(fixDetailPrefix, StringComparison.Ordinal)
+                || !shellHost.PipelineReviewGuideDetailText.Contains(parameterLocationPrefix, StringComparison.Ordinal)
+                || !shellHost.PipelineReviewGuideDetailText.Contains("파라미터 패널", StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains(resultWidthMetricText, StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains("<= 1", StringComparison.OrdinalIgnoreCase)
                 || shellHost.PipelineReviewGuideDetailText.Contains("Result Width", StringComparison.OrdinalIgnoreCase)

@@ -290,6 +290,12 @@ namespace OpenVisionLab
                     parts.Add(T("PipelineReview.Guide.FixDetailPrefix", "Check first") + ": " + Truncate(fix, 160));
                 }
 
+                string location = ResolveNgParameterLocationText(step);
+                if (!string.IsNullOrWhiteSpace(location))
+                {
+                    parts.Add(T("PipelineReview.Guide.ParameterLocationPrefix", "Adjust here") + ": " + Truncate(location, 140));
+                }
+
                 return string.Join(" / ", parts);
             }
 
@@ -356,6 +362,43 @@ namespace OpenVisionLab
             }
 
             return T("PipelineReview.Guide.GenericFix", "Check the input layer, route, ROI, and parameters before changing acceptance limits.");
+        }
+
+        private static string ResolveNgParameterLocationText(VisionPipelineStep step)
+        {
+            string toolType = SafeText(step?.ToolType, SafeText(step?.Name, string.Empty));
+            if (toolType.IndexOf("Threshold", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return T("PipelineReview.Guide.ThresholdParameterLocation", "Parameter panel > Mode, Threshold/Range, Adaptive, ROI.");
+            }
+
+            if (toolType.IndexOf("Blob", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return T("PipelineReview.Guide.BlobParameterLocation", "Parameter panel > input layer, threshold polarity, morphology, area limits, ROI.");
+            }
+
+            if (toolType.IndexOf("Contour", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return T("PipelineReview.Guide.ContourParameterLocation", "Parameter panel > input layer, threshold polarity, morphology, area limits, ROI.");
+            }
+
+            if (toolType.IndexOf("Line", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return T("PipelineReview.Guide.LineParameterLocation", "Parameter panel > ROI/CvROI, polarity/contrast, sampling, Pixel/mm.");
+            }
+
+            if (toolType.IndexOf("Mean", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return T("PipelineReview.Guide.MeanParameterLocation", "Parameter panel > MEAN_TYPES, ROI/CvROI, brightness target range.");
+            }
+
+            if (toolType.IndexOf("Matching", StringComparison.OrdinalIgnoreCase) >= 0
+                || toolType.IndexOf("Feature", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return T("PipelineReview.Guide.MatchingParameterLocation", "Parameter panel > template path, score threshold, angle/scale search.");
+            }
+
+            return T("PipelineReview.Guide.GenericParameterLocation", "Parameter panel > input layer, ROI, route, acceptance limits.");
         }
 
         internal static string FormatAcceptanceMetricNgReason(VisionPipelineStep step, VisionPipelineStepResultSummary summary)

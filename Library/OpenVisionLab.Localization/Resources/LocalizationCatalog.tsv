@@ -272,6 +272,7 @@ PipelineReview.Guide.NgDetail	선택 Step의 결과를 확인하고 라우트 �
 PipelineReview.Guide.Pair	Good/Bad 쌍	Good/Bad Pair
 PipelineReview.Guide.PairMetric	지표 확인	Metric Check
 PipelineReview.Guide.FixDetailPrefix	우선 확인	Check first
+PipelineReview.Guide.ParameterLocationPrefix	조정 위치	Adjust here
 PipelineReview.Guide.ThresholdFix	입력 레이어, ROI, Threshold mode/값/범위, Adaptive Block/Weight를 먼저 확인하십시오.	Check input layer, ROI, threshold mode, value/range, adaptive block size, and weight.
 PipelineReview.Guide.BlobFix	입력 레이어 연결, threshold 극성, morphology 정리, ROI, 면적 제한, connectivity를 먼저 확인하십시오.	Check input layer chaining, threshold polarity, morphology cleanup, ROI, area limits, and connectivity.
 PipelineReview.Guide.ContourFix	입력 레이어 연결, threshold 극성, morphology 정리, ROI, 면적 제한을 먼저 확인하십시오.	Check input layer chaining, threshold polarity, morphology cleanup, ROI, and area limits.
@@ -279,6 +280,13 @@ PipelineReview.Guide.LineFix	ROI 위치, edge layer, polarity/contrast, sampling
 PipelineReview.Guide.MeanFix	입력 레이어, ROI, Mean type, 조명/밝기 변화, 기준 범위를 먼저 확인하십시오.	Check input layer, ROI, mean type, lighting or brightness drift, and target range.
 PipelineReview.Guide.MatchingFix	template 이미지, 입력 레이어, ROI, score threshold, angle search, scale search를 먼저 확인하십시오.	Check template image, input layer, ROI, score threshold, angle search, and scale search.
 PipelineReview.Guide.GenericFix	acceptance 기준을 바꾸기 전에 입력 레이어, 라우트, ROI, 파라미터를 먼저 확인하십시오.	Check the input layer, route, ROI, and parameters before changing acceptance limits.
+PipelineReview.Guide.ThresholdParameterLocation	파라미터 패널 > Mode, Threshold/Range, Adaptive, ROI	Parameter panel > Mode, Threshold/Range, Adaptive, ROI
+PipelineReview.Guide.BlobParameterLocation	파라미터 패널 > 입력 레이어, threshold 극성, morphology, 면적 제한, ROI	Parameter panel > input layer, threshold polarity, morphology, area limits, ROI
+PipelineReview.Guide.ContourParameterLocation	파라미터 패널 > 입력 레이어, threshold 극성, morphology, 면적 제한, ROI	Parameter panel > input layer, threshold polarity, morphology, area limits, ROI
+PipelineReview.Guide.LineParameterLocation	파라미터 패널 > ROI/CvROI, polarity/contrast, sampling, Pixel/mm	Parameter panel > ROI/CvROI, polarity/contrast, sampling, Pixel/mm
+PipelineReview.Guide.MeanParameterLocation	파라미터 패널 > MEAN_TYPES, ROI/CvROI, 밝기 기준 범위	Parameter panel > MEAN_TYPES, ROI/CvROI, brightness target range
+PipelineReview.Guide.MatchingParameterLocation	파라미터 패널 > template 경로, score threshold, angle/scale search	Parameter panel > template path, score threshold, angle/scale search
+PipelineReview.Guide.GenericParameterLocation	파라미터 패널 > 입력 레이어, ROI, 라우트, acceptance 기준	Parameter panel > input layer, ROI, route, acceptance limits
 PipelineReview.Guide.AcceptanceMetricNgDetailFormat	{0}: 측정 {1}, 목표 {2}.	{0}: measured {1}, target {2}.
 PipelineReview.Guide.BranchDetailFormat	분기: 이 Step은 이전 출력 {1} 대신 {0}을 입력으로 사용합니다.	Branch: this step reads {0} instead of previous output {1}.
 PipelineReview.Guide.FailedDetailFormat	NG 원인: {0}	NG reason: {0}
