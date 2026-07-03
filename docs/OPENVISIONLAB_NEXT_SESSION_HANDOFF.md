@@ -1,78 +1,100 @@
 # OpenVisionLab Next Session Handoff
 
-Updated: 2026-07-03 18:30 KST
+Updated: 2026-07-03 18:55 KST
 
-이 문서는 다음 세션에서 바로 이어가기 위한 최소 인수인계입니다. 작업은 항상 `C:\Git\OpenVisionLab_Dev`에서 먼저 구현/검증하고, 안정화한 변경만 `C:\Git\OpenVisionLab` 원본 repo에 reviewed patch/import 방식으로 반영합니다. 사용자가 명시적으로 `PUSH`를 요청하지 않는 한 `git push`를 실행하지 않습니다.
+This document is the minimum handoff needed to continue without re-discovering the current state. Work starts in `C:\Git\OpenVisionLab_Dev`; only reviewed and stabilized changes are imported into the original repo at `C:\Git\OpenVisionLab`. Do not run `git push` unless the user explicitly requests `PUSH`.
 
-## 현재 제품 방향
+## Product Direction
 
-- OpenVisionLab은 OpenCvSharp4 기반 rule-based vision workbench입니다.
-- 목적은 이미지 기반 룰베이스 알고리즘 학습, 검증, 레시피 구성입니다.
-- 카메라, 조명, PLC, I/O 통합 장비 플랫폼이 아닙니다.
-- 알고리즘 Tool은 PropertyGrid 기반 구조를 유지합니다.
-- Preview/Run은 명시적 사용자 동작이어야 하며 layer create/delete/load-image, visibility toggle, output layer 생성만으로 자동 실행되면 안 됩니다.
-- Viewer zoom/pan/drag, ROI overlay, template editor, layer compare/docking 기능은 유지해야 합니다.
+- OpenVisionLab is an OpenCvSharp4-based rule-based vision workbench.
+- Its purpose is image-based algorithm learning, verification, and recipe composition.
+- It is not a camera, lighting, PLC, or I/O integration platform.
+- Algorithm tools must stay PropertyGrid-based.
+- Preview/Run must be explicit user actions. Layer create/delete/load-image, visibility toggles, and output layer creation must not auto-run tools.
+- Viewer zoom/pan/drag, ROI overlay, template editor, layer comparison, and docking features must be preserved.
 
-## 원본 repo 최신 안정 커밋
+## Latest Original Repo Commits
 
-`C:\Git\OpenVisionLab` main 기준 최근 안정 커밋:
+`C:\Git\OpenVisionLab` is clean at these latest stable commits:
 
+- `6ca54d3 Add public sample review smoke runner`
+- `01c7aa4 Fix Korean duplicate key detection`
+- `bab969e Clear stale contour review before teaching preview`
+- `9966a81 Update handoff after sample review checks`
 - `b0da050 Allow product sample NG review smoke`
 - `b011ee2 Expose pair review hint in sample workflow`
 - `667e454 Update OpenVisionLab handoff status`
 - `e98a0b2 Clarify NG review fix guidance`
-- `26f95f1 Document OpenVisionLab self evaluation`
 
-## 2026-07-03 진행 완료
+## Completed On 2026-07-03
 
-- Product sample catalog/native runner gate 안정화
-  - `RunVisionSampleCatalog.ps1` evidence: `artifacts\self_evaluation_product_catalog_20260703_1750\sample_catalog_summary.json`
-  - 결과: `GateStatus=OK`, `RunnableRows=168`, `RequiredRows=84`, `ExpectedFailureRows=84`, `OKRows=168`, `NGRows=0`
-  - 품질 audit: `ProductSampleQualityAudit=PASS | PairRecords=84 OK=84 Review=0 Critical=0`
-- 자체 평가 문서 추가
-  - `docs\OPENVISIONLAB_SELF_EVALUATION_20260703.md`
-  - 타사 대비 결론: 제품 목표 기준 완성도 `4.0/5`, 산업용 통합 플랫폼 기준 `2.0/5`
-  - 장점은 PropertyGrid tool, layer route 투명성, Preview/Pipeline 분리, sample-backed review입니다.
-- MainView/Product sample 흐름 개선
-  - 샘플을 연 직후 하단 workflow strip에 `Pipeline Review에서 NG/OK 기준 열기` 단서를 노출합니다.
-  - 제품군 표기는 `Secondary Battery`, `Display`, `Semiconductor`처럼 짧게 줄여 중요 문구가 말줄임표 뒤로 밀리지 않게 했습니다.
-  - 원본 커밋: `b011ee2`
-- Pipeline Review operator guide 개선
-  - 최종 OK 단계는 더 이상 "다음 Step"으로 오해시키지 않고 출력/지표/Good-Bad 쌍 비교 후 Pipeline 승인으로 안내합니다.
-  - NG 단계는 `우선 확인:` 힌트를 Tool 유형별로 표시합니다.
-  - 원본 커밋: `95ed902`, `e98a0b2`
-- Product sample NG review smoke 수정
-  - `wpf_shell_host_workspace_product_sample_review_ng`는 Product catalog 샘플을 쓰므로, Public 전용 SourceKind assertion을 재사용하지 않도록 수정했습니다.
-  - 원본 커밋: `b0da050`
-- public-safe smoke 정리
-  - legacy root sample 의존 smoke는 public catalog 샘플로 대체되었습니다.
-  - 원본 커밋: `092e8f5`
-- Tool View controller 분리 상태 확인
-  - Line/Arithmetic은 공통 controller를 사용합니다.
-  - Dev에서 `wpf_layer_selection_arithmetic_tool`, `wpf_shell_host_line_tool`, `wpf_shell_host_line_presets` 통과 확인했습니다.
+- Product sample catalog/native runner gate is stable.
+  - Dev evidence: `artifacts\self_evaluation_product_catalog_20260703_1750\sample_catalog_summary.json`
+  - Original full evidence: `artifacts\original_product_catalog_full_20260703_1919\sample_catalog_summary.json`
+  - Original full result: `GateStatus=OK`, `RunnableRows=168`, `RequiredRows=84`, `ExpectedFailureRows=84`, `OKRows=168`, `NGRows=0`
+  - Quality audit: `ProductSampleQualityAudit=PASS | PairRecords=84 OK=84 Review=0 Critical=0`
+- Self-evaluation document was added.
+  - File: `docs\OPENVISIONLAB_SELF_EVALUATION_20260703.md`
+  - Conclusion: target-product maturity `4.0/5`; industrial integrated-platform maturity `2.0/5`.
+  - Keep the product advantage focused on PropertyGrid tools, transparent layer routes, Preview/Pipeline separation, and sample-backed review.
+- MainView/Product sample workflow was improved.
+  - After opening a sample, the bottom workflow strip exposes the hint `Pipeline Review에서 NG/OK 기준 열기`.
+  - Product group labels are shortened to `Secondary Battery`, `Display`, and `Semiconductor` so the review hint stays visible.
+  - Original commit: `b011ee2`
+- Pipeline Review operator guide was improved.
+  - Final OK no longer implies a misleading "next step"; it points to output/support-layer review and Good/Bad pair comparison.
+  - NG review now shows tool-type-specific `우선 확인:` guidance.
+  - Original commits: `95ed902`, `e98a0b2`
+- Product sample NG review smoke was fixed.
+  - `wpf_shell_host_workspace_product_sample_review_ng` now accepts Product catalog samples instead of asserting Public source kind.
+  - Original commit: `b0da050`
+- Contour teaching preview stale review was fixed.
+  - `ContourToolWpfView.RequestThresholdTeachingPreview()` now clears stale result review before teaching preview, matching Blob behavior.
+  - Original commit: `bab969e`
+- Korean duplicate-key detection was fixed.
+  - `WpfPropertyGridAdapter` now detects `같은 키` in duplicate-key messages instead of a mojibake string.
+  - Original commit: `01c7aa4`
+- Public/product sample review smoke coverage was consolidated.
+  - New script: `tools\RunSampleReviewUiSmokes.ps1`
+  - The script runs single WPF targets sequentially to avoid the previously observed multi-target suite hang.
+  - Required pair coverage now uses public/product representative groups instead of legacy root-only sample groups.
+  - Bad-reference audit now requires controlled NG samples and treats legacy comparative bad references as optional/private.
+  - Original commit: `6ca54d3`
 
-## 주요 검증 증거
+## Verification Evidence
 
 - Dev build:
-  - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` 통과
+  - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` passed.
 - Original build:
-  - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` 통과
+  - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` passed.
 - Readiness:
-  - `dotnet run --project tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj -c Debug -- "C:\Git\OpenVisionLab_Dev"` 통과
-  - `dotnet run --project tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj -c Debug -- "C:\Git\OpenVisionLab"` 통과
-- Public samples:
-  - `powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestPublicSampleAssets.ps1` 통과
+  - `dotnet run --project tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj -c Debug -- "C:\Git\OpenVisionLab_Dev"` passed.
+  - `dotnet run --project tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj -c Debug -- "C:\Git\OpenVisionLab"` passed.
+- Reference and sample policy checks:
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestExternalReferences.ps1` passed in Dev and Original.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestPublicSampleAssets.ps1` passed in Dev and Original.
+- Product sample full catalog:
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.ProductSampleCatalog.csv -OutputDir artifacts\original_product_catalog_full_20260703_1919` passed in Original.
+- Sample review UI smoke runner:
+  - Dev: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\sample_review_ui_smoke_script_after_auditfix_20260703_1918` passed.
+  - Original: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\original_sample_review_ui_smoke_script_after_auditfix_20260703_1919` passed.
+
+## Screenshot Evidence
+
 - Product sample focus after:
   - Dev: `C:\Git\OpenVisionLab_Dev\artifacts\sample_workflow_pair_hint_after2_20260703_1821\wpf_shell_host_workspace_sample_product_focus_open.png`
   - Original: `C:\Git\OpenVisionLab\artifacts\original_sample_workflow_pair_hint_after_20260703_1825\wpf_shell_host_workspace_sample_product_focus_open.png`
 - Product sample NG review after:
   - Dev: `C:\Git\OpenVisionLab_Dev\artifacts\operator_review_pair_flow_after_fix_20260703_1833\wpf_shell_host_workspace_product_sample_review_ng.png`
   - Original: `C:\Git\OpenVisionLab\artifacts\original_product_sample_review_ng_after_fix_20260703_1836\wpf_shell_host_workspace_product_sample_review_ng.png`
-- Pair coverage/audit:
-  - `wpf_shell_host_workspace_sample_pair_coverage` 통과
-  - `wpf_shell_host_workspace_sample_bad_reference_audit` 통과
+- Contour teaching preview clear after:
+  - Dev: `C:\Git\OpenVisionLab_Dev\artifacts\contour_teaching_clear_after_20260703_1849\wpf_shell_host_contour_tool.png`
+  - Original: `C:\Git\OpenVisionLab\artifacts\original_contour_teaching_clear_after_20260703_1851\wpf_shell_host_contour_tool.png`
+- PropertyGrid duplicate-key smoke after:
+  - Dev: `C:\Git\OpenVisionLab_Dev\artifacts\property_grid_duplicate_key_string_after_20260703_1855\wpf_property_grid_matching_combo.png`
+  - Original: `C:\Git\OpenVisionLab\artifacts\original_property_grid_duplicate_key_string_after_20260703_1857\wpf_property_grid_matching_combo.png`
 
-## 다음 세션 시작 체크
+## Start Checklist
 
 ```powershell
 cd C:\Git\OpenVisionLab_Dev
@@ -85,23 +107,23 @@ git status --short
 git log --oneline -5
 ```
 
-## 다음 우선순위
+## Next Priorities
 
-1. Pipeline/Recipe operator review UX 추가 보강
-   - Product sample Good -> Review -> NG 기준 열기 -> Run Review 흐름을 current EXE 캡처로 반복 확인합니다.
-   - NG 단계에서 failed metric, expected/actual, suggested action이 한 화면에서 충분히 읽히는지 봅니다.
-2. MainView/Product sample review 실제 사용자 흐름 재점검
-   - Sample Picker -> Open Sample -> Pipeline Review -> Good/Bad counterpart 비교까지 끊김이 없는지 확인합니다.
-3. Tool View code-behind 추가 축소
-   - Line/Arithmetic 이후 남은 반복 wiring을 찾되, PropertyGrid 구조를 흔드는 추상화는 피합니다.
-4. Product sample catalog 보강 여부 판단
-   - 현재 84 pair audit은 PASS입니다. 새 샘플 추가보다 대표 샘플 설명/비교 affordance 강화가 우선입니다.
+1. Pipeline/Recipe operator review UX
+   - Re-run Product sample Good -> Review -> open NG/OK counterpart -> Run Review with current EXE screenshots.
+   - Check whether failed metric, expected/actual values, and suggested action are readable enough on-screen.
+2. MainView/Product sample review flow
+   - Re-check Sample Picker -> Open Sample -> Pipeline Review -> Good/Bad pair comparison as an actual user flow.
+3. Tool View code-behind cleanup
+   - Continue after Line/Arithmetic by finding remaining repeated wiring that can move into existing controller/runtime patterns without changing PropertyGrid behavior.
+4. Product sample catalog quality
+   - Current 84-pair audit is PASS. More samples are lower priority than improving explanation and review affordance.
 
-## 주의
+## Cautions
 
-- UI/UX 수정 시 현재 EXE/current build 기준 before/after 캡처를 새로 남깁니다.
-- `PipelineViewerScreenshotSmoke`의 여러 WPF target을 한 프로세스에서 suite로 실행하면 첫 target 이후 멈출 수 있습니다. Product/sample review 검증은 단일 target을 순차 실행하세요.
-- UI smoke를 병렬 실행하면 `OpenCvSharpExtern.dll` 잠금 warning이 날 수 있습니다. WPF smoke는 병렬 실행하지 않는 편이 안전합니다.
-- 원본 repo에 Dev를 대량 덮어쓰지 않습니다.
-- GitHub Desktop stash가 보이면 임의로 Restore하지 않습니다.
-- 외부 SDK sample asset이나 `dll\Library-Noah\OpenCvSharpExtern.dll`은 public 경로에 다시 넣지 않습니다.
+- UI/UX changes require fresh current-build before/after screenshots. Do not reuse old screenshots.
+- `PipelineViewerScreenshotSmoke` can hang when multiple WPF targets are run in one process. Use `tools\RunSampleReviewUiSmokes.ps1` or single-target runs.
+- Do not run WPF smoke targets in parallel; `OpenCvSharpExtern.dll` lock warnings can appear.
+- Do not bulk-copy Dev into Original.
+- Do not restore GitHub Desktop stashes unless the user explicitly asks.
+- Do not reintroduce SDK sample assets or `dll\Library-Noah\OpenCvSharpExtern.dll` into public paths.
