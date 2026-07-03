@@ -2475,7 +2475,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
             string message = ex?.Message ?? string.Empty;
             return message.IndexOf("same key", StringComparison.OrdinalIgnoreCase) >= 0
                 || message.IndexOf("same key has already been added", StringComparison.OrdinalIgnoreCase) >= 0
-                || message.Contains("���� Ű");
+                || message.IndexOf("같은 키", StringComparison.OrdinalIgnoreCase) >= 0;
         }
         private void ApplyHiddenPropertyBrowsableState(object selectedObject)
         {
