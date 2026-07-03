@@ -69,7 +69,7 @@ namespace OpenVisionLab
                     detailText,
                     string.Format(
                         CultureInfo.CurrentCulture,
-                        "\uC81C\uD488\uAD70: {0} / \uAE30\uC900: {1} / \uD750\uB984: {2}",
+                        "\uC81C\uD488\uAD70: {0} / \uAE30\uC900: {1} / \uD750\uB984: {2} / \uB2E4\uC74C: Pipeline \uBCF4\uAE30 \uB610\uB294 \uCCAB \uB2E8\uACC4 \uC5F4\uAE30",
                         state.Category,
                         state.PairRole,
                         state.ToolFlow));
@@ -87,7 +87,7 @@ namespace OpenVisionLab
                     detailText,
                     string.Format(
                         CultureInfo.CurrentCulture,
-                        "\uCCAB \uB2E8\uACC4: {0} / \uD750\uB984: {1}",
+                        "\uCCAB \uB2E8\uACC4: {0} / \uD750\uB984: {1} / \uB2E4\uC74C: Pipeline \uBCF4\uAE30 \uB610\uB294 \uCCAB \uB2E8\uACC4 \uC5F4\uAE30",
                         state.FirstTool,
                         state.ToolFlow));
             }

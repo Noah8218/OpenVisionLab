@@ -708,6 +708,7 @@ internal static class Program
                 || string.IsNullOrWhiteSpace(firstStepMenu)
                 || !workflowDetail.Contains("\uC81C\uD488\uAD70", StringComparison.Ordinal)
                 || !workflowDetail.Contains("\uAE30\uC900", StringComparison.Ordinal)
+                || !workflowDetail.Contains("\uB2E4\uC74C", StringComparison.Ordinal)
                 || !workflowDetail.Contains(firstStepMenu, StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
@@ -2536,6 +2537,7 @@ internal static class Program
                 || !workflowMeta.Contains(selectedSample.SampleName, StringComparison.Ordinal)
                 || !workflowDetail.Contains(selectedSample.Category, StringComparison.Ordinal)
                 || !workflowDetail.Contains(role, StringComparison.OrdinalIgnoreCase)
+                || !workflowDetail.Contains("\uB2E4\uC74C", StringComparison.Ordinal)
                 || (!string.IsNullOrWhiteSpace(firstTool) && !workflowDetail.Contains(firstTool, StringComparison.OrdinalIgnoreCase)))
             {
                 throw new InvalidOperationException(
