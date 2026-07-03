@@ -5014,6 +5014,7 @@ internal static class Program
                 "panelWidth",
                 "panelHeight",
                 "panelKernelPresets");
+            ClickFloatingButtonByName("btnFilterKernelPreset5", "Filter kernel preset button");
 
             SelectComboBoxItemText(filterTypeCombo, "MedianBlur", "Filter type combo");
             Pump(12);
@@ -5053,6 +5054,7 @@ internal static class Program
             shellHost.SelectToolForTest(VISION_MENU.Morphology);
             Pump(20);
             AssertDockedSingleInputToolLayout("Docked Morphology tool layout");
+            ClickFloatingButtonByName("btnKernelPreset5", "Morphology kernel preset button");
             AssertActiveToolNamedElementsDoNotOverlap(
                 "Docked Morphology kernel layout",
                 "panelKernelWidth",
@@ -11909,9 +11911,11 @@ internal static class Program
             .FirstOrDefault(item => string.Equals(Convert.ToString(item), text, StringComparison.OrdinalIgnoreCase));
         if (match == null)
         {
-            throw new InvalidOperationException(name + " did not contain layer item: " + text);
+            throw new InvalidOperationException(name + " did not contain item: " + text);
         }
 
+        bool wasAlreadySelected = Equals(comboBox.SelectedItem, match)
+            || string.Equals(Convert.ToString(comboBox.SelectedItem), text, StringComparison.OrdinalIgnoreCase);
         int selectionChangedCount = 0;
         SelectionChangedEventHandler handler = (_, _) => selectionChangedCount++;
         comboBox.SelectionChanged += handler;
@@ -11926,11 +11930,16 @@ internal static class Program
             comboBox.SelectionChanged -= handler;
         }
 
-        if (!Equals(comboBox.SelectedItem, match)
-            || selectionChangedCount == 0
-            || !string.Equals(Convert.ToString(comboBox.SelectedItem), text, StringComparison.OrdinalIgnoreCase))
+        bool isSelected = Equals(comboBox.SelectedItem, match)
+            || string.Equals(Convert.ToString(comboBox.SelectedItem), text, StringComparison.OrdinalIgnoreCase);
+        if (!isSelected)
         {
-            throw new InvalidOperationException(name + " did not select layer item: " + text);
+            throw new InvalidOperationException(name + " did not select item: " + text);
+        }
+
+        if (!wasAlreadySelected && selectionChangedCount == 0)
+        {
+            throw new InvalidOperationException(name + " selection did not raise SelectionChanged: " + text);
         }
     }
 
