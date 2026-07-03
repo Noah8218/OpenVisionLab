@@ -269,6 +269,8 @@ PipelineReview.Guide.OkNext	출력 확인 후 다음 Step	Check output, then nex
 PipelineReview.Guide.OkFinalNext	출력/지표/Good-Bad 비교 후 승인	Compare output/metrics/pair, then accept
 PipelineReview.Guide.NgNext	파라미터/라우트 조정 후 재리뷰	Tune parameters/route, then rerun review
 PipelineReview.Guide.NgDetail	선택 Step의 결과를 확인하고 라우트 또는 파라미터를 조정합니다.	Review the selected step's result and adjust the route or parameters.
+PipelineReview.Guide.Pair	Good/Bad 쌍	Good/Bad Pair
+PipelineReview.Guide.PairMetric	지표 확인	Metric Check
 PipelineReview.Guide.FixDetailPrefix	우선 확인	Check first
 PipelineReview.Guide.ThresholdFix	입력 레이어, ROI, Threshold mode/값/범위, Adaptive Block/Weight를 먼저 확인하십시오.	Check input layer, ROI, threshold mode, value/range, adaptive block size, and weight.
 PipelineReview.Guide.BlobFix	입력 레이어 연결, threshold 극성, morphology 정리, ROI, 면적 제한, connectivity를 먼저 확인하십시오.	Check input layer chaining, threshold polarity, morphology cleanup, ROI, area limits, and connectivity.
