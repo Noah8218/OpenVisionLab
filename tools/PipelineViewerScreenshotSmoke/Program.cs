@@ -1661,6 +1661,7 @@ internal static class Program
             shellHost.SelectPipelineReviewStepForTest(activePipelineStepCount - 1, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
             Pump(80);
 
+            string resultCountMetricText = OpenVisionLanguageService.T("PipelineReview.Metric.ResultCount");
             string reviewText = string.Join(
                 " | ",
                 shellHost.PipelineReviewValidationStatusText,
@@ -1674,13 +1675,13 @@ internal static class Program
                 shellHost.PipelineReviewGuideChecklistText);
             if (string.IsNullOrWhiteSpace(shellHost.PipelineReviewValidationStatusText)
                 || !shellHost.PipelineReviewResultSummaryText.Contains("OK", StringComparison.OrdinalIgnoreCase)
-                || !shellHost.PipelineReviewResultDetailText.Contains("Result", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewResultDetailText.Contains(resultCountMetricText, StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideResultDecisionText.Contains("OK", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairText.Contains("Good/Bad", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairText.Contains("Product_Display_Particle_Good", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairText.Contains("Product_Display_Particle_Many_Bad", StringComparison.OrdinalIgnoreCase)
-                || !shellHost.PipelineReviewGuidePairText.Contains("ResultCount", StringComparison.OrdinalIgnoreCase)
-                || !shellHost.PipelineReviewGuidePairMetricText.Contains("Result", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewGuidePairText.Contains(resultCountMetricText, StringComparison.Ordinal)
+                || !shellHost.PipelineReviewGuidePairMetricText.Contains(resultCountMetricText, StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("Pipeline", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("OK", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("NG", StringComparison.OrdinalIgnoreCase)
@@ -1691,7 +1692,7 @@ internal static class Program
                 || !shellHost.PipelineReviewGuideChecklistText.Contains("Bad", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuideChecklistText.Contains("Display_Particle", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuideChecklistText.Contains("Product_Display_Particle_Many_Bad", StringComparison.OrdinalIgnoreCase)
-                || !shellHost.PipelineReviewGuideChecklistText.Contains("ResultCount", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewGuideChecklistText.Contains(resultCountMetricText, StringComparison.Ordinal)
                 || string.IsNullOrWhiteSpace(shellHost.PipelineReviewRunLogText)
                 || !shellHost.HasPipelineReviewOutputPreview)
             {
@@ -1949,6 +1950,11 @@ internal static class Program
             string metricDisplayName = OpenVisionLanguageService.T(metricDisplayKey);
             bool hasLocalizedMetricDisplayName = !string.IsNullOrWhiteSpace(metricDisplayName)
                 && !string.Equals(metricDisplayName, metricDisplayKey, StringComparison.Ordinal);
+            string expectedGuideMetricName = hasLocalizedMetricDisplayName ? metricDisplayName : expectedMetricName;
+            bool pairMetricHasExpectedResult = shellHost.PipelineReviewGuidePairMetricText.Contains(resultDetailKeyword, StringComparison.OrdinalIgnoreCase)
+                || shellHost.PipelineReviewGuidePairMetricText.Contains(expectedGuideMetricName, StringComparison.Ordinal);
+            bool resultDetailHasExpectedResult = shellHost.PipelineReviewResultDetailText.Contains(resultDetailKeyword, StringComparison.OrdinalIgnoreCase)
+                || shellHost.PipelineReviewResultDetailText.Contains(expectedGuideMetricName, StringComparison.Ordinal);
             string reviewText = string.Join(
                 " | ",
                 shellHost.PipelineReviewValidationStatusText,
@@ -1967,8 +1973,8 @@ internal static class Program
                 || !shellHost.PipelineReviewGuideNextActionText.Contains(ngNextAction, StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuidePairText.Contains("Good/Bad", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairText.Contains(sampleName, StringComparison.OrdinalIgnoreCase)
-                || !shellHost.PipelineReviewGuidePairText.Contains(expectedMetricName, StringComparison.OrdinalIgnoreCase)
-                || !shellHost.PipelineReviewGuidePairMetricText.Contains(resultDetailKeyword, StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewGuidePairText.Contains(expectedGuideMetricName, StringComparison.Ordinal)
+                || !pairMetricHasExpectedResult
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("Pipeline", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("OK", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("NG", StringComparison.OrdinalIgnoreCase)
@@ -1976,7 +1982,10 @@ internal static class Program
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("기준 밖", StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains("NG", StringComparison.OrdinalIgnoreCase)
                 || (hasLocalizedMetricDisplayName && !shellHost.PipelineReviewGuideDetailText.Contains(metricDisplayName, StringComparison.Ordinal))
-                || !shellHost.PipelineReviewResultDetailText.Contains(resultDetailKeyword, StringComparison.OrdinalIgnoreCase)
+                || (hasLocalizedMetricDisplayName && shellHost.PipelineReviewGuideDetailText.Contains(expectedMetricName, StringComparison.OrdinalIgnoreCase))
+                || (hasLocalizedMetricDisplayName && shellHost.PipelineReviewGuidePairText.Contains(expectedMetricName, StringComparison.OrdinalIgnoreCase))
+                || (hasLocalizedMetricDisplayName && shellHost.PipelineReviewGuidePairMetricText.Contains(expectedMetricName, StringComparison.OrdinalIgnoreCase))
+                || !resultDetailHasExpectedResult
                 || !shellHost.HasPipelineReviewOutputPreview)
             {
                 throw new InvalidOperationException(

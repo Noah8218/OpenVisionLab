@@ -133,7 +133,7 @@ namespace OpenVisionLab
                     comparisons.Add(string.Format(
                         CultureInfo.CurrentCulture,
                         "{0}: {1} {2} / {3} {4}",
-                        metricName,
+                        FormatMetricName(metricName),
                         FormatRole(selectedSample),
                         FormatMetricRange(selectedMetrics[metricName]),
                         FormatRole(counterpart),
@@ -158,7 +158,7 @@ namespace OpenVisionLab
             List<string> metricNames = ResolveDecisionMetricNames(selectedSample, counterparts);
             string metrics = metricNames.Count == 0
                 ? LocalText("\uacb0\uacfc metric", "result metrics")
-                : string.Join(", ", metricNames.Take(4));
+                : string.Join(", ", metricNames.Take(4).Select(FormatMetricName));
             string okReference = FormatReferenceList(new[] { selectedSample }.Concat(counterparts).Where(IsOkReference));
             string ngReference = FormatReferenceList(new[] { selectedSample }.Concat(counterparts).Where(IsNgReference));
 
@@ -189,7 +189,7 @@ namespace OpenVisionLab
             List<string> metricNames = ResolveDecisionMetricNames(selectedSample, counterparts);
             string metrics = metricNames.Count == 0
                 ? LocalText("\uacb0\uacfc metric", "result metrics")
-                : string.Join(", ", metricNames.Take(4));
+                : string.Join(", ", metricNames.Take(4).Select(FormatMetricName));
             string counterpartReference = FormatReferenceList(counterparts);
             if (string.IsNullOrWhiteSpace(counterpartReference))
             {
@@ -237,7 +237,7 @@ namespace OpenVisionLab
             List<string> metricNames = ResolveDecisionMetricNames(selectedSample, counterparts);
             string metrics = metricNames.Count == 0
                 ? LocalText("\uacb0\uacfc metric", "result metrics")
-                : string.Join(", ", metricNames.Take(4));
+                : string.Join(", ", metricNames.Take(4).Select(FormatMetricName));
             string group = string.IsNullOrWhiteSpace(selectedSample.PairGroup)
                 ? LocalText("\ud604\uc7ac \uc30d", "this pair")
                 : selectedSample.PairGroup.Trim();
@@ -326,6 +326,21 @@ namespace OpenVisionLab
             }
 
             return "-";
+        }
+
+        private static string FormatMetricName(string metricName)
+        {
+            string name = metricName?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return "-";
+            }
+
+            string key = "PipelineReview.Metric." + name;
+            string localized = OpenVisionLanguageService.T(key);
+            return string.IsNullOrWhiteSpace(localized) || string.Equals(localized, key, StringComparison.Ordinal)
+                ? VisionPipelineKnownMetrics.GetDisplayName(name)
+                : localized;
         }
 
         private static string FormatRoleAndName(VisionPipelineSampleCatalogItem item)

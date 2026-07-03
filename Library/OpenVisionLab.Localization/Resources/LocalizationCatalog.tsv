@@ -274,6 +274,7 @@ PipelineReview.Guide.ThresholdFix	입력 레이어, ROI, Threshold mode/값/범�
 PipelineReview.Guide.BlobFix	입력 레이어 연결, threshold 극성, morphology 정리, ROI, 면적 제한, connectivity를 먼저 확인하십시오.	Check input layer chaining, threshold polarity, morphology cleanup, ROI, area limits, and connectivity.
 PipelineReview.Guide.ContourFix	입력 레이어 연결, threshold 극성, morphology 정리, ROI, 면적 제한을 먼저 확인하십시오.	Check input layer chaining, threshold polarity, morphology cleanup, ROI, and area limits.
 PipelineReview.Guide.LineFix	ROI 위치, edge layer, polarity/contrast, sampling interval, projection direction, Pixel/mm를 먼저 확인하십시오.	Check ROI placement, edge layer selection, polarity/contrast, sampling interval, projection direction, and Pixel/mm.
+PipelineReview.Guide.MeanFix	입력 레이어, ROI, Mean type, 조명/밝기 변화, 기준 범위를 먼저 확인하십시오.	Check input layer, ROI, mean type, lighting or brightness drift, and target range.
 PipelineReview.Guide.MatchingFix	template 이미지, 입력 레이어, ROI, score threshold, angle search, scale search를 먼저 확인하십시오.	Check template image, input layer, ROI, score threshold, angle search, and scale search.
 PipelineReview.Guide.GenericFix	acceptance 기준을 바꾸기 전에 입력 레이어, 라우트, ROI, 파라미터를 먼저 확인하십시오.	Check the input layer, route, ROI, and parameters before changing acceptance limits.
 PipelineReview.Guide.AcceptanceMetricNgDetailFormat	{0}: 측정 {1}, 목표 {2}.	{0}: measured {1}, target {2}.
@@ -287,6 +288,8 @@ PipelineReview.Guide.OkDecisionFormat	{0}: 출력 승인	{0}: output accepted
 PipelineReview.Guide.NgDecisionFormat	{0}: 재검토 필요	{0}: review required
 PipelineReview.Metric.ResultImageWidth	결과 폭	Result Width
 PipelineReview.Metric.ResultCount	결과 수	Result Count
+PipelineReview.Metric.MeanValueAvg	평균 밝기(Mean)	Mean Avg
+PipelineReview.Metric.DistanceMmAvg	평균 거리(Distance mm)	Distance Avg (mm)
 Arithmetic.Constant	상수	Constant
 Arithmetic.ConstantValue	상수 값	Constant Value
 Arithmetic.CopyAByOffset	A를 오프셋으로 복사	Copy A by offset

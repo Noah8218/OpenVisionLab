@@ -137,6 +137,18 @@ namespace OpenVisionLab
                 new DefaultCatalogMigration(
                     "Tool \uD30C\uB77C\uBBF8\uD130 \uB610\uB294 \uB77C\uC6B0\uD2B8 \uC870\uC815 \uD6C4 \uB2E4\uC2DC \uB9AC\uBDF0",
                     "Adjust the tool parameters or route, then run review again")
+            },
+            {
+                "PipelineReview.Metric.MeanValueAvg",
+                new DefaultCatalogMigration(
+                    "\uD3C9\uADE0 \uBC1D\uAE30",
+                    "Mean Avg")
+            },
+            {
+                "PipelineReview.Metric.DistanceMmAvg",
+                new DefaultCatalogMigration(
+                    "\uD3C9\uADE0 \uAC70\uB9AC(mm)",
+                    "Distance Avg (mm)")
             }
         };
         private static bool loaded;

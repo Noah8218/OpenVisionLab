@@ -344,15 +344,18 @@ namespace OpenVisionLab
                 return T("PipelineReview.Guide.LineFix", "Check ROI placement, edge layer selection, polarity/contrast, sampling interval, projection direction, and Pixel/mm.");
             }
 
+            if (toolType.IndexOf("Mean", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return T("PipelineReview.Guide.MeanFix", "Check input layer, ROI, mean type, lighting or brightness drift, and target range.");
+            }
+
             if (toolType.IndexOf("Matching", StringComparison.OrdinalIgnoreCase) >= 0
                 || toolType.IndexOf("Feature", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return T("PipelineReview.Guide.MatchingFix", "Check template image, input layer, ROI, score threshold, angle search, and scale search.");
             }
 
-            return FirstText(
-                summary?.AcceptanceMessage,
-                T("PipelineReview.Guide.GenericFix", "Check the input layer, route, ROI, and parameters before changing acceptance limits."));
+            return T("PipelineReview.Guide.GenericFix", "Check the input layer, route, ROI, and parameters before changing acceptance limits.");
         }
 
         internal static string FormatAcceptanceMetricNgReason(VisionPipelineStep step, VisionPipelineStepResultSummary summary)

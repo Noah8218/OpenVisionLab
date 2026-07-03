@@ -1190,12 +1190,15 @@ namespace OpenVisionLab
 
         private static string FormatMetricName(string metricName)
         {
-            if (string.Equals(metricName, VisionPipelineKnownMetrics.ResultCount, StringComparison.OrdinalIgnoreCase))
+            string name = SafeText(metricName, string.Empty);
+            if (string.IsNullOrWhiteSpace(name))
             {
-                return "Result";
+                return "-";
             }
 
-            return VisionPipelineKnownMetrics.GetDisplayName(metricName);
+            return T(
+                "PipelineReview.Metric." + name,
+                VisionPipelineKnownMetrics.GetDisplayName(name));
         }
 
         private static string FormatMetricValue(double value)
