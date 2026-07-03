@@ -923,8 +923,8 @@ namespace OpenVisionLab
             return string.Format(
                 CultureInfo.CurrentCulture,
                 LocalText(
-                    "\ud604\uc7ac \uce21\uc815: {0} {1} / {2} \uae30\uc900 {3} ({4}) / \ubc18\ub300 {5} \uae30\uc900 {6} ({7})",
-                    "Measured: {0} {1} / {2} target {3} ({4}) / opposite {5} target {6} ({7})"),
+                    "\ud604\uc7ac \uce21\uc815: {0} {1} / {2} \uae30\uc900 {3} ({4}) / \ubc18\ub300 {5} \uae30\uc900 {6} ({7}) / \ub2e4\uc74c: \ubc18\ub300 \uc0d8\ud50c\ub3c4 \uac19\uc740 Pipeline\uc73c\ub85c \uc2e4\ud589\ud574 \uae30\uc900 \uc548/\ubc16 \uac08\ub9bc\uc744 \ud655\uc778",
+                    "Measured: {0} {1} / {2} target {3} ({4}) / opposite {5} target {6} ({7}) / Next: run the opposite sample with the same Pipeline and confirm the metric splits inside/outside target."),
                 FormatMetricName(metricName),
                 FormatMetricValue(actualValue),
                 selectedRole,
