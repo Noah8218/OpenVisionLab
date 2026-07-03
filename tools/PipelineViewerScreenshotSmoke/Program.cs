@@ -2847,19 +2847,17 @@ internal static class Program
             .ToList();
         string[] requiredPairGroups =
         {
-            "Blob_ParticleDensity",
-            "BentPin_Shaft",
-            "LineGauge_Angle",
-            "Template_TargetPresence",
-            "EdgeBased_TargetPresence",
-            "Feature_ScoreDiscrimination",
-            "Mean_BrightnessDrift",
-            "Film_DarkSpot",
-            "SurfaceDefect_EdgeCount",
-            "Fiducial_Visibility",
-            "Fiducial_Blur",
-            "Fiducial_Ink",
-            "Fiducial_Solder"
+            "Public_Blob_Particles",
+            "Public_Contour_Shapes",
+            "Public_Line_Pins",
+            "Public_Matching_DiePad",
+            "Public_Edge_Fiducial",
+            "Public_Feature_Card",
+            "Public_Mean_BrightnessDrift",
+            "Public_Threshold_BandPads",
+            "Battery_TabGap",
+            "Display_Particle",
+            "Semiconductor_PackagePolarity"
         };
 
         foreach (string requiredPairGroup in requiredPairGroups)
@@ -2877,11 +2875,11 @@ internal static class Program
 
         string[] executionGroups =
         {
-            "Blob_ParticleDensity",
-            "LineGauge_Angle",
-            "Template_TargetPresence",
-            "Mean_BrightnessDrift",
-            "Fiducial_Solder"
+            "Public_Blob_Particles",
+            "Public_Line_Pins",
+            "Public_Matching_DiePad",
+            "Public_Mean_BrightnessDrift",
+            "Display_Particle"
         };
         List<string> executionLines = new();
         foreach (string groupName in executionGroups)
@@ -2989,10 +2987,10 @@ internal static class Program
             throw new InvalidOperationException("Bad reference audit requires Public_Mean_Brightness_Dark_Bad to remain a public controlled NG ExpectedFailure sample.");
         }
 
-        if (controlledNgCount == 0 || comparativeBadCount == 0)
+        if (controlledNgCount == 0)
         {
             throw new InvalidOperationException(
-                "Bad reference audit expects both controlled NG and comparative Bad references. "
+                "Bad reference audit expects public/product Bad references to be controlled NG ExpectedFailure samples. "
                 + $"ControlledNG={controlledNgCount}, ComparativeBad={comparativeBadCount}");
         }
 
@@ -3003,9 +3001,9 @@ internal static class Program
             + Environment.NewLine
             + $"Controlled NG: {controlledNgCount}"
             + Environment.NewLine
-            + $"Comparative Bad: {comparativeBadCount}"
+            + $"Comparative Bad (legacy/private): {comparativeBadCount}"
             + Environment.NewLine
-            + "Rule: only promote Bad references to ExpectedFailure when the shared sample pipeline rejects them through a stable metric acceptance gate."
+            + "Rule: public/product Bad references should be ExpectedFailure samples rejected through a stable metric acceptance gate."
             + Environment.NewLine
             + Environment.NewLine
             + string.Join(Environment.NewLine, reportLines);
