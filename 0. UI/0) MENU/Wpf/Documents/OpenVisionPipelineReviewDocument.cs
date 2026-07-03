@@ -95,6 +95,7 @@ namespace OpenVisionLab
         public string GuidePairActionText => view.ReviewGuidePairActionText;
         public string GuidePairMetricText => view.ReviewGuidePairMetricText;
         public string GuideChecklistText => view.ReviewGuideChecklistText;
+        public string GuideParameterFocusText => view.ReviewGuideParameterFocusText;
         public bool CanOpenPairSample => view.CanOpenReviewGuidePairAction;
         public bool CanSelectPreviousStep => view.CanSelectPreviousStep;
         public bool CanSelectNextStep => view.CanSelectNextStep;

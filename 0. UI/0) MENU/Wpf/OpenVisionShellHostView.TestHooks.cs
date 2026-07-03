@@ -118,6 +118,7 @@ namespace OpenVisionLab
         public string PipelineReviewGuidePairActionText => toolTestFacade.PipelineReviewGuidePairActionText;
         public string PipelineReviewGuidePairMetricText => toolTestFacade.PipelineReviewGuidePairMetricText;
         public string PipelineReviewGuideChecklistText => toolTestFacade.PipelineReviewGuideChecklistText;
+        public string PipelineReviewGuideParameterFocusText => toolTestFacade.PipelineReviewGuideParameterFocusText;
         public bool CanOpenPipelineReviewPairSampleForTest => toolTestFacade.CanOpenPipelineReviewPairSample;
         public bool CanSelectPreviousPipelineReviewStepForTest => toolTestFacade.CanSelectPreviousPipelineReviewStep;
         public bool CanSelectNextPipelineReviewStepForTest => toolTestFacade.CanSelectNextPipelineReviewStep;

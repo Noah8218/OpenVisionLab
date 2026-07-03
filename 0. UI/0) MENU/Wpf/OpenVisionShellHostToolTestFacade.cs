@@ -160,6 +160,8 @@ namespace OpenVisionLab
 
         public string PipelineReviewGuideChecklistText => statePresenter.PipelineReviewGuideChecklistText;
 
+        public string PipelineReviewGuideParameterFocusText => statePresenter.PipelineReviewGuideParameterFocusText;
+
         public bool CanOpenPipelineReviewPairSample => statePresenter.CanOpenPipelineReviewPairSample;
 
         public bool CanSelectPreviousPipelineReviewStep => statePresenter.CanSelectPreviousPipelineReviewStep;

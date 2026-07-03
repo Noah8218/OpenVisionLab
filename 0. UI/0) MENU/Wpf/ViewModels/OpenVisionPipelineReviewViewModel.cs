@@ -41,8 +41,10 @@ namespace OpenVisionLab
         private string reviewGuidePairActionText = string.Empty;
         private string reviewGuidePairMetricText = string.Empty;
         private string reviewGuideChecklistText = T("PipelineReview.Guide.ChecklistText", "Review habit: run Good first -> run Bad in the same PairGroup with the same pipeline -> compare output image, overlay, metrics, and log.");
+        private string reviewGuideParameterFocusText = string.Empty;
         private bool hasReviewGuidePairText;
         private bool hasReviewGuidePairMetricText;
+        private bool hasReviewGuideParameterFocusText;
         private bool canOpenReviewGuidePairAction;
         private bool canSelectPreviousStep;
         private bool canSelectNextStep;
@@ -80,8 +82,10 @@ namespace OpenVisionLab
         public string ReviewGuidePairActionText { get => reviewGuidePairActionText; private set => SetField(ref reviewGuidePairActionText, value); }
         public string ReviewGuidePairMetricText { get => reviewGuidePairMetricText; private set => SetField(ref reviewGuidePairMetricText, value); }
         public string ReviewGuideChecklistText { get => reviewGuideChecklistText; private set => SetField(ref reviewGuideChecklistText, value); }
+        public string ReviewGuideParameterFocusText { get => reviewGuideParameterFocusText; private set => SetField(ref reviewGuideParameterFocusText, value); }
         public bool HasReviewGuidePairText { get => hasReviewGuidePairText; private set => SetField(ref hasReviewGuidePairText, value); }
         public bool HasReviewGuidePairMetricText { get => hasReviewGuidePairMetricText; private set => SetField(ref hasReviewGuidePairMetricText, value); }
+        public bool HasReviewGuideParameterFocusText { get => hasReviewGuideParameterFocusText; private set => SetField(ref hasReviewGuideParameterFocusText, value); }
         public bool CanOpenReviewGuidePairAction { get => canOpenReviewGuidePairAction; private set => SetField(ref canOpenReviewGuidePairAction, value); }
         public bool CanSelectPreviousStep { get => canSelectPreviousStep; private set => SetField(ref canSelectPreviousStep, value); }
         public bool CanSelectNextStep { get => canSelectNextStep; private set => SetField(ref canSelectNextStep, value); }
@@ -150,6 +154,8 @@ namespace OpenVisionLab
             SetReviewGuidePairAction(string.Empty, false);
             SetReviewGuidePairMetric(string.Empty);
             ReviewGuideChecklistText = SafeText(state?.ChecklistText);
+            ReviewGuideParameterFocusText = string.IsNullOrWhiteSpace(state?.ParameterFocusText) ? string.Empty : state.ParameterFocusText.Trim();
+            HasReviewGuideParameterFocusText = !string.IsNullOrWhiteSpace(ReviewGuideParameterFocusText);
         }
 
         public void SetReviewGuidePairAction(string actionText, bool canOpen)

@@ -15,7 +15,8 @@ namespace OpenVisionLab
             string resultDecisionText,
             string detailText = null,
             string pairReviewText = null,
-            string checklistText = null)
+            string checklistText = null,
+            string parameterFocusText = null)
         {
             StageText = stageText ?? string.Empty;
             CurrentStepText = currentStepText ?? string.Empty;
@@ -24,6 +25,7 @@ namespace OpenVisionLab
             DetailText = detailText ?? string.Empty;
             PairReviewText = pairReviewText ?? string.Empty;
             ChecklistText = checklistText ?? string.Empty;
+            ParameterFocusText = parameterFocusText ?? string.Empty;
         }
 
         public string StageText { get; }
@@ -39,6 +41,8 @@ namespace OpenVisionLab
         public string PairReviewText { get; }
 
         public string ChecklistText { get; }
+
+        public string ParameterFocusText { get; }
     }
 
     internal static class OpenVisionPipelineReviewGuidePresenter
@@ -91,7 +95,8 @@ namespace OpenVisionLab
                 ResolveResultDecisionText(statusText, summary, validationResult),
                 ResolveDetailText(displayIndex, stepCount, step, hasInputImage, hasOutputImage, summary, validationResult, expectedInputLayer, isBranch),
                 ResolvePairReviewText(samplePairGuide),
-                ResolveChecklistText(samplePairGuide));
+                ResolveChecklistText(samplePairGuide),
+                ResolveParameterFocusText(step, summary));
         }
 
         public static OpenVisionPipelineReviewGuideState CreateValidationError(
@@ -362,6 +367,19 @@ namespace OpenVisionLab
             }
 
             return T("PipelineReview.Guide.GenericFix", "Check the input layer, route, ROI, and parameters before changing acceptance limits.");
+        }
+
+        private static string ResolveParameterFocusText(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
+        {
+            if (step == null || summary == null || (summary.Success && !summary.IsAcceptanceNg))
+            {
+                return string.Empty;
+            }
+
+            string location = ResolveNgParameterLocationText(step);
+            return string.IsNullOrWhiteSpace(location)
+                ? string.Empty
+                : T("PipelineReview.Guide.ParameterLocationPrefix", "Adjust here") + ": " + Truncate(location, 140);
         }
 
         private static string ResolveNgParameterLocationText(VisionPipelineStep step)

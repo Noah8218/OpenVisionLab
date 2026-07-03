@@ -1966,7 +1966,8 @@ internal static class Program
                 shellHost.PipelineReviewGuideResultDecisionText,
                 shellHost.PipelineReviewGuideDetailText,
                 shellHost.PipelineReviewGuidePairText,
-                shellHost.PipelineReviewGuidePairMetricText);
+                shellHost.PipelineReviewGuidePairMetricText,
+                shellHost.PipelineReviewGuideParameterFocusText);
             if (string.IsNullOrWhiteSpace(shellHost.PipelineReviewValidationStatusText)
                 || !shellHost.PipelineReviewResultSummaryText.Contains("NG", StringComparison.OrdinalIgnoreCase)
                 || string.IsNullOrWhiteSpace(shellHost.PipelineReviewRunLogText)
@@ -1985,6 +1986,8 @@ internal static class Program
                 || (hasLocalizedMetricDisplayName && !shellHost.PipelineReviewGuideDetailText.Contains(metricDisplayName, StringComparison.Ordinal))
                 || !shellHost.PipelineReviewGuideDetailText.Contains(parameterLocationPrefix, StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains("파라미터 패널", StringComparison.Ordinal)
+                || !shellHost.PipelineReviewGuideParameterFocusText.Contains(parameterLocationPrefix, StringComparison.Ordinal)
+                || !shellHost.PipelineReviewGuideParameterFocusText.Contains("파라미터 패널", StringComparison.Ordinal)
                 || (hasLocalizedMetricDisplayName && shellHost.PipelineReviewGuideDetailText.Contains(expectedMetricName, StringComparison.OrdinalIgnoreCase))
                 || (hasLocalizedMetricDisplayName && shellHost.PipelineReviewGuidePairText.Contains(expectedMetricName, StringComparison.OrdinalIgnoreCase))
                 || (hasLocalizedMetricDisplayName && shellHost.PipelineReviewGuidePairMetricText.Contains(expectedMetricName, StringComparison.OrdinalIgnoreCase))
@@ -5261,6 +5264,8 @@ internal static class Program
                 || !shellHost.PipelineReviewGuideDetailText.Contains(fixDetailPrefix, StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains(parameterLocationPrefix, StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains("파라미터 패널", StringComparison.Ordinal)
+                || !shellHost.PipelineReviewGuideParameterFocusText.Contains(parameterLocationPrefix, StringComparison.Ordinal)
+                || !shellHost.PipelineReviewGuideParameterFocusText.Contains("파라미터 패널", StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains(resultWidthMetricText, StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains("<= 1", StringComparison.OrdinalIgnoreCase)
                 || shellHost.PipelineReviewGuideDetailText.Contains("Result Width", StringComparison.OrdinalIgnoreCase)

@@ -84,6 +84,7 @@ namespace OpenVisionLab
         public string PipelineReviewGuidePairActionText => documentController.ActivePipelineReviewDocument?.GuidePairActionText ?? string.Empty;
         public string PipelineReviewGuidePairMetricText => documentController.ActivePipelineReviewDocument?.GuidePairMetricText ?? string.Empty;
         public string PipelineReviewGuideChecklistText => documentController.ActivePipelineReviewDocument?.GuideChecklistText ?? string.Empty;
+        public string PipelineReviewGuideParameterFocusText => documentController.ActivePipelineReviewDocument?.GuideParameterFocusText ?? string.Empty;
         public bool CanOpenPipelineReviewPairSample => documentController.ActivePipelineReviewDocument?.CanOpenPairSample ?? false;
         public bool CanSelectPreviousPipelineReviewStep => documentController.ActivePipelineReviewDocument?.CanSelectPreviousStep ?? false;
         public bool CanSelectNextPipelineReviewStep => documentController.ActivePipelineReviewDocument?.CanSelectNextStep ?? false;

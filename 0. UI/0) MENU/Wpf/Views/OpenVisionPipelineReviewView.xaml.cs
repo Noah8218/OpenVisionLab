@@ -46,6 +46,7 @@ namespace OpenVisionLab
         public string ReviewGuidePairActionText => ViewModel.ReviewGuidePairActionText;
         public string ReviewGuidePairMetricText => ViewModel.ReviewGuidePairMetricText;
         public string ReviewGuideChecklistText => ViewModel.ReviewGuideChecklistText;
+        public string ReviewGuideParameterFocusText => ViewModel.ReviewGuideParameterFocusText;
         public bool CanOpenReviewGuidePairAction => ViewModel.CanOpenReviewGuidePairAction;
         public bool CanSelectPreviousStep => ViewModel.CanSelectPreviousStep;
         public bool CanSelectNextStep => ViewModel.CanSelectNextStep;
