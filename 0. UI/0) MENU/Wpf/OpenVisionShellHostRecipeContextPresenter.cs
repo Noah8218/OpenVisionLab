@@ -24,16 +24,31 @@ namespace OpenVisionLab
         {
             OpenVisionRecipeContext context = contextProvider();
             labelText.Text = T("RecipeContext.Label", LocalText("레시피", "Recipe"));
-            valueText.Text = context.DisplayText;
+            valueText.Text = FormatScopeText(context);
             valueText.ToolTip = string.Format(
                 CultureInfo.CurrentCulture,
-                "{0}: {1}\n{2}: {3}\n{4}: {5}",
+                "{0}: {1}\n{2}: {3}\n{4}: {5}\n{6}",
                 T("RecipeContext.Recipe", LocalText("레시피", "Recipe")),
                 context.Name,
                 T("RecipeContext.Pipeline", LocalText("파이프라인", "Pipeline")),
                 context.PipelineName,
                 T("RecipeContext.ActiveLayer", LocalText("활성 레이어", "Active Layer")),
-                context.ActiveLayerName);
+                context.ActiveLayerName,
+                T(
+                    "RecipeContext.ScopeHint",
+                    LocalText(
+                        "Add Pipeline은 이 레시피/파이프라인에만 저장되며 Preview는 수동 실행입니다.",
+                        "Add Pipeline writes only to this recipe/pipeline; Preview runs manually.")));
+        }
+
+        private static string FormatScopeText(OpenVisionRecipeContext context)
+        {
+            string dirtySuffix = context.IsDirty ? " *" : string.Empty;
+            return string.Format(
+                CultureInfo.CurrentCulture,
+                T("RecipeContext.ScopeFormat", LocalText("범위: {0}{1}", "Scope: {0}{1}")),
+                context.PipelineName,
+                dirtySuffix);
         }
 
         private static string T(string key, string fallbackText)

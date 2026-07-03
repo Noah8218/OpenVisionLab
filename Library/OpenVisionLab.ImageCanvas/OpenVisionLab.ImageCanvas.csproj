@@ -69,7 +69,7 @@
     </Content>
     <Content Include="..\..\dll\OpenCVSharp\OpenCvSharpExtern.dll">
       <Link>OpenCvSharpExtern.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\dll\OpenCVSharp\opencv_ffmpeg400_64.dll" Condition="'$(ImageCanvasCopyOpenCvVideoRuntime)' == 'true'">
       <Link>opencv_ffmpeg400_64.dll</Link>

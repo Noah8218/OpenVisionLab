@@ -268,6 +268,8 @@ namespace OpenVisionLab
                 OnPropertyChanged(nameof(PairDecisionMetricText));
                 OnPropertyChanged(nameof(PairDecisionChecklistText));
                 OnPropertyChanged(nameof(PairDecisionNextActionText));
+                OnPropertyChanged(nameof(PairDecisionQuickActionText));
+                OnPropertyChanged(nameof(PairDecisionQuickWorkflowText));
                 OnPropertyChanged(nameof(PairDecisionWorkflowText));
                 OnPropertyChanged(nameof(SelectCounterpartSampleButtonText));
                 OnPropertyChanged(nameof(LearnModeText));
@@ -458,6 +460,68 @@ namespace OpenVisionLab
         public string PairDecisionChecklistText => PairDecisionGuide.ChecklistText;
 
         public string PairDecisionNextActionText => PairDecisionGuide.NextActionText;
+
+        public string PairDecisionQuickActionText
+        {
+            get
+            {
+                if (SelectedSample == null)
+                {
+                    return "-";
+                }
+
+                string metricText = ResolveQuickDecisionMetricText();
+                if (IsOkReference(SelectedSample))
+                {
+                    return string.Format(
+                        CultureInfo.CurrentCulture,
+                        LocalText("\ub2e4\uc74c: NG \uae30\uc900 \uc5f4\uae30 -> \uac19\uc740 Pipeline\uc73c\ub85c {0} \ube44\uad50.", "Next: open NG reference -> compare {0} with the same pipeline."),
+                        metricText);
+                }
+
+                if (IsNgReference(SelectedSample))
+                {
+                    return string.Format(
+                        CultureInfo.CurrentCulture,
+                        LocalText("\ub2e4\uc74c: OK \uae30\uc900 \ud655\uc778 -> \uc774 NG\uc640 {0} \ube44\uad50.", "Next: verify OK reference -> compare {0} with this NG."),
+                        metricText);
+                }
+
+                return string.Format(
+                    CultureInfo.CurrentCulture,
+                    LocalText("\ub2e4\uc74c: OK/NG\ub97c \uac19\uc740 Pipeline\uc73c\ub85c \uc2e4\ud589\ud574 {0} \ube44\uad50.", "Next: run OK/NG with the same pipeline and compare {0}."),
+                    metricText);
+            }
+        }
+
+        public string PairDecisionQuickWorkflowText
+        {
+            get
+            {
+                if (SelectedSample == null)
+                {
+                    return "-";
+                }
+
+                if (IsOkReference(SelectedSample))
+                {
+                    return LocalText(
+                        "검증 순서: 이 OK를 먼저 Preview/Run으로 확인하고, NG 기준을 같은 Pipeline으로 비교합니다.",
+                        "Review order: verify this OK with Preview/Run, then compare the NG reference with the same pipeline.");
+                }
+
+                if (IsNgReference(SelectedSample))
+                {
+                    return LocalText(
+                        "검증 순서: OK 기준을 먼저 확인한 뒤 이 NG와 metric 분리를 비교합니다.",
+                        "Review order: check the OK reference first, then compare metric separation against this NG.");
+                }
+
+                return LocalText(
+                    "검증 순서: OK/NG를 같은 Pipeline으로 실행해 metric 분리를 확인합니다.",
+                    "Review order: run OK/NG with the same pipeline and check metric separation.");
+            }
+        }
 
         public string PairDecisionWorkflowText => PairDecisionGuide.WorkflowText;
 
@@ -776,6 +840,48 @@ namespace OpenVisionLab
         {
             return ResolveCounterpartSamples()
                 .FirstOrDefault(MatchesSampleFilter);
+        }
+
+        private string ResolveQuickDecisionMetricText()
+        {
+            if (SelectedSample == null)
+            {
+                return LocalText("metric", "metrics");
+            }
+
+            HashSet<string> selectedNames = new HashSet<string>(
+                SelectedSample.ExpectedMetrics
+                    .Where(metric => metric != null && !string.IsNullOrWhiteSpace(metric.Name))
+                    .Select(metric => metric.Name.Trim()),
+                StringComparer.OrdinalIgnoreCase);
+            if (selectedNames.Count == 0)
+            {
+                return LocalText("metric", "metrics");
+            }
+
+            HashSet<string> counterpartNames = new HashSet<string>(
+                ResolveCounterpartSamples()
+                    .SelectMany(item => item.ExpectedMetrics)
+                    .Where(metric => metric != null && !string.IsNullOrWhiteSpace(metric.Name))
+                    .Select(metric => metric.Name.Trim()),
+                StringComparer.OrdinalIgnoreCase);
+
+            List<string> commonNames = selectedNames
+                .Where(counterpartNames.Contains)
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .Take(2)
+                .ToList();
+            if (commonNames.Count == 0)
+            {
+                commonNames = selectedNames
+                    .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                    .Take(2)
+                    .ToList();
+            }
+
+            return commonNames.Count == 0
+                ? LocalText("metric", "metrics")
+                : string.Join(", ", commonNames);
         }
 
         private OpenVisionWorkspaceSamplePairDecisionGuide PairDecisionGuide =>

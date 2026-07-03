@@ -917,20 +917,22 @@ namespace OpenVisionLab
             string counterpartRole = FormatSampleReferenceRole(activePairCounterpartSample);
             string selectedRange = FormatExpectedMetricRange(selectedMetric);
             string counterpartRange = FormatExpectedMetricRange(counterpartMetric);
-            string judgment = FormatExpectedMetricJudgment(actualValue, selectedMetric);
+            string selectedJudgment = FormatExpectedMetricJudgment(actualValue, selectedMetric, selectedRole);
+            string counterpartJudgment = FormatExpectedMetricJudgment(actualValue, counterpartMetric, counterpartRole);
 
             return string.Format(
                 CultureInfo.CurrentCulture,
                 LocalText(
-                    "\ud604\uc7ac \uce21\uc815: {0} {1} / {2} \uae30\uc900 {3} / \ubc18\ub300 {4} \uae30\uc900 {5} / {6}",
-                    "Measured: {0} {1} / {2} target {3} / opposite {4} target {5} / {6}"),
+                    "\ud604\uc7ac \uce21\uc815: {0} {1} / {2} \uae30\uc900 {3} ({4}) / \ubc18\ub300 {5} \uae30\uc900 {6} ({7})",
+                    "Measured: {0} {1} / {2} target {3} ({4}) / opposite {5} target {6} ({7})"),
                 FormatMetricName(metricName),
                 FormatMetricValue(actualValue),
                 selectedRole,
                 selectedRange,
+                selectedJudgment,
                 counterpartRole,
                 counterpartRange,
-                judgment);
+                counterpartJudgment);
         }
 
         private string ResolvePairComparisonMetricName(VisionPipelineStep step, IDictionary<string, double> metrics)
@@ -1062,7 +1064,10 @@ namespace OpenVisionLab
             return "-";
         }
 
-        private static string FormatExpectedMetricJudgment(double actualValue, VisionPipelineSampleExpectedMetric metric)
+        private static string FormatExpectedMetricJudgment(
+            double actualValue,
+            VisionPipelineSampleExpectedMetric metric,
+            string roleText)
         {
             bool? isInside = IsInsideExpectedMetricRange(actualValue, metric);
             if (!isInside.HasValue)
@@ -1070,9 +1075,12 @@ namespace OpenVisionLab
                 return LocalText("\uae30\uc900 \ud655\uc778 \ubd88\uac00", "target unavailable");
             }
 
+            string role = string.IsNullOrWhiteSpace(roleText)
+                ? LocalText("\ud604\uc7ac", "current")
+                : roleText.Trim();
             return isInside.Value
-                ? LocalText("\ud604\uc7ac \uae30\uc900 \uc548", "inside current target")
-                : LocalText("\ud604\uc7ac \uae30\uc900 \ubc16", "outside current target");
+                ? string.Format(CultureInfo.CurrentCulture, LocalText("{0} \uae30\uc900 \uc548", "inside {0} target"), role)
+                : string.Format(CultureInfo.CurrentCulture, LocalText("{0} \uae30\uc900 \ubc16", "outside {0} target"), role);
         }
 
         private static bool? IsInsideExpectedMetricRange(double actualValue, VisionPipelineSampleExpectedMetric metric)

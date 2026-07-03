@@ -39,7 +39,7 @@
     </Content>
     <Content Include="$(OpenVisionLabOpenCvSharpDllRoot)OpenCvSharpExtern.dll">
       <Link>OpenCvSharpExtern.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 </Project>

@@ -177,7 +177,7 @@
     </Content>
     <Content Include="$(OpenVisionLabOpenCvSharpDllRoot)OpenCvSharpExtern.dll">
       <Link>OpenCvSharpExtern.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="lens.ico" />
   </ItemGroup>
@@ -192,9 +192,10 @@
       <RequiredNoahRuntime Include="$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.dll" />
       <RequiredNoahRuntime Include="$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.Blob.dll" />
       <RequiredNoahRuntime Include="$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.Extensions.dll" />
-      <RequiredNoahRuntime Include="$(OpenVisionLabOpenCvSharpDllRoot)OpenCvSharpExtern.dll" />
+      <RequiredOpenCvSharpRuntime Include="$(OpenVisionLabOpenCvSharpDllRoot)OpenCvSharpExtern.dll" />
     </ItemGroup>
-    <Error Condition="!Exists('%(RequiredNoahRuntime.Identity)')" Text="Missing vendored runtime: %(RequiredNoahRuntime.Identity). Restore dll\Library-Noah and dll\OpenCVSharp from the repository or refresh the vendor DLLs." />
+    <Error Condition="!Exists('%(RequiredNoahRuntime.Identity)')" Text="Missing vendored Library-Noah runtime: %(RequiredNoahRuntime.Identity). Restore dll\Library-Noah from the repository or refresh the vendor DLLs." />
+    <Error Condition="!Exists('%(RequiredOpenCvSharpRuntime.Identity)')" Text="Missing shared OpenCVSharp native runtime: %(RequiredOpenCvSharpRuntime.Identity). Restore dll\OpenCVSharp\OpenCvSharpExtern.dll from the repository." />
   </Target>
 
   <Target Name="ValidateWpgPropertyGridReference" BeforeTargets="ResolveReferences" Condition="'$(DesignTimeBuild)' != 'true' and !Exists('$(OpenVisionLabDllRoot)System.Windows.Controls.WpfPropertyGrid.dll')">

@@ -43,21 +43,27 @@ Add-Check "Lib.OpenCV.Blob.dll" (Join-Path $libraryNoahDllRoot "Lib.OpenCV.Blob.
 Add-Check "OpenCvSharp.dll" (Join-Path $libraryNoahDllRoot "OpenCvSharp.dll")
 Add-Check "OpenCvSharp.Blob.dll" (Join-Path $libraryNoahDllRoot "OpenCvSharp.Blob.dll")
 Add-Check "OpenCvSharp.Extensions.dll" (Join-Path $libraryNoahDllRoot "OpenCvSharp.Extensions.dll")
-Add-Check "OpenCvSharpExtern.dll" (Join-Path $openCvSharpDllRoot "OpenCvSharpExtern.dll")
+Add-Check "OpenCVSharp native runtime" (Join-Path $openCvSharpDllRoot "OpenCvSharpExtern.dll")
 Add-Check "WPF PropertyGrid runtime" (Join-Path $dllRoot "System.Windows.Controls.WpfPropertyGrid.dll")
 
 $missing = @($checks | Where-Object { $_.Required -and -not $_.Exists })
+$legacyNativePath = Join-Path $libraryNoahDllRoot "OpenCvSharpExtern.dll"
+$legacyNativeExists = Test-Path -LiteralPath $legacyNativePath
 $lines = New-Object System.Collections.Generic.List[string]
 $lines.Add("OpenVisionLab Vendored DLL Check") | Out-Null
 $lines.Add("Configuration: $Configuration") | Out-Null
 $lines.Add("DLL root: $([System.IO.Path]::GetFullPath($dllRoot))") | Out-Null
 $lines.Add("Library-Noah DLL root: $([System.IO.Path]::GetFullPath($libraryNoahDllRoot))") | Out-Null
-$lines.Add("OpenCVSharp native DLL root: $([System.IO.Path]::GetFullPath($openCvSharpDllRoot))") | Out-Null
+$lines.Add("OpenCVSharp DLL root: $([System.IO.Path]::GetFullPath($openCvSharpDllRoot))") | Out-Null
 $lines.Add("") | Out-Null
 
 foreach ($check in $checks) {
     $state = if ($check.Exists) { "OK" } else { "MISSING" }
     $lines.Add("$state | $($check.Name) | $($check.Path)") | Out-Null
+}
+
+if ($legacyNativeExists) {
+    $lines.Add("FORBIDDEN | Legacy Library-Noah native runtime | $([System.IO.Path]::GetFullPath($legacyNativePath))") | Out-Null
 }
 
 if ($missing.Count -gt 0) {
@@ -66,6 +72,10 @@ if ($missing.Count -gt 0) {
     foreach ($item in $missing) {
         $lines.Add("- $($item.Name): $($item.Path)") | Out-Null
     }
+}
+elseif ($legacyNativeExists) {
+    $lines.Add("") | Out-Null
+    $lines.Add("Forbidden legacy native DLL found: $([System.IO.Path]::GetFullPath($legacyNativePath))") | Out-Null
 }
 else {
     $lines.Add("") | Out-Null
@@ -87,5 +97,9 @@ if (-not [string]::IsNullOrWhiteSpace($OutputPath)) {
 $lines | ForEach-Object { Write-Host $_ }
 
 if ($missing.Count -gt 0) {
-    throw "Vendored DLL check failed. Restore dll\Library-Noah, dll\OpenCVSharp, and dll\System.Windows.Controls.WpfPropertyGrid.dll from the repository."
+    throw "Vendored DLL check failed. Restore dll\Library-Noah and dll\System.Windows.Controls.WpfPropertyGrid.dll from the repository."
+}
+
+if ($legacyNativeExists) {
+    throw "Vendored DLL check failed. Remove dll\Library-Noah\OpenCvSharpExtern.dll; native runtime must be shared from dll\OpenCVSharp."
 }

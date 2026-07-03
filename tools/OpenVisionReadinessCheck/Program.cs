@@ -25,6 +25,7 @@ internal static class Program
         CheckWpfShellMigration(repoRoot);
         CheckToolSamplesAndDiagnostics(repoRoot);
         CheckPipelineInputOutputUx(repoRoot);
+        CheckToolViewControllerOwnership(repoRoot);
         CheckWpgEditorContracts(repoRoot);
         CheckLocalizationExpansion(repoRoot);
         CheckTutorialAndLearningDocs(repoRoot);
@@ -259,6 +260,63 @@ internal static class Program
         RequireContains(flowView, "PipelineFlow.ViewOutputImage", "Output layer pill tells the user it opens output image.");
         RequireContains(flowView, "PipelineFlow.BranchInputTooltip", "Pipeline flow explains branch input deviations.");
         Pass("Pipeline input/output UX contract");
+    }
+
+    private static void CheckToolViewControllerOwnership(string repoRoot)
+    {
+        string toolViewDirectory = Path.Combine(repoRoot, @"0. UI\6) Vision Test\Wpf");
+        if (!Directory.Exists(toolViewDirectory))
+        {
+            Failures.Add($"Tool View directory was not found: {toolViewDirectory}");
+            return;
+        }
+
+        string[] toolViewFiles = Directory
+            .EnumerateFiles(toolViewDirectory, "*ToolWpfView.xaml.cs", SearchOption.TopDirectoryOnly)
+            .ToArray();
+        if (toolViewFiles.Length == 0)
+        {
+            Failures.Add("Tool View controller ownership check did not find any *ToolWpfView.xaml.cs files.");
+            return;
+        }
+
+        string[] forbiddenTokens =
+        {
+            "new VisionToolSingleInputToolEventHub(",
+            "new VisionToolDoubleInputToolEventHub(",
+            "VisionToolSingleInputCustomToolRuntime.Attach(",
+            "VisionToolSingleInputPropertyToolRuntime<",
+            "VisionToolSingleInputMatchingToolRuntime<",
+            "VisionToolSingleInputSpecialPropertyToolRuntime.Attach(",
+            "VisionToolDoubleInputCustomToolRuntime.Attach(",
+            "VisionToolLanguageChangeController.Attach("
+        };
+
+        foreach (string toolViewFile in toolViewFiles)
+        {
+            string text = File.ReadAllText(toolViewFile, Encoding.UTF8);
+            foreach (string token in forbiddenTokens)
+            {
+                if (text.IndexOf(token, StringComparison.Ordinal) >= 0)
+                {
+                    Failures.Add($"{Path.GetFileName(toolViewFile)} should delegate shell runtime/event/language wiring to a VisionTool controller. Forbidden token: {token}");
+                }
+            }
+        }
+
+        string lineView = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\LineToolWpfView.xaml.cs");
+        RequireContains(lineView, "VisionToolSingleInputSpecialPropertyToolController.Attach", "Line Tool delegates special PropertyGrid shell wiring to the shared controller.");
+
+        string arithmeticView = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\ArithmeticToolWpfView.xaml.cs");
+        RequireContains(arithmeticView, "VisionToolDoubleInputCustomToolController.Attach", "Arithmetic Tool delegates double-input shell wiring to the shared controller.");
+
+        string singleInputSpecialController = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\VisionToolSingleInputSpecialPropertyToolController.cs");
+        RequireContains(singleInputSpecialController, "VisionToolSingleInputSpecialPropertyToolRuntime.Attach", "Special PropertyGrid controller owns the special single-input runtime wiring.");
+
+        string doubleInputController = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\VisionToolDoubleInputCustomToolController.cs");
+        RequireContains(doubleInputController, "VisionToolDoubleInputCustomToolRuntime.Attach", "Double-input controller owns the custom double-input runtime wiring.");
+
+        Pass("Tool View controller ownership contract");
     }
 
     private static void ValidateGoodBadPairCatalog(string catalog)
@@ -545,12 +603,17 @@ internal static class Program
     {
         string external = Read(repoRoot, @"docs\OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md");
         RequireContains(external, "dll\\Library-Noah", "DLL reference policy covers vendored Library-Noah DLLs.");
+        RequireContains(external, "dll\\OpenCVSharp", "DLL reference policy covers shared OpenCVSharp native runtime.");
         RequireContains(external, "System.Windows.Controls.WpfPropertyGrid.dll", "DLL reference policy covers WPG runtime DLL.");
 
         string release = Read(repoRoot, @"docs\OPENVISIONLAB_RELEASE_VERSION_POLICY.md");
         RequireContains(release, "dll\\Library-Noah", "Release policy covers Library-Noah DLL versioning.");
+        RequireContains(release, "dll\\OpenCVSharp", "Release policy covers shared OpenCVSharp native runtime.");
         RequireContains(release, "System.Windows.Controls.WpfPropertyGrid.dll", "Release policy covers WPG runtime versioning.");
         RequireContains(release, "OpenVisionLab", "Release policy covers OpenVisionLab release evidence.");
+
+        RequirePathExists(repoRoot, @"dll\OpenCVSharp\OpenCvSharpExtern.dll", "Shared OpenCVSharp native runtime exists.");
+        RequirePathMissing(repoRoot, @"dll\Library-Noah\OpenCvSharpExtern.dll", "Legacy Library-Noah native runtime remains removed.");
 
         string aiPolicy = Read(repoRoot, @"docs\OPENVISIONLAB_AI_RECIPE_AUTOMATION_POLICY.md");
         RequireContains(aiPolicy, "acceptance", "AI Recipe automation policy covers acceptance changes.");

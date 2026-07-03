@@ -1030,6 +1030,7 @@ internal static class Program
                 shellHost,
                 "WPF recipe context status",
                 "HostRecipeContext");
+            AssertVisibleTextContains(shellHost, "WPF recipe context scope hint", "범위:");
         }, captureFloatingToolWindow: false);
     }
 
@@ -1317,6 +1318,7 @@ internal static class Program
                 "WPF recipe/language controls",
                 "HostRecipeContext",
                 "HostRecipeSelector");
+            AssertVisibleTextContains(shellHost, "WPF recipe/language scope hint", "범위:");
         }, captureFloatingToolWindow: false);
     }
 
@@ -1679,6 +1681,8 @@ internal static class Program
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("Result", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("OK", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("NG", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewGuidePairMetricText.Contains("OK 기준 안", StringComparison.Ordinal)
+                || !shellHost.PipelineReviewGuidePairMetricText.Contains("NG 기준 밖", StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("1", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuideChecklistText.Contains("Good", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuideChecklistText.Contains("Bad", StringComparison.OrdinalIgnoreCase)
@@ -1957,6 +1961,8 @@ internal static class Program
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains(resultDetailKeyword, StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("OK", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("NG", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewGuidePairMetricText.Contains("기준 안", StringComparison.Ordinal)
+                || !shellHost.PipelineReviewGuidePairMetricText.Contains("기준 밖", StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains("NG", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewResultDetailText.Contains(resultDetailKeyword, StringComparison.OrdinalIgnoreCase)
                 || !shellHost.HasPipelineReviewOutputPreview)
@@ -2153,6 +2159,7 @@ internal static class Program
                 "WorkspaceSamplePickerDetail",
                 "WorkspaceSamplePickerSelectedSummary",
                 "WorkspaceSamplePickerBenchmarkStrip",
+                "WorkspaceSamplePickerPairDecisionQuickWorkflow",
                 "WorkspaceSamplePickerLearnModeStrip",
                 "WorkspaceSamplePickerOpenLearnDocumentButton",
                 "WorkspaceSamplePickerPreviewImage",
@@ -2418,6 +2425,7 @@ internal static class Program
                 semiconductorFocus.DisplayName,
                 viewModel.LearnPathLabelText,
                 viewModel.ResultCountText,
+                viewModel.PairDecisionQuickWorkflowText,
                 viewModel.SelectedSample.SampleName
             };
             string? missing = requiredTokens.FirstOrDefault(token => !visibleText.Contains(token, StringComparison.Ordinal));
@@ -2426,6 +2434,12 @@ internal static class Program
                 throw new InvalidOperationException(
                     "Workspace product sample focus picker did not show expected token '" + missing + "'. Text='" + visibleText + "'");
             }
+
+            AssertVisibleAutomationIds(
+                window,
+                "WPF workspace product sample focus benchmark",
+                "WorkspaceSamplePickerBenchmarkStrip",
+                "WorkspaceSamplePickerPairDecisionQuickWorkflow");
         });
     }
 
@@ -2691,6 +2705,7 @@ internal static class Program
                 "WorkspaceSamplePickerDetail",
                 "WorkspaceSamplePickerSelectedSummary",
                 "WorkspaceSamplePickerBenchmarkStrip",
+                "WorkspaceSamplePickerPairDecisionQuickWorkflow",
                 "WorkspaceSamplePickerPairComparisonStrip",
                 "WorkspaceSamplePickerPairDecisionGuide",
                 "WorkspaceSamplePickerPairDecisionChecklist",
@@ -2736,6 +2751,7 @@ internal static class Program
                 viewModel.PairDecisionMetricText,
                 viewModel.PairDecisionChecklistText,
                 viewModel.PairDecisionNextActionText,
+                viewModel.PairDecisionQuickWorkflowText,
                 viewModel.PairDecisionWorkflowText,
                 viewModel.LearnModeText,
                 viewModel.RecommendedStartText,

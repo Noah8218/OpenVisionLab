@@ -113,20 +113,19 @@ namespace OpenVisionLab
         {
             if (samplePairGuide?.HasGuide == true)
             {
-                string metricText = SafeText(samplePairGuide.MetricText, string.Empty);
                 string checklistText = SafeText(samplePairGuide.ChecklistText, string.Empty);
+                if (!string.IsNullOrWhiteSpace(checklistText))
+                {
+                    return checklistText;
+                }
+
                 string nextActionText = SafeText(samplePairGuide.NextActionText, string.Empty);
-                string pairGuideText = JoinNonEmpty(" / ", checklistText, nextActionText);
-                if (!string.IsNullOrWhiteSpace(metricText) && !string.IsNullOrWhiteSpace(pairGuideText))
+                if (!string.IsNullOrWhiteSpace(nextActionText))
                 {
-                    return metricText + " / " + pairGuideText;
+                    return nextActionText;
                 }
 
-                if (!string.IsNullOrWhiteSpace(pairGuideText))
-                {
-                    return pairGuideText;
-                }
-
+                string metricText = SafeText(samplePairGuide.MetricText, string.Empty);
                 if (!string.IsNullOrWhiteSpace(metricText))
                 {
                     return metricText;
@@ -143,13 +142,6 @@ namespace OpenVisionLab
             return samplePairGuide?.HasGuide == true
                 ? SafeText(samplePairGuide.PairReviewText, string.Empty)
                 : string.Empty;
-        }
-
-        private static string JoinNonEmpty(string separator, params string[] values)
-        {
-            return string.Join(
-                separator,
-                values.Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => value.Trim()));
         }
 
         private static string FormatStage(int displayIndex, int stepCount)

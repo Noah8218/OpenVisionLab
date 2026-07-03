@@ -392,6 +392,9 @@
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -417,6 +420,53 @@
                                                    TextWrapping="Wrap"
                                                    TextTrimming="None"
                                                    Margin="0,4,0,0" />
+                                        <Grid Grid.Row="2"
+                                              Grid.ColumnSpan="2"
+                                              Margin="0,7,0,0"
+                                              Visibility="{Binding PairDecisionVisibility}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock AutomationProperties.AutomationId="WorkspaceSamplePickerPairDecisionQuickAction"
+                                                       Text="{Binding PairDecisionQuickActionText}"
+                                                       Foreground="{StaticResource SamplePicker.TextBrush}"
+                                                       FontWeight="SemiBold"
+                                                       TextWrapping="Wrap"
+                                                       TextTrimming="None"
+                                                       MaxHeight="44" />
+                                            <Button Grid.Column="1"
+                                                    AutomationProperties.AutomationId="WorkspaceSamplePickerSelectCounterpartQuickButton"
+                                                    Style="{StaticResource SamplePicker.SecondaryButtonStyle}"
+                                                    Command="{Binding SelectCounterpartSampleCommand}"
+                                                    Margin="10,0,0,0"
+                                                    VerticalAlignment="Top">
+                                                <TextBlock Text="{Binding SelectCounterpartSampleButtonText}"
+                                                           FontWeight="SemiBold" />
+                                            </Button>
+                                        </Grid>
+                                        <TextBlock Grid.Row="3"
+                                                   Grid.ColumnSpan="2"
+                                                   AutomationProperties.AutomationId="WorkspaceSamplePickerPairDecisionQuickMetric"
+                                                   Text="{Binding PairDecisionMetricText}"
+                                                   Foreground="{StaticResource SamplePicker.AccentBrush}"
+                                                   FontWeight="SemiBold"
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="None"
+                                                   MaxHeight="42"
+                                                   Margin="0,6,0,0"
+                                                   Visibility="{Binding PairDecisionVisibility}" />
+                                        <TextBlock Grid.Row="4"
+                                                   Grid.ColumnSpan="2"
+                                                   AutomationProperties.AutomationId="WorkspaceSamplePickerPairDecisionQuickWorkflow"
+                                                   Text="{Binding PairDecisionQuickWorkflowText}"
+                                                   Foreground="{StaticResource SamplePicker.MutedTextBrush}"
+                                                   FontSize="11"
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="None"
+                                                   MaxHeight="34"
+                                                   Margin="0,5,0,0"
+                                                   Visibility="{Binding PairDecisionVisibility}" />
                                     </Grid>
                                 </Border>
                             </StackPanel>
