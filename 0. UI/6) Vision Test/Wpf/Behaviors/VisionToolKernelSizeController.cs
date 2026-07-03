@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Windows.Controls;
 
 namespace OpenVisionLab
@@ -50,6 +51,17 @@ namespace OpenVisionLab
                     syncLockedHeightToWidth();
                 }
             }, schedulePreview: true);
+        }
+
+        public void HandlePresetClick(object sender)
+        {
+            if (sender is not Button { Tag: string tag } ||
+                !int.TryParse(tag, NumberStyles.Integer, CultureInfo.InvariantCulture, out int size))
+            {
+                return;
+            }
+
+            ApplyPreset(size);
         }
 
         public void ApplyPreset(int size)

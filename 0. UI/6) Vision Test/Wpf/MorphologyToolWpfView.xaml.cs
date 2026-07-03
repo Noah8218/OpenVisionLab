@@ -213,19 +213,9 @@ namespace OpenVisionLab
             kernelSizeController?.HandleLockChanged();
         }
 
-        private void Preset3_Click(object sender, RoutedEventArgs e)
+        private void KernelPreset_Click(object sender, RoutedEventArgs e)
         {
-            kernelSizeController.ApplyPreset(3);
-        }
-
-        private void Preset5_Click(object sender, RoutedEventArgs e)
-        {
-            kernelSizeController.ApplyPreset(5);
-        }
-
-        private void Preset7_Click(object sender, RoutedEventArgs e)
-        {
-            kernelSizeController.ApplyPreset(7);
+            kernelSizeController?.HandlePresetClick(sender);
         }
         private void UpdateSummary()
         {

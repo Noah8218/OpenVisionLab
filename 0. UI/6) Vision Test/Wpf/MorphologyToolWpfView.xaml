@@ -77,9 +77,9 @@
                         </WrapPanel>
 
                         <StackPanel x:Name="panelKernelPresets" Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button x:Name="btnKernelPreset3" Content="3 x 3" MinWidth="64" Margin="0,0,8,0" Click="Preset3_Click" />
-                            <Button x:Name="btnKernelPreset5" Content="5 x 5" MinWidth="64" Margin="0,0,8,0" Click="Preset5_Click" />
-                            <Button x:Name="btnKernelPreset7" Content="7 x 7" MinWidth="64" Click="Preset7_Click" />
+                            <Button x:Name="btnKernelPreset3" Content="3 x 3" Tag="3" MinWidth="64" Margin="0,0,8,0" Click="KernelPreset_Click" />
+                            <Button x:Name="btnKernelPreset5" Content="5 x 5" Tag="5" MinWidth="64" Margin="0,0,8,0" Click="KernelPreset_Click" />
+                            <Button x:Name="btnKernelPreset7" Content="7 x 7" Tag="7" MinWidth="64" Click="KernelPreset_Click" />
                         </StackPanel>
 
                         <Grid x:Name="panelShape" Grid.Row="4" VerticalAlignment="Center">
