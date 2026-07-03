@@ -1718,7 +1718,8 @@ internal static class Program
             "Product display particle",
             "Smoke_WpfShellHostWorkspaceProductSampleReviewNg",
             "WPF workspace Product sample review NG metrics",
-            minStepCount: 2);
+            minStepCount: 2,
+            expectedSourceKind: VisionPipelineSampleCatalogSourceKind.Product);
     }
 
     private static CaptureResult CaptureShellHostWorkspaceProductSamplePairOpen(string outputPath)
@@ -1907,11 +1908,12 @@ internal static class Program
         string scenarioLabel,
         string shellHostTitle,
         string scenarioName,
-        int minStepCount)
+        int minStepCount,
+        VisionPipelineSampleCatalogSourceKind expectedSourceKind = VisionPipelineSampleCatalogSourceKind.Public)
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
         VisionPipelineSampleCatalogItem sample = FindRunnableCatalogSample(sampleName);
-        AssertSampleSourceKind(sample, sampleName, VisionPipelineSampleCatalogSourceKind.Public);
+        AssertSampleSourceKind(sample, sampleName, expectedSourceKind);
         VisionPipelineSampleCheckResult sampleCheck = VisionPipelineSampleCheckService.RunSampleCheckSafe(sample);
         if (!sample.ExpectsFailure || !sampleCheck.Success)
         {
