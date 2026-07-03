@@ -1,6 +1,6 @@
 # OpenVisionLab Next Session Handoff
 
-Updated: 2026-07-03 20:17 KST
+Updated: 2026-07-03 20:23 KST
 
 This document is the minimum handoff needed to continue without re-discovering the current state. Work starts in `C:\Git\OpenVisionLab_Dev`; only reviewed and stabilized changes are imported into the original repo at `C:\Git\OpenVisionLab`. Do not run `git push` unless the user explicitly requests `PUSH`.
 
@@ -17,14 +17,13 @@ This document is the minimum handoff needed to continue without re-discovering t
 
 `C:\Git\OpenVisionLab` is clean at these latest stable commits:
 
+- `638eb5c Update handoff after metric explanation cleanup`
 - `470f863 Localize pipeline review metric explanations`
 - `ee63d29 Record current product review flow evaluation`
 - `889e9f7 Update handoff after metric wording polish`
 - `dabf398 Localize pipeline review result count metric`
 - `9b20cec Record latest sample catalog audit`
 - `cf8c891 Refresh handoff next priorities`
-- `a05d6d4 Update handoff after catalog regression`
-- `dbb7f9e Update handoff after line controller cleanup`
 
 ## Completed On 2026-07-03
 
@@ -99,6 +98,14 @@ This document is the minimum handoff needed to continue without re-discovering t
   - Mean NG fix detail no longer repeats raw `AcceptanceMessage`; it points the operator to input layer, ROI, Mean type, lighting/brightness drift, and target range.
   - `PipelineViewerScreenshotSmoke` now rejects raw expected metric keys in localized guide/detail/pair text.
   - Original commit: `470f863`
+- Product sample catalog was re-audited after metric explanation cleanup.
+  - Dev and Original audits both passed: `ProductSampleQualityAudit=PASS | PairRecords=84 OK=84 Review=0 Critical=0`.
+  - The catalog still has 84 Good rows and 84 Bad rows, with 84 PairGroups and one shared baseline pipeline per pair.
+  - No new product samples are warranted before improving review/explanation UX further.
+- Tool View code-behind candidate review was performed.
+  - `git diff --no-index --ignore-space-at-eol` between Original and Dev WPF Tool View files produced no semantic diff.
+  - Current Dev Tool View diff is mostly Dev baseline/line-ending noise; Original already has the reviewed controller/runtime cleanup.
+  - No Tool View code change was made in this pass.
 
 ## Verification Evidence
 
@@ -120,6 +127,8 @@ This document is the minimum handoff needed to continue without re-discovering t
   - `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.ProductSampleCatalog.csv -OutputDir artifacts\original_product_catalog_full_20260703_1919` passed in Original.
   - `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.ProductSampleCatalog.csv -OutputDir artifacts\product_catalog_final_20260703_1920` passed in Original.
   - `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.ProductSampleCatalog.csv -OutputDir artifacts\product_catalog_after_line_controller_cleanup_20260703_1935` passed in Original.
+  - Dev quality audit after metric cleanup: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\AuditProductSampleQuality.ps1 -CatalogPath docs\samples\OpenVisionLab.ProductSampleCatalog.csv -SummaryPath artifacts\self_evaluation_product_catalog_20260703_1750\sample_catalog_summary.json -OutputDir artifacts\product_quality_after_metric_cleanup_20260703_2018 -FailOnCritical` passed.
+  - Original quality audit after metric cleanup: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\AuditProductSampleQuality.ps1 -CatalogPath docs\samples\OpenVisionLab.ProductSampleCatalog.csv -SummaryPath artifacts\product_catalog_after_line_controller_cleanup_20260703_1935\sample_catalog_summary.json -OutputDir artifacts\product_quality_after_metric_cleanup_20260703_2018 -FailOnCritical` passed.
 - Sample review UI smoke runner:
   - Dev current-flow evaluation: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\sample_review_user_flow_eval_20260703_1959` passed.
   - Dev: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\sample_review_ui_smoke_script_after_auditfix_20260703_1918` passed.
