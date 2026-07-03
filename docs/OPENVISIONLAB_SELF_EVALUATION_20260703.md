@@ -11,17 +11,23 @@ OpenVisionLab은 상용 장비 플랫폼과 정면 경쟁하는 제품이 아니
 - Dev 작업 위치: `C:\Git\OpenVisionLab_Dev`
 - 원본 반영 위치: `C:\Git\OpenVisionLab`
 - 최신 원본 안정 커밋:
+  - `811c2b2 Update handoff after final catalog check`
+  - `4278e43 Trim unused filter morphology usings`
+  - `da392e8 Update handoff after pipeline copy polish`
+  - `5f76663 Shorten pipeline review next-action copy`
+  - `853da22 Update handoff after review smoke restore`
+  - `0a2e026 Restore filter morphology layout smoke`
+  - `567fefc Share kernel preset click handling`
+  - `6ca54d3 Add public sample review smoke runner`
   - `5f753d1 Stabilize product sample review and native runtime`
-  - `3871758 Clarify pair metric review next action`
-  - `092e8f5 Use public-safe samples in review smoke`
-  - `1250eb5 Clarify sample workflow next actions`
-  - `95ed902 Clarify final review next action`
 - Product catalog 실행:
   - Command: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.ProductSampleCatalog.csv -OutputDir artifacts\self_evaluation_product_catalog_20260703_1750`
   - Result: `GateStatus=OK`, `RunnableRows=168`, `RequiredRows=84`, `ExpectedFailureRows=84`, `OKRows=168`, `NGRows=0`
   - Artifact issues: `0`, metadata issues: `0`
   - Report: `artifacts\self_evaluation_product_catalog_20260703_1750\sample_catalog_report.md`
   - Summary: `artifacts\self_evaluation_product_catalog_20260703_1750\sample_catalog_summary.json`
+  - Final Original confirmation: `artifacts\product_catalog_final_20260703_1920\sample_catalog_summary.json`
+  - Final Original result: `GateStatus=OK`, `RunnableRows=168`, `RequiredRows=84`, `ExpectedFailureRows=84`, `OKRows=168`, `NGRows=0`
 - Product sample quality audit:
   - Command: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\AuditProductSampleQuality.ps1 -SummaryPath artifacts\self_evaluation_product_catalog_20260703_1750\sample_catalog_summary.json`
   - Result: `ProductSampleQualityAudit=PASS | PairRecords=84 OK=84 Review=0 Critical=0`
@@ -32,6 +38,11 @@ OpenVisionLab은 상용 장비 플랫폼과 정면 경쟁하는 제품이 아니
   - Pipeline Review before: `artifacts\mainview_product_review_before_20260703_1739\wpf_shell_host_workspace_product_sample_review.png`
   - Pipeline Review after: `artifacts\pipeline_review_final_next_after_20260703_1746\wpf_shell_host_workspace_product_sample_review.png`
   - Original after: `C:\Git\OpenVisionLab\artifacts\original_pipeline_review_final_next_after_20260703_1748\wpf_shell_host_workspace_product_sample_review.png`
+- Follow-up stabilization after the initial self-evaluation:
+  - Sample review smoke runner passed after later Pipeline Review copy and Filter/Morphology smoke fixes.
+  - Pipeline Review top-card action text was shortened so the summary card no longer carries the long detailed guide string.
+  - Filter/Morphology kernel preset clicks now use the shared `VisionToolKernelSizeController` path and the restored guard clicks both preset paths.
+  - The self-evaluation conclusion is unchanged: keep the rule-based, OpenCvSharp4, PropertyGrid-centered workbench identity instead of expanding toward a hardware integration platform.
 
 ## 외부 비교 근거
 
