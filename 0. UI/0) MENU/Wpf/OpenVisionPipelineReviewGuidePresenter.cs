@@ -87,7 +87,7 @@ namespace OpenVisionLab
             return new OpenVisionPipelineReviewGuideState(
                 FormatStage(displayIndex, stepCount),
                 FormatCurrentStep(displayIndex, step),
-                ResolveNextActionText(step, hasInputImage, hasOutputImage, summary, validationResult),
+                ResolveNextActionText(displayIndex, stepCount, step, hasInputImage, hasOutputImage, summary, validationResult),
                 ResolveResultDecisionText(statusText, summary, validationResult),
                 ResolveDetailText(displayIndex, stepCount, step, hasInputImage, hasOutputImage, summary, validationResult, expectedInputLayer, isBranch),
                 ResolvePairReviewText(samplePairGuide),
@@ -170,6 +170,8 @@ namespace OpenVisionLab
         }
 
         private static string ResolveNextActionText(
+            int displayIndex,
+            int stepCount,
             VisionPipelineStep step,
             bool hasInputImage,
             bool hasOutputImage,
@@ -198,9 +200,14 @@ namespace OpenVisionLab
                     : T("PipelineReview.Guide.BeforeRunNext", "Run Review to create the step output");
             }
 
-            return summary.Success && !summary.IsAcceptanceNg
-                ? T("PipelineReview.Guide.OkNext", "Check the output image, then continue to the next step")
-                : T("PipelineReview.Guide.NgNext", "Adjust the tool parameters or route, then run review again");
+            if (!summary.Success || summary.IsAcceptanceNg)
+            {
+                return T("PipelineReview.Guide.NgNext", "Adjust the tool parameters or route, then run review again");
+            }
+
+            return displayIndex >= stepCount
+                ? T("PipelineReview.Guide.OkFinalNext", "Compare output, metrics, and the Good/Bad pair before accepting the pipeline")
+                : T("PipelineReview.Guide.OkNext", "Check the output image, then continue to the next step");
         }
 
         private static string ResolveResultDecisionText(

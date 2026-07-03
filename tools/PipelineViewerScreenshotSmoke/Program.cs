@@ -5091,6 +5091,7 @@ internal static class Program
                 OpenVisionLanguageService.T("PipelineReview.Guide.BranchDetailFormat"),
                 "Main",
                 "Morphology_Preview");
+            string koreanFinalNextAction = OpenVisionLanguageService.T("PipelineReview.Guide.OkFinalNext");
             string koreanFinalDetail = OpenVisionLanguageService.T("PipelineReview.Guide.OkFinalDetail");
             if (shellHost.PipelineReviewStepCount != 3
                 || !shellHost.PipelineReviewSelectedStepName.Contains("Threshold", StringComparison.OrdinalIgnoreCase)
@@ -5185,7 +5186,7 @@ internal static class Program
             }
 
             if (!shellHost.PipelineReviewGuideResultDecisionText.Contains("OK", StringComparison.OrdinalIgnoreCase)
-                || string.IsNullOrWhiteSpace(shellHost.PipelineReviewGuideNextActionText)
+                || !shellHost.PipelineReviewGuideNextActionText.Contains(koreanFinalNextAction, StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideCurrentStepText.Contains("Filter", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuideDetailText.Contains(koreanFinalDetail, StringComparison.Ordinal))
             {
