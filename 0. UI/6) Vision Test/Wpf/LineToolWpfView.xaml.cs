@@ -186,33 +186,12 @@ namespace OpenVisionLab
 
         public void ConfigureSelectedLineForTest(string projectionDirection, string polarity, string verticalDirection = null)
         {
-            LineGaugeProperty property = interactionController.GetSelectedLineProperty();
-            if (Enum.TryParse(projectionDirection, true, out Lib.Common.FormulaUtil.PROJECTION_DIR parsedProjectionDirection))
-            {
-                property.PRJ_DIR = parsedProjectionDirection;
-            }
-
-            if (Enum.TryParse(polarity, true, out Lib.Common.FormulaUtil.PROJECTION_POLARITY parsedPolarity))
-            {
-                property.PRJ_PORALITY = parsedPolarity;
-            }
-
-            if (!string.IsNullOrWhiteSpace(verticalDirection)
-                && Enum.TryParse(verticalDirection, true, out Lib.Common.FormulaUtil.PROJECTION_DIR parsedVerticalDirection))
-            {
-                property.VER_PRJ_DIR = parsedVerticalDirection;
-            }
-
-            propertyChangeController.RefreshAfterExternalUpdate(propertyGridController);
+            interactionController.ConfigureSelectedLineForTest(projectionDirection, polarity, verticalDirection);
         }
 
         public void ConfigureSelectedLineThresholdForTest(double threshold, bool invert)
         {
-            LineGaugeProperty property = interactionController.GetSelectedLineProperty();
-            property.USE_THRESHOLD = true;
-            property.THRESHOLD = threshold;
-            property.USE_BITWISENOT = invert;
-            propertyChangeController.RefreshAfterExternalUpdate(propertyGridController);
+            interactionController.ConfigureSelectedLineThresholdForTest(threshold, invert);
             // Test hooks bypass WPG change events; keep their behavior aligned with a real threshold slider edit.
             ScheduleAutoPreview();
         }
@@ -227,26 +206,20 @@ namespace OpenVisionLab
             bool useManualAngle,
             double manualAngleValue)
         {
-            LineGaugeProperty property = interactionController.GetSelectedLineProperty();
-            property.USE_THRESHOLD = useThreshold;
-            property.USE_ADAPTIVE_THRESHOLD = useAdaptiveThreshold;
-            property.CONTRAST = contrast;
-            property.THICKNESS = thickness;
-            property.SAMPLING_STEP = samplingStep;
-            property.POINT_RANGE = pointRange;
-            property.USE_MANUAL_ANGLE = useManualAngle;
-            property.MANUAL_ANGLE_VALUE = manualAngleValue;
-            propertyChangeController.RefreshAfterExternalUpdate(propertyGridController);
+            interactionController.ConfigureSelectedLineMeasureTuningForTest(
+                useThreshold,
+                useAdaptiveThreshold,
+                contrast,
+                thickness,
+                samplingStep,
+                pointRange,
+                useManualAngle,
+                manualAngleValue);
         }
 
         public void ConfigureSelectedLineDrawForTest(bool showVerticalLine, bool showEdge, bool showContour, bool showFitLine)
         {
-            LineGaugeProperty property = interactionController.GetSelectedLineProperty();
-            property.SHOW_VERTICAL_LINE = showVerticalLine;
-            property.SHOW_EDGE = showEdge;
-            property.SHOW_CONTOUR = showContour;
-            property.SHOW_FITLINE = showFitLine;
-            propertyChangeController.RefreshAfterExternalUpdate(propertyGridController);
+            interactionController.ConfigureSelectedLineDrawForTest(showVerticalLine, showEdge, showContour, showFitLine);
         }
 
         public void EnsureDefaultRoi(int width, int height)

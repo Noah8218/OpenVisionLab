@@ -117,6 +117,69 @@ namespace OpenVisionLab
             HandleLineSelectionChanged();
         }
 
+        public void ConfigureSelectedLineForTest(string projectionDirection, string polarity, string verticalDirection = null)
+        {
+            LineGaugeProperty property = GetSelectedLineProperty();
+            if (Enum.TryParse(projectionDirection, true, out Lib.Common.FormulaUtil.PROJECTION_DIR parsedProjectionDirection))
+            {
+                property.PRJ_DIR = parsedProjectionDirection;
+            }
+
+            if (Enum.TryParse(polarity, true, out Lib.Common.FormulaUtil.PROJECTION_POLARITY parsedPolarity))
+            {
+                property.PRJ_PORALITY = parsedPolarity;
+            }
+
+            if (!string.IsNullOrWhiteSpace(verticalDirection)
+                && Enum.TryParse(verticalDirection, true, out Lib.Common.FormulaUtil.PROJECTION_DIR parsedVerticalDirection))
+            {
+                property.VER_PRJ_DIR = parsedVerticalDirection;
+            }
+
+            RefreshPropertyGridAfterExternalUpdate();
+        }
+
+        public void ConfigureSelectedLineThresholdForTest(double threshold, bool invert)
+        {
+            LineGaugeProperty property = GetSelectedLineProperty();
+            property.USE_THRESHOLD = true;
+            property.THRESHOLD = threshold;
+            property.USE_BITWISENOT = invert;
+            RefreshPropertyGridAfterExternalUpdate();
+        }
+
+        public void ConfigureSelectedLineMeasureTuningForTest(
+            bool useThreshold,
+            bool useAdaptiveThreshold,
+            double contrast,
+            double thickness,
+            double samplingStep,
+            int pointRange,
+            bool useManualAngle,
+            double manualAngleValue)
+        {
+            LineGaugeProperty property = GetSelectedLineProperty();
+            property.USE_THRESHOLD = useThreshold;
+            property.USE_ADAPTIVE_THRESHOLD = useAdaptiveThreshold;
+            property.CONTRAST = contrast;
+            property.THICKNESS = thickness;
+            property.SAMPLING_STEP = samplingStep;
+            property.POINT_RANGE = pointRange;
+            property.USE_MANUAL_ANGLE = useManualAngle;
+            property.MANUAL_ANGLE_VALUE = manualAngleValue;
+            RefreshPropertyGridAfterExternalUpdate();
+        }
+
+        public void ConfigureSelectedLineDrawForTest(bool showVerticalLine, bool showEdge, bool showContour, bool showFitLine)
+        {
+            LineGaugeProperty property = GetSelectedLineProperty();
+            property.SHOW_VERTICAL_LINE = showVerticalLine;
+            property.SHOW_EDGE = showEdge;
+            property.SHOW_CONTOUR = showContour;
+            property.SHOW_FITLINE = showFitLine;
+            RefreshPropertyGridAfterExternalUpdate();
+        }
+
         public void Detach()
         {
             if (disposed)
@@ -154,6 +217,11 @@ namespace OpenVisionLab
         {
             propertyGridController.SelectObject(GetSelectedLineProperty());
             propertyChangeController.RefreshViewState();
+        }
+
+        private void RefreshPropertyGridAfterExternalUpdate()
+        {
+            propertyChangeController.RefreshAfterExternalUpdate(propertyGridController);
         }
     }
 }
