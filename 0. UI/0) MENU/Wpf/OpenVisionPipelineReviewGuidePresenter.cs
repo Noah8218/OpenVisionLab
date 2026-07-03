@@ -283,6 +283,13 @@ namespace OpenVisionLab
             {
                 string reason = ResolveNgReasonText(step, summary);
                 parts.Add(TF("PipelineReview.Guide.FailedDetailFormat", "NG reason: {0}", Truncate(reason, 120)));
+                string fix = ResolveNgFixText(step, summary);
+                if (!string.IsNullOrWhiteSpace(fix)
+                    && !string.Equals(reason, fix, StringComparison.Ordinal))
+                {
+                    parts.Add(T("PipelineReview.Guide.FixDetailPrefix", "Check first") + ": " + Truncate(fix, 160));
+                }
+
                 return string.Join(" / ", parts);
             }
 
@@ -312,6 +319,40 @@ namespace OpenVisionLab
                 summary?.AcceptanceMessage,
                 summary?.Message,
                 T("PipelineReview.Guide.NgDetail", "Review the selected step's result and adjust the route or parameters."));
+        }
+
+        private static string ResolveNgFixText(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
+        {
+            string toolType = SafeText(step?.ToolType, SafeText(step?.Name, string.Empty));
+            if (toolType.IndexOf("Threshold", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return T("PipelineReview.Guide.ThresholdFix", "Check input layer, ROI, threshold mode, value/range, adaptive block size, and weight.");
+            }
+
+            if (toolType.IndexOf("Blob", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return T("PipelineReview.Guide.BlobFix", "Check input layer chaining, threshold polarity, morphology cleanup, ROI, area limits, and connectivity.");
+            }
+
+            if (toolType.IndexOf("Contour", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return T("PipelineReview.Guide.ContourFix", "Check input layer chaining, threshold polarity, morphology cleanup, ROI, and area limits.");
+            }
+
+            if (toolType.IndexOf("Line", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return T("PipelineReview.Guide.LineFix", "Check ROI placement, edge layer selection, polarity/contrast, sampling interval, projection direction, and Pixel/mm.");
+            }
+
+            if (toolType.IndexOf("Matching", StringComparison.OrdinalIgnoreCase) >= 0
+                || toolType.IndexOf("Feature", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return T("PipelineReview.Guide.MatchingFix", "Check template image, input layer, ROI, score threshold, angle search, and scale search.");
+            }
+
+            return FirstText(
+                summary?.AcceptanceMessage,
+                T("PipelineReview.Guide.GenericFix", "Check the input layer, route, ROI, and parameters before changing acceptance limits."));
         }
 
         internal static string FormatAcceptanceMetricNgReason(VisionPipelineStep step, VisionPipelineStepResultSummary summary)

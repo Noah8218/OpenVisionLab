@@ -5224,12 +5224,14 @@ internal static class Program
             WaitForTaskWithPump(shellHost.RunPipelineReviewForTestAsync(), 30000, "Pipeline review NG execution");
             Pump(32);
             string ngNextAction = OpenVisionLanguageService.T("PipelineReview.Guide.NgNext");
+            string fixDetailPrefix = OpenVisionLanguageService.T("PipelineReview.Guide.FixDetailPrefix");
             string resultWidthMetricText = OpenVisionLanguageService.T("PipelineReview.Metric.ResultImageWidth");
             if (string.IsNullOrWhiteSpace(shellHost.PipelineReviewValidationStatusText)
                 || !shellHost.PipelineReviewResultSummaryText.Contains("NG", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuideResultDecisionText.Contains("NG", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuideNextActionText.Contains(ngNextAction, StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains("NG", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewGuideDetailText.Contains(fixDetailPrefix, StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains(resultWidthMetricText, StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains("<= 1", StringComparison.OrdinalIgnoreCase)
                 || shellHost.PipelineReviewGuideDetailText.Contains("Result Width", StringComparison.OrdinalIgnoreCase)

@@ -269,6 +269,13 @@ PipelineReview.Guide.OkNext	출력 이미지 확인 후 다음 Step으로 진행
 PipelineReview.Guide.OkFinalNext	출력 이미지, 지표, Good/Bad 쌍을 비교한 뒤 Pipeline 승인	Compare output, metrics, and the Good/Bad pair before accepting the pipeline
 PipelineReview.Guide.NgNext	Tool 파라미터 또는 라우트 조정 후 다시 리뷰	Adjust the tool parameters or route, then run review again
 PipelineReview.Guide.NgDetail	선택 Step의 결과를 확인하고 라우트 또는 파라미터를 조정합니다.	Review the selected step's result and adjust the route or parameters.
+PipelineReview.Guide.FixDetailPrefix	우선 확인	Check first
+PipelineReview.Guide.ThresholdFix	입력 레이어, ROI, Threshold mode/값/범위, Adaptive Block/Weight를 먼저 확인하십시오.	Check input layer, ROI, threshold mode, value/range, adaptive block size, and weight.
+PipelineReview.Guide.BlobFix	입력 레이어 연결, threshold 극성, morphology 정리, ROI, 면적 제한, connectivity를 먼저 확인하십시오.	Check input layer chaining, threshold polarity, morphology cleanup, ROI, area limits, and connectivity.
+PipelineReview.Guide.ContourFix	입력 레이어 연결, threshold 극성, morphology 정리, ROI, 면적 제한을 먼저 확인하십시오.	Check input layer chaining, threshold polarity, morphology cleanup, ROI, and area limits.
+PipelineReview.Guide.LineFix	ROI 위치, edge layer, polarity/contrast, sampling interval, projection direction, Pixel/mm를 먼저 확인하십시오.	Check ROI placement, edge layer selection, polarity/contrast, sampling interval, projection direction, and Pixel/mm.
+PipelineReview.Guide.MatchingFix	template 이미지, 입력 레이어, ROI, score threshold, angle search, scale search를 먼저 확인하십시오.	Check template image, input layer, ROI, score threshold, angle search, and scale search.
+PipelineReview.Guide.GenericFix	acceptance 기준을 바꾸기 전에 입력 레이어, 라우트, ROI, 파라미터를 먼저 확인하십시오.	Check the input layer, route, ROI, and parameters before changing acceptance limits.
 PipelineReview.Guide.AcceptanceMetricNgDetailFormat	{0}: 측정 {1}, 목표 {2}.	{0}: measured {1}, target {2}.
 PipelineReview.Guide.BranchDetailFormat	분기: 이 Step은 이전 출력 {1} 대신 {0}을 입력으로 사용합니다.	Branch: this step reads {0} instead of previous output {1}.
 PipelineReview.Guide.FailedDetailFormat	NG 원인: {0}	NG reason: {0}
