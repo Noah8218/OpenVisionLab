@@ -157,6 +157,7 @@ namespace OpenVisionLab
 
         private void RequestThresholdTeachingPreview()
         {
+            toolController.ClearResultReview();
             thresholdTeachingPreviewRequested = true;
         }
 
