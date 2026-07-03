@@ -1,6 +1,6 @@
 # OpenVisionLab Next Session Handoff
 
-Updated: 2026-07-03 19:18 KST
+Updated: 2026-07-03 19:24 KST
 
 This document is the minimum handoff needed to continue without re-discovering the current state. Work starts in `C:\Git\OpenVisionLab_Dev`; only reviewed and stabilized changes are imported into the original repo at `C:\Git\OpenVisionLab`. Do not run `git push` unless the user explicitly requests `PUSH`.
 
@@ -18,6 +18,8 @@ This document is the minimum handoff needed to continue without re-discovering t
 `C:\Git\OpenVisionLab` is clean at these latest stable commits:
 
 - `6ca54d3 Add public sample review smoke runner`
+- `4278e43 Trim unused filter morphology usings`
+- `da392e8 Update handoff after pipeline copy polish`
 - `5f76663 Shorten pipeline review next-action copy`
 - `853da22 Update handoff after review smoke restore`
 - `0a2e026 Restore filter morphology layout smoke`
@@ -36,7 +38,9 @@ This document is the minimum handoff needed to continue without re-discovering t
 - Product sample catalog/native runner gate is stable.
   - Dev evidence: `artifacts\self_evaluation_product_catalog_20260703_1750\sample_catalog_summary.json`
   - Original full evidence: `artifacts\original_product_catalog_full_20260703_1919\sample_catalog_summary.json`
+  - Original final evidence: `artifacts\product_catalog_final_20260703_1920\sample_catalog_summary.json`
   - Original full result: `GateStatus=OK`, `RunnableRows=168`, `RequiredRows=84`, `ExpectedFailureRows=84`, `OKRows=168`, `NGRows=0`
+  - Original final result: `GateStatus=OK`, `RunnableRows=168`, `RequiredRows=84`, `ExpectedFailureRows=84`, `OKRows=168`, `NGRows=0`, `DurationSeconds=81.234`
   - Quality audit: `ProductSampleQualityAudit=PASS | PairRecords=84 OK=84 Review=0 Critical=0`
 - Self-evaluation document was added.
   - File: `docs\OPENVISIONLAB_SELF_EVALUATION_20260703.md`
@@ -77,6 +81,9 @@ This document is the minimum handoff needed to continue without re-discovering t
   - The long final OK/NG next-action strings now fit the top summary card while the detailed guide still carries the longer explanation.
   - Existing runtime `CONFIG\localization_catalog.tsv` files migrate from the previous default strings to the shorter defaults.
   - Original commit: `5f76663`
+- Filter/Morphology code-behind was trimmed.
+  - Unused imaging, IO, and OpenCvSharp morphology usings were removed after the shared preset controller extraction.
+  - Original commit: `4278e43`
 
 ## Verification Evidence
 
@@ -92,6 +99,7 @@ This document is the minimum handoff needed to continue without re-discovering t
   - `powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestPublicSampleAssets.ps1` passed in Dev and Original.
 - Product sample full catalog:
   - `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.ProductSampleCatalog.csv -OutputDir artifacts\original_product_catalog_full_20260703_1919` passed in Original.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.ProductSampleCatalog.csv -OutputDir artifacts\product_catalog_final_20260703_1920` passed in Original.
 - Sample review UI smoke runner:
   - Dev: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\sample_review_ui_smoke_script_after_auditfix_20260703_1918` passed.
   - Original: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\original_sample_review_ui_smoke_script_after_auditfix_20260703_1919` passed.
