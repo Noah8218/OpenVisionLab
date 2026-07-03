@@ -1,6 +1,6 @@
 # OpenVisionLab Next Session Handoff
 
-Updated: 2026-07-03 20:27 KST
+Updated: 2026-07-03 21:20 KST
 
 This document is the minimum handoff needed to continue without re-discovering the current state. Work starts in `C:\Git\OpenVisionLab_Dev`; only reviewed and stabilized changes are imported into the original repo at `C:\Git\OpenVisionLab`. Do not run `git push` unless the user explicitly requests `PUSH`.
 
@@ -15,15 +15,14 @@ This document is the minimum handoff needed to continue without re-discovering t
 
 ## Latest Original Repo Commits
 
-`C:\Git\OpenVisionLab` is clean at these latest stable commits:
+Key latest stable code/workflow commits in `C:\Git\OpenVisionLab`:
 
+- `2371b37 Add pipeline review parameter location hints`
+- `bc42e0e Record pipeline review label polish`
 - `71ecc21 Localize pipeline review guide labels`
 - `b8a95cf Record catalog audit after metric cleanup`
 - `638eb5c Update handoff after metric explanation cleanup`
 - `470f863 Localize pipeline review metric explanations`
-- `ee63d29 Record current product review flow evaluation`
-- `889e9f7 Update handoff after metric wording polish`
-- `dabf398 Localize pipeline review result count metric`
 
 ## Completed On 2026-07-03
 
@@ -110,6 +109,11 @@ This document is the minimum handoff needed to continue without re-discovering t
   - `Good/Bad Pair` now displays as `Good/Bad 쌍`.
   - `Metric Check` now displays as `지표 확인`.
   - Original commit: `71ecc21`
+- Pipeline Review NG parameter-location hints were added.
+  - NG detail now keeps the reason, first check, and `조정 위치:` in the same operator guide line.
+  - Tool-type-specific hints point to the PropertyGrid parameter panel areas for Threshold, Blob, Contour, Line, Mean, Matching/Feature, and generic steps.
+  - `PipelineViewerScreenshotSmoke` now requires the localized parameter-location prefix and `파라미터 패널` text in NG guide detail.
+  - Original commit: `2371b37`
 
 ## Verification Evidence
 
@@ -127,6 +131,7 @@ This document is the minimum handoff needed to continue without re-discovering t
   - `powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestExternalReferences.ps1` passed in Dev and Original.
   - `powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestPublicSampleAssets.ps1` passed in Dev and Original.
   - Re-run at 2026-07-03 19:27 KST passed in Dev and Original.
+  - Re-run at 2026-07-03 21:16 KST passed in Dev and Original after parameter-location hints.
 - Product sample full catalog:
   - `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.ProductSampleCatalog.csv -OutputDir artifacts\original_product_catalog_full_20260703_1919` passed in Original.
   - `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.ProductSampleCatalog.csv -OutputDir artifacts\product_catalog_final_20260703_1920` passed in Original.
@@ -151,6 +156,12 @@ This document is the minimum handoff needed to continue without re-discovering t
   - Original Line NG after metric display cleanup: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_sample_pipeline_review_line_ng_metrics artifacts\metric_display_line_after_original_20260703_2039` passed.
   - Dev Pipeline Review label localization: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_sample_pipeline_review_ng_metrics artifacts\pipeline_review_labels_after_dev_20260703_2027` passed.
   - Original Pipeline Review label localization: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_sample_pipeline_review_ng_metrics artifacts\pipeline_review_labels_after_original_20260703_2028` passed.
+  - Dev Mean NG parameter-location hint: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_sample_pipeline_review_ng_metrics artifacts\pipeline_review_parameter_location_after_dev_20260703_2105` passed.
+  - Dev Line NG parameter-location hint: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_sample_pipeline_review_line_ng_metrics artifacts\pipeline_review_line_parameter_location_after_dev_20260703_2105` passed.
+  - Dev generic NG parameter-location hint: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_pipeline_review_ng artifacts\pipeline_review_ng_parameter_location_after_dev_20260703_2105` passed.
+  - Original Mean NG parameter-location hint: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_sample_pipeline_review_ng_metrics artifacts\pipeline_review_parameter_location_after_original_20260703_2115` passed.
+  - Original Line NG parameter-location hint: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_sample_pipeline_review_line_ng_metrics artifacts\pipeline_review_line_parameter_location_after_original_20260703_2115` passed.
+  - Original generic NG parameter-location hint: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_pipeline_review_ng artifacts\pipeline_review_ng_parameter_location_after_original_20260703_2115` passed.
 - Filter/Morphology guard:
   - Dev: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_filter_morphology_layout_guard artifacts\filter_morphology_layout_guard_after_dev_20260703_1903` passed.
   - Original: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_filter_morphology_layout_guard artifacts\filter_morphology_layout_guard_after_original_20260703_1908` passed.
@@ -214,6 +225,15 @@ This document is the minimum handoff needed to continue without re-discovering t
   - Before: `C:\Git\OpenVisionLab\artifacts\metric_display_mean_after_original_20260703_2039\wpf_shell_host_workspace_sample_pipeline_review_ng_metrics.png`
   - Dev after: `C:\Git\OpenVisionLab_Dev\artifacts\pipeline_review_labels_after_dev_20260703_2027\wpf_shell_host_workspace_sample_pipeline_review_ng_metrics.png`
   - Original after: `C:\Git\OpenVisionLab\artifacts\pipeline_review_labels_after_original_20260703_2028\wpf_shell_host_workspace_sample_pipeline_review_ng_metrics.png`
+- Pipeline Review parameter-location hints:
+  - Original Mean before: `C:\Git\OpenVisionLab\artifacts\pipeline_review_parameter_location_before_original_20260703_2110\wpf_shell_host_workspace_sample_pipeline_review_ng_metrics.png`
+  - Dev Mean after: `C:\Git\OpenVisionLab_Dev\artifacts\pipeline_review_parameter_location_after_dev_20260703_2105\wpf_shell_host_workspace_sample_pipeline_review_ng_metrics.png`
+  - Original Mean after: `C:\Git\OpenVisionLab\artifacts\pipeline_review_parameter_location_after_original_20260703_2115\wpf_shell_host_workspace_sample_pipeline_review_ng_metrics.png`
+  - Dev Line after: `C:\Git\OpenVisionLab_Dev\artifacts\pipeline_review_line_parameter_location_after_dev_20260703_2105\wpf_shell_host_workspace_sample_pipeline_review_line_ng_metrics.png`
+  - Original Line after: `C:\Git\OpenVisionLab\artifacts\pipeline_review_line_parameter_location_after_original_20260703_2115\wpf_shell_host_workspace_sample_pipeline_review_line_ng_metrics.png`
+  - Original generic NG before: `C:\Git\OpenVisionLab\artifacts\pipeline_review_ng_parameter_location_before_original_20260703_2110\wpf_shell_host_pipeline_review_ng.png`
+  - Dev generic NG after: `C:\Git\OpenVisionLab_Dev\artifacts\pipeline_review_ng_parameter_location_after_dev_20260703_2105\wpf_shell_host_pipeline_review_ng.png`
+  - Original generic NG after: `C:\Git\OpenVisionLab\artifacts\pipeline_review_ng_parameter_location_after_original_20260703_2115\wpf_shell_host_pipeline_review_ng.png`
 
 ## Start Checklist
 
