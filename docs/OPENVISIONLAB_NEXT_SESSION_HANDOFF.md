@@ -1,6 +1,6 @@
 # OpenVisionLab Next Session Handoff
 
-Updated: 2026-07-03 19:10 KST
+Updated: 2026-07-03 19:18 KST
 
 This document is the minimum handoff needed to continue without re-discovering the current state. Work starts in `C:\Git\OpenVisionLab_Dev`; only reviewed and stabilized changes are imported into the original repo at `C:\Git\OpenVisionLab`. Do not run `git push` unless the user explicitly requests `PUSH`.
 
@@ -18,6 +18,8 @@ This document is the minimum handoff needed to continue without re-discovering t
 `C:\Git\OpenVisionLab` is clean at these latest stable commits:
 
 - `6ca54d3 Add public sample review smoke runner`
+- `5f76663 Shorten pipeline review next-action copy`
+- `853da22 Update handoff after review smoke restore`
 - `0a2e026 Restore filter morphology layout smoke`
 - `567fefc Share kernel preset click handling`
 - `8c6c992 Update OpenVisionLab handoff evidence`
@@ -71,6 +73,10 @@ This document is the minimum handoff needed to continue without re-discovering t
   - `SelectComboBoxItemText` now accepts the already-selected value as a valid selection.
   - The layout guard now clicks Filter and Morphology kernel preset buttons, so the shared preset handler is covered by smoke.
   - Original commit: `0a2e026`
+- Pipeline Review top-card next-action copy was shortened.
+  - The long final OK/NG next-action strings now fit the top summary card while the detailed guide still carries the longer explanation.
+  - Existing runtime `CONFIG\localization_catalog.tsv` files migrate from the previous default strings to the shorter defaults.
+  - Original commit: `5f76663`
 
 ## Verification Evidence
 
@@ -90,12 +96,15 @@ This document is the minimum handoff needed to continue without re-discovering t
   - Dev: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\sample_review_ui_smoke_script_after_auditfix_20260703_1918` passed.
   - Original: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\original_sample_review_ui_smoke_script_after_auditfix_20260703_1919` passed.
   - Original re-run after layout smoke restore: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\sample_review_ui_smoke_after_layout_guard_restore_20260703_1903` passed.
+  - Original re-run after Pipeline Review copy shortening: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunSampleReviewUiSmokes.ps1 -OutputDir artifacts\sample_review_ui_smoke_after_pipeline_copy_short_20260703_1915` passed.
 - Filter/Morphology guard:
   - Dev: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_filter_morphology_layout_guard artifacts\filter_morphology_layout_guard_after_dev_20260703_1903` passed.
   - Original: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_filter_morphology_layout_guard artifacts\filter_morphology_layout_guard_after_original_20260703_1908` passed.
 - Pipeline Review OK/NG:
   - Original OK: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_pipeline_review artifacts\pipeline_review_ok_after_smoke_restore_20260703_1906` passed.
   - Original NG: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_pipeline_review_ng artifacts\pipeline_review_ng_after_smoke_restore_20260703_1906` passed.
+  - Original OK after copy shortening: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_pipeline_review artifacts\pipeline_review_top_card_short_after_original_20260703_1917` passed.
+  - Original NG after copy shortening: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_pipeline_review_ng artifacts\pipeline_review_top_card_short_ng_after_original_20260703_1917` passed.
 
 ## Screenshot Evidence
 
@@ -117,6 +126,9 @@ This document is the minimum handoff needed to continue without re-discovering t
 - Pipeline review OK/NG after:
   - OK: `C:\Git\OpenVisionLab\artifacts\pipeline_review_ok_after_smoke_restore_20260703_1906\wpf_shell_host_pipeline_review.png`
   - NG: `C:\Git\OpenVisionLab\artifacts\pipeline_review_ng_after_smoke_restore_20260703_1906\wpf_shell_host_pipeline_review_ng.png`
+- Pipeline review next-action copy after:
+  - OK: `C:\Git\OpenVisionLab\artifacts\pipeline_review_top_card_short_after_original_20260703_1917\wpf_shell_host_pipeline_review.png`
+  - NG: `C:\Git\OpenVisionLab\artifacts\pipeline_review_top_card_short_ng_after_original_20260703_1917\wpf_shell_host_pipeline_review_ng.png`
 
 ## Start Checklist
 
