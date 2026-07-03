@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="VisionPipeline">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Name" type="xs:string" minOccurs="0" />
+        <xs:element name="Steps" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Step" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="Name" type="xs:string" minOccurs="0" />
+                    <xs:element name="ToolType" type="xs:string" minOccurs="0" />
+                    <xs:element name="Enabled" type="xs:boolean" minOccurs="0" />
+                    <xs:element name="InputLayer" type="xs:string" minOccurs="0" />
+                    <xs:element name="OutputLayer" type="xs:string" minOccurs="0" />
+                    <xs:element name="Parameters" minOccurs="0">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="Parameter" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="Key" type="xs:string" minOccurs="0" />
+                                <xs:element name="Value" type="xs:string" minOccurs="0" />
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="UseAcceptance" type="xs:boolean" minOccurs="0" />
+                    <xs:element name="ExpectedSuccess" type="xs:boolean" minOccurs="0" />
+                    <xs:element name="MaxElapsedMilliseconds" type="xs:double" minOccurs="0" />
+                    <xs:element name="RequiredMessageText" type="xs:string" minOccurs="0" />
+                    <xs:element name="AcceptanceMetricName" type="xs:string" minOccurs="0" />
+                    <xs:element name="UseAcceptanceMetricMinimum" type="xs:boolean" minOccurs="0" />
+                    <xs:element name="AcceptanceMetricMinimum" type="xs:double" minOccurs="0" />
+                    <xs:element name="UseAcceptanceMetricMaximum" type="xs:boolean" minOccurs="0" />
+                    <xs:element name="AcceptanceMetricMaximum" type="xs:double" minOccurs="0" />
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

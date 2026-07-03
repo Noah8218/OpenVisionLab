@@ -1,6 +1,6 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
     <OutputType>Library</OutputType>
     <RootNamespace>WpfPropertyGridBridge</RootNamespace>
     <AssemblyName>WpfPropertyGridBridge</AssemblyName>
@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <Reference Include="System.Windows.Controls.WpfPropertyGrid">
-      <HintPath>..\..\dll\System.Windows.Controls.WpfPropertyGrid.dll</HintPath>
+      <HintPath>$(OpenVisionLabDllRoot)System.Windows.Controls.WpfPropertyGrid.dll</HintPath>
       <Private>True</Private>
       <Aliases>WpfPropertyGridOriginal</Aliases>
     </Reference>
@@ -31,5 +31,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PropertyGrid.Abstractions\PropertyGrid.Abstractions.csproj" />
+    <ProjectReference Include="..\OpenVisionLab.Localization\OpenVisionLab.Localization.csproj" />
   </ItemGroup>
+
+  <Target Name="ValidateWpgPropertyGridReference"
+          BeforeTargets="ResolveReferences"
+          Condition="'$(DesignTimeBuild)' != 'true' and !Exists('$(OpenVisionLabDllRoot)System.Windows.Controls.WpfPropertyGrid.dll')">
+    <Error Text="Missing WPG runtime: $(OpenVisionLabDllRoot)System.Windows.Controls.WpfPropertyGrid.dll. Restore the prepared WPG DLL from the repository." />
+  </Target>
 </Project>

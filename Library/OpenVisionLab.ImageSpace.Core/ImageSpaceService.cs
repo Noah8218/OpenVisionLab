@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Drawing;
 
 namespace OpenVisionLab.ImageSpace.Core
@@ -25,6 +25,26 @@ namespace OpenVisionLab.ImageSpace.Core
             item.Image = image;
         }
 
+        public void InsertImage(int index, string title, Bitmap image)
+        {
+            int insertIndex = index < 0 ? items.Count : index;
+            while (items.Count < insertIndex)
+            {
+                items.Add(new ImageSpaceItem());
+            }
+
+            if (insertIndex > items.Count)
+            {
+                insertIndex = items.Count;
+            }
+
+            items.Insert(insertIndex, new ImageSpaceItem
+            {
+                Title = title ?? string.Empty,
+                Image = image
+            });
+        }
+
         public Bitmap GetImage(int index)
         {
             return GetOrNull(index)?.Image;
@@ -33,6 +53,31 @@ namespace OpenVisionLab.ImageSpace.Core
         public Bitmap GetImage(string title)
         {
             return FindByTitle(title)?.Image;
+        }
+
+        public void RemoveImage(int index)
+        {
+            if (index < 0 || index >= items.Count)
+            {
+                return;
+            }
+
+            ImageSpaceItem item = items[index];
+            if (ReferenceEquals(activeImage, item.Image))
+            {
+                activeImage = null;
+            }
+
+            items.RemoveAt(index);
+        }
+
+        public void RemoveImage(string title)
+        {
+            int index = FindIndexByTitle(title);
+            if (index >= 0)
+            {
+                RemoveImage(index);
+            }
         }
 
         public void SetRoi(int index, Rectangle roi)
@@ -102,12 +147,18 @@ namespace OpenVisionLab.ImageSpace.Core
 
         private ImageSpaceItem FindByTitle(string title)
         {
+            int index = FindIndexByTitle(title);
+            return index >= 0 ? items[index] : null;
+        }
+
+        private int FindIndexByTitle(string title)
+        {
             for (int i = 0; i < items.Count; i++)
             {
-                if (items[i].Title == title) return items[i];
+                if (items[i].Title == title) return i;
             }
 
-            return null;
+            return -1;
         }
     }
 }

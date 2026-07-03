@@ -1,4 +1,4 @@
-using OpenVisionLab._1._Core;
+﻿using OpenVisionLab._1._Core;
 using System;
 
 namespace OpenVisionLab
@@ -7,6 +7,7 @@ namespace OpenVisionLab
     {
         public IPropertyGridImageEditorService ImageEditorService { get; private set; }
         public Func<string> RecipeNameAccessor { get; private set; } = () => string.Empty;
+        private Func<string> sourceLayerNameAccessor = () => string.Empty;
 
         public PropertyGridEditorRuntime(IPropertyGridImageEditorService imageEditorService)
         {
@@ -24,10 +25,17 @@ namespace OpenVisionLab
             ImageEditorService.SetRecipeNameContext(RecipeNameAccessor);
         }
 
+        public void SetSourceLayerContext(Func<string> sourceLayerNameAccessor)
+        {
+            this.sourceLayerNameAccessor = sourceLayerNameAccessor ?? (() => string.Empty);
+            ImageEditorService.SetSourceLayerContext(this.sourceLayerNameAccessor);
+        }
+
         public void SetImageEditorService(IPropertyGridImageEditorService service)
         {
             ImageEditorService = service ?? new PropertyGridImageEditorService(() => DisplayManagerService.Default);
             ImageEditorService.SetRecipeNameContext(RecipeNameAccessor);
+            ImageEditorService.SetSourceLayerContext(sourceLayerNameAccessor);
         }
     }
 }

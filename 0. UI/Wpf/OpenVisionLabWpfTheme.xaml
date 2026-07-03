@@ -1,0 +1,30 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <ResourceDictionary.MergedDictionaries>
+        <ui:ThemesDictionary Theme="Light" />
+        <ui:ControlsDictionary />
+    </ResourceDictionary.MergedDictionaries>
+
+    <SolidColorBrush x:Key="OpenVision.ChromeBrush" Color="#30383B" />
+    <SolidColorBrush x:Key="OpenVision.ChromeAltBrush" Color="#445057" />
+    <SolidColorBrush x:Key="OpenVision.ChromeDarkBrush" Color="#121A1E" />
+    <SolidColorBrush x:Key="OpenVision.WorkspaceBrush" Color="#05090A" />
+    <SolidColorBrush x:Key="OpenVision.RailBrush" Color="#101A1F" />
+    <SolidColorBrush x:Key="OpenVision.SurfaceBrush" Color="#F3F6F8" />
+    <SolidColorBrush x:Key="OpenVision.PanelBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="OpenVision.BandBrush" Color="#EAF1F4" />
+    <SolidColorBrush x:Key="OpenVision.InspectorSurfaceBrush" Color="#E7EEF1" />
+    <SolidColorBrush x:Key="OpenVision.InspectorPanelBrush" Color="#F8FAFB" />
+    <SolidColorBrush x:Key="OpenVision.InspectorBandBrush" Color="#DDE8ED" />
+    <SolidColorBrush x:Key="OpenVision.InspectorFieldBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="OpenVision.InspectorLineBrush" Color="#BFD0D8" />
+    <SolidColorBrush x:Key="OpenVision.LineBrush" Color="#D6E1E6" />
+    <SolidColorBrush x:Key="OpenVision.StrongLineBrush" Color="#8BA0AD" />
+    <SolidColorBrush x:Key="OpenVision.TextBrush" Color="#243040" />
+    <SolidColorBrush x:Key="OpenVision.MutedTextBrush" Color="#657487" />
+    <SolidColorBrush x:Key="OpenVision.AccentBrush" Color="#157C86" />
+    <SolidColorBrush x:Key="OpenVision.AccentSoftBrush" Color="#D8ECEE" />
+    <SolidColorBrush x:Key="OpenVision.OkBrush" Color="#0D7A55" />
+    <SolidColorBrush x:Key="OpenVision.WarnBrush" Color="#9A6400" />
+</ResourceDictionary>

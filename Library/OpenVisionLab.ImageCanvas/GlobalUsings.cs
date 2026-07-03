@@ -1,2 +1,2 @@
-global using OpenGL = SharpGL.OpenGL;
+﻿global using OpenGL = SharpGL.OpenGL;
 

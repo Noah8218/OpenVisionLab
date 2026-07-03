@@ -1,11 +1,7 @@
 ﻿using Lib.Common;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -13,135 +9,179 @@ namespace OpenVisionLab
 {
     public static class SerializeHelper
     {
-        public static string ToString<T>(this T toSerialize)
+        public static bool TryLoadFromXmlFile<T>(string path, out T value)
         {
-            //XmlSerializer xmlSerializer = new XmlSerializer(toSerialize.GetType());
+            value = default(T);
 
-            //MemoryStream ms = new MemoryStream();
-            //XmlTextWriter xmlTextWriter = new XmlTextWriter(ms, Encoding.UTF8);
-
-            //xmlTextWriter.Formatting = Formatting.Indented;
-
-            //xmlSerializer.Serialize(xmlTextWriter, toSerialize);
-
-            return Encoding.UTF8.GetString(ToByte<T>(toSerialize));
-        }
-
-        public static byte[] ToByte<T>(this T toSerialize)
-        {
-            try
+            if (!File.Exists(path))
             {
-                XmlSerializer xmlSerializer = new XmlSerializer(toSerialize.GetType());
-
-                MemoryStream ms = new MemoryStream();
-                XmlTextWriter xmlTextWriter = new XmlTextWriter(ms, Encoding.UTF8);
-
-                xmlTextWriter.Formatting = Formatting.Indented;
-
-                xmlSerializer.Serialize(xmlTextWriter, toSerialize);
-
-                return ((MemoryStream)xmlTextWriter.BaseStream).ToArray();
-            }
-            catch (Exception Desc)
-            {
-                //VTS.Logger.Error(ex, string.Format("[VTS.MySerialize.ToByte] error. type({0})", typeof(T).ToString()));
-
-                CLOG.ABNORMAL( $"[{MethodBase.GetCurrentMethod().ReflectedType.Name}]==>{MethodBase.GetCurrentMethod().Name}]   Ex = {Desc.Message}");
-
+                return false;
             }
 
-            return null;
-        }
-
-        public static T Deserialize<T>(string xml)
-        {
             try
             {
-                if (!string.IsNullOrEmpty(xml))
+                using (Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
                     XmlSerializer serializer = new XmlSerializer(typeof(T));
-                    byte[] byteArr = System.Text.Encoding.UTF8.GetBytes(xml);
-
-                    using (MemoryStream ms = new MemoryStream(byteArr))
-                    {
-                        XmlTextReader xmlTextReader = new XmlTextReader(ms);
-                        return (T)serializer.Deserialize(xmlTextReader);
-                    }
-
+                    value = (T)serializer.Deserialize(stream);
                 }
+
+                return value != null;
             }
-            catch (Exception Desc)
+            catch (InvalidOperationException)
             {
-                CLOG.ABNORMAL( $"[{MethodBase.GetCurrentMethod().ReflectedType.Name}]==>{MethodBase.GetCurrentMethod().Name}]   Ex = {Desc.Message}");
+                value = default(T);
+                return false;
             }
-
-            return default(T);
-
-            //XmlReaderSettings settings = new XmlReaderSettings();
-            // No settings need modifying here
-
-            //using (StringReader textReader = new StringReader(xml))
-            //{
-            //    using (XmlReader xmlReader = XmlReader.Create(textReader, settings))
-            //    {
-            //        return (T)serializer.Deserialize(xmlReader);
-            //    }
-            //}
+            catch (XmlException)
+            {
+                value = default(T);
+                return false;
+            }
+            catch (IOException)
+            {
+                value = default(T);
+                return false;
+            }
         }
 
-        public static T FromXmlFile<T>(string path)
+        public static bool TryLoadFromXmlText<T>(string xmlText, out T value, out string errorMessage)
         {
+            value = default(T);
+            errorMessage = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(xmlText))
+            {
+                errorMessage = "XML text is empty.";
+                return false;
+            }
+
             try
             {
-                using (
-                    System.IO.StreamReader sr = new StreamReader(path)
-                )
+                using (StringReader reader = new StringReader(xmlText))
                 {
-                    XmlSerializer reader =
-                    new XmlSerializer(typeof(T));
-
-                    T np = (T)reader.Deserialize(sr);
-
-                    return np;
+                    XmlSerializer serializer = new XmlSerializer(typeof(T));
+                    value = (T)serializer.Deserialize(reader);
                 }
-            }
-            catch (Exception Desc)
-            {
-                CLOG.ABNORMAL( $"[{MethodBase.GetCurrentMethod().ReflectedType.Name}]==>{MethodBase.GetCurrentMethod().Name}], type({typeof(T).ToString()}), path={path}, Ex = {Desc.Message}");
-                //VTS.Logger.Error(ex, string.Format(
-                //    "[VTS.MySerialize.FromXmlFile] error. type({0}), path={1}",
-                //    typeof(T).ToString(), path));
-                CCommon.ShowMessageBox("EXCEPTION", string.Format($"[{MethodBase.GetCurrentMethod().ReflectedType.Name}]==>{MethodBase.GetCurrentMethod().Name}], type({typeof(T).ToString()}), path={path}, Ex = {Desc.Message}"), FormMessageBox.MESSAGEBOX_TYPE.Waring);
-            }
 
-            return default(T);
+                return value != null;
+            }
+            catch (InvalidOperationException ex)
+            {
+                errorMessage = ex.GetBaseException().Message;
+                value = default(T);
+                return false;
+            }
+            catch (XmlException ex)
+            {
+                errorMessage = ex.GetBaseException().Message;
+                value = default(T);
+                return false;
+            }
         }
 
-        public static bool ToXmlFile<T>(string path, T val)
+        public static T LoadOrCreateXmlFile<T>(string path, T defaultValue, out bool loaded)
         {
+            if (TryLoadFromXmlFile(path, out T loadedValue) && loadedValue != null)
+            {
+                loaded = true;
+                return loadedValue;
+            }
+
+            loaded = false;
+            if (File.Exists(path))
+            {
+                BackupInvalidXmlFile(path);
+            }
+
+            if (!File.Exists(path))
+            {
+                SaveXmlFile(path, defaultValue);
+            }
+
+            return defaultValue;
+        }
+
+        public static bool SaveXmlFile<T>(string path, T value)
+        {
+            string directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            XmlWriterSettings settings = new XmlWriterSettings
+            {
+                Indent = true,
+                IndentChars = "\t",
+                NewLineChars = "\r\n",
+                NewLineOnAttributes = true
+            };
+
+            string tempPath = CreateTempPath(path);
             try
             {
-                using (Stream savestream = new FileStream(path, FileMode.Create))
+                using (XmlWriter writer = XmlWriter.Create(tempPath, settings))
                 {
-                    XmlSerializer writer = new XmlSerializer(val.GetType());
-                    writer.Serialize(savestream, val);
-
+                    XmlSerializer serializer = new XmlSerializer(GetXmlSerializerType(value));
+                    serializer.Serialize(writer, value);
                 }
+
+                ReplaceFile(tempPath, path);
                 return true;
             }
-            catch (Exception Desc)
-            {                
-                CLOG.ABNORMAL( $"[{MethodBase.GetCurrentMethod().ReflectedType.Name}]==>{MethodBase.GetCurrentMethod().Name}], type({typeof(T).ToString()}), path={path}, Ex = {Desc.Message}");
-
-                //CCommon.ShowMessageBox("EXCEPTION", string.Format($"[{MethodBase.GetCurrentMethod().ReflectedType.Name}]==>{MethodBase.GetCurrentMethod().Name}], type({typeof(T).ToString()}), path={path}, Ex = {Desc.Message}"), FormMessageBox.MESSAGEBOX_TYPE.Waring);
-                //VTS.Logger.Error(ex, string.Format(
-                //    "[VTS.MySerialize.ToXmlFile] error. type({0}), path={1}",
-                //    typeof(T).ToString(), path));
+            finally
+            {
+                if (File.Exists(tempPath))
+                {
+                    File.Delete(tempPath);
+                }
             }
-            return false;
         }
 
+        private static Type GetXmlSerializerType<T>(T value)
+        {
+            return value == null ? typeof(T) : value.GetType();
+        }
 
+        private static string CreateTempPath(string path)
+        {
+            string directory = Path.GetDirectoryName(path);
+            string fileName = Path.GetFileName(path);
+
+            if (string.IsNullOrWhiteSpace(directory))
+            {
+                directory = Directory.GetCurrentDirectory();
+            }
+
+            return Path.Combine(directory, $".{fileName}.{Guid.NewGuid():N}.tmp");
+        }
+
+        private static void ReplaceFile(string tempPath, string path)
+        {
+            if (File.Exists(path))
+            {
+                File.Replace(tempPath, path, null);
+                return;
+            }
+
+            File.Move(tempPath, path);
+        }
+
+        private static void BackupInvalidXmlFile(string path)
+        {
+            string directory = Path.GetDirectoryName(path);
+            string fileName = Path.GetFileNameWithoutExtension(path);
+            string extension = Path.GetExtension(path);
+
+            if (string.IsNullOrWhiteSpace(directory))
+            {
+                directory = Directory.GetCurrentDirectory();
+            }
+
+            string backupPath = Path.Combine(directory, $"{fileName}.invalid-{DateTime.Now:yyyyMMddHHmmssfff}{extension}");
+            File.Move(path, backupPath);
+        }
     }
 
 }

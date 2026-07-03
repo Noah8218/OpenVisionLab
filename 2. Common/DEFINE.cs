@@ -1,4 +1,3 @@
-﻿using RJCodeUI_M1.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -149,7 +148,8 @@ namespace OpenVisionLab
             CONTOUR,
             PROPERTY,
             THRESHOLD,
-            TEACHING
+            TEACHING,
+            LOG
         }
 
         public enum VISION_MENU
@@ -161,12 +161,15 @@ namespace OpenVisionLab
             Blob,
             Contour,
             Matching,
+            EdgeBasedMatching,
             Line,
             RotateAndScale,
             Histogram,
             Mean,
             HSV,
-            FeatureMatching
+            FeatureMatching,
+            Pipeline,
+            Threshold
         }
 
         public enum PROCESS_TYPES

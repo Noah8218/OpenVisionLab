@@ -1,4 +1,4 @@
-using OpenVisionLab.ImageCanvas.SharedViewModels;
+﻿using OpenVisionLab.ImageCanvas.SharedViewModels;
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -20,10 +20,17 @@ namespace OpenVisionLab.ImageCanvas.Canvas
 				Renderer = new ToolStripProfessionalRenderer(new CanvasContextMenuColorTable())
 			};
 
-			menu.Items.Add(CreateItem(MenuItemUtil.GetDescription(EnumImageCanvasItems.LoadImage), CreateImageIcon(), loadImageClicked));
-			menu.Items.Add(CreateItem(MenuItemUtil.GetDescription(EnumImageCanvasItems.SaveImage), CreateSaveIcon(), saveImageClicked));
+			menu.Items.Add(CreateItem(T("ImageCanvas.LoadImage", MenuItemUtil.GetDescription(EnumImageCanvasItems.LoadImage)), CreateImageIcon(), loadImageClicked));
+			menu.Items.Add(CreateItem(T("ImageCanvas.SaveImage", MenuItemUtil.GetDescription(EnumImageCanvasItems.SaveImage)), CreateSaveIcon(), saveImageClicked));
 
 			return menu;
+		}
+
+		private static string T(string key, string fallback)
+		{
+			return global::OpenVisionLab.OpenVisionLanguageService.TryT(key, out string text)
+				? text
+				: fallback;
 		}
 
 		private static ToolStripMenuItem CreateItem(string text, Image image, EventHandler clicked)

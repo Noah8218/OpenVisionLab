@@ -16,34 +16,36 @@ namespace OpenVisionLab._1._Core
 
         public void SetImage(int index, Bitmap image)
         {
-            FormLayerDisplay display = layers.GetOrNull(index);
-			if (display == null) return;
+            string title = layers.GetTitle(index);
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                return;
+            }
 
-			display.SetImage(image);
-			imageSpace.SetImage(index, display.Text, display.GetCurrentImage());
+            imageSpace.SetImage(index, title, CloneBitmap(image));
+            imageSpace.MarkImageChanged(title, true);
         }
 
         public void AcceptImageChanged(string title, int index)
         {
-            FormLayerDisplay display = layers.GetOrNull(index);
-            if (display != null)
-            {
-                display.AcceptImageChanged();
-            }
-
             imageSpace.AcceptImageChanged(title);
         }
 
-        public void SyncFromDisplay(int index)
+        private static Bitmap CloneBitmap(Bitmap image)
         {
-            FormLayerDisplay display = layers.GetOrNull(index);
-            if (display == null) return;
+            if (image == null)
+            {
+                return null;
+            }
 
-            Bitmap image = display.GetCurrentImage();
-            imageSpace.SetImage(index, display.Text, image);
-            imageSpace.SetRoi(index, display.Roi);
-            imageSpace.SetTrainRoi(index, display.TrainROI);
-            imageSpace.MarkImageChanged(display.Text, display.ImageChanged);
+            try
+            {
+                return image.Clone(new Rectangle(0, 0, image.Width, image.Height), image.PixelFormat);
+            }
+            catch
+            {
+                return new Bitmap(image);
+            }
         }
     }
 }

@@ -2,15 +2,12 @@ using OpenVisionLab.ImageSpace.Core;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Windows.Forms;
-using WeifenLuo.WinFormsUI.Docking;
 
 namespace OpenVisionLab._1._Core
 {
-    internal sealed class DisplayLayerPresenter : IDisplayHostBinder
+    internal sealed class DisplayLayerPresenter
     {
         private readonly object displaySync = new object();
-        private readonly IDisplayHost host;
         private readonly DisplayLayerStore layers;
         private readonly IImageSpace imageSpace;
         private readonly DisplayImageSyncService imageSync;
@@ -22,16 +19,11 @@ namespace OpenVisionLab._1._Core
             this.displayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
             this.imageSpace = imageSpace ?? throw new ArgumentNullException(nameof(imageSpace));
             this.selectedItemAccessor = selectedItemAccessor ?? (() => string.Empty);
-            host = new DisplayDockHost();
             layers = new DisplayLayerStore();
             imageSync = new DisplayImageSyncService(imageSpace, layers);
         }
 
         public int LayerCount => layers.Count;
-
-        public void SetForm(Form form) => host.SetOwner(form);
-
-        public void SetDockPanel(DockPanel dockPanel) => host.SetDockPanel(dockPanel);
 
         public IReadOnlyList<DisplayLayerInfo> GetLayerInfos()
         {
@@ -43,66 +35,130 @@ namespace OpenVisionLab._1._Core
 
         public string GetLayerTitle(int index)
         {
-            return layers.GetTitle(index);
+            lock (displaySync)
+            {
+                return layers.GetTitle(index);
+            }
         }
 
         public int FindIndex(string title)
         {
-            return layers.FindIndex(title);
+            lock (displaySync)
+            {
+                return layers.FindIndex(title);
+            }
         }
 
         public int FindSelectedIndex()
         {
-            return layers.FindIndex(selectedItemAccessor());
+            return FindIndex(selectedItemAccessor());
         }
 
         public void CreatePanel(ImageSpaceFrame frame = null)
         {
-            host.InvokeOnUiThread(() =>
+            Bitmap image = frame?.Image ?? new Bitmap(10, 10);
+            CreateLayerDisplay(ImageSpaceFrameAdapter.FromBitmap(image), CreateNewLayerName(), true);
+        }
+
+        private string CreateNewLayerName()
+        {
+            int next = layers.Count + 1;
+            string title;
+            do
             {
-                FormVision_NewPanel formVisionNewPanel = new FormVision_NewPanel(layers.Count);
-                if (formVisionNewPanel.ShowDialog() == DialogResult.OK)
-                {
-                    Bitmap image = frame?.Image ?? new Bitmap(10, 10);
-                    CreateLayerDisplay(ImageSpaceFrameAdapter.FromBitmap(image), formVisionNewPanel.PanelName, true);
-                }
-            });
+                title = "NewPanel_" + next.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                next++;
+            }
+            while (FindIndex(title) >= 0);
+
+            return title;
         }
 
         public void CreateLayerDisplay(ImageSpaceFrame frame, string title, bool useClose = true)
         {
-            if (frame?.Image == null) return;
+            CreateLayerDisplay(frame, title, useClose, null);
+        }
 
-            ClearEmptyDisplay();
+        public void CreateLayerDisplayAt(ImageSpaceFrame frame, string title, bool useClose, int index)
+        {
+            CreateLayerDisplay(frame, title, useClose, index);
+        }
 
-            host.InvokeOnUiThread(() =>
+        private void CreateLayerDisplay(ImageSpaceFrame frame, string title, bool useClose, int? insertIndex)
+        {
+            if (frame?.Image == null) { return; }
+
+            lock (displaySync)
             {
-                lock (displaySync)
+                layers.RemoveEmpty();
+                int displayIndex = layers.FindIndex(title);
+                if (displayIndex < 0)
                 {
-                    int displayIndex = FindIndex(title);
-                    FormLayerDisplay existingLayer = layers.GetOrNull(displayIndex);
-                    bool existsLayer = existingLayer != null && existingLayer.Text == title;
-
-                    if (!existsLayer)
-                    {
-                        AddLayerDisplay(frame.Image, title, useClose);
-                        return;
-                    }
-
-                    UpdateLayerDisplay(displayIndex, frame.Image, title);
+                    AddLayer(frame.Image, title, useClose, insertIndex);
+                    return;
                 }
-            });
+
+                UpdateLayer(displayIndex, frame.Image, title);
+            }
         }
 
         public void SetLayerImage(int index, Bitmap image)
         {
-            imageSync.SetImage(index, image);
+            lock (displaySync)
+            {
+                imageSync.SetImage(index, image);
+            }
+        }
+
+        public void RemoveLayerDisplay(string title)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                return;
+            }
+
+            lock (displaySync)
+            {
+                layers.Remove(title);
+                imageSpace.RemoveImage(title);
+            }
+        }
+
+        public bool RenameLayerDisplay(string oldTitle, string newTitle)
+        {
+            if (string.IsNullOrWhiteSpace(oldTitle) || string.IsNullOrWhiteSpace(newTitle))
+            {
+                return false;
+            }
+
+            string normalizedNewTitle = newTitle.Trim();
+            lock (displaySync)
+            {
+                int index = layers.FindIndex(oldTitle);
+                if (index < 0
+                    || string.Equals(layers.GetTitle(index), normalizedNewTitle, StringComparison.OrdinalIgnoreCase)
+                    || layers.FindIndex(normalizedNewTitle) >= 0)
+                {
+                    return false;
+                }
+
+                Bitmap image = imageSpace.GetImage(index);
+                if (!layers.Rename(oldTitle, normalizedNewTitle))
+                {
+                    return false;
+                }
+
+                imageSpace.SetImage(index, normalizedNewTitle, image);
+                displayManager.FocusItem = normalizedNewTitle;
+                displayManager.SelectedItem = normalizedNewTitle;
+                imageSpace.SetActiveImage(image);
+                return true;
+            }
         }
 
         public void RefreshLayer(int index)
         {
-            FormLayerDisplay display = layers.GetOrNull(index);
-            display?.RefreshViewer();
+            // WPF workspaces bind to ImageSpace state, so there is no per-form viewer to refresh.
         }
 
         public void ActivateLayer(string title)
@@ -112,8 +168,18 @@ namespace OpenVisionLab._1._Core
 
         public void ActivateLayer(int index)
         {
-            FormLayerDisplay display = layers.GetOrNull(index);
-            display?.Activate();
+            lock (displaySync)
+            {
+                string title = layers.GetTitle(index);
+                if (string.IsNullOrWhiteSpace(title))
+                {
+                    return;
+                }
+
+                displayManager.FocusItem = title;
+                displayManager.SelectedItem = title;
+                imageSpace.SetActiveImage(imageSpace.GetImage(index));
+            }
         }
 
         public void ZoomLayerToFit(string title)
@@ -123,8 +189,7 @@ namespace OpenVisionLab._1._Core
 
         public void ZoomLayerToFit(int index)
         {
-            FormLayerDisplay display = layers.GetOrNull(index);
-            display?.ZoomToFit();
+            // The active WPF image workspace owns fit/zoom presentation.
         }
 
         public void AcceptLayerImageChanged(string title)
@@ -132,38 +197,47 @@ namespace OpenVisionLab._1._Core
             imageSync.AcceptImageChanged(title, FindIndex(title));
         }
 
-        private void ClearEmptyDisplay()
+        public bool GetLayerUseClose(int index)
         {
-            host.InvokeOnUiThread(() =>
+            lock (displaySync)
             {
-                lock (displaySync)
-                {
-                    layers.RemoveEmpty();
-                }
-            });
+                return layers.GetUseClose(index);
+            }
         }
 
-        private void AddLayerDisplay(Bitmap imageSource, string title, bool useClose)
+        private void AddLayer(Bitmap imageSource, string title, bool useClose, int? insertIndex)
         {
-            if (host.DockPanel == null) return;
-
-			FormLayerDisplay display = layers.Create(imageSource, useClose, title, displayManager);
-			imageSpace.SetImage(display.nIndex, title, display.GetCurrentImage());
-			display.Show(host.DockPanel, DockState.Document);
-			display.ZoomToFit();
+            int index = layers.Create(title, useClose, insertIndex);
+            Bitmap layerImage = CloneBitmap(imageSource);
+            imageSpace.InsertImage(index, title, layerImage);
+            imageSpace.SetActiveImage(layerImage);
+            displayManager.FocusItem = title;
+            displayManager.SelectedItem = title;
         }
 
-        private void UpdateLayerDisplay(int displayIndex, Bitmap imageSource, string title)
+        private void UpdateLayer(int displayIndex, Bitmap imageSource, string title)
         {
-            FormLayerDisplay display = layers.GetOrNull(displayIndex);
-            if (display == null) return;
+            Bitmap layerImage = CloneBitmap(imageSource);
+            imageSpace.SetImage(displayIndex, title, layerImage);
+            imageSpace.SetActiveImage(layerImage);
+            displayManager.FocusItem = title;
+            displayManager.SelectedItem = title;
+        }
 
-			display.SetImage(imageSource);
-			imageSpace.SetImage(displayIndex, title, display.GetCurrentImage());
-
-			if (host.ActiveDocumentTitle != title)
+        private static Bitmap CloneBitmap(Bitmap image)
+        {
+            if (image == null)
             {
-                display.Activate();
+                return null;
+            }
+
+            try
+            {
+                return image.Clone(new Rectangle(0, 0, image.Width, image.Height), image.PixelFormat);
+            }
+            catch
+            {
+                return new Bitmap(image);
             }
         }
     }

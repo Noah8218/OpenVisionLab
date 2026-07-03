@@ -1,0 +1,34 @@
+<UserControl x:Class="OpenVisionLab.Docking.Controls.OpenVisionLayerDockWorkspaceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:avalonDock="https://github.com/Dirkster99/AvalonDock"
+             xmlns:local="clr-namespace:OpenVisionLab.Docking.Controls">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/OpenVisionLab.Docking.Controls;component/OpenVisionLayerDockWorkspaceView.Resources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <avalonDock:DockingManager x:Name="layerDockingManager"
+                                   Background="#05090A"
+                                   Foreground="#D7ECEE"
+                                   BorderBrush="#157C86"
+                                   BorderThickness="1"
+                                   AnchorablePaneControlStyle="{StaticResource DockedLayerAnchorablePaneControlStyle}"
+                                   AnchorableHeaderTemplate="{StaticResource DockedLayerTabHeaderTemplate}">
+            <avalonDock:LayoutRoot>
+                <avalonDock:LayoutPanel Orientation="Horizontal">
+                    <avalonDock:LayoutAnchorablePane x:Name="layerAnchorablePane" />
+                </avalonDock:LayoutPanel>
+            </avalonDock:LayoutRoot>
+        </avalonDock:DockingManager>
+
+        <local:OpenVisionLayerDockingGuideOverlayView x:Name="dockingGuideOverlay"
+                                                      Panel.ZIndex="20"
+                                                      IsHitTestVisible="False"
+                                                      Visibility="Collapsed" />
+    </Grid>
+</UserControl>

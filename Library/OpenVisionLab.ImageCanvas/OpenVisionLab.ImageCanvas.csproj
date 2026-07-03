@@ -1,6 +1,6 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <UseWPF>true</UseWPF>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
@@ -10,6 +10,8 @@
     <RootNamespace>OpenVisionLab.ImageCanvas</RootNamespace>
     <AssemblyName>OpenVisionLab.ImageCanvas</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <ImageCanvasCopyEmguNativeRuntime Condition="'$(ImageCanvasCopyEmguNativeRuntime)' == ''">true</ImageCanvasCopyEmguNativeRuntime>
+    <ImageCanvasCopyOpenCvVideoRuntime Condition="'$(ImageCanvasCopyOpenCvVideoRuntime)' == ''">true</ImageCanvasCopyOpenCvVideoRuntime>
   </PropertyGroup>
 
   <ItemGroup>
@@ -57,7 +59,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\dll\EmguCV\cvextern.dll">
+    <ProjectReference Include="..\OpenVisionLab.Localization\OpenVisionLab.Localization.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\dll\EmguCV\cvextern.dll" Condition="'$(ImageCanvasCopyEmguNativeRuntime)' == 'true'">
       <Link>cvextern.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -65,7 +71,7 @@
       <Link>OpenCvSharpExtern.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\dll\OpenCVSharp\opencv_ffmpeg400_64.dll">
+    <Content Include="..\..\dll\OpenCVSharp\opencv_ffmpeg400_64.dll" Condition="'$(ImageCanvasCopyOpenCvVideoRuntime)' == 'true'">
       <Link>opencv_ffmpeg400_64.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

@@ -1,0 +1,2006 @@
+<UserControl x:Class="OpenVisionLab.OpenVisionShellHostView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:docking="clr-namespace:OpenVisionLab.Docking.Controls;assembly=OpenVisionLab.Docking.Controls"
+             xmlns:imageCanvasViews="clr-namespace:OpenVisionLab.ImageCanvas.Views;assembly=OpenVisionLab.ImageCanvas"
+             xmlns:logView="clr-namespace:OpenVisionLab.Logging.Controls.View;assembly=OpenVisionLab.Logging.Controls"
+             xmlns:mvvmBehaviors="clr-namespace:OpenVisionLab.Mvvm.Behaviors;assembly=OpenVisionLab.Mvvm"
+             xmlns:local="clr-namespace:OpenVisionLab"
+             MinWidth="1280"
+             MinHeight="760"
+             Background="#EEF2F6"
+             mvvmBehaviors:InputCommandBehaviors.LoadedCommand="{Binding SessionCommands.LoadedCommand, RelativeSource={RelativeSource Self}}"
+             mvvmBehaviors:InputCommandBehaviors.UnloadedCommand="{Binding SessionCommands.UnloadedCommand, RelativeSource={RelativeSource Self}}">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../../Wpf/OpenVisionLabWpfTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <SolidColorBrush x:Key="ShellHost.ChromeBrush" Color="#30383B" />
+            <SolidColorBrush x:Key="ShellHost.ChromeAltBrush" Color="#445057" />
+            <SolidColorBrush x:Key="ShellHost.ChromeDarkBrush" Color="#121A1E" />
+            <SolidColorBrush x:Key="ShellHost.SurfaceBrush" Color="#F3F6F8" />
+            <SolidColorBrush x:Key="ShellHost.PanelBrush" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="ShellHost.BandBrush" Color="#EAF1F4" />
+            <SolidColorBrush x:Key="ShellHost.LineBrush" Color="#D6E1E6" />
+            <SolidColorBrush x:Key="ShellHost.TextBrush" Color="#243040" />
+            <SolidColorBrush x:Key="ShellHost.MutedTextBrush" Color="#657487" />
+            <SolidColorBrush x:Key="ShellHost.AccentBrush" Color="#157C86" />
+            <SolidColorBrush x:Key="ShellHost.AccentSoftBrush" Color="#D8ECEE" />
+            <SolidColorBrush x:Key="ShellHost.OkBrush" Color="#0D7A55" />
+            <SolidColorBrush x:Key="ShellHost.WarnBrush" Color="#9A6400" />
+            <SolidColorBrush x:Key="ShellHost.FieldBrush" Color="#24363D" />
+            <SolidColorBrush x:Key="ShellHost.FieldHoverBrush" Color="#2E454C" />
+            <SolidColorBrush x:Key="ShellHost.FieldDropBrush" Color="#193038" />
+            <SolidColorBrush x:Key="ShellHost.FieldBorderBrush" Color="#82969D" />
+            <SolidColorBrush x:Key="ShellHost.FieldFocusBrush" Color="#8AD7DA" />
+            <SolidColorBrush x:Key="ShellHost.FieldTextBrush" Color="#F5FAFC" />
+
+            <ContextMenu x:Key="LayerRowsContextMenu"
+                         x:Shared="False">
+                <MenuItem Tag="CreateLayer"
+                          Header="{Binding PlacementTarget.Tag.CreateLayerText, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                          Command="{Binding PlacementTarget.Tag.CreateLayerCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                    <MenuItem.Icon>
+                        <iconPacks:PackIconMaterial Kind="LayersPlus"
+                                                    Width="16"
+                                                    Height="16"
+                                                    Foreground="#157C86" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Tag="LoadImageIntoSelectedLayer"
+                          Header="{Binding PlacementTarget.Tag.LoadImageIntoLayerText, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                          Command="{Binding PlacementTarget.Tag.LoadImageIntoSelectedLayerCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                    <MenuItem.Icon>
+                        <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
+                                                    Width="16"
+                                                    Height="16"
+                                                    Foreground="#157C86" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Tag="DeleteSelectedLayer"
+                          Header="{Binding PlacementTarget.Tag.DeleteLayerText, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                          Command="{Binding PlacementTarget.Tag.DeleteSelectedLayerCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                    <MenuItem.Icon>
+                        <iconPacks:PackIconMaterial Kind="LayersOffOutline"
+                                                    Width="16"
+                                                    Height="16"
+                                                    Foreground="#157C86" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator />
+                <MenuItem Tag="OpenSelectedLayerWindow"
+                          Header="{Binding PlacementTarget.Tag.OpenLayerWindowText, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                          Command="{Binding PlacementTarget.Tag.OpenSelectedLayerWindowCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                    <MenuItem.Icon>
+                        <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
+                                                    Width="16"
+                                                    Height="16"
+                                                    Foreground="#157C86" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Tag="DockSelectedLayer"
+                          Header="{Binding PlacementTarget.Tag.DockLayerText, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                          Visibility="Collapsed"
+                          Command="{Binding PlacementTarget.Tag.DockSelectedLayerCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                    <MenuItem.Icon>
+                        <iconPacks:PackIconMaterial Kind="LayersPlus"
+                                                    Width="16"
+                                                    Height="16"
+                                                    Foreground="#157C86" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Tag="ClearDockedLayers"
+                          Header="{Binding PlacementTarget.Tag.ClearDockedLayersText, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                          Visibility="Collapsed"
+                          Command="{Binding PlacementTarget.Tag.ClearDockedLayersCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                    <MenuItem.Icon>
+                        <iconPacks:PackIconMaterial Kind="LayersOffOutline"
+                                                    Width="16"
+                                                    Height="16"
+                                                    Foreground="#157C86" />
+                    </MenuItem.Icon>
+                </MenuItem>
+            </ContextMenu>
+
+            <Style TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{StaticResource ShellHost.TextBrush}" />
+                <Setter Property="FontFamily" Value="Segoe UI" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            </Style>
+
+            <Style x:Key="CaptionTextStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                <Setter Property="Foreground" Value="{StaticResource ShellHost.MutedTextBrush}" />
+                <Setter Property="FontSize" Value="11" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+
+            <Style x:Key="PanelTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+
+            <Style x:Key="HostLayerListItemStyle" TargetType="ListBoxItem">
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Margin" Value="0,2,0,0" />
+                <Setter Property="Foreground" Value="#D7ECEE" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <Border x:Name="itemChrome"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="3"
+                                    Padding="6,4">
+                                <ContentPresenter VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="itemChrome" Property="Background" Value="#2A3D45" />
+                                    <Setter TargetName="itemChrome" Property="BorderBrush" Value="#45646D" />
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="itemChrome" Property="Background" Value="#105F68" />
+                                    <Setter TargetName="itemChrome" Property="BorderBrush" Value="#60C9CF" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="HostLayerTabListItemStyle" TargetType="ListBoxItem">
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Margin" Value="4,4,0,4" />
+                <Setter Property="Foreground" Value="#D7ECEE" />
+                <Setter Property="Background" Value="#22343B" />
+                <Setter Property="BorderBrush" Value="#38535C" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="MinWidth" Value="136" />
+                <Setter Property="MaxWidth" Value="240" />
+                <Setter Property="MinHeight" Value="26" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <Border x:Name="itemChrome"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="2"
+                                    Padding="8,3">
+                                <ContentPresenter VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="itemChrome" Property="Background" Value="#2A3D45" />
+                                    <Setter TargetName="itemChrome" Property="BorderBrush" Value="#60C9CF" />
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="itemChrome" Property="Background" Value="#157C86" />
+                                    <Setter TargetName="itemChrome" Property="BorderBrush" Value="#8AD7DA" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Height" Value="30" />
+                <Setter Property="Padding" Value="10,0" />
+                <Setter Property="FontFamily" Value="Segoe UI" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Foreground" Value="{StaticResource ShellHost.AccentBrush}" />
+                <Setter Property="Background" Value="{StaticResource ShellHost.PanelBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource ShellHost.AccentBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+            </Style>
+
+            <Style x:Key="NavToolButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Height" Value="Auto" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Margin" Value="0,0,0,6" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            </Style>
+
+            <Style x:Key="TopNavButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Height" Value="34" />
+                <Setter Property="Padding" Value="16,0" />
+                <Setter Property="Foreground" Value="#D7ECEE" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="#6A7A84" />
+                <Setter Property="BorderThickness" Value="1,0,0,0" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type Button}">
+                            <Border x:Name="buttonChrome"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  RecognizesAccessKey="True" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="buttonChrome" Property="Background" Value="#526068" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="buttonChrome" Property="Background" Value="#157C86" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="TopCommandButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Height" Value="28" />
+                <Setter Property="MinWidth" Value="86" />
+                <Setter Property="Padding" Value="10,0" />
+                <Setter Property="Foreground" Value="#EAFBFC" />
+                <Setter Property="Background" Value="#157C86" />
+                <Setter Property="BorderBrush" Value="#46B8BF" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type Button}">
+                            <Border x:Name="buttonChrome"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  RecognizesAccessKey="True" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="buttonChrome" Property="Background" Value="#1A909B" />
+                                    <Setter TargetName="buttonChrome" Property="BorderBrush" Value="#8AD7DA" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="buttonChrome" Property="Background" Value="#0D5F68" />
+                                    <Setter TargetName="buttonChrome" Property="BorderBrush" Value="#EAFBFC" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="buttonChrome" Property="Opacity" Value="0.55" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="TopSecondaryCommandButtonStyle" TargetType="Button" BasedOn="{StaticResource TopCommandButtonStyle}">
+                <Setter Property="Foreground" Value="#D9F2F4" />
+                <Setter Property="Background" Value="#334349" />
+                <Setter Property="BorderBrush" Value="#789097" />
+            </Style>
+
+            <Style x:Key="TopStopCommandButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Height" Value="28" />
+                <Setter Property="MinWidth" Value="86" />
+                <Setter Property="Padding" Value="10,0" />
+                <Setter Property="Foreground" Value="#FFEDEE" />
+                <Setter Property="Background" Value="#7A2E35" />
+                <Setter Property="BorderBrush" Value="#C77278" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type Button}">
+                            <Border x:Name="buttonChrome"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  RecognizesAccessKey="True" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="buttonChrome" Property="Background" Value="#94414A" />
+                                    <Setter TargetName="buttonChrome" Property="BorderBrush" Value="#F0A8AD" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="buttonChrome" Property="Background" Value="#5D2228" />
+                                    <Setter TargetName="buttonChrome" Property="BorderBrush" Value="#FFEDEE" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="buttonChrome" Property="Opacity" Value="0.55" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="LayerDetailActionButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Height" Value="28" />
+                <Setter Property="MinWidth" Value="0" />
+                <Setter Property="Padding" Value="7,0" />
+                <Setter Property="Foreground" Value="#D9F2F4" />
+                <Setter Property="Background" Value="#26383F" />
+                <Setter Property="BorderBrush" Value="#5F858E" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            </Style>
+
+            <Style TargetType="ComboBoxItem">
+                <Setter Property="Foreground" Value="#EAF5F7" />
+                <Setter Property="Background" Value="{StaticResource ShellHost.FieldDropBrush}" />
+                <Setter Property="Padding" Value="8,5" />
+                <Setter Property="FontFamily" Value="Segoe UI" />
+                <Setter Property="FontSize" Value="12" />
+            </Style>
+
+            <Style TargetType="ComboBox">
+                <Setter Property="Height" Value="28" />
+                <Setter Property="MinWidth" Value="136" />
+                <Setter Property="Padding" Value="8,0,28,0" />
+                <Setter Property="Background" Value="{StaticResource ShellHost.FieldBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource ShellHost.FieldTextBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource ShellHost.FieldBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="FontFamily" Value="Segoe UI" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ComboBox}">
+                            <Grid Height="{TemplateBinding Height}" MinWidth="{TemplateBinding MinWidth}">
+                                <Border x:Name="comboChrome"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="3" />
+                                <Grid IsHitTestVisible="False">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="28" />
+                                    </Grid.ColumnDefinitions>
+                                    <ContentPresenter Margin="8,0,4,0"
+                                                      VerticalAlignment="Center"
+                                                      Content="{TemplateBinding SelectionBoxItem}"
+                                                      TextElement.Foreground="{TemplateBinding Foreground}" />
+                                    <Path Grid.Column="1"
+                                          Width="8"
+                                          Height="5"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Data="M 0 0 L 4 5 L 8 0 Z"
+                                          Fill="{StaticResource ShellHost.FieldFocusBrush}" />
+                                </Grid>
+                                <ToggleButton Background="Transparent"
+                                              BorderThickness="0"
+                                              ClickMode="Press"
+                                              Focusable="False"
+                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ToggleButton.Template>
+                                        <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                            <Border Background="Transparent" />
+                                        </ControlTemplate>
+                                    </ToggleButton.Template>
+                                </ToggleButton>
+                                <Popup AllowsTransparency="True"
+                                       Focusable="False"
+                                       IsOpen="{TemplateBinding IsDropDownOpen}"
+                                       Placement="Bottom">
+                                    <Border MinWidth="{TemplateBinding ActualWidth}"
+                                            MaxHeight="240"
+                                            Background="{StaticResource ShellHost.FieldDropBrush}"
+                                            BorderBrush="{StaticResource ShellHost.FieldFocusBrush}"
+                                            BorderThickness="1">
+                                        <ScrollViewer>
+                                            <ItemsPresenter />
+                                        </ScrollViewer>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="comboChrome" Property="Background" Value="{StaticResource ShellHost.FieldHoverBrush}" />
+                                    <Setter TargetName="comboChrome" Property="BorderBrush" Value="{StaticResource ShellHost.FieldFocusBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsDropDownOpen" Value="True">
+                                    <Setter TargetName="comboChrome" Property="Background" Value="{StaticResource ShellHost.FieldDropBrush}" />
+                                    <Setter TargetName="comboChrome" Property="BorderBrush" Value="{StaticResource ShellHost.FieldFocusBrush}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <DataTemplate DataType="{x:Type local:OpenVisionShellNavItem}">
+                <Button Style="{StaticResource NavToolButtonStyle}"
+                        Command="{Binding DataContext.SelectToolCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        CommandParameter="{Binding}"
+                        ToolTip="{Binding ToolTip}">
+                    <Border x:Name="navItemChrome" Padding="9,7">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="#17252B" />
+                                <Setter Property="BorderBrush" Value="#2D434B" />
+                                <Setter Property="BorderThickness" Value="1" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                        <Setter Property="Background" Value="#20363D" />
+                                        <Setter Property="BorderBrush" Value="#157C86" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Grid x:Name="navItemGrid">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="18" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <iconPacks:PackIconMaterial Kind="{Binding IconKind}"
+                                                        Width="16"
+                                                        Height="16"
+                                                        Foreground="#8AD7DA"
+                                                        VerticalAlignment="Center" />
+                            <TextBlock x:Name="navItemTitle"
+                                       Grid.Column="2"
+                                       Text="{Binding Title}"
+                                       Foreground="{Binding TextBrush}"
+                                       FontWeight="{Binding FontWeight}"
+                                       TextWrapping="Wrap"
+                                       LineHeight="14"
+                                       VerticalAlignment="Center" />
+                            <Border x:Name="navItemStatus"
+                                    Grid.Column="4"
+                                    Background="#101A1F"
+                                    BorderBrush="{Binding StatusBrush}"
+                                    BorderThickness="1"
+                                    Padding="5,1"
+                                    MinWidth="32"
+                                    VerticalAlignment="Center">
+                                <TextBlock Text="{Binding StatusLabel}"
+                                           Foreground="{Binding StatusBrush}"
+                                           FontSize="9"
+                                           FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" />
+                            </Border>
+                        </Grid>
+                    </Border>
+                </Button>
+                <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding IsToolRailCompact, RelativeSource={RelativeSource AncestorType={x:Type local:OpenVisionShellHostView}}}" Value="True">
+                        <Setter TargetName="navItemChrome" Property="Padding" Value="12,9" />
+                        <Setter TargetName="navItemGrid" Property="HorizontalAlignment" Value="Center" />
+                        <Setter TargetName="navItemTitle" Property="Visibility" Value="Collapsed" />
+                        <Setter TargetName="navItemStatus" Property="Visibility" Value="Collapsed" />
+                    </DataTrigger>
+                </DataTemplate.Triggers>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type local:OpenVisionShellNavGroup}">
+                <StackPanel>
+                    <TextBlock x:Name="navGroupTitle"
+                               Text="{Binding Title}"
+                               Foreground="#92A8B0"
+                               FontSize="10"
+                               FontWeight="Bold"
+                               Margin="6,10,6,4" />
+                    <ItemsControl ItemsSource="{Binding Items}" />
+                </StackPanel>
+                <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding IsToolRailCompact, RelativeSource={RelativeSource AncestorType={x:Type local:OpenVisionShellHostView}}}" Value="True">
+                        <Setter TargetName="navGroupTitle" Property="Visibility" Value="Collapsed" />
+                    </DataTrigger>
+                </DataTemplate.Triggers>
+            </DataTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid x:Name="rootShellHost" Background="{StaticResource ShellHost.SurfaceBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50" />
+            <RowDefinition Height="34" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="32" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Background="{StaticResource ShellHost.ChromeBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="72" />
+                <ColumnDefinition Width="116" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="170" />
+            </Grid.ColumnDefinitions>
+            <iconPacks:PackIconMaterial Kind="Account"
+                                        Width="30"
+                                        Height="30"
+                                        Foreground="White"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center" />
+            <Border Grid.Column="1"
+                    Width="108"
+                    Height="32"
+                    BorderBrush="#8AD7DA"
+                    BorderThickness="1"
+                    VerticalAlignment="Center">
+                <TextBlock Text="{Binding OperatorText}"
+                           Foreground="#D7ECEE"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold" />
+            </Border>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock x:Name="txtHostMarker"
+                           Text="OpenVisionLab"
+                           Foreground="White"
+                           FontSize="20"
+                           FontWeight="Bold" />
+                <TextBlock Text="{Binding SubtitleText}"
+                           Foreground="#D7ECEE"
+                           Margin="18,5,0,0" />
+            </StackPanel>
+            <ComboBox x:Name="cbHostLanguage"
+                      Grid.Column="3"
+                      ItemsSource="{Binding LanguageOptions}"
+                      SelectedItem="{Binding SelectedLanguageOption, Mode=TwoWay}"
+                      DisplayMemberPath="DisplayName"
+                      Margin="10,0,16,0" />
+        </Grid>
+
+        <Grid Grid.Row="1" Background="{StaticResource ShellHost.ChromeAltBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="310" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="560" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal">
+                <Border Background="#157C86" Padding="16,0">
+                    <TextBlock Text="{Binding ImageProcessingText}"
+                               Foreground="White"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" />
+                </Border>
+                <Border BorderBrush="#6A7A84" BorderThickness="1,0,0,0" Padding="16,0">
+                    <TextBlock Text="{Binding AlgorithmText}"
+                               Foreground="#D7ECEE"
+                               VerticalAlignment="Center" />
+                </Border>
+                <Button Style="{StaticResource TopNavButtonStyle}"
+                        Content="{Binding GuideText}"
+                        ToolTip="{Binding GuideToolTipText}"
+                        Cursor="Hand"
+                        Command="{Binding ChromeCommands.OpenTutorialCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}" />
+            </StackPanel>
+
+            <DockPanel Grid.Column="1" LastChildFill="False" Margin="10,0">
+                <TextBlock x:Name="txtHostRecipeContextLabel"
+                           DockPanel.Dock="Left"
+                           Text="Recipe"
+                           Foreground="#D7ECEE"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold" />
+                <Border DockPanel.Dock="Left"
+                        Margin="10,0,10,0"
+                        MinWidth="140"
+                        MaxWidth="150"
+                        Height="26"
+                        Background="#24363D"
+                        BorderBrush="#82969D"
+                        BorderThickness="1"
+                        Padding="8,0"
+                        AutomationProperties.AutomationId="HostRecipeContext">
+                    <TextBlock x:Name="txtHostRecipeContext"
+                               Foreground="#F5FAFC"
+                               VerticalAlignment="Center"
+                               FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis" />
+                </Border>
+                <ComboBox x:Name="cbHostRecipe"
+                          DockPanel.Dock="Left"
+                          MinWidth="150"
+                          MaxWidth="155"
+                          Margin="0,0,6,0"
+                          AutomationProperties.AutomationId="HostRecipeSelector"
+                          ItemsSource="{Binding RecipeCommands.RecipeOptions, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                          SelectedItem="{Binding RecipeCommands.SelectedRecipeName, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                          ToolTip="{Binding RecipeCommands.RecipeSelectorToolTipText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}" />
+                <Button x:Name="btnHostCreateRecipe"
+                        DockPanel.Dock="Left"
+                        Width="30"
+                        Height="26"
+                        Margin="0,0,10,0"
+                        Padding="0"
+                        BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                        Background="{StaticResource ShellHost.FieldBrush}"
+                        Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                        Command="{Binding RecipeCommands.CreateRecipeCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                        ToolTip="{Binding RecipeCommands.NewRecipeButtonText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                    <iconPacks:PackIconMaterial Kind="Plus"
+                                                Width="14"
+                                                Height="14"
+                                                Foreground="{StaticResource ShellHost.FieldFocusBrush}" />
+                </Button>
+                <TextBlock DockPanel.Dock="Left"
+                           Text="{Binding LayerInputText}"
+                           Foreground="#D7ECEE"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold" />
+                <ComboBox x:Name="cbHostLayer"
+                          DockPanel.Dock="Left"
+                          MinWidth="110"
+                          Width="110"
+                          AutomationProperties.AutomationId="HostLayerNameCombo"
+                          ItemsSource="{Binding LayerOptions}"
+                          SelectedItem="{Binding SelectedLayerOption, Mode=TwoWay}"
+                          Margin="8,0,6,0" />
+                <TextBox x:Name="txtHostTopLayerNameEditor"
+                         DockPanel.Dock="Left"
+                         Width="140"
+                         Height="26"
+                         Margin="0,0,4,0"
+                         Padding="7,2"
+                         VerticalContentAlignment="Center"
+                         AutomationProperties.AutomationId="HostTopLayerNameEditor"
+                         Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                         CaretBrush="#8FE8F0"
+                         BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                         Background="{StaticResource ShellHost.FieldBrush}"
+                         ToolTip="{Binding LayerCommands.RenameLayerText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}" />
+                <Button x:Name="btnHostRenameLayer"
+                        DockPanel.Dock="Left"
+                        Width="26"
+                        Height="26"
+                        Margin="0,0,4,0"
+                        Padding="0"
+                        AutomationProperties.AutomationId="HostTopRenameLayerButton"
+                        BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                        Background="{StaticResource ShellHost.FieldBrush}"
+                        Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                        Command="{Binding LayerCommands.RenameCurrentLayerCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                        CommandParameter="{Binding Text, ElementName=txtHostTopLayerNameEditor}"
+                        ToolTip="{Binding LayerCommands.RenameLayerText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                    <iconPacks:PackIconMaterial Kind="PencilOutline"
+                                                Width="14"
+                                                Height="14"
+                                                Foreground="{StaticResource ShellHost.FieldFocusBrush}" />
+                </Button>
+                <Button x:Name="btnHostCreateLayer"
+                        DockPanel.Dock="Left"
+                        Width="26"
+                        Height="26"
+                        Margin="0,0,4,0"
+                        Padding="0"
+                        AutomationProperties.AutomationId="HostTopCreateLayerButton"
+                        BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                        Background="{StaticResource ShellHost.FieldBrush}"
+                        Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                        Command="{Binding LayerCommands.CreateLayerCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                        ToolTip="{Binding LayerCommands.CreateLayerText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                    <iconPacks:PackIconMaterial Kind="LayersPlus"
+                                                Width="14"
+                                                Height="14"
+                                                Foreground="{StaticResource ShellHost.FieldFocusBrush}" />
+                </Button>
+                <Button x:Name="btnHostLoadImageIntoLayer"
+                        DockPanel.Dock="Left"
+                        Width="26"
+                        Height="26"
+                        Margin="0,0,4,0"
+                        Padding="0"
+                        AutomationProperties.AutomationId="HostTopLoadImageIntoLayerButton"
+                        BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                        Background="{StaticResource ShellHost.FieldBrush}"
+                        Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                        Command="{Binding LayerCommands.LoadImageIntoCurrentLayerCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                        ToolTip="{Binding LayerCommands.LoadImageIntoLayerText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                    <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
+                                                Width="14"
+                                                Height="14"
+                                                Foreground="{StaticResource ShellHost.FieldFocusBrush}" />
+                </Button>
+                <Button x:Name="btnHostDeleteLayer"
+                        DockPanel.Dock="Left"
+                        Width="26"
+                        Height="26"
+                        Padding="0"
+                        AutomationProperties.AutomationId="HostTopDeleteLayerButton"
+                        BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                        Background="{StaticResource ShellHost.FieldBrush}"
+                        Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                        Command="{Binding LayerCommands.DeleteCurrentLayerCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                        ToolTip="{Binding LayerCommands.DeleteLayerText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                    <iconPacks:PackIconMaterial Kind="LayersOffOutline"
+                                                Width="14"
+                                                Height="14"
+                                                Foreground="{StaticResource ShellHost.FieldFocusBrush}" />
+                </Button>
+            </DockPanel>
+
+            <Border x:Name="directResultPanel"
+                    Grid.Column="2"
+                    Margin="0,4,14,4"
+                    BorderBrush="{StaticResource ShellHost.WarnBrush}"
+                    BorderThickness="1"
+                    Background="#1E2C32"
+                    Padding="8,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border x:Name="directResultBadge"
+                            Grid.Column="0"
+                            Background="{StaticResource ShellHost.WarnBrush}"
+                            Padding="8,1"
+                            VerticalAlignment="Center">
+                        <TextBlock x:Name="txtHostDirectBadge"
+                                   Text="{Binding DirectBadgeReadyText}"
+                                   Foreground="White"
+                                   FontWeight="Bold"
+                                   FontSize="10" />
+                    </Border>
+                    <TextBlock x:Name="txtHostSelectedTool"
+                               Grid.Column="2"
+                               Text="{Binding SelectedDirectRunText}"
+                               Foreground="#F5F8FC"
+                               FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis"
+                               VerticalAlignment="Center" />
+                    <Grid Grid.Column="4" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="txtHostSelectedRoute"
+                                   Text="{Binding SelectedRouteText}"
+                                   Foreground="#CFE0E4"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center" />
+                        <TextBlock x:Name="txtHostDirectStatus"
+                                   Grid.Column="1"
+                                   Text="{Binding DirectStatusNoToolText}"
+                                   Foreground="#BFE8D0"
+                                   Margin="8,0,0,0"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="toolRailColumn" Width="220" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition x:Name="toolInspectorSplitterColumn" Width="0" />
+                <ColumnDefinition x:Name="toolInspectorColumn" Width="0" MinWidth="0" />
+                <ColumnDefinition Width="0" />
+            </Grid.ColumnDefinitions>
+
+            <Border x:Name="toolRailBorder" Grid.Column="0" Background="#101A1F" Padding="10,12,10,10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Button x:Name="btnToggleToolRail"
+                            Grid.Row="0"
+                            Height="30"
+                            Padding="8,0"
+                            Margin="0,0,0,8"
+                            Background="#17252B"
+                            BorderBrush="#157C86"
+                            Foreground="#8AD7DA"
+                            BorderThickness="1"
+                            HorizontalContentAlignment="Center"
+                            ToolTip="도구 목록 접기/펼치기"
+                            Command="{Binding ChromeCommands.ToggleToolRailCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                        <StackPanel x:Name="toolRailToggleContent"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                            <iconPacks:PackIconMaterial x:Name="iconToolRailToggle"
+                                                        Kind="ChevronLeft"
+                                                        Width="16"
+                                                        Height="16"
+                                                        Margin="0,0,6,0"
+                                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            <TextBlock x:Name="txtToolRailToggle"
+                                       Text="도구 접기"
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                       FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Button>
+                    <ScrollViewer x:Name="toolRailScroll"
+                                  Grid.Row="1"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl x:Name="navHostToolViews" ItemsSource="{Binding NavigationGroups}" />
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Column="1" Background="#05090A">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="0" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition x:Name="logPanelRow" Height="68" />
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" Background="#18252B" Visibility="Collapsed">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Background="#157C86" Padding="14,0" Height="32">
+                        <TextBlock Text="Main" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </Border>
+                    <Border Grid.Column="1" Background="#26383F" Padding="14,0" Height="32">
+                        <TextBlock x:Name="txtHostSelectedToolTab"
+                                   Text="{Binding SelectedToolPreviewTitle}"
+                                   Foreground="#D7ECEE"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                    <ScrollViewer x:Name="hostLayerRowsScrollViewer"
+                                  Grid.Column="2"
+                                  VerticalScrollBarVisibility="Disabled"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  PanningMode="HorizontalOnly">
+                        <ListBox x:Name="hostLayerRowsList"
+                                 Tag="{Binding LayerCommands, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 Foreground="#D7ECEE"
+                                 ItemContainerStyle="{StaticResource HostLayerTabListItemStyle}"
+                                 ScrollViewer.CanContentScroll="False"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                 mvvmBehaviors:InputCommandBehaviors.SelectionChangedCommand="{Binding LayerCommands.HandleSelectedLayerChangedCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                                 mvvmBehaviors:InputCommandBehaviors.MouseDoubleClickCommand="{Binding LayerCommands.OpenSelectedLayerWindowCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ContextMenu>
+                                <StaticResource ResourceKey="LayerRowsContextMenu" />
+                            </ListBox.ContextMenu>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid MinWidth="0"
+                                          ToolTip="{Binding ToolTip}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="6" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding DisplayIndex}"
+                                                   Foreground="#8AD7DA"
+                                                   FontSize="10"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock x:Name="layerTabTitleText"
+                                                   Grid.Column="2"
+                                                   Text="{Binding Title}"
+                                                   Foreground="#D7ECEE"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   VerticalAlignment="Center" />
+                                        <Border x:Name="layerTabStatusBadge"
+                                                Grid.Column="4"
+                                                MinWidth="34"
+                                                Padding="5,1"
+                                                Background="#23383F"
+                                                BorderBrush="#57747C"
+                                                BorderThickness="1"
+                                                CornerRadius="2"
+                                                VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding StatusText}"
+                                                       Foreground="#BFDDE1"
+                                                       FontSize="9"
+                                                       FontWeight="SemiBold"
+                                                       TextAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </Border>
+                                    </Grid>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                            <Setter TargetName="layerTabTitleText" Property="Foreground" Value="#FFFFFF" />
+                                            <Setter TargetName="layerTabStatusBadge" Property="Background" Value="#0D7A55" />
+                                            <Setter TargetName="layerTabStatusBadge" Property="BorderBrush" Value="#8AD7DA" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </ScrollViewer>
+                </Grid>
+                <Border Grid.Row="1"
+                        Margin="14,14,14,0"
+                        BorderBrush="#157C86"
+                        BorderThickness="1"
+                        Background="#000000">
+                    <Grid x:Name="wpfLayerWorkspace"
+                          Tag="{Binding CommandSurfaces, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                          ClipToBounds="True"
+                          Background="#020506">
+                        <Grid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem x:Name="miWorkspaceLoadImage"
+                                          Header="이미지 로드..."
+                                          Command="{Binding PlacementTarget.Tag.WorkspaceCommands.LoadImageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                    <MenuItem.Icon>
+                                        <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
+                                                                    Width="16"
+                                                                    Height="16"
+                                                                    Foreground="#157C86" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem x:Name="miWorkspaceFitImage"
+                                          Header="이미지 맞춤"
+                                          Command="{Binding PlacementTarget.Tag.WorkspaceCommands.FitImageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                    <MenuItem.Icon>
+                                        <iconPacks:PackIconMaterial Kind="Check"
+                                                                    Width="16"
+                                                                    Height="16"
+                                                                    Foreground="#157C86" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem x:Name="miWorkspaceSaveImage"
+                                          Header="이미지 저장"
+                                          Command="{Binding PlacementTarget.Tag.WorkspaceCommands.SaveImageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                    <MenuItem.Icon>
+                                        <iconPacks:PackIconMaterial Kind="ContentSave"
+                                                                    Width="16"
+                                                                    Height="16"
+                                                                    Foreground="#157C86" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <Separator />
+                                <MenuItem x:Name="miWorkspaceCreateLayer"
+                                          Header="{Binding PlacementTarget.Tag.LayerCommands.CreateLayerText, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          Command="{Binding PlacementTarget.Tag.LayerCommands.CreateLayerCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                    <MenuItem.Icon>
+                                        <iconPacks:PackIconMaterial Kind="LayersPlus"
+                                                                    Width="16"
+                                                                    Height="16"
+                                                                    Foreground="#157C86" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem x:Name="miWorkspaceLoadImageIntoLayer"
+                                          Header="{Binding PlacementTarget.Tag.LayerCommands.LoadImageIntoLayerText, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          Command="{Binding PlacementTarget.Tag.LayerCommands.LoadImageIntoCurrentLayerCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                    <MenuItem.Icon>
+                                        <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
+                                                                    Width="16"
+                                                                    Height="16"
+                                                                    Foreground="#157C86" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem x:Name="miWorkspaceDeleteLayer"
+                                          Header="{Binding PlacementTarget.Tag.LayerCommands.DeleteLayerText, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          Command="{Binding PlacementTarget.Tag.LayerCommands.DeleteCurrentLayerCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                    <MenuItem.Icon>
+                                        <iconPacks:PackIconMaterial Kind="LayersOffOutline"
+                                                                    Width="16"
+                                                                    Height="16"
+                                                                    Foreground="#157C86" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <Separator />
+                                <MenuItem x:Name="miWorkspaceOpenLayerWindow"
+                                          Header="Open Layer in New Window"
+                                          Command="{Binding PlacementTarget.Tag.LayerCommands.OpenCurrentLayerWindowCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                    <MenuItem.Icon>
+                                        <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
+                                                                    Width="16"
+                                                                    Height="16"
+                                                                    Foreground="#157C86" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem x:Name="miWorkspaceDockLayer"
+                                          Header="Dock Layer"
+                                          Visibility="Collapsed"
+                                          Command="{Binding PlacementTarget.Tag.LayerCommands.DockCurrentLayerCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                    <MenuItem.Icon>
+                                        <iconPacks:PackIconMaterial Kind="LayersPlus"
+                                                                    Width="16"
+                                                                    Height="16"
+                                                                    Foreground="#157C86" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem x:Name="miWorkspaceClearDockedLayers"
+                                          Header="Clear Docked Layers"
+                                          Visibility="Collapsed"
+                                          Command="{Binding PlacementTarget.Tag.LayerCommands.ClearDockedLayersCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                    <MenuItem.Icon>
+                                        <iconPacks:PackIconMaterial Kind="LayersOffOutline"
+                                                                    Width="16"
+                                                                    Height="16"
+                                                                    Foreground="#157C86" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                            </ContextMenu>
+                        </Grid.ContextMenu>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="28" />
+                        </Grid.RowDefinitions>
+
+                        <Grid x:Name="singleWorkspaceView" Grid.Row="0" Margin="18">
+                            <Border Background="#000000"
+                                    BorderBrush="#1B363D"
+                                    BorderThickness="1">
+                                <Grid x:Name="hostWorkspaceImageSurface" Background="#000000" ClipToBounds="True">
+                                    <imageCanvasViews:RoiImageCanvasView x:Name="hostWorkspaceCanvas"
+                                                                        Visibility="Collapsed"
+                                                                        mvvmBehaviors:InputCommandBehaviors.LoadedCommand="{Binding SessionCommands.WorkspaceCanvasLoadedCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}" />
+                                    <Image x:Name="hostWorkspaceFallbackImage"
+                                           Stretch="Uniform"
+                                           SnapsToDevicePixels="True"
+                                           Visibility="Collapsed" />
+                                    </Grid>
+                            </Border>
+
+                            <Border x:Name="workspaceEmptyOverlay"
+                                    Width="540"
+                                    MaxWidth="620"
+                                    Padding="24"
+                                    Background="#F4F8FA"
+                                    BorderBrush="#8AD7DA"
+                                    BorderThickness="1"
+                                    CornerRadius="2"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    SnapsToDevicePixels="True">
+                                <StackPanel>
+                                    <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
+                                                               Width="32"
+                                                               Height="32"
+                                                               Foreground="#157C86"
+                                                               Margin="0,0,0,10" />
+                                    <TextBlock x:Name="txtHostWorkspaceEmptyTitle"
+                                               Text="레이어 없음"
+                                               Foreground="#243040"
+                                               FontWeight="SemiBold"
+                                               FontSize="16"
+                                               TextTrimming="None" />
+                                    <TextBlock x:Name="txtHostWorkspaceEmptyDetail"
+                                               Text="표시할 이미지를 선택하거나 도구를 실행하십시오."
+                                               Foreground="#657487"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
+                                               Margin="0,6,0,0" />
+                                    <Grid Margin="0,18,0,0"
+                                          AutomationProperties.AutomationId="WorkspaceEmptyBeginnerFlow">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Grid.Column="0"
+                                                AutomationProperties.AutomationId="WorkspaceEmptyBeginnerStepLoadImage"
+                                                Padding="10,9"
+                                                Background="#E5F0F3"
+                                                BorderBrush="#B4CCD2"
+                                                BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock x:Name="txtWorkspaceEmptyStepLoadTitle"
+                                                           Text="1. 이미지 로드"
+                                                           Foreground="#17252B"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="12" />
+                                                <TextBlock x:Name="txtWorkspaceEmptyStepLoadDetail"
+                                                           Text="Main 레이어에 검사할 이미지를 엽니다."
+                                                           Foreground="#536873"
+                                                           FontSize="11"
+                                                           TextWrapping="Wrap"
+                                                           Margin="0,4,0,0" />
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Grid.Column="2"
+                                                AutomationProperties.AutomationId="WorkspaceEmptyBeginnerStepSelectTool"
+                                                Padding="10,9"
+                                                Background="#E5F0F3"
+                                                BorderBrush="#B4CCD2"
+                                                BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock x:Name="txtWorkspaceEmptyStepSelectTitle"
+                                                           Text="2. 도구 선택"
+                                                           Foreground="#17252B"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="12" />
+                                                <TextBlock x:Name="txtWorkspaceEmptyStepSelectDetail"
+                                                           Text="왼쪽 목록에서 Threshold, Matching, Line 등을 고릅니다."
+                                                           Foreground="#536873"
+                                                           FontSize="11"
+                                                           TextWrapping="Wrap"
+                                                           Margin="0,4,0,0" />
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Grid.Column="4"
+                                                AutomationProperties.AutomationId="WorkspaceEmptyBeginnerStepPreviewCheck"
+                                                Padding="10,9"
+                                                Background="#E5F0F3"
+                                                BorderBrush="#B4CCD2"
+                                                BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock x:Name="txtWorkspaceEmptyStepPreviewTitle"
+                                                           Text="3. 미리보기 확인"
+                                                           Foreground="#17252B"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="12" />
+                                                <TextBlock x:Name="txtWorkspaceEmptyStepPreviewDetail"
+                                                           Text="결과를 확인한 뒤 파이프라인에 추가합니다."
+                                                           Foreground="#536873"
+                                                           FontSize="11"
+                                                           TextWrapping="Wrap"
+                                                           Margin="0,4,0,0" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                    <DockPanel Margin="0,18,0,0" LastChildFill="False">
+                                    <Button x:Name="btnWorkspaceLoadImage"
+                                                DockPanel.Dock="Left"
+                                            HorizontalAlignment="Left"
+                                            MinWidth="132"
+                                            Command="{Binding WorkspaceCommands.LoadImageCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
+                                                                        Width="16"
+                                                                        Height="16"
+                                                                        Foreground="#157C86"
+                                                                        Margin="0,0,7,0" />
+                                            <TextBlock x:Name="txtWorkspaceLoadImageButtonText"
+                                                       Text="이미지 로드"
+                                                       Foreground="#157C86"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="None" />
+                                        </StackPanel>
+                                    </Button>
+                                        <Button Margin="10,0,0,0"
+                                                AutomationProperties.AutomationId="WorkspaceEmptySampleButton"
+                                                DockPanel.Dock="Left"
+                                                HorizontalAlignment="Left"
+                                                MinWidth="116"
+                                                Command="{Binding WorkspaceCommands.OpenSampleCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <iconPacks:PackIconMaterial Kind="ImageMultipleOutline"
+                                                                            Width="16"
+                                                                            Height="16"
+                                                                            Foreground="#157C86"
+                                                                            Margin="0,0,7,0" />
+                                                <TextBlock x:Name="txtWorkspaceEmptySampleButtonText"
+                                                           Text="샘플 열기"
+                                                           Foreground="#157C86"
+                                                           FontWeight="SemiBold"
+                                                           TextTrimming="None" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Margin="10,0,0,0"
+                                                AutomationProperties.AutomationId="WorkspaceEmptyGuideButton"
+                                                DockPanel.Dock="Left"
+                                                HorizontalAlignment="Left"
+                                                MinWidth="116"
+                                                Command="{Binding ChromeCommands.OpenTutorialCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <iconPacks:PackIconMaterial Kind="BookOpenPageVariantOutline"
+                                                                            Width="16"
+                                                                            Height="16"
+                                                                            Foreground="#157C86"
+                                                                            Margin="0,0,7,0" />
+                                                <TextBlock x:Name="txtWorkspaceEmptyGuideButtonText"
+                                                           Text="가이드 보기"
+                                                           Foreground="#157C86"
+                                                           FontWeight="SemiBold"
+                                                           TextTrimming="None" />
+                                            </StackPanel>
+                                        </Button>
+                                    </DockPanel>
+                                    <TextBlock x:Name="txtWorkspaceEmptyLogHint"
+                                               AutomationProperties.AutomationId="WorkspaceEmptyLogHint"
+                                               Text="이미지를 불러오면 이 영역에서 확대, 이동, 픽셀 값을 확인하고 하단 실행 로그에서 상태를 추적합니다."
+                                               Foreground="#657487"
+                                               FontSize="11"
+                                               TextWrapping="Wrap"
+                                               Margin="0,12,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border x:Name="workspaceLayerInfoOverlay"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Margin="10"
+                                    Padding="10,6"
+                                    Background="#CC101A1F"
+                                    BorderBrush="#42636A"
+                                    BorderThickness="1">
+                                <StackPanel>
+                                    <TextBlock x:Name="txtHostWorkspaceLayerTitle"
+                                               Text="-"
+                                               Foreground="#F5FAFC"
+                                               FontWeight="SemiBold"
+                                               FontSize="12" />
+                                    <TextBlock x:Name="txtHostWorkspaceLayerMeta"
+                                               Text="-"
+                                               Foreground="#A8CBD1"
+                                               FontSize="11"
+                                               Margin="0,2,0,0" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <docking:OpenVisionLayerDockWorkspaceView x:Name="dockedWorkspaceView"
+                                                                 Grid.Row="0"
+                                                                 Margin="12"
+                                                                 Visibility="Collapsed" />
+
+                        <Border x:Name="workspaceDropOverlay"
+                                Grid.Row="0"
+                                Panel.ZIndex="40"
+                                Margin="12"
+                                Visibility="Collapsed"
+                                IsHitTestVisible="False"
+                                Background="#33157C86"
+                                BorderBrush="#8AD7DA"
+                                BorderThickness="2" />
+
+                        <Border x:Name="workspaceMainActionOverlay"
+                                Grid.Row="1"
+                                AutomationProperties.AutomationId="WorkspaceMainActionOverlay"
+                                Margin="12,0,12,0"
+                                Padding="10,7"
+                                Visibility="Collapsed"
+                                Background="#101F24"
+                                BorderBrush="#315E66"
+                                BorderThickness="1,0,1,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <iconPacks:PackIconMaterial Grid.Column="0"
+                                                            Kind="ImageCheckOutline"
+                                                            Width="16"
+                                                            Height="16"
+                                                            Foreground="#8AD7DA"
+                                                            Margin="0,0,8,0"
+                                                            VerticalAlignment="Center" />
+                                <TextBlock x:Name="txtWorkspaceMainActionTitle"
+                                           Grid.Column="0"
+                                           Text="이미지 준비됨"
+                                           Foreground="#F5FAFC"
+                                           FontWeight="SemiBold"
+                                           FontSize="12"
+                                           Margin="24,0,0,0"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                                <TextBlock x:Name="txtWorkspaceMainActionDetail"
+                                           Grid.Column="1"
+                                           Text="다음: 도구 선택 -> 미리보기 확인 -> 파이프라인 추가"
+                                           Foreground="#B9D6DC"
+                                           FontSize="11"
+                                           TextTrimming="CharacterEllipsis"
+                                           Margin="14,0,0,0"
+                                           VerticalAlignment="Center" />
+                                <TextBlock x:Name="txtWorkspaceMainActionMeta"
+                                           Grid.Column="2"
+                                           Text="-"
+                                           Foreground="#8AD7DA"
+                                           FontSize="11"
+                                           Margin="14,0,0,0"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                                <Button Grid.Column="3"
+                                        AutomationProperties.AutomationId="WorkspaceMainActionThresholdButton"
+                                        MinWidth="74"
+                                        Height="24"
+                                        Margin="12,0,0,0"
+                                        Padding="8,0"
+                                        Command="{Binding WorkspaceCommands.OpenThresholdToolCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <iconPacks:PackIconMaterial Kind="ContrastBox"
+                                                                    Width="14"
+                                                                    Height="14"
+                                                                    Foreground="#8AD7DA"
+                                                                    Margin="0,0,5,0" />
+                                        <TextBlock x:Name="txtWorkspaceMainActionThresholdButtonText"
+                                                   Text="Threshold"
+                                                   Foreground="#8AD7DA"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="11" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Grid.Column="4"
+                                        AutomationProperties.AutomationId="WorkspaceMainActionMatchingButton"
+                                        MinWidth="74"
+                                        Height="24"
+                                        Margin="6,0,0,0"
+                                        Padding="8,0"
+                                        Command="{Binding WorkspaceCommands.OpenMatchingToolCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <iconPacks:PackIconMaterial Kind="Target"
+                                                                    Width="14"
+                                                                    Height="14"
+                                                                    Foreground="#8AD7DA"
+                                                                    Margin="0,0,5,0" />
+                                        <TextBlock x:Name="txtWorkspaceMainActionMatchingButtonText"
+                                                   Text="Matching"
+                                                   Foreground="#8AD7DA"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="11" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Grid.Column="5"
+                                        AutomationProperties.AutomationId="WorkspaceMainActionLineButton"
+                                        MinWidth="58"
+                                        Height="24"
+                                        Margin="6,0,0,0"
+                                        Padding="8,0"
+                                        Command="{Binding WorkspaceCommands.OpenLineToolCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <iconPacks:PackIconMaterial Kind="VectorLine"
+                                                                    Width="14"
+                                                                    Height="14"
+                                                                    Foreground="#8AD7DA"
+                                                                    Margin="0,0,5,0" />
+                                        <TextBlock x:Name="txtWorkspaceMainActionLineButtonText"
+                                                   Text="Line"
+                                                   Foreground="#8AD7DA"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="11" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <Border x:Name="workspaceSampleWorkflowOverlay"
+                                Grid.Row="1"
+                                AutomationProperties.AutomationId="WorkspaceSampleWorkflowOverlay"
+                                Margin="12,0,12,0"
+                                Padding="10,7"
+                                Visibility="Collapsed"
+                                Background="#121E24"
+                                BorderBrush="#315E66"
+                                BorderThickness="1,0,1,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <iconPacks:PackIconMaterial Grid.Column="0"
+                                                            Kind="SourceBranch"
+                                                            Width="16"
+                                                            Height="16"
+                                                            Foreground="#8AD7DA"
+                                                            Margin="0,0,8,0"
+                                                            VerticalAlignment="Center" />
+                                <TextBlock x:Name="txtWorkspaceSampleWorkflowTitle"
+                                           Grid.Column="0"
+                                           Text="Sample pipeline ready"
+                                           Foreground="#F5FAFC"
+                                           FontWeight="SemiBold"
+                                           FontSize="12"
+                                           Margin="24,0,0,0"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                                <TextBlock x:Name="txtWorkspaceSampleWorkflowDetail"
+                                           Grid.Column="1"
+                                           Text="-"
+                                           Foreground="#B9D6DC"
+                                           FontSize="11"
+                                           TextTrimming="CharacterEllipsis"
+                                           Margin="14,0,0,0"
+                                           VerticalAlignment="Center" />
+                                <TextBlock x:Name="txtWorkspaceSampleWorkflowMeta"
+                                           Grid.Column="2"
+                                           Text="-"
+                                           Foreground="#8AD7DA"
+                                           FontSize="11"
+                                           Margin="14,0,0,0"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                                <Button Grid.Column="3"
+                                        AutomationProperties.AutomationId="WorkspaceSamplePipelineButton"
+                                        MinWidth="86"
+                                        Height="24"
+                                        Margin="12,0,0,0"
+                                        Padding="8,0"
+                                        Command="{Binding WorkspaceCommands.OpenSamplePipelineCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <iconPacks:PackIconMaterial Kind="ChartTimelineVariant"
+                                                                    Width="14"
+                                                                    Height="14"
+                                                                    Foreground="#8AD7DA"
+                                                                    Margin="0,0,5,0" />
+                                        <TextBlock Text="Pipeline 보기"
+                                                   Foreground="#8AD7DA"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="11" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Grid.Column="4"
+                                        AutomationProperties.AutomationId="WorkspaceSampleFirstStepButton"
+                                        MinWidth="88"
+                                        Height="24"
+                                        Margin="6,0,0,0"
+                                        Padding="8,0"
+                                        Command="{Binding WorkspaceCommands.OpenSampleFirstStepCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <iconPacks:PackIconMaterial Kind="OpenInNew"
+                                                                    Width="14"
+                                                                    Height="14"
+                                                                    Foreground="#8AD7DA"
+                                                                    Margin="0,0,5,0" />
+                                        <TextBlock Text="첫 단계 열기"
+                                                   Foreground="#8AD7DA"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="11" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <Grid Grid.Row="2" Background="#0D171B">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="160" />
+                                <ColumnDefinition Width="160" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="txtHostWorkspaceStatus"
+                                       Grid.Column="0"
+                                       Text="-"
+                                       Foreground="#C8DEE3"
+                                       VerticalAlignment="Center"
+                                       Margin="10,0,0,0" />
+                            <TextBlock x:Name="txtHostWorkspaceCoordinates"
+                                       Grid.Column="1"
+                                       Text="X:- Y:-"
+                                       Foreground="#C8DEE3"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock x:Name="txtHostWorkspacePixel"
+                                       Grid.Column="2"
+                                       Text="GV - | RGB -"
+                                       Foreground="#C8DEE3"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Center" />
+                        </Grid>
+
+                    </Grid>
+                </Border>
+                <Border Grid.Row="2"
+                        Margin="14,8,14,14"
+                        BorderBrush="#38535C"
+                        BorderThickness="1"
+                        Background="#111821">
+                    <Grid AutomationProperties.AutomationId="ShellLogCollapsiblePanel">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="42" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0"
+                                Background="#202529"
+                                BorderBrush="#303A42"
+                                BorderThickness="0,0,0,1"
+                                Padding="10,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <iconPacks:PackIconMaterial Grid.Column="0"
+                                                            Kind="TextBoxSearchOutline"
+                                                            Width="16"
+                                                            Height="16"
+                                                            Foreground="#D7ECEE"
+                                                            VerticalAlignment="Center" />
+                                <TextBlock x:Name="txtShellLogTitle"
+                                           Grid.Column="2"
+                                           Text="실행 로그"
+                                           Foreground="#F5F8FC"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="4"
+                                           AutomationProperties.AutomationId="ShellLogCollapsedSummary"
+                                           Text="{Binding DataContext.LatestSummaryText, ElementName=shellLogPanel}"
+                                           Foreground="#AEB9C7"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                                <Border Grid.Column="5"
+                                        Background="#172332"
+                                        BorderBrush="#34445C"
+                                        BorderThickness="1"
+                                        MinWidth="56"
+                                        Height="22"
+                                        Padding="8,0"
+                                        VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding DataContext.SummaryText, ElementName=shellLogPanel}"
+                                               Foreground="#D7ECEE"
+                                               FontSize="11"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
+                                </Border>
+                                <ToggleButton x:Name="btnShellLogToggle"
+                                              Grid.Column="7"
+                                              AutomationProperties.AutomationId="ShellLogToggleButton"
+                                              MinWidth="86"
+                                              Height="26"
+                                              Padding="8,0"
+                                              Background="#2D3338"
+                                              BorderBrush="#3F474E"
+                                              Foreground="#F5F8FC"
+                                              Checked="ShellLogToggle_Checked"
+                                              Unchecked="ShellLogToggle_Unchecked"
+                                              VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal"
+                                                VerticalAlignment="Center">
+                                        <iconPacks:PackIconMaterial x:Name="iconShellLogToggle"
+                                                                    Kind="ChevronUp"
+                                                                    Width="14"
+                                                                    Height="14"
+                                                                    Foreground="#F5F8FC"
+                                                                    Margin="0,0,5,0" />
+                                        <TextBlock x:Name="txtShellLogToggle"
+                                                   Text="로그 열기"
+                                                   Foreground="#F5F8FC"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="11" />
+                                    </StackPanel>
+                                </ToggleButton>
+                            </Grid>
+                        </Border>
+                        <logView:LogPanelView x:Name="shellLogPanel"
+                                              Grid.Row="1"
+                                              Visibility="Collapsed" />
+                        <TextBlock x:Name="txtHostActiveFormType"
+                                   Text=""
+                                   Visibility="Collapsed" />
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <GridSplitter x:Name="toolInspectorSplitter"
+                          Grid.Column="2"
+                          Width="6"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          Background="#20343B"
+                          ShowsPreview="True"
+                          Visibility="Collapsed" />
+
+            <Border x:Name="toolInspectorPanel"
+                    Grid.Column="3"
+                    Background="{StaticResource OpenVision.InspectorSurfaceBrush}"
+                    BorderBrush="#157C86"
+                    BorderThickness="1,0,1,0"
+                    Visibility="Collapsed">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="42" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0"
+                            Background="#243238"
+                            BorderBrush="#157C86"
+                            BorderThickness="0,0,0,1"
+                            Padding="10,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="38" />
+                                <ColumnDefinition Width="4" />
+                                <ColumnDefinition Width="38" />
+                            </Grid.ColumnDefinitions>
+                            <iconPacks:PackIconMaterial Grid.Column="0"
+                                                        Kind="Tools"
+                                                        Width="18"
+                                                        Height="18"
+                                                        Foreground="#8AD7DA"
+                                                        VerticalAlignment="Center" />
+                            <TextBlock x:Name="txtDockedToolTitle"
+                                       Grid.Column="2"
+                                       Foreground="#F4FAFB"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" />
+                            <Button x:Name="btnFloatDockedTool"
+                                    Grid.Column="3"
+                                    Width="34"
+                                    Height="30"
+                                    Background="#1C2B31"
+                                    BorderBrush="#6AAFB7"
+                                    Foreground="#D7ECEE"
+                                    ToolTip="Float tool window"
+                                    AutomationProperties.AutomationId="OpenVisionDockedToolFloatButton"
+                                    AutomationProperties.Name="Float tool window"
+                                    Command="{Binding ChromeCommands.FloatDockedToolCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                <iconPacks:PackIconMaterial Kind="OpenInNew"
+                                                            Width="15"
+                                                            Height="15"
+                                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </Button>
+                            <Button x:Name="btnCloseDockedTool"
+                                    Grid.Column="5"
+                                    Width="34"
+                                    Height="30"
+                                    Background="#1C2B31"
+                                    BorderBrush="#6AAFB7"
+                                    Foreground="#D7ECEE"
+                                    ToolTip="Close tool"
+                                    AutomationProperties.AutomationId="OpenVisionDockedToolCloseButton"
+                                    AutomationProperties.Name="Close tool"
+                                    Command="{Binding ChromeCommands.CloseDockedToolCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                <iconPacks:PackIconMaterial Kind="Close"
+                                                            Width="15"
+                                                            Height="15"
+                                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <ScrollViewer x:Name="dockedToolScrollViewer"
+                                  Grid.Row="1"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <ContentControl x:Name="dockedToolContentHost"
+                                        Height="{Binding ActualHeight, ElementName=dockedToolScrollViewer}"
+                                        HorizontalContentAlignment="Stretch"
+                                        VerticalContentAlignment="Stretch" />
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <Grid x:Name="hostRail"
+                  Grid.Column="4"
+                  Width="0"
+                  Height="0"
+                  Visibility="Collapsed"
+                  Background="#18242A">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="142" />
+                    <RowDefinition Height="210" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border x:Name="legacyDirectResultPanel"
+                        Margin="10,10,10,6"
+                        BorderBrush="{StaticResource ShellHost.WarnBrush}"
+                        BorderThickness="1"
+                        Background="#223139"
+                        Padding="10">
+                    <StackPanel>
+                        <DockPanel>
+                            <TextBlock Text="{Binding DirectResultText}" Foreground="#D7ECEE" FontWeight="SemiBold" />
+                            <Border x:Name="legacyDirectResultBadge"
+                                    DockPanel.Dock="Right"
+                                    Background="{StaticResource ShellHost.WarnBrush}"
+                                    Padding="8,1">
+                                <TextBlock x:Name="legacyTxtHostDirectBadge"
+                                           Text="{Binding DirectBadgeReadyText}"
+                                           Foreground="White"
+                                           FontWeight="Bold"
+                                           FontSize="10" />
+                            </Border>
+                        </DockPanel>
+                        <TextBlock x:Name="legacyTxtHostSelectedTool"
+                                   Text="{Binding SelectedDirectRunText}"
+                                   Foreground="#F5F8FC"
+                                   FontWeight="SemiBold"
+                                   Margin="0,12,0,0" />
+                        <TextBlock x:Name="legacyTxtHostSelectedRoute"
+                                   Text="{Binding SelectedRouteText}"
+                                   Foreground="#CFE0E4"
+                                   Margin="0,8,0,0" />
+                        <TextBlock x:Name="legacyTxtHostDirectStatus"
+                                   Text="{Binding DirectStatusNoToolText}"
+                                   Foreground="#BFE8D0"
+                                   Margin="0,8,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="1" Margin="10,4,10,6" BorderBrush="#38535C" BorderThickness="1" Background="#223139" Padding="10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="{Binding LayersResultsText}" Foreground="#D7ECEE" FontWeight="SemiBold" />
+                        <ScrollViewer x:Name="legacyHostLayerRowsScrollViewer"
+                                      Grid.Row="1"
+                                      Margin="0,8,0,0"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <ListBox x:Name="legacyHostLayerRowsList"
+                                     Tag="{Binding LayerCommands, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="#D7ECEE"
+                                     ItemContainerStyle="{StaticResource HostLayerListItemStyle}"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                     mvvmBehaviors:InputCommandBehaviors.SelectionChangedCommand="{Binding LayerCommands.HandleSelectedLayerChangedCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                                     mvvmBehaviors:InputCommandBehaviors.MouseDoubleClickCommand="{Binding LayerCommands.OpenSelectedLayerWindowCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                <ListBox.ContextMenu>
+                                    <StaticResource ResourceKey="LayerRowsContextMenu" />
+                                </ListBox.ContextMenu>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}"
+                                                   Foreground="#D7ECEE"
+                                                   FontSize="11"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Row="2" Margin="10,4,10,6" BorderBrush="#38535C" BorderThickness="1" Background="#223139" Padding="10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="104" />
+                            <RowDefinition Height="34" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="{Binding SelectedLayerDetailText}" Foreground="#D7ECEE" FontWeight="SemiBold" />
+                        <Border Grid.Row="1"
+                                Margin="0,10,0,0"
+                                Background="#17262D"
+                                BorderBrush="#304D57"
+                                BorderThickness="1"
+                                Padding="8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="86" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border Background="#05090A" BorderBrush="#48636C" BorderThickness="1">
+                                    <Image x:Name="imgHostSelectedLayerPreview"
+                                           Stretch="Uniform"
+                                           SnapsToDevicePixels="True" />
+                                </Border>
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                    <TextBlock Text="{Binding SelectedLayerDetailText}" Foreground="#8FD5DB" FontWeight="SemiBold" FontSize="11" />
+                                    <Grid Margin="0,5,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="4" />
+                                            <ColumnDefinition Width="28" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="txtHostSelectedLayerTitle"
+                                                 Grid.Column="0"
+                                                 MinHeight="24"
+                                                 Padding="6,2"
+                                                 VerticalContentAlignment="Center"
+                                                 AutomationProperties.AutomationId="HostSelectedLayerNameEditor"
+                                                 Text="-"
+                                                 Foreground="#F5F8FC"
+                                                 CaretBrush="#8FE8F0"
+                                                 FontWeight="SemiBold"
+                                                 BorderBrush="#42626B"
+                                                 Background="#12262D" />
+                                        <Button x:Name="btnRenameSelectedLayer"
+                                                Grid.Column="2"
+                                                Width="28"
+                                                Height="24"
+                                                Padding="0"
+                                                AutomationProperties.AutomationId="HostRenameLayerButton"
+                                                Style="{StaticResource LayerDetailActionButtonStyle}"
+                                                ToolTip="{Binding LayerCommands.RenameLayerText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                                                Command="{Binding LayerCommands.RenameSelectedLayerCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                                                CommandParameter="{Binding Text, ElementName=txtHostSelectedLayerTitle}">
+                                            <iconPacks:PackIconMaterial Kind="PencilOutline"
+                                                                        Width="14"
+                                                                        Height="14"
+                                                                        HorizontalAlignment="Center"
+                                                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                        </Button>
+                                    </Grid>
+                                    <TextBlock x:Name="txtHostSelectedLayerMeta"
+                                               Text="-"
+                                               Foreground="#CFE0E4"
+                                               Margin="0,5,0,0" />
+                                    <TextBlock x:Name="txtHostSelectedLayerRoute"
+                                               Text="-"
+                                               Foreground="#AFC5CC"
+                                               FontSize="11"
+                                               Margin="0,5,0,0" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <Grid Grid.Row="2" Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="78" />
+                                <ColumnDefinition Width="6" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="6" />
+                                <ColumnDefinition Width="34" />
+                                <ColumnDefinition Width="6" />
+                                <ColumnDefinition Width="70" />
+                                <ColumnDefinition Width="6" />
+                                <ColumnDefinition Width="34" />
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="btnCreateLayer"
+                                    Grid.Column="0"
+                                    AutomationProperties.AutomationId="HostCreateLayerButton"
+                                    Style="{StaticResource LayerDetailActionButtonStyle}"
+                                    Command="{Binding LayerCommands.CreateLayerCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <iconPacks:PackIconMaterial Kind="LayersPlus"
+                                                                Width="14"
+                                                                Height="14"
+                                                                Margin="0,0,5,0"
+                                                                Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                    <TextBlock Text="{Binding LayerCommands.CreateLayerShortText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                               FontWeight="SemiBold" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="btnLoadImageIntoSelectedLayer"
+                                    Grid.Column="2"
+                                    AutomationProperties.AutomationId="HostLoadImageIntoLayerButton"
+                                    Style="{StaticResource LayerDetailActionButtonStyle}"
+                                    Command="{Binding LayerCommands.LoadImageIntoSelectedLayerCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
+                                                                Width="14"
+                                                                Height="14"
+                                                                Margin="0,0,5,0"
+                                                                Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                    <TextBlock Text="{Binding LayerCommands.LoadImageIntoLayerShortText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                               FontWeight="SemiBold" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="btnDeleteSelectedLayer"
+                                    Grid.Column="4"
+                                    AutomationProperties.AutomationId="HostDeleteLayerButton"
+                                    Style="{StaticResource LayerDetailActionButtonStyle}"
+                                    ToolTip="{Binding LayerCommands.DeleteLayerText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                                    Command="{Binding LayerCommands.DeleteSelectedLayerCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                <iconPacks:PackIconMaterial Kind="LayersOffOutline"
+                                                            Width="15"
+                                                            Height="15"
+                                                            HorizontalAlignment="Center"
+                                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </Button>
+                            <Button x:Name="btnOpenSelectedLayerWindow"
+                                    Grid.Column="6"
+                                    Style="{StaticResource LayerDetailActionButtonStyle}"
+                                    Command="{Binding LayerCommands.OpenSelectedLayerWindowCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <iconPacks:PackIconMaterial Kind="ImageMultipleOutline"
+                                                                Width="14"
+                                                                Height="14"
+                                                                Margin="0,0,5,0"
+                                                                Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                    <TextBlock x:Name="txtOpenSelectedLayerWindowButton"
+                                               Text="팝업"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                               FontWeight="SemiBold" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="btnDockSelectedLayer"
+                                    Grid.Column="6"
+                                    Style="{StaticResource LayerDetailActionButtonStyle}"
+                                    Visibility="Collapsed"
+                                    Command="{Binding LayerCommands.DockSelectedLayerCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <iconPacks:PackIconMaterial Kind="LayersPlus"
+                                                                Width="14"
+                                                                Height="14"
+                                                                Margin="0,0,5,0"
+                                                                Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                    <TextBlock x:Name="txtDockSelectedLayerButton"
+                                               Text="도킹"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                               FontWeight="SemiBold" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="btnClearDockedLayers"
+                                    Grid.Column="8"
+                                    Style="{StaticResource LayerDetailActionButtonStyle}"
+                                    Visibility="Collapsed"
+                                    ToolTip="도킹 해제"
+                                    Command="{Binding LayerCommands.ClearDockedLayersCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                <iconPacks:PackIconMaterial Kind="LayersOffOutline"
+                                                            Width="15"
+                                                            Height="15"
+                                                            HorizontalAlignment="Center"
+                                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+            </Grid>
+        </Grid>
+
+        <Grid Grid.Row="3" Background="{StaticResource ShellHost.ChromeDarkBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="320" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="C:" Foreground="#EAF5F7" FontWeight="SemiBold" />
+                <Border Width="150" Height="5" Background="#31454E" Margin="8,0">
+                    <Border Width="62" Height="5" Background="#157C86" HorizontalAlignment="Left" />
+                </Border>
+                <TextBlock Text="27.7%" Foreground="#D7ECEE" />
+            </StackPanel>
+            <TextBlock Grid.Column="1"
+                       x:Name="statusHostReady"
+                       Text="{Binding StatusText}"
+                       Foreground="#D7ECEE"
+                       VerticalAlignment="Center"
+                       Margin="12,0" />
+            <TextBlock Grid.Column="2"
+                       Text="OpenVisionLab"
+                       Foreground="#D7ECEE"
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Center"
+                       Margin="0,0,14,0" />
+            <TextBlock x:Name="txtToolOpenTimingDiagnostics"
+                       Grid.Column="2"
+                       Width="1"
+                       Height="1"
+                       Opacity="0.01"
+                       IsHitTestVisible="False"
+                       AutomationProperties.AutomationId="OpenVisionToolOpenTimingDiagnostics"
+                       HorizontalAlignment="Left"
+                       VerticalAlignment="Top" />
+        </Grid>
+    </Grid>
+</UserControl>

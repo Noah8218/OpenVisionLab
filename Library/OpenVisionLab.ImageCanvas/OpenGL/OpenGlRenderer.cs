@@ -24,29 +24,6 @@ namespace OpenVisionLab.ImageCanvas
 			gl.LoadIdentity();
 		}
 
-
-		//public static void SetupFrameAndRenderBuffers(OpenGL gl, uint textureId, int width, int height, Action action)
-		//{
-		//	uint[] frameBuffer = new uint[1];
-		//	gl.GenFramebuffersEXT(1, frameBuffer);
-		//	gl.BindFramebufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, frameBuffer[0]);
-		//	gl.FramebufferTexture2DEXT(OpenGL.GL_FRAMEBUFFER_EXT, OpenGL.GL_COLOR_ATTACHMENT0_EXT, OpenGL.GL_TEXTURE_2D, textureId, 0);
-
-		//	uint[] renderBuffer = new uint[1];
-		//	gl.GenRenderbuffersEXT(1, renderBuffer);
-		//	gl.BindRenderbufferEXT(OpenGL.GL_RENDERBUFFER_EXT, renderBuffer[0]);
-		//	gl.RenderbufferStorageEXT(OpenGL.GL_RENDERBUFFER_EXT, OpenGL.GL_STENCIL_INDEX8_EXT, width, height);
-		//	gl.FramebufferRenderbufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, OpenGL.GL_STENCIL_ATTACHMENT_EXT, OpenGL.GL_RENDERBUFFER_EXT, renderBuffer[0]);
-
-		//	action();
-
-		//	// 프레임버퍼 해제 및 청소
-		//	gl.BindFramebufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, 0);
-		//	gl.DeleteFramebuffersEXT(1, frameBuffer);
-		//	gl.DeleteRenderbuffersEXT(1, renderBuffer); // 렌더버퍼 해제 추가
-		//												//ReshapeNonRefrsh();
-		//}
-
 		public static void SetupFrameAndRenderBuffers(OpenGL gl, uint textureId, int width, int height, Action action)
 		{
 			uint[] frameBuffer = new uint[1];
@@ -305,76 +282,6 @@ namespace OpenVisionLab.ImageCanvas
 
 			return mat;
 		}
-
-		//public static unsafe OpenCvSharp.Mat TextureToMat(OpenGL gl, uint textureId, uint bpp)
-		//{
-		//	// FBO 생성
-		//	uint[] fbo = new uint[1];
-		//	gl.GenFramebuffersEXT(1, fbo);
-		//	gl.BindFramebufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, fbo[0]);
-
-		//	// 텍스처를 FBO에 연결
-		//	gl.FramebufferTexture2DEXT(OpenGL.GL_FRAMEBUFFER_EXT, OpenGL.GL_COLOR_ATTACHMENT0_EXT,
-		//							   OpenGL.GL_TEXTURE_2D, textureId, 0);
-
-		//	gl.BindTexture(OpenGL.GL_TEXTURE_2D, textureId);
-
-		//	// 텍스처 크기 얻기
-		//	int[] widthArr = new int[1];
-		//	int[] heightArr = new int[1];
-		//	gl.GetTexLevelParameter(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_TEXTURE_WIDTH, widthArr);
-		//	gl.GetTexLevelParameter(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_TEXTURE_HEIGHT, heightArr);
-
-		//	int width = widthArr[0];
-		//	int height = heightArr[0];
-
-		//	// PBO 생성
-		//	uint[] pbo = new uint[1];
-		//	gl.GenBuffers(1, pbo);
-		//	gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, pbo[0]);
-
-		//	int bytesPerPixel = bpp == 1 ? 1 : (bpp == 3 ? 3 : 4);
-		//	int bufferSize = width * height * bytesPerPixel;
-
-		//	// 버퍼 크기 예약
-		//	gl.BufferData(OpenGL.GL_PIXEL_PACK_BUFFER, bufferSize, IntPtr.Zero, OpenGL.GL_STREAM_READ);
-
-		//	// FBO → PBO로 데이터 읽기
-		//	if (bpp == 1)
-		//		gl.ReadPixels(0, 0, width, height, OpenGL.GL_LUMINANCE, OpenGL.GL_UNSIGNED_BYTE, IntPtr.Zero);
-		//	else if (bpp == 3)
-		//		gl.ReadPixels(0, 0, width, height, OpenGL.GL_BGR, OpenGL.GL_UNSIGNED_BYTE, IntPtr.Zero);
-		//	else if (bpp == 4)
-		//		gl.ReadPixels(0, 0, width, height, OpenGL.GL_BGRA, OpenGL.GL_UNSIGNED_BYTE, IntPtr.Zero);
-
-		//	// PBO 데이터 맵핑
-		//	IntPtr ptr = gl.MapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, OpenGL.GL_READ_ONLY);
-		//	if (ptr == IntPtr.Zero)
-		//		throw new Exception("Failed to map buffer.");
-
-		//	// OpenCV Mat 생성
-		//	var matType = bpp == 1 ? OpenCvSharp.MatType.CV_8UC1
-		//						   : (bpp == 3 ? OpenCvSharp.MatType.CV_8UC3
-		//									   : OpenCvSharp.MatType.CV_8UC4);
-
-		//	Mat mat = new Mat(height, width, matType);
-
-		//	// GPU 메모리 → Mat 메모리 직접 복사
-		//	Buffer.MemoryCopy((void*)ptr, (void*)mat.Data, bufferSize, bufferSize);
-
-		//	// 해제
-		//	gl.UnmapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER);
-		//	gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, 0);
-		//	gl.DeleteBuffers(1, pbo);
-
-		//	gl.BindFramebufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, 0);
-		//	gl.DeleteFramebuffersEXT(1, fbo);
-
-		//	return mat;
-		//}
-
-
-
 		public static Bitmap RenderTextureToBitmap(OpenGL gl, uint textureId, uint texturebBpp, uint displayBpp, Action action)
 		{
 			Bitmap bmp = TextureToBitmap(gl, textureId, texturebBpp);

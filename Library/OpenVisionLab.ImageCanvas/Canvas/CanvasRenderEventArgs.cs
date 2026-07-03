@@ -1,4 +1,4 @@
-using SharpGL;
+﻿using SharpGL;
 using System;
 
 namespace OpenVisionLab.ImageCanvas.Canvas

@@ -1,0 +1,70 @@
+<UserControl x:Class="OpenVisionLab.OpenVisionPendingToolView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             MinWidth="720"
+             MinHeight="420"
+             Background="#EEF2F6">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../../../Wpf/OpenVisionLabWpfTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <SolidColorBrush x:Key="PendingTool.TextBrush" Color="#243040" />
+            <SolidColorBrush x:Key="PendingTool.MutedBrush" Color="#657487" />
+            <SolidColorBrush x:Key="PendingTool.AccentBrush" Color="#157C86" />
+            <SolidColorBrush x:Key="PendingTool.PanelBrush" Color="#F8FBFD" />
+            <SolidColorBrush x:Key="PendingTool.LineBrush" Color="#CCDCE2" />
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Background="#EEF2F6">
+        <Border Width="520"
+                Padding="28"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{StaticResource PendingTool.PanelBrush}"
+                BorderBrush="{StaticResource PendingTool.LineBrush}"
+                BorderThickness="1">
+            <StackPanel>
+                <iconPacks:PackIconMaterial Kind="{Binding IconKind}"
+                                            Width="36"
+                                            Height="36"
+                                            Foreground="{StaticResource PendingTool.AccentBrush}"
+                                            HorizontalAlignment="Left" />
+                <TextBlock Text="{Binding Title}"
+                           Margin="0,16,0,0"
+                           Foreground="{StaticResource PendingTool.TextBrush}"
+                           FontFamily="Segoe UI"
+                           FontSize="22"
+                           FontWeight="SemiBold" />
+                <Border Margin="0,14,0,0"
+                        HorizontalAlignment="Left"
+                        Background="#D8ECEE"
+                        BorderBrush="#9DC6CD"
+                        BorderThickness="1"
+                        Padding="9,3">
+                    <TextBlock Text="{Binding StatusText}"
+                               Foreground="{StaticResource PendingTool.AccentBrush}"
+                               FontFamily="Segoe UI"
+                               FontSize="11"
+                               FontWeight="SemiBold" />
+                </Border>
+                <TextBlock Text="{Binding MessageText}"
+                           Margin="0,18,0,0"
+                           Foreground="{StaticResource PendingTool.TextBrush}"
+                           FontFamily="Segoe UI"
+                           FontSize="13"
+                           TextWrapping="Wrap"
+                           LineHeight="20" />
+                <TextBlock Text="{Binding RouteText}"
+                           Margin="0,10,0,0"
+                           Foreground="{StaticResource PendingTool.MutedBrush}"
+                           FontFamily="Segoe UI"
+                           FontSize="12"
+                           TextWrapping="Wrap"
+                           LineHeight="18" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

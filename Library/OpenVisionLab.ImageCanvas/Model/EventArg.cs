@@ -11,7 +11,7 @@ namespace OpenVisionLab.ImageCanvas.Model
 	public class RoiChangedEventArgs
 	{
 		private bool _handled = false;
-		private IEnumerable<PointF> _robotPos = new List<PointF>();
+		private IEnumerable<PointF> _canvasPoints = new List<PointF>();
 		private IEnumerable<Point> _pixelPos = new List<Point>();
 		private float _zoomScale = 0;
 
@@ -21,9 +21,9 @@ namespace OpenVisionLab.ImageCanvas.Model
 		}
 
 
-		public RoiChangedEventArgs(IEnumerable<PointF> robotPos, IEnumerable<Point> pixelPos)
+		public RoiChangedEventArgs(IEnumerable<PointF> canvasPoints, IEnumerable<Point> pixelPos)
 		{
-			_robotPos = robotPos;
+			_canvasPoints = canvasPoints;
 			_pixelPos = pixelPos;
 		}
 
@@ -35,15 +35,15 @@ namespace OpenVisionLab.ImageCanvas.Model
 			set { _zoomScale = value; }
 		}
 
-		public IEnumerable<PointF> RobotPos
+		public IEnumerable<PointF> CanvasPoints
 		{
 			get
 			{
-				return _robotPos;
+				return _canvasPoints;
 			}
 			set
 			{
-				_robotPos = value;
+				_canvasPoints = value;
 			}
 		}
 		public IEnumerable<Point> PixelPos
@@ -71,32 +71,22 @@ namespace OpenVisionLab.ImageCanvas.Model
 			get => _group;
 			set => _group = value;
 		}
-
-		//public string UniqueId { get; set; }
-
-		//private bool _isExtentionRectange;
-		//public bool IsExtentionRectange
-		//{
-		//	get => _isExtentionRectange;
-		//	set => _isExtentionRectange = value;
-		//}
-
 		public override string ToString()
 		{
-			return String.Format($"Robot : {String.Join(",", RobotPos.Select(x => String.Format($"({x.X},{x.Y})")))}, PixelPos : {String.Join(",", PixelPos.Select(x => String.Format($"({x.X},{x.Y})")))}");
+			return String.Format($"Canvas : {String.Join(",", CanvasPoints.Select(x => String.Format($"({x.X},{x.Y})")))}, PixelPos : {String.Join(",", PixelPos.Select(x => String.Format($"({x.X},{x.Y})")))}");
 		}
 	}
 
 	public class MouseEventArgsEx : System.Windows.Forms.MouseEventArgs
 	{
 		private bool _handled = false;
-		private PointF _robotPos;
+		private PointF _canvasPos;
 		private PointF _pxelPos;
 		private Color _pixelColor;
-		public MouseEventArgsEx(MouseButtons button, int clicks, int x, int y, int delta, float robotX, float robotY, int pixelX, int pixelY)
+		public MouseEventArgsEx(MouseButtons button, int clicks, int x, int y, int delta, float canvasX, float canvasY, int pixelX, int pixelY)
 			: base(button, clicks, x, y, delta)
 		{
-			_robotPos = new PointF(robotX, robotY);
+			_canvasPos = new PointF(canvasX, canvasY);
 			_pxelPos = new Point(pixelX, pixelY);
 		}
 
@@ -112,11 +102,11 @@ namespace OpenVisionLab.ImageCanvas.Model
 			}
 		}
 
-		public PointF RobotPos
+		public PointF CanvasPos
 		{
 			get
 			{
-				return _robotPos;
+				return _canvasPos;
 			}
 		}
 

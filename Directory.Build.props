@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <OpenVisionLabRepoRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)'))</OpenVisionLabRepoRoot>
+    <OpenVisionLabDllRoot>$(OpenVisionLabRepoRoot)dll\</OpenVisionLabDllRoot>
+    <OpenVisionLabLibraryNoahDllRoot>$(OpenVisionLabDllRoot)Library-Noah\</OpenVisionLabLibraryNoahDllRoot>
+    <OpenVisionLabOpenCvSharpDllRoot>$(OpenVisionLabDllRoot)OpenCVSharp\</OpenVisionLabOpenCvSharpDllRoot>
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;obj\**;artifacts\**</DefaultItemExcludes>
+    <Authors>최노아(Noah-Choi)</Authors>
+    <Company>최노아(Noah-Choi)</Company>
+    <Copyright>Copyright (c) 2026 최노아(Noah-Choi)</Copyright>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+  </PropertyGroup>
+</Project>

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Forms;
 using System.Reflection;
 using System.IO;
 using System.Xml;
@@ -21,7 +20,7 @@ namespace OpenVisionLab
         {
             try
             {
-                string strPath = $"{Application.StartupPath}\\CONFIG\\ACCOUNT\\"+ m_XMLName + ".xml";
+                string strPath = Path.Combine(AppPathService.EnsureDirectory("CONFIG", "ACCOUNT"), m_XMLName + ".xml");
 
                 if (File.Exists(strPath))
                 {
@@ -114,10 +113,7 @@ namespace OpenVisionLab
 
         public bool SaveConfig()
         {
-            CUtil.InitDirectory("CONFIG");
-            CUtil.InitDirectory("CONFIG\\ACCOUNT\\");
-
-            string strPath = $"{Application.StartupPath}\\CONFIG\\ACCOUNT\\" + m_XMLName + ".xml";
+            string strPath = Path.Combine(AppPathService.EnsureDirectory("CONFIG", "ACCOUNT"), m_XMLName + ".xml");
 
             XmlWriterSettings settings = new XmlWriterSettings();
             settings.Indent = true;

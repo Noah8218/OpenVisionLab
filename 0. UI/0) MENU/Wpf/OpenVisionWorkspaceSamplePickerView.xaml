@@ -1,0 +1,739 @@
+<UserControl x:Class="OpenVisionLab.OpenVisionWorkspaceSamplePickerView"
+             x:ClassModifier="internal"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             MinWidth="920"
+             MinHeight="560"
+             Background="#0D171B"
+             AutomationProperties.AutomationId="WorkspaceSamplePickerView">
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="SamplePicker.SurfaceBrush" Color="#0D171B" />
+        <SolidColorBrush x:Key="SamplePicker.PanelBrush" Color="#111F24" />
+        <SolidColorBrush x:Key="SamplePicker.HeaderBrush" Color="#182D34" />
+        <SolidColorBrush x:Key="SamplePicker.LineBrush" Color="#2B5E69" />
+        <SolidColorBrush x:Key="SamplePicker.TextBrush" Color="#E9F7F8" />
+        <SolidColorBrush x:Key="SamplePicker.MutedTextBrush" Color="#9AB0BA" />
+        <SolidColorBrush x:Key="SamplePicker.AccentBrush" Color="#89F1F7" />
+        <SolidColorBrush x:Key="SamplePicker.AccentSoftBrush" Color="#173B43" />
+        <SolidColorBrush x:Key="SamplePicker.DarkPreviewBrush" Color="#05090A" />
+
+        <Style TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{StaticResource SamplePicker.TextBrush}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+
+        <Style x:Key="SamplePicker.SectionTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource SamplePicker.AccentBrush}" />
+        </Style>
+
+        <Style x:Key="SamplePicker.PanelStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource SamplePicker.PanelBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource SamplePicker.LineBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style x:Key="SamplePicker.TextBoxStyle" TargetType="TextBox">
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="BorderBrush" Value="{StaticResource SamplePicker.LineBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="#091113" />
+            <Setter Property="Foreground" Value="{StaticResource SamplePicker.TextBrush}" />
+            <Setter Property="CaretBrush" Value="{StaticResource SamplePicker.AccentBrush}" />
+        </Style>
+
+        <Style x:Key="SamplePicker.SecondaryButtonStyle" TargetType="Button">
+            <Setter Property="MinHeight" Value="28" />
+            <Setter Property="Padding" Value="10,3" />
+            <Setter Property="Background" Value="#173B43" />
+            <Setter Property="BorderBrush" Value="{StaticResource SamplePicker.AccentBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{StaticResource SamplePicker.TextBrush}" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+
+        <Style x:Key="SamplePicker.ListBoxStyle" TargetType="ListBox">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+        </Style>
+
+        <Style TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,0,1" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Foreground" Value="{StaticResource SamplePicker.TextBrush}" />
+            <Setter Property="Background" Value="#101D22" />
+            <Setter Property="BorderBrush" Value="#284D56" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#17343B" />
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#114A54" />
+                    <Setter Property="BorderBrush" Value="{StaticResource SamplePicker.AccentBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource SamplePicker.SurfaceBrush}" Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Style="{StaticResource SamplePicker.PanelStyle}"
+                Background="{StaticResource SamplePicker.HeaderBrush}"
+                Padding="14,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="260" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="{Binding HeaderText}"
+                               FontSize="16"
+                               FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding IntroText}"
+                               Foreground="{StaticResource SamplePicker.MutedTextBrush}"
+                               TextWrapping="Wrap"
+                               TextTrimming="None"
+                               Margin="0,4,22,0" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="{Binding SearchLabelText}"
+                               Style="{StaticResource SamplePicker.SectionTitleStyle}" />
+                    <TextBox AutomationProperties.AutomationId="WorkspaceSamplePickerSearchBox"
+                             Style="{StaticResource SamplePicker.TextBoxStyle}"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="{Binding SearchHintText}"
+                             Margin="0,5,0,0" />
+                    <TextBlock Text="{Binding ResultCountText}"
+                               Foreground="{StaticResource SamplePicker.MutedTextBrush}"
+                               FontSize="11"
+                               Margin="0,4,0,0" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="340" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0"
+                    Style="{StaticResource SamplePicker.PanelStyle}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0"
+                            Background="#172A31"
+                            BorderBrush="{StaticResource SamplePicker.LineBrush}"
+                            BorderThickness="0,0,0,1"
+                            Padding="12,9">
+                        <TextBlock Text="{Binding CatalogSourceLabelText}"
+                                   Style="{StaticResource SamplePicker.SectionTitleStyle}" />
+                    </Border>
+
+                    <Border Grid.Row="1"
+                            Background="#0E2328"
+                            BorderBrush="{StaticResource SamplePicker.LineBrush}"
+                            BorderThickness="0,0,0,1"
+                            Padding="10,8">
+                        <StackPanel>
+                            <TextBlock AutomationProperties.AutomationId="WorkspaceSamplePickerCatalogSourceSummary"
+                                       Text="{Binding ActiveCatalogSourceText}"
+                                       Foreground="{StaticResource SamplePicker.MutedTextBrush}"
+                                       FontSize="11"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="None" />
+                            <ListBox AutomationProperties.AutomationId="WorkspaceSamplePickerCatalogSourceList"
+                                     Style="{StaticResource SamplePicker.ListBoxStyle}"
+                                     ItemsSource="{Binding CatalogSourceOptions}"
+                                     SelectedItem="{Binding SelectedCatalogSourceOption, Mode=TwoWay}"
+                                     Margin="0,8,0,0">
+                                <ListBox.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ListBox.ItemsPanel>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid MinWidth="126"
+                                              Margin="8,6">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Text="{Binding DisplayName}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="11" />
+                                            <TextBlock Grid.Row="1"
+                                                       Text="{Binding SampleCountText}"
+                                                       Foreground="{StaticResource SamplePicker.MutedTextBrush}"
+                                                       FontSize="10"
+                                                       Margin="0,2,0,0" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="2"
+                            Background="#172A31"
+                            BorderBrush="{StaticResource SamplePicker.LineBrush}"
+                            BorderThickness="0,0,0,1"
+                            Padding="12,9">
+                        <TextBlock Text="{Binding SampleFocusLabelText}"
+                                   Style="{StaticResource SamplePicker.SectionTitleStyle}" />
+                    </Border>
+
+                    <Border Grid.Row="3"
+                            Background="#0E2328"
+                            BorderBrush="{StaticResource SamplePicker.LineBrush}"
+                            BorderThickness="0,0,0,1"
+                            Padding="10,8">
+                        <StackPanel>
+                            <TextBlock AutomationProperties.AutomationId="WorkspaceSamplePickerSampleFocusSummary"
+                                       Text="{Binding ActiveSampleFocusText}"
+                                       Foreground="{StaticResource SamplePicker.MutedTextBrush}"
+                                       FontSize="11"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="None" />
+                            <ListBox AutomationProperties.AutomationId="WorkspaceSamplePickerSampleFocusList"
+                                     Style="{StaticResource SamplePicker.ListBoxStyle}"
+                                     ItemsSource="{Binding SampleFocusOptions}"
+                                     SelectedItem="{Binding SelectedSampleFocusOption, Mode=TwoWay}"
+                                     MaxHeight="118"
+                                     Margin="0,8,0,0">
+                                <ListBox.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ListBox.ItemsPanel>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid MinWidth="88"
+                                              Margin="8,6">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Text="{Binding DisplayName}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="11" />
+                                            <TextBlock Grid.Row="1"
+                                                       Text="{Binding SampleCountText}"
+                                                       Foreground="{StaticResource SamplePicker.MutedTextBrush}"
+                                                       FontSize="10"
+                                                       Margin="0,2,0,0" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="4"
+                            Background="#172A31"
+                            BorderBrush="{StaticResource SamplePicker.LineBrush}"
+                            BorderThickness="0,0,0,1"
+                            Padding="12,9">
+                        <TextBlock Text="{Binding LearnPathLabelText}"
+                                   Style="{StaticResource SamplePicker.SectionTitleStyle}" />
+                    </Border>
+
+                    <Border Grid.Row="5"
+                            Background="#0E2328"
+                            BorderBrush="{StaticResource SamplePicker.LineBrush}"
+                            BorderThickness="0,0,0,1"
+                            Padding="10,8">
+                        <StackPanel>
+                            <TextBlock AutomationProperties.AutomationId="WorkspaceSamplePickerLearnPathSummary"
+                                       Text="{Binding ActiveLearnPathText}"
+                                       Foreground="{StaticResource SamplePicker.MutedTextBrush}"
+                                       FontSize="11"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="None" />
+                            <ListBox AutomationProperties.AutomationId="WorkspaceSamplePickerLearnPathList"
+                                     Style="{StaticResource SamplePicker.ListBoxStyle}"
+                                     ItemsSource="{Binding LearnPathOptions}"
+                                     SelectedItem="{Binding SelectedLearnPathOption, Mode=TwoWay}"
+                                     MaxHeight="150"
+                                     Margin="0,8,0,0">
+                                <ListBox.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ListBox.ItemsPanel>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid MinWidth="92"
+                                              Margin="8,6">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Text="{Binding DisplayName}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="11" />
+                                            <TextBlock Grid.Row="1"
+                                                       Text="{Binding SampleCountText}"
+                                                       Foreground="{StaticResource SamplePicker.MutedTextBrush}"
+                                                       FontSize="10"
+                                                       Margin="0,2,0,0" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="6"
+                            Background="#172A31"
+                            BorderBrush="{StaticResource SamplePicker.LineBrush}"
+                            BorderThickness="0,0,0,1"
+                            Padding="12,8">
+                        <TextBlock Text="{Binding ListTitleText}"
+                                   Style="{StaticResource SamplePicker.SectionTitleStyle}" />
+                    </Border>
+
+                    <ListBox Grid.Row="7"
+                             AutomationProperties.AutomationId="WorkspaceSamplePickerList"
+                             Style="{StaticResource SamplePicker.ListBoxStyle}"
+                             ItemsSource="{Binding SamplesView}"
+                             SelectedItem="{Binding SelectedSample, Mode=TwoWay}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="10,8">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0"
+                                               Text="{Binding SampleName}"
+                                               FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Grid.Row="1"
+                                               Text="{Binding Category}"
+                                               Foreground="{StaticResource SamplePicker.AccentBrush}"
+                                               FontSize="11"
+                                               Margin="0,3,0,0" />
+                                    <TextBlock Grid.Row="2"
+                                               Text="{Binding Goal}"
+                                               Foreground="{StaticResource SamplePicker.MutedTextBrush}"
+                                               FontSize="11"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
+                                               MaxHeight="34"
+                                               Margin="0,4,0,0" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="2"
+                    Style="{StaticResource SamplePicker.PanelStyle}"
+                    AutomationProperties.AutomationId="WorkspaceSamplePickerDetail">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="220" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0"
+                            Background="#172A31"
+                            BorderBrush="{StaticResource SamplePicker.LineBrush}"
+                            BorderThickness="0,0,0,1"
+                            Padding="12,9">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="{Binding DetailTitleText}"
+                                           Style="{StaticResource SamplePicker.SectionTitleStyle}" />
+                                <TextBlock AutomationProperties.AutomationId="WorkspaceSamplePickerSelectedSummary"
+                                           Text="{Binding SelectionSummaryText}"
+                                           FontWeight="SemiBold"
+                                           Margin="0,4,0,0" />
+                                <Border AutomationProperties.AutomationId="WorkspaceSamplePickerBenchmarkStrip"
+                                        Background="#0E2328"
+                                        BorderBrush="#356A73"
+                                        BorderThickness="1"
+                                        Padding="8,6"
+                                        Margin="0,8,24,0">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding BenchmarkLabelText}"
+                                                   Style="{StaticResource SamplePicker.SectionTitleStyle}" />
+                                        <StackPanel Grid.Column="1"
+                                                    Orientation="Horizontal"
+                                                    VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding BenchmarkOutcomeText}"
+                                                       Foreground="{StaticResource SamplePicker.AccentBrush}"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock Text=" / "
+                                                       Foreground="{StaticResource SamplePicker.MutedTextBrush}" />
+                                            <TextBlock Text="{Binding BenchmarkPairText}"
+                                                       Foreground="{StaticResource SamplePicker.MutedTextBrush}" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Row="1"
+                                                   Grid.ColumnSpan="2"
+                                                   Text="{Binding BenchmarkSummaryText}"
+                                                   Foreground="{StaticResource SamplePicker.TextBrush}"
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="None"
+                                                   Margin="0,4,0,0" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1"
+                                        Width="300">
+                                <TextBlock Text="{Binding ManualPreviewNoticeText}"
+                                           Foreground="{StaticResource SamplePicker.MutedTextBrush}"
+                                           FontSize="11"
+                                           TextWrapping="Wrap"
+                                           TextTrimming="None" />
+                                <Border Background="#10262C"
+                                        BorderBrush="#356A73"
+                                        BorderThickness="1"
+                                        Padding="8,6"
+                                        Margin="0,8,0,0">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Text="{Binding LearnDocumentLabelText}"
+                                                   Style="{StaticResource SamplePicker.SectionTitleStyle}"
+                                                   FontSize="11" />
+                                        <TextBlock Grid.Row="1"
+                                                   Text="{Binding LearnDocumentDescriptionText}"
+                                                   Foreground="{StaticResource SamplePicker.TextBrush}"
+                                                   FontSize="11"
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="None"
+                                                   Margin="0,4,0,0" />
+                                        <Button Grid.Row="2"
+                                                AutomationProperties.AutomationId="WorkspaceSamplePickerOpenLearnDocumentButton"
+                                                Style="{StaticResource SamplePicker.SecondaryButtonStyle}"
+                                                Command="{Binding OpenLearnDocumentCommand}"
+                                                IsEnabled="{Binding HasLearnDocument}"
+                                                HorizontalAlignment="Right"
+                                                Margin="0,7,0,0">
+                                            <TextBlock Text="{Binding OpenLearnDocumentButtonText}"
+                                                       FontWeight="SemiBold" />
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Grid Grid.Row="1" Margin="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="360" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0"
+                                Background="{StaticResource SamplePicker.DarkPreviewBrush}"
+                                BorderBrush="#40616A"
+                                BorderThickness="1">
+                            <Image AutomationProperties.AutomationId="WorkspaceSamplePickerPreviewImage"
+                                   Source="{Binding SelectedImageSource}"
+                                   Stretch="Uniform" />
+                        </Border>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="{Binding ImageLabelText}"
+                                       Style="{StaticResource SamplePicker.SectionTitleStyle}" />
+                            <TextBlock Text="{Binding SelectedImageText}"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="None"
+                                       Foreground="{StaticResource SamplePicker.MutedTextBrush}"
+                                       Margin="0,4,0,12" />
+                            <TextBlock Text="{Binding PipelineLabelText}"
+                                       Style="{StaticResource SamplePicker.SectionTitleStyle}" />
+                            <TextBlock Text="{Binding SelectedPipelineText}"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="None"
+                                       Foreground="{StaticResource SamplePicker.MutedTextBrush}"
+                                       Margin="0,4,0,12" />
+                            <TextBlock Text="{Binding PairLabelText}"
+                                       Style="{StaticResource SamplePicker.SectionTitleStyle}" />
+                            <TextBlock Text="{Binding SelectedSample.PairText}"
+                                       Foreground="{StaticResource SamplePicker.MutedTextBrush}"
+                                       Margin="0,4,0,0" />
+                            <Border AutomationProperties.AutomationId="WorkspaceSamplePickerPairComparisonStrip"
+                                    Background="#10262C"
+                                    BorderBrush="#356A73"
+                                    BorderThickness="1"
+                                    Padding="8,6"
+                                    Margin="0,10,0,0"
+                                    Visibility="{Binding PairComparisonVisibility}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding PairComparisonLabelText}"
+                                               Style="{StaticResource SamplePicker.SectionTitleStyle}" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding PairComparisonSummaryText}"
+                                               Foreground="{StaticResource SamplePicker.AccentBrush}"
+                                               FontWeight="SemiBold"
+                                               FontSize="11" />
+                                    <TextBlock Grid.Row="1"
+                                               Grid.ColumnSpan="2"
+                                               Text="{Binding PairComparisonDetailText}"
+                                               Foreground="{StaticResource SamplePicker.TextBrush}"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
+                                               FontSize="11"
+                                               MaxHeight="48"
+                                               Margin="0,4,0,0" />
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+
+                    <ScrollViewer Grid.Row="2"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Margin="12,0,12,12">
+                        <StackPanel>
+                            <Border AutomationProperties.AutomationId="WorkspaceSamplePickerPairDecisionGuide"
+                                    Background="#0F242A"
+                                    BorderBrush="#3E7A84"
+                                    BorderThickness="1"
+                                    Padding="10,8"
+                                    Margin="0,0,0,12"
+                                    Visibility="{Binding PairDecisionVisibility}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="{Binding PairDecisionLabelText}"
+                                               Style="{StaticResource SamplePicker.SectionTitleStyle}"
+                                               FontSize="11" />
+                                    <Button Grid.Row="0"
+                                            Grid.Column="1"
+                                            AutomationProperties.AutomationId="WorkspaceSamplePickerSelectCounterpartButton"
+                                            Style="{StaticResource SamplePicker.SecondaryButtonStyle}"
+                                            Command="{Binding SelectCounterpartSampleCommand}"
+                                            Margin="8,0,0,0">
+                                        <TextBlock Text="{Binding SelectCounterpartSampleButtonText}"
+                                                   FontWeight="SemiBold" />
+                                    </Button>
+                                    <TextBlock Grid.Row="1"
+                                               Grid.ColumnSpan="2"
+                                               Text="{Binding PairDecisionSummaryText}"
+                                               FontWeight="SemiBold"
+                                               FontSize="11"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
+                                               Margin="0,5,0,0" />
+                                    <TextBlock Grid.Row="2"
+                                               Grid.ColumnSpan="2"
+                                               AutomationProperties.AutomationId="WorkspaceSamplePickerPairDecisionNextAction"
+                                               Text="{Binding PairDecisionNextActionText}"
+                                               Foreground="{StaticResource SamplePicker.TextBrush}"
+                                               FontWeight="SemiBold"
+                                               FontSize="11"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
+                                               Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="3"
+                                               Grid.ColumnSpan="2"
+                                               AutomationProperties.AutomationId="WorkspaceSamplePickerPairDecisionChecklist"
+                                               Text="{Binding PairDecisionChecklistText}"
+                                               Foreground="{StaticResource SamplePicker.TextBrush}"
+                                               FontSize="11"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
+                                               Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="4"
+                                               Grid.ColumnSpan="2"
+                                               Text="{Binding PairDecisionMetricText}"
+                                               Foreground="{StaticResource SamplePicker.AccentBrush}"
+                                               FontSize="11"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
+                                               Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="5"
+                                               Grid.ColumnSpan="2"
+                                               Text="{Binding PairDecisionWorkflowText}"
+                                               Foreground="{StaticResource SamplePicker.MutedTextBrush}"
+                                               FontSize="11"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
+                                               Margin="0,6,0,0" />
+                                </Grid>
+                            </Border>
+
+                            <Border AutomationProperties.AutomationId="WorkspaceSamplePickerLearnModeStrip"
+                                    Background="#10262C"
+                                    BorderBrush="#356A73"
+                                    BorderThickness="1"
+                                    Padding="10,8"
+                                    Margin="0,0,0,12">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="{Binding LearnModeLabelText}"
+                                               Style="{StaticResource SamplePicker.SectionTitleStyle}"
+                                               FontSize="11" />
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="1"
+                                               Text="{Binding LearnModeText}"
+                                               FontWeight="SemiBold"
+                                               FontSize="11"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None" />
+                                    <TextBlock Grid.Row="1"
+                                               Grid.Column="0"
+                                               Text="{Binding RecommendedStartLabelText}"
+                                               Style="{StaticResource SamplePicker.SectionTitleStyle}"
+                                               FontSize="11"
+                                               Margin="0,7,0,0" />
+                                    <TextBlock Grid.Row="1"
+                                               Grid.Column="1"
+                                               Text="{Binding RecommendedStartText}"
+                                               FontSize="11"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
+                                               Margin="0,7,0,0" />
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="{Binding ResultExplanationLabelText}"
+                                               Style="{StaticResource SamplePicker.SectionTitleStyle}"
+                                               FontSize="11"
+                                               Margin="0,7,0,0" />
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="1"
+                                               Text="{Binding ResultExplanationText}"
+                                               FontSize="11"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
+                                               Margin="0,7,0,0" />
+                                    <TextBlock Grid.Row="3"
+                                               Grid.Column="0"
+                                               Text="{Binding FailureCauseLabelText}"
+                                               Style="{StaticResource SamplePicker.SectionTitleStyle}"
+                                               FontSize="11"
+                                               Margin="0,7,0,0" />
+                                    <TextBlock Grid.Row="3"
+                                               Grid.Column="1"
+                                               Text="{Binding FailureCauseText}"
+                                               FontSize="11"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
+                                               Margin="0,7,0,0" />
+                                </Grid>
+                            </Border>
+
+                            <TextBlock Text="{Binding GoalLabelText}"
+                                       Style="{StaticResource SamplePicker.SectionTitleStyle}" />
+                            <TextBlock Text="{Binding SelectedSample.Goal}"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="None"
+                                       Margin="0,4,0,12" />
+
+                            <TextBlock Text="{Binding FlowLabelText}"
+                                       Style="{StaticResource SamplePicker.SectionTitleStyle}" />
+                            <TextBlock AutomationProperties.AutomationId="WorkspaceSamplePickerToolFlow"
+                                       Text="{Binding SelectedSample.ToolFlowText}"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="None"
+                                       Margin="0,4,0,12" />
+
+                            <TextBlock Text="{Binding ExpectedLabelText}"
+                                       Style="{StaticResource SamplePicker.SectionTitleStyle}" />
+                            <TextBlock AutomationProperties.AutomationId="WorkspaceSamplePickerExpected"
+                                       Text="{Binding SelectedSample.ExpectedText}"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="None"
+                                       Margin="0,4,0,12" />
+
+                            <TextBlock Text="{Binding CheckLabelText}"
+                                       Style="{StaticResource SamplePicker.SectionTitleStyle}" />
+                            <TextBlock Text="{Binding SelectedSample.CheckGuideText}"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="None"
+                                       Margin="0,4,0,12" />
+
+                            <TextBlock Text="{Binding FixLabelText}"
+                                       Style="{StaticResource SamplePicker.SectionTitleStyle}" />
+                            <TextBlock Text="{Binding SelectedSample.FixGuideText}"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="None"
+                                       Margin="0,4,0,0" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

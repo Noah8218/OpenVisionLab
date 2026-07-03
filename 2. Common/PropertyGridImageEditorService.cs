@@ -1,4 +1,4 @@
-using Lib.Common;
+﻿using Lib.Common;
 using OpenCvSharp;
 using OpenVisionLab._1._Core;
 using System;
@@ -16,6 +16,7 @@ namespace OpenVisionLab
         private const double MinimumTemplateMatchScore = 0.5;
         private Func<IDisplayManager> runtimeContextAccessor;
         private Func<string> recipeNameAccessor = () => string.Empty;
+        private Func<string> sourceLayerNameAccessor = () => string.Empty;
 
         public PropertyGridImageEditorService(Func<IDisplayManager> contextAccessor)
         {
@@ -38,34 +39,57 @@ namespace OpenVisionLab
             this.recipeNameAccessor = recipeNameAccessor ?? (() => string.Empty);
         }
 
+        public void SetSourceLayerContext(Func<string> sourceLayerNameAccessor)
+        {
+            this.sourceLayerNameAccessor = sourceLayerNameAccessor ?? (() => string.Empty);
+        }
+
         public Mat GetSourceImage()
         {
-            return RuntimeContext.GetImageSrc();
+            Bitmap sourceBitmap = ResolveSourceBitmap(RuntimeContext, GetSourceLayerName());
+            return ToMatSafely(sourceBitmap);
         }
 
-        public FormImageEditView CreateImageEditView(Mat sourceImage, Rectangle roi, string mode)
+        public IPropertyGridImageEditView CreateImageEditView(Mat sourceImage, Rectangle roi, string mode)
         {
-            return new FormImageEditView(CreateSourceBitmap(sourceImage), roi, mode);
+            using Bitmap bitmap = CreateSourceBitmap(sourceImage);
+            if (string.Equals(mode, "TRAIN", StringComparison.OrdinalIgnoreCase))
+            {
+                return new OpenGlTemplateEditorWindow(bitmap, roi, mode);
+            }
+
+            return new RoiEditorWindow(bitmap, roi, mode);
         }
 
-        public FormImageEditView CreateImageEditView(Mat sourceImage, List<Rect> roi, string mode)
+        public IPropertyGridImageEditView CreateImageEditView(Mat sourceImage, List<Rect> roi, string mode)
         {
-            return new FormImageEditView(CreateSourceBitmap(sourceImage), roi ?? new List<Rect>(), mode);
+            using Bitmap bitmap = CreateSourceBitmap(sourceImage);
+            return new RoiEditorWindow(bitmap, roi ?? new List<Rect>(), mode);
+        }
+
+        public double LoadTemplateRotationDegrees(string templatePath)
+        {
+            return LoadTemplateRotationMetadata(templatePath);
         }
 
         public string SaveTemplateImage(Mat sourceImage, Rect selectedRegion)
+        {
+            return SaveTemplateImage(sourceImage, selectedRegion, 0D);
+        }
+
+        public string SaveTemplateImage(Mat sourceImage, Rect selectedRegion, double rotationDegrees)
         {
             Rect templateRegion = ClampToMatBounds(sourceImage, selectedRegion);
             if (!IsValidRoi(templateRegion)) { return string.Empty; }
 
             string path = $@"{RecipeWorkspaceService.GetPatternDirectory(recipeNameAccessor())}\{DateTime.Now:yyyyMMdd_HHmmss}.bmp";
 
-            using (Mat imageTemplate = sourceImage.SubMat(templateRegion).Clone())
+            using (Mat imageTemplate = TemplateImageExtraction.Extract(sourceImage, templateRegion, rotationDegrees))
             {
                 Cv2.ImWrite(path, imageTemplate);
             }
 
-            SaveTemplateRoiMetadata(path, templateRegion, sourceImage.Size());
+            SaveTemplateRoiMetadata(path, templateRegion, sourceImage.Size(), rotationDegrees);
             return path;
         }
 
@@ -77,11 +101,16 @@ namespace OpenVisionLab
             return FindTemplateRoi(sourceImage, templatePath);
         }
 
-        private static void SaveTemplateRoiMetadata(string templatePath, Rect selectedRegion, OpenCvSharp.Size sourceSize)
+        private static void SaveTemplateRoiMetadata(
+            string templatePath,
+            Rect selectedRegion,
+            OpenCvSharp.Size sourceSize,
+            double rotationDegrees)
         {
             if (string.IsNullOrWhiteSpace(templatePath) || !IsValidRoi(selectedRegion)) { return; }
 
             string metadataPath = GetTemplateRoiMetadataPath(templatePath);
+            double normalizedRotationDegrees = TemplateImageExtraction.NormalizeRotationDegrees(rotationDegrees);
             string content = string.Join(Environment.NewLine, new[]
             {
                 $"Format={TemplateRoiFormat}",
@@ -91,7 +120,8 @@ namespace OpenVisionLab
                 $"Width={selectedRegion.Width.ToString(CultureInfo.InvariantCulture)}",
                 $"Height={selectedRegion.Height.ToString(CultureInfo.InvariantCulture)}",
                 $"SourceWidth={sourceSize.Width.ToString(CultureInfo.InvariantCulture)}",
-                $"SourceHeight={sourceSize.Height.ToString(CultureInfo.InvariantCulture)}"
+                $"SourceHeight={sourceSize.Height.ToString(CultureInfo.InvariantCulture)}",
+                $"RotationDegrees={normalizedRotationDegrees.ToString("0.###", CultureInfo.InvariantCulture)}"
             });
 
             File.WriteAllText(metadataPath, content);
@@ -124,6 +154,27 @@ namespace OpenVisionLab
             }
 
             return width > 0 && height > 0 ? new Rect(x, y, width, height) : new Rect();
+        }
+
+        private static double LoadTemplateRotationMetadata(string templatePath)
+        {
+            if (string.IsNullOrWhiteSpace(templatePath)) { return 0D; }
+
+            string metadataPath = GetTemplateRoiMetadataPath(templatePath);
+            if (!File.Exists(metadataPath)) { return 0D; }
+
+            foreach (string line in File.ReadAllLines(metadataPath))
+            {
+                string[] parts = line.Split(new[] { '=' }, 2);
+                if (parts.Length != 2) { continue; }
+                if (!string.Equals(parts[0].Trim(), "RotationDegrees", StringComparison.OrdinalIgnoreCase)) { continue; }
+                if (double.TryParse(parts[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedValue))
+                {
+                    return TemplateImageExtraction.NormalizeRotationDegrees(parsedValue);
+                }
+            }
+
+            return 0D;
         }
 
         private static Rect FindTemplateRoi(Mat sourceImage, string templatePath)
@@ -198,10 +249,133 @@ namespace OpenVisionLab
         {
             if (sourceImage == null || sourceImage.Empty())
             {
-                return new Bitmap(10, 10);
+                return new Bitmap(10, 10, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
             }
 
-            return CImageConverter.ToBitmap(sourceImage);
+            try
+            {
+                return BitmapImageConverter.ToBitmap(sourceImage);
+            }
+            catch
+            {
+                return new Bitmap(10, 10, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+            }
+        }
+
+        private string GetSourceLayerName()
+        {
+            try
+            {
+                return sourceLayerNameAccessor() ?? string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private static Bitmap ResolveSourceBitmap(IDisplayManager displayManager, string sourceLayerName)
+        {
+            if (displayManager == null)
+            {
+                return null;
+            }
+
+            // PropertyGrid editors are generic, so prefer the active tool input layer before shell focus/selection.
+            Bitmap image = ResolveLayerBitmap(displayManager, sourceLayerName);
+            if (IsUsableBitmap(image)) { return image; }
+
+            image = ResolveLayerBitmap(displayManager, displayManager.FocusItem);
+            if (IsUsableBitmap(image)) { return image; }
+
+            image = ResolveLayerBitmap(displayManager, displayManager.SelectedItem);
+            if (IsUsableBitmap(image)) { return image; }
+
+            image = ResolveLayerBitmap(displayManager, "Main");
+            if (IsUsableBitmap(image)) { return image; }
+
+            image = displayManager.ImageSpace?.GetActiveImage();
+            if (IsUsableBitmap(image)) { return image; }
+
+            IReadOnlyList<DisplayLayerInfo> layers = displayManager.GetLayerInfos();
+            if (layers != null)
+            {
+                foreach (DisplayLayerInfo layer in layers)
+                {
+                    image = ResolveLayerBitmap(displayManager, layer?.Title);
+                    if (IsUsableBitmap(image)) { return image; }
+                }
+            }
+
+            return null;
+        }
+
+        private static Bitmap ResolveLayerBitmap(IDisplayManager displayManager, string layerName)
+        {
+            return string.IsNullOrWhiteSpace(layerName)
+                ? null
+                : displayManager.GetLayerImage(layerName);
+        }
+
+        private static Mat ToMatSafely(Bitmap sourceBitmap)
+        {
+            if (!IsUsableBitmap(sourceBitmap))
+            {
+                return new Mat();
+            }
+
+            try
+            {
+                using Bitmap compatibleBitmap = WpfBitmapSourceFactory.CloneCompatibleBitmap(sourceBitmap);
+                try
+                {
+                    return ImageSpaceFrameAdapter.ToMat(compatibleBitmap);
+                }
+                catch
+                {
+                    return CreateMatFromPixels(compatibleBitmap);
+                }
+            }
+            catch
+            {
+                return new Mat();
+            }
+        }
+
+        private static Mat CreateMatFromPixels(Bitmap bitmap)
+        {
+            if (bitmap == null || bitmap.Width <= 0 || bitmap.Height <= 0)
+            {
+                return new Mat();
+            }
+
+            Mat image = new Mat(bitmap.Height, bitmap.Width, MatType.CV_8UC3);
+            try
+            {
+                for (int y = 0; y < bitmap.Height; y++)
+                {
+                    for (int x = 0; x < bitmap.Width; x++)
+                    {
+                        Color color = bitmap.GetPixel(x, y);
+                        image.Set(y, x, new Vec3b(color.B, color.G, color.R));
+                    }
+                }
+
+                return image;
+            }
+            catch
+            {
+                image.Dispose();
+                return new Mat();
+            }
+        }
+
+        private static bool IsUsableBitmap(Bitmap image)
+        {
+            return image != null
+                && image.Width > 0
+                && image.Height > 0
+                && !DisplayManagerImageExtensions.IsPlaceholderBitmap(image);
         }
     }
 }

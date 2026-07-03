@@ -8,7 +8,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using System.Xml;
 using Lib.Common;
 using OpenCvSharp;
@@ -49,7 +48,7 @@ namespace OpenVisionLab
         {
             try
             {
-                string strPath = Application.StartupPath + "\\CONFIG\\DEVICE\\" + NAME + INDEX.ToString() + ".xml";
+                string strPath = Path.Combine(AppPathService.EnsureDirectory("CONFIG", "DEVICE"), NAME + INDEX.ToString() + ".xml");
 
                 if (File.Exists(strPath))
                 {
@@ -101,7 +100,7 @@ namespace OpenVisionLab
         }
         public bool SaveConfig()
         {
-            string strPath = Application.StartupPath + "\\CONFIG\\DEVICE\\" + NAME + INDEX.ToString() + ".xml";
+            string strPath = Path.Combine(AppPathService.EnsureDirectory("CONFIG", "DEVICE"), NAME + INDEX.ToString() + ".xml");
 
             XmlWriterSettings settings = new XmlWriterSettings();
             settings.Indent = true;

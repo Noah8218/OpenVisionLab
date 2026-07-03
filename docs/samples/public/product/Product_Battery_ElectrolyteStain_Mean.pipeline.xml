@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VisionPipeline>
+  <Name>Product_Battery_ElectrolyteStain_Mean</Name>
+  <Steps>
+    <Step>
+      <Name>01 Battery Electrolyte Stain Mean</Name>
+      <ToolType>Mean</ToolType>
+      <Enabled>true</Enabled>
+      <InputLayer>Main</InputLayer>
+      <OutputLayer>Battery_ElectrolyteStain_Preview</OutputLayer>
+      <Parameters>
+        <Parameter><Key>Name</Key><Value>Product_Battery_ElectrolyteStain_Mean</Value></Parameter>
+        <Parameter><Key>MEAN_TYPES</Key><Value>Mean</Value></Parameter>
+        <Parameter><Key>USE_THRESHOLD</Key><Value>false</Value></Parameter>
+        <Parameter><Key>USE_ADAPTIVE_THRESHOLD</Key><Value>false</Value></Parameter>
+        <Parameter><Key>USE_BITWISENOT</Key><Value>false</Value></Parameter>
+        <Parameter><Key>USE_ROI</Key><Value>true</Value></Parameter>
+        <Parameter><Key>CvROI</Key><Value>112,130,352,148</Value></Parameter>
+        <Parameter><Key>USE_MULTI_ROI</Key><Value>false</Value></Parameter>
+      </Parameters>
+      <UseAcceptance>true</UseAcceptance>
+      <ExpectedSuccess>true</ExpectedSuccess>
+      <AcceptanceMetricName>MeanValueAvg</AcceptanceMetricName>
+      <UseAcceptanceMetricMinimum>true</UseAcceptanceMetricMinimum>
+      <AcceptanceMetricMinimum>70</AcceptanceMetricMinimum>
+      <UseAcceptanceMetricMaximum>true</UseAcceptanceMetricMaximum>
+      <AcceptanceMetricMaximum>100</AcceptanceMetricMaximum>
+      <MaxElapsedMilliseconds>300</MaxElapsedMilliseconds>
+    </Step>
+  </Steps>
+</VisionPipeline>

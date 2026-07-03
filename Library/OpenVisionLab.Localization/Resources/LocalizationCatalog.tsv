@@ -1,0 +1,1613 @@
+Key	Korean	English
+Shell.MainAction.ReadyBadge	준비	Ready
+Shell.MainAction.ImageReadyTitle	이미지 준비됨	Image ready
+Shell.MainAction.ImageReadyDetail	다음: 도구 선택 -> 미리보기 실행/확인 -> 파이프라인 추가	Next: select a tool -> run/check preview -> add to pipeline
+Shell.MainAction.ImageReadyRoute	도구 선택 -> 미리보기 실행/확인	Select tool -> run/check preview
+Shell.MainAction.ImageReadyStatus	파이프라인 추가 가능	Pipeline can be added
+Shell.WorkspaceStatus.EmptyBadge	시작	Start
+Shell.WorkspaceStatus.EmptyTitle	이미지를 로드하세요	Load an image
+Shell.WorkspaceStatus.EmptyRoute	이미지 로드 또는 샘플 열기	Load image or open sample
+Shell.WorkspaceStatus.EmptyStatus	이미지 준비 후 도구 선택	Select a tool after image is ready
+Shell.WorkspaceStatus.SampleTitle	샘플 파이프라인 준비됨	Sample pipeline ready
+Shell.WorkspaceStatus.SampleRoute	Pipeline Review 또는 첫 Step 열기	Open Pipeline Review or the first step
+Shell.WorkspaceStatus.SampleStatus	미리보기는 수동 실행	Preview runs manually
+Shell.WorkspaceEmptyStepLoadTitle	1. 이미지 로드	1. Load image
+Shell.WorkspaceEmptyStepLoadDetail	Main 레이어에 검사할 이미지를 엽니다.	Open the image to inspect into the Main layer.
+Shell.WorkspaceEmptyStepSelectTitle	2. 도구 선택	2. Select tool
+Shell.WorkspaceEmptyStepSelectDetail	왼쪽 목록에서 스레시홀드, 매칭, 라인 같은 도구를 선택합니다.	Choose Threshold, Matching, Line, or another tool from the left list.
+Shell.WorkspaceEmptyStepPreviewTitle	3. 미리보기 확인	3. Check preview
+Shell.WorkspaceEmptyStepPreviewDetail	결과를 확인한 뒤 검증된 Step을 파이프라인에 추가합니다.	Check the result, then add the verified step to the pipeline.
+Shell.WorkspaceEmptySampleButton	샘플 열기	Open Sample
+Shell.WorkspaceEmptyGuideButton	가이드 보기	View Guide
+Shell.WorkspaceEmptyLogHint	이미지를 불러오면 이 영역에서 확대, 이동, 픽셀 값을 확인하고 하단 실행 로그에서 상태를 추적합니다.	After loading an image, use this area for zoom, pan, pixel values, and the Run Log for state tracking.
+Shell.WorkspaceFitImage	이미지 맞춤	Fit Image
+Shell.WorkspaceSaveImage	이미지 저장	Save Image
+VisionTool.Verification.PreviewNotRun	미리보기 전	Preview not run
+VisionTool.Verification.RunPreview	미리보기 실행	Run Preview
+VisionTool.Verification.AddToPipeline	파이프라인 추가	Add to Pipeline
+VisionTool.Verification.CheckResultThenAddPipeline	결과 확인 후 파이프라인 추가	Check the result, then add to pipeline
+VisionTool.Verification.AdjustAreaThreshold	이진화/면적/ROI 조정	Adjust threshold, area, or ROI
+VisionTool.Verification.AdjustRoiContrastScan	ROI/대비/스캔 설정 조정	Adjust ROI, contrast, or scan settings
+VisionTool.Verification.HeaderFormat	{0} 검증	{0} verification
+VisionTool.Verification.NextActionFormat	다음: {0}	Next: {0}
+VisionTool.Verification.CompactGuideFormat	{0} / {1} / {2} / {3}	{0} / {1} / {2} / {3}
+VisionTool.Verification.ResultGuidanceFormat	{0} / 합격 기준: {1} / {2} / 다음: {3}	{0} / Criteria: {1} / {2} / Next: {3}
+VisionTool.Verification.AreaSuccessReasonFormat	검출 {0}개 / 최대 면적 {1:0.#}	Count {0}, max area {1:0.#}.
+VisionTool.Verification.AreaFailureReason	현재 면적/이진화 기준을 통과한 결과 없음	No result passed the current area/threshold criteria.
+VisionTool.AreaReview.BoxFormat	최대 박스 {0:0.#}x{1:0.#}	Max box {0:0.#}x{1:0.#}.
+VisionTool.AreaReview.BlobSuccessHint	블랍 면적/이진화/ROI 기준을 통과했습니다. 영역 개수와 최대 면적을 확인하세요.	Blob area/threshold/ROI criteria passed; check region count and largest area.
+VisionTool.AreaReview.ContourSuccessHint	컨투어 면적/이진화/ROI 기준을 통과했습니다. 외곽선과 개수를 확인하세요.	Contour area/threshold/ROI criteria passed; check object outline and count.
+VisionTool.AreaReview.SuccessHint	면적/이진화/ROI 기준을 통과했습니다. 영역 개수와 최대 면적을 확인하세요.	Area/threshold/ROI criteria passed; check region count and largest area.
+VisionTool.AreaReview.MultipleCandidateRisk	여러 영역이 통과했습니다. 의도와 다르면 ROI를 좁히거나 면적/이진화 기준을 조정하세요.	Multiple regions passed; if this is not expected, narrow the ROI or tighten area/threshold limits.
+VisionTool.AreaReview.BlobFailureCause	원인 후보: 이진화 범위, ROI, 면적 제한, 마스킹, 모폴로지 크기를 확인하세요.	Cause candidates: threshold range, ROI, area limits, masking, or morphology size.
+VisionTool.AreaReview.ContourFailureCause	원인 후보: 이진화 범위, ROI, 면적 제한, 컨투어 검색 방식, 약한 외곽선을 확인하세요.	Cause candidates: threshold range, ROI, area limits, retrieval mode, or weak object boundary.
+VisionTool.AreaReview.FailureCause	원인 후보: 이진화 범위, ROI, 면적 제한, 약한 대비를 확인하세요.	Cause candidates: threshold range, ROI, area limits, or weak contrast.
+VisionTool.Verification.LineEdgeReasonFormat	라인 {0}개 / 엣지점 {1}	Lines {0}, edge {1}.
+VisionTool.Verification.LineEdgeFailureReason	현재 기준을 통과한 라인 엣지 없음	No line edge passed the current criteria.
+VisionTool.Verification.LineDistanceReasonFormat	거리 {0:0.#} px / 검출 {1:0}개	Distance {0:0.#} px, count {1:0}.
+VisionTool.Verification.LineDistanceFailureReason	거리 결과 없음	Distance not found.
+VisionTool.Verification.LineIntersectionSuccessReason	교차점 발견	Intersection cross found.
+VisionTool.Verification.LineIntersectionFailureReason	교차점 없음	Intersection cross not found.
+VisionTool.Verification.PreviewNotRunCurrentParameters	미리보기 전 / 현재 파라미터 확인은 미리보기 실행	Preview not run / Run Preview to verify current parameters.
+VisionTool.Verification.PreviewNotRunCurrentRoute	미리보기 전 / 현재 입력과 출력 레이어 확인은 미리보기 실행	Preview not run / Run Preview to verify the current input and output layer.
+VisionTool.Verification.TeachingStateFormat	{0} 설정 확인	{0} teaching
+VisionTool.Verification.ResultStateFormat	{0} 결과 / {1}	{0} result / {1}
+VisionTool.Verification.AreaCriteriaFormat	면적 {0}-{1} / {2} / {3} / {4}	Area {0}-{1} / {2} / {3} / {4}
+VisionTool.Verification.ThresholdFormat	이진화 {0:0.#}	T {0:0.#}
+VisionTool.Verification.LineCriteriaFormat	{0} {1} / 대비 {2:0.#} / 간격 {3:0.#} / {4}	{0} {1} / C{2:0.#} / S{3:0.#} / {4}
+VisionTool.Review.ResultNotRun	결과 대기	Result not run
+VisionTool.Review.Label.Decision	판정	Decision
+VisionTool.Review.Label.Criteria	기준	Criteria
+VisionTool.Review.Label.Count	검출	Count
+VisionTool.Review.Label.State	상태	State
+VisionTool.Review.Label.MaxArea	최대 면적	Max area
+VisionTool.Review.Label.Center	중심	Center
+VisionTool.Review.Label.Box	박스	Box
+VisionTool.Review.Label.Score	점수	Score
+VisionTool.Review.Label.Angle	각도	Angle
+VisionTool.Review.Label.Scale	배율	Scale
+VisionTool.Review.Label.Tact	처리	Tact
+VisionTool.Review.Label.Mean	평균	Mean
+VisionTool.Review.Label.Range	범위	Range
+VisionTool.Review.Label.Type	방식	Type
+VisionTool.Review.Label.Pixels	픽셀	Pixels
+VisionTool.Review.Label.Input	입력	Input
+VisionTool.Review.Label.Output	출력	Output
+VisionTool.Review.Label.Contrast	대비	Contrast
+VisionTool.Review.Label.Distance	거리	Distance
+VisionTool.Review.Label.Length	길이	Length
+VisionTool.Review.Label.Lines	라인	Lines
+VisionTool.Review.Label.Edge	엣지	Edge
+VisionTool.Review.Label.Point	점	Point
+VisionTool.Review.Label.Cross	교차	Cross
+VisionTool.Review.Label.Mm	mm	mm
+VisionTool.Review.NoResult	결과 없음	no result
+VisionTool.Review.NoBlob	블랍 없음	no blob
+VisionTool.Review.NoContour	컨투어 없음	no contour
+VisionTool.Review.NoMatch	매칭 없음	no match
+VisionTool.Review.NoEdge	엣지 없음	no edge
+VisionTool.Review.NeedPair	라인 2개 필요	need pair
+VisionTool.Review.CrossYes	예	Yes
+VisionTool.Review.CrossNo	아니오	No
+VisionTool.Review.FullImage	전체 이미지	Full image
+VisionTool.Review.RoiOn	ROI 사용	ROI on
+VisionTool.Review.MultiRoi	다중 ROI	Multi ROI
+VisionTool.Review.ThresholdOff	이진화 꺼짐	T off
+VisionTool.Review.MaskOn	마스크 사용	Mask on
+VisionTool.Review.MaskOff	마스크 꺼짐	Mask off
+VisionTool.Review.AngleOn	각도 탐색 사용	Angle on
+VisionTool.Review.AngleOff	각도 탐색 꺼짐	Angle off
+VisionTool.Review.ScaleOn	배율 탐색 사용	Scale on
+VisionTool.Review.ScaleOff	배율 탐색 꺼짐	Scale off
+VisionTool.Review.PyramidOn	피라미드 사용	Pyramid on
+VisionTool.Review.OriginalImage	원본	Original
+VisionTool.Verification.AdaptiveThresholdFormat	적응형 {0:0.#}	Adaptive {0:0.#}
+VisionTool.TemplateStatus.ReadyFormat	템플릿 준비 / {0}	Template ready / {0}
+VisionTool.TemplateStatus.MissingFormat	템플릿 파일 없음 / {0}	Template file missing / {0}
+VisionTool.TemplateStatus.NotSelected	템플릿 미선택	Template not selected
+VisionTool.Review.FeatureRatioCriteriaFormat	Ratio <= {0:0.###}	Ratio <= {0:0.###}
+VisionTool.Review.RansacCriteriaFormat	RANSAC {0:0.#}	RANSAC {0:0.#}
+VisionTool.Line.PurposeLabel	목적	Purpose
+VisionTool.Line.SettingLabel	라인	Setting
+VisionTool.Line.Purpose.Edge	엣지	Edge
+VisionTool.Line.Purpose.Measure	측정	Measure
+VisionTool.Line.Purpose.Intersection	교차	Intersection
+VisionTool.Line.LineA	Line A	Line A
+VisionTool.Line.LineB	Line B	Line B
+VisionTool.Line.EditSelectedRoiToolTip	선택 라인 ROI 편집	Edit selected line ROI
+VisionTool.Line.Purpose.EdgeHint	선택 라인의 엣지점과 피팅 라인 안정성을 확인합니다.	Edge points and fitted line stability for the selected line
+VisionTool.Line.Purpose.MeasureHint	Line A 스캔 라인과 Line B 엣지 교차 거리 측정입니다.	Line A scan lines to Line B edge intersections
+VisionTool.Line.Purpose.IntersectionHint	Line A와 Line B 피팅 라인의 교차점을 확인합니다.	Intersection point from Line A and Line B fit-line crossing
+VisionTool.Review.ScoreThresholdLabel	점수 >=	Score >=
+VisionTool.Review.AreaSummaryFormat	{0} / 검출 {1}개 / 최대 면적 {2:0.#} / 중심 {3:0.#},{4:0.#} / 박스 {5:0.#}x{6:0.#}	{0} / Count {1} / Max area {2:0.#} / Center {3:0.#},{4:0.#} / Box {5:0.#}x{6:0.#}
+VisionTool.Review.AreaEmptySummaryFormat	{0} / 검출 0개 / {1}	{0} / Count 0 / {1}
+VisionTool.Review.MeanSummaryFormat	Mean / 평균 {0:0.0} / 범위 {1} / 검출 {2}개	Mean / Avg {0:0.0} / Range {1} / Count {2}
+VisionTool.Review.HsvSummaryFormat	HSV / 선택 {0:0.0}% / {1}	HSV / Selected {0:0.0}% / {1}
+VisionTool.Review.HistogramSummaryFormat	Histogram / {0} / 평균 {1:0.0}->{2:0.0} / 대비 {3:0.0}->{4:0.0}	Histogram / {0} / Mean {1:0.0}->{2:0.0} / Contrast {3:0.0}->{4:0.0}
+VisionTool.Review.MatchCountCriteriaFormat	매칭 {0}개	Match {0}
+VisionTool.Review.CannyCriteriaFormat	Canny {0}	Canny {0}
+VisionTool.Review.SearchCriteriaFormat	탐색 {0}	Search {0}
+VisionTool.Review.PointsCriteriaFormat	포인트 {0}	Points {0}
+VisionTool.Review.MatchingSummaryFormat	{0} / 검출 {1}개 / 점수 {2:0.000} / 중심 {3:0.#},{4:0.#} / 박스 {5:0.#}x{6:0.#} / 각도 {7:0.###}{8}{9}	{0} / Count {1} / Score {2:0.000} / Center {3:0.#},{4:0.#} / Box {5:0.#}x{6:0.#} / Angle {7:0.###}{8}{9}
+VisionTool.Review.MatchingEmptySummaryFormat	{0} / 검출 0개 / 매칭 없음	{0} / Count 0 / no match
+VisionTool.Review.LineEdgeEmptySummary	엣지 / 검출 0개 / 엣지 없음	Edge / Count 0 / no edge
+VisionTool.Review.LineDistanceEmptySummary	측정 / 거리 없음 / 검출 0개	Measure / Distance none / Count 0
+VisionTool.Review.LineDistanceSummaryWithMmFormat	측정 / 거리 {0:0.#} px / {1:0.###} mm / 검출 {2:0}개	Measure / Distance {0:0.#} px / {1:0.###} mm / Count {2:0}
+VisionTool.Review.LineDistanceSummaryFormat	측정 / 거리 {0:0.#} px / 검출 {1:0}개	Measure / Distance {0:0.#} px / Count {1:0}
+VisionTool.Review.LineIntersectionSummaryFormat	교차 / 점 {0:0},{1:0} / 교차 {2} / 엣지 {3:0}	Intersection / Point {0:0},{1:0} / Cross {2} / Edge {3:0}
+VisionTool.Review.LineIntersectionNoCrossSummaryFormat	교차 / 교차 아니오 / 엣지 {0:0}	Intersection / Cross No / Edge {0:0}
+VisionTool.Review.LineMeasureSummaryFormat	측정 / 길이 {0:0.#} px / {1:0.###} mm / 각도 {2:0.#} deg	Measure / Length {0:0.#} px / {1:0.###} mm / Angle {2:0.#} deg
+VisionTool.Review.LineEdgeSummaryFormat	엣지 / 라인 {0}개 / 엣지 {1} / 길이 {2:0.#}	Edge / Count {0} / Edge {1} / Length {2:0.#}
+VisionTool.Review.LineNeedPairSummaryFormat	교차 / 라인 2개 필요 / 엣지 {0}	Intersection / Need pair / Edge {0}
+VisionTool.MatchingGuide.Header	검증 흐름	Verification Flow
+VisionTool.MatchingGuide.EdgeHeader	엣지 매칭 검증	Edge Match Verification
+VisionTool.MatchingGuide.FeatureHeader	특징 매칭 검증	Feature Match Verification
+VisionTool.MatchingGuide.ReadyState	상태: 템플릿 준비 / 미리보기 실행 가능	State: template ready / preview available
+VisionTool.MatchingGuide.EdgeReadyState	상태: 템플릿 준비 / 엣지 후보 검증 대기	State: template ready / waiting for edge candidate verification
+VisionTool.MatchingGuide.FeatureReadyState	상태: 템플릿 준비 / 특징점 후보 검증 대기	State: template ready / waiting for feature candidate verification
+VisionTool.MatchingGuide.NotReadyState	상태: 템플릿 필요 / 미리보기 전 준비 필요	State: template required / prepare before preview
+VisionTool.MatchingGuide.EdgeNotReadyState	상태: 템플릿 필요 / 패턴 경로 등록 필요	State: template required / register a pattern path
+VisionTool.MatchingGuide.FeatureNotReadyState	상태: 특징 템플릿 필요 / 패턴 경로 등록 필요	State: feature template required / register a pattern path
+VisionTool.MatchingGuide.ReadyNext	입력/출력 레이어를 확인하고 미리보기 실행	Check input/output layers and run preview
+VisionTool.MatchingGuide.EdgeReadyNext	미리보기 실행 후 엣지 박스와 출력 레이어 확인	Run preview, then check edge boxes and the output layer
+VisionTool.MatchingGuide.FeatureReadyNext	미리보기 실행 후 특징 박스와 출력 레이어 확인	Run preview, then check feature boxes and the output layer
+VisionTool.MatchingGuide.NotReadyNext	패턴 경로에서 템플릿을 등록한 뒤 미리보기 실행	Register a template from the pattern path, then run preview
+VisionTool.MatchingGuide.EdgeNotReadyNext	패턴 경로에서 템플릿을 등록한 뒤 미리보기 실행	Register a template from the pattern path, then run preview
+VisionTool.MatchingGuide.FeatureNotReadyNext	패턴 경로에서 특징 템플릿을 등록한 뒤 미리보기 실행	Register a feature template from the pattern path, then run preview
+VisionTool.MatchingGuide.DecisionStateFormat	상태: {0}	State: {0}
+VisionTool.MatchingGuide.CompactStateFormat	{0} / {1}	{0} / {1}
+VisionTool.MatchingGuide.CriteriaFallback	합격 기준: 결과 위치와 오버레이 확인	Pass criteria: check result position and overlay
+VisionTool.MatchingGuide.EdgeCriteriaFallback	합격 기준: 엣지 박스, 점수, 출력 레이어 확인	Pass criteria: check edge boxes, score, and output layer
+VisionTool.MatchingGuide.FeatureCriteriaFallback	합격 기준: 특징점 기하와 출력 레이어 확인	Pass criteria: check feature geometry and output layer
+VisionTool.MatchingGuide.CriteriaFormat	합격 기준: {0}	Pass criteria: {0}
+VisionTool.MatchingGuide.NextActionFormat	다음: {0}	Next: {0}
+VisionTool.MatchingGuide.SuccessNext	결과 박스와 출력 레이어를 확인한 뒤 파이프라인에 추가	Check result boxes and the output layer, then add to pipeline
+VisionTool.MatchingGuide.EdgeSuccessNext	엣지 박스와 출력 레이어를 확인한 뒤 파이프라인에 추가	Check edge boxes and the output layer, then add to pipeline
+VisionTool.MatchingGuide.FeatureSuccessNext	특징 박스와 출력 레이어를 확인한 뒤 파이프라인에 추가	Check feature boxes and the output layer, then add to pipeline
+VisionTool.MatchingGuide.FailureNext	템플릿 ROI, 최소 점수, 매칭 개수를 조정하고 다시 미리보기	Adjust template ROI, min score, and match count, then run preview again
+VisionTool.MatchingGuide.EdgeFailureNext	템플릿 ROI, Canny 범위, 최소 점수, 매칭 개수를 조정하고 다시 미리보기	Adjust template ROI, Canny range, min score, and match count, then run preview again
+VisionTool.MatchingGuide.FeatureFailureNext	특징 템플릿, Ratio, RANSAC 허용 오차를 조정하고 다시 미리보기	Adjust feature template, ratio, and RANSAC tolerance, then run preview again
+VisionTool.MatchingReview.NoCandidateReason	현재 기준을 통과한 후보가 없습니다.	No candidate passed the current criteria.
+VisionTool.MatchingReview.EdgeNoCandidateReason	현재 Canny/점수 기준을 통과한 엣지 후보가 없습니다.	No edge candidate passed the current Canny/score criteria.
+VisionTool.MatchingReview.NoCandidateNext	템플릿 재등록, ROI 조정, 최소 점수 조정 후 다시 미리보기	Re-register the template, adjust ROI or min score, then run preview again
+VisionTool.MatchingReview.EdgeNoCandidateNext	템플릿 ROI, Canny 범위, 최소 점수, 매칭 개수를 조정하고 다시 미리보기	Adjust template ROI, Canny range, min score, and match count, then run preview again
+VisionTool.MatchingReview.ScoreFailReasonFormat	최고 점수 {0:0.###}가 기준 {1:0.###}보다 낮습니다.	Best score {0:0.###} is below the criteria {1:0.###}.
+VisionTool.MatchingReview.EdgeScoreFailReasonFormat	최고 엣지 점수 {0:0.###}가 기준 {1:0.###}보다 낮습니다.	Best edge score {0:0.###} is below the criteria {1:0.###}.
+VisionTool.MatchingReview.CountFailReasonFormat	검출 {0}개가 요구 {1}개보다 적습니다.	Detected count {0} is below the required {1}.
+VisionTool.MatchingReview.EdgeCountFailReasonFormat	엣지 후보 {0}개가 요구 {1}개보다 적습니다.	Edge candidate count {0} is below the required {1}.
+VisionTool.MatchingReview.SuccessReason	점수와 개수 기준을 통과했습니다.	Score and count criteria passed.
+VisionTool.MatchingReview.EdgeSuccessReason	엣지 점수와 개수 기준을 통과했습니다.	Edge score and count criteria passed.
+VisionTool.MatchingReview.SuccessNext	결과 박스와 출력 레이어를 확인한 뒤 파이프라인에 추가	Check result boxes and the output layer, then add to pipeline
+VisionTool.MatchingReview.EdgeSuccessNext	엣지 박스와 출력 레이어를 확인한 뒤 파이프라인에 추가	Check edge boxes and the output layer, then add to pipeline
+VisionTool.MatchingReview.FailureNext	템플릿 ROI, 최소 점수, 매칭 개수를 조정하고 다시 미리보기	Adjust template ROI, min score, and match count, then run preview again
+VisionTool.MatchingReview.EdgeFailureNext	템플릿 ROI, Canny 범위, 최소 점수, 매칭 개수를 조정하고 다시 미리보기	Adjust template ROI, Canny range, min score, and match count, then run preview again
+VisionTool.MatchingReview.FeatureNoCandidateReason	Ratio/RANSAC 기준을 통과한 특징 후보가 없습니다.	No feature candidate passed the current Ratio/RANSAC criteria.
+VisionTool.MatchingReview.NoCandidateCause	원인 후보: 템플릿이 너무 크거나 ROI가 맞지 않거나 대비가 낮거나 최소 점수가 높습니다.	Cause candidates: template too large, ROI mismatch, low contrast, or min score too strict.
+VisionTool.MatchingReview.EdgeNoCandidateCause	원인 후보: Canny 범위, 엣지 대비, 템플릿 ROI, 최소 점수, 매칭 개수를 확인하세요.	Cause candidates: Canny range, edge contrast, template ROI, min score, or match count.
+VisionTool.MatchingReview.FeatureNoCandidateCause	원인 후보: 특징 텍스처, 템플릿 ROI, Ratio, RANSAC 허용 오차, 이미지 블러를 확인하세요.	Cause candidates: feature texture, template ROI, Ratio, RANSAC tolerance, or image blur.
+VisionTool.MatchingReview.ScorePassFormat	최고 점수 {0:0.###} >= {1:0.###}	Best score {0:0.###} >= {1:0.###}.
+VisionTool.MatchingReview.EdgeScorePassFormat	최고 엣지 점수 {0:0.###} >= {1:0.###}	Best edge score {0:0.###} >= {1:0.###}.
+VisionTool.MatchingReview.FeatureScorePassFormat	특징 점수 {0:0.###} 통과	Feature score {0:0.###} passed.
+VisionTool.MatchingReview.CountPassFormat	검출 {0}/{1}개	Detected {0}/{1} matches.
+VisionTool.MatchingReview.AngleResultFormat	각도 탐색 결과 {0:0.###}도	Angle search result {0:0.###} deg.
+VisionTool.MatchingReview.ScaleResultFormat	배율 탐색 결과 {0:0.###}	Scale search result {0:0.###}.
+VisionTool.MatchingReview.MultipleCandidateRisk	여러 후보가 통과했습니다. 반복 패턴이면 ROI를 좁혀 오검출을 줄이세요.	Multiple candidates passed; check repeated patterns and narrow the ROI if false positives appear.
+VisionTool.MatchingReview.PyramidReviewHint	피라미드 제안은 속도 옵션입니다. 최종 박스는 원본 이미지에서 확인하세요.	Pyramid proposal is a speed aid; verify final boxes on the original image.
+VisionTool.MatchingReview.ScoreFailCause	원인 후보: 템플릿이 너무 크거나 조명이 달라졌거나 ROI가 넓거나 최소 점수가 높습니다.	Cause candidates: template is too large, lighting changed, ROI is too wide, or min score is too strict.
+VisionTool.MatchingReview.EdgeScoreFailCause	원인 후보: 엣지 대비가 약하거나 Canny 범위가 좁거나 ROI에 방해 패턴이 있습니다.	Cause candidates: edge contrast is weak, Canny range is too narrow, or ROI contains distractors.
+VisionTool.MatchingReview.CountFailCause	원인 후보: ROI가 좁거나 최소 점수가 높거나 템플릿 대비가 부족합니다.	Cause candidates: ROI is too small, min score is high, or template contrast is insufficient.
+VisionTool.MatchingReview.EdgeCountFailCause	원인 후보: 검색 ROI가 좁거나 검색 간격이 크거나 엣지 모델 포인트가 부족합니다.	Cause candidates: search ROI is too small, search step is too coarse, or edge model points are insufficient.
+VisionTool.MatchingReview.FailureReason	매칭 실패: 템플릿 ROI, 최소 점수, 대비, 매칭 개수를 확인하세요.	Matching failed; check template ROI, min score, contrast, and match count.
+VisionTool.MatchingReview.EdgeFailureReason	엣지 매칭 실패: Canny 범위, 엣지 대비, ROI, 최소 점수를 확인하세요.	Edge matching failed; check Canny range, edge contrast, ROI, and min score.
+VisionTool.MatchingReview.FeatureFailureReason	특징 매칭 실패: Ratio, RANSAC 허용 오차, 템플릿 텍스처, 이미지 블러를 확인하세요.	Feature matching failed; check Ratio, RANSAC tolerance, template texture, and image blur.
+VisionTool.MatchingReview.FeatureSuccessReason	Ratio/RANSAC 기준과 특징 기하가 통과했습니다.	Feature geometry passed the Ratio/RANSAC criteria.
+VisionTool.MatchingReview.FeatureSuccessNext	특징 박스와 출력 레이어를 확인한 뒤 파이프라인에 추가	Check feature boxes and the output layer, then add to pipeline
+VisionTool.MatchingReview.FeatureFailureNext	특징 템플릿, Ratio, RANSAC 허용 오차를 조정하고 다시 미리보기	Adjust feature template, Ratio, and RANSAC tolerance, then run preview again
+VisionTool.LineReview.EdgeSuccessFormat	라인 {0}개 / 엣지점 {1}개 / 피팅 길이 {2:0.#} px	Lines {0} / edge points {1} / fit length {2:0.#} px.
+VisionTool.LineReview.EdgeSuccessHint	엣지점이 검출되었습니다. 파이프라인 추가 전 피팅 라인 길이와 안정성을 확인하세요.	Edge points were found; check fitted line length and stability before adding to the pipeline.
+VisionTool.LineReview.MeasureSuccessHint	엣지 지지가 확인되었습니다. 측정 모드는 Line A 스캔 라인과 Line B 엣지의 거리를 비교합니다.	Edge support was found; distance mode will compare Line A scan lines with Line B edges.
+VisionTool.LineReview.IntersectionLineSuccessHint	라인 후보가 검출되었습니다. 교차 모드는 Line A/B 피팅 라인이 만나는지 확인합니다.	Line candidates were found; intersection mode checks whether the fitted Line A/B pair crosses.
+VisionTool.LineReview.EdgeFailureCause	원인 후보: ROI, 대비, 극성, 임계값, 스캔 각도, 샘플링 간격을 확인하세요.	Cause candidates: ROI, contrast, polarity, threshold, scan angle, or sampling interval.
+VisionTool.LineReview.MeasureFailureCause	원인 후보: Line A/B ROI, 스캔 방향, 극성, 대비, 샘플링 간격을 확인하세요.	Cause candidates: Line A/B ROI, scan direction, polarity, contrast, or sampling interval.
+VisionTool.LineReview.DistanceSuccessWithMmFormat	거리 {0:0.#} px / {1:0.###} mm / 검출 {2:0}개	Distance {0:0.#} px / {1:0.###} mm / detected {2:0}.
+VisionTool.LineReview.DistanceSuccessHint	Line A/B 스캔 방향에서 엣지 간 거리를 측정했습니다.	Line A/B scan directions produced a measurable edge-to-edge distance.
+VisionTool.LineReview.DistanceFailureCause	원인 후보: Line A/B ROI, 스캔 방향, 극성, 대비, 샘플링 간격을 확인하세요.	Cause candidates: Line A/B ROI, scan direction, polarity, contrast, or sampling interval.
+VisionTool.LineReview.IntersectionSuccessHint	Line A/B 피팅 라인이 교차했습니다. 교차점 위치와 엣지 지지를 확인하세요.	Line A/B fitted lines crossed; check the point position and edge support.
+VisionTool.LineReview.IntersectionFailureCause	원인 후보: Line A/B 엣지 누락, 평행한 피팅 라인, ROI 불일치, 낮은 대비를 확인하세요.	Cause candidates: missing Line A/B edges, parallel fitted lines, ROI mismatch, or low contrast.
+VisionTool.Preset.Title	추천 프리셋	Recommended presets
+VisionTool.Preset.Detail	프리셋은 PropertyGrid 값만 바꿉니다. 미리보기로 검증하세요.	Choose a starting point. It updates PropertyGrid values only; run Preview to verify.
+VisionTool.Preset.AppliedDetailFormat	{0} 적용됨 / 미리보기로 검증하세요.	{0} applied. Run Preview to verify.
+VisionTool.Preset.MenuToolTip	추천 프리셋 선택	Choose recommended preset
+VisionTool.Preset.Basic	기본	Basic
+VisionTool.Preset.Fast	빠른	Fast
+VisionTool.Preset.Precise	정밀	Precise
+VisionTool.Preset.Matching.Basic.Description	고정 대상 첫 검사: 최상위 1개 후보, 각도/배율 탐색 끔	One best match, no angle or scale search. Good first check for fixed parts.
+VisionTool.Preset.Matching.Fast.Description	빠른 확인: 작업 배율 축소, 엄격한 1개 후보	Lower work scale and one strict match. Use for quick screening before tuning.
+VisionTool.Preset.Matching.Precise.Description	정밀 확인: 후보 3개, 좁은 각도 탐색 사용	Three candidates with a narrow angle search. Use after template position is stable.
+VisionTool.Preset.EdgeMatching.Basic.Description	엣지 기본 검사: 안전한 Canny와 2px 검색 간격	One edge match with safe Canny and 2 px search step.
+VisionTool.Preset.EdgeMatching.Fast.Description	빠른 엣지 확인: 모델 포인트 축소, 거친 검색, 엄격한 점수	Fewer model points, coarse search, and strict score for quick screening.
+VisionTool.Preset.EdgeMatching.Precise.Description	정밀 엣지 확인: 더 많은 포인트, 1px 검색, 좁은 각도와 하이브리드 검증	More edge points, 1 px search, narrow angle scan, and hybrid verification.
+VisionTool.Preset.FeatureMatching.Basic.Description	특징 기본 검사: 균형 잡힌 Ratio와 RANSAC 허용 오차	Balanced ratio and RANSAC tolerance for first verification.
+VisionTool.Preset.FeatureMatching.Fast.Description	빠른 특징 확인: 더 엄격한 Ratio와 넓은 기하 허용 오차	Stricter feature ratio with wider geometry tolerance for quick checks.
+VisionTool.Preset.FeatureMatching.Precise.Description	정밀 특징 확인: 더 많은 특징 후보와 엄격한 기하 검증	Looser feature ratio with tighter geometry validation for final tuning.
+VisionTool.Preset.Blob.Basic.Description	Blob 기본 검사: 중간 면적 기준과 단순 이진화로 시작	Start with thresholded bright/dark regions and a medium area filter.
+VisionTool.Preset.Blob.Fast.Description	Blob 빠른 검사: 작은 노이즈를 무시하도록 면적 기준을 높임	Ignore small noise with a larger area floor and simple thresholding.
+VisionTool.Preset.Blob.Precise.Description	Blob 정밀 검사: 작은 영역도 보도록 면적 기준을 낮추고 적응형 이진화 사용	Keep smaller regions and enable adaptive thresholding for uneven lighting.
+VisionTool.Preset.Contour.Basic.Description	Contour 기본 검사: 외곽 윤곽과 중간 면적 기준으로 시작	External outlines with a medium area filter for first contour checks.
+VisionTool.Preset.Contour.Fast.Description	Contour 빠른 검사: 작은 노이즈 윤곽을 건너뛰도록 면적 기준을 높임	External simple contours with a larger area floor to skip noise quickly.
+VisionTool.Preset.Contour.Precise.Description	Contour 정밀 검사: 작은 윤곽과 근사 다각형으로 형상 튜닝	Smaller contours with polygon approximation for final shape tuning.
+VisionTool.Preset.Line.Basic.Description	Line 기본 검사: 선택된 Line A/B에 균형 잡힌 대비와 스캔 간격 적용	Balanced contrast and scan interval for the selected Line A/B.
+VisionTool.Preset.Line.Fast.Description	Line 빠른 검사: 빠른 엣지 확인을 위해 대비를 높이고 스캔 간격을 넓힘	Higher contrast and wider scan interval for quick edge checks.
+VisionTool.Preset.Line.Precise.Description	Line 정밀 검사: 낮은 대비, 촘촘한 스캔, 핏라인 확장, 평균 필터 적용	Lower contrast, denser scan lines, fit-line extension, and average filtering for final tuning.
+PipelineReview.Guide.Stage	리뷰	Review
+PipelineReview.Guide.Current	현재 Step	Current Step
+PipelineReview.Guide.Next	다음 확인	Next Check
+PipelineReview.Guide.Decision	판정	Decision
+PipelineReview.Guide.Checklist	검증 습관	Review Habit
+PipelineReview.Guide.EmptyStage	Step 없음	No steps
+PipelineReview.Guide.EmptyCurrentFormat	{0}에 리뷰할 Step이 없습니다	{0} has no review steps
+PipelineReview.Guide.EmptyNext	Tool 결과를 Pipeline에 추가	Add a tool result to the pipeline
+PipelineReview.Guide.EmptyDecision	판정할 결과 없음	No result to judge
+PipelineReview.Guide.EmptyDetail	Tool View에서 결과를 Pipeline에 추가한 뒤 리뷰를 실행합니다.	Add a tool result from a Tool View, then run review.
+PipelineReview.Guide.StageFormat	Step {0}/{1}	Step {0}/{1}
+PipelineReview.Guide.RouteFormat	{0} -> {1}	{0} -> {1}
+PipelineReview.Guide.RunningNext	리뷰 실행 중	Review is running
+PipelineReview.Guide.RunningDecision	Step 결과 대기	Waiting for step result
+PipelineReview.Guide.RunningDetail	선택한 Step의 리뷰 결과를 기다리는 중입니다.	The selected step is waiting for the review result.
+PipelineReview.Guide.ValidationNext	리뷰 전에 검증 오류 수정	Fix validation errors before review
+PipelineReview.Guide.ValidationDecision	아직 Pipeline 판정 불가	Pipeline cannot be judged yet
+PipelineReview.Guide.ValidationDetail	검증 상세를 열어 라우트 또는 파라미터를 먼저 수정하십시오.	Open the validation detail and fix the route or parameters first.
+PipelineReview.Guide.DisabledNext	Step을 켠 뒤 판정	Enable this step before judging it
+PipelineReview.Guide.DisabledDetail	이 Step은 꺼져 있어서 리뷰 중 건너뜁니다.	This step is skipped during review because it is disabled.
+PipelineReview.Guide.InputMissingNext	입력 레이어 연결 또는 이미지 로드	Connect or load the input layer
+PipelineReview.Guide.InputMissingDetail	선택한 입력 레이어에 이미지가 없어 아직 이 Step을 판정할 수 없습니다.	The selected input layer has no image, so this step cannot be judged yet.
+PipelineReview.Guide.ReadyNext	리뷰 실행으로 측정 결과 갱신	Run Review to refresh the measured result
+PipelineReview.Guide.ReadyDetail	출력 이미지는 있지만 리뷰 실행으로 측정 결과를 다시 갱신합니다.	An output image exists, but Run Review refreshes the measured result.
+PipelineReview.Guide.BeforeRunNext	리뷰 실행으로 Step 출력 생성	Run Review to create the step output
+PipelineReview.Guide.BeforeRunDetail	리뷰 실행으로 이 Step의 출력 이미지와 측정 결과를 생성합니다.	Run Review creates the output image and measured result for this step.
+PipelineReview.Guide.OkNext	출력 이미지 확인 후 다음 Step으로 진행	Check the output image, then continue to the next step
+PipelineReview.Guide.NgNext	Tool 파라미터 또는 라우트 조정 후 다시 리뷰	Adjust the tool parameters or route, then run review again
+PipelineReview.Guide.NgDetail	선택 Step의 결과를 확인하고 라우트 또는 파라미터를 조정합니다.	Review the selected step's result and adjust the route or parameters.
+PipelineReview.Guide.AcceptanceMetricNgDetailFormat	{0}: 측정 {1}, 목표 {2}.	{0}: measured {1}, target {2}.
+PipelineReview.Guide.BranchDetailFormat	분기: 이 Step은 이전 출력 {1} 대신 {0}을 입력으로 사용합니다.	Branch: this step reads {0} instead of previous output {1}.
+PipelineReview.Guide.FailedDetailFormat	NG 원인: {0}	NG reason: {0}
+PipelineReview.Guide.OkContinueDetailFormat	이 Step은 통과했습니다. Step {0}/{1}로 이동해 다음 출력을 확인하십시오.	This step passed. Move to Step {0}/{1} and confirm the next output.
+PipelineReview.Guide.OkFinalDetail	마지막 Step이 통과했습니다. Pipeline 승인 전에 출력 이미지, 지표, 같은 Good/Bad 쌍을 비교하십시오.	Final step passed. Compare the output image, metrics, and matching Good/Bad pair before accepting the pipeline.
+PipelineReview.Guide.ChecklistText	검증 순서: Good 먼저 실행 -> 같은 PairGroup의 Bad를 같은 Pipeline으로 실행 -> 출력 이미지, 오버레이, 지표, 로그를 함께 비교합니다.	Review habit: run Good first -> run Bad in the same PairGroup with the same pipeline -> compare output image, overlay, metrics, and log.
+PipelineReview.Guide.NoRunDecision	미판정	Not judged
+PipelineReview.Guide.OkDecisionFormat	{0}: 출력 승인	{0}: output accepted
+PipelineReview.Guide.NgDecisionFormat	{0}: 재검토 필요	{0}: review required
+PipelineReview.Metric.ResultImageWidth	결과 폭	Result Width
+Arithmetic.Constant	상수	Constant
+Arithmetic.ConstantValue	상수 값	Constant Value
+Arithmetic.CopyAByOffset	A를 오프셋으로 복사	Copy A by offset
+Arithmetic.Color	컬러	Color
+Arithmetic.Gray	그레이	Gray
+Arithmetic.GrayFormat	그레이 {0}	Gray {0}
+Arithmetic.ColorBgrFormat	컬러 BGR({0},{1},{2})	Color BGR({0},{1},{2})
+Arithmetic.InputAOnly	입력 A만	Input A only
+Arithmetic.InputB	입력 B	Input B
+Arithmetic.InputBSource	입력 B 소스	Input B Source
+Arithmetic.Mode	모드	Mode
+Arithmetic.Offset	오프셋	Offset
+Arithmetic.OffsetMode	오프셋	Offset
+Arithmetic.Operation	연산	Operation
+Arithmetic.OperationMode	연산	Operation
+Arithmetic.RunOffset	오프셋 실행	Run Offset
+Arithmetic.Type	산술 연산 타입	Arithmetic Type
+Morphology.Operation.Erode	침식	Erode
+Morphology.Operation.Dilate	팽창	Dilate
+Morphology.Operation.Open	열림	Open
+Morphology.Operation.Close	닫힘	Close
+Morphology.Operation.TopHat	탑햇	TopHat
+Morphology.Operation.BlackHat	블랙햇	BlackHat
+Morphology.Operation.HitMiss	히트미스	HitMiss
+Morphology.Operation.Gradient	그래디언트	Gradient
+Morphology.Shape.Rect	사각	Rect
+Morphology.Shape.Ellipse	타원	Ellipse
+Morphology.Shape.Cross	십자	Cross
+VisionTool.Status.PreviewOk	미리보기 OK	Preview OK
+VisionTool.Status.PreviewNg	미리보기 NG	Preview NG
+VisionTool.Status.OffsetOk	오프셋 OK	Offset OK
+VisionTool.Status.PipelineAdded	파이프라인 추가됨	Pipeline added
+VisionTool.Status.OutputLayerReady	출력 레이어 준비됨	Output layer ready
+VisionTool.Status.PipelineAddUnavailable	파이프라인 추가 불가	Pipeline add unavailable
+VisionTool.Summary.Min	최소	Min
+VisionTool.Summary.Max	최대	Max
+VisionTool.Summary.Low	낮음	Low
+VisionTool.Summary.High	높음	High
+VisionTool.Summary.Aperture	커널	Aperture
+VisionTool.Summary.Clip	클립	Clip
+VisionTool.Summary.Tile	타일	Tile
+VisionTool.Summary.Angle	각도	Angle
+VisionTool.Summary.Scale	배율	Scale
+Pipeline.OverlayLabel	라벨	Label
+Pipeline.OverlayPoints	포인트	Points
+Pipeline.PreviewMode.Summary	요약	Summary
+Pipeline.PreviewMode.Input	입력	Input
+Pipeline.PreviewMode.Output	출력	Output
+Pipeline.PreviewMode.Overlay	오버레이	Overlay
+Pipeline.OverlayLabelMode.None	없음	None
+Pipeline.OverlayLabelMode.Number	번호	No
+Pipeline.OverlayLabelMode.Details	상세	Details
+Pipeline.ResultGrid.Item	항목	Item
+Pipeline.ResultGrid.Value	값	Value
+Pipeline.State.NeedsPreview	미리보기 필요	Needs Preview
+Pipeline.State.NotCreated	생성 안 됨	Not Created
+Pipeline.State.RunPreviewRequired	미리보기 실행 필요	Run Preview required.
+Pipeline.State.Ready	준비됨	Ready
+Pipeline.ResultRow.Status	상태	Status
+Pipeline.ResultRow.Decision	판정	Decision
+Pipeline.ResultRow.Result	결과	Result
+Pipeline.ResultRow.Viewing	현재 보기	Viewing
+Pipeline.ResultRow.Elapsed	소요 시간	Elapsed
+Pipeline.ResultRow.Toolerror	Tool 오류	Tool error
+Pipeline.ResultRow.Resultstatus	Result 상태	Result status
+Pipeline.ResultRow.Flow	흐름	Flow
+Pipeline.ResultRow.Inputimage	입력 이미지	Input image
+Pipeline.ResultRow.Outputimage	출력 이미지	Output image
+Pipeline.ResultRow.Inputsource	입력 출처	Input source
+Pipeline.ResultRow.Outputresult	출력 결과	Output result
+Pipeline.ResultRow.Acceptance	판정 조건	Acceptance
+Pipeline.ResultRow.Nextaction	다음 동작	Next action
+Pipeline.ResultRow.Tool	Tool	Tool
+Pipeline.ResultRow.Parameters	파라미터	Parameters
+Pipeline.ResultRow.Reason	사유	Reason
+Pipeline.ResultRow.Message	메시지	Message
+Pipeline.ResultRow.Template	템플릿	Template
+Pipeline.ResultRow.Detectedcrop	검출 Crop	Detected crop
+Pipeline.ResultRow.Matchcenter	매칭 중심	Match center
+Pipeline.ResultRow.Overlaysteps	Overlay Step	Overlay steps
+Pipeline.ResultRow.Overlays	Overlay	Overlays
+Pipeline.ResultRow.Cachedsteps	캐시 Step	Cached steps
+Pipeline.ResultRow.Publishtarget	반영 대상	Publish target
+Pipeline.ResultRow.Sample	샘플	Sample
+Pipeline.ResultRow.Check	검증	Check
+Pipeline.ResultRow.Actual	실제값	Actual
+Pipeline.ResultRow.Expected	기대값	Expected
+Pipeline.ResultRow.Recipeflow	Recipe 흐름	Recipe flow
+Pipeline.ResultRow.Goal	목표	Goal
+Pipeline.ResultRow.Finallayer	최종 레이어	Final layer
+Pipeline.ResultRow.Finaloverlays	최종 Overlay	Final overlays
+Pipeline.ResultRow.Moremetrics	추가 Metrics	More metrics
+Pipeline.ResultRow.Moreboxes	추가 박스	More boxes
+Pipeline.ResultRow.Box	Box {0}	Box {0}
+Pipeline.ResultAction.Metrics	더블클릭하면 모든 Metrics를 확인합니다.	Double-click to view all metrics.
+Pipeline.ResultAction.PreviewInput	클릭하면 이 Step의 입력 이미지를 표시하고, 더블클릭하면 확대 보기로 엽니다.	Click to show this step's input image. Double-click to open it.
+Pipeline.ResultAction.PreviewOutput	클릭하면 이 Step의 출력 이미지를 표시하고, 더블클릭하면 확대 보기로 엽니다.	Click to show this step's output image. Double-click to open it.
+Pipeline.ResultAction.PreviewOverlay	클릭하면 이 Step의 Overlay 미리보기를 표시하고, 더블클릭하면 확대 보기로 엽니다.	Click to show this step's overlay preview. Double-click to open it.
+Pipeline.ResultAction.Overlay	클릭하면 Overlay 미리보기를 표시하고, 더블클릭하면 해당 Overlay를 엽니다.	Click to show overlay preview. Double-click to open this overlay.
+Pipeline.ResultAction.Overlays	클릭하면 Overlay 미리보기를 표시하고, 더블클릭하면 확대 보기로 엽니다.	Click to show overlay preview. Double-click to open it.
+Pipeline.Decision.ToolError	Tool 오류	Tool Error
+Pipeline.Decision.AcceptanceNG	판정 NG	Acceptance NG
+Pipeline.Value.ResultOne	결과 {0}개	{0} result
+Pipeline.Value.ResultMany	결과 {0}개	{0} results
+Pipeline.Value.Score	점수 {0}	Score {0}
+Pipeline.Value.Angle	각도 {0}	Angle {0}
+Pipeline.Value.Overlays	Overlay {0}개	{0} overlays
+Pipeline.Value.Image	이미지 {0}	Image {0}
+Pipeline.Value.AcceptanceNgFormat	판정 NG - {0}	Acceptance NG - {0}
+Common.OK	확인	OK
+Common.Cancel	취소	Cancel
+Common.Close	닫기	Close
+Common.Minimize	최소화	Minimize
+Common.Maximize	최대화	Maximize
+Common.DockRight	우측 도킹	Dock Right
+Common.Export	내보내기	Export
+Common.Restore	복원	Restore
+Common.Alarm	알림	Alarm
+PipelineTextPrompt.DefaultTitle	샘플 저장	Save Sample
+PipelineTextPrompt.DefaultLabel	샘플 이름	Sample Name
+AiRecipe.Prompt.Title	AI Recipe 프롬프트	AI Recipe Prompt
+AiRecipe.Prompt.GoalLabel	검사 목표	Inspection Goal
+AiRecipe.Prompt.DefaultGoal	검출 대상과 박스, Metrics, OK/NG 기준을 생성합니다.	Detect target objects and return boxes, metrics, and OK/NG criteria.
+AiRecipe.PromptPreview.Title	AI Recipe 프롬프트	AI Recipe Prompt
+AiRecipe.PromptPreview.Caption	프롬프트를 검토하고 필요 시 수정한 뒤 LLM에 복사하십시오.	Review the prompt, adjust if needed, then copy it for your LLM.
+AiRecipe.PromptPreview.Copy	복사	Copy
+AiRecipe.PromptPreview.DefaultText	이미지 검사 목표와 기대 출력 레이어를 입력하십시오.	Describe the image inspection goal and expected output layers here.
+AiRecipe.OpenXmlDialogTitle	LLM Recipe XML 열기	Open LLM Recipe XML
+AiRecipe.LoadPreviewImageDialogTitle	미리보기 이미지 로드	Load Preview Image
+AiRecipe.RetryPrompt	재시도 프롬프트	Retry Prompt
+AiRecipe.ImageStatus.PreviewImage	미리보기 이미지: Main ({0} x {1})	Preview image: Main ({0} x {1})
+AiRecipe.ImageStatus.CurrentLayers	미리보기 소스: 현재 레이어 ({0})	Preview source: current layers ({0})
+AiRecipe.Overview.CurrentLayers	현재 레이어: {0}	Current layers: {0}
+AiRecipe.Overview.PreviewImage	미리보기 이미지: Main ({0} x {1})	Preview image: Main ({0} x {1})
+AiRecipe.Overview.Waiting	상태: Recipe XML 대기	Status: Waiting for recipe XML
+AiRecipe.Overview.Use	사용: 붙여넣기/XML 열기 또는 샘플 로드	Use: Paste/Open XML or load Sample.
+AiRecipe.Overview.Next	다음: 검증 -> 미리보기 실행 -> AI 피드백 복사	Next: Validate -> Run Preview -> Copy Feedback.
+AiRecipe.NextAction.Waiting	다음 작업: Recipe XML을 붙여넣거나 샘플을 열고 검증하십시오.	Next action: Paste/open recipe XML, then validate.
+AiRecipe.NextAction.ValidationNg	다음 작업: Safe Fix를 적용하거나 검증 오류를 수정하십시오.	Next action: Apply Safe Fix or edit validation errors.
+AiRecipe.NextAction.ValidationOk	다음 작업: 미리보기 실행으로 이미지 검출을 확인하십시오.	Next action: Run Preview and verify detection.
+AiRecipe.NextAction.Running	다음 작업: 미리보기 실행 완료를 기다리십시오.	Next action: Wait for Run Preview to finish.
+AiRecipe.NextAction.PreviewOk	다음 작업: Pipeline에 적용하거나 AI 피드백으로 추가 튜닝하십시오.	Next action: Apply to Pipeline or tune with AI Feedback.
+AiRecipe.NextAction.PreviewNg	다음 작업: Safe Fix/Layer Flow를 적용하거나 AI 피드백을 복사하십시오.	Next action: Apply Safe Fix/Layer Flow or copy AI Feedback.
+AiRecipe.Overview.Pipeline	Pipeline: {0}	Pipeline: {0}
+AiRecipe.Overview.Status	상태: {0}	Status: {0}
+AiRecipe.Overview.Steps	Steps: {0}	Steps: {0}
+AiRecipe.Overview.Validation	검증: {0}	Validation: {0}
+AiRecipe.Overview.RunPreview	미리보기 실행: {0}	Run Preview: {0}
+AiRecipe.Overview.CatalogGate	카탈로그 Gate: {0}	Catalog Gate: {0}
+AiRecipe.Overview.AutoFixes	자동 수정: {0}	Auto Fixes: {0}
+AiRecipe.Status.Validated	검증됨	Validated
+AiRecipe.Flow.Empty	Recipe를 검증하면 Step 체인을 볼 수 있습니다.	Validate a recipe to see the step chain.
+AiRecipe.Flow.Expected	예상 흐름:	Expected flow:
+AiRecipe.Feedback.Empty1	미리보기를 실행하면 AI 튜닝 피드백이 생성됩니다.	Run Preview creates AI tuning feedback.
+AiRecipe.Feedback.Empty2	AI 피드백 복사는 검증, 자동 수정, Metrics, 실패 Step 정보를 클립보드로 보냅니다.	Copy Feedback sends validation, auto-fix, metrics, and failed-step context to the clipboard.
+AiRecipe.Feedback.Empty3	미리보기 실행 후에는 최신 실행 피드백이 프롬프트에 포함됩니다.	Prompt will include the latest Run Preview feedback after a preview has run.
+AiRecipe.Feedback.Ready	LLM 재시도 준비:	Ready for LLM retry:
+AiRecipe.Feedback.Validation	검증 피드백:	Validation feedback:
+AiRecipe.Feedback.FullCopied	전체 피드백은 AI 피드백 복사로 복사됩니다.	Full feedback is copied by Copy AI Feedback.
+AiRecipe.Patch.Empty1	미리보기를 실행하면 XML 수정 요청이 생성됩니다.	Run Preview creates an XML Patch Request.
+AiRecipe.Patch.Empty2	실패 Step을 선택하면 요청 대상이 좁혀집니다.	Select a failed step to focus the request.
+AiRecipe.Patch.Empty3	수정 요청 복사는 LLM에게 전체 VisionPipeline XML 반환을 요청합니다.	Copy Patch Request asks the LLM to return a full VisionPipeline XML.
+AiRecipe.Patch.Target	XML 수정 요청 대상:	XML Patch Request target:
+AiRecipe.Patch.Status	상태: {0}	Status: {0}
+AiRecipe.Patch.Flow	흐름: {0} -> {1}	Flow: {0} -> {1}
+AiRecipe.Patch.Patch	수정: {0}	Patch: {0}
+AiRecipe.Patch.NoSafeFix	Safe Auto Fix: 사용 가능한 항목 없음	Safe Auto Fix: none available.
+AiRecipe.Patch.ManualTuning	수동 튜닝 필요: 수정 요청 복사로 선택 Step 또는 직접 의존 Step만 수정하십시오.	Manual tuning needed: use Copy Patch Request and update only the selected Step or its direct layer dependencies.
+AiRecipe.Patch.CopyIncludesXml	수정 요청 복사는 현재 Step XML을 포함하고 전체 VisionPipeline XML 반환을 요청합니다.	Copy Patch Request includes the current step XML and asks for a full VisionPipeline XML.
+AiRecipe.SafeFixPreview.Title	Safe Auto Fix 미리보기:	Safe Auto Fix Preview:
+AiRecipe.SafeFixPreview.TargetPipeline	대상: 검증 / 전체 Pipeline	Target: validation / whole pipeline
+AiRecipe.SafeFixPreview.Target	대상: {0}	Target: {0}
+AiRecipe.SafeFixPreview.Scope	범위: Step 파라미터, 레이어 흐름, 명시 선택한 판정 제한만 수정합니다.	Scope: Step parameters, layer flow, and explicitly selected acceptance limits only.
+PropertyGrid.DisplayName.Acceptance_Metric	판정 지표	Acceptance Metric
+PropertyGrid.DisplayName.Algorithm	알고리즘	Algorithm
+PropertyGrid.DisplayName.Aperture_size	Aperture 크기	Aperture size
+PropertyGrid.DisplayName.Degree_X	X 차수	Degree X
+PropertyGrid.DisplayName.Degree_Y	Y 차수	Degree Y
+PropertyGrid.DisplayName.High_threshold	High 기준값	High threshold
+PropertyGrid.DisplayName.Kernel_size	커널 크기	Kernel size
+PropertyGrid.DisplayName.Low_threshold	Low 기준값	Low threshold
+PropertyGrid.DisplayName.Max_Elapsed_(ms)	최대 시간(ms)	Max Elapsed (ms)
+PropertyGrid.DisplayName.Metric_Max	최대 지표	Metric Max
+PropertyGrid.DisplayName.Metric_range	지표 범위	Metric range
+PropertyGrid.DisplayName.Required_Message	필수 메시지	Required Message
+PropertyGrid.DisplayName.Scale_X_(%)	X 스케일(%)	Scale X (%)
+PropertyGrid.DisplayName.Scale_Y_(%)	Y 스케일(%)	Scale Y (%)
+PropertyGrid.DisplayName.Step_Name	Step 이름	Step Name
+PropertyGrid.DisplayName.Use_Metric_Max	최대 지표 사용	Use Metric Max
+PropertyGrid.DisplayName.Use_Metric_Min	최소 지표 사용	Use Metric Min
+VisionTest.InputLayer	입력 레이어	Input Layer
+VisionTest.OutputLayer	결과 쓰기 레이어	Result Write Layer
+VisionTest.Run	실행	Run
+VisionTest.Details	상세	Details
+VisionTest.NoInputImage	입력 이미지 없음	No input image
+VisionTest.SelectInputLayer	입력 레이어를 선택하십시오.	Select an input layer.
+VisionTest.NoOutputYet	출력 결과 없음	No output yet
+VisionTest.RunToolToViewResult	Tool을 실행하면 결과가 표시됩니다.	Run the tool to view the result.
+VisionTest.CreateOutputLayer	새 출력 레이어를 생성합니다. Create 버튼은 입력 레이어를 바꾸지 않습니다.	Create Output Layer. This does not change the selected input layer.
+VisionTest.OutputLayerWriteTargetTooltip	미리보기/실행 결과를 쓸 레이어입니다. 기존 레이어를 선택하면 해당 레이어를 덮어쓰고, 새 이름을 입력하거나 + 버튼을 누르면 새 출력 레이어를 사용합니다.	Preview/Run writes results to this layer. Select an existing layer to overwrite it, or type a new name / press + to use a new output layer.
+VisionTest.Help	도움말	Help
+VisionTest.DefaultTitle	검사 Tool	Vision Tool
+VisionTest.DefaultStep	Vision Step	Vision Step
+VisionTest.Running	실행 중	Running
+VisionTest.Completed	실행 완료	Completed
+VisionTest.ResultPublished	결과 표시 완료: {0}	Result published: {0}
+VisionTest.RunFailedFormat	{0} 실행 실패.\r\n{1}	{0} failed.\r\n{1}
+VisionTest.Error.SourceImageNotLoaded	입력 이미지가 로드되지 않았습니다.	Source image is not loaded.
+VisionTest.Error.ToolReturnedNoResult	Vision Tool이 결과 객체를 반환하지 않았습니다.	Vision tool returned no result.
+VisionTest.Error.ResultImageEmpty	Vision Tool 결과 이미지가 비어 있습니다.	Vision tool result image is empty.
+VisionTest.Error.ToolExecutionFailed	Tool 실행에 실패했습니다.	Tool execution failed.
+ToolView.AddPipeline	파이프라인 추가	Add Pipeline
+LineForm.Text	라인 / 거리 측정	Line
+LineForm.btnResult.Text	상세	Details
+LineForm.btnRun.Text	피팅 라인	Fit Line
+LineForm.rjButton1.Text	에지 검출	Edge
+LineForm.btnVerLineRun.Text	수직선 거리	Vertical Line
+LineForm.rdoLeftEdgePara.Text	에지(L)	Edge(L)
+LineForm.rdoRightEdgePara.Text	에지(R)	Edge(R)
+LineForm.btnResult.ToolTip	검출 상세 결과를 확인합니다.	Show detailed detection results.
+LineForm.btnRun.ToolTip	좌/우 에지를 피팅해서 교차 라인을 계산합니다.	Fit left/right edges and calculate the intersection line.
+LineForm.rjButton1.ToolTip	선택한 에지 파라미터로 에지 위치를 검출합니다.	Detect the edge with the selected edge parameter.
+LineForm.btnVerLineRun.ToolTip	좌/우 에지로 수직 거리 측정 라인을 계산합니다.	Calculate vertical measurement lines from left/right edges.
+LineForm.rdoLeftEdgePara.ToolTip	왼쪽 에지 파라미터를 편집합니다.	Edit the left edge parameter.
+LineForm.rdoRightEdgePara.ToolTip	오른쪽 에지 파라미터를 편집합니다.	Edit the right edge parameter.
+LineForm.Run.FitLine	피팅 라인	Fit Line
+LineForm.Run.Edge	에지 검출	Line Edge
+LineForm.Run.VerticalLine	수직선 거리	Vertical Line Intersection
+MatchingForm.Text	패턴 매칭	Matching
+MatchingForm.btnRun.Text	실행	Run
+MatchingForm.groupBoxMatchReview.Text	매칭 검토	Match Review
+MatchingForm.lblTemplateTitle.Text	매칭 템플릿	Template to Match
+MatchingForm.lblDetectedTitle.Text	검출 영역	Detected Crop
+MatchingForm.lblMatchSummaryTitle.Text	매칭 결과	Match Result
+MatchingForm.RunName	패턴 매칭	Matching
+MatchingForm.State.RunToCompare	매칭을 실행하면 비교 결과가 표시됩니다.	Run matching to compare.
+MatchingForm.State.TemplateChanged	템플릿이 변경되었습니다.	Template changed.
+MatchingForm.State.NoMatch	매칭 결과가 없습니다.	No match.
+MatchingForm.Summary.Template	템플릿	Template
+MatchingForm.Summary.Crop	검출 영역	Crop
+MatchingForm.Summary.Score	점수	Score
+MatchingForm.Summary.Center	중심	Center
+MatchingForm.Summary.Size	크기	Size
+MatchingForm.Summary.Count	개수	Count
+MatchingForm.Summary.Overlay	오버레이	Overlay
+MatchingForm.Summary.Output	출력	Output
+MatchingForm.Summary.State	상태	State
+FeatureMatchingForm.Text	특징 매칭	Feature Matching
+FeatureMatchingForm.btnRun.Text	실행	Run
+FeatureMatchingForm.groupBoxFeatureReview.Text	특징 매칭 검토	Feature Review
+FeatureMatchingForm.lblTemplateTitle.Text	특징 템플릿	Feature Template
+FeatureMatchingForm.lblDetectedTitle.Text	검출 영역	Detected Crop
+FeatureMatchingForm.lblFeatureSummaryTitle.Text	특징 매칭 결과	Feature Result
+FeatureMatchingForm.RunName	특징 매칭	Feature Matching
+FeatureMatchingForm.State.RunToCompare	특징 매칭을 실행하면 비교 결과가 표시됩니다.	Run feature matching to compare.
+FeatureMatchingForm.State.TemplateChanged	템플릿이 변경되었습니다.	Template changed.
+FeatureMatchingForm.State.NoMatch	특징 매칭 결과가 없습니다.	No feature match.
+FeatureMatchingForm.Summary.Template	템플릿	Template
+FeatureMatchingForm.Summary.Crop	검출 영역	Crop
+FeatureMatchingForm.Summary.Score	점수	Score
+FeatureMatchingForm.Summary.Center	중심	Center
+FeatureMatchingForm.Summary.Size	크기	Size
+FeatureMatchingForm.Summary.Count	개수	Count
+FeatureMatchingForm.Summary.Angle	각도	Angle
+FeatureMatchingForm.Summary.Overlay	오버레이	Overlay
+FeatureMatchingForm.Summary.Output	출력	Output
+FeatureMatchingForm.Summary.State	상태	State
+AiRecipe.LayerFlow.RunPreviewFirst	FLOW NG | Preview를 실행하고 Step을 선택한 뒤 Layer Flow를 수정하십시오.	FLOW NG | Run Preview and select a step before editing layer flow.
+AiRecipe.LayerFlow.PreviousOutputMissing	FLOW NG | 이전 출력 레이어를 찾을 수 없습니다.	FLOW NG | Previous output layer was not found.
+AiRecipe.LayerFlow.InputRequired	FLOW NG | 입력 레이어가 필요합니다.	FLOW NG | Input Layer is required.
+AiRecipe.LayerFlow.OutputRequired	FLOW NG | 출력 레이어가 필요합니다.	FLOW NG | Output Layer is required.
+AiRecipe.LayerFlow.Applied	FLOW | Step {0:00} {1} | Input {2} -> {3}, Output {4} -> {5}{6}.	FLOW | Step {0:00} {1} | Input {2} -> {3}, Output {4} -> {5}{6}.
+AiRecipe.LayerFlow.BranchAllowed	, 분기=허용	, Branch=Allowed
+AiRecipe.LayerFlow.RunningPreview	FLOW | 변경된 Layer Flow로 Preview를 실행합니다.	FLOW | Running Preview with the changed layer flow.
+AiRecipe.LayerFlow.RerunPreview	FLOW | 변경된 Layer Flow를 확인하려면 Preview를 다시 실행하십시오.	FLOW | Re-run Preview to verify the changed layer flow.
+AiRecipe.LayerFlow.ValidationStillHasErrors	FLOW NG | Layer Flow 수정 후에도 검증 오류가 남아 있습니다.	FLOW NG | Validation still has errors after layer flow edit.
+RotateScale.Text	회전 / 스케일	Rotate / Scale
+RotateScale.RunName	회전 / 스케일	Rotate / Scale
+RotateScale.PreviewRunName	회전 / 스케일 미리보기	Rotate / Scale Preview
+RotateScale.groupBox3.Text	입력 레이어	Input Layer
+RotateScale.groupBox4.Text	출력 레이어	Output Layer
+RotateScale.rjLabel4.Text	회전 각도	Rotate
+RotateScale.rjLabelScaleX.Text	가로 스케일 (%)	Scale X (%)
+RotateScale.rjLabelScaleY.Text	세로 스케일 (%)	Scale Y (%)
+RotateScale.rjButton1.Text	회전 / 스케일 실행	Run Rotate / Scale
+RotateScale.cbLayerList.ToolTip	변환할 원본 이미지를 선택합니다.	Select the source image to transform.
+RotateScale.cbLayerList2.ToolTip	변환 결과를 기록할 레이어를 선택합니다.	Select the layer that receives the transformed image.
+RotateScale.btnNewPanel_Desty.ToolTip	새 출력 레이어를 추가합니다.	Add a new output layer.
+RotateScale.trbRotate.ToolTip	회전 각도를 조정합니다.	Adjust the rotation angle.
+RotateScale.trbScaleX.ToolTip	가로 확대/축소 비율을 조정합니다.	Adjust horizontal scale.
+RotateScale.trbScaleY.ToolTip	세로 확대/축소 비율을 조정합니다.	Adjust vertical scale.
+RotateScale.Error.InputImageEmpty	입력 이미지가 없습니다.	Input image is empty.
+RotateScale.Error.SourceImageEmpty	원본 이미지가 없습니다.	Source image is empty.
+PipelineBatch.Text	파이프라인 배치 실행	Pipeline Batch Run
+PipelineBatch.sampleSetsLabel.Text	샘플 세트	Sample Sets
+PipelineBatch.batchResultsLabel.Text	배치 결과	Batch Results
+PipelineBatch.stepPreviewLabel.Text	Step 미리보기	Step Preview
+PipelineBatch.batchStatusLabel.Text	대기	Ready
+PipelineBatch.btnSelectAll.Text	전체	All
+PipelineBatch.btnClear.Text	해제	Clear
+PipelineBatch.btnRefresh.Text	새로고침	Refresh
+PipelineBatch.btnCancel.Text	취소	Cancel
+PipelineBatch.btnRunFailed.Text	실패 재실행	Run Failed
+PipelineBatch.btnRunAll.Text	전체 실행	Run All
+PipelineBatch.btnRunSelected.Text	선택 실행	Run Checked
+PipelineBatch.btnOpenSummary.Text	결과 폴더	Open Summary
+PipelineBatch.btnHistory.Text	이력	History
+PipelineBatch.resultSampleColumn.HeaderText	샘플	Sample
+PipelineBatch.resultStatusColumn.HeaderText	상태	Status
+PipelineBatch.resultSuccessColumn.HeaderText	판정	Pass
+PipelineBatch.resultElapsedColumn.HeaderText	ms	ms
+PipelineBatch.resultFailedStepColumn.HeaderText	실패 Step	Failed Step
+PipelineBatch.resultMessageColumn.HeaderText	메시지	Message
+PipelineBatch.stepIndexColumn.HeaderText	No	No
+PipelineBatch.stepStatusColumn.HeaderText	상태	Status
+PipelineBatch.stepAcceptanceColumn.HeaderText	허용	Accept
+PipelineBatch.stepNameColumn.HeaderText	이름	Name
+PipelineBatch.stepToolColumn.HeaderText	Tool	Tool
+PipelineBatch.stepElapsedColumn.HeaderText	ms	ms
+PipelineBatch.stepImageColumn.HeaderText	이미지	Image
+PipelineBatch.stepOverlayColumn.HeaderText	오버레이	Overlay
+PipelineBatch.stepMetricColumn.HeaderText	메트릭	Metric
+PipelineBatch.stepErrorColumn.HeaderText	에러	Error
+PipelineBatch.stepResultStatusColumn.HeaderText	결과	Result
+PipelineBatch.stepMessageColumn.HeaderText	메시지	Message
+PipelineBatch.stepAcceptanceMessageColumn.HeaderText	허용 조건	Acceptance
+PipelineBatch.stepDiagnosticHintColumn.HeaderText	진단	Diagnostic
+PipelineBatch.stepSuggestedFixColumn.HeaderText	수정 제안	Suggested Fix
+PipelineBatch.metricNameColumn.HeaderText	메트릭	Metric
+PipelineBatch.metricValueColumn.HeaderText	값	Value
+PipelineBatch.NoSampleSets	샘플 세트가 없습니다. 먼저 Pipeline Samples 창에서 샘플 세트를 저장하십시오.	No sample sets. Save sample sets from the Pipeline Samples window first.
+PipelineBatch.SamplesCount	샘플: {0}	Samples: {0}
+PipelineBatch.MessageTitle	파이프라인 배치	Pipeline Batch
+PipelineBatch.NoFailedSample	재실행할 실패 샘플이 없습니다.	No failed sample to run.
+PipelineBatch.NoSampleSetSelected	선택된 샘플 세트가 없습니다.	No sample set selected.
+PipelineBatch.CancelRequested	취소 요청됨. 현재 Step이 중지될 때까지 대기합니다.	Cancel requested. Waiting for the current step to stop.
+PipelineBatch.ReadyToRun	{0}개 샘플 실행 준비.	Ready to run {0} sample(s).
+PipelineBatch.BatchFinished	배치 완료. 전체: {0}, Pass: {1}, Fail: {2}	Batch finished. Total: {0}, Pass: {1}, Fail: {2}
+PipelineBatch.Elapsed	소요 시간: {0:0.0} ms	Elapsed: {0:0.0} ms
+PipelineBatch.SummaryPath	요약: {0}	Summary: {0}
+PipelineBatch.SummarySaveFailed	요약 저장 실패.	Summary save failed.
+PipelineBatch.SummarySaveFailedDetail	배치 요약 저장 실패: {0}	Batch summary save failed: {0}
+PipelineBatch.BatchCanceled	배치가 취소되었습니다.	Batch canceled.
+PipelineBatch.NoBatchResultSelected	선택된 배치 결과가 없습니다.	No batch result selected.
+PipelineBatch.Sample	샘플: {0}	Sample: {0}
+PipelineBatch.StatusLine	상태: {0}   성공: {1}   전체: {2:0.0} ms	Status: {0}   Success: {1}   Total: {2:0.0} ms
+PipelineBatch.Message	메시지: {0}	Message: {0}
+PipelineBatch.Report	리포트: {0}	Report: {0}
+PipelineBatch.NoBatchResult	배치 결과가 없습니다.	No batch result.
+PipelineBatch.NoStep	(Step 없음)	(no step)
+PipelineBatch.None	없음	None
+PipelineBatch.Summary	요약: 전체 {0}, Pass {1}, Fail {2}	Summary: Total {0}, Pass {1}, Fail {2}
+PipelineBatch.StatusSummary	상태: {0}	Status: {0}
+PipelineBatch.FailedSteps	실패 Step: {0}	Failed Steps: {0}
+PipelineBatch.Filter.All	전체	All
+PipelineBatch.Filter.Failed	실패	Failed
+PipelineBatch.Filter.Passed	통과	Passed
+PipelineBatch.Filter.Invalid	잘못된 설정	Invalid
+PipelineBatch.Filter.Error	오류	Error
+PipelineBatch.Filter.Timeout	시간 초과	Timeout
+PipelineBatch.Filter.Cancel	취소	Cancel
+PipelineHistory.Text	파이프라인 실행 이력	Pipeline Run History
+PipelineHistory.btnRefresh.Text	새로고침	Refresh
+PipelineHistory.btnOpenFolder.Text	폴더 열기	Open Folder
+PipelineHistory.stepIndexColumn.HeaderText	No	No
+PipelineHistory.stepStatusColumn.HeaderText	상태	Status
+PipelineHistory.stepAcceptanceColumn.HeaderText	허용	Accept
+PipelineHistory.stepNameColumn.HeaderText	이름	Name
+PipelineHistory.stepToolColumn.HeaderText	Tool	Tool
+PipelineHistory.stepElapsedColumn.HeaderText	ms	ms
+PipelineHistory.stepImageColumn.HeaderText	이미지	Image
+PipelineHistory.stepOverlayColumn.HeaderText	오버레이	Overlay
+PipelineHistory.stepMetricColumn.HeaderText	메트릭	Metric
+PipelineHistory.stepErrorColumn.HeaderText	에러	Error
+PipelineHistory.stepResultStatusColumn.HeaderText	결과	Result
+PipelineHistory.stepMessageColumn.HeaderText	메시지	Message
+PipelineHistory.stepAcceptanceMessageColumn.HeaderText	허용 조건	Acceptance
+PipelineHistory.stepDiagnosticHintColumn.HeaderText	진단	Diagnostic
+PipelineHistory.stepSuggestedFixColumn.HeaderText	수정 제안	Suggested Fix
+PipelineHistory.metricNameColumn.HeaderText	메트릭	Metric
+PipelineHistory.metricValueColumn.HeaderText	값	Value
+PipelineHistory.NoRunReport	실행 리포트가 없습니다.	No run report.
+PipelineHistory.Pipeline	파이프라인: {0}	Pipeline: {0}
+PipelineHistory.Started	시작: {0}	Started: {0}
+PipelineHistory.Finished	종료: {0}	Finished: {0}
+PipelineHistory.Total	전체: {0:0.0} ms   성공: {1}   전체 출력: {2}	Total: {0:0.0} ms   Success: {1}   All Outputs: {2}
+PipelineBatchHistory.Text	파이프라인 배치 이력	Pipeline Batch History
+PipelineBatchHistory.batchRunsLabel.Text	배치 실행 이력	Batch Runs
+PipelineBatchHistory.sampleResultsLabel.Text	샘플 결과	Sample Results
+PipelineBatchHistory.stepPreviewLabel.Text	Step 미리보기	Step Preview
+PipelineBatchHistory.btnRefresh.Text	새로고침	Refresh
+PipelineBatchHistory.btnOpenFolder.Text	폴더 열기	Open Folder
+PipelineBatchHistory.resultSampleColumn.HeaderText	샘플	Sample
+PipelineBatchHistory.resultStatusColumn.HeaderText	상태	Status
+PipelineBatchHistory.resultSuccessColumn.HeaderText	판정	Pass
+PipelineBatchHistory.resultElapsedColumn.HeaderText	ms	ms
+PipelineBatchHistory.resultFailedStepColumn.HeaderText	실패 Step	Failed Step
+PipelineBatchHistory.resultMessageColumn.HeaderText	메시지	Message
+PipelineBatchHistory.stepIndexColumn.HeaderText	No	No
+PipelineBatchHistory.stepStatusColumn.HeaderText	상태	Status
+PipelineBatchHistory.stepNameColumn.HeaderText	이름	Name
+PipelineBatchHistory.stepToolColumn.HeaderText	Tool	Tool
+PipelineBatchHistory.stepElapsedColumn.HeaderText	ms	ms
+PipelineBatchHistory.stepImageColumn.HeaderText	이미지	Image
+PipelineBatchHistory.stepOverlayColumn.HeaderText	오버레이	Overlay
+PipelineBatchHistory.stepMetricColumn.HeaderText	메트릭	Metric
+PipelineBatchHistory.stepMessageColumn.HeaderText	메시지	Message
+PipelineBatchHistory.metricNameColumn.HeaderText	메트릭	Metric
+PipelineBatchHistory.metricValueColumn.HeaderText	값	Value
+PipelineBatchHistory.NoBatchSummary	배치 요약이 없습니다.	No batch summary.
+PipelineBatchHistory.NoSampleResult	샘플 결과가 없습니다.	No sample result.
+PipelineBatchHistory.Sample	샘플: {0}	Sample: {0}
+PipelineBatchHistory.StatusLine	상태: {0}   성공: {1}   전체: {2:0.0} ms	Status: {0}   Success: {1}   Total: {2:0.0} ms
+PipelineBatchHistory.Message	메시지: {0}	Message: {0}
+PipelineBatchHistory.Report	리포트: {0}	Report: {0}
+PipelineBatchHistory.Pipeline	파이프라인: {0}	Pipeline: {0}
+PipelineBatchHistory.Started	시작: {0}	Started: {0}
+PipelineBatchHistory.Finished	종료: {0}	Finished: {0}
+PipelineBatchHistory.Total	전체: {0}   Pass: {1}   Fail: {2}   소요: {3:0.0} ms	Total: {0}   Pass: {1}   Fail: {2}   Elapsed: {3:0.0} ms
+PipelineBatchHistory.FilteredResultsZero	필터 결과: 0	Filtered Results: 0
+PipelineBatchHistory.FilteredResults	필터 결과: {0}	Filtered Results: {0}
+PipelineBatchHistory.StatusSummary	상태: {0}	Status: {0}
+PipelineBatchHistory.FailedSteps	실패 Step: {0}	Failed Steps: {0}
+PipelineBatchHistory.NoStep	(Step 없음)	(no step)
+PipelineBatchHistory.None	없음	None
+PipelineBatchHistory.Filter.All	전체	All
+PipelineBatchHistory.Filter.Failed	실패	Failed
+PipelineBatchHistory.Filter.Passed	통과	Passed
+PipelineBatchHistory.Filter.Invalid	잘못된 설정	Invalid
+PipelineBatchHistory.Filter.Error	오류	Error
+PipelineBatchHistory.Filter.Timeout	시간 초과	Timeout
+PipelineBatchHistory.Filter.Cancel	취소	Cancel
+PipelineSamples.Text	파이프라인 샘플	Pipeline Samples
+PipelineSamples.tabCatalog.Text	레시피 카탈로그	Recipe Catalog
+PipelineSamples.tabSaved.Text	저장된 작업 영역	Saved Workspace
+PipelineSamples.catalogSourcePreviewLabel.Text	입력 이미지	Source
+PipelineSamples.catalogReferencePreviewLabel.Text	기대 결과	Expected Result
+PipelineSamples.catalogReferenceEmptyLabel.Text	기대 결과 이미지 없음	No expected result yet
+PipelineSamples.CatalogSource	카탈로그 출처	Catalog Source
+PipelineSamples.CatalogSourceEmpty	카탈로그 출처 없음	No catalog source.
+PipelineSamples.btnOpenCatalog.Text	열기 + 미리보기	Open + Preview
+PipelineSamples.btnCheckCatalog.Text	샘플 검사	Check Sample
+PipelineSamples.btnCheckPair.Text	쌍 검사	Check Pair
+PipelineSamples.btnSaveCurrent.Text	현재 상태 저장	Save Current
+PipelineSamples.btnLoad.Text	로드	Load
+PipelineSamples.btnDelete.Text	삭제	Delete
+PipelineSamples.btnRefresh.Text	새로고침	Refresh
+PipelineSamples.btnOpenCatalog.ToolTip	선택한 샘플 이미지와 파이프라인을 열고 미리보기를 실행합니다.	Open the selected sample image and pipeline, then run Preview.
+PipelineSamples.btnCheckCatalog.ToolTip	선택한 샘플이 기대 결과 범위에 들어오는지 검사합니다.	Check whether the selected sample meets its expected result.
+PipelineSamples.btnCheckPair.ToolTip	Good/Bad 샘플 쌍을 같은 파이프라인으로 검사합니다.	Check Good/Bad sample pairs with the same pipeline.
+PipelineSamples.btnSaveCurrent.ToolTip	현재 레이어 이미지를 샘플 세트로 저장합니다.	Save the current layer images as a sample set.
+PipelineSamples.btnLoad.ToolTip	저장된 샘플 세트를 현재 작업 영역으로 로드합니다.	Load the saved sample set into the current workspace.
+PipelineSamples.btnDelete.ToolTip	선택한 저장 샘플을 삭제합니다.	Delete the selected saved sample.
+PipelineSamples.btnRefresh.ToolTip	샘플 목록과 카탈로그 상태를 다시 읽습니다.	Refresh sample lists and catalog status.
+PipelineSamples.CoverageEmpty	카탈로그 커버리지: -	Catalog coverage: -
+PipelineSamples.NoSample	샘플 없음	No sample
+PipelineSamples.SelectRecipeSample	샘플 이미지, 파이프라인, 기대 결과를 확인할 레시피 샘플을 선택하십시오.	Select a recipe sample to load its image, pipeline, and expected result.
+PipelineSamples.LearnEmpty	학습: -	Learn: -
+PipelineSamples.ExpectedEmpty	기대 결과: -	Expected: -
+PipelineSamples.SampleFallback	샘플	Sample
+PipelineSamples.CoverageNone	없음	none
+PipelineSamples.CoverageSummary	카탈로그 커버리지: {0}/{1} 폴더 | 미등록: {2}	Catalog coverage: {0}/{1} folders covered | Backlog: {2}
+PipelineSamples.ExpectedHeaderEmpty	기대 결과: -	Expected: -
+PipelineSamples.ExpectedHeaderPipeline	기대: {0} | 파이프라인: {1}	Expected: {0} | Pipeline: {1}
+PipelineSamples.ExpectedHeaderPairPipeline	기대: {0} | 쌍: {1} | 파이프라인: {2}	Expected: {0} | Pair: {1} | Pipeline: {2}
+PipelineSamples.ExpectedHeaderLast	기대: {0} | 마지막: {1} | 최종: {2}	Expected: {0} | Last: {1} | Final: {2}
+PipelineSamples.ExpectedHeaderPairLast	기대: {0} | 쌍: {1} | 마지막: {2} | 최종: {3}	Expected: {0} | Pair: {1} | Last: {2} | Final: {3}
+PipelineSamples.ExpectedMetricCount	메트릭 {0}개	{0} metrics
+PipelineSamples.GuideTitle	샘플 선택 가이드	Sample Selection Guide
+PipelineSamples.GuidePipeline	추천 Pipeline: {0} | 흐름: {1}	Recommended Pipeline: {0} | Flow: {1}
+PipelineSamples.GuideMetric	기대 결과 / Pair: {0}	Expected / Pair: {0}
+PipelineSamples.GuideCheck	확인할 값: {0}	Check: {0}
+PipelineSamples.GuideFix	실패 시 수정 포인트: {0}	If NG: {0}
+PipelineSamples.GuideLastNotRun	마지막 검사: 실행 안 됨	Last check: not run
+PipelineSamples.GuideLast	마지막 검사: {0} | 실제 {1} | 최종 {2}	Last check: {0} | Actual {1} | Final {2}
+PipelineSamples.LearnPairMissing	학습: {0} | 쌍 비교: 대상 없음	Learn: {0} | Pair Compare: pair target missing
+PipelineSamples.LearnFlowPairMissing	학습: {0} | 흐름: {1} | 쌍 비교: 대상 없음	Learn: {0} | Flow: {1} | Pair Compare: pair target missing
+PipelineSamples.LearnPair	학습: {0} | 쌍 비교: {1}	Learn: {0} | Pair Compare: {1}
+PipelineSamples.LearnFlowPair	학습: {0} | 흐름: {1} | 쌍 비교: {2}	Learn: {0} | Flow: {1} | Pair Compare: {2}
+PipelineSamples.PairSummaryMissing	Good / Bad 쌍: {0}\n - 쌍 샘플이 카탈로그에 등록되지 않았습니다.	Good / Bad Pair: {0}\n - Matching pair sample is not registered in the catalog.
+PipelineSamples.PairSummaryTitle	Good / Bad 쌍: {0} ({1}개 샘플)	Good / Bad Pair: {0} ({1} samples)
+PipelineSamples.PairSummaryLastNotRun	마지막 검사 안 됨	Last not run
+PipelineSamples.PairSummaryLast	마지막 {0} | 실제 {1} | 최종 {2}	Last {0} | actual {1} | final {2}
+PipelineSamples.PairSummaryLine	 - {0} {1}: 기대 {2} | {3}	 - {0} {1}: expected {2} | {3}
+PipelineSamples.PairSummaryPurpose	목적: 같은 Recipe를 OK/NG 기준 이미지에 실행하고 기대 메트릭 범위를 비교합니다.	Purpose: run the same recipe on OK/NG references and compare expected metric bounds.
+PipelineSamples.ReferenceNotDefined	정의 안 됨	not defined
+PipelineSamples.ReferenceMissing	{0} (없음)	{0} (missing)
+PipelineSamples.NoCatalogSample	카탈로그 샘플이 없습니다.	No catalog sample.
+PipelineSamples.Ready	준비됨	Ready
+PipelineSamples.MissingFile	파일 없음	Missing file
+PipelineSamples.LastCheckNotRun	마지막 검사: 실행 안 됨	Last check: Not run
+PipelineSamples.LastCheck	마지막 검사: {0} | {1} | 최종: {2} | 오버레이: {3} | {4:0.0} ms | {5:HH:mm:ss}	Last check: {0} | {1} | Final: {2} | Overlays: {3} | {4:0.0} ms | {5:HH:mm:ss}
+PipelineSamples.FailedStep	실패 Step: {0}	Failed step: {0}
+PipelineSamples.Action	동작: {0}	Action: {0}
+PipelineSamples.StepFlow	Step 흐름: {0}	Step flow: {0}
+PipelineSamples.MetricReviewNotRun	메트릭 검토: 실행 안 됨	Metric review: Not run
+PipelineSamples.ExpectedMetric	기대 메트릭: {0}	Expected metric: {0}
+PipelineSamples.ExpectedReason	기대 근거: {0}	Expected reason: {0}
+PipelineSamples.FixGuide	수정 포인트: {0}	Fix point: {0}
+PipelineSamples.Pair	쌍: {0}	Pair: {0}
+PipelineSamples.RecipeGuide	레시피 가이드: {0}	Recipe guide: {0}
+PipelineSamples.Category	분류: {0}	Category: {0}
+PipelineSamples.Goal	목표: {0}	Goal: {0}
+PipelineSamples.Image	이미지: {0} ({1} x {2})	Image: {0} ({1} x {2})
+PipelineSamples.Reference	기대 결과 이미지: {0}	Reference: {0}
+PipelineSamples.Pipeline	파이프라인: {0}	Pipeline: {0}
+PipelineSamples.OpenPreviewAction	동작: 열기 + 미리보기는 이 이미지와 레시피를 불러온 뒤 Pipeline에서 미리보기를 실행합니다.	Action: Open + Preview loads this image and recipe, then runs preview in Pipeline.
+PipelineSamples.Validation	검증: {0}	Validation: {0}
+PipelineSamples.State	상태: {0}	State: {0}
+PipelineSamples.CheckMessage	검사 메시지: {0}	Check message: {0}
+PipelineSamples.pairRoleColumn.HeaderText	역할	Role
+PipelineSamples.pairSampleColumn.HeaderText	샘플	Sample
+PipelineSamples.pairExpectedColumn.HeaderText	기대 결과	Expected
+PipelineSamples.pairActualColumn.HeaderText	실제 결과	Actual
+PipelineSamples.pairStatusColumn.HeaderText	상태	Status
+PipelineSamples.SelectSample	샘플을 선택하십시오	Select a sample
+PipelineSamples.NoExpectedResultYet	기대 결과 이미지 없음	No expected result yet
+PipelineSamples.ExpectedResultNotFound	기대 결과 이미지를 찾을 수 없음	Expected result not found
+PipelineSamples.NoSampleSet	저장된 샘플 세트가 없습니다.	No sample set.
+PipelineSamples.SavedName	이름: {0}	Name: {0}
+PipelineSamples.SavedLayers	레이어 수: {0}	Layers: {0}
+PipelineSamples.SavedAt	저장 시간: {0:yyyy-MM-dd HH:mm:ss}	Saved: {0:yyyy-MM-dd HH:mm:ss}
+PipelineSamples.SavedPath	경로: {0}	Path: {0}
+PipelineSamples.Checking	검사 중...	Checking...
+PipelineSamples.CheckingPair	쌍 검사 중...	Checking Pair...
+PipelineSamples.ExpectedPipeline	기대 결과: {0} | 파이프라인: {1}	Expected: {0} | Pipeline: {1}
+PipelineSamples.PairCheck	쌍 검사: {0} | {1}개 샘플	Pair Check: {0} | {1} samples
+PipelineSamples.CheckingGoodBadPair	Good/Bad 쌍 검사 중: {0}	Checking Good/Bad pair: {0}
+PipelineSamples.PairWaitingLine	 - {0} {1}: 대기	 - {0} {1}: waiting
+PipelineSamples.SaveSampleTitle	샘플 저장	Save Sample
+PipelineSamples.SampleName	샘플 이름	Sample Name
+PipelineSamples.MessageTitle	파이프라인 샘플	Pipeline Samples
+PipelineSamples.SampleSaved	샘플을 저장했습니다. 레이어 수: {0}	Sample saved. Layers: {0}
+PipelineSamples.SampleLoaded	샘플을 로드했습니다. 레이어 수: {0}	Sample loaded. Layers: {0}
+PipelineSamples.DeleteSampleConfirm	샘플 '{0}'을 삭제하시겠습니까?	Delete sample '{0}'?
+PipelineAddStep.Text	파이프라인 Step 추가	Add Pipeline Step
+PipelineAddStep.captionLabel.Text	파이프라인 Step 추가	Add Pipeline Step
+PipelineAddStep.positionLabel.Text	추가 위치	Position
+PipelineAddStep.toolLabel.Text	1. Tool	1. Tool
+PipelineAddStep.stepNameLabel.Text	2. Step 이름	2. Step Name
+PipelineAddStep.inputLayerLabel.Text	3. 입력 이미지	3. Input Source
+PipelineAddStep.outputLayerLabel.Text	4. 출력 이미지	4. Output Result
+PipelineAddStep.inputCardTitle.Text	INPUT	INPUT
+PipelineAddStep.toolCardTitle.Text	TOOL	TOOL
+PipelineAddStep.outputCardTitle.Text	OUTPUT	OUTPUT
+PipelineAddStep.chkAllowBranch.Text	분기 입력 허용	Allow branch input
+PipelineAddStep.btnCancel.Text	취소	Cancel
+PipelineAddStep.btnAdd.Text	Step 추가	Add Step
+PipelineAddStep.cbToolType.ToolTip	파이프라인에 추가할 Vision Tool입니다.	Vision tool to add to the pipeline.
+PipelineAddStep.insertPositionValue.ToolTip	새 Step이 삽입될 위치입니다.	Where the new step will be inserted.
+PipelineAddStep.tbStepName.ToolTip	Step 목록과 로그에 표시될 이름입니다.	Name shown in the step list and run log.
+PipelineAddStep.cbInputLayer.ToolTip	이 Step이 읽을 이미지입니다. 기본값은 이전 Step 출력이며, 다른 레이어를 고르면 분기 흐름입니다.	Image source used by this step. The previous output is selected by default; choosing another layer creates a branch.
+PipelineAddStep.tbOutputLayer.ToolTip	이 Step이 생성할 결과 레이어입니다. 입력과 다른 이름을 사용해야 합니다.	Result layer created by this step. Keep it different from the input source.
+PipelineAddStep.flowPreviewPanel.ToolTip	새 Step이 파이프라인 흐름에 어떻게 연결되는지 보여줍니다.	Shows how this new step will connect to the pipeline.
+PipelineAddStep.chkAllowBranch.ToolTip	이전 Step 출력이 아닌 별도 레이어를 의도적으로 읽을 때만 켭니다.	Turn this on only when this step should intentionally read from a layer other than the previous output.
+PipelineAddStep.AppendToPipeline	파이프라인 끝에 추가	Append to pipeline
+PipelineAddStep.ReadyPrefix	준비 완료. 	Ready. 
+PipelineAddStep.Validation.SelectTool	Tool을 선택하십시오.	Select a tool.
+PipelineAddStep.Validation.EnterStepName	Step 이름을 입력하십시오.	Enter a step name.
+PipelineAddStep.Validation.StepNameExists	Step 이름 '{0}'이 이미 있습니다.	Step name '{0}' already exists.
+PipelineAddStep.Validation.SelectInputLayer	입력 이미지를 선택하십시오.	Select an input layer.
+PipelineAddStep.Validation.EnterOutputLayer	출력 이미지를 입력하십시오.	Enter an output layer.
+PipelineAddStep.Validation.OutputDifferent	출력 이미지는 입력 이미지와 달라야 합니다.	Output layer must be different from input layer.
+PipelineAddStep.Validation.OutputNotMain	Main은 출력 이미지로 사용할 수 없습니다.	Output layer cannot be Main.
+PipelineAddStep.Validation.OutputLayerExists	출력 이미지 '{0}'이 이미 있습니다.	Output layer '{0}' already exists.
+PipelineAddStep.Validation.BranchInputSelected	분기 입력입니다. 이전 출력 '{1}' 대신 '{0}'을 읽으려면 '분기 입력 허용'을 켜십시오.	Branch input selected. Turn on 'Allow branch input' to read '{0}' instead of previous output '{1}'.
+PipelineAddStep.Flow.SourceReady	'{0}'에서 시작하여 '{1}'을 생성합니다.	Source flow: starts from '{0}' and creates '{1}'.
+PipelineAddStep.Flow.BranchReady	이전 출력 '{1}' 대신 '{0}'을 읽습니다.	Branch flow: reads '{0}' instead of previous output '{1}'.
+PipelineAddStep.Flow.DefaultReady	이전 출력 '{0}'이 이 Step의 입력이 됩니다.	Default link: previous output '{0}' becomes this step input.
+PipelineAddStep.Flow.SourceRelation	Main -> {0}	Source flow: Main -> {0}.
+PipelineAddStep.Flow.DefaultRelation	이전 출력 '{0}' -> {1}	Default link: previous output '{0}' -> {1}.
+PipelineAddStep.Flow.BranchRelation	분기 입력 '{0}'이 이전 출력을 우회합니다.	Branch flow: selected input '{0}' bypasses previous output.
+App.Subtitle	Rule-based Vision Workbench	Rule-based Vision Workbench
+Shell.Operator	작업자	Operator
+Shell.Workbench	작업대	Workbench
+Shell.Camera	카메라	Camera
+Shell.Select	선택	Select
+Shell.All	전체	All
+Shell.DirectResult	직접 실행 결과	Direct Result
+Shell.DirectBadgeReady	대기	Ready
+Shell.DirectBadgeOk	OK	OK
+Shell.DirectStatusReady	실행 전	Not run
+Shell.DirectStatusReadyDetail	도구를 실행하면 결과가 표시됩니다.	Run the tool to show a result.
+Shell.DirectStatusOk	완료	Done
+Shell.DirectStatusOkFormat	완료 | {0}	Done | {0}
+Shell.ResultPreview	결과 미리보기	Result Preview
+Shell.LayersResults	레이어 / 결과	Layers / Results
+Shell.SelectedLayerDetail	선택 레이어	Selected Layer
+Shell.StatusPassed	상태: 통과	Status: Passed
+Shell.ElapsedSample	소요 시간: 14.2 ms	Elapsed: 14.2 ms
+Shell.MainLayer	Main 레이어	Main Layer
+Shell.SelectedLayerCanvasFormat	{0} 레이어	{0} Layer
+Shell.CanvasLayerStatusFormat	레이어 {0} | {1}	Layer {0} | {1}
+Shell.ToolPreview	도구 미리보기	Tool Preview
+Shell.ToolPreviewFormat	{0} 미리보기	{0} Preview
+Shell.InputPreviewFormat	{0} 입력	{0} Input
+Shell.OutputPreviewFormat	{0} 출력	{0} Output
+Shell.SelectedToolFormat	{0} (선택됨)	{0} (selected)
+Shell.RouteEmpty	예상 경로: Main -> -	Expected: Main -> -
+Shell.RouteFormat	예상 경로: Main -> {0}	Expected: Main -> {0}
+Shell.RoutePairFormat	예상 경로: {0} -> {1}	Expected: {0} -> {1}
+Shell.RouteInputFallback	선택 입력	Selected input
+Shell.RouteOutputFallback	선택 출력	Selected output
+Shell.RoutePipelineReview	예상 경로: Pipeline Review 선택 Step	Expected: selected Pipeline Review step
+Shell.PendingTool.NavStatus	준비	Pending
+Shell.PendingTool.NavDescription	도구 화면을 준비 중입니다.	Tool view is being prepared.
+Shell.PendingTool.Status	준비 중	Pending
+Shell.PendingTool.Message	이 도구 화면은 아직 준비 중입니다. 완료 후 이 창에서 바로 실행됩니다.	This tool view is being prepared. It will open here when it is ready.
+Shell.PendingTool.Route	메인 작업영역과 레이어 선택은 계속 사용할 수 있습니다.	Main workspace and layer selection remain available.
+Shell.ReadyFoundation	준비	Ready
+Shell.ReadySelectedFormat	준비 | 선택: {0}	Ready | Selected: {0}
+Shell.LayerDetailNoImage	이미지 없음	No image
+Shell.LayerDetailPending	레이어 대기	Layer pending
+Shell.WorkspaceEmptyTitle	이미지 없음	No image
+Shell.WorkspaceEmptyDetail	이미지를 로드하거나 샘플을 열어 테스트를 시작하십시오.	Load an image or open a sample to start testing.
+Shell.WorkspaceLoadImage	이미지 로드...	Load Image...
+Shell.WorkspaceLoadImageButton	이미지 로드	Load Image
+Shell.OpenLayerWindow	레이어 새 창으로 보기	Open Layer in New Window
+Shell.OpenLayerWindowShort	팝업	Popout
+Shell.CreateLayer	새 레이어 만들기	Create Layer
+Shell.CreateLayerShort	새 레이어	New
+Shell.LoadImageIntoLayer	선택 레이어에 이미지 넣기	Load Image into Layer
+Shell.LoadImageIntoLayerShort	이미지 넣기	Load
+Shell.RenameLayer	선택 레이어 이름 변경	Rename Selected Layer
+Shell.RenameLayerShort	이름 변경	Rename
+Shell.DeleteLayer	선택 레이어 삭제	Delete Layer
+Shell.DeleteLayerShort	삭제	Delete
+Shell.LayerViewerTitleFormat	레이어 보기 - {0}	Layer View - {0}
+Shell.DockLayer	레이어 도킹	Dock Layer
+Shell.DockLayerShort	도킹	Dock
+Shell.ClearDockedLayers	도킹 레이어 비우기	Clear Docked Layers
+Shell.ClearDockedLayersShort	해제	Clear
+Shell.UndockLayer	도킹 해제	Undock Layer
+Shell.DockedLayerStatusFormat	도킹 레이어 {0}개	Docked layers: {0}
+Shell.FloatDockedTool	툴 창 분리	Float tool window
+Shell.CloseDockedTool	툴 닫기	Close tool
+Shell.WorkspaceLoadImageStatusFormat	Main 이미지 로드됨: {0}	Main image loaded: {0}
+ToolView.NoInputImageTitle	입력 이미지 없음	No input image
+ToolView.NoInputImageDetail	이미지를 로드해 이 도구의 테스트를 시작하십시오.	Load an image to start testing this tool.
+ToolView.NoOutputImageTitle	결과 이미지 없음	No result image
+ToolView.NoOutputImageDetail	미리보기를 실행하면 결과 이미지가 표시됩니다.	Run Preview to display a result image.
+ToolView.LoadImage	이미지 로드...	Load Image...
+ToolView.LoadImageButton	이미지 로드	Load Image
+ToolView.SaveImage	이미지 저장...	Save Image...
+ToolView.RoutePreviewInputToolTip	작은 입력 썸네일입니다. 클릭하면 중앙 작업영역에서 해당 레이어를 표시합니다.	Input thumbnail. Click to show this layer in the central workspace.
+ToolView.RoutePreviewOutputToolTip	작은 출력 썸네일입니다. 클릭하면 중앙 작업영역에서 해당 결과 레이어를 표시합니다.	Output thumbnail. Click to show this result layer in the central workspace.
+PipelineReview.Title	파이프라인 리뷰	Pipeline Review
+PipelineReview.StepFlow	Step 흐름	Step Flow
+PipelineReview.Step	Step	Step
+PipelineReview.Tool	Tool	Tool
+PipelineReview.State	상태	State
+PipelineReview.Route	입출력	Route
+PipelineReview.Input	입력	Input
+PipelineReview.Output	출력	Output
+PipelineReview.Flow	흐름	Flow
+PipelineReview.Parameters	파라미터	Parameters
+PipelineReview.Validation	검증	Validation
+PipelineReview.Result	결과	Result
+PipelineReview.RunLog	실행 로그	Run Log
+PipelineReview.MetaFormat	{0} / {1} Step	{0} / {1} steps
+PipelineReview.ValidationNotRun	검증 전	Validation not run
+PipelineReview.RunRequired	리뷰 실행 필요	Run review required
+PipelineReview.RunRequiredDetail	리뷰 실행을 눌러 Step 결과를 갱신하십시오.	Click Run Review to refresh step results.
+PipelineReview.RunReview	리뷰 실행	Run Review
+PipelineReview.PreviousStep	이전	Previous
+PipelineReview.NextStep	다음	Next
+PipelineReview.PreviousStepToolTip	이전 Pipeline Step 선택	Select the previous pipeline step
+PipelineReview.NextStepToolTip	다음 Pipeline Step 선택	Select the next pipeline step
+PipelineReview.Ready	파이프라인 리뷰 준비됨	Pipeline review ready
+PipelineReview.SelectedFormat	선택: {0}	Selected: {0}
+PipelineReview.RunningButton	실행 중...	Running...
+PipelineReview.Running	파이프라인 리뷰 실행 중입니다.	Pipeline review is running.
+PipelineReview.EmptyFlow	Pipeline Step이 없습니다.	No pipeline steps.
+PipelineReview.EmptyHint	Tool View 또는 Pipeline 편집기에서 Step을 추가하십시오.	Add steps from a tool view or the Pipeline editor.
+PipelineReview.NoRunResult	실행 결과 없음	No run result
+PipelineReview.NoStepsStatus	Pipeline에 Step이 없습니다.	Pipeline has no steps.
+PipelineReview.NoImage	이미지 없음	No image
+PipelineReview.Execution.NotRun	실행 전	Not run
+PipelineReview.Execution.AlreadyRunning	이미 실행 중	Already running
+PipelineReview.Execution.NoSteps	Step 없음	No steps
+PipelineReview.Execution.ValidationErrors	검증 오류	Validation errors
+PipelineReview.ValidationError	검증 오류	Validation error
+PipelineReview.FixValidationErrors	리뷰 실행 전 검증 오류를 수정하십시오.	Fix validation errors before running review.
+PipelineReview.Execution.Started	시작됨	Started
+PipelineReview.RunningSummary	실행 중	Running
+PipelineReview.RunningDetail	Pipeline 리뷰 실행 중입니다.	Pipeline review execution in progress.
+PipelineReview.Execution.FailedFormat	실패: {0}	Failed: {0}
+PipelineReview.RunFailed	실행 실패	Run failed
+PipelineReview.Execution.CompletedFormat	완료 / {0} Step 결과	Completed / {0} step results
+PipelineReview.RunLog.ReviewStateFormat	리뷰 상태: {0}	Review state: {0}
+PipelineReview.RunLog.ValidationFormat	검증: {0}	Validation: {0}
+PipelineReview.RunLog.ResultFormat	결과: {0}	Result: {0}
+PipelineReview.RunLog.PreviewModeFormat	미리보기 모드: {0}	Preview mode: {0}
+PipelineReview.RunLog.InputImageFormat	입력 이미지: {0}	Input image: {0}
+PipelineReview.RunLog.OutputImageFormat	출력 이미지: {0}	Output image: {0}
+PipelineReview.NoRunResultForStep	선택 Step 실행 결과 없음.	No run result for selected step.
+PipelineReview.Result.ImageLabel	이미지	Image
+PipelineReview.Result.OverlaysFormat	Overlay {0}개	Overlays {0}
+PipelineReview.ImageMissing	없음	missing
+PipelineReview.Validation.ErrorPrefix	오류	Error
+PipelineReview.Validation.Valid	Pipeline 구조가 유효합니다.	Pipeline structure looks valid.
+PipelineReview.Validation.BranchInputFormat	분기 입력 확인: {0} -> {1}.	Review branch input: {0} -> {1}.
+PipelineReview.Flow.DisabledStep	비활성 Step	Disabled step
+PipelineReview.Flow.UnknownInput	입력?	Input?
+PipelineReview.Flow.SourceImageFormat	원본 이미지: {0}	Source image: {0}
+PipelineReview.Flow.BranchInputFormat	분기 입력: {0} / 이전 출력: {1}	Branch input: {0} instead of previous output {1}
+PipelineReview.Flow.PreviousOutputFormat	이전 출력: {0}	Previous output: {0}
+PipelineReview.RouteFormat	{0} -> {1}	{0} -> {1}
+SimplePreprocess.HistogramType	히스토그램 타입	Histogram type
+SimplePreprocess.ClipLimit	Clip 제한	Clip limit
+SimplePreprocess.TileGrid	타일 그리드	Tile grid
+SimplePreprocess.NormalizeAlpha	정규화 Alpha	Normalize alpha
+SimplePreprocess.NormalizeBeta	정규화 Beta	Normalize beta
+SimplePreprocess.HueRange	Hue	Hue
+SimplePreprocess.HueMin	Hue 최소	Hue min
+SimplePreprocess.HueMax	Hue 최대	Hue max
+SimplePreprocess.SaturationRange	채도	Saturation
+SimplePreprocess.SaturationMin	채도 최소	Saturation min
+SimplePreprocess.SaturationMax	채도 최대	Saturation max
+SimplePreprocess.ValueRange	명도	Value
+SimplePreprocess.ValueMin	명도 최소	Value min
+SimplePreprocess.ValueMax	명도 최대	Value max
+SimplePreprocess.MeanType	평균 타입	Mean type
+SimplePreprocess.MeanMin	최소 평균	Min mean
+SimplePreprocess.MeanMax	최대 평균	Max mean
+VisionTool.SimplePreprocess.MeanPassReasonFormat	평균 {0:0.0}이 설정 범위 {1} 안에 있습니다.	Mean {0:0.0} is inside the configured range {1}.
+VisionTool.SimplePreprocess.MeanFailReasonFormat	평균 결과가 없거나 설정 범위 {0}을 통과하지 못했습니다. 원인 후보: ROI, 밝기 변화, 범위 기준.	Mean result is missing or outside the configured range {0}. Cause candidates: ROI, brightness drift, or range limits.
+VisionTool.SimplePreprocess.MeanPassNext	Good/Bad 샘플에서 값을 비교한 뒤 파이프라인에 추가하세요	Compare the value on Good/Bad samples, then add to pipeline
+VisionTool.SimplePreprocess.MeanFailNext	ROI 또는 평균 범위를 조정한 뒤 미리보기를 다시 실행하세요	Adjust ROI or mean range, then run preview again
+VisionTool.SimplePreprocess.HsvReasonFormat	현재 HSV 범위가 전체 픽셀의 {0:0.0}%를 선택했습니다.	The current HSV range selected {0:0.0}% of pixels.
+VisionTool.SimplePreprocess.HsvNext	배경까지 많이 남으면 H/S/V 범위를 좁히고 Good/Bad 샘플에서 마스크를 비교하세요	If background remains, narrow H/S/V ranges and compare the mask on Good/Bad samples
+VisionTool.SimplePreprocess.HistogramReasonFormat	{0} 변환 후 평균/대비가 {1:0.0}/{2:0.0}에서 {3:0.0}/{4:0.0}로 바뀌었습니다.	{0} changed mean/contrast from {1:0.0}/{2:0.0} to {3:0.0}/{4:0.0}.
+VisionTool.SimplePreprocess.HistogramNext	다음 툴에 연결하기 전에 Good/Bad 샘플에서 출력 밝기와 노이즈를 비교하세요	Compare output brightness and noise on Good/Bad samples before connecting the next tool
+Menu.Tools	도구	Tools
+Menu.Tools.ToolTip	이미지 비교, 로그 보기 등 보조 도구를 엽니다.	Open utility tools such as Image Compare and Log Viewer.
+Menu.ImageCompare	이미지 비교	Image Compare
+Menu.ImageCompare.ToolTip	여러 이미지를 같은 좌표와 배율로 비교합니다.	Compare multiple images at the same coordinate and zoom.
+Menu.LogViewer	로그 보기	Log Viewer
+Menu.LogViewer.ToolTip	실행 로그를 자세히 확인합니다.	Open detailed run logs.
+Menu.Settings	언어 / 번역 편집	Language / Translations
+Menu.Settings.ToolTip	언어를 전환하고 번역 문구를 편집합니다.	Change language and edit translation text.
+Menu.Language.ToolTip	화면 언어를 한국어 또는 영어로 전환합니다.	Switch the UI language between Korean and English.
+Menu.UserOptions.ToolTip	도구와 언어/번역 편집 메뉴를 엽니다.	Open tools and language/translation options.
+Menu.ImageProcessing	이미지 처리	Image Processing
+Menu.Algorithm	알고리즘	Algorithm
+Menu.View	보기	View
+Menu.Guide	가이드	Guide
+Menu.Guide.ToolTip	OpenVisionLab 튜토리얼을 엽니다.	Open the OpenVisionLab tutorial.
+Shell.TutorialNotFoundMessage	튜토리얼 파일을 찾을 수 없습니다.\n{0}	Tutorial file was not found.\n{0}
+Shell.TutorialOpenFailedMessage	튜토리얼을 열 수 없습니다.\n{0}	Could not open the tutorial.\n{0}
+Menu.View.ShowLogDockTitle	Log 패널 제목 표시	Show Log panel title
+Menu.View.SaveWorkspaceLayout	레이아웃 저장	Save layout
+Menu.View.LoadWorkspaceLayout	레이아웃 불러오기	Load layout
+Menu.View.DiagnoseWorkspaceLayout	레이아웃 상태 확인	Check layout state
+Menu.VisionTool.ToolTip	{0} Tool을 엽니다.	Open the {0} tool.
+Main.Layer	레이어	Layer
+Main.LayerInput	레이어 입력	Layer Input
+Main.LayerInputCompact	입력	Input
+Main.ActiveLayer	활성 레이어	Active Layer
+Main.InputSource	입력 기준	Input Source
+Main.Flow	실행 흐름	Flow
+Main.State	작업 상태	State
+Main.Elapsed	소요 시간	Elapsed
+Main.RunStep	선택	Step
+Main.RunAll	전체	All
+Main.Stop	중지	Stop
+Main.StopRequest	요청	Request
+Main.Fit	맞춤	Fit
+Main.Tooltip.RunStep	선택한 검사 Step만 실행합니다.	Run only the selected inspection step.
+Main.Tooltip.RunAll	현재 Pipeline 전체를 실행합니다.	Run the full current pipeline.
+Main.Tooltip.Stop	실행 중인 Pipeline 중지를 요청합니다.	Request the running pipeline to stop.
+Main.Tooltip.Fit	현재 레이어를 뷰어에 맞춥니다.	Fit the current layer to the viewer.
+Main.LayoutSaved	레이아웃 저장 완료	Layout saved
+Main.LayoutSaveFailed	레이아웃 저장 실패	Layout save failed
+Main.LayoutLoaded	레이아웃 불러옴	Layout loaded
+Main.DefaultLayoutApplied	기본 레이아웃 적용	Default layout applied
+Main.LogDockTitleShown	Log 도킹 제목 표시	Log dock title shown
+Main.LogDockTitleHidden	Log 도킹 제목 숨김	Log dock title hidden
+Main.GuideOpened	가이드 열기	Guide opened
+VisionMenu.Morphology	모폴로지	Morphology
+VisionMenu.Filter	필터	Filter
+VisionMenu.Threshold	스레시홀드	Threshold
+VisionMenu.Arithmetic	산술 연산	Arithmetic
+VisionMenu.EdgeDetection	엣지 검출	Edge Detection
+VisionMenu.RotateAndScale	회전 / 스케일	Rotate / Scale
+VisionMenu.Histogram	히스토그램	Histogram
+VisionMenu.HSV	HSV	HSV
+VisionMenu.Blob	블랍	Blob
+VisionMenu.Contour	컨투어	Contour
+VisionMenu.Matching	매칭	Matching
+VisionMenu.EdgeBasedMatching	엣지 기반 매칭	Edge Based Matching
+VisionMenu.FeatureMatching	특징 매칭	Feature Matching
+VisionMenu.Line	라인	Line
+VisionMenu.Mean	평균	Mean
+VisionMenu.Pipeline	파이프라인	Pipeline
+Main.Idle	대기 중	Idle
+AiRecipe.Title	AI Recipe 가져오기	AI Recipe Import
+AiRecipe.Paste	붙여넣기	Paste
+AiRecipe.OpenXml	XML 열기	Open XML
+AiRecipe.Sample	샘플	Sample
+AiRecipe.Catalog	카탈로그	Catalog
+AiRecipe.CheckPair	Pair 검사	Check Pair
+AiRecipe.BuildPrompt	프롬프트 생성	Build Prompt
+AiRecipe.Validate	검증	Validate
+AiRecipe.LoadImage	이미지 로드	Load Image
+AiRecipe.CurrentLayers	현재 레이어	Current Layers
+AiRecipe.RunPreview	미리보기 실행	Run Preview
+AiRecipe.Overview	Recipe 요약	Recipe Overview
+AiRecipe.Flow	Step 흐름	Step Flow
+AiRecipe.Feedback	AI 피드백	AI Feedback
+AiRecipe.Patch	XML 수정 요청	XML Patch Request
+AiRecipe.AdvancedXml	고급 XML	Advanced XML
+AiRecipe.Validation	검증 결과	Validation
+AiRecipe.SafeFix	자동 수정 - 사용할 항목 체크, 값 수정 후 적용	Safe Fix - check Use, edit Value, then apply
+AiRecipe.SafeFixSummary	자동 수정 - {0}개 / 선택 {1}개 / 확인 필요 {2}개	Safe Fix - {0} item(s) / selected {1} / review {2}
+AiRecipe.SafeFixDetail.Empty	수정 항목을 선택하면 Step, Parameter, 적용 값, 검토 조건을 표시합니다.	Select a fix to review the Step, parameter, value, and review policy.
+AiRecipe.SafeFixDetail.Format	대상 {0} | Parameter {1} | 값 {2} -> {3} | {4} | {5}	Target {0} | Parameter {1} | Value {2} -> {3} | {4} | {5}
+AiRecipe.SafeFixDetail.BeforeAfterFormat	대상 {0} | Parameter {1} | 값 {2} -> {3} | {4} | {5}	Target {0} | Parameter {1} | Value {2} -> {3} | {4} | {5}
+AiRecipe.SafeFixDetail.Selected	적용 선택	Selected
+AiRecipe.SafeFixDetail.Ignored	적용 제외	Not selected
+AiRecipe.LayerFlow	레이어 흐름 수정	Layer Flow Edit
+AiRecipe.Input	입력	Input
+AiRecipe.Output	출력	Output
+AiRecipe.UsePreviousOutput	이전 출력 사용	Use Previous Output
+AiRecipe.KeepBranch	분기 유지	Keep Branch
+AiRecipe.ApplyRun	적용 + 실행	Apply + Run
+AiRecipe.Preview	미리보기	Preview
+AiRecipe.RunResult	실행 결과	Run Result
+AiRecipe.Log	로그	Log
+AiRecipe.ApplyPipeline	Pipeline에 적용	Apply to Pipeline
+AiRecipe.ApplyFix	수정 적용	Apply Fix
+AiRecipe.ApplyPreview	적용 + 미리보기	Apply + Preview
+AiRecipe.RevertFix	수정 되돌리기	Revert Fix
+AiRecipe.CopyFeedback	AI 피드백 복사	Copy AI Feedback
+AiRecipe.CopyPatch	수정 요청 복사	Copy Patch Request
+AiRecipe.Close	닫기	Close
+AiRecipe.Type	구분	Type
+AiRecipe.Message	메시지	Message
+AiRecipe.Use	사용	Use
+AiRecipe.Target	대상	Target
+AiRecipe.Change	변경	Change
+AiRecipe.Value	제안값 / 수정	Proposed / Edit
+AiRecipe.No	No	No
+AiRecipe.Step	Step	Step
+AiRecipe.Status	상태	Status
+AiRecipe.Elapsed	시간	Elapsed
+AiRecipe.Metrics	Metrics	Metrics
+AiRecipe.InitialLog	LLM이 생성한 VisionPipeline XML을 붙여넣은 뒤 검증하십시오.	Paste an LLM-generated VisionPipeline XML, then Validate.
+AiRecipe.OperatorGuide	작업자: 사용할 항목을 체크하고 Value를 필요 시 수정한 뒤 Fix 적용 또는 적용 + 미리보기를 누르십시오.	Operator: check Use, edit Value if needed, then Apply Fix or Apply + Preview.
+AiRecipe.EditableGuide	수정 가능한 Value 행은 입력한 값을 사용하며, 체크 해제된 행은 무시됩니다.	Editable Value rows use the typed value; unchecked rows are ignored.
+Pipeline.Title	Pipeline	Pipeline
+Pipeline.Name	Pipeline	Pipeline
+Pipeline.NewStepTool	새 Step 도구	New Step Tool
+Pipeline.InputLayer	입력 레이어	Input Layer
+Pipeline.OutputLayer	출력 레이어	Output Layer
+Pipeline.AddStep	Step 추가	Add Step
+Pipeline.AiRecipe	AI Recipe	AI Recipe
+Pipeline.Flow	Pipeline 흐름	Pipeline Flow
+Pipeline.StepFlow	Step 흐름	Step Flow
+Pipeline.Properties	속성	Properties
+Pipeline.InputSource	입력 이미지	INPUT SOURCE
+Pipeline.OutputResult	출력 결과	OUTPUT RESULT
+Pipeline.LinkPrev	이전 출력 연결	Link Prev
+Pipeline.Source	원본	Source
+Pipeline.Linked	연결됨	Linked
+Pipeline.SelectStepFlow	Step을 선택하면 이미지 흐름을 수정할 수 있습니다.	Select a step to edit image flow.
+Pipeline.Acceptance	추천 판정 조건	RECOMMENDED ACCEPTANCE
+Pipeline.NoAcceptance	판정 조건 없음	No acceptance
+Pipeline.Apply	적용	Apply
+Pipeline.Clear	해제	Clear
+Pipeline.Preview	미리보기	Preview
+Pipeline.RunResult	결과	Result
+Pipeline.ResultDetails	결과 상세	Result Details
+Pipeline.RunLog	실행 로그	Run Log
+Shell.LogPanel.Open	로그 열기	Open Log
+Shell.LogPanel.Close	로그 닫기	Close Log
+Pipeline.Remove	삭제	Remove
+Pipeline.Up	위로	Up
+Pipeline.Down	아래로	Down
+Pipeline.History	이력	History
+Pipeline.Samples	샘플	Samples
+Pipeline.Batch	일괄	Batch
+Pipeline.Import	가져오기	Import
+Pipeline.Check	검증	Check
+Pipeline.Load	열기	Load
+Pipeline.SaveProject	프로젝트 저장	Save Project
+Pipeline.RunPreview	미리보기 실행	Run Preview
+Pipeline.PublishResult	결과 반영	Publish Result
+Pipeline.More	더보기	More
+Pipeline.Cancel	닫기	Cancel
+Pipeline.PublishAll	전체 반영	Publish all
+Pipeline.Menu.AddStepAfter	선택 Step 뒤에 추가	Add Step After...
+Pipeline.Menu.InsertStepBefore	선택 Step 앞에 삽입	Insert Step Before...
+Pipeline.Menu.AcceptancePreset	판정 조건 Preset	Acceptance Preset
+Pipeline.Menu.ClearAcceptance	판정 조건 해제	Clear Acceptance
+Pipeline.Menu.UsePreviousOutput	이전 출력으로 입력 연결	Use Previous Output as Input
+Pipeline.Menu.UsePreviousOutputWithLayer	이전 출력으로 입력 연결 ({0})	Use Previous Output as Input ({0})
+Pipeline.Menu.CopyStep	Step 복사	Copy Step
+Pipeline.Menu.PasteStepAfter	복사한 Step 뒤에 붙여넣기	Paste Step After
+Pipeline.Menu.DuplicateStep	Step 복제	Duplicate Step
+Pipeline.Menu.DisableStep	Step 비활성	Disable Step
+Pipeline.Menu.EnableStep	Step 활성	Enable Step
+Pipeline.Menu.RemoveStep	Step 삭제	Remove Step
+Pipeline.Menu.RunHistory	실행 이력	Run History
+Pipeline.Menu.SampleImages	샘플 이미지	Sample Images
+Pipeline.Menu.BatchTest	일괄 테스트	Batch Test
+Pipeline.Menu.AiRecipe	AI Recipe...	AI Recipe...
+Pipeline.Menu.OpenTutorial	튜토리얼 열기...	Open Tutorial...
+Pipeline.Menu.ImportXml	XML 가져오기...	Import XML...
+Pipeline.Menu.LoadSaved	저장된 Pipeline 열기...	Load Saved...
+Pipeline.Menu.RecommendedFor	{0} 추천값	Recommended for {0}
+Pipeline.Menu.NoPreset	이 Tool에 추천 Preset이 없습니다.	No preset for this tool
+Pipeline.Tooltip.ToolType	다음에 추가할 Tool을 선택합니다. 입력/출력은 Add Step에서 확정합니다.	Choose the tool for the next step. Input and output are confirmed in Add Step.
+Pipeline.Tooltip.DefaultInput	Add Step을 열 때 기본 입력으로 사용할 레이어입니다.	Default input used when Add Step opens.
+Pipeline.Tooltip.DefaultOutput	Add Step을 열 때 제안할 출력 레이어입니다.	Default output suggestion used when Add Step opens.
+Pipeline.Tooltip.Flow	Step을 클릭하면 입력, 출력, 파라미터, 미리보기를 확인합니다.	Click a step to inspect its input, output, parameters, and preview.
+Pipeline.Tooltip.StepIo	선택 Step의 이미지 흐름입니다. Tool 파라미터를 조정하기 전에 INPUT/OUTPUT을 확인하십시오.	Selected step image flow. Change INPUT or OUTPUT here before editing tool parameters.
+Pipeline.Tooltip.StepInputLayer	선택 Step에서 사용할 이미지 레이어입니다.	Image layer used by the selected step.
+Pipeline.Tooltip.StepOutputLayer	선택 Step이 생성할 이미지 레이어입니다.	Image layer created by the selected step.
+Pipeline.Tooltip.ChainInput	이전 활성 Step의 출력을 현재 Step 입력으로 연결합니다.	Use the previous enabled step's output as this step's input.
+Pipeline.Tooltip.StepIoStatus	선택 Step이 원본에서 시작하는지, 이전 출력을 따르는지, 다른 레이어에서 분기하는지 표시합니다.	Shows whether the selected step starts from a source image, follows the previous output, or branches from another layer.
+Pipeline.Tooltip.AddStep	Tool, Step 이름, 입력, 출력을 확인하고 Step을 추가합니다.	Open Add Step to confirm tool, step name, input, and output.
+Pipeline.Tooltip.AiRecipe	AI Recipe에서 Pipeline Step을 생성합니다.	Create pipeline steps from an AI recipe.
+Pipeline.Tooltip.PreviewMode	Summary는 전체 검출을 보고, Input/Output/Overlay는 선택 Step 기준으로 확인합니다.	Choose Summary for the full detection view, or Input/Output/Overlay for the selected step.
+Pipeline.Tooltip.OverlayLabel	Overlay 라벨 표시 방식을 선택합니다.	Choose how overlay labels are drawn.
+Pipeline.Tooltip.PointLimit	LineGauge/Edge처럼 점이 많은 Overlay의 표시 개수를 제한합니다.	Limit dense point overlays so LineGauge and edge views stay readable.
+Pipeline.Tooltip.OverlayRoi	선택 Step의 ROI를 표시합니다. 전체 이미지 ROI는 숨깁니다.	Show the ROI configured on the selected step. Full-image ROI is hidden.
+Pipeline.Tooltip.PreviewLabel	현재 미리보기 모드입니다. Pipeline Flow의 Step, IN, OUT을 클릭해 바꿀 수 있습니다.	Current preview mode. Click Step, IN, or OUT in Pipeline Flow to change it.
+Pipeline.Tooltip.OpenPreview	확대 가능한 미리보기를 엽니다. 휠로 확대하고 드래그로 이동합니다.	Open a zoomable preview. Mouse wheel zooms, drag pans.
+Pipeline.Tooltip.PreviewBox	더블클릭하면 확대 가능한 미리보기로 엽니다.	Double-click to open the zoomable preview.
+Pipeline.Tooltip.TemplateBox	더블클릭하면 Template 이미지를 확대해서 확인합니다.	Double-click to inspect the template in the zoomable viewer.
+Pipeline.Tooltip.DetectedBox	더블클릭하면 검출 Crop을 확대해서 확인합니다.	Double-click to inspect the detected crop in the zoomable viewer.
+Pipeline.Tooltip.RunPreview	Run Preview는 이 창 안에서만 실행하며 메인 작업영역을 업데이트하지 않습니다.	Run Preview executes inside this window. The main workspace is not updated.
+Pipeline.Tooltip.PublishResult	Summary 또는 선택 Step 결과를 메인 작업영역으로 반영합니다.	Publish Summary or the selected step result to the main workspace.
+Pipeline.Tooltip.SaveProject	Pipeline XML, 작업 이미지, Step 미리보기 이미지를 저장합니다.	Save pipeline XML, workspace images, and step preview images.
+Pipeline.Tooltip.PublishAll	선택/최신 결과만이 아니라 캐시된 모든 Step 출력을 반영합니다.	Publish every cached step output instead of only the selected or latest result.
+Pipeline.Tooltip.WorkflowHint	Run Preview는 Pipeline 내부 검증이고, Publish Result만 메인 작업영역을 업데이트합니다.	Run Preview is sandboxed inside Pipeline. Publish Result is the explicit step that updates the main workspace.
+Pipeline.Tooltip.SampleContext	Sample Catalog에서 연 샘플 이미지와 Recipe를 표시합니다.	Shows the sample image and recipe currently opened from Sample Catalog.
+Pipeline.WorkflowHint	Preview 내부 확인 | Publish가 메인 반영	Preview stays here | Publish updates main
+Pipeline.Hint.CheckFailed	검증 실패. 선택된 Step을 수정한 뒤 미리보기를 다시 실행하십시오.	Check failed. Fix the selected step before Run Preview.
+Pipeline.Hint.CheckPassedSandbox	검증 완료. 미리보기는 메인 작업영역을 변경하지 않습니다.	Check passed. Run Preview will not update the main workspace.
+Pipeline.Hint.CheckPassedReview	검증 완료. 미리보기 전에 선택 항목을 확인하십시오.	Check passed. Review the selected item before Run Preview.
+Pipeline.Hint.PreviewRunningSandbox	미리보기 실행 중. 메인 작업영역은 변경되지 않습니다.	Preview is running. Main workspace is unchanged.
+Pipeline.Hint.PreviewCanceled	미리보기가 취소되었습니다. 메인 작업영역은 변경되지 않았습니다.	Preview canceled. Main workspace was not changed.
+Pipeline.Hint.PreviewFailed	미리보기 실패. 선택된 Step 상세를 확인하십시오.	Preview failed. Check the selected step details.
+Pipeline.Hint.PreviewReadySummaryPublish	미리보기 완료. 요약은 전체 검출을 표시하며 결과 반영 시 메인 작업영역에 기록됩니다.	Preview ready. Summary shows all detections; Publish Result writes it to the main workspace.
+Pipeline.Hint.PublishBlockedRunning	미리보기 실행 중에는 결과를 반영할 수 없습니다.	Cannot publish while Preview is running.
+Pipeline.Hint.PublishRunPreviewFirst	결과 반영 전에 미리보기를 먼저 실행하십시오.	Run Preview before Publish Result.
+Pipeline.Hint.PublishRunPreviewBeforeSummary	요약 결과 반영 전에 미리보기를 먼저 실행하십시오.	Run Preview before publishing Summary.
+Pipeline.Hint.PublishNothing	반영된 출력이 없습니다. 각 출력 레이어를 확인하십시오.	Nothing was published. Check each output layer.
+Pipeline.Hint.PublishCompleteFormat	결과 반영 완료. 메인 작업영역의 출력 레이어 {0}개가 갱신되었습니다.	Publish complete. {0} output layer(s) updated in the main workspace.
+Pipeline.Hint.PublishLayerCompleteFormat	결과 반영 완료. '{0}' 레이어가 메인 작업영역에 갱신되었습니다.	Publish complete. '{0}' was updated in the main workspace.
+Pipeline.Hint.PublishNoCachedResult	반영할 캐시 결과가 없습니다.	No cached result to publish.
+Pipeline.Hint.ChainSelectPrevious	첫 번째 이후 Step을 선택한 뒤 이전 출력을 연결하십시오.	Select a step after the first one, then choose a previous output to chain.
+Pipeline.Hint.ChainSelectedPreviousFormat	선택 Step 입력이 이전 출력으로 연결되었습니다: {0}	Selected step now uses previous output: {0}
+Pipeline.Hint.StepIoChanged	Step 입출력이 변경되었습니다. 미리보기를 다시 실행하십시오.	Step I/O changed. Run Preview again.
+Pipeline.Hint.ViewTemplateMissing	Template 이미지가 없습니다.	Template image is not available.
+Pipeline.Hint.ViewDetectedCropMissing	검출 Crop이 없습니다. 미리보기를 먼저 실행하십시오.	Detected crop is not available. Run Preview first.
+Pipeline.Hint.ViewSummaryMissing	요약 미리보기 이미지가 없습니다. 미리보기를 먼저 실행하십시오.	Summary has no preview image. Run Preview first.
+Pipeline.Hint.MetricsMissing	Metric이 없습니다. 미리보기를 먼저 실행하십시오.	No metrics are available. Run Preview first.
+Pipeline.Message.CheckPassedSandbox	검증이 완료되었습니다.\r\n\r\n미리보기는 Pipeline 창 안에서만 실행됩니다. 결과 반영만 메인 작업영역을 업데이트합니다.	Check passed.\r\n\r\nRun Preview executes inside the Pipeline window. Publish Result updates the main workspace.
+Pipeline.Message.CheckPassedWithWarnings	검증은 통과했지만 확인이 필요합니다.\r\n\r\n{0}\r\n\r\n미리보기는 이 창 안에 유지됩니다. 결과 반영만 메인 작업영역을 업데이트합니다.	Check passed, but review is recommended.\r\n\r\n{0}\r\n\r\nRun Preview stays in this window. Publish Result updates the main workspace.
+Pipeline.Message.PublishRunPreviewFirst	먼저 미리보기를 실행한 뒤 결과 반영으로 메인 작업영역의 출력 레이어를 업데이트하십시오.	Run Preview first, then Publish Result to update the output layer in the main workspace.
+Pipeline.Message.PublishRunPreviewBeforeSummary	먼저 미리보기를 실행한 뒤 요약 결과를 반영하십시오.	Run Preview first, then publish the Summary result.
+Pipeline.Message.PublishNothing	반영할 수 있는 출력 레이어가 없습니다. 각 Step의 출력 레이어를 확인하십시오.	No output layer could be published. Check each step output layer.
+Pipeline.SummaryBadgeFormat	요약 | Step {0} | Overlay {1}	SUMMARY | Steps {0} | Overlays {1}
+Pipeline.SelectStep	Step 선택	Select a step
+Pipeline.Summary	요약	Summary
+Pipeline.AllDetections	전체 검출	All detections
+Pipeline.NoStepSelected	선택된 Step 없음	No step selected
+Pipeline.SelectStepPreview	결과를 보려면 Pipeline Step을 선택하십시오.	Select a pipeline step to view its result.
+Pipeline.AllDetectionsPlaceholder	검출된 모든 Overlay가 하나의 이미지에 표시됩니다.	All detected overlays will be shown here on one image.
+Pipeline.LinkedInputStatus	연결 입력: 이 Step은 이전 출력 '{0}'을 사용합니다.	Linked input: this step uses previous output '{0}'.
+Pipeline.SourceInputStatus	원본 입력: 이 Step은 '{0}'에서 시작합니다.	Source input: this step starts from '{0}'.
+Pipeline.Branch	분기	BRANCH
+Pipeline.BranchFrom	분기: {0}	BRANCH from {0}
+Pipeline.FlowDisabledStep	비활성 Step	Disabled step
+Pipeline.FlowInputSource	입력: 원본 이미지 {0}	Input: source image {0}
+Pipeline.FlowInputPrevious	입력: 이전 출력 {0}	Input: previous output {0}
+Pipeline.FlowBranchMain	분기: Main을 읽고 있습니다. 의도하지 않았다면 이전 출력 {0}을 연결하십시오.	Branch: reads Main instead of {0}. Link Prev if this is not intentional.
+Pipeline.FlowBranch	분기: {1} 대신 {0}을 읽고 있습니다.	Branch: reads {0} instead of {1}
+Pipeline.InputSource.SourceLayer	원본 {0}에서 시작	Starts from source {0}
+Pipeline.InputSource.PreviousOutput	이전 출력 {0} 사용	Uses previous output {0}
+Pipeline.InputSource.BranchMain	Main 분기. 이전 출력은 {0}	Main branch. Previous output is {0}
+Pipeline.InputSource.BranchLayer	{0} 분기. 이전 출력은 {1}	Branch from {0}. Previous output is {1}
+Pipeline.OutputResult.MissingLayer	출력 레이어가 지정되지 않았습니다.	Output layer is not set.
+Pipeline.OutputResult.CreatesLayer	{0} 생성/갱신 | {1}	Creates/updates {0} | {1}
+Pipeline.StepInputSource.SourceLayer	원본 {0} 시작	Source {0}
+Pipeline.StepInputSource.PreviousOutput	이전 출력 {0} 사용	Prev output {0}
+Pipeline.StepInputSource.BranchMain	Main 분기 | 이전 출력 {0}	Main branch | Prev output {0}
+Pipeline.StepInputSource.BranchLayer	{0} 분기 | 이전 출력 {1}	Branch {0} | Prev output {1}
+Pipeline.StepOutputResult.MissingLayer	출력 레이어 미설정	Output layer missing
+Pipeline.StepOutputResult.CreatesLayer	{0} 생성/갱신 | {1}	{0} created/updated | {1}
+PipelineFlow.NoSteps	Pipeline Step 없음	No pipeline steps
+PipelineFlow.Input	입력	INPUT
+PipelineFlow.Output	출력	OUTPUT
+PipelineFlow.BranchInput	분기 입력	BRANCH IN
+PipelineFlow.SourceImage	원본 이미지	SOURCE IMG
+PipelineFlow.PreviousOutput	이전 출력	PREV OUT
+PipelineFlow.Branch	분기	BRANCH
+PipelineFlow.RunPreviewRequired	미리보기 필요	Run Preview required
+PipelineFlow.ViewInputImage	입력 이미지 보기	View input image
+PipelineFlow.ViewOutputImage	출력 이미지 보기	View output image
+PipelineFlow.LayerTooltip	{0}: {1} - 클릭하면 이 이미지를 확인합니다.	{0}: {1} - click to inspect this image
+PipelineFlow.BranchInputTooltip	분기 입력입니다. 이 Step은 이전 출력 {1} 대신 {0}을 읽습니다.	Branch input. This step reads {0} instead of previous output {1}.
+PipelineFlow.OverlayTooltip	클릭하면 Overlay 미리보기를 확인합니다.	Click to inspect overlay preview
+PipelineFlow.BranchStepTooltip	분기 Step입니다. 이 Step은 이전 출력 '{1}' 대신 '{0}'을 읽습니다. 의도하지 않았다면 이전 출력 연결을 사용하십시오.	Branch step. This step reads '{0}' instead of previous output '{1}'. Use Link Prev if this was not intentional.
+Threshold.Title	Threshold	Threshold
+Threshold.Mode	모드	Mode
+Threshold.ModeBasic	일반	Basic
+Threshold.ModeRange	범위	Range
+Threshold.ModeAdaptive	Adaptive	Adaptive
+Threshold.Binary	Binary	Binary
+Threshold.BinaryInv	Inv	Inv
+Threshold.MeanC	MeanC	MeanC
+Threshold.GaussianC	GaussianC	GaussianC
+Threshold.InputSource	입력 레이어	Input Source
+Threshold.OutputResult	출력 레이어	Output Result
+Threshold.ResultType	결과 타입	Result type
+Threshold.Method	계산 방식	Method
+Threshold.MaxValue	최대값	Max value
+Threshold.BlockSize	Block size	Block size
+Threshold.Weight	Weight	Weight
+Threshold.BasicTitle	일반 Threshold	Basic Threshold
+Threshold.BasicHint	단일 기준값	Single cutoff
+Threshold.RangeTitle	범위 Threshold	Range Threshold
+Threshold.RangeHint	Min-Max 범위	Keep Min-Max
+Threshold.AdaptiveTitle	Adaptive Threshold	Adaptive Threshold
+Threshold.AdaptiveHint	로컬 밝기	Local brightness
+Threshold.RangeMin	하한값	Min
+Threshold.RangeMax	상한값	Max
+Threshold.Invert	반전	Invert
+Threshold.OutputPreview	{0} (Preview)	{0} (Preview)
+Threshold.PreviewTitle	미리보기 - {0}	Preview - {0}
+Threshold.FlowSame	Input/Output {0}	Input/Output {0}
+Threshold.Flow	Input {0} -> Output {1}	Input {0} -> Output {1}
+Threshold.AddStep	+ {0} Step 추가	+ Add {0} Step
+Threshold.BasicPurpose	하나의 기준값으로 전경과 배경을 분리합니다.	uses one cutoff, useful for clear foreground/background contrast.
+Threshold.RangePurpose	Min-Max 밝기 범위 안의 픽셀만 유지합니다.	keeps only pixels inside the Min-Max brightness band.
+Threshold.AdaptivePurpose	영역별 밝기를 기준으로 계산하며 조명 편차가 있을 때 사용합니다.	uses local brightness, useful for uneven lighting.
+Threshold.Tooltip.InputLayer	Threshold 미리보기에 사용할 입력 레이어입니다.	Input layer used for Threshold preview.
+Threshold.Tooltip.OutputLayer	미리보기 결과는 Threshold 레이어에 기록됩니다.	Preview result is written to the Threshold layer.
+Threshold.Tooltip.BasicResultType	일반 Threshold의 결과 타입입니다.	Result type for Basic Threshold.
+Threshold.Tooltip.BasicValue	일반 Threshold의 기준값입니다.	Threshold value for Basic Threshold.
+Threshold.Tooltip.Range	범위 Threshold의 Min, Max, Invert 설정입니다.	Min, max, and invert option for Range Threshold.
+Threshold.Tooltip.AdaptiveResultType	Adaptive Threshold의 결과 타입입니다.	Result type for Adaptive Threshold.
+Threshold.Tooltip.AdaptiveMethod	Adaptive 계산 방식입니다.	Adaptive calculation method.
+Threshold.Tooltip.AdaptiveMax	Adaptive Threshold의 최대 출력값입니다.	Maximum output value for Adaptive Threshold.
+Threshold.Tooltip.BlockSize	Adaptive block size입니다. 홀수 값을 사용합니다.	Adaptive block size. Use an odd value.
+Threshold.Tooltip.Weight	지역 평균 또는 Gaussian 값에서 빼는 보정값입니다.	Adaptive correction value subtracted from the local mean or Gaussian value.
+MessageBox.Message	메시지	Message
+MessageBox.TechnicalDetails	상세 정보	Technical Details
+MessageBox.HideDetails	상세 숨기기	Hide Details
+MessageBox.CopyDetails	상세 복사	Copy Details
+MessageBox.Copied	복사됨	Copied
+MessageBox.OK	확인	OK
+MessageBox.Cancel	취소	Cancel
+MessageBox.Yes	예	Yes
+MessageBox.No	아니오	No
+MessageBox.Retry	다시 시도	Retry
+MessageBox.Abort	중단	Abort
+MessageBox.Ignore	무시	Ignore
+Log.SummaryMode	요약	Summary
+Log.DetailMode	상세	Details
+Log.HeaderSummary	실행 로그 - 요약	Run Log - Summary
+Log.HeaderDetail	실행 로그 - 상세	Run Log - Details
+Log.Clear	지우기	Clear
+Log.Folder	폴더	Folder
+Log.AutoScroll	자동 스크롤	Auto Scroll
+Log.AllLogs	전체 로그	All Logs
+Log.Level	레벨	Level
+Log.Area	영역	Area
+Log.Empty	표시할 실행 로그가 없습니다.	No execution logs to display.
+Log.NoRecentEvent	최근 이벤트 없음	No recent event
+Log.FiltersOff	필터 없음	Filters off
+Log.FilteredView	필터 보기	Filtered view
+Log.NoFilter	필터 없음	No filter
+Log.CountFormat	{0}건	{0}
+Log.FilteredCountFormat	{0}/{1}건	{0}/{1}
+Log.AreaFormat	영역: {0}	Area: {0}
+Log.LevelFormat	레벨: {0}	Level: {0}
+Log.SearchFormat	검색: {0}	Search: {0}
+Log.Tooltip.Mode	요약/상세 모드를 전환합니다.	Switch summary and detail mode.
+Log.Tooltip.Clear	현재 로그 목록을 지웁니다.	Clear the current log list.
+Log.Tooltip.Folder	로그 폴더를 엽니다.	Open the log folder.
+Log.Tooltip.AutoScroll	새 로그가 들어오면 마지막 줄로 이동합니다.	Move to the latest log line automatically.
+Log.Tooltip.Search	로그 메시지, 영역, 레벨, 소스를 검색합니다.	Search log message, area, level, or source.
+Log.Tooltip.AllLogs	모든 로그를 표시합니다. 켜져 있으면 레벨/영역 필터가 비활성화됩니다.	Show every log line. Level and Area filters are disabled while this is on.
+Log.Tooltip.FilterCombo	전체 로그를 끄면 레벨 또는 영역을 선택할 수 있습니다.	Turn off All Logs to choose Level or Area.
+Localization.Title	다국어 편집기	Localization Editor
+Localization.Language	현재 언어	Current Language
+Localization.Search	검색	Search
+PropertyGrid.Search.NoResults	'{0}'에 해당하는 파라미터가 없습니다. Esc 키로 검색을 지울 수 있습니다.	No properties match '{0}'. Press Esc to clear the search.
+PropertyGrid.Search.ToolTip	파라미터 이름으로 필터링합니다. Esc 키로 검색을 지울 수 있습니다.	Filter properties by name. Press Esc to clear the search.
+Localization.Key	키	Key
+Localization.Korean	한국어	Korean
+Localization.English	English	English
+Localization.Save	저장	Save
+Localization.Reload	다시 읽기	Reload
+Localization.Close	닫기	Close
+Localization.Saved	다국어 catalog를 저장했습니다.	Localization catalog saved.
+Localization.Reloaded	다국어 catalog를 다시 읽었습니다.	Localization catalog reloaded.
+Localization.FilterHint	키 또는 문구 검색	Search key or text
+Localization.MissingOnly	미번역만 보기	Missing only
+Localization.Summary	표시 {0} / 전체 {1} / 미번역 {2}	Visible {0} / Total {1} / Missing {2}
+PropertyGrid.Category.Parameter	기본	Parameter
+PropertyGrid.Category.Threshold	이진화	Threshold
+PropertyGrid.Category.Range	범위	Range
+PropertyGrid.Category.Adaptive_Threshold	적응형 이진화	Adaptive Threshold
+PropertyGrid.Category.ROI	ROI	ROI
+PropertyGrid.Category.Image_Process	이미지 처리	Image Process
+PropertyGrid.Category.Blob_Parameter	블랍	Blob
+PropertyGrid.Category.Contour	컨투어	Contour
+PropertyGrid.Category.Matching	매칭	Matching
+PropertyGrid.Category.Edge	엣지	Edge
+PropertyGrid.Category.Canny	Canny	Canny
+PropertyGrid.Category.Sobel	Sobel	Sobel
+PropertyGrid.Category.Scharr	Scharr	Scharr
+PropertyGrid.Category.Laplacian	Laplacian	Laplacian
+PropertyGrid.Category.Vertical_Line	수직선	Vertical Line
+PropertyGrid.Category.Scan_Line	스캔 라인	Scan Line
+PropertyGrid.Category.Fit_Line	피팅 라인	Fit Line
+PropertyGrid.Category.Filter	필터	Filter
+PropertyGrid.Category.Kernel	커널	Kernel
+PropertyGrid.Category.Bilateral	Bilateral	Bilateral
+PropertyGrid.Category.Draw	표시	Draw
+PropertyGrid.Category.Mean	평균	Mean
+PropertyGrid.Category.Normalize	정규화	Normalize
+PropertyGrid.Category.Step	Step	Step
+PropertyGrid.Category.Acceptance	판정	Acceptance
+PropertyGrid.Category.Morphology	모폴로지	Morphology
+PropertyGrid.Category.Transform	변환	Transform
+PropertyGrid.Property.NAME.DisplayName	이름	Name
+PropertyGrid.Property.PIXELPERMM.DisplayName	Pixel / mm	Pixel / mm
+PropertyGrid.Property.Enabled.DisplayName	사용	Enabled
+PropertyGrid.Property.InputLayer.DisplayName	입력 레이어	Input Layer
+PropertyGrid.Property.InputLayer.Description	이 Step에서 사용할 입력 이미지 레이어입니다. 연결된 Step은 보통 이전 Step의 출력 레이어를 입력으로 사용합니다.	Layer image used as this step input. Linked steps normally use the previous step output.
+PropertyGrid.Property.OutputLayer.DisplayName	출력 레이어	Output Layer
+PropertyGrid.Property.OutputLayer.Description	이 Step 결과를 저장할 레이어 이름입니다. 결과를 나중에 확인해야 하면 고유한 이름을 사용합니다.	Layer name that stores this step result. Use a unique name when the result must be reviewed later.
+PropertyGrid.Property.UseAcceptance.DisplayName	판정 사용	Use Acceptance
+PropertyGrid.Property.ExpectedSuccess.DisplayName	기대 결과	Expected Success
+PropertyGrid.Property.MaxElapsedMilliseconds.DisplayName	최대 시간(ms)	Max Elapsed (ms)
+PropertyGrid.Property.RequiredMessageText.DisplayName	필수 메시지	Required Message
+PropertyGrid.Property.AcceptanceMetricName.DisplayName	판정 지표	Acceptance Metric
+PropertyGrid.Property.AcceptanceMetricMinimum.DisplayName	지표 범위	Metric range
+PropertyGrid.Property.USE_THRESHOLD.DisplayName	이진화 사용	Use threshold
+PropertyGrid.Property.USE_BITWISENOT.DisplayName	결과 반전	Invert result
+PropertyGrid.Property.THRESHOLD_TYPES.DisplayName	이진화 타입	Threshold type
+PropertyGrid.Property.THRESHOLD.DisplayName	기준값	Threshold
+PropertyGrid.Property.USE_ADAPTIVE_THRESHOLD.DisplayName	적응형 이진화 사용	Use adaptive threshold
+PropertyGrid.Property.ADAPTIVE_THRESHOLD.DisplayName	적응형 기준값	Adaptive threshold
+PropertyGrid.Property.ADAPTIVE_THRESHOLD_TYPES.DisplayName	적응형 결과 타입	Adaptive type
+PropertyGrid.Property.ADAPTIVE_THRESHOLD_ALGORITHM.DisplayName	적응형 계산 방식	Adaptive algorithm
+PropertyGrid.Property.BlockSize.DisplayName	블록 크기	Block size
+PropertyGrid.Property.Weight.DisplayName	가중치	Weight
+PropertyGrid.Property.USE_ROI.DisplayName	ROI 사용	Use ROI
+PropertyGrid.Property.USE_MULTI_ROI.DisplayName	다중 ROI 사용	Use multi ROI
+PropertyGrid.Property.CvROI.DisplayName	ROI	ROI
+PropertyGrid.Property.CvROIS.DisplayName	ROI 목록	ROI list
+PropertyGrid.Property.CvMASKS.DisplayName	마스킹	Masking
+PropertyGrid.Property.Mode.DisplayName	모드	Mode
+PropertyGrid.Property.Mode.Description	Threshold는 하나의 기준값, Range는 하한/상한 범위, Adaptive는 주변 픽셀을 기준으로 지역 이진화를 수행합니다.	Threshold uses one gray value, Range uses lower and upper gray limits, Adaptive calculates a local threshold.
+PropertyGrid.Property.Threshold.Description	선택한 이진화 타입에 따라 픽셀을 분류할 단일 GV 기준값입니다.	Single threshold value. Pixels are classified by this gray level and the selected threshold type.
+PropertyGrid.Property.MaxValue.DisplayName	최대값	Max value
+PropertyGrid.Property.ThresholdType.DisplayName	이진화 타입	Threshold type
+PropertyGrid.Property.RangeMin.DisplayName	최소값	Min value
+PropertyGrid.Property.RangeMin.Description	하한/상한을 함께 조정하는 범위 이진화 기준입니다.	Combined range threshold lower limit.
+PropertyGrid.Property.RangeMax.DisplayName	최대값	Max value
+PropertyGrid.Property.Invert.DisplayName	반전	Invert
+PropertyGrid.Property.AdaptiveType.DisplayName	계산 방식	Method
+PropertyGrid.Property.AdaptiveType.Description	적응형 이진화 계산 알고리즘입니다. 조명 편차가 있으면 MeanC와 GaussianC를 비교합니다.	Adaptive threshold algorithm. Compare MeanC and GaussianC when illumination is uneven.
+PropertyGrid.Property.AdaptiveThresholdType.DisplayName	결과 타입	Result type
+PropertyGrid.Property.Shape.DisplayName	커널 형태	Shape
+PropertyGrid.Property.Operator.DisplayName	연산	Operator
+PropertyGrid.Property.KernelWidth.DisplayName	커널 너비	Kernel width
+PropertyGrid.Property.KernelHeight.DisplayName	커널 높이	Kernel height
+PropertyGrid.Property.Iterations.DisplayName	반복 횟수	Iterations
+PropertyGrid.Property.FilterType.DisplayName	필터 타입	Filter type
+PropertyGrid.Property.BorderType.DisplayName	외곽 처리	Border type
+PropertyGrid.Property.MedianKernelSize.DisplayName	Median 커널	Median kernel size
+PropertyGrid.Property.Diameter.DisplayName	직경	Diameter
+PropertyGrid.Property.SigmaColor.DisplayName	Sigma Color	Sigma Color
+PropertyGrid.Property.SigmaSpace.DisplayName	Sigma Space	Sigma Space
+PropertyGrid.Property.EdgeType.DisplayName	엣지 타입	Edge type
+PropertyGrid.Property.CannyThresholdLow.DisplayName	Low 기준값	Low threshold
+PropertyGrid.Property.CannyThresholdHigh.DisplayName	High 기준값	High threshold
+PropertyGrid.Property.CannyApertureSize.DisplayName	Aperture 크기	Aperture size
+PropertyGrid.Property.UseL2Gradient.DisplayName	L2 Gradient 사용	Use L2 gradient
+PropertyGrid.Property.SobelDegreeX.DisplayName	Sobel X 차수	Sobel X degree
+PropertyGrid.Property.SobelDegreeY.DisplayName	Sobel Y 차수	Sobel Y degree
+PropertyGrid.Property.SobelKernelSize.DisplayName	Sobel 커널	Sobel kernel size
+PropertyGrid.Property.ScharrDegreeX.DisplayName	Scharr X 차수	Scharr X degree
+PropertyGrid.Property.ScharrDegreeY.DisplayName	Scharr Y 차수	Scharr Y degree
+PropertyGrid.Property.LaplacianKernelSize.DisplayName	Laplacian 커널	Laplacian kernel size
+PropertyGrid.Property.Angle.DisplayName	회전 각도	Angle
+PropertyGrid.Property.ScaleXPercent.DisplayName	X 스케일(%)	Scale X (%)
+PropertyGrid.Property.ScaleYPercent.DisplayName	Y 스케일(%)	Scale Y (%)
+PropertyGrid.Property.Interpolation.DisplayName	보간	Interpolation
+PropertyGrid.Property.MIN_AREA.DisplayName	최소 면적	Min area
+PropertyGrid.Property.MAX_AREA.DisplayName	최대 면적	Max area
+PropertyGrid.Property.USE_APPROXPOLYDP.DisplayName	Approx poly 사용	Use approx poly
+PropertyGrid.Property.USE_DRAW_IMAGE.DisplayName	결과 그리기	Draw result
+PropertyGrid.Property.ApproximationModes.DisplayName	근사 방식	Approximation
+PropertyGrid.Property.DetectMode.DisplayName	검색 모드	Retrieval mode
+PropertyGrid.Property.EPSILON.DisplayName	근사 오차	Approx epsilon
+PropertyGrid.Property.DrawColor.DisplayName	표시 색상	Draw color
+PropertyGrid.Property.DrawThickness.DisplayName	선 두께	Draw thickness
+PropertyGrid.Property.MATCH_MODE.DisplayName	매칭 방식	Match mode
+PropertyGrid.Property.MATCH_MODE.Description	템플릿 매칭 점수 계산 방식입니다. 조명 변화가 있으면 정규화 계열을 우선 비교합니다.	Template matching score method. Prefer normalized modes when illumination changes.
+PropertyGrid.Property.SCORE_MIN.DisplayName	최소 점수	Min score
+PropertyGrid.Property.SCORE_MIN.Description	검출 결과로 인정할 최소 점수입니다. 높을수록 약한 후보를 더 엄격하게 제외합니다.	Minimum score accepted as a detection. Higher values reject weak candidates more strictly.
+PropertyGrid.Property.MAGNIFIATION.DisplayName	배율	Magnification
+PropertyGrid.Property.MAGNIFIATION.Description	이미지 피라미드 기반 스케일 탐색에 사용하는 배율입니다. 1.0은 등록한 템플릿 원본 크기이며, 값이 달라지면 피라미드 단계에서 크기가 다른 후보를 비교합니다.	Magnification used for image-pyramid based scale search. 1.0 keeps the registered template size; other values compare candidates at different pyramid scales.
+PropertyGrid.Property.NUM_MATCH.DisplayName	매칭 개수	Match count
+PropertyGrid.Property.NUM_MATCH.Description	검출할 최대 매칭 개수입니다. 1이면 가장 좋은 위치 1개만 사용합니다.	Maximum number of accepted matches. 1 uses only the best candidate.
+PropertyGrid.Property.USE_FIND_ANGLE.DisplayName	각도 탐색 사용	Use angle search
+PropertyGrid.Property.USE_FIND_ANGLE.Description	회전된 템플릿까지 탐색할지 결정합니다. 사용하면 각도 범위와 각도 간격 기준으로 반복 검색합니다.	Search rotated template candidates. When enabled, the angle range and step control repeated searches.
+PropertyGrid.Property.FIND_ANGLE.DisplayName	각도 간격	Angle step
+PropertyGrid.Property.FIND_ANGLE.Description	각도 탐색 시 후보 각도를 증가시키는 간격입니다. 작을수록 정밀하지만 검색 시간이 늘어납니다.	Angle increment used during angle search. Smaller values are more precise but slower.
+PropertyGrid.Property.FIND_ANGLE_MAX.DisplayName	최대 각도	Max angle
+PropertyGrid.Property.FIND_ANGLE_MAX.Description	각도 탐색의 상한값입니다.	Upper bound for angle search.
+PropertyGrid.Property.FIND_ANGLE_MIN.DisplayName	최소 각도	Min angle
+PropertyGrid.Property.FIND_ANGLE_MIN.Description	각도 탐색의 하한값입니다.	Lower bound for angle search.
+PropertyGrid.Property.PATTERN_PATH.DisplayName	패턴 경로	Pattern path
+PropertyGrid.Property.PATTERN_PATH.Description	등록한 템플릿 이미지 파일 경로입니다. 이 이미지를 기준으로 매칭을 수행합니다.	Registered template image file path. Matching uses this image as the reference.
+PropertyGrid.Property.USE_CANNY.DisplayName	Canny 사용	Use canny
+PropertyGrid.Property.USE_CANNY.Description	매칭 전에 Canny 엣지 이미지를 사용할지 결정합니다.	Use a Canny edge image before matching.
+PropertyGrid.Property.CANNY_HIGH.DisplayName	Canny High	Canny high
+PropertyGrid.Property.CANNY_HIGH.Description	Canny 전처리의 High 임계값입니다.	High threshold for Canny preprocessing.
+PropertyGrid.Property.CANNY_LOW.DisplayName	Canny Low	Canny low
+PropertyGrid.Property.CANNY_LOW.Description	Canny 전처리의 Low 임계값입니다.	Low threshold for Canny preprocessing.
+PropertyGrid.Property.USE_PADDING_COLOR_WHITE.DisplayName	흰색 패딩 사용	Use white padding
+PropertyGrid.Property.USE_PADDING_COLOR_WHITE.Description	회전/전처리 과정에서 생기는 외곽 영역을 흰색으로 채울지 결정합니다.	Fill border areas created by rotation or preprocessing with white.
+PropertyGrid.Property.PRJ_PORALITY.DisplayName	극성	Polarity
+PropertyGrid.Property.PRJ_DIR.DisplayName	방향	Direction
+PropertyGrid.Property.CONTRAST.DisplayName	대비	Contrast
+PropertyGrid.Property.THICKNESS.DisplayName	두께	Thickness
+PropertyGrid.Property.SAMPLING_STEP.DisplayName	샘플 간격	Sampling step
+PropertyGrid.Property.VER_PRJ_DIR.DisplayName	스캔 방향	Scan direction
+PropertyGrid.Property.POINT_RANGE.DisplayName	스캔 간격	Scan interval
+PropertyGrid.Property.USE_MANUAL_ANGLE.DisplayName	스캔 각도 사용	Use scan angle
+PropertyGrid.Property.MANUAL_ANGLE_VALUE.DisplayName	스캔 각도	Scan angle
+PropertyGrid.Property.USE_EXTEND_FIT_LINE.DisplayName	피팅 라인 연장	Extend fit line
+PropertyGrid.Property.EXTEND_FIT_LINE_VALUE.DisplayName	연장 길이	Extend length
+PropertyGrid.Property.AVERAGE_Diff.DisplayName	평균 차이	Average diff
+PropertyGrid.Property.USE_AVERAGE_FILTER.DisplayName	평균 필터 사용	Use average filter
+PropertyGrid.Property.AVERAGE_FILTER_TYPE.DisplayName	평균 필터 타입	Average filter type
+PropertyGrid.Property.SHOW_VERTICAL_LINE.DisplayName	스캔 라인 표시	Show scan line
+PropertyGrid.Property.SHOW_EDGE.DisplayName	엣지 표시	Show edge
+PropertyGrid.Property.SHOW_CONTOUR.DisplayName	컨투어 라인 표시	Show contour line
+PropertyGrid.Property.SHOW_FITLINE.DisplayName	피팅 라인 표시	Show fit line
+LocalizerSmoke.Text	다국어 자동 적용 테스트	Localization Auto Apply Test
+LocalizerSmoke.lblTitle.Text	자동 현지화 제목	Auto-localized Title
+LocalizerSmoke.btnRun.Text	실행	Run
+LocalizerSmoke.btnRun.ToolTip	현재 작업을 실행합니다.	Run the current action.
+LocalizerSmoke.tbSearch.Placeholder	검색어 입력	Type search text
+LocalizerSmoke.grid.colName.HeaderText	이름	Name
+LocalizerSmoke.grid.colValue.HeaderText	값	Value
+LocalizerSmoke.menuFile.Text	파일	File
+LocalizerSmoke.menuOpen.Text	열기	Open
+LocalizerSmoke.tabMain.Text	기본	Main
+ImageCompare.Title	이미지 비교	Image Compare
+ImageCompare.LoadImages	이미지 불러오기	Load Images
+ImageCompare.FitAll	맞춤	Fit All
+ImageCompare.SyncOn	Sync: ON	Sync: ON
+ImageCompare.SyncOff	Sync: OFF	Sync: OFF
+ImageCompare.NoImage	이미지 없음	No image
+ImageCompare.Ready	대기	Ready
+ImageCompare.SizeMismatch	크기 불일치	SIZE MISMATCH
+ImageCompare.SizeMismatchDetected	이미지 크기 불일치 감지	Size mismatch detected
+ImageCompare.StatusNoImage	{0:00} 이미지 없음	Image {0:00} no image
+ImageCompare.StatusOut	{0:00} 영역 밖	Image {0:00} out
+ImageCompare.DeltaOut	Delta vs {0:00}: 영역 밖	Delta vs {0:00}: out
+ImageCompare.DeltaVs	Delta vs {0:00}	Delta vs {0:00}
+ImageCompare.LoadFailed	이미지 비교 로드 실패.\n{0}	Image compare load failed.\n{0}
+ImageCompare.ImageSlot	이미지 {0:00}	Image {0:00}
+ImageCompare.ImagesCount	이미지: {0}/{1}	Images: {0}/{1}
+ImageCanvas.LoadImage	이미지 불러오기	Load Image
+ImageCanvas.SaveImage	이미지 저장	Save Image
+LayerDisplay.EmptyTitle	이미지 없음	No image
+LayerDisplay.EmptyMainDescription	기준 이미지를 불러오면 이 영역에 표시됩니다.	Load a reference image to display it here.
+LayerDisplay.EmptyLayerDescription	레이어 이미지를 불러오면 이 영역에 표시됩니다.	Load a layer image to display it here.
+LayerDisplay.LoadImageButton	이미지 불러오기	Load Image
+LayerDisplay.Status.LayerEmpty	레이어 - · -	Layer - · -
+LayerDisplay.Status.CanvasEmpty	캔버스 X:0 Y:0	Canvas X:0 Y:0
+LayerDisplay.Status.ImageEmpty	이미지 X:0 Y:0 · 100%	Image X:0 Y:0 · 100%
+LayerDisplay.Status.LayerNoImage	레이어 {0} · 이미지 없음	Layer {0} · No image
+LayerDisplay.Status.CanvasDash	캔버스 -	Canvas -
+LayerDisplay.Status.ImageDash	이미지 - · -	Image - · -
+LayerDisplay.Status.LayerImage	레이어 {0} · {1}	Layer {0} · {1}
+LayerDisplay.Status.Canvas	캔버스 X:{0} Y:{1}	Canvas X:{0} Y:{1}
+LayerDisplay.Status.ImagePosition	이미지 X:{0} Y:{1} · {2:0}%	Image X:{0} Y:{1} · {2:0}%
+LayerDisplay.Tooltip.ColorSwatch	현재 마우스 위치의 픽셀 색상입니다.	Pixel color at the current mouse position.
+LayerDisplay.Tooltip.LayerNoImage	현재 레이어: {0}\n이미지 없음	Current layer: {0}\nNo image
+LayerDisplay.Tooltip.CanvasEmpty	이미지가 로드되면 캔버스 좌표가 표시됩니다.	Canvas coordinates appear after an image is loaded.
+LayerDisplay.Tooltip.ImageEmpty	이미지가 로드되면 이미지 좌표와 확대율이 표시됩니다.	Image coordinates and zoom appear after an image is loaded.
+LayerDisplay.Tooltip.GvEmpty	이미지가 로드되면 Gray Value가 표시됩니다.	Gray Value appears after an image is loaded.
+LayerDisplay.Tooltip.RgbEmpty	이미지가 로드되면 RGB 값이 표시됩니다.	RGB values appear after an image is loaded.
+LayerDisplay.Tooltip.PixelEmpty	이미지가 로드되면 픽셀 색상이 표시됩니다.	Pixel color appears after an image is loaded.
+LayerDisplay.Tooltip.LayerImage	현재 레이어: {0}\n이미지 크기: {1}	Current layer: {0}\nImage size: {1}
+LayerDisplay.Tooltip.Canvas	캔버스 좌표(Bottom-Left 기준)\n{0}	Canvas coordinates (bottom-left origin)\n{0}
+LayerDisplay.Tooltip.ImagePosition	이미지 좌표(Top-Left 기준) 및 확대율\n{0}	Image coordinates (top-left origin) and zoom\n{0}
+LayerDisplay.Tooltip.Rgb	RGB 값\n{0}	RGB value\n{0}
+LayerDisplay.Tooltip.PixelColor	픽셀 색상\nR:{0} G:{1} B:{2}	Pixel color\nR:{0} G:{1} B:{2}
+Pipeline.Menu.Undo	실행 취소	Undo
+Pipeline.Menu.Redo	다시 실행	Redo
+VisionTest.Undo	실행 취소	Undo
+VisionTest.Redo	다시 실행	Redo
+VisionTest.UndoFormat	실행 취소 {0}	Undo {0}
+VisionTest.RedoFormat	다시 실행 {0}	Redo {0}
+Main.LayerUndoDone	레이어 작업 실행 취소: {0}	Layer undo: {0}
+Main.LayerRedoDone	레이어 작업 다시 실행: {0}	Layer redo: {0}
+Shell.LayerStateNone	없음	none
+Shell.LayerStateDisplay	표시	display
+Shell.LayerResultMainFormat	02  Main  {0}	02  Main  {0}
+Shell.LayerResultNoneFormat	03  NewPanel_LPV  {0}	03  NewPanel_LPV  {0}
+Shell.LayerResultDisplayFormat	04  NewPanel_sbA  {0}	04  NewPanel_sbA  {0}
+Shell.ToolRailCollapse	도구 접기	Collapse tools
+Shell.ToolRailExpand	도구 펼치기	Expand tools
+PropertyGrid.Type.BlobProperty.MIN_AREA.DisplayName	면적 범위	Area range
+PropertyGrid.Type.ContourProperty.MIN_AREA.DisplayName	면적 범위	Area range
+PropertyGrid.Type.MatchingProperty.FIND_ANGLE_MIN.DisplayName	각도 범위	Angle range
+PropertyGrid.Type.MatchingProperty.FIND_ANGLE_MIN.Description	패턴 매칭에서 탐색할 회전 각도 범위입니다.	Rotation angle range searched by pattern matching.
+PropertyGrid.Type.MatchingProperty.CANNY_LOW.DisplayName	Canny 범위	Canny range
+PropertyGrid.Type.MatchingProperty.CANNY_LOW.Description	Canny 전처리에 사용할 Low/High 임계값 범위입니다.	Low/High threshold range used for Canny preprocessing.
+PropertyGrid.Type.FeatureMatchingProperty.PATTERN_PATH.DisplayName	특징 템플릿 경로	Feature template path
+PropertyGrid.Type.FeatureMatchingProperty.PATTERN_PATH.Description	특징점 기반 매칭에 사용할 템플릿 이미지 파일 경로입니다.	Template image file path used for feature-based matching.
+PropertyGrid.Type.FeatureMatchingProperty.SCORE_MIN.DisplayName	최소 매칭 점수	Min match score
+PropertyGrid.Type.FeatureMatchingProperty.SCORE_MIN.Description	특징 매칭 결과로 인정할 최소 점수입니다. 높을수록 약한 특징점 매칭을 더 엄격하게 제외합니다.	Minimum score accepted as a feature match. Higher values reject weak feature matches more strictly.
+PropertyGrid.Type.FeatureMatchingProperty.RANSAC_REPROJ_THRESHOLD.DisplayName	RANSAC 허용 오차	RANSAC tolerance
+PropertyGrid.Type.FeatureMatchingProperty.RANSAC_REPROJ_THRESHOLD.Description	특징점 매칭 후 기하 변환을 검증할 때 사용하는 재투영 허용 오차(pixel)입니다. 값이 크면 더 많은 변형을 허용합니다.	Reprojection tolerance in pixels used to validate the geometric transform after feature matching. Higher values allow more variation.
+PropertyGrid.Property.AUTO_PREVIEW.DisplayName	자동 미리보기	Auto preview
+PropertyGrid.Property.AUTO_PREVIEW.Description	파라미터를 바꿀 때마다 자동으로 미리보기를 실행할지 결정합니다. 각도 탐색처럼 오래 걸릴 수 있는 조건에서는 끄고 수동으로 미리보기를 실행하는 것이 안전합니다.	Runs preview automatically after parameter changes. Keep it off for potentially slow searches such as angle search, then run Preview manually.

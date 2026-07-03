@@ -1,0 +1,467 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:avalonDockControls="clr-namespace:AvalonDock.Controls;assembly=AvalonDock"
+                    xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+                    xmlns:local="clr-namespace:OpenVisionLab.Docking.Controls">
+    <local:OpenVisionCountToVisibilityConverter x:Key="DockedLayerMultiDocumentVisibilityConverter"
+                                                MinimumVisibleCount="2" />
+    <local:OpenVisionCountToVisibilityConverter x:Key="DockedLayerSingleDocumentVisibilityConverter"
+                                                MinimumVisibleCount="2"
+                                                Invert="True" />
+    <local:OpenVisionDockPaneSelectedDocumentConverter x:Key="DockedLayerSelectedDocumentConverter" />
+
+    <SolidColorBrush x:Key="DockedLayer.WorkspaceBrush" Color="#05090A" />
+    <SolidColorBrush x:Key="DockedLayer.PaneBorderBrush" Color="#1B6F78" />
+    <SolidColorBrush x:Key="DockedLayer.PaneHeaderBrush" Color="#1B2226" />
+    <SolidColorBrush x:Key="DockedLayer.PaneHeaderBorderBrush" Color="#34434A" />
+    <SolidColorBrush x:Key="DockedLayer.TabStripBrush" Color="#11171B" />
+    <SolidColorBrush x:Key="DockedLayer.TabBrush" Color="#171D21" />
+    <SolidColorBrush x:Key="DockedLayer.TabHoverBrush" Color="#20292E" />
+    <SolidColorBrush x:Key="DockedLayer.TabSelectedBrush" Color="#24313A" />
+    <SolidColorBrush x:Key="DockedLayer.TabBorderBrush" Color="#2A3A42" />
+    <SolidColorBrush x:Key="DockedLayer.TextBrush" Color="#EFF5F6" />
+    <SolidColorBrush x:Key="DockedLayer.SubtleTextBrush" Color="#9DB9BE" />
+    <SolidColorBrush x:Key="DockedLayer.AccentBrush" Color="#70D7DE" />
+
+    <DataTemplate x:Key="DockedLayerTabHeaderTemplate">
+        <Grid AutomationProperties.AutomationId="DockedLayerTabHeader"
+              MinWidth="128"
+              MaxWidth="230"
+              MinHeight="26"
+              Cursor="SizeAll"
+              ToolTip="{Binding RelativeSource={RelativeSource AncestorType=avalonDockControls:LayoutAnchorableTabItem}, Path=ToolTip}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="6" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                 <iconPacks:PackIconMaterial Grid.Column="0"
+                                             Kind="DragHorizontalVariant"
+                                             Width="11"
+                                             Height="11"
+                                             Foreground="{StaticResource DockedLayer.AccentBrush}"
+                                             Opacity="0.72"
+                                             VerticalAlignment="Center" />
+                 <TextBlock Grid.Column="2"
+                            Foreground="{StaticResource DockedLayer.TextBrush}"
+                            FontWeight="SemiBold"
+                            FontSize="11"
+                            TextTrimming="CharacterEllipsis"
+                            VerticalAlignment="Center">
+                    <TextBlock.Text>
+                        <PriorityBinding>
+                            <Binding Path="Title" />
+                            <Binding Path="Model.Title" />
+                            <Binding Path="ContentId" />
+                            <Binding />
+                        </PriorityBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+                 <TextBlock Grid.Column="4"
+                            MinWidth="46"
+                            Foreground="{StaticResource DockedLayer.SubtleTextBrush}"
+                            FontSize="8.5"
+                            FontWeight="SemiBold"
+                            Opacity="0.82"
+                           TextAlignment="Right"
+                           TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center">
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="{}{0}x{1}">
+                            <Binding Path="Content.ImagePixelWidth" />
+                            <Binding Path="Content.ImagePixelHeight" />
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+            </Grid>
+        </Grid>
+    </DataTemplate>
+
+    <Style TargetType="{x:Type TabControl}">
+        <Setter Property="Background" Value="{StaticResource DockedLayer.WorkspaceBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource DockedLayer.PaneBorderBrush}" />
+    </Style>
+
+    <Style TargetType="{x:Type TabItem}">
+        <Setter Property="Foreground" Value="{StaticResource DockedLayer.TextBrush}" />
+        <Setter Property="Background" Value="{StaticResource DockedLayer.TabBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource DockedLayer.TabBorderBrush}" />
+        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="MinHeight" Value="26" />
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Foreground" Value="#FFFFFF" />
+                <Setter Property="Background" Value="{StaticResource DockedLayer.TabSelectedBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource DockedLayer.AccentBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="DockedLayerAnchorablePaneControlStyle"
+           TargetType="{x:Type avalonDockControls:LayoutAnchorablePaneControl}">
+        <Setter Property="Background" Value="{StaticResource DockedLayer.WorkspaceBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource DockedLayer.TextBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource DockedLayer.PaneBorderBrush}" />
+        <Setter Property="TabStripPlacement" Value="Top" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="ItemContainerStyle">
+            <Setter.Value>
+                <Style TargetType="{x:Type TabItem}">
+                    <Setter Property="Background" Value="#05090A" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="Cursor" Value="SizeAll" />
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                    <Setter Property="Margin" Value="0,0,3,0" />
+                    <Setter Property="MinHeight" Value="34" />
+                    <Setter Property="OverridesDefaultStyle" Value="True" />
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type TabItem}">
+                                <Border Background="{TemplateBinding Background}"
+                                        BorderThickness="0"
+                                        Padding="0">
+                                    <ContentPresenter ContentSource="Header"
+                                                      HorizontalAlignment="Stretch"
+                                                      RecognizesAccessKey="True"
+                                                      VerticalAlignment="Stretch" />
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ItemTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <avalonDockControls:LayoutAnchorableTabItem Model="{Binding}" />
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ContentTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <ContentControl Content="{Binding Content}"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Stretch"
+                                    VerticalAlignment="Stretch"
+                                    VerticalContentAlignment="Stretch" />
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type avalonDockControls:LayoutAnchorablePaneControl}">
+                    <Grid Background="{StaticResource DockedLayer.WorkspaceBrush}"
+                          KeyboardNavigation.TabNavigation="Local"
+                          SnapsToDevicePixels="True">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0"
+                                Grid.RowSpan="3"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" />
+                        <Border Grid.Row="0"
+                                AutomationProperties.AutomationId="DockedLayerPaneHeader"
+                                Background="{StaticResource DockedLayer.PaneHeaderBrush}"
+                                BorderBrush="{StaticResource DockedLayer.PaneHeaderBorderBrush}"
+                                BorderThickness="0,0,0,1"
+                                Cursor="SizeAll"
+                                HorizontalAlignment="Stretch"
+                                MinHeight="30"
+                                MinWidth="112"
+                                Padding="10,0"
+                                SnapsToDevicePixels="True"
+                                ToolTip="Drag title to dock or rearrange."
+                                Visibility="{Binding Model.ChildrenCount,
+                                                     RelativeSource={RelativeSource TemplatedParent},
+                                                     Converter={StaticResource DockedLayerSingleDocumentVisibilityConverter}}">
+                            <Border.DataContext>
+                                <MultiBinding Converter="{StaticResource DockedLayerSelectedDocumentConverter}">
+                                    <Binding Path="Model.SelectedContent"
+                                             RelativeSource="{RelativeSource TemplatedParent}" />
+                                    <Binding Path="Model"
+                                             RelativeSource="{RelativeSource TemplatedParent}" />
+                                    <Binding Path="Model.ChildrenCount"
+                                             RelativeSource="{RelativeSource TemplatedParent}" />
+                                </MultiBinding>
+                            </Border.DataContext>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="6" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                 <iconPacks:PackIconMaterial Grid.Column="0"
+                                                             Kind="DragHorizontalVariant"
+                                                             Width="12"
+                                                             Height="12"
+                                                             Foreground="{StaticResource DockedLayer.SubtleTextBrush}"
+                                                             Opacity="0.80"
+                                                             VerticalAlignment="Center" />
+                                 <TextBlock Grid.Column="2"
+                                            Foreground="{StaticResource DockedLayer.TextBrush}"
+                                            FontSize="11"
+                                            FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center">
+                                    <TextBlock.Text>
+                                        <PriorityBinding>
+                                            <Binding Path="Title" />
+                                            <Binding Path="ContentId" />
+                                            <Binding />
+                                        </PriorityBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                                 <TextBlock Grid.Column="4"
+                                            Foreground="{StaticResource DockedLayer.SubtleTextBrush}"
+                                            FontSize="9"
+                                            FontWeight="SemiBold"
+                                           Opacity="0.82"
+                                           TextAlignment="Right"
+                                           VerticalAlignment="Center">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="{}{0}x{1}">
+                                            <Binding Path="Content.ImagePixelWidth" />
+                                            <Binding Path="Content.ImagePixelHeight" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </Grid>
+                        </Border>
+                        <Border x:Name="TabStripHost"
+                                Grid.Row="1"
+                                Background="{StaticResource DockedLayer.TabStripBrush}"
+                                BorderBrush="{StaticResource DockedLayer.PaneHeaderBorderBrush}"
+                                BorderThickness="0,0,0,1"
+                                MinHeight="30"
+                                Padding="0"
+                                Visibility="{Binding Model.ChildrenCount,
+                                                      RelativeSource={RelativeSource TemplatedParent},
+                                                      Converter={StaticResource DockedLayerMultiDocumentVisibilityConverter}}">
+                            <avalonDockControls:AnchorablePaneTabPanel x:Name="HeaderPanel"
+                                                                       IsItemsHost="True"
+                                                                       KeyboardNavigation.TabIndex="1"
+                                                                       Panel.ZIndex="1" />
+                        </Border>
+                        <Border Grid.Row="2"
+                                Background="{StaticResource DockedLayer.WorkspaceBrush}"
+                                BorderBrush="{StaticResource DockedLayer.PaneHeaderBorderBrush}"
+                                BorderThickness="0,0,0,0"
+                                Padding="0">
+                            <ContentControl x:Name="PART_SelectedContentHost"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Stretch"
+                                            KeyboardNavigation.DirectionalNavigation="Contained"
+                                            KeyboardNavigation.TabIndex="2"
+                                            KeyboardNavigation.TabNavigation="Local"
+                                            Margin="0"
+                                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                            VerticalAlignment="Stretch"
+                                            VerticalContentAlignment="Stretch">
+                                <ContentControl.Content>
+                                    <MultiBinding Converter="{StaticResource DockedLayerSelectedDocumentConverter}"
+                                                  ConverterParameter="Content">
+                                        <Binding Path="Model.SelectedContent"
+                                                 RelativeSource="{RelativeSource TemplatedParent}" />
+                                        <Binding Path="Model"
+                                                 RelativeSource="{RelativeSource TemplatedParent}" />
+                                        <Binding Path="Model.ChildrenCount"
+                                                 RelativeSource="{RelativeSource TemplatedParent}" />
+                                    </MultiBinding>
+                                </ContentControl.Content>
+                            </ContentControl>
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type avalonDockControls:LayoutDocumentTabItem}">
+        <Setter Property="Foreground" Value="{StaticResource DockedLayer.TextBrush}" />
+        <Setter Property="Background" Value="{StaticResource DockedLayer.TabBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource DockedLayer.TabBorderBrush}" />
+        <Setter Property="Padding" Value="14,6" />
+        <Setter Property="Margin" Value="2,0,4,0" />
+        <Setter Property="MinWidth" Value="86" />
+        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Cursor" Value="SizeAll" />
+        <Setter Property="ToolTip" Value="Drag tab to dock or rearrange." />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="#FFFFFF" />
+                <Setter Property="Background" Value="{StaticResource DockedLayer.TabHoverBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource DockedLayer.AccentBrush}" />
+            </Trigger>
+            <DataTrigger Binding="{Binding Model.IsSelected, RelativeSource={RelativeSource Self}}" Value="True">
+                <Setter Property="Foreground" Value="#FFFFFF" />
+                <Setter Property="Background" Value="{StaticResource DockedLayer.TabSelectedBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource DockedLayer.AccentBrush}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="{x:Type avalonDockControls:LayoutAnchorableTabItem}">
+        <Setter Property="Foreground" Value="{StaticResource DockedLayer.TextBrush}" />
+        <Setter Property="Background" Value="{StaticResource DockedLayer.TabBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource DockedLayer.TabBorderBrush}" />
+        <Setter Property="Padding" Value="10,4,9,4" />
+        <Setter Property="Margin" Value="0,0,1,0" />
+        <Setter Property="MinWidth" Value="128" />
+        <Setter Property="MaxWidth" Value="230" />
+        <Setter Property="MinHeight" Value="30" />
+        <Setter Property="BorderThickness" Value="1,1,1,0" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Cursor" Value="SizeAll" />
+        <Setter Property="ToolTip" Value="Drag tab to dock or rearrange." />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type avalonDockControls:LayoutAnchorableTabItem}">
+                    <Grid Background="{StaticResource DockedLayer.TabStripBrush}"
+                          SnapsToDevicePixels="True">
+                        <Border x:Name="tabChrome"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="0"
+                                Margin="0"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter x:Name="contentPresenter"
+                                              Content="{Binding Model, RelativeSource={RelativeSource TemplatedParent}}"
+                                              ContentTemplate="{StaticResource DockedLayerTabHeaderTemplate}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              RecognizesAccessKey="True"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                        <Border x:Name="activeLine"
+                                 Height="2"
+                                 Background="{StaticResource DockedLayer.AccentBrush}"
+                                 HorizontalAlignment="Stretch"
+                                 VerticalAlignment="Top"
+                                 Opacity="0" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="tabChrome" Property="Background" Value="{StaticResource DockedLayer.TabHoverBrush}" />
+                            <Setter TargetName="tabChrome" Property="BorderBrush" Value="{StaticResource DockedLayer.AccentBrush}" />
+                        </Trigger>
+                        <DataTrigger Binding="{Binding Model.IsSelected, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                            <Setter Property="Foreground" Value="#FFFFFF" />
+                            <Setter TargetName="tabChrome" Property="Background" Value="{StaticResource DockedLayer.TabSelectedBrush}" />
+                            <Setter TargetName="tabChrome" Property="BorderBrush" Value="{StaticResource DockedLayer.AccentBrush}" />
+                            <Setter TargetName="activeLine" Property="Opacity" Value="1" />
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type avalonDockControls:AnchorablePaneTitle}">
+        <Setter Property="Cursor" Value="SizeAll" />
+        <Setter Property="ToolTip" Value="Drag title to dock or rearrange." />
+        <Setter Property="MinHeight" Value="30" />
+        <Setter Property="MinWidth" Value="112" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type avalonDockControls:AnchorablePaneTitle}">
+                    <Border Background="{StaticResource DockedLayer.PaneHeaderBrush}"
+                            BorderBrush="{StaticResource DockedLayer.PaneHeaderBorderBrush}"
+                            BorderThickness="0,0,0,1"
+                            MinHeight="30"
+                            Padding="10,0"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="6" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                             <iconPacks:PackIconMaterial Grid.Column="0"
+                                                         Kind="DragHorizontalVariant"
+                                                         Width="12"
+                                                         Height="12"
+                                                         Foreground="{StaticResource DockedLayer.SubtleTextBrush}"
+                                                         Opacity="0.80"
+                                                         VerticalAlignment="Center" />
+                             <TextBlock Grid.Column="2"
+                                        Foreground="{StaticResource DockedLayer.TextBrush}"
+                                        FontSize="11"
+                                        FontWeight="SemiBold"
+                                       TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center">
+                                <TextBlock.Text>
+                                    <PriorityBinding>
+                                        <Binding Path="Model.Title"
+                                                 RelativeSource="{RelativeSource TemplatedParent}" />
+                                        <Binding Path="Model.ContentId"
+                                                 RelativeSource="{RelativeSource TemplatedParent}" />
+                                        <Binding Path="Model"
+                                                 RelativeSource="{RelativeSource TemplatedParent}" />
+                                    </PriorityBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                             <TextBlock Grid.Column="4"
+                                        Foreground="{StaticResource DockedLayer.SubtleTextBrush}"
+                                        FontSize="9"
+                                        FontWeight="SemiBold"
+                                       Opacity="0.82"
+                                       TextAlignment="Right"
+                                       VerticalAlignment="Center">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}{0}x{1}">
+                                        <Binding Path="Model.Content.ImagePixelWidth"
+                                                 RelativeSource="{RelativeSource TemplatedParent}" />
+                                        <Binding Path="Model.Content.ImagePixelHeight"
+                                                 RelativeSource="{RelativeSource TemplatedParent}" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="#05090A" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="#05090A" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlLightBrushKey}" Color="#11171B" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlLightLightBrushKey}" Color="#1B2226" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlDarkBrushKey}" Color="#1B6F78" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlDarkDarkBrushKey}" Color="#05090A" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.ActiveCaptionBrushKey}" Color="#24313A" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveCaptionBrushKey}" Color="#171D21" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.ActiveBorderBrushKey}" Color="#70D7DE" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveBorderBrushKey}" Color="#2A3A42" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#24313A" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.WindowTextBrushKey}" Color="#EFF5F6" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}" Color="#EFF5F6" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.MenuBrushKey}" Color="#11171B" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.MenuTextBrushKey}" Color="#EFF5F6" />
+</ResourceDictionary>

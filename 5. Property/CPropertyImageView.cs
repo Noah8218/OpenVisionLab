@@ -8,7 +8,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using System.Xml;
 using Lib.Common;
 using OpenCvSharp;
@@ -41,7 +40,7 @@ namespace OpenVisionLab
         {
             try
             {
-                string strPath = Application.StartupPath + "\\RECIPE\\" + strRecipeName + "\\" + NAME + ".xml";
+                string strPath = Path.Combine(AppPathService.EnsureDirectory("RECIPE", strRecipeName), NAME + ".xml");
 
                 if (File.Exists(strPath))
                 {
@@ -91,7 +90,7 @@ namespace OpenVisionLab
         }
         public bool SaveConfig(string strRecipeName)
         {
-            string strPath = Application.StartupPath + "\\RECIPE\\" + strRecipeName + "\\" + NAME + ".xml";
+            string strPath = Path.Combine(AppPathService.EnsureDirectory("RECIPE", strRecipeName), NAME + ".xml");
 
             XmlWriterSettings settings = new XmlWriterSettings();
             settings.Indent = true;

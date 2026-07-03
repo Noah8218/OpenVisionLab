@@ -1,0 +1,710 @@
+﻿{
+    "Time":  "2026-07-02 19:09:06",
+    "StartedAt":  "2026-07-02 19:08:42",
+    "DurationSeconds":  23.931,
+    "Configuration":  "Debug",
+    "Platform":  "Any CPU",
+    "CatalogPath":  "C:\\Git\\OpenVisionLab_Dev\\docs\\samples\\OpenVisionLab.PublicSampleCatalog.csv",
+    "OutputDir":  "artifacts\\public_sample_catalog_20260702_learn_evidence",
+    "RunnerPath":  "C:\\Git\\OpenVisionLab_Dev\\tools\\VisionRecipeRunnerSmoke\\bin\\Any CPU\\Debug\\net8.0-windows7.0\\VisionRecipeRunnerSmoke.exe",
+    "RunnerRestoreDurationSeconds":  0,
+    "RunnerBuildDurationSeconds":  16.758,
+    "SampleExecutionDurationSeconds":  6.766,
+    "GateStatus":  "OK",
+    "GateMessage":  "All runnable sample rows passed.",
+    "RunnableRows":  16,
+    "RequiredRows":  8,
+    "ExploreRows":  0,
+    "ExpectedFailureRows":  8,
+    "OKRows":  16,
+    "NGRows":  0,
+    "Categories":  [
+                       {
+                           "Category":  "Public Synthetic / Blob",
+                           "Total":  2,
+                           "Required":  1,
+                           "Explore":  0,
+                           "OK":  2,
+                           "NG":  0
+                       },
+                       {
+                           "Category":  "Public Synthetic / Contour",
+                           "Total":  2,
+                           "Required":  1,
+                           "Explore":  0,
+                           "OK":  2,
+                           "NG":  0
+                       },
+                       {
+                           "Category":  "Public Synthetic / EdgeBasedMatching",
+                           "Total":  2,
+                           "Required":  1,
+                           "Explore":  0,
+                           "OK":  2,
+                           "NG":  0
+                       },
+                       {
+                           "Category":  "Public Synthetic / FeatureMatching",
+                           "Total":  2,
+                           "Required":  1,
+                           "Explore":  0,
+                           "OK":  2,
+                           "NG":  0
+                       },
+                       {
+                           "Category":  "Public Synthetic / Line",
+                           "Total":  2,
+                           "Required":  1,
+                           "Explore":  0,
+                           "OK":  2,
+                           "NG":  0
+                       },
+                       {
+                           "Category":  "Public Synthetic / Matching",
+                           "Total":  2,
+                           "Required":  1,
+                           "Explore":  0,
+                           "OK":  2,
+                           "NG":  0
+                       },
+                       {
+                           "Category":  "Public Synthetic / Mean",
+                           "Total":  2,
+                           "Required":  1,
+                           "Explore":  0,
+                           "OK":  2,
+                           "NG":  0
+                       },
+                       {
+                           "Category":  "Public Synthetic / Threshold",
+                           "Total":  2,
+                           "Required":  1,
+                           "Explore":  0,
+                           "OK":  2,
+                           "NG":  0
+                       }
+                   ],
+    "FailedSamples":  [
+
+                      ],
+    "ArtifactIssueCount":  0,
+    "ArtifactIssues":  [
+
+                       ],
+    "MetadataIssueCount":  0,
+    "MetadataIssues":  [
+
+                       ],
+    "SampleFolderCoverage":  [
+                                 {
+                                     "Folder":  ".",
+                                     "ImageCount":  9,
+                                     "CatalogRefs":  0,
+                                     "Status":  "Backlog"
+                                 },
+                                 {
+                                     "Folder":  "EasyBarCode",
+                                     "ImageCount":  20,
+                                     "CatalogRefs":  0,
+                                     "Status":  "Backlog"
+                                 },
+                                 {
+                                     "Folder":  "EasyColor",
+                                     "ImageCount":  16,
+                                     "CatalogRefs":  0,
+                                     "Status":  "Backlog"
+                                 },
+                                 {
+                                     "Folder":  "EasyFind",
+                                     "ImageCount":  11,
+                                     "CatalogRefs":  0,
+                                     "Status":  "Backlog"
+                                 },
+                                 {
+                                     "Folder":  "EasyGauge",
+                                     "ImageCount":  31,
+                                     "CatalogRefs":  0,
+                                     "Status":  "Backlog"
+                                 },
+                                 {
+                                     "Folder":  "EasyImage",
+                                     "ImageCount":  31,
+                                     "CatalogRefs":  0,
+                                     "Status":  "Backlog"
+                                 },
+                                 {
+                                     "Folder":  "EasyMatch",
+                                     "ImageCount":  21,
+                                     "CatalogRefs":  0,
+                                     "Status":  "Backlog"
+                                 },
+                                 {
+                                     "Folder":  "EasyMatrixCode",
+                                     "ImageCount":  31,
+                                     "CatalogRefs":  0,
+                                     "Status":  "Backlog"
+                                 },
+                                 {
+                                     "Folder":  "EasyObject",
+                                     "ImageCount":  25,
+                                     "CatalogRefs":  0,
+                                     "Status":  "Backlog"
+                                 },
+                                 {
+                                     "Folder":  "EasyOCR",
+                                     "ImageCount":  25,
+                                     "CatalogRefs":  0,
+                                     "Status":  "Backlog"
+                                 },
+                                 {
+                                     "Folder":  "EasyOCR2",
+                                     "ImageCount":  101,
+                                     "CatalogRefs":  0,
+                                     "Status":  "Backlog"
+                                 },
+                                 {
+                                     "Folder":  "EasyQRCode",
+                                     "ImageCount":  14,
+                                     "CatalogRefs":  0,
+                                     "Status":  "Backlog"
+                                 },
+                                 {
+                                     "Folder":  "EdgeBasedMatching",
+                                     "ImageCount":  3,
+                                     "CatalogRefs":  0,
+                                     "Status":  "Backlog"
+                                 },
+                                 {
+                                     "Folder":  "FeatureMatching",
+                                     "ImageCount":  1,
+                                     "CatalogRefs":  0,
+                                     "Status":  "Backlog"
+                                 },
+                                 {
+                                     "Folder":  "Generated",
+                                     "ImageCount":  2,
+                                     "CatalogRefs":  0,
+                                     "Status":  "Backlog"
+                                 }
+                             ],
+    "UncoveredSampleFolders":  [
+                                   {
+                                       "Folder":  "EasyBarCode",
+                                       "ImageCount":  20,
+                                       "CatalogRefs":  0,
+                                       "Status":  "Backlog"
+                                   },
+                                   {
+                                       "Folder":  "EasyColor",
+                                       "ImageCount":  16,
+                                       "CatalogRefs":  0,
+                                       "Status":  "Backlog"
+                                   },
+                                   {
+                                       "Folder":  "EasyFind",
+                                       "ImageCount":  11,
+                                       "CatalogRefs":  0,
+                                       "Status":  "Backlog"
+                                   },
+                                   {
+                                       "Folder":  "EasyGauge",
+                                       "ImageCount":  31,
+                                       "CatalogRefs":  0,
+                                       "Status":  "Backlog"
+                                   },
+                                   {
+                                       "Folder":  "EasyImage",
+                                       "ImageCount":  31,
+                                       "CatalogRefs":  0,
+                                       "Status":  "Backlog"
+                                   },
+                                   {
+                                       "Folder":  "EasyMatch",
+                                       "ImageCount":  21,
+                                       "CatalogRefs":  0,
+                                       "Status":  "Backlog"
+                                   },
+                                   {
+                                       "Folder":  "EasyMatrixCode",
+                                       "ImageCount":  31,
+                                       "CatalogRefs":  0,
+                                       "Status":  "Backlog"
+                                   },
+                                   {
+                                       "Folder":  "EasyObject",
+                                       "ImageCount":  25,
+                                       "CatalogRefs":  0,
+                                       "Status":  "Backlog"
+                                   },
+                                   {
+                                       "Folder":  "EasyOCR",
+                                       "ImageCount":  25,
+                                       "CatalogRefs":  0,
+                                       "Status":  "Backlog"
+                                   },
+                                   {
+                                       "Folder":  "EasyOCR2",
+                                       "ImageCount":  101,
+                                       "CatalogRefs":  0,
+                                       "Status":  "Backlog"
+                                   },
+                                   {
+                                       "Folder":  "EasyQRCode",
+                                       "ImageCount":  14,
+                                       "CatalogRefs":  0,
+                                       "Status":  "Backlog"
+                                   },
+                                   {
+                                       "Folder":  "EdgeBasedMatching",
+                                       "ImageCount":  3,
+                                       "CatalogRefs":  0,
+                                       "Status":  "Backlog"
+                                   },
+                                   {
+                                       "Folder":  "FeatureMatching",
+                                       "ImageCount":  1,
+                                       "CatalogRefs":  0,
+                                       "Status":  "Backlog"
+                                   },
+                                   {
+                                       "Folder":  "Generated",
+                                       "ImageCount":  2,
+                                       "CatalogRefs":  0,
+                                       "Status":  "Backlog"
+                                   }
+                               ],
+    "Results":  [
+                    {
+                        "SampleName":  "Public_Matching_DiePad_Good",
+                        "Category":  "Public Synthetic / Matching",
+                        "Mode":  "Required",
+                        "Status":  "OK",
+                        "ExitCode":  0,
+                        "InputImageWidth":  572,
+                        "InputImageHeight":  420,
+                        "MetadataStatus":  "OK",
+                        "MetadataFailureMessages":  [
+
+                                                    ],
+                        "Pipeline":  "Public_Matching_DiePad.pipeline.xml",
+                        "Result":  "Success=True",
+                        "ExpectedMetric":  "ResultCount; ScoreMax",
+                        "ExpectedMetricText":  "ResultCount=3 min=3 max=3; ScoreMax=93.074 min=80 max=100",
+                        "ArtifactStatus":  "OK",
+                        "ArtifactFailureMessages":  [
+
+                                                    ],
+                        "FailureMessages":  [
+
+                                            ],
+                        "OverlayImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Matching_DiePad_Good.png",
+                        "ResultImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Matching_DiePad_Good.result.png",
+                        "LogPath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Matching_DiePad_Good.log"
+                    },
+                    {
+                        "SampleName":  "Public_Matching_DiePad_NoTarget_Bad",
+                        "Category":  "Public Synthetic / Matching",
+                        "Mode":  "ExpectedFailure",
+                        "Status":  "OK",
+                        "ExitCode":  1,
+                        "InputImageWidth":  572,
+                        "InputImageHeight":  420,
+                        "MetadataStatus":  "OK",
+                        "MetadataFailureMessages":  [
+
+                                                    ],
+                        "Pipeline":  "Public_Matching_DiePad.pipeline.xml",
+                        "Result":  "Success=False",
+                        "ExpectedMetric":  "ResultCount",
+                        "ExpectedMetricText":  "ResultCount=0 min=0 max=0",
+                        "ArtifactStatus":  "OK",
+                        "ArtifactFailureMessages":  [
+
+                                                    ],
+                        "FailureMessages":  [
+
+                                            ],
+                        "OverlayImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Matching_DiePad_NoTarget_Bad.png",
+                        "ResultImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Matching_DiePad_NoTarget_Bad.result.png",
+                        "LogPath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Matching_DiePad_NoTarget_Bad.log"
+                    },
+                    {
+                        "SampleName":  "Public_Blob_Particles_Good",
+                        "Category":  "Public Synthetic / Blob",
+                        "Mode":  "Required",
+                        "Status":  "OK",
+                        "ExitCode":  0,
+                        "InputImageWidth":  572,
+                        "InputImageHeight":  420,
+                        "MetadataStatus":  "OK",
+                        "MetadataFailureMessages":  [
+
+                                                    ],
+                        "Pipeline":  "Public_Blob_Particles.pipeline.xml",
+                        "Result":  "Success=True",
+                        "ExpectedMetric":  "ResultCount",
+                        "ExpectedMetricText":  "ResultCount=12 min=8 max=14",
+                        "ArtifactStatus":  "OK",
+                        "ArtifactFailureMessages":  [
+
+                                                    ],
+                        "FailureMessages":  [
+
+                                            ],
+                        "OverlayImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Blob_Particles_Good.png",
+                        "ResultImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Blob_Particles_Good.result.png",
+                        "LogPath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Blob_Particles_Good.log"
+                    },
+                    {
+                        "SampleName":  "Public_Blob_Particles_Sparse_Bad",
+                        "Category":  "Public Synthetic / Blob",
+                        "Mode":  "ExpectedFailure",
+                        "Status":  "OK",
+                        "ExitCode":  1,
+                        "InputImageWidth":  572,
+                        "InputImageHeight":  420,
+                        "MetadataStatus":  "OK",
+                        "MetadataFailureMessages":  [
+
+                                                    ],
+                        "Pipeline":  "Public_Blob_Particles.pipeline.xml",
+                        "Result":  "Success=False",
+                        "ExpectedMetric":  "ResultCount",
+                        "ExpectedMetricText":  "ResultCount=3 min=2 max=4",
+                        "ArtifactStatus":  "OK",
+                        "ArtifactFailureMessages":  [
+
+                                                    ],
+                        "FailureMessages":  [
+
+                                            ],
+                        "OverlayImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Blob_Particles_Sparse_Bad.png",
+                        "ResultImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Blob_Particles_Sparse_Bad.result.png",
+                        "LogPath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Blob_Particles_Sparse_Bad.log"
+                    },
+                    {
+                        "SampleName":  "Public_Contour_Shapes_Good",
+                        "Category":  "Public Synthetic / Contour",
+                        "Mode":  "Required",
+                        "Status":  "OK",
+                        "ExitCode":  0,
+                        "InputImageWidth":  572,
+                        "InputImageHeight":  420,
+                        "MetadataStatus":  "OK",
+                        "MetadataFailureMessages":  [
+
+                                                    ],
+                        "Pipeline":  "Public_Contour_Shapes.pipeline.xml",
+                        "Result":  "Success=True",
+                        "ExpectedMetric":  "ResultCount",
+                        "ExpectedMetricText":  "ResultCount=5 min=5 max=5",
+                        "ArtifactStatus":  "OK",
+                        "ArtifactFailureMessages":  [
+
+                                                    ],
+                        "FailureMessages":  [
+
+                                            ],
+                        "OverlayImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Contour_Shapes_Good.png",
+                        "ResultImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Contour_Shapes_Good.result.png",
+                        "LogPath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Contour_Shapes_Good.log"
+                    },
+                    {
+                        "SampleName":  "Public_Contour_Shapes_Missing_Bad",
+                        "Category":  "Public Synthetic / Contour",
+                        "Mode":  "ExpectedFailure",
+                        "Status":  "OK",
+                        "ExitCode":  1,
+                        "InputImageWidth":  572,
+                        "InputImageHeight":  420,
+                        "MetadataStatus":  "OK",
+                        "MetadataFailureMessages":  [
+
+                                                    ],
+                        "Pipeline":  "Public_Contour_Shapes.pipeline.xml",
+                        "Result":  "Success=False",
+                        "ExpectedMetric":  "ResultCount",
+                        "ExpectedMetricText":  "ResultCount=2 min=2 max=2",
+                        "ArtifactStatus":  "OK",
+                        "ArtifactFailureMessages":  [
+
+                                                    ],
+                        "FailureMessages":  [
+
+                                            ],
+                        "OverlayImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Contour_Shapes_Missing_Bad.png",
+                        "ResultImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Contour_Shapes_Missing_Bad.result.png",
+                        "LogPath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Contour_Shapes_Missing_Bad.log"
+                    },
+                    {
+                        "SampleName":  "Public_Threshold_BandPads_Good",
+                        "Category":  "Public Synthetic / Threshold",
+                        "Mode":  "Required",
+                        "Status":  "OK",
+                        "ExitCode":  0,
+                        "InputImageWidth":  572,
+                        "InputImageHeight":  420,
+                        "MetadataStatus":  "OK",
+                        "MetadataFailureMessages":  [
+
+                                                    ],
+                        "Pipeline":  "Public_Threshold_BandPads.pipeline.xml",
+                        "Result":  "Success=True",
+                        "ExpectedMetric":  "ResultCount",
+                        "ExpectedMetricText":  "ResultCount=4 min=4 max=4",
+                        "ArtifactStatus":  "OK",
+                        "ArtifactFailureMessages":  [
+
+                                                    ],
+                        "FailureMessages":  [
+
+                                            ],
+                        "OverlayImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Threshold_BandPads_Good.png",
+                        "ResultImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Threshold_BandPads_Good.result.png",
+                        "LogPath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Threshold_BandPads_Good.log"
+                    },
+                    {
+                        "SampleName":  "Public_Threshold_BandPads_Missing_Bad",
+                        "Category":  "Public Synthetic / Threshold",
+                        "Mode":  "ExpectedFailure",
+                        "Status":  "OK",
+                        "ExitCode":  1,
+                        "InputImageWidth":  572,
+                        "InputImageHeight":  420,
+                        "MetadataStatus":  "OK",
+                        "MetadataFailureMessages":  [
+
+                                                    ],
+                        "Pipeline":  "Public_Threshold_BandPads.pipeline.xml",
+                        "Result":  "Success=False",
+                        "ExpectedMetric":  "ResultCount",
+                        "ExpectedMetricText":  "ResultCount=1 min=1 max=1",
+                        "ArtifactStatus":  "OK",
+                        "ArtifactFailureMessages":  [
+
+                                                    ],
+                        "FailureMessages":  [
+
+                                            ],
+                        "OverlayImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Threshold_BandPads_Missing_Bad.png",
+                        "ResultImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Threshold_BandPads_Missing_Bad.result.png",
+                        "LogPath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Threshold_BandPads_Missing_Bad.log"
+                    },
+                    {
+                        "SampleName":  "Public_Mean_Brightness_Good",
+                        "Category":  "Public Synthetic / Mean",
+                        "Mode":  "Required",
+                        "Status":  "OK",
+                        "ExitCode":  0,
+                        "InputImageWidth":  572,
+                        "InputImageHeight":  420,
+                        "MetadataStatus":  "OK",
+                        "MetadataFailureMessages":  [
+
+                                                    ],
+                        "Pipeline":  "Public_Mean_BrightnessDrift.pipeline.xml",
+                        "Result":  "Success=True",
+                        "ExpectedMetric":  "MeanValueAvg",
+                        "ExpectedMetricText":  "MeanValueAvg=201.5 min=185 max=220",
+                        "ArtifactStatus":  "OK",
+                        "ArtifactFailureMessages":  [
+
+                                                    ],
+                        "FailureMessages":  [
+
+                                            ],
+                        "OverlayImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Mean_Brightness_Good.png",
+                        "ResultImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Mean_Brightness_Good.result.png",
+                        "LogPath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Mean_Brightness_Good.log"
+                    },
+                    {
+                        "SampleName":  "Public_Mean_Brightness_Dark_Bad",
+                        "Category":  "Public Synthetic / Mean",
+                        "Mode":  "ExpectedFailure",
+                        "Status":  "OK",
+                        "ExitCode":  1,
+                        "InputImageWidth":  572,
+                        "InputImageHeight":  420,
+                        "MetadataStatus":  "OK",
+                        "MetadataFailureMessages":  [
+
+                                                    ],
+                        "Pipeline":  "Public_Mean_BrightnessDrift.pipeline.xml",
+                        "Result":  "Success=False",
+                        "ExpectedMetric":  "MeanValueAvg",
+                        "ExpectedMetricText":  "MeanValueAvg=117.5 min=105 max=130",
+                        "ArtifactStatus":  "OK",
+                        "ArtifactFailureMessages":  [
+
+                                                    ],
+                        "FailureMessages":  [
+
+                                            ],
+                        "OverlayImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Mean_Brightness_Dark_Bad.png",
+                        "ResultImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Mean_Brightness_Dark_Bad.result.png",
+                        "LogPath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Mean_Brightness_Dark_Bad.log"
+                    },
+                    {
+                        "SampleName":  "Public_Feature_Card_Good",
+                        "Category":  "Public Synthetic / FeatureMatching",
+                        "Mode":  "Required",
+                        "Status":  "OK",
+                        "ExitCode":  0,
+                        "InputImageWidth":  572,
+                        "InputImageHeight":  420,
+                        "MetadataStatus":  "OK",
+                        "MetadataFailureMessages":  [
+
+                                                    ],
+                        "Pipeline":  "Public_Feature_Card.pipeline.xml",
+                        "Result":  "Success=True",
+                        "ExpectedMetric":  "ScoreMax; ResultCount",
+                        "ExpectedMetricText":  "ScoreMax=96.7 min=80 max=100; ResultCount=1 min=1 max=3",
+                        "ArtifactStatus":  "OK",
+                        "ArtifactFailureMessages":  [
+
+                                                    ],
+                        "FailureMessages":  [
+
+                                            ],
+                        "OverlayImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Feature_Card_Good.png",
+                        "ResultImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Feature_Card_Good.result.png",
+                        "LogPath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Feature_Card_Good.log"
+                    },
+                    {
+                        "SampleName":  "Public_Feature_Card_Wrong_Bad",
+                        "Category":  "Public Synthetic / FeatureMatching",
+                        "Mode":  "ExpectedFailure",
+                        "Status":  "OK",
+                        "ExitCode":  1,
+                        "InputImageWidth":  572,
+                        "InputImageHeight":  420,
+                        "MetadataStatus":  "OK",
+                        "MetadataFailureMessages":  [
+
+                                                    ],
+                        "Pipeline":  "Public_Feature_Card.pipeline.xml",
+                        "Result":  "Success=False",
+                        "ExpectedMetric":  "ScoreMax",
+                        "ExpectedMetricText":  "ScoreMax=26.7 min=20 max=35",
+                        "ArtifactStatus":  "OK",
+                        "ArtifactFailureMessages":  [
+
+                                                    ],
+                        "FailureMessages":  [
+
+                                            ],
+                        "OverlayImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Feature_Card_Wrong_Bad.png",
+                        "ResultImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Feature_Card_Wrong_Bad.result.png",
+                        "LogPath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Feature_Card_Wrong_Bad.log"
+                    },
+                    {
+                        "SampleName":  "Public_Edge_Fiducial_Good",
+                        "Category":  "Public Synthetic / EdgeBasedMatching",
+                        "Mode":  "Required",
+                        "Status":  "OK",
+                        "ExitCode":  0,
+                        "InputImageWidth":  572,
+                        "InputImageHeight":  420,
+                        "MetadataStatus":  "OK",
+                        "MetadataFailureMessages":  [
+
+                                                    ],
+                        "Pipeline":  "Public_Edge_Fiducial.pipeline.xml",
+                        "Result":  "Success=True",
+                        "ExpectedMetric":  "ScoreMax; ResultCount",
+                        "ExpectedMetricText":  "ScoreMax=99.598 min=70 max=100; ResultCount=1 min=1 max=1",
+                        "ArtifactStatus":  "OK",
+                        "ArtifactFailureMessages":  [
+
+                                                    ],
+                        "FailureMessages":  [
+
+                                            ],
+                        "OverlayImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Edge_Fiducial_Good.png",
+                        "ResultImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Edge_Fiducial_Good.result.png",
+                        "LogPath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Edge_Fiducial_Good.log"
+                    },
+                    {
+                        "SampleName":  "Public_Edge_Fiducial_Wrong_Bad",
+                        "Category":  "Public Synthetic / EdgeBasedMatching",
+                        "Mode":  "ExpectedFailure",
+                        "Status":  "OK",
+                        "ExitCode":  1,
+                        "InputImageWidth":  572,
+                        "InputImageHeight":  420,
+                        "MetadataStatus":  "OK",
+                        "MetadataFailureMessages":  [
+
+                                                    ],
+                        "Pipeline":  "Public_Edge_Fiducial.pipeline.xml",
+                        "Result":  "Success=False",
+                        "ExpectedMetric":  "ResultCount",
+                        "ExpectedMetricText":  "ResultCount=0 min=0 max=0",
+                        "ArtifactStatus":  "OK",
+                        "ArtifactFailureMessages":  [
+
+                                                    ],
+                        "FailureMessages":  [
+
+                                            ],
+                        "OverlayImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Edge_Fiducial_Wrong_Bad.png",
+                        "ResultImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Edge_Fiducial_Wrong_Bad.result.png",
+                        "LogPath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Edge_Fiducial_Wrong_Bad.log"
+                    },
+                    {
+                        "SampleName":  "Public_Line_Pins_Good",
+                        "Category":  "Public Synthetic / Line",
+                        "Mode":  "Required",
+                        "Status":  "OK",
+                        "ExitCode":  0,
+                        "InputImageWidth":  572,
+                        "InputImageHeight":  420,
+                        "MetadataStatus":  "OK",
+                        "MetadataFailureMessages":  [
+
+                                                    ],
+                        "Pipeline":  "Public_Line_Pins_Distance.pipeline.xml",
+                        "Result":  "Success=True",
+                        "ExpectedMetric":  "DistanceMmAvg",
+                        "ExpectedMetricText":  "DistanceMmAvg=0.222 min=0.2 max=0.25",
+                        "ArtifactStatus":  "OK",
+                        "ArtifactFailureMessages":  [
+
+                                                    ],
+                        "FailureMessages":  [
+
+                                            ],
+                        "OverlayImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Line_Pins_Good.png",
+                        "ResultImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Line_Pins_Good.result.png",
+                        "LogPath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Line_Pins_Good.log"
+                    },
+                    {
+                        "SampleName":  "Public_Line_Pins_WidePin_Bad",
+                        "Category":  "Public Synthetic / Line",
+                        "Mode":  "ExpectedFailure",
+                        "Status":  "OK",
+                        "ExitCode":  1,
+                        "InputImageWidth":  572,
+                        "InputImageHeight":  420,
+                        "MetadataStatus":  "OK",
+                        "MetadataFailureMessages":  [
+
+                                                    ],
+                        "Pipeline":  "Public_Line_Pins_Distance.pipeline.xml",
+                        "Result":  "Success=False",
+                        "ExpectedMetric":  "DistanceMmAvg",
+                        "ExpectedMetricText":  "DistanceMmAvg=0.106 min=0.09 max=0.13",
+                        "ArtifactStatus":  "OK",
+                        "ArtifactFailureMessages":  [
+
+                                                    ],
+                        "FailureMessages":  [
+
+                                            ],
+                        "OverlayImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Line_Pins_WidePin_Bad.png",
+                        "ResultImagePath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Line_Pins_WidePin_Bad.result.png",
+                        "LogPath":  "artifacts\\public_sample_catalog_20260702_learn_evidence\\Public_Line_Pins_WidePin_Bad.log"
+                    }
+                ]
+}

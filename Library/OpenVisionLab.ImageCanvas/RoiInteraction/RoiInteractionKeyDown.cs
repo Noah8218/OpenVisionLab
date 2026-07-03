@@ -1,4 +1,4 @@
-using OpenVisionLab.ImageCanvas.CanvasShapes;
+﻿using OpenVisionLab.ImageCanvas.CanvasShapes;
 using OpenVisionLab.ImageCanvas.Overlays;
 using OpenVisionLab.ImageCanvas.OpenGLRendering;
 using System;
@@ -8,7 +8,7 @@ namespace OpenVisionLab.ImageCanvas
 	public class RoiInteractionKeyDown
 	{
 		/// <summary>
-		/// ?�재 ?�택???�각??(_activeRoiRect)??복사?�는 로직 구현			
+		/// ?꾩옱 ?좏깮???ш컖??(_activeRoiRect)??蹂듭궗?섎뒗 濡쒖쭅 援ы쁽			
 		/// </summary>
 		public static void CopyRectangle(CanvasRect<float> activeRoiRect, ref CanvasRect<float> copyRoiRect)
 		{
@@ -16,7 +16,7 @@ namespace OpenVisionLab.ImageCanvas
 		}
 
 		/// <summary>
-		/// ?�립보드 ?�는 ?�시 변?�에??복사???�각?�을 가?��???붙여?�는 로직 구현			
+		/// ?대┰蹂대뱶 ?먮뒗 ?꾩떆 蹂?섏뿉??蹂듭궗???ш컖?뺤쓣 媛?몄???遺숈뿬?ｋ뒗 濡쒖쭅 援ы쁽			
 		/// </summary>
 		public static void PasteRectangle(OpenVisionLab.ImageCanvas.Rendering.ImageCanvasControl imageViewer, ref CanvasRect<float> copyRoiRect, OverlayAddedCallback callbackRoiAdded, OverlayGroupAddedCallback callbackGroupAddition)
 		{
@@ -35,7 +35,7 @@ namespace OpenVisionLab.ImageCanvas
 				CanvasOverlayItem parentOverlay = imageViewer.GetGroupToType(copyRoiRect.GroupType);
 				AddNewOverlay(imageViewer, parentOverlay.GroupType, canvasRect.GroupType, canvasRect, canvasRect.UniqueId, parentOverlay.InspWindowType, EnumItemType.Window);
 
-				// 콜백 ?�출
+				// 肄쒕갚 ?몄텧
 				callbackRoiAdded?.Invoke(canvasRect, parentOverlay);
 			}
 
@@ -79,10 +79,10 @@ namespace OpenVisionLab.ImageCanvas
 			return newRect;
 		}
 
-		private static void AddNewOverlay(OpenVisionLab.ImageCanvas.Rendering.ImageCanvasControl imageViewer, string groupType, string groupNewName, CanvasRect<float> shape, string uniqueId, EnumInspWindowType inspWindowType, EnumItemType itemType, bool isExtentionRectange = false)
+		private static void AddNewOverlay(OpenVisionLab.ImageCanvas.Rendering.ImageCanvasControl imageViewer, string groupType, string groupNewName, CanvasRect<float> shape, string uniqueId, EnumInspWindowType inspWindowType, EnumItemType itemType, bool isExtensionRectangle = false)
 		{
 			bool isGroupRectangle = itemType == EnumItemType.Group ? true : false;
-			imageViewer.AddOverlay(groupType, groupNewName, shape, uniqueId, inspWindowType, itemType, isExtentionRectange, isGroupRectangle);
+			imageViewer.AddOverlay(groupType, groupNewName, shape, uniqueId, inspWindowType, itemType, isExtensionRectangle, isGroupRectangle);
 		}
 	}
 }

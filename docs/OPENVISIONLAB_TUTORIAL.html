@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenVisionLab Tutorial</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #5d6878;
+      --line: #d9e4ed;
+      --panel: #f5f8fb;
+      --brand: #1c5876;
+      --accent: #008f9f;
+      --ok: #168653;
+      --warn: #a76600;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Segoe UI", "Malgun Gothic", Arial, sans-serif;
+      line-height: 1.6;
+      background: #eef3f7;
+    }
+
+    header {
+      padding: 34px 42px 30px;
+      color: #fff;
+      background: linear-gradient(135deg, #243447 0%, #1d5d74 58%, #008f9f 100%);
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      letter-spacing: 0;
+    }
+
+    header p {
+      max-width: 980px;
+      margin: 0;
+      color: #dbe8ef;
+      font-size: 15px;
+    }
+
+    main {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    nav {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 10px;
+      margin: 0 0 18px;
+    }
+
+    nav a {
+      display: block;
+      padding: 10px 12px;
+      border: 1px solid #c9d8e4;
+      border-radius: 6px;
+      color: #164b63;
+      text-decoration: none;
+      background: #fff;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    section {
+      margin: 18px 0;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(31, 43, 68, 0.06);
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      color: var(--brand);
+      font-size: 22px;
+    }
+
+    h3 {
+      margin: 18px 0 8px;
+      color: #243955;
+      font-size: 16px;
+    }
+
+    p { margin: 8px 0; }
+    ul, ol { margin: 8px 0 0 22px; padding: 0; }
+    li { margin: 5px 0; }
+    strong { color: #102a45; }
+
+    .lead {
+      font-size: 16px;
+      color: #324258;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .card {
+      padding: 14px;
+      border: 1px solid #dce7f2;
+      border-radius: 6px;
+      background: var(--panel);
+    }
+
+    .card h3 {
+      margin-top: 0;
+      color: #123b54;
+    }
+
+    .rule {
+      border-left: 4px solid var(--accent);
+      padding: 12px 14px;
+      background: #edf8fa;
+    }
+
+    .warn {
+      border-left: 4px solid var(--warn);
+      padding: 12px 14px;
+      background: #fff8eb;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #d8e3ee;
+      padding: 9px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #edf3f8;
+      color: #243955;
+    }
+
+    code, pre {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+    }
+
+    pre {
+      overflow: auto;
+      padding: 12px;
+      border-radius: 6px;
+      background: #172033;
+      color: #e7f1ff;
+    }
+
+    figure {
+      margin: 14px 0 4px;
+    }
+
+    img {
+      max-width: 100%;
+      border: 1px solid #cbd8e4;
+      border-radius: 6px;
+      background: #fff;
+    }
+
+    figcaption {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 5px;
+    }
+
+    .figure-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 8px 14px;
+      margin: 10px 0 0;
+      padding-left: 22px;
+      font-size: 14px;
+    }
+
+    footer {
+      padding: 28px 24px 40px;
+      color: #6c7784;
+      text-align: center;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>OpenVisionLab 튜토리얼</h1>
+    <p>
+      OpenVisionLab은 OpenCvSharp4 기반의 룰베이스 비전 검사 워크벤치입니다.
+      이 가이드는 샘플 이미지를 열고, Tool을 실행하고, Pipeline Review에서 OK/NG 이유를 확인하는 기본 흐름을 설명합니다.
+    </p>
+  </header>
+
+  <main>
+    <nav>
+      <a href="#workspace">화면 구성</a>
+      <a href="#sample">샘플로 시작</a>
+      <a href="#matching">Matching 따라 하기</a>
+      <a href="#tool-view">Tool View</a>
+      <a href="#layers">Layer 비교</a>
+      <a href="#tool-checks">Tool별 확인</a>
+      <a href="#pipeline">Pipeline Review</a>
+      <a href="#pairs">Good/Bad 샘플</a>
+      <a href="#trouble">문제 확인 순서</a>
+    </nav>
+
+    <section id="workspace">
+      <h2>1. 화면 구성 보기</h2>
+      <p class="lead">
+        처음 화면은 Tool 목록, 이미지 workspace, Layer 입력, 실행 상태 영역으로 나누어 보면 이해하기 쉽습니다.
+      </p>
+      <pre>샘플 열기
+  -> Layer 확인
+  -> Tool 선택
+  -> Preview 실행
+  -> Output Layer 확인
+  -> Pipeline Review 실행
+  -> Good/Bad 샘플로 기준 확인</pre>
+      <figure>
+        <img src="assets/tutorial/annotated/main_workspace_callouts.png" alt="OpenVisionLab Main Workspace Walkthrough">
+        <figcaption>Main Workspace는 원본과 결과 Layer를 확인하는 중심 화면입니다.</figcaption>
+      </figure>
+      <ol class="figure-steps">
+        <li><strong>Tool List</strong>: 사용할 Tool을 선택합니다.</li>
+        <li><strong>Layer Input</strong>: 기준 Layer를 확인합니다.</li>
+        <li><strong>Image View</strong>: 실제 이미지를 보고 위치를 확인합니다.</li>
+        <li><strong>Run Status</strong>: 실행 상태와 예상 output을 봅니다.</li>
+        <li><strong>Quick Actions</strong>: 현재 Layer에서 바로 실행할 수 있는 주요 Tool과 Pipeline 추가 흐름을 확인합니다.</li>
+      </ol>
+      <p>
+        실행 로그는 기본적으로 접힌 상태로 둡니다. 최근 상태만 보고 작업 공간을 넓게 쓰다가,
+        실패 원인이나 실행 이력이 필요할 때만 <strong>로그 열기</strong>로 펼쳐서 확인합니다.
+      </p>
+      <figure>
+        <img src="assets/tutorial/annotated/run_log_collapsed_callouts.png" alt="Run Log Collapsed Walkthrough">
+        <figcaption>접힌 로그는 최근 이벤트 요약과 로그 개수만 보여 주고 workspace를 넓게 유지합니다.</figcaption>
+      </figure>
+      <ol class="figure-steps">
+        <li><strong>Run Log</strong>: 실행 이벤트를 모아 보는 영역입니다.</li>
+        <li><strong>Recent Summary</strong>: 최근 이벤트의 요약을 접힌 상태에서도 확인합니다.</li>
+        <li><strong>Log Count</strong>: 현재 표시되는 로그 개수를 확인합니다.</li>
+        <li><strong>Open Log</strong>: 상세 로그가 필요할 때만 펼칩니다.</li>
+      </ol>
+      <figure>
+        <img src="assets/tutorial/annotated/run_log_open_callouts.png" alt="Run Log Open Walkthrough">
+        <figcaption>열린 로그에서는 이미지 로드, Preview, Run, Tool 검증 이벤트를 확인합니다.</figcaption>
+      </figure>
+      <ol class="figure-steps">
+        <li><strong>Run Log</strong>: 상세 실행 로그가 열린 상태입니다.</li>
+        <li><strong>Recent Events</strong>: 이미지 로드, Preview, Run, Tool 검증 이벤트를 확인합니다.</li>
+        <li><strong>Log Count</strong>: 필터링된 로그 개수를 봅니다.</li>
+        <li><strong>Close Log</strong>: 확인이 끝나면 다시 접어서 workspace를 넓게 씁니다.</li>
+      </ol>
+    </section>
+
+    <section id="sample">
+      <h2>2. 샘플로 시작하기</h2>
+      <p>
+        처음에는 직접 이미지보다 공개용 synthetic 샘플을 여는 것이 좋습니다.
+        샘플에는 이미지, 추천 Pipeline, expected metric, Good/Bad 기준이 함께 들어 있습니다.
+      </p>
+      <figure>
+        <img src="assets/tutorial/annotated/sample_catalog_public_callouts.png" alt="Public Sample Catalog Walkthrough">
+        <figcaption>Sample Catalog는 public source, Learn path, Good/Bad list, preview, decision guide 순서로 봅니다.</figcaption>
+      </figure>
+      <ol class="figure-steps">
+        <li><strong>Public Source</strong>: 공개 튜토리얼에서 사용할 샘플 기준입니다.</li>
+        <li><strong>Learn Path</strong>: Matching, Blob, LineGauge, Good/Bad 비교처럼 흐름을 좁힙니다.</li>
+        <li><strong>Good/Bad List</strong>: 같은 Pipeline으로 비교할 샘플을 고릅니다.</li>
+        <li><strong>Preview</strong>: 선택한 샘플 이미지를 먼저 확인합니다.</li>
+        <li><strong>Decision Guide</strong>: 어떤 metric으로 OK/NG를 볼지 확인합니다.</li>
+        <li><strong>Open Sample</strong>: 샘플과 권장 Pipeline을 workspace에 엽니다.</li>
+      </ol>
+      <table>
+        <thead>
+          <tr><th>배우고 싶은 내용</th><th>Good 샘플</th><th>Bad 샘플</th><th>보는 metric</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Matching으로 대상 찾기</td><td><code>Public_Matching_DiePad_Good</code></td><td><code>Public_Matching_DiePad_NoTarget_Bad</code></td><td><code>ResultCount</code>, <code>ScoreMax</code></td></tr>
+          <tr><td>Blob으로 여러 입자 세기</td><td><code>Public_Blob_Particles_Good</code></td><td><code>Public_Blob_Particles_Sparse_Bad</code></td><td><code>ResultCount</code></td></tr>
+          <tr><td>Contour로 모양 개수 보기</td><td><code>Public_Contour_Shapes_Good</code></td><td><code>Public_Contour_Shapes_Missing_Bad</code></td><td><code>ResultCount</code></td></tr>
+          <tr><td>Threshold로 밝은 pad 분리</td><td><code>Public_Threshold_BandPads_Good</code></td><td><code>Public_Threshold_BandPads_Missing_Bad</code></td><td><code>ResultCount</code></td></tr>
+          <tr><td>Mean으로 밝기 drift 보기</td><td><code>Public_Mean_Brightness_Good</code></td><td><code>Public_Mean_Brightness_Dark_Bad</code></td><td><code>MeanValueAvg</code></td></tr>
+          <tr><td>FeatureMatching 점수 비교</td><td><code>Public_Feature_Card_Good</code></td><td><code>Public_Feature_Card_Wrong_Bad</code></td><td><code>ScoreMax</code>, <code>ResultCount</code></td></tr>
+          <tr><td>EdgeBasedMatching 형상 비교</td><td><code>Public_Edge_Fiducial_Good</code></td><td><code>Public_Edge_Fiducial_Wrong_Bad</code></td><td><code>ScoreMax</code>, <code>ResultCount</code></td></tr>
+          <tr><td>LineGauge로 거리 보기</td><td><code>Public_Line_Pins_Good</code></td><td><code>Public_Line_Pins_WidePin_Bad</code></td><td><code>DistanceMmAvg</code></td></tr>
+        </tbody>
+      </table>
+      <p>
+        샘플을 열었다고 바로 Preview/Run이 실행되는 것은 아닙니다.
+        Tool Preview나 Pipeline Review는 사용자가 직접 실행해야 결과가 계산됩니다.
+      </p>
+      <p>툴별로 따라 할 때는 아래 Learn 문서를 먼저 보는 것이 좋습니다.</p>
+      <ul>
+        <li><a href="learn/LEARN_MATCHING.md">Matching 배우기</a></li>
+        <li><a href="learn/LEARN_BLOB.md">Blob으로 입자 세기</a></li>
+        <li><a href="learn/LEARN_CONTOUR.md">Contour로 모양 개수 보기</a></li>
+        <li><a href="learn/LEARN_THRESHOLD.md">Threshold로 밝은 영역 분리</a></li>
+        <li><a href="learn/LEARN_MEAN.md">Mean으로 밝기 drift 보기</a></li>
+        <li><a href="learn/LEARN_FEATURE_MATCHING.md">FeatureMatching 점수 비교</a></li>
+        <li><a href="learn/LEARN_EDGE_BASED_MATCHING.md">EdgeBasedMatching 형상 비교</a></li>
+        <li><a href="learn/LEARN_LINE.md">LineGauge로 거리 보기</a></li>
+      </ul>
+    </section>
+
+    <section id="matching">
+      <h2>3. Matching 샘플 따라 하기</h2>
+      <ol>
+        <li>Sample Catalog에서 <code>Public_Matching_DiePad_Good</code>를 선택합니다.</li>
+        <li>샘플을 열어 <code>Main</code> Layer에 이미지가 들어왔는지 확인합니다.</li>
+        <li>Tool List에서 <strong>매칭</strong>을 선택합니다.</li>
+        <li>Input Layer가 <code>Main</code>인지 확인합니다.</li>
+        <li>Output Layer를 <code>Matching_Preview</code>처럼 원본과 다른 이름으로 둡니다.</li>
+        <li>Template 준비 상태를 확인합니다.</li>
+        <li><strong>미리보기 실행</strong>을 눌러 결과를 만듭니다.</li>
+        <li>Output Layer와 overlay box가 실제 대상 위에 붙었는지 확인합니다.</li>
+        <li>괜찮으면 Pipeline Step으로 추가합니다.</li>
+        <li>Pipeline Review에서 <strong>리뷰 실행</strong>을 눌러 같은 결과가 재현되는지 확인합니다.</li>
+      </ol>
+      <figure>
+        <img src="assets/tutorial/annotated/tool_matching_form_callouts.png" alt="Tool View Walkthrough">
+        <figcaption>Tool View는 입력, 출력, 파라미터, 결과 확인, 실행 버튼의 흐름으로 봅니다.</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/tutorial/current/matching_preview_actual_current.png" alt="Actual Matching Preview Result">
+        <figcaption>현재 EXE에서 Matching Preview를 실행한 실제 결과 화면입니다. Overlay box와 중심점이 대상에 붙는지 확인합니다.</figcaption>
+      </figure>
+      <p>
+        Matching은 <code>ScoreMax</code>만 높다고 좋은 결과가 아닙니다.
+        <code>ResultCount</code>, Center, Box, Angle을 함께 보고 실제 대상 위치를 잡았는지 확인해야 합니다.
+      </p>
+    </section>
+
+    <section id="tool-view">
+      <h2>4. Tool View 공통 사용법</h2>
+      <p>
+        Tool View는 Input Layer, Output Layer, Preview, PropertyGrid, 결과 해석으로 구성됩니다.
+        Tool의 세부 설정은 PropertyGrid 기반으로 유지됩니다.
+      </p>
+      <ol>
+        <li>Input Layer가 맞는지 확인합니다.</li>
+        <li>Output Layer를 원본과 다른 이름으로 지정합니다.</li>
+        <li>PropertyGrid에서 파라미터를 조정합니다.</li>
+        <li>필요하면 Basic/Fast/Precise preset을 적용합니다.</li>
+        <li>Preview 또는 Run을 명시적으로 실행합니다.</li>
+        <li>결과 image, overlay, metric을 확인합니다.</li>
+        <li>괜찮으면 Pipeline Step으로 추가합니다.</li>
+      </ol>
+      <div class="rule">
+        PropertyGrid는 Tool 모델의 property를 그대로 보여주고 저장합니다.
+        UI에서 조정한 값이 Recipe XML과 샘플 검증 흐름으로 이어지는 구조입니다.
+      </div>
+    </section>
+
+    <section id="layers">
+      <h2>5. Layer를 보고 이해하기</h2>
+      <p>
+        OpenVisionLab은 원본, 전처리 결과, 최종 검출 결과를 Layer로 나누어 봅니다.
+        결과가 이상하면 최종 결과만 보지 말고 바로 이전 Layer를 같이 확인하는 것이 빠릅니다.
+      </p>
+      <table>
+        <thead>
+          <tr><th>목적</th><th>이름 예시</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>원본</td><td><code>Main</code></td></tr>
+          <tr><td>이진화 결과</td><td><code>Pin_Binary</code>, <code>Text_Binary</code></td></tr>
+          <tr><td>노이즈 정리</td><td><code>Pin_Clean</code>, <code>Text_Clean</code></td></tr>
+          <tr><td>최종 검출</td><td><code>PinShaft_Contour</code>, <code>BlobPair_Result</code></td></tr>
+        </tbody>
+      </table>
+      <figure>
+        <img src="assets/tutorial/annotated/layer_docking_callouts.png" alt="Layer Docking Walkthrough">
+        <figcaption>Layer Docking을 사용하면 원본과 결과를 나란히 비교할 수 있습니다.</figcaption>
+      </figure>
+    </section>
+
+    <section id="tool-checks">
+      <h2>6. Tool별 확인 포인트</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Threshold</h3>
+          <p>대상과 배경이 잘 분리되는지, 배경 noise가 과하지 않은지 확인합니다.</p>
+        </div>
+        <div class="card">
+          <h3>Blob</h3>
+          <p>입자나 연결 객체를 세고 면적, box 크기, count를 확인합니다.</p>
+          <p>주요 metric: <code>ResultCount</code>, <code>AreaMax</code>, <code>BoundsWidthAvg</code></p>
+        </div>
+        <div class="card">
+          <h3>Contour</h3>
+          <p>외곽, 문자, 결함 후보를 찾습니다. ROI 전체가 잡히는지 특히 확인해야 합니다.</p>
+          <p>주요 metric: <code>ResultCount</code>, <code>AreaMax</code>, <code>BoundsWidthMax</code></p>
+        </div>
+        <div class="card">
+          <h3>Pattern Matching / FeatureMatching</h3>
+          <p>Template과 비슷한 대상을 찾습니다. Score만 보지 말고 crop과 overlay를 같이 봐야 합니다.</p>
+          <p>주요 metric: <code>ScoreMax</code>, <code>ResultCount</code></p>
+        </div>
+        <div class="card">
+          <h3>EdgeDetection</h3>
+          <p>Filter 이후 Canny 같은 edge image를 만들고, LineGauge나 surface defect 검사에 넘기는 전처리 Tool입니다.</p>
+        </div>
+        <div class="card">
+          <h3>LineGauge</h3>
+          <p>Edge, 거리, 각도, 교차점 확인에 사용합니다. ROI와 scan direction이 중요합니다.</p>
+          <p>주요 metric: <code>LineAngleAvg</code>, <code>DistanceMmAvg</code>, <code>LineLengthMax</code></p>
+        </div>
+      </div>
+      <figure>
+        <img src="assets/tutorial/annotated/tool_blob_form_callouts.png" alt="Blob Tool Walkthrough">
+        <figcaption>Blob은 count와 area가 정상 범위인지 확인합니다.</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/tutorial/annotated/tool_line_form_callouts.png" alt="Line Tool Walkthrough">
+        <figcaption>LineGauge는 ROI, scan direction, distance metric을 함께 봅니다.</figcaption>
+      </figure>
+    </section>
+
+    <section id="pipeline-build">
+      <h2>7. Pipeline 만들기</h2>
+      <p>
+        Pipeline은 Tool을 순서대로 연결한 검사 Recipe입니다. 처음에는 짧은 흐름으로 시작하는 것이 좋습니다.
+      </p>
+      <pre>예시 1: Threshold -> Blob
+예시 2: Threshold -> Morphology -> Contour
+예시 3: Matching
+예시 4: EdgeDetection -> LineGauge</pre>
+      <ol>
+        <li>첫 Tool에서 Input Layer를 <code>Main</code>으로 둡니다.</li>
+        <li>Output Layer를 원본과 다른 이름으로 둡니다.</li>
+        <li>Preview로 결과를 확인합니다.</li>
+        <li>결과가 맞으면 Pipeline Step으로 추가합니다.</li>
+        <li>다음 Tool의 Input Layer는 이전 Output Layer로 선택합니다.</li>
+        <li>마지막에 Pipeline Review에서 전체 흐름을 다시 확인합니다.</li>
+      </ol>
+      <div class="rule">
+        Pipeline을 만들 때 중요한 기준은 순서입니다. 어떤 Step이 어떤 Layer를 읽고 어떤 Layer를 쓰는지 설명할 수 있어야 합니다.
+      </div>
+    </section>
+
+    <section id="pipeline">
+      <h2>8. Pipeline Review에서 결과 보기</h2>
+      <p>
+        Pipeline Review는 Recipe가 실제로 어떤 Step에서 어떤 이미지를 읽고 쓰는지 확인하는 화면입니다.
+      </p>
+      <pre>01 Threshold: Main -> Text_Binary
+02 Morphology: Text_Binary -> Text_Clean
+03 Contour: Text_Clean -> Text_Contour</pre>
+      <p>의도적으로 다시 <code>Main</code>을 읽는 Step은 branch입니다. Branch 자체는 문제가 아니지만, 사용자가 그 이유를 알고 있어야 합니다.</p>
+      <figure>
+        <img src="assets/tutorial/annotated/pipeline_matching_review_callouts.png" alt="Pipeline Review Walkthrough">
+        <figcaption>Pipeline Review에서는 Step별 input/output, metric, OK/NG, log를 확인합니다.</figcaption>
+      </figure>
+      <ol class="figure-steps">
+        <li><strong>Step Flow</strong>: Tool 연결 순서를 봅니다.</li>
+        <li><strong>Guide Strip</strong>: 현재 단계에서 무엇을 확인해야 하는지 안내를 봅니다.</li>
+        <li><strong>Input/Output</strong>: 현재 Step의 Layer route를 확인합니다.</li>
+        <li><strong>Validation</strong>: OK/NG 기준과 통과 여부를 봅니다.</li>
+        <li><strong>Parameters</strong>: 실제 실행에 사용된 Tool 파라미터를 확인합니다.</li>
+        <li><strong>Run Review</strong>: Review 실행은 명시적으로 선택합니다.</li>
+      </ol>
+      <div class="rule">
+        <strong>NG 예시</strong>
+        <pre>NG 원인: Result Count
+측정값: 28
+목표: 120 - 170
+해석: 검출은 되었지만 정상 particle density보다 적음</pre>
+      </div>
+    </section>
+
+    <section id="pairs">
+      <h2>9. Good/Bad 샘플로 기준 잡기</h2>
+      <p>
+        룰베이스 검사는 정상 이미지에서 OK가 나오는 것만으로 부족합니다.
+        불량 이미지에서 어떤 metric이 벗어나는지도 같이 확인해야 합니다.
+      </p>
+      <table>
+        <thead>
+          <tr><th>Public Pair</th><th>Good 기준</th><th>Bad에서 보는 것</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Matching die pad</td><td>template 대상 3개 검출</td><td>no-target 이미지에서 <code>ResultCount=0</code></td></tr>
+          <tr><td>Blob particles</td><td>입자가 충분히 많이 검출됨</td><td>sparse 이미지에서 <code>ResultCount</code> 낮음</td></tr>
+          <tr><td>Contour shapes</td><td>5개 shape 검출</td><td>missing-shape 이미지에서 <code>ResultCount=2</code></td></tr>
+          <tr><td>Threshold band pads</td><td>밝은 pad 4개 분리</td><td>missing-pad 이미지에서 <code>ResultCount=1</code></td></tr>
+          <tr><td>Mean brightness</td><td>평균 밝기가 정상 band 안에 있음</td><td>dark 이미지에서 <code>MeanValueAvg</code> 낮음</td></tr>
+          <tr><td>Feature card</td><td>feature score가 기준 이상</td><td>wrong card에서 <code>ScoreMax</code> 낮음</td></tr>
+          <tr><td>Edge fiducial</td><td>edge fiducial 1개 검출</td><td>wrong fiducial에서 <code>ResultCount=0</code></td></tr>
+          <tr><td>Line pins</td><td>pin 간격이 정상 범위</td><td>wide-pin 이미지에서 <code>DistanceMmAvg</code> 낮음</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Bad 샘플 중 일부는 controlled NG입니다. Tool은 결과 이미지를 만들 수 있지만 acceptance metric이 기준을 벗어나 Pipeline Review에서 NG로 표시됩니다.
+      </p>
+    </section>
+
+    <section id="recipe">
+      <h2>10. Recipe 저장과 전환</h2>
+      <p>
+        검증된 Pipeline은 XML Recipe로 저장합니다. Recipe를 저장하기 전에 최소한 하나의 Good 샘플과 하나의 Bad 샘플로 확인하는 것이 좋습니다.
+      </p>
+      <ol>
+        <li>현재 Pipeline이 원하는 Layer 흐름인지 확인합니다.</li>
+        <li>Good 샘플에서 OK가 나오는지 확인합니다.</li>
+        <li>Bad 샘플에서 어떤 metric이 기준 밖으로 나가는지 확인합니다.</li>
+        <li>Recipe 이름을 검사 목적이 드러나게 저장합니다.</li>
+        <li>Recipe를 전환한 뒤 Tool 파라미터와 Layer route가 해당 Recipe 기준으로 바뀌는지 확인합니다.</li>
+      </ol>
+      <div class="warn">
+        Recipe를 전환할 때 이전 Recipe의 Tool 파라미터가 남아 있으면 안 됩니다. 저장된 Recipe, Tool View, Pipeline Review가 같은 기준을 보여야 합니다.
+      </div>
+    </section>
+
+    <section id="trouble">
+      <h2>11. 문제가 생겼을 때 보는 순서</h2>
+      <ol>
+        <li>현재 보고 있는 Layer가 맞는지 확인합니다.</li>
+        <li>Tool의 Input Layer가 맞는지 확인합니다.</li>
+        <li>Output Layer가 비어 있거나 다른 결과로 덮이지 않았는지 확인합니다.</li>
+        <li>Preview/Run을 실제로 실행했는지 확인합니다.</li>
+        <li>Threshold 결과가 대상과 배경을 잘 나누는지 봅니다.</li>
+        <li>Morphology에서 객체가 사라지거나 붙지 않았는지 봅니다.</li>
+        <li>Blob/Contour의 area 조건이 너무 좁거나 넓지 않은지 봅니다.</li>
+        <li>Matching template이 너무 크거나 배경을 많이 포함하지 않는지 봅니다.</li>
+        <li>ROI가 너무 넓어 후보가 많아지지 않았는지 봅니다.</li>
+        <li>Pipeline Review의 NG metric과 목표 범위를 확인합니다.</li>
+      </ol>
+      <div class="warn">
+        좋은 Recipe는 결과가 한 번 맞는 Recipe가 아니라, Good/Bad 샘플에서 같은 metric 기준으로 반복 설명되는 Recipe입니다.
+      </div>
+    </section>
+
+    <section id="learning-order">
+      <h2>12. 추천 학습 순서</h2>
+      <ol>
+        <li>public synthetic Matching 샘플로 template matching 결과를 봅니다.</li>
+        <li>public synthetic Blob 샘플로 Blob count 흐름을 봅니다.</li>
+        <li>public synthetic LineGauge 샘플로 ROI와 distance 결과를 봅니다.</li>
+        <li>public synthetic Good/Bad pair로 controlled NG를 확인합니다.</li>
+        <li>직접 이미지를 불러와 같은 흐름을 적용합니다.</li>
+        <li>Pipeline XML을 저장합니다.</li>
+        <li>Pipeline Review에서 다시 검증합니다.</li>
+      </ol>
+    </section>
+
+    <section id="summary">
+      <h2>13. 정리</h2>
+      <p>
+        OpenVisionLab을 사용할 때는 이미지를 처리한다는 관점보다 검사 기준을 만든다는 관점으로 보는 것이 좋습니다.
+      </p>
+      <ul>
+        <li>Input Layer와 Output Layer가 분리되어 있습니다.</li>
+        <li>Preview/Run은 사용자가 명시적으로 실행합니다.</li>
+        <li>Tool 설정은 PropertyGrid 기반 Recipe 상태로 남습니다.</li>
+        <li>OK/NG는 image, overlay, metric, log로 설명되어야 합니다.</li>
+        <li>Good/Bad pair에서 같은 기준이 반복해서 설명되어야 합니다.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    OpenVisionLab Tutorial - Rule-based Vision Workbench
+  </footer>
+</body>
+</html>

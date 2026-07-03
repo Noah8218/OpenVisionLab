@@ -1,0 +1,64 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <UseWindowsForms>false</UseWindowsForms>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\OpenVisionLab.csproj" />
+    <ProjectReference Include="..\..\Library\OpenVisionLab.ImageCanvas\OpenVisionLab.ImageCanvas.csproj" />
+    <ProjectReference Include="..\..\Library\OpenVisionLab.Logging\OpenVisionLab.Logging.csproj" />
+    <ProjectReference Include="..\..\Library\OpenVisionLab.Logging.Controls\OpenVisionLab.Logging.Controls.csproj" />
+    <ProjectReference Include="..\..\Library\OpenVisionLab.Localization\OpenVisionLab.Localization.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Lib.Common">
+      <HintPath>$(OpenVisionLabLibraryNoahDllRoot)Lib.Common.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Lib.OpenCV">
+      <HintPath>$(OpenVisionLabLibraryNoahDllRoot)Lib.OpenCV.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Lib.OpenCV.Blob">
+      <HintPath>$(OpenVisionLabLibraryNoahDllRoot)Lib.OpenCV.Blob.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="OpenCvSharp">
+      <HintPath>$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="OpenCvSharp.Extensions">
+      <HintPath>$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.Extensions.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.dll">
+      <Link>OpenCvSharp.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.Blob.dll">
+      <Link>OpenCvSharp.Blob.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.Extensions.dll">
+      <Link>OpenCvSharp.Extensions.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(OpenVisionLabOpenCvSharpDllRoot)OpenCvSharpExtern.dll">
+      <Link>OpenCvSharpExtern.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dirkster.AvalonDock" Version="4.74.1" />
+  </ItemGroup>
+</Project>
