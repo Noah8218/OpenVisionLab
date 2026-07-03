@@ -69,10 +69,11 @@ namespace OpenVisionLab
                     detailText,
                     string.Format(
                         CultureInfo.CurrentCulture,
-                        "\uC81C\uD488\uAD70: {0} / \uAE30\uC900: {1} / \uD750\uB984: {2} / \uB2E4\uC74C: Pipeline \uBCF4\uAE30 \uB610\uB294 \uCCAB \uB2E8\uACC4 \uC5F4\uAE30",
+                        "\uC81C\uD488\uAD70: {0} / \uAE30\uC900: {1}{3} / \uB2E4\uC74C: Pipeline \uBCF4\uAE30 \uB610\uB294 \uCCAB \uB2E8\uACC4 \uC5F4\uAE30 / \uD750\uB984: {2}",
                         state.Category,
                         state.PairRole,
-                        state.ToolFlow));
+                        state.ToolFlow,
+                        FormatPairReviewSuffix(state.PairReviewHint)));
             }
             else
             {
@@ -148,8 +149,9 @@ namespace OpenVisionLab
             {
                 PipelineName = pipelineName,
                 SampleName = SafeText(catalogSample?.SampleName, pipelineName),
-                Category = SafeText(catalogSample?.Category, "-"),
+                Category = ResolveCategoryDisplayText(catalogSample?.Category),
                 PairRole = ResolveSampleRole(catalogSample),
+                PairReviewHint = ResolvePairReviewHint(catalogSample),
                 StepCount = steps.Length,
                 FirstTool = firstTool,
                 ToolFlow = toolFlow
@@ -184,6 +186,56 @@ namespace OpenVisionLab
             }
 
             return sample.ExpectsFailure ? "NG" : "OK";
+        }
+
+        private static string ResolveCategoryDisplayText(string category)
+        {
+            string text = SafeText(category, "-");
+            string[] parts = text
+                .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(part => part.Trim())
+                .Where(part => !string.IsNullOrWhiteSpace(part))
+                .ToArray();
+            return parts.Length >= 2 ? parts[1] : text;
+        }
+
+        private static string ResolvePairReviewHint(VisionPipelineSampleCatalogItem sample)
+        {
+            if (sample == null || string.IsNullOrWhiteSpace(sample.PairGroup))
+            {
+                return string.Empty;
+            }
+
+            string oppositeRole = IsOkSampleReference(sample)
+                ? "NG"
+                : IsNgSampleReference(sample)
+                    ? "OK"
+                    : "Good/Bad";
+            return string.Format(
+                CultureInfo.CurrentCulture,
+                "\uBE44\uAD50: Pipeline Review\uC5D0\uC11C {0} \uAE30\uC900 \uC5F4\uAE30",
+                oppositeRole);
+        }
+
+        private static bool IsOkSampleReference(VisionPipelineSampleCatalogItem sample)
+        {
+            return sample != null
+                && !sample.ExpectsFailure
+                && string.Equals(sample.PairRole?.Trim(), "Good", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsNgSampleReference(VisionPipelineSampleCatalogItem sample)
+        {
+            return sample != null
+                && (sample.ExpectsFailure
+                    || string.Equals(sample.PairRole?.Trim(), "Bad", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static string FormatPairReviewSuffix(string pairReviewHint)
+        {
+            return string.IsNullOrWhiteSpace(pairReviewHint)
+                ? string.Empty
+                : " / " + pairReviewHint.Trim();
         }
 
         private OpenVisionRecipeContext ResolveRecipeContext()
@@ -293,6 +345,8 @@ namespace OpenVisionLab
             public string Category { get; set; } = string.Empty;
 
             public string PairRole { get; set; } = string.Empty;
+
+            public string PairReviewHint { get; set; } = string.Empty;
 
             public int StepCount { get; set; }
 

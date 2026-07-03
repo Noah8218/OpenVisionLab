@@ -2532,17 +2532,24 @@ internal static class Program
                 .Select(part => part.Trim())
                 .FirstOrDefault(part => !string.IsNullOrWhiteSpace(part))
                 ?? string.Empty;
+            string productGroup = selectedSample.Category.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(part => part.Trim())
+                .Skip(1)
+                .FirstOrDefault(part => !string.IsNullOrWhiteSpace(part))
+                ?? selectedSample.Category;
 
             if (!shellHost.IsWorkspaceSampleWorkflowVisibleForTest
                 || !workflowMeta.Contains(selectedSample.SampleName, StringComparison.Ordinal)
-                || !workflowDetail.Contains(selectedSample.Category, StringComparison.Ordinal)
+                || !workflowDetail.Contains(productGroup, StringComparison.Ordinal)
                 || !workflowDetail.Contains(role, StringComparison.OrdinalIgnoreCase)
                 || !workflowDetail.Contains("\uB2E4\uC74C", StringComparison.Ordinal)
+                || !workflowDetail.Contains("\uBE44\uAD50", StringComparison.Ordinal)
+                || !workflowDetail.Contains(selectedSample.ExpectsFailure ? "OK" : "NG", StringComparison.OrdinalIgnoreCase)
                 || (!string.IsNullOrWhiteSpace(firstTool) && !workflowDetail.Contains(firstTool, StringComparison.OrdinalIgnoreCase)))
             {
                 throw new InvalidOperationException(
                     "Workspace product sample focus open did not carry the selected sample focus into the workflow breadcrumb. "
-                    + $"Sample={selectedSample.SampleName}, Category={selectedSample.Category}, Role={role}, FirstTool={firstTool}, "
+                    + $"Sample={selectedSample.SampleName}, ProductGroup={productGroup}, Role={role}, FirstTool={firstTool}, "
                     + $"Meta='{workflowMeta}', Detail='{workflowDetail}'");
             }
 
