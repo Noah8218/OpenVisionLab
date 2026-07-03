@@ -1945,6 +1945,10 @@ internal static class Program
             Pump(80);
 
             string ngNextAction = OpenVisionLanguageService.T("PipelineReview.Guide.NgNext");
+            string metricDisplayKey = "PipelineReview.Metric." + expectedMetricName;
+            string metricDisplayName = OpenVisionLanguageService.T(metricDisplayKey);
+            bool hasLocalizedMetricDisplayName = !string.IsNullOrWhiteSpace(metricDisplayName)
+                && !string.Equals(metricDisplayName, metricDisplayKey, StringComparison.Ordinal);
             string reviewText = string.Join(
                 " | ",
                 shellHost.PipelineReviewValidationStatusText,
@@ -1971,6 +1975,7 @@ internal static class Program
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("기준 안", StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("기준 밖", StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains("NG", StringComparison.OrdinalIgnoreCase)
+                || (hasLocalizedMetricDisplayName && !shellHost.PipelineReviewGuideDetailText.Contains(metricDisplayName, StringComparison.Ordinal))
                 || !shellHost.PipelineReviewResultDetailText.Contains(resultDetailKeyword, StringComparison.OrdinalIgnoreCase)
                 || !shellHost.HasPipelineReviewOutputPreview)
             {

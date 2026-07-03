@@ -286,6 +286,7 @@ PipelineReview.Guide.NoRunDecision	미판정	Not judged
 PipelineReview.Guide.OkDecisionFormat	{0}: 출력 승인	{0}: output accepted
 PipelineReview.Guide.NgDecisionFormat	{0}: 재검토 필요	{0}: review required
 PipelineReview.Metric.ResultImageWidth	결과 폭	Result Width
+PipelineReview.Metric.ResultCount	결과 수	Result Count
 Arithmetic.Constant	상수	Constant
 Arithmetic.ConstantValue	상수 값	Constant Value
 Arithmetic.CopyAByOffset	A를 오프셋으로 복사	Copy A by offset
