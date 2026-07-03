@@ -265,9 +265,9 @@ PipelineReview.Guide.ReadyNext	리뷰 실행으로 측정 결과 갱신	Run Revi
 PipelineReview.Guide.ReadyDetail	출력 이미지는 있지만 리뷰 실행으로 측정 결과를 다시 갱신합니다.	An output image exists, but Run Review refreshes the measured result.
 PipelineReview.Guide.BeforeRunNext	리뷰 실행으로 Step 출력 생성	Run Review to create the step output
 PipelineReview.Guide.BeforeRunDetail	리뷰 실행으로 이 Step의 출력 이미지와 측정 결과를 생성합니다.	Run Review creates the output image and measured result for this step.
-PipelineReview.Guide.OkNext	출력 이미지 확인 후 다음 Step으로 진행	Check the output image, then continue to the next step
-PipelineReview.Guide.OkFinalNext	출력 이미지, 지표, Good/Bad 쌍을 비교한 뒤 Pipeline 승인	Compare output, metrics, and the Good/Bad pair before accepting the pipeline
-PipelineReview.Guide.NgNext	Tool 파라미터 또는 라우트 조정 후 다시 리뷰	Adjust the tool parameters or route, then run review again
+PipelineReview.Guide.OkNext	출력 확인 후 다음 Step	Check output, then next step
+PipelineReview.Guide.OkFinalNext	출력/지표/Good-Bad 비교 후 승인	Compare output/metrics/pair, then accept
+PipelineReview.Guide.NgNext	파라미터/라우트 조정 후 재리뷰	Tune parameters/route, then rerun review
 PipelineReview.Guide.NgDetail	선택 Step의 결과를 확인하고 라우트 또는 파라미터를 조정합니다.	Review the selected step's result and adjust the route or parameters.
 PipelineReview.Guide.FixDetailPrefix	우선 확인	Check first
 PipelineReview.Guide.ThresholdFix	입력 레이어, ROI, Threshold mode/값/범위, Adaptive Block/Weight를 먼저 확인하십시오.	Check input layer, ROI, threshold mode, value/range, adaptive block size, and weight.

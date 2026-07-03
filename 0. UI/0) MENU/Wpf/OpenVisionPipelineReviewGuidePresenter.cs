@@ -202,12 +202,12 @@ namespace OpenVisionLab
 
             if (!summary.Success || summary.IsAcceptanceNg)
             {
-                return T("PipelineReview.Guide.NgNext", "Adjust the tool parameters or route, then run review again");
+                return T("PipelineReview.Guide.NgNext", "Tune parameters/route, then rerun review");
             }
 
             return displayIndex >= stepCount
-                ? T("PipelineReview.Guide.OkFinalNext", "Compare output, metrics, and the Good/Bad pair before accepting the pipeline")
-                : T("PipelineReview.Guide.OkNext", "Check the output image, then continue to the next step");
+                ? T("PipelineReview.Guide.OkFinalNext", "Compare output/metrics/pair, then accept")
+                : T("PipelineReview.Guide.OkNext", "Check output, then next step");
         }
 
         private static string ResolveResultDecisionText(

@@ -119,6 +119,24 @@ namespace OpenVisionLab
                 new DefaultCatalogMigration(
                     "\uC774 \uB3C4\uAD6C\uB294 WPF \uC804\uC6A9 \uD654\uBA74\uC73C\uB85C \uC804\uD658 \uC911\uC785\uB2C8\uB2E4. \uC804\uD658 \uC644\uB8CC \uD6C4 \uC774 \uCC3D\uC5D0\uC11C \uBC14\uB85C \uC2E4\uD589\uB429\uB2C8\uB2E4.",
                     "This tool is being moved to a WPF-only view. It will run from this window after migration.")
+            },
+            {
+                "PipelineReview.Guide.OkNext",
+                new DefaultCatalogMigration(
+                    "\uCD9C\uB825 \uC774\uBBF8\uC9C0 \uD655\uC778 \uD6C4 \uB2E4\uC74C Step\uC73C\uB85C \uC9C4\uD589",
+                    "Check the output image, then continue to the next step")
+            },
+            {
+                "PipelineReview.Guide.OkFinalNext",
+                new DefaultCatalogMigration(
+                    "\uCD9C\uB825 \uC774\uBBF8\uC9C0, \uC9C0\uD45C, Good/Bad \uC30D\uC744 \uBE44\uAD50\uD55C \uB4A4 Pipeline \uC2B9\uC778",
+                    "Compare output, metrics, and the Good/Bad pair before accepting the pipeline")
+            },
+            {
+                "PipelineReview.Guide.NgNext",
+                new DefaultCatalogMigration(
+                    "Tool \uD30C\uB77C\uBBF8\uD130 \uB610\uB294 \uB77C\uC6B0\uD2B8 \uC870\uC815 \uD6C4 \uB2E4\uC2DC \uB9AC\uBDF0",
+                    "Adjust the tool parameters or route, then run review again")
             }
         };
         private static bool loaded;
