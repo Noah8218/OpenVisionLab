@@ -2,13 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media.Imaging;
-using CvMorphShapes = OpenCvSharp.MorphShapes;
-using CvMorphTypes = OpenCvSharp.MorphTypes;
 using OpenVisionLab.Contracts;
 using OpenVisionLab.Services;
 
