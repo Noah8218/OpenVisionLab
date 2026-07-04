@@ -183,6 +183,11 @@ namespace OpenVisionLab.Docking.Controls
             return NotifyWorkspaceStateChangedIf(DocumentOrchestrator.DockDocument(documentId));
         }
 
+        public bool SelectDocument(string documentId)
+        {
+            return NotifyWorkspaceStateChangedIf(DocumentOrchestrator.SelectDocument(documentId));
+        }
+
         public bool SyncDocuments(IReadOnlyList<string> documentIds)
         {
             return NotifyWorkspaceStateChangedIf(DocumentSynchronization.SyncDocuments(documentIds));

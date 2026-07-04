@@ -101,6 +101,8 @@ namespace OpenVisionLab
 
         public bool HasWorkspaceLoadImageMenu => bindings.HasWorkspaceLoadImageMenu();
 
+        public bool IsWorkspaceLoadImageIntoLayerMenuVisible => bindings.IsWorkspaceLoadImageIntoLayerMenuVisible();
+
         public int OpenLayerViewerWindowCount => statePresenter.OpenLayerViewerWindowCount;
 
         public string OpenLayerViewerWindowTitles => statePresenter.OpenLayerViewerWindowTitles;
@@ -273,6 +275,8 @@ namespace OpenVisionLab
         public Func<string> WorkspaceLoadImageButtonText { get; set; } = EmptyText;
 
         public Func<bool> HasWorkspaceLoadImageMenu { get; set; } = False;
+
+        public Func<bool> IsWorkspaceLoadImageIntoLayerMenuVisible { get; set; } = False;
 
         public Action WorkspaceImageReady { get; set; } = NoOp;
 

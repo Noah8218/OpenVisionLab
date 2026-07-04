@@ -24,12 +24,14 @@ namespace OpenVisionLab
         public event EventHandler RunReviewRequested = delegate { };
         public event EventHandler PreviousStepRequested = delegate { };
         public event EventHandler NextStepRequested = delegate { };
+        public event EventHandler FirstIssueStepRequested = delegate { };
         public event EventHandler OpenPairSampleRequested = delegate { };
 
         public OpenVisionPipelineReviewViewModel ViewModel { get; }
         public string SelectedStepText => ViewModel.SelectedStepText;
         public string SelectedToolText => ViewModel.SelectedToolText;
         public string SelectedStatusText => ViewModel.SelectedStatusText;
+        public string ReviewProgressText => ViewModel.ReviewProgressText;
         public string FlowSummaryText => ViewModel.FlowSummaryText;
         public string ParameterSummaryText => ViewModel.ParameterSummaryText;
         public string ValidationStatusText => ViewModel.ValidationStatusText;
@@ -47,9 +49,13 @@ namespace OpenVisionLab
         public string ReviewGuidePairMetricText => ViewModel.ReviewGuidePairMetricText;
         public string ReviewGuideChecklistText => ViewModel.ReviewGuideChecklistText;
         public string ReviewGuideParameterFocusText => ViewModel.ReviewGuideParameterFocusText;
+        public string ReviewGuideTriageFailureText => ViewModel.ReviewGuideTriageFailureText;
+        public string ReviewGuideTriageAdjustmentText => ViewModel.ReviewGuideTriageAdjustmentText;
+        public string ReviewGuideTriageRerunText => ViewModel.ReviewGuideTriageRerunText;
         public bool CanOpenReviewGuidePairAction => ViewModel.CanOpenReviewGuidePairAction;
         public bool CanSelectPreviousStep => ViewModel.CanSelectPreviousStep;
         public bool CanSelectNextStep => ViewModel.CanSelectNextStep;
+        public bool CanSelectFirstIssueStep => ViewModel.CanSelectFirstIssueStep;
         public bool HasInputPreview => ViewModel.HasInputPreview;
         public bool HasOutputPreview => ViewModel.HasOutputPreview;
         public int SelectedFlowIndex => pipelineFlowView.SelectedIndex;
@@ -86,10 +92,15 @@ namespace OpenVisionLab
             lblReviewGuidePair.Text = T("PipelineReview.Guide.Pair", "Good/Bad Pair");
             lblReviewGuidePairMetric.Text = T("PipelineReview.Guide.PairMetric", "Metric Check");
             lblReviewGuideChecklist.Text = T("PipelineReview.Guide.Checklist", "Review Habit");
+            lblReviewGuideTriageFailure.Text = T("PipelineReview.Guide.TriageFailure", "Cause");
+            lblReviewGuideTriageAdjustment.Text = T("PipelineReview.Guide.TriageAdjustment", "Adjust");
+            lblReviewGuideTriageRerun.Text = T("PipelineReview.Guide.TriageRerun", "Rerun");
             txtPreviousStepButton.Text = T("PipelineReview.PreviousStep", "Previous");
             txtNextStepButton.Text = T("PipelineReview.NextStep", "Next");
+            txtFirstIssueStepButton.Text = T("PipelineReview.FirstIssueStep", "NG Step");
             btnPreviousStep.ToolTip = T("PipelineReview.PreviousStepToolTip", "Select the previous pipeline step");
             btnNextStep.ToolTip = T("PipelineReview.NextStepToolTip", "Select the next pipeline step");
+            btnFirstIssueStep.ToolTip = T("PipelineReview.FirstIssueStepToolTip", "Select the first NG pipeline step");
         }
 
         private static string T(string key, string fallbackText)
@@ -103,6 +114,11 @@ namespace OpenVisionLab
         public void SetPipelineHeader(string pipelineName, int stepCount)
         {
             ViewModel.SetPipelineHeader(pipelineName, stepCount);
+        }
+
+        public void SetReviewProgress(string progressText)
+        {
+            ViewModel.SetReviewProgress(progressText);
         }
 
         public void SetSteps(IEnumerable<PipelineFlowStepItem> steps)
@@ -165,6 +181,11 @@ namespace OpenVisionLab
             ViewModel.SetNavigationState(selectedIndex, stepCount);
         }
 
+        public void SetIssueNavigationState(bool canSelectFirstIssueStep)
+        {
+            ViewModel.SetIssueNavigationState(canSelectFirstIssueStep);
+        }
+
         public void SetResultSummary(string summary, string details)
         {
             ViewModel.SetResultSummary(summary, details);
@@ -194,6 +215,11 @@ namespace OpenVisionLab
         private void BtnNextStep_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             NextStepRequested(this, EventArgs.Empty);
+        }
+
+        private void BtnFirstIssueStep_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            FirstIssueStepRequested(this, EventArgs.Empty);
         }
 
         private void BtnOpenPairSample_Click(object sender, System.Windows.RoutedEventArgs e)

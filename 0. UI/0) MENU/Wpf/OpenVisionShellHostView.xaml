@@ -37,6 +37,7 @@
             <SolidColorBrush x:Key="ShellHost.FieldBorderBrush" Color="#82969D" />
             <SolidColorBrush x:Key="ShellHost.FieldFocusBrush" Color="#8AD7DA" />
             <SolidColorBrush x:Key="ShellHost.FieldTextBrush" Color="#F5FAFC" />
+            <BooleanToVisibilityConverter x:Key="ShellHost.BooleanToVisibilityConverter" />
 
             <ContextMenu x:Key="LayerRowsContextMenu"
                          x:Shared="False">
@@ -358,6 +359,7 @@
                 <Setter Property="Height" Value="28" />
                 <Setter Property="MinWidth" Value="136" />
                 <Setter Property="Padding" Value="8,0,28,0" />
+                <Setter Property="mvvmBehaviors:ComboBoxInteractionBehavior.OpenOnFieldClick" Value="True" />
                 <Setter Property="Background" Value="{StaticResource ShellHost.FieldBrush}" />
                 <Setter Property="Foreground" Value="{StaticResource ShellHost.FieldTextBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource ShellHost.FieldBorderBrush}" />
@@ -382,6 +384,9 @@
                                     <ContentPresenter Margin="8,0,4,0"
                                                       VerticalAlignment="Center"
                                                       Content="{TemplateBinding SelectionBoxItem}"
+                                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                      ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+                                                      ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
                                                       TextElement.Foreground="{TemplateBinding Foreground}" />
                                     <Path Grid.Column="1"
                                           Width="8"
@@ -402,9 +407,11 @@
                                         </ControlTemplate>
                                     </ToggleButton.Template>
                                 </ToggleButton>
-                                <Popup AllowsTransparency="True"
+                                <Popup x:Name="PART_Popup"
+                                       AllowsTransparency="True"
                                        Focusable="False"
                                        IsOpen="{TemplateBinding IsDropDownOpen}"
+                                       PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                                        Placement="Bottom">
                                     <Border MinWidth="{TemplateBinding ActualWidth}"
                                             MaxHeight="240"
@@ -626,22 +633,29 @@
                           ItemsSource="{Binding RecipeCommands.RecipeOptions, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
                           SelectedItem="{Binding RecipeCommands.SelectedRecipeName, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           ToolTip="{Binding RecipeCommands.RecipeSelectorToolTipText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}" />
-                <Button x:Name="btnHostCreateRecipe"
-                        DockPanel.Dock="Left"
-                        Width="30"
-                        Height="26"
-                        Margin="0,0,10,0"
-                        Padding="0"
-                        BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
-                        Background="{StaticResource ShellHost.FieldBrush}"
-                        Foreground="{StaticResource ShellHost.FieldTextBrush}"
-                        Command="{Binding RecipeCommands.CreateRecipeCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
-                        ToolTip="{Binding RecipeCommands.NewRecipeButtonText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
-                    <iconPacks:PackIconMaterial Kind="Plus"
-                                                Width="14"
-                                                Height="14"
-                                                Foreground="{StaticResource ShellHost.FieldFocusBrush}" />
-                </Button>
+                <ToggleButton x:Name="btnHostRecipeManager"
+                              DockPanel.Dock="Left"
+                              Width="58"
+                              Height="26"
+                              Margin="0,0,10,0"
+                              Padding="6,0"
+                              AutomationProperties.AutomationId="HostRecipeManagerButton"
+                              BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                              Background="{StaticResource ShellHost.FieldBrush}"
+                              Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                              Tag="{Binding RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                              ToolTip="{Binding RecipeCommands.ManagerButtonText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <iconPacks:PackIconMaterial Kind="PencilOutline"
+                                                    Width="13"
+                                                    Height="13"
+                                                    Margin="0,0,4,0"
+                                                    Foreground="{StaticResource ShellHost.FieldFocusBrush}" />
+                        <TextBlock Text="{Binding RecipeCommands.ManagerButtonShortText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                                   Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                   FontWeight="SemiBold" />
+                    </StackPanel>
+                </ToggleButton>
                 <TextBlock DockPanel.Dock="Left"
                            Text="{Binding LayerInputText}"
                            Foreground="#D7ECEE"
@@ -667,6 +681,7 @@
                          CaretBrush="#8FE8F0"
                          BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
                          Background="{StaticResource ShellHost.FieldBrush}"
+                         Visibility="Collapsed"
                          ToolTip="{Binding LayerCommands.RenameLayerText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}" />
                 <Button x:Name="btnHostRenameLayer"
                         DockPanel.Dock="Left"
@@ -678,6 +693,7 @@
                         BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
                         Background="{StaticResource ShellHost.FieldBrush}"
                         Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                        Visibility="Collapsed"
                         Command="{Binding LayerCommands.RenameCurrentLayerCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
                         CommandParameter="{Binding Text, ElementName=txtHostTopLayerNameEditor}"
                         ToolTip="{Binding LayerCommands.RenameLayerText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
@@ -957,7 +973,7 @@
                             <ContextMenu>
                                 <MenuItem x:Name="miWorkspaceLoadImage"
                                           Header="이미지 로드..."
-                                          Command="{Binding PlacementTarget.Tag.WorkspaceCommands.LoadImageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                          Command="{Binding PlacementTarget.Tag.LayerCommands.LoadImageIntoCurrentLayerCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                                     <MenuItem.Icon>
                                         <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
                                                                     Width="16"
@@ -998,7 +1014,8 @@
                                 </MenuItem>
                                 <MenuItem x:Name="miWorkspaceLoadImageIntoLayer"
                                           Header="{Binding PlacementTarget.Tag.LayerCommands.LoadImageIntoLayerText, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          Command="{Binding PlacementTarget.Tag.LayerCommands.LoadImageIntoCurrentLayerCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                          Command="{Binding PlacementTarget.Tag.LayerCommands.LoadImageIntoCurrentLayerCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          Visibility="Collapsed">
                                     <MenuItem.Icon>
                                         <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
                                                                     Width="16"
@@ -1407,6 +1424,7 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <iconPacks:PackIconMaterial Grid.Column="0"
                                                             Kind="SourceBranch"
@@ -1440,7 +1458,29 @@
                                            Margin="14,0,0,0"
                                            TextTrimming="CharacterEllipsis"
                                            VerticalAlignment="Center" />
-                                <Button Grid.Column="3"
+                                <Button x:Name="btnWorkspaceSampleCounterpart"
+                                        Grid.Column="3"
+                                        AutomationProperties.AutomationId="WorkspaceSampleCounterpartButton"
+                                        MinWidth="108"
+                                        Height="28"
+                                        Margin="12,0,0,0"
+                                        Padding="10,0"
+                                        Visibility="Collapsed"
+                                        Command="{Binding WorkspaceCommands.OpenSampleCounterpartCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <iconPacks:PackIconMaterial Kind="CompareHorizontal"
+                                                                    Width="15"
+                                                                    Height="15"
+                                                                    Foreground="#8AD7DA"
+                                                                    Margin="0,0,6,0" />
+                                        <TextBlock x:Name="txtWorkspaceSampleCounterpartButtonText"
+                                                   Text="Counterpart"
+                                                   Foreground="#8AD7DA"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="12" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Grid.Column="4"
                                         AutomationProperties.AutomationId="WorkspaceSamplePipelineButton"
                                         MinWidth="116"
                                         Height="28"
@@ -1459,7 +1499,7 @@
                                                    FontSize="12" />
                                     </StackPanel>
                                 </Button>
-                                <Button Grid.Column="4"
+                                <Button Grid.Column="5"
                                         AutomationProperties.AutomationId="WorkspaceSampleFirstStepButton"
                                         MinWidth="118"
                                         Height="28"
@@ -1966,6 +2006,976 @@
 
             </Grid>
         </Grid>
+
+        <Border x:Name="recipeManagerPanel"
+                Grid.Row="1"
+                Grid.RowSpan="2"
+                Panel.ZIndex="40"
+                Width="1060"
+                Height="730"
+                Margin="515,34,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                Background="#17262D"
+                BorderBrush="{StaticResource ShellHost.FieldFocusBrush}"
+                BorderThickness="1"
+                Padding="12"
+                DataContext="{Binding RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                AutomationProperties.AutomationId="HostRecipeManagerPanel"
+                Visibility="{Binding IsChecked, ElementName=btnHostRecipeManager, Converter={StaticResource ShellHost.BooleanToVisibilityConverter}}">
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="recipeManagerPanelTransform" />
+            </Border.RenderTransform>
+            <Border.Resources>
+                <Style TargetType="{x:Type Button}" BasedOn="{StaticResource LayerDetailActionButtonStyle}">
+                    <Setter Property="Foreground" Value="#EAFBFC" />
+                    <Setter Property="Background" Value="#233840" />
+                    <Setter Property="BorderBrush" Value="#6C98A1" />
+                    <Setter Property="Padding" Value="8,0" />
+                    <Style.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="#7F969C" />
+                            <Setter Property="Background" Value="#203238" />
+                            <Setter Property="BorderBrush" Value="#405963" />
+                            <Setter Property="Opacity" Value="0.65" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+                <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">
+                    <Setter Property="Foreground" Value="#F5FAFC" />
+                </Style>
+                <Style TargetType="{x:Type TabControl}">
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="Padding" Value="0" />
+                </Style>
+                <Style TargetType="{x:Type TabItem}">
+                    <Setter Property="Foreground" Value="#B9D6DC" />
+                    <Setter Property="Background" Value="#223840" />
+                    <Setter Property="BorderBrush" Value="#38535C" />
+                    <Setter Property="BorderThickness" Value="1" />
+                    <Setter Property="Padding" Value="12,5" />
+                    <Setter Property="Margin" Value="0,0,4,0" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type TabItem}">
+                                <Border x:Name="tabChrome"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter ContentSource="Header"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center" />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="tabChrome" Property="Background" Value="#157C86" />
+                                        <Setter TargetName="tabChrome" Property="BorderBrush" Value="#8AD7DA" />
+                                        <Setter Property="Foreground" Value="#FFFFFF" />
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter TargetName="tabChrome" Property="Opacity" Value="0.55" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Border.Resources>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid x:Name="recipeManagerTitleBar"
+                      Grid.Row="0"
+                      Height="32"
+                      Margin="-12,-12,-12,8"
+                      Background="#223840"
+                      Cursor="SizeAll"
+                      AutomationProperties.AutomationId="HostRecipeManagerTitleBar"
+                      MouseLeftButtonDown="HandleRecipeManagerTitleBarMouseLeftButtonDown"
+                      MouseMove="HandleRecipeManagerTitleBarMouseMove"
+                      MouseLeftButtonUp="HandleRecipeManagerTitleBarMouseLeftButtonUp"
+                      LostMouseCapture="HandleRecipeManagerTitleBarLostMouseCapture">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <iconPacks:PackIconMaterial Kind="DragHorizontalVariant"
+                                                Width="16"
+                                                Height="16"
+                                                Margin="10,0,8,0"
+                                                Foreground="#8AD7DA"
+                                                VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding RecipeCommands.ManagerTitleText}"
+                               Foreground="#F5FAFC"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2"
+                               Text="{Binding RecipeCommands.RecipeListText}"
+                               Foreground="#A8CBD1"
+                               Margin="0,0,10,0"
+                               FontSize="11"
+                               VerticalAlignment="Center" />
+                    <Button Grid.Column="3"
+                            Width="28"
+                            Height="24"
+                            Margin="0,0,8,0"
+                            Padding="0"
+                            Cursor="Hand"
+                            AutomationProperties.AutomationId="HostRecipeManagerCloseButton"
+                            ToolTip="Close"
+                            Click="HandleRecipeManagerCloseClick">
+                        <iconPacks:PackIconMaterial Kind="WindowClose"
+                                                    Width="14"
+                                                    Height="14"
+                                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Button>
+                </Grid>
+                <Grid Grid.Row="1" Margin="0,6,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="64" />
+                        <ColumnDefinition Width="260" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding RecipeCommands.RecipeFilterLabelText}"
+                               Foreground="#A8CBD1"
+                               VerticalAlignment="Center" />
+                    <TextBox Grid.Column="1"
+                             Height="26"
+                             Padding="7,2"
+                             VerticalContentAlignment="Center"
+                             AutomationProperties.AutomationId="HostRecipeFilterTextBox"
+                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                             CaretBrush="#8FE8F0"
+                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                             Background="{StaticResource ShellHost.FieldBrush}"
+                             Text="{Binding RecipeCommands.RecipeFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </Grid>
+                <Grid Grid.Row="2" Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="260" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ListBox Grid.Column="0"
+                             AutomationProperties.AutomationId="HostRecipeManagerList"
+                             Background="#101A1F"
+                             BorderBrush="#38535C"
+                             BorderThickness="1"
+                             Foreground="#F5FAFC"
+                             ItemsSource="{Binding RecipeCommands.FilteredRecipeOptions}"
+                             SelectedItem="{Binding RecipeCommands.SelectedRecipeName, Mode=TwoWay}"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             VirtualizingPanel.IsVirtualizing="True"
+                             VirtualizingPanel.VirtualizationMode="Recycling">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}"
+                                           Foreground="#F5FAFC"
+                                           TextTrimming="CharacterEllipsis" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Grid Grid.Column="2"
+                          AutomationProperties.AutomationId="HostRecipeDetailPanel">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Border MinHeight="50"
+                                 Padding="8"
+                                 BorderBrush="#38535C"
+                                 BorderThickness="1"
+                                 Background="#101A1F"
+                                 AutomationProperties.AutomationId="HostRecipeDetailText">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="{Binding RecipeCommands.SelectedRecipeSummary.HeaderText, Mode=OneWay}"
+                                           FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis"
+                                           Foreground="{StaticResource ShellHost.FieldTextBrush}" />
+                                <WrapPanel Grid.Row="1" Margin="0,7,0,0">
+                                    <Border Margin="0,0,6,0" Padding="7,2" Background="#1B3037" BorderBrush="#38535C" BorderThickness="1">
+                                        <TextBlock Text="{Binding RecipeCommands.SelectedRecipeSummary.ActivePipelineDisplay, Mode=OneWay}" FontSize="11" Foreground="#A8CBD1" />
+                                    </Border>
+                                    <Border Margin="0,0,6,0" Padding="7,2" Background="#1B3037" BorderBrush="#38535C" BorderThickness="1">
+                                        <TextBlock Text="{Binding RecipeCommands.SelectedRecipeSummary.PipelineCountDisplay, Mode=OneWay}" FontSize="11" Foreground="#A8CBD1" />
+                                    </Border>
+                                    <Border Margin="0,0,6,0" Padding="7,2" Background="#1B3037" BorderBrush="#38535C" BorderThickness="1">
+                                        <TextBlock Text="{Binding RecipeCommands.SelectedRecipeSummary.StepCountDisplay, Mode=OneWay}" FontSize="11" Foreground="#A8CBD1" />
+                                    </Border>
+                                    <Border Margin="0,0,6,0" Padding="7,2" Background="#143B35" BorderBrush="#45967F" BorderThickness="1">
+                                        <TextBlock Text="{Binding RecipeCommands.SelectedRecipeSummary.XmlStatusDisplay, Mode=OneWay}" FontSize="11" Foreground="#D7FFF4" />
+                                    </Border>
+                                </WrapPanel>
+                                <TextBlock Grid.Row="2"
+                                           Margin="0,5,0,0"
+                                           Foreground="#A8CBD1"
+                                           FontSize="10"
+                                           Text="{Binding RecipeCommands.StatusText}"
+                                           TextTrimming="CharacterEllipsis" />
+                            </Grid>
+                        </Border>
+                        <TabControl x:Name="recipeManagerDetailTabs"
+                                    Grid.Row="1"
+                                    Margin="0,6,0,0"
+                                    AutomationProperties.AutomationId="HostRecipeDetailTabs">
+                            <TabItem x:Name="tabRecipePipeline"
+                                     Header="Pipeline"
+                                     AutomationProperties.AutomationId="HostRecipePipelineTab">
+                                <ScrollViewer Margin="0,8,0,0"
+                                              VerticalScrollBarVisibility="Auto"
+                                              HorizontalScrollBarVisibility="Disabled">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="0.95*" MinWidth="360" />
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="1.15*" MinWidth="420" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="128" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="12" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Text="{Binding RecipeCommands.PipelineListText}"
+                                                   Foreground="#A8CBD1"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold" />
+                                        <ListBox Grid.Row="1"
+                                                 Margin="0,4,0,0"
+                                                 AutomationProperties.AutomationId="HostRecipePipelineManagerList"
+                                                 Background="#101A1F"
+                                                 BorderBrush="#38535C"
+                                                 BorderThickness="1"
+                                                 ItemsSource="{Binding RecipeCommands.PipelineOptions}"
+                                                 SelectedItem="{Binding RecipeCommands.SelectedPipelineOption, Mode=TwoWay}"
+                                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                                 VirtualizingPanel.IsVirtualizing="True"
+                                                 VirtualizingPanel.VirtualizationMode="Recycling">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Margin="5,4">
+                                                        <TextBlock Text="{Binding DisplayText}"
+                                                                   Foreground="#F5FAFC"
+                                                                   FontWeight="SemiBold"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="{Binding DetailText}"
+                                                                   Foreground="#A8CBD1"
+                                                                   FontSize="11"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                        <Grid Grid.Row="2" Margin="0,8,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="84" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding RecipeCommands.PipelineNameText}"
+                                                       Foreground="#A8CBD1"
+                                                       FontSize="11"
+                                                       VerticalAlignment="Center" />
+                                            <TextBox Grid.Column="1"
+                                                     Height="24"
+                                                     Padding="7,1"
+                                                     AutomationProperties.AutomationId="HostRecipePipelineNameEditor"
+                                                     Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                     CaretBrush="#8FE8F0"
+                                                     BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                     Background="{StaticResource ShellHost.FieldBrush}"
+                                                     Text="{Binding RecipeCommands.PipelineEditName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        </Grid>
+                                        <WrapPanel Grid.Row="3" HorizontalAlignment="Right" Margin="0,8,0,0">
+                                            <Button MinWidth="78"
+                                                    Height="26"
+                                                    Margin="0,0,5,0"
+                                                    AutomationProperties.AutomationId="HostRecipePipelineActivateButton"
+                                                    Command="{Binding RecipeCommands.ActivatePipelineCommand}">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <iconPacks:PackIconMaterial Kind="Check" Width="13" Height="13" Margin="0,1,5,0" />
+                                                    <TextBlock Text="{Binding RecipeCommands.ActivatePipelineText}" FontSize="11" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button MinWidth="94"
+                                                    Height="26"
+                                                    Margin="0,0,5,0"
+                                                    AutomationProperties.AutomationId="HostRecipePipelineDuplicateButton"
+                                                    Command="{Binding RecipeCommands.DuplicatePipelineCommand}">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <iconPacks:PackIconMaterial Kind="ContentCopy" Width="13" Height="13" Margin="0,1,5,0" />
+                                                    <TextBlock Text="{Binding RecipeCommands.DuplicatePipelineText}" FontSize="11" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button MinWidth="86"
+                                                    Height="26"
+                                                    Margin="0,0,5,0"
+                                                    AutomationProperties.AutomationId="HostRecipePipelineRenameButton"
+                                                    Command="{Binding RecipeCommands.RenamePipelineCommand}">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <iconPacks:PackIconMaterial Kind="PencilOutline" Width="13" Height="13" Margin="0,1,5,0" />
+                                                    <TextBlock Text="{Binding RecipeCommands.RenamePipelineText}" FontSize="11" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button MinWidth="80"
+                                                    Height="26"
+                                                    AutomationProperties.AutomationId="HostRecipePipelineDeleteButton"
+                                                    Command="{Binding RecipeCommands.DeletePipelineCommand}">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <iconPacks:PackIconMaterial Kind="LayersOffOutline" Width="13" Height="13" Margin="0,1,5,0" />
+                                                    <TextBlock Text="{Binding RecipeCommands.DeletePipelineText}" FontSize="11" />
+                                                </StackPanel>
+                                            </Button>
+                                        </WrapPanel>
+                                        <Grid Grid.Row="5">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Text="{Binding RecipeCommands.SampleSourceText}"
+                                                       Foreground="#A8CBD1"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold" />
+                                            <Grid Grid.Row="1" Margin="0,4,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="154" />
+                                                </Grid.ColumnDefinitions>
+                                                <ComboBox Grid.Column="0"
+                                                          Height="26"
+                                                          AutomationProperties.AutomationId="HostRecipeSampleSelector"
+                                                          ItemsSource="{Binding RecipeCommands.SampleOptions}"
+                                                          SelectedItem="{Binding RecipeCommands.SelectedSampleOption, Mode=TwoWay}"
+                                                          DisplayMemberPath="DisplayText" />
+                                                <Button Grid.Column="1"
+                                                        Height="26"
+                                                        Margin="8,0,0,0"
+                                                        AutomationProperties.AutomationId="HostRecipeDuplicateFromSampleButton"
+                                                        Command="{Binding RecipeCommands.DuplicateFromSampleCommand}">
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <iconPacks:PackIconMaterial Kind="ContentCopy" Width="13" Height="13" Margin="0,1,5,0" />
+                                                        <TextBlock Text="{Binding RecipeCommands.DuplicateFromSampleText}"
+                                                                   FontSize="11"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </Grid>
+                                            <Border Grid.Row="2"
+                                                    Margin="0,6,0,0"
+                                                    Padding="8,6"
+                                                    AutomationProperties.AutomationId="HostRecipeSampleAcceptanceSummary"
+                                                    Background="#101A1F"
+                                                    BorderBrush="#38535C"
+                                                    BorderThickness="1">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding RecipeCommands.SampleAcceptanceText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="11"
+                                                               FontWeight="SemiBold" />
+                                                    <TextBlock Margin="0,3,0,0"
+                                                               Text="{Binding RecipeCommands.SelectedSampleAcceptanceSummaryText, Mode=OneWay}"
+                                                               Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                               FontSize="11"
+                                                               TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Grid Grid.Row="3" Margin="0,6,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="104" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <Button Height="25"
+                                                            AutomationProperties.AutomationId="HostRecipeRunSampleCheckButton"
+                                                            Command="{Binding RecipeCommands.RunSelectedSampleCheckCommand}">
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                            <iconPacks:PackIconMaterial Kind="Check" Width="13" Height="13" Margin="0,1,5,0" />
+                                                            <TextBlock Text="{Binding RecipeCommands.RunSelectedSampleCheckText}" FontSize="11" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button Height="25"
+                                                            Margin="0,5,0,0"
+                                                            AutomationProperties.AutomationId="HostRecipeRunPairCheckButton"
+                                                            Command="{Binding RecipeCommands.RunSelectedSamplePairCheckCommand}">
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                            <iconPacks:PackIconMaterial Kind="Check" Width="13" Height="13" Margin="0,1,5,0" />
+                                                            <TextBlock Text="{Binding RecipeCommands.RunSelectedSamplePairCheckText}" FontSize="11" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                                    <Border Padding="8,4"
+                                                            AutomationProperties.AutomationId="HostRecipeSampleCheckSummary"
+                                                            Background="#14313A"
+                                                            BorderBrush="#4C8790"
+                                                            BorderThickness="1">
+                                                        <TextBlock Text="{Binding RecipeCommands.LatestSampleRunSummary.CompactText, Mode=OneWay}"
+                                                                   ToolTip="{Binding RecipeCommands.LatestSampleRunSummary.DisplayText, Mode=OneWay}"
+                                                                   Foreground="#EAFBFC"
+                                                                   FontSize="11"
+                                                                   TextWrapping="Wrap" />
+                                                    </Border>
+                                                    <Border Margin="0,5,0,0"
+                                                            Padding="8,4"
+                                                            AutomationProperties.AutomationId="HostRecipePairCheckSummary"
+                                                            Background="#14313A"
+                                                            BorderBrush="#4C8790"
+                                                            BorderThickness="1">
+                                                        <TextBlock Text="{Binding RecipeCommands.LatestPairRunSummary.CompactText, Mode=OneWay}"
+                                                                   ToolTip="{Binding RecipeCommands.LatestPairRunSummary.DisplayText, Mode=OneWay}"
+                                                                   Foreground="#EAFBFC"
+                                                                   FontSize="11"
+                                                                   TextWrapping="Wrap" />
+                                                    </Border>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Grid>
+                                    </Grid>
+                                    <Grid Grid.Column="2"
+                                          AutomationProperties.AutomationId="HostRecipePipelineReviewPanel">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="86" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Text="Operator review"
+                                                   Foreground="#A8CBD1"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold" />
+                                        <Border Grid.Row="1"
+                                                Margin="0,4,0,10"
+                                                Padding="8,6"
+                                                AutomationProperties.AutomationId="HostRecipePipelineOperatorReview"
+                                                Background="#14313A"
+                                                BorderBrush="#4C8790"
+                                                BorderThickness="1">
+                                            <TextBlock Text="{Binding RecipeCommands.SelectedRecipeSummary.OperatorReviewText, Mode=OneWay}"
+                                                       Foreground="#EAFBFC"
+                                                       TextWrapping="Wrap" />
+                                        </Border>
+                                        <TextBlock Grid.Row="2"
+                                                   Text="{Binding RecipeCommands.LlmXmlValidationReportText}"
+                                                   Foreground="#A8CBD1"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold" />
+                                        <TextBox Grid.Row="3"
+                                                 Margin="0,4,0,10"
+                                                 Padding="6"
+                                                 IsReadOnly="True"
+                                                 TextWrapping="Wrap"
+                                                 VerticalScrollBarVisibility="Auto"
+                                                 AutomationProperties.AutomationId="HostRecipePipelineInlineValidationReport"
+                                                 Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                 BorderBrush="#38535C"
+                                                 Background="#101A1F"
+                                                 Text="{Binding RecipeCommands.SelectedRecipeSummary.LlmXmlValidationReport, Mode=OneWay}" />
+                                        <TextBlock Grid.Row="4"
+                                                   Text="{Binding RecipeCommands.SelectedRecipeSummary.PipelinePreviewStepListDisplay}"
+                                                   Foreground="#A8CBD1"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold" />
+                                        <ListBox Grid.Row="5"
+                                                 Margin="0,4,0,0"
+                                                 AutomationProperties.AutomationId="HostRecipePipelineInlinePreviewStepList"
+                                                 Background="#101A1F"
+                                                 BorderBrush="#38535C"
+                                                 BorderThickness="1"
+                                                 ItemsSource="{Binding RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps}"
+                                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                                 VirtualizingPanel.IsVirtualizing="True"
+                                                 VirtualizingPanel.VirtualizationMode="Recycling">
+                                            <ListBox.ItemContainerStyle>
+                                                <Style TargetType="{x:Type ListBoxItem}">
+                                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                                </Style>
+                                            </ListBox.ItemContainerStyle>
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="5,4">
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="Auto" />
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock Text="{Binding DisplayText}"
+                                                                   Foreground="#F5FAFC"
+                                                                   FontWeight="SemiBold"
+                                                                   MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                                   TextWrapping="Wrap" />
+                                                        <TextBlock Grid.Row="1"
+                                                                   Text="{Binding DetailText}"
+                                                                   ToolTip="{Binding FullDetailText}"
+                                                                   Foreground="#A8CBD1"
+                                                                   FontSize="11"
+                                                                   MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                                   TextWrapping="Wrap" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </Grid>
+                                </Grid>
+                                </ScrollViewer>
+                            </TabItem>
+                            <TabItem x:Name="tabRecipeLlmXml"
+                                     Header="LLM XML"
+                                     AutomationProperties.AutomationId="HostRecipeLlmXmlTab">
+                                <ScrollViewer Margin="0,8,0,0"
+                                              VerticalScrollBarVisibility="Auto"
+                                              HorizontalScrollBarVisibility="Disabled">
+                                    <Grid AutomationProperties.AutomationId="HostRecipeLlmAssistantPanel">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="54" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="56" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="110" />
+                                        </Grid.RowDefinitions>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding RecipeCommands.LlmAssistantText}"
+                                                       Foreground="#A8CBD1"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold" />
+                                            <WrapPanel Grid.Column="1">
+                                                <Button MinWidth="86"
+                                                        Height="24"
+                                                        Margin="0,0,5,0"
+                                                        AutomationProperties.AutomationId="HostRecipeBuildLlmPromptButton"
+                                                        Command="{Binding RecipeCommands.BuildLlmPromptCommand}">
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <iconPacks:PackIconMaterial Kind="PencilOutline" Width="12" Height="12" Margin="0,1,4,0" />
+                                                        <TextBlock Text="{Binding RecipeCommands.BuildLlmPromptButtonText}" FontSize="11" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button MinWidth="94"
+                                                        Height="24"
+                                                        Margin="0,0,5,0"
+                                                        AutomationProperties.AutomationId="HostRecipeCreateLlmTemplateXmlButton"
+                                                        Command="{Binding RecipeCommands.CreateLlmTemplateXmlDraftCommand}">
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <iconPacks:PackIconMaterial Kind="ContentSave" Width="12" Height="12" Margin="0,1,4,0" />
+                                                        <TextBlock Text="{Binding RecipeCommands.CreateLlmTemplateXmlText}" FontSize="11" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button MinWidth="76"
+                                                        Height="24"
+                                                        AutomationProperties.AutomationId="HostRecipeRefreshLlmDraftReviewButton"
+                                                        Command="{Binding RecipeCommands.RefreshLlmDraftReviewCommand}">
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <iconPacks:PackIconMaterial Kind="Check" Width="12" Height="12" Margin="0,1,4,0" />
+                                                        <TextBlock Text="{Binding RecipeCommands.RefreshLlmDraftReviewText}" FontSize="11" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </WrapPanel>
+                                        </Grid>
+                                        <Grid Grid.Row="1" Margin="0,7,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="82" />
+                                                <ColumnDefinition Width="166" />
+                                                <ColumnDefinition Width="92" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="100" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding RecipeCommands.LlmToolTemplateText}"
+                                                       Foreground="#A8CBD1"
+                                                       FontSize="11"
+                                                       VerticalAlignment="Center" />
+                                            <ComboBox Grid.Column="1"
+                                                      Height="24"
+                                                      AutomationProperties.AutomationId="HostRecipeLlmTemplateSelector"
+                                                      ItemsSource="{Binding RecipeCommands.LlmToolTemplateOptions}"
+                                                      SelectedItem="{Binding RecipeCommands.SelectedLlmToolTemplate, Mode=TwoWay}" />
+                                            <TextBlock Grid.Column="2"
+                                                       Margin="8,0,0,0"
+                                                       Text="{Binding RecipeCommands.LlmInspectionGoalLabelText}"
+                                                       Foreground="#A8CBD1"
+                                                       FontSize="11"
+                                                       VerticalAlignment="Center" />
+                                            <TextBox Grid.Column="3"
+                                                     Height="24"
+                                                     Padding="6,1"
+                                                     AutomationProperties.AutomationId="HostRecipeLlmGoalText"
+                                                     Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                     CaretBrush="#8FE8F0"
+                                                     BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                     Background="{StaticResource ShellHost.FieldBrush}"
+                                                     Text="{Binding RecipeCommands.LlmInspectionGoalText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <TextBlock Grid.Column="4"
+                                                       Margin="8,0,0,0"
+                                                       Text="{Binding RecipeCommands.LlmDetectionPointLabelText}"
+                                                       Foreground="#A8CBD1"
+                                                       FontSize="11"
+                                                       VerticalAlignment="Center" />
+                                            <TextBox Grid.Column="5"
+                                                     Height="24"
+                                                     Padding="6,1"
+                                                     AutomationProperties.AutomationId="HostRecipeLlmDetectionPointsText"
+                                                     Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                     CaretBrush="#8FE8F0"
+                                                     BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                     Background="{StaticResource ShellHost.FieldBrush}"
+                                                     Text="{Binding RecipeCommands.LlmDetectionPointText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        </Grid>
+                                        <TextBox Grid.Row="2"
+                                                 Margin="0,6,0,0"
+                                                 Padding="6"
+                                                 IsReadOnly="True"
+                                                 TextWrapping="Wrap"
+                                                 VerticalScrollBarVisibility="Auto"
+                                                 AutomationProperties.AutomationId="HostRecipeLlmPromptPreview"
+                                                 Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                 BorderBrush="#38535C"
+                                                 Background="#101A1F"
+                                                 Text="{Binding RecipeCommands.LlmPromptText, Mode=OneWay}" />
+                                        <Grid Grid.Row="3" Margin="0,8,0,0"
+                                              AutomationProperties.AutomationId="HostRecipeLlmXmlDraftPanel">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding RecipeCommands.LlmXmlDraftLabelText}"
+                                                       Foreground="#A8CBD1"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold" />
+                                            <WrapPanel Grid.Column="1">
+                                                <Button MinWidth="72"
+                                                        Height="24"
+                                                        Margin="0,0,5,0"
+                                                        AutomationProperties.AutomationId="HostRecipeLoadLlmXmlDraftButton"
+                                                        Command="{Binding RecipeCommands.LoadLlmXmlDraftCommand}">
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <iconPacks:PackIconMaterial Kind="ImagePlusOutline" Width="12" Height="12" Margin="0,1,4,0" />
+                                                        <TextBlock Text="{Binding RecipeCommands.LoadLlmXmlDraftText}" FontSize="11" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button MinWidth="72"
+                                                        Height="24"
+                                                        Margin="0,0,5,0"
+                                                        AutomationProperties.AutomationId="HostRecipeValidateLlmXmlDraftButton"
+                                                        Command="{Binding RecipeCommands.ValidateLlmXmlDraftCommand}">
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <iconPacks:PackIconMaterial Kind="Check" Width="12" Height="12" Margin="0,1,4,0" />
+                                                        <TextBlock Text="{Binding RecipeCommands.ValidateLlmXmlDraftButtonText}" FontSize="11" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button MinWidth="76"
+                                                        Height="24"
+                                                        AutomationProperties.AutomationId="HostRecipeImportLlmXmlDraftButton"
+                                                        Command="{Binding RecipeCommands.ImportLlmXmlDraftCommand}">
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <iconPacks:PackIconMaterial Kind="ContentSave" Width="12" Height="12" Margin="0,1,4,0" />
+                                                        <TextBlock Text="{Binding RecipeCommands.ImportLlmXmlDraftText}" FontSize="11" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </WrapPanel>
+                                        </Grid>
+                                        <TextBox Grid.Row="4"
+                                                 Margin="0,5,0,0"
+                                                 Padding="6"
+                                                 AcceptsReturn="True"
+                                                 TextWrapping="NoWrap"
+                                                 VerticalScrollBarVisibility="Auto"
+                                                 HorizontalScrollBarVisibility="Auto"
+                                                 AutomationProperties.AutomationId="HostRecipeLlmXmlDraftText"
+                                                 Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                 CaretBrush="#8FE8F0"
+                                                 BorderBrush="#38535C"
+                                                 Background="#101A1F"
+                                                 Text="{Binding RecipeCommands.LlmXmlDraftText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <Grid Grid.Row="5" Margin="0,7,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="92" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="128" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding RecipeCommands.LlmReferenceImageText}"
+                                                       Foreground="#A8CBD1"
+                                                       FontSize="11"
+                                                       VerticalAlignment="Center" />
+                                            <TextBox Grid.Column="1"
+                                                     Height="24"
+                                                     Padding="6,1"
+                                                     IsReadOnly="True"
+                                                     AutomationProperties.AutomationId="HostRecipeLlmReferenceImagePath"
+                                                     Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                     BorderBrush="#38535C"
+                                                     Background="#101A1F"
+                                                     Text="{Binding RecipeCommands.LlmReferenceImagePath, Mode=OneWay}" />
+                                            <Button Grid.Column="2"
+                                                    Height="24"
+                                                    Margin="6,0,0,0"
+                                                    AutomationProperties.AutomationId="HostRecipeUseSampleReferenceButton"
+                                                    Command="{Binding RecipeCommands.UseSelectedSampleReferenceCommand}">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <iconPacks:PackIconMaterial Kind="Target" Width="12" Height="12" Margin="0,1,4,0" />
+                                                    <TextBlock Text="{Binding RecipeCommands.UseSelectedSampleReferenceText}"
+                                                               FontSize="11"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                        <Grid Grid.Row="6" Margin="0,8,0,0">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*" />
+                                                <RowDefinition Height="8" />
+                                                <RowDefinition Height="*" />
+                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="8" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="*" />
+                                                </Grid.RowDefinitions>
+                                                <TextBlock Text="{Binding RecipeCommands.LlmDraftValidationText}"
+                                                           Foreground="#A8CBD1"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold" />
+                                                <TextBox Grid.Row="1"
+                                                         Margin="0,3,0,0"
+                                                         Padding="6"
+                                                         IsReadOnly="True"
+                                                         TextWrapping="Wrap"
+                                                         VerticalScrollBarVisibility="Auto"
+                                                         AutomationProperties.AutomationId="HostRecipeLlmDraftValidationReport"
+                                                         Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                         BorderBrush="#38535C"
+                                                         Background="#101A1F"
+                                                         Text="{Binding RecipeCommands.LlmXmlDraftValidationReport, Mode=OneWay}" />
+                                            </Grid>
+                                            <Grid Grid.Column="2">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="*" />
+                                                </Grid.RowDefinitions>
+                                                <TextBlock Text="{Binding RecipeCommands.LlmDependencyReportText}"
+                                                           Foreground="#A8CBD1"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold" />
+                                                <TextBox Grid.Row="1"
+                                                         Margin="0,3,0,0"
+                                                         Padding="6"
+                                                         IsReadOnly="True"
+                                                         TextWrapping="Wrap"
+                                                         VerticalScrollBarVisibility="Auto"
+                                                         AutomationProperties.AutomationId="HostRecipeLlmDependencyReport"
+                                                         Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                         BorderBrush="#38535C"
+                                                         Background="#101A1F"
+                                                         Text="{Binding RecipeCommands.LlmXmlDraftDependencyReport, Mode=OneWay}" />
+                                            </Grid>
+                                            <Grid Grid.Row="2">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="*" />
+                                                </Grid.RowDefinitions>
+                                                <TextBlock Text="{Binding RecipeCommands.LlmDraftReviewReportText}"
+                                                           Foreground="#A8CBD1"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold" />
+                                                <TextBox Grid.Row="1"
+                                                         Margin="0,3,0,0"
+                                                         Padding="6"
+                                                         IsReadOnly="True"
+                                                         TextWrapping="Wrap"
+                                                         VerticalScrollBarVisibility="Auto"
+                                                         AutomationProperties.AutomationId="HostRecipeLlmDraftReviewReport"
+                                                         Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                         BorderBrush="#38535C"
+                                                         Background="#101A1F"
+                                                         Text="{Binding RecipeCommands.LlmXmlDraftReviewReport, Mode=OneWay}" />
+                                            </Grid>
+                                            <Grid Grid.Row="2" Grid.Column="2">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="*" />
+                                                </Grid.RowDefinitions>
+                                                <TextBlock Text="{Binding RecipeCommands.LlmXmlValidationReportText}"
+                                                           Foreground="#A8CBD1"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold" />
+                                                <TextBox Grid.Row="1"
+                                                         Margin="0,3,0,0"
+                                                         Padding="6"
+                                                         IsReadOnly="True"
+                                                         TextWrapping="Wrap"
+                                                         VerticalScrollBarVisibility="Auto"
+                                                         AutomationProperties.AutomationId="HostRecipeLlmValidationReport"
+                                                         Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                         BorderBrush="#38535C"
+                                                         Background="#101A1F"
+                                                         Text="{Binding RecipeCommands.SelectedRecipeSummary.LlmXmlValidationReport, Mode=OneWay}" />
+                                            </Grid>
+                                        </Grid>
+                                    </Grid>
+                                </ScrollViewer>
+                            </TabItem>
+                            <TabItem x:Name="tabRecipePreview"
+                                     Header="Preview"
+                                     AutomationProperties.AutomationId="HostRecipePreviewTab">
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="{Binding RecipeCommands.PipelinePreviewStepListText}"
+                                               Foreground="#A8CBD1"
+                                               FontSize="11"
+                                               FontWeight="SemiBold" />
+                                    <ListBox Grid.Row="1"
+                                             Margin="0,4,0,0"
+                                             AutomationProperties.AutomationId="HostRecipePipelinePreviewStepList"
+                                             Background="#101A1F"
+                                             BorderBrush="#38535C"
+                                             BorderThickness="1"
+                                             ItemsSource="{Binding RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps}"
+                                             ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="{x:Type ListBoxItem}">
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="5,4">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <TextBlock Text="{Binding DisplayText}"
+                                                               Foreground="#F5FAFC"
+                                                               FontWeight="SemiBold"
+                                                               MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                               TextWrapping="Wrap" />
+                                                    <TextBlock Grid.Row="1"
+                                                               Text="{Binding DetailText}"
+                                                               ToolTip="{Binding FullDetailText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="11"
+                                                               MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                               TextWrapping="Wrap" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Grid>
+                            </TabItem>
+                        </TabControl>
+                    </Grid>
+                </Grid>
+                <Grid Grid.Row="3" Margin="0,6,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="90" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding RecipeCommands.EditRecipeNameLabelText}"
+                               Foreground="#A8CBD1"
+                               VerticalAlignment="Center" />
+                    <TextBox Grid.Column="1"
+                             Height="26"
+                             Padding="7,2"
+                             VerticalContentAlignment="Center"
+                             AutomationProperties.AutomationId="HostRecipeNameEditor"
+                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                             CaretBrush="#8FE8F0"
+                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                             Background="{StaticResource ShellHost.FieldBrush}"
+                             Text="{Binding RecipeCommands.EditRecipeName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </Grid>
+                <WrapPanel Grid.Row="4" HorizontalAlignment="Right" Margin="0,6,0,0">
+                    <Button MinWidth="86"
+                            Height="28"
+                            Margin="0,0,6,0"
+                            AutomationProperties.AutomationId="HostRecipeCreateNamedButton"
+                            Command="{Binding RecipeCommands.CreateNamedRecipeCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="Plus" Width="13" Height="13" Margin="0,1,5,0" />
+                            <TextBlock Text="{Binding RecipeCommands.CreateNamedRecipeText}" />
+                            </StackPanel>
+                        </Button>
+                    <Button MinWidth="74"
+                            Height="28"
+                            Margin="0,0,6,0"
+                            AutomationProperties.AutomationId="HostRecipeDuplicateButton"
+                            Command="{Binding RecipeCommands.DuplicateRecipeCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="ImageMultipleOutline" Width="13" Height="13" Margin="0,1,5,0" />
+                            <TextBlock Text="{Binding RecipeCommands.DuplicateRecipeText}" />
+                        </StackPanel>
+                    </Button>
+                    <Button MinWidth="86"
+                            Height="28"
+                            Margin="0,0,6,0"
+                            AutomationProperties.AutomationId="HostRecipeRenameButton"
+                            Command="{Binding RecipeCommands.RenameRecipeCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="PencilOutline" Width="13" Height="13" Margin="0,1,5,0" />
+                            <TextBlock Text="{Binding RecipeCommands.RenameRecipeText}" />
+                        </StackPanel>
+                    </Button>
+                    <Button MinWidth="72"
+                            Height="28"
+                            AutomationProperties.AutomationId="HostRecipeDeleteButton"
+                            Command="{Binding RecipeCommands.DeleteRecipeCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="LayersOffOutline" Width="13" Height="13" Margin="0,1,5,0" />
+                            <TextBlock Text="{Binding RecipeCommands.DeleteRecipeText}" />
+                        </StackPanel>
+                    </Button>
+                    <Button MinWidth="112"
+                            Height="28"
+                            Margin="6,0,6,0"
+                            AutomationProperties.AutomationId="HostRecipeImportXmlButton"
+                            Command="{Binding RecipeCommands.ImportPipelineXmlCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="ImagePlusOutline" Width="13" Height="13" Margin="0,1,5,0" />
+                            <TextBlock Text="{Binding RecipeCommands.ImportPipelineXmlText}" />
+                        </StackPanel>
+                    </Button>
+                    <Button MinWidth="112"
+                            Height="28"
+                            AutomationProperties.AutomationId="HostRecipeExportXmlButton"
+                            Command="{Binding RecipeCommands.ExportPipelineXmlCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="ImageMultipleOutline" Width="13" Height="13" Margin="0,1,5,0" />
+                            <TextBlock Text="{Binding RecipeCommands.ExportPipelineXmlText}" />
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
+            </Grid>
+        </Border>
 
         <Grid Grid.Row="3" Background="{StaticResource ShellHost.ChromeDarkBrush}">
             <Grid.ColumnDefinitions>

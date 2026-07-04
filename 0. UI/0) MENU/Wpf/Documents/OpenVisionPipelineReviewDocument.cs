@@ -65,6 +65,7 @@ namespace OpenVisionLab
             view.RunReviewRequested += OnRunReviewRequested;
             view.PreviousStepRequested += OnPreviousStepRequested;
             view.NextStepRequested += OnNextStepRequested;
+            view.FirstIssueStepRequested += OnFirstIssueStepRequested;
             view.OpenPairSampleRequested += OnOpenPairSampleRequested;
             OpenVisionLanguageService.LanguageChanged += OnLanguageChanged;
             RefreshLayerState();
@@ -78,6 +79,7 @@ namespace OpenVisionLab
         public string SelectedStepName => view.SelectedStepText;
         public string SelectedToolType => view.SelectedToolText;
         public string SelectedStatusText => view.SelectedStatusText;
+        public string ReviewProgressText => view.ReviewProgressText;
         public string FlowSummaryText => view.FlowSummaryText;
         public string ParameterSummaryText => view.ParameterSummaryText;
         public string ValidationStatusText => view.ValidationStatusText;
@@ -96,9 +98,13 @@ namespace OpenVisionLab
         public string GuidePairMetricText => view.ReviewGuidePairMetricText;
         public string GuideChecklistText => view.ReviewGuideChecklistText;
         public string GuideParameterFocusText => view.ReviewGuideParameterFocusText;
+        public string GuideTriageFailureText => view.ReviewGuideTriageFailureText;
+        public string GuideTriageAdjustmentText => view.ReviewGuideTriageAdjustmentText;
+        public string GuideTriageRerunText => view.ReviewGuideTriageRerunText;
         public bool CanOpenPairSample => view.CanOpenReviewGuidePairAction;
         public bool CanSelectPreviousStep => view.CanSelectPreviousStep;
         public bool CanSelectNextStep => view.CanSelectNextStep;
+        public bool CanSelectFirstIssueStep => view.CanSelectFirstIssueStep;
         public bool HasInputPreview => view.HasInputPreview;
         public bool HasOutputPreview => view.HasOutputPreview;
 
@@ -114,6 +120,7 @@ namespace OpenVisionLab
             ClearReviewRunCache();
             int stepCount = pipeline?.Steps?.Count ?? 0;
             view.SetPipelineHeader(activePipelineName, stepCount);
+            view.SetReviewProgress(FormatReviewProgressText());
             view.SetValidation(FormatValidationStatus(validationResult), FormatValidationDetails(validationResult));
             view.SetResultSummary(
                 T("PipelineReview.RunRequired", "Run review required"),
@@ -165,6 +172,7 @@ namespace OpenVisionLab
             view.RunReviewRequested -= OnRunReviewRequested;
             view.PreviousStepRequested -= OnPreviousStepRequested;
             view.NextStepRequested -= OnNextStepRequested;
+            view.FirstIssueStepRequested -= OnFirstIssueStepRequested;
             view.OpenPairSampleRequested -= OnOpenPairSampleRequested;
             OpenVisionLanguageService.LanguageChanged -= OnLanguageChanged;
             OpenWorkspaceSampleRequested = delegate { };
@@ -195,6 +203,20 @@ namespace OpenVisionLab
             if (selectedIndex >= 0 && selectedIndex < stepCount - 1)
             {
                 SelectStep(selectedIndex + 1, selectedMode);
+            }
+        }
+
+        private void OnFirstIssueStepRequested(object sender, EventArgs e)
+        {
+            SelectFirstIssueStep();
+        }
+
+        private void SelectFirstIssueStep()
+        {
+            int issueIndex = FindFirstIssueStepIndex();
+            if (issueIndex >= 0)
+            {
+                SelectStep(issueIndex, selectedMode);
             }
         }
 
@@ -245,6 +267,7 @@ namespace OpenVisionLab
             RefreshActiveSamplePairGuide(activePipelineName);
             validationResult = VisionPipelineValidator.Validate(pipeline, GetLayerNames());
             view.SetPipelineHeader(activePipelineName, stepCount);
+            view.SetReviewProgress(FormatReviewProgressText());
             view.SetValidation(FormatValidationStatus(validationResult), FormatValidationDetails(validationResult));
 
             if (stepCount == 0)
@@ -374,24 +397,6 @@ namespace OpenVisionLab
                 && string.Equals(left.SampleName?.Trim(), right.SampleName?.Trim(), StringComparison.OrdinalIgnoreCase);
         }
 
-        private static string ResolvePairActionText(VisionPipelineSampleCatalogItem counterpartSample)
-        {
-            if (counterpartSample == null)
-            {
-                return string.Empty;
-            }
-
-            string role = IsOkSampleReference(counterpartSample)
-                ? LocalText("OK 기준", "OK reference")
-                : IsNgSampleReference(counterpartSample)
-                    ? LocalText("NG 기준", "NG reference")
-                    : LocalText("반대 기준", "opposite reference");
-            return string.Format(
-                CultureInfo.CurrentCulture,
-                LocalText("{0} 열기", "Open {0}"),
-                role);
-        }
-
         private void SelectStep(int index, PipelineFlowPreviewMode mode)
         {
             if (pipeline?.Steps == null || index < 0 || index >= pipeline.Steps.Count)
@@ -403,6 +408,7 @@ namespace OpenVisionLab
             selectedMode = mode;
             view.SelectStep(index, mode);
             view.SetNavigationState(index, pipeline.Steps.Count);
+            view.SetIssueNavigationState(FindFirstIssueStepIndex() >= 0);
 
             VisionPipelineStep step = pipeline.Steps[index];
             Bitmap inputImage = ResolveLayerPreviewImage(step.InputLayer);
@@ -422,8 +428,10 @@ namespace OpenVisionLab
                 outputImage,
                 ResolveFlowSummary(step, isBranch, expectedInput),
                 FormatParameters(step),
-                FormatRunLog(step, inputImage, outputImage, mode, statusText, FormatValidationStatus(validationResult), summary));
-            view.SetResultSummary(FormatResultSummary(summary), FormatResultDetails(step, summary));
+                OpenVisionPipelineReviewResultPresenter.FormatRunLog(step, inputImage, outputImage, mode, statusText, FormatValidationStatus(validationResult), summary));
+            view.SetResultSummary(
+                OpenVisionPipelineReviewResultPresenter.FormatResultSummary(summary),
+                OpenVisionPipelineReviewResultPresenter.FormatResultDetails(step, summary));
             view.SetReviewGuide(OpenVisionPipelineReviewGuidePresenter.CreateSelected(
                 index + 1,
                 pipeline.Steps.Count,
@@ -437,9 +445,14 @@ namespace OpenVisionLab
                 isBranch,
                 activeSamplePairGuide));
             view.SetReviewGuidePairAction(
-                ResolvePairActionText(activePairCounterpartSample),
+                OpenVisionPipelineReviewResultPresenter.ResolvePairActionText(activePairCounterpartSample),
                 activePairCounterpartSample?.CanOpen == true);
-            view.SetReviewGuidePairMetric(ResolvePairMetricComparisonText(step, summary));
+            view.SetReviewGuidePairMetric(OpenVisionPipelineReviewResultPresenter.ResolvePairMetricComparisonText(
+                step,
+                summary,
+                activeCatalogSample,
+                activePairCounterpartSample,
+                activeSamplePairGuide));
         }
 
         private List<PipelineFlowStepItem> CreateFlowItems(IReadOnlyList<VisionPipelineStep> steps)
@@ -519,7 +532,9 @@ namespace OpenVisionLab
 
             if (summary != null)
             {
-                return summary.Success ? PipelineFlowStepStatus.Loaded : PipelineFlowStepStatus.Waiting;
+                return summary.Success && !summary.IsAcceptanceNg
+                    ? PipelineFlowStepStatus.Passed
+                    : PipelineFlowStepStatus.Failed;
             }
 
             return outputImage == null ? PipelineFlowStepStatus.Waiting : PipelineFlowStepStatus.Loaded;
@@ -566,6 +581,7 @@ namespace OpenVisionLab
             isRunningReview = true;
             reviewExecutionState = T("PipelineReview.Execution.Started", "Started");
             view.SetRunReviewBusy(true);
+            view.SetReviewProgress(T("PipelineReview.Progress.Running", "Running..."));
             view.SetResultSummary(
                 T("PipelineReview.RunningSummary", "Running"),
                 T("PipelineReview.RunningDetail", "Pipeline review execution in progress."));
@@ -577,6 +593,7 @@ namespace OpenVisionLab
             try
             {
                 ClearReviewRunCache();
+                view.SetIssueNavigationState(false);
                 using VisionPipelineContext context = CreateReviewContextFromDisplayLayers();
                 VisionPipelineRunResult runResult = await VisionPipelineExecutionService.RunAsync(
                     pipeline,
@@ -600,7 +617,11 @@ namespace OpenVisionLab
             finally
             {
                 isRunningReview = false;
-                await view.Dispatcher.InvokeAsync(() => view.SetRunReviewBusy(false));
+                await view.Dispatcher.InvokeAsync(() =>
+                {
+                    view.SetRunReviewBusy(false);
+                    view.SetReviewProgress(FormatReviewProgressText());
+                });
             }
         }
 
@@ -621,6 +642,8 @@ namespace OpenVisionLab
             if (update?.Step != null)
             {
                 view.SetSteps(CreateFlowItems(pipeline.Steps));
+                view.SetReviewProgress(FormatReviewProgressText());
+                view.SetIssueNavigationState(FindFirstIssueStepIndex() >= 0);
                 if (ReferenceEquals(update.Step, pipeline.Steps.ElementAtOrDefault(selectedIndex)))
                 {
                     SelectStep(selectedIndex, selectedMode);
@@ -644,7 +667,33 @@ namespace OpenVisionLab
             }
 
             view.SetSteps(CreateFlowItems(pipeline.Steps));
+            view.SetReviewProgress(FormatReviewProgressText());
             SelectStep(selectedIndex < 0 ? 0 : selectedIndex, selectedMode);
+        }
+
+        private int FindFirstIssueStepIndex()
+        {
+            if (pipeline?.Steps == null)
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < pipeline.Steps.Count; i++)
+            {
+                VisionPipelineStep step = pipeline.Steps[i];
+                if (step == null || step.Enabled == false)
+                {
+                    continue;
+                }
+
+                if (stepResultSummaries.TryGetValue(step, out VisionPipelineStepResultSummary summary)
+                    && summary?.Success == false)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         private VisionPipelineContext CreateReviewContextFromDisplayLayers()
@@ -744,6 +793,61 @@ namespace OpenVisionLab
             reviewLayerImages.Clear();
         }
 
+        private string FormatReviewProgressText()
+        {
+            if (pipeline?.Steps == null || pipeline.Steps.Count == 0)
+            {
+                return T("PipelineReview.Progress.NoSteps", "No steps");
+            }
+
+            int okCount = 0;
+            int ngCount = 0;
+            int skippedCount = 0;
+            foreach (VisionPipelineStep step in pipeline.Steps)
+            {
+                if (step?.Enabled == false)
+                {
+                    skippedCount++;
+                    continue;
+                }
+
+                if (!stepResultSummaries.TryGetValue(step, out VisionPipelineStepResultSummary summary))
+                {
+                    continue;
+                }
+
+                if (summary.Success && !summary.IsAcceptanceNg)
+                {
+                    okCount++;
+                }
+                else
+                {
+                    ngCount++;
+                }
+            }
+
+            int reviewableCount = pipeline.Steps.Count(step => step?.Enabled != false);
+            int waitCount = Math.Max(0, reviewableCount - okCount - ngCount);
+            if (okCount == 0 && ngCount == 0 && waitCount == reviewableCount && !isRunningReview)
+            {
+                return T("PipelineReview.Progress.NotRun", "Not run");
+            }
+
+            string progress = TF("PipelineReview.Progress.CountsFormat", "OK {0} / NG {1} / WAIT {2}", okCount, ngCount, waitCount);
+            if (skippedCount > 0)
+            {
+                progress = string.Format(
+                    CultureInfo.CurrentCulture,
+                    "{0} / {1}",
+                    progress,
+                    TF("PipelineReview.Progress.OffFormat", "OFF {0}", skippedCount));
+            }
+
+            return isRunningReview
+                ? string.Format(CultureInfo.CurrentCulture, "{0} / {1}", T("PipelineReview.Progress.Running", "Running..."), progress)
+                : progress;
+        }
+
         private int GetStepDisplayIndex(VisionPipelineStep step)
         {
             int index = pipeline?.Steps?.IndexOf(step) ?? -1;
@@ -799,428 +903,6 @@ namespace OpenVisionLab
                     .OrderBy(parameter => parameter.Key, StringComparer.OrdinalIgnoreCase)
                     .Take(12)
                     .Select(parameter => string.Format(CultureInfo.CurrentCulture, "{0}: {1}", parameter.Key, parameter.Value)));
-        }
-
-        private static string FormatRunLog(
-            VisionPipelineStep step,
-            Bitmap inputImage,
-            Bitmap outputImage,
-            PipelineFlowPreviewMode mode,
-            string statusText,
-            string validationStatus,
-            VisionPipelineStepResultSummary summary)
-        {
-            List<string> lines = new List<string>
-            {
-                TF("PipelineReview.RunLog.ReviewStateFormat", "Review state: {0}", SafeText(statusText, "WAIT")),
-                TF("PipelineReview.RunLog.ValidationFormat", "Validation: {0}", SafeText(validationStatus, "NOT RUN")),
-                TF("PipelineReview.RunLog.ResultFormat", "Result: {0}", FormatResultSummary(summary)),
-                TF("PipelineReview.RunLog.PreviewModeFormat", "Preview mode: {0}", mode),
-                TF("PipelineReview.RunLog.InputImageFormat", "Input image: {0}", FormatImageState(step?.InputLayer, inputImage)),
-                TF("PipelineReview.RunLog.OutputImageFormat", "Output image: {0}", FormatImageState(step?.OutputLayer, outputImage))
-            };
-
-            return string.Join(Environment.NewLine, lines);
-        }
-
-        private static string FormatResultSummary(VisionPipelineStepResultSummary summary)
-        {
-            if (summary == null)
-            {
-                return T("PipelineReview.RunRequired", "Run review required");
-            }
-
-            string status = SafeText(summary.Status, summary.Success ? "OK" : "NG");
-            if (summary.ElapsedMilliseconds > 0)
-            {
-                status += string.Format(CultureInfo.CurrentCulture, " / {0:0.0} ms", summary.ElapsedMilliseconds);
-            }
-
-            if (summary.ErrorCode > 0)
-            {
-                return string.Format(CultureInfo.CurrentCulture, "{0} / Error {1}:{2}", status, summary.ErrorCode, summary.ErrorName);
-            }
-
-            return status;
-        }
-
-        private static string FormatResultDetails(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
-        {
-            if (summary == null)
-            {
-                return T("PipelineReview.NoRunResultForStep", "No run result for selected step.");
-            }
-
-            List<string> parts = new List<string>();
-            if (summary.HasResultImage)
-            {
-                parts.Add(T("PipelineReview.Result.ImageLabel", "Image") + " " + summary.ResultImageSizeText.Replace(" ", string.Empty));
-            }
-
-            string metricText = FormatPrimaryMetricText(step, summary);
-            if (!string.IsNullOrWhiteSpace(metricText))
-            {
-                parts.Add(metricText);
-            }
-
-            if (summary.OverlayCount > 0)
-            {
-                parts.Add(TF("PipelineReview.Result.OverlaysFormat", "Overlays {0}", summary.OverlayCount));
-            }
-
-            if (summary.IsAcceptanceNg)
-            {
-                string localizedAcceptanceMessage = OpenVisionPipelineReviewGuidePresenter.FormatAcceptanceMetricNgReason(step, summary);
-                if (string.IsNullOrWhiteSpace(localizedAcceptanceMessage))
-                {
-                    localizedAcceptanceMessage = summary.AcceptanceMessage;
-                }
-
-                if (!string.IsNullOrWhiteSpace(localizedAcceptanceMessage))
-                {
-                    parts.Add(Truncate(localizedAcceptanceMessage, 80));
-                }
-            }
-            else if (!summary.Success && !string.IsNullOrWhiteSpace(summary.Message))
-            {
-                parts.Add(Truncate(summary.Message, 80));
-            }
-
-            return parts.Count == 0 ? SafeText(summary.Message, "-") : string.Join(" / ", parts);
-        }
-
-        private string ResolvePairMetricComparisonText(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
-        {
-            if (summary?.Metrics == null
-                || summary.Metrics.Count == 0
-                || activeCatalogSample == null
-                || activeSamplePairGuide == null
-                || string.IsNullOrWhiteSpace(activeSamplePairGuide.PairReviewText))
-            {
-                return string.Empty;
-            }
-
-            string metricName = ResolvePairComparisonMetricName(step, summary.Metrics);
-            if (string.IsNullOrWhiteSpace(metricName)
-                || !TryGetMetricValue(summary.Metrics, metricName, out double actualValue))
-            {
-                return string.Empty;
-            }
-
-            VisionPipelineSampleExpectedMetric selectedMetric = FindExpectedMetric(activeCatalogSample, metricName);
-            VisionPipelineSampleExpectedMetric counterpartMetric = FindExpectedMetric(activePairCounterpartSample, metricName);
-            if (selectedMetric == null && counterpartMetric == null)
-            {
-                return string.Empty;
-            }
-
-            string selectedRole = FormatSampleReferenceRole(activeCatalogSample);
-            string counterpartRole = FormatSampleReferenceRole(activePairCounterpartSample);
-            string selectedRange = FormatExpectedMetricRange(selectedMetric);
-            string counterpartRange = FormatExpectedMetricRange(counterpartMetric);
-            string selectedJudgment = FormatExpectedMetricJudgment(actualValue, selectedMetric, selectedRole);
-            string counterpartJudgment = FormatExpectedMetricJudgment(actualValue, counterpartMetric, counterpartRole);
-
-            return string.Format(
-                CultureInfo.CurrentCulture,
-                LocalText(
-                    "\ud604\uc7ac \uce21\uc815: {0} {1} / {2} \uae30\uc900 {3} ({4}) / \ubc18\ub300 {5} \uae30\uc900 {6} ({7}) / \ub2e4\uc74c: \ubc18\ub300 \uc0d8\ud50c\ub3c4 \uac19\uc740 Pipeline\uc73c\ub85c \uc2e4\ud589\ud574 \uae30\uc900 \uc548/\ubc16 \uac08\ub9bc\uc744 \ud655\uc778",
-                    "Measured: {0} {1} / {2} target {3} ({4}) / opposite {5} target {6} ({7}) / Next: run the opposite sample with the same Pipeline and confirm the metric splits inside/outside target."),
-                FormatMetricName(metricName),
-                FormatMetricValue(actualValue),
-                selectedRole,
-                selectedRange,
-                selectedJudgment,
-                counterpartRole,
-                counterpartRange,
-                counterpartJudgment);
-        }
-
-        private string ResolvePairComparisonMetricName(VisionPipelineStep step, IDictionary<string, double> metrics)
-        {
-            if (metrics == null || metrics.Count == 0)
-            {
-                return string.Empty;
-            }
-
-            if (!string.IsNullOrWhiteSpace(step?.AcceptanceMetricName)
-                && TryResolveMetricKey(metrics, step.AcceptanceMetricName, out string acceptanceMetricName))
-            {
-                return acceptanceMetricName;
-            }
-
-            foreach (string expectedMetricName in EnumerateExpectedMetricNames(activeCatalogSample, activePairCounterpartSample))
-            {
-                if (TryResolveMetricKey(metrics, expectedMetricName, out string actualMetricName))
-                {
-                    return actualMetricName;
-                }
-            }
-
-            KeyValuePair<string, double> metric = OrderResultMetrics(step, metrics).FirstOrDefault();
-            return metric.Key ?? string.Empty;
-        }
-
-        private static IEnumerable<string> EnumerateExpectedMetricNames(params VisionPipelineSampleCatalogItem[] samples)
-        {
-            HashSet<string> emitted = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (VisionPipelineSampleCatalogItem sample in samples)
-            {
-                if (sample?.ExpectedMetrics == null)
-                {
-                    continue;
-                }
-
-                foreach (VisionPipelineSampleExpectedMetric metric in sample.ExpectedMetrics)
-                {
-                    string name = metric?.Name?.Trim();
-                    if (!string.IsNullOrWhiteSpace(name) && emitted.Add(name))
-                    {
-                        yield return name;
-                    }
-                }
-            }
-        }
-
-        private static VisionPipelineSampleExpectedMetric FindExpectedMetric(
-            VisionPipelineSampleCatalogItem sample,
-            string metricName)
-        {
-            if (sample?.ExpectedMetrics == null || string.IsNullOrWhiteSpace(metricName))
-            {
-                return null;
-            }
-
-            return sample.ExpectedMetrics.FirstOrDefault(metric =>
-                metric != null
-                && string.Equals(metric.Name?.Trim(), metricName.Trim(), StringComparison.OrdinalIgnoreCase));
-        }
-
-        private static bool TryResolveMetricKey(IDictionary<string, double> metrics, string metricName, out string actualMetricName)
-        {
-            actualMetricName = string.Empty;
-            if (metrics == null || string.IsNullOrWhiteSpace(metricName))
-            {
-                return false;
-            }
-
-            foreach (string key in metrics.Keys)
-            {
-                if (string.Equals(key, metricName, StringComparison.OrdinalIgnoreCase))
-                {
-                    actualMetricName = key;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static bool TryGetMetricValue(IDictionary<string, double> metrics, string metricName, out double value)
-        {
-            value = 0D;
-            if (metrics == null || string.IsNullOrWhiteSpace(metricName))
-            {
-                return false;
-            }
-
-            foreach (KeyValuePair<string, double> metric in metrics)
-            {
-                if (string.Equals(metric.Key, metricName, StringComparison.OrdinalIgnoreCase))
-                {
-                    value = metric.Value;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static string FormatExpectedMetricRange(VisionPipelineSampleExpectedMetric metric)
-        {
-            if (metric == null)
-            {
-                return "-";
-            }
-
-            string minimum = metric.Minimum?.Trim() ?? string.Empty;
-            string maximum = metric.Maximum?.Trim() ?? string.Empty;
-            if (!string.IsNullOrWhiteSpace(minimum) && !string.IsNullOrWhiteSpace(maximum))
-            {
-                return string.Equals(minimum, maximum, StringComparison.OrdinalIgnoreCase)
-                    ? minimum
-                    : minimum + "~" + maximum;
-            }
-
-            if (!string.IsNullOrWhiteSpace(minimum))
-            {
-                return ">= " + minimum;
-            }
-
-            if (!string.IsNullOrWhiteSpace(maximum))
-            {
-                return "<= " + maximum;
-            }
-
-            return "-";
-        }
-
-        private static string FormatExpectedMetricJudgment(
-            double actualValue,
-            VisionPipelineSampleExpectedMetric metric,
-            string roleText)
-        {
-            bool? isInside = IsInsideExpectedMetricRange(actualValue, metric);
-            if (!isInside.HasValue)
-            {
-                return LocalText("\uae30\uc900 \ud655\uc778 \ubd88\uac00", "target unavailable");
-            }
-
-            string role = string.IsNullOrWhiteSpace(roleText)
-                ? LocalText("\ud604\uc7ac", "current")
-                : roleText.Trim();
-            return isInside.Value
-                ? string.Format(CultureInfo.CurrentCulture, LocalText("{0} \uae30\uc900 \uc548", "inside {0} target"), role)
-                : string.Format(CultureInfo.CurrentCulture, LocalText("{0} \uae30\uc900 \ubc16", "outside {0} target"), role);
-        }
-
-        private static bool? IsInsideExpectedMetricRange(double actualValue, VisionPipelineSampleExpectedMetric metric)
-        {
-            if (metric == null)
-            {
-                return null;
-            }
-
-            bool hasMinimum = TryParseMetricLimit(metric.Minimum, out double minimum);
-            bool hasMaximum = TryParseMetricLimit(metric.Maximum, out double maximum);
-            if (!hasMinimum && !hasMaximum)
-            {
-                return null;
-            }
-
-            if (hasMinimum && actualValue < minimum)
-            {
-                return false;
-            }
-
-            if (hasMaximum && actualValue > maximum)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        private static bool TryParseMetricLimit(string text, out double value)
-        {
-            value = 0D;
-            string normalized = text?.Trim() ?? string.Empty;
-            if (normalized.Length == 0)
-            {
-                return false;
-            }
-
-            return double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out value)
-                || double.TryParse(normalized, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
-        }
-
-        private static string FormatSampleReferenceRole(VisionPipelineSampleCatalogItem sample)
-        {
-            if (IsOkSampleReference(sample))
-            {
-                return "OK";
-            }
-
-            if (IsNgSampleReference(sample))
-            {
-                return "NG";
-            }
-
-            return LocalText("\uae30\uc900", "Reference");
-        }
-
-        private static string FormatPrimaryMetricText(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
-        {
-            if (summary?.Metrics == null || summary.Metrics.Count == 0)
-            {
-                return string.Empty;
-            }
-
-            KeyValuePair<string, double> metric = OrderResultMetrics(step, summary.Metrics).FirstOrDefault();
-            return string.IsNullOrWhiteSpace(metric.Key)
-                ? string.Empty
-                : string.Format(CultureInfo.CurrentCulture, "{0} {1}", FormatMetricName(metric.Key), FormatMetricValue(metric.Value));
-        }
-
-        private static IEnumerable<KeyValuePair<string, double>> OrderResultMetrics(VisionPipelineStep step, IDictionary<string, double> metrics)
-        {
-            if (metrics == null)
-            {
-                yield break;
-            }
-
-            HashSet<string> emitted = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (string metricName in VisionPipelineKnownMetrics.GetMetricNamesForTool(step?.ToolType))
-            {
-                if (IsReviewDetailMetric(metricName)
-                    && metrics.TryGetValue(metricName, out double value)
-                    && emitted.Add(metricName))
-                {
-                    yield return new KeyValuePair<string, double>(metricName, value);
-                }
-            }
-
-            foreach (KeyValuePair<string, double> metric in VisionPipelineKnownMetrics.OrderMetrics(metrics))
-            {
-                if (IsReviewDetailMetric(metric.Key) && emitted.Add(metric.Key))
-                {
-                    yield return metric;
-                }
-            }
-        }
-
-        private static bool IsReviewDetailMetric(string metricName)
-        {
-            return !string.Equals(metricName, VisionPipelineKnownMetrics.SourceImageWidth, StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(metricName, VisionPipelineKnownMetrics.SourceImageHeight, StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(metricName, VisionPipelineKnownMetrics.SourceImageChannels, StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(metricName, VisionPipelineKnownMetrics.ResultImageWidth, StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(metricName, VisionPipelineKnownMetrics.ResultImageHeight, StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(metricName, VisionPipelineKnownMetrics.ResultImageChannels, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static string FormatMetricName(string metricName)
-        {
-            string name = SafeText(metricName, string.Empty);
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                return "-";
-            }
-
-            return T(
-                "PipelineReview.Metric." + name,
-                VisionPipelineKnownMetrics.GetDisplayName(name));
-        }
-
-        private static string FormatMetricValue(double value)
-        {
-            return Math.Abs(value - Math.Round(value)) < 0.000001
-                ? Math.Round(value).ToString("0", CultureInfo.InvariantCulture)
-                : value.ToString("0.###", CultureInfo.InvariantCulture);
-        }
-
-        private static string Truncate(string value, int maxLength)
-        {
-            string text = SafeText(value, string.Empty);
-            return text.Length <= maxLength ? text : text.Substring(0, Math.Max(0, maxLength - 3)) + "...";
-        }
-
-        private static string FormatImageState(string layerName, Bitmap image)
-        {
-            string title = SafeText(layerName, "-");
-            return image == null
-                ? title + " / " + T("PipelineReview.ImageMissing", "missing")
-                : string.Format(CultureInfo.CurrentCulture, "{0} / {1}x{2}", title, image.Width, image.Height);
         }
 
         private List<string> GetLayerNames()
@@ -1335,12 +1017,6 @@ namespace OpenVisionLab
             return string.Format(CultureInfo.CurrentCulture, T(key, fallbackFormat), args);
         }
 
-        private static string LocalText(string korean, string english)
-        {
-            return OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.English
-                ? english ?? korean ?? string.Empty
-                : korean ?? english ?? string.Empty;
-        }
     }
 
     internal sealed class OpenVisionPipelineReviewSampleOpenRequestedEventArgs : EventArgs

@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:local="clr-namespace:OpenVisionLab"
+             xmlns:mvvmBehaviors="clr-namespace:OpenVisionLab.Mvvm.Behaviors;assembly=OpenVisionLab.Mvvm"
              MinWidth="1280"
              MinHeight="760"
              Background="#EEF2F6">
@@ -172,6 +173,7 @@
             <Style TargetType="ComboBox">
                 <Setter Property="Height" Value="28" />
                 <Setter Property="MinWidth" Value="130" />
+                <Setter Property="mvvmBehaviors:ComboBoxInteractionBehavior.OpenOnFieldClick" Value="True" />
                 <Setter Property="FontFamily" Value="Segoe UI" />
                 <Setter Property="FontSize" Value="12" />
                 <Setter Property="Foreground" Value="{StaticResource Shell.FieldTextBrush}" />
@@ -202,14 +204,16 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="28" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock x:Name="contentSite"
-                                               Grid.Column="0"
-                                               Margin="9,0,4,0"
-                                               HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                               VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                               Foreground="{StaticResource Shell.FieldTextBrush}"
-                                               Text="{TemplateBinding Text}"
-                                               TextTrimming="CharacterEllipsis" />
+                                    <ContentPresenter x:Name="contentSite"
+                                                      Grid.Column="0"
+                                                      Margin="9,0,4,0"
+                                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                      Content="{TemplateBinding SelectionBoxItem}"
+                                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                      ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+                                                      ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                      TextElement.Foreground="{StaticResource Shell.FieldTextBrush}" />
                                     <Border x:Name="arrowWell"
                                             Grid.Column="1"
                                             Background="#1A292F"
@@ -240,6 +244,7 @@
                                        AllowsTransparency="True"
                                        Focusable="False"
                                        IsOpen="{TemplateBinding IsDropDownOpen}"
+                                       PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                                        Placement="Bottom"
                                        PopupAnimation="Slide">
                                     <Grid MinWidth="{TemplateBinding ActualWidth}"

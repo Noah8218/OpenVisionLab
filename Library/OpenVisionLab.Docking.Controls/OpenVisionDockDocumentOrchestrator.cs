@@ -65,6 +65,22 @@ namespace OpenVisionLab.Docking.Controls
             return true;
         }
 
+        public bool SelectDocument(string documentId)
+        {
+            if (string.IsNullOrWhiteSpace(documentId) || !documentState.Contains(documentId))
+            {
+                return false;
+            }
+
+            bool selected = workspace.SelectDocument(documentId, documents.GetDocumentIds());
+            if (selected)
+            {
+                refreshActions();
+            }
+
+            return selected;
+        }
+
         public void ClearDocuments()
         {
             documents.ClearDocuments();

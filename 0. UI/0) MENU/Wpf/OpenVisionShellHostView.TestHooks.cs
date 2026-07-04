@@ -69,6 +69,7 @@ namespace OpenVisionLab
         public string WorkspaceLoadImageMenuText => layerTestFacade.WorkspaceLoadImageMenuText;
         public string WorkspaceLoadImageButtonText => layerTestFacade.WorkspaceLoadImageButtonText;
         public bool HasWorkspaceLoadImageMenu => layerTestFacade.HasWorkspaceLoadImageMenu;
+        public bool IsWorkspaceLoadImageIntoLayerMenuVisibleForTest => layerTestFacade.IsWorkspaceLoadImageIntoLayerMenuVisible;
         public int OpenLayerViewerWindowCount => layerTestFacade.OpenLayerViewerWindowCount;
         public string OpenLayerViewerWindowTitles => layerTestFacade.OpenLayerViewerWindowTitles;
         public int DockedLayerCount => dockingTestFacade.LayerCount;
@@ -109,6 +110,7 @@ namespace OpenVisionLab
         public string PipelineReviewResultDetailText => toolTestFacade.PipelineReviewResultDetailText;
         public string PipelineReviewRunLogText => toolTestFacade.PipelineReviewRunLogText;
         public string PipelineReviewExecutionState => toolTestFacade.PipelineReviewExecutionState;
+        public string PipelineReviewProgressText => toolTestFacade.PipelineReviewProgressText;
         public string PipelineReviewGuideStageText => toolTestFacade.PipelineReviewGuideStageText;
         public string PipelineReviewGuideCurrentStepText => toolTestFacade.PipelineReviewGuideCurrentStepText;
         public string PipelineReviewGuideNextActionText => toolTestFacade.PipelineReviewGuideNextActionText;
@@ -119,9 +121,13 @@ namespace OpenVisionLab
         public string PipelineReviewGuidePairMetricText => toolTestFacade.PipelineReviewGuidePairMetricText;
         public string PipelineReviewGuideChecklistText => toolTestFacade.PipelineReviewGuideChecklistText;
         public string PipelineReviewGuideParameterFocusText => toolTestFacade.PipelineReviewGuideParameterFocusText;
+        public string PipelineReviewGuideTriageFailureText => toolTestFacade.PipelineReviewGuideTriageFailureText;
+        public string PipelineReviewGuideTriageAdjustmentText => toolTestFacade.PipelineReviewGuideTriageAdjustmentText;
+        public string PipelineReviewGuideTriageRerunText => toolTestFacade.PipelineReviewGuideTriageRerunText;
         public bool CanOpenPipelineReviewPairSampleForTest => toolTestFacade.CanOpenPipelineReviewPairSample;
         public bool CanSelectPreviousPipelineReviewStepForTest => toolTestFacade.CanSelectPreviousPipelineReviewStep;
         public bool CanSelectNextPipelineReviewStepForTest => toolTestFacade.CanSelectNextPipelineReviewStep;
+        public bool CanSelectFirstIssuePipelineReviewStepForTest => toolTestFacade.CanSelectFirstIssuePipelineReviewStep;
         public bool HasPipelineReviewInputPreview => toolTestFacade.HasPipelineReviewInputPreview;
         public bool HasPipelineReviewOutputPreview => toolTestFacade.HasPipelineReviewOutputPreview;
 
@@ -230,6 +236,17 @@ namespace OpenVisionLab
 
         public string ShellLogToggleTextForTest => txtShellLogToggle?.Text ?? string.Empty;
 
+        public System.Windows.Point RecipeManagerPanelOffsetForTest =>
+            new System.Windows.Point(recipeManagerPanelTransform?.X ?? 0D, recipeManagerPanelTransform?.Y ?? 0D);
+
+        public bool MoveRecipeManagerPanelForTest(double deltaX, double deltaY)
+        {
+            System.Windows.Point before = RecipeManagerPanelOffsetForTest;
+            SetRecipeManagerPanelOffset(before.X + deltaX, before.Y + deltaY);
+            System.Windows.Point after = RecipeManagerPanelOffsetForTest;
+            return Math.Abs(after.X - before.X) > 0.1D || Math.Abs(after.Y - before.Y) > 0.1D;
+        }
+
         public void SetShellLogExpandedForTest(bool expanded)
         {
             if (btnShellLogToggle != null)
@@ -266,6 +283,8 @@ namespace OpenVisionLab
 
         public bool CanOpenSampleFirstStepToolForTest => WorkspaceCommands?.OpenSampleFirstStepCommand.CanExecute(null) == true;
 
+        public bool CanOpenSampleCounterpartForTest => WorkspaceCommands?.OpenSampleCounterpartCommand.CanExecute(null) == true;
+
         public bool CanOpenWorkspaceThresholdToolForTest => WorkspaceCommands?.OpenThresholdToolCommand.CanExecute(null) == true;
 
         public bool CanOpenWorkspaceMatchingToolForTest => WorkspaceCommands?.OpenMatchingToolCommand.CanExecute(null) == true;
@@ -277,6 +296,8 @@ namespace OpenVisionLab
         public void OpenSamplePipelineForTest() => WorkspaceCommands?.OpenSamplePipelineCommand.Execute(null);
 
         public void OpenSampleFirstStepToolForTest() => WorkspaceCommands?.OpenSampleFirstStepCommand.Execute(null);
+
+        public void OpenSampleCounterpartForTest() => WorkspaceCommands?.OpenSampleCounterpartCommand.Execute(null);
 
         public void OpenWorkspaceThresholdToolForTest() => WorkspaceCommands?.OpenThresholdToolCommand.Execute(null);
 

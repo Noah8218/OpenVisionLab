@@ -16,7 +16,10 @@ namespace OpenVisionLab
             string detailText = null,
             string pairReviewText = null,
             string checklistText = null,
-            string parameterFocusText = null)
+            string parameterFocusText = null,
+            string triageFailureText = null,
+            string triageAdjustmentText = null,
+            string triageRerunText = null)
         {
             StageText = stageText ?? string.Empty;
             CurrentStepText = currentStepText ?? string.Empty;
@@ -26,6 +29,9 @@ namespace OpenVisionLab
             PairReviewText = pairReviewText ?? string.Empty;
             ChecklistText = checklistText ?? string.Empty;
             ParameterFocusText = parameterFocusText ?? string.Empty;
+            TriageFailureText = triageFailureText ?? string.Empty;
+            TriageAdjustmentText = triageAdjustmentText ?? string.Empty;
+            TriageRerunText = triageRerunText ?? string.Empty;
         }
 
         public string StageText { get; }
@@ -43,6 +49,12 @@ namespace OpenVisionLab
         public string ChecklistText { get; }
 
         public string ParameterFocusText { get; }
+
+        public string TriageFailureText { get; }
+
+        public string TriageAdjustmentText { get; }
+
+        public string TriageRerunText { get; }
     }
 
     internal static class OpenVisionPipelineReviewGuidePresenter
@@ -96,7 +108,10 @@ namespace OpenVisionLab
                 ResolveDetailText(displayIndex, stepCount, step, hasInputImage, hasOutputImage, summary, validationResult, expectedInputLayer, isBranch),
                 ResolvePairReviewText(samplePairGuide),
                 ResolveChecklistText(samplePairGuide),
-                ResolveParameterFocusText(step, summary));
+                ResolveParameterFocusText(step, summary),
+                ResolveTriageFailureText(step, summary, validationResult),
+                ResolveTriageAdjustmentText(step, summary, validationResult),
+                ResolveTriageRerunText(step, summary, validationResult, samplePairGuide));
         }
 
         public static OpenVisionPipelineReviewGuideState CreateValidationError(
@@ -434,6 +449,67 @@ namespace OpenVisionLab
             return string.IsNullOrWhiteSpace(location)
                 ? string.Empty
                 : T("PipelineReview.Guide.ParameterLocationPrefix", "Adjust here") + ": " + Truncate(location, 140);
+        }
+
+        private static string ResolveTriageFailureText(
+            VisionPipelineStep step,
+            VisionPipelineStepResultSummary summary,
+            VisionPipelineValidationResult validationResult)
+        {
+            if (!ShouldShowOperatorTriage(step, summary, validationResult))
+            {
+                return string.Empty;
+            }
+
+            return TF(
+                "PipelineReview.Guide.FailedDetailFormat",
+                "NG reason: {0}",
+                Truncate(ResolveNgReasonText(step, summary), 120));
+        }
+
+        private static string ResolveTriageAdjustmentText(
+            VisionPipelineStep step,
+            VisionPipelineStepResultSummary summary,
+            VisionPipelineValidationResult validationResult)
+        {
+            if (!ShouldShowOperatorTriage(step, summary, validationResult))
+            {
+                return string.Empty;
+            }
+
+            string fix = ResolveNgFixText(step, summary);
+            return string.IsNullOrWhiteSpace(fix)
+                ? ResolveParameterFocusText(step, summary)
+                : T("PipelineReview.Guide.FixDetailPrefix", "Check first") + ": " + Truncate(fix, 150);
+        }
+
+        private static string ResolveTriageRerunText(
+            VisionPipelineStep step,
+            VisionPipelineStepResultSummary summary,
+            VisionPipelineValidationResult validationResult,
+            OpenVisionWorkspaceSamplePairDecisionGuide samplePairGuide)
+        {
+            if (!ShouldShowOperatorTriage(step, summary, validationResult))
+            {
+                return string.Empty;
+            }
+
+            return samplePairGuide?.HasGuide == true
+                ? T(
+                    "PipelineReview.Guide.TriageRerunPair",
+                    "Run the opposite sample with the same Pipeline and confirm the metric splits inside/outside target.")
+                : T("PipelineReview.Guide.NgNext", "Tune parameters/route, then rerun review");
+        }
+
+        private static bool ShouldShowOperatorTriage(
+            VisionPipelineStep step,
+            VisionPipelineStepResultSummary summary,
+            VisionPipelineValidationResult validationResult)
+        {
+            return (validationResult?.Errors.Count ?? 0) <= 0
+                && step?.Enabled != false
+                && summary != null
+                && (!summary.Success || summary.IsAcceptanceNg);
         }
 
         private static string ResolveNgParameterLocationText(VisionPipelineStep step)

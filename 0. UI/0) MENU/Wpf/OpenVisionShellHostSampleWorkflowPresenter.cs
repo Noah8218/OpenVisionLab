@@ -16,20 +16,27 @@ namespace OpenVisionLab
         private readonly TextBlock titleText;
         private readonly TextBlock metaText;
         private readonly TextBlock detailText;
+        private readonly Button counterpartButton;
+        private readonly TextBlock counterpartButtonText;
         private readonly Func<OpenVisionRecipeContext> recipeContextProvider;
         private VISION_MENU? firstStepMenu;
+        private string counterpartSampleName = string.Empty;
 
         public OpenVisionShellHostSampleWorkflowPresenter(
             UIElement overlay,
             TextBlock titleText,
             TextBlock metaText,
             TextBlock detailText,
+            Button counterpartButton,
+            TextBlock counterpartButtonText,
             Func<OpenVisionRecipeContext> recipeContextProvider)
         {
             this.overlay = overlay;
             this.titleText = titleText;
             this.metaText = metaText;
             this.detailText = detailText;
+            this.counterpartButton = counterpartButton;
+            this.counterpartButtonText = counterpartButtonText;
             this.recipeContextProvider = recipeContextProvider ?? throw new ArgumentNullException(nameof(recipeContextProvider));
         }
 
@@ -43,7 +50,11 @@ namespace OpenVisionLab
 
         public VISION_MENU? FirstStepMenu => firstStepMenu;
 
+        public string CounterpartSampleName => counterpartSampleName;
+
         public bool CanOpenFirstStepTool => IsVisible && firstStepMenu.HasValue;
+
+        public bool CanOpenCounterpartSample => IsVisible && !string.IsNullOrWhiteSpace(counterpartSampleName);
 
         public void ShowForActiveSample()
         {
@@ -55,7 +66,9 @@ namespace OpenVisionLab
             }
 
             firstStepMenu = ResolveToolMenu(state.FirstTool);
+            counterpartSampleName = state.CounterpartSampleName;
             SetText(titleText, "\uC0D8\uD50C \uD30C\uC774\uD504\uB77C\uC778 \uC900\uBE44\uB428");
+            SetCounterpartButton(state.CounterpartActionText);
             if (state.HasCatalogSample)
             {
                 SetText(
@@ -103,6 +116,8 @@ namespace OpenVisionLab
         public void Hide()
         {
             firstStepMenu = null;
+            counterpartSampleName = string.Empty;
+            SetCounterpartButton(string.Empty);
             if (overlay != null)
             {
                 overlay.Visibility = Visibility.Collapsed;
@@ -145,6 +160,7 @@ namespace OpenVisionLab
             }
 
             VisionPipelineSampleCatalogItem catalogSample = ResolveCatalogSample(pipelineName);
+            VisionPipelineSampleCatalogItem counterpartSample = ResolvePairCounterpartSample(catalogSample);
             return new SampleWorkflowState
             {
                 PipelineName = pipelineName,
@@ -152,6 +168,8 @@ namespace OpenVisionLab
                 Category = ResolveCategoryDisplayText(catalogSample?.Category),
                 PairRole = ResolveSampleRole(catalogSample),
                 PairReviewHint = ResolvePairReviewHint(catalogSample),
+                CounterpartSampleName = counterpartSample?.SampleName ?? string.Empty,
+                CounterpartActionText = ResolveCounterpartActionText(counterpartSample),
                 StepCount = steps.Length,
                 FirstTool = firstTool,
                 ToolFlow = toolFlow
@@ -231,6 +249,47 @@ namespace OpenVisionLab
                     || string.Equals(sample.PairRole?.Trim(), "Bad", StringComparison.OrdinalIgnoreCase));
         }
 
+        private static VisionPipelineSampleCatalogItem ResolvePairCounterpartSample(VisionPipelineSampleCatalogItem sample)
+        {
+            if (sample == null || string.IsNullOrWhiteSpace(sample.PairGroup))
+            {
+                return null;
+            }
+
+            bool selectedIsOk = IsOkSampleReference(sample);
+            bool selectedIsNg = IsNgSampleReference(sample);
+            string pairGroup = sample.PairGroup.Trim();
+            return VisionPipelineSampleCatalogItem.LoadRunnable(sample.CatalogSourceKind)
+                .Where(item => item != null
+                    && item.CanOpen
+                    && !string.Equals(item.SampleName?.Trim(), sample.SampleName?.Trim(), StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(item.PairGroup?.Trim(), pairGroup, StringComparison.OrdinalIgnoreCase))
+                .Where(item =>
+                    selectedIsOk
+                        ? IsNgSampleReference(item)
+                        : selectedIsNg
+                            ? IsOkSampleReference(item)
+                            : true)
+                .OrderBy(item => IsOkSampleReference(item) ? 0 : 1)
+                .ThenBy(item => item.SampleName, StringComparer.OrdinalIgnoreCase)
+                .FirstOrDefault();
+        }
+
+        private static string ResolveCounterpartActionText(VisionPipelineSampleCatalogItem counterpartSample)
+        {
+            if (counterpartSample == null)
+            {
+                return string.Empty;
+            }
+
+            string role = IsOkSampleReference(counterpartSample)
+                ? "OK"
+                : IsNgSampleReference(counterpartSample)
+                    ? "NG"
+                    : "Good/Bad";
+            return string.Format(CultureInfo.CurrentCulture, "{0} \uAE30\uC900 \uC5F4\uAE30", role);
+        }
+
         private static string FormatPairReviewSuffix(string pairReviewHint)
         {
             return string.IsNullOrWhiteSpace(pairReviewHint)
@@ -256,6 +315,16 @@ namespace OpenVisionLab
             if (textBlock != null)
             {
                 textBlock.Text = text ?? string.Empty;
+            }
+        }
+
+        private void SetCounterpartButton(string text)
+        {
+            bool canOpen = !string.IsNullOrWhiteSpace(text);
+            SetText(counterpartButtonText, canOpen ? text : string.Empty);
+            if (counterpartButton != null)
+            {
+                counterpartButton.Visibility = canOpen ? Visibility.Visible : Visibility.Collapsed;
             }
         }
 
@@ -347,6 +416,10 @@ namespace OpenVisionLab
             public string PairRole { get; set; } = string.Empty;
 
             public string PairReviewHint { get; set; } = string.Empty;
+
+            public string CounterpartSampleName { get; set; } = string.Empty;
+
+            public string CounterpartActionText { get; set; } = string.Empty;
 
             public int StepCount { get; set; }
 

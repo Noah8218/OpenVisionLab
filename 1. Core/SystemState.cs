@@ -24,7 +24,7 @@ namespace OpenVisionLab
         #region Fields
         private const string XmlName = "SYSTEM";
         private bool m_IsInitialized = false;
-        private string m_strLastRecipe = "SETUP001";
+        private string m_strLastRecipe = "Default";
         private string m_strNotice = "-";
         private RunMode m_eMode = RunMode.READY;
         private MenuKind m_SelectedMenu = MenuKind.MAIN;
@@ -224,7 +224,7 @@ namespace OpenVisionLab
     public class SystemStateConfig
     {
         #region Properties
-        public string LastRecipe { get; set; } = "SETUP001";
+        public string LastRecipe { get; set; } = "Default";
         public string LastRecipeUpdateTime { get; set; } = "";
         public LogConfig LogConfig { get; set; } = new LogConfig();
         #endregion

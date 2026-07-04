@@ -45,6 +45,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestPublicSampleAssets
 - If a frontend, Python, Rust, or other subproject has its own checks, completion means its relevant command passes, for example `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pytest`, or `cargo test`.
 - If a required command is unavailable, report the exact command and the reason it could not run.
 - UI/UX changes require current-build before/after evidence. Do not reuse old screenshots.
+- When UI/UX work is done, render the relevant before/after screenshots directly in the chat whenever the chat surface supports local image display. Do not report only file paths.
+- Image paths may be included as supporting evidence, but they do not replace direct in-chat image display.
+
+## Priority Direction
+
+- Prefer large, user-visible product improvements before minor polish when the user asks to continue priorities.
+- Prioritize complete workflow upgrades such as recipe/sample review, pipeline operator review, validation summaries, and tool runtime structure before small label, spacing, or wording tweaks.
+- Keep small UI polish scoped to the large workflow currently being improved instead of spending cycles on isolated cosmetic fixes first.
 
 ## No Guessing
 

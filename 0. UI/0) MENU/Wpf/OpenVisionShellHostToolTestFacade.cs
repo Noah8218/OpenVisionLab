@@ -142,6 +142,8 @@ namespace OpenVisionLab
 
         public string PipelineReviewExecutionState => statePresenter.PipelineReviewExecutionState;
 
+        public string PipelineReviewProgressText => statePresenter.PipelineReviewProgressText;
+
         public string PipelineReviewGuideStageText => statePresenter.PipelineReviewGuideStageText;
 
         public string PipelineReviewGuideCurrentStepText => statePresenter.PipelineReviewGuideCurrentStepText;
@@ -162,11 +164,19 @@ namespace OpenVisionLab
 
         public string PipelineReviewGuideParameterFocusText => statePresenter.PipelineReviewGuideParameterFocusText;
 
+        public string PipelineReviewGuideTriageFailureText => statePresenter.PipelineReviewGuideTriageFailureText;
+
+        public string PipelineReviewGuideTriageAdjustmentText => statePresenter.PipelineReviewGuideTriageAdjustmentText;
+
+        public string PipelineReviewGuideTriageRerunText => statePresenter.PipelineReviewGuideTriageRerunText;
+
         public bool CanOpenPipelineReviewPairSample => statePresenter.CanOpenPipelineReviewPairSample;
 
         public bool CanSelectPreviousPipelineReviewStep => statePresenter.CanSelectPreviousPipelineReviewStep;
 
         public bool CanSelectNextPipelineReviewStep => statePresenter.CanSelectNextPipelineReviewStep;
+
+        public bool CanSelectFirstIssuePipelineReviewStep => statePresenter.CanSelectFirstIssuePipelineReviewStep;
 
         public bool HasPipelineReviewInputPreview => statePresenter.HasPipelineReviewInputPreview;
 

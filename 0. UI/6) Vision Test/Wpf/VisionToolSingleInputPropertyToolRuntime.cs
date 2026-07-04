@@ -1,4 +1,4 @@
-using OpenVisionLab.PropertyGrid;
+﻿using OpenVisionLab.PropertyGrid;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using System;
 using System.Collections.Generic;

@@ -47,6 +47,11 @@ namespace OpenVisionLab
             return orchestrator.DockLayer(layerTitle);
         }
 
+        public bool ActivateLayerDocument(string layerTitle)
+        {
+            return orchestrator.ActivateLayer(layerTitle);
+        }
+
         public void SyncLayerDocuments(IReadOnlyList<string> layerTitles)
         {
             orchestrator.SyncLayers(layerTitles);

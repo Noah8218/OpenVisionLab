@@ -36,6 +36,12 @@ namespace OpenVisionLab
         [DllImport("user32.dll", SetLastError = true)]
         private static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, UIntPtr dwExtraInfo);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
         public static bool TryRun(string[] args)
         {
             if (args == null
@@ -91,6 +97,20 @@ namespace OpenVisionLab
                     || string.Equals(scenario, "shell-startup-empty-workspace", StringComparison.OrdinalIgnoreCase))
                 {
                     RunWorkspaceStartupEmpty(outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "recipe-manager-tabs", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(scenario, "recipe-manager-direct", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunRecipeManagerTabs(outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "layer-load-matching-flow", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(scenario, "layer-image-matching-flow", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunLayerLoadMatchingFlow(outputDirectory);
                     return true;
                 }
 
@@ -748,6 +768,399 @@ namespace OpenVisionLab
                 }
 
                 app.Shutdown();
+            }
+        }
+
+        private static void RunRecipeManagerTabs(string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string recipeName = "Smoke_RecipeManager_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+            const string pipelineName = "Direct_RecipeManager_Check";
+            VisionPipelineStorage.Save(recipeName, CreateDirectSmokePipeline(pipelineName, 2));
+            VisionPipelineStorage.SaveActivePipelineName(recipeName, pipelineName);
+
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+
+            OpenVisionShellHostWindow window = null;
+            try
+            {
+                ApplicationRuntimeContext runtimeContext = ApplicationRuntimeContext.CreateDefault();
+                window = new OpenVisionShellHostWindow(runtimeContext)
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+
+                app.MainWindow = window;
+                window.Show();
+                window.Activate();
+                Pump(36);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("OpenVision shell host was not created.");
+
+                shellHost.SwitchRecipeContextForTest(recipeName);
+                Pump(40);
+
+                if (!string.Equals(shellHost.ActiveRecipeContextNameForTest, recipeName, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveRecipeContextPipelineNameForTest, pipelineName, StringComparison.Ordinal)
+                    || shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps.Count != 2)
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke did not load the expected recipe context. "
+                        + $"Recipe={shellHost.ActiveRecipeContextNameForTest}, Pipeline={shellHost.ActiveRecipeContextPipelineNameForTest}, "
+                        + $"PreviewSteps={shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps.Count}");
+                }
+
+                System.Windows.Controls.Primitives.ToggleButton recipeManagerButton =
+                    FindNamedVisualChild<System.Windows.Controls.Primitives.ToggleButton>(
+                        shellHost,
+                        "btnHostRecipeManager",
+                        "Recipe manager direct smoke");
+                recipeManagerButton.IsChecked = true;
+                Pump(60);
+
+                OpenVisionRecipeSampleOption sampleOption = shellHost.RecipeCommands.SampleOptions
+                    .FirstOrDefault(option => option?.Sample != null
+                        && option.Sample.CatalogSourceKind == VisionPipelineSampleCatalogSourceKind.Product
+                        && option.Sample.CanOpen
+                        && !option.Sample.ExpectsFailure)
+                    ?? shellHost.RecipeCommands.SampleOptions.FirstOrDefault(option => option?.Sample?.CanOpen == true);
+                if (sampleOption == null)
+                {
+                    throw new InvalidOperationException("Recipe manager direct smoke could not find a runnable sample.");
+                }
+
+                shellHost.RecipeCommands.SelectedSampleOption = sampleOption;
+                if (!shellHost.RecipeCommands.DuplicatePipelineFromSampleOption(sampleOption))
+                {
+                    throw new InvalidOperationException("Recipe manager direct smoke could not duplicate the selected sample pipeline.");
+                }
+
+                Pump(80);
+                shellHost.RecipeCommands.RunSelectedSampleCheckCommand.Execute(null);
+                Stopwatch sampleCheckStopwatch = Stopwatch.StartNew();
+                while (!shellHost.RecipeCommands.LatestSampleRunSummary.HasResult)
+                {
+                    Pump(8);
+                    Thread.Sleep(20);
+                    if (sampleCheckStopwatch.Elapsed > TimeSpan.FromSeconds(20))
+                    {
+                        throw new TimeoutException("Recipe manager sample check did not complete within 20 seconds.");
+                    }
+                }
+
+                shellHost.RecipeCommands.RunSelectedSamplePairCheckCommand.Execute(null);
+                Stopwatch pairCheckStopwatch = Stopwatch.StartNew();
+                while (!shellHost.RecipeCommands.LatestPairRunSummary.HasResult)
+                {
+                    Pump(8);
+                    Thread.Sleep(20);
+                    if (pairCheckStopwatch.Elapsed > TimeSpan.FromSeconds(30))
+                    {
+                        throw new TimeoutException("Recipe manager pair check did not complete within 30 seconds.");
+                    }
+                }
+
+                if (!shellHost.RecipeCommands.LatestPairRunSummary.StatusText.Contains("OK"))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke expected pair check OK. "
+                        + shellHost.RecipeCommands.LatestPairRunSummary.DisplayText);
+                }
+
+                Pump(40);
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager direct smoke pipeline tab",
+                    "HostRecipeManagerPanel",
+                    "HostRecipeManagerTitleBar",
+                    "HostRecipeManagerCloseButton",
+                    "HostRecipeManagerList",
+                    "HostRecipeDetailText",
+                    "HostRecipeDetailTabs",
+                    "HostRecipePipelineTab",
+                    "HostRecipePipelineManagerList",
+                    "HostRecipePipelineNameEditor",
+                    "HostRecipePipelineActivateButton",
+                    "HostRecipePipelineDuplicateButton",
+                    "HostRecipePipelineRenameButton",
+                    "HostRecipePipelineDeleteButton",
+                    "HostRecipeSampleSelector",
+                    "HostRecipeDuplicateFromSampleButton",
+                    "HostRecipeSampleAcceptanceSummary",
+                    "HostRecipeRunSampleCheckButton",
+                    "HostRecipeSampleCheckSummary",
+                    "HostRecipeRunPairCheckButton",
+                    "HostRecipePairCheckSummary",
+                    "HostRecipePipelineReviewPanel",
+                    "HostRecipePipelineOperatorReview",
+                    "HostRecipePipelineInlineValidationReport",
+                    "HostRecipePipelineInlinePreviewStepList",
+                    "HostRecipeCreateNamedButton",
+                    "HostRecipeImportXmlButton",
+                    "HostRecipeExportXmlButton");
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_Pipeline.png"));
+
+                TabItem llmXmlTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipeLlmXml", "Recipe manager direct smoke");
+                llmXmlTab.IsSelected = true;
+                Pump(40);
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager direct smoke LLM XML tab",
+                    "HostRecipeLlmXmlTab",
+                    "HostRecipeLlmAssistantPanel",
+                    "HostRecipeLlmTemplateSelector",
+                    "HostRecipeLlmGoalText",
+                    "HostRecipeLlmDetectionPointsText",
+                    "HostRecipeBuildLlmPromptButton",
+                    "HostRecipeCreateLlmTemplateXmlButton",
+                    "HostRecipeRefreshLlmDraftReviewButton",
+                    "HostRecipeLlmXmlDraftPanel",
+                    "HostRecipeLlmXmlDraftText",
+                    "HostRecipeLoadLlmXmlDraftButton",
+                    "HostRecipeValidateLlmXmlDraftButton",
+                    "HostRecipeImportLlmXmlDraftButton");
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_LlmXml.png"));
+
+                TabItem previewTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePreview", "Recipe manager direct smoke");
+                previewTab.IsSelected = true;
+                Pump(40);
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager direct smoke preview tab",
+                    "HostRecipePreviewTab",
+                    "HostRecipePipelinePreviewStepList");
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_Preview.png"));
+
+                System.Windows.Point offsetBefore = shellHost.RecipeManagerPanelOffsetForTest;
+                if (!shellHost.MoveRecipeManagerPanelForTest(-180D, 18D))
+                {
+                    throw new InvalidOperationException("Recipe manager panel did not move in the direct EXE smoke.");
+                }
+
+                Pump(30);
+                System.Windows.Point offsetAfter = shellHost.RecipeManagerPanelOffsetForTest;
+                if (offsetAfter.X >= offsetBefore.X - 10D || offsetAfter.Y <= offsetBefore.Y)
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke movement was too small. "
+                        + $"Before={offsetBefore.X:0.0},{offsetBefore.Y:0.0}; After={offsetAfter.X:0.0},{offsetAfter.Y:0.0}");
+                }
+
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_Moved.png"));
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: recipe-manager-tabs" + Environment.NewLine
+                    + "Recipe: " + recipeName + Environment.NewLine
+                    + "Pipeline: " + (shellHost.RecipeCommands.SelectedPipelineOption?.PipelineName ?? pipelineName) + Environment.NewLine
+                    + "PreviewSteps: " + shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps.Count.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "SampleCheck: " + shellHost.RecipeCommands.LatestSampleRunSummary.StatusText + Environment.NewLine
+                    + "PairCheck: " + shellHost.RecipeCommands.LatestPairRunSummary.StatusText + Environment.NewLine
+                    + "MovedFrom: " + offsetBefore.X.ToString("0.0", CultureInfo.InvariantCulture) + "," + offsetBefore.Y.ToString("0.0", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "MovedTo: " + offsetAfter.X.ToString("0.0", CultureInfo.InvariantCulture) + "," + offsetAfter.Y.ToString("0.0", CultureInfo.InvariantCulture),
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                if (window != null)
+                {
+                    window.Close();
+                }
+
+                app.Shutdown();
+                RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+            }
+        }
+
+        private static void RunLayerLoadMatchingFlow(string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string repoRoot = FindRepositoryRoot();
+            string matchingImagePath = Path.Combine(repoRoot, "docs", "samples", "public", "Matching_DiePad_Synthetic_OK.png");
+            string matchingTemplatePath = Path.Combine(repoRoot, "docs", "samples", "public", "templates", "Matching_DiePad_Synthetic_Template.png");
+            EnsureFileExists(matchingImagePath, "Direct EXE Matching sample image");
+            EnsureFileExists(matchingTemplatePath, "Direct EXE Matching template image");
+
+            string recipeName = "Smoke_LayerMatching_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+
+            OpenVisionShellHostWindow window = null;
+            try
+            {
+                ApplicationRuntimeContext runtimeContext = ApplicationRuntimeContext.CreateDefault();
+                runtimeContext.Global.Recipe.Name = recipeName;
+                window = new OpenVisionShellHostWindow(runtimeContext)
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+
+                app.MainWindow = window;
+                window.Show();
+                window.Activate();
+                Pump(36);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("OpenVision shell host was not created.");
+
+                if (shellHost.IsWorkspaceLoadImageIntoLayerMenuVisibleForTest)
+                {
+                    throw new InvalidOperationException("Workspace context menu still exposes the duplicate load-into-layer image command.");
+                }
+
+                int runsBeforeLayerActions = shellHost.NativePreviewRunCount;
+                int rowsBeforeLayerActions = shellHost.HostLayerRowCount;
+                string loadedLayer = shellHost.CreateLayerForTest();
+                Pump(40);
+                if (string.IsNullOrWhiteSpace(loadedLayer)
+                    || !shellHost.HasLayerForTest(loadedLayer)
+                    || shellHost.HostLayerRowCount <= rowsBeforeLayerActions
+                    || !string.Equals(shellHost.WorkspaceLayerTitle, loadedLayer, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Direct EXE layer create did not create and show a new layer. "
+                        + $"Layer={loadedLayer}, RowsBefore={rowsBeforeLayerActions}, RowsAfter={shellHost.HostLayerRowCount}, Workspace={shellHost.WorkspaceLayerTitle}");
+                }
+
+                if (!shellHost.LoadImageIntoLayerForTest(loadedLayer, matchingImagePath))
+                {
+                    throw new InvalidOperationException("Direct EXE load-image-into-layer failed for " + loadedLayer);
+                }
+
+                Pump(60);
+                using (Bitmap loadedImage = shellHost.GetLayerImageCloneForTest(loadedLayer))
+                {
+                    if (loadedImage == null || loadedImage.Width <= 0 || loadedImage.Height <= 0)
+                    {
+                        throw new InvalidOperationException("Direct EXE loaded layer did not expose a valid image.");
+                    }
+                }
+
+                if (!shellHost.HasWorkspaceLayerPreview
+                    || !string.Equals(shellHost.WorkspaceLayerTitle, loadedLayer, StringComparison.OrdinalIgnoreCase)
+                    || shellHost.NativePreviewRunCount != runsBeforeLayerActions
+                    || shellHost.HasNativePreviewResult)
+                {
+                    throw new InvalidOperationException(
+                        "Direct EXE layer create/load changed preview state unexpectedly. "
+                        + $"Layer={loadedLayer}, Workspace={shellHost.WorkspaceLayerTitle}, "
+                        + $"RunsBefore={runsBeforeLayerActions}, RunsAfter={shellHost.NativePreviewRunCount}, Preview={shellHost.HasNativePreviewResult}");
+                }
+
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_LayerLoaded.png"));
+
+                if (!shellHost.LoadMainImageFromFileForTest(matchingImagePath))
+                {
+                    throw new InvalidOperationException("Direct EXE main image load failed: " + matchingImagePath);
+                }
+
+                Pump(60);
+                if (!shellHost.HasWorkspaceLayerPreview
+                    || !string.Equals(shellHost.WorkspaceLayerTitle, "Main", StringComparison.OrdinalIgnoreCase)
+                    || shellHost.NativePreviewRunCount != runsBeforeLayerActions
+                    || shellHost.HasNativePreviewResult)
+                {
+                    throw new InvalidOperationException(
+                        "Direct EXE main image load changed preview state unexpectedly. "
+                        + $"Workspace={shellHost.WorkspaceLayerTitle}, RunsBefore={runsBeforeLayerActions}, "
+                        + $"RunsAfter={shellHost.NativePreviewRunCount}, Preview={shellHost.HasNativePreviewResult}");
+                }
+
+                shellHost.SelectToolForTest(VISION_MENU.Matching);
+                Pump(80);
+                int runsBeforeMatchingPreview = shellHost.NativePreviewRunCount;
+                shellHost.SetActiveMatchingTemplatePathForTest(matchingTemplatePath);
+                Pump(20);
+                shellHost.ConfigureActiveMatchingForTest(ConfigureTutorialMatchingProperty);
+                Pump(20);
+                if (shellHost.NativePreviewRunCount != runsBeforeMatchingPreview)
+                {
+                    throw new InvalidOperationException(
+                        "Direct EXE Matching setup triggered Preview before explicit run. "
+                        + $"RunsBefore={runsBeforeMatchingPreview}, RunsAfter={shellHost.NativePreviewRunCount}");
+                }
+
+                shellHost.RunActiveNativePreviewForTest();
+                Pump(140);
+
+                string matchingStatus = shellHost.ActiveNativeStatusText;
+                string matchingReview = shellHost.ActiveNativeResultReviewText;
+                int runsAfterMatchingPreview = shellHost.NativePreviewRunCount;
+                if (!shellHost.HasNativePreviewResult
+                    || runsAfterMatchingPreview <= runsBeforeMatchingPreview
+                    || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, "Main", StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, "Matching_Preview", StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(shellHost.ActiveHostLayerTitle, "Main", StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(shellHost.WorkspaceLayerTitle, "Matching_Preview", StringComparison.OrdinalIgnoreCase)
+                    || matchingReview.IndexOf("Template Match", StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    throw new InvalidOperationException(
+                        "Direct EXE Matching preview did not produce the expected visible result layer. "
+                        + $"Status={matchingStatus}, Review={matchingReview}, Input={shellHost.ActiveNativeRouteInputLayerNameForTest}, "
+                        + $"Output={shellHost.ActiveNativeRouteOutputLayerNameForTest}, Active={shellHost.ActiveHostLayerTitle}, Workspace={shellHost.WorkspaceLayerTitle}, "
+                        + $"RunsBefore={runsBeforeMatchingPreview}, RunsAfter={runsAfterMatchingPreview}");
+                }
+
+                using (Bitmap matchingPreview = shellHost.GetLayerImageCloneForTest("Matching_Preview"))
+                {
+                    if (matchingPreview == null || matchingPreview.Width <= 0 || matchingPreview.Height <= 0)
+                    {
+                        throw new InvalidOperationException("Direct EXE Matching_Preview output layer image was not created.");
+                    }
+
+                    matchingPreview.Save(Path.Combine(outputDirectory, "Matching_Preview.png"));
+                }
+
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_MatchingPreview.png"));
+
+                if (!shellHost.CloseActiveWpfToolWindowForTest())
+                {
+                    throw new InvalidOperationException("Direct EXE Matching tool window did not close for workspace result verification.");
+                }
+
+                Pump(40);
+                if (!shellHost.HasWorkspaceLayerPreview
+                    || !string.Equals(shellHost.WorkspaceLayerTitle, "Matching_Preview", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Direct EXE Matching output was not visible in the main workspace after closing the tool window. "
+                        + $"Workspace={shellHost.WorkspaceLayerTitle}, Preview={shellHost.HasWorkspaceLayerPreview}");
+                }
+
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_MatchingWorkspaceResult.png"));
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: layer-load-matching-flow" + Environment.NewLine
+                    + "Recipe: " + recipeName + Environment.NewLine
+                    + "LoadedLayer: " + loadedLayer + Environment.NewLine
+                    + "PreviewRunsBeforeLayerLoad: " + runsBeforeLayerActions.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "PreviewRunsBeforeMatching: " + runsBeforeMatchingPreview.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "PreviewRunsAfterMatching: " + runsAfterMatchingPreview.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "WorkspaceAfterMatching: " + shellHost.WorkspaceLayerTitle + Environment.NewLine
+                    + "Status: " + matchingStatus + Environment.NewLine
+                    + "Review: " + matchingReview,
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                if (window != null)
+                {
+                    window.Close();
+                }
+
+                app.Shutdown();
+                RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
             }
         }
 
@@ -2143,6 +2556,36 @@ namespace OpenVisionLab
                 {
                     yield return descendant;
                 }
+            }
+        }
+
+        private static T FindNamedVisualChild<T>(DependencyObject root, string name, string scenario)
+            where T : FrameworkElement
+        {
+            T element = FindVisualChildren<T>(root)
+                .FirstOrDefault(item => string.Equals(item.Name, name, StringComparison.Ordinal));
+            if (element == null)
+            {
+                throw new InvalidOperationException(scenario + " could not find element '" + name + "'.");
+            }
+
+            return element;
+        }
+
+        private static void AssertVisibleAutomationIds(DependencyObject root, string scenario, params string[] requiredIds)
+        {
+            HashSet<string> visibleIds = FindVisualChildren<FrameworkElement>(root)
+                .Where(item => item.IsVisible)
+                .Select(System.Windows.Automation.AutomationProperties.GetAutomationId)
+                .Where(item => !string.IsNullOrWhiteSpace(item))
+                .ToHashSet(StringComparer.Ordinal);
+
+            string missing = requiredIds.FirstOrDefault(id => !visibleIds.Contains(id));
+            if (!string.IsNullOrWhiteSpace(missing))
+            {
+                throw new InvalidOperationException(
+                    scenario + " did not show expected AutomationId '" + missing + "'. "
+                    + "VisibleIds='" + string.Join(", ", visibleIds.OrderBy(item => item, StringComparer.Ordinal)) + "'");
             }
         }
 
@@ -3786,6 +4229,23 @@ namespace OpenVisionLab
             return double.Parse(match.Groups["value"].Value, CultureInfo.InvariantCulture);
         }
 
+        private static VisionPipeline CreateDirectSmokePipeline(string name, int stepCount)
+        {
+            VisionPipeline pipeline = new VisionPipeline { Name = name };
+            for (int index = 0; index < stepCount; index++)
+            {
+                pipeline.Steps.Add(new VisionPipelineStep
+                {
+                    Name = name + "_Step_" + (index + 1).ToString(CultureInfo.InvariantCulture),
+                    ToolType = "Threshold",
+                    InputLayer = index == 0 ? "Main" : name + "_Preview_" + index.ToString(CultureInfo.InvariantCulture),
+                    OutputLayer = name + "_Preview_" + (index + 1).ToString(CultureInfo.InvariantCulture)
+                });
+            }
+
+            return pipeline;
+        }
+
         private static string ResolveOutputDirectory(string[] args)
         {
             for (int i = 2; i < args.Length - 1; i++)
@@ -3831,6 +4291,7 @@ namespace OpenVisionLab
 
         private static void SaveWindowScreenshot(Window window, string path)
         {
+            BringWindowToFront(window);
             window.UpdateLayout();
             Pump(4);
             System.Windows.Point topLeft = window.PointToScreen(new System.Windows.Point(0D, 0D));
@@ -3842,6 +4303,32 @@ namespace OpenVisionLab
                 graphics.CopyFromScreen((int)topLeft.X, (int)topLeft.Y, 0, 0, bitmap.Size);
                 bitmap.Save(path);
             }
+        }
+
+        private static void BringWindowToFront(Window window)
+        {
+            if (window == null)
+            {
+                return;
+            }
+
+            if (window.WindowState == WindowState.Minimized)
+            {
+                window.WindowState = WindowState.Normal;
+            }
+
+            IntPtr handle = new System.Windows.Interop.WindowInteropHelper(window).Handle;
+            if (handle != IntPtr.Zero)
+            {
+                const int showRestore = 9;
+                ShowWindow(handle, showRestore);
+                SetForegroundWindow(handle);
+            }
+
+            window.Topmost = true;
+            window.Activate();
+            window.Focus();
+            Pump(12);
         }
 
         private static void MoveCursorInsideWindow(Window window, double x, double y)

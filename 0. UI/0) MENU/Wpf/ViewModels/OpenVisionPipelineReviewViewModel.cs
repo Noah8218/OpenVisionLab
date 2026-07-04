@@ -12,6 +12,7 @@ namespace OpenVisionLab
     {
         private string pipelineTitle = T("PipelineReview.Title", "Pipeline Review");
         private string pipelineMeta = TF("PipelineReview.MetaFormat", "{0} / {1} steps", T("Pipeline.Title", "Pipeline"), 0);
+        private string reviewProgressText = T("PipelineReview.Progress.NotRun", "Not run");
         private string selectedStepText = "-";
         private string selectedToolText = "-";
         private string selectedStatusText = "-";
@@ -42,17 +43,23 @@ namespace OpenVisionLab
         private string reviewGuidePairMetricText = string.Empty;
         private string reviewGuideChecklistText = T("PipelineReview.Guide.ChecklistText", "Review habit: run Good first -> run Bad in the same PairGroup with the same pipeline -> compare output image, overlay, metrics, and log.");
         private string reviewGuideParameterFocusText = string.Empty;
+        private string reviewGuideTriageFailureText = string.Empty;
+        private string reviewGuideTriageAdjustmentText = string.Empty;
+        private string reviewGuideTriageRerunText = string.Empty;
         private bool hasReviewGuidePairText;
         private bool hasReviewGuidePairMetricText;
         private bool hasReviewGuideParameterFocusText;
+        private bool hasReviewGuideTriage;
         private bool canOpenReviewGuidePairAction;
         private bool canSelectPreviousStep;
         private bool canSelectNextStep;
+        private bool canSelectFirstIssueStep;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         public string PipelineTitle { get => pipelineTitle; private set => SetField(ref pipelineTitle, value); }
         public string PipelineMeta { get => pipelineMeta; private set => SetField(ref pipelineMeta, value); }
+        public string ReviewProgressText { get => reviewProgressText; private set => SetField(ref reviewProgressText, value); }
         public string SelectedStepText { get => selectedStepText; private set => SetField(ref selectedStepText, value); }
         public string SelectedToolText { get => selectedToolText; private set => SetField(ref selectedToolText, value); }
         public string SelectedStatusText { get => selectedStatusText; private set => SetField(ref selectedStatusText, value); }
@@ -83,12 +90,17 @@ namespace OpenVisionLab
         public string ReviewGuidePairMetricText { get => reviewGuidePairMetricText; private set => SetField(ref reviewGuidePairMetricText, value); }
         public string ReviewGuideChecklistText { get => reviewGuideChecklistText; private set => SetField(ref reviewGuideChecklistText, value); }
         public string ReviewGuideParameterFocusText { get => reviewGuideParameterFocusText; private set => SetField(ref reviewGuideParameterFocusText, value); }
+        public string ReviewGuideTriageFailureText { get => reviewGuideTriageFailureText; private set => SetField(ref reviewGuideTriageFailureText, value); }
+        public string ReviewGuideTriageAdjustmentText { get => reviewGuideTriageAdjustmentText; private set => SetField(ref reviewGuideTriageAdjustmentText, value); }
+        public string ReviewGuideTriageRerunText { get => reviewGuideTriageRerunText; private set => SetField(ref reviewGuideTriageRerunText, value); }
         public bool HasReviewGuidePairText { get => hasReviewGuidePairText; private set => SetField(ref hasReviewGuidePairText, value); }
         public bool HasReviewGuidePairMetricText { get => hasReviewGuidePairMetricText; private set => SetField(ref hasReviewGuidePairMetricText, value); }
         public bool HasReviewGuideParameterFocusText { get => hasReviewGuideParameterFocusText; private set => SetField(ref hasReviewGuideParameterFocusText, value); }
+        public bool HasReviewGuideTriage { get => hasReviewGuideTriage; private set => SetField(ref hasReviewGuideTriage, value); }
         public bool CanOpenReviewGuidePairAction { get => canOpenReviewGuidePairAction; private set => SetField(ref canOpenReviewGuidePairAction, value); }
         public bool CanSelectPreviousStep { get => canSelectPreviousStep; private set => SetField(ref canSelectPreviousStep, value); }
         public bool CanSelectNextStep { get => canSelectNextStep; private set => SetField(ref canSelectNextStep, value); }
+        public bool CanSelectFirstIssueStep { get => canSelectFirstIssueStep; private set => SetField(ref canSelectFirstIssueStep, value); }
         public bool HasInputPreview => InputPreviewImage != null;
         public bool HasOutputPreview => OutputPreviewImage != null;
 
@@ -97,6 +109,13 @@ namespace OpenVisionLab
             string name = string.IsNullOrWhiteSpace(pipelineName) ? T("Pipeline.Title", "Pipeline") : pipelineName.Trim();
             PipelineTitle = T("PipelineReview.Title", "Pipeline Review");
             PipelineMeta = TF("PipelineReview.MetaFormat", "{0} / {1} steps", name, stepCount);
+        }
+
+        public void SetReviewProgress(string progressText)
+        {
+            ReviewProgressText = string.IsNullOrWhiteSpace(progressText)
+                ? T("PipelineReview.Progress.NotRun", "Not run")
+                : progressText.Trim();
         }
 
         public void SetSelectedStep(
@@ -156,6 +175,12 @@ namespace OpenVisionLab
             ReviewGuideChecklistText = SafeText(state?.ChecklistText);
             ReviewGuideParameterFocusText = string.IsNullOrWhiteSpace(state?.ParameterFocusText) ? string.Empty : state.ParameterFocusText.Trim();
             HasReviewGuideParameterFocusText = !string.IsNullOrWhiteSpace(ReviewGuideParameterFocusText);
+            ReviewGuideTriageFailureText = string.IsNullOrWhiteSpace(state?.TriageFailureText) ? string.Empty : state.TriageFailureText.Trim();
+            ReviewGuideTriageAdjustmentText = string.IsNullOrWhiteSpace(state?.TriageAdjustmentText) ? string.Empty : state.TriageAdjustmentText.Trim();
+            ReviewGuideTriageRerunText = string.IsNullOrWhiteSpace(state?.TriageRerunText) ? string.Empty : state.TriageRerunText.Trim();
+            HasReviewGuideTriage = !string.IsNullOrWhiteSpace(ReviewGuideTriageFailureText)
+                || !string.IsNullOrWhiteSpace(ReviewGuideTriageAdjustmentText)
+                || !string.IsNullOrWhiteSpace(ReviewGuideTriageRerunText);
         }
 
         public void SetReviewGuidePairAction(string actionText, bool canOpen)
@@ -176,6 +201,11 @@ namespace OpenVisionLab
             CanSelectNextStep = selectedIndex >= 0 && selectedIndex < stepCount - 1;
         }
 
+        public void SetIssueNavigationState(bool canSelectFirstIssueStep)
+        {
+            CanSelectFirstIssueStep = canSelectFirstIssueStep;
+        }
+
         public void SetEmptyState(string pipelineName)
         {
             SetPipelineHeader(pipelineName, 0);
@@ -192,7 +222,9 @@ namespace OpenVisionLab
                 T("PipelineReview.EmptyHint", "Add steps from a tool view or the Pipeline editor."));
             SetReviewGuide(OpenVisionPipelineReviewGuidePresenter.CreateEmpty(pipelineName));
             SetNavigationState(-1, 0);
+            SetIssueNavigationState(false);
             SetResultSummary(T("PipelineReview.NoRunResult", "No run result"), "-");
+            SetReviewProgress(T("PipelineReview.Progress.NoSteps", "No steps"));
             StatusText = T("PipelineReview.NoStepsStatus", "Pipeline has no steps.");
         }
 

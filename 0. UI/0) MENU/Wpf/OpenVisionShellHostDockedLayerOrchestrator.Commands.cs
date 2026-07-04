@@ -12,6 +12,11 @@ namespace OpenVisionLab
             return composition.DockDocument(layerTitle);
         }
 
+        public bool ActivateLayer(string layerTitle)
+        {
+            return composition.SelectDocument(layerTitle);
+        }
+
         public void SyncLayers(IReadOnlyList<string> layerTitles)
         {
             composition.SyncDocuments(layerTitles);

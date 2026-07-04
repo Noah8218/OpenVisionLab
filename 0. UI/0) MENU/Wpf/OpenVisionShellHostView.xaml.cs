@@ -1,7 +1,9 @@
 using OpenVisionLab._1._Core;
+using Microsoft.Win32;
 using System;
 using System.Linq;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using WpfUserControl = System.Windows.Controls.UserControl;
 using static OpenVisionLab.DEFINE;
@@ -107,6 +109,10 @@ namespace OpenVisionLab
         private readonly OpenVisionZoomableImageController workspaceFallbackZoomController;
         private readonly OpenVisionShellHostSessionState sessionState = new OpenVisionShellHostSessionState();
         private readonly OpenVisionShellHostSessionController sessionController;
+        private bool isRecipeManagerPanelDragging;
+        private Point recipeManagerPanelDragStartPoint;
+        private double recipeManagerPanelDragStartX;
+        private double recipeManagerPanelDragStartY;
 
         public OpenVisionShellHostView()
             : this(ApplicationRuntimeContext.CreateDefault())
@@ -208,7 +214,8 @@ namespace OpenVisionLab
                 () => viewModel.SelectedRouteText,
                 chromeController.SetDirectRouteText,
                 refreshCoordinator.RefreshHostLayerRows,
-                refreshCoordinator.RefreshHostSelectedLayerDetail);
+                refreshCoordinator.RefreshHostSelectedLayerDetail,
+                layerTitle => dockedLayerWorkspaceComposition.Commands.ActivateLayerDocument(layerTitle));
             nativeToolPrewarmService = new OpenVisionNativeToolPrewarmService(
                 Dispatcher,
                 documentController.NativeToolDocuments,
@@ -230,7 +237,8 @@ namespace OpenVisionLab
                 chromeController.SetDirectRunSucceeded,
                 chromeController.SetActiveDocumentText,
                 refreshCoordinator.RefreshHostLayerRows,
-                hasPreviewResult => nativePreviewRouteCoordinator.RefreshAfterLayerStateChanged(hasPreviewResult));
+                hasPreviewResult => nativePreviewRouteCoordinator.RefreshAfterLayerStateChanged(hasPreviewResult),
+                nativePreviewRouteCoordinator.RefreshLastVisibleNativeOutputWorkspacePreview);
             toolPrewarmController = new OpenVisionShellHostToolPrewarmController(
                 Dispatcher,
                 nativeToolPrewarmService,
@@ -325,6 +333,8 @@ namespace OpenVisionLab
                 txtWorkspaceSampleWorkflowTitle,
                 txtWorkspaceSampleWorkflowMeta,
                 txtWorkspaceSampleWorkflowDetail,
+                btnWorkspaceSampleCounterpart,
+                txtWorkspaceSampleCounterpartButtonText,
                 () => recipeContextStore.Current);
             mainActionPresenter = new OpenVisionShellHostMainActionPresenter(
                 workspaceMainActionOverlay,
@@ -361,7 +371,8 @@ namespace OpenVisionLab
                 commandController,
                 workspacePreviewController,
                 SelectToolMenu,
-                () => sampleWorkflowPresenter.FirstStepMenu);
+                () => sampleWorkflowPresenter.FirstStepMenu,
+                () => sampleWorkflowPresenter.CounterpartSampleName);
             RecipeCommands = new OpenVisionShellHostRecipeCommandSurface(
                 ResolveRuntimeRecipeName,
                 recipeName => runtimeContext.Global.Recipe.Name = recipeName,
@@ -369,7 +380,11 @@ namespace OpenVisionLab
                 {
                     RefreshRecipeContext();
                     WorkspaceCommands?.RefreshCanExecute();
-                });
+                },
+                ConfirmDeleteRecipe,
+                ConfirmDeletePipeline,
+                SelectImportPipelineXmlPath,
+                SelectExportPipelineXmlPath);
             ChromeCommands = new OpenVisionShellHostChromeCommandSurface(
                 () => IsToolRailCompact = !IsToolRailCompact,
                 commandController,
@@ -472,6 +487,7 @@ namespace OpenVisionLab
                     WorkspaceLoadImageMenuText = () => Convert.ToString(miWorkspaceLoadImage?.Header) ?? string.Empty,
                     WorkspaceLoadImageButtonText = () => txtWorkspaceLoadImageButtonText?.Text ?? string.Empty,
                     HasWorkspaceLoadImageMenu = () => miWorkspaceLoadImage != null,
+                    IsWorkspaceLoadImageIntoLayerMenuVisible = () => miWorkspaceLoadImageIntoLayer?.Visibility == Visibility.Visible,
                     WorkspaceImageReady = () =>
                     {
                         mainActionPresenter.ShowImageReady(txtHostWorkspaceLayerTitle?.Text, txtHostWorkspaceLayerMeta?.Text);
@@ -570,6 +586,156 @@ namespace OpenVisionLab
         {
             get => (OpenVisionShellHostRecipeCommandSurface)GetValue(RecipeCommandsProperty);
             private set => SetValue(RecipeCommandsProperty, value);
+        }
+
+        private void HandleRecipeManagerTitleBarMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (recipeManagerPanel?.Visibility != Visibility.Visible || rootShellHost == null || recipeManagerPanelTransform == null)
+            {
+                return;
+            }
+
+            isRecipeManagerPanelDragging = true;
+            recipeManagerPanelDragStartPoint = e.GetPosition(rootShellHost);
+            recipeManagerPanelDragStartX = recipeManagerPanelTransform.X;
+            recipeManagerPanelDragStartY = recipeManagerPanelTransform.Y;
+            Mouse.Capture(recipeManagerTitleBar);
+            e.Handled = true;
+        }
+
+        private void HandleRecipeManagerTitleBarMouseMove(object sender, MouseEventArgs e)
+        {
+            if (!isRecipeManagerPanelDragging || e.LeftButton != MouseButtonState.Pressed || rootShellHost == null)
+            {
+                return;
+            }
+
+            Point current = e.GetPosition(rootShellHost);
+            SetRecipeManagerPanelOffset(
+                recipeManagerPanelDragStartX + current.X - recipeManagerPanelDragStartPoint.X,
+                recipeManagerPanelDragStartY + current.Y - recipeManagerPanelDragStartPoint.Y);
+            e.Handled = true;
+        }
+
+        private void HandleRecipeManagerTitleBarMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            StopRecipeManagerPanelDrag();
+            e.Handled = true;
+        }
+
+        private void HandleRecipeManagerTitleBarLostMouseCapture(object sender, MouseEventArgs e)
+        {
+            isRecipeManagerPanelDragging = false;
+        }
+
+        private void HandleRecipeManagerCloseClick(object sender, RoutedEventArgs e)
+        {
+            btnHostRecipeManager.IsChecked = false;
+            e.Handled = true;
+        }
+
+        private void StopRecipeManagerPanelDrag()
+        {
+            isRecipeManagerPanelDragging = false;
+            if (Mouse.Captured == recipeManagerTitleBar)
+            {
+                Mouse.Capture(null);
+            }
+        }
+
+        private void SetRecipeManagerPanelOffset(double x, double y)
+        {
+            if (recipeManagerPanelTransform == null)
+            {
+                return;
+            }
+
+            if (rootShellHost == null || recipeManagerPanel == null || rootShellHost.ActualWidth <= 0D || rootShellHost.ActualHeight <= 0D)
+            {
+                recipeManagerPanelTransform.X = x;
+                recipeManagerPanelTransform.Y = y;
+                return;
+            }
+
+            double currentLeft = recipeManagerPanel.TranslatePoint(new Point(0D, 0D), rootShellHost).X;
+            double currentTop = recipeManagerPanel.TranslatePoint(new Point(0D, 0D), rootShellHost).Y;
+            double baseLeft = currentLeft - recipeManagerPanelTransform.X;
+            double baseTop = currentTop - recipeManagerPanelTransform.Y;
+            const double minimumVisibleWidth = 260D;
+            const double minimumVisibleHeight = 92D;
+            double minX = 8D - baseLeft;
+            double maxX = Math.Max(minX, rootShellHost.ActualWidth - minimumVisibleWidth - baseLeft);
+            double minY = 8D - baseTop;
+            double maxY = Math.Max(minY, rootShellHost.ActualHeight - minimumVisibleHeight - baseTop);
+
+            recipeManagerPanelTransform.X = Math.Min(Math.Max(x, minX), maxX);
+            recipeManagerPanelTransform.Y = Math.Min(Math.Max(y, minY), maxY);
+        }
+
+        private bool ConfirmDeleteRecipe(string recipeName)
+        {
+            string message = string.Format(
+                System.Globalization.CultureInfo.CurrentCulture,
+                OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean
+                    ? "레시피 '{0}'을 삭제하시겠습니까?"
+                    : "Delete recipe '{0}'?",
+                recipeName);
+            MessageBoxResult result = MessageBox.Show(
+                Window.GetWindow(this),
+                message,
+                OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean ? "레시피 삭제" : "Delete recipe",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            return result == MessageBoxResult.Yes;
+        }
+
+        private bool ConfirmDeletePipeline(string recipeName, string pipelineName)
+        {
+            string message = string.Format(
+                System.Globalization.CultureInfo.CurrentCulture,
+                OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean
+                    ? "Delete pipeline '{1}' from recipe '{0}'?"
+                    : "Delete pipeline '{1}' from recipe '{0}'?",
+                recipeName,
+                pipelineName);
+            MessageBoxResult result = MessageBox.Show(
+                Window.GetWindow(this),
+                message,
+                OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean ? "Delete pipeline" : "Delete pipeline",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            return result == MessageBoxResult.Yes;
+        }
+
+        private string SelectImportPipelineXmlPath()
+        {
+            OpenFileDialog dialog = new OpenFileDialog
+            {
+                Title = OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean
+                    ? "파이프라인 XML 가져오기"
+                    : "Import pipeline XML",
+                Filter = "OpenVision Pipeline XML (*.xml)|*.xml|All files (*.*)|*.*",
+                Multiselect = false
+            };
+
+            return dialog.ShowDialog(Window.GetWindow(this)) == true ? dialog.FileName : string.Empty;
+        }
+
+        private string SelectExportPipelineXmlPath(string suggestedFileName)
+        {
+            SaveFileDialog dialog = new SaveFileDialog
+            {
+                Title = OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean
+                    ? "파이프라인 XML 내보내기"
+                    : "Export pipeline XML",
+                Filter = "OpenVision Pipeline XML (*.xml)|*.xml|All files (*.*)|*.*",
+                FileName = string.IsNullOrWhiteSpace(suggestedFileName) ? "Pipeline.xml" : suggestedFileName,
+                AddExtension = true,
+                DefaultExt = ".xml",
+                OverwritePrompt = true
+            };
+
+            return dialog.ShowDialog(Window.GetWindow(this)) == true ? dialog.FileName : string.Empty;
         }
 
         public OpenVisionShellHostCommandSurfaces CommandSurfaces

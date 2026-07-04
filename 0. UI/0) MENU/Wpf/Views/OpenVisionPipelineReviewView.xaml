@@ -118,6 +118,11 @@
                                Text="{Binding PipelineMeta}"
                                Foreground="{StaticResource PipelineReview.MutedTextBrush}"
                                Margin="0,4,0,0" />
+                    <TextBlock x:Name="txtReviewProgress"
+                               Text="{Binding ReviewProgressText}"
+                               Foreground="{StaticResource PipelineReview.AccentBrush}"
+                               FontWeight="SemiBold"
+                               Margin="0,4,0,0" />
                 </StackPanel>
                 <StackPanel Grid.Column="3"
                             Orientation="Horizontal"
@@ -145,6 +150,7 @@
                             Height="30"
                             MinWidth="72"
                             Padding="9,0"
+                            Margin="0,0,6,0"
                             IsEnabled="{Binding CanSelectNextStep}"
                             Click="BtnNextStep_Click">
                         <StackPanel Orientation="Horizontal">
@@ -157,6 +163,25 @@
                                                         Height="15"
                                                         Margin="4,0,0,0"
                                                         VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="btnFirstIssueStep"
+                            AutomationProperties.AutomationId="PipelineReviewFirstIssueStepButton"
+                            Height="30"
+                            MinWidth="82"
+                            Padding="9,0"
+                            IsEnabled="{Binding CanSelectFirstIssueStep}"
+                            Click="BtnFirstIssueStep_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="AlertCircleOutline"
+                                                        Width="15"
+                                                        Height="15"
+                                                        Margin="0,0,4,0"
+                                                        VerticalAlignment="Center" />
+                            <TextBlock x:Name="txtFirstIssueStepButton"
+                                       Text="NG Step"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -320,12 +345,59 @@
                                                     Width="15"
                                                     Height="15"
                                                     Foreground="{StaticResource PipelineReview.AccentBrush}" />
-                        <TextBlock Grid.Column="2"
-                                   Text="{Binding ReviewGuideDetailText}"
-                                   FontWeight="SemiBold"
-                                   TextWrapping="Wrap"
-                                   TextTrimming="None"
-                                   ToolTip="{Binding ReviewGuideDetailText}" />
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="{Binding ReviewGuideDetailText}"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="None"
+                                       ToolTip="{Binding ReviewGuideDetailText}" />
+                            <Grid Margin="0,8,0,0"
+                                  Visibility="{Binding HasReviewGuideTriage, Converter={StaticResource PipelineReview.BooleanToVisibilityConverter}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1" />
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock x:Name="lblReviewGuideTriageFailure"
+                                               Text="Cause"
+                                               Style="{StaticResource SummaryLabelStyle}" />
+                                    <TextBlock AutomationProperties.AutomationId="PipelineReviewGuideTriageFailure"
+                                               Text="{Binding ReviewGuideTriageFailureText}"
+                                               Foreground="{StaticResource PipelineReview.TextBrush}"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
+                                               ToolTip="{Binding ReviewGuideTriageFailureText}" />
+                                </StackPanel>
+                                <Border Grid.Column="1" Background="{StaticResource PipelineReview.LineBrush}" />
+                                <StackPanel Grid.Column="2" Margin="8,0">
+                                    <TextBlock x:Name="lblReviewGuideTriageAdjustment"
+                                               Text="Adjust"
+                                               Style="{StaticResource SummaryLabelStyle}" />
+                                    <TextBlock AutomationProperties.AutomationId="PipelineReviewGuideTriageAdjustment"
+                                               Text="{Binding ReviewGuideTriageAdjustmentText}"
+                                               Foreground="{StaticResource PipelineReview.TextBrush}"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
+                                               ToolTip="{Binding ReviewGuideTriageAdjustmentText}" />
+                                </StackPanel>
+                                <Border Grid.Column="3" Background="{StaticResource PipelineReview.LineBrush}" />
+                                <StackPanel Grid.Column="4" Margin="8,0,0,0">
+                                    <TextBlock x:Name="lblReviewGuideTriageRerun"
+                                               Text="Rerun"
+                                               Style="{StaticResource SummaryLabelStyle}" />
+                                    <TextBlock AutomationProperties.AutomationId="PipelineReviewGuideTriageRerun"
+                                               Text="{Binding ReviewGuideTriageRerunText}"
+                                               Foreground="{StaticResource PipelineReview.AccentBrush}"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
+                                               ToolTip="{Binding ReviewGuideTriageRerunText}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
                         <iconPacks:PackIconMaterial Grid.Row="2"
                                                     Grid.Column="0"
                                                     Kind="CompareHorizontal"
@@ -419,12 +491,27 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="10" />
+                        <RowDefinition Height="8" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="8" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <TextBlock x:Name="lblStepFlow" Text="Step Flow" Style="{StaticResource SectionTitleStyle}" />
+                    <Border Grid.Row="2"
+                            AutomationProperties.AutomationId="PipelineReviewStepFlowOperatorFocus"
+                            Background="#EAF7F8"
+                            BorderBrush="{StaticResource PipelineReview.LineBrush}"
+                            BorderThickness="1"
+                            Padding="7,5"
+                            Visibility="{Binding HasReviewGuideParameterFocusText, Converter={StaticResource PipelineReview.BooleanToVisibilityConverter}}">
+                        <TextBlock Text="{Binding ReviewGuideParameterFocusText}"
+                                   Foreground="{StaticResource PipelineReview.AccentBrush}"
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap"
+                                   ToolTip="{Binding ReviewGuideParameterFocusText}" />
+                    </Border>
                     <pipeline:PipelineFlowView x:Name="pipelineFlowView"
-                                               Grid.Row="2" />
+                                               Grid.Row="4" />
                 </Grid>
             </Border>
 
@@ -434,7 +521,7 @@
                     <RowDefinition Height="12" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="12" />
-                    <RowDefinition Height="250" />
+                    <RowDefinition Height="210" />
                 </Grid.RowDefinitions>
 
                 <Grid Grid.Row="0">

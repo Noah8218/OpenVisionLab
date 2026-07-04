@@ -11,17 +11,20 @@ namespace OpenVisionLab
         private readonly OpenVisionShellHostWorkspacePreviewController workspacePreviewController;
         private readonly Action<VISION_MENU> selectTool;
         private readonly Func<VISION_MENU?> sampleFirstStepMenuProvider;
+        private readonly Func<string> sampleCounterpartNameProvider;
 
         internal OpenVisionShellHostWorkspaceCommandSurface(
             OpenVisionShellHostCommandController commandController,
             OpenVisionShellHostWorkspacePreviewController workspacePreviewController,
             Action<VISION_MENU> selectTool = null,
-            Func<VISION_MENU?> sampleFirstStepMenuProvider = null)
+            Func<VISION_MENU?> sampleFirstStepMenuProvider = null,
+            Func<string> sampleCounterpartNameProvider = null)
         {
             this.commandController = commandController ?? throw new ArgumentNullException(nameof(commandController));
             this.workspacePreviewController = workspacePreviewController ?? throw new ArgumentNullException(nameof(workspacePreviewController));
             this.selectTool = selectTool;
             this.sampleFirstStepMenuProvider = sampleFirstStepMenuProvider;
+            this.sampleCounterpartNameProvider = sampleCounterpartNameProvider;
 
             LoadImageCommand = new RelayCommand(commandController.PromptAndLoadWorkspaceImage);
             OpenSampleCommand = new RelayCommand(commandController.PromptAndOpenRunnableSample, commandController.HasRunnableSample);
@@ -32,6 +35,7 @@ namespace OpenVisionLab
             OpenLineToolCommand = new RelayCommand(() => OpenTool(VISION_MENU.Line), CanOpenToolAfterImageReady);
             OpenSamplePipelineCommand = new RelayCommand(OpenPipelineReview, CanOpenSampleNavigation);
             OpenSampleFirstStepCommand = new RelayCommand(OpenSampleFirstStepTool, CanOpenSampleFirstStepTool);
+            OpenSampleCounterpartCommand = new RelayCommand(OpenSampleCounterpart, CanOpenSampleCounterpart);
         }
 
         public ICommand LoadImageCommand { get; }
@@ -51,6 +55,8 @@ namespace OpenVisionLab
         public ICommand OpenSamplePipelineCommand { get; }
 
         public ICommand OpenSampleFirstStepCommand { get; }
+
+        public ICommand OpenSampleCounterpartCommand { get; }
 
         public void RefreshCanExecute()
         {
@@ -82,6 +88,11 @@ namespace OpenVisionLab
             return selectTool != null && sampleFirstStepMenuProvider?.Invoke().HasValue == true;
         }
 
+        private bool CanOpenSampleCounterpart()
+        {
+            return !string.IsNullOrWhiteSpace(sampleCounterpartNameProvider?.Invoke());
+        }
+
         private void OpenPipelineReview()
         {
             selectTool?.Invoke(VISION_MENU.Pipeline);
@@ -93,6 +104,15 @@ namespace OpenVisionLab
             if (menu.HasValue)
             {
                 selectTool?.Invoke(menu.Value);
+            }
+        }
+
+        private void OpenSampleCounterpart()
+        {
+            string sampleName = sampleCounterpartNameProvider?.Invoke();
+            if (!string.IsNullOrWhiteSpace(sampleName))
+            {
+                commandController.OpenRunnableSampleByName(sampleName);
             }
         }
     }

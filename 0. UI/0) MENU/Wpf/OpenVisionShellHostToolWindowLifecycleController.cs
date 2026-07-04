@@ -12,6 +12,7 @@ namespace OpenVisionLab
         private readonly Action<string> setActiveDocumentText;
         private readonly Action refreshHostLayerRows;
         private readonly Action<bool> refreshNativePreviewRouteAfterLayerStateChanged;
+        private readonly Action refreshLastNativeOutputWorkspacePreview;
 
         public OpenVisionShellHostToolWindowLifecycleController(
             OpenVisionShellHostDocumentController documentController,
@@ -20,7 +21,8 @@ namespace OpenVisionLab
             Action setDirectRunSucceeded,
             Action<string> setActiveDocumentText,
             Action refreshHostLayerRows,
-            Action<bool> refreshNativePreviewRouteAfterLayerStateChanged)
+            Action<bool> refreshNativePreviewRouteAfterLayerStateChanged,
+            Action refreshLastNativeOutputWorkspacePreview)
         {
             this.documentController = documentController ?? throw new ArgumentNullException(nameof(documentController));
             this.floatingToolWindowHost = floatingToolWindowHost ?? throw new ArgumentNullException(nameof(floatingToolWindowHost));
@@ -29,6 +31,7 @@ namespace OpenVisionLab
             this.setActiveDocumentText = setActiveDocumentText ?? throw new ArgumentNullException(nameof(setActiveDocumentText));
             this.refreshHostLayerRows = refreshHostLayerRows ?? throw new ArgumentNullException(nameof(refreshHostLayerRows));
             this.refreshNativePreviewRouteAfterLayerStateChanged = refreshNativePreviewRouteAfterLayerStateChanged ?? throw new ArgumentNullException(nameof(refreshNativePreviewRouteAfterLayerStateChanged));
+            this.refreshLastNativeOutputWorkspacePreview = refreshLastNativeOutputWorkspacePreview ?? throw new ArgumentNullException(nameof(refreshLastNativeOutputWorkspacePreview));
         }
 
         public bool IsDockedToolInspectorVisible => dockedToolInspectorController.IsVisible;
@@ -112,9 +115,14 @@ namespace OpenVisionLab
 
         private void CloseVisibleDocumentsAndResetActiveText()
         {
+            bool restoreNativeOutputWorkspacePreview = documentController.ActiveNativeDocument?.HasPreviewResult == true;
             documentController.CloseVisibleDocuments();
             setActiveDocumentText(string.Empty);
             refreshHostLayerRows();
+            if (restoreNativeOutputWorkspacePreview)
+            {
+                refreshLastNativeOutputWorkspacePreview();
+            }
         }
     }
 }

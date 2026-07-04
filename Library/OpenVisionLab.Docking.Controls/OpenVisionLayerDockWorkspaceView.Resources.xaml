@@ -17,7 +17,7 @@
     <SolidColorBrush x:Key="DockedLayer.TabStripBrush" Color="#11171B" />
     <SolidColorBrush x:Key="DockedLayer.TabBrush" Color="#171D21" />
     <SolidColorBrush x:Key="DockedLayer.TabHoverBrush" Color="#20292E" />
-    <SolidColorBrush x:Key="DockedLayer.TabSelectedBrush" Color="#24313A" />
+    <SolidColorBrush x:Key="DockedLayer.TabSelectedBrush" Color="#137A84" />
     <SolidColorBrush x:Key="DockedLayer.TabBorderBrush" Color="#2A3A42" />
     <SolidColorBrush x:Key="DockedLayer.TextBrush" Color="#EFF5F6" />
     <SolidColorBrush x:Key="DockedLayer.SubtleTextBrush" Color="#9DB9BE" />
@@ -30,6 +30,13 @@
               MinHeight="26"
               Cursor="SizeAll"
               ToolTip="{Binding RelativeSource={RelativeSource AncestorType=avalonDockControls:LayoutAnchorableTabItem}, Path=ToolTip}">
+            <Border x:Name="selectedBadge"
+                    Width="4"
+                    Margin="-6,3,0,3"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Stretch"
+                    Background="{StaticResource DockedLayer.AccentBrush}"
+                    Visibility="Collapsed" />
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -78,6 +85,11 @@
                 </TextBlock>
             </Grid>
         </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                <Setter TargetName="selectedBadge" Property="Visibility" Value="Visible" />
+            </DataTrigger>
+        </DataTemplate.Triggers>
     </DataTemplate>
 
     <Style TargetType="{x:Type TabControl}">
@@ -354,10 +366,10 @@
                                               VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                         </Border>
                         <Border x:Name="activeLine"
-                                 Height="2"
+                                 Height="4"
                                  Background="{StaticResource DockedLayer.AccentBrush}"
                                  HorizontalAlignment="Stretch"
-                                 VerticalAlignment="Top"
+                                 VerticalAlignment="Bottom"
                                  Opacity="0" />
                     </Grid>
                     <ControlTemplate.Triggers>

@@ -587,6 +587,10 @@ namespace System.Windows.Controls.WpfPropertyGrid
             popup.SetValue(Popup.AllowsTransparencyProperty, true);
             popup.SetValue(Popup.FocusableProperty, false);
             popup.SetValue(Popup.PlacementProperty, PlacementMode.Bottom);
+            popup.SetBinding(Popup.PlacementTargetProperty, new Binding
+            {
+                RelativeSource = RelativeSource.TemplatedParent
+            });
             popup.SetBinding(Popup.IsOpenProperty, new Binding("IsDropDownOpen")
             {
                 RelativeSource = RelativeSource.TemplatedParent,

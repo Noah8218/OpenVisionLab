@@ -75,6 +75,7 @@ namespace OpenVisionLab
         public string PipelineReviewResultDetailText => documentController.ActivePipelineReviewDocument?.ResultDetailText ?? string.Empty;
         public string PipelineReviewRunLogText => documentController.ActivePipelineReviewDocument?.RunLogText ?? string.Empty;
         public string PipelineReviewExecutionState => documentController.ActivePipelineReviewDocument?.ReviewExecutionState ?? string.Empty;
+        public string PipelineReviewProgressText => documentController.ActivePipelineReviewDocument?.ReviewProgressText ?? string.Empty;
         public string PipelineReviewGuideStageText => documentController.ActivePipelineReviewDocument?.GuideStageText ?? string.Empty;
         public string PipelineReviewGuideCurrentStepText => documentController.ActivePipelineReviewDocument?.GuideCurrentStepText ?? string.Empty;
         public string PipelineReviewGuideNextActionText => documentController.ActivePipelineReviewDocument?.GuideNextActionText ?? string.Empty;
@@ -85,9 +86,13 @@ namespace OpenVisionLab
         public string PipelineReviewGuidePairMetricText => documentController.ActivePipelineReviewDocument?.GuidePairMetricText ?? string.Empty;
         public string PipelineReviewGuideChecklistText => documentController.ActivePipelineReviewDocument?.GuideChecklistText ?? string.Empty;
         public string PipelineReviewGuideParameterFocusText => documentController.ActivePipelineReviewDocument?.GuideParameterFocusText ?? string.Empty;
+        public string PipelineReviewGuideTriageFailureText => documentController.ActivePipelineReviewDocument?.GuideTriageFailureText ?? string.Empty;
+        public string PipelineReviewGuideTriageAdjustmentText => documentController.ActivePipelineReviewDocument?.GuideTriageAdjustmentText ?? string.Empty;
+        public string PipelineReviewGuideTriageRerunText => documentController.ActivePipelineReviewDocument?.GuideTriageRerunText ?? string.Empty;
         public bool CanOpenPipelineReviewPairSample => documentController.ActivePipelineReviewDocument?.CanOpenPairSample ?? false;
         public bool CanSelectPreviousPipelineReviewStep => documentController.ActivePipelineReviewDocument?.CanSelectPreviousStep ?? false;
         public bool CanSelectNextPipelineReviewStep => documentController.ActivePipelineReviewDocument?.CanSelectNextStep ?? false;
+        public bool CanSelectFirstIssuePipelineReviewStep => documentController.ActivePipelineReviewDocument?.CanSelectFirstIssueStep ?? false;
         public bool HasPipelineReviewInputPreview => documentController.ActivePipelineReviewDocument?.HasInputPreview ?? false;
         public bool HasPipelineReviewOutputPreview => documentController.ActivePipelineReviewDocument?.HasOutputPreview ?? false;
     }

@@ -19,6 +19,8 @@ namespace OpenVisionLab
 
         bool DockLayerDocument(string layerTitle);
 
+        bool ActivateLayerDocument(string layerTitle);
+
         void ClearDockedLayerDocuments();
     }
 

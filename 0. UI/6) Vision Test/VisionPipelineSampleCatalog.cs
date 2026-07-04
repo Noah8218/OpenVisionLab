@@ -767,8 +767,7 @@ namespace OpenVisionLab
 
             while (directory != null)
             {
-                if (Directory.Exists(Path.Combine(directory.FullName, "docs", "samples"))
-                    && Directory.Exists(Path.Combine(directory.FullName, "Sample")))
+                if (Directory.Exists(Path.Combine(directory.FullName, "docs", "samples")))
                 {
                     return directory.FullName;
                 }
