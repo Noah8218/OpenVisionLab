@@ -256,6 +256,13 @@ namespace OpenVisionLab
             ValidateMinMax(result, label, step, "CANNY_LOW", "CANNY_HIGH");            ValidateGrayValueRange(result, label, step, "CannyThresholdLow");
             ValidateGrayValueRange(result, label, step, "CannyThresholdHigh");
             ValidateMinMax(result, label, step, "CannyThresholdLow", "CannyThresholdHigh");
+            ValidateMinMax(result, label, step, "FIND_ANGLE_MIN", "FIND_ANGLE_MAX");
+            ValidateUnitInterval(result, label, step, "SCORE_MIN");
+            ValidateUnitInterval(result, label, step, "GREEDINESS");
+            ValidateUnitInterval(result, label, step, "HYBRID_VERIFY_IMAGE_WEIGHT");
+            ValidatePositiveDouble(result, label, step, "MAGNIFIATION");
+            ValidatePositiveDouble(result, label, step, "RANSAC_REPROJ_THRESHOLD");
+            ValidatePositiveDouble(result, label, step, "COARSE_ANGLE_STEP");
             ValidatePositiveInt(result, label, step, "BlockSize", oddOnly: true);
             ValidatePositiveInt(result, label, step, "KernelWidth", oddOnly: false);
             ValidatePositiveInt(result, label, step, "KernelHeight", oddOnly: false);
@@ -515,6 +522,14 @@ namespace OpenVisionLab
             if (TryGetDouble(step, key, out double value) && value <= 0)
             {
                 result.Errors.Add($"{label} '{step.Name}': {key} must be greater than 0.");
+            }
+        }
+
+        private static void ValidateUnitInterval(VisionPipelineValidationResult result, string label, VisionPipelineStep step, string key)
+        {
+            if (TryGetDouble(step, key, out double value) && (value < 0 || value > 1))
+            {
+                result.Errors.Add($"{label} '{step.Name}': {key} expects a 0..1 value, not a percentage.");
             }
         }
 

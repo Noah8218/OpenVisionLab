@@ -45,15 +45,25 @@ OpenVisionLab rules:
 - Use invariant culture numbers.
 - Use C# enum names.
 - Do not invent parameter names.
+- Use score and weight parameters such as `SCORE_MIN`, `GREEDINESS`, and `HYBRID_VERIFY_IMAGE_WEIGHT` as `0..1` decimals, not percentages. Use `0.8`, not `80`.
+- Use positive numeric values for `MAGNIFIATION`, `RANSAC_REPROJ_THRESHOLD`, and `COARSE_ANGLE_STEP`.
+- Keep `FIND_ANGLE_MIN` less than or equal to `FIND_ANGLE_MAX`.
+- Use only existing template/image dependency paths. If no real file is available, omit dependency path parameters until OpenVisionLab attaches a reference image.
 - Do not embed image data.
 - Use acceptance rules only when they are conservative.
 - Prefer sample-backed metric gates from the Sample Catalog. If no close sample exists, keep acceptance loose and explain which metric should be tuned.
 - When Good/Bad sample pairs exist, use them to set acceptance gates that pass the good sample and fail the bad sample for an explainable metric.
 
+Result channel contract:
+- OpenVisionLab will derive `Inspection.Status`, `Inspection.FailedStep`,
+  `Inspection.Evidence`, `Inspection.Benchmark`, and `Inspection.NextAction`
+  from XML validation and explicit sample runs.
+- Do not add `Inspection.*` XML nodes, custom elements, or custom parameters.
+- Make step names, layer routes, output layers, judgement parameters, and
+  dependency paths clear enough for those channels to be computed after import.
+
 Return only:
-1. Recipe summary
-2. Complete VisionPipeline XML
-3. Tuning checklist with 3 to 5 concrete parameters
+Complete `VisionPipeline` XML that can be pasted into OpenVisionLab and validated before import.
 ```
 
 ## Recommended First-Pass Chains

@@ -75,6 +75,13 @@ namespace OpenVisionLab.Mvvm.Behaviors
                 typeof(InputCommandBehaviors),
                 new PropertyMetadata(TextInputFilterMode.None, OnTextInputFilterChanged));
 
+        public static readonly DependencyProperty ScrollSelectedItemIntoViewProperty =
+            DependencyProperty.RegisterAttached(
+                "ScrollSelectedItemIntoView",
+                typeof(bool),
+                typeof(InputCommandBehaviors),
+                new PropertyMetadata(false, OnScrollSelectedItemIntoViewChanged));
+
         public static ICommand GetSelectionChangedCommand(DependencyObject target)
         {
             return (ICommand)target.GetValue(SelectionChangedCommandProperty);
@@ -153,6 +160,16 @@ namespace OpenVisionLab.Mvvm.Behaviors
         public static void SetTextInputFilter(DependencyObject target, TextInputFilterMode value)
         {
             target.SetValue(TextInputFilterProperty, value);
+        }
+
+        public static bool GetScrollSelectedItemIntoView(DependencyObject target)
+        {
+            return (bool)target.GetValue(ScrollSelectedItemIntoViewProperty);
+        }
+
+        public static void SetScrollSelectedItemIntoView(DependencyObject target, bool value)
+        {
+            target.SetValue(ScrollSelectedItemIntoViewProperty, value);
         }
 
         private static void OnSelectionChangedCommandChanged(DependencyObject target, DependencyPropertyChangedEventArgs e)
@@ -321,6 +338,57 @@ namespace OpenVisionLab.Mvvm.Behaviors
             }
 
             Execute(GetUnloadedCommand(target), e);
+        }
+
+        private static void OnScrollSelectedItemIntoViewChanged(DependencyObject target, DependencyPropertyChangedEventArgs e)
+        {
+            if (target is not ListBox listBox)
+            {
+                return;
+            }
+
+            listBox.SelectionChanged -= ListBox_ScrollSelectedItemIntoViewSelectionChanged;
+            listBox.Loaded -= ListBox_ScrollSelectedItemIntoViewLoaded;
+            if ((bool)e.NewValue)
+            {
+                listBox.SelectionChanged += ListBox_ScrollSelectedItemIntoViewSelectionChanged;
+                listBox.Loaded += ListBox_ScrollSelectedItemIntoViewLoaded;
+                ScrollSelectedItemIntoView(listBox);
+            }
+        }
+
+        private static void ListBox_ScrollSelectedItemIntoViewSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is ListBox listBox)
+            {
+                ScrollSelectedItemIntoView(listBox);
+            }
+        }
+
+        private static void ListBox_ScrollSelectedItemIntoViewLoaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is ListBox listBox)
+            {
+                ScrollSelectedItemIntoView(listBox);
+            }
+        }
+
+        private static void ScrollSelectedItemIntoView(ListBox listBox)
+        {
+            if (listBox.SelectedItem == null)
+            {
+                return;
+            }
+
+            listBox.Dispatcher.BeginInvoke(
+                new Action(() =>
+                {
+                    if (listBox.SelectedItem != null)
+                    {
+                        listBox.ScrollIntoView(listBox.SelectedItem);
+                    }
+                }),
+                System.Windows.Threading.DispatcherPriority.Background);
         }
 
         private static void Execute(ICommand command, object parameter)

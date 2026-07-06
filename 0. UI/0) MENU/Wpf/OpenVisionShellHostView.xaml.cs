@@ -1,12 +1,14 @@
 using OpenVisionLab._1._Core;
 using Microsoft.Win32;
 using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using WpfUserControl = System.Windows.Controls.UserControl;
 using static OpenVisionLab.DEFINE;
+using DrawingBitmap = System.Drawing.Bitmap;
 
 namespace OpenVisionLab
 {
@@ -109,6 +111,7 @@ namespace OpenVisionLab
         private readonly OpenVisionZoomableImageController workspaceFallbackZoomController;
         private readonly OpenVisionShellHostSessionState sessionState = new OpenVisionShellHostSessionState();
         private readonly OpenVisionShellHostSessionController sessionController;
+        private VisionToolPropertyGridHost recipeStepPropertyGridHostController;
         private bool isRecipeManagerPanelDragging;
         private Point recipeManagerPanelDragStartPoint;
         private double recipeManagerPanelDragStartX;
@@ -384,7 +387,13 @@ namespace OpenVisionLab
                 ConfirmDeleteRecipe,
                 ConfirmDeletePipeline,
                 SelectImportPipelineXmlPath,
-                SelectExportPipelineXmlPath);
+                SelectExportPipelineXmlPath,
+                BuildRecipeLayerCard,
+                layerTitle => layerActivationController?.Activate(layerTitle) == true,
+                (layerTitle, imagePath) => layerManagementController?.LoadImageIntoLayer(layerTitle, imagePath) == true,
+                SelectToolMenu,
+                () => recipeStepPropertyGridHostController?.CommitPendingEdit() ?? true);
+            AttachRecipeStepPropertyGridHost();
             ChromeCommands = new OpenVisionShellHostChromeCommandSurface(
                 () => IsToolRailCompact = !IsToolRailCompact,
                 commandController,
@@ -586,6 +595,40 @@ namespace OpenVisionLab
         {
             get => (OpenVisionShellHostRecipeCommandSurface)GetValue(RecipeCommandsProperty);
             private set => SetValue(RecipeCommandsProperty, value);
+        }
+
+        private void AttachRecipeStepPropertyGridHost()
+        {
+            if (recipeStepPropertyGridHost == null || RecipeCommands == null)
+            {
+                return;
+            }
+
+            recipeStepPropertyGridHostController = VisionToolPropertyGridHost.Attach(
+                recipeStepPropertyGridHost,
+                RecipeCommands.SelectedStepEditObject,
+                (_, __) => RecipeCommands?.MarkSelectedStepEditDirty());
+            recipeStepPropertyGridHostController.SetCompactDensity(true);
+            recipeStepPropertyGridHostController.Grid.Foreground = Brushes.Black;
+            recipeStepPropertyGridHostController.Grid.Background = Brushes.White;
+            lifecycle.Track(
+                () => RecipeCommands.PropertyChanged += OnRecipeCommandsPropertyChanged,
+                () => RecipeCommands.PropertyChanged -= OnRecipeCommandsPropertyChanged);
+            lifecycle.Track(
+                () => { },
+                () =>
+                {
+                    recipeStepPropertyGridHostController?.Dispose();
+                    recipeStepPropertyGridHostController = null;
+                });
+        }
+
+        private void OnRecipeCommandsPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e == null || e.PropertyName == nameof(OpenVisionShellHostRecipeCommandSurface.SelectedStepEditObject))
+            {
+                recipeStepPropertyGridHostController?.SelectObject(RecipeCommands?.SelectedStepEditObject);
+            }
         }
 
         private void HandleRecipeManagerTitleBarMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -834,6 +877,30 @@ namespace OpenVisionLab
         private bool OpenWorkspaceSampleByNameFromReview(string sampleName)
         {
             return commandController?.OpenRunnableSampleByName(sampleName) == true;
+        }
+
+        private OpenVisionRecipeLayerCard BuildRecipeLayerCard(string layerName)
+        {
+            if (string.IsNullOrWhiteSpace(layerName) || string.Equals(layerName, "-", StringComparison.Ordinal))
+            {
+                return OpenVisionRecipeLayerCard.CreateMissing(layerName);
+            }
+
+            int layerIndex = displayManager.FindIndex(layerName);
+            if (layerIndex < 0)
+            {
+                return OpenVisionRecipeLayerCard.CreateMissing(layerName);
+            }
+
+            DrawingBitmap image = displayManager.GetLayerImage(layerName);
+            string status = image == null
+                ? LocalText("이미지 없음", "No image")
+                : string.Format(System.Globalization.CultureInfo.CurrentCulture, "{0}x{1}", image.Width, image.Height);
+            return new OpenVisionRecipeLayerCard(
+                layerName,
+                status,
+                OpenVisionBitmapImagePreviewFactory.Create(image),
+                true);
         }
 
         private void SetWorkspaceDropOverlay(bool visible, bool canDrop)

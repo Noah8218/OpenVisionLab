@@ -16,13 +16,29 @@ An LLM recipe request should provide:
 
 ## Required Output
 
-The LLM should output only:
+For direct OpenVisionLab import, the LLM should output only:
 
-1. A short recipe summary.
-2. A complete `VisionPipeline` XML document.
-3. A tuning checklist with 3 to 5 concrete parameters to adjust.
+1. A complete `VisionPipeline` XML document.
 
 The XML must be directly importable by OpenVisionLab.
+
+## Logical Result Channel Contract
+
+OpenVisionLab derives operator-facing result channels after XML validation and explicit sample runs. These channels are not XML nodes and must not be emitted as custom `Inspection.*` elements or parameters.
+
+- `Inspection.Status`: final review state such as OK, NG, or WAIT. This comes from XML validation and explicit run evidence, not from the LLM claiming success.
+- `Inspection.FailedStep`: the first failing or most relevant step name. Step names and layer routes must be clear enough for OpenVisionLab to map the failure.
+- `Inspection.Evidence`: output layer, metric, score, count, ROI, template, or dependency evidence that explains the judgement.
+- `Inspection.Benchmark`: comparison against sample catalog, Good/Bad pair, or run history when available.
+- `Inspection.NextAction`: the next safe operator action, such as validate XML, fix a dependency path, tune a threshold, review a step, or run a Good/Bad sample pair.
+
+Minimum readiness for these channels:
+
+- At least one enabled step.
+- Every enabled step writes a named output layer.
+- Output layers should be separate from input layers unless overwriting was explicitly requested.
+- Acceptance or judgement parameters should be present when the user asked for OK/NG, count, score, or measurement.
+- Template/image dependency paths must refer to real files or be omitted until OpenVisionLab attaches a reference image.
 
 ## XML Rules
 
@@ -52,8 +68,12 @@ The XML must be directly importable by OpenVisionLab.
   - Enum: C# enum name used by the OpenVisionLab property
   - ROI: `x,y,width,height`
   - ROI list: `x,y,width,height;x,y,width,height`
+- Score and weight values such as `SCORE_MIN`, `GREEDINESS`, and `HYBRID_VERIFY_IMAGE_WEIGHT` must be `0..1` decimals, not percentages. Use `0.8`, not `80`.
+- `MAGNIFIATION`, `RANSAC_REPROJ_THRESHOLD`, and `COARSE_ANGLE_STEP` must be positive numbers.
+- `FIND_ANGLE_MIN` must be less than or equal to `FIND_ANGLE_MAX`.
 - Do not invent parameter names. Use names already supported by the relevant tool property.
 - Do not embed source images in the pipeline XML.
+- Use only existing template/image dependency paths. If no real template file is available, omit dependency path parameters until OpenVisionLab attaches a reference image.
 
 ## Preferred First-Pass Chains
 
@@ -150,9 +170,9 @@ Use `Pipeline > AI Recipe` for generated XML:
 1. Paste or open the generated `VisionPipeline` XML.
 2. Use `Sample` when a known reference recipe is needed.
 3. Validate the XML and step/layer references.
-4. Run Preview with either the current display layers or a loaded image file.
+4. Review dependency, diff, and result-channel readiness messages.
 5. Apply to Pipeline only after validation succeeds.
-6. OpenVisionLab selects the final review step and runs a preview automatically when an input image is available.
+6. Run Preview or sample checks explicitly after import.
 7. Save from the Pipeline form after reviewing the generated steps.
 
 ## Do Not

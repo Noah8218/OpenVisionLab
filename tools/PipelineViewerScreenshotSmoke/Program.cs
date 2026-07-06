@@ -29,6 +29,7 @@ using Bitmap = System.Drawing.Bitmap;
 using DrawingColor = System.Drawing.Color;
 using DrawingRectangle = System.Drawing.Rectangle;
 using DrawingRectangleF = System.Drawing.RectangleF;
+using DrawingSize = System.Drawing.Size;
 using Graphics = System.Drawing.Graphics;
 using static OpenVisionLab.DEFINE;
 
@@ -323,6 +324,13 @@ internal static class Program
             {
                 throw new InvalidOperationException("WPF shell host window did not render the shared title bar control.");
             }
+
+            AssertVisibleAutomationIds(
+                window,
+                "WPF shell host window chrome",
+                "OpenVisionWindowMinimizeButton",
+                "OpenVisionWindowMaximizeRestoreButton",
+                "OpenVisionWindowCloseButton");
         });
     }
 
@@ -480,6 +488,11 @@ internal static class Program
                 OpenVisionLanguageService.T("Pipeline.RunLog"),
                 OpenVisionLanguageService.T("Shell.LogPanel.Open"));
             AssertVisibleTextDoesNotContain(shellHost, "WPF workspace empty Korean copy", "Preview 확인");
+
+            if (shellHost.RecipeCommands.LlmXmlDraftDependencyRows.Count == 0)
+            {
+                throw new InvalidOperationException("Recipe manager LLM XML dependency path drilldown did not expose any rows.");
+            }
 
             OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
             Pump(8);
@@ -1222,7 +1235,7 @@ internal static class Program
             {
                 Name = $"{name}_Step_{index + 1}",
                 ToolType = "Threshold",
-                InputLayer = "Main",
+                InputLayer = index == 0 ? "Main" : $"{name}_Preview_{index}",
                 OutputLayer = $"{name}_Preview_{index + 1}"
             });
         }
@@ -1410,7 +1423,10 @@ internal static class Program
             if (!sampleDuplicateSummary.ActivePipelineName.StartsWith("Sample_", StringComparison.OrdinalIgnoreCase)
                 || sampleDuplicateSummary.PipelineCount <= pipelineCountBeforeSampleDuplicate
                 || sampleDuplicateSummary.PipelinePreviewSteps.Count == 0
-                || !sampleDuplicateSummary.LlmXmlValidationReport.Contains("LLM XML validation: OK", StringComparison.OrdinalIgnoreCase))
+                || !ContainsAny(
+                    sampleDuplicateSummary.LlmXmlValidationReport,
+                    "LLM XML validation: OK",
+                    "LLM XML 검증: OK"))
             {
                 throw new InvalidOperationException(
                     "Recipe manager duplicate-from-sample did not activate a validated sample pipeline preview. "
@@ -1435,7 +1451,10 @@ internal static class Program
             OpenVisionRecipeManagerSummary importSummary = shellHost.RecipeCommands.SelectedRecipeSummary;
             if (importSummary.PipelinePreviewSteps.Count != 2
                 || !importSummary.PipelinePreviewSteps[0].DisplayText.Contains("Imported_Manager_Step_1", StringComparison.OrdinalIgnoreCase)
-                || !importSummary.LlmXmlValidationReport.Contains("Schema/routing: OK", StringComparison.OrdinalIgnoreCase))
+                || !ContainsAny(
+                    importSummary.LlmXmlValidationReport,
+                    "Schema/routing: OK",
+                    "스키마/경로: OK"))
             {
                 throw new InvalidOperationException(
                     "Recipe manager did not expose the imported XML validation report and preview step list. "
@@ -1530,36 +1549,197 @@ internal static class Program
             Pump(20);
             if (!shellHost.RecipeCommands.LlmPromptText.Contains("OpenVisionLab VisionPipeline XML draft", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.RecipeCommands.LlmPromptText.Contains("Template Matching", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmPromptText.Contains("Inspection.Status", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.RecipeCommands.LlmPromptText.Contains("do not run Preview", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException("Recipe manager LLM assistant did not build a grounded prompt.");
+            }
+            if (!shellHost.RecipeCommands.CopyLlmPromptCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager LLM prompt copy command was disabled after prompt generation.");
+            }
+
+            shellHost.RecipeCommands.CopyLlmPromptCommand.Execute(null);
+            Pump(40);
+            if (!ContainsAny(shellHost.RecipeCommands.LlmPromptCopyStatusText, "copied", "복사"))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager LLM prompt copy command did not report success. "
+                    + $"Status='{shellHost.RecipeCommands.LlmPromptCopyStatusText}'");
             }
 
             shellHost.RecipeCommands.CreateLlmTemplateXmlDraftCommand.Execute(null);
             Pump(80);
             if (!shellHost.RecipeCommands.LlmXmlDraftText.Contains("<VisionPipeline", StringComparison.OrdinalIgnoreCase)
-                || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("LLM draft validation: OK", StringComparison.OrdinalIgnoreCase)
-                || !shellHost.RecipeCommands.LlmXmlDraftReviewReport.Contains("Draft import review: READY", StringComparison.OrdinalIgnoreCase)
-                || !shellHost.RecipeCommands.LlmXmlDraftReviewReport.Contains("Step count delta", StringComparison.OrdinalIgnoreCase)
+                || !ContainsAny(
+                    shellHost.RecipeCommands.LlmXmlDraftValidationReport,
+                    "LLM draft validation: OK",
+                    "LLM 초안 검증: OK")
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftValidationReport, "Inspection.Status")
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftValidationReport, "Inspection.Evidence")
+                || !ContainsAny(
+                    shellHost.RecipeCommands.LlmXmlDraftReviewReport,
+                    "Draft import review: READY",
+                    "초안 가져오기 검토: 준비됨")
+                || !ContainsAny(
+                    shellHost.RecipeCommands.LlmXmlDraftReviewReport,
+                    "Step count delta",
+                    "단계 수 변화")
+                || !ContainsAny(
+                    shellHost.RecipeCommands.LlmXmlDraftDiffReport,
+                    "LLM XML diff review: READY",
+                    "LLM XML 변경점: 준비됨")
+                || !ContainsAny(
+                    shellHost.RecipeCommands.LlmXmlDraftDiffReport,
+                    "Step count delta",
+                    "단계 수 변화")
                 || !shellHost.RecipeCommands.RefreshLlmDraftReviewCommand.CanExecute(null))
             {
                 throw new InvalidOperationException(
                     "Recipe manager LLM assistant did not create a valid XML starter with import review. "
                     + $"Validation='{shellHost.RecipeCommands.LlmXmlDraftValidationReport}', "
-                    + $"Review='{shellHost.RecipeCommands.LlmXmlDraftReviewReport}'");
+                    + $"Review='{shellHost.RecipeCommands.LlmXmlDraftReviewReport}', "
+                    + $"Diff='{shellHost.RecipeCommands.LlmXmlDraftDiffReport}'");
+            }
+            if (!shellHost.RecipeCommands.CopyLlmReviewBundleCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager LLM review bundle copy command was disabled after XML starter creation.");
+            }
+
+            shellHost.RecipeCommands.CopyLlmReviewBundleCommand.Execute(null);
+            Pump(40);
+            if (!ContainsAny(shellHost.RecipeCommands.LlmReviewBundleCopyStatusText, "copied", "복사"))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager LLM review bundle copy command did not report success. "
+                    + $"Status='{shellHost.RecipeCommands.LlmReviewBundleCopyStatusText}'");
+            }
+
+            string llmReviewBundleClipboard = System.Windows.Clipboard.GetText();
+            if (!llmReviewBundleClipboard.Contains("Selected step operator context", StringComparison.OrdinalIgnoreCase)
+                || !llmReviewBundleClipboard.Contains("Failure review", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager LLM review bundle did not include selected-step operator context. "
+                    + $"Clipboard='{llmReviewBundleClipboard}'");
+            }
+
+            System.Windows.Clipboard.SetText(File.ReadAllText(llmDraftPath));
+            shellHost.RecipeCommands.PasteLlmXmlDraftFromClipboardCommand.Execute(null);
+            Pump(40);
+            if (!shellHost.RecipeCommands.LlmXmlDraftText.Contains("LLM_Draft_Manager", StringComparison.OrdinalIgnoreCase)
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftPasteStatusText, "Pasted", "붙여넣"))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager LLM XML draft was not pasted from the clipboard. "
+                    + $"Status='{shellHost.RecipeCommands.LlmXmlDraftPasteStatusText}'");
             }
 
             if (!shellHost.RecipeCommands.LoadLlmXmlDraftFromPath(llmDraftPath)
-                || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("LLM draft validation: OK", StringComparison.OrdinalIgnoreCase)
-                || !shellHost.RecipeCommands.LlmXmlDraftDependencyReport.Contains("Found:", StringComparison.OrdinalIgnoreCase)
-                || !shellHost.RecipeCommands.LlmXmlDraftReviewReport.Contains("Draft import review: READY", StringComparison.OrdinalIgnoreCase)
+                || !ContainsAny(
+                    shellHost.RecipeCommands.LlmXmlDraftValidationReport,
+                    "LLM draft validation: OK",
+                    "LLM 초안 검증: OK")
+                || !ContainsAny(
+                    shellHost.RecipeCommands.LlmXmlDraftDependencyReport,
+                    "Found:",
+                    "찾음:")
+                || !ContainsAny(
+                    shellHost.RecipeCommands.LlmXmlDraftReviewReport,
+                    "Draft import review: READY",
+                    "초안 가져오기 검토: 준비됨")
+                || !ContainsAny(
+                    shellHost.RecipeCommands.LlmXmlDraftDiffReport,
+                    "Change summary",
+                    "변경 요약")
                 || !shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest()
                 || !shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null))
             {
                 throw new InvalidOperationException(
                     "Recipe manager LLM XML draft did not load and validate before import. "
                     + $"Validation='{shellHost.RecipeCommands.LlmXmlDraftValidationReport}', "
-                    + $"Dependencies='{shellHost.RecipeCommands.LlmXmlDraftDependencyReport}'");
+                    + $"Dependencies='{shellHost.RecipeCommands.LlmXmlDraftDependencyReport}', "
+                    + $"Diff='{shellHost.RecipeCommands.LlmXmlDraftDiffReport}'");
+            }
+
+            string customInspectionDraftPath = Path.Combine(Path.GetTempPath(), "OpenVisionLab_llm_custom_inspection_" + Guid.NewGuid().ToString("N") + ".xml");
+            VisionPipeline customInspectionDraftPipeline = CreateRecipeContextSmokePipeline("LLM_CustomInspection_Manager", 1);
+            customInspectionDraftPipeline.Steps[0].Parameters["Inspection.Status"] = "OK";
+            SerializeHelper.SaveXmlFile(customInspectionDraftPath, customInspectionDraftPipeline);
+            string selectedPipelineBeforeCustomInspectionImport = shellHost.RecipeCommands.SelectedPipelineOption?.PipelineName ?? string.Empty;
+            shellHost.RecipeCommands.LlmXmlDraftText = File.ReadAllText(customInspectionDraftPath);
+            if (shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest()
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftValidationReport, "Inspection.*")
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftValidationReport, "not XML nodes", "리뷰 채널"))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager LLM XML custom Inspection.* draft was not blocked before import. "
+                    + $"Validation='{shellHost.RecipeCommands.LlmXmlDraftValidationReport}'");
+            }
+
+            if (shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null))
+            {
+                shellHost.RecipeCommands.ImportLlmXmlDraftCommand.Execute(null);
+                Pump(40);
+            }
+
+            string selectedPipelineAfterCustomInspectionImport = shellHost.RecipeCommands.SelectedPipelineOption?.PipelineName ?? string.Empty;
+            if (!string.Equals(selectedPipelineBeforeCustomInspectionImport, selectedPipelineAfterCustomInspectionImport, StringComparison.OrdinalIgnoreCase)
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftValidationReport, "Inspection.*"))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager LLM XML custom Inspection.* import attempt changed pipeline state or lost validation context. "
+                    + $"Before='{selectedPipelineBeforeCustomInspectionImport}', After='{selectedPipelineAfterCustomInspectionImport}', "
+                    + $"Validation='{shellHost.RecipeCommands.LlmXmlDraftValidationReport}'");
+            }
+
+            shellHost.RecipeCommands.LlmXmlDraftText = File.ReadAllText(llmDraftPath);
+            if (!shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest()
+                || !shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager LLM XML draft did not recover after custom Inspection.* validation failure. "
+                    + $"Validation='{shellHost.RecipeCommands.LlmXmlDraftValidationReport}'");
+            }
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+            shellHost.RecipeCommands.RefreshLocalization();
+            if (!shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest()
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftDependencyReport, "Dependency scan report")
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftDependencyReport, "Found:")
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftValidationReport, "Result channels:")
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftValidationReport, "Inspection.Status")
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftReviewReport, "Draft import review: READY")
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftReviewReport, "Step count delta")
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftDiffReport, "LLM XML diff review: READY")
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftDiffReport, "Change summary"))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager LLM XML draft reports were not available in English. "
+                    + $"Validation='{shellHost.RecipeCommands.LlmXmlDraftValidationReport}', "
+                    + $"Dependencies='{shellHost.RecipeCommands.LlmXmlDraftDependencyReport}', "
+                    + $"Review='{shellHost.RecipeCommands.LlmXmlDraftReviewReport}', "
+                    + $"Diff='{shellHost.RecipeCommands.LlmXmlDraftDiffReport}'");
+            }
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            shellHost.RecipeCommands.RefreshLocalization();
+            if (!shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest()
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftDependencyReport, "의존 파일 스캔 보고서")
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftDependencyReport, "찾음:")
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftValidationReport, "판정 출력 채널:")
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftValidationReport, "Inspection.Status")
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftReviewReport, "초안 가져오기 검토: 준비됨")
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftReviewReport, "단계 수 변화")
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftDiffReport, "LLM XML 변경점: 준비됨")
+                || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftDiffReport, "변경 요약"))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager LLM XML draft reports were not available in Korean. "
+                    + $"Validation='{shellHost.RecipeCommands.LlmXmlDraftValidationReport}', "
+                    + $"Dependencies='{shellHost.RecipeCommands.LlmXmlDraftDependencyReport}', "
+                    + $"Review='{shellHost.RecipeCommands.LlmXmlDraftReviewReport}', "
+                    + $"Diff='{shellHost.RecipeCommands.LlmXmlDraftDiffReport}'");
             }
 
             shellHost.RecipeCommands.ImportLlmXmlDraftCommand.Execute(null);
@@ -1569,9 +1749,18 @@ internal static class Program
                 || importedLlmDraftPipeline.Steps.Count != 2
                 || string.Equals(importedLlmDraftPipeline.Steps[0].Parameters["TemplatePath"], llmDependencyPath, StringComparison.OrdinalIgnoreCase)
                 || !File.Exists(importedLlmDraftPipeline.Steps[0].Parameters["TemplatePath"])
-                || !shellHost.RecipeCommands.LlmXmlDraftDependencyReport.Contains("Dependency copy report", StringComparison.OrdinalIgnoreCase)
-                || !shellHost.RecipeCommands.LlmXmlDraftDependencyReport.Contains("Copied:", StringComparison.OrdinalIgnoreCase)
-                || !shellHost.RecipeCommands.LlmXmlDraftDependencyReport.Contains("Summary: detected=1, copied=1, missing=0", StringComparison.OrdinalIgnoreCase))
+                || !ContainsAny(
+                    shellHost.RecipeCommands.LlmXmlDraftDependencyReport,
+                    "Dependency copy report",
+                    "의존 파일 복사 보고서")
+                || !ContainsAny(
+                    shellHost.RecipeCommands.LlmXmlDraftDependencyReport,
+                    "Copied:",
+                    "복사됨:")
+                || !ContainsAny(
+                    shellHost.RecipeCommands.LlmXmlDraftDependencyReport,
+                    "Summary: detected=1, copied=1, missing=0",
+                    "요약: 감지=1, 복사=1, 누락=0"))
             {
                 throw new InvalidOperationException(
                     "Recipe manager LLM XML draft import did not copy dependencies and activate the imported pipeline. "
@@ -1694,21 +1883,56 @@ internal static class Program
                 shellHost,
                 "WPF recipe manager pipeline tab",
                 "HostRecipeManagerPanel",
+                "HostRecipeManagerWorkbenchHeader",
+                "HostRecipeManagerWorkbenchGrid",
+                "HostRecipeManagerLibraryPane",
                 "HostRecipeFilterTextBox",
                 "HostRecipeManagerList",
                 "HostRecipeDetailPanel",
                 "HostRecipeDetailText",
+                "HostRecipePipelineHeaderStepFlow",
+                "HostRecipeGuidedSetupStrip",
+                "HostRecipeGuidedNextActionButton",
                 "HostRecipeDetailTabs",
                 "HostRecipePipelineTab",
                 "HostRecipePipelineManagerList",
                 "HostRecipePipelineNameEditor",
+                "HostRecipePipelineEditValidation",
                 "HostRecipePipelineActivateButton",
                 "HostRecipePipelineDuplicateButton",
                 "HostRecipePipelineRenameButton",
                 "HostRecipePipelineDeleteButton",
                 "HostRecipeSampleSelector",
                 "HostRecipeDuplicateFromSampleButton",
+                "HostRecipePipelineReviewPanel",
+                "HostRecipePipelineReviewTab",
+                "HostRecipePipelineReportTab",
+                "HostRecipeOperatorDecisionBoard",
+                "HostRecipeOperatorDecisionXmlCard",
+                "HostRecipeOperatorDecisionSampleCard",
+                "HostRecipeOperatorDecisionPairCard",
+                "HostRecipeOperatorDecisionNextAction",
+                "HostRecipeSampleMatrixPanel",
+                "HostRecipeSampleMatrixSummary",
+                "HostRecipeSampleMatrixList",
+                "HostRecipeSelectedSampleMatrixReview",
+                "HostRecipeRunCatalogBenchmarkCompactButton",
+                "HostRecipePipelineOperatorChecklist",
+                "HostRecipePipelineRunReview",
+                "HostRecipeCatalogBenchmarkPanel",
+                "HostRecipeCatalogBenchmarkSummary",
+                "HostRecipeRunCatalogBenchmarkButton",
+                "HostRecipeCatalogBenchmarkDetail",
+                "HostRecipeFailureRerunComparisonPanel",
+                "HostRecipeFailureRerunComparisonText",
+                "HostRecipeFailureViewOutputButton",
+                "HostRecipeFailureViewInputButton",
+                "HostRecipeFailureLoadParametersButton",
+                "HostRecipeFailureRerunPairButton",
+                "HostRecipeManagerNameStrip",
+                "HostRecipeManagerCommandStrip",
                 "HostRecipeNameEditor",
+                "HostRecipeEditValidation",
                 "HostRecipeCreateNamedButton",
                 "HostRecipeDuplicateButton",
                 "HostRecipeRenameButton",
@@ -1717,6 +1941,357 @@ internal static class Program
                 "HostRecipeExportXmlButton",
                 "HostRecipeManagerTitleBar",
                 "HostRecipeManagerCloseButton");
+            if (!shellHost.RecipeCommands.SampleMatrixRows.Any(row => row != null && !row.IsPlaceholder))
+            {
+                throw new InvalidOperationException("Recipe sample matrix did not expose any runnable sample rows.");
+            }
+
+            if (!ContainsAny(shellHost.RecipeCommands.SampleMatrixSummaryText, "Rows", "행"))
+            {
+                throw new InvalidOperationException(
+                    "Recipe sample matrix summary did not expose row count. "
+                    + $"Text='{shellHost.RecipeCommands.SampleMatrixSummaryText}'");
+            }
+
+            List<OpenVisionRecipeSampleMatrixRow> matrixRows = shellHost.RecipeCommands.SampleMatrixRows
+                .Where(row => row != null && !row.IsPlaceholder)
+                .ToList();
+            OpenVisionRecipeSampleMatrixRow firstMatrixRow = matrixRows[0];
+            OpenVisionRecipeSampleMatrixRow? secondMatrixRow = matrixRows.Skip(1).FirstOrDefault();
+            List<OpenVisionRecipePairSampleRunSummary> injectedPairResults = new List<OpenVisionRecipePairSampleRunSummary>
+            {
+                OpenVisionRecipePairSampleRunSummary.CreateForTest(
+                    firstMatrixRow.Role,
+                    firstMatrixRow.SampleName,
+                    secondMatrixRow == null ? "NG" : "OK",
+                    secondMatrixRow != null,
+                    "ScoreMax=0.95",
+                    string.Empty,
+                    secondMatrixRow == null ? "01 Match [NG]" : string.Empty)
+            };
+            if (secondMatrixRow != null)
+            {
+                injectedPairResults.Add(OpenVisionRecipePairSampleRunSummary.CreateForTest(
+                    secondMatrixRow.Role,
+                    secondMatrixRow.SampleName,
+                    "NG",
+                    false,
+                    "ScoreMax=0.12",
+                    "Injected matrix failure",
+                    "02 Match [NG]"));
+            }
+
+            shellHost.RecipeCommands.SetPairRunSummaryForTest(injectedPairResults);
+            Pump(40);
+            if (!shellHost.RecipeCommands.SampleMatrixRows.Any(row => row != null && row.HasResult && !row.Success && row.ResultBadgeText == "NG"))
+            {
+                throw new InvalidOperationException("Recipe sample matrix did not reflect injected NG pair result.");
+            }
+
+            if (!ContainsAny(shellHost.RecipeCommands.SelectedSampleMatrixReviewText, "Failed step", "실패 Step"))
+            {
+                throw new InvalidOperationException(
+                    "Recipe sample matrix selected review did not expose failed-step review text. "
+                    + $"Text='{shellHost.RecipeCommands.SelectedSampleMatrixReviewText}'");
+            }
+
+            if (!shellHost.RecipeCommands.RunCatalogBenchmarkCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe catalog benchmark command was not executable for the current pipeline.");
+            }
+
+            shellHost.RecipeCommands.SetCatalogBenchmarkSummaryForTest(new[]
+            {
+                new VisionPipelineBatchSampleRunResult
+                {
+                    SampleName = "Product_Battery_CellVentAlignment_Good",
+                    Status = "OK",
+                    Success = true,
+                    TotalMilliseconds = 12.3,
+                    Message = "DistanceMmAvg min 0.20 max 0.26"
+                },
+                new VisionPipelineBatchSampleRunResult
+                {
+                    SampleName = "Product_Battery_CellVentAlignment_Bad",
+                    Status = "NG",
+                    Success = false,
+                    TotalMilliseconds = 14.1,
+                    FailedStep = "02 Match [NG]",
+                    Message = "DistanceMmAvg max 0.12"
+                }
+            });
+            Pump(40);
+            if (!ContainsAny(shellHost.RecipeCommands.CatalogBenchmarkSummaryText, "Catalog", "카탈로그")
+                || !ContainsAny(shellHost.RecipeCommands.CatalogBenchmarkDetailText, "Product", "Product")
+                || !ContainsAny(shellHost.RecipeCommands.CatalogBenchmarkDetailText, "02 Match [NG]", "02 Match [NG]"))
+            {
+                throw new InvalidOperationException(
+                    "Recipe catalog benchmark panel did not expose catalog summary, Product sample scope, and failure step. "
+                    + $"Summary='{shellHost.RecipeCommands.CatalogBenchmarkSummaryText}', Detail='{shellHost.RecipeCommands.CatalogBenchmarkDetailText}'");
+            }
+
+            SaveVisibleAutomationElementPng(
+                shellHost,
+                "HostRecipeCatalogBenchmarkPanel",
+                outputPath,
+                "recipe-catalog-benchmark-panel.png");
+
+            SaveVisibleAutomationElementPng(
+                shellHost,
+                "HostRecipeSampleMatrixPanel",
+                outputPath,
+                "recipe-sample-matrix-panel.png");
+
+            shellHost.RecipeCommands.SelectedPipelinePreviewStep =
+                shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps.FirstOrDefault();
+            Pump(40);
+            if (!ContainsAny(shellHost.RecipeCommands.FailureReviewText, "Compare:", "비교:")
+                || !ContainsAny(shellHost.RecipeCommands.FailureReviewText, "Rerun", "재검사"))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager failed-step rerun/comparison review text was not actionable. "
+                    + $"Text='{shellHost.RecipeCommands.FailureReviewText}'");
+            }
+            TabItem? reportTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineReport");
+            if (reportTab == null)
+            {
+                throw new InvalidOperationException("Recipe manager report sub-tab was not found.");
+            }
+
+            reportTab.IsSelected = true;
+            Pump(40);
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager report sub-tab",
+                "HostRecipePipelineReportTab",
+                "HostRecipeCopyOperatorHandoffReportButton",
+                "HostRecipeOperatorValidationChecklistPanel",
+                "HostRecipeOperatorValidationChecklist",
+                "HostRecipeOperatorResultChannelsPanel",
+                "HostRecipeOperatorResultChannelBoard",
+                "HostRecipeOperatorResultChannels",
+                "HostRecipeOperatorHandoffReport");
+            IReadOnlyList<OpenVisionRecipeOperatorValidationRow> validationRows =
+                shellHost.RecipeCommands.OperatorValidationChecklistRows;
+            if (validationRows == null
+                || validationRows.Count < 5
+                || !validationRows.Any(row => string.Equals(row.StateText, "OK", StringComparison.OrdinalIgnoreCase))
+                || !validationRows.Any(row => string.Equals(row.StateText, "NG", StringComparison.OrdinalIgnoreCase))
+                || !validationRows.Any(row => row.ItemText.Contains("Good/Bad", StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager operator validation checklist was incomplete. "
+                    + $"Rows='{string.Join(" | ", validationRows?.Select(row => row.DisplayText) ?? Array.Empty<string>())}'");
+            }
+
+            IReadOnlyList<OpenVisionRecipeOperatorResultChannelRow> resultChannels =
+                shellHost.RecipeCommands.OperatorResultChannelRows;
+            IReadOnlyList<OpenVisionRecipeOperatorResultChannelRow> resultChannelBoard =
+                shellHost.RecipeCommands.OperatorResultChannelBoardRows;
+            if (resultChannels == null
+                || resultChannels.Count < 5
+                || !resultChannels.Any(row => row.ChannelText.Contains("Inspection.Status", StringComparison.OrdinalIgnoreCase))
+                || !resultChannels.Any(row => row.ChannelText.Contains("Inspection.FailedStep", StringComparison.OrdinalIgnoreCase))
+                || !resultChannels.Any(row => row.ChannelText.Contains("Inspection.NextAction", StringComparison.OrdinalIgnoreCase))
+                || !resultChannels.Any(row => string.Equals(row.ValueText, "NG", StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager operator result channels were incomplete. "
+                    + $"Rows='{string.Join(" | ", resultChannels?.Select(row => row.DisplayText) ?? Array.Empty<string>())}'");
+            }
+
+            if (resultChannelBoard == null
+                || resultChannelBoard.Count < 5
+                || !resultChannelBoard.Any(row => row.ChannelText.Contains("Inspection.Status", StringComparison.OrdinalIgnoreCase))
+                || !resultChannelBoard.Any(row => row.ChannelText.Contains("Inspection.Evidence", StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager operator result channel board was incomplete. "
+                    + $"Rows='{string.Join(" | ", resultChannelBoard?.Select(row => row.DisplayText) ?? Array.Empty<string>())}'");
+            }
+
+            if (!ContainsAny(shellHost.RecipeCommands.OperatorHandoffReportText, "OpenVisionLab")
+                || !ContainsAny(shellHost.RecipeCommands.OperatorHandoffReportText, "Validation checklist", "검증 체크리스트")
+                || !ContainsAny(shellHost.RecipeCommands.OperatorHandoffReportText, "Judgement outputs", "판정 출력 정의")
+                || !ContainsAny(shellHost.RecipeCommands.OperatorHandoffReportText, "Inspection.Status")
+                || !ContainsAny(shellHost.RecipeCommands.OperatorHandoffReportText, "Good/Bad")
+                || !ContainsAny(shellHost.RecipeCommands.OperatorHandoffReportText, "Next action", "다음 작업"))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager operator handoff report was incomplete. "
+                    + $"Text='{shellHost.RecipeCommands.OperatorHandoffReportText}'");
+            }
+            if (!shellHost.RecipeCommands.CopyOperatorHandoffReportCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager operator handoff report copy command was disabled.");
+            }
+
+            shellHost.RecipeCommands.CopyOperatorHandoffReportCommand.Execute(null);
+            Pump(40);
+            if (!ContainsAny(shellHost.RecipeCommands.OperatorHandoffReportStatusText, "copied", "복사"))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager operator handoff report copy command did not report success. "
+                    + $"Status='{shellHost.RecipeCommands.OperatorHandoffReportStatusText}'");
+            }
+            TabItem? runHistoryTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineRunHistory");
+            if (runHistoryTab == null)
+            {
+                throw new InvalidOperationException("Recipe manager run history sub-tab was not found.");
+            }
+
+            runHistoryTab.IsSelected = true;
+            Pump(40);
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager pipeline run history sub-tab",
+                "HostRecipePipelineRunHistoryTab",
+                "HostRecipeRecentBatchRunList",
+                "HostRecipeRecentBatchRunSampleList",
+                "HostRecipeRecentBatchRunComparisonPanel",
+                "HostRecipeBenchmarkBaselineRunSelector",
+                "HostRecipeBenchmarkBaselineRunCombo",
+                "HostRecipeRecentBatchRunComparisonSummary",
+                "HostRecipeRecentBatchRunComparisonList",
+                "HostRecipeSelectedRunComparisonReview",
+                "HostRecipeRunHistoryFailureActionPanel",
+                "HostRecipeRunHistoryFocusFailureStepButton",
+                "HostRecipeRunHistoryLoadSampleInputButton",
+                "HostRecipeRunHistoryViewInputButton",
+                "HostRecipeRunHistoryViewOutputButton",
+                "HostRecipeCopySelectedRunReviewButton",
+                "HostRecipeSelectedRunReview");
+            if (shellHost.RecipeCommands.RecentBatchRunComparisonRows == null
+                || shellHost.RecipeCommands.RecentBatchRunComparisonRows.Count == 0
+                || string.IsNullOrWhiteSpace(shellHost.RecipeCommands.RecentBatchRunComparisonSummaryText)
+                || string.IsNullOrWhiteSpace(shellHost.RecipeCommands.SelectedRecentBatchRunComparisonReviewText))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager run history did not expose benchmark diff rows and review text. "
+                    + $"Summary='{shellHost.RecipeCommands.RecentBatchRunComparisonSummaryText}', "
+                    + $"Review='{shellHost.RecipeCommands.SelectedRecentBatchRunComparisonReviewText}'");
+            }
+
+            SaveVisibleAutomationElementPng(
+                shellHost,
+                "HostRecipeRecentBatchRunComparisonPanel",
+                outputPath,
+                "recipe-benchmark-diff-panel.png");
+
+            bool hasSavedRunSelection = shellHost.RecipeCommands.SelectedRecentBatchRunOption != null
+                && !string.IsNullOrWhiteSpace(shellHost.RecipeCommands.SelectedRecentBatchRunOption.SummaryPath);
+            bool canCopySelectedRunReview = shellHost.RecipeCommands.CopySelectedRecentBatchRunReviewCommand.CanExecute(null);
+            if (hasSavedRunSelection && !canCopySelectedRunReview)
+            {
+                throw new InvalidOperationException("Recipe manager selected run review copy command was disabled for a saved run.");
+            }
+
+            if (canCopySelectedRunReview)
+            {
+                shellHost.RecipeCommands.CopySelectedRecentBatchRunReviewCommand.Execute(null);
+                Pump(40);
+                if (!ContainsAny(shellHost.RecipeCommands.SelectedRecentBatchRunReviewCopyStatusText, "copied", "복사"))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager selected run review copy command did not report success. "
+                        + $"Status='{shellHost.RecipeCommands.SelectedRecentBatchRunReviewCopyStatusText}'");
+                }
+            }
+
+            TabItem? xmlStepsTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineXmlSteps");
+            if (xmlStepsTab == null)
+            {
+                throw new InvalidOperationException("Recipe manager XML/steps sub-tab was not found.");
+            }
+
+            xmlStepsTab.IsSelected = true;
+            Pump(40);
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager pipeline XML/steps sub-tab",
+                "HostRecipePipelineXmlStepsTab",
+                "HostRecipePipelineInlineValidationReport",
+                "HostRecipePipelineValidationIssueList",
+                "HostRecipePipelineStepComparisonGrid",
+                "HostRecipePipelineStepFlowFocus",
+                "HostRecipePipelineStepFlowReview",
+                "HostRecipePipelineStepFlowSlots",
+                "HostRecipePreviousPipelineStepButton",
+                "HostRecipeNextPipelineStepButton",
+                "HostRecipeBranchOutputComparisonPanel",
+                "HostRecipeBranchOutputComparisonText",
+                "HostRecipeBranchOutputComparisonList",
+                "HostRecipePipelineInlinePreviewStepList",
+                "HostRecipePipelineSelectedStepDetailPanel",
+                "HostRecipePipelineSelectedStepOperatorContext",
+                "HostRecipePipelineSelectedStepRoute",
+                "HostRecipePipelineSelectedStepInputLayer",
+                "HostRecipePipelineSelectedStepInputLayerThumbnail",
+                "HostRecipePipelineSelectedStepOutputLayer",
+                "HostRecipePipelineSelectedStepOutputLayerThumbnail",
+                "HostRecipePipelineSelectedStepAcceptance",
+                "HostRecipePipelineSelectedStepRoiTemplate",
+                "HostRecipeOpenSelectedStepToolButton",
+                "HostRecipePipelineSelectedStepParameters",
+                "HostRecipeLoadSelectedStepParametersButton",
+                "HostRecipeApplySelectedStepParametersButton",
+                "HostRecipeSelectedStepEditStatus",
+                "HostRecipeCorrectedOutputReviewPanel",
+                "HostRecipeCorrectedOutputReviewText",
+                "HostRecipeCorrectedOutputViewButton",
+                "HostRecipeCorrectedOutputRerunButton");
+            shellHost.RecipeCommands.SelectedPipelinePreviewStep = shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps[0];
+            Pump(40);
+            if (!shellHost.RecipeCommands.CurrentPipelineStepText.Contains("Imported_Manager_Step_1", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.NextPipelineStepText.Contains("Imported_Manager_Step_2", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.PipelineStepFlowReviewText.Contains("Imported_Manager_Preview_1", StringComparison.OrdinalIgnoreCase)
+                || !ContainsAny(shellHost.RecipeCommands.BranchOutputComparisonText, "output consumers 1", "출력 소비 Step 1")
+                || !shellHost.RecipeCommands.BranchOutputComparisonRows.Any(row => row.Route.Contains("Imported_Manager_Preview_1", StringComparison.OrdinalIgnoreCase))
+                || !shellHost.RecipeCommands.SelectNextPipelinePreviewStepCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager step flow focus did not expose the selected step and next step. "
+                    + $"Current='{shellHost.RecipeCommands.CurrentPipelineStepText}', "
+                    + $"Next='{shellHost.RecipeCommands.NextPipelineStepText}', "
+                    + $"Review='{shellHost.RecipeCommands.PipelineStepFlowReviewText}', "
+                    + $"Branch='{shellHost.RecipeCommands.BranchOutputComparisonText}'");
+            }
+
+            string selectedStepOperatorContext = shellHost.RecipeCommands.PipelineSelectedStepOperatorContextText;
+            if (string.IsNullOrWhiteSpace(selectedStepOperatorContext)
+                || !ContainsAny(selectedStepOperatorContext, "Selected step", "선택 Step")
+                || !ContainsAny(selectedStepOperatorContext, "Next", "다음"))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager step flow focus did not expose selected-step operator context. "
+                    + $"Context='{selectedStepOperatorContext}'");
+            }
+
+            int beforeStepFlowNavigationRuns = shellHost.NativePreviewRunCount;
+            shellHost.RecipeCommands.SelectNextPipelinePreviewStepCommand.Execute(null);
+            Pump(40);
+            if (shellHost.RecipeCommands.SelectedPipelinePreviewStep?.Index != 2
+                || !shellHost.RecipeCommands.PreviousPipelineStepText.Contains("Imported_Manager_Step_1", StringComparison.OrdinalIgnoreCase)
+                || shellHost.NativePreviewRunCount != beforeStepFlowNavigationRuns)
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager next-step flow navigation did not select step 2 without running Preview. "
+                    + $"Selected={shellHost.RecipeCommands.SelectedPipelinePreviewStep?.Index}, "
+                    + $"Previous='{shellHost.RecipeCommands.PreviousPipelineStepText}', "
+                    + $"RunsBefore={beforeStepFlowNavigationRuns}, RunsAfter={shellHost.NativePreviewRunCount}");
+            }
+
+            SaveVisibleAutomationElementPng(
+                shellHost,
+                "HostRecipeManagerPanel",
+                outputPath,
+                "recipe-manager-panel.png");
+            SaveVisibleAutomationElementPng(
+                shellHost,
+                "HostRecipeBranchOutputComparisonPanel",
+                outputPath,
+                "recipe-branch-output-comparison-panel.png");
+
             TabItem? llmXmlTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipeLlmXml");
             if (llmXmlTab == null)
             {
@@ -1733,11 +2308,15 @@ internal static class Program
                 "HostRecipeLlmTemplateSelector",
                 "HostRecipeLlmGoalText",
                 "HostRecipeLlmDetectionPointsText",
+                "HostRecipeLlmResultChannelContract",
                 "HostRecipeBuildLlmPromptButton",
+                "HostRecipeCopyLlmPromptButton",
                 "HostRecipeCreateLlmTemplateXmlButton",
                 "HostRecipeRefreshLlmDraftReviewButton",
                 "HostRecipeLlmPromptPreview",
                 "HostRecipeLlmXmlDraftPanel",
+                "HostRecipeCopyLlmReviewBundleButton",
+                "HostRecipePasteLlmXmlDraftButton",
                 "HostRecipeLlmXmlDraftText",
                 "HostRecipeLoadLlmXmlDraftButton",
                 "HostRecipeValidateLlmXmlDraftButton",
@@ -1746,8 +2325,11 @@ internal static class Program
                 "HostRecipeUseSampleReferenceButton",
                 "HostRecipeLlmDraftValidationReport",
                 "HostRecipeLlmDependencyReport",
+                "HostRecipeLlmDependencyPathList",
                 "HostRecipeLlmDraftReviewReport",
-                "HostRecipeLlmValidationReport");
+                "HostRecipeLlmDiffReport",
+                "HostRecipeLlmValidationReport",
+                "HostRecipeLlmValidationIssueList");
             TabItem? previewTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePreview");
             if (previewTab == null)
             {
@@ -1769,6 +2351,48 @@ internal static class Program
 
             pipelineTab.IsSelected = true;
             Pump(40);
+            Button? loadSelectedStepParametersButton = FindVisualChildren<Button>(shellHost)
+                .FirstOrDefault(button => string.Equals(
+                    System.Windows.Automation.AutomationProperties.GetAutomationId(button),
+                    "HostRecipeLoadSelectedStepParametersButton",
+                    StringComparison.Ordinal));
+            if (loadSelectedStepParametersButton?.Command == null
+                || !loadSelectedStepParametersButton.Command.CanExecute(loadSelectedStepParametersButton.CommandParameter))
+            {
+                throw new InvalidOperationException("Selected step parameter load command was not available.");
+            }
+
+            int beforeStepParameterApplyRuns = shellHost.NativePreviewRunCount;
+            loadSelectedStepParametersButton.Command.Execute(loadSelectedStepParametersButton.CommandParameter);
+            Pump(180);
+            if (shellHost.RecipeCommands.SelectedStepEditObject == null
+                || !shellHost.RecipeCommands.ApplySelectedStepParametersCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Selected step parameters did not load into the recipe PropertyGrid edit object.");
+            }
+
+            shellHost.RecipeCommands.ApplySelectedStepParametersCommand.Execute(null);
+            Pump(260);
+            if (!ContainsAny(shellHost.RecipeCommands.CorrectedOutputReviewText, "corrected output", "수정")
+                || !ContainsAny(shellHost.RecipeCommands.CorrectedOutputReviewText, "Rerun", "재검사"))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager corrected-output review did not update after XML apply. "
+                    + $"Text='{shellHost.RecipeCommands.CorrectedOutputReviewText}'");
+            }
+
+            if (shellHost.NativePreviewRunCount != beforeStepParameterApplyRuns)
+            {
+                throw new InvalidOperationException(
+                    "Selected step parameter XML apply triggered preview/run. "
+                    + $"RunsBefore={beforeStepParameterApplyRuns}, RunsAfter={shellHost.NativePreviewRunCount}");
+            }
+
+            AssertVisibleTextContains(
+                shellHost,
+                "WPF selected step XML apply status",
+                "XML 반영 완료");
+            AssertHostedPropertyGridRowsRendered(shellHost, "WPF selected step PropertyGrid");
             Point recipeManagerOffsetBefore = shellHost.RecipeManagerPanelOffsetForTest;
             if (!shellHost.MoveRecipeManagerPanelForTest(-220D, 16D))
             {
@@ -1787,7 +2411,21 @@ internal static class Program
             }
 
             AssertVisibleTextContains(shellHost, "WPF recipe/language scope hint", "범위:");
-        }, captureFloatingToolWindow: false);
+            xmlStepsTab.IsSelected = true;
+            shellHost.RecipeCommands.SelectedPipelinePreviewStep = shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps[0];
+            Pump(80);
+            FrameworkElement? branchOutputPanel = FindVisualChildren<FrameworkElement>(shellHost)
+                .FirstOrDefault(item => string.Equals(
+                    System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                    "HostRecipeBranchOutputComparisonPanel",
+                    StringComparison.Ordinal));
+            if (branchOutputPanel != null)
+            {
+                branchOutputPanel.BringIntoView();
+                branchOutputPanel.UpdateLayout();
+                Pump(80);
+            }
+        }, captureFloatingToolWindow: false, captureScreen: true);
     }
 
     private static CaptureResult CaptureShellHostLayerManagementCommands(string outputPath)
@@ -1891,6 +2529,8 @@ internal static class Program
                     "HostTopCreateLayerButton",
                     "HostTopLoadImageIntoLayerButton",
                     "HostTopDeleteLayerButton");
+                AssertTopLayerIconButtonLayout(shellHost);
+                AssertVisibleTextDoesNotContain(shellHost, "WPF shell top header account chrome", "작업자");
             }, captureFloatingToolWindow: false);
         }
         finally
@@ -9523,7 +10163,7 @@ internal static class Program
 
     private static string CreateMatchingTemplateFile(Bitmap source)
     {
-        string path = Path.Combine(Path.GetTempPath(), "OpenVisionLab_matching_smoke_template.png");
+        string path = Path.Combine(Path.GetTempPath(), "OpenVisionLab_matching_smoke_template_" + Guid.NewGuid().ToString("N") + ".png");
         using Bitmap template = source.Clone(new DrawingRectangle(150, 100, 120, 96), source.PixelFormat);
         template.Save(path, System.Drawing.Imaging.ImageFormat.Png);
         return path;
@@ -9684,7 +10324,7 @@ internal static class Program
 
     private static string CreateFeatureMatchingTemplateFile(Bitmap source)
     {
-        string path = Path.Combine(Path.GetTempPath(), "OpenVisionLab_feature_matching_smoke_template.png");
+        string path = Path.Combine(Path.GetTempPath(), "OpenVisionLab_feature_matching_smoke_template_" + Guid.NewGuid().ToString("N") + ".png");
         using Bitmap template = source.Clone(new DrawingRectangle(132, 82, 190, 142), source.PixelFormat);
         template.Save(path, System.Drawing.Imaging.ImageFormat.Png);
         return path;
@@ -10018,7 +10658,8 @@ internal static class Program
         Action verify,
         bool captureFloatingToolWindow = true,
         Action<string>? verifyCapture = null,
-        int initialPumpCount = 20)
+        int initialPumpCount = 20,
+        bool captureScreen = false)
     {
         Window window = new()
         {
@@ -10045,7 +10686,15 @@ internal static class Program
                     .LastOrDefault(item => item.IsVisible && item.GetType().Name == "OpenVisionFloatingToolWindow")
                     ?? window
                 : window;
-            WriteElementPng(captureWindow, outputPath, (int)captureWindow.ActualWidth, (int)captureWindow.ActualHeight);
+            if (captureScreen)
+            {
+                WriteScreenPng(captureWindow, outputPath);
+            }
+            else
+            {
+                WriteElementPng(captureWindow, outputPath, (int)captureWindow.ActualWidth, (int)captureWindow.ActualHeight);
+            }
+
             WriteOpenGlDiagnostics(outputPath, captureWindow, content);
             verifyCapture?.Invoke(outputPath);
             return new CaptureResult(
@@ -10349,6 +10998,24 @@ internal static class Program
         DateTime started = DateTime.UtcNow;
         WriteElementPng(element, outputPath, width, height);
         return new CaptureResult(width, height, (DateTime.UtcNow - started).TotalMilliseconds);
+    }
+
+    private static void WriteScreenPng(Window window, string outputPath)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? ".");
+        window.UpdateLayout();
+        Point topLeft = window.PointToScreen(new Point(0D, 0D));
+        int width = Math.Max(1, (int)Math.Round(window.ActualWidth));
+        int height = Math.Max(1, (int)Math.Round(window.ActualHeight));
+        using Bitmap bitmap = new(width, height);
+        using Graphics graphics = Graphics.FromImage(bitmap);
+        graphics.CopyFromScreen(
+            Math.Max(0, (int)Math.Round(topLeft.X)),
+            Math.Max(0, (int)Math.Round(topLeft.Y)),
+            0,
+            0,
+            new DrawingSize(width, height));
+        bitmap.Save(outputPath, ImageFormat.Png);
     }
 
     private static void WriteElementPng(FrameworkElement element, string outputPath, int width, int height)
@@ -10722,6 +11389,80 @@ internal static class Program
         }
     }
 
+    private static void AssertTopLayerIconButtonLayout(DependencyObject root)
+    {
+        string[] ids =
+        {
+            "HostTopCreateLayerButton",
+            "HostTopLoadImageIntoLayerButton",
+            "HostTopDeleteLayerButton"
+        };
+        double previousLeft = double.NegativeInfinity;
+        foreach (string id in ids)
+        {
+            Button button = FindVisualChildren<Button>(root)
+                .Where(item => item.IsVisible)
+                .FirstOrDefault(item => string.Equals(
+                    System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                    id,
+                    StringComparison.Ordinal))
+                ?? throw new InvalidOperationException("Top layer icon button was not visible: " + id);
+            Point origin = button.TranslatePoint(new Point(0D, 0D), (UIElement)root);
+            if (button.ActualWidth < 27D
+                || button.ActualWidth > 29D
+                || button.ActualHeight < 25D
+                || button.ActualHeight > 27D
+                || origin.X <= previousLeft)
+            {
+                throw new InvalidOperationException(
+                    "Top layer icon button layout is unstable. "
+                    + $"Id={id}, Size={button.ActualWidth:0.0}x{button.ActualHeight:0.0}, X={origin.X:0.0}, PreviousX={previousLeft:0.0}");
+            }
+
+            previousLeft = origin.X;
+        }
+    }
+
+    private static void SaveVisibleAutomationElementPng(
+        DependencyObject root,
+        string automationId,
+        string outputPath,
+        string fileName)
+    {
+        FrameworkElement? element = FindVisualChildren<FrameworkElement>(root)
+            .Where(item => item.IsVisible)
+            .FirstOrDefault(item => string.Equals(
+                System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                automationId,
+                StringComparison.Ordinal));
+        if (element == null || element.ActualWidth <= 1D || element.ActualHeight <= 1D)
+        {
+            throw new InvalidOperationException(
+                "Visible AutomationId '" + automationId + "' was not available for PNG capture.");
+        }
+
+        string? parentDirectory = Path.GetDirectoryName(outputPath);
+        string outputName = Path.GetFileNameWithoutExtension(outputPath);
+        string diagnosticsDirectory = Path.Combine(
+            string.IsNullOrWhiteSpace(parentDirectory) ? "." : parentDirectory,
+            string.IsNullOrWhiteSpace(outputName) ? "diagnostics" : outputName + ".diagnostics");
+        Directory.CreateDirectory(diagnosticsDirectory);
+        string capturePath = Path.Combine(diagnosticsDirectory, fileName);
+        WriteVisibleElementPng(element, capturePath);
+    }
+
+    private static void WriteVisibleElementPng(FrameworkElement element, string outputPath)
+    {
+        int width = Math.Max(1, (int)Math.Round(element.ActualWidth));
+        int height = Math.Max(1, (int)Math.Round(element.ActualHeight));
+        RenderTargetBitmap bitmap = new(width, height, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(element);
+        PngBitmapEncoder encoder = new();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using FileStream stream = File.Create(outputPath);
+        encoder.Save(stream);
+    }
+
     private static void AssertHiddenAutomationIds(DependencyObject root, string name, params string[] hiddenIds)
     {
         HashSet<string> visibleIds = FindVisualChildren<FrameworkElement>(root)
@@ -10735,6 +11476,13 @@ internal static class Program
                 name + " still shows hidden AutomationId '" + visible + "'. "
                 + "VisibleIds='" + string.Join(", ", visibleIds.OrderBy(item => item, StringComparer.Ordinal)) + "'");
         }
+    }
+
+    private static bool ContainsAny(string text, params string[] expectedFragments)
+    {
+        return expectedFragments.Any(fragment =>
+            !string.IsNullOrWhiteSpace(fragment)
+            && (text ?? string.Empty).IndexOf(fragment, StringComparison.OrdinalIgnoreCase) >= 0);
     }
 
     private static void AssertVisibleTextContains(DependencyObject root, string name, params string[] requiredTexts)
@@ -11919,6 +12667,34 @@ internal static class Program
         if (!hasVisiblePropertyGrid)
         {
             throw new InvalidOperationException(name + " was not visible or had no selected object.");
+        }
+    }
+
+    private static void AssertHostedPropertyGridRowsRendered(DependencyObject root, string name)
+    {
+        System.Windows.Controls.WpfPropertyGrid.PropertyGrid? grid = FindVisualChildren<System.Windows.Controls.WpfPropertyGrid.PropertyGrid>(root)
+            .FirstOrDefault(item => item.IsVisible && item.ActualWidth >= 200D && item.ActualHeight >= 100D);
+        if (grid == null)
+        {
+            throw new InvalidOperationException(name + " was not visible.");
+        }
+
+        object? selectedObject = grid.SelectedObject;
+        int descriptorCount = selectedObject == null
+            ? 0
+            : System.ComponentModel.TypeDescriptor.GetProperties(selectedObject).Count;
+        int renderedTextCount = FindVisualChildren<TextBlock>(grid)
+            .Count(item => item.IsVisible
+                && !string.IsNullOrWhiteSpace(item.Text)
+                && !string.Equals(item.Text, "Search", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(item.Text, "검색", StringComparison.OrdinalIgnoreCase));
+
+        if (selectedObject == null || descriptorCount <= 0 || renderedTextCount < 2)
+        {
+            throw new InvalidOperationException(
+                name + " did not render property rows. "
+                + $"Selected={selectedObject?.GetType().Name ?? "<null>"}, Descriptors={descriptorCount}, "
+                + $"RenderedTextBlocks={renderedTextCount}");
         }
     }
 

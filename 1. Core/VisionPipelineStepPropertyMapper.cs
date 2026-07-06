@@ -151,6 +151,9 @@ namespace OpenVisionLab
                         SHOW_CONTOUR = GetBool(step.Parameters, nameof(LineGaugeProperty.SHOW_CONTOUR), true),
                         SHOW_FITLINE = GetBool(step.Parameters, nameof(LineGaugeProperty.SHOW_FITLINE), true)
                     }, step.Parameters), name, step.InputLayer, step.OutputLayer);
+                case "linedistance":
+                case "lineintersection":
+                    return AttachStepMetadata(CreatePipelineLinePairProperty(step, name), name, step.InputLayer, step.OutputLayer);
                 case "matching":
                 case "templatematching":
                     return AttachStepMetadata(ApplyCommonOpenCvProperty(new PipelineMatchingProperty(name)
@@ -270,7 +273,11 @@ namespace OpenVisionLab
             }
 
             VisionPipelineStep mapped = null;
-            if (property is OpenCvPropertyBase openCvProperty)
+            if (property is PipelineLinePairProperty linePair)
+            {
+                mapped = linePair.ToStep(inputLayer, outputLayer);
+            }
+            else if (property is OpenCvPropertyBase openCvProperty)
             {
                 mapped = VisionPipelineStepBuilder.FromProperty(openCvProperty, inputLayer, outputLayer);
             }
@@ -312,6 +319,76 @@ namespace OpenVisionLab
             target.UseAcceptanceMetricMaximum = useAcceptanceMetricMaximum;
             target.AcceptanceMetricMaximum = acceptanceMetricMaximum;
             return true;
+        }
+
+        public static bool TryCreateLineGaugePair(
+            object property,
+            out LineGaugeProperty left,
+            out LineGaugeProperty right)
+        {
+            if (property is PipelineLinePairProperty pair)
+            {
+                left = pair.CreateLeftProperty();
+                right = pair.CreateRightProperty();
+                return true;
+            }
+
+            left = null;
+            right = null;
+            return false;
+        }
+
+        private static PipelineLinePairProperty CreatePipelineLinePairProperty(VisionPipelineStep step, string name)
+        {
+            string toolType = string.IsNullOrWhiteSpace(step?.ToolType) ? "LineDistance" : step.ToolType.Trim();
+            LineGaugeProperty left = CreatePrefixedLineGaugeProperty(
+                step?.Parameters,
+                "Left",
+                name + "_Left",
+                PROJECTION_DIR.X_LTOR);
+            LineGaugeProperty right = CreatePrefixedLineGaugeProperty(
+                step?.Parameters,
+                "Right",
+                name + "_Right",
+                PROJECTION_DIR.X_RTOL);
+
+            return new PipelineLinePairProperty(name, toolType, left, right)
+            {
+                Purpose = GetString(step?.Parameters, "LinePurpose", toolType)
+            };
+        }
+
+        private static LineGaugeProperty CreatePrefixedLineGaugeProperty(
+            IDictionary<string, string> parameters,
+            string prefix,
+            string name,
+            PROJECTION_DIR defaultDirection)
+        {
+            LineGaugeProperty property = new LineGaugeProperty(name)
+            {
+                PRJ_PORALITY = GetPrefixedEnum(parameters, prefix, nameof(LineGaugeProperty.PRJ_PORALITY), PROJECTION_POLARITY.BTOW),
+                PRJ_DIR = GetPrefixedEnum(parameters, prefix, nameof(LineGaugeProperty.PRJ_DIR), defaultDirection),
+                CONTRAST = GetPrefixedDouble(parameters, prefix, nameof(LineGaugeProperty.CONTRAST), 30),
+                THICKNESS = GetPrefixedDouble(parameters, prefix, nameof(LineGaugeProperty.THICKNESS), 5),
+                SAMPLING_STEP = GetPrefixedDouble(parameters, prefix, nameof(LineGaugeProperty.SAMPLING_STEP), 10),
+                VER_PRJ_DIR = GetPrefixedEnum(parameters, prefix, nameof(LineGaugeProperty.VER_PRJ_DIR), PROJECTION_DIR.X_LTOR),
+                POINT_RANGE = GetPrefixedInt(parameters, prefix, nameof(LineGaugeProperty.POINT_RANGE), 10),
+                USE_MANUAL_ANGLE = GetPrefixedBool(parameters, prefix, nameof(LineGaugeProperty.USE_MANUAL_ANGLE), false),
+                MANUAL_ANGLE_VALUE = GetPrefixedDouble(parameters, prefix, nameof(LineGaugeProperty.MANUAL_ANGLE_VALUE), 0),
+                USE_EXTEND_FIT_LINE = GetPrefixedBool(parameters, prefix, nameof(LineGaugeProperty.USE_EXTEND_FIT_LINE), false),
+                EXTEND_FIT_LINE_VALUE = GetPrefixedInt(parameters, prefix, nameof(LineGaugeProperty.EXTEND_FIT_LINE_VALUE), 100),
+                AVERAGE_Diff = GetPrefixedDouble(parameters, prefix, nameof(LineGaugeProperty.AVERAGE_Diff), 100),
+                USE_AVERAGE_FILTER = GetPrefixedBool(parameters, prefix, nameof(LineGaugeProperty.USE_AVERAGE_FILTER), false),
+                AVERAGE_FILTER_TYPE = GetPrefixedEnum(parameters, prefix, nameof(LineGaugeProperty.AVERAGE_FILTER_TYPE), LineGaugeProperty.AVERAGE_FILTER_TYPES.Y),
+                SHOW_VERTICAL_LINE = GetPrefixedBool(parameters, prefix, nameof(LineGaugeProperty.SHOW_VERTICAL_LINE), true),
+                SHOW_EDGE = GetPrefixedBool(parameters, prefix, nameof(LineGaugeProperty.SHOW_EDGE), true),
+                SHOW_CONTOUR = GetPrefixedBool(parameters, prefix, nameof(LineGaugeProperty.SHOW_CONTOUR), true),
+                SHOW_FITLINE = GetPrefixedBool(parameters, prefix, nameof(LineGaugeProperty.SHOW_FITLINE), true)
+            };
+
+            ApplyCommonOpenCvProperty(property, parameters);
+            ApplyPrefixedOpenCvProperty(property, parameters, prefix);
+            return property;
         }
 
         private static T AttachStepMetadata<T>(T property, string name, string inputLayer, string outputLayer)
@@ -440,6 +517,90 @@ namespace OpenVisionLab
             return Enum.TryParse(value, true, out TEnum result) ? result : defaultValue;
         }
 
+        private static int GetPrefixedInt(IDictionary<string, string> parameters, string prefix, string key, int defaultValue)
+        {
+            string value = GetPrefixedValue(parameters, prefix, key);
+            return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int result)
+                ? result
+                : GetInt(parameters, key, defaultValue);
+        }
+
+        private static double GetPrefixedDouble(IDictionary<string, string> parameters, string prefix, string key, double defaultValue)
+        {
+            string value = GetPrefixedValue(parameters, prefix, key);
+            return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double result)
+                ? result
+                : GetDouble(parameters, key, defaultValue);
+        }
+
+        private static bool GetPrefixedBool(IDictionary<string, string> parameters, string prefix, string key, bool defaultValue)
+        {
+            string value = GetPrefixedValue(parameters, prefix, key);
+            return bool.TryParse(value, out bool result)
+                ? result
+                : GetBool(parameters, key, defaultValue);
+        }
+
+        private static TEnum GetPrefixedEnum<TEnum>(IDictionary<string, string> parameters, string prefix, string key, TEnum defaultValue)
+            where TEnum : struct
+        {
+            string value = GetPrefixedValue(parameters, prefix, key);
+            return Enum.TryParse(value, true, out TEnum result)
+                ? result
+                : GetEnum(parameters, key, defaultValue);
+        }
+
+        private static string GetPrefixedValue(IDictionary<string, string> parameters, string prefix, string key)
+        {
+            if (parameters == null || string.IsNullOrWhiteSpace(prefix) || string.IsNullOrWhiteSpace(key))
+            {
+                return null;
+            }
+
+            string[] candidates =
+            {
+                prefix + key,
+                prefix + "_" + key,
+                prefix + "." + key
+            };
+
+            foreach (string candidate in candidates)
+            {
+                string value = GetValue(parameters, candidate);
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+            }
+
+            return null;
+        }
+
+        private static void ApplyPrefixedOpenCvProperty(
+            OpenCvPropertyBase property,
+            IDictionary<string, string> parameters,
+            string prefix)
+        {
+            property.PIXELPERMM = GetPrefixedDouble(parameters, prefix, nameof(property.PIXELPERMM), property.PIXELPERMM);
+            property.USE_THRESHOLD = GetPrefixedBool(parameters, prefix, nameof(property.USE_THRESHOLD), property.USE_THRESHOLD);
+            property.USE_BITWISENOT = GetPrefixedBool(parameters, prefix, nameof(property.USE_BITWISENOT), property.USE_BITWISENOT);
+            property.THRESHOLD_TYPES = GetPrefixedEnum(parameters, prefix, nameof(property.THRESHOLD_TYPES), property.THRESHOLD_TYPES);
+            property.THRESHOLD = GetPrefixedDouble(parameters, prefix, nameof(property.THRESHOLD), property.THRESHOLD);
+            property.USE_ADAPTIVE_THRESHOLD = GetPrefixedBool(parameters, prefix, nameof(property.USE_ADAPTIVE_THRESHOLD), property.USE_ADAPTIVE_THRESHOLD);
+            property.ADAPTIVE_THRESHOLD = GetPrefixedDouble(parameters, prefix, nameof(property.ADAPTIVE_THRESHOLD), property.ADAPTIVE_THRESHOLD);
+            property.ADAPTIVE_THRESHOLD_TYPES = GetPrefixedEnum(parameters, prefix, nameof(property.ADAPTIVE_THRESHOLD_TYPES), property.ADAPTIVE_THRESHOLD_TYPES);
+            property.ADAPTIVE_THRESHOLD_ALGORITHM = GetPrefixedEnum(parameters, prefix, nameof(property.ADAPTIVE_THRESHOLD_ALGORITHM), property.ADAPTIVE_THRESHOLD_ALGORITHM);
+            property.BlockSize = GetPrefixedInt(parameters, prefix, nameof(property.BlockSize), property.BlockSize);
+            property.Weight = GetPrefixedInt(parameters, prefix, nameof(property.Weight), property.Weight);
+            property.USE_ROI = GetPrefixedBool(parameters, prefix, nameof(property.USE_ROI), property.USE_ROI);
+            property.USE_MULTI_ROI = GetPrefixedBool(parameters, prefix, nameof(property.USE_MULTI_ROI), property.USE_MULTI_ROI);
+            property.USE_MASKING = GetPrefixedBool(parameters, prefix, nameof(property.USE_MASKING), property.USE_MASKING);
+            property.CvROI = GetRect(parameters, prefix + nameof(property.CvROI), property.CvROI);
+            property.CvROIS = GetRectList(parameters, prefix + nameof(property.CvROIS), property.CvROIS);
+            property.CvMASKS = GetRectList(parameters, prefix + nameof(property.CvMASKS), property.CvMASKS);
+            property.USE_MASKING |= property.CvMASKS?.Count > 0;
+        }
+
         private static Rect GetRect(IDictionary<string, string> parameters, string key, Rect defaultValue)
         {
             string value = GetValue(parameters, key);
@@ -550,6 +711,7 @@ namespace OpenVisionLab
                 case PipelineContourProperty _:
                     return "Contour";
                 case PipelineLineGaugeProperty _:
+                case PipelineLinePairProperty _:
                     return "LineGauge";
                 case PipelineMatchingProperty _:
                     return "Matching";
@@ -754,6 +916,333 @@ namespace OpenVisionLab
             [Category("Acceptance")]
             [DisplayName("Metric Max")]
             public double AcceptanceMetricMaximum { get; set; }
+        }
+
+        [CategoryOrder("Step", -1)]
+        [CategoryOrder("Line Pair", 0)]
+        [CategoryOrder("Left Line", 10)]
+        [CategoryOrder("Right Line", 11)]
+        [CategoryOrder("Threshold", 20)]
+        [CategoryOrder("Acceptance", 40)]
+        private sealed class PipelineLinePairProperty : IPipelineStepMetadata
+        {
+            public PipelineLinePairProperty(
+                string name,
+                string toolType,
+                LineGaugeProperty left,
+                LineGaugeProperty right)
+            {
+                PipelineStepName = string.IsNullOrWhiteSpace(name) ? "LineDistance" : name;
+                ToolType = string.IsNullOrWhiteSpace(toolType) ? "LineDistance" : toolType.Trim();
+                Purpose = ToolType;
+                PixelPerMm = left?.PIXELPERMM ?? 1D;
+                UseRoi = left?.USE_ROI ?? false;
+                Roi = left?.CvROI ?? default;
+                UseThreshold = left?.USE_THRESHOLD ?? false;
+                UseBitwiseNot = left?.USE_BITWISENOT ?? false;
+                ThresholdType = left?.THRESHOLD_TYPES ?? ThresholdTypes.Binary;
+                Threshold = left?.THRESHOLD ?? 127D;
+                UseAdaptiveThreshold = left?.USE_ADAPTIVE_THRESHOLD ?? false;
+                AdaptiveThreshold = left?.ADAPTIVE_THRESHOLD ?? 127D;
+                Polarity = left?.PRJ_PORALITY ?? PROJECTION_POLARITY.BTOW;
+                Contrast = left?.CONTRAST ?? 30D;
+                Thickness = left?.THICKNESS ?? 5D;
+                SamplingStep = left?.SAMPLING_STEP ?? 10D;
+                VerticalProjectionDirection = left?.VER_PRJ_DIR ?? PROJECTION_DIR.X_LTOR;
+                PointRange = left?.POINT_RANGE ?? 10;
+                UseManualAngle = left?.USE_MANUAL_ANGLE ?? false;
+                ManualAngleValue = left?.MANUAL_ANGLE_VALUE ?? 0D;
+                UseExtendFitLine = left?.USE_EXTEND_FIT_LINE ?? false;
+                ExtendFitLineValue = left?.EXTEND_FIT_LINE_VALUE ?? 100;
+                UseAverageFilter = left?.USE_AVERAGE_FILTER ?? false;
+                AverageDiff = left?.AVERAGE_Diff ?? 100D;
+                AverageFilterType = left?.AVERAGE_FILTER_TYPE ?? LineGaugeProperty.AVERAGE_FILTER_TYPES.Y;
+                ShowVerticalLine = left?.SHOW_VERTICAL_LINE ?? true;
+                ShowEdge = left?.SHOW_EDGE ?? true;
+                ShowContour = left?.SHOW_CONTOUR ?? true;
+                ShowFitLine = left?.SHOW_FITLINE ?? true;
+                LeftDirection = left?.PRJ_DIR ?? PROJECTION_DIR.X_LTOR;
+                RightDirection = right?.PRJ_DIR ?? PROJECTION_DIR.X_RTOL;
+            }
+
+            [PropertyOrder(-3)]
+            [Category("Step")]
+            [DisplayName("Step Name")]
+            public string PipelineStepName { get; set; }
+
+            [PropertyOrder(-2)]
+            [Category("Step")]
+            [DisplayName("Input Layer")]
+            [TypeConverter(typeof(PipelineLayerNameConverter))]
+            public string InputLayer { get; set; } = "Main";
+
+            [PropertyOrder(-1)]
+            [Category("Step")]
+            [DisplayName("Output Layer")]
+            [TypeConverter(typeof(PipelineLayerNameConverter))]
+            public string OutputLayer { get; set; } = "Pipeline_Output";
+
+            [PropertyOrder(0)]
+            [Category("Step")]
+            [DisplayName("Enabled")]
+            public bool Enabled { get; set; } = true;
+
+            [PropertyOrder(0)]
+            [Category("Line Pair")]
+            [DisplayName("Tool Type")]
+            public string ToolType { get; set; }
+
+            [PropertyOrder(1)]
+            [Category("Line Pair")]
+            [DisplayName("Purpose")]
+            public string Purpose { get; set; }
+
+            [PropertyOrder(2)]
+            [Category("Line Pair")]
+            [DisplayName("Pixel per mm")]
+            public double PixelPerMm { get; set; }
+
+            [PropertyOrder(3)]
+            [Category("Line Pair")]
+            [DisplayName("Use ROI")]
+            public bool UseRoi { get; set; }
+
+            [PropertyOrder(4)]
+            [Category("Line Pair")]
+            [DisplayName("ROI")]
+            public Rect Roi { get; set; }
+
+            [PropertyOrder(0)]
+            [Category("Left Line")]
+            [DisplayName("Projection direction")]
+            public PROJECTION_DIR LeftDirection { get; set; }
+
+            [PropertyOrder(0)]
+            [Category("Right Line")]
+            [DisplayName("Projection direction")]
+            public PROJECTION_DIR RightDirection { get; set; }
+
+            [PropertyOrder(1)]
+            [Category("Line Pair")]
+            [DisplayName("Polarity")]
+            public PROJECTION_POLARITY Polarity { get; set; }
+
+            [PropertyOrder(2)]
+            [Category("Line Pair")]
+            [DisplayName("Contrast")]
+            public double Contrast { get; set; }
+
+            [PropertyOrder(3)]
+            [Category("Line Pair")]
+            [DisplayName("Thickness")]
+            public double Thickness { get; set; }
+
+            [PropertyOrder(4)]
+            [Category("Line Pair")]
+            [DisplayName("Sampling step")]
+            public double SamplingStep { get; set; }
+
+            [PropertyOrder(5)]
+            [Category("Line Pair")]
+            [DisplayName("Vertical projection")]
+            public PROJECTION_DIR VerticalProjectionDirection { get; set; }
+
+            [PropertyOrder(6)]
+            [Category("Line Pair")]
+            [DisplayName("Point range")]
+            public int PointRange { get; set; }
+
+            [PropertyOrder(7)]
+            [Category("Line Pair")]
+            [DisplayName("Use manual angle")]
+            public bool UseManualAngle { get; set; }
+
+            [PropertyOrder(8)]
+            [Category("Line Pair")]
+            [DisplayName("Manual angle")]
+            public double ManualAngleValue { get; set; }
+
+            [PropertyOrder(9)]
+            [Category("Line Pair")]
+            [DisplayName("Extend fit line")]
+            public bool UseExtendFitLine { get; set; }
+
+            [PropertyOrder(10)]
+            [Category("Line Pair")]
+            [DisplayName("Extend fit value")]
+            public int ExtendFitLineValue { get; set; }
+
+            [PropertyOrder(11)]
+            [Category("Line Pair")]
+            [DisplayName("Use average filter")]
+            public bool UseAverageFilter { get; set; }
+
+            [PropertyOrder(12)]
+            [Category("Line Pair")]
+            [DisplayName("Average diff")]
+            public double AverageDiff { get; set; }
+
+            [PropertyOrder(13)]
+            [Category("Line Pair")]
+            [DisplayName("Average filter type")]
+            public LineGaugeProperty.AVERAGE_FILTER_TYPES AverageFilterType { get; set; }
+
+            [PropertyOrder(14)]
+            [Category("Line Pair")]
+            [DisplayName("Show vertical line")]
+            public bool ShowVerticalLine { get; set; }
+
+            [PropertyOrder(15)]
+            [Category("Line Pair")]
+            [DisplayName("Show edge")]
+            public bool ShowEdge { get; set; }
+
+            [PropertyOrder(16)]
+            [Category("Line Pair")]
+            [DisplayName("Show contour")]
+            public bool ShowContour { get; set; }
+
+            [PropertyOrder(17)]
+            [Category("Line Pair")]
+            [DisplayName("Show fit line")]
+            public bool ShowFitLine { get; set; }
+
+            [PropertyOrder(0)]
+            [Category("Threshold")]
+            [DisplayName("Use threshold")]
+            public bool UseThreshold { get; set; }
+
+            [PropertyOrder(1)]
+            [Category("Threshold")]
+            [DisplayName("Use bitwise not")]
+            public bool UseBitwiseNot { get; set; }
+
+            [PropertyOrder(2)]
+            [Category("Threshold")]
+            [DisplayName("Threshold type")]
+            public ThresholdTypes ThresholdType { get; set; }
+
+            [PropertyOrder(3)]
+            [Category("Threshold")]
+            [DisplayName("Threshold")]
+            public double Threshold { get; set; }
+
+            [PropertyOrder(4)]
+            [Category("Threshold")]
+            [DisplayName("Use adaptive threshold")]
+            public bool UseAdaptiveThreshold { get; set; }
+
+            [PropertyOrder(5)]
+            [Category("Threshold")]
+            [DisplayName("Adaptive threshold")]
+            public double AdaptiveThreshold { get; set; }
+
+            [PropertyOrder(1)]
+            [Category("Acceptance")]
+            [DisplayName("Use Acceptance")]
+            public bool UseAcceptance { get; set; }
+
+            [PropertyOrder(2)]
+            [Category("Acceptance")]
+            [DisplayName("Expected Success")]
+            public bool ExpectedSuccess { get; set; } = true;
+
+            [PropertyOrder(3)]
+            [Category("Acceptance")]
+            [DisplayName("Max Elapsed (ms)")]
+            public double MaxElapsedMilliseconds { get; set; }
+
+            [PropertyOrder(4)]
+            [Category("Acceptance")]
+            [DisplayName("Required Message")]
+            public string RequiredMessageText { get; set; } = string.Empty;
+
+            [PropertyOrder(5)]
+            [Category("Acceptance")]
+            [DisplayName("Acceptance Metric")]
+            [TypeConverter(typeof(PipelineMetricNameConverter))]
+            public string AcceptanceMetricName { get; set; } = string.Empty;
+
+            [PropertyOrder(6)]
+            [Browsable(false)]
+            [Category("Acceptance")]
+            [DisplayName("Use Metric Min")]
+            public bool UseAcceptanceMetricMinimum { get; set; }
+
+            [PropertyOrder(7)]
+            [PropertyEditor(typeof(WpgMetricRangeEditor))]
+            [MetricRangeEditor(3, nameof(UseAcceptanceMetricMinimum), nameof(AcceptanceMetricMinimum), nameof(UseAcceptanceMetricMaximum), nameof(AcceptanceMetricMaximum))]
+            [Category("Acceptance")]
+            [DisplayName("Metric range")]
+            public double AcceptanceMetricMinimum { get; set; }
+
+            [PropertyOrder(8)]
+            [Browsable(false)]
+            [Category("Acceptance")]
+            [DisplayName("Use Metric Max")]
+            public bool UseAcceptanceMetricMaximum { get; set; }
+
+            [PropertyOrder(9)]
+            [Browsable(false)]
+            [Category("Acceptance")]
+            [DisplayName("Metric Max")]
+            public double AcceptanceMetricMaximum { get; set; }
+
+            public VisionPipelineStep ToStep(string inputLayer, string outputLayer)
+            {
+                return VisionPipelineStepBuilder.FromLineGaugePair(
+                    PipelineStepName,
+                    string.IsNullOrWhiteSpace(ToolType) ? "LineDistance" : ToolType,
+                    CreateLeftProperty(),
+                    CreateRightProperty(),
+                    inputLayer,
+                    outputLayer,
+                    Purpose);
+            }
+
+            public LineGaugeProperty CreateLeftProperty()
+            {
+                return CreateLineProperty(PipelineStepName + "_Left", LeftDirection);
+            }
+
+            public LineGaugeProperty CreateRightProperty()
+            {
+                return CreateLineProperty(PipelineStepName + "_Right", RightDirection);
+            }
+
+            private LineGaugeProperty CreateLineProperty(string name, PROJECTION_DIR direction)
+            {
+                return new LineGaugeProperty(name)
+                {
+                    PIXELPERMM = PixelPerMm,
+                    USE_ROI = UseRoi,
+                    CvROI = Roi,
+                    USE_THRESHOLD = UseThreshold,
+                    USE_BITWISENOT = UseBitwiseNot,
+                    THRESHOLD_TYPES = ThresholdType,
+                    THRESHOLD = Threshold,
+                    USE_ADAPTIVE_THRESHOLD = UseAdaptiveThreshold,
+                    ADAPTIVE_THRESHOLD = AdaptiveThreshold,
+                    PRJ_PORALITY = Polarity,
+                    PRJ_DIR = direction,
+                    CONTRAST = Contrast,
+                    THICKNESS = Thickness,
+                    SAMPLING_STEP = SamplingStep,
+                    VER_PRJ_DIR = VerticalProjectionDirection,
+                    POINT_RANGE = PointRange,
+                    USE_MANUAL_ANGLE = UseManualAngle,
+                    MANUAL_ANGLE_VALUE = ManualAngleValue,
+                    USE_EXTEND_FIT_LINE = UseExtendFitLine,
+                    EXTEND_FIT_LINE_VALUE = ExtendFitLineValue,
+                    USE_AVERAGE_FILTER = UseAverageFilter,
+                    AVERAGE_Diff = AverageDiff,
+                    AVERAGE_FILTER_TYPE = AverageFilterType,
+                    SHOW_VERTICAL_LINE = ShowVerticalLine,
+                    SHOW_EDGE = ShowEdge,
+                    SHOW_CONTOUR = ShowContour,
+                    SHOW_FITLINE = ShowFitLine
+                };
+            }
         }
 
         [CategoryOrder("Step", -1)]

@@ -73,6 +73,50 @@ namespace OpenVisionLab
             }
         }
 
+        public static void SetRepositoryProperty<TProperty>(
+            string toolKey,
+            Func<VisionToolRepository, List<TProperty>> selectProperties,
+            TProperty property,
+            int index = 0)
+            where TProperty : OpenCvPropertyBase, IOpenCvConfigurableProperty<TProperty>
+        {
+            if (property == null)
+            {
+                return;
+            }
+
+            if (selectProperties == null)
+            {
+                throw new ArgumentNullException(nameof(selectProperties));
+            }
+
+            if (index < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            string key = CreateKey(toolKey);
+            VisionToolRepository repository = TryGetRepository();
+            lock (syncRoot)
+            {
+                if (repository != null)
+                {
+                    List<TProperty> list = selectProperties(repository);
+                    if (list != null)
+                    {
+                        while (list.Count <= index)
+                        {
+                            list.Add(null);
+                        }
+
+                        list[index] = property;
+                    }
+                }
+
+                properties[key] = property;
+            }
+        }
+
         public static TProperty GetOrLoad<TProperty>(string toolKey, Func<TProperty> createDefault)
             where TProperty : OpenCvPropertyBase, IOpenCvConfigurableProperty<TProperty>
         {
