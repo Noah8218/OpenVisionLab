@@ -167,13 +167,25 @@ namespace OpenVisionLab
         public IReadOnlyList<string> RecipeOptions
         {
             get => recipeOptions;
-            private set => SetProperty(ref recipeOptions, value ?? Array.Empty<string>());
+            private set
+            {
+                if (SetProperty(ref recipeOptions, value ?? Array.Empty<string>()))
+                {
+                    OnPropertyChanged(nameof(RecipeLibrarySummaryText));
+                }
+            }
         }
 
         public IReadOnlyList<string> FilteredRecipeOptions
         {
             get => filteredRecipeOptions;
-            private set => SetProperty(ref filteredRecipeOptions, value ?? Array.Empty<string>());
+            private set
+            {
+                if (SetProperty(ref filteredRecipeOptions, value ?? Array.Empty<string>()))
+                {
+                    OnPropertyChanged(nameof(RecipeLibrarySummaryText));
+                }
+            }
         }
 
         public IReadOnlyList<OpenVisionRecipePipelineOption> PipelineOptions
@@ -183,6 +195,7 @@ namespace OpenVisionLab
             {
                 if (SetProperty(ref pipelineOptions, value ?? Array.Empty<OpenVisionRecipePipelineOption>()))
                 {
+                    OnPropertyChanged(nameof(PipelineListSummaryText));
                     ApplyPipelineFilter();
                 }
             }
@@ -191,7 +204,13 @@ namespace OpenVisionLab
         public IReadOnlyList<OpenVisionRecipePipelineOption> FilteredPipelineOptions
         {
             get => filteredPipelineOptions;
-            private set => SetProperty(ref filteredPipelineOptions, value ?? Array.Empty<OpenVisionRecipePipelineOption>());
+            private set
+            {
+                if (SetProperty(ref filteredPipelineOptions, value ?? Array.Empty<OpenVisionRecipePipelineOption>()))
+                {
+                    OnPropertyChanged(nameof(PipelineListSummaryText));
+                }
+            }
         }
 
         public IReadOnlyList<OpenVisionRecipeSampleOption> SampleOptions
@@ -727,6 +746,23 @@ namespace OpenVisionLab
 
         public string RecipeLibraryText => LocalText("레시피 라이브러리", "Recipe library");
 
+        public string RecipeLibrarySummaryText
+        {
+            get
+            {
+                int total = RecipeOptions?.Count ?? 0;
+                int visible = FilteredRecipeOptions?.Count ?? 0;
+                if (total <= 0)
+                {
+                    return RecipeLibraryText;
+                }
+
+                return visible == total
+                    ? string.Format(CultureInfo.CurrentCulture, "{0} ({1})", RecipeLibraryText, total)
+                    : string.Format(CultureInfo.CurrentCulture, "{0} ({1}/{2})", RecipeLibraryText, visible, total);
+            }
+        }
+
         public string ReviewWorkspaceText => LocalText("검토 작업면", "Review workspace");
 
         public string RecipeGuidedSetupText => BuildRecipeGuidedSetupText();
@@ -760,6 +796,23 @@ namespace OpenVisionLab
         public string DuplicateFromSampleText => LocalText("샘플 복제", "Sample copy");
 
         public string PipelineListText => LocalText("파이프라인", "Pipelines");
+
+        public string PipelineListSummaryText
+        {
+            get
+            {
+                int total = PipelineOptions?.Count ?? 0;
+                int visible = FilteredPipelineOptions?.Count ?? 0;
+                if (total <= 0)
+                {
+                    return PipelineListText;
+                }
+
+                return visible == total
+                    ? string.Format(CultureInfo.CurrentCulture, "{0} ({1})", PipelineListText, total)
+                    : string.Format(CultureInfo.CurrentCulture, "{0} ({1}/{2})", PipelineListText, visible, total);
+            }
+        }
 
         public string PipelineFilterLabelText => LocalText("검색", "Search");
 
@@ -1079,6 +1132,7 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(ManagerWorkbenchText));
             OnPropertyChanged(nameof(RecipeListText));
             OnPropertyChanged(nameof(RecipeLibraryText));
+            OnPropertyChanged(nameof(RecipeLibrarySummaryText));
             OnPropertyChanged(nameof(ReviewWorkspaceText));
             OnPropertyChanged(nameof(RecipeGuidedSetupText));
             OnPropertyChanged(nameof(RecipeGuidedNextActionText));
@@ -1096,6 +1150,7 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(RecipePreviewTabText));
             OnPropertyChanged(nameof(DuplicateFromSampleText));
             OnPropertyChanged(nameof(PipelineListText));
+            OnPropertyChanged(nameof(PipelineListSummaryText));
             OnPropertyChanged(nameof(PipelineFilterLabelText));
             OnPropertyChanged(nameof(PipelineNameText));
             OnPropertyChanged(nameof(ActivatePipelineText));
@@ -7247,7 +7302,7 @@ namespace OpenVisionLab
 
             List<string> lines = new List<string>
             {
-                OpenVisionRecipeText.Local("샘플: ", "Sample: ") + sample.SampleName,
+                OpenVisionRecipeText.Local("샘플: ", "Sample: ") + Shorten(sample.SampleName, 48),
                 OpenVisionRecipeText.Local("모드: ", "Mode: ") + (string.IsNullOrWhiteSpace(sample.ValidationMode) ? "-" : sample.ValidationMode.Trim()),
                 OpenVisionRecipeText.Local("기대값: ", "Expected: ") + (string.IsNullOrWhiteSpace(sample.ExpectedText) ? "-" : sample.ExpectedText)
             };
@@ -7270,6 +7325,22 @@ namespace OpenVisionLab
             }
 
             return string.Join(Environment.NewLine, lines);
+        }
+
+        private static string Shorten(string value, int maxLength)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "-";
+            }
+
+            string text = value.Trim();
+            if (text.Length <= maxLength)
+            {
+                return text;
+            }
+
+            return text.Substring(0, Math.Max(1, maxLength - 3)) + "...";
         }
     }
 }

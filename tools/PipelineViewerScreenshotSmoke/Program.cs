@@ -66,6 +66,9 @@ internal static class Program
         ["wpf_shell_host_recipe_context_switch"] = CaptureShellHostRecipeContextSwitch,
         ["wpf_shell_host_recipe_output_route_isolation"] = CaptureShellHostRecipeOutputRouteIsolation,
         ["wpf_shell_host_recipe_language_controls"] = CaptureShellHostRecipeLanguageControls,
+        ["wpf_shell_host_recipe_multibranch_comparison"] = CaptureShellHostRecipeMultiBranchComparison,
+        ["wpf_shell_host_recipe_large_library"] = CaptureShellHostRecipeLargeLibrary,
+        ["wpf_shell_host_recipe_large_pipeline_list"] = CaptureShellHostRecipeLargePipelineList,
         ["wpf_shell_host_layer_management_commands"] = CaptureShellHostLayerManagementCommands,
         ["wpf_shell_host_layer_rename_command"] = CaptureShellHostLayerRenameCommand,
         ["wpf_shell_host_workspace_sample_actions"] = CaptureShellHostWorkspaceSampleActions,
@@ -2426,6 +2429,233 @@ internal static class Program
                 Pump(80);
             }
         }, captureFloatingToolWindow: false, captureScreen: true);
+    }
+
+    private static CaptureResult CaptureShellHostRecipeMultiBranchComparison(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostView shellHost = CreateShellHost(
+            "Smoke_WpfShellHostRecipeMultiBranchComparison",
+            seedMainLayer: true);
+
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            ToggleButton? recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager");
+            if (recipeManagerButton == null)
+            {
+                throw new InvalidOperationException("Recipe manager button was not found.");
+            }
+
+            recipeManagerButton.IsChecked = true;
+            Pump(80);
+
+            string pipelinePath = Path.Combine(
+                "docs",
+                "samples",
+                "Contour_AllSymbolsAndFaint_LLM.pipeline.xml");
+            if (!File.Exists(pipelinePath)
+                || !shellHost.RecipeCommands.ImportPipelineXmlFromPath(pipelinePath))
+            {
+                throw new InvalidOperationException("Could not import the actual 3+ branch pipeline: " + pipelinePath);
+            }
+
+            Pump(80);
+            TabItem? xmlStepsTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineXmlSteps");
+            if (xmlStepsTab == null)
+            {
+                throw new InvalidOperationException("Recipe manager XML/steps sub-tab was not found.");
+            }
+
+            xmlStepsTab.IsSelected = true;
+            Pump(60);
+
+            OpenVisionRecipePipelineStepPreview? fanOutStep = shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps
+                .FirstOrDefault(step =>
+                    string.Equals(step.InputLayer, "Main", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(step.OutputLayer, "TextSymbol_Binary", StringComparison.OrdinalIgnoreCase));
+            if (fanOutStep == null)
+            {
+                throw new InvalidOperationException("The actual 3+ branch pipeline did not expose the expected Main fan-out step.");
+            }
+
+            shellHost.RecipeCommands.SelectedPipelinePreviewStep = fanOutStep;
+            Pump(80);
+
+            IReadOnlyList<OpenVisionRecipeBranchOutputComparisonRow> rows = shellHost.RecipeCommands.BranchOutputComparisonRows;
+            string rowsText = string.Join(" | ", rows.Select(row => row.Status + ": " + row.Route));
+            int sameInputRows = rows.Count(row => row.Status.Contains("같은", StringComparison.OrdinalIgnoreCase)
+                || row.Status.Contains("Same input", StringComparison.OrdinalIgnoreCase));
+            bool hasOutputConsumer = rows.Any(row =>
+                row.Route.Contains("TextSymbol_Binary -> TextSymbol_Clean", StringComparison.OrdinalIgnoreCase));
+            if (sameInputRows < 3 || !hasOutputConsumer)
+            {
+                throw new InvalidOperationException(
+                    "Branch/output comparison did not expose the actual 3+ fan-out candidates. "
+                    + $"SameInputRows={sameInputRows}, Rows='{rowsText}'");
+            }
+
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager actual 3+ branch comparison",
+                "HostRecipeManagerPanel",
+                "HostRecipePipelineXmlStepsTab",
+                "HostRecipePipelineInlinePreviewStepList",
+                "HostRecipeBranchOutputComparisonPanel",
+                "HostRecipeBranchOutputComparisonText",
+                "HostRecipeBranchOutputComparisonList");
+
+            FrameworkElement? branchOutputPanel = FindVisualChildren<FrameworkElement>(shellHost)
+                .FirstOrDefault(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "HostRecipeBranchOutputComparisonPanel",
+                    StringComparison.Ordinal));
+            if (branchOutputPanel != null)
+            {
+                branchOutputPanel.BringIntoView();
+                branchOutputPanel.UpdateLayout();
+                Pump(80);
+            }
+
+            SaveVisibleAutomationElementPng(
+                shellHost,
+                "HostRecipeBranchOutputComparisonPanel",
+                outputPath,
+                "recipe-multibranch-comparison-panel.png");
+        }, captureFloatingToolWindow: false);
+    }
+
+    private static CaptureResult CaptureShellHostRecipeLargeLibrary(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        CleanupTransientRecipeWorkspaces();
+
+        string batchId = Guid.NewGuid().ToString("N").Substring(0, 8);
+        List<string> recipeNames = new List<string>();
+        for (int i = 0; i < 100; i++)
+        {
+            string category = "Category_" + (i % 10).ToString("00", CultureInfo.InvariantCulture);
+            string name = "Smoke_LargeLibrary_" + batchId + "_" + category + "_Very_Long_Product_Recipe_Name_" + i.ToString("000", CultureInfo.InvariantCulture);
+            RecipeWorkspaceService.EnsureVisionWorkspace(name);
+            VisionPipelineStorage.Save(name, CreateRecipeContextSmokePipeline("LargeLibrary_" + i.ToString("000", CultureInfo.InvariantCulture), 1));
+            VisionPipelineStorage.SaveActivePipelineName(name, "LargeLibrary_" + i.ToString("000", CultureInfo.InvariantCulture));
+            recipeNames.Add(name);
+        }
+
+        string selectedRecipe = recipeNames[0];
+        OpenVisionShellHostView shellHost = CreateShellHost(selectedRecipe, seedMainLayer: false);
+        try
+        {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                ToggleButton? recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager");
+                if (recipeManagerButton == null)
+                {
+                    throw new InvalidOperationException("Recipe manager button was not found.");
+                }
+
+                recipeManagerButton.IsChecked = true;
+                Pump(80);
+                shellHost.RecipeCommands.RecipeFilterText = "Category_07";
+                Pump(80);
+
+                int filteredCount = shellHost.RecipeCommands.FilteredRecipeOptions.Count(name =>
+                    name.Contains("Smoke_LargeLibrary_" + batchId + "_Category_07", StringComparison.OrdinalIgnoreCase));
+                if (filteredCount != 10)
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager large-library filter did not narrow 100 long recipes to the expected 10. "
+                        + $"Filtered={filteredCount}, TotalVisible={shellHost.RecipeCommands.FilteredRecipeOptions.Count}");
+                }
+
+                if (!shellHost.RecipeCommands.RecipeLibrarySummaryText.Contains("10/", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager large-library summary did not expose filtered/total count. "
+                        + $"Summary='{shellHost.RecipeCommands.RecipeLibrarySummaryText}'");
+                }
+
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "WPF recipe manager large recipe library",
+                    "HostRecipeManagerPanel",
+                    "HostRecipeLibrarySummaryText",
+                    "HostRecipeFilterTextBox",
+                    "HostRecipeManagerList");
+            }, captureFloatingToolWindow: false);
+        }
+        finally
+        {
+            foreach (string recipeName in recipeNames)
+            {
+                RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+            }
+        }
+    }
+
+    private static CaptureResult CaptureShellHostRecipeLargePipelineList(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        CleanupTransientRecipeWorkspaces();
+
+        string batchId = Guid.NewGuid().ToString("N").Substring(0, 8);
+        string recipeName = "Smoke_LargePipelineList_" + batchId;
+        RecipeWorkspaceService.EnsureVisionWorkspace(recipeName);
+        for (int i = 0; i < 100; i++)
+        {
+            string group = "Group_" + (i % 10).ToString("00", CultureInfo.InvariantCulture);
+            string pipelineName = "LargePipeline_" + batchId + "_" + group + "_Very_Long_Inspection_Pipeline_Name_" + i.ToString("000", CultureInfo.InvariantCulture);
+            VisionPipelineStorage.Save(recipeName, CreateRecipeContextSmokePipeline(pipelineName, 1));
+            if (i == 0)
+            {
+                VisionPipelineStorage.SaveActivePipelineName(recipeName, pipelineName);
+            }
+        }
+
+        OpenVisionShellHostView shellHost = CreateShellHost(recipeName, seedMainLayer: false);
+        try
+        {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                ToggleButton? recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager");
+                if (recipeManagerButton == null)
+                {
+                    throw new InvalidOperationException("Recipe manager button was not found.");
+                }
+
+                recipeManagerButton.IsChecked = true;
+                Pump(80);
+                shellHost.RecipeCommands.PipelineFilterText = "Group_07";
+                Pump(80);
+
+                int filteredCount = shellHost.RecipeCommands.FilteredPipelineOptions.Count(option =>
+                    option.PipelineName.Contains("LargePipeline_" + batchId + "_Group_07", StringComparison.OrdinalIgnoreCase));
+                if (filteredCount != 10)
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager large-pipeline filter did not narrow 100 long pipelines to the expected 10. "
+                        + $"Filtered={filteredCount}, TotalVisible={shellHost.RecipeCommands.FilteredPipelineOptions.Count}");
+                }
+
+                if (!shellHost.RecipeCommands.PipelineListSummaryText.Contains("10/", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager large-pipeline summary did not expose filtered/total count. "
+                        + $"Summary='{shellHost.RecipeCommands.PipelineListSummaryText}'");
+                }
+
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "WPF recipe manager large pipeline list",
+                    "HostRecipeManagerPanel",
+                    "HostRecipePipelineListSummaryText",
+                    "HostRecipePipelineFilterTextBox",
+                    "HostRecipePipelineManagerList");
+            }, captureFloatingToolWindow: false);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
     }
 
     private static CaptureResult CaptureShellHostLayerManagementCommands(string outputPath)

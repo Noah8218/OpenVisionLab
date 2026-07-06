@@ -2137,7 +2137,7 @@
                       Margin="0,4,0,0"
                       AutomationProperties.AutomationId="HostRecipeManagerWorkbenchHeader">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="300" />
+                        <ColumnDefinition Width="320" />
                         <ColumnDefinition Width="16" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
@@ -2171,7 +2171,7 @@
                       Margin="0,12,0,0"
                       AutomationProperties.AutomationId="HostRecipeManagerWorkbenchGrid">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="300" MinWidth="260" />
+                        <ColumnDefinition Width="320" MinWidth="300" />
                         <ColumnDefinition Width="16" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
@@ -2181,7 +2181,8 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <TextBlock Text="{Binding RecipeCommands.RecipeLibraryText}"
+                        <TextBlock AutomationProperties.AutomationId="HostRecipeLibrarySummaryText"
+                                   Text="{Binding RecipeCommands.RecipeLibrarySummaryText}"
                                    Foreground="#A8CBD1"
                                    FontSize="11"
                                    FontWeight="SemiBold"
@@ -2197,11 +2198,17 @@
                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                                  VirtualizingPanel.IsVirtualizing="True"
                                  VirtualizingPanel.VirtualizationMode="Recycling">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="{x:Type ListBoxItem}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                </Style>
+                            </ListBox.ItemContainerStyle>
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding}"
                                                ToolTip="{Binding}"
                                                Foreground="#F5FAFC"
+                                               MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}}"
                                                TextTrimming="CharacterEllipsis" />
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
@@ -2316,7 +2323,8 @@
                                             <RowDefinition Height="12" />
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
-                                        <TextBlock Text="{Binding RecipeCommands.PipelineListText}"
+                                        <TextBlock AutomationProperties.AutomationId="HostRecipePipelineListSummaryText"
+                                                   Text="{Binding RecipeCommands.PipelineListSummaryText}"
                                                    Foreground="#A8CBD1"
                                                    FontSize="11"
                                                    FontWeight="SemiBold" />
@@ -2350,6 +2358,11 @@
                                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                                                  VirtualizingPanel.IsVirtualizing="True"
                                                  VirtualizingPanel.VirtualizationMode="Recycling">
+                                            <ListBox.ItemContainerStyle>
+                                                <Style TargetType="{x:Type ListBoxItem}">
+                                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                                </Style>
+                                            </ListBox.ItemContainerStyle>
                                             <ListBox.ItemTemplate>
                                                 <DataTemplate>
                                                     <StackPanel Margin="5,4">
@@ -2357,11 +2370,13 @@
                                                                    ToolTip="{Binding PipelineName}"
                                                                    Foreground="#F5FAFC"
                                                                    FontWeight="SemiBold"
+                                                                   MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}}"
                                                                    TextTrimming="CharacterEllipsis" />
                                                         <TextBlock Text="{Binding DetailText}"
                                                                    ToolTip="{Binding DetailText}"
                                                                    Foreground="#A8CBD1"
                                                                    FontSize="11"
+                                                                   MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}}"
                                                                    TextTrimming="CharacterEllipsis" />
                                                     </StackPanel>
                                                 </DataTemplate>
@@ -2491,6 +2506,7 @@
                                                                FontWeight="SemiBold" />
                                                     <TextBlock Margin="0,3,0,0"
                                                                Text="{Binding RecipeCommands.SelectedSampleAcceptanceSummaryText, Mode=OneWay}"
+                                                               ToolTip="{Binding RecipeCommands.SelectedSampleAcceptanceSummaryText, Mode=OneWay}"
                                                                Foreground="{StaticResource ShellHost.FieldTextBrush}"
                                                                FontSize="11"
                                                                TextWrapping="Wrap" />
@@ -3753,6 +3769,88 @@
                                                 </Grid>
                                             </Grid>
                                         </Border>
+                                        <TextBlock Text="{Binding RecipeCommands.SelectedRecipeSummary.PipelinePreviewStepListDisplay}"
+                                                   Foreground="#A8CBD1"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold" />
+                                        <ListBox Margin="0,4,0,10"
+                                                 MaxHeight="132"
+                                                 AutomationProperties.AutomationId="HostRecipePipelineInlinePreviewStepList"
+                                                 Background="#101A1F"
+                                                 BorderBrush="#38535C"
+                                                 BorderThickness="1"
+                                                 ItemsSource="{Binding RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps}"
+                                                 SelectedItem="{Binding RecipeCommands.SelectedPipelinePreviewStep, Mode=TwoWay}"
+                                                 mvvmBehaviors:InputCommandBehaviors.ScrollSelectedItemIntoView="True"
+                                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                                 VirtualizingPanel.IsVirtualizing="True"
+                                                 VirtualizingPanel.VirtualizationMode="Recycling">
+                                            <ListBox.ItemContainerStyle>
+                                                <Style TargetType="{x:Type ListBoxItem}">
+                                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                                    <Setter Property="Background" Value="#101A1F" />
+                                                    <Setter Property="BorderBrush" Value="#243941" />
+                                                    <Setter Property="BorderThickness" Value="1" />
+                                                    <Setter Property="Margin" Value="0,0,0,3" />
+                                                    <Setter Property="Padding" Value="2" />
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                                                <Border x:Name="ItemBorder"
+                                                                        Background="{TemplateBinding Background}"
+                                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                                        BorderThickness="{TemplateBinding BorderThickness}">
+                                                                    <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsSelected" Value="True">
+                                                                        <Setter TargetName="ItemBorder" Property="Background" Value="#183F48" />
+                                                                        <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#7CE5F0" />
+                                                                    </Trigger>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="ItemBorder" Property="Background" Value="#173039" />
+                                                                        <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#4F8F9A" />
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </ListBox.ItemContainerStyle>
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="5,3">
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="Auto" />
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock Text="{Binding DisplayText}"
+                                                                   ToolTip="{Binding FullDetailText}"
+                                                                   Foreground="#F5FAFC"
+                                                                   FontWeight="SemiBold"
+                                                                   MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Grid.Row="1"
+                                                                   Text="{Binding RouteText}"
+                                                                   ToolTip="{Binding FullDetailText}"
+                                                                   Foreground="#A8CBD1"
+                                                                   FontSize="11"
+                                                                   MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Grid.Row="2"
+                                                                   Text="{Binding ParameterPreviewText}"
+                                                                   ToolTip="{Binding FullParameterText}"
+                                                                   Foreground="#95D6B8"
+                                                                   FontSize="11"
+                                                                   MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
                                         <Border Margin="0,0,0,10"
                                                 Padding="8"
                                                 AutomationProperties.AutomationId="HostRecipeBranchOutputComparisonPanel"
@@ -4195,88 +4293,6 @@
                                                 </Border>
                                             </Grid>
                                         </Border>
-                                        <TextBlock Grid.Row="12"
-                                                   Text="{Binding RecipeCommands.SelectedRecipeSummary.PipelinePreviewStepListDisplay}"
-                                                   Foreground="#A8CBD1"
-                                                   FontSize="11"
-                                                   FontWeight="SemiBold" />
-                                        <ListBox Grid.Row="13"
-                                                 Margin="0,4,0,0"
-                                                 AutomationProperties.AutomationId="HostRecipePipelineInlinePreviewStepList"
-                                                 Background="#101A1F"
-                                                 BorderBrush="#38535C"
-                                                 BorderThickness="1"
-                                                 ItemsSource="{Binding RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps}"
-                                                 SelectedItem="{Binding RecipeCommands.SelectedPipelinePreviewStep, Mode=TwoWay}"
-                                                 mvvmBehaviors:InputCommandBehaviors.ScrollSelectedItemIntoView="True"
-                                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                                 VirtualizingPanel.IsVirtualizing="True"
-                                                 VirtualizingPanel.VirtualizationMode="Recycling">
-                                            <ListBox.ItemContainerStyle>
-                                                <Style TargetType="{x:Type ListBoxItem}">
-                                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                                    <Setter Property="Background" Value="#101A1F" />
-                                                    <Setter Property="BorderBrush" Value="#243941" />
-                                                    <Setter Property="BorderThickness" Value="1" />
-                                                    <Setter Property="Margin" Value="0,0,0,3" />
-                                                    <Setter Property="Padding" Value="2" />
-                                                    <Setter Property="Template">
-                                                        <Setter.Value>
-                                                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                                                <Border x:Name="ItemBorder"
-                                                                        Background="{TemplateBinding Background}"
-                                                                        BorderBrush="{TemplateBinding BorderBrush}"
-                                                                        BorderThickness="{TemplateBinding BorderThickness}">
-                                                                    <ContentPresenter Margin="{TemplateBinding Padding}"
-                                                                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-                                                                </Border>
-                                                                <ControlTemplate.Triggers>
-                                                                    <Trigger Property="IsSelected" Value="True">
-                                                                        <Setter TargetName="ItemBorder" Property="Background" Value="#183F48" />
-                                                                        <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#7CE5F0" />
-                                                                    </Trigger>
-                                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                                        <Setter TargetName="ItemBorder" Property="Background" Value="#173039" />
-                                                                        <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#4F8F9A" />
-                                                                    </Trigger>
-                                                                </ControlTemplate.Triggers>
-                                                            </ControlTemplate>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                </Style>
-                                            </ListBox.ItemContainerStyle>
-                                            <ListBox.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Grid Margin="5,4">
-                                                        <Grid.RowDefinitions>
-                                                            <RowDefinition Height="Auto" />
-                                                            <RowDefinition Height="Auto" />
-                                                            <RowDefinition Height="Auto" />
-                                                        </Grid.RowDefinitions>
-                                                        <TextBlock Text="{Binding DisplayText}"
-                                                                   Foreground="#F5FAFC"
-                                                                   FontWeight="SemiBold"
-                                                                   MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                                   TextWrapping="Wrap" />
-                                                        <TextBlock Grid.Row="1"
-                                                                   Text="{Binding RouteText}"
-                                                                   ToolTip="{Binding FullDetailText}"
-                                                                   Foreground="#A8CBD1"
-                                                                   FontSize="11"
-                                                                   MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                                   TextWrapping="Wrap" />
-                                                        <TextBlock Grid.Row="2"
-                                                                   Text="{Binding ParameterPreviewText}"
-                                                                   ToolTip="{Binding FullParameterText}"
-                                                                   Foreground="#95D6B8"
-                                                                   FontSize="11"
-                                                                   MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                                   TextWrapping="Wrap" />
-                                                    </Grid>
-                                                </DataTemplate>
-                                            </ListBox.ItemTemplate>
-                                        </ListBox>
                                                 </StackPanel>
                                             </ScrollViewer>
                                         </TabItem>

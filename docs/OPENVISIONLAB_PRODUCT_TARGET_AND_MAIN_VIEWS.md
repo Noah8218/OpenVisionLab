@@ -1,6 +1,6 @@
 # OpenVisionLab Product Target And Main Views
 
-Updated: 2026-07-06 15:04 KST
+Updated: 2026-07-06 20:16 KST
 
 This is the short product-direction document for future sessions. Read this first when continuing OpenVisionLab work so the goal, view structure, completed areas, and next priorities do not need to be rediscovered.
 
@@ -85,9 +85,16 @@ Responsibilities:
 Already completed enough to avoid redoing:
 
 - Recipe manager has searchable list, create/duplicate/rename/delete, XML import/export, draggable title area, close affordance, and a workbench-sized overlay layout with recipe library, review workspace, and command strip zones.
+- Recipe library filtering now shows visible/total count and is smoke-verified with 100 temporary long recipe names.
+- Pipeline list filtering now shows visible/total count and is smoke-verified with 100 temporary long pipeline names in one recipe.
+- The Recipe Manager library/sample column now uses a wider 320px baseline and shortens the displayed sample id in the sample acceptance summary while keeping the full text in the tooltip.
 - Pipeline tab is split into review/history/XML-Step sub-tabs.
 - Duplicate from sample, LLM XML validation report, structured validation issue rows, pipeline preview step list, step comparison table, selected-step detail panel, selected-step operator context, selected-step input/output layer thumbnail cards with click navigation, selected-step PropertyGrid parameter review with explicit XML apply-back and corrected-output review, selected Step branch/output comparison rows, and Good/Bad role failed-Step drill-down exist.
 - Multi-step flow focus now exists: the Recipe Manager header shows the selected Step position, tool, route, previous context, and next context; the XML/Step tab also has a Step flow focus strip with explicit Previous/Next Step navigation that does not run Preview.
+- The XML/Step tab now keeps the inline Step list directly under the flow focus strip, before branch/output and detail panels, so the actual Step rows are visible on the first 1600x900 workbench view instead of being pushed below dense review content.
+- Recipe library rows and XML/Step inline Step rows now use predictable single-line ellipsis with tooltips for long recipe names, long routes, and long parameter previews instead of allowing dense rows to grow unpredictably.
+- Branch/output comparison is now smoke-verified against the real `BentPin_TopBottom_Overlay` multi-branch sample, including same-input rows, input-producer rows, and multiple output consumers from one intermediate layer.
+- Branch/output comparison is also smoke-verified against the real `Contour_AllSymbolsAndFaint_LLM` 3+ fan-out sample, including three same-input alternatives and one output consumer from the selected Step.
 - Failed-Step rerun/comparison action strip now exists in the Review tab: selected failed Step text, input/output comparison route, direct output/input layer navigation, parameter review, and Good/Bad rerun.
 - Operator decision board now exists in the Review tab: XML/Step, selected sample, Good/Bad, and next action are summarized above the longer operator review text.
 - Operator handoff report now exists as a Pipeline review sub-tab, summarizing current recipe/pipeline/XML/sample/Good-Bad/failure-Step/next-action state for review and next-session transfer; it also has an explicit copy action and a compact result-channel board for `Inspection.Status`, `Inspection.FailedStep`, `Inspection.Evidence`, `Inspection.Benchmark`, and `Inspection.NextAction`.
@@ -116,9 +123,11 @@ Already completed enough to avoid redoing:
 
 - LLM assistant fields, prompt creation/copy, XML starter creation, XML draft load, clipboard paste, validation, import draft, reference image, dependency copy report, dependency/path action hints, dependency path drill-down rows, draft import review, before/after diff review, inline validation report, and LLM correction review-bundle copy exist. The correction bundle includes selected Step operator context and failed-Step review text.
 - LLM result-channel contract now exists in the in-app prompt/review/validation flow: `Inspection.Status`, `Inspection.FailedStep`, `Inspection.Evidence`, `Inspection.Benchmark`, and `Inspection.NextAction` are derived after validation and explicit runs, not emitted as XML nodes.
+- External LLM prompt-side API guidance now exists: `docs\OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md` and `docs\OPENVISIONLAB_LLM_TOOL_CATALOG.json`. Use these before collecting GPT/Gemini/Claude transcript examples so the LLM learns the actual OpenVisionLab XML contract instead of guessing.
 
 Next development focus:
 
+- Collect sanitized real LLM correction-loop transcripts only after the guide/catalog are included in the prompt packet; expand the corpus when transcripts expose gaps beyond the current direct smoke cases.
 - Expand dependency files and unresolved paths further only when real failure examples require more than the current row-level drill-down.
 - Keep the LLM workflow explicit: validate, review diff/dependencies, then import. It must not run Preview or silently accept recipes.
 
@@ -226,23 +235,26 @@ Future sessions should not spend time re-discovering these unless a regression i
 - Existing LLM XML before/after diff review and dependency/path action hints.
 - Existing LLM XML missing-dependency import block; drafts with unresolved template/image dependency paths must validate NG and must not import.
 - Existing LLM XML result-channel contract: `Inspection.*` values are logical operator outputs derived from validation/run evidence. Do not add a separate XML node model for them unless a real export/import workflow requires it.
+- Existing LLM XML authoring guide and machine-readable tool catalog; do not ask external LLMs to draft OpenVisionLab XML without these references unless the experiment is intentionally measuring unguided failure behavior.
 - Existing LLM XML failure/correction corpus smoke coverage for malformed XML, missing input layer, unsupported ToolType, missing dependency path, invalid parameter values, matching score percentage misuse, missing Arithmetic InputLayerB, correction-bundle copy, and corrected-draft explicit import.
-- Existing Pipeline XML/Step tab, step comparison table, selected-step detail panel, selected-step operator context, and input/output thumbnail cards with click navigation.
+- Existing Pipeline XML/Step tab, inline Step list placement before branch/output/detail panels, compact ellipsis Step rows, step comparison table, selected-step detail panel, selected-step operator context, and input/output thumbnail cards with click navigation.
 - Existing multi-step selected-Step flow focus in the Recipe Manager header and XML/Step tab.
 - Existing failed Step rerun/comparison action strip in the Recipe Manager Review tab.
 - Existing corrected-output review after selected Step XML apply.
-- Existing selected Step branch/output comparison rows for multi-step Recipe Manager review.
+- Existing selected Step branch/output comparison rows for multi-step Recipe Manager review, including real BentPin multi-branch and Contour_AllSymbolsAndFaint 3+ fan-out smoke coverage.
 - Existing LLM XML dependency path drill-down rows.
 - Existing selected Step ROI/template metadata card and explicit tool entry button.
 - Existing selected Step PropertyGrid parameter review and explicit XML apply-back inside Recipe Manager.
 - Existing Recipe Manager behavior where the selected Step PropertyGrid is hidden until parameters are explicitly loaded, and stale edit status is cleared when selected Step changes.
 - Existing Recipe Manager compact footer where the selected recipe name editor and recipe CRUD/XML commands stay visible together on 1600x900.
+- Existing Recipe Manager recipe library filter count for large libraries; do not replace it with a separate browser until a real workflow needs grouping, tags, or paging beyond search.
+- Existing Recipe Manager pipeline list filter count for large recipes; do not replace it with a separate pipeline browser until a real workflow needs grouping, tags, or paging beyond search.
 - Existing Recipe Manager guided setup strip in the detail header; do not rebuild it as a separate wizard unless a real workflow requires a full-screen guided mode.
 - Existing Recipe Manager guided next-action button; extend the action routing only when current EXE evidence shows a real next action is missing.
 - Existing Recipe Manager operator decision board in the Review tab; do not replace it with a separate wizard unless current screenshots prove the compact board is insufficient.
 - Existing Recipe Manager operator handoff Report tab, compact result-channel board, detailed result-channel list, and copy action; extend this report only with real missing review fields instead of adding another reporting surface.
 - Existing Run History selected-review copy action; do not add a second history export path unless a real operator report format is required.
-- Existing single-input custom tool base, Blob/Contour/Line single-input PropertyGrid tool base, Matching-family single-input PropertyGrid tool base, and double-input Arithmetic custom tool base; do not re-extract those shell/event forwarding paths.
+- Existing single-input custom tool base, Blob/Contour/Line single-input PropertyGrid tool base, Matching-family single-input PropertyGrid tool base, double-input Arithmetic custom tool base, and Arithmetic interaction-controller event ownership; do not re-extract those shell/event forwarding paths or move Arithmetic parameter events back into view code-behind.
 - Removed top-level account/operator chrome; do not reintroduce it without real account/session requirements.
 - Existing main window minimize, maximize/restore, and close controls; do not remove or hide these with account/session cleanup.
 
@@ -253,10 +265,11 @@ Future sessions should not spend time re-discovering these unless a regression i
    - Improve guided setup/operator review only where current screenshots show unclear next action; do not add equipment integration.
 
 2. Recipe Manager density/layout follow-up
-   - Use current-build screenshots to fix only actual clipping, overlap, or workflow friction.
+   - Use only fresh current-EXE screenshots or current-source view captures generated after the latest relevant source changes. Do not use older artifacts as current UI evidence.
+   - Fix only actual clipping, overlap, or workflow friction.
 
 3. Pipeline/Recipe operator review follow-up
-   - Expand branch/output comparison only when a real multi-branch sample needs more than the current selected-step producer/consumer map.
+   - Expand branch/output comparison only when a real multi-branch sample needs more than the current selected-step producer/consumer map and the existing BentPin plus Contour_AllSymbolsAndFaint coverage.
 
 4. Tool View code-behind cleanup continuation
    - Continue only where established presenters/controllers/shared bases fit naturally.

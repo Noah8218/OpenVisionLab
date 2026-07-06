@@ -1,0 +1,714 @@
+{
+  "version": "2026-07-06",
+  "purpose": "Machine-readable guide for external LLMs that draft OpenVisionLab VisionPipeline XML.",
+  "productIdentity": {
+    "name": "OpenVisionLab",
+    "scope": "OpenCvSharp4 rule-based vision recipe workbench with LLM-assisted XML generation and validation.",
+    "outOfScope": [
+      "camera setup",
+      "lighting control",
+      "PLC",
+      "I/O",
+      "account management",
+      "deployment runtime"
+    ]
+  },
+  "xmlContract": {
+    "root": "VisionPipeline",
+    "pipelineNameElement": "Name",
+    "stepsPath": "VisionPipeline/Steps/Step",
+    "requiredStepElements": [
+      "Name",
+      "ToolType",
+      "Enabled",
+      "InputLayer",
+      "OutputLayer"
+    ],
+    "parameterShape": {
+      "path": "Step/Parameters/Parameter",
+      "keyElement": "Key",
+      "valueElement": "Value"
+    },
+    "acceptanceElements": [
+      "UseAcceptance",
+      "ExpectedSuccess",
+      "MaxElapsedMilliseconds",
+      "AcceptanceMetricName",
+      "UseAcceptanceMetricMinimum",
+      "AcceptanceMetricMinimum",
+      "UseAcceptanceMetricMaximum",
+      "AcceptanceMetricMaximum"
+    ]
+  },
+  "globalRules": [
+    "Return only VisionPipeline XML when XML is requested.",
+    "InputLayer must be Main or a previous enabled Step OutputLayer.",
+    "Use ALLOW_BRANCH_INPUT=true for intentional fan-out from an earlier layer.",
+    "Prefer unique OutputLayer values so source images and evidence layers are preserved.",
+    "Do not emit Inspection.* XML nodes or parameters.",
+    "Do not invent dependency paths; use existing paths only.",
+    "SCORE_MIN, GREEDINESS, and HYBRID_VERIFY_IMAGE_WEIGHT are 0..1 decimals.",
+    "Threshold, MaxValue, RangeMin, RangeMax, CANNY_LOW, and CANNY_HIGH are 0..255 gray values.",
+    "Kernel sizes and counts must be positive; odd-only kernels must be odd.",
+    "FIND_ANGLE_MIN must be less than or equal to FIND_ANGLE_MAX.",
+    "OverlayMerge should usually be the final enabled Step when it is the operator review result."
+  ],
+  "resultChannels": {
+    "doNotEmitAsXml": [
+      "Inspection.Status",
+      "Inspection.FailedStep",
+      "Inspection.Evidence",
+      "Inspection.Benchmark",
+      "Inspection.NextAction"
+    ],
+    "derivedByOpenVisionLab": true,
+    "requiredEvidence": [
+      "clear Step names",
+      "clear InputLayer and OutputLayer route",
+      "measurable parameters",
+      "dependency paths that exist",
+      "acceptance metrics when OK/NG judgement is needed"
+    ]
+  },
+  "supportedToolTypeNames": [
+    "Threshold",
+    "Morphology",
+    "Filter",
+    "EdgeDetection",
+    "Edge",
+    "Blob",
+    "Contour",
+    "Line",
+    "LineGauge",
+    "LineDistance",
+    "LineDistanceGauge",
+    "LineIntersection",
+    "LineIntersectionGauge",
+    "Matching",
+    "TemplateMatching",
+    "EdgeBasedMatching",
+    "EdgeBasedTemplateMatching",
+    "EdgeTemplateMatching",
+    "Mean",
+    "RotateScale",
+    "RotateAndScale",
+    "Feature",
+    "FeatureMatching",
+    "Sift",
+    "Arithmetic",
+    "OverlayMerge",
+    "ResultMerge",
+    "MergeResult"
+  ],
+  "commonParameterTypes": {
+    "booleanPrefixes": [
+      "USE_",
+      "SHOW_",
+      "LeftUSE_",
+      "LeftSHOW_",
+      "RightUSE_",
+      "RightSHOW_"
+    ],
+    "booleanKeys": [
+      "Invert",
+      "BurnIn",
+      "DrawLabels",
+      "AllowEmpty",
+      "UseConstantInput",
+      "UseColorConstant",
+      "UseL2Gradient"
+    ],
+    "unitIntervalKeys": [
+      "SCORE_MIN",
+      "GREEDINESS",
+      "HYBRID_VERIFY_IMAGE_WEIGHT"
+    ],
+    "grayValueKeys": [
+      "Threshold",
+      "MaxValue",
+      "RangeMin",
+      "RangeMax",
+      "CANNY_LOW",
+      "CANNY_HIGH",
+      "CannyThresholdLow",
+      "CannyThresholdHigh",
+      "Gray",
+      "B",
+      "G",
+      "R"
+    ],
+    "positiveDoubleKeys": [
+      "MAGNIFIATION",
+      "RANSAC_REPROJ_THRESHOLD",
+      "COARSE_ANGLE_STEP",
+      "PIXELPERMM",
+      "ScaleXPercent",
+      "ScaleYPercent"
+    ],
+    "positiveIntegerKeys": [
+      "BlockSize",
+      "KernelWidth",
+      "KernelHeight",
+      "Iterations",
+      "MedianKernelSize",
+      "Diameter",
+      "SigmaColor",
+      "SigmaSpace",
+      "NUM_MATCH",
+      "SEARCH_STEP",
+      "MAX_TEMPLATE_POINTS"
+    ]
+  },
+  "knownMetrics": {
+    "detectionCount": [
+      "ResultCount"
+    ],
+    "area": [
+      "AreaMin",
+      "AreaMax",
+      "AreaAvg"
+    ],
+    "matchingScore": [
+      "ScoreMin",
+      "ScoreMax",
+      "ScoreAvg"
+    ],
+    "angle": [
+      "AngleMin",
+      "AngleMax",
+      "AngleAvg"
+    ],
+    "mean": [
+      "MeanValueMin",
+      "MeanValueMax",
+      "MeanValueAvg"
+    ],
+    "edge": [
+      "EdgeCount",
+      "EdgePointCount"
+    ],
+    "line": [
+      "LineLengthMin",
+      "LineLengthMax",
+      "LineLengthAvg",
+      "LineLengthMmMin",
+      "LineLengthMmMax",
+      "LineLengthMmAvg",
+      "LineAngleMin",
+      "LineAngleMax",
+      "LineAngleAvg"
+    ],
+    "distance": [
+      "DistanceCount",
+      "DistancePxMin",
+      "DistancePxMax",
+      "DistancePxAvg",
+      "DistanceMmMin",
+      "DistanceMmMax",
+      "DistanceMmAvg"
+    ],
+    "merge": [
+      "MergeOverlayCount",
+      "MergeSourceCount"
+    ],
+    "bounds": [
+      "BoundsWidthMin",
+      "BoundsWidthMax",
+      "BoundsWidthAvg",
+      "BoundsWidthMmMin",
+      "BoundsWidthMmMax",
+      "BoundsWidthMmAvg",
+      "BoundsHeightMin",
+      "BoundsHeightMax",
+      "BoundsHeightAvg",
+      "BoundsHeightMmMin",
+      "BoundsHeightMmMax",
+      "BoundsHeightMmAvg"
+    ],
+    "image": [
+      "SourceImageWidth",
+      "SourceImageHeight",
+      "SourceImageChannels",
+      "ResultImageWidth",
+      "ResultImageHeight",
+      "ResultImageChannels"
+    ]
+  },
+  "tools": [
+    {
+      "toolType": "Threshold",
+      "role": "Create a binary or range-thresholded layer from an input image.",
+      "category": "preprocess",
+      "commonParameters": [
+        "Mode",
+        "Threshold",
+        "MaxValue",
+        "ThresholdType",
+        "Invert",
+        "RangeMin",
+        "RangeMax"
+      ],
+      "validationHints": [
+        "Threshold, MaxValue, RangeMin, and RangeMax must be 0..255.",
+        "Typical OutputLayer: Binary_Result or Threshold_Result."
+      ],
+      "recommendedMetrics": [
+        "ResultImageWidth",
+        "ResultImageHeight",
+        "ResultImageChannels"
+      ]
+    },
+    {
+      "toolType": "Morphology",
+      "role": "Clean binary regions with morphological operations.",
+      "category": "preprocess",
+      "commonParameters": [
+        "Shape",
+        "Operator",
+        "KernelWidth",
+        "KernelHeight",
+        "Iterations"
+      ],
+      "validationHints": [
+        "KernelWidth, KernelHeight, and Iterations must be positive.",
+        "Use after Threshold when blobs or contours need noise cleanup."
+      ],
+      "recommendedMetrics": [
+        "ResultImageWidth",
+        "ResultImageHeight",
+        "ResultImageChannels"
+      ]
+    },
+    {
+      "toolType": "Filter",
+      "role": "Apply image filtering before inspection.",
+      "category": "preprocess",
+      "commonParameters": [
+        "FilterType",
+        "KernelWidth",
+        "KernelHeight",
+        "BorderType"
+      ],
+      "validationHints": [
+        "Kernel dimensions must be positive."
+      ],
+      "recommendedMetrics": [
+        "ResultImageWidth",
+        "ResultImageHeight",
+        "ResultImageChannels"
+      ]
+    },
+    {
+      "toolType": "EdgeDetection",
+      "aliases": [
+        "Edge"
+      ],
+      "role": "Create an edge image for downstream measurement or review.",
+      "category": "preprocess",
+      "commonParameters": [
+        "EdgeType",
+        "CannyThresholdLow",
+        "CannyThresholdHigh",
+        "CannyApertureSize",
+        "UseL2Gradient"
+      ],
+      "validationHints": [
+        "Canny thresholds must be 0..255.",
+        "CannyThresholdLow must be less than or equal to CannyThresholdHigh."
+      ],
+      "recommendedMetrics": [
+        "ResultImageWidth",
+        "ResultImageHeight",
+        "ResultImageChannels"
+      ]
+    },
+    {
+      "toolType": "Blob",
+      "role": "Detect connected bright/dark regions and measure area/count/position.",
+      "category": "inspection",
+      "commonParameters": [
+        "USE_THRESHOLD",
+        "USE_ADAPTIVE_THRESHOLD",
+        "USE_BITWISENOT",
+        "USE_ROI",
+        "USE_MULTI_ROI",
+        "MIN_AREA",
+        "MAX_AREA",
+        "PIXELPERMM",
+        "Name"
+      ],
+      "validationHints": [
+        "MIN_AREA must be less than or equal to MAX_AREA.",
+        "Disable internal threshold options when InputLayer is already a processed binary layer."
+      ],
+      "recommendedMetrics": [
+        "ResultCount",
+        "AreaMin",
+        "AreaMax",
+        "AreaAvg",
+        "BoundsWidthMax",
+        "BoundsHeightMax"
+      ]
+    },
+    {
+      "toolType": "Contour",
+      "role": "Detect contour regions and produce shape overlays.",
+      "category": "inspection",
+      "commonParameters": [
+        "USE_THRESHOLD",
+        "USE_ADAPTIVE_THRESHOLD",
+        "USE_BITWISENOT",
+        "USE_ROI",
+        "USE_MULTI_ROI",
+        "CvROI",
+        "CvROIS",
+        "MIN_AREA",
+        "MAX_AREA",
+        "ApproximationModes",
+        "DetectMode",
+        "USE_DRAW_IMAGE",
+        "DrawThickness",
+        "ClrGridHtml",
+        "PIXELPERMM",
+        "Name"
+      ],
+      "validationHints": [
+        "Use CvROI as x,y,width,height.",
+        "MIN_AREA must be less than or equal to MAX_AREA.",
+        "Use ALLOW_BRANCH_INPUT=true for intentional parallel contour checks from the same prepared layer."
+      ],
+      "recommendedMetrics": [
+        "ResultCount",
+        "AreaMin",
+        "AreaMax",
+        "AreaAvg",
+        "BoundsWidthMax",
+        "BoundsHeightMax"
+      ]
+    },
+    {
+      "toolType": "Matching",
+      "aliases": [
+        "TemplateMatching"
+      ],
+      "role": "Find a template in the input image.",
+      "category": "inspection",
+      "commonParameters": [
+        "TemplatePath",
+        "PATTERN_PATH",
+        "MATCH_MODE",
+        "SCORE_MIN",
+        "NUM_MATCH",
+        "MAGNIFIATION",
+        "USE_FIND_ANGLE",
+        "FIND_ANGLE",
+        "FIND_ANGLE_MIN",
+        "FIND_ANGLE_MAX",
+        "USE_CANNY",
+        "USE_THRESHOLD",
+        "USE_ADAPTIVE_THRESHOLD",
+        "USE_ROI",
+        "Name"
+      ],
+      "validationHints": [
+        "TemplatePath and PATTERN_PATH must point to existing files before import.",
+        "SCORE_MIN is a 0..1 decimal.",
+        "MAGNIFIATION must be positive.",
+        "FIND_ANGLE_MIN must be less than or equal to FIND_ANGLE_MAX."
+      ],
+      "recommendedMetrics": [
+        "ResultCount",
+        "ScoreMin",
+        "ScoreMax",
+        "ScoreAvg",
+        "AngleMin",
+        "AngleMax",
+        "AngleAvg"
+      ]
+    },
+    {
+      "toolType": "EdgeBasedMatching",
+      "aliases": [
+        "EdgeBasedTemplateMatching",
+        "EdgeTemplateMatching"
+      ],
+      "role": "Find a template using contour/edge shape when intensity matching is less reliable.",
+      "category": "inspection",
+      "commonParameters": [
+        "TemplatePath",
+        "PATTERN_PATH",
+        "SCORE_MIN",
+        "NUM_MATCH",
+        "GREEDINESS",
+        "CANNY_LOW",
+        "CANNY_HIGH",
+        "CANNY_APERTURE_SIZE",
+        "MIN_GRADIENT_MAGNITUDE",
+        "MAX_TEMPLATE_POINTS",
+        "USE_FIND_ANGLE",
+        "FIND_ANGLE",
+        "FIND_ANGLE_MIN",
+        "FIND_ANGLE_MAX",
+        "SEARCH_STEP",
+        "USE_COARSE_TO_FINE_ANGLE_SEARCH",
+        "HYBRID_VERIFY_IMAGE_WEIGHT",
+        "USE_HYBRID_VERIFY",
+        "USE_ROI",
+        "Name"
+      ],
+      "validationHints": [
+        "TemplatePath and PATTERN_PATH must point to existing files before import.",
+        "SCORE_MIN, GREEDINESS, and HYBRID_VERIFY_IMAGE_WEIGHT are 0..1 decimals.",
+        "CANNY_LOW and CANNY_HIGH are 0..255 and low must be less than or equal to high.",
+        "CANNY_APERTURE_SIZE must be odd and in the supported Canny range."
+      ],
+      "recommendedMetrics": [
+        "ResultCount",
+        "ScoreMin",
+        "ScoreMax",
+        "ScoreAvg",
+        "AngleMin",
+        "AngleMax",
+        "AngleAvg"
+      ]
+    },
+    {
+      "toolType": "FeatureMatching",
+      "aliases": [
+        "Feature",
+        "Sift"
+      ],
+      "role": "Find a target by feature points and geometric verification.",
+      "category": "inspection",
+      "commonParameters": [
+        "TemplatePath",
+        "PATTERN_PATH",
+        "SCORE_MIN",
+        "RANSAC_REPROJ_THRESHOLD",
+        "USE_THRESHOLD",
+        "USE_ADAPTIVE_THRESHOLD",
+        "USE_ROI",
+        "Name"
+      ],
+      "validationHints": [
+        "TemplatePath and PATTERN_PATH must point to existing files before import.",
+        "SCORE_MIN is a 0..1 decimal.",
+        "RANSAC_REPROJ_THRESHOLD must be positive."
+      ],
+      "recommendedMetrics": [
+        "ResultCount",
+        "ScoreMin",
+        "ScoreMax",
+        "ScoreAvg"
+      ]
+    },
+    {
+      "toolType": "Mean",
+      "role": "Measure average brightness or channel intensity in a region.",
+      "category": "measurement",
+      "commonParameters": [
+        "USE_THRESHOLD",
+        "USE_ADAPTIVE_THRESHOLD",
+        "USE_BITWISENOT",
+        "USE_ROI",
+        "USE_MULTI_ROI",
+        "CvROI",
+        "MEAN_TYPES",
+        "Name"
+      ],
+      "validationHints": [
+        "Use MEAN_TYPES from the supported enum.",
+        "Use MeanValueAvg or min/max mean metrics for judgement."
+      ],
+      "recommendedMetrics": [
+        "ResultCount",
+        "MeanValueMin",
+        "MeanValueMax",
+        "MeanValueAvg"
+      ]
+    },
+    {
+      "toolType": "LineGauge",
+      "aliases": [
+        "Line"
+      ],
+      "role": "Find line/edge features for gauge-style measurement.",
+      "category": "measurement",
+      "commonParameters": [
+        "USE_ROI",
+        "CvROI",
+        "CONTRAST",
+        "THICKNESS",
+        "SAMPLING_STEP",
+        "PRJ_DIR",
+        "PRJ_PORALITY",
+        "SHOW_EDGE",
+        "SHOW_FITLINE",
+        "PIXELPERMM",
+        "Name"
+      ],
+      "validationHints": [
+        "CONTRAST, THICKNESS, SAMPLING_STEP, and PIXELPERMM are numeric; PIXELPERMM must be positive.",
+        "Use line metrics for acceptance."
+      ],
+      "recommendedMetrics": [
+        "ResultCount",
+        "EdgeCount",
+        "EdgePointCount",
+        "LineLengthMax",
+        "LineAngleAvg"
+      ]
+    },
+    {
+      "toolType": "LineDistance",
+      "aliases": [
+        "LineDistanceGauge"
+      ],
+      "role": "Measure distance between paired edge/line projections.",
+      "category": "measurement",
+      "commonParameters": [
+        "USE_ROI",
+        "CvROI",
+        "CONTRAST",
+        "THICKNESS",
+        "SAMPLING_STEP",
+        "POINT_RANGE",
+        "LeftPRJ_DIR",
+        "RightPRJ_DIR",
+        "VER_PRJ_DIR",
+        "PRJ_PORALITY",
+        "SHOW_EDGE",
+        "SHOW_VERTICAL_LINE",
+        "USE_MANUAL_ANGLE",
+        "MANUAL_ANGLE_VALUE",
+        "PIXELPERMM",
+        "Name"
+      ],
+      "validationHints": [
+        "POINT_RANGE is an integer.",
+        "PIXELPERMM must be positive when mm metrics are used."
+      ],
+      "recommendedMetrics": [
+        "ResultCount",
+        "DistancePxAvg",
+        "DistanceMmAvg",
+        "EdgeCount"
+      ]
+    },
+    {
+      "toolType": "LineIntersection",
+      "aliases": [
+        "LineIntersectionGauge"
+      ],
+      "role": "Review intersection-style line geometry.",
+      "category": "measurement",
+      "commonParameters": [
+        "USE_ROI",
+        "CvROI",
+        "CONTRAST",
+        "THICKNESS",
+        "SAMPLING_STEP",
+        "PIXELPERMM"
+      ],
+      "validationHints": [
+        "Use only when the recipe intent needs an intersection/gauge result."
+      ],
+      "recommendedMetrics": [
+        "ResultCount",
+        "EdgeCount",
+        "LineLengthMax",
+        "LineAngleAvg"
+      ]
+    },
+    {
+      "toolType": "RotateScale",
+      "aliases": [
+        "RotateAndScale"
+      ],
+      "role": "Rotate and/or resize an image layer.",
+      "category": "preprocess",
+      "commonParameters": [
+        "Angle",
+        "ScaleXPercent",
+        "ScaleYPercent",
+        "Interpolation",
+        "BorderType"
+      ],
+      "validationHints": [
+        "ScaleXPercent and ScaleYPercent must be positive."
+      ],
+      "recommendedMetrics": [
+        "ResultImageWidth",
+        "ResultImageHeight",
+        "ResultImageChannels"
+      ]
+    },
+    {
+      "toolType": "Arithmetic",
+      "role": "Combine, compare, invert, or offset image layers.",
+      "category": "preprocess",
+      "commonParameters": [
+        "ArithmeticMode",
+        "ArithmeticOperation",
+        "InputLayerB",
+        "UseConstantInput",
+        "UseColorConstant",
+        "Gray",
+        "B",
+        "G",
+        "R",
+        "OffsetX",
+        "OffsetY"
+      ],
+      "validationHints": [
+        "ArithmeticMode must be Operation or Offset.",
+        "ArithmeticOperation supports Bitwise_AND, Bitwise_OR, Bitwise_XOR, Bitwise_NOT, ADD, SUBTRACT, MULTIPLY, DIVIDE, MAX, MIN, ABS, ABSDIFF.",
+        "Operation mode requires InputLayerB unless the operation is Bitwise_NOT or ABS, or UseConstantInput is true.",
+        "InputLayerB must already exist before this Step.",
+        "Gray, B, G, and R are 0..255."
+      ],
+      "recommendedMetrics": [
+        "ResultImageWidth",
+        "ResultImageHeight",
+        "ResultImageChannels"
+      ]
+    },
+    {
+      "toolType": "OverlayMerge",
+      "aliases": [
+        "ResultMerge",
+        "MergeResult"
+      ],
+      "role": "Merge previous Step overlays into one operator review result image.",
+      "category": "review",
+      "commonParameters": [
+        "SourceLayers",
+        "SourceSteps",
+        "BurnIn",
+        "DrawLabels",
+        "AllowEmpty",
+        "MaxPoints"
+      ],
+      "validationHints": [
+        "SourceLayers is a semicolon-separated list of previous output layer names.",
+        "SourceSteps is a semicolon-separated list of previous Step names.",
+        "At least one source filter is preferred.",
+        "Put OverlayMerge last when it is the final review image."
+      ],
+      "recommendedMetrics": [
+        "ResultCount",
+        "MergeOverlayCount",
+        "MergeSourceCount"
+      ]
+    }
+  ],
+  "sourceEvidence": [
+    "0. UI/0) MENU/Wpf/OpenVisionShellHostRecipeCommandSurface.cs",
+    "1. Core/VisionPipelineValidation.cs",
+    "1. Core/VisionPipelineStepParameterSchema.cs",
+    "1. Core/VisionPipelineKnownMetrics.cs",
+    "1. Core/VisionPipelineArithmeticStep.cs",
+    "docs/samples/*.pipeline.xml",
+    "OpenVisionLabDirectSmokeRunner.cs"
+  ]
+}

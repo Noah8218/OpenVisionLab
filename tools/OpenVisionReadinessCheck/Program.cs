@@ -318,7 +318,9 @@ internal static class Program
         RequireContains(lineView, "VisionToolSingleInputSpecialPropertyToolController.Attach", "Line Tool delegates special PropertyGrid shell wiring to the shared controller.");
 
         string arithmeticView = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\ArithmeticToolWpfView.xaml.cs");
-        RequireContains(arithmeticView, "VisionToolDoubleInputCustomToolController.Attach", "Arithmetic Tool delegates double-input shell wiring to the shared controller.");
+        RequireContains(arithmeticView, "VisionToolDoubleInputCustomToolViewBase", "Arithmetic Tool delegates double-input shell forwarding to the shared view base.");
+        string doubleInputCustomToolViewBase = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\VisionToolDoubleInputCustomToolViewBase.cs");
+        RequireContains(doubleInputCustomToolViewBase, "VisionToolDoubleInputCustomToolController.Attach", "Double-input custom Tool View base delegates shell wiring to the shared controller.");
 
         string singleInputSpecialController = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\VisionToolSingleInputSpecialPropertyToolController.cs");
         RequireContains(singleInputSpecialController, "VisionToolSingleInputSpecialPropertyToolRuntime.Attach", "Special PropertyGrid controller owns the special single-input runtime wiring.");

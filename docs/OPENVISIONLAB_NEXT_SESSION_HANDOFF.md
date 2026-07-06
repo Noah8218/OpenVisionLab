@@ -1,6 +1,6 @@
 # OpenVisionLab Next Session Handoff
 
-Updated: 2026-07-06 15:04 KST
+Updated: 2026-07-06 21:57 KST
 
 This document is the minimum handoff needed to continue without re-discovering the current state. Work starts in `C:\Git\OpenVisionLab_Dev`; only reviewed and stabilized changes are imported into the original repo at `C:\Git\OpenVisionLab`. Do not run `git push` unless the user explicitly requests `PUSH`.
 
@@ -12,13 +12,14 @@ This document is the minimum handoff needed to continue without re-discovering t
 
 ## Product Direction
 
-- OpenVisionLab is an OpenCvSharp4-based rule-based vision workbench.
+- OpenVisionLab is an LLM-assisted OpenCvSharp4-based rule-based vision recipe workbench.
 - Its purpose is image-based algorithm learning, verification, LLM-assisted XML recipe generation, and recipe composition.
 - It is not a camera, lighting, PLC, or I/O integration platform.
 - Algorithm tools must stay PropertyGrid-based.
 - Preview/Run must be explicit user actions. Layer create/delete/load-image, visibility toggles, and output layer creation must not auto-run tools.
 - Viewer zoom/pan/drag, ROI overlay, template editor, layer comparison, and docking features must be preserved.
 - Main window title-bar minimize, maximize/restore, and close controls must remain visible and verified. These are window controls, not account/session UI.
+- Smoke tests and UI screenshots must use the latest updated EXE or a current-source view generated after the latest relevant source changes. Do not show old artifact images as current UI evidence; label them as historical/baseline only.
 
 ## Current Dev Baseline On 2026-07-05
 
@@ -45,9 +46,10 @@ Current Recipe Manager baseline:
 
 Current priority order:
 
-1. Continue Tool View code-behind cleanup only where established controller/presenter/base patterns fit; current test hooks and preview command paths are in use and should not be removed just to reduce line count. The double-input Arithmetic shell, Blob/Contour single-input PropertyGrid shell, and Matching-family single-input PropertyGrid shell now have shared bases, so do not recreate those extractions.
-2. Continue Recipe Manager density polish only when screenshots show actual clipping, overlap, or workflow friction.
-3. Continue Pipeline/Recipe operator review UX only when a real workflow gap is visible from current EXE evidence.
+1. If a real API key or manual transcript is available, collect one GPT/Gemini/Claude XML correction-loop transcript using `docs\OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md` and `docs\OPENVISIONLAB_LLM_TOOL_CATALOG.json`, then validate/import it in Recipe Manager. Do not fabricate transcript evidence.
+2. If no real transcript is available, continue Recipe Manager/LLM Assistant UX work only where fresh current-EXE/current-source screenshots show actual clipping, overlap, unclear next action, or workflow friction.
+3. Expand branch/output comparison only when a real multi-branch recipe exceeds the current selected-step producer/consumer model and the existing BentPin plus Contour_AllSymbolsAndFaint coverage.
+4. Continue Tool View code-behind cleanup only where established controller/presenter/base patterns fit; current test hooks and preview command paths are in use and should not be removed just to reduce line count. The double-input Arithmetic shell, Blob/Contour/Line single-input PropertyGrid shell, and Matching-family single-input PropertyGrid shell now have shared bases, so do not recreate those extractions.
 
 Latest UI evidence for corrected-output review after Step XML apply:
 
@@ -85,6 +87,67 @@ Latest UI evidence for selected Step operator context:
 - Direct EXE smoke: `artifacts\operator_step_context_after_20260706_r1_direct\report.txt` passed and now checks `PipelineSelectedStepOperatorContextText`.
 - Screenshot smoke: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_recipe_language_controls artifacts\operator_step_context_after_20260706_r1` passed with `layout=0`, `text=0`, and `internal=0`.
 - Structure note: `HostRecipePipelineSelectedStepOperatorContext` sits inside the selected Step detail panel and summarizes selected Step, route, Good/Bad or run-history failure link, and next action. It is read-only guidance and does not run Preview/Run.
+
+Latest UI evidence for Recipe Manager XML/Step list density:
+
+- Before: `artifacts\recipe_manager_density_current_20260706_r1\wpf_shell_host_recipe_language_controls.png`
+- After: `artifacts\recipe_manager_density_after_step_list_20260706_r1\wpf_shell_host_recipe_language_controls.png`
+- Screenshot smoke: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_recipe_language_controls artifacts\recipe_manager_density_after_step_list_20260706_r1` passed with `layout=0`, `text=0`, and `internal=0`.
+- Structure note: `HostRecipePipelineInlinePreviewStepList` now appears immediately after the XML/Step flow focus strip, before branch/output and selected-Step detail panels. On a 1600x900 workbench screenshot the Step rows are visible in the first view instead of only the list title being pushed near the footer. This is a layout-only change and does not add Preview/Run triggers.
+
+Latest UI evidence for compact Recipe Manager recipe/Step rows:
+
+- Before: `artifacts\recipe_manager_compact_step_rows_before_20260706_r1\wpf_shell_host_recipe_language_controls.png`
+- After: `artifacts\recipe_manager_compact_step_rows_after_20260706_r1\wpf_shell_host_recipe_language_controls.png`
+- Screenshot smoke: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_recipe_language_controls artifacts\recipe_manager_compact_step_rows_after_20260706_r1` passed with `layout=0`, `text=0`, and `internal=0`.
+- Direct EXE smoke: `artifacts\recipe_manager_compact_step_rows_after_20260706_r1_direct\report.txt` passed with `Result: PASS`, `BranchOutputComparison: 2`, and `ActualMultiBranchComparison: 7`.
+- Structure note: the recipe library list now stretches item content so long names use ellipsis and tooltips predictably. The XML/Step inline Step list now uses single-line ellipsis rows for Display, Route, and Parameters instead of multi-line wrapping, preserving workbench density for long routes and parameter previews.
+
+Latest UI evidence for large Recipe Manager library filtering:
+
+- Before: `artifacts\recipe_large_library_before_20260706_r1\wpf_shell_host_recipe_large_library.png`
+- After: `artifacts\recipe_large_library_after_20260706_r1\wpf_shell_host_recipe_large_library.png`
+- Screenshot smoke: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_recipe_large_library artifacts\recipe_large_library_after_20260706_r1` passed with `layout=0`, `text=0`, and `internal=0`.
+- Direct EXE smoke: `artifacts\recipe_large_library_after_20260706_r1_direct\report.txt` passed with `Result: PASS`, `ActualMultiBranchComparison: 7`, and `ActualThreeWayBranchComparison: 5`.
+- Structure note: `RecipeLibrarySummaryText` now shows total or filtered/total recipe count, for example `레시피 라이브러리 (10/101)`, above the recipe list. The screenshot smoke creates 100 long temporary recipe names, filters to `Category_07`, verifies 10 visible matches, then cleans the temporary workspaces.
+
+Latest UI evidence for large Recipe Manager pipeline filtering:
+
+- Before: `artifacts\recipe_large_pipeline_list_before_20260706_r1\wpf_shell_host_recipe_large_pipeline_list.png`
+- After: `artifacts\recipe_large_pipeline_list_after_20260706_r1\wpf_shell_host_recipe_large_pipeline_list.png`
+- Screenshot smoke: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_recipe_large_pipeline_list artifacts\recipe_large_pipeline_list_after_20260706_r1` passed with `layout=0`, `text=0`, and `internal=0`.
+- Direct EXE smoke: `artifacts\recipe_large_pipeline_list_after_20260706_r1_direct\report.txt` passed with `Result: PASS`, `ActualMultiBranchComparison: 7`, and `ActualThreeWayBranchComparison: 5`.
+- Structure note: `PipelineListSummaryText` now shows total or filtered/total pipeline count, for example `파이프라인 (10/109)`, above the pipeline list. The screenshot smoke creates one temporary recipe with 100 long pipeline names, filters to `Group_07`, verifies 10 visible matches, then deletes the temporary workspace.
+
+Latest actual multi-branch branch/output coverage:
+
+- Real sample scan found `docs\samples\BentPin_TopBottom_Overlay.pipeline.xml` with `Main` fan-out and `BentPin_Clean` multi-consumer routes; `docs\samples\Contour_AllSymbolsAndFaint_LLM.pipeline.xml` also has `Main` fan-out.
+- Direct EXE smoke now imports `docs\samples\BentPin_TopBottom_Overlay.pipeline.xml` and verifies both output consumers from `BentPin_Clean` plus the same-input and input-producer rows around the selected multi-branch Steps.
+- Evidence: `artifacts\recipe_manager_density_after_step_list_20260706_r2_direct\report.txt` passed with `ActualMultiBranchComparison: 7`.
+- Structure note: this expands verification of the existing branch/output comparison model for a real multi-branch recipe. It does not create a new comparison surface.
+
+Latest actual 3+ branch fan-out coverage:
+
+- Real sample scan found only one 3+ branch candidate in the current sample set: `docs\samples\Contour_AllSymbolsAndFaint_LLM.pipeline.xml`, where `Main` feeds 4 enabled Steps.
+- Screenshot smoke target `wpf_shell_host_recipe_multibranch_comparison` imports that pipeline, selects `Main -> TextSymbol_Binary`, and verifies 3 same-input alternatives plus one output consumer row.
+- UI evidence: `artifacts\recipe_multibranch_comparison_after_20260706_r1\wpf_shell_host_recipe_multibranch_comparison.png`.
+- Direct EXE smoke evidence: `artifacts\recipe_multibranch_comparison_after_20260706_r1_direct\report.txt` passed with `ActualThreeWayBranchComparison: 5`.
+- Decision: no new branch/output UI surface was added. The current selected-step producer/consumer list shows all rows for this real 3+ branch sample on the 1600x900 workbench screenshot, so broader UI expansion should wait for a real sample that exceeds this map.
+
+Latest LLM XML authoring reference:
+
+- Added `docs\OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md` as the external GPT/Gemini/Claude prompt-side API guide for OpenVisionLab `VisionPipeline` XML authoring and correction-loop transcript collection.
+- Added `docs\OPENVISIONLAB_LLM_TOOL_CATALOG.json` as the machine-readable tool/parameter/metric catalog for LLM prompt packets.
+- Source evidence checked before writing: `OpenVisionShellHostRecipeCommandSurface.cs`, `VisionPipelineValidation.cs`, `VisionPipelineStepParameterSchema.cs`, `VisionPipelineKnownMetrics.cs`, `VisionPipelineArithmeticStep.cs`, `docs\samples\*.pipeline.xml`, and LLM direct smoke cases in `OpenVisionLabDirectSmokeRunner.cs`.
+- Usage rule: when collecting real LLM transcripts, give the LLM the guide and JSON catalog first, ask for one `VisionPipeline` XML only, validate inside Recipe Manager, then feed back the validation/dependency report for repair. Do not commit raw transcripts until private names/assets are scrubbed.
+- Validation rules now documented for external LLMs include supported ToolType names, `Main`/previous-output layer routing, `ALLOW_BRANCH_INPUT`, dependency path safety, `Inspection.*` review channel handling, 0..1 matching score parameters, gray-value ranges, Arithmetic `InputLayerB`, OverlayMerge final review intent, and acceptance metric use.
+
+Latest Recipe Manager sample summary density evidence:
+
+- Before/current capture: `artifacts\recipe_manager_current_density_review_20260706_r1\wpf_shell_host_recipe_language_controls.png`.
+- After capture: `artifacts\recipe_manager_density_after_sample_summary_20260706_r1\wpf_shell_host_recipe_language_controls.png`.
+- Screenshot smoke: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_recipe_language_controls artifacts\recipe_manager_density_after_sample_summary_20260706_r1` passed with `layout=0`, `text=0`, and `internal=0`.
+- Structure note: the Recipe Manager left library pane now uses a 320px baseline width, and the sample acceptance summary shortens the displayed sample id while preserving the full summary as a tooltip. This is a layout/readability change only and does not add Preview/Run behavior.
 
 Latest Tool View code-behind candidate review:
 
@@ -156,6 +219,18 @@ Latest Tool View code-behind cleanup for double-input custom tool base:
   - `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_layer_selection_arithmetic_tool artifacts\double_input_custom_tool_base_refactor_20260705_r1` passed with `layout=0`, `text=0`, and `internal=0`.
   - `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_algorithm_output_preview_flow artifacts\double_input_custom_tool_base_refactor_20260705_r1_route` passed with `layout=0`, `text=0`, and `internal=0`.
   - `git diff --check -- "0. UI/6) Vision Test/Wpf/ArithmeticToolWpfView.xaml" "0. UI/6) Vision Test/Wpf/ArithmeticToolWpfView.xaml.cs" "0. UI/6) Vision Test/Wpf/VisionToolDoubleInputCustomToolViewBase.cs"` passed with CRLF warnings only.
+
+Latest current-build evidence rule and Arithmetic event-owner cleanup:
+
+- `AGENTS.md` and global `C:\Users\user\.codex\AGENTS.md` now require smoke/capture evidence to use the latest updated EXE or a current-source view generated after the latest relevant source changes. Old artifacts must not be shown as current UI.
+- `ArithmeticToolInteractionController` now owns Arithmetic parameter event attach/detach for operation mode, source mode, constant/offset text changes, and numeric input filtering. `ArithmeticToolWpfView.xaml` no longer wires those events to code-behind forwarding methods, and `ArithmeticToolWpfView.xaml.cs` no longer contains those forwarding methods.
+- This is a narrow Tool View cleanup only; it does not change Preview/Run behavior, Arithmetic A/B input routing, output layer creation, or docked/floating layout.
+- Latest build: `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` passed with 0 warnings and 0 errors on 2026-07-06 21:57 KST.
+- Latest direct EXE smoke: `dotnet run --no-build --project OpenVisionLab.csproj -c Debug -- --smoke recipe-manager-tabs artifacts\current_exe_recipe_manager_tabs_20260706_r2_direct` passed. Report includes `Result: PASS`, `LlmCorrectedDraftImport: imported`, `BranchOutputComparison: 2`, `ActualMultiBranchComparison: 7`, and `ActualThreeWayBranchComparison: 5`.
+- Latest current-source view capture: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_layer_selection_arithmetic_tool artifacts\current_source_arithmetic_tool_20260706_r2` passed with `layout=0`, `text=0`, and `internal=0`.
+- Current UI evidence from this turn:
+  - `artifacts\current_exe_recipe_manager_tabs_20260706_r2_direct\OpenVisionLab_RecipeManager_LlmXml.png`
+  - `artifacts\current_source_arithmetic_tool_20260706_r2\wpf_layer_selection_arithmetic_tool.png`
 
 Latest UI evidence for main window title-bar controls:
 

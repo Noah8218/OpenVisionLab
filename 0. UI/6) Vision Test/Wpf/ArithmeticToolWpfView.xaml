@@ -1,11 +1,11 @@
-<UserControl x:Class="OpenVisionLab.ArithmeticToolWpfView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:OpenVisionLab"
-             MinWidth="920"
-             MinHeight="620"
-             Background="#EEF2F6">
-    <UserControl.Resources>
+<local:VisionToolDoubleInputCustomToolViewBase x:Class="OpenVisionLab.ArithmeticToolWpfView"
+                                               xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                                               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                                               xmlns:local="clr-namespace:OpenVisionLab"
+                                               MinWidth="920"
+                                               MinHeight="620"
+                                               Background="#EEF2F6">
+    <local:VisionToolDoubleInputCustomToolViewBase.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <local:SharedResourceDictionary Source="VisionToolWpfTheme.xaml" />
@@ -14,7 +14,7 @@
                 <Setter Property="Width" Value="68" />
             </Style>
         </ResourceDictionary>
-    </UserControl.Resources>
+    </local:VisionToolDoubleInputCustomToolViewBase.Resources>
 
     <Grid>
         <local:VisionToolDoubleInputCustomToolShell x:Name="toolShell" TitleIconKind="Calculator" />
@@ -48,17 +48,15 @@
                                          Content="Operation"
                                          GroupName="ArithmeticPipelineMode"
                                          Style="{StaticResource VisionTool.SegmentedRadioButtonStyle}"
-                                         IsChecked="True"
-                                         Checked="Mode_Changed" />
+                                         IsChecked="True" />
                             <RadioButton x:Name="rdoModeOffset"
                                          Content="Offset"
                                          GroupName="ArithmeticPipelineMode"
-                                         Style="{StaticResource VisionTool.SegmentedRadioButtonStyle}"
-                                         Checked="Mode_Changed" />
+                                         Style="{StaticResource VisionTool.SegmentedRadioButtonStyle}" />
                         </StackPanel>
                         <StackPanel x:Name="panelArithmeticType">
                             <TextBlock x:Name="lblArithmeticType" Text="Arithmetic Type" Style="{StaticResource SectionTitleStyle}" />
-                            <ComboBox x:Name="cbArithmeticType" SelectionChanged="ArithmeticType_SelectionChanged" />
+                            <ComboBox x:Name="cbArithmeticType" />
                         </StackPanel>
                     </StackPanel>
                 </GroupBox>
@@ -69,23 +67,19 @@
                             <RadioButton x:Name="rdoSourceImage"
                                          Content="Input B"
                                          GroupName="SourceMode"
-                                         IsChecked="True"
-                                         Checked="Mode_Changed" />
+                                         IsChecked="True" />
                             <RadioButton x:Name="rdoContrast"
                                          Content="Constant"
-                                         GroupName="SourceMode"
-                                         Checked="Mode_Changed" />
+                                         GroupName="SourceMode" />
                         </StackPanel>
                         <StackPanel x:Name="panelConstantMode" Orientation="Horizontal">
                             <RadioButton x:Name="rdoGray"
                                          Content="Gray"
                                          GroupName="ConstantMode"
-                                         IsChecked="True"
-                                         Checked="Mode_Changed" />
+                                         IsChecked="True" />
                             <RadioButton x:Name="rdoColor"
                                          Content="Color"
-                                         GroupName="ConstantMode"
-                                         Checked="Mode_Changed" />
+                                         GroupName="ConstantMode" />
                         </StackPanel>
                     </StackPanel>
                 </GroupBox>
@@ -100,19 +94,19 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock x:Name="lblConstantGray" Text="Gray" Style="{StaticResource SectionTitleStyle}" />
-                            <TextBox x:Name="txtGray" Text="1" PreviewTextInput="NumberTextBox_PreviewTextInput" TextChanged="Parameter_TextChanged" />
+                            <TextBox x:Name="txtGray" Text="1" />
                         </StackPanel>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="B" Style="{StaticResource SectionTitleStyle}" />
-                            <TextBox x:Name="txtB" Text="1" PreviewTextInput="NumberTextBox_PreviewTextInput" TextChanged="Parameter_TextChanged" />
+                            <TextBox x:Name="txtB" Text="1" />
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="G" Style="{StaticResource SectionTitleStyle}" />
-                            <TextBox x:Name="txtG" Text="1" PreviewTextInput="NumberTextBox_PreviewTextInput" TextChanged="Parameter_TextChanged" />
+                            <TextBox x:Name="txtG" Text="1" />
                         </StackPanel>
                         <StackPanel Grid.Column="3">
                             <TextBlock Text="R" Style="{StaticResource SectionTitleStyle}" />
-                            <TextBox x:Name="txtR" Text="1" PreviewTextInput="NumberTextBox_PreviewTextInput" TextChanged="Parameter_TextChanged" />
+                            <TextBox x:Name="txtR" Text="1" />
                         </StackPanel>
                     </Grid>
                 </GroupBox>
@@ -126,11 +120,11 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="X" Style="{StaticResource SectionTitleStyle}" />
-                            <TextBox x:Name="txtOffsetX" Text="1" PreviewTextInput="SignedNumberTextBox_PreviewTextInput" TextChanged="Parameter_TextChanged" />
+                            <TextBox x:Name="txtOffsetX" Text="1" />
                         </StackPanel>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="Y" Style="{StaticResource SectionTitleStyle}" />
-                            <TextBox x:Name="txtOffsetY" Text="1" PreviewTextInput="SignedNumberTextBox_PreviewTextInput" TextChanged="Parameter_TextChanged" />
+                            <TextBox x:Name="txtOffsetY" Text="1" />
                         </StackPanel>
                         <TextBlock x:Name="txtCopyOffset"
                                    Grid.Column="2"
@@ -142,4 +136,4 @@
             </Grid>
         </ScrollViewer>
     </Grid>
-</UserControl>
+</local:VisionToolDoubleInputCustomToolViewBase>

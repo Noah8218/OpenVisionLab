@@ -1,17 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace OpenVisionLab
 {
-    public partial class ArithmeticToolWpfView : UserControl, IArithmeticVisionToolWpfView, IVisionToolPreviewImageCommands, IVisionToolViewLifetime
+    public partial class ArithmeticToolWpfView : VisionToolDoubleInputCustomToolViewBase, IArithmeticVisionToolWpfView
     {
-        private readonly VisionToolDoubleInputCustomToolController toolController;
         private readonly VisionToolParameterChangeController parameterChangeController;
-        private readonly VisionToolDebouncedPreviewScheduler previewScheduler;
+        private readonly ArithmeticToolPreviewController previewController;
         private readonly ArithmeticToolTextPresenter textPresenter;
         private ArithmeticToolInteractionController interactionController;
         private bool suppressEvents;
@@ -19,13 +14,15 @@ namespace OpenVisionLab
         public ArithmeticToolWpfView()
         {
             InitializeComponent();
-            toolController = VisionToolDoubleInputCustomToolController.Attach(
-                this,
+            AttachToolController(
                 "VisionMenu.Arithmetic",
                 parameterContentHost,
                 () => UseOffsetMode,
                 applyToolLocalization: ApplyLocalization);
-            previewScheduler = new VisionToolDebouncedPreviewScheduler(this, RequestPreviewForCurrentMode, 120);
+            previewController = new ArithmeticToolPreviewController(
+                this,
+                ToolController,
+                () => interactionController?.UseOffsetMode == true);
             textPresenter = new ArithmeticToolTextPresenter(
                 () => interactionController?.CreateTextState() ?? ArithmeticToolTextState.Empty,
                 gbOperation,
@@ -42,18 +39,19 @@ namespace OpenVisionLab
                 groupConstant,
                 gbOffset,
                 txtCopyOffset,
-                toolController.SetRunOffsetText,
-                toolController.SetSummaryText);
+                ToolController.SetRunOffsetText,
+                ToolController.SetSummaryText);
             parameterChangeController = new VisionToolParameterChangeController(
                 () => suppressEvents,
                 textPresenter.RefreshSummary,
                 () => ParameterChanged(this, EventArgs.Empty),
-                ScheduleAutoPreview);
+                previewController.ScheduleAutoPreview);
             interactionController = new ArithmeticToolInteractionController(
                 parameterChangeController,
+                () => suppressEvents,
                 value => suppressEvents = value,
-                toolController.SetInputBPreviewVisible,
-                toolController.SetOffsetActionsVisible,
+                ToolController.SetInputBPreviewVisible,
+                ToolController.SetOffsetActionsVisible,
                 cbArithmeticType,
                 rdoModeOperation,
                 rdoSourceImage,
@@ -80,97 +78,22 @@ namespace OpenVisionLab
             parameterChangeController.RefreshProgrammatic(interactionController.RefreshMode);
         }
 
-        public event EventHandler InputALayerChanged
-        {
-            add { toolController.InputALayerChanged += value; }
-            remove { toolController.InputALayerChanged -= value; }
-        }
-
-        public event EventHandler InputBLayerChanged
-        {
-            add { toolController.InputBLayerChanged += value; }
-            remove { toolController.InputBLayerChanged -= value; }
-        }
-
-        public event EventHandler OutputLayerChanged
-        {
-            add { toolController.OutputLayerChanged += value; }
-            remove { toolController.OutputLayerChanged -= value; }
-        }
-
-        public event EventHandler InputAPreviewClicked
-        {
-            add { toolController.InputAPreviewClicked += value; }
-            remove { toolController.InputAPreviewClicked -= value; }
-        }
-
-        public event EventHandler InputBPreviewClicked
-        {
-            add { toolController.InputBPreviewClicked += value; }
-            remove { toolController.InputBPreviewClicked -= value; }
-        }
-
-        public event EventHandler OutputPreviewClicked
-        {
-            add { toolController.OutputPreviewClicked += value; }
-            remove { toolController.OutputPreviewClicked -= value; }
-        }
-
-        public event EventHandler CreateOutputLayerRequested
-        {
-            add { toolController.CreateOutputLayerRequested += value; }
-            remove { toolController.CreateOutputLayerRequested -= value; }
-        }
-
-        public event EventHandler RunPreviewRequested
-        {
-            add { toolController.RunPreviewRequested += value; }
-            remove { toolController.RunPreviewRequested -= value; }
-        }
-
-        public event EventHandler RunOffsetRequested
-        {
-            add { toolController.RunOffsetRequested += value; }
-            remove { toolController.RunOffsetRequested -= value; }
-        }
-
-        public event EventHandler AddPipelineRequested
-        {
-            add { toolController.AddPipelineRequested += value; }
-            remove { toolController.AddPipelineRequested -= value; }
-        }
-
         public event EventHandler ParameterChanged = delegate { };
 
-        public event EventHandler<VisionToolPreviewImageCommandEventArgs> LoadPreviewImageRequested
-        {
-            add { toolController.LoadPreviewImageRequested += value; }
-            remove { toolController.LoadPreviewImageRequested -= value; }
-        }
-
-        public event EventHandler<VisionToolPreviewImageCommandEventArgs> SavePreviewImageRequested
-        {
-            add { toolController.SavePreviewImageRequested += value; }
-            remove { toolController.SavePreviewImageRequested -= value; }
-        }
-
-        public string SelectedInputLayerA => toolController.SelectedInputLayerA;
-        public string SelectedInputLayerB => toolController.SelectedInputLayerB;
-        public string SelectedOutputLayer => toolController.SelectedOutputLayer;
         public string SelectedArithmeticType => interactionController?.SelectedArithmeticType ?? string.Empty;
         public bool UseConstantInput => interactionController?.UseConstantInput == true;
         public bool UseColorConstant => interactionController?.UseColorConstant == true;
         public bool UseOffsetMode => interactionController?.UseOffsetMode == true;
 
-        public void DisposeView()
+        protected override void DisposeToolResources()
         {
-            previewScheduler.Dispose();
-            toolController.Dispose();
+            interactionController?.Detach();
+            previewController?.Dispose();
         }
 
         private void ApplyLocalization()
         {
-            toolController.ApplyLocalization();
+            ToolController.ApplyLocalization();
             textPresenter?.ApplyLocalization();
         }
 
@@ -186,41 +109,7 @@ namespace OpenVisionLab
 
         public void ApplyPersistedSettings(ArithmeticToolSettings settings)
         {
-            bool previousSuppressEvents = suppressEvents;
-            suppressEvents = true;
-            try
-            {
-                interactionController?.ApplySettings(settings);
-            }
-            finally
-            {
-                suppressEvents = previousSuppressEvents;
-            }
-        }
-
-        public void SetLayerList(IEnumerable<string> layerNames, string selectedInputA, string selectedInputB, string selectedOutput)
-        {
-            toolController.SetLayerList(layerNames, selectedInputA, selectedInputB, selectedOutput);
-        }
-
-        public void SetInputAPreview(Bitmap image)
-        {
-            toolController.SetInputAPreview(image);
-        }
-
-        public void SetInputBPreview(Bitmap image)
-        {
-            toolController.SetInputBPreview(image);
-        }
-
-        public void SetOutputPreview(Bitmap image)
-        {
-            toolController.SetOutputPreview(image);
-        }
-
-        public void SetStatus(string status)
-        {
-            toolController.SetStatus(status);
+            interactionController?.ApplySettings(settings);
         }
 
         public int GetGrayValue(int fallback)
@@ -253,46 +142,5 @@ namespace OpenVisionLab
             return interactionController?.GetOffsetY(fallback) ?? fallback;
         }
 
-        private void ArithmeticType_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            interactionController?.HandleArithmeticTypeChanged();
-        }
-
-        private void Mode_Changed(object sender, RoutedEventArgs e)
-        {
-            interactionController?.HandleModeChanged();
-        }
-
-        private void Parameter_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            interactionController?.HandleParameterTextChanged();
-        }
-
-        private void ScheduleAutoPreview()
-        {
-            previewScheduler.Schedule();
-        }
-
-        private void RequestPreviewForCurrentMode()
-        {
-            // Offset mode has a separate execution path and status; auto-preview must respect the visible mode.
-            if (UseOffsetMode)
-            {
-                toolController.RequestRunOffset();
-                return;
-            }
-
-            toolController.RequestRunPreview();
-        }
-
-        private void NumberTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
-        {
-            interactionController?.HandleNumberTextInput(e);
-        }
-
-        private void SignedNumberTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
-        {
-            interactionController?.HandleSignedNumberTextInput(e);
-        }
     }
 }

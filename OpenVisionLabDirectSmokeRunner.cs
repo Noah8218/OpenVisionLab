@@ -2006,6 +2006,9 @@ namespace OpenVisionLab
                     "Missing_Input_B",
                     "does not exist");
 
+                int actualMultiBranchRows = VerifyActualMultiBranchPipeline(shellHost);
+                int actualThreeWayBranchRows = VerifyActualThreeWayBranchPipeline(shellHost);
+
                 shellHost.RecipeCommands.LlmXmlDraftText = originalLlmDraft;
                 shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest();
 
@@ -2073,6 +2076,8 @@ namespace OpenVisionLab
                     + "LlmXmlDiff: visible" + Environment.NewLine
                     + "StepComparisonGrid: visible" + Environment.NewLine
                     + "BranchOutputComparison: " + shellHost.RecipeCommands.BranchOutputComparisonRows.Count.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "ActualMultiBranchComparison: " + actualMultiBranchRows.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "ActualThreeWayBranchComparison: " + actualThreeWayBranchRows.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
                     + "SelectedStepDetail: visible" + Environment.NewLine
                     + "StepLayerCards: visible" + Environment.NewLine
                     + "StepLayerNavigation: " + selectedPreviewStep.OutputLayer + " -> " + selectedPreviewStep.InputLayer + Environment.NewLine
@@ -2090,6 +2095,181 @@ namespace OpenVisionLab
                 app.Shutdown();
                 RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
             }
+        }
+
+        private static int VerifyActualMultiBranchPipeline(OpenVisionShellHostView shellHost)
+        {
+            string path = Path.Combine(FindRepositoryRoot(), "docs", "samples", "BentPin_TopBottom_Overlay.pipeline.xml");
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException("Actual multi-branch sample pipeline was not found.", path);
+            }
+
+            OpenVisionRecipePipelineOption originalOption = shellHost.RecipeCommands.SelectedPipelineOption;
+            try
+            {
+                if (!shellHost.RecipeCommands.ImportPipelineXmlFromPath(path))
+                {
+                    throw new InvalidOperationException("Recipe manager direct smoke could not import the actual multi-branch sample pipeline.");
+                }
+
+                Pump(60);
+                if (!string.Equals(
+                        shellHost.RecipeCommands.SelectedPipelineOption?.PipelineName,
+                        "BentPin_TopBottom_Overlay",
+                        StringComparison.OrdinalIgnoreCase)
+                    || shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps.Count < 5)
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke did not select the imported multi-branch pipeline. "
+                        + $"Selected='{shellHost.RecipeCommands.SelectedPipelineOption?.PipelineName}', "
+                        + $"Steps={shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps.Count}");
+                }
+
+                OpenVisionRecipePipelineStepPreview cleanStep =
+                    shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps
+                        .FirstOrDefault(step => step.Name.Contains("Bent Pin Close", StringComparison.OrdinalIgnoreCase));
+                if (cleanStep == null)
+                {
+                    throw new InvalidOperationException("Actual multi-branch sample did not expose the Bent Pin Close step.");
+                }
+
+                shellHost.RecipeCommands.SelectedPipelinePreviewStep = cleanStep;
+                Pump(40);
+                IReadOnlyList<OpenVisionRecipeBranchOutputComparisonRow> cleanRows =
+                    shellHost.RecipeCommands.BranchOutputComparisonRows;
+                bool hasTopConsumer = cleanRows.Any(row =>
+                    row.Route.Contains("BentPin_Clean -> BentPin_TopContour", StringComparison.OrdinalIgnoreCase));
+                bool hasBottomConsumer = cleanRows.Any(row =>
+                    row.Route.Contains("BentPin_Clean -> BentPin_BottomContour", StringComparison.OrdinalIgnoreCase));
+                if (!hasTopConsumer || !hasBottomConsumer)
+                {
+                    throw new InvalidOperationException(
+                        "Actual multi-branch sample did not expose both output consumers for BentPin_Clean. "
+                        + $"Rows='{DescribeBranchRows(cleanRows)}'");
+                }
+
+                OpenVisionRecipePipelineStepPreview topStep =
+                    shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps
+                        .FirstOrDefault(step => step.Name.Contains("Top Region", StringComparison.OrdinalIgnoreCase));
+                if (topStep == null)
+                {
+                    throw new InvalidOperationException("Actual multi-branch sample did not expose the Top Region step.");
+                }
+
+                shellHost.RecipeCommands.SelectedPipelinePreviewStep = topStep;
+                Pump(40);
+                IReadOnlyList<OpenVisionRecipeBranchOutputComparisonRow> topRows =
+                    shellHost.RecipeCommands.BranchOutputComparisonRows;
+                bool hasSameInput = topRows.Any(row =>
+                    row.Route.Contains("BentPin_Clean -> BentPin_BottomContour", StringComparison.OrdinalIgnoreCase));
+                bool hasInputProducer = topRows.Any(row =>
+                    row.Route.Contains("BentPin_Binary -> BentPin_Clean", StringComparison.OrdinalIgnoreCase));
+                if (!hasSameInput || !hasInputProducer)
+                {
+                    throw new InvalidOperationException(
+                        "Actual multi-branch sample did not expose same-input and input-producer rows for Top Region. "
+                        + $"Rows='{DescribeBranchRows(topRows)}'");
+                }
+
+                return cleanRows.Count + topRows.Count;
+            }
+            finally
+            {
+                if (originalOption != null)
+                {
+                    OpenVisionRecipePipelineOption restoreOption = shellHost.RecipeCommands.PipelineOptions
+                        .FirstOrDefault(option => string.Equals(
+                            option.PipelineName,
+                            originalOption.PipelineName,
+                            StringComparison.OrdinalIgnoreCase));
+                    if (restoreOption != null)
+                    {
+                        shellHost.RecipeCommands.SelectedPipelineOption = restoreOption;
+                        Pump(40);
+                    }
+                }
+            }
+        }
+
+        private static int VerifyActualThreeWayBranchPipeline(OpenVisionShellHostView shellHost)
+        {
+            string path = Path.Combine(FindRepositoryRoot(), "docs", "samples", "Contour_AllSymbolsAndFaint_LLM.pipeline.xml");
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException("Actual 3+ branch sample pipeline was not found.", path);
+            }
+
+            OpenVisionRecipePipelineOption originalOption = shellHost.RecipeCommands.SelectedPipelineOption;
+            try
+            {
+                if (!shellHost.RecipeCommands.ImportPipelineXmlFromPath(path))
+                {
+                    throw new InvalidOperationException("Recipe manager direct smoke could not import the actual 3+ branch sample pipeline.");
+                }
+
+                Pump(60);
+                OpenVisionRecipePipelineStepPreview fanOutStep =
+                    shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps
+                        .FirstOrDefault(step =>
+                            string.Equals(step.InputLayer, "Main", StringComparison.OrdinalIgnoreCase)
+                            && string.Equals(step.OutputLayer, "TextSymbol_Binary", StringComparison.OrdinalIgnoreCase));
+                if (fanOutStep == null)
+                {
+                    throw new InvalidOperationException(
+                        "Actual 3+ branch sample did not expose the expected Main -> TextSymbol_Binary fan-out step. "
+                        + $"Selected='{shellHost.RecipeCommands.SelectedPipelineOption?.PipelineName}', "
+                        + $"Steps={shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps.Count}");
+                }
+
+                shellHost.RecipeCommands.SelectedPipelinePreviewStep = fanOutStep;
+                Pump(40);
+                IReadOnlyList<OpenVisionRecipeBranchOutputComparisonRow> rows =
+                    shellHost.RecipeCommands.BranchOutputComparisonRows;
+                int sameInputRows = rows.Count(row =>
+                    row.Status.Contains("같은", StringComparison.OrdinalIgnoreCase)
+                    || row.Status.Contains("Same input", StringComparison.OrdinalIgnoreCase));
+                bool hasFaintTop = rows.Any(row =>
+                    row.Route.Contains("Main -> FaintTop_Range", StringComparison.OrdinalIgnoreCase));
+                bool hasFaintPhone = rows.Any(row =>
+                    row.Route.Contains("Main -> FaintPhone_Range", StringComparison.OrdinalIgnoreCase));
+                bool hasOverlayMerge = rows.Any(row =>
+                    row.Route.Contains("Main -> AllSymbols_Overlay", StringComparison.OrdinalIgnoreCase));
+                bool hasOutputConsumer = rows.Any(row =>
+                    row.Route.Contains("TextSymbol_Binary -> TextSymbol_Clean", StringComparison.OrdinalIgnoreCase));
+                if (sameInputRows < 3 || !hasFaintTop || !hasFaintPhone || !hasOverlayMerge || !hasOutputConsumer)
+                {
+                    throw new InvalidOperationException(
+                        "Actual 3+ branch sample did not expose same-input alternatives and output consumer rows. "
+                        + $"SameInputRows={sameInputRows}, Rows='{DescribeBranchRows(rows)}'");
+                }
+
+                return rows.Count;
+            }
+            finally
+            {
+                if (originalOption != null)
+                {
+                    OpenVisionRecipePipelineOption restoreOption = shellHost.RecipeCommands.PipelineOptions
+                        .FirstOrDefault(option => string.Equals(
+                            option.PipelineName,
+                            originalOption.PipelineName,
+                            StringComparison.OrdinalIgnoreCase));
+                    if (restoreOption != null)
+                    {
+                        shellHost.RecipeCommands.SelectedPipelineOption = restoreOption;
+                        Pump(40);
+                    }
+                }
+            }
+        }
+
+        private static string DescribeBranchRows(IEnumerable<OpenVisionRecipeBranchOutputComparisonRow> rows)
+        {
+            return string.Join(
+                " | ",
+                (rows ?? Array.Empty<OpenVisionRecipeBranchOutputComparisonRow>())
+                    .Select(row => row.Status + " / " + row.StepName + " / " + row.Route + " / " + row.Action));
         }
 
         private static void RunLayerLoadMatchingFlow(string outputDirectory)
@@ -5512,7 +5692,7 @@ namespace OpenVisionLab
                 DirectoryInfo current = new DirectoryInfo(start);
                 while (current != null)
                 {
-                    if (File.Exists(Path.Combine(current.FullName, "Sample", "EasyGauge", "Pins.bmp")))
+                    if (IsRepositoryRootCandidate(current.FullName))
                     {
                         return current.FullName;
                     }
@@ -5522,6 +5702,12 @@ namespace OpenVisionLab
             }
 
             throw new DirectoryNotFoundException("Could not locate the OpenVisionLab repository root.");
+        }
+
+        private static bool IsRepositoryRootCandidate(string path)
+        {
+            return File.Exists(Path.Combine(path, "OpenVisionLab.sln"))
+                && Directory.Exists(Path.Combine(path, "docs", "samples"));
         }
 
         private static void SaveWindowScreenshot(Window window, string path)

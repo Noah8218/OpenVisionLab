@@ -11,6 +11,7 @@ namespace OpenVisionLab
     internal sealed class ArithmeticToolInteractionController
     {
         private readonly VisionToolParameterChangeController parameterChangeController;
+        private readonly Func<bool> isSuppressed;
         private readonly Action<bool> setSuppressed;
         private readonly Action<bool> setInputBPreviewVisible;
         private readonly Action<bool> setOffsetActionsVisible;
@@ -39,6 +40,7 @@ namespace OpenVisionLab
 
         public ArithmeticToolInteractionController(
             VisionToolParameterChangeController parameterChangeController,
+            Func<bool> isSuppressed,
             Action<bool> setSuppressed,
             Action<bool> setInputBPreviewVisible,
             Action<bool> setOffsetActionsVisible,
@@ -66,6 +68,7 @@ namespace OpenVisionLab
             TextBox offsetYTextBox)
         {
             this.parameterChangeController = parameterChangeController ?? throw new ArgumentNullException(nameof(parameterChangeController));
+            this.isSuppressed = isSuppressed ?? throw new ArgumentNullException(nameof(isSuppressed));
             this.setSuppressed = setSuppressed ?? throw new ArgumentNullException(nameof(setSuppressed));
             this.setInputBPreviewVisible = setInputBPreviewVisible ?? throw new ArgumentNullException(nameof(setInputBPreviewVisible));
             this.setOffsetActionsVisible = setOffsetActionsVisible ?? throw new ArgumentNullException(nameof(setOffsetActionsVisible));
@@ -91,6 +94,7 @@ namespace OpenVisionLab
             this.redTextBox = redTextBox ?? throw new ArgumentNullException(nameof(redTextBox));
             this.offsetXTextBox = offsetXTextBox ?? throw new ArgumentNullException(nameof(offsetXTextBox));
             this.offsetYTextBox = offsetYTextBox ?? throw new ArgumentNullException(nameof(offsetYTextBox));
+            AttachEvents();
         }
 
         public string SelectedArithmeticType => GetComboText(arithmeticTypeComboBox);
@@ -136,8 +140,7 @@ namespace OpenVisionLab
             List<string> operations = operationNames?.Where(item => !string.IsNullOrWhiteSpace(item)).ToList()
                 ?? new List<string>();
 
-            setSuppressed(true);
-            try
+            RunSuppressed(() =>
             {
                 arithmeticTypeComboBox.ItemsSource = operations;
                 SelectComboText(arithmeticTypeComboBox, selectedOperation);
@@ -145,11 +148,7 @@ namespace OpenVisionLab
                 {
                     arithmeticTypeComboBox.SelectedIndex = 0;
                 }
-            }
-            finally
-            {
-                setSuppressed(false);
-            }
+            });
 
             parameterChangeController.RefreshProgrammatic(RefreshMode);
         }
@@ -178,8 +177,7 @@ namespace OpenVisionLab
                 return;
             }
 
-            setSuppressed(true);
-            try
+            RunSuppressed(() =>
             {
                 SelectComboText(arithmeticTypeComboBox, settings.SelectedOperation);
                 operationModeRadioButton.IsChecked = !settings.UseOffsetMode;
@@ -193,36 +191,82 @@ namespace OpenVisionLab
                 redTextBox.Text = settings.R.ToString(CultureInfo.InvariantCulture);
                 offsetXTextBox.Text = settings.OffsetX.ToString(CultureInfo.InvariantCulture);
                 offsetYTextBox.Text = settings.OffsetY.ToString(CultureInfo.InvariantCulture);
-            }
-            finally
-            {
-                setSuppressed(false);
-            }
+            });
 
             parameterChangeController.RefreshProgrammatic(RefreshMode);
         }
 
-        public void HandleArithmeticTypeChanged()
+        public void Detach()
+        {
+            arithmeticTypeComboBox.SelectionChanged -= ArithmeticTypeComboBox_SelectionChanged;
+
+            operationModeRadioButton.Checked -= ModeRadioButton_Checked;
+            sourceImageRadioButton.Checked -= ModeRadioButton_Checked;
+            constantInputRadioButton.Checked -= ModeRadioButton_Checked;
+            colorConstantRadioButton.Checked -= ModeRadioButton_Checked;
+            offsetModeRadioButton.Checked -= ModeRadioButton_Checked;
+
+            grayTextBox.PreviewTextInput -= NumberTextBox_PreviewTextInput;
+            blueTextBox.PreviewTextInput -= NumberTextBox_PreviewTextInput;
+            greenTextBox.PreviewTextInput -= NumberTextBox_PreviewTextInput;
+            redTextBox.PreviewTextInput -= NumberTextBox_PreviewTextInput;
+            offsetXTextBox.PreviewTextInput -= SignedNumberTextBox_PreviewTextInput;
+            offsetYTextBox.PreviewTextInput -= SignedNumberTextBox_PreviewTextInput;
+
+            grayTextBox.TextChanged -= ParameterTextBox_TextChanged;
+            blueTextBox.TextChanged -= ParameterTextBox_TextChanged;
+            greenTextBox.TextChanged -= ParameterTextBox_TextChanged;
+            redTextBox.TextChanged -= ParameterTextBox_TextChanged;
+            offsetXTextBox.TextChanged -= ParameterTextBox_TextChanged;
+            offsetYTextBox.TextChanged -= ParameterTextBox_TextChanged;
+        }
+
+        private void AttachEvents()
+        {
+            arithmeticTypeComboBox.SelectionChanged += ArithmeticTypeComboBox_SelectionChanged;
+
+            operationModeRadioButton.Checked += ModeRadioButton_Checked;
+            sourceImageRadioButton.Checked += ModeRadioButton_Checked;
+            constantInputRadioButton.Checked += ModeRadioButton_Checked;
+            colorConstantRadioButton.Checked += ModeRadioButton_Checked;
+            offsetModeRadioButton.Checked += ModeRadioButton_Checked;
+
+            grayTextBox.PreviewTextInput += NumberTextBox_PreviewTextInput;
+            blueTextBox.PreviewTextInput += NumberTextBox_PreviewTextInput;
+            greenTextBox.PreviewTextInput += NumberTextBox_PreviewTextInput;
+            redTextBox.PreviewTextInput += NumberTextBox_PreviewTextInput;
+            offsetXTextBox.PreviewTextInput += SignedNumberTextBox_PreviewTextInput;
+            offsetYTextBox.PreviewTextInput += SignedNumberTextBox_PreviewTextInput;
+
+            grayTextBox.TextChanged += ParameterTextBox_TextChanged;
+            blueTextBox.TextChanged += ParameterTextBox_TextChanged;
+            greenTextBox.TextChanged += ParameterTextBox_TextChanged;
+            redTextBox.TextChanged += ParameterTextBox_TextChanged;
+            offsetXTextBox.TextChanged += ParameterTextBox_TextChanged;
+            offsetYTextBox.TextChanged += ParameterTextBox_TextChanged;
+        }
+
+        private void ArithmeticTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             parameterChangeController.TryHandle(RefreshMode, notifyChanged: true, schedulePreview: true);
         }
 
-        public void HandleModeChanged()
+        private void ModeRadioButton_Checked(object sender, RoutedEventArgs e)
         {
             parameterChangeController.TryHandle(RefreshMode, notifyChanged: true, schedulePreview: true);
         }
 
-        public void HandleParameterTextChanged()
+        private void ParameterTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             parameterChangeController.TryHandle(notifyChanged: true, schedulePreview: true);
         }
 
-        public void HandleNumberTextInput(TextCompositionEventArgs e)
+        private void NumberTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
             VisionToolControlBinding.AllowUnsignedIntegerInput(e);
         }
 
-        public void HandleSignedNumberTextInput(TextCompositionEventArgs e)
+        private void SignedNumberTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
             VisionToolControlBinding.AllowSignedIntegerInput(e);
         }
@@ -284,6 +328,20 @@ namespace OpenVisionLab
         {
             return !string.Equals(operationName, "Bitwise_NOT", StringComparison.OrdinalIgnoreCase)
                 && !string.Equals(operationName, "ABS", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void RunSuppressed(Action action)
+        {
+            bool previousSuppressState = isSuppressed();
+            setSuppressed(true);
+            try
+            {
+                action();
+            }
+            finally
+            {
+                setSuppressed(previousSuppressState);
+            }
         }
 
         private static string GetComboText(ComboBox comboBox)
