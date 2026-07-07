@@ -46,3 +46,13 @@ Threshold가 분리한 밝은 pad 4개가 후속 count에서 정상 영역으로
 - Good 샘플에서 밝은 pad 4개가 분리됩니다.
 - Bad 샘플에서 pad 1개만 남아 정상 기준을 만족하지 못합니다.
 - Threshold toggle이나 표시 옵션만으로 Preview/Run이 실행되지 않습니다.
+Opening this guide or changing Threshold parameters must not run Preview/Run automatically.
+
+## Beginner path handoff
+
+- Previous topic: Mean / Brightness. Confirm the object and background GV ranges before choosing a threshold value.
+- This topic goal: isolate bright pads on `Public_Threshold_BandPads_Good` and explain why `Public_Threshold_BandPads_Missing_Bad` fails.
+- Practice Samples path: `preprocess`.
+- Explicit action: open the Threshold Tool View or the public Threshold sample, then click Preview/Run manually.
+- Next topic: use Filter or Morphology only when Threshold output has noise, holes, or broken regions that would confuse Blob/Contour.
+- Do not skip: output layer review and downstream `ResultCount`. A binary image is useful only when the next metric becomes stable.

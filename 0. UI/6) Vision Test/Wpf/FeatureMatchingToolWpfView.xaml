@@ -1,8 +1,11 @@
-<UserControl x:Class="OpenVisionLab.FeatureMatchingToolWpfView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:OpenVisionLab">
+<local:VisionToolSingleInputPropertyToolViewBase x:Class="OpenVisionLab.FeatureMatchingToolWpfView"
+                                                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                                                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                                                 xmlns:local="clr-namespace:OpenVisionLab">
     <local:VisionToolSingleInputPropertyToolShell x:Name="toolShell"
                                                   TitleIconKind="ImageSearch"
+                                                  LearnButtonVisibility="Visible"
+                                                  LearnButtonText="Learn Feature"
+                                                  LearnTopicIndex="10"
                                                   TemplateStatusVisibility="Visible" />
-</UserControl>
+</local:VisionToolSingleInputPropertyToolViewBase>

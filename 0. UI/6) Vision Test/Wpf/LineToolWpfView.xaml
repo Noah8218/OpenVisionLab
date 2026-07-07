@@ -1,19 +1,22 @@
-<UserControl x:Class="OpenVisionLab.LineToolWpfView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
-             xmlns:local="clr-namespace:OpenVisionLab">
-    <UserControl.Resources>
+<local:VisionToolSingleInputPropertyToolViewBase x:Class="OpenVisionLab.LineToolWpfView"
+                                                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                                                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                                                 xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+                                                 xmlns:local="clr-namespace:OpenVisionLab">
+    <local:VisionToolSingleInputPropertyToolViewBase.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <local:SharedResourceDictionary Source="VisionToolWpfTheme.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
-    </UserControl.Resources>
+    </local:VisionToolSingleInputPropertyToolViewBase.Resources>
 
     <Grid>
         <local:VisionToolSingleInputPropertyToolShell x:Name="toolShell"
-                                                      TitleIconKind="VectorLine" />
+                                                      TitleIconKind="VectorLine"
+                                                      LearnButtonVisibility="Visible"
+                                                      LearnButtonText="Learn Line"
+                                                      LearnTopicIndex="8" />
 
         <StackPanel x:Name="lineToolContentHost"
                     Visibility="Collapsed">
@@ -89,4 +92,4 @@
             </Border>
         </StackPanel>
     </Grid>
-</UserControl>
+</local:VisionToolSingleInputPropertyToolViewBase>

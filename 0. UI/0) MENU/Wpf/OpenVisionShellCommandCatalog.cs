@@ -136,10 +136,11 @@ namespace OpenVisionLab
         public string SubtitleText => T("App.Subtitle", "Rule-based Vision Workbench");
         public string ImageProcessingText => T("Menu.ImageProcessing", "Image Processing");
         public string AlgorithmText => T("Menu.Algorithm", "Algorithm");
+        public string LearnText => T("Menu.Learn", "Learn");
+        public string LearnToolTipText => T("Menu.Learn.ToolTip", "Open OpenVisionLab Learn.");
         public string GuideText => T("Menu.Guide", "Guide");
         public string GuideToolTipText => T("Menu.Guide.ToolTip", "Open the OpenVisionLab tutorial.");
         public string WorkbenchText => T("Shell.Workbench", "Workbench");
-        public string OperatorText => T("Shell.Operator", "Operator").ToUpperInvariant();
         public string CameraText => T("Shell.Camera", "Camera");
         public string LayerText => T("Main.Layer", "Layer");
         public string LayerInputText => T("Main.LayerInput", "Layer Input");
@@ -304,10 +305,11 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(SubtitleText));
             OnPropertyChanged(nameof(ImageProcessingText));
             OnPropertyChanged(nameof(AlgorithmText));
+            OnPropertyChanged(nameof(LearnText));
+            OnPropertyChanged(nameof(LearnToolTipText));
             OnPropertyChanged(nameof(GuideText));
             OnPropertyChanged(nameof(GuideToolTipText));
             OnPropertyChanged(nameof(WorkbenchText));
-            OnPropertyChanged(nameof(OperatorText));
             OnPropertyChanged(nameof(CameraText));
             OnPropertyChanged(nameof(LayerText));
             OnPropertyChanged(nameof(LayerInputText));

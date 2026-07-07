@@ -21,7 +21,16 @@ namespace OpenVisionLab
             IEnumerable<VisionPipelineSampleCatalogItem> samples,
             out VisionPipelineSampleCatalogItem sample)
         {
-            OpenVisionWorkspaceSamplePickerViewModel viewModel = new OpenVisionWorkspaceSamplePickerViewModel(samples);
+            return TrySelectSample(owner, samples, null, out sample);
+        }
+
+        public static bool TrySelectSample(
+            Window owner,
+            IEnumerable<VisionPipelineSampleCatalogItem> samples,
+            string preferredLearnPathId,
+            out VisionPipelineSampleCatalogItem sample)
+        {
+            OpenVisionWorkspaceSamplePickerViewModel viewModel = new OpenVisionWorkspaceSamplePickerViewModel(samples, preferredLearnPathId);
             if (!viewModel.HasSamples)
             {
                 sample = null;

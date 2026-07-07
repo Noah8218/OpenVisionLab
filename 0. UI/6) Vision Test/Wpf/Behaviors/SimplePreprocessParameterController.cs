@@ -387,48 +387,49 @@ namespace OpenVisionLab
 
         public void ApplySettings(SimplePreprocessToolSettings settings)
         {
-            if (settings?.Parameters == null || settings.Parameters.Count == 0)
+            if (settings?.Parameters != null && settings.Parameters.Count > 0)
             {
-                return;
-            }
-
-            setSuppressed(true);
-            try
-            {
-                foreach (ToolParameterValue item in settings.Parameters)
+                bool wasSuppressed = isSuppressed();
+                setSuppressed(true);
+                try
                 {
-                    if (item == null || string.IsNullOrWhiteSpace(item.Key))
+                    foreach (ToolParameterValue item in settings.Parameters)
                     {
-                        continue;
-                    }
+                        if (item == null || string.IsNullOrWhiteSpace(item.Key))
+                        {
+                            continue;
+                        }
 
-                    if (choiceControls.TryGetValue(item.Key, out ComboBox comboBox))
-                    {
-                        SelectComboValue(comboBox, item.Value);
-                    }
+                        if (choiceControls.TryGetValue(item.Key, out ComboBox comboBox))
+                        {
+                            SelectComboValue(comboBox, item.Value);
+                        }
 
-                    if (numberControls.TryGetValue(item.Key, out TextBox textBox))
-                    {
-                        textBox.Text = item.Value ?? string.Empty;
-                    }
+                        if (numberControls.TryGetValue(item.Key, out TextBox textBox))
+                        {
+                            textBox.Text = item.Value ?? string.Empty;
+                        }
 
-                    if (sliderControls.TryGetValue(item.Key, out Slider slider)
-                        && double.TryParse(item.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out double sliderValue))
-                    {
-                        slider.Value = Math.Max(slider.Minimum, Math.Min(slider.Maximum, sliderValue));
-                    }
+                        if (sliderControls.TryGetValue(item.Key, out Slider slider)
+                            && double.TryParse(item.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out double sliderValue))
+                        {
+                            slider.Value = Math.Max(slider.Minimum, Math.Min(slider.Maximum, sliderValue));
+                        }
 
-                    if (checkControls.TryGetValue(item.Key, out CheckBox checkBox)
-                        && bool.TryParse(item.Value, out bool checkedValue))
-                    {
-                        checkBox.IsChecked = checkedValue;
+                        if (checkControls.TryGetValue(item.Key, out CheckBox checkBox)
+                            && bool.TryParse(item.Value, out bool checkedValue))
+                        {
+                            checkBox.IsChecked = checkedValue;
+                        }
                     }
                 }
+                finally
+                {
+                    setSuppressed(wasSuppressed);
+                }
             }
-            finally
-            {
-                setSuppressed(false);
-            }
+
+            parameterChangeController.RefreshProgrammatic(notifyChanged: true);
         }
 
         public void RefreshLabels()

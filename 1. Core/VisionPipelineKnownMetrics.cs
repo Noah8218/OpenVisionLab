@@ -39,6 +39,8 @@ namespace OpenVisionLab
         public const string MeanValueMin = "MeanValueMin";
         public const string MeanValueMax = "MeanValueMax";
         public const string MeanValueAvg = "MeanValueAvg";
+        public const string MaskPixelCount = "MaskPixelCount";
+        public const string MaskPixelRatio = "MaskPixelRatio";
         public const string EdgeCount = "EdgeCount";
         public const string EdgePointCount = "EdgePointCount";
         public const string LineLengthMin = "LineLengthMin";
@@ -95,6 +97,8 @@ namespace OpenVisionLab
             new VisionPipelineMetricDefinition { Name = MeanValueMin, DisplayName = "Mean Min", Description = "Minimum mean value." },
             new VisionPipelineMetricDefinition { Name = MeanValueMax, DisplayName = "Mean Max", Description = "Maximum mean value." },
             new VisionPipelineMetricDefinition { Name = MeanValueAvg, DisplayName = "Mean Avg", Description = "Average mean value." },
+            new VisionPipelineMetricDefinition { Name = MaskPixelCount, DisplayName = "Mask Pixel Count", Description = "Number of pixels selected by a mask-producing tool." },
+            new VisionPipelineMetricDefinition { Name = MaskPixelRatio, DisplayName = "Mask Pixel Ratio", Description = "Selected mask pixels divided by the inspected image or ROI area." },
             new VisionPipelineMetricDefinition { Name = EdgeCount, DisplayName = "Edge Count", Description = "Number of edge groups." },
             new VisionPipelineMetricDefinition { Name = EdgePointCount, DisplayName = "Edge Point Count", Description = "Total number of edge points." },
             new VisionPipelineMetricDefinition { Name = LineLengthMin, DisplayName = "Line Length Min", Description = "Minimum fitted line overlay length." },
@@ -203,6 +207,10 @@ namespace OpenVisionLab
             ["featurematching"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg),
             ["sift"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg),
             ["mean"] = WithImageAndRectangleMetrics(ResultCount, MeanValueMin, MeanValueMax, MeanValueAvg),
+            ["hsv"] = WithImageMetrics(MaskPixelCount, MaskPixelRatio),
+            ["hsvmask"] = WithImageMetrics(MaskPixelCount, MaskPixelRatio),
+            ["colorhsv"] = WithImageMetrics(MaskPixelCount, MaskPixelRatio),
+            ["colormask"] = WithImageMetrics(MaskPixelCount, MaskPixelRatio),
             ["line"] = WithImageAndLineMetrics(ResultCount, EdgeCount, EdgePointCount),
             ["linegauge"] = WithImageAndLineMetrics(ResultCount, EdgeCount, EdgePointCount),
             ["linedistance"] = WithImageAndLineMetrics(new[] { ResultCount, EdgeCount, EdgePointCount }.Concat(DistanceMetricNames).ToArray()),
@@ -235,6 +243,7 @@ namespace OpenVisionLab
             new VisionPipelineAcceptancePreset { Name = "Best Score >= 80", MetricName = ScoreMax, ToolTypes = new[] { "matching", "templatematching", "edgebasedmatching", "edgebasedtemplatematching", "edgetemplatematching", "feature", "featurematching", "sift" }, UseMinimum = true, Minimum = 80 },
             new VisionPipelineAcceptancePreset { Name = "Best Score >= 60", MetricName = ScoreMax, ToolTypes = new[] { "feature", "featurematching", "sift" }, UseMinimum = true, Minimum = 60 },
             new VisionPipelineAcceptancePreset { Name = "Mean <= 180", MetricName = MeanValueAvg, ToolTypes = new[] { "mean" }, UseMaximum = true, Maximum = 180 },
+            new VisionPipelineAcceptancePreset { Name = "Mask Ratio 0.10..0.90", MetricName = MaskPixelRatio, ToolTypes = new[] { "hsv", "hsvmask", "colorhsv", "colormask" }, UseMinimum = true, Minimum = 0.10, UseMaximum = true, Maximum = 0.90 },
             new VisionPipelineAcceptancePreset { Name = "Line Edge Count >= 1", MetricName = EdgeCount, ToolTypes = new[] { "line", "linegauge" }, UseMinimum = true, Minimum = 1 },
             new VisionPipelineAcceptancePreset { Name = "Fitted Line Length >= 100 px", MetricName = LineLengthMax, ToolTypes = new[] { "line", "linegauge" }, UseMinimum = true, Minimum = 100 },
             new VisionPipelineAcceptancePreset { Name = "Fitted Line Length >= 3 mm", MetricName = LineLengthMmMax, ToolTypes = new[] { "line", "linegauge" }, UseMinimum = true, Minimum = 3 },

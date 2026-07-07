@@ -377,6 +377,100 @@ function Save-ContourShapesMissingSyntheticSample {
     Write-Host "Generated: $imagePath"
 }
 
+function Save-GeometryTransformSyntheticSample {
+    $imagePath = Join-Path $publicDir 'Geometry_RotateScale_Synthetic_OK.png'
+
+    $bitmap = [System.Drawing.Bitmap]::new(572, 420, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+
+    $background = New-Brush 42
+    $panel = New-Brush 86
+    $grid = New-Pen 120 1
+    $outline = New-Pen 210 4
+    $mark = New-Brush 224
+    $dimMark = New-Brush 164
+
+    $graphics.FillRectangle($background, 0, 0, $bitmap.Width, $bitmap.Height)
+    $graphics.FillRectangle($panel, 74, 58, 424, 292)
+    for ($x = 114; $x -le 474; $x += 40) {
+        $graphics.DrawLine($grid, $x, 58, $x, 350)
+    }
+    for ($y = 98; $y -le 338; $y += 40) {
+        $graphics.DrawLine($grid, 74, $y, 498, $y)
+    }
+
+    $graphics.DrawRectangle($outline, 142, 112, 288, 176)
+    $graphics.FillRectangle($mark, 174, 148, 70, 46)
+    $graphics.FillEllipse($mark, 322, 140, 64, 64)
+    $graphics.FillPolygon($dimMark, [System.Drawing.Point[]]@(
+        [System.Drawing.Point]::new(234, 270),
+        [System.Drawing.Point]::new(284, 214),
+        [System.Drawing.Point]::new(334, 270)
+    ))
+
+    $graphics.Dispose()
+    $background.Dispose()
+    $panel.Dispose()
+    $grid.Dispose()
+    $outline.Dispose()
+    $mark.Dispose()
+    $dimMark.Dispose()
+
+    Add-Noise $bitmap 6243 3
+    $bitmap.Save($imagePath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bitmap.Dispose()
+
+    Write-Host "Generated: $imagePath"
+}
+
+function Save-GeometryTransformWideSyntheticSample {
+    $imagePath = Join-Path $publicDir 'Geometry_RotateScale_Synthetic_Wide_NG.png'
+
+    $bitmap = [System.Drawing.Bitmap]::new(640, 420, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+
+    $background = New-Brush 42
+    $panel = New-Brush 86
+    $grid = New-Pen 120 1
+    $outline = New-Pen 210 4
+    $mark = New-Brush 224
+    $dimMark = New-Brush 164
+
+    $graphics.FillRectangle($background, 0, 0, $bitmap.Width, $bitmap.Height)
+    $graphics.FillRectangle($panel, 84, 58, 472, 292)
+    for ($x = 124; $x -le 524; $x += 40) {
+        $graphics.DrawLine($grid, $x, 58, $x, 350)
+    }
+    for ($y = 98; $y -le 338; $y += 40) {
+        $graphics.DrawLine($grid, 84, $y, 556, $y)
+    }
+
+    $graphics.DrawRectangle($outline, 166, 112, 308, 176)
+    $graphics.FillRectangle($mark, 204, 148, 70, 46)
+    $graphics.FillEllipse($mark, 352, 140, 64, 64)
+    $graphics.FillPolygon($dimMark, [System.Drawing.Point[]]@(
+        [System.Drawing.Point]::new(264, 270),
+        [System.Drawing.Point]::new(314, 214),
+        [System.Drawing.Point]::new(364, 270)
+    ))
+
+    $graphics.Dispose()
+    $background.Dispose()
+    $panel.Dispose()
+    $grid.Dispose()
+    $outline.Dispose()
+    $mark.Dispose()
+    $dimMark.Dispose()
+
+    Add-Noise $bitmap 6244 3
+    $bitmap.Save($imagePath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bitmap.Dispose()
+
+    Write-Host "Generated: $imagePath"
+}
+
 function Save-ThresholdBandSyntheticSample {
     $imagePath = Join-Path $publicDir 'Threshold_BandPads_Synthetic_OK.png'
 
@@ -469,6 +563,260 @@ function Save-ThresholdBandMissingSyntheticSample {
     Write-Host "Generated: $imagePath"
 }
 
+function Save-FilterDenoiseSyntheticSample {
+    $imagePath = Join-Path $publicDir 'Filter_Denoise_Synthetic_OK.png'
+
+    $bitmap = [System.Drawing.Bitmap]::new(572, 420, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+
+    $background = New-Brush 46
+    $tray = New-Brush 76
+    $target = New-Brush 196
+    $rim = New-Pen 120 2
+
+    $graphics.FillRectangle($background, 0, 0, $bitmap.Width, $bitmap.Height)
+    $graphics.FillRectangle($tray, 70, 66, 430, 260)
+    $graphics.DrawRectangle($rim, 70, 66, 430, 260)
+
+    $targets = @(
+        @(126, 126), @(226, 128), @(326, 126), @(426, 128)
+    )
+    foreach ($p in $targets) {
+        $graphics.FillEllipse($target, $p[0], $p[1], 52, 44)
+        $graphics.DrawEllipse($rim, $p[0], $p[1], 52, 44)
+    }
+
+    $specks = @(
+        @(112, 218), @(144, 246), @(182, 224), @(216, 274), @(254, 232), @(292, 258),
+        @(336, 222), @(374, 274), @(414, 236), @(452, 258), @(474, 292), @(238, 154)
+    )
+    foreach ($p in $specks) {
+        $graphics.FillRectangle($target, $p[0], $p[1], 3, 3)
+    }
+
+    $graphics.Dispose()
+    $background.Dispose()
+    $tray.Dispose()
+    $target.Dispose()
+    $rim.Dispose()
+
+    Add-Noise $bitmap 9171 4
+    $bitmap.Save($imagePath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bitmap.Dispose()
+
+    Write-Host "Generated: $imagePath"
+}
+
+function Save-FilterDenoiseMissingSyntheticSample {
+    $imagePath = Join-Path $publicDir 'Filter_Denoise_Synthetic_Missing_NG.png'
+
+    $bitmap = [System.Drawing.Bitmap]::new(572, 420, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+
+    $background = New-Brush 46
+    $tray = New-Brush 76
+    $target = New-Brush 196
+    $rim = New-Pen 120 2
+
+    $graphics.FillRectangle($background, 0, 0, $bitmap.Width, $bitmap.Height)
+    $graphics.FillRectangle($tray, 70, 66, 430, 260)
+    $graphics.DrawRectangle($rim, 70, 66, 430, 260)
+
+    $targets = @(
+        @(126, 126), @(326, 126)
+    )
+    foreach ($p in $targets) {
+        $graphics.FillEllipse($target, $p[0], $p[1], 52, 44)
+        $graphics.DrawEllipse($rim, $p[0], $p[1], 52, 44)
+    }
+
+    $specks = @(
+        @(112, 218), @(144, 246), @(182, 224), @(216, 274), @(254, 232), @(292, 258),
+        @(336, 222), @(374, 274), @(414, 236), @(452, 258), @(474, 292), @(238, 154),
+        @(232, 146), @(432, 148)
+    )
+    foreach ($p in $specks) {
+        $graphics.FillRectangle($target, $p[0], $p[1], 3, 3)
+    }
+
+    $graphics.Dispose()
+    $background.Dispose()
+    $tray.Dispose()
+    $target.Dispose()
+    $rim.Dispose()
+
+    Add-Noise $bitmap 9172 4
+    $bitmap.Save($imagePath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bitmap.Dispose()
+
+    Write-Host "Generated: $imagePath"
+}
+
+function Save-EdgeDetectionShapesSyntheticSample {
+    $imagePath = Join-Path $publicDir 'EdgeDetection_Shapes_Synthetic_OK.png'
+
+    $bitmap = [System.Drawing.Bitmap]::new(572, 420, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+
+    $background = New-Brush 44
+    $tray = New-Brush 72
+    $target = New-Brush 196
+    $rim = New-Pen 118 2
+
+    $graphics.FillRectangle($background, 0, 0, $bitmap.Width, $bitmap.Height)
+    $graphics.FillRectangle($tray, 70, 66, 430, 260)
+    $graphics.DrawRectangle($rim, 70, 66, 430, 260)
+
+    $targets = @(
+        @(122, 126), @(226, 126), @(330, 126), @(434, 126)
+    )
+    foreach ($p in $targets) {
+        $graphics.FillRectangle($target, $p[0], $p[1], 48, 44)
+        $graphics.DrawRectangle($rim, $p[0], $p[1], 48, 44)
+    }
+
+    $graphics.Dispose()
+    $background.Dispose()
+    $tray.Dispose()
+    $target.Dispose()
+    $rim.Dispose()
+
+    Add-Noise $bitmap 9181 2
+    $bitmap.Save($imagePath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bitmap.Dispose()
+
+    Write-Host "Generated: $imagePath"
+}
+
+function Save-EdgeDetectionShapesMissingSyntheticSample {
+    $imagePath = Join-Path $publicDir 'EdgeDetection_Shapes_Synthetic_Missing_NG.png'
+
+    $bitmap = [System.Drawing.Bitmap]::new(572, 420, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+
+    $background = New-Brush 44
+    $tray = New-Brush 72
+    $target = New-Brush 196
+    $rim = New-Pen 118 2
+
+    $graphics.FillRectangle($background, 0, 0, $bitmap.Width, $bitmap.Height)
+    $graphics.FillRectangle($tray, 70, 66, 430, 260)
+    $graphics.DrawRectangle($rim, 70, 66, 430, 260)
+
+    $targets = @(
+        @(122, 126), @(330, 126)
+    )
+    foreach ($p in $targets) {
+        $graphics.FillRectangle($target, $p[0], $p[1], 48, 44)
+        $graphics.DrawRectangle($rim, $p[0], $p[1], 48, 44)
+    }
+
+    $graphics.Dispose()
+    $background.Dispose()
+    $tray.Dispose()
+    $target.Dispose()
+    $rim.Dispose()
+
+    Add-Noise $bitmap 9182 2
+    $bitmap.Save($imagePath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bitmap.Dispose()
+
+    Write-Host "Generated: $imagePath"
+}
+
+function Save-MorphologyCleanupSyntheticSample {
+    $imagePath = Join-Path $publicDir 'Morphology_Cleanup_Synthetic_OK.png'
+
+    $bitmap = [System.Drawing.Bitmap]::new(572, 420, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+
+    $background = New-Brush 48
+    $tray = New-Brush 78
+    $target = New-Brush 190
+    $rim = New-Pen 118 2
+
+    $graphics.FillRectangle($background, 0, 0, $bitmap.Width, $bitmap.Height)
+    $graphics.FillRectangle($tray, 70, 66, 430, 260)
+    $graphics.DrawRectangle($rim, 70, 66, 430, 260)
+
+    $targets = @(
+        @(126, 128), @(226, 128), @(326, 128), @(426, 128)
+    )
+    foreach ($p in $targets) {
+        $graphics.FillRectangle($target, $p[0], $p[1], 52, 42)
+        $graphics.DrawRectangle($rim, $p[0], $p[1], 52, 42)
+    }
+
+    $specks = @(
+        @(118, 230), @(166, 252), @(222, 226), @(274, 258), @(340, 232), @(396, 256), @(454, 230), @(472, 284)
+    )
+    foreach ($p in $specks) {
+        $graphics.FillRectangle($target, $p[0], $p[1], 3, 3)
+    }
+
+    $graphics.Dispose()
+    $background.Dispose()
+    $tray.Dispose()
+    $target.Dispose()
+    $rim.Dispose()
+
+    Add-Noise $bitmap 9161 3
+    $bitmap.Save($imagePath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bitmap.Dispose()
+
+    Write-Host "Generated: $imagePath"
+}
+
+function Save-MorphologyCleanupMissingSyntheticSample {
+    $imagePath = Join-Path $publicDir 'Morphology_Cleanup_Synthetic_Missing_NG.png'
+
+    $bitmap = [System.Drawing.Bitmap]::new(572, 420, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+
+    $background = New-Brush 48
+    $tray = New-Brush 78
+    $target = New-Brush 190
+    $rim = New-Pen 118 2
+
+    $graphics.FillRectangle($background, 0, 0, $bitmap.Width, $bitmap.Height)
+    $graphics.FillRectangle($tray, 70, 66, 430, 260)
+    $graphics.DrawRectangle($rim, 70, 66, 430, 260)
+
+    $targets = @(
+        @(126, 128), @(326, 128)
+    )
+    foreach ($p in $targets) {
+        $graphics.FillRectangle($target, $p[0], $p[1], 52, 42)
+        $graphics.DrawRectangle($rim, $p[0], $p[1], 52, 42)
+    }
+
+    $specks = @(
+        @(118, 230), @(166, 252), @(222, 226), @(274, 258), @(340, 232), @(396, 256), @(454, 230), @(472, 284),
+        @(232, 140), @(432, 142)
+    )
+    foreach ($p in $specks) {
+        $graphics.FillRectangle($target, $p[0], $p[1], 3, 3)
+    }
+
+    $graphics.Dispose()
+    $background.Dispose()
+    $tray.Dispose()
+    $target.Dispose()
+    $rim.Dispose()
+
+    Add-Noise $bitmap 9162 3
+    $bitmap.Save($imagePath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bitmap.Dispose()
+
+    Write-Host "Generated: $imagePath"
+}
+
 function Save-MeanBrightnessSyntheticSample {
     $imagePath = Join-Path $publicDir 'Mean_Brightness_Synthetic_OK.png'
 
@@ -539,6 +887,140 @@ function Save-MeanBrightnessDarkSyntheticSample {
     $mark.Dispose()
 
     Add-Noise $bitmap 5232 2
+    $bitmap.Save($imagePath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bitmap.Dispose()
+
+    Write-Host "Generated: $imagePath"
+}
+
+function Save-ArithmeticInvertSyntheticSample {
+    $imagePath = Join-Path $publicDir 'Arithmetic_Invert_Synthetic_OK.png'
+
+    $bitmap = [System.Drawing.Bitmap]::new(572, 420, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+
+    $background = New-Brush 36
+    $panel = New-Brush 52
+    $mark = New-Brush 78
+    $rim = New-Pen 92 2
+    $trace = New-Pen 68 2
+
+    $graphics.FillRectangle($background, 0, 0, $bitmap.Width, $bitmap.Height)
+    $graphics.FillRectangle($panel, 74, 66, 424, 260)
+    $graphics.DrawRectangle($rim, 74, 66, 424, 260)
+
+    for ($i = 0; $i -lt 7; $i++) {
+        $x = 112 + ($i * 52)
+        $graphics.FillRectangle($mark, $x, 124, 30, 120)
+        $graphics.DrawRectangle($rim, $x, 124, 30, 120)
+        $graphics.DrawLine($trace, $x + 10, 102, $x + 10, 270)
+    }
+
+    $graphics.Dispose()
+    $background.Dispose()
+    $panel.Dispose()
+    $mark.Dispose()
+    $rim.Dispose()
+    $trace.Dispose()
+
+    Add-Noise $bitmap 5241 2
+    $bitmap.Save($imagePath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bitmap.Dispose()
+
+    Write-Host "Generated: $imagePath"
+}
+
+function Save-ArithmeticInvertBrightSyntheticSample {
+    $imagePath = Join-Path $publicDir 'Arithmetic_Invert_Synthetic_Bright_NG.png'
+
+    $bitmap = [System.Drawing.Bitmap]::new(572, 420, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+
+    $background = New-Brush 188
+    $panel = New-Brush 174
+    $mark = New-Brush 156
+    $rim = New-Pen 138 2
+    $trace = New-Pen 160 2
+
+    $graphics.FillRectangle($background, 0, 0, $bitmap.Width, $bitmap.Height)
+    $graphics.FillRectangle($panel, 74, 66, 424, 260)
+    $graphics.DrawRectangle($rim, 74, 66, 424, 260)
+
+    for ($i = 0; $i -lt 7; $i++) {
+        $x = 112 + ($i * 52)
+        $graphics.FillRectangle($mark, $x, 124, 30, 120)
+        $graphics.DrawRectangle($rim, $x, 124, 30, 120)
+        $graphics.DrawLine($trace, $x + 10, 102, $x + 10, 270)
+    }
+
+    $graphics.Dispose()
+    $background.Dispose()
+    $panel.Dispose()
+    $mark.Dispose()
+    $rim.Dispose()
+    $trace.Dispose()
+
+    Add-Noise $bitmap 5242 2
+    $bitmap.Save($imagePath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bitmap.Dispose()
+
+    Write-Host "Generated: $imagePath"
+}
+
+function Save-HsvColorPatchSyntheticSample {
+    $imagePath = Join-Path $publicDir 'HSV_ColorPatch_Synthetic_OK.png'
+
+    $bitmap = [System.Drawing.Bitmap]::new(572, 420, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::None
+    $graphics.Clear([System.Drawing.Color]::FromArgb(34, 40, 47))
+
+    $redBrush = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(230, 48, 42))
+    $blueBrush = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(46, 92, 170))
+    $grayPen = [System.Drawing.Pen]::new([System.Drawing.Color]::FromArgb(110, 118, 128), 2)
+
+    $graphics.FillRectangle($blueBrush, 84, 88, 92, 62)
+    $graphics.FillRectangle($redBrush, 210, 88, 70, 50)
+    $graphics.FillRectangle($redBrush, 312, 88, 70, 50)
+    $graphics.FillRectangle($redBrush, 210, 174, 70, 50)
+    $graphics.FillRectangle($redBrush, 312, 174, 70, 50)
+    $graphics.DrawRectangle($grayPen, 196, 74, 200, 164)
+
+    $grayPen.Dispose()
+    $blueBrush.Dispose()
+    $redBrush.Dispose()
+    $graphics.Dispose()
+    $bitmap.Save($imagePath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bitmap.Dispose()
+
+    Write-Host "Generated: $imagePath"
+}
+
+function Save-HsvColorPatchMissingSyntheticSample {
+    $imagePath = Join-Path $publicDir 'HSV_ColorPatch_Synthetic_Missing_NG.png'
+
+    $bitmap = [System.Drawing.Bitmap]::new(572, 420, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::None
+    $graphics.Clear([System.Drawing.Color]::FromArgb(34, 40, 47))
+
+    $redBrush = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(230, 48, 42))
+    $blueBrush = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(46, 92, 170))
+    $grayPen = [System.Drawing.Pen]::new([System.Drawing.Color]::FromArgb(110, 118, 128), 2)
+
+    $graphics.FillRectangle($blueBrush, 84, 88, 92, 62)
+    $graphics.FillRectangle($redBrush, 210, 88, 70, 50)
+    $graphics.FillRectangle($blueBrush, 312, 88, 70, 50)
+    $graphics.FillRectangle($blueBrush, 210, 174, 70, 50)
+    $graphics.FillRectangle($blueBrush, 312, 174, 70, 50)
+    $graphics.DrawRectangle($grayPen, 196, 74, 200, 164)
+
+    $grayPen.Dispose()
+    $blueBrush.Dispose()
+    $redBrush.Dispose()
+    $graphics.Dispose()
     $bitmap.Save($imagePath, [System.Drawing.Imaging.ImageFormat]::Png)
     $bitmap.Dispose()
 
@@ -891,10 +1373,22 @@ function Save-Manifest {
         'docs/samples/public/Blob_Particles_Synthetic_Sparse_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated sparse blob negative sample',
         'docs/samples/public/Contour_Shapes_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated contour shape-count source image',
         'docs/samples/public/Contour_Shapes_Synthetic_Missing_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated contour missing-shape negative sample',
+        'docs/samples/public/Geometry_RotateScale_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated geometry transform source image',
+        'docs/samples/public/Geometry_RotateScale_Synthetic_Wide_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated geometry transform wide-input negative sample',
         'docs/samples/public/Threshold_BandPads_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated basic threshold source image',
         'docs/samples/public/Threshold_BandPads_Synthetic_Missing_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated basic threshold missing-pad negative sample',
+        'docs/samples/public/Filter_Denoise_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated filter denoise source image',
+        'docs/samples/public/Filter_Denoise_Synthetic_Missing_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated filter denoise missing-target negative sample',
+        'docs/samples/public/EdgeDetection_Shapes_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated edge detection shape source image',
+        'docs/samples/public/EdgeDetection_Shapes_Synthetic_Missing_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated edge detection missing-shape negative sample',
+        'docs/samples/public/Morphology_Cleanup_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated morphology cleanup source image',
+        'docs/samples/public/Morphology_Cleanup_Synthetic_Missing_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated morphology cleanup missing-target negative sample',
         'docs/samples/public/Mean_Brightness_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated mean brightness normal sample',
         'docs/samples/public/Mean_Brightness_Synthetic_Dark_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated mean brightness dark drift negative sample',
+        'docs/samples/public/Arithmetic_Invert_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated arithmetic inversion normal sample',
+        'docs/samples/public/Arithmetic_Invert_Synthetic_Bright_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated arithmetic inversion bright-input negative sample',
+        'docs/samples/public/HSV_ColorPatch_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated HSV color patch normal sample',
+        'docs/samples/public/HSV_ColorPatch_Synthetic_Missing_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated HSV color patch missing-color negative sample',
         'docs/samples/public/Feature_Card_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated feature matching source image',
         'docs/samples/public/Feature_Card_Synthetic_Wrong_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated feature matching wrong-target negative sample',
         'docs/samples/public/templates/Feature_Card_Synthetic_Template.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated template crop from Feature_Card_Synthetic_OK.png',
@@ -916,10 +1410,22 @@ Save-BlobParticlesSyntheticSample
 Save-BlobParticlesSparseSyntheticSample
 Save-ContourShapesSyntheticSample
 Save-ContourShapesMissingSyntheticSample
+Save-GeometryTransformSyntheticSample
+Save-GeometryTransformWideSyntheticSample
 Save-ThresholdBandSyntheticSample
 Save-ThresholdBandMissingSyntheticSample
+Save-FilterDenoiseSyntheticSample
+Save-FilterDenoiseMissingSyntheticSample
+Save-EdgeDetectionShapesSyntheticSample
+Save-EdgeDetectionShapesMissingSyntheticSample
+Save-MorphologyCleanupSyntheticSample
+Save-MorphologyCleanupMissingSyntheticSample
 Save-MeanBrightnessSyntheticSample
 Save-MeanBrightnessDarkSyntheticSample
+Save-ArithmeticInvertSyntheticSample
+Save-ArithmeticInvertBrightSyntheticSample
+Save-HsvColorPatchSyntheticSample
+Save-HsvColorPatchMissingSyntheticSample
 Save-FeatureCardSyntheticSample
 Save-FeatureCardWrongSyntheticSample
 Save-EdgeFiducialSyntheticSample

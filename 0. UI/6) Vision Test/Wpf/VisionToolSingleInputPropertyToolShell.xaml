@@ -210,6 +210,8 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="6" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="6" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock x:Name="txtParameterHeader"
                                    Grid.Column="0"
@@ -229,6 +231,28 @@
                                                         Height="14"
                                                         HorizontalAlignment="Center"
                                                         Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        </Button>
+                        <Button x:Name="btnLearnTopic"
+                                Grid.Column="4"
+                                MinWidth="82"
+                                Height="22"
+                                Padding="8,0"
+                                Click="LearnTopicButton_Click"
+                                ToolTip="Open Learn topic"
+                                Visibility="{Binding LearnButtonVisibility, RelativeSource={RelativeSource AncestorType=local:VisionToolSingleInputPropertyToolShell}}"
+                                AutomationProperties.AutomationId="VisionToolHeaderLearnButton">
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Center">
+                                <iconPacks:PackIconMaterial Kind="ImageSearch"
+                                                            Width="13"
+                                                            Height="13"
+                                                            Margin="0,0,5,0"
+                                                            VerticalAlignment="Center"
+                                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                <TextBlock Text="{Binding LearnButtonText, RelativeSource={RelativeSource AncestorType=local:VisionToolSingleInputPropertyToolShell}}"
+                                           FontWeight="SemiBold"
+                                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </StackPanel>
                         </Button>
                     </Grid>
                 </GroupBox.Header>

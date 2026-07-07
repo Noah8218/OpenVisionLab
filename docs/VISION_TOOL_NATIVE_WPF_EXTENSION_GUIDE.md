@@ -10,7 +10,7 @@ Use one of these lanes before adding a row to `OpenVisionNativeToolRegistry`.
 | Lane | Use When | Main Entry Points |
 | --- | --- | --- |
 | PropertyGrid tool | The tool is an inspection/algorithm tool whose parameters should come from a property model. | `OpenVisionNativePropertyGridToolFactory`, `OpenVisionNativePropertyGridToolDocumentBuilder` |
-| Custom UI tool | The tool needs a hand-built WPF parameter panel, but still creates one property object for preview/pipeline. | `OpenVisionNativeCustomToolFactory`, `ISingleInputPropertyVisionToolWpfView<TProperty>` |
+| Custom UI tool | The tool needs a hand-built WPF parameter panel, but still creates one property object for preview/pipeline. | `OpenVisionNativeCustomToolFactory`, `VisionToolSingleInputCustomToolViewBase`, `ISingleInputPropertyVisionToolWpfView<TProperty>` |
 | SimplePreprocess tool | The tool can share `SimplePreprocessToolWpfView` and only differs by parameter configuration, preview, and step creation. | `OpenVisionNativeSimplePreprocessDocumentFactory`, `OpenVisionNativeSimplePreprocessViewConfigurator`, `OpenVisionNativeSimplePreprocessPropertyFactory`, `OpenVisionNativeSimplePreprocessPreviewExecutor` |
 
 Do not merge all lanes into one generic factory. A new tool should make its lane obvious.
@@ -57,12 +57,17 @@ The PropertyGrid editor must remain model-driven. Adding public properties and a
 
 1. Add a ViewModel contract and implementation for parameter state and normalization.
 2. Add a Presenter if the view needs binding-friendly properties or commands.
-3. Implement `ISingleInputPropertyVisionToolWpfView<TProperty>` on the WPF view.
-4. Use `VisionToolSingleInputCustomToolRuntime` for layer selectors, previews, status, run, and pipeline buttons.
-5. Add a creation method in `OpenVisionNativeCustomToolFactory`.
-6. Use `CreateSinglePropertyToolDocument` unless the tool has special step/preview semantics.
-7. Add one row in `OpenVisionNativeToolRegistry`.
-8. Add or update UI smoke coverage.
+3. Use `VisionToolSingleInputCustomToolViewBase` as the XAML root for single-input custom UI tools.
+4. Implement `ISingleInputPropertyVisionToolWpfView<TProperty>` on the WPF view if the tool creates a property model.
+5. Call `AttachToolController(...)` from the view constructor after `InitializeComponent()` to attach layer selectors, previews, status, run, and pipeline buttons.
+6. Keep only tool-specific parameter controllers, presenters, `CreateProperty()`, and disposal hooks in code-behind.
+7. Do not copy event forwarding for `SourceLayerChanged`, preview clicks, preview image load/save, selected layers, status, or preview images into each view.
+8. Do not call `VisionToolSingleInputCustomToolRuntime` directly from the view; the base/controller path owns that runtime.
+9. Keep parameter changes on the existing explicit preview scheduler path. Boolean visibility changes and layer create/delete/load-image actions must not run Preview.
+10. Add a creation method in `OpenVisionNativeCustomToolFactory`.
+11. Use `CreateSinglePropertyToolDocument` unless the tool has special step/preview semantics.
+12. Add one row in `OpenVisionNativeToolRegistry`.
+13. Add or update UI smoke coverage.
 
 Line is intentionally special because it has Edge, Measure, and Intersection paths plus paired properties.
 

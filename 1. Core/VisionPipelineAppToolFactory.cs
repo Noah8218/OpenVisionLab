@@ -50,6 +50,14 @@ namespace OpenVisionLab
                     return CreateEdgeBasedMatchingTool(step.Parameters);
                 case "mean":
                     return CreateMeanTool(step.Parameters);
+                case "hsv":
+                case "hsvmask":
+                case "colorhsv":
+                case "colormask":
+                    return CreateHsvMaskTool(step.Parameters);
+                case "edge":
+                case "edgedetection":
+                    return CreateEdgeDetectionTool(step.Parameters);
                 case "rotatescale":
                 case "rotateandscale":
                     return CreateRotateScaleTool(step.Parameters);
@@ -284,6 +292,21 @@ namespace OpenVisionLab
 
             return tool;
         }
+
+        private static IVisionTool CreateEdgeDetectionTool(IDictionary<string, string> parameters)
+        {
+            return new VisionPipelineEdgeDetectionTool(
+                GetString(parameters, "Name", "PipelineEdgeDetection"),
+                parameters);
+        }
+
+        private static IVisionTool CreateHsvMaskTool(IDictionary<string, string> parameters)
+        {
+            return new VisionPipelineHsvMaskTool(
+                GetString(parameters, "Name", "PipelineHsvMask"),
+                parameters);
+        }
+
         private static IVisionTool CreateMeanTool(IDictionary<string, string> parameters)
         {
             MeanProperty property = new MeanProperty(GetString(parameters, "Name", "PipelineMean"))

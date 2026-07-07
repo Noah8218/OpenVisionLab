@@ -146,6 +146,9 @@ namespace OpenVisionLab
             validationSuiteStatusText = OpenVisionRecipeText.Local(
                 "Suite 범위를 선택한 뒤 명시적으로 Run suite를 실행하세요.",
                 "Select a suite scope, then run the explicit suite.");
+            SetLlmXmlDraftDependencyPlaceholder(LocalText(
+                "XML 초안을 붙여넣거나 로드한 뒤 검증을 실행하세요.",
+                "Paste or load an XML draft, then run validation."));
 
             CreateRecipeCommand = new RelayCommand(CreateRecipe);
             CreateNamedRecipeCommand = new RelayCommand(CreateNamedRecipe, CanCreateNamedRecipe);
@@ -4552,7 +4555,9 @@ namespace OpenVisionLab
                 validationLines.Add(OpenVisionRecipeText.Local("다음: 검증 전에 VisionPipeline XML 초안을 붙여넣거나 로드하세요.", "Next: Paste or load a VisionPipeline XML draft before validation."));
                 validationReport = string.Join(Environment.NewLine, validationLines);
                 dependencyReport = OpenVisionRecipeText.Local("의존 파일 스캔 건너뜀.", "Dependency scan skipped.");
-                LlmXmlDraftDependencyRows = Array.Empty<OpenVisionRecipeDependencyReviewRow>();
+                SetLlmXmlDraftDependencyPlaceholder(LocalText(
+                    "VisionPipeline XML 초안을 붙여넣거나 로드하세요.",
+                    "Paste or load a VisionPipeline XML draft."));
                 return false;
             }
 
@@ -4560,7 +4565,9 @@ namespace OpenVisionLab
             {
                 validationReport = string.Join(Environment.NewLine, validationLines);
                 dependencyReport = OpenVisionRecipeText.Local("의존 파일 스캔 건너뜀.", "Dependency scan skipped.");
-                LlmXmlDraftDependencyRows = Array.Empty<OpenVisionRecipeDependencyReviewRow>();
+                SetLlmXmlDraftDependencyPlaceholder(LocalText(
+                    "XML 문법을 수정한 뒤 다시 검증하세요.",
+                    "Fix XML syntax, then validate again."));
                 return false;
             }
 
@@ -4571,7 +4578,9 @@ namespace OpenVisionLab
                 validationLines.Add(OpenVisionRecipeText.Local("다음: OpenVisionLab VisionPipeline 스키마에 맞는 XML을 LLM에 다시 생성하게 하세요.", "Next: Ask the LLM to regenerate XML that matches the OpenVisionLab VisionPipeline schema."));
                 validationReport = string.Join(Environment.NewLine, validationLines);
                 dependencyReport = OpenVisionRecipeText.Local("의존 파일 스캔 건너뜀.", "Dependency scan skipped.");
-                LlmXmlDraftDependencyRows = Array.Empty<OpenVisionRecipeDependencyReviewRow>();
+                SetLlmXmlDraftDependencyPlaceholder(LocalText(
+                    "OpenVisionLab VisionPipeline XML 구조를 수정하세요.",
+                    "Fix the OpenVisionLab VisionPipeline XML structure."));
                 return false;
             }
 
@@ -4812,7 +4821,9 @@ namespace OpenVisionLab
             missingDependencyCount = 0;
             if (pipeline?.Steps == null || pipeline.Steps.Count == 0)
             {
-                LlmXmlDraftDependencyRows = Array.Empty<OpenVisionRecipeDependencyReviewRow>();
+                SetLlmXmlDraftDependencyPlaceholder(LocalText(
+                    "Step이 없어 검사할 의존 경로가 없습니다.",
+                    "No steps are available for dependency path review."));
                 return LocalText("의존 파일 스캔 건너뜀: 파이프라인 단계가 없습니다.", "Dependency scan skipped: pipeline has no steps.");
             }
 
@@ -4921,6 +4932,19 @@ namespace OpenVisionLab
             missingDependencyCount = missing;
             LlmXmlDraftDependencyRows = rows;
             return string.Join(Environment.NewLine, lines);
+        }
+
+        private void SetLlmXmlDraftDependencyPlaceholder(string action)
+        {
+            LlmXmlDraftDependencyRows = new[]
+            {
+                new OpenVisionRecipeDependencyReviewRow(
+                    LocalText("대기", "Waiting"),
+                    "-",
+                    "-",
+                    "-",
+                    action)
+            };
         }
 
         private void CopyReferenceImageForDraftImport(string recipeName, string pipelineName, ref string dependencyReport)

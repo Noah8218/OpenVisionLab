@@ -1,8 +1,11 @@
-<UserControl x:Class="OpenVisionLab.MatchingToolWpfView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:OpenVisionLab">
+<local:VisionToolSingleInputPropertyToolViewBase x:Class="OpenVisionLab.MatchingToolWpfView"
+                                                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                                                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                                                 xmlns:local="clr-namespace:OpenVisionLab">
     <local:VisionToolSingleInputPropertyToolShell x:Name="toolShell"
                                                   TitleIconKind="CrosshairsGps"
+                                                  LearnButtonVisibility="Visible"
+                                                  LearnButtonText="Learn Matching"
+                                                  LearnTopicIndex="9"
                                                   TemplateStatusVisibility="Visible" />
-</UserControl>
+</local:VisionToolSingleInputPropertyToolViewBase>

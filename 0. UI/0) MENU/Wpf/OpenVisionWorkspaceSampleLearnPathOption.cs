@@ -47,7 +47,12 @@ namespace OpenVisionLab
                     source.Count)
             };
 
-            AddIfNotEmpty(options, source, "matching", LocalText("Matching", "Matching"), LocalText("템플릿, 특징, Edge 기반 매칭", "Template, feature, and edge matching"));
+            AddIfNotEmpty(options, source, "preprocess", LocalText("전처리", "Preprocess"), LocalText("Threshold, Filter, Morphology로 검출 전 입력 정리", "Threshold, Filter, and Morphology before detection"));
+            AddIfNotEmpty(options, source, "geometry", LocalText("Geometry", "Geometry"), LocalText("RotateScale transform and ROI coordinate review", "RotateScale transform and ROI coordinate review"));
+            AddIfNotEmpty(options, source, "matching", LocalText("Matching 전체", "All matching"), LocalText("Template, Feature, Edge 기반 매칭 전체", "Template, feature, and edge matching"));
+            AddIfNotEmpty(options, source, "template-matching", LocalText("Template", "Template"), LocalText("Template Matching으로 기준 형상/마크 찾기", "Find a reference shape or mark with Template Matching"));
+            AddIfNotEmpty(options, source, "edge-matching", LocalText("Edge", "Edge"), LocalText("EdgeBasedMatching으로 형상 edge 비교", "Compare edge geometry with EdgeBasedMatching"));
+            AddIfNotEmpty(options, source, "feature-matching", LocalText("Feature", "Feature"), LocalText("FeatureMatching으로 특징점 비교", "Compare keypoints with FeatureMatching"));
             AddIfNotEmpty(options, source, "blob", LocalText("Blob", "Blob"), LocalText("입자, 얼룩, 밀도 검출", "Particle, stain, and density detection"));
             AddIfNotEmpty(options, source, "contour", LocalText("Contour", "Contour"), LocalText("형상, 개수, 영역 검출", "Shape, count, and region detection"));
             AddIfNotEmpty(options, source, "line", LocalText("Line", "Line"), LocalText("거리, 각도, 직선 측정", "Distance, angle, and line measurement"));
@@ -106,6 +111,34 @@ namespace OpenVisionLab
                 return ContainsAny(flow, category, string.Empty, string.Empty, "Matching", "FeatureMatching", "EdgeBased", "Template matching", "Feature matching");
             }
 
+            if (string.Equals(id, "template-matching", StringComparison.OrdinalIgnoreCase))
+            {
+                return ContainsAny(flow, category, name, goal, "TemplateMatching", "Template Matching", "Image Matching")
+                    || (ContainsAny(flow, category, name, goal, "Matching")
+                        && !ContainsAny(flow, category, name, goal, "Feature", "EdgeBased", "Edge Based"));
+            }
+
+            if (string.Equals(id, "edge-matching", StringComparison.OrdinalIgnoreCase))
+            {
+                return ContainsAny(flow, category, name, goal, "EdgeBased", "Edge Based", "EdgeBasedMatching");
+            }
+
+            if (string.Equals(id, "feature-matching", StringComparison.OrdinalIgnoreCase))
+            {
+                return ContainsAny(flow, category, name, goal, "FeatureMatching", "Feature Matching", "Feature");
+            }
+
+            if (string.Equals(id, "preprocess", StringComparison.OrdinalIgnoreCase))
+            {
+                return ContainsAny(flow, string.Empty, string.Empty, string.Empty, "Threshold", "Filter", "Morphology", "EdgeDetection")
+                    || ContainsAny(category, name, goal, string.Empty, "Preprocess", "Binary", "Clean");
+            }
+
+            if (string.Equals(id, "geometry", StringComparison.OrdinalIgnoreCase))
+            {
+                return ContainsAny(flow, category, name, goal, "RotateScale", "RotateAndScale", "Resize");
+            }
+
             if (string.Equals(id, "blob", StringComparison.OrdinalIgnoreCase))
             {
                 return ContainsAny(flow, category, name, goal, "Blob", "Particle", "Density", "Stain");
@@ -118,7 +151,7 @@ namespace OpenVisionLab
 
             if (string.Equals(id, "line", StringComparison.OrdinalIgnoreCase))
             {
-                return ContainsAny(flow, category, name, goal, "Line", "LineGauge", "Distance", "Angle", "Measure");
+                return ContainsAny(flow, category, name, goal, "LineDistance", "LineGauge", "Distance", "Angle", "Measure");
             }
 
             if (string.Equals(id, "mean", StringComparison.OrdinalIgnoreCase))

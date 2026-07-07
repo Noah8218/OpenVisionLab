@@ -46,3 +46,4 @@ Good은 shape 5개가 모두 남아 있고, Bad는 missing-shape 이미지라 2�
 - Good 샘플에서 contour 5개가 검출됩니다.
 - Bad 샘플에서 `ResultCount=2`로 missing 상태가 설명됩니다.
 - Contour display 옵션은 표시만 바꾸고 Preview/Run을 자동 실행하지 않습니다.
+Opening this guide or changing Contour parameters must not run Preview/Run automatically.

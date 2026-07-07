@@ -33,9 +33,9 @@ namespace OpenVisionLab
             {
                 view.ShowResultReview(SimplePreprocessResultExplanation.CreateMean(
                     Array.Empty<Lib.OpenCV.Result.MeanResult>(),
-                    view.GetEnum("MeanType", MeanType.Mean),
-                    view.GetInt("MeanMin", 100),
-                    view.GetInt("MeanMax", 240)));
+                    view.Parameters.GetEnum("MeanType", MeanType.Mean),
+                    view.Parameters.GetInt("MeanMin", 100),
+                    view.Parameters.GetInt("MeanMax", 240)));
                 return result;
             }
 
@@ -78,9 +78,9 @@ namespace OpenVisionLab
             result.ResultImage = visual;
             view.ShowResultReview(SimplePreprocessResultExplanation.CreateMean(
                 tool.results,
-                view.GetEnum("MeanType", MeanType.Mean),
-                view.GetInt("MeanMin", 100),
-                view.GetInt("MeanMax", 240)));
+                view.Parameters.GetEnum("MeanType", MeanType.Mean),
+                view.Parameters.GetInt("MeanMin", 100),
+                view.Parameters.GetInt("MeanMax", 240)));
             return result;
         }
 
@@ -90,12 +90,12 @@ namespace OpenVisionLab
             using Mat mask = new Mat();
             Mat preview = new Mat();
 
-            int hueMin = Math.Min(view.GetInt("HueMin", 0), view.GetInt("HueMax", 179));
-            int hueMax = Math.Max(view.GetInt("HueMin", 0), view.GetInt("HueMax", 179));
-            int satMin = Math.Min(view.GetInt("SatMin", 0), view.GetInt("SatMax", 255));
-            int satMax = Math.Max(view.GetInt("SatMin", 0), view.GetInt("SatMax", 255));
-            int valMin = Math.Min(view.GetInt("ValMin", 0), view.GetInt("ValMax", 255));
-            int valMax = Math.Max(view.GetInt("ValMin", 0), view.GetInt("ValMax", 255));
+            int hueMin = Math.Min(view.Parameters.GetInt("HueMin", 0), view.Parameters.GetInt("HueMax", 179));
+            int hueMax = Math.Max(view.Parameters.GetInt("HueMin", 0), view.Parameters.GetInt("HueMax", 179));
+            int satMin = Math.Min(view.Parameters.GetInt("SatMin", 0), view.Parameters.GetInt("SatMax", 255));
+            int satMax = Math.Max(view.Parameters.GetInt("SatMin", 0), view.Parameters.GetInt("SatMax", 255));
+            int valMin = Math.Min(view.Parameters.GetInt("ValMin", 0), view.Parameters.GetInt("ValMax", 255));
+            int valMax = Math.Max(view.Parameters.GetInt("ValMin", 0), view.Parameters.GetInt("ValMax", 255));
 
             Cv2.InRange(
                 hsv,
@@ -117,14 +117,14 @@ namespace OpenVisionLab
         public static VisionToolResult ExecuteHistogramPreview(Mat source, SimplePreprocessToolWpfView view)
         {
             Mat result = source.Clone();
-            HistogramPreviewType histogramType = view.GetEnum("HistogramType", HistogramPreviewType.clahe);
+            HistogramPreviewType histogramType = view.Parameters.GetEnum("HistogramType", HistogramPreviewType.clahe);
             switch (histogramType)
             {
                 case HistogramPreviewType.clahe:
                     using (CLAHE clahe = Cv2.CreateCLAHE())
                     {
-                        int tileSize = Math.Max(1, view.GetInt("TilesGridSize", 3));
-                        clahe.ClipLimit = Math.Max(0d, view.GetDouble("ClipLimit", 3));
+                        int tileSize = Math.Max(1, view.Parameters.GetInt("TilesGridSize", 3));
+                        clahe.ClipLimit = Math.Max(0d, view.Parameters.GetDouble("ClipLimit", 3));
                         clahe.TilesGridSize = new OpenCvSharp.Size(tileSize, tileSize);
                         clahe.Apply(result, result);
                     }
@@ -133,8 +133,8 @@ namespace OpenVisionLab
                     Cv2.EqualizeHist(result, result);
                     break;
                 case HistogramPreviewType.Normalize:
-                    int alpha = view.GetInt("Alpha", 0);
-                    int beta = view.GetInt("Beta", 100);
+                    int alpha = view.Parameters.GetInt("Alpha", 0);
+                    int beta = view.Parameters.GetInt("Beta", 100);
                     Cv2.Normalize(result, result, alpha, beta, NormTypes.MinMax);
                     break;
             }
@@ -155,14 +155,14 @@ namespace OpenVisionLab
                     return string.Format(
                         CultureInfo.CurrentCulture,
                         "CLAHE / Clip {0:0.###} / Tile {1}",
-                        view.GetDouble("ClipLimit", 3),
-                        view.GetInt("TilesGridSize", 3));
+                        view.Parameters.GetDouble("ClipLimit", 3),
+                        view.Parameters.GetInt("TilesGridSize", 3));
                 case HistogramPreviewType.Normalize:
                     return string.Format(
                         CultureInfo.CurrentCulture,
                         "Normalize / Alpha {0} / Beta {1}",
-                        view.GetInt("Alpha", 0),
-                        view.GetInt("Beta", 100));
+                        view.Parameters.GetInt("Alpha", 0),
+                        view.Parameters.GetInt("Beta", 100));
                 default:
                     return "Global equalize";
             }

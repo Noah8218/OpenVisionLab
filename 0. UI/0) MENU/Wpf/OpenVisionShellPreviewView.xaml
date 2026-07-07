@@ -365,8 +365,6 @@
 
         <Grid Grid.Row="0" Background="{StaticResource Shell.ChromeBrush}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="72" />
-                <ColumnDefinition Width="116" />
                 <ColumnDefinition Width="280" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="110" />
@@ -377,43 +375,36 @@
                 <ColumnDefinition Width="42" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Margin="8,5" Background="#157C86">
-                <iconPacks:PackIconMaterial Kind="Account" Width="28" Height="28" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-            </Border>
-            <Border Grid.Column="1"
-                    Margin="4,9"
-                    BorderBrush="#8AD7DA"
-                    BorderThickness="1"
-                    Background="#3F4B51">
-                <TextBlock Text="{Binding OperatorText}" Foreground="#E9F4F5" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
-            </Border>
-            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+            <StackPanel Grid.Column="0"
+                        Margin="16,0,0,0"
+                        Orientation="Horizontal"
+                        VerticalAlignment="Center">
                 <TextBlock x:Name="txtShellMarker" Text="OpenVisionLab" Foreground="White" FontSize="20" FontWeight="Bold" />
             </StackPanel>
-            <TextBlock Grid.Column="3"
+            <TextBlock Grid.Column="1"
                        Text="{Binding SubtitleText}"
                        Foreground="#D3E0E3"
                        VerticalAlignment="Center"
                        FontSize="12" />
             <ComboBox x:Name="cbShellLanguage"
-                      Grid.Column="4"
+                      Grid.Column="2"
                       Margin="0,11,10,11"
                       DisplayMemberPath="DisplayName"
                       ItemsSource="{Binding LanguageOptions}"
                       SelectedItem="{Binding SelectedLanguageOption, Mode=TwoWay}" />
-            <Button x:Name="btnShellSettings" Grid.Column="5" Style="{StaticResource IconButtonStyle}" ToolTip="{Binding SettingsToolTipText}">
+            <Button x:Name="btnShellSettings" Grid.Column="3" Style="{StaticResource IconButtonStyle}" ToolTip="{Binding SettingsToolTipText}">
                 <iconPacks:PackIconMaterial Kind="Cog" Width="20" Height="20" HorizontalAlignment="Center" />
             </Button>
-            <Button x:Name="btnShellExport" Grid.Column="6" Style="{StaticResource IconButtonStyle}" ToolTip="{Binding ExportToolTipText}">
+            <Button x:Name="btnShellExport" Grid.Column="4" Style="{StaticResource IconButtonStyle}" ToolTip="{Binding ExportToolTipText}">
                 <iconPacks:PackIconMaterial Kind="FileExport" Width="20" Height="20" HorizontalAlignment="Center" />
             </Button>
-            <Button x:Name="btnShellMinimize" Grid.Column="7" Style="{StaticResource IconButtonStyle}" ToolTip="{Binding MinimizeToolTipText}">
+            <Button x:Name="btnShellMinimize" Grid.Column="5" Style="{StaticResource IconButtonStyle}" ToolTip="{Binding MinimizeToolTipText}">
                 <iconPacks:PackIconMaterial Kind="WindowMinimize" Width="18" Height="18" HorizontalAlignment="Center" />
             </Button>
-            <Button x:Name="btnShellMaximize" Grid.Column="8" Style="{StaticResource IconButtonStyle}" ToolTip="{Binding MaximizeToolTipText}">
+            <Button x:Name="btnShellMaximize" Grid.Column="6" Style="{StaticResource IconButtonStyle}" ToolTip="{Binding MaximizeToolTipText}">
                 <iconPacks:PackIconMaterial Kind="WindowMaximize" Width="18" Height="18" HorizontalAlignment="Center" />
             </Button>
-            <Button x:Name="btnShellClose" Grid.Column="9" Style="{StaticResource IconButtonStyle}" ToolTip="{Binding CloseToolTipText}">
+            <Button x:Name="btnShellClose" Grid.Column="7" Style="{StaticResource IconButtonStyle}" ToolTip="{Binding CloseToolTipText}">
                 <iconPacks:PackIconMaterial Kind="WindowClose" Width="18" Height="18" HorizontalAlignment="Center" />
             </Button>
         </Grid>

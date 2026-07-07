@@ -3,27 +3,23 @@ using Lib.OpenCV.Tool;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
 using OpenVisionLab.Contracts;
 
 namespace OpenVisionLab
 {
-    public partial class LineToolWpfView : UserControl, ISingleInputPropertyVisionToolWpfView<LineGaugeProperty>, IVisionToolPreviewImageCommands, IVisionToolViewLifetime
+    public partial class LineToolWpfView : VisionToolSingleInputPropertyToolViewBase, ISingleInputPropertyVisionToolWpfView<LineGaugeProperty>
     {
         public const string LinePurposeParameterName = "LinePurpose";
         private readonly LineToolPresenter presenter;
         private readonly VisionToolPropertyGridHost propertyGridController;
         private readonly VisionToolPropertyChangeController propertyChangeController;
-        private readonly VisionToolDebouncedPreviewScheduler previewScheduler;
         private readonly VisionToolSingleInputSpecialPropertyToolController toolController;
         private readonly LineToolInteractionController interactionController;
-        private readonly LineToolResultReviewPresenter resultReviewPresenter;
-        private readonly LineToolVerificationGuidePresenter lineVerificationGuidePresenter;
+        private readonly LineToolReviewController reviewController;
+        private readonly LineToolPreviewController previewController;
         private readonly VisionToolPresetButtonPresenter<LineGaugeProperty> presetPresenter;
-        private bool autoPreviewShouldShowThresholdTeachingImage;
-        private bool thresholdTeachingPreviewRequested;
+        private readonly LineToolTextPresenter textPresenter;
 
         internal LineToolWpfView(LineToolPresenter presenter)
         {
@@ -34,18 +30,18 @@ namespace OpenVisionLab
                 "VisionMenu.Line",
                 lineToolContentHost,
                 ClearResultReview);
-            lineVerificationGuidePresenter = new LineToolVerificationGuidePresenter(
+            AttachPropertyToolController(toolController);
+            LineToolVerificationGuidePresenter lineVerificationGuidePresenter = new LineToolVerificationGuidePresenter(
                 toolController.SummaryText,
                 toolController.ResultGuidanceText);
             toolController.ResultGuidanceText.Visibility = Visibility.Collapsed;
-            previewScheduler = new VisionToolDebouncedPreviewScheduler(this, RunAutoPreview, 120);
             propertyChangeController = new VisionToolPropertyChangeController(
                 UpdateSummary,
                 ClearResultReview,
                 _ => PersistLineProperties(),
-                refreshOverlay: UpdateInputRoiOverlay,
-                schedulePreview: ScheduleAutoPreview,
-                cancelPreview: previewScheduler.Cancel,
+                refreshOverlay: () => previewController?.UpdateInputRoiOverlay(),
+                schedulePreview: () => previewController?.ScheduleAutoPreview(),
+                cancelPreview: () => previewController?.CancelAutoPreview(),
                 shouldSchedulePreview: VisionToolPropertyPreviewPolicy.ShouldScheduleAutoPreview);
             propertyGridController = VisionToolPropertyGridHost.Attach(
                 toolController.PropertyGridHost,
@@ -63,80 +59,48 @@ namespace OpenVisionLab
                 btnEditSelectedRoi,
                 UpdateSummary,
                 ClearResultReview,
+                PersistLineProperties,
                 () => EditSelectedRoiRequested(this, EventArgs.Empty));
-            resultReviewPresenter = new LineToolResultReviewPresenter(
+            previewController = new LineToolPreviewController(
+                this,
+                presenter,
+                toolController,
+                interactionController);
+            LineToolResultReviewPresenter resultReviewPresenter = new LineToolResultReviewPresenter(
                 this,
                 toolController.ResultReviewText,
                 toolController.ResultReviewChips,
                 () => interactionController.SelectedPurpose,
                 () => interactionController.GetSelectedLineProperty());
+            textPresenter = new LineToolTextPresenter(
+                presenter,
+                txtPurposeLabel,
+                txtLineSelectorLabel,
+                rdoPurposeEdge,
+                rdoPurposeMeasure,
+                rdoPurposeIntersection,
+                rdoLineA,
+                rdoLineB,
+                txtPurposeHint,
+                btnEditSelectedRoi,
+                toolController.SetSummaryText);
             presetPresenter = toolController.AttachPresetPresenter(
                 VisionToolPresetCatalog.GetLinePresets(),
                 ApplyPreset);
+            reviewController = new LineToolReviewController(
+                toolController,
+                interactionController,
+                resultReviewPresenter,
+                lineVerificationGuidePresenter,
+                textPresenter);
             ApplyLocalization();
             UpdateSummary();
             ClearResultReview();
             toolController.AttachLanguageChange(RefreshLocalization);
         }
 
-        public event EventHandler SourceLayerChanged
-        {
-            add { toolController.SourceLayerChanged += value; }
-            remove { toolController.SourceLayerChanged -= value; }
-        }
-
-        public event EventHandler DestinationLayerChanged
-        {
-            add { toolController.DestinationLayerChanged += value; }
-            remove { toolController.DestinationLayerChanged -= value; }
-        }
-
-        public event EventHandler InputPreviewClicked
-        {
-            add { toolController.InputPreviewClicked += value; }
-            remove { toolController.InputPreviewClicked -= value; }
-        }
-
-        public event EventHandler OutputPreviewClicked
-        {
-            add { toolController.OutputPreviewClicked += value; }
-            remove { toolController.OutputPreviewClicked -= value; }
-        }
-
-        public event EventHandler CreateOutputLayerRequested
-        {
-            add { toolController.CreateOutputLayerRequested += value; }
-            remove { toolController.CreateOutputLayerRequested -= value; }
-        }
-
         public event EventHandler EditSelectedRoiRequested = delegate { };
 
-        public event EventHandler RunPreviewRequested
-        {
-            add { toolController.RunPreviewRequested += value; }
-            remove { toolController.RunPreviewRequested -= value; }
-        }
-
-        public event EventHandler AddPipelineRequested
-        {
-            add { toolController.AddPipelineRequested += value; }
-            remove { toolController.AddPipelineRequested -= value; }
-        }
-
-        public event EventHandler<VisionToolPreviewImageCommandEventArgs> LoadPreviewImageRequested
-        {
-            add { toolController.LoadPreviewImageRequested += value; }
-            remove { toolController.LoadPreviewImageRequested -= value; }
-        }
-
-        public event EventHandler<VisionToolPreviewImageCommandEventArgs> SavePreviewImageRequested
-        {
-            add { toolController.SavePreviewImageRequested += value; }
-            remove { toolController.SavePreviewImageRequested -= value; }
-        }
-
-        public string SelectedInputLayer => toolController.SelectedInputLayer;
-        public string SelectedOutputLayer => toolController.SelectedOutputLayer;
         public string SelectedPurpose => interactionController.SelectedPurpose.ToString();
         public string SelectedLineName => interactionController.SelectedLineName;
         public bool HasInputPreviewImage => toolController.InputPreview?.HasImage ?? false;
@@ -169,9 +133,7 @@ namespace OpenVisionLab
 
         public bool ConsumeThresholdTeachingPreviewRequest()
         {
-            bool requested = thresholdTeachingPreviewRequested;
-            thresholdTeachingPreviewRequested = false;
-            return requested;
+            return previewController.ConsumeThresholdTeachingPreviewRequest();
         }
 
         public void SetPurposeForTest(string purpose)
@@ -193,7 +155,7 @@ namespace OpenVisionLab
         {
             interactionController.ConfigureSelectedLineThresholdForTest(threshold, invert);
             // Test hooks bypass WPG change events; keep their behavior aligned with a real threshold slider edit.
-            ScheduleAutoPreview();
+            previewController.ScheduleAutoPreview();
         }
 
         public void ConfigureSelectedLineMeasureTuningForTest(
@@ -224,125 +186,42 @@ namespace OpenVisionLab
 
         public void EnsureDefaultRoi(int width, int height)
         {
-            if (width <= 0 || height <= 0)
-            {
-                return;
-            }
-
-            bool changed = false;
-            if (presenter.LineAProperty.CvROI.Width <= 0 || presenter.LineAProperty.CvROI.Height <= 0)
-            {
-                presenter.LineAProperty.CvROI = new OpenCvSharp.Rect(0, 0, width, height);
-                changed = true;
-            }
-
-            if (presenter.LineBProperty.CvROI.Width <= 0 || presenter.LineBProperty.CvROI.Height <= 0)
-            {
-                presenter.LineBProperty.CvROI = new OpenCvSharp.Rect(0, 0, width, height);
-                changed = true;
-            }
-
-            if (changed)
-            {
-                propertyChangeController.RefreshAfterExternalUpdate(propertyGridController);
-            }
+            interactionController.EnsureDefaultRoi(width, height);
         }
 
         public void ApplySelectedLineRoi(OpenCvSharp.Rect roi)
         {
-            if (roi.Width <= 0 || roi.Height <= 0)
-            {
-                return;
-            }
-
-            LineGaugeProperty property = interactionController.GetSelectedLineProperty();
-            property.USE_ROI = true;
-            property.USE_MULTI_ROI = false;
-            property.CvROI = roi;
-            PersistLineProperties();
-            propertyChangeController.RefreshAfterExternalUpdate(propertyGridController);
+            interactionController.ApplySelectedLineRoi(roi);
         }
 
         public void SetRoiForTest(OpenCvSharp.Rect roi)
         {
-            if (roi.Width <= 0 || roi.Height <= 0)
-            {
-                return;
-            }
-
-            presenter.LineAProperty.USE_ROI = true;
-            presenter.LineAProperty.USE_MULTI_ROI = false;
-            presenter.LineAProperty.CvROI = roi;
-            presenter.LineBProperty.USE_ROI = true;
-            presenter.LineBProperty.USE_MULTI_ROI = false;
-            presenter.LineBProperty.CvROI = roi;
-            PersistLineProperties();
-            propertyChangeController.RefreshAfterExternalUpdate(propertyGridController);
+            interactionController.SetRoiForTest(roi);
         }
 
-        public void SetLayerList(IEnumerable<string> layerNames, string selectedInputLayer, string selectedOutputLayer)
+        public override void SetInputPreview(Bitmap image)
         {
-            toolController.SetLayerList(layerNames, selectedInputLayer, selectedOutputLayer);
-        }
-
-        public void SetInputPreview(Bitmap image)
-        {
-            toolController.SetInputPreview(image, UpdateInputRoiOverlay);
-        }
-
-        public void SetOutputPreview(Bitmap image)
-        {
-            toolController.SetOutputPreview(image);
-        }
-
-        public void SetStatus(string status)
-        {
-            toolController.SetStatus(status);
+            previewController.SetInputPreview(image);
         }
 
         public void SetResultReview(IEnumerable<LineGaugeResult> results)
         {
-            List<LineGaugeResult> resultList = results?.Where(item => item != null).ToList() ?? new List<LineGaugeResult>();
-            resultReviewPresenter.Show(resultList);
-            lineVerificationGuidePresenter.ShowLineResult(
-                resultList,
-                interactionController.SelectedPurpose,
-                SelectedLineName,
-                interactionController.GetSelectedLineProperty());
+            reviewController.ShowLineResult(results);
         }
 
         public void SetDistanceResultReview(VisionToolResult result)
         {
-            resultReviewPresenter.ShowDistance(result);
-            lineVerificationGuidePresenter.ShowDistanceResult(
-                result,
-                interactionController.SelectedPurpose,
-                SelectedLineName,
-                interactionController.GetSelectedLineProperty());
+            reviewController.ShowDistanceResult(result);
         }
 
         public void SetIntersectionResultReview(LineGaugeTool lineA, LineGaugeTool lineB, OpenCvSharp.Point intersectionPoint)
         {
-            resultReviewPresenter.ShowIntersection(lineA, lineB, intersectionPoint);
-            lineVerificationGuidePresenter.ShowIntersectionResult(
-                true,
-                interactionController.SelectedPurpose,
-                SelectedLineName,
-                interactionController.GetSelectedLineProperty());
+            reviewController.ShowIntersectionResult(lineA, lineB, intersectionPoint);
         }
 
         public void SetIntersectionResultReview(VisionToolResult result)
         {
-            resultReviewPresenter.ShowIntersection(result);
-            bool crosses = result?.Success == true
-                && result.Metrics != null
-                && result.Metrics.TryGetValue("IntersectionCross", out double crossValue)
-                && crossValue >= 0.5D;
-            lineVerificationGuidePresenter.ShowIntersectionResult(
-                crosses,
-                interactionController.SelectedPurpose,
-                SelectedLineName,
-                interactionController.GetSelectedLineProperty());
+            reviewController.ShowIntersectionResult(result);
         }
 
         private void RefreshLocalization()
@@ -352,11 +231,10 @@ namespace OpenVisionLab
             UpdateSummary();
         }
 
-        public void DisposeView()
+        protected override void DisposeToolResources()
         {
             presetPresenter.Dispose();
-            previewScheduler.Dispose();
-            toolController.Dispose();
+            previewController.Dispose();
             interactionController.Detach();
             propertyGridController.Dispose();
         }
@@ -364,33 +242,13 @@ namespace OpenVisionLab
         private void ApplyLocalization()
         {
             toolController.ApplyLocalization();
-            txtPurposeLabel.Text = VisionToolVerificationText.LinePurposeLabel;
-            txtLineSelectorLabel.Text = VisionToolVerificationText.LineSettingLabel;
-            rdoPurposeEdge.Content = VisionToolVerificationText.LinePurposeEdge;
-            rdoPurposeMeasure.Content = VisionToolVerificationText.LinePurposeMeasure;
-            rdoPurposeIntersection.Content = VisionToolVerificationText.LinePurposeIntersection;
-            rdoLineA.Content = VisionToolVerificationText.LineA;
-            rdoLineB.Content = VisionToolVerificationText.LineB;
-            txtPurposeHint.Text = VisionToolVerificationText.CreateLinePurposeHint(interactionController.SelectedPurpose.ToString());
-            VisionToolChromePresenter.ApplyTooltip(btnEditSelectedRoi, VisionToolVerificationText.EditSelectedLineRoiTooltip);
+            textPresenter.ApplyLocalization(interactionController.SelectedPurpose);
             presetPresenter?.ApplyLocalization();
         }
 
         private void UpdateSummary()
         {
-            LineToolPurpose purpose = interactionController.SelectedPurpose;
-            if (!string.IsNullOrWhiteSpace(toolController.ResultReviewText.Text))
-            {
-                return;
-            }
-
-            string purposeText = VisionToolVerificationText.CreateLinePurposeText(purpose.ToString());
-            toolController.SetSummaryText(presenter.CreateSummary(purpose, interactionController.IsLineBSelected, purposeText, SelectedLineName));
-            txtPurposeHint.Text = VisionToolVerificationText.CreateLinePurposeHint(purpose.ToString());
-            lineVerificationGuidePresenter?.ShowTeachingState(
-                purpose,
-                SelectedLineName,
-                interactionController.GetSelectedLineProperty());
+            reviewController?.RefreshTeachingSummary();
         }
 
         private void CommitPendingPropertyGridEdit()
@@ -415,12 +273,12 @@ namespace OpenVisionLab
                 return;
             }
 
-            previewScheduler.Cancel();
+            previewController.CancelAutoPreview();
             preset.ApplyTo(property);
             PersistLineProperties();
             propertyGridController.RefreshAndApplyVisibilityRules();
             UpdateSummary();
-            UpdateInputRoiOverlay();
+            previewController.UpdateInputRoiOverlay();
             ClearResultReview();
         }
 
@@ -432,53 +290,8 @@ namespace OpenVisionLab
 
         private void ClearResultReview()
         {
-            toolController?.ClearResultReview();
-            if (interactionController != null)
-            {
-                lineVerificationGuidePresenter?.ShowTeachingState(
-                    interactionController.SelectedPurpose,
-                    SelectedLineName,
-                    interactionController.GetSelectedLineProperty());
-            }
+            reviewController?.ClearResultReview();
         }
 
-        private void ScheduleAutoPreview()
-        {
-            autoPreviewShouldShowThresholdTeachingImage = ShouldShowThresholdTeachingPreview();
-            previewScheduler.Schedule();
-        }
-
-        private void RunAutoPreview()
-        {
-            thresholdTeachingPreviewRequested = autoPreviewShouldShowThresholdTeachingImage;
-            autoPreviewShouldShowThresholdTeachingImage = false;
-            toolController.RequestRunPreview();
-        }
-
-        private bool ShouldShowThresholdTeachingPreview()
-        {
-            LineGaugeProperty property = interactionController.GetSelectedLineProperty();
-            return property != null && (property.USE_THRESHOLD || property.USE_ADAPTIVE_THRESHOLD);
-        }
-
-        private void UpdateInputRoiOverlay()
-        {
-            VisionToolInlinePreviewSlot inputPreview = toolController.InputPreview;
-            if (inputPreview == null)
-            {
-                return;
-            }
-
-            if (!inputPreview.HasImage)
-            {
-                inputPreview.ClearRoiOverlays();
-                return;
-            }
-
-            inputPreview.SetLineRoiOverlays(
-                presenter.LineAProperty.CvROI,
-                presenter.LineBProperty.CvROI,
-                interactionController.IsLineBSelected);
-        }
     }
 }

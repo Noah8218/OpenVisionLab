@@ -18,6 +18,7 @@ namespace OpenVisionLab
         private readonly Button editSelectedRoiButton;
         private readonly Action refreshSummary;
         private readonly Action clearResultReview;
+        private readonly Action persistProperties;
         private readonly Action editSelectedRoiRequested;
         private bool disposed;
 
@@ -33,6 +34,7 @@ namespace OpenVisionLab
             Button editSelectedRoiButton,
             Action refreshSummary,
             Action clearResultReview,
+            Action persistProperties,
             Action editSelectedRoiRequested)
         {
             this.presenter = presenter ?? throw new ArgumentNullException(nameof(presenter));
@@ -46,6 +48,7 @@ namespace OpenVisionLab
             this.editSelectedRoiButton = editSelectedRoiButton ?? throw new ArgumentNullException(nameof(editSelectedRoiButton));
             this.refreshSummary = refreshSummary ?? throw new ArgumentNullException(nameof(refreshSummary));
             this.clearResultReview = clearResultReview ?? throw new ArgumentNullException(nameof(clearResultReview));
+            this.persistProperties = persistProperties ?? throw new ArgumentNullException(nameof(persistProperties));
             this.editSelectedRoiRequested = editSelectedRoiRequested ?? throw new ArgumentNullException(nameof(editSelectedRoiRequested));
 
             AttachCommands();
@@ -180,6 +183,61 @@ namespace OpenVisionLab
             RefreshPropertyGridAfterExternalUpdate();
         }
 
+        public bool EnsureDefaultRoi(int width, int height)
+        {
+            if (width <= 0 || height <= 0)
+            {
+                return false;
+            }
+
+            bool changed = false;
+            if (presenter.LineAProperty.CvROI.Width <= 0 || presenter.LineAProperty.CvROI.Height <= 0)
+            {
+                presenter.LineAProperty.CvROI = new OpenCvSharp.Rect(0, 0, width, height);
+                changed = true;
+            }
+
+            if (presenter.LineBProperty.CvROI.Width <= 0 || presenter.LineBProperty.CvROI.Height <= 0)
+            {
+                presenter.LineBProperty.CvROI = new OpenCvSharp.Rect(0, 0, width, height);
+                changed = true;
+            }
+
+            if (changed)
+            {
+                RefreshPropertyGridAfterExternalUpdate();
+            }
+
+            return changed;
+        }
+
+        public bool ApplySelectedLineRoi(OpenCvSharp.Rect roi)
+        {
+            if (roi.Width <= 0 || roi.Height <= 0)
+            {
+                return false;
+            }
+
+            ApplyRoi(GetSelectedLineProperty(), roi);
+            persistProperties();
+            RefreshPropertyGridAfterExternalUpdate();
+            return true;
+        }
+
+        public bool SetRoiForTest(OpenCvSharp.Rect roi)
+        {
+            if (roi.Width <= 0 || roi.Height <= 0)
+            {
+                return false;
+            }
+
+            ApplyRoi(presenter.LineAProperty, roi);
+            ApplyRoi(presenter.LineBProperty, roi);
+            persistProperties();
+            RefreshPropertyGridAfterExternalUpdate();
+            return true;
+        }
+
         public void Detach()
         {
             if (disposed)
@@ -222,6 +280,13 @@ namespace OpenVisionLab
         private void RefreshPropertyGridAfterExternalUpdate()
         {
             propertyChangeController.RefreshAfterExternalUpdate(propertyGridController);
+        }
+
+        private static void ApplyRoi(LineGaugeProperty property, OpenCvSharp.Rect roi)
+        {
+            property.USE_ROI = true;
+            property.USE_MULTI_ROI = false;
+            property.CvROI = roi;
         }
     }
 }

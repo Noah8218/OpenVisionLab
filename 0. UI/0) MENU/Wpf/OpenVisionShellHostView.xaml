@@ -644,6 +644,12 @@
                                VerticalAlignment="Center" />
                 </Border>
                 <Button Style="{StaticResource TopNavButtonStyle}"
+                        AutomationProperties.AutomationId="HostLearnButton"
+                        Content="{Binding LearnText}"
+                        ToolTip="{Binding LearnToolTipText}"
+                        Cursor="Hand"
+                        Command="{Binding ChromeCommands.OpenLearnCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}" />
+                <Button Style="{StaticResource TopNavButtonStyle}"
                         Content="{Binding GuideText}"
                         ToolTip="{Binding GuideToolTipText}"
                         Cursor="Hand"
@@ -1252,7 +1258,7 @@
                                                 DockPanel.Dock="Left"
                                                 HorizontalAlignment="Left"
                                                 MinWidth="116"
-                                                Command="{Binding ChromeCommands.OpenTutorialCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                                Command="{Binding ChromeCommands.OpenLearnCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <iconPacks:PackIconMaterial Kind="BookOpenPageVariantOutline"
                                                                             Width="16"
@@ -1260,7 +1266,7 @@
                                                                             Foreground="#157C86"
                                                                             Margin="0,0,7,0" />
                                                 <TextBlock x:Name="txtWorkspaceEmptyGuideButtonText"
-                                                           Text="가이드 보기"
+                                                           Text="Open Learn"
                                                            Foreground="#157C86"
                                                            FontWeight="SemiBold"
                                                            TextTrimming="None" />
@@ -5221,10 +5227,10 @@
                                                             <Grid Margin="5,2">
                                                                 <Grid.ColumnDefinitions>
                                                                     <ColumnDefinition Width="52" />
+                                                                    <ColumnDefinition Width="0.9*" />
+                                                                    <ColumnDefinition Width="72" />
                                                                     <ColumnDefinition Width="1.05*" />
-                                                                    <ColumnDefinition Width="86" />
-                                                                    <ColumnDefinition Width="1.35*" />
-                                                                    <ColumnDefinition Width="1.15*" />
+                                                                    <ColumnDefinition Width="1.7*" />
                                                                 </Grid.ColumnDefinitions>
                                                                 <TextBlock Text="{Binding Status}"
                                                                            Foreground="#D7FFF4"
@@ -5257,7 +5263,7 @@
                                                                            ToolTip="{Binding Action}"
                                                                            Foreground="#95D6B8"
                                                                            FontSize="10"
-                                                                           TextTrimming="CharacterEllipsis" />
+                                                                           TextWrapping="Wrap" />
                                                             </Grid>
                                                         </DataTemplate>
                                                     </ListBox.ItemTemplate>

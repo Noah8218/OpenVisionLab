@@ -106,9 +106,9 @@ namespace OpenVisionLab
             SimplePreprocessToolWpfView view = new SimplePreprocessToolWpfView();
             descriptor.ConfigureView(view);
             string settingsConfigName = OpenVisionNativeToolSettingsStore.CreateConfigName(descriptor.ToolName);
-            view.ApplyPersistedSettings(OpenVisionNativeToolSettingsStore.Load(settingsConfigName, new SimplePreprocessToolSettings()));
+            view.Parameters.ApplySettings(OpenVisionNativeToolSettingsStore.Load(settingsConfigName, new SimplePreprocessToolSettings()));
             view.ParameterChanged += (sender, e) =>
-                OpenVisionNativeToolSettingsStore.Save(settingsConfigName, view.CaptureSettings());
+                OpenVisionNativeToolSettingsStore.Save(settingsConfigName, view.Parameters.CaptureSettings());
 
             Func<string, string, VisionPipelineStep> stepFactory = descriptor.CreateStep == null
                 ? null

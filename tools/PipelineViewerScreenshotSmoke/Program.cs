@@ -40,6 +40,7 @@ internal static class Program
         ["wpf_shell_preview"] = CaptureShellPreview,
         ["wpf_shell_host_window_chrome"] = CaptureShellHostWindowChrome,
         ["wpf_shell_host_workspace_empty"] = CaptureShellHostWorkspaceEmpty,
+        ["wpf_shell_host_learn_entry"] = CaptureShellHostLearnEntry,
         ["wpf_shell_host_workspace"] = CaptureShellHostWorkspace,
         ["wpf_shell_host_workspace_avalondock_tabs"] = CaptureShellHostWorkspaceAvalonDockTabs,
         ["wpf_shell_host_workspace_image_load"] = CaptureShellHostWorkspaceImageLoad,
@@ -64,6 +65,7 @@ internal static class Program
         ["wpf_shell_host_workspace_sample_pipeline_review_bentpin_ng_metrics"] = CaptureShellHostWorkspaceSamplePipelineReviewBentPinNgMetrics,
         ["wpf_shell_host_workspace_sample_pipeline_review_film_ng_metrics"] = CaptureShellHostWorkspaceSamplePipelineReviewFilmNgMetrics,
         ["wpf_shell_host_recipe_context_switch"] = CaptureShellHostRecipeContextSwitch,
+        ["wpf_shell_host_llm_dependency_placeholder"] = CaptureShellHostLlmDependencyPlaceholder,
         ["wpf_shell_host_recipe_output_route_isolation"] = CaptureShellHostRecipeOutputRouteIsolation,
         ["wpf_shell_host_recipe_language_controls"] = CaptureShellHostRecipeLanguageControls,
         ["wpf_shell_host_recipe_multibranch_comparison"] = CaptureShellHostRecipeMultiBranchComparison,
@@ -100,6 +102,26 @@ internal static class Program
         ["wpf_shell_host_native_tool"] = CaptureShellHostNativeTool,
         ["wpf_shell_host_threshold_basic_tool"] = CaptureShellHostThresholdBasicTool,
         ["wpf_shell_host_threshold_tool"] = CaptureShellHostThresholdTool,
+        ["wpf_threshold_tool_guide"] = outputPath => CaptureOpenVisionLearnThreshold(outputPath, 0),
+        ["wpf_openvision_learn_curriculum"] = CaptureOpenVisionLearnCurriculum,
+        ["wpf_openvision_learn_brightness"] = CaptureOpenVisionLearnBrightness,
+        ["wpf_openvision_learn_filtering"] = CaptureOpenVisionLearnFiltering,
+        ["wpf_openvision_learn_morphology"] = CaptureOpenVisionLearnMorphology,
+        ["wpf_openvision_learn_blob"] = CaptureOpenVisionLearnBlob,
+        ["wpf_openvision_learn_contour"] = CaptureOpenVisionLearnContour,
+        ["wpf_openvision_learn_edge_line"] = CaptureOpenVisionLearnEdgeLine,
+        ["wpf_openvision_learn_line_distance"] = CaptureOpenVisionLearnLineDistance,
+        ["wpf_openvision_learn_matching"] = CaptureOpenVisionLearnMatching,
+        ["wpf_openvision_learn_feature_matching"] = CaptureOpenVisionLearnFeatureMatching,
+        ["wpf_openvision_learn_layer_recipe"] = CaptureOpenVisionLearnLayerRecipe,
+        ["wpf_openvision_learn_edge_based_matching"] = CaptureOpenVisionLearnEdgeBasedMatching,
+        ["wpf_openvision_learn_metrics_acceptance"] = CaptureOpenVisionLearnMetricsAcceptance,
+        ["wpf_openvision_learn_arithmetic"] = CaptureOpenVisionLearnArithmetic,
+        ["wpf_openvision_learn_geometry"] = CaptureOpenVisionLearnGeometry,
+        ["wpf_openvision_learn_color_hsv"] = CaptureOpenVisionLearnColorHsv,
+        ["wpf_openvision_learn_threshold"] = outputPath => CaptureOpenVisionLearnThreshold(outputPath, 0),
+        ["wpf_openvision_learn_threshold_animation"] = outputPath => CaptureOpenVisionLearnThreshold(outputPath, 1),
+        ["wpf_openvision_learn_threshold_apply"] = outputPath => CaptureOpenVisionLearnThreshold(outputPath, 2),
         ["wpf_shell_host_pipeline_review"] = CaptureShellHostPipelineReview,
         ["wpf_shell_host_pipeline_review_ng"] = CaptureShellHostPipelineReviewNg,
         ["wpf_shell_host_rotate_scale_tool"] = CaptureShellHostRotateScaleTool,
@@ -519,6 +541,276 @@ internal static class Program
                 OpenVisionLanguageService.T("Shell.WorkspaceEmptyStepPreviewTitle"),
                 OpenVisionLanguageService.T("Shell.WorkspaceEmptySampleButton"));
         }, captureFloatingToolWindow: false);
+    }
+
+    private static CaptureResult CaptureShellHostLearnEntry(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostLearnEntry", seedMainLayer: false);
+        Window hostWindow = new()
+        {
+            Content = shellHost,
+            Width = 1600,
+            Height = 900,
+            WindowStyle = WindowStyle.None,
+            ResizeMode = ResizeMode.NoResize,
+            ShowInTaskbar = false,
+            Topmost = true
+        };
+
+        DateTime started = DateTime.UtcNow;
+        hostWindow.Show();
+        hostWindow.Activate();
+        try
+        {
+            Pump(20);
+            int beforeRuns = shellHost.NativePreviewRunCount;
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF shell Learn entry",
+                "HostLearnButton",
+                "WorkspaceEmptyGuideButton");
+            string hostOutputPath = Path.Combine(
+                Path.GetDirectoryName(outputPath) ?? ".",
+                Path.GetFileNameWithoutExtension(outputPath) + "_host.png");
+            WriteElementPng(hostWindow, hostOutputPath, 1600, 900);
+
+            ClickVisibleButtonByAutomationId(shellHost, "HostLearnButton", "top Learn button");
+            Pump(12);
+            OpenVisionLearnWindow learnWindow = GetVisibleLearnWindow("top Learn button");
+            if (learnWindow.SelectedTopicIndexForTest != 0)
+            {
+                throw new InvalidOperationException("Top Learn button did not open Learn at topic 1.");
+            }
+
+            if (!learnWindow.CanOpenPracticeSamplesForTest)
+            {
+                throw new InvalidOperationException("Top Learn button did not attach Practice Samples action.");
+            }
+
+            string topPracticeLearnPathId = ClickPracticeSamplesAndCaptureSelectedLearnPath(
+                learnWindow,
+                "top Learn Practice Samples button");
+            if (!string.Equals(topPracticeLearnPathId, "all", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Top Learn Practice Samples did not open Sample Picker at the expected Learn path. "
+                    + "Expected='all', Actual='"
+                    + topPracticeLearnPathId
+                    + "'.");
+            }
+
+            AssertVisibleTextContains(
+                learnWindow,
+                "OpenVision Learn topic 1 path overview",
+                "추천 학습 경로",
+                "명시 Preview/Run");
+            learnWindow.Close();
+            Pump(8);
+            ClickVisibleButtonByAutomationId(shellHost, "WorkspaceEmptyGuideButton", "workspace empty Learn button");
+            Pump(12);
+            learnWindow = GetVisibleLearnWindow("workspace empty Learn button");
+            if (learnWindow.SelectedTopicIndexForTest != 0)
+            {
+                throw new InvalidOperationException("Workspace empty Learn button did not open Learn at topic 1.");
+            }
+
+            if (!learnWindow.CanOpenPracticeSamplesForTest)
+            {
+                throw new InvalidOperationException("Workspace empty Learn button did not attach Practice Samples action.");
+            }
+
+            if (shellHost.NativePreviewRunCount != beforeRuns
+                || shellHost.IsActiveWpfToolWindowVisibleForTest
+                || shellHost.IsNativeDocumentActive)
+            {
+                throw new InvalidOperationException("Opening Learn or Practice Samples triggered tool Preview/Run or opened a tool document.");
+            }
+
+            WriteElementPng(learnWindow, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            foreach (Window owned in Application.Current.Windows.OfType<Window>().Where(item => !ReferenceEquals(item, hostWindow)).ToArray())
+            {
+                owned.Close();
+            }
+
+            hostWindow.Close();
+        }
+    }
+
+    private static CaptureResult CaptureShellHostLlmDependencyPlaceholder(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostLlmDependencyPlaceholder", seedMainLayer: false);
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            if (shellHost.RecipeCommands.LlmXmlDraftDependencyRows.Count == 0)
+            {
+                throw new InvalidOperationException("LLM dependency path review did not expose an initial placeholder row.");
+            }
+
+            OpenVisionRecipeDependencyReviewRow row = shellHost.RecipeCommands.LlmXmlDraftDependencyRows[0];
+            if (!ContainsAny(row.Status, "대기", "Waiting")
+                || !ContainsAny(row.Action, "XML 초안", "XML draft"))
+            {
+                throw new InvalidOperationException(
+                    "LLM dependency path review placeholder row did not explain the next action. "
+                    + $"Status='{row.Status}', Action='{row.Action}'");
+            }
+
+            ToggleButton? recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager");
+            if (recipeManagerButton == null)
+            {
+                throw new InvalidOperationException("Recipe manager button was not found.");
+            }
+
+            recipeManagerButton.IsChecked = true;
+            Pump(80);
+            TabItem? llmXmlTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipeLlmXml");
+            if (llmXmlTab == null)
+            {
+                throw new InvalidOperationException("Recipe manager LLM XML tab was not found.");
+            }
+
+            llmXmlTab.IsSelected = true;
+            Pump(80);
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager initial LLM dependency rows",
+                "HostRecipeLlmXmlTab",
+                "HostRecipeLlmDependencyPathList");
+            AssertVisibleTextContains(
+                shellHost,
+                "WPF recipe manager initial LLM dependency rows",
+                "대기",
+                "XML 초안");
+            SaveVisibleAutomationElementPng(
+                shellHost,
+                "HostRecipeLlmXmlDraftPanel",
+                outputPath,
+                "llm-xml-draft-panel.png");
+        }, captureFloatingToolWindow: false);
+    }
+
+    private static OpenVisionLearnWindow GetVisibleLearnWindow(string source)
+    {
+        OpenVisionLearnWindow? learnWindow = Application.Current.Windows
+            .OfType<OpenVisionLearnWindow>()
+            .FirstOrDefault(item => item.IsVisible);
+        if (learnWindow == null)
+        {
+            throw new InvalidOperationException(source + " did not open OpenVisionLab Learn.");
+        }
+
+        return learnWindow;
+    }
+
+    private static string ClickPracticeSamplesAndCaptureSelectedLearnPath(OpenVisionLearnWindow learnWindow, string name)
+    {
+        string? capturedLearnPathId = null;
+        string? capturedError = null;
+        Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            try
+            {
+                OpenVisionWorkspaceSamplePickerWindow? pickerWindow = Application.Current.Windows
+                    .OfType<OpenVisionWorkspaceSamplePickerWindow>()
+                    .FirstOrDefault(item => item.IsVisible);
+                if (pickerWindow == null)
+                {
+                    capturedError = name + " did not open Sample Picker.";
+                    return;
+                }
+
+                capturedLearnPathId = pickerWindow.ViewModel.SelectedLearnPathOption?.Id;
+                pickerWindow.Close();
+            }
+            catch (Exception ex)
+            {
+                capturedError = ex.Message;
+            }
+        }), System.Windows.Threading.DispatcherPriority.ContextIdle);
+
+        ClickVisibleButtonByAutomationId(learnWindow, "OpenVisionLearnPracticeSamplesButton", name);
+        Pump(12);
+        if (!string.IsNullOrWhiteSpace(capturedError))
+        {
+            throw new InvalidOperationException(capturedError);
+        }
+
+        if (string.IsNullOrWhiteSpace(capturedLearnPathId))
+        {
+            throw new InvalidOperationException(name + " opened Sample Picker without a selected Learn path.");
+        }
+
+        return capturedLearnPathId;
+    }
+
+    private static void ClickVisibleButtonByAutomationId(DependencyObject root, string automationId, string name)
+    {
+        Button? button = FindVisualChildren<Button>(root)
+            .FirstOrDefault(item => item.IsVisible
+                && string.Equals(AutomationProperties.GetAutomationId(item), automationId, StringComparison.Ordinal));
+        if (button == null)
+        {
+            throw new InvalidOperationException(name + " was not visible.");
+        }
+
+        if (button.Command != null)
+        {
+            object parameter = button.CommandParameter;
+            if (!button.Command.CanExecute(parameter))
+            {
+                throw new InvalidOperationException(name + " command was disabled.");
+            }
+
+            button.Command.Execute(parameter);
+            return;
+        }
+
+        button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, button));
+    }
+
+    private static void AssertToolHeaderLearnOpensTopic(
+        OpenVisionShellHostView shellHost,
+        int expectedTopicIndex,
+        string name)
+    {
+        Window toolWindow = GetActiveFloatingToolWindow(name);
+        Button? learnButton = FindVisualChildren<Button>(toolWindow)
+            .FirstOrDefault(item => item.IsVisible
+                && string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "VisionToolHeaderLearnButton",
+                    StringComparison.Ordinal));
+        if (learnButton == null)
+        {
+            throw new InvalidOperationException(name + " Learn button was not visible.");
+        }
+
+        int beforeRuns = shellHost.NativePreviewRunCount;
+        learnButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, learnButton));
+        Pump(12);
+
+        OpenVisionLearnWindow learnWindow = GetVisibleLearnWindow(name + " Learn button");
+        if (learnWindow.SelectedTopicIndexForTest != expectedTopicIndex)
+        {
+            throw new InvalidOperationException(
+                name + " opened the wrong Learn topic. "
+                + $"Expected={expectedTopicIndex}, Actual={learnWindow.SelectedTopicIndexForTest}");
+        }
+
+        learnWindow.Close();
+        Pump(6);
+        if (shellHost.NativePreviewRunCount != beforeRuns)
+        {
+            throw new InvalidOperationException(
+                name + " Learn button triggered Preview/Run. "
+                + $"RunsBefore={beforeRuns}, RunsAfter={shellHost.NativePreviewRunCount}");
+        }
     }
 
     private static CaptureResult CaptureShellHostWorkspaceImageLoad(string outputPath)
@@ -3593,6 +3885,7 @@ internal static class Program
                 "WPF workspace sample picker",
                 "WorkspaceSamplePickerView",
                 "WorkspaceSamplePickerSearchBox",
+                "WorkspaceSamplePickerRouteSummary",
                 "WorkspaceSamplePickerCatalogSourceList",
                 "WorkspaceSamplePickerCatalogSourceSummary",
                 "WorkspaceSamplePickerSampleFocusList",
@@ -3739,6 +4032,7 @@ internal static class Program
             {
                 viewModel.SelectedSample.SampleName,
                 viewModel.CatalogSourceLabelText,
+                viewModel.ActiveRouteSummaryText,
                 viewModel.ActiveCatalogSourceText,
                 viewModel.SelectedCatalogSourceOption.DisplayName,
                 viewModel.SampleFocusLabelText,
@@ -4218,11 +4512,21 @@ internal static class Program
                 throw new InvalidOperationException("Workspace sample learn path smoke could not find the sample list.");
             }
 
-            string[] pathIds = { "matching", "blob", "line", "pair" };
+            ListBox? learnPathList = FindVisualChildren<ListBox>(window)
+                .FirstOrDefault(item => string.Equals(
+                    System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                    "WorkspaceSamplePickerLearnPathList",
+                    StringComparison.Ordinal));
+            if (learnPathList == null)
+            {
+                throw new InvalidOperationException("Workspace sample learn path smoke could not find the Learn path list.");
+            }
+
+            string[] pathIds = { "preprocess", "geometry", "matching", "template-matching", "edge-matching", "feature-matching", "blob", "line", "pair" };
             List<OpenVisionWorkspaceSampleLearnPathOption> checkedPaths = viewModel.LearnPathOptions
                 .Where(option => pathIds.Contains(option.Id, StringComparer.OrdinalIgnoreCase))
                 .ToList();
-            if (checkedPaths.Count < 3)
+            if (checkedPaths.Count < 6)
             {
                 throw new InvalidOperationException(
                     "Workspace sample learn path selector is missing expected task groups. "
@@ -4247,19 +4551,131 @@ internal static class Program
                         "Workspace sample learn path did not keep a matching selected sample. "
                         + $"Path={path.Id}, Selected={viewModel.SelectedSample?.SampleName ?? "-"}");
                 }
+
+                if (!viewModel.HasLearnDocument
+                    || !viewModel.OpenLearnDocumentCommand.CanExecute(null)
+                    || !viewModel.CanOpenLearnAndSample)
+                {
+                    throw new InvalidOperationException(
+                        "Workspace sample learn path did not expose an explicit guide/sample action. "
+                        + $"Path={path.Id}, Sample={viewModel.SelectedSample?.SampleName ?? "-"}, "
+                        + $"Guide='{viewModel.LearnDocumentTitleText}', Description='{viewModel.LearnDocumentDescriptionText}'");
+                }
+
+                string? expectedPathDocument = path.Id switch
+                {
+                    "template-matching" => "LEARN_MATCHING.md",
+                    "geometry" => "LEARN_GEOMETRY_TRANSFORM.md",
+                    "edge-matching" => "LEARN_EDGE_BASED_MATCHING.md",
+                    "feature-matching" => "LEARN_FEATURE_MATCHING.md",
+                    "line" => "LEARN_LINE.md",
+                    _ => null
+                };
+                if (!string.IsNullOrWhiteSpace(expectedPathDocument))
+                {
+                    VisionPipelineSampleCatalogItem? pathSample = samples
+                        .Where(item => path.Matches(item))
+                        .Where(item => item.CatalogSourceKind != VisionPipelineSampleCatalogSourceKind.Product)
+                        .FirstOrDefault();
+                    if (pathSample == null)
+                    {
+                        throw new InvalidOperationException(
+                            "Workspace sample learn path did not find a non-product sample for document validation. "
+                            + $"Path={path.Id}");
+                    }
+
+                    if (!OpenVisionWorkspaceLearnDocumentService.TryResolveDocumentPath(pathSample, path, out string pathDocument)
+                        || !string.Equals(Path.GetFileName(pathDocument), expectedPathDocument, StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "Workspace sample learn path resolved the wrong document. "
+                            + $"Path={path.Id}, Sample={pathSample.SampleName}, Document={Path.GetFileName(pathDocument)}, Expected={expectedPathDocument}");
+                    }
+                }
             }
 
             OpenVisionWorkspaceSampleLearnPathOption capturePath =
-                checkedPaths.FirstOrDefault(option => string.Equals(option.Id, "matching", StringComparison.OrdinalIgnoreCase))
+                checkedPaths.FirstOrDefault(option => string.Equals(option.Id, "feature-matching", StringComparison.OrdinalIgnoreCase))
+                ?? checkedPaths.FirstOrDefault(option => string.Equals(option.Id, "edge-matching", StringComparison.OrdinalIgnoreCase))
+                ?? checkedPaths.FirstOrDefault(option => string.Equals(option.Id, "template-matching", StringComparison.OrdinalIgnoreCase))
+                ?? checkedPaths.FirstOrDefault(option => string.Equals(option.Id, "preprocess", StringComparison.OrdinalIgnoreCase))
                 ?? checkedPaths[0];
             viewModel.SelectedLearnPathOption = capturePath;
-            Pump(40);
+            learnPathList.SelectedItem = capturePath;
+            learnPathList.ScrollIntoView(capturePath);
+            learnPathList.UpdateLayout();
+            Pump(80);
+
+            VisionPipelineSampleCatalogItem? captureSample = samples
+                .Where(item => capturePath.Matches(item))
+                .Where(item => item.CatalogSourceKind != VisionPipelineSampleCatalogSourceKind.Product)
+                .FirstOrDefault(item =>
+                {
+                    string text = string.Join(" ", item.ToolFlowText, item.Category, item.SampleName, item.Goal);
+                    if (string.Equals(capturePath.Id, "feature-matching", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return text.Contains("Feature", StringComparison.OrdinalIgnoreCase);
+                    }
+
+                    if (string.Equals(capturePath.Id, "edge-matching", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return text.Contains("EdgeBased", StringComparison.OrdinalIgnoreCase)
+                            || text.Contains("Edge Based", StringComparison.OrdinalIgnoreCase);
+                    }
+
+                    if (string.Equals(capturePath.Id, "template-matching", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return text.Contains("Matching", StringComparison.OrdinalIgnoreCase)
+                            && !text.Contains("Feature", StringComparison.OrdinalIgnoreCase)
+                            && !text.Contains("EdgeBased", StringComparison.OrdinalIgnoreCase)
+                            && !text.Contains("Edge Based", StringComparison.OrdinalIgnoreCase);
+                    }
+
+                    return text.Contains("Filter", StringComparison.OrdinalIgnoreCase)
+                        || text.Contains("Morphology", StringComparison.OrdinalIgnoreCase);
+                });
+            if (captureSample != null)
+            {
+                viewModel.SelectedSample = captureSample;
+                Pump(40);
+            }
 
             if (!viewModel.HasLearnDocument || !viewModel.OpenLearnDocumentCommand.CanExecute(null))
             {
                 throw new InvalidOperationException(
                     "Workspace sample learn path did not resolve a Learn document for the captured path. "
                     + $"Path={capturePath.Id}, Sample={viewModel.SelectedSample?.SampleName ?? "-"}");
+            }
+
+            if (captureSample != null
+                && OpenVisionWorkspaceLearnDocumentService.TryResolveDocumentPath(viewModel.SelectedSample, capturePath, out string documentPath))
+            {
+                string fileName = Path.GetFileName(documentPath);
+                string? expectedFileName = capturePath.Id switch
+                {
+                    "template-matching" => "LEARN_MATCHING.md",
+                    "geometry" => "LEARN_GEOMETRY_TRANSFORM.md",
+                    "edge-matching" => "LEARN_EDGE_BASED_MATCHING.md",
+                    "feature-matching" => "LEARN_FEATURE_MATCHING.md",
+                    "line" => "LEARN_LINE.md",
+                    _ => null
+                };
+                if (!string.IsNullOrWhiteSpace(expectedFileName)
+                    && !string.Equals(fileName, expectedFileName, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Workspace sample Learn path did not resolve the expected guide. "
+                        + $"Path={capturePath.Id}, Sample={viewModel.SelectedSample?.SampleName ?? "-"}, Document={fileName}, Expected={expectedFileName}");
+                }
+
+                if (string.Equals(capturePath.Id, "preprocess", StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(fileName, "LEARN_FILTER.md", StringComparison.Ordinal)
+                    && !string.Equals(fileName, "LEARN_MORPHOLOGY.md", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Workspace sample preprocess Learn path did not resolve a Filter/Morphology guide. "
+                        + $"Sample={viewModel.SelectedSample?.SampleName ?? "-"}, Document={fileName}");
+                }
             }
 
             if (!viewModel.CanOpenLearnAndSample)
@@ -6383,6 +6799,1024 @@ internal static class Program
         }
     }
 
+    private static CaptureResult CaptureOpenVisionLearnThreshold(string outputPath, int selectedTabIndex)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow window = new(127, 255, false);
+        int appliedThreshold = -1;
+        bool appliedInvert = false;
+        window.ApplyThresholdRequested += (_, e) =>
+        {
+            appliedThreshold = e.Threshold;
+            appliedInvert = e.Invert;
+        };
+
+        window.Show();
+        try
+        {
+            Pump(12);
+            window.ThresholdValueForTest = 160;
+            window.IsInvertedForTest = true;
+            Pump(6);
+            TabControl? tabs = FindVisualChildren<TabControl>(window)
+                .FirstOrDefault(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "OpenVisionLearnThresholdTabs",
+                    StringComparison.Ordinal));
+            if (tabs == null || tabs.Items.Count <= selectedTabIndex)
+            {
+                throw new InvalidOperationException("OpenVision Learn threshold tabs were not ready.");
+            }
+
+            tabs.SelectedIndex = selectedTabIndex;
+            Pump(6);
+            if (!window.FormulaTextForTest.Contains("BinaryInv", StringComparison.Ordinal)
+                || !window.FormulaTextForTest.Contains("MaxValue", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Threshold guide window did not show the BinaryInv conversion rule.");
+            }
+
+            window.ApplyForTest();
+            if (appliedThreshold != 160 || !appliedInvert)
+            {
+                throw new InvalidOperationException(
+                    "Threshold guide apply event did not return the selected sandbox values. "
+                    + $"Threshold={appliedThreshold}, Invert={appliedInvert}");
+            }
+
+            WriteElementPng(window, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private static CaptureResult CaptureOpenVisionLearnCurriculum(string outputPath)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow window = new(127, 255, false, 0);
+        window.Show();
+        try
+        {
+            Pump(12);
+            if (window.SelectedTopicIndexForTest != 0)
+            {
+                throw new InvalidOperationException("OpenVision Learn curriculum topic was not selected.");
+            }
+
+            AssertLearnTopicDocument(window, "OPENVISIONLAB_LEARN_CURRICULUM.md");
+            AssertAllLearnTopicDocumentsResolve();
+            AssertAllLearnTopicPracticeGuidesResolve();
+
+            string visibleText = string.Join(
+                " | ",
+                FindVisualChildren<TextBlock>(window)
+                    .Select(item => item.Text)
+                    .Where(text => !string.IsNullOrWhiteSpace(text)));
+            string[] requiredTokens =
+            {
+                "커리큘럼",
+                "GV",
+                "ROI",
+                "Layer",
+                "OpenCvSharp operator basics",
+                "Point = X,Y",
+                "Rect ROI = X,Y,W,H",
+                "Mat = rows x cols x channels",
+                "Beginner path",
+                "Brightness/GV",
+                "Filter/Morphology",
+                "Blob/Contour/LineDistance",
+                "Good/Bad check",
+                "Point",
+                "Size",
+                "Rect",
+                "Mat",
+                "행렬",
+                "Pipeline",
+                "LLM XML",
+                "Arithmetic",
+                "RotateScale",
+                "Color/HSV",
+                "Metrics/Acceptance",
+                "Practice:",
+                "Sample Picker",
+                "Tool View"
+            };
+            string? missing = requiredTokens.FirstOrDefault(token => !visibleText.Contains(token, StringComparison.Ordinal));
+            if (!string.IsNullOrWhiteSpace(missing))
+            {
+                throw new InvalidOperationException(
+                    "OpenVision Learn curriculum topic did not show expected token '" + missing + "'. Text='" + visibleText + "'");
+            }
+
+            bool hasDocsButton = FindVisualChildren<Button>(window)
+                .Any(item => string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "OpenVisionLearnOpenDocsButton",
+                        StringComparison.Ordinal)
+                    && string.Equals(item.Content?.ToString(), "Topic Docs", StringComparison.Ordinal));
+            if (!hasDocsButton)
+            {
+                throw new InvalidOperationException("OpenVision Learn curriculum did not show the Topic Docs button.");
+            }
+
+            bool hasFoundationDocsButton = FindVisualChildren<Button>(window)
+                .Any(item => string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "OpenVisionLearnOpenFoundationDocsButton",
+                        StringComparison.Ordinal)
+                    && string.Equals(item.Content?.ToString(), "Foundation Docs", StringComparison.Ordinal));
+            if (!hasFoundationDocsButton)
+            {
+                throw new InvalidOperationException("OpenVision Learn curriculum did not show the Foundation Docs button.");
+            }
+
+            if (!OpenVisionWorkspaceLearnDocumentService.TryResolveLearnDocumentFile(
+                    "LEARN_OPENCVSHARP_FOUNDATIONS.md",
+                    out string foundationDocumentPath)
+                || !foundationDocumentPath.EndsWith(
+                    Path.Combine("docs", "learn", "LEARN_OPENCVSHARP_FOUNDATIONS.md"),
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("OpenVision Learn foundation document did not resolve.");
+            }
+
+            AssertVisibleAutomationIds(
+                window,
+                "OpenVision Learn foundation topic",
+                "OpenVisionLearnFoundationTypeCards",
+                "OpenVisionLearnBeginnerPathPanel",
+                "OpenVisionLearnOpenFoundationDocsButton");
+
+            Button? practiceSamplesButton = FindVisualChildren<Button>(window)
+                .FirstOrDefault(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "OpenVisionLearnPracticeSamplesButton",
+                    StringComparison.Ordinal));
+            if (practiceSamplesButton == null
+                || !string.Equals(practiceSamplesButton.Content?.ToString(), "Practice Samples", StringComparison.Ordinal)
+                || practiceSamplesButton.IsEnabled
+                || window.CanOpenPracticeSamplesForTest)
+            {
+                throw new InvalidOperationException("Standalone OpenVision Learn curriculum did not show a disabled Practice Samples button.");
+            }
+
+            WriteElementPng(window, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private static void AssertAllLearnTopicDocumentsResolve()
+    {
+        string[] expectedFiles =
+        {
+            "OPENVISIONLAB_LEARN_CURRICULUM.md",
+            "LEARN_MEAN.md",
+            "LEARN_THRESHOLD.md",
+            "LEARN_FILTER.md",
+            "LEARN_MORPHOLOGY.md",
+            "LEARN_BLOB.md",
+            "LEARN_CONTOUR.md",
+            "LEARN_EDGE_DETECTION.md",
+            "LEARN_LINE.md",
+            "LEARN_MATCHING.md",
+            "LEARN_FEATURE_MATCHING.md",
+            "LEARN_PIPELINE_LAYER_ROUTING.md",
+            "LEARN_EDGE_BASED_MATCHING.md",
+            "LEARN_METRICS_ACCEPTANCE.md",
+            "LEARN_ARITHMETIC.md",
+            "LEARN_GEOMETRY_TRANSFORM.md",
+            "LEARN_COLOR_HSV.md"
+        };
+
+        for (int i = 0; i < expectedFiles.Length; i++)
+        {
+            OpenVisionLearnWindow topicWindow = new(127, 255, false, i);
+            try
+            {
+                AssertLearnTopicDocument(topicWindow, expectedFiles[i]);
+            }
+            finally
+            {
+                topicWindow.Close();
+            }
+        }
+    }
+
+    private static void AssertAllLearnTopicPracticeGuidesResolve()
+    {
+        string[] expectedTokens =
+        {
+            "Sample Picker",
+            "Mean",
+            "Threshold",
+            "Filter",
+            "Morphology",
+            "Blob",
+            "Contour",
+            "EdgeDetection",
+            "Line",
+            "Template",
+            "Feature",
+            "Pipeline Review",
+            "EdgeBasedMatching",
+            "Metrics/Acceptance",
+            "Arithmetic",
+            "RotateScale",
+            "HSV"
+        };
+        string[] expectedPathIds =
+        {
+            "all",
+            "mean",
+            "preprocess",
+            "preprocess",
+            "preprocess",
+            "blob",
+            "contour",
+            "preprocess",
+            "line",
+            "template-matching",
+            "feature-matching",
+            "all",
+            "edge-matching",
+            "all",
+            "preprocess",
+            "geometry",
+            "mean"
+        };
+        List<VisionPipelineSampleCatalogItem> runnableSamples = VisionPipelineSampleCatalogItem
+            .LoadRunnable()
+            .Where(item => item.CanOpen)
+            .ToList();
+        HashSet<string> availablePathIds = OpenVisionWorkspaceSampleLearnPathOption
+            .Create(runnableSamples)
+            .Select(item => item.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        for (int i = 0; i < expectedTokens.Length; i++)
+        {
+            OpenVisionLearnWindow topicWindow = new(127, 255, false, i);
+            try
+            {
+                topicWindow.Show();
+                Pump(4);
+                string pathId = topicWindow.SelectedTopicLearnPathIdForTest;
+                string practiceText = topicWindow.SelectedTopicPracticeTextForTest;
+                if (!practiceText.Contains("Practice:", StringComparison.Ordinal)
+                    || !practiceText.Contains(expectedTokens[i], StringComparison.Ordinal)
+                    || !string.Equals(pathId, expectedPathIds[i], StringComparison.Ordinal)
+                    || !practiceText.Contains("'" + expectedPathIds[i] + "'", StringComparison.Ordinal)
+                    || !availablePathIds.Contains(expectedPathIds[i]))
+                {
+                    throw new InvalidOperationException(
+                        "OpenVision Learn topic did not show expected practice guidance token/path '"
+                        + expectedTokens[i]
+                        + "'/'"
+                        + expectedPathIds[i]
+                        + "'. Path='"
+                        + pathId
+                        + "'. Text='"
+                        + practiceText
+                        + "'.");
+                }
+
+                string? clickedPracticePathId = null;
+                topicWindow.SetOpenPracticeSamplesAction(path => clickedPracticePathId = path);
+                ClickVisibleButtonByAutomationId(
+                    topicWindow,
+                    "OpenVisionLearnPracticeSamplesButton",
+                    "OpenVision Learn topic " + i.ToString(CultureInfo.InvariantCulture) + " Practice Samples button");
+                Pump(4);
+                if (!string.Equals(clickedPracticePathId, expectedPathIds[i], StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "OpenVision Learn Practice Samples button passed the wrong Learn path. "
+                        + "Topic="
+                        + i.ToString(CultureInfo.InvariantCulture)
+                        + ", Expected='"
+                        + expectedPathIds[i]
+                        + "', Actual='"
+                        + (clickedPracticePathId ?? "-")
+                        + "'.");
+                }
+
+                OpenVisionWorkspaceSamplePickerViewModel practicePickerViewModel = new(runnableSamples, expectedPathIds[i]);
+                if (!string.Equals(practicePickerViewModel.SelectedLearnPathOption?.Id, expectedPathIds[i], StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Sample Picker did not select expected practice Learn path '"
+                        + expectedPathIds[i]
+                        + "'. Actual='"
+                        + (practicePickerViewModel.SelectedLearnPathOption?.Id ?? "-")
+                        + "'.");
+                }
+
+                if (!string.Equals(practicePickerViewModel.SelectedCatalogSourceOption?.Id, "public", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Sample Picker practice Learn path should resolve from the public-safe catalog. "
+                        + "Path='"
+                        + expectedPathIds[i]
+                        + "', ActualSource='"
+                        + (practicePickerViewModel.SelectedCatalogSourceOption?.Id ?? "-")
+                        + "'.");
+                }
+            }
+            finally
+            {
+                topicWindow.Close();
+            }
+        }
+    }
+
+    private static void AssertLearnTopicDocument(OpenVisionLearnWindow window, string expectedFileName)
+    {
+        if (!string.Equals(window.SelectedTopicDocumentFileNameForTest, expectedFileName, StringComparison.Ordinal)
+            || !OpenVisionWorkspaceLearnDocumentService.TryResolveLearnDocumentFile(
+                window.SelectedTopicDocumentFileNameForTest,
+                out string topicDocumentPath)
+            || !topicDocumentPath.EndsWith(
+                Path.Combine("docs", "learn", expectedFileName),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "OpenVision Learn topic did not resolve expected document '"
+                + expectedFileName
+                + "'. Actual='"
+                + window.SelectedTopicDocumentFileNameForTest
+                + "'.");
+        }
+    }
+
+    private static CaptureResult CaptureOpenVisionLearnBrightness(string outputPath)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow window = new(127, 255, false, 1);
+        window.Show();
+        try
+        {
+            Pump(12);
+            window.BrightnessOffsetForTest = -35;
+            Pump(8);
+            if (window.SelectedTopicIndexForTest != 1)
+            {
+                throw new InvalidOperationException("OpenVision Learn brightness topic was not selected.");
+            }
+
+            if (!window.BrightnessFormulaTextForTest.Contains("clamp", StringComparison.OrdinalIgnoreCase)
+                || !window.BrightnessFormulaTextForTest.Contains("-35", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Brightness guide did not explain clamped GV offset.");
+            }
+
+            AssertVisibleAutomationIds(
+                window,
+                "OpenVision Learn brightness topic",
+                "OpenVisionLearnBrightnessOffsetSlider");
+            WriteElementPng(window, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private static CaptureResult CaptureOpenVisionLearnFiltering(string outputPath)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow window = new(127, 255, false, 3);
+        window.Show();
+        try
+        {
+            Pump(12);
+            window.FilterModeIndexForTest = 1;
+            Pump(8);
+            if (window.SelectedTopicIndexForTest != 3)
+            {
+                throw new InvalidOperationException("OpenVision Learn filtering topic was not selected.");
+            }
+
+            if (!window.FilterFormulaTextForTest.Contains("median", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Filtering guide did not explain the median filter calculation.");
+            }
+
+            AssertVisibleAutomationIds(
+                window,
+                "OpenVision Learn filtering topic",
+                "OpenVisionLearnFilterModeCombo");
+            WriteElementPng(window, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private static CaptureResult CaptureOpenVisionLearnMorphology(string outputPath)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow window = new(127, 255, false, 4);
+        window.Show();
+        try
+        {
+            Pump(12);
+            window.MorphologyModeIndexForTest = 2;
+            Pump(8);
+            if (window.SelectedTopicIndexForTest != 4)
+            {
+                throw new InvalidOperationException("OpenVision Learn morphology topic was not selected.");
+            }
+
+            if (!window.MorphologyFormulaTextForTest.Contains("Opening", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Morphology guide did not explain the opening operation.");
+            }
+
+            AssertVisibleAutomationIds(
+                window,
+                "OpenVision Learn morphology topic",
+                "OpenVisionLearnMorphologyModeCombo");
+            WriteElementPng(window, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private static CaptureResult CaptureOpenVisionLearnBlob(string outputPath)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow window = new(127, 255, false, 5);
+        window.Show();
+        try
+        {
+            Pump(12);
+            window.BlobMinAreaForTest = 3;
+            Pump(8);
+            if (window.SelectedTopicIndexForTest != 5)
+            {
+                throw new InvalidOperationException("OpenVision Learn Blob topic was not selected.");
+            }
+
+            if (!window.BlobFormulaTextForTest.Contains("ResultCount", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Blob guide did not explain ResultCount.");
+            }
+
+            AssertVisibleAutomationIds(
+                window,
+                "OpenVision Learn Blob topic",
+                "OpenVisionLearnBlobMinAreaSlider");
+            WriteElementPng(window, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private static CaptureResult CaptureOpenVisionLearnContour(string outputPath)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow window = new(127, 255, false, 6);
+        window.Show();
+        try
+        {
+            Pump(12);
+            window.ContourDrawModeIndexForTest = 2;
+            Pump(8);
+            if (window.SelectedTopicIndexForTest != 6)
+            {
+                throw new InvalidOperationException("OpenVision Learn Contour topic was not selected.");
+            }
+
+            if (!window.ContourFormulaTextForTest.Contains("Contour", StringComparison.OrdinalIgnoreCase)
+                || !window.ContourFormulaTextForTest.Contains("BoundingBox", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Contour guide did not explain contour and bounding box output.");
+            }
+
+            AssertVisibleAutomationIds(
+                window,
+                "OpenVision Learn Contour topic",
+                "OpenVisionLearnContourDrawModeCombo");
+            WriteElementPng(window, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private static CaptureResult CaptureOpenVisionLearnEdgeLine(string outputPath)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow window = new(127, 255, false, 7);
+        window.Show();
+        try
+        {
+            Pump(12);
+            window.EdgeThresholdForTest = 85;
+            Pump(8);
+            if (window.SelectedTopicIndexForTest != 7)
+            {
+                throw new InvalidOperationException("OpenVision Learn Edge / Line topic was not selected.");
+            }
+
+            if (!window.EdgeLineFormulaTextForTest.Contains("Edge", StringComparison.OrdinalIgnoreCase)
+                || !window.EdgeLineFormulaTextForTest.Contains("LineRun", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Edge / Line guide did not explain edge strength and line run.");
+            }
+
+            string visibleText = string.Join(
+                " | ",
+                FindVisualChildren<TextBlock>(window)
+                    .Select(item => item.Text)
+                    .Where(text => !string.IsNullOrWhiteSpace(text)));
+            foreach (string token in new[] { "EdgeDetection", "EdgeBasedMatching", "LineGauge", "LineDistance" })
+            {
+                if (!visibleText.Contains(token, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Edge / Line guide did not show expected role-map token '" + token + "'.");
+                }
+            }
+
+            AssertVisibleAutomationIds(
+                window,
+                "OpenVision Learn Edge / Line topic",
+                "OpenVisionLearnEdgeThresholdSlider");
+            WriteElementPng(window, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private static CaptureResult CaptureOpenVisionLearnLineDistance(string outputPath)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow window = new(127, 255, false, 8);
+        window.Show();
+        try
+        {
+            Pump(12);
+            window.LineDistanceRangeMaxForTest = 0.5;
+            Pump(8);
+            if (window.SelectedTopicIndexForTest != 8)
+            {
+                throw new InvalidOperationException("OpenVision Learn LineDistance topic was not selected.");
+            }
+
+            if (!window.LineDistanceFormulaTextForTest.Contains("DistancePxAvg", StringComparison.OrdinalIgnoreCase)
+                || !window.LineDistanceFormulaTextForTest.Contains("DistancePxRange", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("LineDistance guide did not explain average and range metrics.");
+            }
+
+            AssertVisibleAutomationIds(
+                window,
+                "OpenVision Learn LineDistance topic",
+                "OpenVisionLearnLineDistanceRangeSlider");
+            WriteElementPng(window, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private static CaptureResult CaptureOpenVisionLearnMatching(string outputPath)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow window = new(127, 255, false, 9);
+        window.Show();
+        try
+        {
+            Pump(12);
+            window.MatchingThresholdForTest = 0.85;
+            Pump(8);
+            if (window.SelectedTopicIndexForTest != 9)
+            {
+                throw new InvalidOperationException("OpenVision Learn Matching topic was not selected.");
+            }
+
+            if (!window.MatchingFormulaTextForTest.Contains("BestScore", StringComparison.OrdinalIgnoreCase)
+                || !window.MatchingFormulaTextForTest.Contains("Threshold", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Matching guide did not explain score threshold evaluation.");
+            }
+
+            AssertVisibleAutomationIds(
+                window,
+                "OpenVision Learn Matching topic",
+                "OpenVisionLearnMatchingThresholdSlider");
+            WriteElementPng(window, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private static CaptureResult CaptureOpenVisionLearnFeatureMatching(string outputPath)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow window = new(127, 255, false, 10);
+        window.Show();
+        try
+        {
+            Pump(12);
+            window.FeatureGoodMatchMinForTest = 4;
+            Pump(8);
+            if (window.SelectedTopicIndexForTest != 10)
+            {
+                throw new InvalidOperationException("OpenVision Learn Feature Matching topic was not selected.");
+            }
+
+            if (!window.FeatureMatchingFormulaTextForTest.Contains("GoodMatches", StringComparison.OrdinalIgnoreCase)
+                || !window.FeatureMatchingFormulaTextForTest.Contains("DescriptorScore", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Feature Matching guide did not explain good match evaluation.");
+            }
+
+            AssertVisibleAutomationIds(
+                window,
+                "OpenVision Learn Feature Matching topic",
+                "OpenVisionLearnFeatureMatchMinSlider");
+            WriteElementPng(window, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private static CaptureResult CaptureOpenVisionLearnLayerRecipe(string outputPath)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow window = new(127, 255, false, 11);
+        window.Show();
+        try
+        {
+            Pump(12);
+            window.LayerRecipeSelectedStepForTest = 2;
+            Pump(8);
+            if (window.SelectedTopicIndexForTest != 11)
+            {
+                throw new InvalidOperationException("OpenVision Learn Layer / Pipeline / Recipe topic was not selected.");
+            }
+
+            if (!window.LayerRecipeFormulaTextForTest.Contains("Input=", StringComparison.OrdinalIgnoreCase)
+                || !window.LayerRecipeFormulaTextForTest.Contains("Output=", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Layer / Pipeline / Recipe guide did not explain step routing.");
+            }
+
+            string visibleText = string.Join(
+                " | ",
+                FindVisualChildren<TextBlock>(window)
+                    .Select(item => item.Text)
+                    .Where(text => !string.IsNullOrWhiteSpace(text)));
+            foreach (string token in new[] { "Routing safety checklist", "InputLayer", "OutputLayer", "explicit user action" })
+            {
+                if (!visibleText.Contains(token, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Layer / Pipeline / Recipe guide did not show expected routing safety token '" + token + "'.");
+                }
+            }
+
+            AssertVisibleAutomationIds(
+                window,
+                "OpenVision Learn Layer / Pipeline / Recipe topic",
+                "OpenVisionLearnLayerRecipeStepSlider",
+                "OpenVisionLearnLayerRoutingSafetyPanel");
+            WriteElementPng(window, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private static CaptureResult CaptureOpenVisionLearnEdgeBasedMatching(string outputPath)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow window = new(127, 255, false, 12);
+        window.Show();
+        try
+        {
+            Pump(12);
+            window.MatchingThresholdForTest = 0.82;
+            Pump(8);
+            if (window.SelectedTopicIndexForTest != 12)
+            {
+                throw new InvalidOperationException("OpenVision Learn EdgeBasedMatching topic was not selected.");
+            }
+
+            AssertLearnTopicDocument(window, "LEARN_EDGE_BASED_MATCHING.md");
+            if (!window.SelectedTopicPracticeTextForTest.Contains("EdgeBasedMatching", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("ScoreMax", StringComparison.Ordinal)
+                || !string.Equals(window.SelectedTopicLearnPathIdForTest, "edge-matching", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "EdgeBasedMatching topic did not expose the expected practice guidance. "
+                    + "Path='"
+                    + window.SelectedTopicLearnPathIdForTest
+                    + "', Text='"
+                    + window.SelectedTopicPracticeTextForTest
+                    + "'.");
+            }
+
+            string visibleText = string.Join(
+                " | ",
+                FindVisualChildren<TextBlock>(window)
+                    .Select(item => item.Text)
+                    .Where(text => !string.IsNullOrWhiteSpace(text)));
+            foreach (string token in new[] { "EdgeBasedMatching", "Score", "Threshold", "ResultCount" })
+            {
+                if (!visibleText.Contains(token, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("EdgeBasedMatching topic did not show expected token '" + token + "'.");
+                }
+            }
+
+            AssertVisibleAutomationIds(
+                window,
+                "OpenVision Learn EdgeBasedMatching topic",
+                "OpenVisionLearnMatchingThresholdSlider");
+            WriteElementPng(window, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private static CaptureResult CaptureOpenVisionLearnMetricsAcceptance(string outputPath)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow window = new(127, 255, false, 13);
+        window.Show();
+        try
+        {
+            Pump(12);
+            if (window.SelectedTopicIndexForTest != 13)
+            {
+                throw new InvalidOperationException("OpenVision Learn Metrics / Acceptance topic was not selected.");
+            }
+
+            AssertLearnTopicDocument(window, "LEARN_METRICS_ACCEPTANCE.md");
+            if (!window.SelectedTopicPracticeTextForTest.Contains("Metrics/Acceptance", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("Good/Bad", StringComparison.Ordinal)
+                || !string.Equals(window.SelectedTopicLearnPathIdForTest, "all", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Metrics / Acceptance topic did not expose the expected practice guidance. "
+                    + "Path='"
+                    + window.SelectedTopicLearnPathIdForTest
+                    + "', Text='"
+                    + window.SelectedTopicPracticeTextForTest
+                    + "'.");
+            }
+
+            string visibleText = string.Join(
+                " | ",
+                FindVisualChildren<TextBlock>(window)
+                    .Select(item => item.Text)
+                    .Where(text => !string.IsNullOrWhiteSpace(text)));
+            foreach (string token in new[] { "ScoreMax", "ResultCount", "MeanValueAvg", "DistanceMmAvg", "DistanceMmRange" })
+            {
+                if (!visibleText.Contains(token, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Metrics / Acceptance topic did not show expected token '" + token + "'.");
+                }
+            }
+
+            WriteElementPng(window, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private static CaptureResult CaptureOpenVisionLearnArithmetic(string outputPath)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow window = new(127, 255, false, 14);
+        window.Show();
+        try
+        {
+            Pump(12);
+            window.ArithmeticModeIndexForTest = 2;
+            Pump(8);
+            if (window.SelectedTopicIndexForTest != 14)
+            {
+                throw new InvalidOperationException("OpenVision Learn Arithmetic / Logic topic was not selected.");
+            }
+
+            AssertLearnTopicDocument(window, "LEARN_ARITHMETIC.md");
+            if (!window.SelectedTopicPracticeTextForTest.Contains("Arithmetic", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("Preview", StringComparison.Ordinal)
+                || !string.Equals(window.SelectedTopicLearnPathIdForTest, "preprocess", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Arithmetic / Logic topic did not expose the expected practice guidance. "
+                    + "Path='"
+                    + window.SelectedTopicLearnPathIdForTest
+                    + "', Text='"
+                    + window.SelectedTopicPracticeTextForTest
+                    + "'.");
+            }
+
+            if (!window.ArithmeticFormulaTextForTest.Contains("AbsDiff", StringComparison.OrdinalIgnoreCase)
+                || !window.ArithmeticFormulaTextForTest.Contains("Output", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Arithmetic / Logic guide did not explain the selected operation output.");
+            }
+
+            string visibleText = string.Join(
+                " | ",
+                FindVisualChildren<TextBlock>(window)
+                    .Select(item => item.Text)
+                    .Where(text => !string.IsNullOrWhiteSpace(text)));
+            foreach (string token in new[] { "InputLayer A", "InputLayer B", "OutputLayer", "AbsDiff", "Preview/Run" })
+            {
+                if (!visibleText.Contains(token, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Arithmetic / Logic topic did not show expected token '" + token + "'.");
+                }
+            }
+
+            AssertVisibleAutomationIds(
+                window,
+                "OpenVision Learn Arithmetic / Logic topic",
+                "OpenVisionLearnArithmeticModeCombo");
+            WriteElementPng(window, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private static CaptureResult CaptureOpenVisionLearnGeometry(string outputPath)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow window = new(127, 255, false, 15);
+        window.Show();
+        try
+        {
+            Pump(12);
+            window.GeometryAngleForTest = 25;
+            window.GeometryScaleForTest = 80;
+            Pump(8);
+            if (window.SelectedTopicIndexForTest != 15)
+            {
+                throw new InvalidOperationException("OpenVision Learn Geometry Transform topic was not selected.");
+            }
+
+            AssertLearnTopicDocument(window, "LEARN_GEOMETRY_TRANSFORM.md");
+            if (!window.SelectedTopicPracticeTextForTest.Contains("RotateScale", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("Preview", StringComparison.Ordinal)
+                || !string.Equals(window.SelectedTopicLearnPathIdForTest, "geometry", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Geometry Transform topic did not expose the expected practice guidance. "
+                    + "Path='"
+                    + window.SelectedTopicLearnPathIdForTest
+                    + "', Text='"
+                    + window.SelectedTopicPracticeTextForTest
+                    + "'.");
+            }
+
+            if (!window.GeometryFormulaTextForTest.Contains("RotateScale", StringComparison.Ordinal)
+                || !window.GeometryFormulaTextForTest.Contains("OutputSize", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Geometry Transform guide did not explain output size.");
+            }
+
+            string visibleText = string.Join(
+                " | ",
+                FindVisualChildren<TextBlock>(window)
+                    .Select(item => item.Text)
+                    .Where(text => !string.IsNullOrWhiteSpace(text)));
+            foreach (string token in new[] { "RotateScale", "ROI", "OutputSize", "Preview/Run", "pixel/mm" })
+            {
+                if (!visibleText.Contains(token, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Geometry Transform topic did not show expected token '" + token + "'.");
+                }
+            }
+
+            AssertVisibleAutomationIds(
+                window,
+                "OpenVision Learn Geometry Transform topic",
+                "OpenVisionLearnGeometryAngleSlider",
+                "OpenVisionLearnGeometryScaleSlider");
+            WriteElementPng(window, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private static CaptureResult CaptureOpenVisionLearnColorHsv(string outputPath)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow window = new(127, 255, false, 16);
+        window.Show();
+        try
+        {
+            Pump(12);
+            window.ColorHueForTest = 45;
+            window.ColorValueForTest = 185;
+            Pump(8);
+            if (window.SelectedTopicIndexForTest != 16)
+            {
+                throw new InvalidOperationException("OpenVision Learn Color / HSV topic was not selected.");
+            }
+
+            AssertLearnTopicDocument(window, "LEARN_COLOR_HSV.md");
+            if (!window.SelectedTopicPracticeTextForTest.Contains("HSV", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("temporary brightness bridge", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("not HSV sample evidence", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("Run Mean manually", StringComparison.Ordinal)
+                || !string.Equals(window.SelectedTopicLearnPathIdForTest, "mean", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Color / HSV topic did not expose the expected practice guidance. "
+                    + "Path='"
+                    + window.SelectedTopicLearnPathIdForTest
+                    + "', Text='"
+                    + window.SelectedTopicPracticeTextForTest
+                    + "'.");
+            }
+
+            if (!window.ColorHsvFormulaTextForTest.Contains("HSV mask", StringComparison.Ordinal)
+                || !window.ColorHsvFormulaTextForTest.Contains("MaskPixelRatio", StringComparison.Ordinal)
+                || !window.ColorHsvFormulaTextForTest.Contains("future metric", StringComparison.Ordinal)
+                || !window.ColorHsvFormulaTextForTest.Contains("downstream ResultCount/Area", StringComparison.Ordinal)
+                || !window.ColorHsvFormulaTextForTest.Contains("OutputLayer", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Color / HSV guide did not explain future mask metric support and downstream review.");
+            }
+
+            string visibleText = string.Join(
+                " | ",
+                FindVisualChildren<TextBlock>(window)
+                    .Select(item => item.Text)
+                    .Where(text => !string.IsNullOrWhiteSpace(text)));
+            foreach (string token in new[] { "Hue", "Saturation", "Value", "OutputLayer", "MaskPixelRatio", "runner support exists", "Preview/Run", "Current practice bridge", "public HSV color-classification pair", "MeanValueAvg" })
+            {
+                if (!visibleText.Contains(token, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Color / HSV topic did not show expected token '" + token + "'.");
+                }
+            }
+
+            AssertVisibleAutomationIds(
+                window,
+                "OpenVision Learn Color / HSV topic",
+                "OpenVisionLearnColorSampleBridge",
+                "OpenVisionLearnColorHueSlider",
+                "OpenVisionLearnColorValueSlider");
+            WriteElementPng(window, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
     private static CaptureResult CaptureShellHostThresholdTool(string outputPath)
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
@@ -6451,6 +7885,78 @@ internal static class Program
 
             thresholdView.ConfigureBasicInvertForTest(false);
             Pump(12);
+            Button? guideButton = Application.Current.Windows
+                .OfType<Window>()
+                .Where(item => item.IsVisible && item.GetType().Name == "OpenVisionFloatingToolWindow")
+                .SelectMany(FindVisualChildren<Button>)
+                .Where(item => item.IsVisible)
+                .FirstOrDefault(item =>
+                    string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "ThresholdToolLearnButton",
+                        StringComparison.Ordinal)
+                    || ExtractElementText(item).Contains("Learn Threshold", StringComparison.Ordinal));
+            if (guideButton == null)
+            {
+                string buttonCandidates = string.Join(
+                    " | ",
+                    Application.Current.Windows
+                        .OfType<Window>()
+                        .Where(item => item.IsVisible && item.GetType().Name == "OpenVisionFloatingToolWindow")
+                        .SelectMany(FindVisualChildren<Button>)
+                        .Where(item => item.IsVisible)
+                        .Select(item =>
+                            "Name='"
+                            + item.Name
+                            + "', Id='"
+                            + AutomationProperties.GetAutomationId(item)
+                            + "', Text='"
+                            + ExtractElementText(item.Content)
+                            + "', Visible="
+                            + item.IsVisible.ToString(CultureInfo.InvariantCulture)
+                            + ", Size="
+                            + item.ActualWidth.ToString("0.0", CultureInfo.InvariantCulture)
+                            + "x"
+                            + item.ActualHeight.ToString("0.0", CultureInfo.InvariantCulture)));
+                throw new InvalidOperationException("Threshold Learn entry button was not visible. Buttons=" + buttonCandidates);
+            }
+
+            int beforeGuideApplyRuns = shellHost.NativePreviewRunCount;
+            guideButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Pump(12);
+            OpenVisionLearnWindow? guideWindow = Application.Current.Windows
+                .OfType<OpenVisionLearnWindow>()
+                .FirstOrDefault(item => item.IsVisible);
+            if (guideWindow == null)
+            {
+                throw new InvalidOperationException("OpenVision Learn window did not open.");
+            }
+
+            guideWindow.ThresholdValueForTest = 142;
+            guideWindow.IsInvertedForTest = true;
+            Pump(6);
+            if (!guideWindow.FormulaTextForTest.Contains("BinaryInv", StringComparison.Ordinal)
+                || !guideWindow.FormulaTextForTest.Contains("MaxValue", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Threshold guide did not explain BinaryInv conversion.");
+            }
+
+            guideWindow.ApplyForTest();
+            Pump(12);
+            guideWindow.Close();
+            Pump(6);
+            if (shellHost.NativePreviewRunCount != beforeGuideApplyRuns)
+            {
+                throw new InvalidOperationException(
+                    "Threshold guide Apply triggered Preview/Run. "
+                    + $"RunsBefore={beforeGuideApplyRuns}, RunsAfter={shellHost.NativePreviewRunCount}");
+            }
+
+            if (!FloatingToolTextContains("Basic / T 142"))
+            {
+                throw new InvalidOperationException("Threshold guide Apply did not update the visible tool threshold summary.");
+            }
+
             AssertFloatingNamedElementsDoNotOverlap(
                 "Threshold basic slider layout",
                 "txtThreshold",
@@ -6623,6 +8129,7 @@ internal static class Program
             // This guard checks actual WPF bounds, not only screenshots, so visible control overlaps fail the smoke.
             shellHost.SelectToolForTest(VISION_MENU.Filter);
             Pump(20);
+            AssertToolHeaderLearnOpensTopic(shellHost, 3, "Filter header Learn");
             ComboBox filterTypeCombo = FindFloatingComboBox("cbFilterType");
             SelectComboBoxItemText(filterTypeCombo, "Blur", "Filter type combo");
             Pump(12);
@@ -6647,6 +8154,12 @@ internal static class Program
                 "panelDiameter",
                 "panelSigmaColor",
                 "panelSigmaSpace");
+
+            shellHost.SelectToolForTest(VISION_MENU.Morphology);
+            Pump(20);
+            AssertToolHeaderLearnOpensTopic(shellHost, 4, "Morphology header Learn");
+            shellHost.SelectToolForTest(VISION_MENU.Filter);
+            Pump(20);
 
             if (!shellHost.DockActiveWpfToolWindowForTest())
             {
@@ -7201,6 +8714,7 @@ internal static class Program
         {
             shellHost.SelectToolForTest(VISION_MENU.Blob);
             Pump(16);
+            AssertToolHeaderLearnOpensTopic(shellHost, 5, "Blob header Learn");
             AssertActiveToolTextsVisible("Blob verification guide initial", "Blob 검증", "미리보기 전", "면적 ", "다음:");
             ComboBox inputLayerCombo = FindFloatingComboBox("cbInputLayer");
             AssertVisionToolComboTemplate(inputLayerCombo, "Blob input layer combo");
@@ -7456,6 +8970,7 @@ internal static class Program
             shellHost.SelectToolForTest(VISION_MENU.Contour);
             Pump(16);
             AssertActiveToolTextsVisible("Contour verification guide initial", "Contour 검증", "미리보기 전", "면적 ", "다음:");
+            AssertToolHeaderLearnOpensTopic(shellHost, 6, "Contour header Learn");
             AssertFloatingPropertyGridRowsRendered("Contour property grid");
             System.Windows.Controls.WpfPropertyGrid.PropertyGrid contourGrid = GetActiveFloatingPropertyGrid("Contour property grid");
             List<string> contourPropertyEvents = new();
@@ -7835,6 +9350,7 @@ internal static class Program
             {
                 shellHost.SelectToolForTest(VISION_MENU.Matching);
                 Pump(16);
+                AssertToolHeaderLearnOpensTopic(shellHost, 9, "Matching header Learn");
                 ComboBox inputLayerCombo = FindFloatingComboBox("cbInputLayer");
                 AssertVisionToolComboTemplate(inputLayerCombo, "Matching input layer combo");
                 AssertComboBoxPopupLayout(inputLayerCombo, "Matching input layer combo");
@@ -9411,6 +10927,7 @@ internal static class Program
                 Thread.Sleep(180);
                 Pump(30);
                 AssertFloatingPropertyGridDialogButtonsReady("EdgeBasedMatching property grid dialog button");
+                AssertToolHeaderLearnOpensTopic(shellHost, 12, "EdgeBasedMatching header Learn");
                 if (!shellHost.IsNativeDocumentActive || !shellHost.HasNativePreviewResult)
                 {
                     throw new InvalidOperationException("Native WPF EdgeBasedMatching tool did not auto-preview after template registration: " + shellHost.ActiveNativeStatusText);
@@ -9477,6 +10994,7 @@ internal static class Program
             {
                 shellHost.SelectToolForTest(VISION_MENU.FeatureMatching);
                 Pump(16);
+                AssertToolHeaderLearnOpensTopic(shellHost, 10, "FeatureMatching header Learn");
                 int beforeAutoPreviewRuns = shellHost.NativePreviewRunCount;
                 shellHost.SetActiveFeatureMatchingTemplatePathForTest(templatePath);
                 Thread.Sleep(180);
@@ -9950,6 +11468,7 @@ internal static class Program
         {
             shellHost.SelectToolForTest(VISION_MENU.Line);
             Pump(16);
+            AssertToolHeaderLearnOpensTopic(shellHost, 8, "Line header Learn");
             AssertActiveToolTextsVisible("Line verification guide initial", "Line 검증", "미리보기 전", "대비", "다음:");
             AssertActiveToolTextsVisible("Line purpose controls", "목적", "라인", "엣지", "측정", "교차");
             AssertFloatingPropertyGridRowsRendered("Line property grid");

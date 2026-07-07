@@ -161,6 +161,14 @@
                             BorderThickness="0,0,0,1"
                             Padding="10,8">
                         <StackPanel>
+                            <TextBlock AutomationProperties.AutomationId="WorkspaceSamplePickerRouteSummary"
+                                       Text="{Binding ActiveRouteSummaryText}"
+                                       Foreground="{StaticResource SamplePicker.AccentBrush}"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="None"
+                                       Margin="0,0,0,6" />
                             <TextBlock AutomationProperties.AutomationId="WorkspaceSamplePickerCatalogSourceSummary"
                                        Text="{Binding ActiveCatalogSourceText}"
                                        Foreground="{StaticResource SamplePicker.MutedTextBrush}"

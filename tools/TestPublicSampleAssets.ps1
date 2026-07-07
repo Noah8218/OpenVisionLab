@@ -214,8 +214,8 @@ foreach ($file in $publicImageFiles) {
 }
 
 $catalogRows = Import-Csv -LiteralPath $catalogAbsolute
-if ($catalogRows.Count -lt 16) {
-    Fail "Public catalog should contain Matching, Blob, Contour, Threshold, Mean, FeatureMatching, EdgeBasedMatching, and LineDistance Good/Bad pairs."
+if ($catalogRows.Count -lt 24) {
+    Fail "Public catalog should contain Matching, Blob, Contour, Threshold, Filter, EdgeDetection, Morphology, Mean, Arithmetic, HSV, FeatureMatching, EdgeBasedMatching, and LineDistance Good/Bad pairs."
 }
 
 $sampleNames = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
@@ -256,10 +256,16 @@ else {
         "Public_Blob_Particles_Good",
         "Public_Contour_Shapes_Good",
         "Public_Threshold_BandPads_Good",
+        "Public_Filter_Denoise_Good",
+        "Public_EdgeDetection_Shapes_Good",
+        "Public_Morphology_Cleanup_Good",
         "Public_Mean_Brightness_Good",
+        "Public_Arithmetic_Invert_Good",
+        "Public_HSV_ColorPatch_Good",
         "Public_Feature_Card_Good",
         "Public_Edge_Fiducial_Good",
-        "Public_Line_Pins_Good"
+        "Public_Line_Pins_Good",
+        "Public_Geometry_RotateScale_Wide_Bad"
     )) {
         if (-not $sampleNames.Contains($required)) {
             Fail "Public catalog is missing required row: $required"
@@ -271,7 +277,12 @@ else {
         "docs/samples/public/Public_Blob_Particles.pipeline.xml",
         "docs/samples/public/Public_Contour_Shapes.pipeline.xml",
         "docs/samples/public/Public_Threshold_BandPads.pipeline.xml",
+        "docs/samples/public/Public_Filter_Denoise.pipeline.xml",
+        "docs/samples/public/Public_EdgeDetection_Shapes.pipeline.xml",
+        "docs/samples/public/Public_Morphology_Cleanup.pipeline.xml",
         "docs/samples/public/Public_Mean_BrightnessDrift.pipeline.xml",
+        "docs/samples/public/Public_Arithmetic_Invert.pipeline.xml",
+        "docs/samples/public/Public_HSV_ColorPatch.pipeline.xml",
         "docs/samples/public/Public_Feature_Card.pipeline.xml",
         "docs/samples/public/Public_Edge_Fiducial.pipeline.xml",
         "docs/samples/public/Public_Line_Pins_Distance.pipeline.xml"

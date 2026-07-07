@@ -6,22 +6,26 @@ using System.Windows;
 
 namespace OpenVisionLab
 {
-    internal sealed class VisionToolSingleInputMatchingToolController<TProperty> : IDisposable
+    internal sealed class VisionToolSingleInputMatchingToolController<TProperty> : IVisionToolSingleInputPropertyToolController
     {
         private readonly VisionToolSingleInputToolEventHub eventHub;
         private readonly VisionToolLanguageChangeController languageChangeController;
         private readonly VisionToolSingleInputMatchingToolRuntime<TProperty> toolRuntime;
+        private readonly string resultReviewTitle;
 
         private VisionToolSingleInputMatchingToolController(
             FrameworkElement owner,
             VisionToolPropertyGridPresenter<TProperty> presenter,
-            string titleLocalizationKey)
+            string titleLocalizationKey,
+            string resultReviewTitle)
         {
             eventHub = OpenVisionToolOpenProfiler.Measure("CreateMatchingEventHub", () => new VisionToolSingleInputToolEventHub(owner));
             if (presenter == null)
             {
                 throw new ArgumentNullException(nameof(presenter));
             }
+
+            this.resultReviewTitle = string.IsNullOrWhiteSpace(resultReviewTitle) ? "Match" : resultReviewTitle.Trim();
 
             // Matching views share the same shell wiring; only the property type and review title differ.
             toolRuntime = OpenVisionToolOpenProfiler.Measure(
@@ -106,9 +110,10 @@ namespace OpenVisionLab
         public static VisionToolSingleInputMatchingToolController<TProperty> Attach(
             FrameworkElement owner,
             VisionToolPropertyGridPresenter<TProperty> presenter,
-            string titleLocalizationKey)
+            string titleLocalizationKey,
+            string resultReviewTitle)
         {
-            return new VisionToolSingleInputMatchingToolController<TProperty>(owner, presenter, titleLocalizationKey);
+            return new VisionToolSingleInputMatchingToolController<TProperty>(owner, presenter, titleLocalizationKey, resultReviewTitle);
         }
 
         public TProperty CreateProperty()
@@ -154,6 +159,11 @@ namespace OpenVisionLab
         public void SetResultReview(string title, IEnumerable<MatchingResult> results, TimeSpan? tactTime = null)
         {
             toolRuntime.SetResultReview(title, results, tactTime);
+        }
+
+        public void SetResultReview(IEnumerable<MatchingResult> results, TimeSpan? tactTime = null)
+        {
+            toolRuntime.SetResultReview(resultReviewTitle, results, tactTime);
         }
 
         public void Dispose()

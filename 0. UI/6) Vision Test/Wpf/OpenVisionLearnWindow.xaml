@@ -1,0 +1,1922 @@
+<Window x:Class="OpenVisionLab.OpenVisionLearnWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:OpenVisionLab"
+        Title="OpenVisionLab Learn"
+        Width="1040"
+        Height="700"
+        MinWidth="920"
+        MinHeight="620"
+        WindowStartupLocation="CenterOwner"
+        Background="#EEF2F6"
+        AutomationProperties.AutomationId="OpenVisionLearnWindow">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <local:SharedResourceDictionary Source="VisionToolWpfTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <Style x:Key="LearnPanelStyle" TargetType="Border">
+                <Setter Property="Background" Value="{StaticResource VisionTool.PanelBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource VisionTool.HeaderBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="4" />
+                <Setter Property="Padding" Value="14" />
+            </Style>
+
+            <Style x:Key="LearnMutedTextStyle" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{StaticResource VisionTool.SecondaryTextBrush}" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250" />
+            <ColumnDefinition Width="14" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0"
+                Style="{StaticResource LearnPanelStyle}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="10" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <StackPanel>
+                    <TextBlock Text="Learn"
+                               FontSize="18"
+                               FontWeight="SemiBold" />
+                    <TextBlock Margin="0,4,0,0"
+                               Style="{StaticResource LearnMutedTextStyle}"
+                               Text="Tool은 작업 공간이고, Learn은 개념과 실습을 확인하는 공간입니다." />
+                </StackPanel>
+                <ListBox x:Name="topicList"
+                         Grid.Row="2"
+                         AutomationProperties.AutomationId="OpenVisionLearnTopicList"
+                         BorderThickness="0"
+                         Background="Transparent"
+                         SelectedIndex="2"
+                         SelectionChanged="TopicList_SelectionChanged">
+                    <ListBoxItem Content="0. 커리큘럼 / 영상 기초" />
+                    <ListBoxItem Content="1. 밝기와 히스토그램" />
+                    <ListBoxItem Content="2. 이진화 / Threshold" />
+                    <ListBoxItem Content="3. 필터링" />
+                    <ListBoxItem Content="4. 모폴로지" />
+                    <ListBoxItem Content="5. Blob / 영역 검출" />
+                    <ListBoxItem Content="6. Contour / 외곽선" />
+                    <ListBoxItem Content="7. Edge / Line" />
+                    <ListBoxItem Content="8. LineDistance 측정" />
+                    <ListBoxItem Content="9. Matching" />
+                    <ListBoxItem Content="10. Feature Matching" />
+                    <ListBoxItem Content="11. Layer / Pipeline / Recipe" />
+                    <ListBoxItem Content="12. EdgeBasedMatching" />
+                    <ListBoxItem Content="13. Metrics / Acceptance" />
+                    <ListBoxItem Content="14. Arithmetic / Logic" />
+                    <ListBoxItem Content="15. Geometry Transform" />
+                    <ListBoxItem Content="16. Color / HSV" />
+                </ListBox>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="10" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="10" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0"
+                    Style="{StaticResource LearnPanelStyle}">
+                <StackPanel>
+                    <TextBlock x:Name="txtTopicTitle"
+                               Text="3. 이진화 / Threshold"
+                               FontSize="20"
+                               FontWeight="SemiBold" />
+                    <TextBlock x:Name="txtTopicSubtitle"
+                               Margin="0,4,0,0"
+                               Style="{StaticResource LearnMutedTextStyle}"
+                               Text="세부 문서: Arithmetic, RotateScale, Color/HSV, Pipeline/Layer, Metrics/Acceptance." />
+                    <StackPanel Margin="0,10,0,0"
+                                Orientation="Horizontal">
+                        <Button MinWidth="92"
+                                Padding="12,6"
+                                Content="Topic Docs"
+                                ToolTip="Open the current Learn topic document"
+                                Click="OpenLearnDocsButton_Click"
+                                AutomationProperties.AutomationId="OpenVisionLearnOpenDocsButton" />
+                        <Button MinWidth="112"
+                                Margin="8,0,0,0"
+                                Padding="12,6"
+                                Content="Foundation Docs"
+                                ToolTip="Open OpenCvSharp foundation terms: Point, Rect, Mat, ROI, layer"
+                                Click="OpenFoundationDocsButton_Click"
+                                AutomationProperties.AutomationId="OpenVisionLearnOpenFoundationDocsButton" />
+                        <Button x:Name="btnPracticeSamples"
+                                MinWidth="118"
+                                Margin="8,0,0,0"
+                                Padding="12,6"
+                                Content="Practice Samples"
+                                IsEnabled="False"
+                                ToolTip="Open Sample Picker with the current Learn path"
+                                Click="OpenPracticeSamplesButton_Click"
+                                AutomationProperties.AutomationId="OpenVisionLearnPracticeSamplesButton" />
+                    </StackPanel>
+                    <TextBlock x:Name="txtTopicPractice"
+                               Margin="0,8,0,0"
+                               Style="{StaticResource LearnMutedTextStyle}"
+                               TextWrapping="Wrap"
+                               Text="Practice: use Sample Picker Learn paths, then open the related Tool View and run Preview manually." />
+                </StackPanel>
+            </Border>
+
+            <Border x:Name="pixelTopicPanel"
+                    Grid.Row="2"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Style="{StaticResource LearnPanelStyle}"
+                                AutomationProperties.AutomationId="OpenVisionLearnFoundationTypeCards">
+                            <StackPanel>
+                                <TextBlock Text="OpenCvSharp operator basics"
+                                           FontWeight="SemiBold" />
+                                <UniformGrid Margin="0,8,0,0"
+                                             Columns="2"
+                                             Rows="2">
+                                    <TextBlock Text="Point = X,Y -> center / edge / keypoint" />
+                                    <TextBlock Text="Rect ROI = X,Y,W,H -> CvROI" />
+                                    <TextBlock Text="Size = W,H -> kernel / template / output" />
+                                    <TextBlock Text="Mat = rows x cols x channels -> layer image" />
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="PropertyGrid values such as CvROI, kernel size, template path, threshold, and output size are easier to tune after these four shapes are clear." />
+                        <Border Margin="0,10,0,0"
+                                Style="{StaticResource LearnPanelStyle}"
+                                AutomationProperties.AutomationId="OpenVisionLearnBeginnerPathPanel">
+                            <StackPanel>
+                                <TextBlock Text="Beginner path: Foundation -> Brightness/GV -> Threshold -> Filter/Morphology -> Blob/Contour/LineDistance"
+                                           FontWeight="SemiBold"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="Read the concept, open a public sample, then use the related Tool View and click Preview/Run manually. Do not skip the metric or Good/Bad check." />
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="전체 목차를 먼저 봅니다"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="OpenVisionLab Learn은 설치나 카메라 프로그래밍 교재가 아니라, 현재 프로그램의 툴을 이해하고 검증하기 위한 OpenCvSharp 기초 목차입니다. 영상/GV/ROI/Layer와 Point, Size, Rect, Mat를 먼저 잡고, 전처리와 검출, 측정과 매칭, Pipeline/Metric/Good-Bad/LLM XML 순서로 봅니다." />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="세부 문서: Arithmetic, RotateScale, Color/HSV, EdgeDetection, Pipeline/Layer, Metrics/Acceptance." />
+                        <TextBlock Margin="0,14,0,0"
+                                   Text="핵심 키워드"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Pixel: 이미지의 가장 작은 칸입니다. 각 칸은 위치 X/Y와 밝기 또는 색상 값을 가집니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="GV: Gray Value입니다. 흑백 영상에서 0은 검정, 255는 흰색에 가까운 밝기입니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="ROI: 검사할 영역입니다. ROI를 좁히면 불필요한 배경을 줄이고 검출 안정성을 높일 수 있습니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Layer: 원본, 중간 결과, 최종 결과를 나누어 보는 이름 있는 이미지입니다. Output 레이어를 만든다고 Input 레이어가 자동으로 바뀌면 안 됩니다." />
+                        <TextBlock Margin="0,14,0,0"
+                                   Text="OpenCvSharp 기본 타입"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Point: X/Y 위치입니다. edge point, keypoint, match center, line endpoint를 읽을 때 필요합니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Size: 폭과 높이입니다. 이미지 크기, template 크기, kernel 크기, resize 결과를 이해할 때 씁니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Rect: x, y, width, height로 표현하는 사각 영역입니다. ROI, bounding box, template crop은 대부분 Rect로 생각하면 됩니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Mat: 이미지를 행렬처럼 담는 OpenCvSharp의 기본 이미지 객체입니다. row/column, channel, ROI slice를 이해하면 툴 파라미터가 더 명확해집니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="행렬 연산: filter kernel, morphology kernel, affine/rotate/scale transform은 픽셀 주변값이나 좌표를 행렬식으로 바꾸는 작업입니다." />
+                        <TextBlock Margin="0,14,0,0"
+                                   Text="목차 구성"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="아래 순서대로 보면 개념, 샘플, 툴, metric, Good/Bad 판정이 하나의 작업 흐름으로 이어집니다." />
+                        <Border Margin="0,14,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <StackPanel>
+                                <TextBlock Text="추천 학습 경로"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Margin="0,8,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="0-4장: 영상, 픽셀, GV, Point/Size/Rect/Mat, ROI, Layer, 명시 Preview/Run 원칙을 잡습니다." />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="4-7장: 밝기/히스토그램, Threshold, Filter, Morphology로 입력을 정리합니다." />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="8-11장: Blob, Contour, Edge, LineDistance로 후보와 치수를 검증합니다." />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="12-14장: Matching, EdgeBasedMatching, FeatureMatching으로 템플릿/형상/특징을 비교합니다." />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="15-20장: Pipeline route, metric gate, Good/Bad 검증, Recipe Manager, LLM XML correction loop를 연결합니다." />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="brightnessTopicPanel"
+                    Grid.Row="2"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="왜 밝기와 히스토그램을 먼저 보나요?"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="밝기는 각 픽셀의 GV가 얼마나 큰지를 뜻합니다. 조명이 변하거나 대상이 어두워지면 같은 Threshold 값도 전혀 다른 결과를 만들 수 있습니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="히스토그램은 이미지 안에 어떤 밝기 값이 얼마나 많은지 세어 놓은 표입니다. 어두운 값에 몰려 있으면 전체가 어둡고, 밝은 값에 몰려 있으면 전체가 밝습니다." />
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="원본 GV 샘플"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="각 칸은 이미지 안의 픽셀 밝기 예시입니다."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="brightnessInputGrid"
+                                                 Columns="4"
+                                                 Rows="2" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="밝기 보정 후"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtBrightnessFormula"
+                                               Margin="0,3,0,10"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="brightnessOutputGrid"
+                                                 Columns="4"
+                                                 Rows="2" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="150" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid Grid.Row="0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="미니 히스토그램"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtBrightnessOffset"
+                                               Grid.Column="1"
+                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                </Grid>
+                                <Slider x:Name="brightnessOffsetSlider"
+                                        Grid.Row="2"
+                                        Minimum="-80"
+                                        Maximum="80"
+                                        TickFrequency="5"
+                                        IsSnapToTickEnabled="True"
+                                        IsMoveToPointEnabled="True"
+                                        ValueChanged="BrightnessOffsetSlider_ValueChanged"
+                                        AutomationProperties.AutomationId="OpenVisionLearnBrightnessOffsetSlider" />
+                                <UniformGrid x:Name="histogramGrid"
+                                             Grid.Row="4"
+                                             Columns="8"
+                                             Rows="1" />
+                                <TextBlock Grid.Row="5"
+                                           Margin="0,8,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="Threshold를 정하기 전에는 대상과 배경의 밝기 분포가 떨어져 있는지 확인합니다. 분포가 겹치면 Threshold 하나로 안정적인 검출이 어렵습니다." />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="arithmeticTopicPanel"
+                    Grid.Row="2"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Arithmetic combines pixel values from one or two layers."
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Use this topic when you need to brighten, darken, compare, mask, or combine result layers. Arithmetic is useful only when the input layers and binary polarity are clear." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Opening this guide does not run Preview/Run, create layers, or change InputLayer/InputLayerB/OutputLayer. Open the Arithmetic Tool View and click Preview explicitly when you want to test the operation." />
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="InputLayer A"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="First image or mask"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="arithmeticInputAGrid"
+                                                 Columns="4"
+                                                 Rows="2" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="InputLayer B"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="Second image, mask, or constant source"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="arithmeticInputBGrid"
+                                                 Columns="4"
+                                                 Rows="2" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="4"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="OutputLayer"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtArithmeticFormula"
+                                               Margin="0,3,0,10"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="arithmeticResultGrid"
+                                                 Columns="4"
+                                                 Rows="2" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="10" />
+                                        <ColumnDefinition Width="220" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Operation"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                    <ComboBox x:Name="arithmeticModeCombo"
+                                              Grid.Column="2"
+                                              SelectedIndex="2"
+                                              SelectionChanged="ArithmeticModeCombo_SelectionChanged"
+                                              AutomationProperties.AutomationId="OpenVisionLearnArithmeticModeCombo">
+                                        <ComboBoxItem Content="Add" />
+                                        <ComboBoxItem Content="Subtract" />
+                                        <ComboBoxItem Content="AbsDiff" />
+                                        <ComboBoxItem Content="Bitwise AND" />
+                                        <ComboBoxItem Content="Bitwise OR" />
+                                    </ComboBox>
+                                </Grid>
+                                <TextBlock x:Name="txtArithmeticMeaning"
+                                           Grid.Row="2"
+                                           Style="{StaticResource LearnMutedTextStyle}" />
+                                <TextBlock Grid.Row="4"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="Common checks: InputLayerA and InputLayerB must be the intended layers, binary white/black meaning must be known, and OutputLayer should be a separate review layer." />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="geometryTopicPanel"
+                    Grid.Row="2"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Geometry transforms move pixels and coordinates."
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="RotateScale is useful when the recipe intentionally normalizes orientation or size before detection. After rotation or scaling, ROI, measurement distance, template position, and pixel/mm gates must be reviewed again." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Opening this guide does not run Preview/Run, create layers, or rewrite routing. Use the Rotate / Scale Tool View and click Preview explicitly to create the transformed output layer." />
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="280" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Before / after concept"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="Dashed box is the original ROI. Blue box is the transformed review area."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <Canvas Width="250"
+                                            Height="112"
+                                            Background="#F8FAFC">
+                                        <Rectangle Width="92"
+                                                   Height="54"
+                                                   Canvas.Left="79"
+                                                   Canvas.Top="30"
+                                                   Stroke="#94A3B8"
+                                                   StrokeDashArray="4 3"
+                                                   StrokeThickness="2"
+                                                   Fill="#FFFFFF" />
+                                        <Border x:Name="geometryTargetBox"
+                                                Width="92"
+                                                Height="54"
+                                                Canvas.Left="79"
+                                                Canvas.Top="30"
+                                                Background="#2563EB"
+                                                Opacity="0.78"
+                                                CornerRadius="5"
+                                                RenderTransformOrigin="0.5,0.5">
+                                            <Border.RenderTransform>
+                                                <TransformGroup>
+                                                    <ScaleTransform x:Name="geometryScaleTransform" />
+                                                    <RotateTransform x:Name="geometryRotateTransform" />
+                                                </TransformGroup>
+                                            </Border.RenderTransform>
+                                            <TextBlock Text="ROI"
+                                                       Foreground="White"
+                                                       FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center" />
+                                        </Border>
+                                    </Canvas>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Coordinate review"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtGeometryFormula"
+                                               Margin="0,6,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <TextBlock x:Name="txtGeometryMeaning"
+                                               Margin="0,8,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <TextBlock Margin="0,10,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="Checklist: keep the original image on its own layer, write transform output to a new layer, then re-check ROI, template, edge direction, pixel/mm distance calibration, and acceptance gates." />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Angle"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock x:Name="txtGeometryAngle"
+                                                   Grid.Column="1"
+                                                   Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                    </Grid>
+                                    <Slider x:Name="geometryAngleSlider"
+                                            Margin="0,8,0,0"
+                                            Minimum="-45"
+                                            Maximum="45"
+                                            TickFrequency="5"
+                                            IsSnapToTickEnabled="True"
+                                            IsMoveToPointEnabled="True"
+                                            ValueChanged="GeometrySlider_ValueChanged"
+                                            AutomationProperties.AutomationId="OpenVisionLearnGeometryAngleSlider" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Scale"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock x:Name="txtGeometryScale"
+                                                   Grid.Column="1"
+                                                   Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                    </Grid>
+                                    <Slider x:Name="geometryScaleSlider"
+                                            Margin="0,8,0,0"
+                                            Minimum="50"
+                                            Maximum="150"
+                                            TickFrequency="10"
+                                            IsSnapToTickEnabled="True"
+                                            IsMoveToPointEnabled="True"
+                                            ValueChanged="GeometrySlider_ValueChanged"
+                                            AutomationProperties.AutomationId="OpenVisionLearnGeometryScaleSlider" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="colorHsvTopicPanel"
+                    Grid.Row="2"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Color inspection separates hue, saturation, and brightness."
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="RGB/BGR channels store raw color components. HSV is often easier for inspection because Hue is color family, Saturation is color strength, and Value is brightness." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Opening this guide does not run Preview/Run, create layers, or change routing. Use HSV, Mean, or Histogram Tool Views and click Preview or Run Review explicitly." />
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}"
+                                AutomationProperties.AutomationId="OpenVisionLearnColorSampleBridge">
+                            <StackPanel>
+                                <TextBlock Text="Current practice bridge"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="Practice Samples currently opens the Mean Good/Bad set because a public HSV color-classification pair is not stable yet. Treat MeanValueAvg as brightness/channel drift evidence; do not claim HSV color pass until a color-range sample and metric gate are added." />
+                            </StackPanel>
+                        </Border>
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="250" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Channel thinking"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="The same colored pixel can be read in different coordinate systems."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid Columns="3"
+                                                 Rows="1">
+                                        <Border Height="62"
+                                                Margin="0,0,6,0"
+                                                Background="#DC2626"
+                                                CornerRadius="4">
+                                            <TextBlock Text="Hue"
+                                                       Foreground="White"
+                                                       FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center" />
+                                        </Border>
+                                        <Border Height="62"
+                                                Margin="0,0,6,0"
+                                                Background="#2563EB"
+                                                CornerRadius="4">
+                                            <TextBlock Text="Saturation"
+                                                       Foreground="White"
+                                                       FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center" />
+                                        </Border>
+                                        <Border Height="62"
+                                                Background="#6B7280"
+                                                CornerRadius="4">
+                                            <TextBlock Text="Value"
+                                                       Foreground="White"
+                                                       FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center" />
+                                        </Border>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="HSV range review"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtColorHsvFormula"
+                                               Margin="0,6,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <TextBlock x:Name="txtColorHsvMeaning"
+                                               Margin="0,8,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <TextBlock Margin="0,10,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="Checklist: use ROI if the background has similar hue, keep the HSV mask on a separate OutputLayer, and validate with MaskPixelRatio only after runner support exists, or with downstream ResultCount/Area." />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="210" />
+                                    <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border x:Name="colorHsvPreviewSwatch"
+                                        Grid.Column="0"
+                                        Height="82"
+                                        CornerRadius="6"
+                                        BorderBrush="#CBD5E1"
+                                        BorderThickness="1">
+                                    <TextBlock x:Name="txtColorHsvPreviewLabel"
+                                               Foreground="White"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
+                                </Border>
+                                <Grid Grid.Column="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Hue"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock x:Name="txtColorHsvHue"
+                                                       Grid.Column="1"
+                                                       Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                        </Grid>
+                                        <Border Height="12"
+                                                Margin="0,6,0,0"
+                                                CornerRadius="4">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0.5"
+                                                                     EndPoint="1,0.5">
+                                                    <GradientStop Color="#EF4444"
+                                                                  Offset="0" />
+                                                    <GradientStop Color="#F59E0B"
+                                                                  Offset="0.18" />
+                                                    <GradientStop Color="#22C55E"
+                                                                  Offset="0.38" />
+                                                    <GradientStop Color="#06B6D4"
+                                                                  Offset="0.58" />
+                                                    <GradientStop Color="#3B82F6"
+                                                                  Offset="0.75" />
+                                                    <GradientStop Color="#EF4444"
+                                                                  Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                        </Border>
+                                        <Slider x:Name="colorHueSlider"
+                                                Margin="0,6,0,0"
+                                                Minimum="0"
+                                                Maximum="179"
+                                                TickFrequency="5"
+                                                IsSnapToTickEnabled="True"
+                                                IsMoveToPointEnabled="True"
+                                                ValueChanged="ColorHsvSlider_ValueChanged"
+                                                AutomationProperties.AutomationId="OpenVisionLearnColorHueSlider" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Value"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock x:Name="txtColorHsvValue"
+                                                       Grid.Column="1"
+                                                       Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                        </Grid>
+                                        <Slider x:Name="colorValueSlider"
+                                                Margin="0,24,0,0"
+                                                Minimum="40"
+                                                Maximum="255"
+                                                TickFrequency="5"
+                                                IsSnapToTickEnabled="True"
+                                                IsMoveToPointEnabled="True"
+                                                ValueChanged="ColorHsvSlider_ValueChanged"
+                                                AutomationProperties.AutomationId="OpenVisionLearnColorValueSlider" />
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="filterTopicPanel"
+                    Grid.Row="2"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="필터는 주변 픽셀을 같이 보는 연산입니다"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Threshold는 픽셀 하나를 기준값과 비교하지만, 필터링은 중심 픽셀 주변의 작은 영역을 같이 계산합니다. 그래서 노이즈를 줄이거나 경계를 강조할 수 있습니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="OpenVisionLab에서는 필터링 결과를 별도 Output 레이어에 만든 뒤, 그 레이어를 다음 Threshold, Blob, Contour, Line 도구의 Input으로 연결해 확인합니다." />
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="원본 3x3 GV"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="가운데 220은 작은 밝은 노이즈 예시입니다."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="filterInputGrid"
+                                                 Columns="3"
+                                                 Rows="3" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="필터 적용 후"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtFilterFormula"
+                                               Margin="0,3,0,10"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="filterOutputGrid"
+                                                 Columns="3"
+                                                 Rows="3" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="10" />
+                                        <ColumnDefinition Width="220" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="필터 종류"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                    <ComboBox x:Name="filterModeCombo"
+                                              Grid.Column="2"
+                                              SelectedIndex="0"
+                                              SelectionChanged="FilterModeCombo_SelectionChanged"
+                                              AutomationProperties.AutomationId="OpenVisionLearnFilterModeCombo">
+                                        <ComboBoxItem Content="Mean blur" />
+                                        <ComboBoxItem Content="Median" />
+                                        <ComboBoxItem Content="Sharpen" />
+                                    </ComboBox>
+                                </Grid>
+                                <TextBlock x:Name="txtFilterMeaning"
+                                           Grid.Row="2"
+                                           Style="{StaticResource LearnMutedTextStyle}" />
+                                <TextBlock Grid.Row="4"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="필터링만으로 검사가 끝나는 경우는 드뭅니다. 보통 노이즈를 정리한 뒤 Threshold나 Edge/Line 같은 다음 도구가 더 안정적으로 동작하도록 준비합니다." />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="morphologyTopicPanel"
+                    Grid.Row="2"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="모폴로지는 이진 영상의 흰 영역 모양을 정리합니다"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Threshold 후에는 작은 흰 점, 끊어진 선, 구멍이 남을 수 있습니다. 모폴로지는 3x3 같은 커널을 움직이며 흰 영역을 줄이거나 키워 Blob과 Contour가 더 안정적으로 보게 만듭니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="OpenVisionLab에서는 보통 Threshold Output을 Morphology Input으로 넣고, 정리된 Output 레이어를 Blob 또는 Contour의 Input으로 연결합니다. 이 Learn 화면은 개념만 바꾸며 Preview/Run은 실행하지 않습니다." />
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Threshold 후 이진 영상"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="흰색은 검사 대상, 검정은 배경입니다."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="morphologyInputGrid"
+                                                 Columns="5"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="모폴로지 적용 후"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtMorphologyFormula"
+                                               Margin="0,3,0,10"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="morphologyOutputGrid"
+                                                 Columns="5"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="10" />
+                                        <ColumnDefinition Width="220" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="연산 종류"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                    <ComboBox x:Name="morphologyModeCombo"
+                                              Grid.Column="2"
+                                              SelectedIndex="0"
+                                              SelectionChanged="MorphologyModeCombo_SelectionChanged"
+                                              AutomationProperties.AutomationId="OpenVisionLearnMorphologyModeCombo">
+                                        <ComboBoxItem Content="Erosion" />
+                                        <ComboBoxItem Content="Dilation" />
+                                        <ComboBoxItem Content="Opening" />
+                                        <ComboBoxItem Content="Closing" />
+                                    </ComboBox>
+                                </Grid>
+                                <TextBlock x:Name="txtMorphologyMeaning"
+                                           Grid.Row="2"
+                                           Style="{StaticResource LearnMutedTextStyle}" />
+                                <TextBlock Grid.Row="4"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="커널 크기와 반복 횟수는 항상 정리 전/후 레이어를 비교하면서 정합니다." />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="blobTopicPanel"
+                    Grid.Row="2"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Blob은 붙어 있는 흰 영역을 하나의 후보로 셉니다"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Threshold와 Morphology 후, 연결된 흰 픽셀 묶음을 찾고 개수, 면적, 위치, 폭/높이를 측정합니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="MIN_AREA와 MAX_AREA로 작은 먼지나 큰 배경 덩어리를 제외합니다. 이 화면은 Preview/Run을 실행하지 않습니다." />
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="이진 입력"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="흰색 묶음 하나가 Blob 후보입니다."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="blobInputGrid"
+                                                 Columns="6"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="면적 필터 후 후보"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtBlobFormula"
+                                               Margin="0,3,0,10"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="blobOutputGrid"
+                                                 Columns="6"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="MIN_AREA"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtBlobMinArea"
+                                               Grid.Column="1"
+                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                </Grid>
+                                <Slider x:Name="blobMinAreaSlider"
+                                        Grid.Row="2"
+                                        Minimum="1"
+                                        Maximum="6"
+                                        TickFrequency="1"
+                                        IsSnapToTickEnabled="True"
+                                        IsMoveToPointEnabled="True"
+                                        ValueChanged="BlobMinAreaSlider_ValueChanged"
+                                        AutomationProperties.AutomationId="OpenVisionLearnBlobMinAreaSlider" />
+                                <TextBlock x:Name="txtBlobMeaning"
+                                           Grid.Row="4"
+                                           Style="{StaticResource LearnMutedTextStyle}" />
+                                <TextBlock Grid.Row="6"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="Blob이 NG라면 이진 입력 레이어와 MIN_AREA/MAX_AREA를 먼저 확인합니다." />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="contourTopicPanel"
+                    Grid.Row="2"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Contour는 통과한 영역의 경계선을 따라갑니다"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Blob이 연결된 영역을 후보로 세는 단계라면, Contour는 그 후보의 외곽선을 따라 실제 모양, 위치, 폭/높이를 확인하는 단계입니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Threshold와 Morphology 결과가 흔들리면 Contour도 흔들립니다. 그래서 보통 이진 입력, 면적 필터, 외곽선 결과를 같은 레시피에서 비교합니다." />
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Blob 필터 후 이진 후보"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="큰 흰 영역은 검사 대상, 작은 점은 제외 후보입니다."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="contourInputGrid"
+                                                 Columns="7"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="외곽선 표시 결과"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtContourFormula"
+                                               Margin="0,3,0,10"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="contourOutputGrid"
+                                                 Columns="7"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="10" />
+                                        <ColumnDefinition Width="220" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="표시 방식"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                    <ComboBox x:Name="contourDrawModeCombo"
+                                              Grid.Column="2"
+                                              SelectedIndex="0"
+                                              SelectionChanged="ContourDrawModeCombo_SelectionChanged"
+                                              AutomationProperties.AutomationId="OpenVisionLearnContourDrawModeCombo">
+                                        <ComboBoxItem Content="Contour" />
+                                        <ComboBoxItem Content="Bounding box" />
+                                        <ComboBoxItem Content="Contour + box" />
+                                    </ComboBox>
+                                </Grid>
+                                <TextBlock x:Name="txtContourMeaning"
+                                           Grid.Row="2"
+                                           Style="{StaticResource LearnMutedTextStyle}" />
+                                <TextBlock Grid.Row="4"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="Contour 결과가 NG라면 먼저 Threshold/Morphology Output과 Blob 면적 필터를 확인합니다." />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="edgeLineTopicPanel"
+                    Grid.Row="2"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Edge는 밝기 차이, Line은 이어진 Edge 후보입니다"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Edge는 이웃 픽셀 사이 GV 차이가 큰 지점입니다. Line은 그런 Edge 후보가 같은 방향으로 충분히 이어진 경우입니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="OpenVisionLab에서는 Edge/Line으로 경계 위치를 확인하고, 거리나 폭 판정은 다음 LineDistance 측정 단계에서 다룹니다." />
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="원본 GV 샘플"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="왼쪽 어두운 영역과 오른쪽 밝은 영역 사이에 경계가 있습니다."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="edgeLineInputGrid"
+                                                 Columns="5"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Edge / Line 후보"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtEdgeLineFormula"
+                                               Margin="0,3,0,10"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="edgeLineOutputGrid"
+                                                 Columns="5"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="EDGE_THRESHOLD"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtEdgeThreshold"
+                                               Grid.Column="1"
+                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                </Grid>
+                                <Slider x:Name="edgeThresholdSlider"
+                                        Grid.Row="2"
+                                        Minimum="10"
+                                        Maximum="150"
+                                        TickFrequency="5"
+                                        IsSnapToTickEnabled="True"
+                                        IsMoveToPointEnabled="True"
+                                        ValueChanged="EdgeThresholdSlider_ValueChanged"
+                                        AutomationProperties.AutomationId="OpenVisionLearnEdgeThresholdSlider" />
+                                <TextBlock x:Name="txtEdgeLineMeaning"
+                                           Grid.Row="4"
+                                           Style="{StaticResource LearnMutedTextStyle}" />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="lineDistanceTopicPanel"
+                    Grid.Row="2"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="LineDistance는 두 Edge 사이 거리를 여러 줄에서 잽니다"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="한 줄만 재면 우연히 맞을 수 있습니다. LineDistance는 ROI 안에서 여러 sampling line을 만들고, 각 줄의 왼쪽/오른쪽 Edge 사이 거리를 계산합니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="핀 gap, pitch, 폭, clearance 같은 측정은 DistanceAvg만 보지 말고 DistanceRange나 Max 같은 튐 검사를 같이 둡니다." />
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="ROI 안의 sampling line"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="L/R은 각 줄에서 찾은 왼쪽/오른쪽 Edge입니다."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="lineDistanceInputGrid"
+                                                 Columns="9"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="줄별 거리"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtLineDistanceFormula"
+                                               Margin="0,3,0,10"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="lineDistanceOutputGrid"
+                                                 Columns="5"
+                                                 Rows="1" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="DISTANCE_RANGE_MAX"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtLineDistanceRangeMax"
+                                               Grid.Column="1"
+                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                </Grid>
+                                <Slider x:Name="lineDistanceRangeMaxSlider"
+                                        Grid.Row="2"
+                                        Minimum="0"
+                                        Maximum="2"
+                                        TickFrequency="0.25"
+                                        IsSnapToTickEnabled="True"
+                                        IsMoveToPointEnabled="True"
+                                        ValueChanged="LineDistanceRangeMaxSlider_ValueChanged"
+                                        AutomationProperties.AutomationId="OpenVisionLearnLineDistanceRangeSlider" />
+                                <TextBlock x:Name="txtLineDistanceMeaning"
+                                           Grid.Row="4"
+                                           Style="{StaticResource LearnMutedTextStyle}" />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="matchingTopicPanel"
+                    Grid.Row="2"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Matching은 작은 Template을 찾아 점수로 판정합니다"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Template Matching은 기준 모양을 검색 영역 위로 움직이며 가장 비슷한 위치와 Score를 찾습니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="ScoreThreshold가 낮으면 오검출이 늘고, 너무 높으면 조명이나 작은 흔들림에도 NG가 날 수 있습니다." />
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="검색 이미지와 Template"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="T는 기준 Template, B는 최고 점수 위치입니다."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="10" />
+                                            <ColumnDefinition Width="110" />
+                                        </Grid.ColumnDefinitions>
+                                        <UniformGrid x:Name="matchingSearchGrid"
+                                                     Columns="5"
+                                                     Rows="5" />
+                                        <UniformGrid x:Name="matchingTemplateGrid"
+                                                     Grid.Column="2"
+                                                     Columns="2"
+                                                     Rows="2" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="후보 Score"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtMatchingFormula"
+                                               Margin="0,3,0,10"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="matchingScoreGrid"
+                                                 Columns="5"
+                                                 Rows="1" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="SCORE_THRESHOLD"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtMatchingThreshold"
+                                               Grid.Column="1"
+                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                </Grid>
+                                <Slider x:Name="matchingThresholdSlider"
+                                        Grid.Row="2"
+                                        Minimum="0.50"
+                                        Maximum="1.00"
+                                        TickFrequency="0.05"
+                                        IsSnapToTickEnabled="True"
+                                        IsMoveToPointEnabled="True"
+                                        ValueChanged="MatchingThresholdSlider_ValueChanged"
+                                        AutomationProperties.AutomationId="OpenVisionLearnMatchingThresholdSlider" />
+                                <TextBlock x:Name="txtMatchingMeaning"
+                                           Grid.Row="4"
+                                           Style="{StaticResource LearnMutedTextStyle}" />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="featureMatchingTopicPanel"
+                    Grid.Row="2"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Feature Matching은 특징점끼리 대응시킵니다"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Template Matching이 픽셀 모양을 직접 비교한다면, Feature Matching은 코너 같은 keypoint와 descriptor를 찾아 서로 맞는 쌍을 셉니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="회전, 크기 변화, 일부 가림이 있는 대상은 점수 하나보다 GoodMatches, 위치 일관성, 최종 overlay를 같이 봐야 합니다." />
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Reference / Scene keypoints"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="K는 기준 특징점, M은 매칭된 장면 특징점입니다."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="12" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <UniformGrid x:Name="featureReferenceGrid"
+                                                     Columns="5"
+                                                     Rows="5" />
+                                        <UniformGrid x:Name="featureSceneGrid"
+                                                     Grid.Column="2"
+                                                     Columns="5"
+                                                     Rows="5" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Descriptor match score"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtFeatureMatchingFormula"
+                                               Margin="0,3,0,10"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="featureMatchScoreGrid"
+                                                 Columns="6"
+                                                 Rows="1" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="GOOD_MATCH_MIN"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtFeatureGoodMatchMin"
+                                               Grid.Column="1"
+                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                </Grid>
+                                <Slider x:Name="featureGoodMatchMinSlider"
+                                        Grid.Row="2"
+                                        Minimum="1"
+                                        Maximum="6"
+                                        TickFrequency="1"
+                                        IsSnapToTickEnabled="True"
+                                        IsMoveToPointEnabled="True"
+                                        ValueChanged="FeatureGoodMatchMinSlider_ValueChanged"
+                                        AutomationProperties.AutomationId="OpenVisionLearnFeatureMatchMinSlider" />
+                                <TextBlock x:Name="txtFeatureMatchingMeaning"
+                                           Grid.Row="4"
+                                           Style="{StaticResource LearnMutedTextStyle}" />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="layerRecipeTopicPanel"
+                    Grid.Row="2"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Margin="0,0,0,12"
+                                Style="{StaticResource LearnPanelStyle}"
+                                AutomationProperties.AutomationId="OpenVisionLearnLayerRoutingSafetyPanel">
+                            <StackPanel>
+                                <TextBlock Text="Routing safety checklist"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Margin="0,6,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="InputLayer is the source image. OutputLayer is the produced result. Creating an OutputLayer must not select or rewrite InputLayer." />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="Layer create/delete/load-image actions and visibility toggles must not run Preview/Run. Execute Preview or Run Review only by explicit user action." />
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="Layer는 이미지 이름, Pipeline은 Step 흐름, Recipe는 저장된 검사 계획입니다"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="각 Step은 InputLayer를 읽고 OutputLayer를 만듭니다. Output을 만든다고 다음 Input이 자동으로 바뀌면 안 되고, 사용자가 route를 명시적으로 확인해야 합니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Recipe는 Step 순서, 파라미터, acceptance gate, 샘플 검증 결과를 함께 저장해 다시 검토할 수 있게 합니다." />
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Layer 흐름"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="원본, 중간 결과, 리뷰 결과를 이름으로 분리합니다."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="layerRecipeLayerGrid"
+                                                 Columns="4"
+                                                 Rows="1" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Pipeline Step route"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtLayerRecipeFormula"
+                                               Margin="0,3,0,10"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="layerRecipeFlowGrid"
+                                                 Columns="4"
+                                                 Rows="4" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="SELECTED_STEP"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtLayerRecipeSelectedStep"
+                                               Grid.Column="1"
+                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                </Grid>
+                                <Slider x:Name="layerRecipeStepSlider"
+                                        Grid.Row="2"
+                                        Minimum="1"
+                                        Maximum="4"
+                                        TickFrequency="1"
+                                        IsSnapToTickEnabled="True"
+                                        IsMoveToPointEnabled="True"
+                                        ValueChanged="LayerRecipeStepSlider_ValueChanged"
+                                        AutomationProperties.AutomationId="OpenVisionLearnLayerRecipeStepSlider" />
+                                <TextBlock x:Name="txtLayerRecipeMeaning"
+                                           Grid.Row="4"
+                                           Style="{StaticResource LearnMutedTextStyle}" />
+                            </Grid>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="metricsAcceptanceTopicPanel"
+                    Grid.Row="2"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Metrics turn a visual result into an OK/NG decision."
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Use Good/Bad samples to confirm the metric fails for the intended reason. A missing image, missing template, missing input layer, or wrong route is setup failure, not inspection evidence." />
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Common gates"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,6,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="Presence: ScoreMax + ResultCount&#x0a;Blob/Contour: ResultCount + area range&#x0a;Brightness: MeanValueAvg range&#x0a;Distance: DistanceMmAvg + DistanceMmRange" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Distance outlier rule"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,6,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="Do not approve a multi-line distance inspection from average only. Add range or max gates so one long or short line cannot pass hidden inside DistanceMmAvg." />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Practice flow"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Margin="0,6,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="Open Practice Samples, choose a Good/Bad pair, run review explicitly, then compare ScoreMax, ResultCount, MeanValueAvg, DistanceMmAvg, and DistanceMmRange against the expected gates." />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <TabControl x:Name="thresholdTabs"
+                        Grid.Row="2"
+                        AutomationProperties.AutomationId="OpenVisionLearnThresholdTabs">
+                <TabItem Header="개념">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0,10,8,0">
+                            <Border Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="핵심 키워드"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,8,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="GV: Gray Value입니다. 0은 검정, 255는 흰색에 가까운 밝기 숫자입니다." />
+                                    <TextBlock Margin="0,5,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="Threshold: 픽셀 GV와 비교하는 기준값입니다. 기준보다 밝은지 어두운지로 결과가 갈립니다." />
+                                    <TextBlock Margin="0,5,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="MaxValue: 조건을 만족한 픽셀을 흰색으로 만들 때 쓰는 값입니다. 보통 255입니다." />
+                                    <TextBlock Margin="0,5,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="Binary: GV가 기준값 이상이면 MaxValue, 아니면 0입니다." />
+                                    <TextBlock Margin="0,5,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="BinaryInv: Binary의 반대입니다. 밝은 영역을 검정으로, 어두운 영역을 흰색으로 만듭니다." />
+                                </StackPanel>
+                            </Border>
+                            <Border Margin="0,10,0,0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="OpenVisionLab에서의 의미"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,8,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="Threshold는 보통 Blob, Contour, Morphology 앞에서 밝은 대상과 어두운 배경을 분리할 때 사용합니다." />
+                                    <TextBlock Margin="0,5,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="Learn 화면의 Apply는 tool parameter만 바꿉니다. 실제 결과 이미지는 Tool의 Run Preview를 명시적으로 눌러 확인합니다." />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="애니메이션">
+                    <Grid Margin="0,10,8,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="44" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <Grid Grid.Row="0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="txtThresholdValue"
+                                               FontWeight="SemiBold"
+                                               Text="Threshold = 127" />
+                                    <TextBlock x:Name="txtMaxValue"
+                                               Grid.Column="1"
+                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
+                                               Text="MaxValue = 255" />
+                                </Grid>
+
+                                <Grid x:Name="thresholdBarHost"
+                                      Grid.Row="2"
+                                      SizeChanged="ThresholdBarHost_SizeChanged">
+                                    <Border CornerRadius="3">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                                <GradientStop Color="#111827" Offset="0" />
+                                                <GradientStop Color="#6B7280" Offset="0.50" />
+                                                <GradientStop Color="#FFFFFF" Offset="1" />
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                    </Border>
+                                    <Border x:Name="thresholdMarker"
+                                            Width="4"
+                                            Background="#EF4444"
+                                            HorizontalAlignment="Left"
+                                            CornerRadius="2">
+                                        <Border.RenderTransform>
+                                            <TranslateTransform x:Name="thresholdMarkerTransform" />
+                                        </Border.RenderTransform>
+                                    </Border>
+                                </Grid>
+
+                                <Slider x:Name="thresholdSlider"
+                                        Grid.Row="4"
+                                        Minimum="0"
+                                        Maximum="255"
+                                        TickFrequency="1"
+                                        IsSnapToTickEnabled="True"
+                                        IsMoveToPointEnabled="True"
+                                        ValueChanged="ThresholdSlider_ValueChanged"
+                                        AutomationProperties.AutomationId="OpenVisionLearnThresholdSlider" />
+
+                                <Grid Grid.Row="6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="0 black"
+                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="255 white"
+                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Sample GV"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="Each cell is one example pixel."
+                                               FontSize="11"
+                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                    <UniformGrid x:Name="sampleGrid"
+                                                 Columns="4"
+                                                 Rows="2" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Binary result"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtFormula"
+                                               Margin="0,3,0,10"
+                                               FontSize="11"
+                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
+                                               TextWrapping="Wrap" />
+                                    <UniformGrid x:Name="resultGrid"
+                                                 Columns="4"
+                                                 Rows="2" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="툴 적용">
+                    <Border Margin="0,10,8,0"
+                            Style="{StaticResource LearnPanelStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Tool로 돌아가는 방법"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Margin="0,8,0,0"
+                                       Style="{StaticResource LearnMutedTextStyle}"
+                                       Text="1. 애니메이션 탭에서 Threshold와 BinaryInv를 조정합니다." />
+                            <TextBlock Margin="0,5,0,0"
+                                       Style="{StaticResource LearnMutedTextStyle}"
+                                       Text="2. Apply to tool을 누르면 현재 열린 Threshold Tool의 값만 바뀝니다." />
+                            <TextBlock Margin="0,5,0,0"
+                                       Style="{StaticResource LearnMutedTextStyle}"
+                                       Text="3. 실제 결과 이미지는 Threshold Tool에서 Run Preview를 눌러 확인합니다." />
+                            <TextBlock Margin="0,5,0,0"
+                                       Style="{StaticResource LearnMutedTextStyle}"
+                                       Text="4. 결과가 좋으면 Add Pipeline으로 recipe step을 저장합니다." />
+                        </StackPanel>
+                    </Border>
+                </TabItem>
+            </TabControl>
+
+            <Grid x:Name="thresholdControls"
+                  Grid.Row="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <CheckBox x:Name="chkInvert"
+                          Grid.Column="0"
+                          Content="BinaryInv"
+                          VerticalAlignment="Center"
+                          Checked="InvertCheckBox_Changed"
+                          Unchecked="InvertCheckBox_Changed"
+                          AutomationProperties.AutomationId="OpenVisionLearnThresholdInvertCheckBox" />
+                <Button x:Name="btnAnimate"
+                        Grid.Column="1"
+                        MinWidth="84"
+                        Height="32"
+                        Content="Play"
+                        Click="AnimateButton_Click"
+                        AutomationProperties.AutomationId="OpenVisionLearnThresholdAnimationButton" />
+                <Button x:Name="btnApply"
+                        Grid.Column="3"
+                        MinWidth="122"
+                        Height="32"
+                        Content="Apply to tool"
+                        Click="ApplyButton_Click"
+                        AutomationProperties.AutomationId="OpenVisionLearnThresholdApplyButton" />
+                <Button Grid.Column="5"
+                        MinWidth="78"
+                        Height="32"
+                        Content="Close"
+                        Click="CloseButton_Click" />
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

@@ -18,7 +18,7 @@ Shell.WorkspaceEmptyStepSelectDetail	왼쪽 목록에서 스레시홀드, 매칭
 Shell.WorkspaceEmptyStepPreviewTitle	3. 미리보기 확인	3. Check preview
 Shell.WorkspaceEmptyStepPreviewDetail	결과를 확인한 뒤 검증된 Step을 파이프라인에 추가합니다.	Check the result, then add the verified step to the pipeline.
 Shell.WorkspaceEmptySampleButton	샘플 열기	Open Sample
-Shell.WorkspaceEmptyGuideButton	가이드 보기	View Guide
+Shell.WorkspaceEmptyGuideButton	Learn 열기	Open Learn
 Shell.WorkspaceEmptyLogHint	이미지를 불러오면 이 영역에서 확대, 이동, 픽셀 값을 확인하고 하단 실행 로그에서 상태를 추적합니다.	After loading an image, use this area for zoom, pan, pixel values, and the Run Log for state tracking.
 Shell.WorkspaceFitImage	이미지 맞춤	Fit Image
 Shell.WorkspaceSaveImage	이미지 저장	Save Image
@@ -271,6 +271,10 @@ PipelineReview.Guide.NgNext	파라미터/라우트 조정 후 재리뷰	Tune par
 PipelineReview.Guide.NgDetail	선택 Step의 결과를 확인하고 라우트 또는 파라미터를 조정합니다.	Review the selected step's result and adjust the route or parameters.
 PipelineReview.Guide.Pair	Good/Bad 쌍	Good/Bad Pair
 PipelineReview.Guide.PairMetric	지표 확인	Metric Check
+PipelineReview.Guide.TriageFailure	원인	Cause
+PipelineReview.Guide.TriageAdjustment	조정	Adjust
+PipelineReview.Guide.TriageRerun	재리뷰	Rerun
+PipelineReview.Guide.TriageRerunPair	반대 샘플도 같은 Pipeline으로 실행해 기준 안/밖 갈림을 확인하십시오.	Run the opposite sample with the same Pipeline and confirm the metric splits inside/outside target.
 PipelineReview.Guide.FixDetailPrefix	우선 확인	Check first
 PipelineReview.Guide.ParameterLocationPrefix	조정 위치	Adjust here
 PipelineReview.Guide.ThresholdFix	입력 레이어, ROI, Threshold mode/값/범위, Adaptive Block/Weight를 먼저 확인하십시오.	Check input layer, ROI, threshold mode, value/range, adaptive block size, and weight.
@@ -960,14 +964,21 @@ PipelineReview.Validation	검증	Validation
 PipelineReview.Result	결과	Result
 PipelineReview.RunLog	실행 로그	Run Log
 PipelineReview.MetaFormat	{0} / {1} Step	{0} / {1} steps
+PipelineReview.Progress.NotRun	미실행	Not run
+PipelineReview.Progress.NoSteps	Step 없음	No steps
+PipelineReview.Progress.Running	실행 중...	Running...
+PipelineReview.Progress.CountsFormat	OK {0} / NG {1} / 대기 {2}	OK {0} / NG {1} / WAIT {2}
+PipelineReview.Progress.OffFormat	OFF {0}	OFF {0}
 PipelineReview.ValidationNotRun	검증 전	Validation not run
 PipelineReview.RunRequired	리뷰 실행 필요	Run review required
 PipelineReview.RunRequiredDetail	리뷰 실행을 눌러 Step 결과를 갱신하십시오.	Click Run Review to refresh step results.
 PipelineReview.RunReview	리뷰 실행	Run Review
 PipelineReview.PreviousStep	이전	Previous
 PipelineReview.NextStep	다음	Next
+PipelineReview.FirstIssueStep	NG Step	NG Step
 PipelineReview.PreviousStepToolTip	이전 Pipeline Step 선택	Select the previous pipeline step
 PipelineReview.NextStepToolTip	다음 Pipeline Step 선택	Select the next pipeline step
+PipelineReview.FirstIssueStepToolTip	첫 NG Pipeline Step 선택	Select the first NG pipeline step
 PipelineReview.Ready	파이프라인 리뷰 준비됨	Pipeline review ready
 PipelineReview.SelectedFormat	선택: {0}	Selected: {0}
 PipelineReview.RunningButton	실행 중...	Running...
@@ -1048,6 +1059,8 @@ Menu.Algorithm	알고리즘	Algorithm
 Menu.View	보기	View
 Menu.Guide	가이드	Guide
 Menu.Guide.ToolTip	OpenVisionLab 튜토리얼을 엽니다.	Open the OpenVisionLab tutorial.
+Menu.Learn	Learn	Learn
+Menu.Learn.ToolTip	OpenVisionLab Learn을 엽니다.	Open OpenVisionLab Learn.
 Shell.TutorialNotFoundMessage	튜토리얼 파일을 찾을 수 없습니다.\n{0}	Tutorial file was not found.\n{0}
 Shell.TutorialOpenFailedMessage	튜토리얼을 열 수 없습니다.\n{0}	Could not open the tutorial.\n{0}
 Menu.View.ShowLogDockTitle	Log 패널 제목 표시	Show Log panel title

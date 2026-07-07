@@ -47,6 +47,26 @@ namespace OpenVisionLab
             this.resourceOwner = resourceOwner ?? throw new ArgumentNullException(nameof(resourceOwner));
             this.operationButtons = operationButtons ?? throw new ArgumentNullException(nameof(operationButtons));
             this.shapeButtons = shapeButtons ?? throw new ArgumentNullException(nameof(shapeButtons));
+            AttachControls();
+        }
+
+        public void Detach()
+        {
+            foreach (Button button in operationButtons)
+            {
+                if (button != null)
+                {
+                    button.Click -= OperationButton_Click;
+                }
+            }
+
+            foreach (RadioButton radioButton in shapeButtons)
+            {
+                if (radioButton != null)
+                {
+                    radioButton.Checked -= ShapeRadioButton_Checked;
+                }
+            }
         }
 
         public void HandleOperationClick(object sender)
@@ -123,6 +143,35 @@ namespace OpenVisionLab
         private Brush GetBrush(string resourceKey)
         {
             return resourceOwner.TryFindResource(resourceKey) as Brush ?? Brushes.Transparent;
+        }
+
+        private void AttachControls()
+        {
+            foreach (Button button in operationButtons)
+            {
+                if (button != null)
+                {
+                    button.Click += OperationButton_Click;
+                }
+            }
+
+            foreach (RadioButton radioButton in shapeButtons)
+            {
+                if (radioButton != null)
+                {
+                    radioButton.Checked += ShapeRadioButton_Checked;
+                }
+            }
+        }
+
+        private void OperationButton_Click(object sender, RoutedEventArgs e)
+        {
+            HandleOperationClick(sender);
+        }
+
+        private void ShapeRadioButton_Checked(object sender, RoutedEventArgs e)
+        {
+            HandleShapeChecked(sender);
         }
     }
 }

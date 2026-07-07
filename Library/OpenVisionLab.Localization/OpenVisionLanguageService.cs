@@ -71,6 +71,12 @@ namespace OpenVisionLab
                     "동작: 열기 + Preview는 이 이미지와 레시피를 불러온 뒤 Pipeline에서 Preview를 실행합니다.",
                     "Action: Open + Preview loads this image and recipe, then runs preview in Pipeline.")
             },
+            {
+                "Shell.WorkspaceEmptyGuideButton",
+                new DefaultCatalogMigration(
+                    "가이드 보기",
+                    "View Guide")
+            },
             // Legacy CONFIG values with implementation terms are kept only for migration to neutral Shell.Ready* defaults.
             {
                 "Shell.ReadyFoundation",

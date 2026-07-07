@@ -12,17 +12,17 @@ namespace OpenVisionLab
         {
             return new EdgeDetectionToolProperty
             {
-                EdgeType = view.GetEnum("EdgeType", EdgeDetectionToolType.Canny),
-                CannyThresholdLow = view.GetInt("CannyThresholdLow", 100),
-                CannyThresholdHigh = view.GetInt("CannyThresholdHigh", 200),
-                CannyApertureSize = view.GetInt("CannyApertureSize", 3),
-                UseL2Gradient = view.GetBool("UseL2Gradient", true),
-                SobelDegreeX = view.GetInt("SobelDegreeX", 1),
-                SobelDegreeY = view.GetInt("SobelDegreeY", 0),
-                SobelKernelSize = view.GetInt("SobelKernelSize", 3),
-                ScharrDegreeX = view.GetInt("ScharrDegreeX", 1),
-                ScharrDegreeY = view.GetInt("ScharrDegreeY", 0),
-                LaplacianKernelSize = view.GetInt("LaplacianKernelSize", 3)
+                EdgeType = view.Parameters.GetEnum("EdgeType", EdgeDetectionToolType.Canny),
+                CannyThresholdLow = view.Parameters.GetInt("CannyThresholdLow", 100),
+                CannyThresholdHigh = view.Parameters.GetInt("CannyThresholdHigh", 200),
+                CannyApertureSize = view.Parameters.GetInt("CannyApertureSize", 3),
+                UseL2Gradient = view.Parameters.GetBool("UseL2Gradient", true),
+                SobelDegreeX = view.Parameters.GetInt("SobelDegreeX", 1),
+                SobelDegreeY = view.Parameters.GetInt("SobelDegreeY", 0),
+                SobelKernelSize = view.Parameters.GetInt("SobelKernelSize", 3),
+                ScharrDegreeX = view.Parameters.GetInt("ScharrDegreeX", 1),
+                ScharrDegreeY = view.Parameters.GetInt("ScharrDegreeY", 0),
+                LaplacianKernelSize = view.Parameters.GetInt("LaplacianKernelSize", 3)
             };
         }
 
@@ -30,9 +30,9 @@ namespace OpenVisionLab
         {
             return new RotateScaleToolProperty
             {
-                Angle = view.GetDouble("Angle", 0),
-                ScaleXPercent = view.GetDouble("ScaleXPercent", 100),
-                ScaleYPercent = view.GetDouble("ScaleYPercent", 100),
+                Angle = view.Parameters.GetDouble("Angle", 0),
+                ScaleXPercent = view.Parameters.GetDouble("ScaleXPercent", 100),
+                ScaleYPercent = view.Parameters.GetDouble("ScaleYPercent", 100),
                 Interpolation = InterpolationFlags.Linear,
                 BorderType = BorderTypes.Constant
             };
@@ -42,10 +42,10 @@ namespace OpenVisionLab
         {
             MeanProperty property = new MeanProperty("Mean")
             {
-                MEAN_TYPES = view.GetEnum("MeanType", MeanType.Mean)
+                MEAN_TYPES = view.Parameters.GetEnum("MeanType", MeanType.Mean)
             };
-            int min = view.GetInt("MeanMin", property.MEAN_MIN);
-            int max = view.GetInt("MeanMax", property.MEAN_MAX);
+            int min = view.Parameters.GetInt("MeanMin", property.MEAN_MIN);
+            int max = view.Parameters.GetInt("MeanMax", property.MEAN_MAX);
             property.MEAN_MIN = Math.Min(min, max);
             property.MEAN_MAX = Math.Max(min, max);
             return property;

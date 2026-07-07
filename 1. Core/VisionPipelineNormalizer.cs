@@ -228,6 +228,10 @@ namespace OpenVisionLab
                 case "filter":
                 case "edgedetection":
                 case "edge":
+                case "hsv":
+                case "hsvmask":
+                case "colorhsv":
+                case "colormask":
                 case "arithmetic":
                     return true;
                 default:

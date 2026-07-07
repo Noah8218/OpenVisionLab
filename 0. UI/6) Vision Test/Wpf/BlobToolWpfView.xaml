@@ -1,13 +1,16 @@
-<UserControl x:Class="OpenVisionLab.BlobToolWpfView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:OpenVisionLab">
+<local:VisionToolSingleInputPropertyToolViewBase x:Class="OpenVisionLab.BlobToolWpfView"
+                                                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                                                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                                                 xmlns:local="clr-namespace:OpenVisionLab">
     <local:VisionToolSingleInputPropertyToolShell x:Name="toolShell"
                                                   TitleIconKind="VectorCircle"
+                                                  LearnButtonVisibility="Visible"
+                                                  LearnButtonText="Learn Blob"
+                                                  LearnTopicIndex="5"
                                                   ToolContentVisibility="Visible">
         <local:VisionToolSingleInputPropertyToolShell.ToolContent>
             <local:VisionToolVerificationGuideView IsCompactMode="True"
                                                    HorizontalAlignment="Stretch" />
         </local:VisionToolSingleInputPropertyToolShell.ToolContent>
     </local:VisionToolSingleInputPropertyToolShell>
-</UserControl>
+</local:VisionToolSingleInputPropertyToolViewBase>

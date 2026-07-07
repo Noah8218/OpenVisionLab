@@ -96,7 +96,7 @@ namespace OpenVisionLab
             SetText(workspaceEmptyStepPreviewDetailText, TOrFallback("Shell.WorkspaceEmptyStepPreviewDetail", "Check the result, then add the verified step to the pipeline."));
             SetText(workspaceLoadImageButtonText, OpenVisionLanguageService.T("Shell.WorkspaceLoadImageButton"));
             SetText(workspaceEmptySampleButtonText, TOrFallback("Shell.WorkspaceEmptySampleButton", "Open Sample"));
-            SetText(workspaceEmptyGuideButtonText, TOrFallback("Shell.WorkspaceEmptyGuideButton", "View Guide"));
+            SetText(workspaceEmptyGuideButtonText, TOrFallback("Shell.WorkspaceEmptyGuideButton", "Open Learn"));
             SetText(workspaceEmptyLogHintText, TOrFallback("Shell.WorkspaceEmptyLogHint", "After loading an image, use this area for zoom, pan, pixel values, and the Run Log for state tracking."));
             SetText(openSelectedLayerWindowButtonText, OpenVisionLanguageService.T("Shell.OpenLayerWindowShort"));
             SetText(dockSelectedLayerButtonText, OpenVisionLanguageService.T("Shell.DockLayerShort"));

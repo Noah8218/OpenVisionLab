@@ -107,7 +107,7 @@ OpenVisionLab은 단순 이미지 뷰어가 아니라 **레이어 기반 rule-ba
 
 ### 1. 문서/트래커 정리
 
-현재 공개 문서는 README, Tutorial, Learn, Product Sample, Roadmap 중심으로 유지하고 내부 회복 로그나 작업 메모는 공개 배포 대상에서 제외합니다.
+현재 `CODEX_RECOVERY.md`, `NEXT_CODEX_PROMPT.md`, tracker 문서 일부에 과거 내용과 깨진 한글 인코딩이 섞여 있습니다.
 
 남은 작업:
 

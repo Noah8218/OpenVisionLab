@@ -1,8 +1,11 @@
-<UserControl x:Class="OpenVisionLab.EdgeBasedMatchingToolWpfView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:OpenVisionLab">
+<local:VisionToolSingleInputPropertyToolViewBase x:Class="OpenVisionLab.EdgeBasedMatchingToolWpfView"
+                                                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                                                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                                                 xmlns:local="clr-namespace:OpenVisionLab">
     <local:VisionToolSingleInputPropertyToolShell x:Name="toolShell"
                                                   TitleIconKind="CrosshairsGps"
+                                                  LearnButtonVisibility="Visible"
+                                                  LearnButtonText="Learn Edge Match"
+                                                  LearnTopicIndex="12"
                                                   TemplateStatusVisibility="Visible" />
-</UserControl>
+</local:VisionToolSingleInputPropertyToolViewBase>

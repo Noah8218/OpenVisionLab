@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Windows;
 
 namespace OpenVisionLab
 {
-    internal sealed class VisionToolSingleInputPropertyToolController<TProperty> : IDisposable
+    internal sealed class VisionToolSingleInputPropertyToolController<TProperty> : IVisionToolSingleInputPropertyToolController
     {
         private readonly VisionToolSingleInputToolEventHub eventHub;
         private readonly VisionToolLanguageChangeController languageChangeController;
@@ -172,6 +173,37 @@ namespace OpenVisionLab
                 title,
                 emptyState,
                 results,
+                getArea,
+                getCenterX,
+                getCenterY,
+                getBoxWidth,
+                getBoxHeight);
+        }
+
+        public void ShowAreaResultReview<TResult>(
+            VisionToolAreaVerificationGuidePresenter<TProperty, TResult> verificationGuidePresenter,
+            TProperty currentProperty,
+            string title,
+            string emptyState,
+            IEnumerable<TResult> results,
+            Func<TResult, double> getArea,
+            Func<TResult, double> getCenterX,
+            Func<TResult, double> getCenterY,
+            Func<TResult, double> getBoxWidth,
+            Func<TResult, double> getBoxHeight)
+            where TResult : class
+        {
+            if (verificationGuidePresenter == null)
+            {
+                throw new ArgumentNullException(nameof(verificationGuidePresenter));
+            }
+
+            List<TResult> resultList = results?.Where(item => item != null).ToList() ?? new List<TResult>();
+            verificationGuidePresenter.ShowResult(resultList, currentProperty);
+            ShowAreaResultReview(
+                title,
+                emptyState,
+                resultList,
                 getArea,
                 getCenterX,
                 getCenterY,

@@ -12,6 +12,8 @@ namespace OpenVisionLab
     {
         private readonly ThresholdToolPresenter presenter;
         private readonly VisionToolParameterChangeController parameterChangeController;
+        private readonly Func<bool> isSuppressed;
+        private readonly Action<bool> setSuppressed;
         private readonly RadioButton rbBasic;
         private readonly RadioButton rbRange;
         private readonly RadioButton rbAdaptive;
@@ -40,6 +42,8 @@ namespace OpenVisionLab
         public VisionToolThresholdInteractionController(
             ThresholdToolPresenter presenter,
             VisionToolParameterChangeController parameterChangeController,
+            Func<bool> isSuppressed,
+            Action<bool> setSuppressed,
             RadioButton rbBasic,
             RadioButton rbRange,
             RadioButton rbAdaptive,
@@ -67,6 +71,8 @@ namespace OpenVisionLab
         {
             this.presenter = presenter ?? throw new ArgumentNullException(nameof(presenter));
             this.parameterChangeController = parameterChangeController ?? throw new ArgumentNullException(nameof(parameterChangeController));
+            this.isSuppressed = isSuppressed ?? throw new ArgumentNullException(nameof(isSuppressed));
+            this.setSuppressed = setSuppressed ?? throw new ArgumentNullException(nameof(setSuppressed));
             this.rbBasic = rbBasic ?? throw new ArgumentNullException(nameof(rbBasic));
             this.rbRange = rbRange ?? throw new ArgumentNullException(nameof(rbRange));
             this.rbAdaptive = rbAdaptive ?? throw new ArgumentNullException(nameof(rbAdaptive));
@@ -191,6 +197,38 @@ namespace OpenVisionLab
                 txtBlockSize);
         }
 
+        public void ConfigureBasicInvertForTest(bool invert)
+        {
+            RunSuppressed(() =>
+            {
+                presenter.Mode = ThresholdToolMode.Threshold;
+                presenter.BasicInvert = invert;
+                rbBasic.IsChecked = true;
+                rbBasicBinary.IsChecked = !invert;
+                rbBasicInvert.IsChecked = invert;
+            });
+
+            // CreateProperty flushes control bindings, so keep the visible controls and ViewModel in the same state.
+            parameterChangeController.RefreshProgrammatic(RefreshModePanels);
+        }
+
+        public void ApplyBasicThresholdFromGuide(int threshold, bool invert)
+        {
+            int normalizedThreshold = Math.Max(0, Math.Min(255, threshold));
+            RunSuppressed(() =>
+            {
+                presenter.Mode = ThresholdToolMode.Threshold;
+                presenter.Threshold = normalizedThreshold;
+                presenter.BasicInvert = invert;
+                rbBasic.IsChecked = true;
+                rbBasicBinary.IsChecked = !invert;
+                rbBasicInvert.IsChecked = invert;
+                sliderThreshold.Value = normalizedThreshold;
+            });
+
+            parameterChangeController.RefreshProgrammatic(RefreshModePanels);
+        }
+
         private void AttachControlBehaviors()
         {
             // Toggle events must handle both user clicks and test/programmatic IsChecked changes while keeping the View free of handlers.
@@ -275,6 +313,20 @@ namespace OpenVisionLab
             else if (ReferenceEquals(sender, sliderBlockSize) || ReferenceEquals(sender, txtBlockSize))
             {
                 presenter.NormalizeBlockSize();
+            }
+        }
+
+        private void RunSuppressed(Action action)
+        {
+            bool previousSuppressState = isSuppressed();
+            setSuppressed(true);
+            try
+            {
+                action();
+            }
+            finally
+            {
+                setSuppressed(previousSuppressState);
             }
         }
     }

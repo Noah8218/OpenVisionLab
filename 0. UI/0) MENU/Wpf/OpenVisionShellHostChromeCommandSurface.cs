@@ -23,12 +23,15 @@ namespace OpenVisionLab
             this.toolWindowController = toolWindowController ?? throw new ArgumentNullException(nameof(toolWindowController));
 
             ToggleToolRailCommand = new RelayCommand(this.toggleToolRail);
+            OpenLearnCommand = new RelayCommand(this.commandController.OpenLearn);
             OpenTutorialCommand = new RelayCommand(this.commandController.OpenTutorial);
             FloatDockedToolCommand = new RelayCommand(FloatDockedTool);
             CloseDockedToolCommand = new RelayCommand(CloseDockedTool);
         }
 
         public ICommand ToggleToolRailCommand { get; }
+
+        public ICommand OpenLearnCommand { get; }
 
         public ICommand OpenTutorialCommand { get; }
 

@@ -105,7 +105,7 @@ This checks:
 
 - OpenVisionLab build.
 - XML compatibility and sample XML deserialization.
-- `VisionRecipeRunner` with public synthetic contour samples and runnable contour sample recipes.
+- `VisionRecipeRunner` with `Sample\Contour.jpg` and the runnable contour sample recipes.
 - UI screenshot smoke checks unless `-SkipUi` is used.
 - WPF shell/tool-view screenshot and parity checks when `-WpfTools` is supplied.
 

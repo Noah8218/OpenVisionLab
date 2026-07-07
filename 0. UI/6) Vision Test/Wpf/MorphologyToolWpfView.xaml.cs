@@ -9,22 +9,22 @@ using OpenVisionLab.Services;
 
 namespace OpenVisionLab
 {
-    public partial class MorphologyToolWpfView : UserControl, ISingleInputPropertyVisionToolWpfView<MorphologyToolProperty>, IVisionToolPreviewImageCommands, IVisionToolViewLifetime
+    public partial class MorphologyToolWpfView : VisionToolSingleInputCustomToolViewBase, ISingleInputPropertyVisionToolWpfView<MorphologyToolProperty>
     {
         private readonly MorphologyToolPresenter presenter;
 
-        private readonly VisionToolSingleInputCustomToolController toolController;
         private readonly VisionToolDebouncedPreviewScheduler previewScheduler;
         private readonly VisionToolParameterChangeController parameterChangeController;
         private readonly VisionToolKernelSizeController kernelSizeController;
         private readonly VisionToolMorphologyInteractionController morphologyInteractionController;
+        private readonly MorphologyToolTextPresenter textPresenter;
         private bool suppressEvents = true;
 
         internal MorphologyToolWpfView(MorphologyToolPresenter presenter)
         {
             this.presenter = presenter ?? throw new ArgumentNullException(nameof(presenter));
             InitializeComponent();
-            previewScheduler = new VisionToolDebouncedPreviewScheduler(this, () => toolController?.RequestRunPreview());
+            previewScheduler = new VisionToolDebouncedPreviewScheduler(this, RequestRunPreview);
             parameterChangeController = new VisionToolParameterChangeController(() => suppressEvents, UpdateSummary, schedulePreview: previewScheduler.Schedule);
             kernelSizeController = new VisionToolKernelSizeController(
                 parameterChangeController,
@@ -32,7 +32,18 @@ namespace OpenVisionLab
                 chkLockSize,
                 presenter.SetKernelPreset,
                 presenter.SyncKernelHeightToWidth,
-                value => suppressEvents = value);
+                value => suppressEvents = value,
+                new[]
+                {
+                    txtWidth,
+                    txtHeight
+                },
+                new[]
+                {
+                    btnKernelPreset3,
+                    btnKernelPreset5,
+                    btnKernelPreset7
+                });
             morphologyInteractionController = new VisionToolMorphologyInteractionController(
                 presenter,
                 parameterChangeController,
@@ -54,8 +65,14 @@ namespace OpenVisionLab
                     rdoShapeEllipse,
                     rdoShapeCross
                 });
-            toolController = VisionToolSingleInputCustomToolController.Attach(
-                this,
+            textPresenter = new MorphologyToolTextPresenter(
+                gbOperation,
+                gbKernel,
+                lblKernelWidth,
+                lblKernelHeight,
+                lblShape,
+                morphologyInteractionController.RefreshLabels);
+            AttachToolController(
                 "VisionMenu.Morphology",
                 parameterContentHost,
                 refreshViewState: UpdateSummary,
@@ -66,143 +83,34 @@ namespace OpenVisionLab
             suppressEvents = false;
         }
 
-        public event EventHandler SourceLayerChanged
+        protected override void DisposeToolResources()
         {
-            add { toolController.SourceLayerChanged += value; }
-            remove { toolController.SourceLayerChanged -= value; }
-        }
-
-        public event EventHandler DestinationLayerChanged
-        {
-            add { toolController.DestinationLayerChanged += value; }
-            remove { toolController.DestinationLayerChanged -= value; }
-        }
-
-        public event EventHandler InputPreviewClicked
-        {
-            add { toolController.InputPreviewClicked += value; }
-            remove { toolController.InputPreviewClicked -= value; }
-        }
-
-        public event EventHandler OutputPreviewClicked
-        {
-            add { toolController.OutputPreviewClicked += value; }
-            remove { toolController.OutputPreviewClicked -= value; }
-        }
-
-        public event EventHandler CreateOutputLayerRequested
-        {
-            add { toolController.CreateOutputLayerRequested += value; }
-            remove { toolController.CreateOutputLayerRequested -= value; }
-        }
-
-        public event EventHandler RunPreviewRequested
-        {
-            add { toolController.RunPreviewRequested += value; }
-            remove { toolController.RunPreviewRequested -= value; }
-        }
-
-        public event EventHandler AddPipelineRequested
-        {
-            add { toolController.AddPipelineRequested += value; }
-            remove { toolController.AddPipelineRequested -= value; }
-        }
-
-        public event EventHandler<VisionToolPreviewImageCommandEventArgs> LoadPreviewImageRequested
-        {
-            add { toolController.LoadPreviewImageRequested += value; }
-            remove { toolController.LoadPreviewImageRequested -= value; }
-        }
-
-        public event EventHandler<VisionToolPreviewImageCommandEventArgs> SavePreviewImageRequested
-        {
-            add { toolController.SavePreviewImageRequested += value; }
-            remove { toolController.SavePreviewImageRequested -= value; }
-        }
-
-        public string SelectedInputLayer => toolController.SelectedInputLayer;
-        public string SelectedOutputLayer => toolController.SelectedOutputLayer;
-
-        public void DisposeView()
-        {
-            toolController.Dispose();
+            morphologyInteractionController.Detach();
+            kernelSizeController.Detach();
             previewScheduler.Dispose();
         }
 
         private void ApplyLocalization()
         {
-            toolController.ApplyLocalization();
-            gbOperation.Header = OpenVisionLanguageService.T("Arithmetic.Operation");
-            gbKernel.Header = OpenVisionLanguageService.T("PropertyGrid.Category.Kernel");
-            lblKernelWidth.Text = OpenVisionLanguageService.T("PropertyGrid.Property.KernelWidth.DisplayName");
-            lblKernelHeight.Text = OpenVisionLanguageService.T("PropertyGrid.Property.KernelHeight.DisplayName");
-            lblShape.Text = OpenVisionLanguageService.T("PropertyGrid.Property.Shape.DisplayName");
-            morphologyInteractionController.RefreshLabels();
-        }
-        public void SetLayerList(IEnumerable<string> layerNames, string selectedInputLayer, string selectedOutputLayer)
-        {
-            toolController.SetLayerList(layerNames, selectedInputLayer, selectedOutputLayer);
-        }
-
-        public void SetInputPreview(Bitmap image)
-        {
-            toolController.SetInputPreview(image);
-        }
-
-        public void SetOutputPreview(Bitmap image)
-        {
-            toolController.SetOutputPreview(image);
-        }
-
-        public void SetStatus(string status)
-        {
-            toolController.SetStatus(status);
+            ToolController.ApplyLocalization();
+            textPresenter.ApplyLocalization();
         }
 
         public MorphologyToolProperty CreateProperty()
         {
-            FlushParameterBindings();
+            kernelSizeController.FlushParameterBindings();
             return presenter.CreateProperty();
         }
 
-        private void Operation_Click(object sender, RoutedEventArgs e)
-        {
-            morphologyInteractionController?.HandleOperationClick(sender);
-        }
-
-        private void Shape_Checked(object sender, RoutedEventArgs e)
-        {
-            morphologyInteractionController?.HandleShapeChecked(sender);
-        }
-
-        private void Parameter_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            kernelSizeController?.HandleTextChanged(sender);
-        }
-
-        private void LockSize_Changed(object sender, RoutedEventArgs e)
-        {
-            kernelSizeController?.HandleLockChanged();
-        }
-
-        private void KernelPreset_Click(object sender, RoutedEventArgs e)
-        {
-            kernelSizeController?.HandlePresetClick(sender);
-        }
         private void UpdateSummary()
         {
-            if (toolController == null)
+            if (!HasToolController)
             {
                 return;
             }
 
-            FlushParameterBindings();
-            toolController.SetSummaryText(morphologyInteractionController.CreateSummary());
-        }
-
-        private void FlushParameterBindings()
-        {
-            VisionToolControlBinding.UpdateTextSources(txtWidth, txtHeight);
+            kernelSizeController.FlushParameterBindings();
+            ToolController.SetSummaryText(morphologyInteractionController.CreateSummary());
         }
     }
 }

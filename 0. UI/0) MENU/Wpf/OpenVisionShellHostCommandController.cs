@@ -23,6 +23,7 @@ namespace OpenVisionLab
         private readonly Action sampleWorkspaceLoaded;
         private readonly Action manualWorkspaceImageLoaded;
         private string lastWorkspaceImageDirectory;
+        private OpenVisionLearnWindow learnWindow;
 
         public OpenVisionShellHostCommandController(
             Func<Window> ownerProvider,
@@ -131,12 +132,34 @@ namespace OpenVisionLab
             }
         }
 
+        public void OpenLearn()
+        {
+            if (learnWindow != null)
+            {
+                learnWindow.Activate();
+                return;
+            }
+
+            learnWindow = new OpenVisionLearnWindow
+            {
+                Owner = ownerProvider()
+            };
+            learnWindow.SetOpenPracticeSamplesAction(PromptAndOpenRunnableSample);
+            learnWindow.Closed += LearnWindow_Closed;
+            learnWindow.Show();
+        }
+
         public bool HasRunnableSample()
         {
             return LoadRunnableSamples().Count > 0;
         }
 
         public void PromptAndOpenRunnableSample()
+        {
+            PromptAndOpenRunnableSample(null);
+        }
+
+        public void PromptAndOpenRunnableSample(string preferredLearnPathId)
         {
             List<VisionPipelineSampleCatalogItem> samples = LoadRunnableSamples();
             if (samples.Count == 0)
@@ -145,13 +168,13 @@ namespace OpenVisionLab
                 return;
             }
 
-            if (samples.Count == 1)
+            if (samples.Count == 1 && string.IsNullOrWhiteSpace(preferredLearnPathId))
             {
                 OpenRunnableSample(samples[0]);
                 return;
             }
 
-            if (OpenVisionWorkspaceSamplePickerWindow.TrySelectSample(ownerProvider(), samples, out VisionPipelineSampleCatalogItem sample))
+            if (OpenVisionWorkspaceSamplePickerWindow.TrySelectSample(ownerProvider(), samples, preferredLearnPathId, out VisionPipelineSampleCatalogItem sample))
             {
                 OpenRunnableSample(sample);
             }
@@ -288,6 +311,15 @@ namespace OpenVisionLab
             char[] invalidChars = Path.GetInvalidFileNameChars();
             string safeName = new string(rawName.Select(ch => invalidChars.Contains(ch) ? '_' : ch).ToArray());
             return "Sample_" + (string.IsNullOrWhiteSpace(safeName) ? "Pipeline" : safeName);
+        }
+
+        private void LearnWindow_Closed(object sender, EventArgs e)
+        {
+            if (learnWindow != null)
+            {
+                learnWindow.Closed -= LearnWindow_Closed;
+                learnWindow = null;
+            }
         }
 
         private static string ResolveTutorialPath()

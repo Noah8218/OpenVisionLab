@@ -21,15 +21,14 @@ OpenVisionLab은 상용 장비 플랫폼과 정면 경쟁하는 제품이 아니
   - `6ca54d3 Add public sample review smoke runner`
   - `5f753d1 Stabilize product sample review and native runtime`
 - Product catalog 실행:
-  - Command: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.ProductSampleCatalog.csv -OutputDir artifacts\self_evaluation_product_catalog_20260703_1750`
-  - Result: `GateStatus=OK`, `RunnableRows=168`, `RequiredRows=84`, `ExpectedFailureRows=84`, `OKRows=168`, `NGRows=0`
+  - Command: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.ProductSampleCatalog.csv -OutputDir artifacts\product_catalog_quality_followup_dev_20260703_01 -SkipRunnerBuild`
+  - Result: `GateStatus=OK`, `RunnableRows=184`, `RequiredRows=84`, `ExploreRows=16`, `ExpectedFailureRows=84`, `OKRows=184`, `NGRows=0`
   - Artifact issues: `0`, metadata issues: `0`
-  - Report: `artifacts\self_evaluation_product_catalog_20260703_1750\sample_catalog_report.md`
-  - Summary: `artifacts\self_evaluation_product_catalog_20260703_1750\sample_catalog_summary.json`
-  - Final Original confirmation: `artifacts\product_catalog_final_20260703_1920\sample_catalog_summary.json`
-  - Final Original result: `GateStatus=OK`, `RunnableRows=168`, `RequiredRows=84`, `ExpectedFailureRows=84`, `OKRows=168`, `NGRows=0`
+  - Report: `artifacts\product_catalog_quality_followup_dev_20260703_01\sample_catalog_report.md`
+  - Summary: `artifacts\product_catalog_quality_followup_dev_20260703_01\sample_catalog_summary.json`
+  - Current Dev public catalog confirmation: `PublicSampleAssetCheck=PASS | CatalogRows=184 ManifestAssets=214 Pipelines=87`
 - Product sample quality audit:
-  - Command: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\AuditProductSampleQuality.ps1 -SummaryPath artifacts\self_evaluation_product_catalog_20260703_1750\sample_catalog_summary.json`
+  - Command: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\AuditProductSampleQuality.ps1 -SummaryPath artifacts\product_catalog_quality_followup_dev_20260703_01\sample_catalog_summary.json`
   - Result: `ProductSampleQualityAudit=PASS | PairRecords=84 OK=84 Review=0 Critical=0`
   - Report: `artifacts\product_sample_quality_audit\product_sample_quality_audit.md`
 - UI evidence:
@@ -43,6 +42,11 @@ OpenVisionLab은 상용 장비 플랫폼과 정면 경쟁하는 제품이 아니
   - Pipeline Review top-card action text was shortened so the summary card no longer carries the long detailed guide string.
   - Filter/Morphology kernel preset clicks now use the shared `VisionToolKernelSizeController` path and the restored guard clicks both preset paths.
   - The self-evaluation conclusion is unchanged: keep the rule-based, OpenCvSharp4, PropertyGrid-centered workbench identity instead of expanding toward a hardware integration platform.
+- 2026-07-04 follow-up:
+  - Pipeline Review now has a manual `NG Step` button that selects the first failed review step after explicit Run Review.
+  - The first-issue navigation smoke clicks the real button, verifies the first NG Threshold step is selected, and confirms Native Preview/Run count does not increase.
+  - Line and Arithmetic preview scheduling moved into dedicated preview controllers; Threshold removed a duplicate schedule wrapper; SimplePreprocess setting restore now belongs to the parameter controller.
+  - Product field-style samples are represented as 16 renamed Explore rows, with current full catalog gate `RunnableRows=184`, `OKRows=184`, `NGRows=0`.
 
 ## 외부 비교 근거
 
@@ -85,7 +89,7 @@ OpenVisionLab은 상용 장비 플랫폼과 정면 경쟁하는 제품이 아니
    - visibility toggle, layer create/delete/load-image가 자동 Run을 유발하지 않는 방향이 맞다.
 
 4. 결과 설명이 실제 runner와 연결되어 있다.
-   - Product sample 168 row가 전부 실행 검증된다.
+   - Product sample 184 row가 전부 실행 검증된다.
    - Bad 샘플 84 row는 expected-failure로 관리되어 NG 이유와 metric 범위를 확인할 수 있다.
    - 예: Matching 실패는 template/input/ROI/score threshold 튜닝 안내를 낸다. Blob/Contour/Line 실패는 ResultCount, DistanceMmAvg 같은 측정값과 target 범위를 같이 낸다.
 
@@ -122,10 +126,10 @@ OpenVisionLab은 상용 장비 플랫폼과 정면 경쟁하는 제품이 아니
 | --- | ---: | --- |
 | 제품 방향성 | 4.5 / 5 | rule-based workbench 방향은 명확하다. 장비 플랫폼으로 확장하지 않는 결정이 맞다. |
 | 현재 사용 가능성 | 4.0 / 5 | 샘플 실행, Pipeline Review, result/failure explanation이 실제로 동작한다. |
-| Product sample catalog | 4.2 / 5 | 168 row gate, 84 pair audit가 통과한다. 추가 샘플보다 UX 연결이 더 중요하다. |
-| in-app guide | 3.6 / 5 | MainView와 Pipeline Review가 개선되었지만 첫 사용자 guided flow는 더 다듬어야 한다. |
-| 결과/실패 설명 | 4.1 / 5 | metric, target, suggested fix가 runner와 UI에 연결되어 있다. NG 화면의 우선 행동은 더 선명해질 수 있다. |
-| Tool View 유지보수성 | 3.5 / 5 | 공통 controller 정리가 시작되었으나 반복 code-behind가 아직 남아 있다. |
+| Product sample catalog | 4.3 / 5 | 184 row gate, 84 pair audit가 통과한다. 추가 샘플보다 UX 연결이 더 중요하다. |
+| in-app guide | 3.8 / 5 | MainView와 Pipeline Review가 개선되었고 NG Step affordance가 추가되었다. 첫 사용자 guided flow는 더 다듬어야 한다. |
+| 결과/실패 설명 | 4.3 / 5 | metric, target, suggested fix가 runner와 UI에 연결되어 있고 첫 NG 단계 이동이 가능하다. |
+| Tool View 유지보수성 | 3.7 / 5 | preview/review/parameter 책임이 controller로 더 이동했지만 일부 facade와 반복 code-behind가 아직 남아 있다. |
 | 상용 알고리즘 범위 | 2.3 / 5 | HALCON/VisionPro류 breadth와 비교 대상이 아니다. 현재 목표에서는 치명적 결함으로 보지 않는다. |
 | 산업 장비 통합성 | 1.5 / 5 | 일부러 하지 않는 영역이다. 이 점수를 올리려 하면 제품 방향이 잘못된다. |
 

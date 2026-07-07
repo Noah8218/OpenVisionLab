@@ -53,3 +53,13 @@ Good에서만 세 대상이 맞고 Bad에서 no-result가 나와야 template이 
 - Good 샘플에서 대상 3개가 검출됩니다.
 - Bad 샘플에서 `ResultCount=0`으로 reject됩니다.
 - Output Layer가 따로 생성되어도 Input Layer가 몰래 바뀌지 않습니다.
+
+## Matching Family Selection
+
+| Intent | Use Tool | Primary Signal | First Metric | Common Risk |
+| --- | --- | --- | --- | --- |
+| Stable brightness/template appearance | Matching | Pixel intensity template score | ScoreMax, ResultCount | Lighting and background variation |
+| Shape survives lighting but edge geometry is stable | EdgeBasedMatching | Canny/edge shape score | ScoreMax, ResultCount | Weak or repeated edge shape |
+| Target changes scale/rotation/view but local features remain | FeatureMatching | Keypoint/descriptor matches | ResultCount, ScoreMax | Too few keypoints or repeated texture |
+
+Use explicit Preview/Run only. Opening this guide or changing Matching parameters must not run Preview/Run automatically.

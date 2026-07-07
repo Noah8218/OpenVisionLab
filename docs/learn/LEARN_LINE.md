@@ -48,3 +48,4 @@ Good은 정상 pin 간격을 만들고, Bad는 같은 설정에서 더 좁은 �
 - Good 샘플에서 pin 간격이 정상 범위입니다.
 - Bad 샘플에서 `DistanceMmAvg` 기준으로 NG가 설명됩니다.
 - ROI overlay와 결과 overlay가 같은 검사 의도를 가리킵니다.
+Opening this guide or changing Line/LineDistance parameters must not run Preview/Run automatically.

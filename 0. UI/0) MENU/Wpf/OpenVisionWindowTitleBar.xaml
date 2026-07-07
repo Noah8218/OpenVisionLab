@@ -75,18 +75,21 @@
             <Button x:Name="btnMinimize"
                     Style="{StaticResource ChromeButtonStyle}"
                     ToolTip="Minimize"
+                    AutomationProperties.AutomationId="OpenVisionWindowMinimizeButton"
                     Click="Minimize_Click">
                 <iconPacks:PackIconMaterial Kind="WindowMinimize" Width="15" Height="15" />
             </Button>
             <Button x:Name="btnMaximize"
                     Style="{StaticResource ChromeButtonStyle}"
                     ToolTip="Maximize"
+                    AutomationProperties.AutomationId="OpenVisionWindowMaximizeRestoreButton"
                     Click="MaximizeRestore_Click">
                 <iconPacks:PackIconMaterial x:Name="maximizeIcon" Kind="WindowMaximize" Width="14" Height="14" />
             </Button>
             <Button x:Name="btnClose"
                     Style="{StaticResource ChromeButtonStyle}"
                     ToolTip="Close"
+                    AutomationProperties.AutomationId="OpenVisionWindowCloseButton"
                     Click="Close_Click">
                 <iconPacks:PackIconMaterial Kind="Close" Width="16" Height="16" />
             </Button>

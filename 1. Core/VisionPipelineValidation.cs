@@ -46,6 +46,10 @@ namespace OpenVisionLab
             "edgebasedtemplatematching",
             "edgetemplatematching",
             "mean",
+            "hsv",
+            "hsvmask",
+            "colorhsv",
+            "colormask",
             "rotatescale",
             "rotateandscale",
             "feature",
@@ -256,6 +260,15 @@ namespace OpenVisionLab
             ValidateMinMax(result, label, step, "CANNY_LOW", "CANNY_HIGH");            ValidateGrayValueRange(result, label, step, "CannyThresholdLow");
             ValidateGrayValueRange(result, label, step, "CannyThresholdHigh");
             ValidateMinMax(result, label, step, "CannyThresholdLow", "CannyThresholdHigh");
+            ValidateMinMax(result, label, step, "HueMin", "HueMax");
+            ValidateMinMax(result, label, step, "SaturationMin", "SaturationMax");
+            ValidateMinMax(result, label, step, "ValueMin", "ValueMax");
+            ValidateBoundedInt(result, label, step, "HueMin", 0, 179);
+            ValidateBoundedInt(result, label, step, "HueMax", 0, 179);
+            ValidateBoundedInt(result, label, step, "SaturationMin", 0, 255);
+            ValidateBoundedInt(result, label, step, "SaturationMax", 0, 255);
+            ValidateBoundedInt(result, label, step, "ValueMin", 0, 255);
+            ValidateBoundedInt(result, label, step, "ValueMax", 0, 255);
             ValidateMinMax(result, label, step, "FIND_ANGLE_MIN", "FIND_ANGLE_MAX");
             ValidateUnitInterval(result, label, step, "SCORE_MIN");
             ValidateUnitInterval(result, label, step, "GREEDINESS");
@@ -471,6 +484,19 @@ namespace OpenVisionLab
             else if (oddOnly && value % 2 == 0)
             {
                 result.Warnings.Add($"{label} '{step.Name}': {key} should usually be odd for this OpenCV operation.");
+            }
+        }
+
+        private static void ValidateBoundedInt(VisionPipelineValidationResult result, string label, VisionPipelineStep step, string key, int minimum, int maximum)
+        {
+            if (!TryGetInt(step, key, out int value))
+            {
+                return;
+            }
+
+            if (value < minimum || value > maximum)
+            {
+                result.Errors.Add($"{label} '{step.Name}': {key} expects a value between {minimum} and {maximum}.");
             }
         }
 

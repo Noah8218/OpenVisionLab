@@ -25,6 +25,18 @@ This file defines the working agreement for Codex in this repository.
 - For measurement intents such as pin gap, pitch, width, or clearance, do not rely on average distance alone. Require consistency/outlier gates such as `DistancePxRange`, `DistanceMmRange`, `DistancePxMax`, or `DistanceMmMax` so a visually wrong long measurement line cannot pass through `DistancePxAvg` or `DistanceMmAvg`.
 - When continuing this direction, prefer building the next concrete inspection-intent wizard or template only after identifying the user-visible workflow, required inputs, generated tool family, validation metrics, and smoke evidence.
 
+## OpenVisionLab Learn Mode Direction
+
+- Prioritize making OpenVisionLab usable as a rule-based vision workbench without LLM assistance. LLM support is optional assistance; the core program must teach and run the existing tools clearly on its own.
+- Keep algorithm Tool Views as working editors. Do not turn Threshold, Blob, Contour, LineDistance, Matching, or other Tool Views into long textbook pages.
+- Put tool learning content in a separate Learn surface, tab, option, or window. Tool Views may expose only a compact `Learn` entry point that opens the relevant Learn topic.
+- Structure Learn content around OpenCvSharp concepts that explain OpenVisionLab's actual tools and workflows. Include operator-facing basics such as coordinate systems, `Point`, `Size`, `Rect`, `RotatedRect`, `Mat`, pixel/channel values, matrix-style image storage, ROI slicing, and how those concepts appear in PropertyGrid parameters and result metrics.
+- Do not build OpenCV installation, camera/video capture, generic file I/O, event handling, machine learning, DNN, or deployment chapters unless the product direction explicitly changes.
+- Organize the separate Learn surface like a machine-vision curriculum, but rewrite the outline for OpenVisionLab instead of copying a book table of contents. The intended chapter flow is OpenCvSharp/image basics -> Point/Rect/Mat/ROI/layers -> brightness/contrast/histogram -> arithmetic/logical operations -> filtering -> geometry transforms -> edge/line -> color/HSV -> Threshold/Morphology -> Blob/Contour -> Matching/EdgeBasedMatching/FeatureMatching -> pipeline/layer routing -> metrics/Good-Bad validation -> LLM XML authoring.
+- The Learn roadmap should cover the useful equivalent of OpenCV learning chapters 5-14 first: brightness/contrast/histogram, arithmetic/logical operations, filtering, geometry transforms, edge/Hough-style line concepts where supported, color/HSV, threshold/morphology, labeling/blob/contour, template/object matching, and feature matching. If a chapter has no current OpenVisionLab tool, record the gap and add a PropertyGrid-based tool only after defining the operator workflow, parameters, metrics, samples, and smoke evidence.
+- Each Learn topic should connect concept -> visual explanation or animation -> sample image/recipe -> relevant Tool View entry -> explicit Preview/Run or validation step. Learn interactions must not auto-run Preview/Run, create layers, change routing, or modify recipe values unless the user explicitly clicks an apply/open/run action.
+- For the first implementation phase, build the Threshold Learn topic as a separate Learn screen with a table of contents, GV/Threshold/Binary/BinaryInv/MaxValue explanations, sandbox animation, and an explicit apply-to-tool action that changes only the tool parameters.
+
 ## Project Orientation and Status Review
 
 At the start of a new OpenVisionLab chat, after a handoff, or whenever the user asks to continue project work, do not jump directly into narrow code or UI fixes. First rebuild the product context from current evidence.

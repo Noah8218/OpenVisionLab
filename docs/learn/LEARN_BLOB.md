@@ -48,3 +48,4 @@ ROI 안의 입자 12개가 각각 box와 중심점으로 잡혀야 정상입니�
 - Good 샘플에서 count가 정상 범위입니다.
 - Bad 샘플에서 `ResultCount` 기준으로 NG가 설명됩니다.
 - Binary/Clean Layer와 Blob 결과를 Layer Docking으로 비교할 수 있습니다.
+Opening this guide or changing Blob parameters must not run Preview/Run automatically.

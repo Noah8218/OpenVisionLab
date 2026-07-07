@@ -29,6 +29,11 @@ namespace OpenVisionLab
         private string searchText = string.Empty;
 
         public OpenVisionWorkspaceSamplePickerViewModel(IEnumerable<VisionPipelineSampleCatalogItem> samples)
+            : this(samples, null)
+        {
+        }
+
+        public OpenVisionWorkspaceSamplePickerViewModel(IEnumerable<VisionPipelineSampleCatalogItem> samples, string preferredLearnPathId)
         {
             this.samples = (samples ?? Enumerable.Empty<VisionPipelineSampleCatalogItem>())
                 .Where(item => item != null && item.CanOpen)
@@ -36,11 +41,9 @@ namespace OpenVisionLab
             catalogSourceOptions = OpenVisionWorkspaceSampleCatalogSourceOption.Create(this.samples);
             openLearnDocumentCommand = new RelayCommand(OpenLearnDocument, () => HasLearnDocument);
             selectCounterpartSampleCommand = new RelayCommand(SelectCounterpartSample, CanSelectCounterpartSample);
-            selectedCatalogSourceOption = catalogSourceOptions
-                .FirstOrDefault(option => option.SourceKind == VisionPipelineSampleCatalogSourceKind.Public)
-                ?? catalogSourceOptions.FirstOrDefault();
+            selectedCatalogSourceOption = ResolveInitialCatalogSourceOption(preferredLearnPathId);
             RebuildSampleFocusOptions(preferredFocusId: null);
-            RebuildLearnPathOptions(preferredLearnPathId: null);
+            RebuildLearnPathOptions(preferredLearnPathId);
 
             samplesView = CollectionViewSource.GetDefaultView(this.samples);
             samplesView.Filter = MatchesSampleFilter;
@@ -70,6 +73,13 @@ namespace OpenVisionLab
         public string SearchLabelText => T("Localization.Search", "Search");
 
         public string CatalogSourceLabelText => T("PipelineSamples.CatalogSource", "Catalog Source");
+
+        public string ActiveRouteSummaryText => string.Format(
+            CultureInfo.CurrentCulture,
+            "Active route: {0} / {1} / {2}",
+            SelectedCatalogSourceOption?.DisplayName ?? "-",
+            SelectedSampleFocusOption?.DisplayName ?? "-",
+            SelectedLearnPathOption?.DisplayName ?? "-");
 
         public string ActiveCatalogSourceText => SelectedCatalogSourceOption == null
             ? T("PipelineSamples.CatalogSourceEmpty", "No catalog source.")
@@ -203,6 +213,7 @@ namespace OpenVisionLab
                 RebuildLearnPathOptions(previousLearnPathId);
                 RefreshSampleFilter();
                 OnPropertyChanged(nameof(ActiveCatalogSourceText));
+                OnPropertyChanged(nameof(ActiveRouteSummaryText));
             }
         }
 
@@ -221,6 +232,7 @@ namespace OpenVisionLab
                 RebuildLearnPathOptions(previousLearnPathId);
                 RefreshSampleFilter();
                 OnPropertyChanged(nameof(ActiveSampleFocusText));
+                OnPropertyChanged(nameof(ActiveRouteSummaryText));
             }
         }
 
@@ -236,6 +248,7 @@ namespace OpenVisionLab
 
                 RefreshSampleFilter();
                 OnPropertyChanged(nameof(ActiveLearnPathText));
+                OnPropertyChanged(nameof(ActiveRouteSummaryText));
                 NotifyLearnDocumentChanged();
             }
         }
@@ -572,12 +585,27 @@ namespace OpenVisionLab
                     return LocalText("Matching 배우기", "Learn matching");
                 }
 
+                if (ContainsAny(flow, category, "Filter", "EdgeDetection"))
+                {
+                    return LocalText("Filter로 노이즈/경계 전처리 배우기", "Learn filtering for noise and edge preparation");
+                }
+
+                if (ContainsAny(flow, category, "Morphology"))
+                {
+                    return LocalText("Morphology로 binary 정리 배우기", "Learn morphology cleanup");
+                }
+
+                if (ContainsAny(flow, category, "Threshold"))
+                {
+                    return LocalText("Threshold로 밝기 구간 나누기", "Learn threshold separation");
+                }
+
                 if (ContainsAny(flow, category, "Blob"))
                 {
                     return LocalText("Blob으로 얼룩/입자 찾기", "Find stains or particles with Blob");
                 }
 
-                if (ContainsAny(flow, category, "Line", "LineGauge", "Distance"))
+                if (ContainsAny(flow, category, "LineDistance", "LineGauge", "Distance", "Measure"))
                 {
                     return LocalText("Line으로 거리/각도 측정하기", "Measure distance or angle with Line");
                 }
@@ -611,9 +639,19 @@ namespace OpenVisionLab
                     ? LocalText("OK 기준 확인 후 이 NG 기준과 비교합니다.", "Check the OK reference, then compare this NG reference.")
                     : LocalText("기본 검사로 시작하고 Preview/Run은 직접 실행합니다.", "Start basic; run Preview/Run manually.");
 
-                if (ContainsAny(flow, category, "Matching", "Feature", "EdgeBased"))
+                if (ContainsAny(flow, category, "EdgeBased"))
                 {
-                    return startMode + " " + LocalText("템플릿/ROI/최소 점수부터 봅니다.", "Start with template, ROI, and minimum score.");
+                    return startMode + " " + LocalText("Template ROI, Canny/edge threshold, 최소 점수, 반복 edge 오검출을 봅니다.", "Start with template ROI, Canny/edge threshold, minimum score, and repeated-edge false positives.");
+                }
+
+                if (ContainsAny(flow, category, "Feature"))
+                {
+                    return startMode + " " + LocalText("Template ROI, Ratio, RANSAC, 최소 good match 수를 봅니다.", "Start with template ROI, ratio, RANSAC, and minimum good-match count.");
+                }
+
+                if (ContainsAny(flow, category, "Matching"))
+                {
+                    return startMode + " " + LocalText("Template ROI, 최소 점수, 개수, 각도/스케일 옵션을 봅니다.", "Start with template ROI, minimum score, count, and angle/scale options.");
                 }
 
                 if (ContainsAny(flow, category, "Blob", "Contour"))
@@ -621,9 +659,14 @@ namespace OpenVisionLab
                     return startMode + " " + LocalText("Threshold/ROI/면적/개수 기준부터 봅니다.", "Start with threshold, ROI, area, and count.");
                 }
 
-                if (ContainsAny(flow, category, "Line", "LineGauge", "Distance"))
+                if (ContainsAny(flow, category, "Threshold", "Filter", "Morphology", "EdgeDetection"))
                 {
-                    return startMode + " " + LocalText("ROI/극성/샘플링/길이·각도 기준부터 봅니다.", "Start with ROI, polarity, sampling, and length/angle.");
+                    return startMode + " " + LocalText("GV 분리, 노이즈 정리, kernel 크기, 다음 단계 metric을 봅니다.", "Start with GV separation, noise cleanup, kernel size, and downstream metrics.");
+                }
+
+                if (ContainsAny(flow, category, "LineDistance", "LineGauge", "Distance", "Measure"))
+                {
+                    return startMode + " " + LocalText("ROI/극성/샘플링, DistanceAvg와 Range 기준을 같이 봅니다.", "Start with ROI, polarity, sampling, and both DistanceAvg and range gates.");
                 }
 
                 return startMode;
@@ -660,9 +703,19 @@ namespace OpenVisionLab
 
                 string flow = SelectedSample.ToolFlowText ?? string.Empty;
                 string category = SelectedSample.Category ?? string.Empty;
-                if (ContainsAny(flow, category, "Matching", "Feature", "EdgeBased"))
+                if (ContainsAny(flow, category, "EdgeBased"))
                 {
-                    return LocalText("템플릿 과대/ROI 과대/점수 낮음/후보 과다/Edge 부족을 확인합니다.", "Check oversized template/ROI, low score, too many candidates, or weak edges.");
+                    return LocalText("Edge가 약하거나 비슷한 edge 반복 패턴이 많으면 ROI, Canny, 최소 점수를 다시 봅니다.", "If edges are weak or repeated edge patterns are present, review ROI, Canny, and minimum score.");
+                }
+
+                if (ContainsAny(flow, category, "Feature"))
+                {
+                    return LocalText("특징점이 부족하거나 반복 무늬가 많으면 Ratio, RANSAC, template ROI를 다시 봅니다.", "If keypoints are sparse or repetitive, review ratio, RANSAC, and template ROI.");
+                }
+
+                if (ContainsAny(flow, category, "Matching"))
+                {
+                    return LocalText("템플릿 과대/ROI 과대/점수 낮음/후보 과다를 확인합니다.", "Check oversized template/ROI, low score, or too many candidates.");
                 }
 
                 if (ContainsAny(flow, category, "Blob", "Contour"))
@@ -670,7 +723,7 @@ namespace OpenVisionLab
                     return LocalText("Threshold 범위, ROI, 면적 제한, Morphology 크기를 확인합니다.", "Check threshold range, ROI, area limits, and morphology size.");
                 }
 
-                if (ContainsAny(flow, category, "Line", "LineGauge", "Distance"))
+                if (ContainsAny(flow, category, "LineDistance", "LineGauge", "Distance", "Measure"))
                 {
                     return LocalText("Edge 부족, ROI/극성/샘플링 간격 불일치를 확인합니다.", "Check weak edges and ROI/polarity/sampling mismatch.");
                 }
@@ -711,6 +764,7 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(LearnPathOptions));
             OnPropertyChanged(nameof(SelectedLearnPathOption));
             OnPropertyChanged(nameof(ActiveLearnPathText));
+            OnPropertyChanged(nameof(ActiveRouteSummaryText));
             NotifyLearnDocumentChanged();
         }
 
@@ -722,6 +776,7 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(SampleFocusOptions));
             OnPropertyChanged(nameof(SelectedSampleFocusOption));
             OnPropertyChanged(nameof(ActiveSampleFocusText));
+            OnPropertyChanged(nameof(ActiveRouteSummaryText));
         }
 
         private void NotifyLearnDocumentChanged()
@@ -778,6 +833,26 @@ namespace OpenVisionLab
             }
 
             return learnPathOptions.FirstOrDefault();
+        }
+
+        private OpenVisionWorkspaceSampleCatalogSourceOption ResolveInitialCatalogSourceOption(string preferredLearnPathId)
+        {
+            if (!string.IsNullOrWhiteSpace(preferredLearnPathId)
+                && !string.Equals(preferredLearnPathId, "all", StringComparison.OrdinalIgnoreCase))
+            {
+                OpenVisionWorkspaceSampleCatalogSourceOption matchingSource = catalogSourceOptions
+                    .FirstOrDefault(option => samples.Any(sample =>
+                        option.Matches(sample)
+                        && OpenVisionWorkspaceSampleLearnPathClassifier.Matches(preferredLearnPathId, sample)));
+                if (matchingSource != null)
+                {
+                    return matchingSource;
+                }
+            }
+
+            return catalogSourceOptions
+                .FirstOrDefault(option => option.SourceKind == VisionPipelineSampleCatalogSourceKind.Public)
+                ?? catalogSourceOptions.FirstOrDefault();
         }
 
         private OpenVisionWorkspaceSampleFocusOption ResolveSampleFocusOption(string preferredFocusId)

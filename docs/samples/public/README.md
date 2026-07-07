@@ -19,10 +19,22 @@ Current generated set:
 - `Blob_Particles_Synthetic_Sparse_NG.png`: sparse blob negative image.
 - `Contour_Shapes_Synthetic_OK.png`: contour shape-count source image.
 - `Contour_Shapes_Synthetic_Missing_NG.png`: contour missing-shape negative image.
+- `Geometry_RotateScale_Synthetic_OK.png`: geometry transform source image for RotateScale resize review.
+- `Geometry_RotateScale_Synthetic_Wide_NG.png`: geometry transform negative image with unexpected input width.
 - `Threshold_BandPads_Synthetic_OK.png`: threshold source image with four bright pads.
 - `Threshold_BandPads_Synthetic_Missing_NG.png`: threshold negative image with one bright pad.
+- `Filter_Denoise_Synthetic_OK.png`: filter denoise source image with four large targets and salt noise.
+- `Filter_Denoise_Synthetic_Missing_NG.png`: filter denoise negative image with two surviving targets.
+- `EdgeDetection_Shapes_Synthetic_OK.png`: edge detection source image with four shape boundaries.
+- `EdgeDetection_Shapes_Synthetic_Missing_NG.png`: edge detection negative image with two shape boundaries.
+- `Morphology_Cleanup_Synthetic_OK.png`: morphology cleanup source image with four bright targets and small specks.
+- `Morphology_Cleanup_Synthetic_Missing_NG.png`: morphology cleanup negative image with two surviving targets.
 - `Mean_Brightness_Synthetic_OK.png`: mean brightness normal source image.
 - `Mean_Brightness_Synthetic_Dark_NG.png`: mean brightness dark-drift negative image.
+- `Arithmetic_Invert_Synthetic_OK.png`: arithmetic inversion normal source image.
+- `Arithmetic_Invert_Synthetic_Bright_NG.png`: arithmetic inversion bright-input negative image.
+- `HSV_ColorPatch_Synthetic_OK.png`: HSV red color-mask source image.
+- `HSV_ColorPatch_Synthetic_Missing_NG.png`: HSV missing-red negative image.
 - `Feature_Card_Synthetic_OK.png`: feature matching source image with a feature-rich target card.
 - `Feature_Card_Synthetic_Wrong_NG.png`: feature matching wrong-target negative image.
 - `templates/Feature_Card_Synthetic_Template.png`: template crop for the feature matching sample.
@@ -34,13 +46,19 @@ Current generated set:
 
 Runnable public samples:
 
-- `../OpenVisionLab.PublicSampleCatalog.csv`: GitHub-safe sample catalog with Matching, Blob, Contour, Threshold, Mean, FeatureMatching, EdgeBasedMatching, and LineDistance Good/Bad pairs.
+- `../OpenVisionLab.PublicSampleCatalog.csv`: GitHub-safe sample catalog with Matching, Blob, Contour, Threshold, Filter, EdgeDetection, Morphology, Mean, Arithmetic, HSV, FeatureMatching, EdgeBasedMatching, LineDistance Good/Bad pairs, and a RotateScale geometry benchmark.
 - `../OpenVisionLab.ProductSampleCatalog.csv`: product-domain sample catalog with secondary battery, display, and semiconductor Good/Bad pairs.
 - `Public_Matching_DiePad.pipeline.xml`: Matching benchmark using the synthetic template.
 - `Public_Blob_Particles.pipeline.xml`: Threshold + Blob count benchmark.
 - `Public_Contour_Shapes.pipeline.xml`: Threshold + Contour shape-count benchmark.
+- `Public_Geometry_RotateScale.pipeline.xml`: RotateScale output-size benchmark.
 - `Public_Threshold_BandPads.pipeline.xml`: Threshold + Contour pad-count benchmark.
+- `Public_Filter_Denoise.pipeline.xml`: MedianBlur + Threshold + Contour denoise benchmark.
+- `Public_EdgeDetection_Shapes.pipeline.xml`: EdgeDetection + Morphology + Contour shape-boundary benchmark.
+- `Public_Morphology_Cleanup.pipeline.xml`: Threshold + Morphology Open + Contour cleanup benchmark.
 - `Public_Mean_BrightnessDrift.pipeline.xml`: Mean brightness drift benchmark.
+- `Public_Arithmetic_Invert.pipeline.xml`: Arithmetic Bitwise_NOT + Mean inversion benchmark.
+- `Public_HSV_ColorPatch.pipeline.xml`: HSV color-mask ratio benchmark.
 - `Public_Feature_Card.pipeline.xml`: FeatureMatching benchmark using the synthetic feature card template.
 - `Public_Edge_Fiducial.pipeline.xml`: EdgeBasedMatching benchmark using the synthetic fiducial template.
 - `Public_Line_Pins_Distance.pipeline.xml`: LineDistance benchmark for synthetic pin spacing.

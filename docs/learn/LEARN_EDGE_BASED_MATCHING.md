@@ -46,3 +46,13 @@ Good은 L 형태 fiducial을 찾고, Bad는 T 형태의 wrong fiducial이라 no-
 - Good 샘플에서 L fiducial 1개가 검출됩니다.
 - Bad 샘플에서 `ResultCount=0`으로 reject됩니다.
 - angle/search/pyramid 같은 비용 큰 옵션은 필요할 때만 켭니다.
+
+## Matching Family Selection
+
+| Intent | Use Tool | Primary Signal | First Metric | Common Risk |
+| --- | --- | --- | --- | --- |
+| Stable brightness/template appearance | Matching | Pixel intensity template score | ScoreMax, ResultCount | Lighting and background variation |
+| Shape survives lighting but edge geometry is stable | EdgeBasedMatching | Canny/edge shape score | ScoreMax, ResultCount | Weak or repeated edge shape |
+| Target changes scale/rotation/view but local features remain | FeatureMatching | Keypoint/descriptor matches | ResultCount, ScoreMax | Too few keypoints or repeated texture |
+
+Use explicit Preview/Run only. Opening this guide or changing EdgeBasedMatching parameters must not run Preview/Run automatically.

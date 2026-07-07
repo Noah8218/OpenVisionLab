@@ -46,3 +46,13 @@ Good은 feature-rich card가 template과 맞고, Bad는 다른 card라 score가 
 - Good 샘플에서 target card가 검출됩니다.
 - Bad 샘플에서 score가 낮아 controlled NG가 됩니다.
 - Score만 보지 않고 overlay 위치와 `ResultCount`를 같이 확인합니다.
+
+## Matching Family Selection
+
+| Intent | Use Tool | Primary Signal | First Metric | Common Risk |
+| --- | --- | --- | --- | --- |
+| Stable brightness/template appearance | Matching | Pixel intensity template score | ScoreMax, ResultCount | Lighting and background variation |
+| Shape survives lighting but edge geometry is stable | EdgeBasedMatching | Canny/edge shape score | ScoreMax, ResultCount | Weak or repeated edge shape |
+| Target changes scale/rotation/view but local features remain | FeatureMatching | Keypoint/descriptor matches | ResultCount, ScoreMax | Too few keypoints or repeated texture |
+
+Use explicit Preview/Run only. Opening this guide or changing FeatureMatching parameters must not run Preview/Run automatically.

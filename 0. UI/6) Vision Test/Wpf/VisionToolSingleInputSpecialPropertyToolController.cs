@@ -6,7 +6,7 @@ using System.Windows.Controls;
 
 namespace OpenVisionLab
 {
-    internal sealed class VisionToolSingleInputSpecialPropertyToolController : IDisposable
+    internal sealed class VisionToolSingleInputSpecialPropertyToolController : IVisionToolSingleInputPropertyToolController
     {
         private readonly VisionToolSingleInputToolEventHub eventHub;
         private VisionToolLanguageChangeController languageChangeController;
@@ -132,7 +132,12 @@ namespace OpenVisionLab
             toolRuntime.SetLayerList(layerNames, selectedInputLayer, selectedOutputLayer);
         }
 
-        public void SetInputPreview(Bitmap image, Action afterRefresh = null)
+        public void SetInputPreview(Bitmap image)
+        {
+            toolRuntime.SetInputPreview(image);
+        }
+
+        public void SetInputPreview(Bitmap image, Action afterRefresh)
         {
             if (afterRefresh == null)
             {

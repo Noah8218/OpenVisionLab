@@ -45,3 +45,13 @@ Mean은 박스 검출형 도구가 아니므로, 이미지의 같은 영역에�
 - Good 샘플은 정상 밝기 band 안에 들어옵니다.
 - Bad 샘플은 `MeanValueAvg`가 낮아 NG 이유가 명확합니다.
 - 밝기 기준이 이미지 전체인지 ROI인지 문서와 recipe에서 분명해야 합니다.
+Opening this guide or changing Mean parameters must not run Preview/Run automatically.
+
+## Beginner path handoff
+
+- Previous concept: read `LEARN_OPENCVSHARP_FOUNDATIONS.md` until pixel, GV, ROI, `Rect`, `Mat`, `InputLayer`, and `OutputLayer` are clear.
+- This topic goal: prove that brightness drift changes `MeanValueAvg` on `Public_Mean_Brightness_Good` and `Public_Mean_Brightness_Dark_Bad`.
+- Practice Samples path: `mean`.
+- Explicit action: open the public Good sample, run review manually, then repeat with the Bad sample.
+- Next topic: move to Threshold only after the operator can explain why a GV change should move a threshold boundary.
+- Do not skip: metric and Good/Bad comparison. A visual difference without `MeanValueAvg` evidence is not enough.

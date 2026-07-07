@@ -195,10 +195,7 @@ PropertyGrid 기반 알고리즘 툴은 반드시 유지해야 하는 핵심 구
 
 - `dll/Library-Noah/Lib.OpenCV.dll`
 - `dll/Library-Noah/Lib.OpenCV.Blob.dll`
-- `dll/Library-Noah/OpenCvSharp.dll`
-- `dll/Library-Noah/OpenCvSharp.Blob.dll`
-- `dll/Library-Noah/OpenCvSharp.Extensions.dll`
-- `dll/OpenCVSharp/OpenCvSharpExtern.dll`
+- `dll/Library-Noah/OpenCvSharp*.dll`
 
 메인 앱은 vendored DLL이 없으면 build target에서 실패하도록 구성되어 있습니다.
 OpenCV 실행 경로를 수정할 때는 UI preview뿐 아니라 pipeline step 실행과 recipe runner 호환성도 같이 확인해야 합니다.

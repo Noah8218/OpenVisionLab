@@ -51,6 +51,13 @@ namespace OpenVisionLab
             this.panelSigmaColor = panelSigmaColor ?? throw new ArgumentNullException(nameof(panelSigmaColor));
             this.panelSigmaSpace = panelSigmaSpace ?? throw new ArgumentNullException(nameof(panelSigmaSpace));
             this.parameterTextBoxes = parameterTextBoxes ?? Array.Empty<TextBox>();
+            AttachControls();
+        }
+
+        public void Detach()
+        {
+            filterTypeComboBox.SelectionChanged -= FilterTypeComboBox_SelectionChanged;
+            borderTypeComboBox.SelectionChanged -= BorderTypeComboBox_SelectionChanged;
         }
 
         public void InitializeOptions()
@@ -101,6 +108,22 @@ namespace OpenVisionLab
         {
             VisionToolControlBinding.UpdateSelectionSources(filterTypeComboBox, borderTypeComboBox);
             VisionToolControlBinding.UpdateTextSources(parameterTextBoxes);
+        }
+
+        private void AttachControls()
+        {
+            filterTypeComboBox.SelectionChanged += FilterTypeComboBox_SelectionChanged;
+            borderTypeComboBox.SelectionChanged += BorderTypeComboBox_SelectionChanged;
+        }
+
+        private void FilterTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            HandleFilterTypeChanged();
+        }
+
+        private void BorderTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            HandleParameterSelectionChanged();
         }
     }
 }

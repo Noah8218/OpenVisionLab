@@ -123,6 +123,7 @@ internal static class Program
 
         string samplePickerViewModel = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionWorkspaceSamplePickerViewModel.cs");
         RequireContains(samplePickerViewModel, "CatalogSourceOptions", "Workspace sample picker exposes catalog source options.");
+        RequireContains(samplePickerViewModel, "ActiveRouteSummaryText", "Workspace sample picker exposes active route summary text.");
         RequireContains(samplePickerViewModel, "SelectedCatalogSourceOption", "Workspace sample picker can switch between catalog sources.");
         RequireContains(samplePickerViewModel, "RebuildLearnPathOptions", "Workspace sample picker rebuilds learn paths per selected catalog source.");
         RequireContains(samplePickerViewModel, "OpenLearnDocumentCommand", "Workspace sample picker exposes a non-executing Learn document command.");
@@ -133,9 +134,14 @@ internal static class Program
         RequireContains(learnDocumentService, "LEARN_PRODUCT_SAMPLES.md", "Workspace Learn document resolver links product-domain samples.");
         RequireContains(learnDocumentService, "LEARN_MATCHING.md", "Workspace Learn document resolver links Matching samples.");
         RequireContains(learnDocumentService, "LEARN_EDGE_BASED_MATCHING.md", "Workspace Learn document resolver links EdgeBasedMatching samples.");
+        RequireContains(learnDocumentService, "LEARN_GEOMETRY_TRANSFORM.md", "Workspace Learn document resolver links Geometry samples.");
+        string sampleLearnPathOption = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionWorkspaceSampleLearnPathOption.cs");
+        RequireContains(sampleLearnPathOption, "\"geometry\"", "Workspace sample picker exposes the Geometry Learn path.");
+        RequireContains(sampleLearnPathOption, "RotateScale", "Workspace sample picker classifies RotateScale samples as Geometry.");
 
         string samplePickerView = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionWorkspaceSamplePickerView.xaml");
         RequireContains(samplePickerView, "WorkspaceSamplePickerCatalogSourceList", "Workspace sample picker renders a catalog source selector.");
+        RequireContains(samplePickerView, "WorkspaceSamplePickerRouteSummary", "Workspace sample picker renders the active catalog/focus/Learn route summary.");
         RequireContains(samplePickerView, "WorkspaceSamplePickerCatalogSourceSummary", "Workspace sample picker renders selected catalog source guidance.");
         RequireContains(samplePickerView, "WorkspaceSamplePickerOpenLearnDocumentButton", "Workspace sample picker renders a Learn document open button.");
 
@@ -178,31 +184,56 @@ internal static class Program
         RequireContains(publicCatalog, "Public_Contour_Shapes_Missing_Bad", "Public sample catalog includes Contour missing-shape Bad benchmark.");
         RequireContains(publicCatalog, "Public_Threshold_BandPads_Good", "Public sample catalog includes Threshold synthetic benchmark.");
         RequireContains(publicCatalog, "Public_Threshold_BandPads_Missing_Bad", "Public sample catalog includes Threshold Bad benchmark.");
+        RequireContains(publicCatalog, "Public_Filter_Denoise_Good", "Public sample catalog includes Filter synthetic benchmark.");
+        RequireContains(publicCatalog, "Public_Filter_Denoise_Missing_Bad", "Public sample catalog includes Filter Bad benchmark.");
+        RequireContains(publicCatalog, "Public_EdgeDetection_Shapes_Good", "Public sample catalog includes EdgeDetection synthetic benchmark.");
+        RequireContains(publicCatalog, "Public_EdgeDetection_Shapes_Missing_Bad", "Public sample catalog includes EdgeDetection Bad benchmark.");
+        RequireContains(publicCatalog, "Public_Morphology_Cleanup_Good", "Public sample catalog includes Morphology synthetic benchmark.");
+        RequireContains(publicCatalog, "Public_Morphology_Cleanup_Missing_Bad", "Public sample catalog includes Morphology Bad benchmark.");
         RequireContains(publicCatalog, "Public_Mean_Brightness_Good", "Public sample catalog includes Mean brightness synthetic benchmark.");
         RequireContains(publicCatalog, "Public_Mean_Brightness_Dark_Bad", "Public sample catalog includes Mean brightness Bad benchmark.");
+        RequireContains(publicCatalog, "Public_Arithmetic_Invert_Good", "Public sample catalog includes Arithmetic inversion synthetic benchmark.");
+        RequireContains(publicCatalog, "Public_Arithmetic_Invert_Bright_Bad", "Public sample catalog includes Arithmetic inversion Bad benchmark.");
+        RequireContains(publicCatalog, "Public_HSV_ColorPatch_Good", "Public sample catalog includes HSV color-mask synthetic benchmark.");
+        RequireContains(publicCatalog, "Public_HSV_ColorPatch_Missing_Bad", "Public sample catalog includes HSV color-mask Bad benchmark.");
         RequireContains(publicCatalog, "Public_Feature_Card_Good", "Public sample catalog includes FeatureMatching synthetic benchmark.");
         RequireContains(publicCatalog, "Public_Feature_Card_Wrong_Bad", "Public sample catalog includes FeatureMatching Bad benchmark.");
         RequireContains(publicCatalog, "Public_Edge_Fiducial_Good", "Public sample catalog includes EdgeBasedMatching synthetic benchmark.");
         RequireContains(publicCatalog, "Public_Edge_Fiducial_Wrong_Bad", "Public sample catalog includes EdgeBasedMatching Bad benchmark.");
         RequireContains(publicCatalog, "Public_Line_Pins_Good", "Public sample catalog includes LineDistance synthetic benchmark.");
         RequireContains(publicCatalog, "Public_Line_Pins_WidePin_Bad", "Public sample catalog includes LineDistance Bad benchmark.");
+        RequireContains(publicCatalog, "Public_Geometry_RotateScale_Good", "Public sample catalog includes RotateScale geometry benchmark.");
+        RequireContains(publicCatalog, "Public_Geometry_RotateScale_Wide_Bad", "Public sample catalog includes RotateScale geometry Bad benchmark.");
+        RequireContains(publicCatalog, "ResultImageWidth;ResultImageHeight", "Public RotateScale benchmark checks output width and height.");
         RequireContains(publicCatalog, "ExpectedFailure", "Public sample catalog includes controlled NG rows.");
         RequireContains(publicCatalog, "Public_Matching_DiePad,Bad", "Public sample catalog groups Matching Good/Bad pair.");
         RequireContains(publicCatalog, "Public_Blob_Particles,Bad", "Public sample catalog groups Blob Good/Bad pair.");
         RequireContains(publicCatalog, "Public_Contour_Shapes,Bad", "Public sample catalog groups Contour Good/Bad pair.");
         RequireContains(publicCatalog, "Public_Threshold_BandPads,Bad", "Public sample catalog groups Threshold Good/Bad pair.");
+        RequireContains(publicCatalog, "Public_Filter_Denoise,Bad", "Public sample catalog groups Filter Good/Bad pair.");
+        RequireContains(publicCatalog, "Public_EdgeDetection_Shapes,Bad", "Public sample catalog groups EdgeDetection Good/Bad pair.");
+        RequireContains(publicCatalog, "Public_Morphology_Cleanup,Bad", "Public sample catalog groups Morphology Good/Bad pair.");
         RequireContains(publicCatalog, "Public_Mean_BrightnessDrift,Bad", "Public sample catalog groups Mean Good/Bad pair.");
+        RequireContains(publicCatalog, "Public_Arithmetic_Invert,Bad", "Public sample catalog groups Arithmetic Good/Bad pair.");
+        RequireContains(publicCatalog, "Public_HSV_ColorPatch,Bad", "Public sample catalog groups HSV Good/Bad pair.");
         RequireContains(publicCatalog, "Public_Feature_Card,Bad", "Public sample catalog groups FeatureMatching Good/Bad pair.");
         RequireContains(publicCatalog, "Public_Edge_Fiducial,Bad", "Public sample catalog groups EdgeBasedMatching Good/Bad pair.");
         RequireContains(publicCatalog, "Public_Line_Pins,Bad", "Public sample catalog groups Line Good/Bad pair.");
+        RequireContains(publicCatalog, "Public_Geometry_RotateScale,Bad", "Public sample catalog groups RotateScale Good/Bad pair.");
         RequireContains(publicCatalog, @"docs\samples\public\Public_Matching_DiePad.pipeline.xml", "Public sample catalog points Matching to a public pipeline.");
         RequireContains(publicCatalog, @"docs\samples\public\Public_Blob_Particles.pipeline.xml", "Public sample catalog points Blob to a public pipeline.");
         RequireContains(publicCatalog, @"docs\samples\public\Public_Contour_Shapes.pipeline.xml", "Public sample catalog points Contour to a public pipeline.");
         RequireContains(publicCatalog, @"docs\samples\public\Public_Threshold_BandPads.pipeline.xml", "Public sample catalog points Threshold to a public pipeline.");
+        RequireContains(publicCatalog, @"docs\samples\public\Public_Filter_Denoise.pipeline.xml", "Public sample catalog points Filter to a public pipeline.");
+        RequireContains(publicCatalog, @"docs\samples\public\Public_EdgeDetection_Shapes.pipeline.xml", "Public sample catalog points EdgeDetection to a public pipeline.");
+        RequireContains(publicCatalog, @"docs\samples\public\Public_Morphology_Cleanup.pipeline.xml", "Public sample catalog points Morphology to a public pipeline.");
         RequireContains(publicCatalog, @"docs\samples\public\Public_Mean_BrightnessDrift.pipeline.xml", "Public sample catalog points Mean to a public pipeline.");
+        RequireContains(publicCatalog, @"docs\samples\public\Public_Arithmetic_Invert.pipeline.xml", "Public sample catalog points Arithmetic to a public pipeline.");
+        RequireContains(publicCatalog, @"docs\samples\public\Public_HSV_ColorPatch.pipeline.xml", "Public sample catalog points HSV to a public pipeline.");
         RequireContains(publicCatalog, @"docs\samples\public\Public_Feature_Card.pipeline.xml", "Public sample catalog points FeatureMatching to a public pipeline.");
         RequireContains(publicCatalog, @"docs\samples\public\Public_Edge_Fiducial.pipeline.xml", "Public sample catalog points EdgeBasedMatching to a public pipeline.");
         RequireContains(publicCatalog, @"docs\samples\public\Public_Line_Pins_Distance.pipeline.xml", "Public sample catalog points LineDistance to a public pipeline.");
+        RequireContains(publicCatalog, @"docs\samples\public\Public_Geometry_RotateScale.pipeline.xml", "Public sample catalog points RotateScale to a public pipeline.");
         RequireNotContains(publicCatalog, @"Sample\", "Public sample catalog must not use legacy SDK Sample paths.");
         RequireNotContains(publicCatalog, @"Sample/", "Public sample catalog must not use legacy SDK Sample paths.");
         RequireNotContains(publicCatalog, @"bin\Debug\EasyMatch", "Public sample catalog must not use local EasyMatch output paths.");
@@ -220,8 +251,18 @@ internal static class Program
         RequireContains(publicManifest, "Contour_Shapes_Synthetic_Missing_NG.png", "Public sample manifest includes contour Bad synthetic image.");
         RequireContains(publicManifest, "Threshold_BandPads_Synthetic_OK.png", "Public sample manifest includes threshold synthetic image.");
         RequireContains(publicManifest, "Threshold_BandPads_Synthetic_Missing_NG.png", "Public sample manifest includes threshold Bad synthetic image.");
+        RequireContains(publicManifest, "Filter_Denoise_Synthetic_OK.png", "Public sample manifest includes filter synthetic image.");
+        RequireContains(publicManifest, "Filter_Denoise_Synthetic_Missing_NG.png", "Public sample manifest includes filter Bad synthetic image.");
+        RequireContains(publicManifest, "EdgeDetection_Shapes_Synthetic_OK.png", "Public sample manifest includes edge detection synthetic image.");
+        RequireContains(publicManifest, "EdgeDetection_Shapes_Synthetic_Missing_NG.png", "Public sample manifest includes edge detection Bad synthetic image.");
+        RequireContains(publicManifest, "Morphology_Cleanup_Synthetic_OK.png", "Public sample manifest includes morphology synthetic image.");
+        RequireContains(publicManifest, "Morphology_Cleanup_Synthetic_Missing_NG.png", "Public sample manifest includes morphology Bad synthetic image.");
         RequireContains(publicManifest, "Mean_Brightness_Synthetic_OK.png", "Public sample manifest includes mean synthetic image.");
         RequireContains(publicManifest, "Mean_Brightness_Synthetic_Dark_NG.png", "Public sample manifest includes mean Bad synthetic image.");
+        RequireContains(publicManifest, "Arithmetic_Invert_Synthetic_OK.png", "Public sample manifest includes arithmetic synthetic image.");
+        RequireContains(publicManifest, "Arithmetic_Invert_Synthetic_Bright_NG.png", "Public sample manifest includes arithmetic Bad synthetic image.");
+        RequireContains(publicManifest, "HSV_ColorPatch_Synthetic_OK.png", "Public sample manifest includes HSV synthetic image.");
+        RequireContains(publicManifest, "HSV_ColorPatch_Synthetic_Missing_NG.png", "Public sample manifest includes HSV Bad synthetic image.");
         RequireContains(publicManifest, "Feature_Card_Synthetic_OK.png", "Public sample manifest includes feature matching synthetic image.");
         RequireContains(publicManifest, "Feature_Card_Synthetic_Wrong_NG.png", "Public sample manifest includes feature matching Bad synthetic image.");
         RequireContains(publicManifest, "Feature_Card_Synthetic_Template.png", "Public sample manifest includes feature matching synthetic template.");
@@ -230,6 +271,8 @@ internal static class Program
         RequireContains(publicManifest, "Edge_Fiducial_Synthetic_Template.png", "Public sample manifest includes edge-based matching synthetic template.");
         RequireContains(publicManifest, "Line_Pins_Synthetic_OK.png", "Public sample manifest includes line synthetic image.");
         RequireContains(publicManifest, "Line_Pins_Synthetic_WidePin_NG.png", "Public sample manifest includes line Bad synthetic image.");
+        RequireContains(publicManifest, "Geometry_RotateScale_Synthetic_OK.png", "Public sample manifest includes geometry transform synthetic image.");
+        RequireContains(publicManifest, "Geometry_RotateScale_Synthetic_Wide_NG.png", "Public sample manifest includes geometry transform Bad synthetic image.");
         RequireNotContains(publicManifest, @"Sample\", "Public sample manifest must not use legacy SDK Sample paths.");
         RequireNotContains(publicManifest, @"Sample/", "Public sample manifest must not use legacy SDK Sample paths.");
         RequireNotContains(publicManifest, "Euresys", "Public sample manifest must not depend on Euresys sample assets.");
@@ -241,10 +284,16 @@ internal static class Program
             @"docs\samples\public\Public_Blob_Particles.pipeline.xml",
             @"docs\samples\public\Public_Contour_Shapes.pipeline.xml",
             @"docs\samples\public\Public_Threshold_BandPads.pipeline.xml",
+            @"docs\samples\public\Public_Filter_Denoise.pipeline.xml",
+            @"docs\samples\public\Public_EdgeDetection_Shapes.pipeline.xml",
+            @"docs\samples\public\Public_Morphology_Cleanup.pipeline.xml",
             @"docs\samples\public\Public_Mean_BrightnessDrift.pipeline.xml",
+            @"docs\samples\public\Public_Arithmetic_Invert.pipeline.xml",
+            @"docs\samples\public\Public_HSV_ColorPatch.pipeline.xml",
             @"docs\samples\public\Public_Feature_Card.pipeline.xml",
             @"docs\samples\public\Public_Edge_Fiducial.pipeline.xml",
             @"docs\samples\public\Public_Line_Pins_Distance.pipeline.xml",
+            @"docs\samples\public\Public_Geometry_RotateScale.pipeline.xml",
         })
         {
             string pipeline = Read(repoRoot, relativePath);
@@ -552,6 +601,339 @@ internal static class Program
             RequireContains(learn, "Bad", $"Learn document {relativePath} explains Bad sample behavior.");
         }
 
+        string learnIndex = Read(repoRoot, @"docs\learn\README.md");
+        RequireContains(learnIndex, "## Learn Window Topic Map", "Learn index documents the Learn window topic map.");
+        foreach ((int Topic, string Document, string PathId) learnTopic in new[]
+        {
+            (0, "OPENVISIONLAB_LEARN_CURRICULUM.md", "all"),
+            (1, "LEARN_MEAN.md", "mean"),
+            (2, "LEARN_THRESHOLD.md", "preprocess"),
+            (3, "LEARN_FILTER.md", "preprocess"),
+            (4, "LEARN_MORPHOLOGY.md", "preprocess"),
+            (5, "LEARN_BLOB.md", "blob"),
+            (6, "LEARN_CONTOUR.md", "contour"),
+            (7, "LEARN_EDGE_DETECTION.md", "preprocess"),
+            (8, "LEARN_LINE.md", "line"),
+            (9, "LEARN_MATCHING.md", "template-matching"),
+            (10, "LEARN_FEATURE_MATCHING.md", "feature-matching"),
+            (11, "LEARN_PIPELINE_LAYER_ROUTING.md", "all"),
+            (12, "LEARN_EDGE_BASED_MATCHING.md", "edge-matching"),
+            (13, "LEARN_METRICS_ACCEPTANCE.md", "all"),
+            (14, "LEARN_ARITHMETIC.md", "preprocess"),
+            (15, "LEARN_GEOMETRY_TRANSFORM.md", "geometry"),
+            (16, "LEARN_COLOR_HSV.md", "mean"),
+        })
+        {
+            RequireContains(learnIndex, $"| {learnTopic.Topic} |", $"Learn index documents topic {learnTopic.Topic}.");
+            RequireContains(learnIndex, $"`{learnTopic.Document}`", $"Learn index documents topic {learnTopic.Topic} document {learnTopic.Document}.");
+            RequireContains(learnIndex, $"`{learnTopic.PathId}`", $"Learn index documents topic {learnTopic.Topic} practice path {learnTopic.PathId}.");
+        }
+
+        foreach (string relativePath in new[]
+        {
+            @"docs\learn\OPENVISIONLAB_LEARN_CURRICULUM.md",
+            @"docs\learn\LEARN_OPENCVSHARP_FOUNDATIONS.md",
+            @"docs\learn\LEARN_PRODUCT_SAMPLES.md",
+            @"docs\learn\LEARN_MATCHING.md",
+            @"docs\learn\LEARN_BLOB.md",
+            @"docs\learn\LEARN_CONTOUR.md",
+            @"docs\learn\LEARN_THRESHOLD.md",
+            @"docs\learn\LEARN_ARITHMETIC.md",
+            @"docs\learn\LEARN_GEOMETRY_TRANSFORM.md",
+            @"docs\learn\LEARN_FILTER.md",
+            @"docs\learn\LEARN_MORPHOLOGY.md",
+            @"docs\learn\LEARN_MEAN.md",
+            @"docs\learn\LEARN_COLOR_HSV.md",
+            @"docs\learn\LEARN_EDGE_DETECTION.md",
+            @"docs\learn\LEARN_FEATURE_MATCHING.md",
+            @"docs\learn\LEARN_EDGE_BASED_MATCHING.md",
+            @"docs\learn\LEARN_LINE.md",
+            @"docs\learn\LEARN_PIPELINE_LAYER_ROUTING.md",
+            @"docs\learn\LEARN_METRICS_ACCEPTANCE.md",
+        })
+        {
+            RequirePathExists(repoRoot, relativePath, $"Learn document exists: {relativePath}.");
+            RequireContains(learnIndex, Path.GetFileName(relativePath), $"Learn index links {relativePath}.");
+            string learn = Read(repoRoot, relativePath);
+            RequireContainsAny(
+                learn,
+                $"Learn document {relativePath} keeps execution explicit.",
+                "Preview/Run",
+                "Preview or Run",
+                "Preview and Run",
+                "Run Preview",
+                "Preview를");
+            RequireContainsAny(
+                learn,
+                $"Learn document {relativePath} states guides/settings do not auto-run.",
+                "must not run",
+                "does not run",
+                "not run Preview",
+                "automatically",
+                "자동");
+        }
+
+        foreach (string relativePath in new[]
+        {
+            @"docs\learn\OPENVISIONLAB_LEARN_CURRICULUM.md",
+            @"docs\learn\LEARN_OPENCVSHARP_FOUNDATIONS.md",
+            @"docs\learn\LEARN_PRODUCT_SAMPLES.md",
+            @"docs\learn\LEARN_MATCHING.md",
+            @"docs\learn\LEARN_BLOB.md",
+            @"docs\learn\LEARN_CONTOUR.md",
+            @"docs\learn\LEARN_THRESHOLD.md",
+            @"docs\learn\LEARN_ARITHMETIC.md",
+            @"docs\learn\LEARN_GEOMETRY_TRANSFORM.md",
+            @"docs\learn\LEARN_FILTER.md",
+            @"docs\learn\LEARN_MORPHOLOGY.md",
+            @"docs\learn\LEARN_MEAN.md",
+            @"docs\learn\LEARN_COLOR_HSV.md",
+            @"docs\learn\LEARN_EDGE_DETECTION.md",
+            @"docs\learn\LEARN_FEATURE_MATCHING.md",
+            @"docs\learn\LEARN_EDGE_BASED_MATCHING.md",
+            @"docs\learn\LEARN_LINE.md",
+            @"docs\learn\LEARN_PIPELINE_LAYER_ROUTING.md",
+            @"docs\learn\LEARN_METRICS_ACCEPTANCE.md",
+        })
+        {
+            string learn = Read(repoRoot, relativePath);
+            RequireNotContains(learn, @"Sample\", $"Learn document {relativePath} must not depend on local legacy root Sample paths.");
+            RequireNotContains(learn, "Sample/", $"Learn document {relativePath} must not depend on local legacy root Sample paths.");
+            RequireNotContains(learn, @"bin\Debug", $"Learn document {relativePath} must not depend on local build output sample paths.");
+            RequireNotContains(learn, "Euresys", $"Learn document {relativePath} must not depend on vendor sample assets.");
+            RequireNotContains(learn, "MVTec", $"Learn document {relativePath} must not depend on non-commercial dataset assets.");
+        }
+
+        string learnWindowXaml = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\OpenVisionLearnWindow.xaml");
+        string learnWindow = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\OpenVisionLearnWindow.xaml.cs");
+        string toolShell = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\VisionToolSingleInputPropertyToolShell.xaml.cs");
+        string foundationGuide = Read(repoRoot, @"docs\learn\LEARN_OPENCVSHARP_FOUNDATIONS.md");
+        RequireContains(learnIndex, "LEARN_OPENCVSHARP_FOUNDATIONS.md", "Learn index links the OpenCvSharp foundations guide.");
+        RequireContains(foundationGuide, "`Point`", "OpenCvSharp foundations guide explains Point.");
+        RequireContains(foundationGuide, "`Size`", "OpenCvSharp foundations guide explains Size.");
+        RequireContains(foundationGuide, "`Rect`", "OpenCvSharp foundations guide explains Rect.");
+        RequireContains(foundationGuide, "`RotatedRect`", "OpenCvSharp foundations guide explains RotatedRect.");
+        RequireContains(foundationGuide, "`Scalar`", "OpenCvSharp foundations guide explains Scalar.");
+        RequireContains(foundationGuide, "`Mat`", "OpenCvSharp foundations guide explains Mat.");
+        RequireContains(foundationGuide, "Mat[Row=Y, Column=X, Channel]", "OpenCvSharp foundations guide explains matrix-style image access.");
+        RequireContains(foundationGuide, "`InputLayer` is the source layer", "OpenCvSharp foundations guide explains input layer routing.");
+        RequireContains(foundationGuide, "`OutputLayer` is the result created by the step", "OpenCvSharp foundations guide explains output layer routing.");
+        RequireContains(foundationGuide, "must not run Preview/Run", "OpenCvSharp foundations guide keeps execution explicit.");
+        RequireContains(foundationGuide, "Use public samples only", "OpenCvSharp foundations guide keeps sample practice public-safe.");
+        RequireContains(foundationGuide, "Good/Bad samples", "OpenCvSharp foundations guide connects concepts to Good/Bad validation.");
+        RequireContains(learnWindowXaml, "OpenVisionLearnOpenFoundationDocsButton", "OpenVision Learn exposes a Foundation Docs button.");
+        RequireContains(learnWindowXaml, "Foundation Docs", "OpenVision Learn labels the Foundation Docs button.");
+        RequireContains(learnWindow, "OpenFoundationDocsButton_Click", "OpenVision Learn handles the Foundation Docs button.");
+        RequireContains(learnWindow, "LEARN_OPENCVSHARP_FOUNDATIONS.md", "OpenVision Learn Foundation Docs button opens the foundations guide.");
+        RequireContains(learnWindowXaml, "OpenVisionLearnFoundationTypeCards", "OpenVision Learn foundation topic exposes Point/Rect/Size/Mat cards.");
+        RequireContains(learnWindowXaml, "OpenVisionLearnBeginnerPathPanel", "OpenVision Learn foundation topic exposes a beginner path panel.");
+        RequireContains(learnWindowXaml, "Beginner path: Foundation -> Brightness/GV -> Threshold -> Filter/Morphology -> Blob/Contour/LineDistance", "OpenVision Learn foundation topic shows the beginner tool path.");
+        RequireContains(learnWindowXaml, "Do not skip the metric or Good/Bad check.", "OpenVision Learn beginner path requires metric and Good/Bad checks.");
+        RequireContains(learnWindowXaml, "Mat = rows x cols x channels", "OpenVision Learn foundation topic explains Mat as an image matrix.");
+        string meanGuide = Read(repoRoot, @"docs\learn\LEARN_MEAN.md");
+        string thresholdGuide = Read(repoRoot, @"docs\learn\LEARN_THRESHOLD.md");
+        string filterGuide = Read(repoRoot, @"docs\learn\LEARN_FILTER.md");
+        string edgeDetectionGuide = Read(repoRoot, @"docs\learn\LEARN_EDGE_DETECTION.md");
+        string morphologyGuide = Read(repoRoot, @"docs\learn\LEARN_MORPHOLOGY.md");
+        RequireContains(meanGuide, "## Beginner path handoff", "Mean Learn guide includes beginner handoff.");
+        RequireContains(meanGuide, "Practice Samples path: `mean`", "Mean Learn guide names the mean practice path.");
+        RequireContains(meanGuide, "Public_Mean_Brightness_Good", "Mean beginner handoff names the public Good sample.");
+        RequireContains(meanGuide, "Public_Mean_Brightness_Dark_Bad", "Mean beginner handoff names the public Bad sample.");
+        RequireContains(thresholdGuide, "## Beginner path handoff", "Threshold Learn guide includes beginner handoff.");
+        RequireContains(thresholdGuide, "Practice Samples path: `preprocess`", "Threshold Learn guide names the preprocess practice path.");
+        RequireContains(thresholdGuide, "Public_Threshold_BandPads_Good", "Threshold beginner handoff names the public Good sample.");
+        RequireContains(thresholdGuide, "downstream `ResultCount`", "Threshold beginner handoff requires downstream metric evidence.");
+        RequireContains(filterGuide, "## Beginner path handoff", "Filter Learn guide includes beginner handoff.");
+        RequireContains(filterGuide, "Public_Filter_Denoise_Good", "Filter Learn guide names the public Good sample.");
+        RequireContains(filterGuide, "Public_Filter_Denoise_Missing_Bad", "Filter Learn guide names the public Bad sample.");
+        RequireContains(filterGuide, "Public sample pair", "Filter Learn guide marks the public sample pair.");
+        RequireContains(filterGuide, "Filter alone is not the final OK/NG decision", "Filter Learn guide avoids treating preprocessing as final inspection.");
+        RequireContains(edgeDetectionGuide, "## Beginner path handoff", "EdgeDetection Learn guide includes beginner handoff.");
+        RequireContains(edgeDetectionGuide, "Public_EdgeDetection_Shapes_Good", "EdgeDetection Learn guide names the public Good sample.");
+        RequireContains(edgeDetectionGuide, "Public_EdgeDetection_Shapes_Missing_Bad", "EdgeDetection Learn guide names the public Bad sample.");
+        RequireContains(edgeDetectionGuide, "Public sample pair", "EdgeDetection Learn guide marks the public sample pair.");
+        RequireContains(edgeDetectionGuide, "downstream Contour metric", "EdgeDetection Learn guide keeps final evidence downstream.");
+        RequireContains(morphologyGuide, "## Beginner path handoff", "Morphology Learn guide includes beginner handoff.");
+        RequireContains(morphologyGuide, "Public_Morphology_Cleanup_Good", "Morphology Learn guide names the public Good sample.");
+        RequireContains(morphologyGuide, "Public_Morphology_Cleanup_Missing_Bad", "Morphology Learn guide names the public Bad sample.");
+        RequireContains(morphologyGuide, "Public sample pair", "Morphology Learn guide marks the public sample pair.");
+        RequireContains(morphologyGuide, "before/after output-layer comparison", "Morphology Learn guide requires output-layer comparison.");
+        RequireContains(toolShell, "new OpenVisionLearnWindow(127, 255, false, LearnTopicIndex)", "PropertyGrid tool Learn buttons open the configured Learn topic.");
+        foreach ((string Xaml, string Text, int TopicIndex, string Document) toolLearn in new[]
+        {
+            (@"0. UI\6) Vision Test\Wpf\FilterToolWpfView.xaml", "Learn Filter", 3, "LEARN_FILTER.md"),
+            (@"0. UI\6) Vision Test\Wpf\MorphologyToolWpfView.xaml", "Learn Morph", 4, "LEARN_MORPHOLOGY.md"),
+            (@"0. UI\6) Vision Test\Wpf\BlobToolWpfView.xaml", "Learn Blob", 5, "LEARN_BLOB.md"),
+            (@"0. UI\6) Vision Test\Wpf\ContourToolWpfView.xaml", "Learn Contour", 6, "LEARN_CONTOUR.md"),
+            (@"0. UI\6) Vision Test\Wpf\LineToolWpfView.xaml", "Learn Line", 8, "LEARN_LINE.md"),
+            (@"0. UI\6) Vision Test\Wpf\EdgeBasedMatchingToolWpfView.xaml", "Learn Edge Match", 12, "LEARN_EDGE_BASED_MATCHING.md"),
+            (@"0. UI\6) Vision Test\Wpf\MatchingToolWpfView.xaml", "Learn Matching", 9, "LEARN_MATCHING.md"),
+            (@"0. UI\6) Vision Test\Wpf\FeatureMatchingToolWpfView.xaml", "Learn Feature", 10, "LEARN_FEATURE_MATCHING.md"),
+        })
+        {
+            string toolXaml = Read(repoRoot, toolLearn.Xaml);
+            string topicIndex = toolLearn.TopicIndex.ToString(CultureInfo.InvariantCulture);
+            RequireContains(toolXaml, "LearnButtonVisibility=\"Visible\"", $"Tool Learn button is visible: {toolLearn.Xaml}.");
+            RequireContains(toolXaml, $"LearnButtonText=\"{toolLearn.Text}\"", $"Tool Learn button text is mapped: {toolLearn.Xaml}.");
+            RequireContains(toolXaml, $"LearnTopicIndex=\"{topicIndex}\"", $"Tool Learn topic index is mapped: {toolLearn.Xaml}.");
+            RequireContains(learnWindow, $"{topicIndex} => \"{toolLearn.Document}\"", $"Learn topic {topicIndex} resolves {toolLearn.Document}.");
+            RequirePathExists(repoRoot, Path.Combine("docs", "learn", toolLearn.Document), $"Tool Learn document exists for {toolLearn.Xaml}.");
+        }
+
+        foreach ((string Document, string ToolName) matchingGuide in new[]
+        {
+            (@"docs\learn\LEARN_MATCHING.md", "Matching"),
+            (@"docs\learn\LEARN_EDGE_BASED_MATCHING.md", "EdgeBasedMatching"),
+            (@"docs\learn\LEARN_FEATURE_MATCHING.md", "FeatureMatching"),
+        })
+        {
+            string learn = Read(repoRoot, matchingGuide.Document);
+            RequireContains(learn, "## Matching Family Selection", $"{matchingGuide.ToolName} Learn document compares Matching-family tool selection.");
+            RequireContains(learn, "Stable brightness/template appearance", $"{matchingGuide.ToolName} Learn document explains when to use Matching.");
+            RequireContains(learn, "Shape survives lighting but edge geometry is stable", $"{matchingGuide.ToolName} Learn document explains when to use EdgeBasedMatching.");
+            RequireContains(learn, "Target changes scale/rotation/view but local features remain", $"{matchingGuide.ToolName} Learn document explains when to use FeatureMatching.");
+            RequireContains(learn, "ScoreMax, ResultCount", $"{matchingGuide.ToolName} Learn document anchors Matching-family metrics.");
+            RequireContains(learn, "Use explicit Preview/Run only.", $"{matchingGuide.ToolName} Learn document keeps execution explicit.");
+        }
+
+        string metricsAcceptanceGuide = Read(repoRoot, @"docs\learn\LEARN_METRICS_ACCEPTANCE.md");
+        string publicSampleCatalog = Read(repoRoot, @"docs\samples\OpenVisionLab.PublicSampleCatalog.csv");
+        foreach (string sampleName in new[]
+        {
+            "Public_Matching_DiePad_Good",
+            "Public_Matching_DiePad_NoTarget_Bad",
+            "Public_Blob_Particles_Good",
+            "Public_Blob_Particles_Sparse_Bad",
+            "Public_Filter_Denoise_Good",
+            "Public_Filter_Denoise_Missing_Bad",
+            "Public_EdgeDetection_Shapes_Good",
+            "Public_EdgeDetection_Shapes_Missing_Bad",
+            "Public_Morphology_Cleanup_Good",
+            "Public_Morphology_Cleanup_Missing_Bad",
+            "Public_Mean_Brightness_Good",
+            "Public_Mean_Brightness_Dark_Bad",
+            "Public_HSV_ColorPatch_Good",
+            "Public_HSV_ColorPatch_Missing_Bad",
+            "Public_Line_Pins_Good",
+            "Public_Line_Pins_WidePin_Bad",
+            "Public_Edge_Fiducial_Good",
+            "Public_Edge_Fiducial_Wrong_Bad",
+            "Public_Geometry_RotateScale_Good",
+        })
+        {
+            RequireContains(metricsAcceptanceGuide, sampleName, $"Metrics/Acceptance Learn document names public sample {sampleName}.");
+            RequireContains(publicSampleCatalog, sampleName, $"Public sample catalog contains {sampleName}.");
+        }
+
+        RequireContains(metricsAcceptanceGuide, "DistanceMmAvg=0.20..0.25", "Metrics/Acceptance Learn document teaches the LineDistance Good gate.");
+        RequireContains(metricsAcceptanceGuide, "add range/max gates for outliers", "Metrics/Acceptance Learn document teaches distance outlier gates.");
+        RequireContains(metricsAcceptanceGuide, "ResultImageWidth=286", "Metrics/Acceptance Learn document teaches the RotateScale output width gate.");
+        RequireContains(metricsAcceptanceGuide, "ResultImageHeight=210", "Metrics/Acceptance Learn document teaches the RotateScale output height gate.");
+        RequireContains(metricsAcceptanceGuide, "Transform samples may be Good-only", "Metrics/Acceptance Learn document explains Good-only transform benchmarks.");
+        RequireContains(metricsAcceptanceGuide, "Good/Bad comparison is useful only when the Bad row fails for the intended metric.", "Metrics/Acceptance Learn document distinguishes intended metric failure from setup failure.");
+        RequireNotContains(metricsAcceptanceGuide, "Public_Template_Circle", "Metrics/Acceptance Learn document must not reference non-catalog sample names.");
+        RequireContains(learnWindow, "13. Metrics / Acceptance", "OpenVision Learn topic list exposes Metrics/Acceptance.");
+        RequireContains(learnWindow, "13 => \"LEARN_METRICS_ACCEPTANCE.md\"", "OpenVision Learn topic 13 resolves Metrics/Acceptance document.");
+        RequireContains(learnWindow, "Metrics/Acceptance gates", "OpenVision Learn topic 13 exposes Metrics/Acceptance practice guidance.");
+        RequireContains(learnWindow, "metricsAcceptanceTopicPanel", "OpenVision Learn has a visible Metrics/Acceptance topic panel.");
+
+        string pipelineLayerRoutingGuide = Read(repoRoot, @"docs\learn\LEARN_PIPELINE_LAYER_ROUTING.md");
+        RequireContains(pipelineLayerRoutingGuide, "## Route Safety Checklist", "Pipeline/Layer Learn document has a route safety checklist.");
+        RequireContains(pipelineLayerRoutingGuide, "`InputLayer` is the source image", "Pipeline/Layer Learn document explains InputLayer.");
+        RequireContains(pipelineLayerRoutingGuide, "`OutputLayer` is the produced result", "Pipeline/Layer Learn document explains OutputLayer.");
+        RequireContains(pipelineLayerRoutingGuide, "must not select, rewrite, or silently replace `InputLayer`", "Pipeline/Layer Learn document protects output/input isolation.");
+        RequireContains(pipelineLayerRoutingGuide, "Layer create/delete/load-image actions and visibility toggles must not run Preview/Run.", "Pipeline/Layer Learn document protects explicit execution.");
+        RequireContains(learnWindowXaml, "OpenVisionLearnLayerRoutingSafetyPanel", "OpenVision Learn exposes the route safety checklist panel.");
+        RequireContains(learnWindowXaml, "Routing safety checklist", "OpenVision Learn topic 11 shows route safety guidance.");
+
+        string learnSmokeScript = Read(repoRoot, @"tools\RunLearnModeUiSmokes.ps1");
+        foreach (string learnSmokeTarget in new[]
+        {
+            "wpf_openvision_learn_curriculum",
+            "wpf_openvision_learn_brightness",
+            "wpf_openvision_learn_threshold",
+            "wpf_openvision_learn_threshold_animation",
+            "wpf_openvision_learn_threshold_apply",
+            "wpf_openvision_learn_filtering",
+            "wpf_openvision_learn_morphology",
+            "wpf_openvision_learn_blob",
+            "wpf_openvision_learn_contour",
+            "wpf_openvision_learn_edge_line",
+            "wpf_openvision_learn_line_distance",
+            "wpf_openvision_learn_matching",
+            "wpf_openvision_learn_feature_matching",
+            "wpf_openvision_learn_layer_recipe",
+            "wpf_openvision_learn_edge_based_matching",
+            "wpf_openvision_learn_metrics_acceptance",
+            "wpf_openvision_learn_arithmetic",
+            "wpf_openvision_learn_geometry",
+            "wpf_openvision_learn_color_hsv",
+        })
+        {
+            RequireContains(learnSmokeScript, learnSmokeTarget, $"Learn Mode UI smoke runner covers {learnSmokeTarget}.");
+        }
+
+        RequireContains(learnSmokeScript, "foreach ($target in $normalizedTargets)", "Learn Mode UI smoke runner executes targets sequentially.");
+        RequireNotContains(learnSmokeScript, "Start-Job", "Learn Mode UI smoke runner must not parallelize WPF smoke targets.");
+
+        string learnScreenshotSmoke = Read(repoRoot, @"tools\PipelineViewerScreenshotSmoke\Program.cs");
+        RequireContains(learnScreenshotSmoke, "wpf_openvision_learn_edge_based_matching", "Learn screenshot smoke exposes the EdgeBasedMatching topic target.");
+        RequireContains(learnScreenshotSmoke, "CaptureOpenVisionLearnEdgeBasedMatching", "Learn screenshot smoke verifies the EdgeBasedMatching topic.");
+        RequireContains(learnWindow, "EdgeDetection: pixels", "OpenVision Learn Edge / Line topic distinguishes edge, line, and measurement tool roles.");
+        RequireContains(learnScreenshotSmoke, "\"LineGauge\", \"LineDistance\"", "Learn screenshot smoke verifies Edge / Line role-map guidance.");
+        RequireContains(learnScreenshotSmoke, "wpf_openvision_learn_arithmetic", "Learn screenshot smoke exposes the Arithmetic topic target.");
+        RequireContains(learnScreenshotSmoke, "CaptureOpenVisionLearnArithmetic", "Learn screenshot smoke verifies the Arithmetic topic.");
+        RequireContains(learnScreenshotSmoke, "wpf_openvision_learn_geometry", "Learn screenshot smoke exposes the Geometry topic target.");
+        RequireContains(learnScreenshotSmoke, "CaptureOpenVisionLearnGeometry", "Learn screenshot smoke verifies the Geometry topic.");
+        RequireContains(learnScreenshotSmoke, "wpf_openvision_learn_color_hsv", "Learn screenshot smoke exposes the Color / HSV topic target.");
+        RequireContains(learnScreenshotSmoke, "CaptureOpenVisionLearnColorHsv", "Learn screenshot smoke verifies the Color / HSV topic.");
+        RequireContains(learnWindow, "14. Arithmetic / Logic", "OpenVision Learn topic list exposes Arithmetic / Logic.");
+        RequireContains(learnWindow, "14 => \"LEARN_ARITHMETIC.md\"", "OpenVision Learn topic 14 resolves Arithmetic document.");
+        RequireContains(learnWindow, "15. Geometry Transform", "OpenVision Learn topic list exposes Geometry Transform.");
+        RequireContains(learnWindow, "15 => \"LEARN_GEOMETRY_TRANSFORM.md\"", "OpenVision Learn topic 15 resolves Geometry document.");
+        RequireContains(learnWindow, "16. Color / HSV", "OpenVision Learn topic list exposes Color / HSV.");
+        RequireContains(learnWindow, "16 => \"LEARN_COLOR_HSV.md\"", "OpenVision Learn topic 16 resolves Color / HSV document.");
+        RequireContains(learnWindow, "temporary brightness bridge, not HSV sample evidence", "OpenVision Learn Color / HSV practice text explains that the mean path is a bridge, not HSV evidence.");
+        RequireContains(learnWindowXaml, "OpenVisionLearnColorSampleBridge", "OpenVision Learn Color / HSV topic explains the current Mean Good/Bad sample bridge.");
+        RequireContains(learnWindowXaml, "public HSV color-classification pair is not stable yet", "OpenVision Learn Color / HSV topic states the current HSV public sample gap.");
+        RequireContains(learnWindowXaml, "MaskPixelRatio only after runner support exists", "OpenVision Learn Color / HSV topic does not present MaskPixelRatio as a current runner metric.");
+        RequireContains(learnScreenshotSmoke, "OpenVisionLearnColorSampleBridge", "Learn screenshot smoke verifies the Color / HSV sample bridge.");
+        RequireContains(learnScreenshotSmoke, "future metric", "Learn screenshot smoke verifies MaskPixelRatio is presented as future runner support.");
+        string colorHsvGuide = Read(repoRoot, @"docs\learn\LEARN_COLOR_HSV.md");
+        RequireContains(colorHsvGuide, "Do not add public HSV sample rows until", "Color / HSV Learn guide blocks public HSV samples until sample smoke evidence exists.");
+        RequireContains(colorHsvGuide, "initial `HSV` mask ToolType", "Color / HSV Learn guide acknowledges initial HSV pipeline runner support.");
+        RequireContains(colorHsvGuide, "`MaskPixelRatio` is available only for the `HSV` pipeline runner path", "Color / HSV Learn guide scopes MaskPixelRatio availability to the runner path.");
+        RequireContains(colorHsvGuide, "## HSV Pipeline Runtime Contract", "Color / HSV Learn guide defines the runtime contract before public HSV samples.");
+        RequireContains(colorHsvGuide, "`HueMin`, `HueMax`, `SaturationMin`, `SaturationMax`, `ValueMin`, `ValueMax`", "Color / HSV Learn guide defines required HSV range parameters.");
+        RequireContains(colorHsvGuide, "`InputLayer` and `OutputLayer`", "Color / HSV Learn guide keeps HSV output mask routing explicit.");
+        RequireContains(colorHsvGuide, "`MaskPixelCount`", "Color / HSV Learn guide requires count metrics before sample promotion.");
+        RequireContains(colorHsvGuide, "bounded `MaskPixelRatio` range", "Color / HSV Learn guide requires bounded mask-ratio acceptance.");
+        RequirePathExists(repoRoot, @"1. Core\VisionPipelineHsvMaskTool.cs", "HSV pipeline runner tool exists.");
+        string hsvPipelineTool = Read(repoRoot, @"1. Core\VisionPipelineHsvMaskTool.cs");
+        RequireContains(hsvPipelineTool, "VisionPipelineHsvMaskTool", "HSV pipeline runner tool is implemented.");
+        RequireContains(hsvPipelineTool, "ColorConversionCodes.BGR2HSV", "HSV pipeline runner converts BGR input to HSV.");
+        RequireContains(hsvPipelineTool, "MaskPixelRatio", "HSV pipeline runner reports mask ratio.");
+        string pipelineKnownMetrics = Read(repoRoot, @"1. Core\VisionPipelineKnownMetrics.cs");
+        RequireContains(pipelineKnownMetrics, "public const string MaskPixelCount", "Known metrics include MaskPixelCount.");
+        RequireContains(pipelineKnownMetrics, "public const string MaskPixelRatio", "Known metrics include MaskPixelRatio.");
+        RequireContains(pipelineKnownMetrics, "[\"hsv\"]", "Known metrics map HSV ToolType.");
+        string pipelineValidator = Read(repoRoot, @"1. Core\VisionPipelineValidation.cs");
+        RequireContains(pipelineValidator, "\"hsv\"", "Pipeline validator supports HSV ToolType.");
+        string geometryGuide = Read(repoRoot, @"docs\learn\LEARN_GEOMETRY_TRANSFORM.md");
+        RequireContains(geometryGuide, "Public_Geometry_RotateScale_Good", "Geometry Learn guide uses the public RotateScale sample.");
+        RequireContains(geometryGuide, "Public_Geometry_RotateScale_Wide_Bad", "Geometry Learn guide uses the public RotateScale Bad sample.");
+        RequireContains(geometryGuide, "ResultImageWidth=320", "Geometry Learn guide explains the Bad sample output-size drift.");
+        RequireContains(geometryGuide, @"docs\samples\public\Geometry_RotateScale_Synthetic_OK.png", "Geometry Learn guide points to a public-safe synthetic image.");
+        RequireContains(geometryGuide, @"docs\samples\public\Geometry_RotateScale_Synthetic_Wide_NG.png", "Geometry Learn guide points to the public-safe wide negative image.");
+        RequireNotContains(geometryGuide, @"Sample\Contour.jpg", "Geometry Learn guide must not depend on the local legacy root Sample image.");
+
+        string thresholdToolXaml = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\ThresholdToolWpfView.xaml");
+        RequireContains(thresholdToolXaml, "ThresholdToolLearnButton", "Threshold Tool exposes its compact Learn entry.");
+        RequireContains(thresholdToolXaml, "Learn Threshold", "Threshold Tool Learn entry is labelled for Threshold.");
+        RequireContains(learnWindow, ": this(threshold, maxValue, invert, 2)", "Threshold Tool Learn entry opens the Threshold topic.");
+        RequireContains(learnWindow, "2 => \"LEARN_THRESHOLD.md\"", "Threshold Learn topic resolves LEARN_THRESHOLD.md.");
+        RequirePathExists(repoRoot, @"docs\learn\LEARN_THRESHOLD.md", "Threshold Tool Learn document exists.");
+
         foreach ((string Document, string Link, string Asset) evidence in new[]
         {
             (
@@ -662,6 +1044,18 @@ internal static class Program
         {
             Failures.Add($"{description} Missing token: {token}");
         }
+    }
+
+    private static void RequireContainsAny(string text, string description, params string[] tokens)
+    {
+        if (!string.IsNullOrEmpty(text)
+            && tokens.Any(token => !string.IsNullOrWhiteSpace(token)
+                && text.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0))
+        {
+            return;
+        }
+
+        Failures.Add($"{description} Missing one of: {string.Join(", ", tokens)}");
     }
 
     private static void ValidateProductSampleCatalog(string repoRoot)

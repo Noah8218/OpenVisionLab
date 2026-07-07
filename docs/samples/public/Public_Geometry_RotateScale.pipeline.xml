@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VisionPipeline>
+  <Name>Public_Geometry_RotateScale</Name>
+  <Steps>
+    <Step>
+      <Name>01 Resize Public Geometry Half</Name>
+      <ToolType>RotateScale</ToolType>
+      <Enabled>true</Enabled>
+      <InputLayer>Main</InputLayer>
+      <OutputLayer>Geometry_ResizeHalf_Result</OutputLayer>
+      <Parameters>
+        <Parameter>
+          <Key>Angle</Key>
+          <Value>0</Value>
+        </Parameter>
+        <Parameter>
+          <Key>ScaleXPercent</Key>
+          <Value>50</Value>
+        </Parameter>
+        <Parameter>
+          <Key>ScaleYPercent</Key>
+          <Value>50</Value>
+        </Parameter>
+        <Parameter>
+          <Key>Interpolation</Key>
+          <Value>Linear</Value>
+        </Parameter>
+        <Parameter>
+          <Key>BorderType</Key>
+          <Value>Constant</Value>
+        </Parameter>
+      </Parameters>
+      <UseAcceptance>true</UseAcceptance>
+      <ExpectedSuccess>true</ExpectedSuccess>
+      <AcceptanceMetricName>ResultImageWidth</AcceptanceMetricName>
+      <UseAcceptanceMetricMinimum>true</UseAcceptanceMetricMinimum>
+      <AcceptanceMetricMinimum>286</AcceptanceMetricMinimum>
+      <UseAcceptanceMetricMaximum>true</UseAcceptanceMetricMaximum>
+      <AcceptanceMetricMaximum>286</AcceptanceMetricMaximum>
+      <MaxElapsedMilliseconds>300</MaxElapsedMilliseconds>
+    </Step>
+  </Steps>
+</VisionPipeline>

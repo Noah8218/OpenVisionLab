@@ -222,7 +222,7 @@ WPF screenshot smoke와 실제 EXE UI smoke는 로컬 current-build 증거가 �
 - [튜토리얼 가이드](docs/OPENVISIONLAB_TUTORIAL.md)
 - [Learn Mode 가이드](docs/learn/README.md)
 - [안정 기능 계약](docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md)
-- [제품 정체성과 로드맵](docs/OPENVISIONLAB_PRODUCT_IDENTITY_AND_ROADMAP.md)
+- [현재 상태와 다음 작업](docs/OPENVISIONLAB_STATUS_AND_NEXT_STEPS.md)
 - [공개용 샘플 카탈로그](docs/samples/OpenVisionLab.PublicSampleCatalog.csv)
 - [제품형 샘플 카탈로그](docs/samples/OpenVisionLab.ProductSampleCatalog.csv)
 
