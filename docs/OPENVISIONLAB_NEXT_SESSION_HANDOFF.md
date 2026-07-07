@@ -140,7 +140,18 @@ Latest LLM XML authoring reference:
 - Added `docs\OPENVISIONLAB_LLM_TOOL_CATALOG.json` as the machine-readable tool/parameter/metric catalog for LLM prompt packets.
 - Source evidence checked before writing: `OpenVisionShellHostRecipeCommandSurface.cs`, `VisionPipelineValidation.cs`, `VisionPipelineStepParameterSchema.cs`, `VisionPipelineKnownMetrics.cs`, `VisionPipelineArithmeticStep.cs`, `docs\samples\*.pipeline.xml`, and LLM direct smoke cases in `OpenVisionLabDirectSmokeRunner.cs`.
 - Usage rule: when collecting real LLM transcripts, give the LLM the guide and JSON catalog first, ask for one `VisionPipeline` XML only, validate inside Recipe Manager, then feed back the validation/dependency report for repair. Do not commit raw transcripts until private names/assets are scrubbed.
+- Corpus rule: store real external LLM prompt/response under `artifacts\llm_transcripts\raw`, user-provided/operator-repaired XML replay cases under `artifacts\llm_transcripts\manual`, and sanitized replay candidates under `artifacts\llm_transcripts\sanitized`. Manual replay is validation evidence, not real GPT/Gemini/Claude transcript evidence.
 - Validation rules now documented for external LLMs include supported ToolType names, `Main`/previous-output layer routing, `ALLOW_BRANCH_INPUT`, dependency path safety, `Inspection.*` review channel handling, 0..1 matching score parameters, gray-value ranges, Arithmetic `InputLayerB`, OverlayMerge final review intent, and acceptance metric use.
+
+Latest LLM intent-contract replay evidence:
+
+- User-provided pin image XML replay is local-only under `artifacts\llm_transcripts\manual\20260706_user_pins_marked_roi_length_measure.xml`. It is a manual draft/replay artifact, not a real external GPT/Gemini/Claude transcript.
+- Product lesson: when the selected intent is pin-to-pin, edge-to-edge, gap, pitch, width, or clearance, OpenVisionLab must lock the tool family to `LineDistance`. `Contour` plus `BoundsHeightAvg` does not satisfy a distance intent.
+- Source behavior: `OpenVisionShellHostRecipeCommandSurface.AppendLlmIntentContractValidation` blocks drafts whose selected `Pin gap / edge distance (LineDistance)` intent lacks an enabled `LineDistance` or accepted `LineDistanceGauge` step.
+- Latest direct EXE smoke: `dotnet run --no-build --project OpenVisionLab.csproj -c Debug -- --smoke recipe-manager-llm-intent-skills artifacts\llm_manual_replay_contract_after_20260707_r1` passed with `Result: PASS`, `PinGapContourMismatch: blocked by intent contract`, and `PreviewRunCountUnchanged: 0`.
+- Validation evidence: `artifacts\llm_manual_replay_contract_after_20260707_r1\PinGapContourMismatchValidation.txt` reports `Error: Intent contract mismatch. Selected intent 'Pin gap / edge distance' requires ToolType=LineDistance.` and `Draft enabled ToolTypes: Contour, Threshold`.
+- UI evidence: `artifacts\llm_manual_replay_contract_after_20260707_r1\OpenVisionLab_RecipeManager_LlmIntentSkills_PinGapContourMismatch.png`.
+- Next transcript work remains unchanged: capture one real GPT/Gemini/Claude correction-loop transcript when an API key or manually exported transcript is available. Do not treat this manual replay as that evidence.
 
 Latest Recipe Manager sample summary density evidence:
 

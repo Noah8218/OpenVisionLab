@@ -16,6 +16,15 @@ This file defines the working agreement for Codex in this repository.
 - The main workflow is sample image and operator intent -> LLM XML draft -> validation/correction/import -> explicit Preview/Run -> layer/result comparison -> saved recipe.
 - It is not a camera, lighting, PLC, or I/O integration platform.
 
+## LLM-Assisted Recipe Skill Direction
+
+- Do not position OpenVisionLab as a one-shot "LLM looks at an image and creates the correct rule-based inspection automatically" product. That expectation is currently inaccurate and leads to weak product decisions.
+- Treat LLM support as a guided recipe authoring assistant. The human operator provides inspection intent, target ROI/measurement region, OK/NG tolerance, and sample evidence; OpenVisionLab constrains tool choice, generates or validates XML, runs explicit Preview/Run checks, and exposes correction evidence.
+- Develop LLM workflows as reusable inspection-intent skills inside OpenVisionLab: intent -> required user inputs -> locked tool family -> XML starter -> required metrics -> acceptance gates -> correction-loop evidence.
+- These are OpenVisionLab recipe-wizard/intent-template skills, similar in spirit to a Codex skill such as Ponytail, but they are product features and documentation contracts, not external Codex plugins or global agent skills unless the user explicitly asks to create those.
+- For measurement intents such as pin gap, pitch, width, or clearance, do not rely on average distance alone. Require consistency/outlier gates such as `DistancePxRange`, `DistanceMmRange`, `DistancePxMax`, or `DistanceMmMax` so a visually wrong long measurement line cannot pass through `DistancePxAvg` or `DistanceMmAvg`.
+- When continuing this direction, prefer building the next concrete inspection-intent wizard or template only after identifying the user-visible workflow, required inputs, generated tool family, validation metrics, and smoke evidence.
+
 ## Project Orientation and Status Review
 
 At the start of a new OpenVisionLab chat, after a handoff, or whenever the user asks to continue project work, do not jump directly into narrow code or UI fixes. First rebuild the product context from current evidence.

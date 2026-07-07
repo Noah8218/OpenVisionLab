@@ -38,6 +38,30 @@
             <SolidColorBrush x:Key="ShellHost.FieldFocusBrush" Color="#8AD7DA" />
             <SolidColorBrush x:Key="ShellHost.FieldTextBrush" Color="#F5FAFC" />
             <BooleanToVisibilityConverter x:Key="ShellHost.BooleanToVisibilityConverter" />
+            <Style x:Key="ShellHost.PinGapIntentVisibilityStyle" TargetType="{x:Type FrameworkElement}">
+                <Setter Property="Visibility" Value="Collapsed" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding RecipeCommands.SelectedLlmToolTemplate}" Value="Pin gap / edge distance (LineDistance)">
+                        <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="ShellHost.BlobCountIntentVisibilityStyle" TargetType="{x:Type FrameworkElement}">
+                <Setter Property="Visibility" Value="Collapsed" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding RecipeCommands.SelectedLlmToolTemplate}" Value="Threshold + Blob">
+                        <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="ShellHost.ContourCountIntentVisibilityStyle" TargetType="{x:Type FrameworkElement}">
+                <Setter Property="Visibility" Value="Collapsed" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding RecipeCommands.SelectedLlmToolTemplate}" Value="Shape boundary (Contour)">
+                        <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
 
             <ContextMenu x:Key="LayerRowsContextMenu"
                          x:Shared="False">
@@ -4380,7 +4404,7 @@
                                         <Grid Grid.Row="1" Margin="0,7,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="82" />
-                                                <ColumnDefinition Width="166" />
+                                                <ColumnDefinition Width="260" />
                                                 <ColumnDefinition Width="92" />
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="100" />
@@ -4433,10 +4457,476 @@
                                                 Background="#14313A"
                                                 BorderBrush="#4C8790"
                                                 BorderThickness="1">
-                                            <TextBlock Text="{Binding RecipeCommands.LlmResultChannelContractSummaryText}"
-                                                       Foreground="#D7FFF4"
-                                                       FontSize="10"
-                                                       TextTrimming="CharacterEllipsis" />
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+                                                <TextBlock Text="{Binding RecipeCommands.LlmResultChannelContractSummaryText}"
+                                                           Foreground="#D7FFF4"
+                                                           FontSize="10"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <Grid Grid.Row="1"
+                                                      Margin="0,5,0,0"
+                                                      Style="{StaticResource ShellHost.PinGapIntentVisibilityStyle}"
+                                                      AutomationProperties.AutomationId="HostRecipeLlmPinGapIntentSkill">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="78" />
+                                                        <ColumnDefinition Width="32" />
+                                                        <ColumnDefinition Width="120" />
+                                                        <ColumnDefinition Width="52" />
+                                                        <ColumnDefinition Width="58" />
+                                                        <ColumnDefinition Width="52" />
+                                                        <ColumnDefinition Width="58" />
+                                                        <ColumnDefinition Width="52" />
+                                                        <ColumnDefinition Width="58" />
+                                                        <ColumnDefinition Width="48" />
+                                                        <ColumnDefinition Width="58" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding RecipeCommands.PinGapIntentSkillText}"
+                                                               Foreground="#9FE5DE"
+                                                               FontSize="10"
+                                                               FontWeight="SemiBold"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding RecipeCommands.PinGapIntentRoiLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="2"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipePinGapIntentRoiText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.PinGapIntentRoiText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="3"
+                                                               Margin="6,0,0,0"
+                                                               Text="{Binding RecipeCommands.PinGapIntentDistanceMinLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="4"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipePinGapIntentMinText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.PinGapIntentDistanceMinText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="5"
+                                                               Margin="6,0,0,0"
+                                                               Text="{Binding RecipeCommands.PinGapIntentDistanceMaxLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="6"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipePinGapIntentMaxText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.PinGapIntentDistanceMaxText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="7"
+                                                               Margin="6,0,0,0"
+                                                               Text="{Binding RecipeCommands.PinGapIntentRangeMaxLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="8"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipePinGapIntentRangeText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.PinGapIntentRangeMaxText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="9"
+                                                               Margin="6,0,0,0"
+                                                               Text="{Binding RecipeCommands.PinGapIntentScaleLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="10"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipePinGapIntentScaleText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.PinGapIntentScaleText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <Button Grid.Column="11"
+                                                            MinWidth="100"
+                                                            Height="22"
+                                                            Margin="7,0,0,0"
+                                                            AutomationProperties.AutomationId="HostRecipeCreatePinGapIntentXmlButton"
+                                                            Command="{Binding RecipeCommands.CreatePinGapIntentXmlDraftCommand}">
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                            <iconPacks:PackIconMaterial Kind="Target" Width="11" Height="11" Margin="0,1,4,0" />
+                                                            <TextBlock Text="{Binding RecipeCommands.CreatePinGapIntentXmlText}" FontSize="10" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                </Grid>
+                                                <TextBlock Grid.Row="2"
+                                                           Margin="0,5,0,0"
+                                                           Style="{StaticResource ShellHost.PinGapIntentVisibilityStyle}"
+                                                           AutomationProperties.AutomationId="HostRecipePinGapIntentWorkflowText"
+                                                           Text="{Binding RecipeCommands.PinGapIntentWorkflowText}"
+                                                           Foreground="#C7EFCB"
+                                                           FontSize="10"
+                                                           TextWrapping="Wrap" />
+                                                <TextBlock Grid.Row="3"
+                                                           Margin="0,4,0,0"
+                                                           Style="{StaticResource ShellHost.PinGapIntentVisibilityStyle}"
+                                                           AutomationProperties.AutomationId="HostRecipePinGapIntentFeedbackText"
+                                                           Text="{Binding RecipeCommands.PinGapIntentFeedbackText}"
+                                                           Foreground="#F3D79B"
+                                                           FontSize="10"
+                                                           TextWrapping="Wrap" />
+                                                <TextBlock Grid.Row="4"
+                                                           Margin="0,4,0,0"
+                                                           Style="{StaticResource ShellHost.PinGapIntentVisibilityStyle}"
+                                                           AutomationProperties.AutomationId="HostRecipePinGapIntentLatestRunText"
+                                                           Text="{Binding RecipeCommands.PinGapIntentLatestRunText}"
+                                                           Foreground="#9FD9FF"
+                                                           FontSize="10"
+                                                           TextWrapping="Wrap" />
+                                                <Grid Grid.Row="5"
+                                                      Margin="0,7,0,0"
+                                                      Style="{StaticResource ShellHost.BlobCountIntentVisibilityStyle}"
+                                                      AutomationProperties.AutomationId="HostRecipeLlmBlobCountIntentSkill">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="78" />
+                                                        <ColumnDefinition Width="32" />
+                                                        <ColumnDefinition Width="120" />
+                                                        <ColumnDefinition Width="66" />
+                                                        <ColumnDefinition Width="48" />
+                                                        <ColumnDefinition Width="62" />
+                                                        <ColumnDefinition Width="46" />
+                                                        <ColumnDefinition Width="62" />
+                                                        <ColumnDefinition Width="46" />
+                                                        <ColumnDefinition Width="58" />
+                                                        <ColumnDefinition Width="62" />
+                                                        <ColumnDefinition Width="58" />
+                                                        <ColumnDefinition Width="62" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding RecipeCommands.BlobCountIntentSkillText}"
+                                                               Foreground="#9FE5DE"
+                                                               FontSize="10"
+                                                               FontWeight="SemiBold"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding RecipeCommands.BlobCountIntentRoiLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="2"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipeBlobCountIntentRoiText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.BlobCountIntentRoiText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="3"
+                                                               Margin="6,0,0,0"
+                                                               Text="{Binding RecipeCommands.BlobCountIntentThresholdLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="4"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipeBlobCountIntentThresholdText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.BlobCountIntentThresholdText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="5"
+                                                               Margin="6,0,0,0"
+                                                               Text="{Binding RecipeCommands.BlobCountIntentMinCountLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="6"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipeBlobCountIntentMinCountText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.BlobCountIntentMinCountText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="7"
+                                                               Margin="6,0,0,0"
+                                                               Text="{Binding RecipeCommands.BlobCountIntentMaxCountLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="8"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipeBlobCountIntentMaxCountText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.BlobCountIntentMaxCountText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="9"
+                                                               Margin="6,0,0,0"
+                                                               Text="{Binding RecipeCommands.BlobCountIntentMinAreaLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="10"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipeBlobCountIntentMinAreaText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.BlobCountIntentMinAreaText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="11"
+                                                               Margin="6,0,0,0"
+                                                               Text="{Binding RecipeCommands.BlobCountIntentMaxAreaLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="12"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipeBlobCountIntentMaxAreaText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.BlobCountIntentMaxAreaText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <Button Grid.Column="13"
+                                                            MinWidth="112"
+                                                            Height="22"
+                                                            Margin="7,0,0,0"
+                                                            AutomationProperties.AutomationId="HostRecipeCreateBlobCountIntentXmlButton"
+                                                            Command="{Binding RecipeCommands.CreateBlobCountIntentXmlDraftCommand}">
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                            <iconPacks:PackIconMaterial Kind="Target" Width="11" Height="11" Margin="0,1,4,0" />
+                                                            <TextBlock Text="{Binding RecipeCommands.CreateBlobCountIntentXmlText}" FontSize="10" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                </Grid>
+                                                <TextBlock Grid.Row="6"
+                                                           Margin="0,5,0,0"
+                                                           Style="{StaticResource ShellHost.BlobCountIntentVisibilityStyle}"
+                                                           AutomationProperties.AutomationId="HostRecipeBlobCountIntentWorkflowText"
+                                                           Text="{Binding RecipeCommands.BlobCountIntentWorkflowText}"
+                                                           Foreground="#C7EFCB"
+                                                           FontSize="10"
+                                                           TextWrapping="Wrap" />
+                                                <TextBlock Grid.Row="7"
+                                                           Margin="0,4,0,0"
+                                                           Style="{StaticResource ShellHost.BlobCountIntentVisibilityStyle}"
+                                                           AutomationProperties.AutomationId="HostRecipeBlobCountIntentFeedbackText"
+                                                           Text="{Binding RecipeCommands.BlobCountIntentFeedbackText}"
+                                                           Foreground="#F3D79B"
+                                                           FontSize="10"
+                                                           TextWrapping="Wrap" />
+                                                <TextBlock Grid.Row="8"
+                                                           Margin="0,4,0,0"
+                                                           Style="{StaticResource ShellHost.BlobCountIntentVisibilityStyle}"
+                                                           AutomationProperties.AutomationId="HostRecipeBlobCountIntentLatestRunText"
+                                                           Text="{Binding RecipeCommands.BlobCountIntentLatestRunText}"
+                                                           Foreground="#9FD9FF"
+                                                           FontSize="10"
+                                                           TextWrapping="Wrap" />
+                                                <Grid Grid.Row="9"
+                                                      Margin="0,7,0,0"
+                                                      Style="{StaticResource ShellHost.ContourCountIntentVisibilityStyle}"
+                                                      AutomationProperties.AutomationId="HostRecipeLlmContourCountIntentSkill">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="78" />
+                                                        <ColumnDefinition Width="32" />
+                                                        <ColumnDefinition Width="120" />
+                                                        <ColumnDefinition Width="66" />
+                                                        <ColumnDefinition Width="48" />
+                                                        <ColumnDefinition Width="62" />
+                                                        <ColumnDefinition Width="46" />
+                                                        <ColumnDefinition Width="62" />
+                                                        <ColumnDefinition Width="46" />
+                                                        <ColumnDefinition Width="58" />
+                                                        <ColumnDefinition Width="62" />
+                                                        <ColumnDefinition Width="58" />
+                                                        <ColumnDefinition Width="62" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding RecipeCommands.ContourCountIntentSkillText}"
+                                                               Foreground="#9FE5DE"
+                                                               FontSize="10"
+                                                               FontWeight="SemiBold"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding RecipeCommands.ContourCountIntentRoiLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="2"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipeContourCountIntentRoiText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.ContourCountIntentRoiText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="3"
+                                                               Margin="6,0,0,0"
+                                                               Text="{Binding RecipeCommands.ContourCountIntentThresholdLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="4"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipeContourCountIntentThresholdText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.ContourCountIntentThresholdText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="5"
+                                                               Margin="6,0,0,0"
+                                                               Text="{Binding RecipeCommands.ContourCountIntentMinCountLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="6"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipeContourCountIntentMinCountText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.ContourCountIntentMinCountText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="7"
+                                                               Margin="6,0,0,0"
+                                                               Text="{Binding RecipeCommands.ContourCountIntentMaxCountLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="8"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipeContourCountIntentMaxCountText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.ContourCountIntentMaxCountText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="9"
+                                                               Margin="6,0,0,0"
+                                                               Text="{Binding RecipeCommands.ContourCountIntentMinAreaLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="10"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipeContourCountIntentMinAreaText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.ContourCountIntentMinAreaText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="11"
+                                                               Margin="6,0,0,0"
+                                                               Text="{Binding RecipeCommands.ContourCountIntentMaxAreaLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="12"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipeContourCountIntentMaxAreaText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.ContourCountIntentMaxAreaText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <Button Grid.Column="13"
+                                                            MinWidth="112"
+                                                            Height="22"
+                                                            Margin="7,0,0,0"
+                                                            AutomationProperties.AutomationId="HostRecipeCreateContourCountIntentXmlButton"
+                                                            Command="{Binding RecipeCommands.CreateContourCountIntentXmlDraftCommand}">
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                            <iconPacks:PackIconMaterial Kind="VectorLine" Width="11" Height="11" Margin="0,1,4,0" />
+                                                            <TextBlock Text="{Binding RecipeCommands.CreateContourCountIntentXmlText}" FontSize="10" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                </Grid>
+                                                <TextBlock Grid.Row="10"
+                                                           Margin="0,5,0,0"
+                                                           Style="{StaticResource ShellHost.ContourCountIntentVisibilityStyle}"
+                                                           AutomationProperties.AutomationId="HostRecipeContourCountIntentWorkflowText"
+                                                           Text="{Binding RecipeCommands.ContourCountIntentWorkflowText}"
+                                                           Foreground="#C7EFCB"
+                                                           FontSize="10"
+                                                           TextWrapping="Wrap" />
+                                                <TextBlock Grid.Row="11"
+                                                           Margin="0,4,0,0"
+                                                           Style="{StaticResource ShellHost.ContourCountIntentVisibilityStyle}"
+                                                           AutomationProperties.AutomationId="HostRecipeContourCountIntentFeedbackText"
+                                                           Text="{Binding RecipeCommands.ContourCountIntentFeedbackText}"
+                                                           Foreground="#F3D79B"
+                                                           FontSize="10"
+                                                           TextWrapping="Wrap" />
+                                                <TextBlock Grid.Row="12"
+                                                           Margin="0,4,0,0"
+                                                           Style="{StaticResource ShellHost.ContourCountIntentVisibilityStyle}"
+                                                           AutomationProperties.AutomationId="HostRecipeContourCountIntentLatestRunText"
+                                                           Text="{Binding RecipeCommands.ContourCountIntentLatestRunText}"
+                                                           Foreground="#9FD9FF"
+                                                           FontSize="10"
+                                                           TextWrapping="Wrap" />
+                                            </Grid>
                                         </Border>
                                         <TextBox Grid.Row="3"
                                                  Margin="0,6,0,0"

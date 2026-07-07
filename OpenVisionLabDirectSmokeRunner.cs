@@ -109,6 +109,27 @@ namespace OpenVisionLab
                     return true;
                 }
 
+                if (string.Equals(scenario, "recipe-manager-llm-intent-skills", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(scenario, "llm-intent-skills", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunRecipeManagerLlmIntentSkills(outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "llm-xml-draft-file", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(scenario, "llm-draft-file", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunLlmXmlDraftFile(args, outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "llm-xml-image-run", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(scenario, "llm-draft-image-run", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunLlmXmlImageRun(args, outputDirectory);
+                    return true;
+                }
+
                 if (string.Equals(scenario, "layer-load-matching-flow", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(scenario, "layer-image-matching-flow", StringComparison.OrdinalIgnoreCase))
                 {
@@ -175,6 +196,262 @@ namespace OpenVisionLab
                 Environment.ExitCode = 1;
                 return true;
             }
+        }
+
+        private static void RunLlmXmlImageRun(string[] args, string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string draftPath = ResolveRequiredOption(args, "--draft");
+            string imagePath = ResolveRequiredOption(args, "--image");
+            int timeoutMilliseconds = ResolveOptionalIntOption(args, "--timeout-ms", 5000);
+
+            if (!File.Exists(draftPath))
+            {
+                throw new FileNotFoundException("LLM XML draft file was not found.", draftPath);
+            }
+
+            if (!File.Exists(imagePath))
+            {
+                throw new FileNotFoundException("LLM XML draft verification image was not found.", imagePath);
+            }
+
+            if (!SerializeHelper.TryLoadFromXmlFile(draftPath, out VisionPipeline pipeline) || pipeline == null)
+            {
+                throw new InvalidOperationException("LLM XML draft could not be loaded for image execution: " + draftPath);
+            }
+
+            VisionPipelineValidationResult validation = VisionPipelineValidator.Validate(pipeline, new[] { "Main" });
+            VisionRecipeRunResult imageRunResult = RunLlmDraftOnImage(pipeline, imagePath, outputDirectory, timeoutMilliseconds);
+            bool pass = validation.Success && imageRunResult != null && imageRunResult.Success;
+
+            File.WriteAllText(
+                Path.Combine(outputDirectory, "report.txt"),
+                "Result: " + (pass ? "PASS" : "FAIL") + Environment.NewLine
+                + "Scenario: llm-xml-image-run" + Environment.NewLine
+                + "DraftPath: " + draftPath + Environment.NewLine
+                + "ImagePath: " + imagePath + Environment.NewLine
+                + "TimeoutMs: " + timeoutMilliseconds.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                + "ValidationSuccess: " + validation.Success + Environment.NewLine
+                + "ValidationErrors: " + validation.Errors.Count.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                + string.Join(Environment.NewLine, validation.Errors.Select(error => "ValidationError: " + error)) + Environment.NewLine
+                + "ValidationWarnings: " + validation.Warnings.Count.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                + string.Join(Environment.NewLine, validation.Warnings.Select(warning => "ValidationWarning: " + warning)) + Environment.NewLine
+                + BuildLlmDraftImageRunReport(imageRunResult, imagePath),
+                Encoding.UTF8);
+
+            imageRunResult?.ResultImage?.Dispose();
+
+            if (!pass)
+            {
+                throw new InvalidOperationException(
+                    "LLM XML draft image run failed. "
+                    + $"ValidationSuccess={validation.Success}, RunSuccess={imageRunResult?.Success}");
+            }
+        }
+
+        private static void RunLlmXmlDraftFile(string[] args, string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string draftPath = ResolveRequiredOption(args, "--draft");
+            if (!File.Exists(draftPath))
+            {
+                throw new FileNotFoundException("LLM XML draft file was not found.", draftPath);
+            }
+
+            string expectedPipelineName = ResolveDraftPipelineName(draftPath);
+            string imagePath = ResolveOptionalOption(args, "--image");
+            if (!string.IsNullOrWhiteSpace(imagePath) && !File.Exists(imagePath))
+            {
+                throw new FileNotFoundException("LLM XML draft verification image was not found.", imagePath);
+            }
+
+            string recipeName = "Smoke_LlmDraft_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+            const string pipelineName = "Direct_LlmDraft_Baseline";
+            VisionPipelineStorage.Save(recipeName, CreateDirectSmokePipeline(pipelineName, 1));
+            VisionPipelineStorage.SaveActivePipelineName(recipeName, pipelineName);
+
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+
+            OpenVisionShellHostWindow window = null;
+            try
+            {
+                ApplicationRuntimeContext runtimeContext = ApplicationRuntimeContext.CreateDefault();
+                window = new OpenVisionShellHostWindow(runtimeContext)
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+
+                app.MainWindow = window;
+                window.Show();
+                window.Activate();
+                Pump(36);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("OpenVision shell host was not created.");
+
+                shellHost.SwitchRecipeContextForTest(recipeName);
+                Pump(40);
+
+                bool validationOk = shellHost.RecipeCommands.LoadLlmXmlDraftFromPath(draftPath);
+                bool importEnabled = shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null);
+                string selectedBeforeImport = shellHost.RecipeCommands.SelectedPipelineOption?.PipelineName ?? string.Empty;
+                if (validationOk && importEnabled)
+                {
+                    shellHost.RecipeCommands.ImportLlmXmlDraftCommand.Execute(null);
+                    Pump(80);
+                }
+
+                string selectedAfterImport = shellHost.RecipeCommands.SelectedPipelineOption?.PipelineName ?? string.Empty;
+                bool imported = validationOk
+                    && importEnabled
+                    && !string.Equals(selectedBeforeImport, selectedAfterImport, StringComparison.OrdinalIgnoreCase)
+                    && (string.IsNullOrWhiteSpace(expectedPipelineName)
+                        || selectedAfterImport.IndexOf(expectedPipelineName, StringComparison.OrdinalIgnoreCase) >= 0);
+
+                VisionRecipeRunResult imageRunResult = null;
+                string imageRunReport = "ImageRun: SKIPPED";
+                bool imageRunOk = string.IsNullOrWhiteSpace(imagePath);
+                if (validationOk && imported && !string.IsNullOrWhiteSpace(imagePath))
+                {
+                    if (!SerializeHelper.TryLoadFromXmlFile(draftPath, out VisionPipeline pipeline) || pipeline == null)
+                    {
+                        throw new InvalidOperationException("LLM XML draft could not be loaded for image execution: " + draftPath);
+                    }
+
+                    imageRunResult = RunLlmDraftOnImage(pipeline, imagePath, outputDirectory, 5000);
+                    imageRunOk = imageRunResult != null && imageRunResult.Success;
+                    imageRunReport = BuildLlmDraftImageRunReport(imageRunResult, imagePath);
+                }
+
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: " + (validationOk && imported && imageRunOk ? "PASS" : "FAIL") + Environment.NewLine
+                    + "Scenario: llm-xml-draft-file" + Environment.NewLine
+                    + "DraftPath: " + draftPath + Environment.NewLine
+                    + "ImagePath: " + (string.IsNullOrWhiteSpace(imagePath) ? "-" : imagePath) + Environment.NewLine
+                    + "ValidationOk: " + validationOk + Environment.NewLine
+                    + "ImportEnabled: " + importEnabled + Environment.NewLine
+                    + "Imported: " + imported + Environment.NewLine
+                    + "SelectedBeforeImport: " + selectedBeforeImport + Environment.NewLine
+                    + "SelectedAfterImport: " + selectedAfterImport + Environment.NewLine
+                    + imageRunReport + Environment.NewLine
+                    + "ValidationReport:" + Environment.NewLine
+                    + shellHost.RecipeCommands.LlmXmlDraftValidationReport + Environment.NewLine
+                    + "DependencyReport:" + Environment.NewLine
+                    + shellHost.RecipeCommands.LlmXmlDraftDependencyReport + Environment.NewLine
+                    + "ReviewReport:" + Environment.NewLine
+                    + shellHost.RecipeCommands.LlmXmlDraftReviewReport + Environment.NewLine
+                    + "DiffReport:" + Environment.NewLine
+                    + shellHost.RecipeCommands.LlmXmlDraftDiffReport,
+                    Encoding.UTF8);
+
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_LlmXmlDraftFile.png"));
+
+                imageRunResult?.ResultImage?.Dispose();
+
+                if (!validationOk || !imported || !imageRunOk)
+                {
+                    throw new InvalidOperationException(
+                        "LLM XML draft file did not validate/import. "
+                        + $"ValidationOk={validationOk}, ImportEnabled={importEnabled}, Imported={imported}, ImageRunOk={imageRunOk}");
+                }
+            }
+            finally
+            {
+                if (window != null)
+                {
+                    window.Close();
+                }
+
+                app.Shutdown();
+            }
+        }
+
+        private static VisionRecipeRunResult RunLlmDraftOnImage(
+            VisionPipeline pipeline,
+            string imagePath,
+            string outputDirectory,
+            int timeoutMilliseconds)
+        {
+            if (pipeline == null)
+            {
+                throw new ArgumentNullException(nameof(pipeline));
+            }
+
+            using (OpenCvSharp.Mat source = OpenCvSharp.Cv2.ImRead(imagePath, OpenCvSharp.ImreadModes.Grayscale))
+            {
+                if (source.Empty())
+                {
+                    throw new InvalidOperationException("LLM XML draft verification image could not be loaded: " + imagePath);
+                }
+
+                VisionRecipeRunner runner = new VisionRecipeRunner();
+                VisionRecipeRunResult result = runner.RunAsync(
+                    pipeline,
+                    source,
+                    VisionRecipeRunner.DefaultInputLayer,
+                    timeoutMilliseconds,
+                    CancellationToken.None).GetAwaiter().GetResult();
+                if (result?.ResultImage != null && !result.ResultImage.Empty())
+                {
+                    OpenCvSharp.Cv2.ImWrite(Path.Combine(outputDirectory, "LlmDraft_RunResult.png"), result.ResultImage);
+                }
+
+                return result;
+            }
+        }
+
+        private static string BuildLlmDraftImageRunReport(VisionRecipeRunResult result, string imagePath)
+        {
+            if (result == null)
+            {
+                return "ImageRun: FAIL" + Environment.NewLine + "ImageRunMessage: no run result";
+            }
+
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("ImageRun: " + (result.Success ? "PASS" : "FAIL"));
+            builder.AppendLine("ImageRunPath: " + imagePath);
+            builder.AppendLine("ImageRunMessage: " + result.Message);
+            builder.AppendLine("ImageRunFinalLayer: " + result.FinalLayer);
+            builder.AppendLine("ImageRunFinalStep: " + result.FinalStepName);
+            builder.AppendLine("ImageRunTotalMs: " + result.TotalMilliseconds.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.AppendLine("ImageRunResultSize: " + result.ResultImageWidth.ToString(CultureInfo.InvariantCulture) + "x" + result.ResultImageHeight.ToString(CultureInfo.InvariantCulture));
+
+            foreach (VisionRecipeStepRunSummary step in result.Steps ?? new List<VisionRecipeStepRunSummary>())
+            {
+                builder.AppendLine(
+                    "ImageRunStep: "
+                    + step.Index.ToString(CultureInfo.InvariantCulture)
+                    + " | " + step.Name
+                    + " | " + step.ToolType
+                    + " | " + step.Status
+                    + " | Acceptance=" + step.AcceptancePassed
+                    + " | OverlayCount=" + step.OverlayCount.ToString(CultureInfo.InvariantCulture)
+                    + " | " + step.AcceptanceMessage);
+                if (!string.IsNullOrWhiteSpace(step.MetricsText))
+                {
+                    builder.AppendLine("ImageRunMetrics: " + step.MetricsText);
+                }
+
+                if (step.Metrics != null && step.Metrics.TryGetValue("BoundsHeightAvg", out double boundsHeightAvg))
+                {
+                    builder.AppendLine("MeasuredBoundsHeightAvg: " + boundsHeightAvg.ToString("0.###", CultureInfo.InvariantCulture));
+                }
+            }
+
+            return builder.ToString().TrimEnd();
+        }
+
+        private static string ResolveDraftPipelineName(string draftPath)
+        {
+            return SerializeHelper.TryLoadFromXmlFile(draftPath, out VisionPipeline pipeline) && pipeline != null
+                ? pipeline.Name ?? string.Empty
+                : string.Empty;
         }
 
         private static void RunLinePinsMeasure(string outputDirectory)
@@ -760,6 +1037,193 @@ namespace OpenVisionLab
                     + "DockedTiles: " + shellHost.DockedLayerTextureTileCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
                     + "RootOrientation: " + shellHost.DockedLayerRootOrientationForTest + Environment.NewLine
                     + "Titles: " + shellHost.DockedLayerTitles,
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                if (window != null)
+                {
+                    window.Close();
+                }
+
+                app.Shutdown();
+            }
+        }
+
+        private static void RunRecipeManagerLlmIntentSkills(string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string recipeName = "Smoke_LlmIntentSkills_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+            const string pipelineName = "Direct_LlmIntentSkill_Check";
+            VisionPipelineStorage.Save(recipeName, CreateDirectSmokePipeline(pipelineName, 2));
+            VisionPipelineStorage.SaveActivePipelineName(recipeName, pipelineName);
+
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+
+            OpenVisionShellHostWindow window = null;
+            try
+            {
+                ApplicationRuntimeContext runtimeContext = ApplicationRuntimeContext.CreateDefault();
+                window = new OpenVisionShellHostWindow(runtimeContext)
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+
+                app.MainWindow = window;
+                window.Show();
+                window.Activate();
+                Pump(36);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("OpenVision shell host was not created.");
+
+                shellHost.SwitchRecipeContextForTest(recipeName);
+                Pump(40);
+
+                System.Windows.Controls.Primitives.ToggleButton recipeManagerButton =
+                    FindNamedVisualChild<System.Windows.Controls.Primitives.ToggleButton>(
+                        shellHost,
+                        "btnHostRecipeManager",
+                        "Recipe manager LLM intent skill smoke");
+                recipeManagerButton.IsChecked = true;
+                Pump(60);
+
+                TabItem llmXmlTab = FindNamedVisualChild<TabItem>(
+                    shellHost,
+                    "tabRecipeLlmXml",
+                    "Recipe manager LLM intent skill smoke");
+                llmXmlTab.IsSelected = true;
+                Pump(40);
+
+                int beforeRuns = shellHost.NativePreviewRunCount;
+                OpenVisionShellHostRecipeCommandSurface commands = shellHost.RecipeCommands;
+
+                commands.SelectedLlmToolTemplate = "Template Matching";
+                Pump(20);
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager LLM intent skill baseline",
+                    "HostRecipeLlmAssistantPanel",
+                    "HostRecipeLlmTemplateSelector",
+                    "HostRecipeLlmResultChannelContract");
+                AssertNotVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager LLM intent skill baseline",
+                    "HostRecipeLlmPinGapIntentSkill",
+                    "HostRecipeLlmBlobCountIntentSkill",
+                    "HostRecipeLlmContourCountIntentSkill");
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_LlmIntentSkills_TemplateMatching.png"));
+
+                commands.SelectedLlmToolTemplate = "Pin gap / edge distance (LineDistance)";
+                Pump(20);
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager LLM pin-gap intent focus",
+                    "HostRecipeLlmPinGapIntentSkill",
+                    "HostRecipePinGapIntentWorkflowText",
+                    "HostRecipePinGapIntentFeedbackText",
+                    "HostRecipePinGapIntentLatestRunText");
+                AssertNotVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager LLM pin-gap intent focus",
+                    "HostRecipeLlmBlobCountIntentSkill",
+                    "HostRecipeLlmContourCountIntentSkill");
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_LlmIntentSkills_PinGap.png"));
+
+                commands.SelectedLlmToolTemplate = "Threshold + Blob";
+                Pump(20);
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager LLM blob-count intent focus",
+                    "HostRecipeLlmBlobCountIntentSkill",
+                    "HostRecipeBlobCountIntentWorkflowText",
+                    "HostRecipeBlobCountIntentFeedbackText",
+                    "HostRecipeBlobCountIntentLatestRunText");
+                AssertNotVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager LLM blob-count intent focus",
+                    "HostRecipeLlmPinGapIntentSkill",
+                    "HostRecipeLlmContourCountIntentSkill");
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_LlmIntentSkills_BlobCount.png"));
+
+                commands.SelectedLlmToolTemplate = "Shape boundary (Contour)";
+                Pump(20);
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager LLM contour-count intent focus",
+                    "HostRecipeLlmContourCountIntentSkill",
+                    "HostRecipeContourCountIntentWorkflowText",
+                    "HostRecipeContourCountIntentFeedbackText",
+                    "HostRecipeContourCountIntentLatestRunText");
+                AssertNotVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager LLM contour-count intent focus",
+                    "HostRecipeLlmPinGapIntentSkill",
+                    "HostRecipeLlmBlobCountIntentSkill");
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_LlmIntentSkills_ContourCount.png"));
+
+                commands.SelectedLlmToolTemplate = "Pin gap / edge distance (LineDistance)";
+                Pump(20);
+                VisionPipeline wrongPinGapDraft = new VisionPipeline { Name = "Direct_LLM_PinGap_WrongContour" };
+                VisionPipelineStep wrongThresholdStep = new VisionPipelineStep
+                {
+                    Name = "01 Pin Binary",
+                    ToolType = "Threshold",
+                    InputLayer = "Main",
+                    OutputLayer = "Pin_Binary"
+                };
+                wrongThresholdStep.Parameters["Threshold"] = "128";
+                wrongThresholdStep.Parameters["MaxValue"] = "255";
+                wrongPinGapDraft.Steps.Add(wrongThresholdStep);
+                VisionPipelineStep wrongContourStep = new VisionPipelineStep
+                {
+                    Name = "02 Wrong Pin Distance Contour",
+                    ToolType = "Contour",
+                    InputLayer = "Pin_Binary",
+                    OutputLayer = "Pin_Contour"
+                };
+                wrongContourStep.Parameters["USE_THRESHOLD"] = "false";
+                wrongContourStep.Parameters["MIN_AREA"] = "100";
+                wrongContourStep.Parameters["MAX_AREA"] = "5000";
+                wrongPinGapDraft.Steps.Add(wrongContourStep);
+                commands.LlmXmlDraftText = SerializePipelineToXmlText(wrongPinGapDraft);
+                if (commands.ValidateLlmXmlDraftTextForTest()
+                    || !commands.LlmXmlDraftValidationReport.Contains("Intent contract mismatch", StringComparison.OrdinalIgnoreCase)
+                    || !commands.LlmXmlDraftValidationReport.Contains("LineDistance", StringComparison.OrdinalIgnoreCase)
+                    || !commands.LlmXmlDraftValidationReport.Contains("Contour", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager LLM pin-gap intent did not block a Contour-only distance draft. "
+                        + commands.LlmXmlDraftValidationReport);
+                }
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "PinGapContourMismatchValidation.txt"),
+                    commands.LlmXmlDraftValidationReport,
+                    Encoding.UTF8);
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_LlmIntentSkills_PinGapContourMismatch.png"));
+
+                if (shellHost.NativePreviewRunCount != beforeRuns)
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager LLM intent skill selection triggered Preview/Run. "
+                        + $"Before={beforeRuns}, After={shellHost.NativePreviewRunCount}");
+                }
+
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: recipe-manager-llm-intent-skills" + Environment.NewLine
+                    + "TemplateMatching: intent skill blocks collapsed" + Environment.NewLine
+                    + "PinGapFocus: only pin-gap skill block visible" + Environment.NewLine
+                    + "BlobCountFocus: only blob-count skill block visible" + Environment.NewLine
+                    + "ContourCountFocus: only contour-count skill block visible" + Environment.NewLine
+                    + "PinGapContourMismatch: blocked by intent contract" + Environment.NewLine
+                    + "PreviewRunCountUnchanged: " + beforeRuns.ToString(CultureInfo.InvariantCulture),
                     Encoding.UTF8);
             }
             finally
@@ -1400,7 +1864,7 @@ namespace OpenVisionLab
                         "Recipe manager direct smoke operator handoff report copy command did not report success. "
                         + shellHost.RecipeCommands.OperatorHandoffReportStatusText);
                 }
-                string operatorReportClipboard = System.Windows.Clipboard.GetText();
+                string operatorReportClipboard = GetClipboardTextWithRetry();
                 if (!operatorReportClipboard.Contains("OpenVisionLab", StringComparison.OrdinalIgnoreCase)
                     || (!operatorReportClipboard.Contains("Validation checklist", StringComparison.OrdinalIgnoreCase)
                         && !operatorReportClipboard.Contains("검증 체크리스트", StringComparison.OrdinalIgnoreCase))
@@ -1449,7 +1913,7 @@ namespace OpenVisionLab
                         "Recipe manager direct smoke selected run review copy command did not report success. "
                         + shellHost.RecipeCommands.SelectedRecentBatchRunReviewCopyStatusText);
                 }
-                string runReviewClipboard = System.Windows.Clipboard.GetText();
+                string runReviewClipboard = GetClipboardTextWithRetry();
                 if (!runReviewClipboard.Contains(forcedFailedRole.SampleName, StringComparison.OrdinalIgnoreCase)
                     || !runReviewClipboard.Contains(failedStepPreview.Name, StringComparison.OrdinalIgnoreCase))
                 {
@@ -1647,9 +2111,10 @@ namespace OpenVisionLab
                         "Recipe manager direct smoke LLM prompt copy command did not report success. "
                         + shellHost.RecipeCommands.LlmPromptCopyStatusText);
                 }
-                string llmPromptClipboard = System.Windows.Clipboard.GetText();
+                string llmPromptClipboard = GetClipboardTextWithRetry();
                 if (!llmPromptClipboard.Contains("OpenVisionLab VisionPipeline XML draft", StringComparison.OrdinalIgnoreCase)
                     || !llmPromptClipboard.Contains("Template Matching", StringComparison.OrdinalIgnoreCase)
+                    || !llmPromptClipboard.Contains("Intent contract", StringComparison.OrdinalIgnoreCase)
                     || !llmPromptClipboard.Contains("Inspection.Status", StringComparison.OrdinalIgnoreCase)
                     || !llmPromptClipboard.Contains("0..1 decimals", StringComparison.OrdinalIgnoreCase)
                     || !llmPromptClipboard.Contains("FIND_ANGLE_MIN", StringComparison.OrdinalIgnoreCase)
@@ -1657,6 +2122,253 @@ namespace OpenVisionLab
                 {
                     throw new InvalidOperationException("Recipe manager direct smoke LLM prompt copy did not write the expected clipboard content.");
                 }
+
+                string previousLlmToolTemplate = shellHost.RecipeCommands.SelectedLlmToolTemplate;
+                shellHost.RecipeCommands.SelectedLlmToolTemplate = "Pin gap / edge distance (LineDistance)";
+                shellHost.RecipeCommands.CreateLlmTemplateXmlDraftForTest();
+                Pump(20);
+                string lineDistanceTemplateDraft = shellHost.RecipeCommands.LlmXmlDraftText ?? string.Empty;
+                if (!lineDistanceTemplateDraft.Contains("<ToolType>LineDistance</ToolType>", StringComparison.OrdinalIgnoreCase)
+                    || !lineDistanceTemplateDraft.Contains("<AcceptanceMetricName>DistancePxRange</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                    || !lineDistanceTemplateDraft.Contains("<UseAcceptanceMetricMaximum>true</UseAcceptanceMetricMaximum>", StringComparison.OrdinalIgnoreCase)
+                    || !lineDistanceTemplateDraft.Contains("<Key>LeftPRJ_DIR</Key>", StringComparison.OrdinalIgnoreCase)
+                    || lineDistanceTemplateDraft.Contains("<ToolType>Contour</ToolType>", StringComparison.OrdinalIgnoreCase)
+                    || lineDistanceTemplateDraft.Contains("<ToolType>Line</ToolType>", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke LLM pin-gap intent did not create a locked LineDistance XML starter. "
+                        + lineDistanceTemplateDraft);
+                }
+
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_LlmIntentLineDistance.png"));
+                shellHost.RecipeCommands.PinGapIntentRoiText = "430,220,125,50";
+                shellHost.RecipeCommands.PinGapIntentDistanceMinText = "0.40";
+                shellHost.RecipeCommands.PinGapIntentDistanceMaxText = "0.55";
+                shellHost.RecipeCommands.PinGapIntentRangeMaxText = "0.06";
+                shellHost.RecipeCommands.PinGapIntentScaleText = "0.006";
+                if (!shellHost.RecipeCommands.CreatePinGapIntentXmlDraftCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException("Recipe manager direct smoke pin-gap skill command was disabled.");
+                }
+
+                shellHost.RecipeCommands.CreatePinGapIntentXmlDraftCommand.Execute(null);
+                Pump(40);
+                string pinGapSkillDraft = shellHost.RecipeCommands.LlmXmlDraftText ?? string.Empty;
+                if (!pinGapSkillDraft.Contains("<Name>LLM_PinGap_DistanceSkill</Name>", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapSkillDraft.Contains("<Name>01 Pin Gap Distance</Name>", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapSkillDraft.Contains("<Name>02 Pin Gap Consistency</Name>", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapSkillDraft.Contains("<AcceptanceMetricName>DistanceMmAvg</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapSkillDraft.Contains("<AcceptanceMetricName>DistanceMmRange</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapSkillDraft.Contains("<Value>430,220,125,50</Value>", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapSkillDraft.Contains("<Key>ALLOW_BRANCH_INPUT</Key>", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke pin-gap skill did not create the expected two-gate LineDistance XML draft. "
+                        + pinGapSkillDraft);
+                }
+
+                string pinGapWorkflowText = shellHost.RecipeCommands.PinGapIntentWorkflowText ?? string.Empty;
+                if (!pinGapWorkflowText.Contains("DistanceMmAvg", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapWorkflowText.Contains("DistanceMmRange", StringComparison.OrdinalIgnoreCase)
+                    || (!pinGapWorkflowText.Contains("Validate", StringComparison.OrdinalIgnoreCase)
+                        && !pinGapWorkflowText.Contains("검증", StringComparison.OrdinalIgnoreCase))
+                    || (!pinGapWorkflowText.Contains("Import", StringComparison.OrdinalIgnoreCase)
+                        && !pinGapWorkflowText.Contains("가져오기", StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke pin-gap workflow summary did not expose the expected gates and next actions. "
+                        + pinGapWorkflowText);
+                }
+
+                string pinGapFeedbackText = shellHost.RecipeCommands.PinGapIntentFeedbackText ?? string.Empty;
+                if (!pinGapFeedbackText.Contains("Avg NG", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapFeedbackText.Contains("Range NG", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapFeedbackText.Contains("ROI", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapFeedbackText.Contains("mm/px", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke pin-gap feedback did not expose the expected tuning axes. "
+                        + pinGapFeedbackText);
+                }
+
+                string pinGapLatestRunText = shellHost.RecipeCommands.PinGapIntentLatestRunText ?? string.Empty;
+                if (!pinGapLatestRunText.Contains("DistanceMmAvg", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapLatestRunText.Contains("DistanceMmRange", StringComparison.OrdinalIgnoreCase)
+                    || (!pinGapLatestRunText.Contains("Decision", StringComparison.OrdinalIgnoreCase)
+                        && !pinGapLatestRunText.Contains("판정", StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke pin-gap latest run summary did not expose actual distance metrics and decision text. "
+                        + pinGapLatestRunText);
+                }
+
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager direct smoke pin-gap workflow summary",
+                    "HostRecipePinGapIntentWorkflowText",
+                    "HostRecipePinGapIntentFeedbackText",
+                    "HostRecipePinGapIntentLatestRunText");
+                File.WriteAllText(Path.Combine(outputDirectory, "LlmPinGapSkill.xml"), pinGapSkillDraft, Encoding.Unicode);
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_LlmPinGapSkill.png"));
+
+                shellHost.RecipeCommands.BlobCountIntentRoiText = "0,0,572,420";
+                shellHost.RecipeCommands.BlobCountIntentThresholdText = "150";
+                shellHost.RecipeCommands.BlobCountIntentMinCountText = "8";
+                shellHost.RecipeCommands.BlobCountIntentMaxCountText = "14";
+                shellHost.RecipeCommands.BlobCountIntentMinAreaText = "200";
+                shellHost.RecipeCommands.BlobCountIntentMaxAreaText = "2000";
+                if (!shellHost.RecipeCommands.CreateBlobCountIntentXmlDraftCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException("Recipe manager direct smoke blob-count skill command was disabled.");
+                }
+
+                shellHost.RecipeCommands.CreateBlobCountIntentXmlDraftCommand.Execute(null);
+                Pump(40);
+                string blobCountSkillDraft = shellHost.RecipeCommands.LlmXmlDraftText ?? string.Empty;
+                if (!blobCountSkillDraft.Contains("<Name>LLM_BlobCount_Skill</Name>", StringComparison.OrdinalIgnoreCase)
+                    || !blobCountSkillDraft.Contains("<Name>01 Blob Count Binary</Name>", StringComparison.OrdinalIgnoreCase)
+                    || !blobCountSkillDraft.Contains("<ToolType>Threshold</ToolType>", StringComparison.OrdinalIgnoreCase)
+                    || !blobCountSkillDraft.Contains("<Name>02 Blob Count Inspect</Name>", StringComparison.OrdinalIgnoreCase)
+                    || !blobCountSkillDraft.Contains("<ToolType>Blob</ToolType>", StringComparison.OrdinalIgnoreCase)
+                    || !blobCountSkillDraft.Contains("<AcceptanceMetricName>ResultCount</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                    || !blobCountSkillDraft.Contains("<Value>0,0,572,420</Value>", StringComparison.OrdinalIgnoreCase)
+                    || !blobCountSkillDraft.Contains("<Key>MIN_AREA</Key>", StringComparison.OrdinalIgnoreCase)
+                    || !blobCountSkillDraft.Contains("<Value>200</Value>", StringComparison.OrdinalIgnoreCase)
+                    || !blobCountSkillDraft.Contains("<Key>MAX_AREA</Key>", StringComparison.OrdinalIgnoreCase)
+                    || !blobCountSkillDraft.Contains("<Value>2000</Value>", StringComparison.OrdinalIgnoreCase)
+                    || blobCountSkillDraft.Contains("<ToolType>LineDistance</ToolType>", StringComparison.OrdinalIgnoreCase)
+                    || blobCountSkillDraft.Contains("<ToolType>Contour</ToolType>", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke blob-count skill did not create the expected Threshold + Blob ResultCount XML draft. "
+                        + blobCountSkillDraft);
+                }
+
+                string blobCountWorkflowText = shellHost.RecipeCommands.BlobCountIntentWorkflowText ?? string.Empty;
+                if (!blobCountWorkflowText.Contains("ResultCount", StringComparison.OrdinalIgnoreCase)
+                    || (!blobCountWorkflowText.Contains("Validate", StringComparison.OrdinalIgnoreCase)
+                        && !blobCountWorkflowText.Contains("검증", StringComparison.OrdinalIgnoreCase))
+                    || (!blobCountWorkflowText.Contains("Import", StringComparison.OrdinalIgnoreCase)
+                        && !blobCountWorkflowText.Contains("가져오기", StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke blob-count workflow summary did not expose the expected gate and next actions. "
+                        + blobCountWorkflowText);
+                }
+
+                string blobCountFeedbackText = shellHost.RecipeCommands.BlobCountIntentFeedbackText ?? string.Empty;
+                if (!blobCountFeedbackText.Contains("Count NG", StringComparison.OrdinalIgnoreCase)
+                    || !blobCountFeedbackText.Contains("threshold", StringComparison.OrdinalIgnoreCase)
+                    || !blobCountFeedbackText.Contains("ROI", StringComparison.OrdinalIgnoreCase)
+                    || !blobCountFeedbackText.Contains("area", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke blob-count feedback did not expose the expected tuning axes. "
+                        + blobCountFeedbackText);
+                }
+
+                string blobCountLatestRunText = shellHost.RecipeCommands.BlobCountIntentLatestRunText ?? string.Empty;
+                if (!blobCountLatestRunText.Contains("ResultCount", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke blob-count latest run summary did not expose ResultCount guidance. "
+                        + blobCountLatestRunText);
+                }
+
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager direct smoke blob-count workflow summary",
+                    "HostRecipeLlmBlobCountIntentSkill",
+                    "HostRecipeBlobCountIntentWorkflowText",
+                    "HostRecipeBlobCountIntentFeedbackText",
+                    "HostRecipeBlobCountIntentLatestRunText");
+                File.WriteAllText(Path.Combine(outputDirectory, "LlmBlobCountSkill.xml"), blobCountSkillDraft, Encoding.Unicode);
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_LlmBlobCountSkill.png"));
+
+                shellHost.RecipeCommands.ContourCountIntentRoiText = "0,0,572,420";
+                shellHost.RecipeCommands.ContourCountIntentThresholdText = "150";
+                shellHost.RecipeCommands.ContourCountIntentMinCountText = "5";
+                shellHost.RecipeCommands.ContourCountIntentMaxCountText = "5";
+                shellHost.RecipeCommands.ContourCountIntentMinAreaText = "700";
+                shellHost.RecipeCommands.ContourCountIntentMaxAreaText = "9000";
+                if (!shellHost.RecipeCommands.CreateContourCountIntentXmlDraftCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException("Recipe manager direct smoke contour-count skill command was disabled.");
+                }
+
+                shellHost.RecipeCommands.CreateContourCountIntentXmlDraftCommand.Execute(null);
+                Pump(40);
+                string contourCountSkillDraft = shellHost.RecipeCommands.LlmXmlDraftText ?? string.Empty;
+                if (!contourCountSkillDraft.Contains("<Name>LLM_ContourCountSize_Skill</Name>", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountSkillDraft.Contains("<Name>01 Contour Binary</Name>", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountSkillDraft.Contains("<ToolType>Threshold</ToolType>", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountSkillDraft.Contains("<Name>02 Contour Count</Name>", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountSkillDraft.Contains("<ToolType>Contour</ToolType>", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountSkillDraft.Contains("<Name>03 Contour Size Guard</Name>", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountSkillDraft.Contains("<Name>04 Contour Review Overlay</Name>", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountSkillDraft.Contains("<ToolType>OverlayMerge</ToolType>", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountSkillDraft.Contains("<AcceptanceMetricName>ResultCount</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountSkillDraft.Contains("<AcceptanceMetricName>AreaMax</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountSkillDraft.Contains("<Value>0,0,572,420</Value>", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountSkillDraft.Contains("<Key>ALLOW_BRANCH_INPUT</Key>", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountSkillDraft.Contains("<Key>SourceLayers</Key>", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountSkillDraft.Contains("<Value>ContourSize_Result</Value>", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountSkillDraft.Contains("<Key>MIN_AREA</Key>", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountSkillDraft.Contains("<Value>700</Value>", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountSkillDraft.Contains("<Key>MAX_AREA</Key>", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountSkillDraft.Contains("<Value>9000</Value>", StringComparison.OrdinalIgnoreCase)
+                    || contourCountSkillDraft.Contains("<ToolType>LineDistance</ToolType>", StringComparison.OrdinalIgnoreCase)
+                    || contourCountSkillDraft.Contains("<ToolType>Blob</ToolType>", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke contour-count skill did not create the expected Threshold + Contour ResultCount/AreaMax XML draft. "
+                        + contourCountSkillDraft);
+                }
+
+                string contourCountWorkflowText = shellHost.RecipeCommands.ContourCountIntentWorkflowText ?? string.Empty;
+                if (!contourCountWorkflowText.Contains("ResultCount", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountWorkflowText.Contains("AreaMax", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountWorkflowText.Contains("Review overlay", StringComparison.OrdinalIgnoreCase)
+                    || (!contourCountWorkflowText.Contains("Validate", StringComparison.OrdinalIgnoreCase)
+                        && !contourCountWorkflowText.Contains("검증", StringComparison.OrdinalIgnoreCase))
+                    || (!contourCountWorkflowText.Contains("Import", StringComparison.OrdinalIgnoreCase)
+                        && !contourCountWorkflowText.Contains("가져오기", StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke contour-count workflow summary did not expose the expected gates and next actions. "
+                        + contourCountWorkflowText);
+                }
+
+                string contourCountFeedbackText = shellHost.RecipeCommands.ContourCountIntentFeedbackText ?? string.Empty;
+                if (!contourCountFeedbackText.Contains("Count NG", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountFeedbackText.Contains("AreaMax NG", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountFeedbackText.Contains("threshold", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountFeedbackText.Contains("ROI", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke contour-count feedback did not expose the expected tuning axes. "
+                        + contourCountFeedbackText);
+                }
+
+                string contourCountLatestRunText = shellHost.RecipeCommands.ContourCountIntentLatestRunText ?? string.Empty;
+                if (!contourCountLatestRunText.Contains("ResultCount", StringComparison.OrdinalIgnoreCase)
+                    || !contourCountLatestRunText.Contains("AreaMax", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke contour-count latest run summary did not expose ResultCount/AreaMax guidance. "
+                        + contourCountLatestRunText);
+                }
+
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager direct smoke contour-count workflow summary",
+                    "HostRecipeLlmContourCountIntentSkill",
+                    "HostRecipeContourCountIntentWorkflowText",
+                    "HostRecipeContourCountIntentFeedbackText",
+                    "HostRecipeContourCountIntentLatestRunText");
+                File.WriteAllText(Path.Combine(outputDirectory, "LlmContourCountSkill.xml"), contourCountSkillDraft, Encoding.Unicode);
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_LlmContourCountSkill.png"));
+                shellHost.RecipeCommands.SelectedLlmToolTemplate = previousLlmToolTemplate;
 
                 string llmDependencyPath = Path.Combine(Path.GetTempPath(), "OpenVisionLab_direct_llm_dependency_" + Guid.NewGuid().ToString("N") + ".png");
                 using (Bitmap dependencyImage = CreateDockFloatSmokeBitmap())
@@ -1672,7 +2384,7 @@ namespace OpenVisionLab
                     throw new InvalidOperationException("Recipe manager direct smoke could not save LLM draft XML: " + llmDraftSaveMessage);
                 }
 
-                System.Windows.Clipboard.SetText(File.ReadAllText(llmDraftPath));
+                SetClipboardTextWithRetry(File.ReadAllText(llmDraftPath));
                 shellHost.RecipeCommands.PasteLlmXmlDraftFromClipboardCommand.Execute(null);
                 Pump(40);
                 if (!shellHost.RecipeCommands.LlmXmlDraftText.Contains("Direct_LLM_Draft", StringComparison.OrdinalIgnoreCase)
@@ -1733,7 +2445,7 @@ namespace OpenVisionLab
                         "Recipe manager direct smoke LLM review bundle copy command did not report success. "
                         + shellHost.RecipeCommands.LlmReviewBundleCopyStatusText);
                 }
-                string llmReviewBundleClipboard = System.Windows.Clipboard.GetText();
+                string llmReviewBundleClipboard = GetClipboardTextWithRetry();
                 if (!llmReviewBundleClipboard.Contains("OpenVisionLab LLM XML review bundle", StringComparison.OrdinalIgnoreCase)
                     || !llmReviewBundleClipboard.Contains("Inspection.Status", StringComparison.OrdinalIgnoreCase)
                     || !llmReviewBundleClipboard.Contains("Selected step operator context", StringComparison.OrdinalIgnoreCase)
@@ -1927,7 +2639,7 @@ namespace OpenVisionLab
 
                 shellHost.RecipeCommands.CopyLlmReviewBundleCommand.Execute(null);
                 Pump(40);
-                string correctionBundleClipboard = System.Windows.Clipboard.GetText();
+                string correctionBundleClipboard = GetClipboardTextWithRetry();
                 if (!correctionBundleClipboard.Contains("Correction rules", StringComparison.OrdinalIgnoreCase)
                     || !correctionBundleClipboard.Contains("Bad_Parameter_Step", StringComparison.OrdinalIgnoreCase)
                     || !correctionBundleClipboard.Contains("expects a numeric value", StringComparison.OrdinalIgnoreCase)
@@ -2062,6 +2774,17 @@ namespace OpenVisionLab
                     + "StepRoiTemplate: " + selectedPreviewStep.RoiMetadataText + " | " + selectedPreviewStep.TemplateMetadataText + Environment.NewLine
                     + "StepToolEntry: " + shellHost.RecipeCommands.OpenSelectedStepToolText + Environment.NewLine
                     + "StepPropertyGridApply: explicit XML apply without Preview/Run" + Environment.NewLine
+                    + "LlmIntentTemplate: LineDistance locked" + Environment.NewLine
+                    + "LlmPinGapIntentSkill: generated DistanceMmAvg + DistanceMmRange gates" + Environment.NewLine
+                    + "LlmPinGapWorkflow: visible Validate/Import/sample-run next actions" + Environment.NewLine
+                    + "LlmPinGapFeedback: visible Avg NG vs Range NG tuning axes" + Environment.NewLine
+                    + "LlmPinGapLatestRun: visible actual DistanceMmAvg/DistanceMmRange decision" + Environment.NewLine
+                    + "LlmBlobCountIntentSkill: generated Threshold + Blob ResultCount gate" + Environment.NewLine
+                    + "LlmBlobCountWorkflow: visible Validate/Import/sample-run next actions" + Environment.NewLine
+                    + "LlmBlobCountFeedback: visible count/threshold/ROI/area tuning axes" + Environment.NewLine
+                    + "LlmContourCountIntentSkill: generated Threshold + Contour ResultCount/AreaMax gates plus review OverlayMerge" + Environment.NewLine
+                    + "LlmContourCountWorkflow: visible Validate/Import/sample-run next actions" + Environment.NewLine
+                    + "LlmContourCountFeedback: visible count/area/threshold/ROI tuning axes" + Environment.NewLine
                     + "LlmValidationIssues: visible" + Environment.NewLine
                     + "LlmBadRouteValidation: blocked" + Environment.NewLine
                     + "LlmUnsupportedToolImport: blocked" + Environment.NewLine
@@ -3916,6 +4639,23 @@ namespace OpenVisionLab
             }
         }
 
+        private static void AssertNotVisibleAutomationIds(DependencyObject root, string scenario, params string[] hiddenIds)
+        {
+            HashSet<string> visibleIds = FindVisualChildren<FrameworkElement>(root)
+                .Where(item => item.IsVisible)
+                .Select(System.Windows.Automation.AutomationProperties.GetAutomationId)
+                .Where(item => !string.IsNullOrWhiteSpace(item))
+                .ToHashSet(StringComparer.Ordinal);
+
+            string visible = hiddenIds.FirstOrDefault(id => visibleIds.Contains(id));
+            if (!string.IsNullOrWhiteSpace(visible))
+            {
+                throw new InvalidOperationException(
+                    scenario + " still showed AutomationId '" + visible + "'. "
+                    + "VisibleIds='" + string.Join(", ", visibleIds.OrderBy(item => item, StringComparer.Ordinal)) + "'");
+            }
+        }
+
         private static void AssertHostedPropertyGridRowsRendered(DependencyObject root, string scenario)
         {
             System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid = FindVisualChildren<System.Windows.Controls.WpfPropertyGrid.PropertyGrid>(root)
@@ -5679,6 +6419,46 @@ namespace OpenVisionLab
             return Path.Combine(FindRepositoryRoot(), ".codex", "smoke-output", "actual-exe-line-pins-measure");
         }
 
+        private static string ResolveRequiredOption(string[] args, string optionName)
+        {
+            for (int i = 0; i < args.Length - 1; i++)
+            {
+                if (string.Equals(args[i], optionName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return Path.GetFullPath(args[i + 1]);
+                }
+            }
+
+            throw new ArgumentException("Missing required smoke option: " + optionName);
+        }
+
+        private static string ResolveOptionalOption(string[] args, string optionName)
+        {
+            for (int i = 0; i < args.Length - 1; i++)
+            {
+                if (string.Equals(args[i], optionName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return Path.GetFullPath(args[i + 1]);
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static int ResolveOptionalIntOption(string[] args, string optionName, int fallback)
+        {
+            for (int i = 0; i < args.Length - 1; i++)
+            {
+                if (string.Equals(args[i], optionName, StringComparison.OrdinalIgnoreCase)
+                    && int.TryParse(args[i + 1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
+                {
+                    return value;
+                }
+            }
+
+            return fallback;
+        }
+
         private static string FindRepositoryRoot()
         {
             string[] starts =
@@ -5855,6 +6635,45 @@ namespace OpenVisionLab
             }
 
             task.GetAwaiter().GetResult();
+        }
+
+        private static string GetClipboardTextWithRetry()
+        {
+            return RunClipboardActionWithRetry(() => System.Windows.Clipboard.GetText());
+        }
+
+        private static void SetClipboardTextWithRetry(string text)
+        {
+            RunClipboardActionWithRetry(() =>
+            {
+                System.Windows.Clipboard.SetText(text ?? string.Empty);
+                return true;
+            });
+        }
+
+        private static T RunClipboardActionWithRetry<T>(Func<T> action)
+        {
+            if (action == null)
+            {
+                throw new ArgumentNullException(nameof(action));
+            }
+
+            COMException lastException = null;
+            for (int attempt = 0; attempt < 40; attempt++)
+            {
+                try
+                {
+                    return action();
+                }
+                catch (COMException ex) when ((uint)ex.ErrorCode == 0x800401D0)
+                {
+                    lastException = ex;
+                    Pump(4);
+                    Thread.Sleep(Math.Min(250, 50 + attempt * 10));
+                }
+            }
+
+            throw lastException ?? new COMException("Clipboard operation failed.");
         }
 
         private static void CopyCurrentDockingStateFile(string fileName, string outputDirectory, string outputFileName)

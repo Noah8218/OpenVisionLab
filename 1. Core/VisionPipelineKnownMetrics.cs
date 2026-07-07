@@ -54,9 +54,11 @@ namespace OpenVisionLab
         public const string DistancePxMin = "DistancePxMin";
         public const string DistancePxMax = "DistancePxMax";
         public const string DistancePxAvg = "DistancePxAvg";
+        public const string DistancePxRange = "DistancePxRange";
         public const string DistanceMmMin = "DistanceMmMin";
         public const string DistanceMmMax = "DistanceMmMax";
         public const string DistanceMmAvg = "DistanceMmAvg";
+        public const string DistanceMmRange = "DistanceMmRange";
         public const string MergeOverlayCount = "MergeOverlayCount";
         public const string MergeSourceCount = "MergeSourceCount";
         public const string BoundsWidthMin = "BoundsWidthMin";
@@ -108,9 +110,11 @@ namespace OpenVisionLab
             new VisionPipelineMetricDefinition { Name = DistancePxMin, DisplayName = "Distance Min (px)", Description = "Minimum distance between paired edge points in pixels." },
             new VisionPipelineMetricDefinition { Name = DistancePxMax, DisplayName = "Distance Max (px)", Description = "Maximum distance between paired edge points in pixels." },
             new VisionPipelineMetricDefinition { Name = DistancePxAvg, DisplayName = "Distance Avg (px)", Description = "Average distance between paired edge points in pixels." },
+            new VisionPipelineMetricDefinition { Name = DistancePxRange, DisplayName = "Distance Range (px)", Description = "Spread between maximum and minimum paired edge distances in pixels." },
             new VisionPipelineMetricDefinition { Name = DistanceMmMin, DisplayName = "Distance Min (mm)", Description = "Minimum distance between paired edge points converted by PIXELPERMM." },
             new VisionPipelineMetricDefinition { Name = DistanceMmMax, DisplayName = "Distance Max (mm)", Description = "Maximum distance between paired edge points converted by PIXELPERMM." },
             new VisionPipelineMetricDefinition { Name = DistanceMmAvg, DisplayName = "Distance Avg (mm)", Description = "Average distance between paired edge points converted by PIXELPERMM." },
+            new VisionPipelineMetricDefinition { Name = DistanceMmRange, DisplayName = "Distance Range (mm)", Description = "Spread between maximum and minimum paired edge distances converted by PIXELPERMM." },
             new VisionPipelineMetricDefinition { Name = MergeOverlayCount, DisplayName = "Merge Overlay Count", Description = "Number of overlays collected into the merged result." },
             new VisionPipelineMetricDefinition { Name = MergeSourceCount, DisplayName = "Merge Source Count", Description = "Number of previous steps that contributed overlays." },
             new VisionPipelineMetricDefinition { Name = BoundsWidthMin, DisplayName = "Bounds Width Min", Description = "Minimum rectangle overlay width." },
@@ -178,9 +182,11 @@ namespace OpenVisionLab
             DistancePxMin,
             DistancePxMax,
             DistancePxAvg,
+            DistancePxRange,
             DistanceMmMin,
             DistanceMmMax,
-            DistanceMmAvg
+            DistanceMmAvg,
+            DistanceMmRange
         };
 
         private static readonly Dictionary<string, string[]> ToolMetricNames = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
@@ -233,6 +239,7 @@ namespace OpenVisionLab
             new VisionPipelineAcceptancePreset { Name = "Fitted Line Length >= 100 px", MetricName = LineLengthMax, ToolTypes = new[] { "line", "linegauge" }, UseMinimum = true, Minimum = 100 },
             new VisionPipelineAcceptancePreset { Name = "Fitted Line Length >= 3 mm", MetricName = LineLengthMmMax, ToolTypes = new[] { "line", "linegauge" }, UseMinimum = true, Minimum = 3 },
             new VisionPipelineAcceptancePreset { Name = "Edge Distance 0.30..0.50 mm", MetricName = DistanceMmAvg, ToolTypes = new[] { "linedistance", "linedistancegauge" }, UseMinimum = true, Minimum = 0.30, UseMaximum = true, Maximum = 0.50 },
+            new VisionPipelineAcceptancePreset { Name = "Edge Distance Spread <= 0.06 mm", MetricName = DistanceMmRange, ToolTypes = new[] { "linedistance", "linedistancegauge" }, UseMaximum = true, Maximum = 0.06 },
             new VisionPipelineAcceptancePreset { Name = "Max Bounds Width <= 0.12 mm", MetricName = BoundsWidthMmMax, ToolTypes = new[] { "blob", "contour", "corner" }, UseMaximum = true, Maximum = 0.12 },
             new VisionPipelineAcceptancePreset { Name = "Max Bounds Width >= 0.12 mm", MetricName = BoundsWidthMmMax, ToolTypes = new[] { "blob", "contour", "corner" }, UseMinimum = true, Minimum = 0.12 },
             new VisionPipelineAcceptancePreset { Name = "Max Bounds Height <= 0.12 mm", MetricName = BoundsHeightMmMax, ToolTypes = new[] { "blob", "contour", "corner" }, UseMaximum = true, Maximum = 0.12 },

@@ -149,6 +149,7 @@ namespace OpenVisionLab
                 [VisionPipelineKnownMetrics.DistancePxMin] = distances.Min(),
                 [VisionPipelineKnownMetrics.DistancePxMax] = distances.Max(),
                 [VisionPipelineKnownMetrics.DistancePxAvg] = distances.Average(),
+                [VisionPipelineKnownMetrics.DistancePxRange] = distances.Max() - distances.Min(),
                 [VisionPipelineKnownMetrics.EdgeCount] = (leftTool.resultList?.Sum(item => item.EdgeCount) ?? 0)
                     + (rightTool.resultList?.Sum(item => item.EdgeCount) ?? 0),
                 [VisionPipelineKnownMetrics.EdgePointCount] = (leftTool.resultList?.Sum(item => item.EdgePointCount) ?? 0)
@@ -166,6 +167,7 @@ namespace OpenVisionLab
                 metrics[VisionPipelineKnownMetrics.DistanceMmMin] = metrics[VisionPipelineKnownMetrics.DistancePxMin] * pixelPerMm;
                 metrics[VisionPipelineKnownMetrics.DistanceMmMax] = metrics[VisionPipelineKnownMetrics.DistancePxMax] * pixelPerMm;
                 metrics[VisionPipelineKnownMetrics.DistanceMmAvg] = metrics[VisionPipelineKnownMetrics.DistancePxAvg] * pixelPerMm;
+                metrics[VisionPipelineKnownMetrics.DistanceMmRange] = metrics[VisionPipelineKnownMetrics.DistancePxRange] * pixelPerMm;
             }
 
             return metrics;

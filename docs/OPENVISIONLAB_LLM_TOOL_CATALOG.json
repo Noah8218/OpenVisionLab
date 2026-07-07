@@ -203,9 +203,11 @@
       "DistancePxMin",
       "DistancePxMax",
       "DistancePxAvg",
+      "DistancePxRange",
       "DistanceMmMin",
       "DistanceMmMax",
-      "DistanceMmAvg"
+      "DistanceMmAvg",
+      "DistanceMmRange"
     ],
     "merge": [
       "MergeOverlayCount",
@@ -586,12 +588,16 @@
       ],
       "validationHints": [
         "POINT_RANGE is an integer.",
-        "PIXELPERMM must be positive when mm metrics are used."
+        "PIXELPERMM must be positive when mm metrics are used.",
+        "Do not accept pin-to-pin or edge-to-edge distance using DistancePxAvg/DistanceMmAvg alone. Add a DistancePxRange/DistanceMmRange or DistancePxMax/DistanceMmMax gate so one long outlier distance line fails."
       ],
       "recommendedMetrics": [
         "ResultCount",
         "DistancePxAvg",
+        "DistancePxRange",
         "DistanceMmAvg",
+        "DistanceMmRange",
+        "DistanceMmMax",
         "EdgeCount"
       ]
     },

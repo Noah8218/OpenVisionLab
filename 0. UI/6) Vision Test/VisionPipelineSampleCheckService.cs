@@ -16,6 +16,7 @@ namespace OpenVisionLab
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
         public string MetricText { get; set; } = string.Empty;
+        public string DistanceMetricText { get; set; } = string.Empty;
         public string MetricReviewText { get; set; } = string.Empty;
         public string FinalLayerText { get; set; } = string.Empty;
         public string OverlayCountText { get; set; } = string.Empty;
@@ -72,6 +73,7 @@ namespace OpenVisionLab
                 Success = false,
                 Message = message ?? string.Empty,
                 MetricText = "-",
+                DistanceMetricText = string.Empty,
                 MetricReviewText = "Metric review: check failed before metric evaluation.",
                 FinalLayerText = "-",
                 OverlayCountText = "-",
@@ -213,6 +215,7 @@ namespace OpenVisionLab
                     Success = success,
                     Message = message,
                     MetricText = metricText,
+                    DistanceMetricText = BuildDistanceMetricText(result),
                     MetricReviewText = metricReviewText,
                     FinalLayerText = string.IsNullOrWhiteSpace(result.FinalLayer) ? "-" : result.FinalLayer,
                     OverlayCountText = ResolveOverlayCountText(result),
@@ -307,6 +310,22 @@ namespace OpenVisionLab
             }
 
             return false;
+        }
+
+        private static string BuildDistanceMetricText(VisionRecipeRunResult result)
+        {
+            List<string> parts = new List<string>();
+            AppendMetric(parts, result, VisionPipelineKnownMetrics.DistanceMmAvg);
+            AppendMetric(parts, result, VisionPipelineKnownMetrics.DistanceMmRange);
+            return string.Join("; ", parts);
+        }
+
+        private static void AppendMetric(List<string> parts, VisionRecipeRunResult result, string metricName)
+        {
+            if (TryFindMetric(result, metricName, out double value))
+            {
+                parts.Add($"{metricName}={value:0.###}");
+            }
         }
 
         private static bool TryParseDouble(string text, out double value)

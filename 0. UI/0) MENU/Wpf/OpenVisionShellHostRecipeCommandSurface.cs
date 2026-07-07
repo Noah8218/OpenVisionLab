@@ -33,10 +33,12 @@ namespace OpenVisionLab
         private readonly Func<bool> commitSelectedStepEdit;
         private readonly IReadOnlyList<string> llmToolTemplateOptions = new[]
         {
-            "Threshold + Blob",
+            "Pin gap / edge distance (LineDistance)",
+            "Line Measurement",
             "Template Matching",
             "Edge Based Matching",
-            "Line Measurement",
+            "Shape boundary (Contour)",
+            "Threshold + Blob",
             "Mean Intensity"
         };
         private IReadOnlyList<string> recipeOptions = Array.Empty<string>();
@@ -67,6 +69,23 @@ namespace OpenVisionLab
         private string selectedLlmToolTemplate = "Template Matching";
         private string llmInspectionGoalText = string.Empty;
         private string llmDetectionPointText = string.Empty;
+        private string pinGapIntentRoiText = string.Empty;
+        private string pinGapIntentDistanceMinText = "0.40";
+        private string pinGapIntentDistanceMaxText = "0.55";
+        private string pinGapIntentRangeMaxText = "0.06";
+        private string pinGapIntentScaleText = "0.006";
+        private string blobCountIntentRoiText = "0,0,572,420";
+        private string blobCountIntentThresholdText = "128";
+        private string blobCountIntentMinCountText = "1";
+        private string blobCountIntentMaxCountText = "99";
+        private string blobCountIntentMinAreaText = "50";
+        private string blobCountIntentMaxAreaText = "999999";
+        private string contourCountIntentRoiText = "0,0,572,420";
+        private string contourCountIntentThresholdText = "150";
+        private string contourCountIntentMinCountText = "5";
+        private string contourCountIntentMaxCountText = "5";
+        private string contourCountIntentMinAreaText = "700";
+        private string contourCountIntentMaxAreaText = "9000";
         private string llmPromptText = string.Empty;
         private string llmXmlDraftText = string.Empty;
         private string llmReferenceImagePath = string.Empty;
@@ -147,6 +166,9 @@ namespace OpenVisionLab
                 CanSelectPairSampleResult);
             BuildLlmPromptCommand = new RelayCommand(BuildLlmPrompt, CanUseSelectedRecipe);
             CreateLlmTemplateXmlDraftCommand = new RelayCommand(CreateLlmTemplateXmlDraft, CanUseSelectedRecipe);
+            CreatePinGapIntentXmlDraftCommand = new RelayCommand(CreatePinGapIntentXmlDraft, CanUseSelectedRecipe);
+            CreateBlobCountIntentXmlDraftCommand = new RelayCommand(CreateBlobCountIntentXmlDraft, CanUseSelectedRecipe);
+            CreateContourCountIntentXmlDraftCommand = new RelayCommand(CreateContourCountIntentXmlDraft, CanUseSelectedRecipe);
             RefreshLlmDraftReviewCommand = new RelayCommand(RefreshLlmDraftReview, CanUseLlmXmlDraft);
             NavigateSelectedStepInputLayerCommand = new RelayCommand(NavigateSelectedStepInputLayer, CanNavigateSelectedStepInputLayer);
             NavigateSelectedStepOutputLayerCommand = new RelayCommand(NavigateSelectedStepOutputLayer, CanNavigateSelectedStepOutputLayer);
@@ -465,6 +487,7 @@ namespace OpenVisionLab
             {
                 if (SetProperty(ref selectedLlmToolTemplate, string.IsNullOrWhiteSpace(value) ? llmToolTemplateOptions[0] : value))
                 {
+                    OnPropertyChanged(nameof(LlmResultChannelContractSummaryText));
                     RefreshCommandState();
                 }
             }
@@ -490,6 +513,225 @@ namespace OpenVisionLab
                 if (SetProperty(ref llmDetectionPointText, value ?? string.Empty))
                 {
                     RefreshCommandState();
+                }
+            }
+        }
+
+        public string PinGapIntentRoiText
+        {
+            get => pinGapIntentRoiText;
+            set
+            {
+                if (SetProperty(ref pinGapIntentRoiText, value ?? string.Empty))
+                {
+                    OnPropertyChanged(nameof(PinGapIntentWorkflowText));
+                    OnPropertyChanged(nameof(PinGapIntentFeedbackText));
+                    OnPropertyChanged(nameof(PinGapIntentLatestRunText));
+                    RefreshCommandState();
+                }
+            }
+        }
+
+        public string PinGapIntentDistanceMinText
+        {
+            get => pinGapIntentDistanceMinText;
+            set
+            {
+                if (SetProperty(ref pinGapIntentDistanceMinText, value ?? string.Empty))
+                {
+                    OnPropertyChanged(nameof(PinGapIntentWorkflowText));
+                    OnPropertyChanged(nameof(PinGapIntentFeedbackText));
+                    OnPropertyChanged(nameof(PinGapIntentLatestRunText));
+                    RefreshCommandState();
+                }
+            }
+        }
+
+        public string PinGapIntentDistanceMaxText
+        {
+            get => pinGapIntentDistanceMaxText;
+            set
+            {
+                if (SetProperty(ref pinGapIntentDistanceMaxText, value ?? string.Empty))
+                {
+                    OnPropertyChanged(nameof(PinGapIntentWorkflowText));
+                    OnPropertyChanged(nameof(PinGapIntentFeedbackText));
+                    OnPropertyChanged(nameof(PinGapIntentLatestRunText));
+                    RefreshCommandState();
+                }
+            }
+        }
+
+        public string PinGapIntentRangeMaxText
+        {
+            get => pinGapIntentRangeMaxText;
+            set
+            {
+                if (SetProperty(ref pinGapIntentRangeMaxText, value ?? string.Empty))
+                {
+                    OnPropertyChanged(nameof(PinGapIntentWorkflowText));
+                    OnPropertyChanged(nameof(PinGapIntentFeedbackText));
+                    OnPropertyChanged(nameof(PinGapIntentLatestRunText));
+                    RefreshCommandState();
+                }
+            }
+        }
+
+        public string PinGapIntentScaleText
+        {
+            get => pinGapIntentScaleText;
+            set
+            {
+                if (SetProperty(ref pinGapIntentScaleText, value ?? string.Empty))
+                {
+                    OnPropertyChanged(nameof(PinGapIntentWorkflowText));
+                    OnPropertyChanged(nameof(PinGapIntentFeedbackText));
+                    OnPropertyChanged(nameof(PinGapIntentLatestRunText));
+                    RefreshCommandState();
+                }
+            }
+        }
+
+        public string BlobCountIntentRoiText
+        {
+            get => blobCountIntentRoiText;
+            set
+            {
+                if (SetProperty(ref blobCountIntentRoiText, value ?? string.Empty))
+                {
+                    NotifyBlobCountIntentTextChanged();
+                }
+            }
+        }
+
+        public string BlobCountIntentThresholdText
+        {
+            get => blobCountIntentThresholdText;
+            set
+            {
+                if (SetProperty(ref blobCountIntentThresholdText, value ?? string.Empty))
+                {
+                    NotifyBlobCountIntentTextChanged();
+                }
+            }
+        }
+
+        public string BlobCountIntentMinCountText
+        {
+            get => blobCountIntentMinCountText;
+            set
+            {
+                if (SetProperty(ref blobCountIntentMinCountText, value ?? string.Empty))
+                {
+                    NotifyBlobCountIntentTextChanged();
+                }
+            }
+        }
+
+        public string BlobCountIntentMaxCountText
+        {
+            get => blobCountIntentMaxCountText;
+            set
+            {
+                if (SetProperty(ref blobCountIntentMaxCountText, value ?? string.Empty))
+                {
+                    NotifyBlobCountIntentTextChanged();
+                }
+            }
+        }
+
+        public string BlobCountIntentMinAreaText
+        {
+            get => blobCountIntentMinAreaText;
+            set
+            {
+                if (SetProperty(ref blobCountIntentMinAreaText, value ?? string.Empty))
+                {
+                    NotifyBlobCountIntentTextChanged();
+                }
+            }
+        }
+
+        public string BlobCountIntentMaxAreaText
+        {
+            get => blobCountIntentMaxAreaText;
+            set
+            {
+                if (SetProperty(ref blobCountIntentMaxAreaText, value ?? string.Empty))
+                {
+                    NotifyBlobCountIntentTextChanged();
+                }
+            }
+        }
+
+        public string ContourCountIntentRoiText
+        {
+            get => contourCountIntentRoiText;
+            set
+            {
+                if (SetProperty(ref contourCountIntentRoiText, value ?? string.Empty))
+                {
+                    NotifyContourCountIntentTextChanged();
+                }
+            }
+        }
+
+        public string ContourCountIntentThresholdText
+        {
+            get => contourCountIntentThresholdText;
+            set
+            {
+                if (SetProperty(ref contourCountIntentThresholdText, value ?? string.Empty))
+                {
+                    NotifyContourCountIntentTextChanged();
+                }
+            }
+        }
+
+        public string ContourCountIntentMinCountText
+        {
+            get => contourCountIntentMinCountText;
+            set
+            {
+                if (SetProperty(ref contourCountIntentMinCountText, value ?? string.Empty))
+                {
+                    NotifyContourCountIntentTextChanged();
+                }
+            }
+        }
+
+        public string ContourCountIntentMaxCountText
+        {
+            get => contourCountIntentMaxCountText;
+            set
+            {
+                if (SetProperty(ref contourCountIntentMaxCountText, value ?? string.Empty))
+                {
+                    NotifyContourCountIntentTextChanged();
+                }
+            }
+        }
+
+        public string ContourCountIntentMinAreaText
+        {
+            get => contourCountIntentMinAreaText;
+            set
+            {
+                if (SetProperty(ref contourCountIntentMinAreaText, value ?? string.Empty))
+                {
+                    NotifyContourCountIntentTextChanged();
+                }
+            }
+        }
+
+        public string ContourCountIntentMaxAreaText
+        {
+            get => contourCountIntentMaxAreaText;
+            set
+            {
+                if (SetProperty(ref contourCountIntentMaxAreaText, value ?? string.Empty))
+                {
+                    NotifyContourCountIntentTextChanged();
                 }
             }
         }
@@ -603,6 +845,9 @@ namespace OpenVisionLab
                 {
                     NotifyOperatorReviewChanged();
                     OnPropertyChanged(nameof(RecipeGuidedSetupText));
+                    OnPropertyChanged(nameof(PinGapIntentLatestRunText));
+                    OnPropertyChanged(nameof(BlobCountIntentLatestRunText));
+                    OnPropertyChanged(nameof(ContourCountIntentLatestRunText));
                 }
             }
         }
@@ -703,6 +948,12 @@ namespace OpenVisionLab
         public ICommand BuildLlmPromptCommand { get; }
 
         public ICommand CreateLlmTemplateXmlDraftCommand { get; }
+
+        public ICommand CreatePinGapIntentXmlDraftCommand { get; }
+
+        public ICommand CreateBlobCountIntentXmlDraftCommand { get; }
+
+        public ICommand CreateContourCountIntentXmlDraftCommand { get; }
 
         public ICommand RefreshLlmDraftReviewCommand { get; }
 
@@ -1023,16 +1274,116 @@ namespace OpenVisionLab
 
         public string LlmAssistantText => LocalText("LLM 어시스턴트", "LLM assistant");
 
-        public string LlmToolTemplateText => LocalText("도구 템플릿", "Tool template");
+        public string LlmToolTemplateText => LocalText("검사 의도", "Inspection intent");
 
         public string LlmInspectionGoalLabelText => LocalText("검사 목표", "Inspection goal");
 
         public string LlmDetectionPointLabelText => LocalText("검출 포인트", "Detection points");
 
-        public string LlmResultChannelContractSummaryText =>
+        public string PinGapIntentSkillText => LocalText("핀 간격 skill", "Pin gap skill");
+
+        public string PinGapIntentRoiLabelText => LocalText("ROI", "ROI");
+
+        public string PinGapIntentDistanceMinLabelText => LocalText("Min mm", "Min mm");
+
+        public string PinGapIntentDistanceMaxLabelText => LocalText("Max mm", "Max mm");
+
+        public string PinGapIntentRangeMaxLabelText => LocalText("Range", "Range");
+
+        public string PinGapIntentScaleLabelText => LocalText("mm/px", "mm/px");
+
+        public string CreatePinGapIntentXmlText => LocalText("핀 간격 XML", "Pin gap XML");
+
+        public string PinGapIntentWorkflowText =>
+            LocalText("판정: DistanceMmAvg ", "Gates: DistanceMmAvg ")
+            + PinGapIntentDistanceMinText
+            + ".."
+            + PinGapIntentDistanceMaxText
+            + LocalText(" mm, DistanceMmRange <= ", " mm, DistanceMmRange <= ")
+            + PinGapIntentRangeMaxText
+            + LocalText(
+                " mm / 다음: Pin gap XML -> 검증 -> 가져오기 -> 샘플 실행으로 ROI/scale 튜닝",
+                " mm / Next: Pin gap XML -> Validate -> Import -> run sample to tune ROI/scale");
+
+        public string PinGapIntentFeedbackText =>
             LocalText(
-                "출력 채널: Inspection.Status, FailedStep, Evidence, Benchmark, NextAction은 XML 검증과 명시적 샘플 실행에서 파생됩니다.",
-                "Result channels: Inspection.Status, FailedStep, Evidence, Benchmark, and NextAction are derived from XML validation and explicit sample runs.");
+                "Feedback: Avg NG는 mm/px 또는 Min/Max spec을 조정합니다. Range NG/긴 선/허공 검출은 ROI를 실제 핀 간격만 포함하게 줄이고 edge contrast/sampling을 조정합니다.",
+                "Feedback: Avg NG means tune mm/px or Min/Max spec. Range NG/long line/empty-space hit means narrow ROI to the real pin gap and tune edge contrast/sampling.");
+
+        public string PinGapIntentLatestRunText => BuildPinGapIntentLatestRunText();
+
+        public string BlobCountIntentSkillText => LocalText("Blob count skill", "Blob count skill");
+
+        public string BlobCountIntentRoiLabelText => LocalText("ROI", "ROI");
+
+        public string BlobCountIntentThresholdLabelText => LocalText("Threshold", "Threshold");
+
+        public string BlobCountIntentMinCountLabelText => LocalText("Min count", "Min count");
+
+        public string BlobCountIntentMaxCountLabelText => LocalText("Max count", "Max count");
+
+        public string BlobCountIntentMinAreaLabelText => LocalText("Min area", "Min area");
+
+        public string BlobCountIntentMaxAreaLabelText => LocalText("Max area", "Max area");
+
+        public string CreateBlobCountIntentXmlText => LocalText("Blob count XML", "Blob count XML");
+
+        public string BlobCountIntentWorkflowText =>
+            LocalText("Gates: ResultCount ", "Gates: ResultCount ")
+            + BlobCountIntentMinCountText
+            + ".."
+            + BlobCountIntentMaxCountText
+            + LocalText(" / area ", " / area ")
+            + BlobCountIntentMinAreaText
+            + ".."
+            + BlobCountIntentMaxAreaText
+            + LocalText(" / Next: Blob count XML -> Validate -> Import -> run sample to tune threshold/ROI/area", " / Next: Blob count XML -> Validate -> Import -> run sample to tune threshold/ROI/area");
+
+        public string BlobCountIntentFeedbackText =>
+            LocalText(
+                "Feedback: Count NG means tune threshold, ROI, or area limits. Noise means raise Min area; missing targets means lower threshold or widen ROI.",
+                "Feedback: Count NG means tune threshold, ROI, or area limits. Noise means raise Min area; missing targets means lower threshold or widen ROI.");
+
+        public string BlobCountIntentLatestRunText => BuildBlobCountIntentLatestRunText();
+
+        public string ContourCountIntentSkillText => LocalText("Contour count/size skill", "Contour count/size skill");
+
+        public string ContourCountIntentRoiLabelText => LocalText("ROI", "ROI");
+
+        public string ContourCountIntentThresholdLabelText => LocalText("Threshold", "Threshold");
+
+        public string ContourCountIntentMinCountLabelText => LocalText("Min count", "Min count");
+
+        public string ContourCountIntentMaxCountLabelText => LocalText("Max count", "Max count");
+
+        public string ContourCountIntentMinAreaLabelText => LocalText("Min area", "Min area");
+
+        public string ContourCountIntentMaxAreaLabelText => LocalText("Max area", "Max area");
+
+        public string CreateContourCountIntentXmlText => LocalText("Contour XML", "Contour XML");
+
+        public string ContourCountIntentWorkflowText =>
+            LocalText("Gates: ResultCount ", "Gates: ResultCount ")
+            + ContourCountIntentMinCountText
+            + ".."
+            + ContourCountIntentMaxCountText
+            + LocalText(", AreaMax <= ", ", AreaMax <= ")
+            + ContourCountIntentMaxAreaText
+            + LocalText(" / Review overlay -> Next: Contour XML -> Validate -> Import -> run sample to tune threshold/ROI/area", " / Review overlay -> Next: Contour XML -> Validate -> Import -> run sample to tune threshold/ROI/area");
+
+        public string ContourCountIntentFeedbackText =>
+            LocalText(
+                "Feedback: Count NG means tune threshold, ROI, or area limits. AreaMax NG means split/limit oversized shapes before accepting the recipe.",
+                "Feedback: Count NG means tune threshold, ROI, or area limits. AreaMax NG means split/limit oversized shapes before accepting the recipe.");
+
+        public string ContourCountIntentLatestRunText => BuildContourCountIntentLatestRunText();
+
+        public string LlmResultChannelContractSummaryText =>
+            LocalText("선택 의도는 도구군을 고정합니다: ", "Selected intent locks tool family: ")
+            + ResolveIntentSummary(SelectedLlmToolTemplate)
+            + LocalText(
+                " / 출력 채널은 XML 검증과 명시적 샘플 실행에서 파생됩니다.",
+                " / Result channels are derived from XML validation and explicit sample runs.");
 
         public string BuildLlmPromptButtonText => LocalText("프롬프트 생성", "Build prompt");
 
@@ -1230,6 +1581,9 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(LlmInspectionGoalLabelText));
             OnPropertyChanged(nameof(LlmDetectionPointLabelText));
             OnPropertyChanged(nameof(LlmResultChannelContractSummaryText));
+            OnPropertyChanged(nameof(PinGapIntentWorkflowText));
+            OnPropertyChanged(nameof(PinGapIntentFeedbackText));
+            OnPropertyChanged(nameof(PinGapIntentLatestRunText));
             OnPropertyChanged(nameof(BuildLlmPromptButtonText));
             OnPropertyChanged(nameof(CopyLlmPromptText));
             OnPropertyChanged(nameof(CreateLlmTemplateXmlText));
@@ -2886,12 +3240,14 @@ namespace OpenVisionLab
                 "Instruction: revise the VisionPipeline XML using this feedback. Return only a VisionPipeline XML document.",
                 "Recipe: " + recipeName,
                 "Pipeline: " + (string.IsNullOrWhiteSpace(pipelineName) ? "-" : pipelineName),
-                "Tool template: " + SelectedLlmToolTemplate,
+                "Inspection intent: " + SelectedLlmToolTemplate,
+                "Intent contract: " + BuildLlmIntentContractText(SelectedLlmToolTemplate),
                 "",
                 "[Correction rules]",
                 "- Use only OpenVisionLab VisionPipeline XML and return only XML.",
                 "- Use InputLayer=\"Main\" or the exact OutputLayer of a previous enabled step; do not invent layers.",
                 "- Use supported OpenVisionLab ToolType names and PropertyGrid-compatible parameter values.",
+                "- Do not switch to another tool family unless the selected intent contract explicitly allows it.",
                 "- Replace missing template/image dependency paths with existing files, or remove those dependency parameters until a real file is selected.",
                 "- Do not add camera, lighting, PLC, I/O, account, Preview, or Run instructions.",
                 "",
@@ -2928,6 +3284,385 @@ namespace OpenVisionLab
             LlmXmlDraftText = SerializePipelineToXmlText(pipeline);
             ValidateLlmXmlDraftText(false);
             StatusText = LocalText("LLM 템플릿에서 XML 시작안을 생성했습니다: ", "Created XML starter from LLM template: ") + SelectedLlmToolTemplate;
+        }
+
+        private string BuildPinGapIntentLatestRunText()
+        {
+            OpenVisionRecipeSampleRunSummary sample = LatestSampleRunSummary ?? OpenVisionRecipeSampleRunSummary.Empty;
+            if (!sample.HasResult)
+            {
+                return LocalText(
+                    "최근 샘플: 아직 실행 결과가 없습니다. Pin gap XML을 가져온 뒤 샘플 검사를 실행하면 DistanceMmAvg/DistanceMmRange가 여기에 표시됩니다.",
+                    "Latest sample: no run result yet. Import Pin gap XML and run the sample check to show DistanceMmAvg/DistanceMmRange here.");
+            }
+
+            string metrics = sample.DistanceMetricText;
+            if (string.IsNullOrWhiteSpace(metrics))
+            {
+                return LocalText(
+                    "최근 샘플: DistanceMmAvg/DistanceMmRange가 아직 없습니다. Pin gap XML을 가져온 뒤 샘플 검사를 실행하세요.",
+                    "Latest sample: no DistanceMmAvg/DistanceMmRange yet. Import Pin gap XML and run the sample check.");
+            }
+
+            return LocalText("최근 샘플: ", "Latest sample: ")
+                + metrics
+                + " / "
+                + ResolvePinGapMetricAdvice(metrics);
+        }
+
+        private string ResolvePinGapMetricAdvice(string metrics)
+        {
+            bool hasAverage = OpenVisionRecipePinGapIntentSkill.TryExtractMetricValue(metrics, VisionPipelineKnownMetrics.DistanceMmAvg, out double average);
+            bool hasRange = OpenVisionRecipePinGapIntentSkill.TryExtractMetricValue(metrics, VisionPipelineKnownMetrics.DistanceMmRange, out double range);
+
+            if (hasRange
+                && OpenVisionRecipePinGapIntentSkill.TryParsePositiveDouble(PinGapIntentRangeMaxText, out double rangeMax)
+                && range > rangeMax)
+            {
+                return LocalText(
+                    "판정: Range NG -> ROI를 핀 간격만 남기고 줄인 뒤 edge contrast/sampling을 먼저 조정",
+                    "Decision: Range NG -> narrow ROI to the pin gap first, then tune edge contrast/sampling");
+            }
+
+            bool hasMinimum = OpenVisionRecipePinGapIntentSkill.TryParsePositiveDouble(PinGapIntentDistanceMinText, out double minimum);
+            bool hasMaximum = OpenVisionRecipePinGapIntentSkill.TryParsePositiveDouble(PinGapIntentDistanceMaxText, out double maximum);
+            if (hasAverage
+                && ((hasMinimum && average < minimum) || (hasMaximum && average > maximum)))
+            {
+                return LocalText(
+                    "판정: Avg NG -> mm/px 또는 Min/Max spec을 조정",
+                    "Decision: Avg NG -> tune mm/px or Min/Max spec");
+            }
+
+            if (hasAverage && !hasRange)
+            {
+                return LocalText(
+                    "판정: Avg만 있음 -> Range gate가 있는 Pin gap XML로 샘플을 다시 실행",
+                    "Decision: Avg only -> rerun with Pin gap XML that includes the Range gate");
+            }
+
+            if (hasAverage || hasRange)
+            {
+                return LocalText(
+                    "판정: 현재 입력 기준에서는 Distance gate가 OK",
+                    "Decision: Distance gates are OK against the current fields");
+            }
+
+            return LocalText(
+                "판정: Distance metric 없음 -> LineDistance/Pin gap XML로 샘플을 다시 실행",
+                "Decision: no distance metric -> rerun with LineDistance/Pin gap XML");
+        }
+
+        private string BuildBlobCountIntentLatestRunText()
+        {
+            OpenVisionRecipeSampleRunSummary sample = LatestSampleRunSummary ?? OpenVisionRecipeSampleRunSummary.Empty;
+            if (!sample.HasResult)
+            {
+                return LocalText(
+                    "Latest sample: no run result yet. Import Blob count XML and run the sample check to show ResultCount here.",
+                    "Latest sample: no run result yet. Import Blob count XML and run the sample check to show ResultCount here.");
+            }
+
+            string metrics = sample.DisplayText;
+            if (!OpenVisionRecipeBlobCountIntentSkill.TryExtractMetricValue(metrics, VisionPipelineKnownMetrics.ResultCount, out double count))
+            {
+                return LocalText(
+                    "Latest sample: no ResultCount yet. Import Blob count XML and run the sample check.",
+                    "Latest sample: no ResultCount yet. Import Blob count XML and run the sample check.");
+            }
+
+            return LocalText("Latest sample: ResultCount=", "Latest sample: ResultCount=")
+                + count.ToString("0.###", CultureInfo.InvariantCulture)
+                + " / "
+                + ResolveBlobCountMetricAdvice(count);
+        }
+
+        private string ResolveBlobCountMetricAdvice(double count)
+        {
+            bool hasMinimum = OpenVisionRecipeBlobCountIntentSkill.TryParseNonNegativeInt(BlobCountIntentMinCountText, out int minimum);
+            bool hasMaximum = OpenVisionRecipeBlobCountIntentSkill.TryParseNonNegativeInt(BlobCountIntentMaxCountText, out int maximum);
+            if (hasMinimum && hasMaximum && minimum <= maximum && (count < minimum || count > maximum))
+            {
+                return LocalText(
+                    "Decision: Count NG -> tune threshold, ROI, or area limits",
+                    "Decision: Count NG -> tune threshold, ROI, or area limits");
+            }
+
+            if (hasMinimum && hasMaximum && minimum > maximum)
+            {
+                return LocalText(
+                    "Decision: count field range is invalid",
+                    "Decision: count field range is invalid");
+            }
+
+            return LocalText(
+                "Decision: ResultCount gate is OK against the current fields",
+                "Decision: ResultCount gate is OK against the current fields");
+        }
+
+        private void NotifyBlobCountIntentTextChanged()
+        {
+            OnPropertyChanged(nameof(BlobCountIntentWorkflowText));
+            OnPropertyChanged(nameof(BlobCountIntentFeedbackText));
+            OnPropertyChanged(nameof(BlobCountIntentLatestRunText));
+            RefreshCommandState();
+        }
+
+        private string BuildContourCountIntentLatestRunText()
+        {
+            OpenVisionRecipeSampleRunSummary sample = LatestSampleRunSummary ?? OpenVisionRecipeSampleRunSummary.Empty;
+            if (!sample.HasResult)
+            {
+                return LocalText(
+                    "Latest sample: no run result yet. Import Contour XML and run the sample check to show ResultCount/AreaMax here.",
+                    "Latest sample: no run result yet. Import Contour XML and run the sample check to show ResultCount/AreaMax here.");
+            }
+
+            string metrics = sample.DisplayText;
+            bool hasCount = OpenVisionRecipeContourCountIntentSkill.TryExtractMetricValue(metrics, VisionPipelineKnownMetrics.ResultCount, out double count);
+            bool hasAreaMax = OpenVisionRecipeContourCountIntentSkill.TryExtractMetricValue(metrics, VisionPipelineKnownMetrics.AreaMax, out double areaMax);
+            if (!hasCount && !hasAreaMax)
+            {
+                return LocalText(
+                    "Latest sample: no ResultCount/AreaMax yet. Import Contour XML and run the sample check.",
+                    "Latest sample: no ResultCount/AreaMax yet. Import Contour XML and run the sample check.");
+            }
+
+            List<string> parts = new List<string>();
+            if (hasCount)
+            {
+                parts.Add(VisionPipelineKnownMetrics.ResultCount + "=" + count.ToString("0.###", CultureInfo.InvariantCulture));
+            }
+
+            if (hasAreaMax)
+            {
+                parts.Add(VisionPipelineKnownMetrics.AreaMax + "=" + areaMax.ToString("0.###", CultureInfo.InvariantCulture));
+            }
+
+            return LocalText("Latest sample: ", "Latest sample: ")
+                + string.Join(", ", parts)
+                + " / "
+                + ResolveContourCountMetricAdvice(count, hasCount, areaMax, hasAreaMax);
+        }
+
+        private string ResolveContourCountMetricAdvice(double count, bool hasCount, double areaMax, bool hasAreaMax)
+        {
+            bool hasMinimum = OpenVisionRecipeContourCountIntentSkill.TryParseNonNegativeInt(ContourCountIntentMinCountText, out int minimum);
+            bool hasMaximum = OpenVisionRecipeContourCountIntentSkill.TryParseNonNegativeInt(ContourCountIntentMaxCountText, out int maximum);
+            if (hasCount && hasMinimum && hasMaximum && minimum <= maximum && (count < minimum || count > maximum))
+            {
+                return LocalText(
+                    "Decision: Count NG -> tune threshold, ROI, or area limits",
+                    "Decision: Count NG -> tune threshold, ROI, or area limits");
+            }
+
+            if (hasAreaMax
+                && OpenVisionRecipeContourCountIntentSkill.TryParsePositiveInt(ContourCountIntentMaxAreaText, out int maxArea)
+                && areaMax > maxArea)
+            {
+                return LocalText(
+                    "Decision: AreaMax NG -> reduce oversized contour before accepting",
+                    "Decision: AreaMax NG -> reduce oversized contour before accepting");
+            }
+
+            if (hasMinimum && hasMaximum && minimum > maximum)
+            {
+                return LocalText(
+                    "Decision: count field range is invalid",
+                    "Decision: count field range is invalid");
+            }
+
+            return LocalText(
+                "Decision: Contour gates are OK against the current fields",
+                "Decision: Contour gates are OK against the current fields");
+        }
+
+        private void NotifyContourCountIntentTextChanged()
+        {
+            OnPropertyChanged(nameof(ContourCountIntentWorkflowText));
+            OnPropertyChanged(nameof(ContourCountIntentFeedbackText));
+            OnPropertyChanged(nameof(ContourCountIntentLatestRunText));
+            RefreshCommandState();
+        }
+
+        private void CreatePinGapIntentXmlDraft()
+        {
+            if (!OpenVisionRecipePinGapIntentSkill.TryParseRoi(PinGapIntentRoiText, out int roiX, out int roiY, out int roiWidth, out int roiHeight, out string roiMessage)
+                || !OpenVisionRecipePinGapIntentSkill.TryParsePositiveDouble(PinGapIntentDistanceMinText, out double minDistanceMm)
+                || !OpenVisionRecipePinGapIntentSkill.TryParsePositiveDouble(PinGapIntentDistanceMaxText, out double maxDistanceMm)
+                || !OpenVisionRecipePinGapIntentSkill.TryParsePositiveDouble(PinGapIntentRangeMaxText, out double maxRangeMm)
+                || !OpenVisionRecipePinGapIntentSkill.TryParsePositiveDouble(PinGapIntentScaleText, out double mmPerPixel))
+            {
+                StatusText = LocalText(
+                    "핀 간격 skill 입력을 확인하세요. ROI는 x,y,w,h이고 거리/Range/mm/px는 양수여야 합니다. ",
+                    "Check Pin gap skill inputs. ROI must be x,y,w,h and distance/range/mm-per-pixel values must be positive. ")
+                    + roiMessage;
+                return;
+            }
+
+            if (minDistanceMm > maxDistanceMm)
+            {
+                StatusText = LocalText("핀 간격 Min mm은 Max mm보다 클 수 없습니다.", "Pin gap Min mm cannot be greater than Max mm.");
+                return;
+            }
+
+            SelectedLlmToolTemplate = "Pin gap / edge distance (LineDistance)";
+            VisionPipeline pipeline = OpenVisionRecipePinGapIntentSkill.CreatePipeline(
+                roiX,
+                roiY,
+                roiWidth,
+                roiHeight,
+                minDistanceMm,
+                maxDistanceMm,
+                maxRangeMm,
+                mmPerPixel);
+
+            LlmPromptText = BuildLlmPromptText()
+                + Environment.NewLine
+                + Environment.NewLine
+                + "[Pin gap skill inputs]"
+                + Environment.NewLine
+                + "ROI: " + OpenVisionRecipePinGapIntentSkill.FormatRoi(roiX, roiY, roiWidth, roiHeight)
+                + Environment.NewLine
+                + "Nominal distance mm: " + minDistanceMm.ToString("0.###", CultureInfo.InvariantCulture)
+                + ".." + maxDistanceMm.ToString("0.###", CultureInfo.InvariantCulture)
+                + Environment.NewLine
+                + "Consistency range max mm: " + maxRangeMm.ToString("0.###", CultureInfo.InvariantCulture)
+                + Environment.NewLine
+                + "Scale mm/px: " + mmPerPixel.ToString("0.######", CultureInfo.InvariantCulture)
+                + Environment.NewLine
+                + "Generated contract: Step 1 judges DistanceMmAvg, Step 2 judges DistanceMmRange. Neither Step runs until the user explicitly validates/imports/runs.";
+            LlmXmlDraftText = SerializePipelineToXmlText(pipeline);
+            ValidateLlmXmlDraftText(false);
+            StatusText = LocalText(
+                "핀 간격 skill XML 초안을 생성했습니다. Preview/Run은 실행하지 않았습니다.",
+                "Created Pin gap skill XML draft. Preview/Run was not executed.");
+        }
+
+        private void CreateBlobCountIntentXmlDraft()
+        {
+            if (!OpenVisionRecipeBlobCountIntentSkill.TryParseRoi(BlobCountIntentRoiText, out int roiX, out int roiY, out int roiWidth, out int roiHeight, out string roiMessage)
+                || !OpenVisionRecipeBlobCountIntentSkill.TryParseByte(BlobCountIntentThresholdText, out int threshold)
+                || !OpenVisionRecipeBlobCountIntentSkill.TryParseNonNegativeInt(BlobCountIntentMinCountText, out int minCount)
+                || !OpenVisionRecipeBlobCountIntentSkill.TryParseNonNegativeInt(BlobCountIntentMaxCountText, out int maxCount)
+                || !OpenVisionRecipeBlobCountIntentSkill.TryParsePositiveInt(BlobCountIntentMinAreaText, out int minArea)
+                || !OpenVisionRecipeBlobCountIntentSkill.TryParsePositiveInt(BlobCountIntentMaxAreaText, out int maxArea))
+            {
+                StatusText = LocalText(
+                    "Check Blob count skill inputs. ROI must be x,y,w,h, threshold must be 0..255, count must be 0 or greater, and area values must be positive. ",
+                    "Check Blob count skill inputs. ROI must be x,y,w,h, threshold must be 0..255, count must be 0 or greater, and area values must be positive. ")
+                    + roiMessage;
+                return;
+            }
+
+            if (minCount > maxCount)
+            {
+                StatusText = LocalText("Blob count Min count cannot be greater than Max count.", "Blob count Min count cannot be greater than Max count.");
+                return;
+            }
+
+            if (minArea > maxArea)
+            {
+                StatusText = LocalText("Blob count Min area cannot be greater than Max area.", "Blob count Min area cannot be greater than Max area.");
+                return;
+            }
+
+            SelectedLlmToolTemplate = "Threshold + Blob";
+            VisionPipeline pipeline = OpenVisionRecipeBlobCountIntentSkill.CreatePipeline(
+                roiX,
+                roiY,
+                roiWidth,
+                roiHeight,
+                threshold,
+                minCount,
+                maxCount,
+                minArea,
+                maxArea);
+
+            LlmPromptText = BuildLlmPromptText()
+                + Environment.NewLine
+                + Environment.NewLine
+                + "[Blob count skill inputs]"
+                + Environment.NewLine
+                + "ROI: " + OpenVisionRecipeBlobCountIntentSkill.FormatRoi(roiX, roiY, roiWidth, roiHeight)
+                + Environment.NewLine
+                + "Threshold: " + threshold.ToString(CultureInfo.InvariantCulture)
+                + Environment.NewLine
+                + "Expected ResultCount: " + minCount.ToString(CultureInfo.InvariantCulture)
+                + ".." + maxCount.ToString(CultureInfo.InvariantCulture)
+                + Environment.NewLine
+                + "Blob area px: " + minArea.ToString(CultureInfo.InvariantCulture)
+                + ".." + maxArea.ToString(CultureInfo.InvariantCulture)
+                + Environment.NewLine
+                + "Generated contract: Step 1 creates a binary layer, Step 2 judges ResultCount. Neither Step runs until the user explicitly validates/imports/runs.";
+            LlmXmlDraftText = SerializePipelineToXmlText(pipeline);
+            ValidateLlmXmlDraftText(false);
+            StatusText = LocalText(
+                "Created Blob count skill XML draft. Preview/Run was not executed.",
+                "Created Blob count skill XML draft. Preview/Run was not executed.");
+        }
+
+        private void CreateContourCountIntentXmlDraft()
+        {
+            if (!OpenVisionRecipeContourCountIntentSkill.TryParseRoi(ContourCountIntentRoiText, out int roiX, out int roiY, out int roiWidth, out int roiHeight, out string roiMessage)
+                || !OpenVisionRecipeContourCountIntentSkill.TryParseByte(ContourCountIntentThresholdText, out int threshold)
+                || !OpenVisionRecipeContourCountIntentSkill.TryParseNonNegativeInt(ContourCountIntentMinCountText, out int minCount)
+                || !OpenVisionRecipeContourCountIntentSkill.TryParseNonNegativeInt(ContourCountIntentMaxCountText, out int maxCount)
+                || !OpenVisionRecipeContourCountIntentSkill.TryParsePositiveInt(ContourCountIntentMinAreaText, out int minArea)
+                || !OpenVisionRecipeContourCountIntentSkill.TryParsePositiveInt(ContourCountIntentMaxAreaText, out int maxArea))
+            {
+                StatusText = LocalText(
+                    "Check Contour skill inputs. ROI must be x,y,w,h, threshold must be 0..255, count must be 0 or greater, and area values must be positive. ",
+                    "Check Contour skill inputs. ROI must be x,y,w,h, threshold must be 0..255, count must be 0 or greater, and area values must be positive. ")
+                    + roiMessage;
+                return;
+            }
+
+            if (minCount > maxCount)
+            {
+                StatusText = LocalText("Contour Min count cannot be greater than Max count.", "Contour Min count cannot be greater than Max count.");
+                return;
+            }
+
+            if (minArea > maxArea)
+            {
+                StatusText = LocalText("Contour Min area cannot be greater than Max area.", "Contour Min area cannot be greater than Max area.");
+                return;
+            }
+
+            SelectedLlmToolTemplate = "Shape boundary (Contour)";
+            VisionPipeline pipeline = OpenVisionRecipeContourCountIntentSkill.CreatePipeline(
+                roiX,
+                roiY,
+                roiWidth,
+                roiHeight,
+                threshold,
+                minCount,
+                maxCount,
+                minArea,
+                maxArea);
+
+            LlmPromptText = BuildLlmPromptText()
+                + Environment.NewLine
+                + Environment.NewLine
+                + "[Contour count/size skill inputs]"
+                + Environment.NewLine
+                + "ROI: " + OpenVisionRecipeContourCountIntentSkill.FormatRoi(roiX, roiY, roiWidth, roiHeight)
+                + Environment.NewLine
+                + "Threshold: " + threshold.ToString(CultureInfo.InvariantCulture)
+                + Environment.NewLine
+                + "Expected ResultCount: " + minCount.ToString(CultureInfo.InvariantCulture)
+                + ".." + maxCount.ToString(CultureInfo.InvariantCulture)
+                + Environment.NewLine
+                + "Contour area px: " + minArea.ToString(CultureInfo.InvariantCulture)
+                + ".." + maxArea.ToString(CultureInfo.InvariantCulture)
+                + Environment.NewLine
+                + "Generated contract: Step 1 creates a binary layer, Step 2 judges ResultCount, Step 3 judges AreaMax. No Step runs until the user explicitly validates/imports/runs.";
+            LlmXmlDraftText = SerializePipelineToXmlText(pipeline);
+            ValidateLlmXmlDraftText(false);
+            StatusText = LocalText(
+                "Created Contour count/size skill XML draft. Preview/Run was not executed.",
+                "Created Contour count/size skill XML draft. Preview/Run was not executed.");
         }
 
         private void RefreshLlmDraftReview()
@@ -2992,6 +3727,9 @@ namespace OpenVisionLab
                 "Create an OpenVisionLab VisionPipeline XML draft.",
                 "Product identity: OpenCvSharp4 rule-based vision workbench; no camera, lighting, PLC, or I/O setup.",
                 "Use only OpenVisionLab pipeline tools and parameters. Keep algorithm tool parameters compatible with PropertyGrid-backed tools.",
+                "Selected inspection intent: " + SelectedLlmToolTemplate,
+                "Intent contract: " + BuildLlmIntentContractText(SelectedLlmToolTemplate),
+                "Hard rule: do not switch to another tool family unless the selected intent contract explicitly allows it.",
                 "Never overwrite the input layer. Read from Main unless a previous step output is intentionally used.",
                 "Use score and weight parameters such as SCORE_MIN, GREEDINESS, and HYBRID_VERIFY_IMAGE_WEIGHT as 0..1 decimals, not percentages.",
                 "Use positive numeric values for MAGNIFIATION, RANSAC_REPROJ_THRESHOLD, and COARSE_ANGLE_STEP.",
@@ -3024,13 +3762,137 @@ namespace OpenVisionLab
             });
         }
 
+        private static string BuildLlmIntentContractText(string template)
+        {
+            if (IsLineDistanceTemplate(template))
+            {
+                return "Use ToolType=LineDistance only for edge-to-edge or pin-to-pin distance. Primary value metrics: DistancePxAvg; use DistanceMmAvg only when PIXELPERMM is known. Quality metrics: DistancePxRange/DistanceMmRange and DistancePxMax/DistanceMmMax must be checked so one long outlier line cannot pass through the average. If both nominal distance and consistency must be judged, duplicate the same LineDistance parameters into a second validation Step with a separate OutputLayer. Required parameters: USE_ROI/CvROI, LeftPRJ_DIR, RightPRJ_DIR, PRJ_PORALITY, CONTRAST, THICKNESS, SAMPLING_STEP, POINT_RANGE. Do not use Blob or Contour to measure distance. ROI must cover a narrow measurement band across the two edges, not the full object or empty background.";
+            }
+
+            if (IsContourTemplate(template))
+            {
+                return "Use ToolType=Contour only for boundary, chip, scratch, shape, or region outline checks. Primary metrics: ResultCount, AreaAvg, BoundsWidthAvg, BoundsHeightAvg. Do not use Contour for pin-to-pin gap measurement.";
+            }
+
+            if (IsBlobTemplate(template))
+            {
+                return "Use Threshold followed by Blob for connected object count, area, position, or foreground presence checks. Primary metrics: ResultCount and AreaAvg.";
+            }
+
+            if (IsEdgeBasedTemplate(template))
+            {
+                return "Use ToolType=EdgeBasedMatching for template-like shape matching when edge geometry is more stable than intensity. Primary metrics: ScoreMax and ResultCount.";
+            }
+
+            if (IsMeanTemplate(template))
+            {
+                return "Use ToolType=Mean for region brightness or intensity band judgment. Primary metric: MeanValueAvg.";
+            }
+
+            return "Use ToolType=Matching for template position or presence checks with a real template path. Primary metrics: ScoreMax and ResultCount.";
+        }
+
+        private static string ResolveIntentSummary(string template)
+        {
+            if (IsLineDistanceTemplate(template))
+            {
+                return "LineDistance / DistancePxAvg + DistancePxRange";
+            }
+
+            if (IsContourTemplate(template))
+            {
+                return "Contour / ResultCount, AreaAvg, bounds";
+            }
+
+            if (IsBlobTemplate(template))
+            {
+                return "Threshold + Blob / ResultCount, AreaAvg";
+            }
+
+            if (IsEdgeBasedTemplate(template))
+            {
+                return "EdgeBasedMatching / ScoreMax";
+            }
+
+            if (IsMeanTemplate(template))
+            {
+                return "Mean / MeanValueAvg";
+            }
+
+            return "Matching / ScoreMax";
+        }
+
+        private static bool IsLineDistanceTemplate(string template)
+        {
+            string value = template ?? string.Empty;
+            return value.IndexOf("LineDistance", StringComparison.OrdinalIgnoreCase) >= 0
+                || value.IndexOf("gap", StringComparison.OrdinalIgnoreCase) >= 0
+                || value.IndexOf("distance", StringComparison.OrdinalIgnoreCase) >= 0
+                || string.Equals(value, "Line Measurement", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsContourTemplate(string template)
+        {
+            string value = template ?? string.Empty;
+            return value.IndexOf("Contour", StringComparison.OrdinalIgnoreCase) >= 0
+                || value.IndexOf("boundary", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool IsBlobTemplate(string template)
+        {
+            string value = template ?? string.Empty;
+            return value.IndexOf("Blob", StringComparison.OrdinalIgnoreCase) >= 0
+                || value.IndexOf("count", StringComparison.OrdinalIgnoreCase) >= 0
+                || value.IndexOf("area", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool IsEdgeBasedTemplate(string template)
+        {
+            string value = template ?? string.Empty;
+            return value.IndexOf("Edge Based", StringComparison.OrdinalIgnoreCase) >= 0
+                || value.IndexOf("EdgeBased", StringComparison.OrdinalIgnoreCase) >= 0
+                || value.IndexOf("edge-shape", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool IsMeanTemplate(string template)
+        {
+            string value = template ?? string.Empty;
+            return value.IndexOf("Mean", StringComparison.OrdinalIgnoreCase) >= 0
+                || value.IndexOf("brightness", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
         private VisionPipeline CreateLlmTemplatePipeline()
         {
             string template = SelectedLlmToolTemplate ?? string.Empty;
             string pipelineName = "LLM_Starter_" + SanitizePathSegment(template.Replace("+", "And").Replace(" ", string.Empty));
             VisionPipeline pipeline = new VisionPipeline { Name = pipelineName };
 
-            if (template.IndexOf("Blob", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (IsLineDistanceTemplate(template))
+            {
+                VisionPipelineStep step = CreateDraftStep("LineDistance_Measure", "LineDistance", "Main", "LineDistance_Result");
+                step.Parameters["Name"] = "LineDistance_Measure";
+                step.Parameters["PIXELPERMM"] = "1";
+                step.Parameters["USE_ROI"] = "False";
+                step.Parameters["CvROI"] = "0,0,0,0";
+                step.Parameters["LeftPRJ_DIR"] = "X_LTOR";
+                step.Parameters["RightPRJ_DIR"] = "X_RTOL";
+                step.Parameters["PRJ_PORALITY"] = "WTOB";
+                step.Parameters["CONTRAST"] = "18";
+                step.Parameters["THICKNESS"] = "2";
+                step.Parameters["SAMPLING_STEP"] = "8";
+                step.Parameters["POINT_RANGE"] = "8";
+                step.Parameters["VER_PRJ_DIR"] = "X_RTOL";
+                step.Parameters["USE_MANUAL_ANGLE"] = "False";
+                step.UseAcceptance = true;
+                step.ExpectedSuccess = true;
+                step.AcceptanceMetricName = "DistancePxRange";
+                step.UseAcceptanceMetricMaximum = true;
+                step.AcceptanceMetricMaximum = 8;
+                pipeline.Steps.Add(step);
+                return pipeline;
+            }
+
+            if (IsBlobTemplate(template))
             {
                 VisionPipelineStep threshold = CreateDraftStep("Threshold_Precheck", "Threshold", "Main", "Threshold_Preview");
                 threshold.Parameters["Threshold"] = "128";
@@ -3044,7 +3906,22 @@ namespace OpenVisionLab
                 return pipeline;
             }
 
-            if (template.IndexOf("Edge", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (IsContourTemplate(template))
+            {
+                VisionPipelineStep step = CreateDraftStep("Contour_Inspect", "Contour", "Main", "Contour_Result");
+                step.Parameters["USE_THRESHOLD"] = "True";
+                step.Parameters["THRESHOLD"] = "128";
+                step.Parameters["MIN_AREA"] = "50";
+                step.Parameters["MAX_AREA"] = "999999";
+                step.Parameters["USE_DRAW_IMAGE"] = "True";
+                step.UseAcceptance = true;
+                step.ExpectedSuccess = true;
+                step.AcceptanceMetricName = "ResultCount";
+                pipeline.Steps.Add(step);
+                return pipeline;
+            }
+
+            if (IsEdgeBasedTemplate(template))
             {
                 VisionPipelineStep step = CreateDraftStep("Edge_Match", "EdgeBasedMatching", "Main", "EdgeMatching_Result");
                 step.Parameters["SCORE_MIN"] = "0.75";
@@ -3056,17 +3933,7 @@ namespace OpenVisionLab
                 return pipeline;
             }
 
-            if (template.IndexOf("Line", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                VisionPipelineStep step = CreateDraftStep("Line_Measure", "Line", "Main", "Line_Result");
-                step.Parameters["CONTRAST"] = "20";
-                step.Parameters["THICKNESS"] = "5";
-                step.Parameters["SAMPLING_STEP"] = "1";
-                pipeline.Steps.Add(step);
-                return pipeline;
-            }
-
-            if (template.IndexOf("Mean", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (IsMeanTemplate(template))
             {
                 VisionPipelineStep step = CreateDraftStep("Mean_Check", "Mean", "Main", "Mean_Result");
                 step.Parameters["MEAN_MIN"] = "0";
@@ -3121,23 +3988,27 @@ namespace OpenVisionLab
 
         private static string ResolveTemplateGuidance(string template)
         {
-            string value = template ?? string.Empty;
-            if (value.IndexOf("Blob", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (IsLineDistanceTemplate(template))
+            {
+                return "Use LineDistance for pin-to-pin, edge-to-edge, gap, pitch, width, or clearance measurement. Keep the ROI to the measurement band. Do not judge DistancePxAvg/DistanceMmAvg alone; also constrain DistancePxRange/DistanceMmRange or DistancePxMax/DistanceMmMax to reject outlier distance lines.";
+            }
+
+            if (IsBlobTemplate(template))
             {
                 return "Use Threshold to isolate the foreground, then Blob to measure area/count/position.";
             }
 
-            if (value.IndexOf("Edge", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (IsContourTemplate(template))
+            {
+                return "Use Contour only for boundary, chip, scratch, shape, or region outline checks; do not use it for pin-to-pin gap measurement.";
+            }
+
+            if (IsEdgeBasedTemplate(template))
             {
                 return "Use EdgeBasedMatching when contour shape is more reliable than raw intensity.";
             }
 
-            if (value.IndexOf("Line", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                return "Use Line/LineDistance style outputs for edge or gap measurement points.";
-            }
-
-            if (value.IndexOf("Mean", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (IsMeanTemplate(template))
             {
                 return "Use Mean when the judgment is based on brightness or region intensity.";
             }
@@ -3519,6 +4390,7 @@ namespace OpenVisionLab
             }
 
             bool resultChannelsReady = AppendLlmResultChannelValidation(pipeline, xmlText, validationLines);
+            bool intentContractReady = AppendLlmIntentContractValidation(pipeline, validationLines);
 
             if (!string.IsNullOrWhiteSpace(LlmReferenceImagePath))
             {
@@ -3543,7 +4415,7 @@ namespace OpenVisionLab
                     "Next: Attach the missing file(s) or replace XML paths with existing sample/template paths before import."));
             }
 
-            bool success = validation.Success && missingDependencyCount == 0 && resultChannelsReady;
+            bool success = validation.Success && missingDependencyCount == 0 && resultChannelsReady && intentContractReady;
             validationLines[0] = success
                 ? OpenVisionRecipeText.Local("LLM 초안 검증: OK", "LLM draft validation: OK")
                 : OpenVisionRecipeText.Local("LLM 초안 검증: NG", "LLM draft validation: NG");
@@ -3598,6 +4470,84 @@ namespace OpenVisionLab
             validationLines.Add(OpenVisionRecipeText.Local("Inspection.Benchmark: WAIT - 가져오기 후 카탈로그/이력 비교 실행이 필요합니다.", "Inspection.Benchmark: WAIT - run catalog/history comparison after import."));
             validationLines.Add(OpenVisionRecipeText.Local("Inspection.NextAction: OK - 검증 리포트와 작업자 리포트에 다음 조치가 표시됩니다.", "Inspection.NextAction: OK - validation and operator reports expose the next action."));
             return true;
+        }
+
+        private bool AppendLlmIntentContractValidation(VisionPipeline pipeline, ICollection<string> validationLines)
+        {
+            string template = SelectedLlmToolTemplate ?? string.Empty;
+            if (IsLineDistanceTemplate(template))
+            {
+                return AppendRequiredLlmIntentToolValidation(
+                    pipeline,
+                    validationLines,
+                    "LineDistance",
+                    "Pin gap / edge distance",
+                    "Use ToolType=LineDistance for pin-to-pin, edge-to-edge, gap, pitch, width, or clearance measurement. Do not substitute Contour or Blob.");
+            }
+
+            if (IsContourTemplate(template))
+            {
+                return AppendRequiredLlmIntentToolValidation(
+                    pipeline,
+                    validationLines,
+                    "Contour",
+                    "Shape boundary",
+                    "Use ToolType=Contour for boundary, chip, scratch, shape, or region outline checks.");
+            }
+
+            if (IsBlobTemplate(template))
+            {
+                return AppendRequiredLlmIntentToolValidation(
+                    pipeline,
+                    validationLines,
+                    "Blob",
+                    "Threshold + Blob",
+                    "Use ToolType=Blob after Threshold for connected-object count, area, position, or foreground presence checks.");
+            }
+
+            validationLines.Add("Intent contract: SKIP - selected intent has no strict tool-family gate.");
+            return true;
+        }
+
+        private static bool AppendRequiredLlmIntentToolValidation(
+            VisionPipeline pipeline,
+            ICollection<string> validationLines,
+            string requiredToolType,
+            string intentName,
+            string nextAction)
+        {
+            List<string> enabledToolTypes = (pipeline?.Steps ?? new List<VisionPipelineStep>())
+                .Where(step => step != null && step.Enabled)
+                .Select(step => step.ToolType ?? string.Empty)
+                .Where(toolType => !string.IsNullOrWhiteSpace(toolType))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(toolType => toolType, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            bool hasRequiredTool = enabledToolTypes.Any(toolType =>
+                string.Equals(toolType, requiredToolType, StringComparison.OrdinalIgnoreCase)
+                || IsAcceptedToolAlias(requiredToolType, toolType));
+
+            if (hasRequiredTool)
+            {
+                validationLines.Add("Intent contract: OK - " + intentName + " uses ToolType=" + requiredToolType + ".");
+                return true;
+            }
+
+            validationLines.Add("Error: Intent contract mismatch. Selected intent '" + intentName + "' requires ToolType=" + requiredToolType + ".");
+            validationLines.Add("Draft enabled ToolTypes: " + (enabledToolTypes.Count == 0 ? "-" : string.Join(", ", enabledToolTypes)));
+            validationLines.Add("Next: " + nextAction);
+            return false;
+        }
+
+        private static bool IsAcceptedToolAlias(string requiredToolType, string actualToolType)
+        {
+            if (string.Equals(requiredToolType, "LineDistance", StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Equals(actualToolType, "LineDistanceGauge", StringComparison.OrdinalIgnoreCase);
+            }
+
+            return false;
         }
 
         private static bool HasJudgementParameter(VisionPipelineStep step)
@@ -6192,13 +7142,20 @@ namespace OpenVisionLab
             OpenVisionRecipeText.Local("샘플을 선택한 뒤 명시적으로 검사를 실행하세요.", "Select a sample and run an explicit check."),
             false);
 
-        private OpenVisionRecipeSampleRunSummary(string statusText, string detailText, bool hasResult, string compactText = null, bool succeeded = false)
+        private OpenVisionRecipeSampleRunSummary(
+            string statusText,
+            string detailText,
+            bool hasResult,
+            string compactText = null,
+            bool succeeded = false,
+            string distanceMetricText = null)
         {
             StatusText = statusText ?? string.Empty;
             DetailText = detailText ?? string.Empty;
             HasResult = hasResult;
             Succeeded = succeeded;
             CompactText = string.IsNullOrWhiteSpace(compactText) ? StatusText : compactText.Trim();
+            DistanceMetricText = string.IsNullOrWhiteSpace(distanceMetricText) ? string.Empty : distanceMetricText.Trim();
         }
 
         public string StatusText { get; }
@@ -6210,6 +7167,8 @@ namespace OpenVisionLab
         public bool Succeeded { get; }
 
         public string CompactText { get; }
+
+        public string DistanceMetricText { get; }
 
         public string DisplayText => StatusText + Environment.NewLine + DetailText;
 
@@ -6288,7 +7247,8 @@ namespace OpenVisionLab
                 string.Join(Environment.NewLine, lines),
                 true,
                 compact,
-                result.Success);
+                result.Success,
+                result.DistanceMetricText);
         }
 
         private static string BuildSampleNextAction(VisionPipelineSampleCheckResult result)

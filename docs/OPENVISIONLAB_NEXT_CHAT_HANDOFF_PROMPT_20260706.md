@@ -148,6 +148,8 @@ Latest current evidence update on 2026-07-06 21:57 KST:
 - Actual external LLM transcript corpus is not yet captured.
 - Current environment check found missing `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `CLAUDE_API_KEY`, `GEMINI_API_KEY`, and `GOOGLE_API_KEY`.
 - Do not fabricate "real" external LLM transcript examples. If keys or manually exported transcripts become available, store raw prompts/responses under `artifacts\llm_transcripts\raw`, sanitize them, then decide what can be committed.
+- User-provided/operator-repaired XML replay cases belong under `artifacts\llm_transcripts\manual`; they can prove validation behavior but must not be reported as real GPT/Gemini/Claude transcript evidence.
+- Current manual replay evidence: pin distance intent with a Contour/Threshold draft is blocked by the intent contract. Latest direct EXE smoke `recipe-manager-llm-intent-skills` in `artifacts\llm_manual_replay_contract_after_20260707_r1` passed with `PinGapContourMismatch: blocked by intent contract` and `PreviewRunCountUnchanged: 0`.
 - Recipe Manager after screenshot still shows some dense run-summary text. It is not a clipping error in the latest smoke, but can be compacted later if a fresh screenshot shows actual workflow friction.
 
 ## Next Priority

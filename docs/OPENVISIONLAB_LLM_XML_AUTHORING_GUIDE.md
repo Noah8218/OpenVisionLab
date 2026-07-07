@@ -71,7 +71,7 @@ Optional judgement fields:
 - `UseAcceptance`: `true` when this Step has an OK/NG gate.
 - `ExpectedSuccess`: usually `true`; use `false` only when the Step is expected to fail.
 - `MaxElapsedMilliseconds`: positive time budget for this Step.
-- `AcceptanceMetricName`: known metric such as `ResultCount`, `ScoreMax`, `AreaAvg`, `DistanceMmAvg`, `MergeOverlayCount`.
+- `AcceptanceMetricName`: known metric such as `ResultCount`, `ScoreMax`, `AreaAvg`, `DistanceMmAvg`, `DistanceMmRange`, `MergeOverlayCount`.
 - `UseAcceptanceMetricMinimum`, `AcceptanceMetricMinimum`
 - `UseAcceptanceMetricMaximum`, `AcceptanceMetricMaximum`
 
@@ -94,6 +94,7 @@ Parameter values are strings in XML but are validated by type. Boolean values mu
 - Gray-level values such as `Threshold`, `MaxValue`, `RangeMin`, `RangeMax`, `CANNY_LOW`, and `CANNY_HIGH` must be within 0..255.
 - `Arithmetic` operation mode needs `InputLayerB` unless the operation is `Bitwise_NOT` or `ABS`, the mode is `Offset`, or `UseConstantInput` is `true`.
 - `OverlayMerge` should be the final enabled Step when it is the user-facing review result.
+- For pin-to-pin, edge-to-edge, pitch, width, or clearance checks using `LineDistance`, do not judge only `DistancePxAvg` or `DistanceMmAvg`. Also constrain candidate consistency with `DistancePxRange`/`DistanceMmRange` or reject long outliers with `DistancePxMax`/`DistanceMmMax`. If one Step must judge the nominal distance and another must judge consistency, duplicate the same `LineDistance` parameters into a second validation Step with a separate `OutputLayer`.
 
 ## Result Channel Contract
 
@@ -301,8 +302,11 @@ Repair rules:
 Store raw external LLM experiments outside public sample paths until reviewed:
 
 - Raw prompt/response: `artifacts\llm_transcripts\raw\...`
+- User-provided or operator-repaired XML replay cases: `artifacts\llm_transcripts\manual\...`
 - Sanitized replay corpus candidate: `artifacts\llm_transcripts\sanitized\...`
 - Public documentation examples: only after private product names, customer data, old company recipe names, and non-public assets are removed.
+
+Manual replay cases are useful validation evidence, but they are not real GPT/Gemini/Claude transcript evidence. Do not report them as external LLM correction-loop transcripts.
 
 Commit only sanitized examples that are safe under the public sample asset policy.
 

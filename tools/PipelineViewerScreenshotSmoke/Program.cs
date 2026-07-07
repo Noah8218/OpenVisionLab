@@ -1618,7 +1618,7 @@ internal static class Program
                     + $"Status='{shellHost.RecipeCommands.LlmReviewBundleCopyStatusText}'");
             }
 
-            string llmReviewBundleClipboard = System.Windows.Clipboard.GetText();
+            string llmReviewBundleClipboard = GetClipboardTextWithRetry();
             if (!llmReviewBundleClipboard.Contains("Selected step operator context", StringComparison.OrdinalIgnoreCase)
                 || !llmReviewBundleClipboard.Contains("Failure review", StringComparison.OrdinalIgnoreCase))
             {
@@ -1627,7 +1627,7 @@ internal static class Program
                     + $"Clipboard='{llmReviewBundleClipboard}'");
             }
 
-            System.Windows.Clipboard.SetText(File.ReadAllText(llmDraftPath));
+            SetClipboardTextWithRetry(File.ReadAllText(llmDraftPath));
             shellHost.RecipeCommands.PasteLlmXmlDraftFromClipboardCommand.Execute(null);
             Pump(40);
             if (!shellHost.RecipeCommands.LlmXmlDraftText.Contains("LLM_Draft_Manager", StringComparison.OrdinalIgnoreCase)
@@ -14491,6 +14491,40 @@ internal static class Program
         {
             yield return child;
         }
+    }
+
+    private static string GetClipboardTextWithRetry()
+    {
+        return RunClipboardActionWithRetry(() => System.Windows.Clipboard.GetText());
+    }
+
+    private static void SetClipboardTextWithRetry(string text)
+    {
+        RunClipboardActionWithRetry(() =>
+        {
+            System.Windows.Clipboard.SetText(text ?? string.Empty);
+            return true;
+        });
+    }
+
+    private static T RunClipboardActionWithRetry<T>(Func<T> action)
+    {
+        COMException? lastException = null;
+        for (int attempt = 0; attempt < 40; attempt++)
+        {
+            try
+            {
+                return action();
+            }
+            catch (COMException ex) when ((uint)ex.ErrorCode == 0x800401D0)
+            {
+                lastException = ex;
+                Pump(4);
+                Thread.Sleep(Math.Min(250, 50 + attempt * 10));
+            }
+        }
+
+        throw lastException ?? new COMException("Clipboard operation failed.");
     }
 
     [DllImport("user32.dll")]
