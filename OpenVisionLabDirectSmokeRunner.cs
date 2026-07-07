@@ -1342,6 +1342,49 @@ namespace OpenVisionLab
 
                 string pairCheckStatusText = shellHost.RecipeCommands.LatestPairRunSummary.StatusText;
                 int pairRoleCardCount = shellHost.RecipeCommands.LatestPairRunSummary.SampleResults.Count;
+                string validationSuitePipelineName = shellHost.RecipeCommands.SelectedPipelineOption?.PipelineName ?? pipelineName;
+                int validationSuiteHistoryCountBefore = VisionPipelineBatchRunSummaryStorage
+                    .List(recipeName, validationSuitePipelineName)
+                    .Count;
+                OpenVisionRecipeValidationSuiteScopeOption selectedSampleSuiteScope =
+                    shellHost.RecipeCommands.ValidationSuiteScopeOptions.FirstOrDefault(option =>
+                        string.Equals(option.Key, OpenVisionRecipeValidationSuiteScopeOption.SelectedSampleKey, StringComparison.OrdinalIgnoreCase));
+                if (selectedSampleSuiteScope == null)
+                {
+                    throw new InvalidOperationException("Recipe manager direct smoke could not find the selected-sample validation suite scope.");
+                }
+
+                shellHost.RecipeCommands.SelectedValidationSuiteScopeOption = selectedSampleSuiteScope;
+                if (!shellHost.RecipeCommands.RunValidationSuiteCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException("Recipe manager direct smoke validation suite command was disabled for selected sample.");
+                }
+
+                shellHost.RecipeCommands.RunValidationSuiteCommand.Execute(null);
+                Stopwatch validationSuiteStopwatch = Stopwatch.StartNew();
+                while (VisionPipelineBatchRunSummaryStorage.List(recipeName, validationSuitePipelineName).Count <= validationSuiteHistoryCountBefore)
+                {
+                    Pump(8);
+                    Thread.Sleep(20);
+                    if (validationSuiteStopwatch.Elapsed > TimeSpan.FromSeconds(20))
+                    {
+                        throw new TimeoutException("Recipe manager validation suite did not save selected-sample history within 20 seconds.");
+                    }
+                }
+
+                IReadOnlyList<OpenVisionRecipeBatchRunOption> validationSuiteRecentRuns =
+                    shellHost.RecipeCommands.RecentBatchRunOptions ?? Array.Empty<OpenVisionRecipeBatchRunOption>();
+                if (string.IsNullOrWhiteSpace(shellHost.RecipeCommands.ValidationSuiteStatusText)
+                    || (!shellHost.RecipeCommands.ValidationSuiteStatusText.Contains("saved", StringComparison.OrdinalIgnoreCase)
+                        && !shellHost.RecipeCommands.ValidationSuiteStatusText.Contains("저장", StringComparison.OrdinalIgnoreCase))
+                    || !validationSuiteRecentRuns.Any(option => option != null
+                        && option.SampleResults.Any(result => string.Equals(result.SampleName, sampleOption.SampleName, StringComparison.OrdinalIgnoreCase))))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager validation suite did not expose saved selected-sample evidence. "
+                        + $"Status='{shellHost.RecipeCommands.ValidationSuiteStatusText}'");
+                }
+
                 OpenVisionRecipePipelineStepPreview failedStepPreview =
                     shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps.FirstOrDefault()
                     ?? throw new InvalidOperationException("Recipe manager direct smoke could not find a preview step for failure-link verification.");
@@ -1889,6 +1932,11 @@ namespace OpenVisionLab
                     shellHost,
                     "Recipe manager direct smoke pipeline run history tab",
                     "HostRecipePipelineRunHistoryTab",
+                    "HostRecipeValidationSuitePanel",
+                    "HostRecipeValidationSuiteScopeCombo",
+                    "HostRecipeRunValidationSuiteButton",
+                    "HostRecipeValidationSuiteStatus",
+                    "HostRecipeValidationSuiteSummary",
                     "HostRecipeRecentBatchRunList",
                     "HostRecipeRecentBatchRunSampleList",
                     "HostRecipeRecentBatchRunComparisonPanel",
@@ -2825,6 +2873,7 @@ namespace OpenVisionLab
                     + "PreviewSteps: " + shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps.Count.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
                     + "SampleCheck: " + shellHost.RecipeCommands.LatestSampleRunSummary.StatusText + Environment.NewLine
                     + "PairCheck: " + pairCheckStatusText + Environment.NewLine
+                    + "ValidationSuite: selected sample saved to run history" + Environment.NewLine
                     + "PairRoleCards: " + pairRoleCardCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
                     + "RoleDrilldown: " + forcedFailedRole.Role + " -> " + failedStepPreview.Name + Environment.NewLine
                     + "FailedRunLink: " + selectedPreviewStep.Index.ToString(CultureInfo.InvariantCulture) + " | " + selectedPreviewStep.Name + Environment.NewLine

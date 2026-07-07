@@ -3252,6 +3252,70 @@
                                              <ScrollViewer VerticalScrollBarVisibility="Auto"
                                                            HorizontalScrollBarVisibility="Disabled">
                                                  <StackPanel>
+                                        <TextBlock Text="{Binding RecipeCommands.ValidationSuiteText}"
+                                                   Foreground="#A8CBD1"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold" />
+                                        <Border Margin="0,4,0,10"
+                                                Padding="8,6"
+                                                AutomationProperties.AutomationId="HostRecipeValidationSuitePanel"
+                                                Background="#102329"
+                                                BorderBrush="#4C8790"
+                                                BorderThickness="1">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="220" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding RecipeCommands.ValidationSuiteScopeLabelText}"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="#A8CBD1"
+                                                           FontSize="10"
+                                                           FontWeight="SemiBold" />
+                                                <ComboBox Grid.Column="1"
+                                                          Height="24"
+                                                          Margin="8,0,0,0"
+                                                          AutomationProperties.AutomationId="HostRecipeValidationSuiteScopeCombo"
+                                                          DisplayMemberPath="DisplayText"
+                                                          ItemsSource="{Binding RecipeCommands.ValidationSuiteScopeOptions}"
+                                                          SelectedItem="{Binding RecipeCommands.SelectedValidationSuiteScopeOption, Mode=TwoWay}" />
+                                                <Button Grid.Column="2"
+                                                        MinWidth="92"
+                                                        Height="24"
+                                                        Margin="8,0,0,0"
+                                                        AutomationProperties.AutomationId="HostRecipeRunValidationSuiteButton"
+                                                        Command="{Binding RecipeCommands.RunValidationSuiteCommand}">
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <iconPacks:PackIconMaterial Kind="PlayCircleOutline" Width="12" Height="12" Margin="0,1,4,0" />
+                                                        <TextBlock Text="{Binding RecipeCommands.RunValidationSuiteText}" FontSize="10" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <TextBlock Grid.Column="3"
+                                                           Margin="8,0,0,0"
+                                                           AutomationProperties.AutomationId="HostRecipeValidationSuiteStatus"
+                                                           Text="{Binding RecipeCommands.ValidationSuiteStatusText, Mode=OneWay}"
+                                                           ToolTip="{Binding RecipeCommands.ValidationSuiteStatusText, Mode=OneWay}"
+                                                           Foreground="#95D6B8"
+                                                           FontSize="10"
+                                                           VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Grid.Row="1"
+                                                           Grid.ColumnSpan="4"
+                                                           Margin="0,6,0,0"
+                                                           AutomationProperties.AutomationId="HostRecipeValidationSuiteSummary"
+                                                           Text="{Binding RecipeCommands.ValidationSuiteSummaryText, Mode=OneWay}"
+                                                           ToolTip="{Binding RecipeCommands.ValidationSuiteSummaryText, Mode=OneWay}"
+                                                           Foreground="#EAFBFC"
+                                                           FontSize="10"
+                                                           TextWrapping="Wrap" />
+                                            </Grid>
+                                        </Border>
                                         <TextBlock Text="{Binding RecipeCommands.RecentBatchRunComparisonText}"
                                                    Foreground="#A8CBD1"
                                                    FontSize="11"

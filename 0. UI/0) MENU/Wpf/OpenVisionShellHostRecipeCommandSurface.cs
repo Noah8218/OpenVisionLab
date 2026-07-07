@@ -51,6 +51,8 @@ namespace OpenVisionLab
         private IReadOnlyList<OpenVisionRecipeBatchRunComparisonRow> recentBatchRunComparisonRows = Array.Empty<OpenVisionRecipeBatchRunComparisonRow>();
         private IReadOnlyList<OpenVisionRecipeSampleMatrixRow> sampleMatrixRows = Array.Empty<OpenVisionRecipeSampleMatrixRow>();
         private IReadOnlyList<OpenVisionRecipeDependencyReviewRow> llmXmlDraftDependencyRows = Array.Empty<OpenVisionRecipeDependencyReviewRow>();
+        private readonly IReadOnlyList<OpenVisionRecipeValidationSuiteScopeOption> validationSuiteScopeOptions = OpenVisionRecipeValidationSuiteScopeOption.CreateDefaults();
+        private OpenVisionRecipeValidationSuiteScopeOption selectedValidationSuiteScopeOption;
         private OpenVisionRecipeBatchRunOption selectedRecentBatchRunOption;
         private OpenVisionRecipeBatchRunOption selectedBenchmarkBaselineRunOption;
         private OpenVisionRecipeBatchSampleResultOption selectedRecentBatchSampleResultOption;
@@ -98,12 +100,14 @@ namespace OpenVisionLab
         private string llmXmlDraftPasteStatusText = string.Empty;
         private string operatorHandoffReportStatusText = string.Empty;
         private string selectedRecentBatchRunReviewCopyStatusText = string.Empty;
+        private string validationSuiteStatusText = string.Empty;
         private string statusText = string.Empty;
         private bool isRefreshingOptions;
         private bool isSelectingRecipe;
         private bool isSampleCheckRunning;
         private bool isPairCheckRunning;
         private bool isCatalogBenchmarkRunning;
+        private bool isValidationSuiteRunning;
         private OpenVisionRecipePipelineOption selectedPipelineOption;
         private OpenVisionRecipeSampleOption selectedSampleOption;
         private OpenVisionRecipeSampleRunSummary latestSampleRunSummary = OpenVisionRecipeSampleRunSummary.Empty;
@@ -138,6 +142,10 @@ namespace OpenVisionLab
             this.loadImageIntoLayer = loadImageIntoLayer ?? ((_, _) => false);
             this.selectStepTool = selectStepTool;
             this.commitSelectedStepEdit = commitSelectedStepEdit ?? (() => true);
+            selectedValidationSuiteScopeOption = validationSuiteScopeOptions.FirstOrDefault();
+            validationSuiteStatusText = OpenVisionRecipeText.Local(
+                "Suite 범위를 선택한 뒤 명시적으로 Run suite를 실행하세요.",
+                "Select a suite scope, then run the explicit suite.");
 
             CreateRecipeCommand = new RelayCommand(CreateRecipe);
             CreateNamedRecipeCommand = new RelayCommand(CreateNamedRecipe, CanCreateNamedRecipe);
@@ -162,6 +170,7 @@ namespace OpenVisionLab
             RunSelectedSampleCheckCommand = new RelayCommand(RunSelectedSampleCheck, CanRunSelectedSampleCheck);
             RunSelectedSamplePairCheckCommand = new RelayCommand(RunSelectedSamplePairCheck, CanRunSelectedSamplePairCheck);
             RunCatalogBenchmarkCommand = new RelayCommand(RunCatalogBenchmark, CanRunCatalogBenchmark);
+            RunValidationSuiteCommand = new RelayCommand(RunValidationSuite, CanRunValidationSuite);
             SelectPairSampleResultCommand = new RelayCommand<OpenVisionRecipePairSampleRunSummary>(
                 SelectPairSampleResult,
                 CanSelectPairSampleResult);
@@ -240,6 +249,21 @@ namespace OpenVisionLab
         {
             get => sampleOptions;
             private set => SetProperty(ref sampleOptions, value ?? Array.Empty<OpenVisionRecipeSampleOption>());
+        }
+
+        public IReadOnlyList<OpenVisionRecipeValidationSuiteScopeOption> ValidationSuiteScopeOptions => validationSuiteScopeOptions;
+
+        public OpenVisionRecipeValidationSuiteScopeOption SelectedValidationSuiteScopeOption
+        {
+            get => selectedValidationSuiteScopeOption;
+            set
+            {
+                if (SetProperty(ref selectedValidationSuiteScopeOption, value ?? validationSuiteScopeOptions.FirstOrDefault()))
+                {
+                    OnPropertyChanged(nameof(ValidationSuiteSummaryText));
+                    RefreshCommandState();
+                }
+            }
         }
 
         public IReadOnlyList<OpenVisionRecipeBatchRunOption> RecentBatchRunOptions
@@ -816,6 +840,7 @@ namespace OpenVisionLab
                     OnPropertyChanged(nameof(SelectedSampleAcceptanceSummaryText));
                     OnPropertyChanged(nameof(RunSelectedSampleCheckText));
                     OnPropertyChanged(nameof(RunSelectedSamplePairCheckText));
+                    OnPropertyChanged(nameof(ValidationSuiteSummaryText));
                     OnPropertyChanged(nameof(RecipeGuidedSetupText));
                     RefreshCommandState();
                 }
@@ -855,6 +880,7 @@ namespace OpenVisionLab
                     OnPropertyChanged(nameof(PinGapIntentLatestRunText));
                     OnPropertyChanged(nameof(BlobCountIntentLatestRunText));
                     OnPropertyChanged(nameof(ContourCountIntentLatestRunText));
+                    OnPropertyChanged(nameof(ValidationSuiteSummaryText));
                 }
             }
         }
@@ -872,6 +898,7 @@ namespace OpenVisionLab
                     OnPropertyChanged(nameof(FailureReviewText));
                     OnPropertyChanged(nameof(PipelineSelectedStepOperatorContextText));
                     OnPropertyChanged(nameof(RecipeGuidedSetupText));
+                    OnPropertyChanged(nameof(ValidationSuiteSummaryText));
                 }
             }
         }
@@ -886,6 +913,7 @@ namespace OpenVisionLab
                     OnPropertyChanged(nameof(CatalogBenchmarkSummaryText));
                     OnPropertyChanged(nameof(CatalogBenchmarkDetailText));
                     OnPropertyChanged(nameof(RecipeGuidedSetupText));
+                    OnPropertyChanged(nameof(ValidationSuiteSummaryText));
                     NotifyOperatorReviewChanged();
                 }
             }
@@ -951,6 +979,8 @@ namespace OpenVisionLab
         public ICommand RunSelectedSamplePairCheckCommand { get; }
 
         public ICommand RunCatalogBenchmarkCommand { get; }
+
+        public ICommand RunValidationSuiteCommand { get; }
 
         public ICommand SelectPairSampleResultCommand { get; }
 
@@ -1138,10 +1168,31 @@ namespace OpenVisionLab
             LatestCatalogBenchmarkSummary?.DetailText
             ?? OpenVisionRecipeCatalogBenchmarkSummary.Empty.DetailText;
 
+        public string ValidationSuiteText => "Validation Suite";
+
+        public string ValidationSuiteScopeLabelText => LocalText("범위", "Scope");
+
+        public string RunValidationSuiteText =>
+            isValidationSuiteRunning ? LocalText("실행 중...", "Running...") : LocalText("Suite 실행", "Run suite");
+
+        public string ValidationSuiteSummaryText => BuildValidationSuiteSummaryText();
+
         public string SelectedRecentBatchRunReviewCopyStatusText
         {
             get => selectedRecentBatchRunReviewCopyStatusText;
             private set => SetProperty(ref selectedRecentBatchRunReviewCopyStatusText, value ?? string.Empty);
+        }
+
+        public string ValidationSuiteStatusText
+        {
+            get => validationSuiteStatusText;
+            private set
+            {
+                if (SetProperty(ref validationSuiteStatusText, value ?? string.Empty))
+                {
+                    OnPropertyChanged(nameof(ValidationSuiteSummaryText));
+                }
+            }
         }
 
         public string RunSelectedSampleCheckText => isSampleCheckRunning ? LocalText("실행 중...", "Running...") : LocalText("검사 실행", "Run check");
@@ -1834,6 +1885,31 @@ namespace OpenVisionLab
                 + pass.ToString(CultureInfo.InvariantCulture)
                 + " / NG "
                 + fail.ToString(CultureInfo.InvariantCulture);
+        }
+
+        private string BuildValidationSuiteSummaryText()
+        {
+            string recipe = string.IsNullOrWhiteSpace(selectedRecipeName) ? "-" : selectedRecipeName.Trim();
+            string pipeline = string.IsNullOrWhiteSpace(SelectedPipelineOption?.PipelineName) ? "-" : SelectedPipelineOption.PipelineName.Trim();
+            string scope = SelectedValidationSuiteScopeOption?.DisplayText ?? "-";
+            string sample = string.IsNullOrWhiteSpace(SelectedSampleOption?.SampleName) ? "-" : SelectedSampleOption.SampleName;
+            return "Active: "
+                + recipe
+                + " / "
+                + pipeline
+                + " | "
+                + LocalText("범위: ", "Scope: ")
+                + scope
+                + " | "
+                + LocalText("샘플: ", "Sample: ")
+                + sample
+                + Environment.NewLine
+                + LocalText("최근: ", "Latest: ")
+                + (LatestSampleRunSummary?.CompactText ?? "-")
+                + " / "
+                + (LatestPairRunSummary?.CompactText ?? "-")
+                + " / "
+                + (LatestCatalogBenchmarkSummary?.CompactText ?? "-");
         }
 
         private string BuildOperatorRunReviewText()
@@ -2993,6 +3069,84 @@ namespace OpenVisionLab
             }
         }
 
+        private async void RunValidationSuite()
+        {
+            if (!CanRunValidationSuite())
+            {
+                return;
+            }
+
+            string scope = SelectedValidationSuiteScopeOption?.Key ?? OpenVisionRecipeValidationSuiteScopeOption.SelectedSampleKey;
+            if (string.Equals(scope, OpenVisionRecipeValidationSuiteScopeOption.GoodBadPairKey, StringComparison.OrdinalIgnoreCase))
+            {
+                ValidationSuiteStatusText = LocalText("Good/Bad suite 실행 시작.", "Started Good/Bad suite.");
+                RunSelectedSamplePairCheck();
+                return;
+            }
+
+            if (string.Equals(scope, OpenVisionRecipeValidationSuiteScopeOption.CatalogKey, StringComparison.OrdinalIgnoreCase))
+            {
+                ValidationSuiteStatusText = LocalText("Catalog suite 실행 시작.", "Started catalog suite.");
+                RunCatalogBenchmark();
+                return;
+            }
+
+            await RunSelectedSampleValidationSuiteAsync();
+        }
+
+        private async Task RunSelectedSampleValidationSuiteAsync()
+        {
+            OpenVisionRecipeSampleOption sampleOption = SelectedSampleOption;
+            string recipeName = NormalizeRecipeName(selectedRecipeName);
+            string pipelineName = SelectedPipelineOption?.PipelineName ?? string.Empty;
+            string pipelinePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, pipelineName);
+
+            isValidationSuiteRunning = true;
+            isSampleCheckRunning = true;
+            OnPropertyChanged(nameof(RunValidationSuiteText));
+            OnPropertyChanged(nameof(RunSelectedSampleCheckText));
+            LatestSampleRunSummary = OpenVisionRecipeSampleRunSummary.CreateRunning(sampleOption, pipelineName);
+            ValidationSuiteStatusText = LocalText("Selected sample suite 실행 중: ", "Running selected-sample suite: ") + sampleOption.SampleName;
+            StatusText = ValidationSuiteStatusText;
+            RefreshCommandState();
+
+            DateTime startedAt = DateTime.Now;
+            try
+            {
+                string pipelineXmlText = File.ReadAllText(pipelinePath);
+                VisionPipelineSampleCheckResult result =
+                    await VisionPipelineSampleCheckService.RunSampleCheckSafeAsync(sampleOption.Sample, pipelineXmlText);
+                LatestSampleRunSummary = OpenVisionRecipeSampleRunSummary.FromResult(sampleOption, pipelineName, result);
+
+                string summaryPath = VisionPipelineBatchRunSummaryStorage.Save(
+                    recipeName,
+                    pipelineName,
+                    startedAt,
+                    DateTime.Now,
+                    new[] { CreateBatchSampleRunResult(sampleOption.Sample, result) });
+                RefreshRecentBatchRunOptions();
+                ValidationSuiteStatusText = LocalText("Selected sample suite 저장됨: ", "Selected-sample suite saved: ") + summaryPath;
+                StatusText = LocalText("샘플 검사 ", "Sample check ") + result.Status + ": " + sampleOption.SampleName;
+            }
+            catch (Exception ex)
+            {
+                VisionPipelineSampleCheckResult result = VisionPipelineSampleCheckService.CreateErrorResult(
+                    ex.GetBaseException().Message);
+                LatestSampleRunSummary = OpenVisionRecipeSampleRunSummary.FromResult(sampleOption, pipelineName, result);
+                ValidationSuiteStatusText = LocalText("Selected sample suite ERROR: ", "Selected-sample suite ERROR: ") + result.Message;
+                StatusText = ValidationSuiteStatusText;
+            }
+            finally
+            {
+                isSampleCheckRunning = false;
+                isValidationSuiteRunning = false;
+                OnPropertyChanged(nameof(RunSelectedSampleCheckText));
+                OnPropertyChanged(nameof(RunValidationSuiteText));
+                OnPropertyChanged(nameof(ValidationSuiteSummaryText));
+                RefreshCommandState();
+            }
+        }
+
         private async void RunSelectedSampleCheck()
         {
             if (!CanRunSelectedSampleCheck())
@@ -3066,15 +3220,7 @@ namespace OpenVisionLab
                     VisionPipelineSampleCheckResult result =
                         await VisionPipelineSampleCheckService.RunSampleCheckSafeAsync(sample, pipelineXmlText);
                     pairResults.Add(OpenVisionRecipePairSampleRunSummary.FromResult(sample, result));
-                    storageResults.Add(new VisionPipelineBatchSampleRunResult
-                    {
-                        SampleName = sample?.SampleName ?? string.Empty,
-                        Status = result?.Status ?? string.Empty,
-                        Success = result?.Success ?? false,
-                        TotalMilliseconds = result?.TotalMilliseconds ?? 0D,
-                        FailedStep = result?.FailedStepText ?? string.Empty,
-                        Message = result?.Message ?? string.Empty
-                    });
+                    storageResults.Add(CreateBatchSampleRunResult(sample, result));
                 }
 
                 summaryPath = VisionPipelineBatchRunSummaryStorage.Save(
@@ -3089,6 +3235,7 @@ namespace OpenVisionLab
                     pairResults,
                     summaryPath);
                 RefreshRecentBatchRunOptions();
+                ValidationSuiteStatusText = LocalText("Good/Bad suite 저장됨: ", "Good/Bad suite saved: ") + summaryPath;
                 StatusText = LatestPairRunSummary.StatusText + ": " + sampleOption.Sample.PairGroup;
             }
             catch (Exception ex)
@@ -3097,6 +3244,7 @@ namespace OpenVisionLab
                     sampleOption,
                     pipelineName,
                     ex.GetBaseException().Message);
+                ValidationSuiteStatusText = LocalText("Good/Bad suite ERROR: ", "Good/Bad suite ERROR: ") + ex.GetBaseException().Message;
                 StatusText = LocalText("쌍 검사 ERROR: ", "Pair check ERROR: ") + ex.GetBaseException().Message;
             }
             finally
@@ -3137,16 +3285,7 @@ namespace OpenVisionLab
                     VisionPipelineSampleCheckResult result =
                         await VisionPipelineSampleCheckService.RunSampleCheckSafeAsync(sample, pipelineXmlText);
 
-                    storageResults.Add(new VisionPipelineBatchSampleRunResult
-                    {
-                        SampleName = sample?.SampleName ?? string.Empty,
-                        Status = result?.Status ?? string.Empty,
-                        Success = result?.Success ?? false,
-                        TotalMilliseconds = result?.TotalMilliseconds ?? 0D,
-                        FailedStep = result?.FailedStepText ?? string.Empty,
-                        Message = FormatCatalogBenchmarkMessage(result),
-                        ReportPath = sample?.ImageFullPath ?? string.Empty
-                    });
+                    storageResults.Add(CreateBatchSampleRunResult(sample, result, FormatCatalogBenchmarkMessage(result)));
 
                     if ((index + 1) == samples.Count || (index + 1) % 10 == 0)
                     {
@@ -3169,6 +3308,7 @@ namespace OpenVisionLab
                     storageResults,
                     summaryPath);
                 RefreshRecentBatchRunOptions();
+                ValidationSuiteStatusText = LocalText("Catalog suite 저장됨: ", "Catalog suite saved: ") + summaryPath;
                 StatusText = LatestCatalogBenchmarkSummary.CompactText;
             }
             catch (Exception ex)
@@ -3176,6 +3316,7 @@ namespace OpenVisionLab
                 LatestCatalogBenchmarkSummary = OpenVisionRecipeCatalogBenchmarkSummary.FromError(
                     pipelineName,
                     ex.GetBaseException().Message);
+                ValidationSuiteStatusText = LocalText("Catalog suite ERROR: ", "Catalog suite ERROR: ") + ex.GetBaseException().Message;
                 StatusText = LocalText("카탈로그 벤치마크 ERROR: ", "Catalog benchmark ERROR: ") + ex.GetBaseException().Message;
             }
             finally
@@ -5201,6 +5342,27 @@ namespace OpenVisionLab
             return BuildCatalogBenchmarkSamples().Count > 0;
         }
 
+        private bool CanRunValidationSuite()
+        {
+            if (isValidationSuiteRunning)
+            {
+                return false;
+            }
+
+            string scope = SelectedValidationSuiteScopeOption?.Key ?? OpenVisionRecipeValidationSuiteScopeOption.SelectedSampleKey;
+            if (string.Equals(scope, OpenVisionRecipeValidationSuiteScopeOption.GoodBadPairKey, StringComparison.OrdinalIgnoreCase))
+            {
+                return CanRunSelectedSamplePairCheck();
+            }
+
+            if (string.Equals(scope, OpenVisionRecipeValidationSuiteScopeOption.CatalogKey, StringComparison.OrdinalIgnoreCase))
+            {
+                return CanRunCatalogBenchmark();
+            }
+
+            return CanRunSelectedSampleCheck();
+        }
+
         private void CreateAndSwitchRecipe(string recipeName)
         {
             RecipeWorkspaceService.EnsureVisionWorkspace(recipeName);
@@ -5275,6 +5437,33 @@ namespace OpenVisionLab
             }
 
             return string.Join(" | ", parts);
+        }
+
+        private static VisionPipelineBatchSampleRunResult CreateBatchSampleRunResult(
+            VisionPipelineSampleCatalogItem sample,
+            VisionPipelineSampleCheckResult result,
+            string messageOverride = null)
+        {
+            string sampleImagePath = sample?.ImageFullPath ?? string.Empty;
+            return new VisionPipelineBatchSampleRunResult
+            {
+                SampleName = sample?.SampleName ?? string.Empty,
+                Status = result?.Status ?? string.Empty,
+                Success = result?.Success ?? false,
+                TotalMilliseconds = result?.TotalMilliseconds ?? 0D,
+                FailedStep = result?.FailedStepText ?? string.Empty,
+                Message = messageOverride ?? result?.Message ?? string.Empty,
+                ReportPath = sampleImagePath,
+                SampleImagePath = sampleImagePath,
+                PairGroup = sample?.PairGroup ?? string.Empty,
+                PairRole = sample?.PairRole ?? string.Empty,
+                ExpectedText = sample?.ExpectedText ?? string.Empty,
+                MetricText = result?.MetricText ?? string.Empty,
+                MetricReviewText = result?.MetricReviewText ?? string.Empty,
+                FinalLayer = result?.FinalLayerText ?? string.Empty,
+                OverlayCount = result?.OverlayCountText ?? string.Empty,
+                ActionSummary = result?.ActionSummaryText ?? string.Empty
+            };
         }
 
         private void RefreshSampleOptions()
@@ -6409,6 +6598,8 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(RecipeEditValidationText));
             OnPropertyChanged(nameof(PipelineEditValidationText));
             OnPropertyChanged(nameof(RecipeGuidedNextActionText));
+            OnPropertyChanged(nameof(RunValidationSuiteText));
+            OnPropertyChanged(nameof(ValidationSuiteSummaryText));
             CommandManager.InvalidateRequerySuggested();
         }
 
@@ -6433,6 +6624,45 @@ namespace OpenVisionLab
         public static string Local(string korean, string english)
         {
             return OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean ? korean : english;
+        }
+    }
+
+    public sealed class OpenVisionRecipeValidationSuiteScopeOption
+    {
+        public const string SelectedSampleKey = "SelectedSample";
+        public const string GoodBadPairKey = "GoodBadPair";
+        public const string CatalogKey = "Catalog";
+
+        private OpenVisionRecipeValidationSuiteScopeOption(string key, string displayText, string detailText)
+        {
+            Key = key ?? string.Empty;
+            DisplayText = displayText ?? string.Empty;
+            DetailText = detailText ?? string.Empty;
+        }
+
+        public string Key { get; }
+
+        public string DisplayText { get; }
+
+        public string DetailText { get; }
+
+        public static IReadOnlyList<OpenVisionRecipeValidationSuiteScopeOption> CreateDefaults()
+        {
+            return new[]
+            {
+                new OpenVisionRecipeValidationSuiteScopeOption(
+                    SelectedSampleKey,
+                    OpenVisionRecipeText.Local("선택 샘플", "Selected sample"),
+                    OpenVisionRecipeText.Local("현재 선택 샘플 1개를 실행하고 이력에 저장합니다.", "Run the selected sample and save it to history.")),
+                new OpenVisionRecipeValidationSuiteScopeOption(
+                    GoodBadPairKey,
+                    "Good/Bad",
+                    OpenVisionRecipeText.Local("같은 PairGroup의 Good/Bad 샘플을 실행합니다.", "Run Good/Bad samples from the same PairGroup.")),
+                new OpenVisionRecipeValidationSuiteScopeOption(
+                    CatalogKey,
+                    OpenVisionRecipeText.Local("카탈로그", "Catalog"),
+                    OpenVisionRecipeText.Local("Product catalog 전체 benchmark를 실행합니다.", "Run the full Product catalog benchmark."))
+            };
         }
     }
 
@@ -8282,11 +8512,30 @@ namespace OpenVisionLab
                 detail += " | " + result.Message.Trim();
             }
 
+            if (!string.IsNullOrWhiteSpace(result.MetricText))
+            {
+                detail += " | " + result.MetricText.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.FinalLayer))
+            {
+                detail += " | " + OpenVisionRecipeText.Local("최종: ", "Final: ") + result.FinalLayer.Trim();
+            }
+
             string review = result.Success
                 ? OpenVisionRecipeText.Local("판독: 통과. NG 샘플을 선택하면 실패 Step을 연결합니다.", "Review: Passed. Select an NG sample to link the failed step.")
                 : string.IsNullOrWhiteSpace(result.FailedStep)
                     ? OpenVisionRecipeText.Local("판독: 실패했지만 실패 Step이 기록되지 않았습니다. 실행 로그와 XML 경로를 확인하세요.", "Review: Failed, but no failed step was recorded. Check the run log and XML route.")
                     : OpenVisionRecipeText.Local("판독: 실패 Step을 선택했습니다. 입력/출력 레이어와 파라미터를 XML/Step 탭에서 확인하세요.", "Review: Failed step selected. Check input/output layers and parameters in XML/Steps.");
+            if (!string.IsNullOrWhiteSpace(result.MetricReviewText))
+            {
+                review += Environment.NewLine + result.MetricReviewText.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.ActionSummary))
+            {
+                review += Environment.NewLine + OpenVisionRecipeText.Local("실행 요약: ", "Action summary: ") + result.ActionSummary.Trim();
+            }
 
             return new OpenVisionRecipeBatchSampleResultOption(
                 display,
@@ -8295,7 +8544,7 @@ namespace OpenVisionLab
                 result.Success,
                 result.FailedStep,
                 result.SampleName,
-                result.ReportPath);
+                string.IsNullOrWhiteSpace(result.ReportPath) ? result.SampleImagePath : result.ReportPath);
         }
 
         public static OpenVisionRecipeBatchSampleResultOption CreateEmpty()

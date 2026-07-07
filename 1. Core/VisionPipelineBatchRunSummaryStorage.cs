@@ -9,6 +9,10 @@ namespace OpenVisionLab
     {
         public string RecipeName { get; set; } = string.Empty;
         public string PipelineName { get; set; } = string.Empty;
+        public string SuiteName { get; set; } = string.Empty;
+        public string SuiteKind { get; set; } = string.Empty;
+        public string PipelineSnapshotFile { get; set; } = string.Empty;
+        public string Notes { get; set; } = string.Empty;
         public string StartedAt { get; set; } = string.Empty;
         public string FinishedAt { get; set; } = string.Empty;
         public double TotalMilliseconds { get; set; }
@@ -27,6 +31,16 @@ namespace OpenVisionLab
         public string FailedStep { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
         public string ReportPath { get; set; } = string.Empty;
+        public string SampleImagePath { get; set; } = string.Empty;
+        public string PairGroup { get; set; } = string.Empty;
+        public string PairRole { get; set; } = string.Empty;
+        public string ExpectedText { get; set; } = string.Empty;
+        public string MetricText { get; set; } = string.Empty;
+        public string MetricReviewText { get; set; } = string.Empty;
+        public string FinalLayer { get; set; } = string.Empty;
+        public string OverlayCount { get; set; } = string.Empty;
+        public string ActionSummary { get; set; } = string.Empty;
+        public string RunReportPath { get; set; } = string.Empty;
     }
 
     internal static class VisionPipelineBatchRunSummaryStorage
@@ -63,6 +77,8 @@ namespace OpenVisionLab
             {
                 RecipeName = recipeName ?? string.Empty,
                 PipelineName = pipelineName ?? string.Empty,
+                SuiteName = "Validation Suite",
+                SuiteKind = "Batch",
                 StartedAt = startedAt.ToString("o"),
                 FinishedAt = finishedAt.ToString("o"),
                 TotalMilliseconds = (finishedAt - startedAt).TotalMilliseconds,
@@ -144,7 +160,7 @@ namespace OpenVisionLab
 
         private static IEnumerable<string> CreateTsvLines(VisionPipelineBatchRunSummary summary)
         {
-            yield return "SampleName\tStatus\tSuccess\tTotalMilliseconds\tFailedStep\tMessage\tReportPath";
+            yield return "SampleName\tStatus\tSuccess\tTotalMilliseconds\tFailedStep\tMessage\tReportPath\tSampleImagePath\tPairGroup\tPairRole\tExpectedText\tMetricText\tMetricReviewText\tFinalLayer\tOverlayCount\tActionSummary\tRunReportPath";
             foreach (VisionPipelineBatchSampleRunResult result in summary.Results)
             {
                 yield return string.Join(
@@ -155,7 +171,17 @@ namespace OpenVisionLab
                     result.TotalMilliseconds.ToString("0.0"),
                     Escape(result.FailedStep),
                     Escape(result.Message),
-                    Escape(result.ReportPath));
+                    Escape(result.ReportPath),
+                    Escape(result.SampleImagePath),
+                    Escape(result.PairGroup),
+                    Escape(result.PairRole),
+                    Escape(result.ExpectedText),
+                    Escape(result.MetricText),
+                    Escape(result.MetricReviewText),
+                    Escape(result.FinalLayer),
+                    Escape(result.OverlayCount),
+                    Escape(result.ActionSummary),
+                    Escape(result.RunReportPath));
             }
         }
 
