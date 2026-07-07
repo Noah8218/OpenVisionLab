@@ -1,6 +1,6 @@
 # OpenVisionLab Next Session Handoff
 
-Updated: 2026-07-06 21:57 KST
+Updated: 2026-07-07 KST
 
 This document is the minimum handoff needed to continue without re-discovering the current state. Work starts in `C:\Git\OpenVisionLab_Dev`; only reviewed and stabilized changes are imported into the original repo at `C:\Git\OpenVisionLab`. Do not run `git push` unless the user explicitly requests `PUSH`.
 
@@ -50,6 +50,25 @@ Current priority order:
 2. If no real transcript is available, continue Recipe Manager/LLM Assistant UX work only where fresh current-EXE/current-source screenshots show actual clipping, overlap, unclear next action, or workflow friction.
 3. Expand branch/output comparison only when a real multi-branch recipe exceeds the current selected-step producer/consumer model and the existing BentPin plus Contour_AllSymbolsAndFaint coverage.
 4. Continue Tool View code-behind cleanup only where established controller/presenter/base patterns fit; current test hooks and preview command paths are in use and should not be removed just to reduce line count. The double-input Arithmetic shell, Blob/Contour/Line single-input PropertyGrid shell, and Matching-family single-input PropertyGrid shell now have shared bases, so do not recreate those extractions.
+
+Latest UI evidence for pin-gap intent ROI suggestion:
+
+- Scope: pin-gap intent skills now treat unmarked requests as whole pin-array inspection samples, not one arbitrary pair, and expose a `Sample ROI` button beside the ROI sample field.
+- Product contract: `Sample ROI` is a starter ROI helper. It scales the existing whole-array ROI samples from the selected sample/reference image size. It does not claim automatic visual understanding, does not create a run result, and does not trigger Preview/Run.
+- Before: `artifacts\pin_gap_roi_suggest_before_20260707_r1\OpenVisionLab_RecipeManager_LlmIntentSkills_PinGap.png`.
+- After: `artifacts\pin_gap_roi_suggest_after_20260707_r1\OpenVisionLab_RecipeManager_LlmIntentSkills_PinGap.png`.
+- Current-build UI smoke: `dotnet run --no-build --project OpenVisionLab.csproj -c Debug -- --smoke recipe-manager-llm-intent-skills artifacts\pin_gap_roi_suggest_after_20260707_r1` passed after a fresh Debug build.
+- Current-build direct smoke: `artifacts\pin_gap_roi_suggest_recipe_manager_tabs_20260707_r1\report.txt` passed with `LlmPinGapRoiSuggest: selected sample image suggested multi-sample ROI without Preview/Run`.
+- Current-build XML/image run: `artifacts\pin_gap_roi_suggest_generated_xml_image_run_20260707_r1\report.txt` passed on `Sample\EasyGauge\Pin 1.jpg` with final layer `PinArray_Review` and `MergeOverlayCount=24`.
+
+Latest LLM prompt evidence for pin-gap GPT handoff:
+
+- Scope: when `Pin gap / edge distance (LineDistance)` is selected, Recipe Manager `Build prompt` now embeds a self-contained GPT task packet for pin gap/pitch/edge-to-edge distance XML. It includes whole-array default scope, ROI samples, DistanceMmAvg and DistanceMmRange gates, mm/px, LineDistance-only constraints, OverlayMerge review, and XML-only response format.
+- Product contract: this reduces manual document hunting for the operator. The preferred user flow is Recipe Manager -> LLM XML -> select pin-gap intent -> set ROI/spec fields -> `Build prompt` -> `Copy prompt` -> paste into GPT with the image. File packets under `llm_prompt_packets\pin_gap_distance` remain as fallback/reference material.
+- Before: `artifacts\pin_gap_prompt_packet_before_20260707_r1\OpenVisionLab_RecipeManager_LlmIntentLineDistance.png`.
+- After: `artifacts\pin_gap_prompt_packet_after_20260707_r1\OpenVisionLab_RecipeManager_LlmIntentLineDistance.png`.
+- Current-build direct smoke: `artifacts\pin_gap_prompt_packet_after_20260707_r1\report.txt` passed with `LlmPinGapPromptPacket: copy-ready GPT XML-only packet copied`.
+- Current-build XML/image run: `artifacts\pin_gap_prompt_packet_generated_xml_image_run_20260707_r1\report.txt` passed on `Sample\EasyGauge\Pin 1.jpg` with final layer `PinArray_Review`.
 
 Latest UI evidence for corrected-output review after Step XML apply:
 

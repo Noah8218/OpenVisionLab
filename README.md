@@ -4,6 +4,32 @@ OpenVisionLab은 **OpenCvSharp4 기반의 룰베이스 비전 검사 워크벤�
 
 이미지를 불러와서 Tool을 적용하는 데서 끝나는 프로그램이 아니라, 사용자가 검사 흐름을 직접 만들고 결과가 왜 OK/NG인지 확인할 수 있게 만드는 것이 목표입니다.
 
+## 1분 요약
+
+OpenVisionLab은 카메라/PLC 장비 플랫폼이 아니라, 이미지 샘플에서 rule-based 검사 recipe를 만들고 검증하는 데 집중한 WPF 워크벤치입니다.
+
+- 핵심 흐름: 이미지 로드 -> Layer 확인 -> Tool 파라미터 조정 -> 명시적 Preview/Run -> Pipeline/Recipe 저장 -> Good/Bad 샘플 검증
+- 주요 툴: Threshold, Blob, Contour, Matching, FeatureMatching, EdgeBasedMatching, Line/Length, Mean 등
+- LLM 방향: 이미지를 한 번에 이해해 자동 완성하는 기능이 아니라, operator intent와 샘플 evidence를 기반으로 XML recipe 초안/검증/수정 루프를 돕는 보조 기능입니다.
+- 현재 개발 초점: Recipe Manager, Pipeline Review, Sample Catalog, LLM XML authoring, layer/result 비교, 검증 smoke입니다.
+
+## 설치/실행 방법
+
+필수 전제:
+
+- Windows 개발 환경
+- .NET SDK 8.0.x. 이 저장소의 `global.json`은 `8.0.421`을 고정합니다.
+- WPF/Windows Desktop 빌드가 가능한 SDK
+- 저장소의 `dll/` 아래 vendored runtime DLL 유지
+
+빌드 후 실행:
+
+```powershell
+cd C:\Git\OpenVisionLab_Dev
+dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
+.\bin\Debug\OpenVisionLab.exe
+```
+
 ![OpenVisionLab main workspace walkthrough](docs/assets/tutorial/annotated/main_workspace_callouts.png)
 
 처음 화면은 위 번호 순서로 보면 됩니다.
@@ -58,7 +84,7 @@ OpenVisionLab은 이 문제를 줄이기 위해 Layer, Tool, Pipeline, Recipe, P
 | Learn Mode | Matching, Blob, Contour, Threshold, Mean, FeatureMatching, EdgeBasedMatching, Line 학습 문서 |
 | Localization | 한국어/영어 전환 구조 |
 
-## 샘플로 시작하기
+## 샘플 데이터
 
 처음에는 직접 이미지를 고르기보다 공개용 synthetic 샘플로 시작하는 것이 좋습니다.
 공개 샘플은 `docs/samples/public` 아래에 있고, 각 샘플은 이미지, 추천 Pipeline, expected metric, Good/Bad 기준을 함께 제공합니다.
@@ -117,11 +143,14 @@ Pipeline Review는 OpenVisionLab에서 가장 중요한 검증 화면 중 하나
 
 ## 빌드
 
+기본 빌드:
+
 ```powershell
+cd C:\Git\OpenVisionLab_Dev
 dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
 ```
 
-실행 파일:
+실행 파일은 Debug 기준으로 다음 위치에 생성됩니다.
 
 ```powershell
 .\bin\Debug\OpenVisionLab.exe
@@ -129,24 +158,64 @@ dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
 
 ## 검증
 
-기본 빌드 확인:
+기본 release/readiness 검증:
 
 ```powershell
 dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
-```
-
-Readiness contract:
-
-```powershell
 dotnet run --project "tools/OpenVisionReadinessCheck/OpenVisionReadinessCheck.csproj" -c Debug -- "C:\Git\OpenVisionLab_Dev"
-```
-
-공개 샘플 확인:
-
-```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestExternalReferences.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestPublicSampleAssets.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.PublicSampleCatalog.csv -OutputDir artifacts\public_sample_catalog
 ```
+
+현재 소스 기준 WPF view screenshot smoke:
+
+```powershell
+dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_recipe_language_controls artifacts\smoke\recipe_language_controls
+```
+
+최신 빌드 EXE 기준 direct smoke:
+
+```powershell
+dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
+.\bin\Debug\OpenVisionLab.exe --smoke recipe-manager-tabs --output artifacts\smoke\recipe_manager_tabs
+```
+
+UI/UX를 수정했다면 현재 빌드 또는 현재 소스 view에서 before/after 캡처를 새로 남겨야 합니다. 이전 smoke artifact는 현재 UI 증거로 쓰지 않습니다.
+
+## CI
+
+GitHub Actions workflow는 `.github/workflows/ci.yml`에 있습니다.
+현재 CI는 Windows에서 build, readiness, external reference policy, public sample asset policy를 확인하는 최소 게이트입니다.
+
+WPF screenshot smoke와 실제 EXE UI smoke는 로컬 current-build 증거가 필요한 경우가 많아, CI 기본 게이트에는 넣지 않고 변경 범위에 맞춰 수동 실행합니다.
+
+## 릴리즈 노트
+
+- 변경 이력: [CHANGELOG.md](CHANGELOG.md)
+- release/version gate: [docs/OPENVISIONLAB_RELEASE_VERSION_POLICY.md](docs/OPENVISIONLAB_RELEASE_VERSION_POLICY.md)
+
+릴리즈 후보는 최소한 build, readiness, external refs, public sample assets, 필요한 UI/EXE smoke 증거를 함께 남겨야 합니다.
+
+## 로드맵
+
+현재 제품 방향과 다음 우선순위는 다음 문서가 기준입니다.
+
+- [제품 목표와 메인 뷰](docs/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md)
+- [제품 정체성과 로드맵](docs/OPENVISIONLAB_PRODUCT_IDENTITY_AND_ROADMAP.md)
+- [현재 상태와 다음 작업](docs/OPENVISIONLAB_STATUS_AND_NEXT_STEPS.md)
+- [Validation Suite / Result Archive 설계](docs/OPENVISIONLAB_VALIDATION_SUITE_RESULT_ARCHIVE_DESIGN_20260707.md)
+
+현재 다음 큰 작업은 Recipe Manager 안에서 recipe-local Validation Suite와 Result Archive를 제공하는 것입니다.
+
+## Known Limitations
+
+- OpenVisionLab은 카메라, 조명, PLC, I/O, account, deployment 플랫폼이 아닙니다.
+- LLM 기능은 one-shot 자동 영상처리가 아니라 guided XML authoring/correction-loop 보조 기능입니다.
+- 실제 GPT/Gemini/Claude transcript evidence는 사용자가 제공한 API key 또는 수동 transcript가 있을 때만 확보할 수 있습니다.
+- `Sample/` 루트는 로컬/vendor 샘플 영역이며 공개 배포 샘플 기준은 `docs/samples/public`과 catalog CSV입니다.
+- Recipe-local Validation Suite / Result Archive는 설계 문서가 먼저 정리된 상태이며 구현은 다음 우선순위입니다.
+- UI/UX 변경은 문서나 설명만으로 완료 처리하지 않고 current-build/current-source before/after 캡처가 필요합니다.
 
 ## 문서
 

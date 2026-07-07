@@ -1125,6 +1125,7 @@ namespace OpenVisionLab
                     shellHost,
                     "Recipe manager LLM pin-gap intent focus",
                     "HostRecipeLlmPinGapIntentSkill",
+                    "HostRecipeSuggestPinGapIntentRoiButton",
                     "HostRecipePinGapIntentWorkflowText",
                     "HostRecipePinGapIntentFeedbackText",
                     "HostRecipePinGapIntentLatestRunText");
@@ -2129,7 +2130,10 @@ namespace OpenVisionLab
                 Pump(20);
                 string lineDistanceTemplateDraft = shellHost.RecipeCommands.LlmXmlDraftText ?? string.Empty;
                 if (!lineDistanceTemplateDraft.Contains("<ToolType>LineDistance</ToolType>", StringComparison.OrdinalIgnoreCase)
-                    || !lineDistanceTemplateDraft.Contains("<AcceptanceMetricName>DistancePxRange</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                    || !lineDistanceTemplateDraft.Contains("<AcceptanceMetricName>DistanceMmRange</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                    || !lineDistanceTemplateDraft.Contains("<ToolType>OverlayMerge</ToolType>", StringComparison.OrdinalIgnoreCase)
+                    || !lineDistanceTemplateDraft.Contains("<Value>42,150,80,80</Value>", StringComparison.OrdinalIgnoreCase)
+                    || !lineDistanceTemplateDraft.Contains("<Value>151,150,80,80</Value>", StringComparison.OrdinalIgnoreCase)
                     || !lineDistanceTemplateDraft.Contains("<UseAcceptanceMetricMaximum>true</UseAcceptanceMetricMaximum>", StringComparison.OrdinalIgnoreCase)
                     || !lineDistanceTemplateDraft.Contains("<Key>LeftPRJ_DIR</Key>", StringComparison.OrdinalIgnoreCase)
                     || lineDistanceTemplateDraft.Contains("<ToolType>Contour</ToolType>", StringComparison.OrdinalIgnoreCase)
@@ -2140,8 +2144,61 @@ namespace OpenVisionLab
                         + lineDistanceTemplateDraft);
                 }
 
+                string lineDistancePrompt = shellHost.RecipeCommands.LlmPromptText ?? string.Empty;
+                if (!lineDistancePrompt.Contains("self-contained GPT task packet", StringComparison.OrdinalIgnoreCase)
+                    || !lineDistancePrompt.Contains("measure pin-to-pin distance", StringComparison.OrdinalIgnoreCase)
+                    || !lineDistancePrompt.Contains("Response format: return XML only", StringComparison.OrdinalIgnoreCase)
+                    || !lineDistancePrompt.Contains("Do not use Contour", StringComparison.OrdinalIgnoreCase)
+                    || !lineDistancePrompt.Contains(OpenVisionRecipePinGapIntentSkill.DefaultRoiSamplesText, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke LLM pin-gap prompt did not include the copy-ready GPT packet. "
+                        + lineDistancePrompt);
+                }
+
+                if (!shellHost.RecipeCommands.CopyLlmPromptCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException("Recipe manager direct smoke LLM pin-gap prompt copy command was disabled.");
+                }
+
+                shellHost.RecipeCommands.CopyLlmPromptCommand.Execute(null);
+                Pump(40);
+                string pinGapPromptClipboard = GetClipboardTextWithRetry();
+                if (!pinGapPromptClipboard.Contains("self-contained GPT task packet", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapPromptClipboard.Contains("Response format: return XML only", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapPromptClipboard.Contains("DistanceMmRange", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("Recipe manager direct smoke LLM pin-gap prompt copy did not write the expected GPT packet.");
+                }
+
                 SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_LlmIntentLineDistance.png"));
-                shellHost.RecipeCommands.PinGapIntentRoiText = "430,220,125,50";
+                if (!shellHost.RecipeCommands.SuggestPinGapIntentRoiSamplesCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException("Recipe manager direct smoke pin-gap ROI suggestion command was disabled.");
+                }
+
+                int beforePinGapRoiSuggestRuns = shellHost.NativePreviewRunCount;
+                shellHost.RecipeCommands.PinGapIntentRoiText = string.Empty;
+                shellHost.RecipeCommands.SuggestPinGapIntentRoiSamplesCommand.Execute(null);
+                Pump(20);
+                string suggestedPinGapRoiText = shellHost.RecipeCommands.PinGapIntentRoiText ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(suggestedPinGapRoiText)
+                    || !suggestedPinGapRoiText.Contains(";", StringComparison.Ordinal)
+                    || !shellHost.RecipeCommands.StatusText.Contains("ROI", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke pin-gap ROI suggestion did not populate multi-sample ROI text. "
+                        + suggestedPinGapRoiText);
+                }
+
+                if (shellHost.NativePreviewRunCount != beforePinGapRoiSuggestRuns)
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke pin-gap ROI suggestion triggered Preview/Run. "
+                        + $"Before={beforePinGapRoiSuggestRuns}, After={shellHost.NativePreviewRunCount}");
+                }
+
+                shellHost.RecipeCommands.PinGapIntentRoiText = OpenVisionRecipePinGapIntentSkill.DefaultRoiSamplesText;
                 shellHost.RecipeCommands.PinGapIntentDistanceMinText = "0.40";
                 shellHost.RecipeCommands.PinGapIntentDistanceMaxText = "0.55";
                 shellHost.RecipeCommands.PinGapIntentRangeMaxText = "0.06";
@@ -2155,21 +2212,27 @@ namespace OpenVisionLab
                 Pump(40);
                 string pinGapSkillDraft = shellHost.RecipeCommands.LlmXmlDraftText ?? string.Empty;
                 if (!pinGapSkillDraft.Contains("<Name>LLM_PinGap_DistanceSkill</Name>", StringComparison.OrdinalIgnoreCase)
-                    || !pinGapSkillDraft.Contains("<Name>01 Pin Gap Distance</Name>", StringComparison.OrdinalIgnoreCase)
-                    || !pinGapSkillDraft.Contains("<Name>02 Pin Gap Consistency</Name>", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapSkillDraft.Contains("<Name>01 Pin Array LeftA Avg</Name>", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapSkillDraft.Contains("<Name>08 Pin Array Right Range</Name>", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapSkillDraft.Contains("<Name>09 Pin Array Review Overlay</Name>", StringComparison.OrdinalIgnoreCase)
                     || !pinGapSkillDraft.Contains("<AcceptanceMetricName>DistanceMmAvg</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
                     || !pinGapSkillDraft.Contains("<AcceptanceMetricName>DistanceMmRange</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
-                    || !pinGapSkillDraft.Contains("<Value>430,220,125,50</Value>", StringComparison.OrdinalIgnoreCase)
-                    || !pinGapSkillDraft.Contains("<Key>ALLOW_BRANCH_INPUT</Key>", StringComparison.OrdinalIgnoreCase))
+                    || !pinGapSkillDraft.Contains("<ToolType>OverlayMerge</ToolType>", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapSkillDraft.Contains("<Value>42,150,80,80</Value>", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapSkillDraft.Contains("<Value>478,150,80,80</Value>", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapSkillDraft.Contains("<Key>ALLOW_BRANCH_INPUT</Key>", StringComparison.OrdinalIgnoreCase)
+                    || !pinGapSkillDraft.Contains("<Key>SourceLayers</Key>", StringComparison.OrdinalIgnoreCase))
                 {
                     throw new InvalidOperationException(
-                        "Recipe manager direct smoke pin-gap skill did not create the expected two-gate LineDistance XML draft. "
+                        "Recipe manager direct smoke pin-gap skill did not create the expected whole-array LineDistance XML draft. "
                         + pinGapSkillDraft);
                 }
 
                 string pinGapWorkflowText = shellHost.RecipeCommands.PinGapIntentWorkflowText ?? string.Empty;
                 if (!pinGapWorkflowText.Contains("DistanceMmAvg", StringComparison.OrdinalIgnoreCase)
                     || !pinGapWorkflowText.Contains("DistanceMmRange", StringComparison.OrdinalIgnoreCase)
+                    || (!pinGapWorkflowText.Contains("whole pin-array", StringComparison.OrdinalIgnoreCase)
+                        && !pinGapWorkflowText.Contains("전체 핀 배열", StringComparison.OrdinalIgnoreCase))
                     || (!pinGapWorkflowText.Contains("Validate", StringComparison.OrdinalIgnoreCase)
                         && !pinGapWorkflowText.Contains("검증", StringComparison.OrdinalIgnoreCase))
                     || (!pinGapWorkflowText.Contains("Import", StringComparison.OrdinalIgnoreCase)
@@ -2183,6 +2246,8 @@ namespace OpenVisionLab
                 string pinGapFeedbackText = shellHost.RecipeCommands.PinGapIntentFeedbackText ?? string.Empty;
                 if (!pinGapFeedbackText.Contains("Avg NG", StringComparison.OrdinalIgnoreCase)
                     || !pinGapFeedbackText.Contains("Range NG", StringComparison.OrdinalIgnoreCase)
+                    || (!pinGapFeedbackText.Contains("whole-array", StringComparison.OrdinalIgnoreCase)
+                        && !pinGapFeedbackText.Contains("전체 핀 배열", StringComparison.OrdinalIgnoreCase))
                     || !pinGapFeedbackText.Contains("ROI", StringComparison.OrdinalIgnoreCase)
                     || !pinGapFeedbackText.Contains("mm/px", StringComparison.OrdinalIgnoreCase))
                 {
@@ -2206,6 +2271,7 @@ namespace OpenVisionLab
                     shellHost,
                     "Recipe manager direct smoke pin-gap workflow summary",
                     "HostRecipePinGapIntentWorkflowText",
+                    "HostRecipeSuggestPinGapIntentRoiButton",
                     "HostRecipePinGapIntentFeedbackText",
                     "HostRecipePinGapIntentLatestRunText");
                 File.WriteAllText(Path.Combine(outputDirectory, "LlmPinGapSkill.xml"), pinGapSkillDraft, Encoding.Unicode);
@@ -2775,9 +2841,11 @@ namespace OpenVisionLab
                     + "StepToolEntry: " + shellHost.RecipeCommands.OpenSelectedStepToolText + Environment.NewLine
                     + "StepPropertyGridApply: explicit XML apply without Preview/Run" + Environment.NewLine
                     + "LlmIntentTemplate: LineDistance locked" + Environment.NewLine
-                    + "LlmPinGapIntentSkill: generated DistanceMmAvg + DistanceMmRange gates" + Environment.NewLine
-                    + "LlmPinGapWorkflow: visible Validate/Import/sample-run next actions" + Environment.NewLine
-                    + "LlmPinGapFeedback: visible Avg NG vs Range NG tuning axes" + Environment.NewLine
+                    + "LlmPinGapPromptPacket: copy-ready GPT XML-only packet copied" + Environment.NewLine
+                    + "LlmPinGapIntentSkill: generated whole-array DistanceMmAvg + DistanceMmRange gates plus review OverlayMerge" + Environment.NewLine
+                    + "LlmPinGapRoiSuggest: selected sample image suggested multi-sample ROI without Preview/Run" + Environment.NewLine
+                    + "LlmPinGapWorkflow: visible whole-array Validate/Import/sample-run next actions" + Environment.NewLine
+                    + "LlmPinGapFeedback: visible whole-array Avg NG vs Range NG tuning axes" + Environment.NewLine
                     + "LlmPinGapLatestRun: visible actual DistanceMmAvg/DistanceMmRange decision" + Environment.NewLine
                     + "LlmBlobCountIntentSkill: generated Threshold + Blob ResultCount gate" + Environment.NewLine
                     + "LlmBlobCountWorkflow: visible Validate/Import/sample-run next actions" + Environment.NewLine

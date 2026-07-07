@@ -69,7 +69,7 @@ namespace OpenVisionLab
         private string selectedLlmToolTemplate = "Template Matching";
         private string llmInspectionGoalText = string.Empty;
         private string llmDetectionPointText = string.Empty;
-        private string pinGapIntentRoiText = string.Empty;
+        private string pinGapIntentRoiText = OpenVisionRecipePinGapIntentSkill.DefaultRoiSamplesText;
         private string pinGapIntentDistanceMinText = "0.40";
         private string pinGapIntentDistanceMaxText = "0.55";
         private string pinGapIntentRangeMaxText = "0.06";
@@ -158,6 +158,7 @@ namespace OpenVisionLab
             CopyLlmReviewBundleCommand = new RelayCommand(CopyLlmReviewBundle, CanCopyLlmReviewBundle);
             PasteLlmXmlDraftFromClipboardCommand = new RelayCommand(PasteLlmXmlDraftFromClipboard);
             UseSelectedSampleReferenceCommand = new RelayCommand(UseSelectedSampleReference, CanUseSelectedSampleReference);
+            SuggestPinGapIntentRoiSamplesCommand = new RelayCommand(SuggestPinGapIntentRoiSamples, CanSuggestPinGapIntentRoiSamples);
             RunSelectedSampleCheckCommand = new RelayCommand(RunSelectedSampleCheck, CanRunSelectedSampleCheck);
             RunSelectedSamplePairCheckCommand = new RelayCommand(RunSelectedSamplePairCheck, CanRunSelectedSamplePairCheck);
             RunCatalogBenchmarkCommand = new RelayCommand(RunCatalogBenchmark, CanRunCatalogBenchmark);
@@ -763,7 +764,13 @@ namespace OpenVisionLab
         public string LlmReferenceImagePath
         {
             get => llmReferenceImagePath;
-            set => SetProperty(ref llmReferenceImagePath, value ?? string.Empty);
+            set
+            {
+                if (SetProperty(ref llmReferenceImagePath, value ?? string.Empty))
+                {
+                    RefreshCommandState();
+                }
+            }
         }
 
         public string LlmXmlDraftValidationReport
@@ -936,6 +943,8 @@ namespace OpenVisionLab
         public ICommand PasteLlmXmlDraftFromClipboardCommand { get; }
 
         public ICommand UseSelectedSampleReferenceCommand { get; }
+
+        public ICommand SuggestPinGapIntentRoiSamplesCommand { get; }
 
         public ICommand RunSelectedSampleCheckCommand { get; }
 
@@ -1282,7 +1291,7 @@ namespace OpenVisionLab
 
         public string PinGapIntentSkillText => LocalText("핀 간격 skill", "Pin gap skill");
 
-        public string PinGapIntentRoiLabelText => LocalText("ROI", "ROI");
+        public string PinGapIntentRoiLabelText => LocalText("ROI 샘플", "ROI samples");
 
         public string PinGapIntentDistanceMinLabelText => LocalText("Min mm", "Min mm");
 
@@ -1294,6 +1303,8 @@ namespace OpenVisionLab
 
         public string CreatePinGapIntentXmlText => LocalText("핀 간격 XML", "Pin gap XML");
 
+        public string SuggestPinGapIntentRoiSamplesText => LocalText("샘플 ROI", "Sample ROI");
+
         public string PinGapIntentWorkflowText =>
             LocalText("판정: DistanceMmAvg ", "Gates: DistanceMmAvg ")
             + PinGapIntentDistanceMinText
@@ -1302,13 +1313,13 @@ namespace OpenVisionLab
             + LocalText(" mm, DistanceMmRange <= ", " mm, DistanceMmRange <= ")
             + PinGapIntentRangeMaxText
             + LocalText(
-                " mm / 다음: Pin gap XML -> 검증 -> 가져오기 -> 샘플 실행으로 ROI/scale 튜닝",
-                " mm / Next: Pin gap XML -> Validate -> Import -> run sample to tune ROI/scale");
+                " mm / 기본: 전체 핀 배열 샘플 / 다음: Pin gap XML -> 검증 -> 가져오기 -> 샘플 실행",
+                " mm / Default: whole pin-array samples / Next: Pin gap XML -> Validate -> Import -> run sample");
 
         public string PinGapIntentFeedbackText =>
             LocalText(
-                "Feedback: Avg NG는 mm/px 또는 Min/Max spec을 조정합니다. Range NG/긴 선/허공 검출은 ROI를 실제 핀 간격만 포함하게 줄이고 edge contrast/sampling을 조정합니다.",
-                "Feedback: Avg NG means tune mm/px or Min/Max spec. Range NG/long line/empty-space hit means narrow ROI to the real pin gap and tune edge contrast/sampling.");
+                "Feedback: 표시 영역이 없으면 전체 핀 배열을 좌/중/우 샘플로 봅니다. 특정 두 핀만 보려면 ROI 샘플을 하나로 줄이세요. Avg NG는 mm/px/spec, Range NG/긴 선은 ROI/contrast/sampling을 조정합니다.",
+                "Feedback: without a marked region, inspect whole-array left/center/right samples. Use one ROI only for a marked pair. Avg NG tunes mm/px/spec; Range NG/long lines tune ROI/contrast/sampling.");
 
         public string PinGapIntentLatestRunText => BuildPinGapIntentLatestRunText();
 
@@ -2943,6 +2954,45 @@ namespace OpenVisionLab
             StatusText = LocalText("참조 이미지가 샘플에서 설정됨: ", "Reference image set from sample: ") + SelectedSampleOption.Sample.SampleName;
         }
 
+        private void SuggestPinGapIntentRoiSamples()
+        {
+            string imagePath = ResolvePinGapRoiSuggestionImagePath();
+            if (string.IsNullOrWhiteSpace(imagePath))
+            {
+                StatusText = LocalText(
+                    "핀 간격 ROI를 제안할 샘플/참조 이미지가 없습니다.",
+                    "No sample/reference image is available for pin gap ROI suggestion.");
+                return;
+            }
+
+            try
+            {
+                BitmapFrame frame = BitmapFrame.Create(
+                    new Uri(imagePath, UriKind.Absolute),
+                    BitmapCreateOptions.DelayCreation,
+                    BitmapCacheOption.OnLoad);
+                IReadOnlyList<OpenVisionRecipePinGapIntentSkill.RoiSample> samples =
+                    OpenVisionRecipePinGapIntentSkill.CreateScaledRoiSamples(frame.PixelWidth, frame.PixelHeight);
+                PinGapIntentRoiText = OpenVisionRecipePinGapIntentSkill.FormatRoiSamples(samples);
+                StatusText = LocalText(
+                    "핀 간격 ROI 샘플 제안: ",
+                    "Suggested pin gap ROI samples: ")
+                    + Path.GetFileName(imagePath)
+                    + " ("
+                    + frame.PixelWidth.ToString(CultureInfo.InvariantCulture)
+                    + "x"
+                    + frame.PixelHeight.ToString(CultureInfo.InvariantCulture)
+                    + ")";
+            }
+            catch (Exception ex)
+            {
+                StatusText = LocalText(
+                    "핀 간격 ROI 제안 실패: ",
+                    "Pin gap ROI suggestion failed: ")
+                    + ex.GetBaseException().Message;
+            }
+        }
+
         private async void RunSelectedSampleCheck()
         {
             if (!CanRunSelectedSampleCheck())
@@ -3487,7 +3537,7 @@ namespace OpenVisionLab
 
         private void CreatePinGapIntentXmlDraft()
         {
-            if (!OpenVisionRecipePinGapIntentSkill.TryParseRoi(PinGapIntentRoiText, out int roiX, out int roiY, out int roiWidth, out int roiHeight, out string roiMessage)
+            if (!OpenVisionRecipePinGapIntentSkill.TryParseRoiSamples(PinGapIntentRoiText, out IReadOnlyList<OpenVisionRecipePinGapIntentSkill.RoiSample> roiSamples, out string roiMessage)
                 || !OpenVisionRecipePinGapIntentSkill.TryParsePositiveDouble(PinGapIntentDistanceMinText, out double minDistanceMm)
                 || !OpenVisionRecipePinGapIntentSkill.TryParsePositiveDouble(PinGapIntentDistanceMaxText, out double maxDistanceMm)
                 || !OpenVisionRecipePinGapIntentSkill.TryParsePositiveDouble(PinGapIntentRangeMaxText, out double maxRangeMm)
@@ -3495,7 +3545,7 @@ namespace OpenVisionLab
             {
                 StatusText = LocalText(
                     "핀 간격 skill 입력을 확인하세요. ROI는 x,y,w,h이고 거리/Range/mm/px는 양수여야 합니다. ",
-                    "Check Pin gap skill inputs. ROI must be x,y,w,h and distance/range/mm-per-pixel values must be positive. ")
+                    "Check Pin gap skill inputs. ROI samples must be x,y,w,h groups separated by semicolons, and distance/range/mm-per-pixel values must be positive. ")
                     + roiMessage;
                 return;
             }
@@ -3508,10 +3558,7 @@ namespace OpenVisionLab
 
             SelectedLlmToolTemplate = "Pin gap / edge distance (LineDistance)";
             VisionPipeline pipeline = OpenVisionRecipePinGapIntentSkill.CreatePipeline(
-                roiX,
-                roiY,
-                roiWidth,
-                roiHeight,
+                roiSamples,
                 minDistanceMm,
                 maxDistanceMm,
                 maxRangeMm,
@@ -3522,7 +3569,9 @@ namespace OpenVisionLab
                 + Environment.NewLine
                 + "[Pin gap skill inputs]"
                 + Environment.NewLine
-                + "ROI: " + OpenVisionRecipePinGapIntentSkill.FormatRoi(roiX, roiY, roiWidth, roiHeight)
+                + "ROI samples: " + OpenVisionRecipePinGapIntentSkill.FormatRoiSamples(roiSamples)
+                + Environment.NewLine
+                + "Default scope: whole visible pin array unless the user marked one specific pair or region."
                 + Environment.NewLine
                 + "Nominal distance mm: " + minDistanceMm.ToString("0.###", CultureInfo.InvariantCulture)
                 + ".." + maxDistanceMm.ToString("0.###", CultureInfo.InvariantCulture)
@@ -3531,7 +3580,7 @@ namespace OpenVisionLab
                 + Environment.NewLine
                 + "Scale mm/px: " + mmPerPixel.ToString("0.######", CultureInfo.InvariantCulture)
                 + Environment.NewLine
-                + "Generated contract: Step 1 judges DistanceMmAvg, Step 2 judges DistanceMmRange. Neither Step runs until the user explicitly validates/imports/runs.";
+                + "Generated contract: every ROI sample gets DistanceMmAvg and DistanceMmRange gates, then a final OverlayMerge review. No Step runs until the user explicitly validates/imports/runs.";
             LlmXmlDraftText = SerializePipelineToXmlText(pipeline);
             ValidateLlmXmlDraftText(false);
             StatusText = LocalText(
@@ -3722,7 +3771,7 @@ namespace OpenVisionLab
                 ? "No reference image path is selected in OpenVisionLab."
                 : LlmReferenceImagePath.Trim();
 
-            return string.Join(Environment.NewLine, new[]
+            List<string> lines = new List<string>
             {
                 "Create an OpenVisionLab VisionPipeline XML draft.",
                 "Product identity: OpenCvSharp4 rule-based vision workbench; no camera, lighting, PLC, or I/O setup.",
@@ -3744,9 +3793,47 @@ namespace OpenVisionLab
                 "Inspection goal: " + goal,
                 "Detection points: " + detectionPoints,
                 "",
+            };
+
+            string intentPacket = BuildLlmIntentSpecificPromptPacketText(SelectedLlmToolTemplate);
+            if (!string.IsNullOrWhiteSpace(intentPacket))
+            {
+                lines.Add("[Intent-specific GPT packet]");
+                lines.Add(intentPacket);
+                lines.Add(string.Empty);
+            }
+
+            lines.AddRange(new[]
+            {
                 "[Result channel contract]",
                 BuildLlmResultChannelContractText(),
                 "Required response: return only a VisionPipeline XML document that can be loaded by OpenVisionLab."
+            });
+
+            return string.Join(Environment.NewLine, lines);
+        }
+
+        private string BuildLlmIntentSpecificPromptPacketText(string template)
+        {
+            if (!IsLineDistanceTemplate(template))
+            {
+                return string.Empty;
+            }
+
+            return string.Join(Environment.NewLine, new[]
+            {
+                "This is a self-contained GPT task packet for OpenVisionLab pin gap / pitch / edge-to-edge distance XML.",
+                "Operator wording may be simple, such as 'measure pin-to-pin distance'. Do not require a second final XML-only message from the operator; this prompt already carries the XML-only response contract.",
+                "Default scope: if the operator did not mark one specific pair or ROI, inspect the whole visible pin array with multiple ROI sample windows.",
+                "Use only ToolType=LineDistance for measurement Steps. Do not use Contour, Blob, BoundsHeightAvg, or object bounding boxes to measure pin spacing.",
+                "Create one DistanceMmAvg validation Step and one DistanceMmRange consistency Step for each ROI sample. Reuse the same LineDistance parameters in both Steps with separate OutputLayer values.",
+                "Add a final OverlayMerge review Step on Main with SourceLayers set to the consistency/review layers, BurnIn=true, DrawLabels=true, and AllowEmpty=false.",
+                "ROI samples x,y,w,h: " + (string.IsNullOrWhiteSpace(PinGapIntentRoiText) ? OpenVisionRecipePinGapIntentSkill.DefaultRoiSamplesText : PinGapIntentRoiText.Trim()),
+                "Nominal gate DistanceMmAvg: " + PinGapIntentDistanceMinText + ".." + PinGapIntentDistanceMaxText,
+                "Consistency gate DistanceMmRange <= " + PinGapIntentRangeMaxText,
+                "Scale mm/px: " + PinGapIntentScaleText,
+                "Recommended LineDistance parameters: USE_ROI=true, LeftPRJ_DIR=X_LTOR, RightPRJ_DIR=X_RTOL, PRJ_PORALITY=WTOB, CONTRAST=18, THICKNESS=2, SAMPLING_STEP=16, POINT_RANGE=8, USE_MANUAL_ANGLE=true, MANUAL_ANGLE_VALUE=89, SHOW_EDGE=true, SHOW_VERTICAL_LINE=true.",
+                "Response format: return XML only. No markdown fence, no prose, no explanation before or after the XML."
             });
         }
 
@@ -3766,7 +3853,7 @@ namespace OpenVisionLab
         {
             if (IsLineDistanceTemplate(template))
             {
-                return "Use ToolType=LineDistance only for edge-to-edge or pin-to-pin distance. Primary value metrics: DistancePxAvg; use DistanceMmAvg only when PIXELPERMM is known. Quality metrics: DistancePxRange/DistanceMmRange and DistancePxMax/DistanceMmMax must be checked so one long outlier line cannot pass through the average. If both nominal distance and consistency must be judged, duplicate the same LineDistance parameters into a second validation Step with a separate OutputLayer. Required parameters: USE_ROI/CvROI, LeftPRJ_DIR, RightPRJ_DIR, PRJ_PORALITY, CONTRAST, THICKNESS, SAMPLING_STEP, POINT_RANGE. Do not use Blob or Contour to measure distance. ROI must cover a narrow measurement band across the two edges, not the full object or empty background.";
+                return "Use ToolType=LineDistance only for edge-to-edge or pin-to-pin distance. If no specific pair/region is marked, treat pin gap/pitch as a whole-array consistency check and use multiple narrow ROI sample windows across the visible array. Use a single ROI only when the user explicitly marks one pair. Primary value metrics: DistancePxAvg or DistanceMmAvg when PIXELPERMM is known. Quality metrics: DistancePxRange/DistanceMmRange and DistancePxMax/DistanceMmMax must be checked so one long outlier line cannot pass through the average. If both nominal distance and consistency must be judged, duplicate the same LineDistance parameters into a second validation Step with a separate OutputLayer, then add a final OverlayMerge review Step. Do not use Blob or Contour to measure distance.";
             }
 
             if (IsContourTemplate(template))
@@ -3796,7 +3883,7 @@ namespace OpenVisionLab
         {
             if (IsLineDistanceTemplate(template))
             {
-                return "LineDistance / DistancePxAvg + DistancePxRange";
+                return "LineDistance / DistanceMmAvg + DistanceMmRange";
             }
 
             if (IsContourTemplate(template))
@@ -3869,27 +3956,11 @@ namespace OpenVisionLab
 
             if (IsLineDistanceTemplate(template))
             {
-                VisionPipelineStep step = CreateDraftStep("LineDistance_Measure", "LineDistance", "Main", "LineDistance_Result");
-                step.Parameters["Name"] = "LineDistance_Measure";
-                step.Parameters["PIXELPERMM"] = "1";
-                step.Parameters["USE_ROI"] = "False";
-                step.Parameters["CvROI"] = "0,0,0,0";
-                step.Parameters["LeftPRJ_DIR"] = "X_LTOR";
-                step.Parameters["RightPRJ_DIR"] = "X_RTOL";
-                step.Parameters["PRJ_PORALITY"] = "WTOB";
-                step.Parameters["CONTRAST"] = "18";
-                step.Parameters["THICKNESS"] = "2";
-                step.Parameters["SAMPLING_STEP"] = "8";
-                step.Parameters["POINT_RANGE"] = "8";
-                step.Parameters["VER_PRJ_DIR"] = "X_RTOL";
-                step.Parameters["USE_MANUAL_ANGLE"] = "False";
-                step.UseAcceptance = true;
-                step.ExpectedSuccess = true;
-                step.AcceptanceMetricName = "DistancePxRange";
-                step.UseAcceptanceMetricMaximum = true;
-                step.AcceptanceMetricMaximum = 8;
-                pipeline.Steps.Add(step);
-                return pipeline;
+                IReadOnlyList<OpenVisionRecipePinGapIntentSkill.RoiSample> samples =
+                    OpenVisionRecipePinGapIntentSkill.TryParseRoiSamples(PinGapIntentRoiText, out IReadOnlyList<OpenVisionRecipePinGapIntentSkill.RoiSample> parsedSamples, out _)
+                        ? parsedSamples
+                        : OpenVisionRecipePinGapIntentSkill.DefaultRoiSamples;
+                return OpenVisionRecipePinGapIntentSkill.CreatePipeline(samples, 0.40, 0.55, 0.06, 0.006);
             }
 
             if (IsBlobTemplate(template))
@@ -3990,7 +4061,7 @@ namespace OpenVisionLab
         {
             if (IsLineDistanceTemplate(template))
             {
-                return "Use LineDistance for pin-to-pin, edge-to-edge, gap, pitch, width, or clearance measurement. Keep the ROI to the measurement band. Do not judge DistancePxAvg/DistanceMmAvg alone; also constrain DistancePxRange/DistanceMmRange or DistancePxMax/DistanceMmMax to reject outlier distance lines.";
+                return "Use LineDistance for pin-to-pin, edge-to-edge, gap, pitch, width, or clearance measurement. If no pair is marked, sample multiple narrow ROI windows across the whole visible pin array and finish with OverlayMerge review. Do not judge DistancePxAvg/DistanceMmAvg alone; also constrain DistancePxRange/DistanceMmRange or DistancePxMax/DistanceMmMax to reject outlier distance lines.";
             }
 
             if (IsBlobTemplate(template))
@@ -5049,6 +5120,28 @@ namespace OpenVisionLab
             return SelectedSampleOption?.Sample != null
                 && !string.IsNullOrWhiteSpace(SelectedSampleOption.Sample.ImageFullPath)
                 && File.Exists(SelectedSampleOption.Sample.ImageFullPath);
+        }
+
+        private bool CanSuggestPinGapIntentRoiSamples()
+        {
+            return !string.IsNullOrWhiteSpace(ResolvePinGapRoiSuggestionImagePath());
+        }
+
+        private string ResolvePinGapRoiSuggestionImagePath()
+        {
+            string selectedSamplePath = SelectedSampleOption?.Sample?.ImageFullPath ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(selectedSamplePath) && File.Exists(selectedSamplePath))
+            {
+                return selectedSamplePath;
+            }
+
+            string referenceImagePath = LlmReferenceImagePath;
+            if (!string.IsNullOrWhiteSpace(referenceImagePath) && File.Exists(referenceImagePath))
+            {
+                return referenceImagePath;
+            }
+
+            return string.Empty;
         }
 
         private bool CanRunSelectedSampleCheck()

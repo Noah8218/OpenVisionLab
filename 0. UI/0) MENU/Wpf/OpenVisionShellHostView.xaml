@@ -3273,7 +3273,7 @@
                                                       Margin="0,0,0,5">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto" />
-                                                        <ColumnDefinition Width="260" />
+                                                        <ColumnDefinition Width="420" />
                                                         <ColumnDefinition Width="*" />
                                                     </Grid.ColumnDefinitions>
                                                     <TextBlock Text="{Binding RecipeCommands.BenchmarkBaselineRunText}"
@@ -4483,8 +4483,9 @@
                                                       AutomationProperties.AutomationId="HostRecipeLlmPinGapIntentSkill">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="78" />
-                                                        <ColumnDefinition Width="32" />
-                                                        <ColumnDefinition Width="120" />
+                                                        <ColumnDefinition Width="68" />
+                                                        <ColumnDefinition Width="330" />
+                                                        <ColumnDefinition Width="Auto" />
                                                         <ColumnDefinition Width="52" />
                                                         <ColumnDefinition Width="58" />
                                                         <ColumnDefinition Width="52" />
@@ -4515,14 +4516,26 @@
                                                              CaretBrush="#8FE8F0"
                                                              BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
                                                              Background="{StaticResource ShellHost.FieldBrush}"
+                                                             ToolTip="{Binding RecipeCommands.PinGapIntentRoiText}"
                                                              Text="{Binding RecipeCommands.PinGapIntentRoiText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                    <TextBlock Grid.Column="3"
+                                                    <Button Grid.Column="3"
+                                                            MinWidth="78"
+                                                            Height="22"
+                                                            Margin="6,0,0,0"
+                                                            AutomationProperties.AutomationId="HostRecipeSuggestPinGapIntentRoiButton"
+                                                            Command="{Binding RecipeCommands.SuggestPinGapIntentRoiSamplesCommand}">
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                            <iconPacks:PackIconMaterial Kind="ImageFilterCenterFocusStrongOutline" Width="11" Height="11" Margin="0,1,4,0" />
+                                                            <TextBlock Text="{Binding RecipeCommands.SuggestPinGapIntentRoiSamplesText}" FontSize="10" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <TextBlock Grid.Column="4"
                                                                Margin="6,0,0,0"
                                                                Text="{Binding RecipeCommands.PinGapIntentDistanceMinLabelText}"
                                                                Foreground="#A8CBD1"
                                                                FontSize="10"
                                                                VerticalAlignment="Center" />
-                                                    <TextBox Grid.Column="4"
+                                                    <TextBox Grid.Column="5"
                                                              Height="22"
                                                              Padding="5,0"
                                                              AutomationProperties.AutomationId="HostRecipePinGapIntentMinText"
@@ -4531,13 +4544,13 @@
                                                              BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
                                                              Background="{StaticResource ShellHost.FieldBrush}"
                                                              Text="{Binding RecipeCommands.PinGapIntentDistanceMinText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                    <TextBlock Grid.Column="5"
+                                                    <TextBlock Grid.Column="6"
                                                                Margin="6,0,0,0"
                                                                Text="{Binding RecipeCommands.PinGapIntentDistanceMaxLabelText}"
                                                                Foreground="#A8CBD1"
                                                                FontSize="10"
                                                                VerticalAlignment="Center" />
-                                                    <TextBox Grid.Column="6"
+                                                    <TextBox Grid.Column="7"
                                                              Height="22"
                                                              Padding="5,0"
                                                              AutomationProperties.AutomationId="HostRecipePinGapIntentMaxText"
@@ -4546,13 +4559,13 @@
                                                              BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
                                                              Background="{StaticResource ShellHost.FieldBrush}"
                                                              Text="{Binding RecipeCommands.PinGapIntentDistanceMaxText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                    <TextBlock Grid.Column="7"
+                                                    <TextBlock Grid.Column="8"
                                                                Margin="6,0,0,0"
                                                                Text="{Binding RecipeCommands.PinGapIntentRangeMaxLabelText}"
                                                                Foreground="#A8CBD1"
                                                                FontSize="10"
                                                                VerticalAlignment="Center" />
-                                                    <TextBox Grid.Column="8"
+                                                    <TextBox Grid.Column="9"
                                                              Height="22"
                                                              Padding="5,0"
                                                              AutomationProperties.AutomationId="HostRecipePinGapIntentRangeText"
@@ -4561,13 +4574,13 @@
                                                              BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
                                                              Background="{StaticResource ShellHost.FieldBrush}"
                                                              Text="{Binding RecipeCommands.PinGapIntentRangeMaxText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                    <TextBlock Grid.Column="9"
+                                                    <TextBlock Grid.Column="10"
                                                                Margin="6,0,0,0"
                                                                Text="{Binding RecipeCommands.PinGapIntentScaleLabelText}"
                                                                Foreground="#A8CBD1"
                                                                FontSize="10"
                                                                VerticalAlignment="Center" />
-                                                    <TextBox Grid.Column="10"
+                                                    <TextBox Grid.Column="11"
                                                              Height="22"
                                                              Padding="5,0"
                                                              AutomationProperties.AutomationId="HostRecipePinGapIntentScaleText"
@@ -4576,7 +4589,7 @@
                                                              BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
                                                              Background="{StaticResource ShellHost.FieldBrush}"
                                                              Text="{Binding RecipeCommands.PinGapIntentScaleText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                    <Button Grid.Column="11"
+                                                    <Button Grid.Column="12"
                                                             MinWidth="100"
                                                             Height="22"
                                                             Margin="7,0,0,0"

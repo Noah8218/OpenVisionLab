@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - "codex/**"
+  pull_request:
+
+jobs:
+  build:
+    name: Build and policy checks
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
+
+      - name: Readiness
+        shell: pwsh
+        run: dotnet run --project "tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj" -c Debug -- "${{ github.workspace }}"
+
+      - name: External reference policy
+        shell: pwsh
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestExternalReferences.ps1
+
+      - name: Public sample asset policy
+        shell: pwsh
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestPublicSampleAssets.ps1

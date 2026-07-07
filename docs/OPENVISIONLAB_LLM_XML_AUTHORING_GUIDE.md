@@ -21,6 +21,8 @@ Use this loop when collecting real LLM transcripts:
 
 Do not ask the LLM to run Preview, Run, load images, switch layers, or accept the recipe. Those are explicit user actions inside OpenVisionLab.
 
+For the pin-gap distance case, prefer the in-app flow first: select `Pin gap / edge distance (LineDistance)` in Recipe Manager, set the ROI/spec fields, click `Build prompt`, then `Copy prompt`. That copied prompt includes the XML-only pin-gap task contract. A file-based fallback packet is also available at `llm_prompt_packets/pin_gap_distance`.
+
 ## Minimal XML Shape
 
 ```xml
