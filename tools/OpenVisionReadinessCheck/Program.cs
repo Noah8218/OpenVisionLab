@@ -128,6 +128,8 @@ internal static class Program
         RequireContains(samplePickerViewModel, "RebuildLearnPathOptions", "Workspace sample picker rebuilds learn paths per selected catalog source.");
         RequireContains(samplePickerViewModel, "OpenLearnDocumentCommand", "Workspace sample picker exposes a non-executing Learn document command.");
         RequireContains(samplePickerViewModel, "CanOpenLearnAndSample", "Workspace sample picker exposes an explicit guide-plus-sample action state.");
+        RequireContains(samplePickerViewModel, "Selected: {0} / {1} - {2}", "Workspace sample picker Learn path summary names the selected path and sample count.");
+        RequireContains(samplePickerViewModel, "SampleCountText", "Workspace sample picker Learn path summary includes the selected path sample count.");
 
         string learnDocumentService = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionWorkspaceLearnDocumentService.cs");
         RequireContains(learnDocumentService, "docs", "Workspace sample picker resolves Learn documents from the repository docs folder.");
@@ -138,6 +140,8 @@ internal static class Program
         string sampleLearnPathOption = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionWorkspaceSampleLearnPathOption.cs");
         RequireContains(sampleLearnPathOption, "\"geometry\"", "Workspace sample picker exposes the Geometry Learn path.");
         RequireContains(sampleLearnPathOption, "RotateScale", "Workspace sample picker classifies RotateScale samples as Geometry.");
+        RequireContains(sampleLearnPathOption, "\"color-hsv\"", "Workspace sample picker exposes the Color / HSV Learn path.");
+        RequireContains(sampleLearnPathOption, "\"HSV\", \"Color range\"", "Workspace sample picker classifies HSV samples as Color / HSV.");
 
         string samplePickerView = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionWorkspaceSamplePickerView.xaml");
         RequireContains(samplePickerView, "WorkspaceSamplePickerCatalogSourceList", "Workspace sample picker renders a catalog source selector.");
@@ -621,7 +625,7 @@ internal static class Program
             (13, "LEARN_METRICS_ACCEPTANCE.md", "all"),
             (14, "LEARN_ARITHMETIC.md", "preprocess"),
             (15, "LEARN_GEOMETRY_TRANSFORM.md", "geometry"),
-            (16, "LEARN_COLOR_HSV.md", "mean"),
+            (16, "LEARN_COLOR_HSV.md", "color-hsv"),
         })
         {
             RequireContains(learnIndex, $"| {learnTopic.Topic} |", $"Learn index documents topic {learnTopic.Topic}.");
@@ -881,6 +885,11 @@ internal static class Program
         RequireContains(learnScreenshotSmoke, "CaptureOpenVisionLearnEdgeBasedMatching", "Learn screenshot smoke verifies the EdgeBasedMatching topic.");
         RequireContains(learnWindow, "EdgeDetection: pixels", "OpenVision Learn Edge / Line topic distinguishes edge, line, and measurement tool roles.");
         RequireContains(learnScreenshotSmoke, "\"LineGauge\", \"LineDistance\"", "Learn screenshot smoke verifies Edge / Line role-map guidance.");
+        RequireContains(learnScreenshotSmoke, "DistanceMmMax", "Learn screenshot smoke verifies LineDistance max/outlier guidance.");
+        RequireContains(learnWindowXaml, "Gate rule: DistanceMmAvg checks the nominal gap or pitch", "OpenVision Learn LineDistance topic explains average plus consistency gates.");
+        string lineGuide = Read(repoRoot, @"docs\learn\LEARN_LINE.md");
+        RequireContains(lineGuide, "LineDistance outlier gate", "Line Learn document explains the LineDistance outlier gate.");
+        RequireContains(lineGuide, "`DistanceMmRange`, `DistancePxRange`, `DistanceMmMax`, or `DistancePxMax`", "Line Learn document requires consistency/outlier metrics.");
         RequireContains(learnScreenshotSmoke, "wpf_openvision_learn_arithmetic", "Learn screenshot smoke exposes the Arithmetic topic target.");
         RequireContains(learnScreenshotSmoke, "CaptureOpenVisionLearnArithmetic", "Learn screenshot smoke verifies the Arithmetic topic.");
         RequireContains(learnScreenshotSmoke, "wpf_openvision_learn_geometry", "Learn screenshot smoke exposes the Geometry topic target.");
@@ -893,17 +902,21 @@ internal static class Program
         RequireContains(learnWindow, "15 => \"LEARN_GEOMETRY_TRANSFORM.md\"", "OpenVision Learn topic 15 resolves Geometry document.");
         RequireContains(learnWindow, "16. Color / HSV", "OpenVision Learn topic list exposes Color / HSV.");
         RequireContains(learnWindow, "16 => \"LEARN_COLOR_HSV.md\"", "OpenVision Learn topic 16 resolves Color / HSV document.");
-        RequireContains(learnWindow, "temporary brightness bridge, not HSV sample evidence", "OpenVision Learn Color / HSV practice text explains that the mean path is a bridge, not HSV evidence.");
-        RequireContains(learnWindowXaml, "OpenVisionLearnColorSampleBridge", "OpenVision Learn Color / HSV topic explains the current Mean Good/Bad sample bridge.");
-        RequireContains(learnWindowXaml, "public HSV color-classification pair is not stable yet", "OpenVision Learn Color / HSV topic states the current HSV public sample gap.");
-        RequireContains(learnWindowXaml, "MaskPixelRatio only after runner support exists", "OpenVision Learn Color / HSV topic does not present MaskPixelRatio as a current runner metric.");
-        RequireContains(learnScreenshotSmoke, "OpenVisionLearnColorSampleBridge", "Learn screenshot smoke verifies the Color / HSV sample bridge.");
-        RequireContains(learnScreenshotSmoke, "future metric", "Learn screenshot smoke verifies MaskPixelRatio is presented as future runner support.");
+        RequireContains(learnWindow, "16 => \"color-hsv\"", "OpenVision Learn topic 16 opens the Color / HSV practice path.");
+        RequireContains(learnWindow, "Sample Picker path 'color-hsv'", "OpenVision Learn Color / HSV practice text uses the Color / HSV path.");
+        RequireContains(learnWindow, "Public_HSV_ColorPatch", "OpenVision Learn Color / HSV practice text names the public HSV sample pair.");
+        RequireContains(learnWindowXaml, "OpenVisionLearnColorSampleEvidence", "OpenVision Learn Color / HSV topic explains the current public HSV Good/Bad sample evidence.");
+        RequireContains(learnWindowXaml, "Public HSV practice samples", "OpenVision Learn Color / HSV topic labels the public HSV sample evidence.");
+        RequireContains(learnWindowXaml, "Public_HSV_ColorPatch_Good", "OpenVision Learn Color / HSV topic names the public HSV Good sample.");
+        RequireContains(learnWindowXaml, "MaskPixelRatio", "OpenVision Learn Color / HSV topic presents MaskPixelRatio as the current HSV metric.");
+        RequireContains(learnScreenshotSmoke, "OpenVisionLearnColorSampleEvidence", "Learn screenshot smoke verifies the Color / HSV sample evidence panel.");
+        RequireContains(learnScreenshotSmoke, "metric=", "Learn screenshot smoke verifies MaskPixelRatio is presented as a current metric.");
         string colorHsvGuide = Read(repoRoot, @"docs\learn\LEARN_COLOR_HSV.md");
-        RequireContains(colorHsvGuide, "Do not add public HSV sample rows until", "Color / HSV Learn guide blocks public HSV samples until sample smoke evidence exists.");
-        RequireContains(colorHsvGuide, "initial `HSV` mask ToolType", "Color / HSV Learn guide acknowledges initial HSV pipeline runner support.");
-        RequireContains(colorHsvGuide, "`MaskPixelRatio` is available only for the `HSV` pipeline runner path", "Color / HSV Learn guide scopes MaskPixelRatio availability to the runner path.");
-        RequireContains(colorHsvGuide, "## HSV Pipeline Runtime Contract", "Color / HSV Learn guide defines the runtime contract before public HSV samples.");
+        RequireContains(colorHsvGuide, "Practice Samples path: `color-hsv`", "Color / HSV Learn guide names the Color / HSV practice path.");
+        RequireContains(colorHsvGuide, "Public_HSV_ColorPatch_Good", "Color / HSV Learn guide names the public HSV Good sample.");
+        RequireContains(colorHsvGuide, "Public_HSV_ColorPatch_Missing_Bad", "Color / HSV Learn guide names the public HSV Bad sample.");
+        RequireContains(colorHsvGuide, "`MaskPixelRatio` is the first stable HSV sample metric", "Color / HSV Learn guide scopes MaskPixelRatio as current public HSV sample evidence.");
+        RequireContains(colorHsvGuide, "## HSV Pipeline Runtime Contract", "Color / HSV Learn guide defines the runtime contract for public HSV samples.");
         RequireContains(colorHsvGuide, "`HueMin`, `HueMax`, `SaturationMin`, `SaturationMax`, `ValueMin`, `ValueMax`", "Color / HSV Learn guide defines required HSV range parameters.");
         RequireContains(colorHsvGuide, "`InputLayer` and `OutputLayer`", "Color / HSV Learn guide keeps HSV output mask routing explicit.");
         RequireContains(colorHsvGuide, "`MaskPixelCount`", "Color / HSV Learn guide requires count metrics before sample promotion.");

@@ -4,7 +4,7 @@ Updated: 2026-07-08
 
 Color inspection starts by separating what changed: brightness, hue, saturation, or channel distribution.
 
-OpenVisionLab currently supports this area with `HSV`, `Mean`, and `Histogram` tool views. The pipeline runner now has an initial `HSV` mask ToolType with `MaskPixelCount` and `MaskPixelRatio` metrics, but a stable public color-classification Good/Bad sample still needs a focused sample pair and smoke evidence before promotion.
+OpenVisionLab currently supports this area with `HSV`, `Mean`, and `Histogram` tool views. The pipeline runner has an `HSV` mask ToolType with `MaskPixelCount` and `MaskPixelRatio` metrics, and the public sample catalog includes a focused HSV Good/Bad pair for color-mask practice.
 
 ## Core Concepts
 
@@ -20,7 +20,7 @@ OpenVisionLab currently supports this area with `HSV`, `Mean`, and `Histogram` t
 
 | Tool | Use it for | Current status |
 | --- | --- | --- |
-| `HSV` | Color range mask review | Initial XML runner support exists with `MaskPixelCount` and `MaskPixelRatio`; no stable public HSV Good/Bad pair yet |
+| `HSV` | Color range mask review | XML runner support exists with `MaskPixelCount` and `MaskPixelRatio`; use the public HSV Good/Bad pair for first practice |
 | `Mean` | Brightness or intensity drift judgment | Has public Good/Bad samples and `MeanValueAvg` gates |
 | `Histogram` | Contrast and distribution review | Tool view exists; use as visual evidence before adding a stricter step |
 
@@ -36,17 +36,17 @@ OpenVisionLab currently supports this area with `HSV`, `Mean`, and `Histogram` t
 
 The `Product_Display_ColorFilterShift` pair is not an HSV color-classification sample. It is useful context for explaining that a color-looking problem may still require a geometric measurement tool.
 
-## Current Practice Bridge
+## Practice Samples Path
 
-The Color / HSV Learn topic currently opens Sample Picker path `mean` in some UI entry points. Prefer the public HSV color patch pair when validating color-mask recipes.
+Practice Samples path: `color-hsv`
 
-- Use `Public_Mean_Brightness_Good` and `Public_Mean_Brightness_Dark_Bad` to practice brightness/channel drift review with `MeanValueAvg`.
-- Do not report those samples as HSV color classification evidence.
-- Treat an HSV recipe as complete only after a color-range sample, separate output mask, and metric gate such as `MaskPixelRatio`, count, area, or a downstream measurement are available.
+- Use `Public_HSV_ColorPatch_Good` and `Public_HSV_ColorPatch_Missing_Bad` to practice color-range masking with `MaskPixelRatio`.
+- Use `Public_Mean_Brightness_Good` and `Public_Mean_Brightness_Dark_Bad` only when the inspection intent is brightness/channel drift with `MeanValueAvg`.
+- Treat an HSV recipe as complete only when the output mask is separate from the input layer and an acceptance gate such as `MaskPixelRatio`, count, area, or a downstream measurement is checked.
 
-## Public Sample Promotion Prerequisite
+## Public Sample Contract
 
-Do not add public HSV sample rows until these conditions are true:
+The public HSV sample pair is valid only because these conditions are true:
 
 1. The intended sample pair uses the `HSV` `VisionPipeline` ToolType and not only the exploratory Tool View.
 2. The runner emits stable color-mask metrics such as `MaskPixelCount` and `MaskPixelRatio`, or a downstream Blob/Contour metric that represents the selected color area.
@@ -96,6 +96,6 @@ Required acceptance pattern:
 
 ## Completion Standard
 
-This chapter is partially covered until OpenVisionLab has at least one public HSV Good/Bad sample pair with stable acceptance metrics. `MaskPixelRatio` is available only for the `HSV` pipeline runner path and must not be claimed as public sample evidence until a Good/Bad catalog smoke proves it.
+This chapter has first-pass coverage for HSV color-range masking through the public `Public_HSV_ColorPatch` Good/Bad pair. `MaskPixelRatio` is the first stable HSV sample metric; deeper channel split/merge education can be added later if the product needs dedicated color debugging tools.
 
 Opening this guide or changing HSV/Histogram/Mean parameters must not run Preview/Run automatically.

@@ -95,7 +95,12 @@ namespace OpenVisionLab
 
         public string ActiveLearnPathText => SelectedLearnPathOption == null
             ? LocalText("모든 검증 샘플을 표시합니다.", "Showing all verification samples.")
-            : SelectedLearnPathOption.Description;
+            : string.Format(
+                CultureInfo.CurrentCulture,
+                LocalText("선택: {0} / {1} - {2}", "Selected: {0} / {1} - {2}"),
+                SelectedLearnPathOption.DisplayName,
+                SelectedLearnPathOption.SampleCountText,
+                SelectedLearnPathOption.Description);
 
         public string SearchHintText => LocalText("샘플명, 목적, 도구, 검증 기준 검색", "Search sample, goal, tool, or criterion");
 

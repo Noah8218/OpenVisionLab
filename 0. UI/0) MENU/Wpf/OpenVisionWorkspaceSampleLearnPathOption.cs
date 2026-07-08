@@ -56,7 +56,8 @@ namespace OpenVisionLab
             AddIfNotEmpty(options, source, "blob", LocalText("Blob", "Blob"), LocalText("입자, 얼룩, 밀도 검출", "Particle, stain, and density detection"));
             AddIfNotEmpty(options, source, "contour", LocalText("Contour", "Contour"), LocalText("형상, 개수, 영역 검출", "Shape, count, and region detection"));
             AddIfNotEmpty(options, source, "line", LocalText("Line", "Line"), LocalText("거리, 각도, 직선 측정", "Distance, angle, and line measurement"));
-            AddIfNotEmpty(options, source, "mean", LocalText("Mean", "Mean"), LocalText("밝기와 색상 변화 측정", "Brightness and color drift measurement"));
+            AddIfNotEmpty(options, source, "mean", LocalText("Mean", "Mean"), LocalText("밝기와 히스토그램 변화 측정", "Brightness and histogram drift measurement"));
+            AddIfNotEmpty(options, source, "color-hsv", LocalText("Color / HSV", "Color / HSV"), LocalText("HSV 색상 범위 마스크 검증", "HSV color-range mask checks"));
             AddIfNotEmpty(options, source, "pair", LocalText("Good/Bad", "Good/Bad"), LocalText("OK/NG 샘플 쌍 검증", "OK/NG sample-pair validation"));
 
             return options;
@@ -156,7 +157,12 @@ namespace OpenVisionLab
 
             if (string.Equals(id, "mean", StringComparison.OrdinalIgnoreCase))
             {
-                return ContainsAny(flow, category, name, goal, "Mean", "Brightness", "HSV", "Histogram", "Color");
+                return ContainsAny(flow, category, name, goal, "Mean", "Brightness", "Histogram");
+            }
+
+            if (string.Equals(id, "color-hsv", StringComparison.OrdinalIgnoreCase))
+            {
+                return ContainsAny(flow, category, name, goal, "HSV", "Color range", "ColorPatch", "Color Patch");
             }
 
             if (string.Equals(id, "pair", StringComparison.OrdinalIgnoreCase))

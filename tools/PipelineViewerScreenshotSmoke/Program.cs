@@ -4522,7 +4522,7 @@ internal static class Program
                 throw new InvalidOperationException("Workspace sample learn path smoke could not find the Learn path list.");
             }
 
-            string[] pathIds = { "preprocess", "geometry", "matching", "template-matching", "edge-matching", "feature-matching", "blob", "line", "pair" };
+            string[] pathIds = { "preprocess", "geometry", "color-hsv", "matching", "template-matching", "edge-matching", "feature-matching", "blob", "line", "pair" };
             List<OpenVisionWorkspaceSampleLearnPathOption> checkedPaths = viewModel.LearnPathOptions
                 .Where(option => pathIds.Contains(option.Id, StringComparer.OrdinalIgnoreCase))
                 .ToList();
@@ -4595,7 +4595,8 @@ internal static class Program
             }
 
             OpenVisionWorkspaceSampleLearnPathOption capturePath =
-                checkedPaths.FirstOrDefault(option => string.Equals(option.Id, "feature-matching", StringComparison.OrdinalIgnoreCase))
+                checkedPaths.FirstOrDefault(option => string.Equals(option.Id, "color-hsv", StringComparison.OrdinalIgnoreCase))
+                ?? checkedPaths.FirstOrDefault(option => string.Equals(option.Id, "feature-matching", StringComparison.OrdinalIgnoreCase))
                 ?? checkedPaths.FirstOrDefault(option => string.Equals(option.Id, "edge-matching", StringComparison.OrdinalIgnoreCase))
                 ?? checkedPaths.FirstOrDefault(option => string.Equals(option.Id, "template-matching", StringComparison.OrdinalIgnoreCase))
                 ?? checkedPaths.FirstOrDefault(option => string.Equals(option.Id, "preprocess", StringComparison.OrdinalIgnoreCase))
@@ -4645,6 +4646,15 @@ internal static class Program
                 throw new InvalidOperationException(
                     "Workspace sample learn path did not resolve a Learn document for the captured path. "
                     + $"Path={capturePath.Id}, Sample={viewModel.SelectedSample?.SampleName ?? "-"}");
+            }
+
+            if (!viewModel.ActiveLearnPathText.Contains(capturePath.DisplayName, StringComparison.Ordinal)
+                || !viewModel.ActiveLearnPathText.Contains(capturePath.SampleCountText, StringComparison.Ordinal)
+                || !viewModel.ActiveLearnPathText.Contains(capturePath.Description, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Workspace sample learn path summary did not expose the selected path name, count, and description. "
+                    + $"Path={capturePath.Id}, Summary='{viewModel.ActiveLearnPathText}'");
             }
 
             if (captureSample != null
@@ -4697,7 +4707,9 @@ internal static class Program
                 viewModel.LearnDocumentLabelText,
                 viewModel.OpenLearnDocumentButtonText,
                 viewModel.OpenLearnAndSampleButtonText,
+                viewModel.ActiveLearnPathText,
                 capturePath.DisplayName,
+                capturePath.SampleCountText,
                 capturePath.Description,
                 viewModel.ResultCountText,
                 viewModel.SelectedSample.SampleName
@@ -7050,7 +7062,7 @@ internal static class Program
             "all",
             "preprocess",
             "geometry",
-            "mean"
+            "color-hsv"
         };
         List<VisionPipelineSampleCatalogItem> runnableSamples = VisionPipelineSampleCatalogItem
             .LoadRunnable()
@@ -7386,9 +7398,24 @@ internal static class Program
             }
 
             if (!window.LineDistanceFormulaTextForTest.Contains("DistancePxAvg", StringComparison.OrdinalIgnoreCase)
-                || !window.LineDistanceFormulaTextForTest.Contains("DistancePxRange", StringComparison.OrdinalIgnoreCase))
+                || !window.LineDistanceFormulaTextForTest.Contains("DistancePxRange", StringComparison.OrdinalIgnoreCase)
+                || !window.LineDistanceFormulaTextForTest.Contains("DistanceMmRange", StringComparison.OrdinalIgnoreCase)
+                || !window.LineDistanceFormulaTextForTest.Contains("DistanceMmMax", StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidOperationException("LineDistance guide did not explain average and range metrics.");
+                throw new InvalidOperationException("LineDistance guide did not explain average, range, and max metrics.");
+            }
+
+            string visibleText = string.Join(
+                " | ",
+                FindVisualChildren<TextBlock>(window)
+                    .Select(item => item.Text)
+                    .Where(text => !string.IsNullOrWhiteSpace(text)));
+            foreach (string token in new[] { "Gate rule", "DistanceMmAvg", "DistanceMmRange", "DistanceMmMax", "CvROI", "SAMPLING_STEP", "POINT_RANGE", "PIXELPERMM" })
+            {
+                if (!visibleText.Contains(token, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("LineDistance guide did not show expected gate token '" + token + "'.");
+                }
             }
 
             AssertVisibleAutomationIds(
@@ -7766,10 +7793,10 @@ internal static class Program
 
             AssertLearnTopicDocument(window, "LEARN_COLOR_HSV.md");
             if (!window.SelectedTopicPracticeTextForTest.Contains("HSV", StringComparison.Ordinal)
-                || !window.SelectedTopicPracticeTextForTest.Contains("temporary brightness bridge", StringComparison.Ordinal)
-                || !window.SelectedTopicPracticeTextForTest.Contains("not HSV sample evidence", StringComparison.Ordinal)
-                || !window.SelectedTopicPracticeTextForTest.Contains("Run Mean manually", StringComparison.Ordinal)
-                || !string.Equals(window.SelectedTopicLearnPathIdForTest, "mean", StringComparison.Ordinal))
+                || !window.SelectedTopicPracticeTextForTest.Contains("Public_HSV_ColorPatch", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("MaskPixelRatio", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("explicit Run Review", StringComparison.Ordinal)
+                || !string.Equals(window.SelectedTopicLearnPathIdForTest, "color-hsv", StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
                     "Color / HSV topic did not expose the expected practice guidance. "
@@ -7782,11 +7809,11 @@ internal static class Program
 
             if (!window.ColorHsvFormulaTextForTest.Contains("HSV mask", StringComparison.Ordinal)
                 || !window.ColorHsvFormulaTextForTest.Contains("MaskPixelRatio", StringComparison.Ordinal)
-                || !window.ColorHsvFormulaTextForTest.Contains("future metric", StringComparison.Ordinal)
+                || !window.ColorHsvFormulaTextForTest.Contains("metric=", StringComparison.Ordinal)
                 || !window.ColorHsvFormulaTextForTest.Contains("downstream ResultCount/Area", StringComparison.Ordinal)
                 || !window.ColorHsvFormulaTextForTest.Contains("OutputLayer", StringComparison.Ordinal))
             {
-                throw new InvalidOperationException("Color / HSV guide did not explain future mask metric support and downstream review.");
+                throw new InvalidOperationException("Color / HSV guide did not explain mask metric support and downstream review.");
             }
 
             string visibleText = string.Join(
@@ -7794,7 +7821,7 @@ internal static class Program
                 FindVisualChildren<TextBlock>(window)
                     .Select(item => item.Text)
                     .Where(text => !string.IsNullOrWhiteSpace(text)));
-            foreach (string token in new[] { "Hue", "Saturation", "Value", "OutputLayer", "MaskPixelRatio", "runner support exists", "Preview/Run", "Current practice bridge", "public HSV color-classification pair", "MeanValueAvg" })
+            foreach (string token in new[] { "Hue", "Saturation", "Value", "OutputLayer", "MaskPixelRatio", "Preview/Run", "Public HSV practice samples", "Public_HSV_ColorPatch_Good", "Public_HSV_ColorPatch_Missing_Bad" })
             {
                 if (!visibleText.Contains(token, StringComparison.Ordinal))
                 {
@@ -7805,7 +7832,7 @@ internal static class Program
             AssertVisibleAutomationIds(
                 window,
                 "OpenVision Learn Color / HSV topic",
-                "OpenVisionLearnColorSampleBridge",
+                "OpenVisionLearnColorSampleEvidence",
                 "OpenVisionLearnColorHueSlider",
                 "OpenVisionLearnColorValueSlider");
             WriteElementPng(window, outputPath, 1040, 700);

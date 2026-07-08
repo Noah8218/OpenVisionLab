@@ -1128,6 +1128,8 @@ namespace OpenVisionLab
             int range = max - min;
             double pixelPerMm = 0.006D;
             double avgMm = avg * pixelPerMm;
+            double rangeMm = range * pixelPerMm;
+            double maxMm = max * pixelPerMm;
             bool rangeOk = range <= rangeMax;
 
             txtLineDistanceRangeMax.Text = rangeMax.ToString("0.00", CultureInfo.InvariantCulture) + " px";
@@ -1136,7 +1138,11 @@ namespace OpenVisionLab
                 + ", DistancePxRange="
                 + range.ToString(CultureInfo.InvariantCulture)
                 + ", DistanceMmAvg="
-                + avgMm.ToString("0.000", CultureInfo.InvariantCulture);
+                + avgMm.ToString("0.000", CultureInfo.InvariantCulture)
+                + ", DistanceMmRange="
+                + rangeMm.ToString("0.000", CultureInfo.InvariantCulture)
+                + ", DistanceMmMax="
+                + maxMm.ToString("0.000", CultureInfo.InvariantCulture);
             txtLineDistanceMeaning.Text = rangeOk
                 ? "평균과 줄별 흔들림이 모두 기준 안입니다. 실제 레시피도 DistanceAvg와 DistanceRange를 함께 판정합니다."
                 : "평균값만 보면 지나칠 수 있지만 줄별 거리 차이가 큽니다. Range/Max 게이트로 긴 측정선을 NG 처리해야 합니다.";
@@ -1301,7 +1307,7 @@ namespace OpenVisionLab
                 + saturationMinimum.ToString(CultureInfo.InvariantCulture)
                 + ", V>="
                 + value.ToString(CultureInfo.InvariantCulture)
-                + " -> OutputLayer=HSV_Mask, future metric=MaskPixelRatio after runner support, or downstream ResultCount/Area";
+                + " -> OutputLayer=HSV_Mask, metric=MaskPixelRatio, or downstream ResultCount/Area";
             txtColorHsvMeaning.Text = value < 110
                 ? "Low Value means the color is dark; hue alone may be unstable, so compare Mean/Histogram evidence before accepting the mask."
                 : "Hue chooses the color family, Saturation rejects gray background, and Value rejects dark pixels before explicit Preview/Run.";
@@ -2111,7 +2117,7 @@ namespace OpenVisionLab
                 12 => "edge-matching",
                 14 => "preprocess",
                 15 => "geometry",
-                16 => "mean",
+                16 => "color-hsv",
                 _ => "all"
             };
         }
@@ -2136,7 +2142,7 @@ namespace OpenVisionLab
                 13 => "Practice: Sample Picker path 'all', then compare Metrics/Acceptance gates across Good/Bad samples after explicit Run Review.",
                 14 => "Practice: Sample Picker path 'preprocess', then open Arithmetic Tool View and click Preview manually.",
                 15 => "Practice: Sample Picker path 'geometry', then open RotateScale and click Preview manually.",
-                16 => "Practice: Sample Picker path 'mean' is a temporary brightness bridge, not HSV sample evidence. Run Mean manually, then use HSV/Histogram only for review.",
+                16 => "Practice: Sample Picker path 'color-hsv', then compare Public_HSV_ColorPatch Good/Bad MaskPixelRatio after explicit Run Review.",
                 _ => "Practice: Sample Picker path 'all', then open the related Tool View and run Preview manually."
             };
         }

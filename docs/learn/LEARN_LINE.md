@@ -49,3 +49,17 @@ Good은 정상 pin 간격을 만들고, Bad는 같은 설정에서 더 좁은 �
 - Bad 샘플에서 `DistanceMmAvg` 기준으로 NG가 설명됩니다.
 - ROI overlay와 결과 overlay가 같은 검사 의도를 가리킵니다.
 Opening this guide or changing Line/LineDistance parameters must not run Preview/Run automatically.
+
+## LineDistance outlier gate
+
+For pin gap, pitch, width, or clearance, do not approve the inspection from
+`DistanceMmAvg` alone. Use two gates:
+
+| Gate | Metric | Purpose |
+| --- | --- | --- |
+| Nominal distance | `DistanceMmAvg` or `DistancePxAvg` | Checks the expected average gap/pitch/width |
+| Consistency / outlier | `DistanceMmRange`, `DistancePxRange`, `DistanceMmMax`, or `DistancePxMax` | Fails one long or short sampling line that the average can hide |
+
+Before judging the metric, review the PropertyGrid values that decide where
+the measurement lines are created: `CvROI`, `SAMPLING_STEP`, `POINT_RANGE`,
+`LeftPRJ_DIR`, `RightPRJ_DIR`, `PRJ_PORALITY`, and `PIXELPERMM`.

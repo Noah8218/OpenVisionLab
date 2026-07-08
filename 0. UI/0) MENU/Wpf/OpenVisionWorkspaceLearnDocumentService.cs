@@ -230,6 +230,11 @@ namespace OpenVisionLab
                 return "LEARN_LINE.md";
             }
 
+            if (string.Equals(id, "color-hsv", StringComparison.OrdinalIgnoreCase))
+            {
+                return "LEARN_COLOR_HSV.md";
+            }
+
             if (string.Equals(id, "mean", StringComparison.OrdinalIgnoreCase))
             {
                 return "LEARN_MEAN.md";

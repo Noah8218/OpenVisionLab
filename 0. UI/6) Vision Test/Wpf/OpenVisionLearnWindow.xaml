@@ -608,13 +608,13 @@
                                    Text="Opening this guide does not run Preview/Run, create layers, or change routing. Use HSV, Mean, or Histogram Tool Views and click Preview or Run Review explicitly." />
                         <Border Margin="0,12,0,0"
                                 Style="{StaticResource LearnPanelStyle}"
-                                AutomationProperties.AutomationId="OpenVisionLearnColorSampleBridge">
+                                AutomationProperties.AutomationId="OpenVisionLearnColorSampleEvidence">
                             <StackPanel>
-                                <TextBlock Text="Current practice bridge"
+                                <TextBlock Text="Public HSV practice samples"
                                            FontWeight="SemiBold" />
                                 <TextBlock Margin="0,5,0,0"
                                            Style="{StaticResource LearnMutedTextStyle}"
-                                           Text="Practice Samples currently opens the Mean Good/Bad set because a public HSV color-classification pair is not stable yet. Treat MeanValueAvg as brightness/channel drift evidence; do not claim HSV color pass until a color-range sample and metric gate are added." />
+                                           Text="Practice Samples opens the Color / HSV path with Public_HSV_ColorPatch_Good and Public_HSV_ColorPatch_Missing_Bad. Use MaskPixelRatio as the first HSV color-mask metric, then compare Good/Bad results after explicit Run Review." />
                             </StackPanel>
                         </Border>
 
@@ -679,7 +679,7 @@
                                                Style="{StaticResource LearnMutedTextStyle}" />
                                     <TextBlock Margin="0,10,0,0"
                                                Style="{StaticResource LearnMutedTextStyle}"
-                                               Text="Checklist: use ROI if the background has similar hue, keep the HSV mask on a separate OutputLayer, and validate with MaskPixelRatio only after runner support exists, or with downstream ResultCount/Area." />
+                                               Text="Checklist: use ROI if the background has similar hue, keep the HSV mask on a separate OutputLayer, and validate with MaskPixelRatio or downstream ResultCount/Area after explicit Preview/Run." />
                                 </StackPanel>
                             </Border>
                         </Grid>
@@ -1288,6 +1288,9 @@
                                     <UniformGrid x:Name="lineDistanceOutputGrid"
                                                  Columns="5"
                                                  Rows="1" />
+                                    <TextBlock Margin="0,10,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="Gate rule: DistanceMmAvg checks the nominal gap or pitch; DistanceMmRange or DistanceMmMax catches one long/short sampling line. Tune CvROI, SAMPLING_STEP, POINT_RANGE, direction, polarity, and PIXELPERMM before judging." />
                                 </StackPanel>
                             </Border>
                         </Grid>

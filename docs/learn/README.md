@@ -34,11 +34,11 @@ The Learn window exposes the topics below. Detail documents in the Tool Guides t
 | 13 | Metrics / Acceptance | `LEARN_METRICS_ACCEPTANCE.md` | `all` |
 | 14 | Arithmetic / Logic | `LEARN_ARITHMETIC.md` | `preprocess` |
 | 15 | Geometry Transform | `LEARN_GEOMETRY_TRANSFORM.md` | `geometry` |
-| 16 | Color / HSV | `LEARN_COLOR_HSV.md` | `mean` |
+| 16 | Color / HSV | `LEARN_COLOR_HSV.md` | `color-hsv` |
 
 Opening Topic Docs or Practice Samples must not run Preview/Run. Practice Samples only opens the sample picker on the selected Learn path.
 
-Color / HSV currently uses the `mean` Practice Samples path as a temporary brightness bridge. Treat those Mean samples as brightness/channel drift evidence, not as HSV color-classification evidence.
+Color / HSV uses the `color-hsv` Practice Samples path. Opening Practice Samples only filters the picker to public HSV Good/Bad samples; it does not run Preview/Run.
 
 ## Tool Guides
 
