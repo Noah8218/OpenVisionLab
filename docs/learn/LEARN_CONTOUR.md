@@ -32,6 +32,18 @@ Good은 shape 5개가 모두 남아 있고, Bad는 missing-shape 이미지라 2�
 6. overlay가 shape 외곽에 붙는지 확인합니다.
 7. Pipeline Review에서 `ResultCount`가 Good/Bad를 분리하는지 봅니다.
 
+## Blob과 Contour 구분
+
+| 질문 | Contour에서 먼저 보는 값 |
+| --- | --- |
+| 외곽선이 실제 모양을 따라가는가 | `DrawMode`, overlay 위치 |
+| shape 크기가 기대 범위인가 | `AreaMax`, `BoundsWidthMax`, `BoundsHeightMax` |
+| 내부/외부 외곽선 선택이 맞는가 | `RetrievalMode` |
+
+Contour는 통과한 후보의 경계를 따라 shape 증거를 만드는 단계입니다.
+먼저 `DrawMode`, `RetrievalMode`, `MIN_AREA`, `MAX_AREA`를 확인하고, Good/Bad 비교에서는 `ResultCount`와 box/area 최대값을 같이 봅니다.
+후보가 너무 많거나 적으면 Contour보다 앞 단계인 Threshold, Morphology, Blob 면적 필터부터 다시 봅니다.
+
 ## 실패 원인
 
 | 증상 | 먼저 볼 것 |

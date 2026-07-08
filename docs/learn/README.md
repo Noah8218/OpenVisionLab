@@ -12,6 +12,19 @@ Open the Good sample first, then open the Bad sample from the same PairGroup and
 
 Start with [OpenVisionLab Learn Curriculum](OPENVISIONLAB_LEARN_CURRICULUM.md) when you want a chapter-style learning path. Use [Learn OpenCvSharp Foundations](LEARN_OPENCVSHARP_FOUNDATIONS.md) first when `Point`, `Rect`, `Mat`, ROI, layer routing, or pixel/GV terms are unclear. The guides stay separate from the Tool Views and map machine-vision chapters 5-14 to actual OpenVisionLab tools or explicit tool gaps.
 
+## Practice Workflow Contract
+
+Every Learn topic should lead the operator through the same bounded practice loop:
+
+1. Open `Practice Samples` for the selected Learn path.
+2. Choose a Good/Bad sample pair.
+3. Open the related PropertyGrid Tool View.
+4. Click Preview or Run Review explicitly.
+5. Compare overlay, result image, metric, and Good/Bad reason before saving a recipe.
+
+`Practice Samples` is a navigation/filtering action only. It must not create layers, change input/output routing, run Preview, run Review, or silently accept a recipe.
+`Open Guide + Sample` may open the guide and prepare the sample/pipeline, but the operator still opens the related Tool View or Pipeline Review and clicks Preview or Run Review explicitly.
+
 ## Learn Window Topic Map
 
 The Learn window exposes the topics below. Detail documents in the Tool Guides table are reference pages unless they are listed here as a Learn window topic.

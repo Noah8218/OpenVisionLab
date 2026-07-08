@@ -128,6 +128,9 @@ internal static class Program
         RequireContains(samplePickerViewModel, "RebuildLearnPathOptions", "Workspace sample picker rebuilds learn paths per selected catalog source.");
         RequireContains(samplePickerViewModel, "OpenLearnDocumentCommand", "Workspace sample picker exposes a non-executing Learn document command.");
         RequireContains(samplePickerViewModel, "CanOpenLearnAndSample", "Workspace sample picker exposes an explicit guide-plus-sample action state.");
+        RequireContains(samplePickerViewModel, "PracticeWorkflowText", "Workspace sample picker exposes the Learn practice workflow text.");
+        RequireContains(samplePickerViewModel, "Tool View 또는 Pipeline Review", "Workspace sample picker points the operator to Tool View or Pipeline Review after sample open.");
+        RequireContains(samplePickerViewModel, "Preview/Run Review를 직접 클릭", "Workspace sample picker keeps Learn sample verification explicit.");
         RequireContains(samplePickerViewModel, "Selected: {0} / {1} - {2}", "Workspace sample picker Learn path summary names the selected path and sample count.");
         RequireContains(samplePickerViewModel, "SampleCountText", "Workspace sample picker Learn path summary includes the selected path sample count.");
 
@@ -148,9 +151,15 @@ internal static class Program
         RequireContains(samplePickerView, "WorkspaceSamplePickerRouteSummary", "Workspace sample picker renders the active catalog/focus/Learn route summary.");
         RequireContains(samplePickerView, "WorkspaceSamplePickerCatalogSourceSummary", "Workspace sample picker renders selected catalog source guidance.");
         RequireContains(samplePickerView, "WorkspaceSamplePickerOpenLearnDocumentButton", "Workspace sample picker renders a Learn document open button.");
+        RequireContains(samplePickerView, "WorkspaceSamplePickerPracticeWorkflowStrip", "Workspace sample picker renders the Learn practice workflow strip.");
 
         string samplePickerWindow = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionWorkspaceSamplePickerWindow.xaml");
         RequireContains(samplePickerWindow, "WorkspaceSamplePickerOpenGuideAndSampleButton", "Workspace sample picker renders an explicit guide-plus-sample button.");
+        string shellSampleWorkflowPresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionShellHostSampleWorkflowPresenter.cs");
+        RequireContains(shellSampleWorkflowPresenter, "Pipeline \\uBCF4\\uAE30 -> Run Review", "Shell sample workflow overlay points from Pipeline view to explicit Run Review.");
+        RequireContains(shellSampleWorkflowPresenter, "\\uAE30\\uC900 \\uC5F4\\uACE0 Run Review", "Shell sample workflow pair comparison tells operators to run review explicitly.");
+        string localizationCatalog = Read(repoRoot, @"Library\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv");
+        RequireContains(localizationCatalog, "Shell.WorkspaceStatus.SampleRoute\tPipeline Review 열기 -> Run Review 또는 첫 Step 열기", "Shell top sample route includes explicit Run Review.");
 
         string sampleSmoke = Read(repoRoot, @"tools\PipelineViewerScreenshotSmoke\Program.cs");
         RequireContains(sampleSmoke, "wpf_shell_host_workspace_product_sample_review", "Screenshot smoke covers the Product sample catalog WPF review flow.");
@@ -607,6 +616,12 @@ internal static class Program
 
         string learnIndex = Read(repoRoot, @"docs\learn\README.md");
         RequireContains(learnIndex, "## Learn Window Topic Map", "Learn index documents the Learn window topic map.");
+        RequireContains(learnIndex, "## Practice Workflow Contract", "Learn index documents the common Learn practice workflow contract.");
+        RequireContains(learnIndex, "Open `Practice Samples`", "Learn index starts practice from the explicit Practice Samples action.");
+        RequireContains(learnIndex, "Open the related PropertyGrid Tool View", "Learn index connects samples to the related Tool View.");
+        RequireContains(learnIndex, "Click Preview or Run Review explicitly", "Learn index keeps Preview/Run Review explicit.");
+        RequireContains(learnIndex, "must not create layers, change input/output routing, run Preview, run Review", "Learn index blocks Learn navigation from execution side effects.");
+        RequireContains(learnIndex, "`Open Guide + Sample` may open the guide and prepare the sample/pipeline", "Learn index documents the guide-plus-sample action boundary.");
         foreach ((int Topic, string Document, string PathId) learnTopic in new[]
         {
             (0, "OPENVISIONLAB_LEARN_CURRICULUM.md", "all"),
@@ -729,6 +744,10 @@ internal static class Program
         RequireContains(learnWindowXaml, "Foundation Docs", "OpenVision Learn labels the Foundation Docs button.");
         RequireContains(learnWindow, "OpenFoundationDocsButton_Click", "OpenVision Learn handles the Foundation Docs button.");
         RequireContains(learnWindow, "LEARN_OPENCVSHARP_FOUNDATIONS.md", "OpenVision Learn Foundation Docs button opens the foundations guide.");
+        RequireContains(learnWindowXaml, "OpenVisionLearnPracticeWorkflowPanel", "OpenVision Learn exposes the common practice workflow panel.");
+        RequireContains(learnWindowXaml, "Practice workflow", "OpenVision Learn labels the common practice workflow panel.");
+        RequireContains(learnWindowXaml, "click Preview or Run Review explicitly", "OpenVision Learn tells the operator execution remains explicit.");
+        RequireContains(learnWindowXaml, "must not create layers, change routing, or run tools", "OpenVision Learn says Learn path filtering has no execution side effects.");
         RequireContains(learnWindowXaml, "OpenVisionLearnFoundationTypeCards", "OpenVision Learn foundation topic exposes Point/Rect/Size/Mat cards.");
         RequireContains(learnWindowXaml, "OpenVisionLearnBeginnerPathPanel", "OpenVision Learn foundation topic exposes a beginner path panel.");
         RequireContains(learnWindowXaml, "Beginner path: Foundation -> Brightness/GV -> Threshold -> Filter/Morphology -> Blob/Contour/LineDistance", "OpenVision Learn foundation topic shows the beginner tool path.");
@@ -739,6 +758,8 @@ internal static class Program
         string filterGuide = Read(repoRoot, @"docs\learn\LEARN_FILTER.md");
         string edgeDetectionGuide = Read(repoRoot, @"docs\learn\LEARN_EDGE_DETECTION.md");
         string morphologyGuide = Read(repoRoot, @"docs\learn\LEARN_MORPHOLOGY.md");
+        string blobGuide = Read(repoRoot, @"docs\learn\LEARN_BLOB.md");
+        string contourGuide = Read(repoRoot, @"docs\learn\LEARN_CONTOUR.md");
         RequireContains(meanGuide, "## Beginner path handoff", "Mean Learn guide includes beginner handoff.");
         RequireContains(meanGuide, "Practice Samples path: `mean`", "Mean Learn guide names the mean practice path.");
         RequireContains(meanGuide, "Public_Mean_Brightness_Good", "Mean beginner handoff names the public Good sample.");
@@ -762,6 +783,17 @@ internal static class Program
         RequireContains(morphologyGuide, "Public_Morphology_Cleanup_Missing_Bad", "Morphology Learn guide names the public Bad sample.");
         RequireContains(morphologyGuide, "Public sample pair", "Morphology Learn guide marks the public sample pair.");
         RequireContains(morphologyGuide, "before/after output-layer comparison", "Morphology Learn guide requires output-layer comparison.");
+        RequireContains(blobGuide, "## Blob과 Contour 구분", "Blob Learn guide distinguishes Blob from Contour.");
+        RequireContains(blobGuide, "`ResultCount`만으로 끝내지 말고", "Blob Learn guide requires metric gates beyond count.");
+        RequireContains(contourGuide, "## Blob과 Contour 구분", "Contour Learn guide distinguishes Contour from Blob.");
+        RequireContains(contourGuide, "`DrawMode`, `RetrievalMode`, `MIN_AREA`, `MAX_AREA`", "Contour Learn guide names the first operator checks.");
+        RequireContains(learnWindowXaml, "OpenVisionLearnBlobDecisionPanel", "OpenVision Learn Blob topic exposes the Blob decision panel.");
+        RequireContains(learnWindowXaml, "판단 기준: Blob = 연결 영역", "OpenVision Learn Blob topic labels the Blob decision rule.");
+        RequireContains(learnWindowXaml, "OpenVisionLearnContourDecisionPanel", "OpenVision Learn Contour topic exposes the Contour decision panel.");
+        RequireContains(learnWindowXaml, "판단 기준: Contour = 외곽선/모양", "OpenVision Learn Contour topic labels the Contour decision rule.");
+        RequireContains(learnWindowXaml, "OpenVisionLearnMatchingFamilyDecisionPanel", "OpenVision Learn Matching topic exposes the Matching family decision panel.");
+        RequireContains(learnWindowXaml, "도구 선택: Matching / EdgeBasedMatching / FeatureMatching", "OpenVision Learn Matching-family topics label the tool selection rule.");
+        RequireContains(learnWindowXaml, "OpenVisionLearnFeatureMatchingFamilyDecisionPanel", "OpenVision Learn FeatureMatching topic exposes the Matching family decision panel.");
         RequireContains(toolShell, "new OpenVisionLearnWindow(127, 255, false, LearnTopicIndex)", "PropertyGrid tool Learn buttons open the configured Learn topic.");
         foreach ((string Xaml, string Text, int TopicIndex, string Document) toolLearn in new[]
         {
@@ -831,6 +863,10 @@ internal static class Program
 
         RequireContains(metricsAcceptanceGuide, "DistanceMmAvg=0.20..0.25", "Metrics/Acceptance Learn document teaches the LineDistance Good gate.");
         RequireContains(metricsAcceptanceGuide, "add range/max gates for outliers", "Metrics/Acceptance Learn document teaches distance outlier gates.");
+        RequireContains(metricsAcceptanceGuide, "## Minimum Tool Gate Cheat Sheet", "Metrics/Acceptance Learn document has the tool gate cheat sheet.");
+        RequireContains(metricsAcceptanceGuide, "FeatureMatching | `GoodMatches`, `ScoreMax`, RANSAC/overlay", "Metrics/Acceptance Learn document names the FeatureMatching minimum gates.");
+        RequireContains(learnWindowXaml, "OpenVisionLearnMetricGateCheatSheetPanel", "OpenVision Learn Metrics/Acceptance topic exposes the metric gate cheat sheet panel.");
+        RequireContains(learnWindowXaml, "Minimum Good/Bad gate cheat sheet", "OpenVision Learn Metrics/Acceptance topic labels the metric gate cheat sheet.");
         RequireContains(metricsAcceptanceGuide, "ResultImageWidth=286", "Metrics/Acceptance Learn document teaches the RotateScale output width gate.");
         RequireContains(metricsAcceptanceGuide, "ResultImageHeight=210", "Metrics/Acceptance Learn document teaches the RotateScale output height gate.");
         RequireContains(metricsAcceptanceGuide, "Transform samples may be Good-only", "Metrics/Acceptance Learn document explains Good-only transform benchmarks.");
@@ -847,8 +883,12 @@ internal static class Program
         RequireContains(pipelineLayerRoutingGuide, "`OutputLayer` is the produced result", "Pipeline/Layer Learn document explains OutputLayer.");
         RequireContains(pipelineLayerRoutingGuide, "must not select, rewrite, or silently replace `InputLayer`", "Pipeline/Layer Learn document protects output/input isolation.");
         RequireContains(pipelineLayerRoutingGuide, "Layer create/delete/load-image actions and visibility toggles must not run Preview/Run.", "Pipeline/Layer Learn document protects explicit execution.");
+        RequireContains(pipelineLayerRoutingGuide, "## Operator Route Review Loop", "Pipeline/Layer Learn document has the operator route review loop.");
+        RequireContains(pipelineLayerRoutingGuide, "route setup, not execution evidence", "Pipeline/Layer Learn document distinguishes routing setup from execution evidence.");
         RequireContains(learnWindowXaml, "OpenVisionLearnLayerRoutingSafetyPanel", "OpenVision Learn exposes the route safety checklist panel.");
         RequireContains(learnWindowXaml, "Routing safety checklist", "OpenVision Learn topic 11 shows route safety guidance.");
+        RequireContains(learnWindowXaml, "OpenVisionLearnLayerRouteReviewLoopPanel", "OpenVision Learn exposes the operator route review loop panel.");
+        RequireContains(learnWindowXaml, "Operator route review loop", "OpenVision Learn topic 11 shows the operator route review loop.");
 
         string learnSmokeScript = Read(repoRoot, @"tools\RunLearnModeUiSmokes.ps1");
         foreach (string learnSmokeTarget in new[]

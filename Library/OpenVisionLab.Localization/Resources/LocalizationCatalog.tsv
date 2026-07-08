@@ -9,7 +9,7 @@ Shell.WorkspaceStatus.EmptyTitle	이미지를 로드하세요	Load an image
 Shell.WorkspaceStatus.EmptyRoute	이미지 로드 또는 샘플 열기	Load image or open sample
 Shell.WorkspaceStatus.EmptyStatus	이미지 준비 후 도구 선택	Select a tool after image is ready
 Shell.WorkspaceStatus.SampleTitle	샘플 파이프라인 준비됨	Sample pipeline ready
-Shell.WorkspaceStatus.SampleRoute	Pipeline Review 또는 첫 Step 열기	Open Pipeline Review or the first step
+Shell.WorkspaceStatus.SampleRoute	Pipeline Review 열기 -> Run Review 또는 첫 Step 열기	Open Pipeline Review -> Run Review or first step
 Shell.WorkspaceStatus.SampleStatus	미리보기는 수동 실행	Preview runs manually
 Shell.WorkspaceEmptyStepLoadTitle	1. 이미지 로드	1. Load image
 Shell.WorkspaceEmptyStepLoadDetail	Main 레이어에 검사할 이미지를 엽니다.	Open the image to inspect into the Main layer.

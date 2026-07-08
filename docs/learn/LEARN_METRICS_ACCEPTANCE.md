@@ -29,6 +29,19 @@ A metric is the value produced by a tool. An acceptance gate is the allowed rang
 | Line angle | `LineAngleAvg`, `LineLengthMax`, `EdgeCount` |
 | Transform output | `ResultImageWidth`, `ResultImageHeight` |
 
+## Minimum Tool Gate Cheat Sheet
+
+| Tool family | Minimum Good/Bad gates | Visual evidence |
+| --- | --- | --- |
+| Matching | `ScoreMax`, `ResultCount` | Box and center on the intended template target |
+| EdgeBasedMatching | `ScoreMax`, `ResultCount` | Box on the intended edge shape |
+| FeatureMatching | `GoodMatches`, `ScoreMax`, RANSAC/overlay | Homography or overlay on the intended feature target |
+| Blob / Contour | `ResultCount`, `AreaMin`, `AreaMax`, `BoundsWidth`, `BoundsHeight` | Binary input plus object boxes or outlines |
+| LineDistance | `DistanceMmAvg`, `DistanceMmRange` or `DistanceMmMax` | All sampled distance lines on the intended edges |
+| HSV / Mean / Geometry | `MaskPixelRatio`, `MeanValueAvg`, `ResultImageWidth`, `ResultImageHeight` | Mask, brightness region, or output-size comparison |
+
+Use the shortest gate set that separates the current Good/Bad pair for the intended reason. Add more gates only when a visible false pass remains.
+
 ## Why Average Is Not Enough
 
 For distance inspections, `DistanceMmAvg` alone can hide one bad long or short line. Use a consistency gate when the measurement creates multiple lines:

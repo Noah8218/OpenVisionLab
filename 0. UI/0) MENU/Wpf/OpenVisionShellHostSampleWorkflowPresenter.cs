@@ -82,7 +82,7 @@ namespace OpenVisionLab
                     detailText,
                     string.Format(
                         CultureInfo.CurrentCulture,
-                        "\uC81C\uD488\uAD70: {0} / \uAE30\uC900: {1}{3} / \uB2E4\uC74C: Pipeline \uBCF4\uAE30 \uB610\uB294 \uCCAB \uB2E8\uACC4 \uC5F4\uAE30 / \uD750\uB984: {2}",
+                        "\uC81C\uD488\uAD70: {0} / \uAE30\uC900: {1}{3} / \uB2E4\uC74C: Pipeline \uBCF4\uAE30 -> Run Review \uB610\uB294 \uCCAB \uB2E8\uACC4 \uC5F4\uAE30 / \uD750\uB984: {2}",
                         state.Category,
                         state.PairRole,
                         state.ToolFlow,
@@ -101,7 +101,7 @@ namespace OpenVisionLab
                     detailText,
                     string.Format(
                         CultureInfo.CurrentCulture,
-                        "\uCCAB \uB2E8\uACC4: {0} / \uD750\uB984: {1} / \uB2E4\uC74C: Pipeline \uBCF4\uAE30 \uB610\uB294 \uCCAB \uB2E8\uACC4 \uC5F4\uAE30",
+                        "\uCCAB \uB2E8\uACC4: {0} / \uD750\uB984: {1} / \uB2E4\uC74C: Pipeline \uBCF4\uAE30 -> Run Review \uB610\uB294 \uCCAB \uB2E8\uACC4 \uC5F4\uAE30",
                         state.FirstTool,
                         state.ToolFlow));
             }
@@ -231,7 +231,7 @@ namespace OpenVisionLab
                     : "Good/Bad";
             return string.Format(
                 CultureInfo.CurrentCulture,
-                "\uBE44\uAD50: Pipeline Review\uC5D0\uC11C {0} \uAE30\uC900 \uC5F4\uAE30",
+                "\uBE44\uAD50: Pipeline Review\uC5D0\uC11C {0} \uAE30\uC900 \uC5F4\uACE0 Run Review",
                 oppositeRole);
         }
 

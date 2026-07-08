@@ -496,6 +496,24 @@
                                            FontSize="11"
                                            TextWrapping="Wrap"
                                            TextTrimming="None" />
+                                <Border AutomationProperties.AutomationId="WorkspaceSamplePickerPracticeWorkflowStrip"
+                                        Background="#10262C"
+                                        BorderBrush="#356A73"
+                                        BorderThickness="1"
+                                        Padding="8,6"
+                                        Margin="0,8,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding PracticeWorkflowLabelText}"
+                                                   Style="{StaticResource SamplePicker.SectionTitleStyle}"
+                                                   FontSize="11" />
+                                        <TextBlock Text="{Binding PracticeWorkflowText}"
+                                                   Foreground="{StaticResource SamplePicker.TextBrush}"
+                                                   FontSize="11"
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="None"
+                                                   Margin="0,4,0,0" />
+                                    </StackPanel>
+                                </Border>
                                 <Border Background="#10262C"
                                         BorderBrush="#356A73"
                                         BorderThickness="1"

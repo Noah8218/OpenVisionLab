@@ -1020,6 +1020,7 @@ internal static class Program
                 || !workflowDetail.Contains("\uC81C\uD488\uAD70", StringComparison.Ordinal)
                 || !workflowDetail.Contains("\uAE30\uC900", StringComparison.Ordinal)
                 || !workflowDetail.Contains("\uB2E4\uC74C", StringComparison.Ordinal)
+                || !workflowDetail.Contains("Run Review", StringComparison.Ordinal)
                 || !workflowDetail.Contains(firstStepMenu, StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
@@ -3899,6 +3900,7 @@ internal static class Program
                 "WorkspaceSamplePickerPairDecisionQuickWorkflow",
                 "WorkspaceSamplePickerLearnModeStrip",
                 "WorkspaceSamplePickerOpenLearnDocumentButton",
+                "WorkspaceSamplePickerPracticeWorkflowStrip",
                 "WorkspaceSamplePickerPreviewImage",
                 "WorkspaceSamplePickerToolFlow",
                 "WorkspaceSamplePickerExpected",
@@ -4488,6 +4490,7 @@ internal static class Program
                 "WorkspaceSamplePickerBenchmarkStrip",
                 "WorkspaceSamplePickerLearnModeStrip",
                 "WorkspaceSamplePickerOpenLearnDocumentButton",
+                "WorkspaceSamplePickerPracticeWorkflowStrip",
                 "WorkspaceSamplePickerPreviewImage",
                 "WorkspaceSamplePickerToolFlow",
                 "WorkspaceSamplePickerExpected",
@@ -4707,6 +4710,8 @@ internal static class Program
                 viewModel.LearnDocumentLabelText,
                 viewModel.OpenLearnDocumentButtonText,
                 viewModel.OpenLearnAndSampleButtonText,
+                viewModel.PracticeWorkflowLabelText,
+                viewModel.PracticeWorkflowText,
                 viewModel.ActiveLearnPathText,
                 capturePath.DisplayName,
                 capturePath.SampleCountText,
@@ -6915,7 +6920,12 @@ internal static class Program
                 "Metrics/Acceptance",
                 "Practice:",
                 "Sample Picker",
-                "Tool View"
+                "Tool View",
+                "Practice workflow",
+                "Open Practice Samples",
+                "Good/Bad pair",
+                "Preview or Run Review explicitly",
+                "must not create layers"
             };
             string? missing = requiredTokens.FirstOrDefault(token => !visibleText.Contains(token, StringComparison.Ordinal));
             if (!string.IsNullOrWhiteSpace(missing))
@@ -6961,6 +6971,7 @@ internal static class Program
                 "OpenVision Learn foundation topic",
                 "OpenVisionLearnFoundationTypeCards",
                 "OpenVisionLearnBeginnerPathPanel",
+                "OpenVisionLearnPracticeWorkflowPanel",
                 "OpenVisionLearnOpenFoundationDocsButton");
 
             Button? practiceSamplesButton = FindVisualChildren<Button>(window)
@@ -7288,6 +7299,13 @@ internal static class Program
                 throw new InvalidOperationException("Blob guide did not explain ResultCount.");
             }
 
+            AssertVisibleTextContains(
+                window,
+                "OpenVision Learn Blob decision guide",
+                "판단 기준: Blob = 연결 영역",
+                "MIN_AREA/MAX_AREA",
+                "ResultCount만 보지 말고");
+
             AssertVisibleAutomationIds(
                 window,
                 "OpenVision Learn Blob topic",
@@ -7321,6 +7339,13 @@ internal static class Program
             {
                 throw new InvalidOperationException("Contour guide did not explain contour and bounding box output.");
             }
+
+            AssertVisibleTextContains(
+                window,
+                "OpenVision Learn Contour decision guide",
+                "판단 기준: Contour = 외곽선/모양",
+                "DrawMode",
+                "BoundsHeightMax");
 
             AssertVisibleAutomationIds(
                 window,
@@ -7452,6 +7477,14 @@ internal static class Program
                 throw new InvalidOperationException("Matching guide did not explain score threshold evaluation.");
             }
 
+            AssertVisibleTextContains(
+                window,
+                "OpenVision Learn Matching family decision guide",
+                "도구 선택: Matching / EdgeBasedMatching / FeatureMatching",
+                "Matching: 밝기와 외관",
+                "EdgeBasedMatching: 조명은 흔들려도",
+                "FeatureMatching: 회전, 크기");
+
             AssertVisibleAutomationIds(
                 window,
                 "OpenVision Learn Matching topic",
@@ -7485,6 +7518,14 @@ internal static class Program
             {
                 throw new InvalidOperationException("Feature Matching guide did not explain good match evaluation.");
             }
+
+            AssertVisibleTextContains(
+                window,
+                "OpenVision Learn Feature Matching family decision guide",
+                "도구 선택: Matching / EdgeBasedMatching / FeatureMatching",
+                "EdgeBasedMatching: 색보다 edge",
+                "GoodMatches",
+                "RANSAC/overlay");
 
             AssertVisibleAutomationIds(
                 window,
@@ -7525,7 +7566,7 @@ internal static class Program
                 FindVisualChildren<TextBlock>(window)
                     .Select(item => item.Text)
                     .Where(text => !string.IsNullOrWhiteSpace(text)));
-            foreach (string token in new[] { "Routing safety checklist", "InputLayer", "OutputLayer", "explicit user action" })
+            foreach (string token in new[] { "Routing safety checklist", "InputLayer", "OutputLayer", "explicit user action", "Operator route review loop", "route setup, not execution evidence" })
             {
                 if (!visibleText.Contains(token, StringComparison.Ordinal))
                 {
@@ -7537,7 +7578,8 @@ internal static class Program
                 window,
                 "OpenVision Learn Layer / Pipeline / Recipe topic",
                 "OpenVisionLearnLayerRecipeStepSlider",
-                "OpenVisionLearnLayerRoutingSafetyPanel");
+                "OpenVisionLearnLayerRoutingSafetyPanel",
+                "OpenVisionLearnLayerRouteReviewLoopPanel");
             WriteElementPng(window, outputPath, 1040, 700);
             return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
         }
@@ -7588,6 +7630,14 @@ internal static class Program
                     throw new InvalidOperationException("EdgeBasedMatching topic did not show expected token '" + token + "'.");
                 }
             }
+
+            AssertVisibleTextContains(
+                window,
+                "OpenVision Learn EdgeBasedMatching family decision guide",
+                "도구 선택: Matching / EdgeBasedMatching / FeatureMatching",
+                "EdgeBasedMatching: 조명은 흔들려도",
+                "edge 형상",
+                "FeatureMatching: 회전, 크기");
 
             AssertVisibleAutomationIds(
                 window,
@@ -7641,6 +7691,15 @@ internal static class Program
                     throw new InvalidOperationException("Metrics / Acceptance topic did not show expected token '" + token + "'.");
                 }
             }
+
+            AssertVisibleTextContains(
+                window,
+                "OpenVision Learn Metrics gate cheat sheet",
+                "Minimum Good/Bad gate cheat sheet",
+                "GoodMatches + ScoreMax",
+                "AreaMin/AreaMax",
+                "DistanceMmRange or DistanceMmMax",
+                "ResultImageWidth/Height");
 
             WriteElementPng(window, outputPath, 1040, 700);
             return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);

@@ -34,6 +34,18 @@ ROI 안의 입자 12개가 각각 box와 중심점으로 잡혀야 정상입니�
 6. `ResultCount`와 overlay 개수가 맞는지 봅니다.
 7. Bad 샘플에서 같은 pipeline이 낮은 count를 NG로 설명하는지 확인합니다.
 
+## Blob과 Contour 구분
+
+| 질문 | Blob에서 먼저 보는 값 |
+| --- | --- |
+| 후보가 몇 개인가 | `ResultCount` |
+| 후보가 너무 작거나 큰가 | `AreaMin`, `AreaMax`, `MIN_AREA`, `MAX_AREA` |
+| 후보 박스가 기대 범위인가 | `BoundsWidth`, `BoundsHeight` |
+
+Blob은 연결된 흰 픽셀 묶음을 세는 단계입니다. 붙은 물체는 하나로 합쳐지고, 먼지는 작은 Blob으로 늘어납니다.
+그래서 `ResultCount`만으로 끝내지 말고 `AreaMin/AreaMax`, `BoundsWidth/BoundsHeight`를 같이 확인합니다.
+모양 외곽선 자체가 판정 근거라면 다음 단계에서 Contour를 봅니다.
+
 ## 실패 원인
 
 | 증상 | 먼저 볼 것 |

@@ -35,6 +35,16 @@ A layer holds an image result. A pipeline step reads one input layer, writes one
 - Layer create/delete/load-image actions and visibility toggles must not run Preview/Run.
 - Execute Preview or Run Review only by explicit user action.
 
+## Operator Route Review Loop
+
+1. Select the intended `InputLayer`.
+2. Select a separate and descriptive `OutputLayer`.
+3. Click Preview or Run Review explicitly.
+4. Compare `Main`, the selected input, and the produced output layer.
+5. Save the recipe only after the Good/Bad metric gates pass for the intended reason.
+
+Creating or selecting an `OutputLayer` is route setup, not execution evidence. If a later step fails, inspect the previous `OutputLayer` first.
+
 ## Common Pipeline Shapes
 
 | Shape | Example | Reason |

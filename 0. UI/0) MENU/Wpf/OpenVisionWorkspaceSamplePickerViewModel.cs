@@ -168,6 +168,12 @@ namespace OpenVisionLab
             "열기 후에는 Main 레이어와 Sample_ 파이프라인만 준비됩니다. 도구 검증은 Preview/Run을 직접 눌러 확인하십시오.",
             "After opening, only the Main layer and Sample_ pipeline are prepared. Use Preview/Run manually to verify the tool.");
 
+        public string PracticeWorkflowLabelText => LocalText("실습 다음 단계", "Practice Next Step");
+
+        public string PracticeWorkflowText => LocalText(
+            "가이드와 샘플 열기 -> 관련 Tool View 또는 Pipeline Review 열기 -> Preview/Run Review를 직접 클릭 -> Good/Bad overlay와 metric 비교.",
+            "Open Guide + Sample -> open the related Tool View or Pipeline Review -> click Preview/Run Review manually -> compare Good/Bad overlay and metrics.");
+
         public string LearnDocumentLabelText => LocalText("따라하기 문서", "Step-by-step Guide");
 
         public string LearnDocumentTitleText =>

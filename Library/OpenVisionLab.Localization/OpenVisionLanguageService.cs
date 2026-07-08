@@ -77,6 +77,12 @@ namespace OpenVisionLab
                     "가이드 보기",
                     "View Guide")
             },
+            {
+                "Shell.WorkspaceStatus.SampleRoute",
+                new DefaultCatalogMigration(
+                    "Pipeline Review \uB610\uB294 \uCCAB Step \uC5F4\uAE30",
+                    "Open Pipeline Review or the first step")
+            },
             // Legacy CONFIG values with implementation terms are kept only for migration to neutral Shell.Ready* defaults.
             {
                 "Shell.ReadyFoundation",
