@@ -150,6 +150,7 @@ internal static class Program
         ["wpf_layer_selection_existing_output_write"] = CaptureLayerSelectionExistingOutputWrite,
         ["wpf_layer_selection_preprocess_existing_output_write"] = CaptureLayerSelectionPreprocessExistingOutputWrite,
         ["wpf_layer_selection_algorithm_existing_output_write"] = CaptureLayerSelectionAlgorithmExistingOutputWrite,
+        ["wpf_arithmetic_tool_learn_button"] = CaptureArithmeticToolLearnButton,
         ["wpf_layer_selection_arithmetic_tool"] = CaptureLayerSelectionArithmeticTool,
         ["wpf_layer_selection_all_native_tools"] = CaptureLayerSelectionAllNativeTools,
         ["wpf_algorithm_output_preview_flow"] = CaptureAlgorithmOutputPreviewFlow,
@@ -10334,6 +10335,50 @@ internal static class Program
         AssertBitmapVisiblyDifferent(beforeOutput, afterOutput, menu + " preprocess existing output layer should be overwritten by preview");
     }
 
+    private static CaptureResult CaptureArithmeticToolLearnButton(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfArithmeticLearnButton", seedMainLayer: false);
+        using Bitmap mainBitmap = CreateWorkspaceSeedSmokeBitmap();
+        using Bitmap inputABitmap = CreateDockingPanelSmokeBitmap(1);
+        using Bitmap inputBBitmap = CreateDockingPanelSmokeBitmap(2);
+        shellHost.SetMainLayerImageForTest(mainBitmap);
+        if (!shellHost.AddLayerImageForTest("Aux_Arithmetic_A", inputABitmap)
+            || !shellHost.AddLayerImageForTest("Aux_Arithmetic_B", inputBBitmap))
+        {
+            throw new InvalidOperationException("Aux arithmetic input layers could not be created.");
+        }
+
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            shellHost.SelectToolForTest(VISION_MENU.Arithmetic);
+            Pump(16);
+            AssertToolHeaderLearnOpensTopic(shellHost, 14, "Arithmetic header Learn");
+
+            Window toolWindow = GetActiveFloatingToolWindow("Arithmetic Learn button capture");
+            Button? learnButton = FindVisualChildren<Button>(toolWindow)
+                .FirstOrDefault(item => item.IsVisible
+                    && string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "VisionToolHeaderLearnButton",
+                        StringComparison.Ordinal));
+            if (learnButton == null)
+            {
+                throw new InvalidOperationException("Arithmetic Learn button was not visible for capture.");
+            }
+
+            string buttonText = string.Join(
+                " ",
+                FindVisualChildren<TextBlock>(learnButton)
+                    .Select(item => item.Text)
+                    .Where(item => !string.IsNullOrWhiteSpace(item)));
+            if (!buttonText.Contains("Learn Arithmetic", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Arithmetic Learn button text was not visible. Text=" + buttonText);
+            }
+        });
+    }
+
     private static CaptureResult CaptureLayerSelectionArithmeticTool(string outputPath)
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
@@ -10353,6 +10398,7 @@ internal static class Program
         {
             shellHost.SelectToolForTest(VISION_MENU.Arithmetic);
             Pump(16);
+            AssertToolHeaderLearnOpensTopic(shellHost, 14, "Arithmetic header Learn");
 
             ClickFloatingRadioButtonByName("rdoModeOperation", "Layer selection arithmetic operation mode radio");
             Pump(12);

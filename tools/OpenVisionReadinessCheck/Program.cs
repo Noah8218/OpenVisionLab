@@ -726,6 +726,7 @@ internal static class Program
         string learnWindowXaml = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\OpenVisionLearnWindow.xaml");
         string learnWindow = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\OpenVisionLearnWindow.xaml.cs");
         string toolShell = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\VisionToolSingleInputPropertyToolShell.xaml.cs");
+        string doubleInputToolShell = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\VisionToolDoubleInputCustomToolShell.xaml.cs");
         string foundationGuide = Read(repoRoot, @"docs\learn\LEARN_OPENCVSHARP_FOUNDATIONS.md");
         RequireContains(learnIndex, "LEARN_OPENCVSHARP_FOUNDATIONS.md", "Learn index links the OpenCvSharp foundations guide.");
         RequireContains(foundationGuide, "`Point`", "OpenCvSharp foundations guide explains Point.");
@@ -795,6 +796,7 @@ internal static class Program
         RequireContains(learnWindowXaml, "도구 선택: Matching / EdgeBasedMatching / FeatureMatching", "OpenVision Learn Matching-family topics label the tool selection rule.");
         RequireContains(learnWindowXaml, "OpenVisionLearnFeatureMatchingFamilyDecisionPanel", "OpenVision Learn FeatureMatching topic exposes the Matching family decision panel.");
         RequireContains(toolShell, "new OpenVisionLearnWindow(127, 255, false, LearnTopicIndex)", "PropertyGrid tool Learn buttons open the configured Learn topic.");
+        RequireContains(doubleInputToolShell, "new OpenVisionLearnWindow(127, 255, false, LearnTopicIndex)", "Double-input tool Learn buttons open the configured Learn topic.");
         foreach ((string Xaml, string Text, int TopicIndex, string Document) toolLearn in new[]
         {
             (@"0. UI\6) Vision Test\Wpf\FilterToolWpfView.xaml", "Learn Filter", 3, "LEARN_FILTER.md"),
@@ -805,6 +807,7 @@ internal static class Program
             (@"0. UI\6) Vision Test\Wpf\EdgeBasedMatchingToolWpfView.xaml", "Learn Edge Match", 12, "LEARN_EDGE_BASED_MATCHING.md"),
             (@"0. UI\6) Vision Test\Wpf\MatchingToolWpfView.xaml", "Learn Matching", 9, "LEARN_MATCHING.md"),
             (@"0. UI\6) Vision Test\Wpf\FeatureMatchingToolWpfView.xaml", "Learn Feature", 10, "LEARN_FEATURE_MATCHING.md"),
+            (@"0. UI\6) Vision Test\Wpf\ArithmeticToolWpfView.xaml", "Learn Arithmetic", 14, "LEARN_ARITHMETIC.md"),
         })
         {
             string toolXaml = Read(repoRoot, toolLearn.Xaml);
@@ -932,6 +935,8 @@ internal static class Program
         RequireContains(lineGuide, "`DistanceMmRange`, `DistancePxRange`, `DistanceMmMax`, or `DistancePxMax`", "Line Learn document requires consistency/outlier metrics.");
         RequireContains(learnScreenshotSmoke, "wpf_openvision_learn_arithmetic", "Learn screenshot smoke exposes the Arithmetic topic target.");
         RequireContains(learnScreenshotSmoke, "CaptureOpenVisionLearnArithmetic", "Learn screenshot smoke verifies the Arithmetic topic.");
+        RequireContains(learnScreenshotSmoke, "wpf_arithmetic_tool_learn_button", "Learn screenshot smoke exposes the Arithmetic Tool View Learn button target.");
+        RequireContains(learnScreenshotSmoke, "CaptureArithmeticToolLearnButton", "Learn screenshot smoke verifies the Arithmetic Tool View Learn button.");
         RequireContains(learnScreenshotSmoke, "wpf_openvision_learn_geometry", "Learn screenshot smoke exposes the Geometry topic target.");
         RequireContains(learnScreenshotSmoke, "CaptureOpenVisionLearnGeometry", "Learn screenshot smoke verifies the Geometry topic.");
         RequireContains(learnScreenshotSmoke, "wpf_openvision_learn_color_hsv", "Learn screenshot smoke exposes the Color / HSV topic target.");

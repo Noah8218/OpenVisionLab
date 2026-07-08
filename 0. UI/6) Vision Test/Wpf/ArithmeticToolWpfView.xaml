@@ -17,7 +17,11 @@
     </local:VisionToolDoubleInputCustomToolViewBase.Resources>
 
     <Grid>
-        <local:VisionToolDoubleInputCustomToolShell x:Name="toolShell" TitleIconKind="Calculator" />
+        <local:VisionToolDoubleInputCustomToolShell x:Name="toolShell"
+                                                    TitleIconKind="Calculator"
+                                                    LearnButtonVisibility="Visible"
+                                                    LearnButtonText="Learn Arithmetic"
+                                                    LearnTopicIndex="14" />
 
         <ScrollViewer x:Name="parameterContentHost"
                       AutomationProperties.AutomationId="VisionToolParametersGroup"

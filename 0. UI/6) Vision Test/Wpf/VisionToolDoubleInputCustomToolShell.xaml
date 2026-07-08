@@ -218,6 +218,8 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="10" />
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <iconPacks:PackIconMaterial Grid.Column="0"
                                                 Kind="{Binding TitleIconKind, RelativeSource={RelativeSource AncestorType=local:VisionToolDoubleInputCustomToolShell}}"
@@ -228,6 +230,28 @@
                                Grid.Column="2"
                                FontSize="14"
                                FontWeight="SemiBold" />
+                    <Button x:Name="btnLearnTopic"
+                            Grid.Column="4"
+                            MinWidth="104"
+                            Height="24"
+                            Padding="8,0"
+                            Click="LearnTopicButton_Click"
+                            ToolTip="Open Learn topic"
+                            Visibility="{Binding LearnButtonVisibility, RelativeSource={RelativeSource AncestorType=local:VisionToolDoubleInputCustomToolShell}}"
+                            AutomationProperties.AutomationId="VisionToolHeaderLearnButton">
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center">
+                            <iconPacks:PackIconMaterial Kind="ImageSearch"
+                                                        Width="13"
+                                                        Height="13"
+                                                        Margin="0,0,5,0"
+                                                        VerticalAlignment="Center"
+                                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            <TextBlock Text="{Binding LearnButtonText, RelativeSource={RelativeSource AncestorType=local:VisionToolDoubleInputCustomToolShell}}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        </StackPanel>
+                    </Button>
                 </Grid>
             </Border>
 

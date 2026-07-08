@@ -29,6 +29,27 @@ namespace OpenVisionLab
                 typeof(VisionToolDoubleInputCustomToolShell),
                 new PropertyMetadata(false, OnIsDockedInspectorModeChanged));
 
+        public static readonly DependencyProperty LearnButtonVisibilityProperty =
+            DependencyProperty.Register(
+                nameof(LearnButtonVisibility),
+                typeof(Visibility),
+                typeof(VisionToolDoubleInputCustomToolShell),
+                new PropertyMetadata(Visibility.Collapsed));
+
+        public static readonly DependencyProperty LearnButtonTextProperty =
+            DependencyProperty.Register(
+                nameof(LearnButtonText),
+                typeof(string),
+                typeof(VisionToolDoubleInputCustomToolShell),
+                new PropertyMetadata("Learn"));
+
+        public static readonly DependencyProperty LearnTopicIndexProperty =
+            DependencyProperty.Register(
+                nameof(LearnTopicIndex),
+                typeof(int),
+                typeof(VisionToolDoubleInputCustomToolShell),
+                new PropertyMetadata(0));
+
         public VisionToolDoubleInputCustomToolShell()
         {
             InitializeComponent();
@@ -52,6 +73,24 @@ namespace OpenVisionLab
         {
             get => (bool)GetValue(IsDockedInspectorModeProperty);
             set => SetValue(IsDockedInspectorModeProperty, value);
+        }
+
+        public Visibility LearnButtonVisibility
+        {
+            get => (Visibility)GetValue(LearnButtonVisibilityProperty);
+            set => SetValue(LearnButtonVisibilityProperty, value);
+        }
+
+        public string LearnButtonText
+        {
+            get => (string)GetValue(LearnButtonTextProperty);
+            set => SetValue(LearnButtonTextProperty, value);
+        }
+
+        public int LearnTopicIndex
+        {
+            get => (int)GetValue(LearnTopicIndexProperty);
+            set => SetValue(LearnTopicIndexProperty, value);
         }
 
         public HeaderedContentControl InputAGroup => gbInputA;
@@ -102,6 +141,15 @@ namespace OpenVisionLab
         private void ApplyDockedInspectorMode()
         {
             layoutController?.Apply();
+        }
+
+        private void LearnTopicButton_Click(object sender, RoutedEventArgs e)
+        {
+            OpenVisionLearnWindow learnWindow = new OpenVisionLearnWindow(127, 255, false, LearnTopicIndex)
+            {
+                Owner = Window.GetWindow(this)
+            };
+            learnWindow.Show();
         }
     }
 }
