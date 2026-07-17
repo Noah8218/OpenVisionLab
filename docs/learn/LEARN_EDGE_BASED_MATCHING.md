@@ -1,6 +1,6 @@
 # EdgeBasedMatching 형상 비교하기
 
-Updated: 2026-07-02
+Updated: 2026-07-14
 
 EdgeBasedMatching은 픽셀 밝기 자체보다 edge 형상을 기준으로 대상을 찾는 도구입니다.
 채색이나 조명 변화가 있어도 edge 구조가 안정적이면 유리하지만, 비슷한 edge 형상이 가까이 있으면 ROI와 기준 점수 관리가 중요합니다.
@@ -24,9 +24,9 @@ Good은 L 형태 fiducial을 찾고, Bad는 T 형태의 wrong fiducial이라 no-
 
 ## 보는 순서
 
-1. EdgeBasedMatching Tool을 엽니다.
+1. Learn의 `EdgeBasedMatching Tool 열기`를 눌러 PropertyGrid에서 edge Template, 검색 ROI, score 기준을 찾습니다.
 2. pattern path가 준비되어 있는지 확인합니다.
-3. Canny low/high, score, search step, max template points를 봅니다.
+3. `Matching > Min score / Match count`, `Edge Model > Canny range / Max template points`, `Search > Search step`, ROI를 봅니다.
 4. Preview를 실행합니다.
 5. overlay box가 edge fiducial 중심에 붙는지 확인합니다.
 6. Bad 샘플에서 `ResultCount=0`이 되는지 확인합니다.
@@ -55,4 +55,4 @@ Good은 L 형태 fiducial을 찾고, Bad는 T 형태의 wrong fiducial이라 no-
 | Shape survives lighting but edge geometry is stable | EdgeBasedMatching | Canny/edge shape score | ScoreMax, ResultCount | Weak or repeated edge shape |
 | Target changes scale/rotation/view but local features remain | FeatureMatching | Keypoint/descriptor matches | ResultCount, ScoreMax | Too few keypoints or repeated texture |
 
-Use explicit Preview/Run only. Opening this guide or changing EdgeBasedMatching parameters must not run Preview/Run automatically.
+After changing EdgeBasedMatching parameters, run Preview or Run Review and compare edge overlay position, `ScoreMax`, and `ResultCount`.

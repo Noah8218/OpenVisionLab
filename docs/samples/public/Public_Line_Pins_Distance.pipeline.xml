@@ -3,88 +3,68 @@
   <Name>Public_Line_Pins_Distance</Name>
   <Steps>
     <Step>
-      <Name>01 Synthetic Pin Edge Distance</Name>
+      <Name>01 Synthetic Pin Edge Consistency</Name>
+      <ToolType>LineDistance</ToolType>
+      <Enabled>true</Enabled>
+      <InputLayer>Main</InputLayer>
+      <OutputLayer>Line_Range_Preview</OutputLayer>
+      <Parameters>
+        <Parameter><Key>Name</Key><Value>Public_Line_Pins_Distance_Range</Value></Parameter>
+        <Parameter><Key>PIXELPERMM</Key><Value>0.006</Value></Parameter>
+        <Parameter><Key>USE_THRESHOLD</Key><Value>false</Value></Parameter>
+        <Parameter><Key>USE_ADAPTIVE_THRESHOLD</Key><Value>false</Value></Parameter>
+        <Parameter><Key>USE_BITWISENOT</Key><Value>false</Value></Parameter>
+        <Parameter><Key>USE_ROI</Key><Value>true</Value></Parameter>
+        <Parameter><Key>CvROI</Key><Value>430,170,125,145</Value></Parameter>
+        <Parameter><Key>LeftPRJ_DIR</Key><Value>X_LTOR</Value></Parameter>
+        <Parameter><Key>RightPRJ_DIR</Key><Value>X_RTOL</Value></Parameter>
+        <Parameter><Key>PRJ_PORALITY</Key><Value>WTOB</Value></Parameter>
+        <Parameter><Key>CONTRAST</Key><Value>18</Value></Parameter>
+        <Parameter><Key>THICKNESS</Key><Value>2</Value></Parameter>
+        <Parameter><Key>SAMPLING_STEP</Key><Value>6</Value></Parameter>
+        <Parameter><Key>POINT_RANGE</Key><Value>8</Value></Parameter>
+        <Parameter><Key>VER_PRJ_DIR</Key><Value>X_RTOL</Value></Parameter>
+        <Parameter><Key>USE_MANUAL_ANGLE</Key><Value>true</Value></Parameter>
+        <Parameter><Key>MANUAL_ANGLE_VALUE</Key><Value>89</Value></Parameter>
+        <Parameter><Key>SHOW_EDGE</Key><Value>true</Value></Parameter>
+        <Parameter><Key>SHOW_VERTICAL_LINE</Key><Value>true</Value></Parameter>
+      </Parameters>
+      <UseAcceptance>true</UseAcceptance>
+      <ExpectedSuccess>true</ExpectedSuccess>
+      <AcceptanceMetricName>DistanceMmRange</AcceptanceMetricName>
+      <UseAcceptanceMetricMinimum>false</UseAcceptanceMetricMinimum>
+      <AcceptanceMetricMinimum>0.00</AcceptanceMetricMinimum>
+      <UseAcceptanceMetricMaximum>true</UseAcceptanceMetricMaximum>
+      <AcceptanceMetricMaximum>0.03</AcceptanceMetricMaximum>
+      <MaxElapsedMilliseconds>500</MaxElapsedMilliseconds>
+    </Step>
+    <Step>
+      <Name>02 Synthetic Pin Edge Distance</Name>
       <ToolType>LineDistance</ToolType>
       <Enabled>true</Enabled>
       <InputLayer>Main</InputLayer>
       <OutputLayer>Line_Preview</OutputLayer>
       <Parameters>
-        <Parameter>
-          <Key>Name</Key>
-          <Value>Public_Line_Pins_Distance</Value>
-        </Parameter>
-        <Parameter>
-          <Key>PIXELPERMM</Key>
-          <Value>0.006</Value>
-        </Parameter>
-        <Parameter>
-          <Key>USE_THRESHOLD</Key>
-          <Value>false</Value>
-        </Parameter>
-        <Parameter>
-          <Key>USE_ADAPTIVE_THRESHOLD</Key>
-          <Value>false</Value>
-        </Parameter>
-        <Parameter>
-          <Key>USE_BITWISENOT</Key>
-          <Value>false</Value>
-        </Parameter>
-        <Parameter>
-          <Key>USE_ROI</Key>
-          <Value>true</Value>
-        </Parameter>
-        <Parameter>
-          <Key>CvROI</Key>
-          <Value>430,170,125,145</Value>
-        </Parameter>
-        <Parameter>
-          <Key>LeftPRJ_DIR</Key>
-          <Value>X_LTOR</Value>
-        </Parameter>
-        <Parameter>
-          <Key>RightPRJ_DIR</Key>
-          <Value>X_RTOL</Value>
-        </Parameter>
-        <Parameter>
-          <Key>PRJ_PORALITY</Key>
-          <Value>WTOB</Value>
-        </Parameter>
-        <Parameter>
-          <Key>CONTRAST</Key>
-          <Value>18</Value>
-        </Parameter>
-        <Parameter>
-          <Key>THICKNESS</Key>
-          <Value>2</Value>
-        </Parameter>
-        <Parameter>
-          <Key>SAMPLING_STEP</Key>
-          <Value>6</Value>
-        </Parameter>
-        <Parameter>
-          <Key>POINT_RANGE</Key>
-          <Value>8</Value>
-        </Parameter>
-        <Parameter>
-          <Key>VER_PRJ_DIR</Key>
-          <Value>X_RTOL</Value>
-        </Parameter>
-        <Parameter>
-          <Key>USE_MANUAL_ANGLE</Key>
-          <Value>true</Value>
-        </Parameter>
-        <Parameter>
-          <Key>MANUAL_ANGLE_VALUE</Key>
-          <Value>89</Value>
-        </Parameter>
-        <Parameter>
-          <Key>SHOW_EDGE</Key>
-          <Value>true</Value>
-        </Parameter>
-        <Parameter>
-          <Key>SHOW_VERTICAL_LINE</Key>
-          <Value>true</Value>
-        </Parameter>
+        <Parameter><Key>Name</Key><Value>Public_Line_Pins_Distance</Value></Parameter>
+        <Parameter><Key>ALLOW_BRANCH_INPUT</Key><Value>true</Value></Parameter>
+        <Parameter><Key>PIXELPERMM</Key><Value>0.006</Value></Parameter>
+        <Parameter><Key>USE_THRESHOLD</Key><Value>false</Value></Parameter>
+        <Parameter><Key>USE_ADAPTIVE_THRESHOLD</Key><Value>false</Value></Parameter>
+        <Parameter><Key>USE_BITWISENOT</Key><Value>false</Value></Parameter>
+        <Parameter><Key>USE_ROI</Key><Value>true</Value></Parameter>
+        <Parameter><Key>CvROI</Key><Value>430,170,125,145</Value></Parameter>
+        <Parameter><Key>LeftPRJ_DIR</Key><Value>X_LTOR</Value></Parameter>
+        <Parameter><Key>RightPRJ_DIR</Key><Value>X_RTOL</Value></Parameter>
+        <Parameter><Key>PRJ_PORALITY</Key><Value>WTOB</Value></Parameter>
+        <Parameter><Key>CONTRAST</Key><Value>18</Value></Parameter>
+        <Parameter><Key>THICKNESS</Key><Value>2</Value></Parameter>
+        <Parameter><Key>SAMPLING_STEP</Key><Value>6</Value></Parameter>
+        <Parameter><Key>POINT_RANGE</Key><Value>8</Value></Parameter>
+        <Parameter><Key>VER_PRJ_DIR</Key><Value>X_RTOL</Value></Parameter>
+        <Parameter><Key>USE_MANUAL_ANGLE</Key><Value>true</Value></Parameter>
+        <Parameter><Key>MANUAL_ANGLE_VALUE</Key><Value>89</Value></Parameter>
+        <Parameter><Key>SHOW_EDGE</Key><Value>true</Value></Parameter>
+        <Parameter><Key>SHOW_VERTICAL_LINE</Key><Value>true</Value></Parameter>
       </Parameters>
       <UseAcceptance>true</UseAcceptance>
       <ExpectedSuccess>true</ExpectedSuccess>

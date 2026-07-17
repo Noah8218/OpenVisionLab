@@ -1,0 +1,22 @@
+Your previous XML was tested unchanged in the current OpenVisionLab build and did not pass validation or the required OK/NG behavior.
+
+Original inspection contract:
+- Use exactly one `EdgeBasedMatching` Step with the supplied asymmetric L-fiducial template.
+- `Edge_Fiducial_Synthetic_OK.png` must pass with `ResultCount=1` and `ScoreMax` from `70` through `100`.
+- `Edge_Fiducial_Synthetic_Wrong_NG.png` must fail because the wrong T shape does not produce a valid match above `SCORE_MIN=0.70`.
+- Both template path parameters must point to the same existing template. For the current Debug workspace, the verified application-startup-relative path is `..\..\docs\samples\public\templates\Edge_Fiducial_Synthetic_Template.png`.
+- `SCORE_MIN` remains `0.70` on the normalized 0 through 1 scale; the `ScoreMax` acceptance minimum remains `70` on the result metric's 0 through 100 scale.
+- Preview and Run remain explicit OpenVisionLab user actions.
+
+Actual OpenVisionLab report:
+<PASTE_THE_COMPLETE_UNEDITED_VALIDATION_OR_RUN_REPORT_HERE>
+
+Correction rules:
+- Correct only the XML defects demonstrated by the report.
+- Preserve the `Edge_Fiducial_Inspection` pipeline name, original inspection intent, one-Step structure, and supported `EdgeBasedMatching` ToolType.
+- Do not invent parameters, custom XML nodes, result values, absolute paths, or automatic execution behavior.
+- Return the complete corrected XML document, not a patch or explanation.
+- Output XML only.
+- The first characters must be `<?xml`.
+- The last characters must be `</VisionPipeline>`.
+- Do not use Markdown fences.

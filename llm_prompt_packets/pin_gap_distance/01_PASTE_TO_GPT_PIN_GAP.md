@@ -13,14 +13,14 @@ OpenVisionLab is an LLM-assisted OpenCvSharp4 rule-based vision recipe workbench
 Task:
 Create one OpenVisionLab `VisionPipeline` XML draft for the attached pin image.
 
-Inspection image:
-- Original image path on the user's machine: `C:\Git\OpenVisionLab_Dev\Sample\EasyGauge\Pin 1.jpg`
-- A marked crop/screenshot may also be attached. Use it only when the user explicitly wants one pair or region. Otherwise inspect the whole visible pin array.
+Inspection images:
+- Nominal target: `C:\Git\OpenVisionLab_Dev\docs\samples\public\Line_Pins_Synthetic_OK.png`
+- Negative reference: `C:\Git\OpenVisionLab_Dev\docs\samples\public\Line_Pins_Synthetic_WidePin_NG.png`
+- Both are 572 x 420 project-authored synthetic samples. Define the XML from the nominal image and use the negative image only as the expected reject reference.
 
 Inspection intent:
-- Measure repeated pin-to-pin spacing across the whole visible pin array.
-- This is a pin pitch / pin spacing consistency check.
-- Do not infer that the user wants only the most visible two pins when no specific region is marked.
+- Measure the clear edge-to-edge gap between adjacent bright pins across the whole visible pin array.
+- This is not pin width, package clearance, center pitch, area, height, or object count.
 - Do not use Contour or Blob as the primary measurement tool for this spacing intent.
 - Required primary tool family: `LineDistance`.
 
@@ -34,9 +34,9 @@ Expected gates:
 - Add a nominal distance gate using `DistanceMmAvg`.
 - Add a consistency/outlier gate using `DistanceMmRange`.
 - Do not judge only `DistancePxAvg` or `DistanceMmAvg`; one long wrong line must be able to fail.
-- Starting tolerance:
-  - `DistanceMmAvg`: minimum `0.40`, maximum `0.55`
-  - `DistanceMmRange`: maximum `0.06`
+- Verified starting tolerance:
+  - `DistanceMmAvg`: minimum `0.14`, maximum `0.17`
+  - `DistanceMmRange`: maximum `0.02`
 - Starting scale:
   - `PIXELPERMM`: `0.006`
 
@@ -49,7 +49,8 @@ OpenVisionLab XML rules:
 - Use a separate `OutputLayer` for each enabled Step.
 - `Preview` and `Run` are explicit OpenVisionLab user actions; do not claim that XML runs anything automatically.
 - Boolean values must be `true` or `false`.
-- Numeric values must use invariant decimal text such as `0.006`, `0.40`, `0.55`.
+- All LineDistance Steps read `Main`. Add `ALLOW_BRANCH_INPUT=true` to every LineDistance Step after the first one.
+- Numeric values must use invariant decimal text such as `0.006`, `0.14`, `0.17`.
 
 Required LineDistance parameters to include:
 - `Name`
@@ -77,7 +78,7 @@ Useful starting LineDistance values:
 - `USE_ADAPTIVE_THRESHOLD=false`
 - `USE_BITWISENOT=false`
 - `USE_ROI=true`
-- Whole-array starting ROI windows: `42,150,80,80`, `151,150,80,80`, `424,150,80,80`, `478,150,80,80`
+- Whole-array verified ROI windows: `108,170,65,120`, `204,170,65,120`, `300,170,65,120`, `396,170,65,120`
 - `LeftPRJ_DIR=X_LTOR`
 - `RightPRJ_DIR=X_RTOL`
 - `PRJ_PORALITY=WTOB`
@@ -111,7 +112,7 @@ Sample shape to adapt:
         <Parameter><Key>USE_ADAPTIVE_THRESHOLD</Key><Value>false</Value></Parameter>
         <Parameter><Key>USE_BITWISENOT</Key><Value>false</Value></Parameter>
         <Parameter><Key>USE_ROI</Key><Value>true</Value></Parameter>
-        <Parameter><Key>CvROI</Key><Value>42,150,80,80</Value></Parameter>
+        <Parameter><Key>CvROI</Key><Value>108,170,65,120</Value></Parameter>
         <Parameter><Key>LeftPRJ_DIR</Key><Value>X_LTOR</Value></Parameter>
         <Parameter><Key>RightPRJ_DIR</Key><Value>X_RTOL</Value></Parameter>
         <Parameter><Key>PRJ_PORALITY</Key><Value>WTOB</Value></Parameter>
@@ -129,9 +130,9 @@ Sample shape to adapt:
       <ExpectedSuccess>true</ExpectedSuccess>
       <AcceptanceMetricName>DistanceMmAvg</AcceptanceMetricName>
       <UseAcceptanceMetricMinimum>true</UseAcceptanceMetricMinimum>
-      <AcceptanceMetricMinimum>0.40</AcceptanceMetricMinimum>
+      <AcceptanceMetricMinimum>0.14</AcceptanceMetricMinimum>
       <UseAcceptanceMetricMaximum>true</UseAcceptanceMetricMaximum>
-      <AcceptanceMetricMaximum>0.55</AcceptanceMetricMaximum>
+      <AcceptanceMetricMaximum>0.17</AcceptanceMetricMaximum>
       <MaxElapsedMilliseconds>500</MaxElapsedMilliseconds>
     </Step>
   </Steps>
@@ -140,7 +141,7 @@ Sample shape to adapt:
 
 Output requirement:
 - Return only the final `VisionPipeline` XML.
-- Include a `DistanceMmAvg` judgement Step and a `DistanceMmRange` consistency judgement Step. If needed, duplicate the same `LineDistance` parameters into a second validation Step with a separate `OutputLayer`.
+- Include paired `DistanceMmAvg` and `DistanceMmRange` judgement Steps for every ROI. Duplicate the same `LineDistance` parameters into the paired Step with a separate `OutputLayer`.
 - Put a final `OverlayMerge` review Step after all validation Steps. It should not replace the `LineDistance` validation Steps.
-- If pitch vs gap is ambiguous, choose edge-to-edge gap and return XML.
-- If ROI is imperfect, choose the provided starting ROI and return XML. The operator will tune ROI inside OpenVisionLab after validation.
+- Use edge-to-edge gap, not center pitch.
+- Use the provided verified ROI windows and return XML. The operator will tune only after OpenVisionLab validation and explicit Preview/Run evidence.

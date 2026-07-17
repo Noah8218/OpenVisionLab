@@ -1,0 +1,11 @@
+Your first XML response was tested by OpenVisionLab and needs correction.
+
+Keep the same inspection intent: one full-image `Mean` Step that passes the nominal image with `MeanValueAvg` from `185` through `220` and rejects the dark negative image below that range.
+
+Do not add tools or Steps. Keep `InputLayer=Main`, `OutputLayer=Mean_Brightness_Preview`, `MEAN_TYPES=Mean`, the five required boolean parameters, and the direct `MeanValueAvg` acceptance fields.
+
+OpenVisionLab current-build validation or execution report:
+
+[PASTE THE COMPLETE REPORT HERE]
+
+Return one corrected VisionPipeline XML document only. Do not include explanation, Markdown fences, or notes.

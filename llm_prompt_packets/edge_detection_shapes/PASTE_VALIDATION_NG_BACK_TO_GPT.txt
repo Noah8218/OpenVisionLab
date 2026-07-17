@@ -1,0 +1,21 @@
+Your previous XML was tested unchanged in the current OpenVisionLab build and did not pass validation or the required OK/NG behavior.
+
+Original inspection contract:
+- Detect the four rectangular shapes with `EdgeDetection(Canny)`, join edge gaps with `Morphology(Close)`, then count joined shapes with `Contour`.
+- `EdgeDetection_Shapes_Synthetic_OK.png` must pass `ResultCount=4`.
+- `EdgeDetection_Shapes_Synthetic_Missing_NG.png` must fail the same count gate because it contains two valid joined contours.
+- The layer route must remain `Main -> EdgeDetection_Edge -> EdgeDetection_EdgeJoin -> EdgeDetection_Shape_Preview`.
+- Preview and Run remain explicit OpenVisionLab user actions.
+
+Actual OpenVisionLab report:
+<PASTE_THE_COMPLETE_UNEDITED_VALIDATION_OR_RUN_REPORT_HERE>
+
+Correction rules:
+- Correct only the XML defects demonstrated by the report.
+- Preserve the original inspection intent, Step order, layer route, verified values, and supported ToolTypes.
+- Do not invent parameters, custom XML nodes, result values, or automatic execution behavior.
+- Return the complete corrected XML document, not a patch or explanation.
+- Output XML only.
+- The first characters must be `<?xml`.
+- The last characters must be `</VisionPipeline>`.
+- Do not use Markdown fences.

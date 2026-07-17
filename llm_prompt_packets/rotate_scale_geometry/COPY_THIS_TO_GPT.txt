@@ -1,0 +1,68 @@
+You are an OpenVisionLab VisionPipeline XML authoring assistant.
+
+User request:
+Create a rule-based geometry check that resizes the entire source image to 50 percent with no rotation. The nominal image must pass only when the result width is exactly 286 pixels. The wide negative image must fail because the same 50 percent resize produces width 320 pixels.
+
+Attached images:
+- Nominal image: `Geometry_RotateScale_Synthetic_OK.png`
+- Wide negative image: `Geometry_RotateScale_Synthetic_Wide_NG.png`
+- The nominal image is 572 x 420. Its expected result size is 286 x 210.
+- The wide negative image is 640 x 420. Its result width becomes 320 and must fail the nominal width gate.
+- Both images are OpenVisionLab project-authored synthetic samples.
+
+Inspection intent:
+- Use `RotateScale` to resize the full image. This is not object detection, template matching, ROI measurement, or camera calibration.
+- Do not use Threshold, Morphology, Filter, Blob, Contour, Matching, LineDistance, EdgeDetection, HSV, Arithmetic, OverlayMerge, or unsupported custom tools.
+- Required tool sequence: one `RotateScale` Step only.
+- Required layer route: `Main -> Geometry_ResizeHalf_Result`.
+- Keep angle at zero and both scale percentages at 50.
+- Use a single acceptance metric: `ResultImageWidth` must be exactly 286 for the nominal image.
+- Do not add a second height acceptance gate. The expected nominal result height is 210 for operator review, but this XML contract uses one acceptance metric per Step.
+
+OpenVisionLab product boundary:
+- OpenVisionLab is an LLM-assisted OpenCvSharp4 rule-based vision recipe workbench.
+- Do not create camera, lighting, PLC, I/O, account, user, role, deployment, or automatic execution settings.
+- Preview and Run are explicit user actions inside OpenVisionLab. The XML must not claim to run automatically.
+
+OpenVisionLab XML contract:
+- Return exactly one XML document with root `<VisionPipeline>`.
+- Use `<Name>` and `<Steps>` directly under `<VisionPipeline>`.
+- Every `<Step>` must contain `<Name>`, `<ToolType>`, `<Enabled>`, `<InputLayer>`, `<OutputLayer>`, and `<Parameters>`.
+- Every parameter must use `<Parameter><Key>...</Key><Value>...</Value></Parameter>`.
+- Boolean values must be lowercase `true` or `false`.
+- Use invariant numeric text.
+- Use only supported `ToolType` name `RotateScale` for this task.
+- `InputLayer` must be `Main`.
+- The enabled Step must have a distinct non-empty `OutputLayer`.
+- Do not emit custom `Inspection.*` elements, comments, result values, or invented parameters.
+
+Pipeline requirements:
+- Pipeline Name: `Public_Geometry_RotateScale`
+- Step Name: `01 Resize Public Geometry Half`
+- ToolType: `RotateScale`
+- Enabled: `true`
+- InputLayer: `Main`
+- OutputLayer: `Geometry_ResizeHalf_Result`
+- Parameters, exactly:
+  - `Angle=0`
+  - `ScaleXPercent=50`
+  - `ScaleYPercent=50`
+  - `Interpolation=Linear`
+  - `BorderType=Constant`
+- Acceptance fields must be direct children of the `<Step>`, after `</Parameters>`:
+  - `<UseAcceptance>true</UseAcceptance>`
+  - `<ExpectedSuccess>true</ExpectedSuccess>`
+  - `<MaxElapsedMilliseconds>300</MaxElapsedMilliseconds>`
+  - `<AcceptanceMetricName>ResultImageWidth</AcceptanceMetricName>`
+  - `<UseAcceptanceMetricMinimum>true</UseAcceptanceMetricMinimum>`
+  - `<AcceptanceMetricMinimum>286</AcceptanceMetricMinimum>`
+  - `<UseAcceptanceMetricMaximum>true</UseAcceptanceMetricMaximum>`
+  - `<AcceptanceMetricMaximum>286</AcceptanceMetricMaximum>`
+
+Output contract:
+- Output XML only.
+- The first characters of your response must be `<?xml`.
+- The last characters of your response must be `</VisionPipeline>`.
+- Do not write explanations, analysis, tables, Markdown fences, notes, warnings, image estimates, or follow-up questions.
+- Do not add, omit, or reorder Steps.
+- Do not alter the verified starting values.

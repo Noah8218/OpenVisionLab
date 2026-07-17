@@ -43,6 +43,13 @@ Use `Public_EdgeDetection_Shapes.pipeline.xml` to practice this topic. The EdgeD
 4. If the next step is Contour, check `ResultCount` and area metrics after cleanup.
 5. If the next step is LineGauge or LineDistance, check ROI, scan direction, polarity, and metric names.
 
+## Open the related Tool View from Learn
+
+- `EdgeDetection Tool 열기` opens the existing EdgeDetection Tool View for creating an edge-map output layer. Check `Edge Type`, Canny Low/High, Canny Aperture, and Use L2 Gradient; Sobel, Scharr, and Laplacian expose their own direction or kernel values.
+- `Line Tool 열기` opens the existing Line Tool View for ROI-based edge, fitted-line, measurement, or intersection work. Check Purpose, Line A/B, ROI, Edge Polarity/Direction/Contrast/Thickness, and Scan direction/interval.
+- Open the related Tool View, inspect its edge or scan parameters, then use Preview to compare the edge image and detected line.
+- The Line Tool header keeps its existing Learn route to the LineDistance measurement topic because that Tool View also owns Measure and Intersection purposes.
+
 ## Common Failures
 
 | Symptom | Likely Cause | First Fix |
@@ -52,17 +59,17 @@ Use `Public_EdgeDetection_Shapes.pipeline.xml` to practice this topic. The EdgeD
 | Contour selects the whole surface | Edge map is not cleaned before region extraction | Add Morphology or ROI |
 | Distance line appears in the wrong place | EdgeDetection was used, but LineDistance ROI/direction is wrong | Fix LineDistance ROI and scan direction |
 
-## Completion Standard
+## Learning Check
 
-EdgeDetection is useful only when the next tool produces a measurable result. A recipe should end with a metric such as count, area, score, distance, angle, or output size.
+Use the downstream count, area, score, distance, angle, or output-size metric to confirm that the detected edge belongs to the intended target.
 
-Opening this guide or changing EdgeDetection parameters must not run Preview/Run automatically.
+After changing EdgeDetection or Line parameters, use Preview to confirm the edge position, direction, and downstream measurement.
 
 ## Beginner path handoff
 
 - Previous topic: Filter. Use EdgeDetection when boundary pixels, not filled regions, are the useful evidence.
 - This topic goal: prove that Canny edge output can feed a downstream count or measurement step.
-- Practice Samples path: `preprocess`.
+- Practice Samples path: `edge-detection`.
 - Public sample pair: `Public_EdgeDetection_Shapes_Good` / `Public_EdgeDetection_Shapes_Missing_Bad`.
-- Explicit action: run EdgeDetection Preview manually, then run downstream Morphology/Contour manually and compare `ResultCount`.
+- Practice action: run EdgeDetection Preview, then run downstream Morphology/Contour and compare `ResultCount`.
 - Next topic: use LineDistance when the question is distance, pitch, width, or clearance between edges.

@@ -31,6 +31,13 @@ Mean은 박스 검출형 도구가 아니므로, 이미지의 같은 영역에�
 5. `MeanValueAvg`가 기준 범위 안에 있는지 봅니다.
 6. Pipeline Review에서 밝기 drift가 metric으로 설명되는지 확인합니다.
 
+## Learn에서 Tool View 열기
+
+- `Mean Tool 열기`는 기존 Mean Tool View를 열고 `Mean Type`, `Min Mean`, `Max Mean` 위치를 안내합니다.
+- `Histogram Tool 열기`는 기존 Histogram Tool View를 열고 `Type`, `Clip Limit`, `Tile Grid`, `Normalize Alpha/Beta` 위치를 안내합니다.
+- Mean 또는 Histogram Tool View에서 입력/출력 Layer와 밝기 관련 파라미터를 찾습니다.
+- Preview 또는 Run Review에서 밝기 분포와 결과 지표를 확인합니다.
+
 ## 실패 원인
 
 | 증상 | 먼저 볼 것 |
@@ -45,13 +52,13 @@ Mean은 박스 검출형 도구가 아니므로, 이미지의 같은 영역에�
 - Good 샘플은 정상 밝기 band 안에 들어옵니다.
 - Bad 샘플은 `MeanValueAvg`가 낮아 NG 이유가 명확합니다.
 - 밝기 기준이 이미지 전체인지 ROI인지 문서와 recipe에서 분명해야 합니다.
-Opening this guide or changing Mean parameters must not run Preview/Run automatically.
+After changing Mean or Histogram parameters, use Preview or Run Review to compare the brightness distribution and metrics.
 
 ## Beginner path handoff
 
 - Previous concept: read `LEARN_OPENCVSHARP_FOUNDATIONS.md` until pixel, GV, ROI, `Rect`, `Mat`, `InputLayer`, and `OutputLayer` are clear.
 - This topic goal: prove that brightness drift changes `MeanValueAvg` on `Public_Mean_Brightness_Good` and `Public_Mean_Brightness_Dark_Bad`.
 - Practice Samples path: `mean`.
-- Explicit action: open the public Good sample, run review manually, then repeat with the Bad sample.
+- Practice action: open the public Good sample, run review, then repeat with the Bad sample.
 - Next topic: move to Threshold only after the operator can explain why a GV change should move a threshold boundary.
-- Do not skip: metric and Good/Bad comparison. A visual difference without `MeanValueAvg` evidence is not enough.
+- Always compare the Good/Bad images with `MeanValueAvg` so the visible brightness difference is also confirmed by a metric.

@@ -31,9 +31,16 @@ This public-safe pair resizes `docs\samples\public\Geometry_RotateScale_Syntheti
 2. Confirm the input layer is the original image layer.
 3. Set the output layer to a new name so the original image remains reviewable.
 4. Change `Angle`, `ScaleXPercent`, or `ScaleYPercent`.
-5. Run Preview explicitly.
+5. Run Preview.
 6. Compare input and output size, visible crop, border fill, and object position.
 7. If another tool follows this step, confirm its ROI is still on the intended object.
+
+## Open The Tool From Learn
+
+- `Rotate / Scale Tool 열기` selects the existing RotateScale Tool View.
+- Check the shared input/output layer controls, then `Angle`, `Scale X`, and `Scale Y`. Recipe XML uses `ScaleXPercent` and `ScaleYPercent` for the scale values.
+- `OutputSize` shows the width and height of the image produced by Preview.
+- Compare the transformed image with the original, then review downstream ROI and measurement positions.
 
 ## Common Failures
 
@@ -47,6 +54,6 @@ This public-safe pair resizes `docs\samples\public\Geometry_RotateScale_Syntheti
 
 ## Relation To Recipes
 
-Use `RotateScale` when the recipe intentionally normalizes the input image before detection. Do not use it to hide a weak detector. The next tool should still expose a measurable result such as count, score, area, distance, or output size.
+Use `RotateScale` when the recipe normalizes image orientation or size before detection. Confirm the effect with a measurable result such as count, score, area, distance, or output size.
 
-Keep transform output on its own layer. Opening this guide or changing a parameter must not run Preview/Run automatically.
+Keep the transform result on a descriptive output layer and use Preview to re-check ROI, Template, edge direction, and pixel/mm coordinates.

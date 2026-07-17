@@ -15,35 +15,33 @@ A layer holds an image result. A pipeline step reads one input layer, writes one
 | `OutputLayer` | Layer a step writes to |
 | Branch | Multiple steps reading from the same source layer |
 | Review layer | Overlay or merged result used to explain the final decision |
-| Explicit Preview/Run | User action that actually executes a tool or recipe |
+| Preview/Run result | Image and metrics produced from the current settings |
 
-## Routing Rules
+## Building A Route
 
-1. Do not overwrite `Main` unless the user explicitly chooses to replace the loaded image.
-2. Output layer creation must not automatically change the input layer.
-3. Visibility toggles must not run tools.
-4. Loading or deleting a layer must not run tools.
-5. Preview and Run must be explicit user actions.
-6. If a step needs a previous result, set its `InputLayer` to that previous `OutputLayer`.
-7. If two inspections must be compared, keep separate output layers and use review/overlay layers for final evidence.
+1. Keep `Main` as the original reference image.
+2. Select the image a Step reads in `InputLayer`.
+3. Give `OutputLayer` a name that describes the result.
+4. If a Step needs a previous result, select that previous `OutputLayer` as its `InputLayer`.
+5. For independent inspections, branch from the same source into separate output layers.
+6. Use review/overlay layers to show how the final metric relates to the image.
 
-## Route Safety Checklist
+## Reading A Route
 
 - `InputLayer` is the source image or previous result a step reads.
 - `OutputLayer` is the produced result a step writes.
-- Creating an `OutputLayer` must not select, rewrite, or silently replace `InputLayer`.
-- Layer create/delete/load-image actions and visibility toggles must not run Preview/Run.
-- Execute Preview or Run Review only by explicit user action.
+- The next Step can continue from a previous result by selecting its `OutputLayer` as the next `InputLayer`.
+- Compare `Main`, the current input, and the current output to see exactly what the Step changed.
 
 ## Operator Route Review Loop
 
 1. Select the intended `InputLayer`.
 2. Select a separate and descriptive `OutputLayer`.
-3. Click Preview or Run Review explicitly.
+3. Click Preview or Run Review.
 4. Compare `Main`, the selected input, and the produced output layer.
 5. Save the recipe only after the Good/Bad metric gates pass for the intended reason.
 
-Creating or selecting an `OutputLayer` is route setup, not execution evidence. If a later step fails, inspect the previous `OutputLayer` first.
+If a later Step gives an unexpected result, inspect the previous `OutputLayer` first and move backward until the first changed image is found.
 
 ## Common Pipeline Shapes
 
@@ -59,7 +57,7 @@ Creating or selecting an `OutputLayer` is route setup, not execution evidence. I
 1. Open the step list and read each `InputLayer` and `OutputLayer`.
 2. Confirm every input layer exists before running.
 3. Confirm output layer names are unique and descriptive.
-4. Run Preview/Run explicitly.
+4. Run Preview or Run Review.
 5. Compare input and output layers after execution.
 6. If a later step fails, inspect the previous output layer first.
 
@@ -69,7 +67,7 @@ Creating or selecting an `OutputLayer` is route setup, not execution evidence. I
 | --- | --- | --- |
 | Step reads the wrong image | `InputLayer` points to an old output | Select the intended source layer |
 | Original image seems changed | User is viewing an output layer, not `Main` | Switch back to `Main` or compare layers |
-| Later step has no result | Previous output layer was never created | Run the previous step or full recipe explicitly |
+| Later step has no result | Previous output layer has no usable image | Review the previous Step and run the recipe again |
 | Branch result is confusing | Output names are too generic | Rename outputs by purpose, not tool only |
 | Review overlay hides defect | Overlay is final review, not the metric source | Inspect the raw metric step layer |
 
@@ -83,4 +81,4 @@ Before saving a recipe, answer:
 4. Which layer should the operator compare when NG occurs?
 5. Can the recipe be rerun without relying on a stale preview layer?
 
-Opening this guide, creating layers, toggling visibility, or changing routing must not run Preview/Run automatically.
+Practice by selecting one Step at a time and explaining its input image, output image, and metric before moving to the next Step.

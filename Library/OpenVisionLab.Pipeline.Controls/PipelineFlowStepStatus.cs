@@ -10,6 +10,7 @@ namespace OpenVisionLab.Pipeline.Controls
         Loaded,
         Skipped,
         Canceled,
-        Timeout
+        Timeout,
+        MissingInput
     }
 }

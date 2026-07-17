@@ -78,6 +78,54 @@ namespace OpenVisionLab
                     "View Guide")
             },
             {
+                "Shell.WorkspaceEmptyDetail",
+                new DefaultCatalogMigration(
+                    "이미지를 로드하거나 샘플을 열어 테스트를 시작하십시오.",
+                    "Load an image or open a sample to start testing.")
+            },
+            {
+                "Shell.WorkspaceEmptyStepLoadTitle",
+                new DefaultCatalogMigration(
+                    "1. 이미지 로드",
+                    "1. Load image")
+            },
+            {
+                "Shell.WorkspaceEmptyStepLoadDetail",
+                new DefaultCatalogMigration(
+                    "Main 레이어에 검사할 이미지를 엽니다.",
+                    "Open the image to inspect into the Main layer.")
+            },
+            {
+                "Shell.WorkspaceEmptyStepSelectTitle",
+                new DefaultCatalogMigration(
+                    "2. 도구 선택",
+                    "2. Select tool")
+            },
+            {
+                "Shell.WorkspaceEmptyStepSelectDetail",
+                new DefaultCatalogMigration(
+                    "왼쪽 목록에서 스레시홀드, 매칭, 라인 같은 도구를 선택합니다.",
+                    "Choose Threshold, Matching, Line, or another tool from the left list.")
+            },
+            {
+                "Shell.WorkspaceEmptyStepPreviewTitle",
+                new DefaultCatalogMigration(
+                    "3. 미리보기 확인",
+                    "3. Check preview")
+            },
+            {
+                "Shell.WorkspaceEmptyStepPreviewDetail",
+                new DefaultCatalogMigration(
+                    "결과를 확인한 뒤 검증된 Step을 파이프라인에 추가합니다.",
+                    "Check the result, then add the verified step to the pipeline.")
+            },
+            {
+                "Shell.WorkspaceEmptyLogHint",
+                new DefaultCatalogMigration(
+                    "이미지를 불러오면 이 영역에서 확대, 이동, 픽셀 값을 확인하고 하단 실행 로그에서 상태를 추적합니다.",
+                    "After loading an image, use this area for zoom, pan, pixel values, and the Run Log for state tracking.")
+            },
+            {
                 "Shell.WorkspaceStatus.SampleRoute",
                 new DefaultCatalogMigration(
                     "Pipeline Review \uB610\uB294 \uCCAB Step \uC5F4\uAE30",
@@ -161,6 +209,54 @@ namespace OpenVisionLab
                 new DefaultCatalogMigration(
                     "\uD3C9\uADE0 \uAC70\uB9AC(mm)",
                     "Distance Avg (mm)")
+            },
+            {
+                "PropertyGrid.Type.FeatureMatchingProperty.SCORE_MIN.DisplayName",
+                new DefaultCatalogMigration(
+                    "\uCD5C\uC18C \uB9E4\uCE6D \uC810\uC218",
+                    "Min match score")
+            },
+            {
+                "PropertyGrid.Type.FeatureMatchingProperty.SCORE_MIN.Description",
+                new DefaultCatalogMigration(
+                    "\uD2B9\uC9D5 \uB9E4\uCE6D \uACB0\uACFC\uB85C \uC778\uC815\uD560 \uCD5C\uC18C \uC810\uC218\uC785\uB2C8\uB2E4. \uB192\uC744\uC218\uB85D \uC57D\uD55C \uD2B9\uC9D5\uC810 \uB9E4\uCE6D\uC744 \uB354 \uC5C4\uACA9\uD558\uAC8C \uC81C\uC678\uD569\uB2C8\uB2E4.",
+                    "Minimum score accepted as a feature match. Higher values reject weak feature matches more strictly.")
+            },
+            {
+                "VisionTool.Preset.FeatureMatching.Fast.Description",
+                new DefaultCatalogMigration(
+                    "\uBE60\uB978 \uD2B9\uC9D5 \uD655\uC778: \uB354 \uC5C4\uACA9\uD55C Ratio\uC640 \uB113\uC740 \uAE30\uD558 \uD5C8\uC6A9 \uC624\uCC28",
+                    "Stricter feature ratio with wider geometry tolerance for quick checks.")
+            },
+            {
+                "VisionTool.Preset.FeatureMatching.Precise.Description",
+                new DefaultCatalogMigration(
+                    "\uC815\uBC00 \uD2B9\uC9D5 \uD655\uC778: \uB354 \uB9CE\uC740 \uD2B9\uC9D5 \uD6C4\uBCF4\uC640 \uC5C4\uACA9\uD55C \uAE30\uD558 \uAC80\uC99D",
+                    "Looser feature ratio with tighter geometry validation for final tuning.")
+            },
+            {
+                "PipelineReview.FixtureTeach.Waiting",
+                new DefaultCatalogMigration(
+                    "\uAE30\uC900 \uC774\uBBF8\uC9C0\uC5D0\uC11C \uB9AC\uBDF0 \uC2E4\uD589 \uD6C4 Matching 1\uAC1C\uB97C \uD655\uC778\uD558\uC2ED\uC2DC\uC624. \uC18C\uBE44 Step ROI\uB294 \uBCC0\uACBD\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.",
+                    "Run Review on the reference image and verify one match. Consumer ROI stays unchanged.")
+            },
+            {
+                "PipelineReview.FixtureTeach.ReadyFormat",
+                new DefaultCatalogMigration(
+                    "\uAC80\uD1A0 \uC790\uC138 \uC900\uBE44: X {0}, Y {1}, \uAC01\uB3C4 {2}\uB3C4. \uAE30\uC900 \uC774\uBBF8\uC9C0\uC5D0\uC11C\uB9CC \uC800\uC7A5\uD558\uC2ED\uC2DC\uC624.",
+                    "Reviewed pose ready: X {0}, Y {1}, angle {2} deg. Save only on the reference image.")
+            },
+            {
+                "PipelineReview.FixtureTeach.SavedFormat",
+                new DefaultCatalogMigration(
+                    "\uCC38\uC870 \uC800\uC7A5: X {0}, Y {1}, \uAC01\uB3C4 {2}\uB3C4. \uC18C\uBE44 Step ROI\uB294 \uBCC0\uACBD\uD558\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uB9AC\uBDF0 \uC2E4\uD589\uD558\uC2ED\uC2DC\uC624.",
+                    "Reference saved: X {0}, Y {1}, angle {2} deg. Consumer ROI was not changed. Run Review again.")
+            },
+            {
+                "PipelineReview.FixtureTeach.RunRequired",
+                new DefaultCatalogMigration(
+                    "\uCC38\uC870 \uC800\uC7A5\uB428 / \uB9AC\uBDF0 \uC7AC\uC2E4\uD589 \uD544\uC694",
+                    "Reference saved / run review required")
             }
         };
         private static bool loaded;

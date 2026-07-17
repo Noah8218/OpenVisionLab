@@ -24,7 +24,14 @@ OpenVisionLab already has an `Arithmetic` tool. Use it to understand chapter-sty
 2. Use `UseConstantInput` only when the second image is not needed.
 3. For binary images, verify whether white means object or background.
 4. Keep output on a separate layer so the original input remains reviewable.
-5. Run Preview explicitly and compare input/output layers.
+5. Run Preview and compare input/output layers.
+
+## Open The Tool From Learn
+
+- `Arithmetic Tool 열기` selects the existing Arithmetic Tool View.
+- Check `Input A`, `Input B`, and `Output Layer` in the shared route controls.
+- Check `Mode`, `Arithmetic Type`, and `Input B Source` in the parameter area. Constant mode exposes `Constant Value`; Offset mode exposes X/Y offset.
+- Confirm the input/output route, click Preview, and compare how the selected operation changes each pixel.
 
 ## Common Failures
 
@@ -44,5 +51,5 @@ In XML, `Arithmetic` operations are useful before final review layers:
 - `Bitwise_OR` for combining multiple defect candidates.
 - `Bitwise_NOT` for polarity correction.
 
-Do not use arithmetic to hide unclear inspection intent. A good recipe should still expose the source layers and measurable result metrics.
-Opening this guide or changing Arithmetic parameters must not run Preview/Run automatically.
+Keep the arithmetic intent visible by using descriptive source/output layer names and a measurable downstream result.
+After changing Arithmetic parameters, run Preview and compare the source layers, output layer, and downstream metric.

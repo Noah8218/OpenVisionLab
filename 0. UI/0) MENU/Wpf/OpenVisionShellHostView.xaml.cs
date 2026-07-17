@@ -1,7 +1,9 @@
 using OpenVisionLab._1._Core;
 using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
@@ -173,11 +175,14 @@ namespace OpenVisionLab
                 txtWorkspaceEmptyStepLoadDetail,
                 txtWorkspaceEmptyStepSelectTitle,
                 txtWorkspaceEmptyStepSelectDetail,
+                txtWorkspaceEmptyStepPipelineTitle,
+                txtWorkspaceEmptyStepPipelineDetail,
                 txtWorkspaceEmptyStepPreviewTitle,
                 txtWorkspaceEmptyStepPreviewDetail,
                 txtWorkspaceLoadImageButtonText,
                 txtWorkspaceEmptySampleButtonText,
                 txtWorkspaceEmptyGuideButtonText,
+                txtWorkspaceEmptyPipelineButtonText,
                 txtWorkspaceEmptyLogHint,
                 txtOpenSelectedLayerWindowButton,
                 txtDockSelectedLayerButton,
@@ -269,7 +274,10 @@ namespace OpenVisionLab
                 chromeController.SetDirectRunSucceeded,
                 chromeController.SetActiveDocumentText,
                 refreshCoordinator.RefreshHostLayerRows,
-                OpenWorkspaceSampleByNameFromReview);
+                OpenWorkspaceSampleByNameFromReview,
+                ReturnToRecipeManagerFromPipelineReview,
+                OpenPipelineStepEditorFromPipelineReview,
+                OpenLearnForPipelineReviewTool);
             toolSelectionController = new OpenVisionShellHostToolSelectionController(
                 viewModel,
                 toolWindowController,
@@ -322,7 +330,11 @@ namespace OpenVisionLab
                 layerWorkspacePresenter,
                 () => layerListPresenter.GetSelectedLayerTitle(hostLayerRowsList.SelectedIndex),
                 dockedLayerWorkspaceComposition.Synchronization,
-                viewModel.SetLayerOptions);
+                (layerNames, selectedLayer) =>
+                {
+                    viewModel.SetLayerOptions(layerNames, selectedLayer);
+                    RefreshToolReadiness();
+                });
             refreshCoordinator.AttachLayerRefreshController(layerRefreshController);
             workspaceImageController = new OpenVisionShellHostWorkspaceImageController(
                 displayManager,
@@ -354,6 +366,7 @@ namespace OpenVisionLab
                 workspaceFallbackZoomController,
                 () => WorkspaceLayerTitle,
                 () => recipeContextStore.Current,
+                SelectToolMenu,
                 () =>
                 {
                     mainActionPresenter.Hide();
@@ -388,17 +401,25 @@ namespace OpenVisionLab
                 ConfirmDeletePipeline,
                 SelectImportPipelineXmlPath,
                 SelectExportPipelineXmlPath,
+                SelectExportRecipeReviewBundlePath,
                 BuildRecipeLayerCard,
                 layerTitle => layerActivationController?.Activate(layerTitle) == true,
                 (layerTitle, imagePath) => layerManagementController?.LoadImageIntoLayer(layerTitle, imagePath) == true,
                 SelectToolMenu,
-                () => recipeStepPropertyGridHostController?.CommitPendingEdit() ?? true);
+                () => recipeStepPropertyGridHostController?.CommitPendingEdit() ?? true,
+                OpenRecipeLlmXmlReview,
+                SelectValidationSetImagePaths,
+                SelectValidationSetFolderPath,
+                SelectValidationSetReplacementImagePath,
+                ConfirmDeleteValidationSet,
+                OpenRecipePipelineReview);
             AttachRecipeStepPropertyGridHost();
             ChromeCommands = new OpenVisionShellHostChromeCommandSurface(
                 () => IsToolRailCompact = !IsToolRailCompact,
                 commandController,
                 toolWindowLifecycleController,
-                toolWindowController);
+                toolWindowController,
+                OpenGuidedSetupForTool);
             sessionController = new OpenVisionShellHostSessionController(
                 sessionState,
                 dockedLayerWorkspaceComposition.Session,
@@ -571,6 +592,12 @@ namespace OpenVisionLab
             lifecycle.Track(
                 () => this.runtimeContext.Global.Recipe.EventChangedRecipe += OnRuntimeRecipeChanged,
                 () => this.runtimeContext.Global.Recipe.EventChangedRecipe -= OnRuntimeRecipeChanged);
+            lifecycle.Track(
+                () => OpenVisionNativeToolPropertySessionStore.PropertySaved += OnNativeToolPropertySaved,
+                () => OpenVisionNativeToolPropertySessionStore.PropertySaved -= OnNativeToolPropertySaved);
+            lifecycle.Track(
+                () => OpenVisionNativeToolSettingsStore.SettingsSaved += OnNativeToolSettingsSaved,
+                () => OpenVisionNativeToolSettingsStore.SettingsSaved -= OnNativeToolSettingsSaved);
         }
 
         public bool IsToolRailCompact
@@ -677,6 +704,114 @@ namespace OpenVisionLab
             e.Handled = true;
         }
 
+        private void HandleRecipeManagerOpenChecked(object sender, RoutedEventArgs e)
+        {
+            RecipeCommands?.RefreshOptions();
+
+            if (recipeAdvancedReviewToggle != null)
+            {
+                recipeAdvancedReviewToggle.IsChecked = false;
+            }
+
+            if (tabRecipeOverview != null)
+            {
+                tabRecipeOverview.IsSelected = true;
+            }
+        }
+
+        private void HandleRecipeAdvancedReviewChecked(object sender, RoutedEventArgs e)
+        {
+            if (tabRecipePipeline != null)
+            {
+                tabRecipePipeline.IsSelected = true;
+            }
+        }
+
+        private void HandleRecipeAdvancedReviewUnchecked(object sender, RoutedEventArgs e)
+        {
+            if (tabRecipeOverview != null)
+            {
+                tabRecipeOverview.IsSelected = true;
+            }
+        }
+
+        private void OpenGuidedSetupForTool(VISION_MENU menu)
+        {
+            if (!RecipeCommands.SelectGuidedSetupForTool(menu))
+            {
+                return;
+            }
+
+            OpenRecipeGuidedSetup();
+        }
+
+        private void HandleOpenRecipeGuidedSetup(object sender, RoutedEventArgs e)
+        {
+            OpenRecipeGuidedSetup();
+        }
+
+        private void OpenRecipeGuidedSetup()
+        {
+            btnHostRecipeManager.IsChecked = true;
+            recipeAdvancedReviewToggle.IsChecked = true;
+            tabRecipeGuidedSetup.IsSelected = true;
+            recipeGuidedSetupScrollViewer.ScrollToTop();
+        }
+
+        private void OpenRecipeLlmXmlReview()
+        {
+            btnHostRecipeManager.IsChecked = true;
+            recipeAdvancedReviewToggle.IsChecked = true;
+            tabRecipeLlmXml.IsSelected = true;
+        }
+
+        private void OpenRecipePipelineReview()
+        {
+            btnHostRecipeManager.IsChecked = false;
+            SelectToolMenu(VISION_MENU.Pipeline);
+        }
+
+        private void ReturnToRecipeManagerFromPipelineReview()
+        {
+            toolWindowLifecycleController.CloseActiveWpfToolWindowByUser();
+            btnHostRecipeManager.IsChecked = true;
+        }
+
+        private void OpenPipelineStepEditorFromPipelineReview(string recipeName, string pipelineName, int stepNumber)
+        {
+            toolWindowLifecycleController.CloseActiveWpfToolWindowByUser();
+            btnHostRecipeManager.IsChecked = true;
+
+            if (RecipeCommands?.FocusPipelineStepForEdit(recipeName, pipelineName, stepNumber) != true)
+            {
+                return;
+            }
+
+            recipeAdvancedReviewToggle.IsChecked = true;
+            tabRecipePipeline.IsSelected = true;
+            tabRecipePipelineXmlSteps.IsSelected = true;
+
+            Dispatcher.BeginInvoke(
+                System.Windows.Threading.DispatcherPriority.Background,
+                new Action(() =>
+                {
+                    recipePipelineTabScrollViewer.UpdateLayout();
+                    recipePipelineTabScrollViewer.ScrollToEnd();
+                    Dispatcher.BeginInvoke(
+                        System.Windows.Threading.DispatcherPriority.Background,
+                        new Action(() =>
+                        {
+                            recipePipelineTabScrollViewer.UpdateLayout();
+                            recipePipelineTabScrollViewer.ScrollToEnd();
+                        }));
+                }));
+        }
+
+        private void OpenLearnForPipelineReviewTool(string toolType)
+        {
+            commandController?.OpenLearnForToolType(toolType);
+        }
+
         private void StopRecipeManagerPanelDrag()
         {
             isRecipeManagerPanelDragging = false;
@@ -755,9 +890,9 @@ namespace OpenVisionLab
             OpenFileDialog dialog = new OpenFileDialog
             {
                 Title = OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean
-                    ? "파이프라인 XML 가져오기"
-                    : "Import pipeline XML",
-                Filter = "OpenVision Pipeline XML (*.xml)|*.xml|All files (*.*)|*.*",
+                    ? "파이프라인 XML 또는 검토 번들 열기"
+                    : "Open pipeline XML or review bundle",
+                Filter = "OpenVision XML / Review bundle (*.xml;*.review.zip;*.zip)|*.xml;*.review.zip;*.zip|OpenVision Pipeline XML (*.xml)|*.xml|Review bundle (*.review.zip;*.zip)|*.review.zip;*.zip|All files (*.*)|*.*",
                 Multiselect = false
             };
 
@@ -779,6 +914,87 @@ namespace OpenVisionLab
             };
 
             return dialog.ShowDialog(Window.GetWindow(this)) == true ? dialog.FileName : string.Empty;
+        }
+
+        private string SelectExportRecipeReviewBundlePath(string suggestedFileName)
+        {
+            SaveFileDialog dialog = new SaveFileDialog
+            {
+                Title = OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean
+                    ? "레시피 검토 묶음 내보내기"
+                    : "Export recipe review bundle",
+                Filter = "OpenVision review bundle (*.review.zip)|*.review.zip|Zip archive (*.zip)|*.zip",
+                FileName = string.IsNullOrWhiteSpace(suggestedFileName) ? "Pipeline.review.zip" : suggestedFileName,
+                AddExtension = true,
+                DefaultExt = ".zip",
+                OverwritePrompt = true
+            };
+
+            return dialog.ShowDialog(Window.GetWindow(this)) == true ? dialog.FileName : string.Empty;
+        }
+
+        private IReadOnlyList<string> SelectValidationSetImagePaths(string expected)
+        {
+            OpenFileDialog dialog = new OpenFileDialog
+            {
+                Title = OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean
+                    ? "로컬 검증 세트에 " + expected + " 이미지 추가"
+                    : "Add " + expected + " images to local validation set",
+                Filter = "Image files (*.bmp;*.jpg;*.jpeg;*.png;*.tif;*.tiff)|*.bmp;*.jpg;*.jpeg;*.png;*.tif;*.tiff|All files (*.*)|*.*",
+                Multiselect = true,
+                CheckFileExists = true
+            };
+
+            return dialog.ShowDialog(Window.GetWindow(this)) == true
+                ? dialog.FileNames
+                : Array.Empty<string>();
+        }
+
+        private string SelectValidationSetFolderPath(string expected)
+        {
+            OpenFolderDialog dialog = new OpenFolderDialog
+            {
+                Title = OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean
+                    ? "로컬 검증 세트에 " + expected + " 폴더 추가"
+                    : "Add " + expected + " folder to local validation set",
+                Multiselect = false
+            };
+
+            return dialog.ShowDialog(Window.GetWindow(this)) == true
+                ? dialog.FolderName
+                : string.Empty;
+        }
+
+        private string SelectValidationSetReplacementImagePath(string missingPath)
+        {
+            OpenFileDialog dialog = new OpenFileDialog
+            {
+                Title = OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean
+                    ? "누락 검증 이미지 교체: " + Path.GetFileName(missingPath)
+                    : "Replace missing validation image: " + Path.GetFileName(missingPath),
+                Filter = "Image files (*.bmp;*.jpg;*.jpeg;*.png;*.tif;*.tiff)|*.bmp;*.jpg;*.jpeg;*.png;*.tif;*.tiff|All files (*.*)|*.*",
+                Multiselect = false,
+                CheckFileExists = true
+            };
+
+            return dialog.ShowDialog(Window.GetWindow(this)) == true
+                ? dialog.FileName
+                : string.Empty;
+        }
+
+        private bool ConfirmDeleteValidationSet(string setName)
+        {
+            MessageBoxResult result = MessageBox.Show(
+                Window.GetWindow(this),
+                OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean
+                    ? "로컬 검증 세트 '" + setName + "'을 삭제하시겠습니까? 이미지 원본은 삭제되지 않습니다."
+                    : "Delete local validation set '" + setName + "'? Source images will not be deleted.",
+                OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean
+                    ? "검증 세트 삭제"
+                    : "Delete validation set",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            return result == MessageBoxResult.Yes;
         }
 
         public OpenVisionShellHostCommandSurfaces CommandSurfaces
@@ -826,10 +1042,60 @@ namespace OpenVisionLab
 
         private void OnRuntimeRecipeChanged(object sender, EventArgs e)
         {
-            recipeController.OnRecipeChanged(sender, e);
             RefreshRecipeContext();
+            recipeController.OnRecipeChanged(sender, e);
+            RefreshToolReadiness();
             RecipeCommands?.RefreshOptions();
             WorkspaceCommands?.RefreshCanExecute();
+        }
+
+        private void OnNativeToolPropertySaved(object sender, EventArgs e)
+        {
+            RefreshToolReadiness();
+        }
+
+        private void OnNativeToolSettingsSaved(object sender, EventArgs e)
+        {
+            RefreshToolReadiness();
+        }
+
+        private void RefreshToolReadiness()
+        {
+            ArithmeticToolSettings arithmeticSettings = OpenVisionNativeToolSettingsStore.Load(
+                OpenVisionNativeToolSettingsStore.CreateConfigName("Arithmetic"),
+                new ArithmeticToolSettings());
+            bool arithmeticInputLayerBRequired = VisionPipelineArithmeticStep.RequiresInputLayerB(
+                arithmeticSettings.UseOffsetMode
+                    ? VisionPipelineArithmeticStep.ModeOffset
+                    : VisionPipelineArithmeticStep.ModeOperation,
+                arithmeticSettings.SelectedOperation,
+                arithmeticSettings.UseConstantInput);
+            viewModel.SetToolReadiness(
+                displayManager.GetLayerImage("Main") != null,
+                arithmeticInputLayerBRequired,
+                HasSecondaryWorkspaceImage(),
+                runtimeContext.Global?.VisionTools);
+        }
+
+        private bool HasSecondaryWorkspaceImage()
+        {
+            int imageCount = 0;
+            for (int index = 0; index < displayManager.LayerCount; index++)
+            {
+                DrawingBitmap image = displayManager.GetLayerImage(index);
+                if (image == null || DisplayManagerImageExtensions.IsPlaceholderBitmap(image))
+                {
+                    continue;
+                }
+
+                imageCount++;
+                if (imageCount >= 2)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void OnToolRailCompactChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

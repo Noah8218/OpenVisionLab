@@ -1,6 +1,6 @@
 # Contour로 모양 개수 확인하기
 
-Updated: 2026-07-02
+Updated: 2026-07-13
 
 Contour는 Threshold 이후 분리된 영역의 외곽선을 찾아서 개수와 면적 조건을 확인하는 도구입니다.
 Blob이 연결된 영역의 수량을 빠르게 보는 쪽에 가깝다면, Contour는 외곽선과 shape 조건을 더 직접적으로 봅니다.
@@ -32,6 +32,14 @@ Good은 shape 5개가 모두 남아 있고, Bad는 missing-shape 이미지라 2�
 6. overlay가 shape 외곽에 붙는지 확인합니다.
 7. Pipeline Review에서 `ResultCount`가 Good/Bad를 분리하는지 봅니다.
 
+## Learn에서 Tool View 열기
+
+- `Contour Tool 열기`는 기존 Contour Tool View를 선택합니다.
+- PropertyGrid의 Contour 범주에서 `컨투어 표시`, `Retrieval mode`, `Min area`, `Max area`를 먼저 확인합니다.
+- 필요한 경우 `Approximation`, `Approx epsilon`, `표시 색상`, `선 두께`를 추가로 확인합니다.
+- Preview 또는 Run Review에서 `ResultCount`, `AreaMax`, `BoundsWidthMax`, `BoundsHeightMax`를 함께 검토합니다.
+- PropertyGrid에서 검색 방식, 면적 범위, 표시 방식을 찾고 결과 외곽선과 수치를 비교합니다.
+
 ## Blob과 Contour 구분
 
 | 질문 | Contour에서 먼저 보는 값 |
@@ -57,5 +65,5 @@ Contour는 통과한 후보의 경계를 따라 shape 증거를 만드는 단계
 
 - Good 샘플에서 contour 5개가 검출됩니다.
 - Bad 샘플에서 `ResultCount=2`로 missing 상태가 설명됩니다.
-- Contour display 옵션은 표시만 바꾸고 Preview/Run을 자동 실행하지 않습니다.
-Opening this guide or changing Contour parameters must not run Preview/Run automatically.
+- Contour display 옵션은 외곽선, BoundingBox 등 결과를 보여주는 방식을 정합니다.
+After changing a Contour parameter, run Preview and confirm both the displayed boundary and the result metrics.

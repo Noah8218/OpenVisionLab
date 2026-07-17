@@ -88,11 +88,11 @@ Use the exact sample names from `docs/samples/OpenVisionLab.PublicSampleCatalog.
 | `Public_Edge_Fiducial` | `Public_Edge_Fiducial_Good` | `Public_Edge_Fiducial_Wrong_Bad` | EdgeBasedMatching | Good `ScoreMax=70..100`, `ResultCount=1`; Bad `ResultCount=0` |
 | `Public_Geometry_RotateScale` | `Public_Geometry_RotateScale_Good` | - | RotateScale | Good `ResultImageWidth=286`, `ResultImageHeight=210` |
 
-Good/Bad comparison is useful only when the Bad row fails for the intended metric. If it fails because an image path, template path, or input layer is missing, fix the recipe setup first and do not treat that as inspection evidence.
+Good/Bad comparison is useful when the Bad row fails for the intended metric. If a result is missing, check the image path, template path, and input layer first, then run the comparison again.
 
-Transform samples may be Good-only when the goal is output metadata such as image size. In that case, the review evidence is the exact output width/height plus explicit input/output layer comparison.
+Transform samples may be Good-only when the goal is output metadata such as image size. In that case, compare the exact output width/height with the input and output images.
 
-## Completion Standard
+## Learning Check
 
 A recipe is reviewable when a user can answer:
 
@@ -102,4 +102,4 @@ A recipe is reviewable when a user can answer:
 4. Why does the Bad sample fail?
 5. Which overlay proves the value came from the intended target?
 
-Changing gates or opening this guide must not run Preview/Run automatically.
+After changing a gate, run the same Good/Bad pair again and confirm that the metric separates the intended defect without rejecting the Good sample.

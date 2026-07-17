@@ -15,6 +15,9 @@ Current generated set:
 - `Matching_DiePad_Synthetic_OK.png`: matching source image with repeated target pads.
 - `Matching_DiePad_Synthetic_NoTarget_NG.png`: matching no-target negative image.
 - `templates/Matching_DiePad_Synthetic_Template.png`: template crop for the matching sample.
+- `Fixture_Pad_Synthetic_Shifted_OK.png`: shifted part with a locator and valid inspection pad.
+- `Fixture_Pad_Synthetic_Shifted_Missing_NG.png`: same shifted locator with the inspection pad missing.
+- `templates/Fixture_Locator_Synthetic_Template.png`: reference-pose locator crop used by the Fixture pipeline.
 - `Blob_Particles_Synthetic_OK.png`: blob/counting source image.
 - `Blob_Particles_Synthetic_Sparse_NG.png`: sparse blob negative image.
 - `Contour_Shapes_Synthetic_OK.png`: contour shape-count source image.
@@ -46,9 +49,10 @@ Current generated set:
 
 Runnable public samples:
 
-- `../OpenVisionLab.PublicSampleCatalog.csv`: GitHub-safe sample catalog with Matching, Blob, Contour, Threshold, Filter, EdgeDetection, Morphology, Mean, Arithmetic, HSV, FeatureMatching, EdgeBasedMatching, LineDistance Good/Bad pairs, and a RotateScale geometry benchmark.
+- `../OpenVisionLab.PublicSampleCatalog.csv`: GitHub-safe sample catalog with Matching, Matching-to-Blob Fixture, Blob, Contour, Threshold, Filter, EdgeDetection, Morphology, Mean, Arithmetic, HSV, FeatureMatching, EdgeBasedMatching, LineDistance Good/Bad pairs, and a RotateScale geometry benchmark.
 - `../OpenVisionLab.ProductSampleCatalog.csv`: product-domain sample catalog with secondary battery, display, and semiconductor Good/Bad pairs.
 - `Public_Matching_DiePad.pipeline.xml`: Matching benchmark using the synthetic template.
+- `Public_Matching_FixturePad.pipeline.xml`: Matching fixture translation plus downstream Blob ROI inspection benchmark.
 - `Public_Blob_Particles.pipeline.xml`: Threshold + Blob count benchmark.
 - `Public_Contour_Shapes.pipeline.xml`: Threshold + Contour shape-count benchmark.
 - `Public_Geometry_RotateScale.pipeline.xml`: RotateScale output-size benchmark.

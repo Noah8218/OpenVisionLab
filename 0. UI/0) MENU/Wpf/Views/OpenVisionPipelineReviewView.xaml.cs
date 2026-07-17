@@ -26,11 +26,16 @@ namespace OpenVisionLab
         public event EventHandler NextStepRequested = delegate { };
         public event EventHandler FirstIssueStepRequested = delegate { };
         public event EventHandler OpenPairSampleRequested = delegate { };
+        public event EventHandler UseSelectedMatchingPoseRequested = delegate { };
+        public event EventHandler ReturnToRecipeRequested = delegate { };
+        public event EventHandler OpenSelectedToolLearnRequested = delegate { };
+        public event EventHandler EditSelectedStepRequested = delegate { };
 
         public OpenVisionPipelineReviewViewModel ViewModel { get; }
         public string SelectedStepText => ViewModel.SelectedStepText;
         public string SelectedToolText => ViewModel.SelectedToolText;
         public string SelectedStatusText => ViewModel.SelectedStatusText;
+        public string RecipeContextText => ViewModel.RecipeContextText;
         public string ReviewProgressText => ViewModel.ReviewProgressText;
         public string FlowSummaryText => ViewModel.FlowSummaryText;
         public string ParameterSummaryText => ViewModel.ParameterSummaryText;
@@ -39,6 +44,7 @@ namespace OpenVisionLab
         public string ResultSummaryText => ViewModel.ResultSummaryText;
         public string ResultDetailText => ViewModel.ResultDetailText;
         public string RunLogText => ViewModel.RunLogText;
+        public string ReadinessSummaryText => ViewModel.ReadinessSummaryText;
         public string ReviewGuideStageText => ViewModel.ReviewGuideStageText;
         public string ReviewGuideCurrentStepText => ViewModel.ReviewGuideCurrentStepText;
         public string ReviewGuideNextActionText => ViewModel.ReviewGuideNextActionText;
@@ -85,6 +91,7 @@ namespace OpenVisionLab
             lblValidation.Text = T("PipelineReview.Validation", "Validation");
             lblResult.Text = T("PipelineReview.Result", "Result");
             lblRunLog.Text = T("PipelineReview.RunLog", "Run Log");
+            lblReadiness.Text = T("PipelineReview.Readiness.Title", "Inspection readiness");
             lblReviewGuideStage.Text = T("PipelineReview.Guide.Stage", "Review");
             lblReviewGuideCurrent.Text = T("PipelineReview.Guide.Current", "Current Step");
             lblReviewGuideNext.Text = T("PipelineReview.Guide.Next", "Next Check");
@@ -98,9 +105,25 @@ namespace OpenVisionLab
             txtPreviousStepButton.Text = T("PipelineReview.PreviousStep", "Previous");
             txtNextStepButton.Text = T("PipelineReview.NextStep", "Next");
             txtFirstIssueStepButton.Text = T("PipelineReview.FirstIssueStep", "NG Step");
+            txtOpenSelectedToolLearnButton.Text = T("PipelineReview.OpenSelectedToolLearnButton", "Learn Tool");
+            txtEditSelectedStepButton.Text = T("PipelineReview.EditSelectedStepButton", "Edit Step");
             btnPreviousStep.ToolTip = T("PipelineReview.PreviousStepToolTip", "Select the previous pipeline step");
             btnNextStep.ToolTip = T("PipelineReview.NextStepToolTip", "Select the next pipeline step");
             btnFirstIssueStep.ToolTip = T("PipelineReview.FirstIssueStepToolTip", "Select the first NG pipeline step");
+            btnOpenSelectedToolLearn.ToolTip = T(
+                "PipelineReview.OpenSelectedToolLearnToolTip",
+                "Open the Learn topic for the selected tool");
+            btnEditSelectedStep.ToolTip = T(
+                "PipelineReview.EditSelectedStepToolTip",
+                "Open the selected step in the Recipe Manager parameter editor");
+            txtReturnToRecipeButton.Text = T("PipelineReview.ReturnToRecipe", "Return to Recipe");
+            btnReturnToRecipe.ToolTip = T(
+                "PipelineReview.ReturnToRecipeToolTip",
+                "Close Pipeline Review and return to the selected recipe summary.");
+            txtUseSelectedMatchingPoseButton.Text = T("PipelineReview.FixtureTeach.Button", "Save as reference");
+            btnUseSelectedMatchingPose.ToolTip = T(
+                "PipelineReview.FixtureTeach.ButtonToolTip",
+                "Save the reviewed Matching pose as the fixture reference without running the pipeline");
         }
 
         private static string T(string key, string fallbackText)
@@ -114,6 +137,11 @@ namespace OpenVisionLab
         public void SetPipelineHeader(string pipelineName, int stepCount)
         {
             ViewModel.SetPipelineHeader(pipelineName, stepCount);
+        }
+
+        public void SetRecipeContext(string recipeName)
+        {
+            ViewModel.SetRecipeContext(recipeName);
         }
 
         public void SetReviewProgress(string progressText)
@@ -161,6 +189,11 @@ namespace OpenVisionLab
             ViewModel.SetValidation(status, details);
         }
 
+        public void SetReadiness(OpenVisionPipelineReviewReadinessState state)
+        {
+            ViewModel.SetReadiness(state);
+        }
+
         public void SetReviewGuide(OpenVisionPipelineReviewGuideState state)
         {
             ViewModel.SetReviewGuide(state);
@@ -186,6 +219,11 @@ namespace OpenVisionLab
             ViewModel.SetIssueNavigationState(canSelectFirstIssueStep);
         }
 
+        public void SetSelectedToolLearnState(bool canOpen)
+        {
+            ViewModel.SetSelectedToolLearnState(canOpen);
+        }
+
         public void SetResultSummary(string summary, string details)
         {
             ViewModel.SetResultSummary(summary, details);
@@ -194,6 +232,11 @@ namespace OpenVisionLab
         public void SetRunReviewBusy(bool isBusy)
         {
             ViewModel.SetRunReviewBusy(isBusy);
+        }
+
+        public void SetFixtureTeachState(bool isVisible, bool poseAvailable, string statusText)
+        {
+            ViewModel.SetFixtureTeachState(isVisible, poseAvailable, statusText);
         }
 
         public void SetEmptyState(string pipelineName)
@@ -205,6 +248,11 @@ namespace OpenVisionLab
         private void BtnRunReview_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             RunReviewRequested(this, EventArgs.Empty);
+        }
+
+        private void BtnReturnToRecipe_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            ReturnToRecipeRequested(this, EventArgs.Empty);
         }
 
         private void BtnPreviousStep_Click(object sender, System.Windows.RoutedEventArgs e)
@@ -222,9 +270,24 @@ namespace OpenVisionLab
             FirstIssueStepRequested(this, EventArgs.Empty);
         }
 
+        private void BtnOpenSelectedToolLearn_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            OpenSelectedToolLearnRequested(this, EventArgs.Empty);
+        }
+
+        private void BtnEditSelectedStep_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            EditSelectedStepRequested(this, EventArgs.Empty);
+        }
+
         private void BtnOpenPairSample_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             OpenPairSampleRequested(this, EventArgs.Empty);
+        }
+
+        private void BtnUseSelectedMatchingPose_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            UseSelectedMatchingPoseRequested(this, EventArgs.Empty);
         }
 
         private void OnPipelineFlowStepSelected(object sender, PipelineFlowStepSelectedEventArgs e)

@@ -1,4 +1,4 @@
-Keep the original inspection intent unchanged: pin-to-pin / edge-to-edge distance measurement using `LineDistance`.
+Keep the original inspection intent unchanged: whole-array adjacent-pin edge-to-edge gap measurement using `LineDistance`.
 
 The previous XML did not pass OpenVisionLab validation or did not satisfy the intent contract.
 
@@ -13,8 +13,11 @@ Repair rules:
 - Do not change the task into Contour, Blob, area, height, or object-count inspection.
 - Use `ToolType=LineDistance` for the distance measurement.
 - Keep both gates:
-  - `DistanceMmAvg` nominal distance gate
-  - `DistanceMmRange` consistency/outlier gate
+  - `DistanceMmAvg` minimum `0.14`, maximum `0.17`
+  - `DistanceMmRange` maximum `0.02`
+- Keep these four ROI windows: `108,170,65,120`, `204,170,65,120`, `300,170,65,120`, `396,170,65,120`.
+- Keep `PIXELPERMM=0.006`.
+- All LineDistance Steps read `Main`; add `ALLOW_BRANCH_INPUT=true` to every LineDistance Step after the first one.
 - Do not invent layers. `InputLayer` must be `Main` or a previous enabled Step `OutputLayer`.
 - Do not invent external dependency files.
 - Do not emit `Inspection.*` XML nodes or parameters.

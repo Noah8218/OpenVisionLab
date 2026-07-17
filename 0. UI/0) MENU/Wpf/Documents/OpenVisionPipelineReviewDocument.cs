@@ -1,6 +1,4 @@
-using Lib.Common;
 using Lib.OpenCV.Pipeline;
-using OpenCvSharp;
 using OpenVisionLab._1._Core;
 using OpenVisionLab.Pipeline.Controls;
 using System;
@@ -9,7 +7,6 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -21,8 +18,7 @@ namespace OpenVisionLab
         private readonly IDisplayManager displayManager;
         private readonly OpenVisionRecipeContext recipeContext;
         private readonly OpenVisionPipelineReviewView view;
-        private readonly Dictionary<VisionPipelineStep, VisionPipelineStepResultSummary> stepResultSummaries = new Dictionary<VisionPipelineStep, VisionPipelineStepResultSummary>();
-        private readonly Dictionary<string, Bitmap> reviewLayerImages = new Dictionary<string, Bitmap>(StringComparer.OrdinalIgnoreCase);
+        private readonly OpenVisionPipelineReviewExecutionController executionController;
         private VisionPipeline pipeline;
         private VisionPipelineValidationResult validationResult;
         private OpenVisionWorkspaceSamplePairDecisionGuide activeSamplePairGuide = OpenVisionWorkspaceSamplePairDecisionGuide.Empty;
@@ -31,7 +27,6 @@ namespace OpenVisionLab
         private string activePipelineName = string.Empty;
         private int selectedIndex;
         private PipelineFlowPreviewMode selectedMode = PipelineFlowPreviewMode.Overlay;
-        private bool isRunningReview;
         private string reviewExecutionState = T("PipelineReview.Execution.NotRun", "Not run");
         private bool disposed;
 
@@ -61,12 +56,18 @@ namespace OpenVisionLab
                 activeLayerName: "Main",
                 lastReviewState: string.Empty);
             view = new OpenVisionPipelineReviewView();
+            executionController = new OpenVisionPipelineReviewExecutionController(displayManager, InvokeOnViewDispatcher);
+            executionController.StepUpdated += OnReviewStepExecutionUpdated;
             view.StepSelected += OnStepSelected;
             view.RunReviewRequested += OnRunReviewRequested;
             view.PreviousStepRequested += OnPreviousStepRequested;
             view.NextStepRequested += OnNextStepRequested;
             view.FirstIssueStepRequested += OnFirstIssueStepRequested;
             view.OpenPairSampleRequested += OnOpenPairSampleRequested;
+            view.UseSelectedMatchingPoseRequested += OnUseSelectedMatchingPoseRequested;
+            view.ReturnToRecipeRequested += OnReturnToRecipeRequested;
+            view.OpenSelectedToolLearnRequested += OnOpenSelectedToolLearnRequested;
+            view.EditSelectedStepRequested += OnEditSelectedStepRequested;
             OpenVisionLanguageService.LanguageChanged += OnLanguageChanged;
             RefreshLayerState();
         }
@@ -78,7 +79,9 @@ namespace OpenVisionLab
         public int StepCount => pipeline?.Steps?.Count ?? 0;
         public string SelectedStepName => view.SelectedStepText;
         public string SelectedToolType => view.SelectedToolText;
+        public int SelectedStepNumber => selectedIndex < 0 ? 0 : selectedIndex + 1;
         public string SelectedStatusText => view.SelectedStatusText;
+        public string RecipeContextText => view.RecipeContextText;
         public string ReviewProgressText => view.ReviewProgressText;
         public string FlowSummaryText => view.FlowSummaryText;
         public string ParameterSummaryText => view.ParameterSummaryText;
@@ -87,6 +90,7 @@ namespace OpenVisionLab
         public string ResultSummaryText => view.ResultSummaryText;
         public string ResultDetailText => view.ResultDetailText;
         public string RunLogText => view.RunLogText;
+        public string ReadinessSummaryText => view.ReadinessSummaryText;
         public string ReviewExecutionState => reviewExecutionState;
         public string GuideStageText => view.ReviewGuideStageText;
         public string GuideCurrentStepText => view.ReviewGuideCurrentStepText;
@@ -110,6 +114,9 @@ namespace OpenVisionLab
 
         public event EventHandler LayerStateChanged = delegate { };
         public event EventHandler<OpenVisionPipelineReviewSampleOpenRequestedEventArgs> OpenWorkspaceSampleRequested = delegate { };
+        public event EventHandler ReturnToRecipeRequested = delegate { };
+        public event EventHandler OpenSelectedToolLearnRequested = delegate { };
+        public event EventHandler EditSelectedStepRequested = delegate { };
 
         public void RefreshLayerState()
         {
@@ -117,11 +124,13 @@ namespace OpenVisionLab
             pipeline = VisionPipelineStorage.Load(recipeContext.Name, activePipelineName);
             RefreshActiveSamplePairGuide(activePipelineName);
             validationResult = VisionPipelineValidator.Validate(pipeline, GetLayerNames());
-            ClearReviewRunCache();
+            executionController.Reset();
             int stepCount = pipeline?.Steps?.Count ?? 0;
+            view.SetRecipeContext(recipeContext.Name);
             view.SetPipelineHeader(activePipelineName, stepCount);
             view.SetReviewProgress(FormatReviewProgressText());
             view.SetValidation(FormatValidationStatus(validationResult), FormatValidationDetails(validationResult));
+            RefreshReadiness();
             view.SetResultSummary(
                 T("PipelineReview.RunRequired", "Run review required"),
                 T("PipelineReview.RunRequiredDetail", "Click Run Review to refresh step results."));
@@ -174,9 +183,17 @@ namespace OpenVisionLab
             view.NextStepRequested -= OnNextStepRequested;
             view.FirstIssueStepRequested -= OnFirstIssueStepRequested;
             view.OpenPairSampleRequested -= OnOpenPairSampleRequested;
+            view.UseSelectedMatchingPoseRequested -= OnUseSelectedMatchingPoseRequested;
+            view.ReturnToRecipeRequested -= OnReturnToRecipeRequested;
+            view.OpenSelectedToolLearnRequested -= OnOpenSelectedToolLearnRequested;
+            view.EditSelectedStepRequested -= OnEditSelectedStepRequested;
             OpenVisionLanguageService.LanguageChanged -= OnLanguageChanged;
             OpenWorkspaceSampleRequested = delegate { };
-            ClearReviewRunCache();
+            ReturnToRecipeRequested = delegate { };
+            OpenSelectedToolLearnRequested = delegate { };
+            EditSelectedStepRequested = delegate { };
+            executionController.StepUpdated -= OnReviewStepExecutionUpdated;
+            executionController.Dispose();
         }
 
         private void OnStepSelected(object sender, PipelineFlowStepSelectedEventArgs e)
@@ -187,6 +204,22 @@ namespace OpenVisionLab
         private async void OnRunReviewRequested(object sender, EventArgs e)
         {
             await RunReviewAsync();
+        }
+
+        private void InvokeOnViewDispatcher(Action action)
+        {
+            if (action == null)
+            {
+                return;
+            }
+
+            if (view.Dispatcher.CheckAccess())
+            {
+                action();
+                return;
+            }
+
+            view.Dispatcher.Invoke(action);
         }
 
         private void OnPreviousStepRequested(object sender, EventArgs e)
@@ -223,6 +256,29 @@ namespace OpenVisionLab
         private void OnOpenPairSampleRequested(object sender, EventArgs e)
         {
             RequestOpenPairSample();
+        }
+
+        private void OnUseSelectedMatchingPoseRequested(object sender, EventArgs e)
+        {
+            SaveSelectedMatchingPoseAsReference();
+        }
+
+        private void OnReturnToRecipeRequested(object sender, EventArgs e)
+        {
+            ReturnToRecipeRequested(this, EventArgs.Empty);
+        }
+
+        private void OnOpenSelectedToolLearnRequested(object sender, EventArgs e)
+        {
+            if (OpenVisionLearnTopicCatalog.TryResolveForToolType(SelectedToolType, out _))
+            {
+                OpenSelectedToolLearnRequested(this, EventArgs.Empty);
+            }
+        }
+
+        private void OnEditSelectedStepRequested(object sender, EventArgs e)
+        {
+            EditSelectedStepRequested(this, EventArgs.Empty);
         }
 
         public bool OpenPairSampleForTest()
@@ -266,9 +322,11 @@ namespace OpenVisionLab
             int stepCount = pipeline?.Steps?.Count ?? 0;
             RefreshActiveSamplePairGuide(activePipelineName);
             validationResult = VisionPipelineValidator.Validate(pipeline, GetLayerNames());
+            view.SetRecipeContext(recipeContext.Name);
             view.SetPipelineHeader(activePipelineName, stepCount);
             view.SetReviewProgress(FormatReviewProgressText());
             view.SetValidation(FormatValidationStatus(validationResult), FormatValidationDetails(validationResult));
+            RefreshReadiness();
 
             if (stepCount == 0)
             {
@@ -411,12 +469,15 @@ namespace OpenVisionLab
             view.SetIssueNavigationState(FindFirstIssueStepIndex() >= 0);
 
             VisionPipelineStep step = pipeline.Steps[index];
+            view.SetSelectedToolLearnState(OpenVisionLearnTopicCatalog.TryResolveForToolType(step.ToolType, out _));
             Bitmap inputImage = ResolveLayerPreviewImage(step.InputLayer);
             Bitmap outputImage = ResolveLayerPreviewImage(step.OutputLayer);
-            stepResultSummaries.TryGetValue(step, out VisionPipelineStepResultSummary summary);
+            executionController.TryGetSummary(step, out VisionPipelineStepResultSummary summary);
             string expectedInput = ResolveExpectedInputLayer(index);
             bool isBranch = IsBranch(step, expectedInput);
-            string statusText = ResolveStatusText(step, outputImage, summary);
+            bool inputWillBeProduced = HasEnabledProducerBefore(pipeline.Steps, index, step.InputLayer);
+            bool isInputMissing = IsInputMissing(step, inputImage, inputWillBeProduced);
+            string statusText = ResolveStatusText(step, outputImage, summary, isInputMissing);
 
             view.SetSelectedStep(
                 FormatStepName(index, step),
@@ -426,7 +487,7 @@ namespace OpenVisionLab
                 inputImage,
                 step.OutputLayer,
                 outputImage,
-                ResolveFlowSummary(step, isBranch, expectedInput),
+                ResolveFlowSummary(step, isBranch, expectedInput, isInputMissing),
                 FormatParameters(step),
                 OpenVisionPipelineReviewResultPresenter.FormatRunLog(step, inputImage, outputImage, mode, statusText, FormatValidationStatus(validationResult), summary));
             view.SetResultSummary(
@@ -443,6 +504,7 @@ namespace OpenVisionLab
                 validationResult,
                 expectedInput,
                 isBranch,
+                inputWillBeProduced,
                 activeSamplePairGuide));
             view.SetReviewGuidePairAction(
                 OpenVisionPipelineReviewResultPresenter.ResolvePairActionText(activePairCounterpartSample),
@@ -453,6 +515,158 @@ namespace OpenVisionLab
                 activeCatalogSample,
                 activePairCounterpartSample,
                 activeSamplePairGuide));
+            UpdateFixtureTeachState(step, summary);
+        }
+
+        private void UpdateFixtureTeachState(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
+        {
+            if (!VisionPipelineFixtureFrameService.IsProducer(step))
+            {
+                view.SetFixtureTeachState(false, false, string.Empty);
+                return;
+            }
+
+            if (TryGetReviewedFixturePose(step, summary, out double x, out double y, out double angle))
+            {
+                view.SetFixtureTeachState(
+                    true,
+                    true,
+                    TF(
+                        "PipelineReview.FixtureTeach.ReadyFormat",
+                        "X {0} / Y {1} / {2} deg. Confirm the reference image.",
+                        FormatPoseValue(x),
+                        FormatPoseValue(y),
+                        FormatPoseValue(angle)));
+                return;
+            }
+
+            view.SetFixtureTeachState(
+                true,
+                false,
+                T(
+                    "PipelineReview.FixtureTeach.Waiting",
+                    "Run Review and verify one Matching result."));
+        }
+
+        private void SaveSelectedMatchingPoseAsReference()
+        {
+            VisionPipelineStep step = GetSelectedStepOrDefault();
+            if (step == null)
+            {
+                return;
+            }
+
+            executionController.TryGetSummary(step, out VisionPipelineStepResultSummary summary);
+            if (!TryGetReviewedFixturePose(step, summary, out double x, out double y, out double angle))
+            {
+                UpdateFixtureTeachState(step, summary);
+                return;
+            }
+
+            Dictionary<string, string> parameters = step.Parameters;
+            string[] keys =
+            {
+                VisionPipelineFixtureFrameService.ReferenceXParameter,
+                VisionPipelineFixtureFrameService.ReferenceYParameter,
+                VisionPipelineFixtureFrameService.ReferenceAngleParameter
+            };
+            Dictionary<string, string> previousValues = keys
+                .Where(parameters.ContainsKey)
+                .ToDictionary(key => key, key => parameters[key], StringComparer.OrdinalIgnoreCase);
+
+            parameters[VisionPipelineFixtureFrameService.ReferenceXParameter] = FormatPoseValue(x);
+            parameters[VisionPipelineFixtureFrameService.ReferenceYParameter] = FormatPoseValue(y);
+            parameters[VisionPipelineFixtureFrameService.ReferenceAngleParameter] = FormatPoseValue(angle);
+
+            try
+            {
+                VisionPipelineStorage.Save(recipeContext.Name, pipeline);
+            }
+            catch (Exception ex)
+            {
+                foreach (string key in keys)
+                {
+                    if (previousValues.TryGetValue(key, out string previousValue))
+                    {
+                        parameters[key] = previousValue;
+                    }
+                    else
+                    {
+                        parameters.Remove(key);
+                    }
+                }
+
+                view.SetFixtureTeachState(
+                    true,
+                    true,
+                    TF(
+                        "PipelineReview.FixtureTeach.SaveFailedFormat",
+                        "Could not save reference: {0}",
+                        ex.GetBaseException().Message));
+                return;
+            }
+
+            executionController.Reset();
+            reviewExecutionState = T(
+                "PipelineReview.Execution.ReferenceChanged",
+                "Reference changed / run review required");
+            validationResult = VisionPipelineValidator.Validate(pipeline, GetLayerNames());
+            view.SetSteps(CreateFlowItems(pipeline.Steps));
+            view.SetReviewProgress(FormatReviewProgressText());
+            view.SetValidation(FormatValidationStatus(validationResult), FormatValidationDetails(validationResult));
+            RefreshReadiness();
+            SelectStep(selectedIndex, selectedMode);
+            view.SetResultSummary(
+                T("PipelineReview.FixtureTeach.RunRequired", "Reference saved"),
+                T(
+                    "PipelineReview.FixtureTeach.RunRequiredDetail",
+                    "The reference changed. Consumer ROI and routing were preserved; click Run Review to refresh every result."));
+            view.SetFixtureTeachState(
+                true,
+                false,
+                TF(
+                    "PipelineReview.FixtureTeach.SavedFormat",
+                    "Saved X {0} / Y {1} / {2} deg. ROI kept; run review again.",
+                    FormatPoseValue(x),
+                    FormatPoseValue(y),
+                    FormatPoseValue(angle)));
+        }
+
+        private static bool TryGetReviewedFixturePose(
+            VisionPipelineStep step,
+            VisionPipelineStepResultSummary summary,
+            out double x,
+            out double y,
+            out double angle)
+        {
+            x = 0d;
+            y = 0d;
+            angle = 0d;
+            if (!VisionPipelineFixtureFrameService.IsProducer(step)
+                || summary?.Success != true
+                || summary.Metrics == null)
+            {
+                return false;
+            }
+
+            string toolType = VisionPipelineNormalizer.NormalizeToolType(step.ToolType);
+            return (toolType == "matching" || toolType == "templatematching")
+                && summary.Metrics.TryGetValue(VisionPipelineKnownMetrics.FixtureCenterX, out x)
+                && summary.Metrics.TryGetValue(VisionPipelineKnownMetrics.FixtureCenterY, out y)
+                && summary.Metrics.TryGetValue(VisionPipelineKnownMetrics.FixtureAngle, out angle)
+                && IsFinite(x)
+                && IsFinite(y)
+                && IsFinite(angle);
+        }
+
+        private static bool IsFinite(double value)
+        {
+            return !double.IsNaN(value) && !double.IsInfinity(value);
+        }
+
+        private static string FormatPoseValue(double value)
+        {
+            return value.ToString("0.###", CultureInfo.InvariantCulture);
         }
 
         private List<PipelineFlowStepItem> CreateFlowItems(IReadOnlyList<VisionPipelineStep> steps)
@@ -469,9 +683,11 @@ namespace OpenVisionLab
 
                 Bitmap inputImage = ResolveLayerPreviewImage(step.InputLayer);
                 Bitmap outputImage = ResolveLayerPreviewImage(step.OutputLayer);
-                stepResultSummaries.TryGetValue(step, out VisionPipelineStepResultSummary summary);
+                executionController.TryGetSummary(step, out VisionPipelineStepResultSummary summary);
                 bool isBranch = IsBranch(step, previousEnabledOutput);
-                string statusText = ResolveStatusText(step, outputImage, summary);
+                bool inputWillBeProduced = HasEnabledProducerBefore(steps, i, step.InputLayer);
+                bool isInputMissing = IsInputMissing(step, inputImage, inputWillBeProduced);
+                string statusText = ResolveStatusText(step, outputImage, summary, isInputMissing);
                 items.Add(new PipelineFlowStepItem
                 {
                     Index = i,
@@ -480,12 +696,13 @@ namespace OpenVisionLab
                     InputLayer = step.InputLayer,
                     OutputLayer = step.OutputLayer,
                     ExpectedInputLayer = previousEnabledOutput,
-                    FlowStateText = ResolveFlowSummary(step, isBranch, previousEnabledOutput),
+                    FlowStateText = ResolveFlowSummary(step, isBranch, previousEnabledOutput, isInputMissing),
                     IsBranch = isBranch,
                     IsEnabled = step.Enabled,
                     HasInputImage = inputImage != null,
+                    IsInputMissing = isInputMissing,
                     HasOutputImage = outputImage != null,
-                    Status = ResolveFlowStatus(step, outputImage, summary),
+                    Status = ResolveFlowStatus(step, outputImage, summary, isInputMissing),
                     StatusText = statusText
                 });
 
@@ -523,7 +740,11 @@ namespace OpenVisionLab
             return !string.Equals(SafeText(step.InputLayer, string.Empty), expectedInputLayer, StringComparison.OrdinalIgnoreCase);
         }
 
-        private static PipelineFlowStepStatus ResolveFlowStatus(VisionPipelineStep step, Bitmap outputImage, VisionPipelineStepResultSummary summary)
+        private static PipelineFlowStepStatus ResolveFlowStatus(
+            VisionPipelineStep step,
+            Bitmap outputImage,
+            VisionPipelineStepResultSummary summary,
+            bool isInputMissing)
         {
             if (step != null && !step.Enabled)
             {
@@ -537,10 +758,19 @@ namespace OpenVisionLab
                     : PipelineFlowStepStatus.Failed;
             }
 
+            if (isInputMissing)
+            {
+                return PipelineFlowStepStatus.MissingInput;
+            }
+
             return outputImage == null ? PipelineFlowStepStatus.Waiting : PipelineFlowStepStatus.Loaded;
         }
 
-        private static string ResolveStatusText(VisionPipelineStep step, Bitmap outputImage, VisionPipelineStepResultSummary summary)
+        private static string ResolveStatusText(
+            VisionPipelineStep step,
+            Bitmap outputImage,
+            VisionPipelineStepResultSummary summary,
+            bool isInputMissing)
         {
             if (step != null && !step.Enabled)
             {
@@ -552,14 +782,48 @@ namespace OpenVisionLab
                 return SafeText(summary.Status, "DONE");
             }
 
+            if (isInputMissing)
+            {
+                return T("PipelineReview.Status.InputMissing", "Input missing");
+            }
+
             return outputImage == null ? "WAIT" : "READY";
+        }
+
+        private static bool HasEnabledProducerBefore(
+            IReadOnlyList<VisionPipelineStep> steps,
+            int stepIndex,
+            string inputLayer)
+        {
+            if (steps == null || stepIndex <= 0 || string.IsNullOrWhiteSpace(inputLayer))
+            {
+                return false;
+            }
+
+            string normalizedInput = inputLayer.Trim();
+            for (int index = 0; index < stepIndex && index < steps.Count; index++)
+            {
+                VisionPipelineStep candidate = steps[index];
+                if (candidate?.Enabled == true
+                    && string.Equals(candidate.OutputLayer?.Trim(), normalizedInput, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsInputMissing(VisionPipelineStep step, Bitmap inputImage, bool inputWillBeProduced)
+        {
+            return step?.Enabled == true && inputImage == null && !inputWillBeProduced;
         }
 
         private async Task RunReviewAsync()
         {
-            if (isRunningReview || pipeline?.Steps == null || pipeline.Steps.Count == 0)
+            if (executionController.IsRunning || pipeline?.Steps == null || pipeline.Steps.Count == 0)
             {
-                reviewExecutionState = isRunningReview
+                reviewExecutionState = executionController.IsRunning
                     ? T("PipelineReview.Execution.AlreadyRunning", "Already running")
                     : T("PipelineReview.Execution.NoSteps", "No steps");
                 return;
@@ -578,7 +842,6 @@ namespace OpenVisionLab
                 return;
             }
 
-            isRunningReview = true;
             reviewExecutionState = T("PipelineReview.Execution.Started", "Started");
             view.SetRunReviewBusy(true);
             view.SetReviewProgress(T("PipelineReview.Progress.Running", "Running..."));
@@ -592,18 +855,14 @@ namespace OpenVisionLab
 
             try
             {
-                ClearReviewRunCache();
+                executionController.Reset();
+                UpdateFixtureTeachState(GetSelectedStepOrDefault(), null);
                 view.SetIssueNavigationState(false);
-                using VisionPipelineContext context = CreateReviewContextFromDisplayLayers();
-                VisionPipelineRunResult runResult = await VisionPipelineExecutionService.RunAsync(
+                OpenVisionPipelineReviewExecutionResult runResult = await executionController.RunAsync(
                     pipeline,
-                    context,
-                    StepTimeoutMilliseconds,
-                    CancellationToken.None,
-                    OnReviewStepExecutionUpdated);
+                    StepTimeoutMilliseconds);
 
                 await view.Dispatcher.InvokeAsync(() => ApplyReviewRunResult(runResult));
-                DisposeRunResultImages(runResult);
             }
             catch (Exception ex)
             {
@@ -616,7 +875,6 @@ namespace OpenVisionLab
             }
             finally
             {
-                isRunningReview = false;
                 await view.Dispatcher.InvokeAsync(() =>
                 {
                     view.SetRunReviewBusy(false);
@@ -625,47 +883,32 @@ namespace OpenVisionLab
             }
         }
 
-        private void OnReviewStepExecutionUpdated(VisionPipelineStepExecutionUpdate update)
+        private void OnReviewStepExecutionUpdated(
+            object sender,
+            OpenVisionPipelineReviewStepUpdatedEventArgs e)
         {
             if (!view.Dispatcher.CheckAccess())
             {
-                view.Dispatcher.Invoke(() => OnReviewStepExecutionUpdated(update));
+                view.Dispatcher.Invoke(() => OnReviewStepExecutionUpdated(sender, e));
                 return;
             }
 
-            if (update?.StepResult != null && update.Step != null)
-            {
-                stepResultSummaries[update.Step] = VisionPipelineResultSummaryService.CreateStepSummary(GetStepDisplayIndex(update.Step), update.StepResult);
-                CacheReviewOutput(update.StepResult);
-            }
-
-            if (update?.Step != null)
+            VisionPipelineStep updatedStep = e?.Step;
+            if (updatedStep != null)
             {
                 view.SetSteps(CreateFlowItems(pipeline.Steps));
                 view.SetReviewProgress(FormatReviewProgressText());
                 view.SetIssueNavigationState(FindFirstIssueStepIndex() >= 0);
-                if (ReferenceEquals(update.Step, pipeline.Steps.ElementAtOrDefault(selectedIndex)))
+                if (ReferenceEquals(updatedStep, pipeline.Steps.ElementAtOrDefault(selectedIndex)))
                 {
                     SelectStep(selectedIndex, selectedMode);
                 }
             }
         }
 
-        private void ApplyReviewRunResult(VisionPipelineRunResult runResult)
+        private void ApplyReviewRunResult(OpenVisionPipelineReviewExecutionResult runResult)
         {
-            reviewExecutionState = TF("PipelineReview.Execution.CompletedFormat", "Completed / {0} step results", runResult?.StepResults?.Count ?? 0);
-            CacheMissingReviewOutputs(runResult);
-            List<VisionPipelineStepResultSummary> summaries = VisionPipelineResultSummaryService.CreateStepSummaries(runResult);
-            foreach (VisionPipelineStepResultSummary summary in summaries)
-            {
-                VisionPipelineStep step = pipeline.Steps.FirstOrDefault(candidate => string.Equals(candidate?.Name, summary.Name, StringComparison.Ordinal)
-                    && string.Equals(candidate?.OutputLayer, summary.OutputLayer, StringComparison.OrdinalIgnoreCase));
-                if (step != null)
-                {
-                    stepResultSummaries[step] = summary;
-                }
-            }
-
+            reviewExecutionState = TF("PipelineReview.Execution.CompletedFormat", "Completed / {0} step results", runResult?.StepResultCount ?? 0);
             view.SetSteps(CreateFlowItems(pipeline.Steps));
             view.SetReviewProgress(FormatReviewProgressText());
             SelectStep(selectedIndex < 0 ? 0 : selectedIndex, selectedMode);
@@ -686,7 +929,7 @@ namespace OpenVisionLab
                     continue;
                 }
 
-                if (stepResultSummaries.TryGetValue(step, out VisionPipelineStepResultSummary summary)
+                if (executionController.TryGetSummary(step, out VisionPipelineStepResultSummary summary)
                     && summary?.Success == false)
                 {
                     return i;
@@ -694,76 +937,6 @@ namespace OpenVisionLab
             }
 
             return -1;
-        }
-
-        private VisionPipelineContext CreateReviewContextFromDisplayLayers()
-        {
-            VisionPipelineContext context = new VisionPipelineContext();
-            for (int i = 0; i < displayManager.LayerCount; i++)
-            {
-                string title = displayManager.GetLayerTitle(i);
-                Bitmap image = displayManager.GetLayerImage(i);
-                if (string.IsNullOrWhiteSpace(title) || image == null || DisplayManagerImageExtensions.IsPlaceholderBitmap(image))
-                {
-                    continue;
-                }
-
-                using Mat mat = BitmapImageConverter.ToMat(image);
-                context.SetLayer(title, mat);
-            }
-
-            return context;
-        }
-
-        private void CacheMissingReviewOutputs(VisionPipelineRunResult runResult)
-        {
-            foreach (VisionPipelineStepResult stepResult in runResult?.StepResults ?? Enumerable.Empty<VisionPipelineStepResult>())
-            {
-                CacheReviewOutput(stepResult, onlyIfMissing: true);
-            }
-        }
-
-        private void CacheReviewOutput(VisionPipelineStepResult stepResult, bool onlyIfMissing = false)
-        {
-            string outputLayer = stepResult?.Step?.OutputLayer;
-            if (string.IsNullOrWhiteSpace(outputLayer)
-                || stepResult.ToolResult?.ResultImage == null
-                || stepResult.ToolResult.ResultImage.Empty())
-            {
-                return;
-            }
-
-            if (onlyIfMissing && reviewLayerImages.ContainsKey(outputLayer))
-            {
-                return;
-            }
-
-            Bitmap bitmap = BitmapImageConverter.ToBitmap(stepResult.ToolResult.ResultImage);
-            ReplaceReviewLayerImage(outputLayer, bitmap);
-        }
-
-        private static void DisposeRunResultImages(VisionPipelineRunResult runResult)
-        {
-            foreach (VisionPipelineStepResult stepResult in runResult?.StepResults ?? Enumerable.Empty<VisionPipelineStepResult>())
-            {
-                stepResult?.ToolResult?.ResultImage?.Dispose();
-            }
-        }
-
-        private void ReplaceReviewLayerImage(string layerName, Bitmap image)
-        {
-            if (string.IsNullOrWhiteSpace(layerName) || image == null)
-            {
-                image?.Dispose();
-                return;
-            }
-
-            if (reviewLayerImages.TryGetValue(layerName, out Bitmap existing))
-            {
-                existing?.Dispose();
-            }
-
-            reviewLayerImages[layerName] = image;
         }
 
         private Bitmap ResolveLayerPreviewImage(string layerName)
@@ -779,18 +952,17 @@ namespace OpenVisionLab
                 return displayImage;
             }
 
-            return reviewLayerImages.TryGetValue(layerName, out Bitmap cached) ? cached : null;
+            return executionController.ResolveCachedOutput(layerName);
         }
 
-        private void ClearReviewRunCache()
+        private void RefreshReadiness()
         {
-            stepResultSummaries.Clear();
-            foreach (Bitmap image in reviewLayerImages.Values)
-            {
-                image?.Dispose();
-            }
-
-            reviewLayerImages.Clear();
+            view.SetReadiness(OpenVisionPipelineReviewReadinessPresenter.Create(
+                pipeline,
+                validationResult,
+                layerName => ResolveLayerPreviewImage(layerName) != null,
+                activeSamplePairGuide?.HasGuide == true,
+                activePairCounterpartSample?.CanOpen == true));
         }
 
         private string FormatReviewProgressText()
@@ -811,7 +983,7 @@ namespace OpenVisionLab
                     continue;
                 }
 
-                if (!stepResultSummaries.TryGetValue(step, out VisionPipelineStepResultSummary summary))
+                if (!executionController.TryGetSummary(step, out VisionPipelineStepResultSummary summary))
                 {
                     continue;
                 }
@@ -828,7 +1000,7 @@ namespace OpenVisionLab
 
             int reviewableCount = pipeline.Steps.Count(step => step?.Enabled != false);
             int waitCount = Math.Max(0, reviewableCount - okCount - ngCount);
-            if (okCount == 0 && ngCount == 0 && waitCount == reviewableCount && !isRunningReview)
+            if (okCount == 0 && ngCount == 0 && waitCount == reviewableCount && !executionController.IsRunning)
             {
                 return T("PipelineReview.Progress.NotRun", "Not run");
             }
@@ -843,15 +1015,9 @@ namespace OpenVisionLab
                     TF("PipelineReview.Progress.OffFormat", "OFF {0}", skippedCount));
             }
 
-            return isRunningReview
+            return executionController.IsRunning
                 ? string.Format(CultureInfo.CurrentCulture, "{0} / {1}", T("PipelineReview.Progress.Running", "Running..."), progress)
                 : progress;
-        }
-
-        private int GetStepDisplayIndex(VisionPipelineStep step)
-        {
-            int index = pipeline?.Steps?.IndexOf(step) ?? -1;
-            return index < 0 ? 0 : index + 1;
         }
 
         private int GetSelectedDisplayIndex()
@@ -864,7 +1030,11 @@ namespace OpenVisionLab
             return pipeline?.Steps?.ElementAtOrDefault(selectedIndex);
         }
 
-        private static string ResolveFlowSummary(VisionPipelineStep step, bool isBranch, string expectedInputLayer)
+        private static string ResolveFlowSummary(
+            VisionPipelineStep step,
+            bool isBranch,
+            string expectedInputLayer,
+            bool isInputMissing)
         {
             if (step == null)
             {
@@ -877,6 +1047,11 @@ namespace OpenVisionLab
             }
 
             string inputLayer = SafeText(step.InputLayer, T("PipelineReview.Flow.UnknownInput", "Input?"));
+            if (isInputMissing)
+            {
+                return TF("PipelineReview.Flow.MissingInputFormat", "Missing input: {0}", inputLayer);
+            }
+
             if (string.IsNullOrWhiteSpace(expectedInputLayer))
             {
                 return TF("PipelineReview.Flow.SourceImageFormat", "Source image: {0}", inputLayer);
@@ -996,6 +1171,12 @@ namespace OpenVisionLab
         private static string FormatStepName(int index, VisionPipelineStep step)
         {
             string name = SafeText(step?.Name, step?.ToolType);
+            string ordinal = (index + 1).ToString("00", CultureInfo.CurrentCulture);
+            if (name.StartsWith(ordinal + " ", StringComparison.OrdinalIgnoreCase))
+            {
+                name = name.Substring(ordinal.Length).TrimStart();
+            }
+
             return string.Format(CultureInfo.CurrentCulture, "{0:00}  {1}", index + 1, name);
         }
 

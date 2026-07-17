@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace OpenVisionReadinessCheck;
 
@@ -25,6 +26,8 @@ internal static class Program
         CheckWpfShellMigration(repoRoot);
         CheckToolSamplesAndDiagnostics(repoRoot);
         CheckPipelineInputOutputUx(repoRoot);
+        CheckSourceOwnership(repoRoot);
+        CheckToolViewSourceOrganization(repoRoot);
         CheckToolViewControllerOwnership(repoRoot);
         CheckWpgEditorContracts(repoRoot);
         CheckLocalizationExpansion(repoRoot);
@@ -60,15 +63,259 @@ internal static class Program
         string shellHost = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionShellHostView.xaml.cs");
         RequireContains(shellHost, "SetDirectRunPending", "Pending state is surfaced by the WPF shell direct-run pending state.");
 
-        string documentController = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionShellHostDocumentController.cs");
+        string documentController = Read(repoRoot, @"0. UI\0) MENU\Wpf\Shell\Documents\OpenVisionShellHostDocumentController.cs");
         RequireContains(documentController, "ActivatePendingTool", "Pending tool state is represented by a WPF ViewModel.");
         RequireContains(documentController, "OpenVisionPendingToolViewModel", "Pending tool state is represented by a WPF ViewModel.");
 
-        string statePresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionShellHostStatePresenter.cs");
+        string statePresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\Shell\State\OpenVisionShellHostStatePresenter.cs");
         RequireContains(statePresenter, "ActivePendingToolTitle", "Pending tool state is projected through shell host state presenter.");
 
-        string commandCatalog = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionShellCommandCatalog.cs");
+        string commandCatalog = Read(repoRoot, @"0. UI\0) MENU\Wpf\Shell\Commands\OpenVisionShellCommandCatalog.cs");
         RequireContains(commandCatalog, "PendingAlgorithmTool", "Algorithm tools without completed views are marked as pending work.");
+
+        string recipeCommandSurface = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionShellHostRecipeCommandSurface.cs");
+        RequireNotContains(recipeCommandSurface, "public sealed class OpenVisionRecipeValidationSuiteScopeOption", "Recipe command surface no longer owns validation/review model declarations.");
+        RequireNotContains(recipeCommandSurface, "public sealed class OpenVisionRecipeSampleRunSummary", "Recipe command surface no longer owns sample/batch model declarations.");
+
+        string recipeValidationReviewModels = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Models\OpenVisionRecipeValidationReviewModels.cs");
+        RequireContains(recipeValidationReviewModels, "public sealed class OpenVisionRecipeValidationSuiteScopeOption", "Recipe validation/review models have an explicit owner.");
+        RequireContains(recipeValidationReviewModels, "public sealed class OpenVisionRecipeOperatorResultChannelRow", "Recipe operator decision rows have an explicit owner.");
+
+        string recipeSampleRunModels = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Models\OpenVisionRecipeSampleRunModels.cs");
+        RequireContains(recipeSampleRunModels, "public sealed class OpenVisionRecipeSampleRunSummary", "Recipe sample-run models have an explicit owner.");
+        RequireContains(recipeSampleRunModels, "public sealed class OpenVisionRecipeBatchRunComparisonRow", "Recipe batch-comparison rows have an explicit owner.");
+
+        RequireNotContains(recipeCommandSurface, "private string BuildOperatorRunReviewText()", "Recipe command surface does not derive operator run-review text.");
+        RequireNotContains(recipeCommandSurface, "private string BuildSelectedPairRoleRunReviewSuffix()", "Recipe command surface does not derive selected pair-role review text.");
+        RequireNotContains(recipeCommandSurface, "private string BuildSelectedRecentBatchRunReviewText()", "Recipe command surface does not derive selected batch-run review text.");
+        RequireNotContains(recipeCommandSurface, "private static string BuildOperatorRunReviewNextAction(", "Recipe command surface does not own run-review next-action policy.");
+        RequireNotContains(recipeCommandSurface, "private string BuildOperatorDecisionXmlCardText()", "Recipe command surface does not format the decision-board XML card.");
+        RequireNotContains(recipeCommandSurface, "private string BuildOperatorDecisionSampleCardText()", "Recipe command surface does not format the decision-board sample card.");
+        RequireNotContains(recipeCommandSurface, "private string BuildOperatorDecisionPairCardText()", "Recipe command surface does not format the decision-board Good/Bad card.");
+        RequireNotContains(recipeCommandSurface, "private string BuildOperatorDecisionNextActionText()", "Recipe command surface does not format the decision-board next action.");
+        RequireNotContains(recipeCommandSurface, "private string BuildOperatorDecisionSummaryStatusText()", "Recipe command surface does not format the decision-board status summary.");
+        RequireNotContains(recipeCommandSurface, "private string BuildOperatorDecisionEvidenceText()", "Recipe command surface does not derive decision-board metric evidence.");
+        RequireNotContains(recipeCommandSurface, "private IReadOnlyList<OpenVisionRecipeOperatorValidationRow> BuildOperatorValidationChecklistRows()", "Recipe command surface does not derive the decision-board validation rows.");
+        RequireNotContains(recipeCommandSurface, "private IReadOnlyList<OpenVisionRecipeOperatorResultChannelRow> BuildOperatorResultChannelRows()", "Recipe command surface does not derive the decision-board result channels.");
+        RequireNotContains(recipeCommandSurface, "private string BuildOperatorHandoffReportText()", "Recipe command surface does not format the operator handoff report.");
+
+        string recipeRunReviewPresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Review\OpenVisionRecipeRunReviewPresenter.cs");
+        RequireContains(recipeRunReviewPresenter, "internal static class OpenVisionRecipeRunReviewPresenter", "Recipe run-review presentation has an explicit owner.");
+        RequireContains(recipeRunReviewPresenter, "BuildOperatorRunReviewText", "Recipe run-review presenter formats operator review output.");
+        RequireContains(recipeRunReviewPresenter, "BuildSelectedBatchRunReviewText", "Recipe run-review presenter formats saved batch-run review output.");
+        RequireContains(recipeRunReviewPresenter, "BuildNextAction", "Recipe run-review presenter owns the next-action policy.");
+
+        string recipeOperatorDecisionPresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Review\OpenVisionRecipeOperatorDecisionPresenter.cs");
+        RequireContains(recipeOperatorDecisionPresenter, "internal sealed class OpenVisionRecipeOperatorDecisionRequest", "Recipe operator-decision presentation has an explicit request contract.");
+        RequireContains(recipeOperatorDecisionPresenter, "internal sealed class OpenVisionRecipeOperatorDecisionPresentation", "Recipe operator-decision presentation has an explicit result contract.");
+        RequireContains(recipeOperatorDecisionPresenter, "internal static class OpenVisionRecipeOperatorDecisionPresenter", "Recipe operator-decision presentation has an explicit owner.");
+        RequireContains(recipeOperatorDecisionPresenter, "BuildValidationRows", "Recipe operator-decision presenter owns validation-row presentation.");
+        RequireContains(recipeOperatorDecisionPresenter, "BuildResultChannels", "Recipe operator-decision presenter owns result-channel presentation.");
+        RequireContains(recipeOperatorDecisionPresenter, "BuildHandoffReportText", "Recipe operator-decision presenter owns operator handoff formatting.");
+
+        RequireNotContains(recipeCommandSurface, "private string BuildPipelineDiffReport(", "Recipe command surface does not format pipeline diff reports.");
+        RequireNotContains(recipeCommandSurface, "private static void AddLimitedDiffLines(", "Recipe command surface does not format limited pipeline-diff rows.");
+        RequireNotContains(recipeCommandSurface, "private static string FormatDetailedStepDiff(", "Recipe command surface does not format detailed step diffs.");
+        RequireNotContains(recipeCommandSurface, "private static string FormatParameterDiff(", "Recipe command surface does not format parameter diffs.");
+        RequireNotContains(recipeCommandSurface, "private static int CountDependencyParameters(", "Recipe command surface does not count comparison dependency paths.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipePipelineComparisonPresenter.BuildDraftImportReview", "Recipe command surface delegates LLM draft review presentation.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipePipelineComparisonPresenter.BuildDraftDiffReview", "Recipe command surface delegates LLM draft diff presentation.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipePipelineComparisonPresenter.BuildVariantComparison", "Recipe command surface delegates active/selected pipeline comparison presentation.");
+
+        string recipePipelineComparisonPresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Review\OpenVisionRecipePipelineComparisonPresenter.cs");
+        RequireContains(recipePipelineComparisonPresenter, "internal static class OpenVisionRecipePipelineComparisonPresenter", "Recipe pipeline-comparison presentation has an explicit owner.");
+        RequireContains(recipePipelineComparisonPresenter, "BuildDraftImportReview", "Recipe pipeline-comparison presenter formats LLM draft import review.");
+        RequireContains(recipePipelineComparisonPresenter, "BuildDraftDiffReview", "Recipe pipeline-comparison presenter formats LLM draft diff review.");
+        RequireContains(recipePipelineComparisonPresenter, "BuildVariantComparison", "Recipe pipeline-comparison presenter formats active/selected pipeline comparison.");
+        RequireContains(recipePipelineComparisonPresenter, "BuildPipelineDiffReport", "Recipe pipeline-comparison presenter owns step and parameter diff formatting.");
+
+        RequireNotContains(recipeCommandSurface, "private string BuildPipelineSelectedStepOperatorContextText()", "Recipe command surface does not format selected-step operator context.");
+        RequireNotContains(recipeCommandSurface, "private string BuildFailureReviewText()", "Recipe command surface does not format failed-step review guidance.");
+        RequireNotContains(recipeCommandSurface, "private string BuildCorrectedOutputReviewText()", "Recipe command surface does not format corrected-output guidance.");
+        RequireNotContains(recipeCommandSurface, "private string BuildCorrectedOutputAppliedText(", "Recipe command surface does not format corrected-output apply evidence.");
+        RequireNotContains(recipeCommandSurface, "private string BuildPipelineStepFlowReviewText()", "Recipe command surface does not format step-flow review.");
+        RequireNotContains(recipeCommandSurface, "private string BuildBranchOutputComparisonText()", "Recipe command surface does not format branch/output comparison summary.");
+        RequireNotContains(recipeCommandSurface, "private IReadOnlyList<OpenVisionRecipeBranchOutputComparisonRow> BuildBranchOutputComparisonRows()", "Recipe command surface does not build branch/output comparison rows.");
+        RequireNotContains(recipeCommandSurface, "private static string BuildPipelineStepSlotText(", "Recipe command surface does not format step-slot text.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipePipelineStepReviewPresenter.BuildOperatorContext", "Recipe command surface delegates selected-step operator context.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipePipelineStepReviewPresenter.BuildFailureReviewText", "Recipe command surface delegates failed-step review guidance.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipePipelineStepReviewPresenter.BuildCorrectedOutputReviewText", "Recipe command surface delegates corrected-output guidance.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipePipelineStepReviewPresenter.BuildBranchOutputComparisonRows", "Recipe command surface delegates branch/output comparison rows.");
+
+        string recipePipelineStepReviewPresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Review\OpenVisionRecipePipelineStepReviewPresenter.cs");
+        RequireContains(recipePipelineStepReviewPresenter, "internal static class OpenVisionRecipePipelineStepReviewPresenter", "Recipe pipeline-step review presentation has an explicit owner.");
+        RequireContains(recipePipelineStepReviewPresenter, "BuildOperatorContext", "Recipe pipeline-step review presenter formats selected-step context.");
+        RequireContains(recipePipelineStepReviewPresenter, "BuildFailureReviewText", "Recipe pipeline-step review presenter formats failure review.");
+        RequireContains(recipePipelineStepReviewPresenter, "BuildCorrectedOutputAppliedText", "Recipe pipeline-step review presenter formats corrected-output apply evidence.");
+        RequireContains(recipePipelineStepReviewPresenter, "BuildStepFlowReview", "Recipe pipeline-step review presenter formats step flow.");
+        RequireContains(recipePipelineStepReviewPresenter, "BuildBranchOutputComparisonRows", "Recipe pipeline-step review presenter owns branch/output rows.");
+
+        RequireNotContains(recipeCommandSurface, "private IReadOnlyList<OpenVisionRecipeBatchSampleResultOption> BuildFilteredRecentBatchRunSampleResults(", "Recipe command surface does not filter Run History rows directly.");
+        RequireNotContains(recipeCommandSurface, "private string BuildRecentBatchRunNgFilterSummaryText()", "Recipe command surface does not format the Run History NG summary.");
+        RequireNotContains(recipeCommandSurface, "private IReadOnlyList<OpenVisionRecipeBatchRunComparisonRow> BuildRecentBatchRunComparisonRows()", "Recipe command surface does not build Run History comparison rows.");
+        RequireNotContains(recipeCommandSurface, "private OpenVisionRecipeBatchRunOption FindBaselineBatchRunOption(", "Recipe command surface does not resolve the Run History baseline policy.");
+        RequireNotContains(recipeCommandSurface, "private OpenVisionRecipeBatchRunOption FindAutoBaselineBatchRunOption(", "Recipe command surface does not resolve automatic Run History baselines.");
+        RequireNotContains(recipeCommandSurface, "private static Dictionary<string, VisionPipelineBatchSampleRunResult> BuildBatchResultMap(", "Recipe command surface does not map Run History sample results.");
+        RequireNotContains(recipeCommandSurface, "private static OpenVisionRecipeBatchRunComparisonRow SelectDefaultBatchComparisonRow(", "Recipe command surface does not select Run History comparison presentation.");
+        RequireNotContains(recipeCommandSurface, "private string BuildRecentBatchRunComparisonSummaryText()", "Recipe command surface does not format the Run History comparison summary.");
+        RequireNotContains(recipeCommandSurface, "private string BuildRecentBatchRunPerformanceComparisonText()", "Recipe command surface does not format Run History timing comparison.");
+        RequireNotContains(recipeCommandSurface, "private static bool HaveEquivalentBatchSampleSets(", "Recipe command surface does not compare Run History sample sets.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeRunHistoryPresenter.BuildFilteredSampleResults", "Recipe command surface delegates Run History filtering.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeRunHistoryPresenter.BuildComparisonRows", "Recipe command surface delegates Run History comparison rows.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeRunHistoryPresenter.BuildComparisonSummaryText", "Recipe command surface delegates Run History comparison summary.");
+
+        string recipeRunHistoryPresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Review\OpenVisionRecipeRunHistoryPresenter.cs");
+        RequireContains(recipeRunHistoryPresenter, "internal static class OpenVisionRecipeRunHistoryPresenter", "Recipe Run History presentation has an explicit owner.");
+        RequireContains(recipeRunHistoryPresenter, "BuildFilteredSampleResults", "Recipe Run History presenter filters saved-run samples.");
+        RequireContains(recipeRunHistoryPresenter, "ResolveBaselineRunOption", "Recipe Run History presenter owns baseline selection policy.");
+        RequireContains(recipeRunHistoryPresenter, "BuildComparisonRows", "Recipe Run History presenter derives comparison rows.");
+        RequireContains(recipeRunHistoryPresenter, "BuildComparisonSummaryText", "Recipe Run History presenter formats comparison and performance evidence.");
+        RequireNotContains(recipeRunHistoryPresenter, "VisionPipelineBatchRunSummaryStorage.Load(", "Recipe Run History presenter does not load persisted run summaries.");
+
+        RequireNotContains(recipeCommandSurface, "private IReadOnlyList<OpenVisionRecipeSampleMatrixRow> BuildSampleMatrixRows()", "Recipe command surface does not build sample-matrix rows directly.");
+        RequireNotContains(recipeCommandSurface, "private static OpenVisionRecipeSampleMatrixRow SelectDefaultSampleMatrixRow(", "Recipe command surface does not select sample-matrix presentation directly.");
+        RequireNotContains(recipeCommandSurface, "private string BuildSampleMatrixSummaryText()", "Recipe command surface does not format the sample-matrix summary.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeSampleMatrixPresenter.BuildRows", "Recipe command surface delegates sample-matrix row construction.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeSampleMatrixPresenter.SelectDefaultRow", "Recipe command surface delegates sample-matrix selection priority.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeSampleMatrixPresenter.BuildSummaryText", "Recipe command surface delegates sample-matrix summary presentation.");
+
+        string recipeSampleMatrixPresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Review\OpenVisionRecipeSampleMatrixPresenter.cs");
+        RequireContains(recipeSampleMatrixPresenter, "internal static class OpenVisionRecipeSampleMatrixPresenter", "Recipe sample-matrix presentation has an explicit owner.");
+        RequireContains(recipeSampleMatrixPresenter, "BuildRows", "Recipe sample-matrix presenter derives Good/Bad rows.");
+        RequireContains(recipeSampleMatrixPresenter, "SelectDefaultRow", "Recipe sample-matrix presenter owns selected-row priority.");
+        RequireContains(recipeSampleMatrixPresenter, "BuildSummaryText", "Recipe sample-matrix presenter formats matrix summary.");
+        RequireNotContains(recipeSampleMatrixPresenter, "VisionPipelineExecutionService.RunAsync", "Recipe sample-matrix presenter does not execute a pipeline.");
+
+        RequireNotContains(recipeCommandSurface, "private string BuildValidationSetExpectedText()", "Recipe command surface does not format validation-set expected-role summary.");
+        RequireNotContains(recipeCommandSurface, "private string BuildValidationSetNextActionText()", "Recipe command surface does not format validation-set next action.");
+        RequireNotContains(recipeCommandSurface, "private string BuildValidationSuiteSummaryText()", "Recipe command surface does not format Validation Suite summary.");
+        RequireNotContains(recipeCommandSurface, "private string BuildValidationSetSelectionSummaryText()", "Recipe command surface does not format validation-set selection summary.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeValidationSetPresenter.BuildExpectedText", "Recipe command surface delegates validation-set expected-role presentation.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeValidationSetPresenter.BuildNextActionText", "Recipe command surface delegates validation-set next action presentation.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeValidationSetPresenter.BuildSelectionSummaryText", "Recipe command surface delegates validation-set selection summary.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeValidationSetPresenter.BuildValidationSuiteSummaryText", "Recipe command surface delegates Validation Suite summary presentation.");
+
+        string recipeValidationSetPresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Review\OpenVisionRecipeValidationSetPresenter.cs");
+        RequireContains(recipeValidationSetPresenter, "internal static class OpenVisionRecipeValidationSetPresenter", "Recipe validation-set presentation has an explicit owner.");
+        RequireContains(recipeValidationSetPresenter, "BuildExpectedText", "Recipe validation-set presenter formats expected roles.");
+        RequireContains(recipeValidationSetPresenter, "BuildNextActionText", "Recipe validation-set presenter formats next action.");
+        RequireContains(recipeValidationSetPresenter, "BuildSelectionSummaryText", "Recipe validation-set presenter formats selected-set summary.");
+        RequireContains(recipeValidationSetPresenter, "BuildValidationSuiteSummaryText", "Recipe validation-set presenter formats Validation Suite summary.");
+        RequireNotContains(recipeValidationSetPresenter, "OpenVisionRecipeValidationSetStorage.", "Recipe validation-set presenter does not persist validation sets.");
+        RequireNotContains(recipeValidationSetPresenter, "VisionPipelineStorage.TryLoadFromFile(", "Recipe validation-set presenter does not load pipeline XML.");
+        RequireNotContains(recipeValidationSetPresenter, "VisionPipelineExecutionService.RunAsync", "Recipe validation-set presenter does not execute a pipeline.");
+
+        RequireNotContains(recipeCommandSurface, "private string BuildPinGapIntentLatestRunText()", "Recipe command surface does not format Pin gap latest-run feedback.");
+        RequireNotContains(recipeCommandSurface, "private string BuildPinGapIntentCalibrationReviewText()", "Recipe command surface does not format Pin gap calibration feedback.");
+        RequireNotContains(recipeCommandSurface, "private string ResolvePinGapMetricAdvice(string metrics)", "Recipe command surface does not resolve Pin gap metric advice.");
+        RequireNotContains(recipeCommandSurface, "private string BuildBlobCountIntentLatestRunText()", "Recipe command surface does not format Blob latest-run feedback.");
+        RequireNotContains(recipeCommandSurface, "private string ResolveBlobCountMetricAdvice(double count)", "Recipe command surface does not resolve Blob metric advice.");
+        RequireNotContains(recipeCommandSurface, "private string BuildContourCountIntentLatestRunText()", "Recipe command surface does not format Contour latest-run feedback.");
+        RequireNotContains(recipeCommandSurface, "private string ResolveContourCountMetricAdvice(double count, bool hasCount, double areaMax, bool hasAreaMax)", "Recipe command surface does not resolve Contour metric advice.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeIntentFeedbackPresenter.BuildPinGapLatestRunText", "Recipe command surface delegates Pin gap latest-run feedback.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeIntentFeedbackPresenter.BuildPinGapCalibrationReviewText", "Recipe command surface delegates Pin gap calibration feedback.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeIntentFeedbackPresenter.BuildBlobCountLatestRunText", "Recipe command surface delegates Blob latest-run feedback.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeIntentFeedbackPresenter.BuildContourCountLatestRunText", "Recipe command surface delegates Contour latest-run feedback.");
+
+        string recipeIntentFeedbackPresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Review\OpenVisionRecipeIntentFeedbackPresenter.cs");
+        RequireContains(recipeIntentFeedbackPresenter, "internal static class OpenVisionRecipeIntentFeedbackPresenter", "Recipe intent feedback presentation has an explicit owner.");
+        RequireContains(recipeIntentFeedbackPresenter, "BuildPinGapLatestRunText", "Recipe intent feedback presenter formats Pin gap latest runs.");
+        RequireContains(recipeIntentFeedbackPresenter, "BuildPinGapCalibrationReviewText", "Recipe intent feedback presenter formats Pin gap calibration review.");
+        RequireContains(recipeIntentFeedbackPresenter, "BuildBlobCountLatestRunText", "Recipe intent feedback presenter formats Blob latest runs.");
+        RequireContains(recipeIntentFeedbackPresenter, "BuildContourCountLatestRunText", "Recipe intent feedback presenter formats Contour latest runs.");
+        RequireNotContains(recipeIntentFeedbackPresenter, "VisionPipelineSampleCheckService.Run", "Recipe intent feedback presenter does not run sample checks.");
+        RequireNotContains(recipeIntentFeedbackPresenter, "VisionPipelineStorage.TryLoadFromFile(", "Recipe intent feedback presenter does not load pipeline XML.");
+        RequireNotContains(recipeIntentFeedbackPresenter, "VisionPipelineBatchRunSummaryStorage.Save(", "Recipe intent feedback presenter does not persist run history.");
+
+        RequireNotContains(recipeCommandSurface, "private string BuildGuidedSetupReadinessText()", "Recipe command surface does not format Guided Setup readiness text.");
+        RequireNotContains(recipeCommandSurface, "private bool TryBuildGuidedSetupIntentInputStatus(out string status)", "Recipe command surface does not evaluate Guided Setup required inputs.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeGuidedSetupReadinessPresenter.BuildReadinessText", "Recipe command surface delegates Guided Setup readiness text.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeGuidedSetupReadinessPresenter.Evaluate", "Recipe command surface delegates Guided Setup required-input evaluation.");
+
+        string recipeGuidedSetupReadinessPresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\IntentSkills\OpenVisionRecipeGuidedSetupReadinessPresenter.cs");
+        RequireContains(recipeGuidedSetupReadinessPresenter, "internal static class OpenVisionRecipeGuidedSetupReadinessPresenter", "Guided Setup readiness presentation has an explicit IntentSkills owner.");
+        RequireContains(recipeGuidedSetupReadinessPresenter, "BuildReadinessText", "Guided Setup readiness presenter formats required-input guidance.");
+        RequireContains(recipeGuidedSetupReadinessPresenter, "Evaluate(OpenVisionRecipeGuidedSetupReadinessInput input)", "Guided Setup readiness presenter evaluates the current input DTO.");
+        RequireContains(recipeGuidedSetupReadinessPresenter, "OpenVisionRecipeGuidedSetupReadinessInput", "Guided Setup readiness presenter has an explicit read-only input contract.");
+        RequireNotContains(recipeGuidedSetupReadinessPresenter, "VisionPipelineSampleCheckService.Run", "Guided Setup readiness presenter does not run sample checks.");
+        RequireNotContains(recipeGuidedSetupReadinessPresenter, "VisionPipelineStorage.TryLoadFromFile(", "Guided Setup readiness presenter does not load pipeline XML.");
+        RequireNotContains(recipeGuidedSetupReadinessPresenter, "VisionPipelineBatchRunSummaryStorage.Save(", "Guided Setup readiness presenter does not persist run history.");
+        RequireNotContains(recipeGuidedSetupReadinessPresenter, "CreatePipeline(", "Guided Setup readiness presenter does not create starter XML pipelines.");
+
+        RequireNotContains(recipeCommandSurface, "private string BuildRecipeGuidedSetupText()", "Recipe command surface does not format the Guided workflow strip.");
+        RequireNotContains(recipeCommandSurface, "private string BuildRecipeGuidedNextActionText()", "Recipe command surface does not duplicate Guided workflow action labels.");
+        RequireNotContains(recipeCommandSurface, "private Action ResolveRecipeGuidedNextAction()", "Recipe command surface does not duplicate Guided workflow action selection.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeGuidedWorkflowPresenter.BuildSetupText", "Recipe command surface delegates Guided workflow strip presentation.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeGuidedWorkflowPresenter.BuildNextActionText", "Recipe command surface delegates Guided workflow action labels.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeGuidedWorkflowPresenter.ResolveNextAction", "Recipe command surface delegates Guided workflow action selection.");
+
+        string recipeGuidedWorkflowPresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Review\OpenVisionRecipeGuidedWorkflowPresenter.cs");
+        RequireContains(recipeGuidedWorkflowPresenter, "internal static class OpenVisionRecipeGuidedWorkflowPresenter", "Guided workflow presentation has an explicit Review owner.");
+        RequireContains(recipeGuidedWorkflowPresenter, "BuildSetupText", "Guided workflow presenter formats the setup strip.");
+        RequireContains(recipeGuidedWorkflowPresenter, "ResolveNextAction", "Guided workflow presenter owns ordered next-action selection.");
+        RequireContains(recipeGuidedWorkflowPresenter, "OpenVisionRecipeGuidedWorkflowActionRequest", "Guided workflow presenter has an explicit availability request contract.");
+        RequireNotContains(recipeGuidedWorkflowPresenter, "VisionPipelineExecutionService.RunAsync", "Guided workflow presenter does not execute a pipeline.");
+        RequireNotContains(recipeGuidedWorkflowPresenter, "VisionPipelineStorage.TryLoadFromFile(", "Guided workflow presenter does not load pipeline XML.");
+        RequireNotContains(recipeGuidedWorkflowPresenter, "CreatePipeline(", "Guided workflow presenter does not create starter XML pipelines.");
+        RequireNotContains(recipeGuidedWorkflowPresenter, "System.Windows.Clipboard", "Guided workflow presenter does not access WPF clipboard state.");
+
+        RequireNotContains(recipeCommandSurface, "private string BuildRecipeEditValidationText()", "Recipe command surface does not format recipe lifecycle validation text.");
+        RequireNotContains(recipeCommandSurface, "private string BuildPipelineEditValidationText()", "Recipe command surface does not format pipeline lifecycle validation text.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeLifecycleValidationPresenter.BuildRecipeEditValidationText", "Recipe command surface delegates recipe lifecycle validation text.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeLifecycleValidationPresenter.BuildPipelineEditValidationText", "Recipe command surface delegates pipeline lifecycle validation text.");
+
+        string recipeLifecycleValidationPresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Review\OpenVisionRecipeLifecycleValidationPresenter.cs");
+        RequireContains(recipeLifecycleValidationPresenter, "internal static class OpenVisionRecipeLifecycleValidationPresenter", "Recipe lifecycle validation presentation has an explicit Review owner.");
+        RequireContains(recipeLifecycleValidationPresenter, "OpenVisionRecipeEditValidationRequest", "Recipe lifecycle validation presenter has a recipe edit request contract.");
+        RequireContains(recipeLifecycleValidationPresenter, "OpenVisionRecipePipelineEditValidationRequest", "Recipe lifecycle validation presenter has a pipeline edit request contract.");
+        RequireNotContains(recipeLifecycleValidationPresenter, "RecipeWorkspaceService.EnsureVisionWorkspace(", "Recipe lifecycle validation presenter does not create workspaces.");
+        RequireNotContains(recipeLifecycleValidationPresenter, "RecipeWorkspaceService.DuplicateVisionWorkspace(", "Recipe lifecycle validation presenter does not duplicate workspaces.");
+        RequireNotContains(recipeLifecycleValidationPresenter, "RecipeWorkspaceService.RenameVisionWorkspace(", "Recipe lifecycle validation presenter does not rename workspaces.");
+        RequireNotContains(recipeLifecycleValidationPresenter, "RecipeWorkspaceService.DeleteVisionWorkspace(", "Recipe lifecycle validation presenter does not delete workspaces.");
+        RequireNotContains(recipeLifecycleValidationPresenter, "VisionPipelineStorage.", "Recipe lifecycle validation presenter does not access pipeline storage.");
+        RequireNotContains(recipeLifecycleValidationPresenter, "VisionPipelineExecutionService.RunAsync", "Recipe lifecycle validation presenter does not execute a pipeline.");
+
+        RequireNotContains(recipeCommandSurface, "private static string BuildLlmXmlValidationReport(", "Recipe command surface does not format stored-pipeline XML validation evidence.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeStoredPipelineValidationReportBuilder.Build", "Recipe command surface delegates stored-pipeline XML validation evidence.");
+
+        string storedPipelineValidationReportBuilder = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Validation\OpenVisionRecipeStoredPipelineValidationReportBuilder.cs");
+        RequireContains(storedPipelineValidationReportBuilder, "internal static class OpenVisionRecipeStoredPipelineValidationReportBuilder", "Stored-pipeline XML validation evidence has an explicit Validation owner.");
+        RequireContains(storedPipelineValidationReportBuilder, "OpenVisionRecipeStoredPipelineValidationReportRequest", "Stored-pipeline XML validation builder has an explicit request contract.");
+        RequireContains(storedPipelineValidationReportBuilder, "VisionPipelineValidator.Validate", "Stored-pipeline XML validation builder preserves schema/routing validation.");
+        RequireNotContains(storedPipelineValidationReportBuilder, "VisionPipelineStorage.", "Stored-pipeline XML validation builder does not load or save pipeline storage.");
+        RequireNotContains(storedPipelineValidationReportBuilder, "VisionPipelineExecutionService.RunAsync", "Stored-pipeline XML validation builder does not execute a pipeline.");
+        RequireNotContains(storedPipelineValidationReportBuilder, "System.Windows.", "Stored-pipeline XML validation builder does not access WPF state.");
+        RequireContains(recipeCommandSurface, "다음: 파이프라인 열기", "Recipe Manager labels the summary primary action as the next step.");
+        RequireContains(
+            Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionShellHostView.xaml"),
+            "AutomationProperties.Name=\"{Binding RecipeCommands.OpenPipelineReviewText}\"",
+            "Recipe Manager exposes the summary primary action through its localized accessible name.");
+
+        string pipelineReviewReadinessPresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\PipelineReview\Presenters\OpenVisionPipelineReviewReadinessPresenter.cs");
+        RequireContains(pipelineReviewReadinessPresenter, "OpenVisionPipelineReviewReadinessPresenter", "Pipeline Review readiness presentation has an explicit owner.");
+
+        string pipelineReviewDocument = Read(repoRoot, @"0. UI\0) MENU\Wpf\Documents\OpenVisionPipelineReviewDocument.cs");
+        RequireNotContains(pipelineReviewDocument, "VisionPipelineExecutionService.RunAsync", "Pipeline Review document does not execute the pipeline directly.");
+        RequireNotContains(pipelineReviewDocument, "reviewLayerImages", "Pipeline Review document does not own review output-image caches.");
+        RequireNotContains(pipelineReviewDocument, "stepResultSummaries", "Pipeline Review document does not own Step result caches.");
+        RequireNotContains(pipelineReviewDocument, "CreateReviewContextFromDisplayLayers", "Pipeline Review document does not build the execution context directly.");
+
+        string pipelineReviewExecutionController = Read(repoRoot, @"0. UI\0) MENU\Wpf\PipelineReview\Execution\OpenVisionPipelineReviewExecutionController.cs");
+        RequireContains(pipelineReviewExecutionController, "internal sealed class OpenVisionPipelineReviewExecutionController", "Pipeline Review execution has an explicit controller owner.");
+        RequireContains(pipelineReviewExecutionController, "VisionPipelineExecutionService.RunAsync", "Pipeline Review execution controller invokes the shared pipeline runner.");
+        RequireContains(pipelineReviewExecutionController, "CreateReviewContextFromDisplayLayers", "Pipeline Review execution controller builds the display-layer execution context.");
+        RequireContains(pipelineReviewExecutionController, "CacheReviewOutput", "Pipeline Review execution controller owns review output-image caches.");
+        RequireContains(pipelineReviewExecutionController, "DisposeRunResultImages", "Pipeline Review execution controller owns result-image disposal.");
+
+        string pipelineReviewExecutionResult = Read(repoRoot, @"0. UI\0) MENU\Wpf\PipelineReview\Execution\OpenVisionPipelineReviewExecutionResult.cs");
+        RequireContains(pipelineReviewExecutionResult, "OpenVisionPipelineReviewExecutionResult", "Pipeline Review execution returns an explicit result contract.");
+        RequireContains(pipelineReviewExecutionResult, "OpenVisionPipelineReviewStepUpdatedEventArgs", "Pipeline Review execution exposes Step update events through an explicit contract.");
+
+        string edgeBasedMatchingIntentSkill = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\IntentSkills\OpenVisionRecipeEdgeBasedMatchingIntentSkill.cs");
+        RequireContains(edgeBasedMatchingIntentSkill, "ToolType = \"EdgeBasedMatching\"", "EdgeBasedMatching intent starter has an explicit owner.");
+
+        string featureMatchingIntentSkill = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\IntentSkills\OpenVisionRecipeFeatureMatchingIntentSkill.cs");
+        RequireContains(featureMatchingIntentSkill, "ToolType = \"FeatureMatching\"", "FeatureMatching intent starter has an explicit owner.");
 
         string uiPrecheck = Read(repoRoot, @"tools\RunUiPrecheck.ps1");
         RequireContains(uiPrecheck, "wpf_shell_host_workspace", "UI precheck covers the WPF image workspace.");
@@ -87,7 +334,7 @@ internal static class Program
 
     private static void CheckToolSamplesAndDiagnostics(string repoRoot)
     {
-        string diagnostic = Read(repoRoot, @"1. Core\VisionPipelineStepDiagnosticService.cs");
+        string diagnostic = Read(repoRoot, @"1. Core\Pipeline\Validation\VisionPipelineStepDiagnosticService.cs");
         RequireContains(diagnostic, "ResultCount", "Tool diagnostics include result count.");
         RequireContains(diagnostic, "Score", "Tool diagnostics include matching/feature score context.");
         RequireContains(diagnostic, "EdgeCount", "Tool diagnostics include edge/line count context.");
@@ -111,7 +358,7 @@ internal static class Program
         ValidatePublicSampleCatalog(repoRoot);
         ValidateProductSampleCatalog(repoRoot);
 
-        string sampleCatalogUi = Read(repoRoot, @"0. UI\6) Vision Test\VisionPipelineSampleCatalog.cs");
+        string sampleCatalogUi = Read(repoRoot, @"1. Core\Pipeline\Storage\VisionPipelineSampleCatalog.cs");
         RequireContains(sampleCatalogUi, "VisionPipelineSampleCatalogSourceKind.Public", "Sample catalog loader exposes public catalog source.");
         RequireContains(sampleCatalogUi, "VisionPipelineSampleCatalogSourceKind.Product", "Sample catalog loader exposes product-domain catalog source.");
         RequireContains(sampleCatalogUi, "OpenVisionLab.PublicSampleCatalog.csv", "Sample catalog loader reads the public catalog.");
@@ -121,7 +368,7 @@ internal static class Program
         RequireContains(sampleCatalogUi, "ExpectedReasonText", "Sample catalog UX explains why expected metrics matter.");
         RequireContains(sampleCatalogUi, "Expected outcome: no result / controlled NG", "Sample catalog UX explains expected-failure samples.");
 
-        string samplePickerViewModel = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionWorkspaceSamplePickerViewModel.cs");
+        string samplePickerViewModel = Read(repoRoot, @"0. UI\0) MENU\Wpf\Workspace\Samples\OpenVisionWorkspaceSamplePickerViewModel.cs");
         RequireContains(samplePickerViewModel, "CatalogSourceOptions", "Workspace sample picker exposes catalog source options.");
         RequireContains(samplePickerViewModel, "ActiveRouteSummaryText", "Workspace sample picker exposes active route summary text.");
         RequireContains(samplePickerViewModel, "SelectedCatalogSourceOption", "Workspace sample picker can switch between catalog sources.");
@@ -134,28 +381,28 @@ internal static class Program
         RequireContains(samplePickerViewModel, "Selected: {0} / {1} - {2}", "Workspace sample picker Learn path summary names the selected path and sample count.");
         RequireContains(samplePickerViewModel, "SampleCountText", "Workspace sample picker Learn path summary includes the selected path sample count.");
 
-        string learnDocumentService = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionWorkspaceLearnDocumentService.cs");
+        string learnDocumentService = Read(repoRoot, @"0. UI\0) MENU\Wpf\Workspace\Samples\OpenVisionWorkspaceLearnDocumentService.cs");
         RequireContains(learnDocumentService, "docs", "Workspace sample picker resolves Learn documents from the repository docs folder.");
         RequireContains(learnDocumentService, "LEARN_PRODUCT_SAMPLES.md", "Workspace Learn document resolver links product-domain samples.");
         RequireContains(learnDocumentService, "LEARN_MATCHING.md", "Workspace Learn document resolver links Matching samples.");
         RequireContains(learnDocumentService, "LEARN_EDGE_BASED_MATCHING.md", "Workspace Learn document resolver links EdgeBasedMatching samples.");
         RequireContains(learnDocumentService, "LEARN_GEOMETRY_TRANSFORM.md", "Workspace Learn document resolver links Geometry samples.");
-        string sampleLearnPathOption = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionWorkspaceSampleLearnPathOption.cs");
+        string sampleLearnPathOption = Read(repoRoot, @"0. UI\0) MENU\Wpf\Workspace\Samples\OpenVisionWorkspaceSampleLearnPathOption.cs");
         RequireContains(sampleLearnPathOption, "\"geometry\"", "Workspace sample picker exposes the Geometry Learn path.");
         RequireContains(sampleLearnPathOption, "RotateScale", "Workspace sample picker classifies RotateScale samples as Geometry.");
         RequireContains(sampleLearnPathOption, "\"color-hsv\"", "Workspace sample picker exposes the Color / HSV Learn path.");
         RequireContains(sampleLearnPathOption, "\"HSV\", \"Color range\"", "Workspace sample picker classifies HSV samples as Color / HSV.");
 
-        string samplePickerView = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionWorkspaceSamplePickerView.xaml");
+        string samplePickerView = Read(repoRoot, @"0. UI\0) MENU\Wpf\Workspace\Samples\OpenVisionWorkspaceSamplePickerView.xaml");
         RequireContains(samplePickerView, "WorkspaceSamplePickerCatalogSourceList", "Workspace sample picker renders a catalog source selector.");
         RequireContains(samplePickerView, "WorkspaceSamplePickerRouteSummary", "Workspace sample picker renders the active catalog/focus/Learn route summary.");
         RequireContains(samplePickerView, "WorkspaceSamplePickerCatalogSourceSummary", "Workspace sample picker renders selected catalog source guidance.");
         RequireContains(samplePickerView, "WorkspaceSamplePickerOpenLearnDocumentButton", "Workspace sample picker renders a Learn document open button.");
         RequireContains(samplePickerView, "WorkspaceSamplePickerPracticeWorkflowStrip", "Workspace sample picker renders the Learn practice workflow strip.");
 
-        string samplePickerWindow = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionWorkspaceSamplePickerWindow.xaml");
+        string samplePickerWindow = Read(repoRoot, @"0. UI\0) MENU\Wpf\Workspace\Samples\OpenVisionWorkspaceSamplePickerWindow.xaml");
         RequireContains(samplePickerWindow, "WorkspaceSamplePickerOpenGuideAndSampleButton", "Workspace sample picker renders an explicit guide-plus-sample button.");
-        string shellSampleWorkflowPresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionShellHostSampleWorkflowPresenter.cs");
+        string shellSampleWorkflowPresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\Shell\Workspace\OpenVisionShellHostSampleWorkflowPresenter.cs");
         RequireContains(shellSampleWorkflowPresenter, "Pipeline \\uBCF4\\uAE30 -> Run Review", "Shell sample workflow overlay points from Pipeline view to explicit Run Review.");
         RequireContains(shellSampleWorkflowPresenter, "\\uAE30\\uC900 \\uC5F4\\uACE0 Run Review", "Shell sample workflow pair comparison tells operators to run review explicitly.");
         string localizationCatalog = Read(repoRoot, @"Library\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv");
@@ -215,6 +462,7 @@ internal static class Program
         RequireContains(publicCatalog, "Public_Edge_Fiducial_Wrong_Bad", "Public sample catalog includes EdgeBasedMatching Bad benchmark.");
         RequireContains(publicCatalog, "Public_Line_Pins_Good", "Public sample catalog includes LineDistance synthetic benchmark.");
         RequireContains(publicCatalog, "Public_Line_Pins_WidePin_Bad", "Public sample catalog includes LineDistance Bad benchmark.");
+        RequireContains(publicCatalog, "DistanceMmRange,0.08,0.11", "Public LineDistance Bad benchmark records the consistency-gate failure range.");
         RequireContains(publicCatalog, "Public_Geometry_RotateScale_Good", "Public sample catalog includes RotateScale geometry benchmark.");
         RequireContains(publicCatalog, "Public_Geometry_RotateScale_Wide_Bad", "Public sample catalog includes RotateScale geometry Bad benchmark.");
         RequireContains(publicCatalog, "ResultImageWidth;ResultImageHeight", "Public RotateScale benchmark checks output width and height.");
@@ -318,6 +566,11 @@ internal static class Program
             RequireNotContains(pipeline, "MVTec", $"Public pipeline {relativePath} must not depend on MVTec non-commercial assets.");
         }
 
+        string publicLinePipeline = Read(repoRoot, @"docs\samples\public\Public_Line_Pins_Distance.pipeline.xml");
+        RequireContains(publicLinePipeline, "<AcceptanceMetricName>DistanceMmRange</AcceptanceMetricName>", "Public LineDistance pipeline gates sampling-line consistency.");
+        RequireContains(publicLinePipeline, "<AcceptanceMetricMaximum>0.03</AcceptanceMetricMaximum>", "Public LineDistance pipeline sets the range gate to 0.03 mm.");
+        RequireContains(publicLinePipeline, "<Key>ALLOW_BRANCH_INPUT</Key>", "Public LineDistance average step explicitly reads Main as a second branch.");
+
         Pass("Public sample asset contract");
     }
 
@@ -334,9 +587,297 @@ internal static class Program
         Pass("Pipeline input/output UX contract");
     }
 
+    private static void CheckSourceOwnership(string repoRoot)
+    {
+        RequireExactDirectSourceFiles(repoRoot, @"1. Core", "Core root must not retain unowned source files.");
+        RequireExactDirectSourceFiles(repoRoot, @"0. UI\6) Vision Test", "Vision Test root must not retain unowned source files.");
+        RequireExactDirectSourceFiles(repoRoot, @"0. UI\6) Vision Test\Wpf", "Vision Test WPF root must not retain unowned source files.");
+        RequireExactDirectSourceFiles(
+            repoRoot,
+            @"0. UI\0) MENU\Wpf",
+            "MENU WPF root retains only the explicit Shell composition boundary.",
+            "OpenVisionShellHostRecipeCommandSurface.cs",
+            "OpenVisionShellHostView.xaml",
+            "OpenVisionShellHostView.xaml.cs");
+
+        string recipeCommandSurface = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionShellHostRecipeCommandSurface.cs");
+        RequireNotContains(recipeCommandSurface, "internal static class OpenVisionGuidedSetupCatalog", "Recipe command surface does not own the guided-setup catalog declaration.");
+        RequireNotContains(recipeCommandSurface, "internal static class OpenVisionRecipeText", "Recipe command surface does not own recipe text localization.");
+        RequireNotContains(recipeCommandSurface, "private string BuildLlmIntentSpecificPromptPacketText", "Recipe command surface does not own LLM prompt packet construction.");
+        RequireNotContains(recipeCommandSurface, "private static string BuildLlmIntentContractText", "Recipe command surface does not own LLM intent contract text.");
+        RequireNotContains(recipeCommandSurface, "private static bool AppendLlmResultChannelValidation", "Recipe command surface does not own LLM result-channel validation rules.");
+        RequireNotContains(recipeCommandSurface, "private bool AppendLlmIntentContractValidation", "Recipe command surface does not own LLM intent validation rules.");
+        RequireNotContains(recipeCommandSurface, "private static bool TryValidateXmlSyntax", "Recipe command surface does not own XML syntax validation rules.");
+        RequireNotContains(recipeCommandSurface, "private string BuildDependencyReport", "Recipe command surface does not own LLM dependency-review execution.");
+        RequireNotContains(recipeCommandSurface, "internal static bool LooksLikeDependencyPath", "Recipe command surface does not own dependency path classification.");
+        RequireNotContains(recipeCommandSurface, "internal static string ResolveDependencySourcePath", "Recipe command surface does not own dependency path resolution.");
+        RequireNotContains(recipeCommandSurface, "private void CopyReferenceImageForDraftImport", "Recipe command surface does not own dependency file-copy execution.");
+        RequireNotContains(recipeCommandSurface, "SerializeHelper.TryLoadFromXmlText", "Recipe command surface does not deserialize LLM XML drafts directly.");
+        RequireNotContains(recipeCommandSurface, "OpenVisionLab LLM XML review bundle", "Recipe command surface does not own correction-packet text construction.");
+
+        string guidedSetupCatalog = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\IntentSkills\OpenVisionRecipeGuidedSetupCatalog.cs");
+        RequireContains(guidedSetupCatalog, "internal static class OpenVisionGuidedSetupCatalog", "Guided setup catalog has an IntentSkills owner.");
+        RequireContains(guidedSetupCatalog, "TryResolveTemplate", "Guided setup catalog keeps deterministic tool-to-template mapping.");
+
+        string recipeText = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Models\OpenVisionRecipeText.cs");
+        RequireContains(recipeText, "internal static class OpenVisionRecipeText", "Recipe text localization has a Models owner.");
+        RequireContains(recipeText, "OpenVisionLanguageService.CurrentLanguage", "Recipe text localization keeps the current-language decision.");
+
+        string llmPromptBuilder = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\IntentSkills\OpenVisionRecipeLlmPromptBuilder.cs");
+        RequireContains(llmPromptBuilder, "internal static class OpenVisionRecipeLlmPromptBuilder", "LLM prompt construction has an IntentSkills owner.");
+        RequireContains(llmPromptBuilder, "internal sealed class OpenVisionRecipeLlmPromptRequest", "LLM prompt construction receives an explicit host-state request.");
+        RequireContains(llmPromptBuilder, "Do not run Preview/Run automatically.", "LLM prompt construction preserves the explicit Preview/Run contract.");
+        RequireContains(llmPromptBuilder, "internal static class OpenVisionRecipeLlmIntent", "LLM tool-family contracts have an IntentSkills owner.");
+
+        string llmReviewBundleBuilder = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\IntentSkills\OpenVisionRecipeLlmReviewBundleBuilder.cs");
+        RequireContains(llmReviewBundleBuilder, "internal static class OpenVisionRecipeLlmReviewBundleBuilder", "LLM correction-packet construction has an IntentSkills owner.");
+        RequireContains(llmReviewBundleBuilder, "internal sealed class OpenVisionRecipeLlmReviewBundleRequest", "LLM correction-packet construction receives an explicit request.");
+        RequireContains(llmReviewBundleBuilder, "OpenVisionLab LLM XML review bundle", "LLM correction-packet construction preserves the correction bundle format.");
+        RequireContains(llmReviewBundleBuilder, "OpenVisionRecipeLlmIntent.BuildLlmIntentContractText", "LLM correction-packet construction uses the shared intent contract.");
+
+        string llmDraftValidationRules = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Validation\OpenVisionRecipeLlmDraftValidationRules.cs");
+        RequireContains(llmDraftValidationRules, "internal static class OpenVisionRecipeLlmDraftValidationRules", "LLM draft validation rules have a Recipe Validation owner.");
+        RequireContains(llmDraftValidationRules, "internal static bool AppendResultChannelValidation", "LLM draft validation owns result-channel checks.");
+        RequireContains(llmDraftValidationRules, "internal static bool AppendIntentContractValidation", "LLM draft validation owns intent-contract checks.");
+        RequireContains(llmDraftValidationRules, "internal static bool TryValidateXmlSyntax", "LLM draft validation owns XML syntax checks.");
+
+        string dependencyReviewService = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Review\OpenVisionRecipeDependencyReviewService.cs");
+        RequireContains(dependencyReviewService, "internal static class OpenVisionRecipeDependencyReviewService", "Dependency review execution has a Recipe Review owner.");
+        RequireContains(dependencyReviewService, "internal sealed class OpenVisionRecipeDependencyReviewResult", "Dependency review execution returns an explicit result.");
+        RequireContains(dependencyReviewService, "internal static OpenVisionRecipeDependencyReviewResult Review", "Dependency review owns the scan/copy decision.");
+        RequireContains(dependencyReviewService, "internal static bool LooksLikeDependencyPath", "Dependency review owns path classification.");
+        RequireContains(dependencyReviewService, "internal static string ResolveDependencySourcePath", "Dependency review owns path resolution.");
+        RequireContains(dependencyReviewService, "TryCopyReferenceImageToRecipe", "Dependency review owns reference-image copying.");
+
+        string llmDraftValidationService = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Validation\OpenVisionRecipeLlmDraftValidationService.cs");
+        RequireContains(llmDraftValidationService, "internal static class OpenVisionRecipeLlmDraftValidationService", "LLM draft orchestration has a Recipe Validation owner.");
+        RequireContains(llmDraftValidationService, "internal sealed class OpenVisionRecipeLlmDraftValidationRequest", "LLM draft orchestration receives an explicit request.");
+        RequireContains(llmDraftValidationService, "internal sealed class OpenVisionRecipeLlmDraftValidationResult", "LLM draft orchestration returns an explicit result.");
+        RequireContains(llmDraftValidationService, "SerializeHelper.TryLoadFromXmlText", "LLM draft orchestration owns XML deserialization.");
+        RequireContains(llmDraftValidationService, "VisionPipelineValidator.Validate", "LLM draft orchestration owns schema and routing validation.");
+        RequireContains(llmDraftValidationService, "OpenVisionRecipeDependencyReviewService.Review", "LLM draft orchestration receives dependency review results.");
+
+        Pass("Source ownership contract");
+    }
+
+    private static void CheckToolViewSourceOrganization(string repoRoot)
+    {
+        const string toolViewRoot = @"0. UI\6) Vision Test\Wpf";
+        string toolViewDirectory = Path.Combine(repoRoot, toolViewRoot);
+        if (!Directory.Exists(toolViewDirectory))
+        {
+            Failures.Add($"Tool View source root was not found: {toolViewDirectory}");
+            return;
+        }
+
+        string[] rootSourceFiles = Directory
+            .EnumerateFiles(toolViewDirectory, "*.*", SearchOption.TopDirectoryOnly)
+            .Where(path => string.Equals(Path.GetExtension(path), ".cs", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(Path.GetExtension(path), ".xaml", StringComparison.OrdinalIgnoreCase))
+            .Select(Path.GetFileName)
+            .OrderBy(fileName => fileName, StringComparer.Ordinal)
+            .ToArray();
+        if (rootSourceFiles.Length > 0)
+        {
+            Failures.Add("Tool View source root must not retain direct C# or XAML files: " + string.Join(", ", rootSourceFiles));
+        }
+
+        RequireToolViewOwnerFiles(repoRoot, @"0. UI\6) Vision Test\Wpf\Behaviors",
+            "ArithmeticToolInteractionController.cs",
+            "LineToolInteractionController.cs",
+            "SimplePreprocessParameterController.cs",
+            "VisionToolActionBehavior.cs",
+            "VisionToolControlBinding.cs",
+            "VisionToolControlValueReader.cs",
+            "VisionToolFilterInteractionController.cs",
+            "VisionToolKernelSizeController.cs",
+            "VisionToolLayerSelectionBehavior.cs",
+            "VisionToolMorphologyInteractionController.cs",
+            "VisionToolTextInputBehavior.cs",
+            "VisionToolThresholdInteractionController.cs");
+        RequireToolViewOwnerFiles(repoRoot, @"0. UI\6) Vision Test\Wpf\Tooling\Contracts",
+            "IArithmeticVisionToolWpfView.cs",
+            "ISingleInputVisionToolWpfView.cs",
+            "IVisionToolViewLifetime.cs");
+        RequireToolViewOwnerFiles(repoRoot, @"0. UI\6) Vision Test\Wpf\Tooling\Preview",
+            "ArithmeticToolPreviewController.cs",
+            "LineToolPreviewController.cs",
+            "VisionToolDebouncedPreviewScheduler.cs",
+            "VisionToolInlinePreviewSlot.cs",
+            "VisionToolOpenGlPreviewSlot.cs",
+            "VisionToolPreviewImageCommands.cs",
+            "VisionToolPreviewStatePresenter.cs",
+            "VisionToolPropertyPreviewPolicy.cs",
+            "VisionToolThresholdTeachingPreviewController.cs");
+        RequireToolViewOwnerFiles(repoRoot, @"0. UI\6) Vision Test\Wpf\Tooling\PropertyGrid",
+            "VisionToolMatchingPropertyRuntime.cs",
+            "VisionToolParameterChangeController.cs",
+            "VisionToolParameterPresenters.cs",
+            "VisionToolPropertyChangeController.cs",
+            "VisionToolPropertyGridHost.cs",
+            "VisionToolPropertyGridPresenter.cs");
+        RequireToolViewOwnerFiles(repoRoot, @"0. UI\6) Vision Test\Wpf\Tooling\Presets",
+            "VisionToolPreset.cs",
+            "VisionToolPresetButtonPresenter.cs",
+            "VisionToolPresetCatalog.cs");
+        RequireToolViewOwnerFiles(repoRoot, @"0. UI\6) Vision Test\Wpf\Tooling\Layers",
+            "VisionToolLayerChangeController.cs",
+            "VisionToolLayerComboHelper.cs",
+            "VisionToolLayerSelectionPresenter.cs");
+        RequireToolViewOwnerFiles(repoRoot, @"0. UI\6) Vision Test\Wpf\Tooling\Interaction",
+            "VisionToolActionRequestController.cs",
+            "VisionToolLanguageChangeController.cs");
+        RequireToolViewOwnerFiles(repoRoot, @"0. UI\6) Vision Test\Wpf\Tooling\Presentation",
+            "ArithmeticToolTextPresenter.cs",
+            "FilterToolTextPresenter.cs",
+            "LineToolPresenter.cs",
+            "LineToolTextPresenter.cs",
+            "MorphologyToolTextPresenter.cs",
+            "SimplePreprocessTextPresenter.cs",
+            "ThresholdToolTextPresenter.cs",
+            "VisionToolChromePresenter.cs",
+            "VisionToolTemplateStatusPresenter.cs",
+            "VisionToolWpfStatusPresenter.cs",
+            "VisionToolWpfTheme.xaml");
+        RequireToolViewOwnerFiles(repoRoot, @"0. UI\6) Vision Test\Wpf\Tooling\Review",
+            "LineToolResultExplanation.cs",
+            "LineToolResultReviewPresenter.cs",
+            "LineToolReviewController.cs",
+            "LineToolVerificationGuidePresenter.cs",
+            "SimplePreprocessResultExplanation.cs",
+            "VisionToolAreaResultExplanation.cs",
+            "VisionToolAreaResultReviewPresenter.cs",
+            "VisionToolAreaVerificationCriteriaText.cs",
+            "VisionToolAreaVerificationGuidePresenter.cs",
+            "VisionToolMatchingResultExplanation.cs",
+            "VisionToolMatchingResultReviewPresenter.cs",
+            "VisionToolMatchingVerificationGuidePresenter.cs",
+            "VisionToolResultReviewPresenter.cs",
+            "VisionToolVerificationGuideView.xaml",
+            "VisionToolVerificationGuideView.xaml.cs",
+            "VisionToolVerificationText.cs");
+        RequireToolViewOwnerFiles(repoRoot, @"0. UI\6) Vision Test\Wpf\Tooling\SingleInput",
+            "VisionToolSingleInputCustomToolController.cs",
+            "VisionToolSingleInputCustomToolRuntime.cs",
+            "VisionToolSingleInputCustomToolViewBase.cs",
+            "VisionToolSingleInputMatchingToolController.cs",
+            "VisionToolSingleInputMatchingToolRuntime.cs",
+            "VisionToolSingleInputPropertyToolController.cs",
+            "VisionToolSingleInputPropertyToolRuntime.cs",
+            "VisionToolSingleInputPropertyToolShell.DockedInspectorLayoutController.cs",
+            "VisionToolSingleInputPropertyToolShell.xaml",
+            "VisionToolSingleInputPropertyToolShell.xaml.cs",
+            "VisionToolSingleInputPropertyToolViewBase.cs",
+            "VisionToolSingleInputSpecialPropertyToolController.cs",
+            "VisionToolSingleInputSpecialPropertyToolRuntime.cs",
+            "VisionToolSingleInputToolEventHub.cs",
+            "VisionToolSingleInputViewBinder.cs",
+            "VisionToolSingleInputViewModel.cs",
+            "VisionToolSingleInputViewRuntime.cs");
+        RequireToolViewOwnerFiles(repoRoot, @"0. UI\6) Vision Test\Wpf\Tooling\DoubleInput",
+            "VisionToolDoubleInputCustomToolController.cs",
+            "VisionToolDoubleInputCustomToolRuntime.cs",
+            "VisionToolDoubleInputCustomToolShell.DockedInspectorLayoutController.cs",
+            "VisionToolDoubleInputCustomToolShell.xaml",
+            "VisionToolDoubleInputCustomToolShell.xaml.cs",
+            "VisionToolDoubleInputCustomToolViewBase.cs",
+            "VisionToolDoubleInputToolEventHub.cs",
+            "VisionToolDoubleInputViewBinder.cs",
+            "VisionToolDoubleInputViewModel.cs",
+            "VisionToolDoubleInputViewRuntime.cs");
+        RequireToolViewOwnerFiles(repoRoot, @"0. UI\6) Vision Test\Wpf\ToolViews",
+            "ArithmeticToolWpfView.xaml",
+            "ArithmeticToolWpfView.xaml.cs",
+            "BlobToolWpfView.xaml",
+            "BlobToolWpfView.xaml.cs",
+            "ContourToolWpfView.xaml",
+            "ContourToolWpfView.xaml.cs",
+            "EdgeBasedMatchingToolWpfView.xaml",
+            "EdgeBasedMatchingToolWpfView.xaml.cs",
+            "FeatureMatchingToolWpfView.xaml",
+            "FeatureMatchingToolWpfView.xaml.cs",
+            "FilterToolWpfView.xaml",
+            "FilterToolWpfView.xaml.cs",
+            "LineToolWpfView.xaml",
+            "LineToolWpfView.xaml.cs",
+            "MatchingToolWpfView.xaml",
+            "MatchingToolWpfView.xaml.cs",
+            "MorphologyToolWpfView.xaml",
+            "MorphologyToolWpfView.xaml.cs",
+            "SimplePreprocessToolWpfView.xaml",
+            "SimplePreprocessToolWpfView.xaml.cs",
+            "ThresholdToolWpfView.xaml",
+            "ThresholdToolWpfView.xaml.cs");
+        RequireToolViewOwnerFiles(repoRoot, @"0. UI\6) Vision Test\Wpf\Learn",
+            "OpenVisionLearnTopics.cs",
+            "OpenVisionLearnWindow.xaml",
+            "OpenVisionLearnWindow.xaml.cs",
+            "ThresholdToolLearnWindowController.cs",
+            "VisionToolLearnWindowController.cs");
+
+        Pass("Tool View source organization contract");
+    }
+
+    private static void RequireExactDirectSourceFiles(
+        string repoRoot,
+        string ownerDirectory,
+        string description,
+        params string[] expectedFiles)
+    {
+        string directoryPath = Path.Combine(repoRoot, ownerDirectory);
+        if (!Directory.Exists(directoryPath))
+        {
+            Failures.Add($"{description} Missing directory: {ownerDirectory}");
+            return;
+        }
+
+        string[] actualFiles = Directory
+            .EnumerateFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly)
+            .Where(path => string.Equals(Path.GetExtension(path), ".cs", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(Path.GetExtension(path), ".xaml", StringComparison.OrdinalIgnoreCase))
+            .Select(Path.GetFileName)
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        string[] normalizedExpectedFiles = (expectedFiles ?? Array.Empty<string>())
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (!actualFiles.SequenceEqual(normalizedExpectedFiles, StringComparer.OrdinalIgnoreCase))
+        {
+            Failures.Add(
+                $"{description} Expected [{string.Join(", ", normalizedExpectedFiles)}], "
+                + $"actual [{string.Join(", ", actualFiles)}].");
+        }
+    }
+
+    private static void RequireToolViewOwnerFiles(string repoRoot, string ownerDirectory, params string[] expectedFiles)
+    {
+        string fullDirectory = Path.Combine(repoRoot, ownerDirectory);
+        if (!Directory.Exists(fullDirectory))
+        {
+            Failures.Add($"Tool View owner directory was not found: {ownerDirectory}");
+            return;
+        }
+
+        string[] actualFiles = Directory
+            .EnumerateFiles(fullDirectory, "*.*", SearchOption.TopDirectoryOnly)
+            .Where(path => string.Equals(Path.GetExtension(path), ".cs", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(Path.GetExtension(path), ".xaml", StringComparison.OrdinalIgnoreCase))
+            .Select(Path.GetFileName)
+            .OrderBy(fileName => fileName, StringComparer.Ordinal)
+            .ToArray();
+        string[] expected = expectedFiles
+            .OrderBy(fileName => fileName, StringComparer.Ordinal)
+            .ToArray();
+        if (!actualFiles.SequenceEqual(expected, StringComparer.Ordinal))
+        {
+            Failures.Add($"Tool View owner directory does not match the required source layout: {ownerDirectory}. Expected='{string.Join(", ", expected)}', Actual='{string.Join(", ", actualFiles)}'");
+        }
+    }
+
     private static void CheckToolViewControllerOwnership(string repoRoot)
     {
-        string toolViewDirectory = Path.Combine(repoRoot, @"0. UI\6) Vision Test\Wpf");
+        string toolViewDirectory = Path.Combine(repoRoot, @"0. UI\6) Vision Test\Wpf\ToolViews");
         if (!Directory.Exists(toolViewDirectory))
         {
             Failures.Add($"Tool View directory was not found: {toolViewDirectory}");
@@ -376,18 +917,18 @@ internal static class Program
             }
         }
 
-        string lineView = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\LineToolWpfView.xaml.cs");
+        string lineView = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\ToolViews\LineToolWpfView.xaml.cs");
         RequireContains(lineView, "VisionToolSingleInputSpecialPropertyToolController.Attach", "Line Tool delegates special PropertyGrid shell wiring to the shared controller.");
 
-        string arithmeticView = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\ArithmeticToolWpfView.xaml.cs");
+        string arithmeticView = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\ToolViews\ArithmeticToolWpfView.xaml.cs");
         RequireContains(arithmeticView, "VisionToolDoubleInputCustomToolViewBase", "Arithmetic Tool delegates double-input shell forwarding to the shared view base.");
-        string doubleInputCustomToolViewBase = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\VisionToolDoubleInputCustomToolViewBase.cs");
+        string doubleInputCustomToolViewBase = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\Tooling\DoubleInput\VisionToolDoubleInputCustomToolViewBase.cs");
         RequireContains(doubleInputCustomToolViewBase, "VisionToolDoubleInputCustomToolController.Attach", "Double-input custom Tool View base delegates shell wiring to the shared controller.");
 
-        string singleInputSpecialController = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\VisionToolSingleInputSpecialPropertyToolController.cs");
+        string singleInputSpecialController = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\Tooling\SingleInput\VisionToolSingleInputSpecialPropertyToolController.cs");
         RequireContains(singleInputSpecialController, "VisionToolSingleInputSpecialPropertyToolRuntime.Attach", "Special PropertyGrid controller owns the special single-input runtime wiring.");
 
-        string doubleInputController = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\VisionToolDoubleInputCustomToolController.cs");
+        string doubleInputController = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\Tooling\DoubleInput\VisionToolDoubleInputCustomToolController.cs");
         RequireContains(doubleInputController, "VisionToolDoubleInputCustomToolRuntime.Attach", "Double-input controller owns the custom double-input runtime wiring.");
 
         Pass("Tool View controller ownership contract");
@@ -615,13 +1156,169 @@ internal static class Program
         }
 
         string learnIndex = Read(repoRoot, @"docs\learn\README.md");
+        string commercialGapReview = Read(repoRoot, @"docs\OPENVISIONLAB_COMMERCIAL_GAP_PRIORITY_REVIEW_20260710.md");
+        string guidedSetupSpec = Read(repoRoot, @"docs\OPENVISIONLAB_GUIDED_INSPECTION_SETUP_SPEC.md");
+        RequireContains(commercialGapReview, "Non-LLM Guided Inspection Setup", "Commercial gap review prioritizes non-LLM guided setup.");
+        RequireContains(commercialGapReview, "Guided Inspection Setup", "Commercial gap review names the guided setup development track.");
+        RequireContains(commercialGapReview, "Camera acquisition setup", "Commercial gap review keeps camera acquisition out of scope.");
+        RequireContains(commercialGapReview, "Tool Palette Search And Readiness", "Commercial gap review tracks tool discovery/readiness as a later operating gap.");
+        RequireContains(commercialGapReview, "report-first summary baseline", "Commercial gap review records the consolidated result-board baseline.");
+        RequireContains(guidedSetupSpec, "Guided Inspection Setup is a recipe authoring helper, not a hardware wizard.", "Guided setup spec keeps the feature inside recipe authoring scope.");
+        RequireContains(guidedSetupSpec, "It must not:", "Guided setup spec documents forbidden side effects.");
+        RequireContains(guidedSetupSpec, "Run Preview automatically.", "Guided setup spec blocks automatic Preview.");
+        RequireContains(guidedSetupSpec, "Run Review automatically.", "Guided setup spec blocks automatic Run Review.");
+        RequireContains(guidedSetupSpec, "Replace PropertyGrid tool editing.", "Guided setup spec preserves PropertyGrid editing.");
+        RequireContains(guidedSetupSpec, "Blob count / particle count", "Guided setup spec includes Blob count starter intent.");
+        RequireContains(guidedSetupSpec, "Contour shape / outline", "Guided setup spec includes Contour starter intent.");
+        RequireContains(guidedSetupSpec, "Pin gap / pitch measurement", "Guided setup spec includes LineDistance measurement starter intent.");
+        RequireContains(guidedSetupSpec, "Template target presence", "Guided setup spec includes Matching starter intent.");
+        RequireContains(guidedSetupSpec, "Brightness drift / mean value", "Guided setup spec includes Mean starter intent.");
+        RequireContains(guidedSetupSpec, "Do not choose `Contour` just because pins are visible.", "Guided setup spec prevents pin-gap fallback to Contour.");
+        RequireContains(guidedSetupSpec, "DistancePxRange", "Guided setup spec requires pin-gap consistency metrics.");
+        RequireContains(guidedSetupSpec, "DistanceMmRange", "Guided setup spec requires pin-gap mm consistency metrics.");
+        RequireContains(guidedSetupSpec, "Create Starter XML", "Guided setup spec defines an explicit starter XML action.");
+        RequireContains(guidedSetupSpec, "Starter XML creation does not call Preview", "Guided setup spec requires no auto-run verification.");
+        RequireContains(guidedSetupSpec, "DistanceMmAvg=0.224", "Guided setup spec records public Pin gap mm/px parity evidence.");
+        string recipeCommandSurface = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionShellHostRecipeCommandSurface.cs");
+        string shellHostView = Read(repoRoot, @"0. UI\0) MENU\Wpf\OpenVisionShellHostView.xaml");
+        string screenshotSmoke = Read(repoRoot, @"tools\PipelineViewerScreenshotSmoke\Program.cs");
+        string directSmokeRunner = Read(repoRoot, "OpenVisionLabDirectSmokeRunner.cs");
+        string pinGapIntentSkill = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\IntentSkills\OpenVisionRecipePinGapIntentSkill.cs");
+        string pipelineValidation = Read(repoRoot, @"1. Core\Pipeline\Validation\VisionPipelineValidation.cs");
+        string matchingIntentSkill = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\IntentSkills\OpenVisionRecipeMatchingIntentSkill.cs");
+        string meanIntentSkill = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\IntentSkills\OpenVisionRecipeMeanIntentSkill.cs");
+        string recipeOperatorDecisionPresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Review\OpenVisionRecipeOperatorDecisionPresenter.cs");
+        RequireContains(recipeCommandSurface, "GuidedSetupSummaryText", "Recipe Manager exposes Guided setup summary text.");
+        RequireContains(recipeCommandSurface, "GuidedSetupReadinessText", "Recipe Manager exposes Guided setup readiness text.");
+        RequireContains(recipeCommandSurface, "OperatorDecisionEvidenceText", "Recipe Manager exposes consolidated result-board metric evidence text.");
+        RequireContains(recipeCommandSurface, "BuildOperatorDecisionPresentation()", "Recipe Manager supplies selected state to the consolidated decision-board presenter.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeOperatorDecisionPresenter.Build(", "Recipe Manager delegates decision-board text composition to its presenter.");
+        RequireContains(recipeCommandSurface, "OperatorDecisionSummaryStatusText", "Recipe Manager consolidates final status and failed step from existing result channels.");
+        RequireContains(recipeOperatorDecisionPresenter, "Metric review: expected", "Decision-board presenter summarizes expected versus actual metric evidence.");
+        RequireContains(recipeOperatorDecisionPresenter, "Metric evidence: ", "Decision-board handoff report includes metric evidence.");
+        RequireContains(recipeCommandSurface, "ShowRecentBatchNgOnly", "Recipe Manager exposes run-history NG-only filter state.");
+        RequireContains(recipeCommandSurface, "FilteredRecentBatchRunSampleResults", "Recipe Manager exposes filtered run-history sample results.");
+        RequireContains(recipeCommandSurface, "RecentBatchRunNgFilterSummaryText", "Recipe Manager summarizes run-history NG causes.");
+        RequireContains(recipeCommandSurface, "PinGapIntentCalibrationReviewText", "Recipe Manager exposes Pin gap calibration review text.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeIntentFeedbackPresenter.BuildPinGapCalibrationReviewText", "Recipe Manager delegates Pin gap calibration review text.");
+        RequireContains(recipeCommandSurface, "PIXELPERMM", "Recipe Manager explains the Pin gap mm/px scale.");
+        RequireContains(recipeCommandSurface, "PX-ONLY", "Recipe Manager exposes Pin gap pixel-only state.");
+        RequireContains(recipeCommandSurface, "MM-READY", "Recipe Manager exposes calibrated Pin gap state.");
+        RequireContains(recipeCommandSurface, "CreatePixelPipeline", "Recipe Manager routes px-only Pin gap setup to pixel metrics.");
+        RequireContains(
+            Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Review\OpenVisionRecipeIntentFeedbackPresenter.cs"),
+            "average-only measurement is not enough",
+            "Recipe intent feedback warns against average-only distance measurements.");
+        RequireContains(recipeCommandSurface, "Starter XML creation only updates the draft; it does not create layers, import a recipe, Preview, or Run.", "Guided setup VM states starter XML has no execution side effects.");
+        RequireContains(recipeCommandSurface, "Created Guided setup draft XML. Preview/Run was not executed", "Guided setup generic draft creation reports no auto Preview/Run.");
+        RequireContains(recipeCommandSurface, "RecipeGuidedSetupTabText", "Recipe Manager exposes the standalone Guided setup tab label.");
+        RequireContains(recipeCommandSurface, "GuidedSetupNoLlmText", "Guided setup explains that LLM assistance is optional.");
+        RequireContains(recipeCommandSurface, "GuidedSetupActionBoundaryText", "Guided setup exposes its no-auto-run boundary text.");
+        RequireContains(recipeCommandSurface, "CreateGuidedSetupStarterXmlCommand", "Guided setup exposes one deterministic Starter XML command.");
+        RequireContains(recipeCommandSurface, "OpenVisionRecipeGuidedSetupReadinessPresenter.Evaluate", "Guided setup validates intent-specific readiness before Starter XML creation.");
+        RequireContains(recipeCommandSurface, "CreatePinGapIntentXmlDraft();", "Guided setup routes distance intent to the existing Pin gap generator.");
+        RequireContains(recipeCommandSurface, "CreateBlobCountIntentXmlDraft();", "Guided setup routes Blob intent to the existing Blob generator.");
+        RequireContains(recipeCommandSurface, "CreateContourCountIntentXmlDraft();", "Guided setup routes Contour intent to the existing Contour generator.");
+        RequireContains(recipeCommandSurface, "CreateMatchingIntentXmlDraft();", "Guided setup routes Matching intent to the deterministic Matching generator.");
+        RequireContains(
+            Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\IntentSkills\OpenVisionRecipeGuidedSetupReadinessPresenter.cs"),
+            "READY: template + Search ROI + SCORE_MIN + ResultCount gate",
+            "Guided setup reports Matching readiness inputs.");
+        RequireContains(recipeCommandSurface, "CreateMeanIntentXmlDraft();", "Guided setup routes Mean intent to the deterministic Mean generator.");
+        RequireContains(recipeCommandSurface, "MeanValueAvg ", "Guided setup reports MeanValueAvg readiness inputs.");
+        RequireContains(matchingIntentSkill, "ToolType = \"Matching\"", "Matching intent skill locks ToolType to Matching.");
+        RequireContains(matchingIntentSkill, "step.Parameters[\"PATTERN_PATH\"]", "Matching intent skill preserves the template dependency path.");
+        RequireContains(matchingIntentSkill, "step.Parameters[\"CvROI\"]", "Matching intent skill writes the search ROI.");
+        RequireContains(matchingIntentSkill, "AcceptanceMetricName = VisionPipelineKnownMetrics.ResultCount", "Matching intent skill judges the expected match count.");
+        RequireContains(meanIntentSkill, "ToolType = \"Mean\"", "Mean intent skill locks ToolType to Mean.");
+        RequireContains(meanIntentSkill, "step.Parameters[\"MEAN_TYPES\"]", "Mean intent skill preserves the selected mean type.");
+        RequireContains(meanIntentSkill, "step.Parameters[\"USE_ROI\"]", "Mean intent skill records full-image or ROI scope.");
+        RequireContains(meanIntentSkill, "AcceptanceMetricName = VisionPipelineKnownMetrics.MeanValueAvg", "Mean intent skill judges MeanValueAvg.");
+        RequireContains(pinGapIntentSkill, "CreatePixelPipeline", "Pin gap intent skill exposes a px-only pipeline path.");
+        RequireContains(pinGapIntentSkill, "VisionPipelineKnownMetrics.DistancePxAvg", "Pin gap px-only pipeline judges DistancePxAvg.");
+        RequireContains(pinGapIntentSkill, "VisionPipelineKnownMetrics.DistancePxRange", "Pin gap px-only pipeline judges DistancePxRange.");
+        RequireContains(pipelineValidation, "ValidateMetricCalibration", "Pipeline validation blocks mm gates without calibration.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupSummary", "Recipe Manager renders the Guided setup summary.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupReadiness", "Recipe Manager renders Guided setup readiness.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupTab", "Recipe Manager exposes a separate Guided setup tab.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupIntentSelector", "Guided setup exposes an intent selector without requiring an LLM.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupCreateStarterButton", "Guided setup exposes explicit Starter XML creation.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupActionBoundary", "Guided setup states its no-auto-run action boundary.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupDraftText", "Guided setup renders the generated starter draft.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupPinGapInputs", "Guided setup renders Pin gap intent inputs.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupPinGapCalibrationReview", "Guided setup renders Pin gap calibration state and conversion review.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupBlobInputs", "Guided setup renders Blob intent inputs.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupContourInputs", "Guided setup renders Contour intent inputs.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupMatchingInputs", "Guided setup renders Matching intent inputs.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupMatchingTemplatePathText", "Guided setup renders the Matching template path.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupMatchingSearchRoiText", "Guided setup renders the Matching search ROI.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupMatchingScoreMinText", "Guided setup renders the Matching score gate.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupMatchingExpectedCountText", "Guided setup renders the Matching expected count.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupMeanInputs", "Guided setup renders Mean intent inputs.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupMeanRoiText", "Guided setup renders the optional Mean ROI.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupMeanTypeSelector", "Guided setup renders the Mean type selector.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupMeanMinimumText", "Guided setup renders the Mean minimum GV gate.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupMeanMaximumText", "Guided setup renders the Mean maximum GV gate.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupIntentInputStatus", "Guided setup renders READY/MISSING intent status.");
+        RequireContains(shellHostView, "RecipeCommands.CreateGuidedSetupStarterXmlCommand", "Guided setup binds the deterministic Starter XML command.");
+        RequireContains(shellHostView, "HostRecipeOperatorDecisionEvidence", "Recipe Manager renders consolidated result-board metric evidence.");
+        RequireContains(shellHostView, "RecipeCommands.OperatorDecisionEvidenceText", "Recipe Manager binds consolidated result-board metric evidence.");
+        RequireContains(shellHostView, "HostRecipeOperatorDecisionSummaryBand", "Recipe Manager renders the report-first operator decision summary band.");
+        RequireContains(shellHostView, "HostRecipeOperatorDecisionSummaryStatus", "Operator decision summary exposes final Good/Bad status.");
+        RequireContains(shellHostView, "HostRecipeOperatorDecisionSummaryMetric", "Operator decision summary exposes expected/actual metric evidence.");
+        RequireContains(shellHostView, "HostRecipeOperatorDecisionSummaryNextAction", "Operator decision summary exposes the next action.");
+        RequireContains(shellHostView, "HostRecipeRecentBatchRunNgOnlyToggle", "Recipe Manager renders the run-history NG-only toggle.");
+        RequireContains(shellHostView, "HostRecipeRecentBatchRunNgFilterSummary", "Recipe Manager renders the run-history NG cause summary.");
+        RequireContains(shellHostView, "RecipeCommands.FilteredRecentBatchRunSampleResults", "Recipe Manager binds the filtered run-history sample list.");
+        RequireContains(shellHostView, "HostRecipePinGapIntentCalibrationReviewText", "Recipe Manager renders Pin gap calibration review.");
+        RequireContains(shellHostView, "RecipeCommands.GuidedSetupReadinessText", "Recipe Manager binds readiness to the selected intent.");
+        RequireContains(shellHostView, "RecipeCommands.PinGapIntentCalibrationReviewText", "Recipe Manager binds Pin gap calibration review.");
+        RequireContains(screenshotSmoke, "wpf_shell_host_recipe_guided_setup", "Screenshot smoke includes a dedicated Guided setup capture target.");
+        RequireContains(screenshotSmoke, "CaptureShellHostRecipeGuidedSetup", "Screenshot smoke captures the Guided setup tab directly.");
+        RequireContains(screenshotSmoke, "wpf_shell_host_recipe_operator_decision_board", "Screenshot smoke includes a dedicated operator decision board capture target.");
+        RequireContains(screenshotSmoke, "CaptureShellHostRecipeOperatorDecisionBoard", "Screenshot smoke captures the operator decision board directly.");
+        RequireContains(screenshotSmoke, "HostRecipeOperatorDecisionEvidence", "Screenshot smoke verifies consolidated result-board metric evidence.");
+        RequireContains(screenshotSmoke, "OperatorDecisionEvidenceText", "Screenshot smoke checks consolidated result-board metric evidence text.");
+        RequireContains(screenshotSmoke, "HostRecipeOperatorDecisionSummaryBand", "Screenshot smoke captures the report-first operator decision summary.");
+        RequireContains(screenshotSmoke, "HostRecipeRecentBatchRunNgOnlyToggle", "Screenshot smoke verifies the run-history NG-only toggle.");
+        RequireContains(screenshotSmoke, "FilteredRecentBatchRunSampleResults", "Screenshot smoke verifies filtered run-history sample results.");
+        RequireContains(screenshotSmoke, "HostRecipeGuidedSetupSummary", "Screenshot smoke verifies the Guided setup summary.");
+        RequireContains(screenshotSmoke, "HostRecipeGuidedSetupReadiness", "Screenshot smoke verifies Guided setup readiness.");
+        RequireContains(screenshotSmoke, "HostRecipeGuidedSetupIntentSelector", "Screenshot smoke verifies the standalone Guided setup selector.");
+        RequireContains(screenshotSmoke, "HostRecipeGuidedSetupCreateStarterButton", "Screenshot smoke verifies explicit Guided setup Starter XML creation.");
+        RequireContains(screenshotSmoke, "HostRecipeGuidedSetupDraftText", "Screenshot smoke verifies the Guided setup draft output.");
+        RequireContains(screenshotSmoke, "HostRecipeGuidedSetupPinGapInputs", "Screenshot smoke verifies Pin gap input controls.");
+        RequireContains(screenshotSmoke, "HostRecipeGuidedSetupBlobInputs", "Screenshot smoke verifies Blob input controls.");
+        RequireContains(screenshotSmoke, "HostRecipeGuidedSetupContourInputs", "Screenshot smoke verifies Contour input controls.");
+        RequireContains(screenshotSmoke, "HostRecipeGuidedSetupMatchingInputs", "Screenshot smoke verifies Matching input controls.");
+        RequireContains(screenshotSmoke, "HostRecipeGuidedSetupMeanInputs", "Screenshot smoke verifies Mean input controls.");
+        RequireContains(screenshotSmoke, "did not expose ready px-only Pin gap inputs", "Screenshot smoke verifies Pin gap PX-ONLY readiness.");
+        RequireContains(screenshotSmoke, "did not block an invalid Pin gap scale input", "Screenshot smoke verifies invalid Pin gap scale MISSING state.");
+        RequireContains(screenshotSmoke, "did not block an invalid Blob threshold", "Screenshot smoke verifies Blob MISSING state.");
+        RequireContains(screenshotSmoke, "did not block an invalid Contour max area", "Screenshot smoke verifies Contour MISSING state.");
+        RequireContains(screenshotSmoke, "did not block a missing Matching template path", "Screenshot smoke verifies Matching template readiness.");
+        RequireContains(screenshotSmoke, "did not block Matching SCORE_MIN outside 0..1", "Screenshot smoke verifies Matching score validation.");
+        RequireContains(screenshotSmoke, "did not block Matching expected count <= 0", "Screenshot smoke verifies Matching count validation.");
+        RequireContains(screenshotSmoke, "did not block an invalid Matching search ROI", "Screenshot smoke verifies Matching ROI validation.");
+        RequireContains(screenshotSmoke, "did not block an unsupported Mean type", "Screenshot smoke verifies Mean type validation.");
+        RequireContains(screenshotSmoke, "did not block Mean GV outside 0..255", "Screenshot smoke verifies Mean GV range validation.");
+        RequireContains(screenshotSmoke, "did not block Mean Min GV greater than Max GV", "Screenshot smoke verifies Mean min/max ordering.");
+        RequireContains(screenshotSmoke, "did not block an invalid optional Mean ROI", "Screenshot smoke verifies Mean ROI validation.");
+        RequireContains(directSmokeRunner, "GuidedSetupStandalone: Pin gap + Blob + Contour + Matching + Feature Matching + Edge Based Matching + Mean Starter XML without Preview/Run", "Direct EXE smoke records all seven standalone Guided setup intents.");
+        RequireContains(directSmokeRunner, "GuidedSetupPinGapUnits: MM-READY conversion review + PX-ONLY DistancePx gates + invalid scale blocked", "Direct EXE smoke records both Pin gap unit modes.");
+        RequireContains(directSmokeRunner, "GuidedSetupPinGapPublicSample: ", "Direct EXE smoke records public Pin gap Good/Bad unit parity.");
+        RequireContains(directSmokeRunner, "Line_Pins_Synthetic_WidePin_NG.png", "Direct EXE smoke runs the public Pin gap Bad sample.");
+        RequireContains(directSmokeRunner, "OperatorDecisionSummaryBand: final Good/Bad status + expected/actual metric evidence + next action", "Direct EXE smoke records the consolidated operator decision summary.");
+        RequireContains(directSmokeRunner, "OpenCvSharp.ImreadModes.Unchanged", "LLM XML image smoke preserves color channels for HSV and color recipes.");
+        RequireContains(directSmokeRunner, "--expect-run-success", "LLM XML image smoke can verify expected Good and expected NG samples separately.");
         RequireContains(learnIndex, "## Learn Window Topic Map", "Learn index documents the Learn window topic map.");
-        RequireContains(learnIndex, "## Practice Workflow Contract", "Learn index documents the common Learn practice workflow contract.");
-        RequireContains(learnIndex, "Open `Practice Samples`", "Learn index starts practice from the explicit Practice Samples action.");
-        RequireContains(learnIndex, "Open the related PropertyGrid Tool View", "Learn index connects samples to the related Tool View.");
-        RequireContains(learnIndex, "Click Preview or Run Review explicitly", "Learn index keeps Preview/Run Review explicit.");
-        RequireContains(learnIndex, "must not create layers, change input/output routing, run Preview, run Review", "Learn index blocks Learn navigation from execution side effects.");
-        RequireContains(learnIndex, "`Open Guide + Sample` may open the guide and prepare the sample/pipeline", "Learn index documents the guide-plus-sample action boundary.");
+        RequireContains(learnIndex, "## Practice Workflow", "Learn index documents the learner practice workflow.");
+        RequireContains(learnIndex, "Choose a Good/Bad sample pair", "Learn index starts practice from a Good/Bad pair.");
+        RequireContains(learnIndex, "related Tool View or Pipeline Review", "Learn index connects samples to the related review surface.");
+        RequireContains(learnIndex, "Click Preview or Run Review", "Learn index gives the operator the next execution action.");
+        RequireContains(learnIndex, "Compare overlay, result image, metric, and Good/Bad reason", "Learn index names the evidence to compare.");
+        RequireContains(learnIndex, "`Practice Samples` opens the sample catalog", "Learn index explains the Practice Samples action.");
+        RequireNotContains(learnIndex, "must not create layers, change input/output routing", "Learn index must not expose internal execution contracts as learner copy.");
         foreach ((int Topic, string Document, string PathId) learnTopic in new[]
         {
             (0, "OPENVISIONLAB_LEARN_CURRICULUM.md", "all"),
@@ -682,14 +1379,21 @@ internal static class Program
                 "Preview and Run",
                 "Run Preview",
                 "Preview를");
-            RequireContainsAny(
-                learn,
-                $"Learn document {relativePath} states guides/settings do not auto-run.",
+            foreach (string internalContractPhrase in new[]
+            {
                 "must not run",
-                "does not run",
-                "not run Preview",
-                "automatically",
-                "자동");
+                "does not run Preview",
+                "no Preview/Run",
+                "execution evidence",
+                "smoke evidence",
+                "runtime contract",
+            })
+            {
+                RequireNotContains(
+                    learn,
+                    internalContractPhrase,
+                    $"Learn document {relativePath} must explain the learner workflow instead of internal engineering contracts.");
+            }
         }
 
         foreach (string relativePath in new[]
@@ -723,10 +1427,13 @@ internal static class Program
             RequireNotContains(learn, "MVTec", $"Learn document {relativePath} must not depend on non-commercial dataset assets.");
         }
 
-        string learnWindowXaml = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\OpenVisionLearnWindow.xaml");
-        string learnWindow = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\OpenVisionLearnWindow.xaml.cs");
-        string toolShell = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\VisionToolSingleInputPropertyToolShell.xaml.cs");
-        string doubleInputToolShell = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\VisionToolDoubleInputCustomToolShell.xaml.cs");
+        string learnWindowXaml = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\Learn\OpenVisionLearnWindow.xaml");
+        string learnWindow = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\Learn\OpenVisionLearnWindow.xaml.cs");
+        string learnTopicsCatalog = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\Learn\OpenVisionLearnTopics.cs");
+        Dictionary<int, string> learnTopicIndexToEnum = BuildLearnTopicIndexToEnumMap(learnTopicsCatalog);
+        string toolShell = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\Tooling\SingleInput\VisionToolSingleInputPropertyToolShell.xaml.cs");
+        string doubleInputToolShell = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\Tooling\DoubleInput\VisionToolDoubleInputCustomToolShell.xaml.cs");
+        string toolLearnWindowController = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\Learn\VisionToolLearnWindowController.cs");
         string foundationGuide = Read(repoRoot, @"docs\learn\LEARN_OPENCVSHARP_FOUNDATIONS.md");
         RequireContains(learnIndex, "LEARN_OPENCVSHARP_FOUNDATIONS.md", "Learn index links the OpenCvSharp foundations guide.");
         RequireContains(foundationGuide, "`Point`", "OpenCvSharp foundations guide explains Point.");
@@ -738,22 +1445,23 @@ internal static class Program
         RequireContains(foundationGuide, "Mat[Row=Y, Column=X, Channel]", "OpenCvSharp foundations guide explains matrix-style image access.");
         RequireContains(foundationGuide, "`InputLayer` is the source layer", "OpenCvSharp foundations guide explains input layer routing.");
         RequireContains(foundationGuide, "`OutputLayer` is the result created by the step", "OpenCvSharp foundations guide explains output layer routing.");
-        RequireContains(foundationGuide, "must not run Preview/Run", "OpenCvSharp foundations guide keeps execution explicit.");
-        RequireContains(foundationGuide, "Use public samples only", "OpenCvSharp foundations guide keeps sample practice public-safe.");
+        RequireContains(foundationGuide, "Name the image concept first, choose the matching tool family", "OpenCvSharp foundations guide connects concepts to tool choice.");
+        RequireContains(foundationGuide, "Use the provided Good/Bad samples", "OpenCvSharp foundations guide starts practice from provided sample evidence.");
         RequireContains(foundationGuide, "Good/Bad samples", "OpenCvSharp foundations guide connects concepts to Good/Bad validation.");
         RequireContains(learnWindowXaml, "OpenVisionLearnOpenFoundationDocsButton", "OpenVision Learn exposes a Foundation Docs button.");
-        RequireContains(learnWindowXaml, "Foundation Docs", "OpenVision Learn labels the Foundation Docs button.");
+        RequireContains(learnWindowXaml, "기초 용어", "OpenVision Learn labels the foundations button for learners.");
         RequireContains(learnWindow, "OpenFoundationDocsButton_Click", "OpenVision Learn handles the Foundation Docs button.");
         RequireContains(learnWindow, "LEARN_OPENCVSHARP_FOUNDATIONS.md", "OpenVision Learn Foundation Docs button opens the foundations guide.");
         RequireContains(learnWindowXaml, "OpenVisionLearnPracticeWorkflowPanel", "OpenVision Learn exposes the common practice workflow panel.");
-        RequireContains(learnWindowXaml, "Practice workflow", "OpenVision Learn labels the common practice workflow panel.");
-        RequireContains(learnWindowXaml, "click Preview or Run Review explicitly", "OpenVision Learn tells the operator execution remains explicit.");
-        RequireContains(learnWindowXaml, "must not create layers, change routing, or run tools", "OpenVision Learn says Learn path filtering has no execution side effects.");
+        RequireContains(learnWindowXaml, "실습 순서", "OpenVision Learn labels the common practice workflow panel.");
+        RequireContains(learnWindowXaml, "Preview 또는 Pipeline Review 실행", "OpenVision Learn gives the operator the next execution action.");
+        RequireContains(learnWindowXaml, "입력 이미지, 출력 이미지, 핵심 지표", "OpenVision Learn names the evidence the operator should compare.");
+        RequireNotContains(learnWindowXaml, "바뀌면 안", "OpenVision Learn must not expose internal routing contracts as learner copy.");
         RequireContains(learnWindowXaml, "OpenVisionLearnFoundationTypeCards", "OpenVision Learn foundation topic exposes Point/Rect/Size/Mat cards.");
         RequireContains(learnWindowXaml, "OpenVisionLearnBeginnerPathPanel", "OpenVision Learn foundation topic exposes a beginner path panel.");
-        RequireContains(learnWindowXaml, "Beginner path: Foundation -> Brightness/GV -> Threshold -> Filter/Morphology -> Blob/Contour/LineDistance", "OpenVision Learn foundation topic shows the beginner tool path.");
-        RequireContains(learnWindowXaml, "Do not skip the metric or Good/Bad check.", "OpenVision Learn beginner path requires metric and Good/Bad checks.");
-        RequireContains(learnWindowXaml, "Mat = rows x cols x channels", "OpenVision Learn foundation topic explains Mat as an image matrix.");
+        RequireContains(learnWindowXaml, "추천 순서: 영상 기초", "OpenVision Learn foundation topic shows the beginner tool path.");
+        RequireContains(learnWindowXaml, "Good/Bad 기준으로 비교", "OpenVision Learn beginner path connects concepts to Good/Bad checks.");
+        RequireContains(learnWindowXaml, "Mat = 행 x 열 x 채널", "OpenVision Learn foundation topic explains Mat as an image matrix.");
         string meanGuide = Read(repoRoot, @"docs\learn\LEARN_MEAN.md");
         string thresholdGuide = Read(repoRoot, @"docs\learn\LEARN_THRESHOLD.md");
         string filterGuide = Read(repoRoot, @"docs\learn\LEARN_FILTER.md");
@@ -773,7 +1481,7 @@ internal static class Program
         RequireContains(filterGuide, "Public_Filter_Denoise_Good", "Filter Learn guide names the public Good sample.");
         RequireContains(filterGuide, "Public_Filter_Denoise_Missing_Bad", "Filter Learn guide names the public Bad sample.");
         RequireContains(filterGuide, "Public sample pair", "Filter Learn guide marks the public sample pair.");
-        RequireContains(filterGuide, "Filter alone is not the final OK/NG decision", "Filter Learn guide avoids treating preprocessing as final inspection.");
+        RequireContains(filterGuide, "final OK/NG metric", "Filter Learn guide connects preprocessing to downstream inspection evidence.");
         RequireContains(edgeDetectionGuide, "## Beginner path handoff", "EdgeDetection Learn guide includes beginner handoff.");
         RequireContains(edgeDetectionGuide, "Public_EdgeDetection_Shapes_Good", "EdgeDetection Learn guide names the public Good sample.");
         RequireContains(edgeDetectionGuide, "Public_EdgeDetection_Shapes_Missing_Bad", "EdgeDetection Learn guide names the public Bad sample.");
@@ -783,7 +1491,7 @@ internal static class Program
         RequireContains(morphologyGuide, "Public_Morphology_Cleanup_Good", "Morphology Learn guide names the public Good sample.");
         RequireContains(morphologyGuide, "Public_Morphology_Cleanup_Missing_Bad", "Morphology Learn guide names the public Bad sample.");
         RequireContains(morphologyGuide, "Public sample pair", "Morphology Learn guide marks the public sample pair.");
-        RequireContains(morphologyGuide, "before/after output-layer comparison", "Morphology Learn guide requires output-layer comparison.");
+        RequireContains(morphologyGuide, "before/after output layers", "Morphology Learn guide requires output-layer comparison.");
         RequireContains(blobGuide, "## Blob과 Contour 구분", "Blob Learn guide distinguishes Blob from Contour.");
         RequireContains(blobGuide, "`ResultCount`만으로 끝내지 말고", "Blob Learn guide requires metric gates beyond count.");
         RequireContains(contourGuide, "## Blob과 Contour 구분", "Contour Learn guide distinguishes Contour from Blob.");
@@ -795,19 +1503,21 @@ internal static class Program
         RequireContains(learnWindowXaml, "OpenVisionLearnMatchingFamilyDecisionPanel", "OpenVision Learn Matching topic exposes the Matching family decision panel.");
         RequireContains(learnWindowXaml, "도구 선택: Matching / EdgeBasedMatching / FeatureMatching", "OpenVision Learn Matching-family topics label the tool selection rule.");
         RequireContains(learnWindowXaml, "OpenVisionLearnFeatureMatchingFamilyDecisionPanel", "OpenVision Learn FeatureMatching topic exposes the Matching family decision panel.");
-        RequireContains(toolShell, "new OpenVisionLearnWindow(127, 255, false, LearnTopicIndex)", "PropertyGrid tool Learn buttons open the configured Learn topic.");
-        RequireContains(doubleInputToolShell, "new OpenVisionLearnWindow(127, 255, false, LearnTopicIndex)", "Double-input tool Learn buttons open the configured Learn topic.");
+        RequireContains(toolShell, "learnWindowController.Open(LearnTopicIndex)", "PropertyGrid tool Learn buttons delegate the configured Learn topic.");
+        RequireContains(doubleInputToolShell, "learnWindowController.Open(LearnTopicIndex)", "Double-input tool Learn buttons delegate the configured Learn topic.");
+        RequireContains(toolLearnWindowController, "new OpenVisionLearnWindow(127, 255, false, topicIndex)", "Common Tool Learn controller opens the configured Learn topic.");
+        RequireContains(toolLearnWindowController, "learnWindow.Activate()", "Common Tool Learn controller reactivates the existing Learn window.");
         foreach ((string Xaml, string Text, int TopicIndex, string Document) toolLearn in new[]
         {
-            (@"0. UI\6) Vision Test\Wpf\FilterToolWpfView.xaml", "Learn Filter", 3, "LEARN_FILTER.md"),
-            (@"0. UI\6) Vision Test\Wpf\MorphologyToolWpfView.xaml", "Learn Morph", 4, "LEARN_MORPHOLOGY.md"),
-            (@"0. UI\6) Vision Test\Wpf\BlobToolWpfView.xaml", "Learn Blob", 5, "LEARN_BLOB.md"),
-            (@"0. UI\6) Vision Test\Wpf\ContourToolWpfView.xaml", "Learn Contour", 6, "LEARN_CONTOUR.md"),
-            (@"0. UI\6) Vision Test\Wpf\LineToolWpfView.xaml", "Learn Line", 8, "LEARN_LINE.md"),
-            (@"0. UI\6) Vision Test\Wpf\EdgeBasedMatchingToolWpfView.xaml", "Learn Edge Match", 12, "LEARN_EDGE_BASED_MATCHING.md"),
-            (@"0. UI\6) Vision Test\Wpf\MatchingToolWpfView.xaml", "Learn Matching", 9, "LEARN_MATCHING.md"),
-            (@"0. UI\6) Vision Test\Wpf\FeatureMatchingToolWpfView.xaml", "Learn Feature", 10, "LEARN_FEATURE_MATCHING.md"),
-            (@"0. UI\6) Vision Test\Wpf\ArithmeticToolWpfView.xaml", "Learn Arithmetic", 14, "LEARN_ARITHMETIC.md"),
+            (@"0. UI\6) Vision Test\Wpf\ToolViews\FilterToolWpfView.xaml", "Learn Filter", 3, "LEARN_FILTER.md"),
+            (@"0. UI\6) Vision Test\Wpf\ToolViews\MorphologyToolWpfView.xaml", "Learn Morph", 4, "LEARN_MORPHOLOGY.md"),
+            (@"0. UI\6) Vision Test\Wpf\ToolViews\BlobToolWpfView.xaml", "Learn Blob", 5, "LEARN_BLOB.md"),
+            (@"0. UI\6) Vision Test\Wpf\ToolViews\ContourToolWpfView.xaml", "Learn Contour", 6, "LEARN_CONTOUR.md"),
+            (@"0. UI\6) Vision Test\Wpf\ToolViews\LineToolWpfView.xaml", "Learn Line", 8, "LEARN_LINE.md"),
+            (@"0. UI\6) Vision Test\Wpf\ToolViews\EdgeBasedMatchingToolWpfView.xaml", "Learn Edge Match", 12, "LEARN_EDGE_BASED_MATCHING.md"),
+            (@"0. UI\6) Vision Test\Wpf\ToolViews\MatchingToolWpfView.xaml", "Learn Matching", 9, "LEARN_MATCHING.md"),
+            (@"0. UI\6) Vision Test\Wpf\ToolViews\FeatureMatchingToolWpfView.xaml", "Learn Feature", 10, "LEARN_FEATURE_MATCHING.md"),
+            (@"0. UI\6) Vision Test\Wpf\ToolViews\ArithmeticToolWpfView.xaml", "Learn Arithmetic", 14, "LEARN_ARITHMETIC.md"),
         })
         {
             string toolXaml = Read(repoRoot, toolLearn.Xaml);
@@ -815,7 +1525,9 @@ internal static class Program
             RequireContains(toolXaml, "LearnButtonVisibility=\"Visible\"", $"Tool Learn button is visible: {toolLearn.Xaml}.");
             RequireContains(toolXaml, $"LearnButtonText=\"{toolLearn.Text}\"", $"Tool Learn button text is mapped: {toolLearn.Xaml}.");
             RequireContains(toolXaml, $"LearnTopicIndex=\"{topicIndex}\"", $"Tool Learn topic index is mapped: {toolLearn.Xaml}.");
-            RequireContains(learnWindow, $"{topicIndex} => \"{toolLearn.Document}\"", $"Learn topic {topicIndex} resolves {toolLearn.Document}.");
+            string expectedEnumName = LearnTopicEnumNameByIndex(learnTopicIndexToEnum, toolLearn.TopicIndex);
+            RequireContains(learnTopicsCatalog, $"OpenVisionLearnTopicIndex.{expectedEnumName}", $"Learn topic {topicIndex} maps to enum {expectedEnumName}.");
+            RequireContains(learnTopicsCatalog, $"\"{toolLearn.Document}\"", $"Learn topic {topicIndex} resolves {toolLearn.Document}.");
             RequirePathExists(repoRoot, Path.Combine("docs", "learn", toolLearn.Document), $"Tool Learn document exists for {toolLearn.Xaml}.");
         }
 
@@ -832,7 +1544,7 @@ internal static class Program
             RequireContains(learn, "Shape survives lighting but edge geometry is stable", $"{matchingGuide.ToolName} Learn document explains when to use EdgeBasedMatching.");
             RequireContains(learn, "Target changes scale/rotation/view but local features remain", $"{matchingGuide.ToolName} Learn document explains when to use FeatureMatching.");
             RequireContains(learn, "ScoreMax, ResultCount", $"{matchingGuide.ToolName} Learn document anchors Matching-family metrics.");
-            RequireContains(learn, "Use explicit Preview/Run only.", $"{matchingGuide.ToolName} Learn document keeps execution explicit.");
+            RequireContains(learn, "run Preview or Run Review and compare", $"{matchingGuide.ToolName} Learn document connects parameter changes to review evidence.");
         }
 
         string metricsAcceptanceGuide = Read(repoRoot, @"docs\learn\LEARN_METRICS_ACCEPTANCE.md");
@@ -873,25 +1585,26 @@ internal static class Program
         RequireContains(metricsAcceptanceGuide, "ResultImageWidth=286", "Metrics/Acceptance Learn document teaches the RotateScale output width gate.");
         RequireContains(metricsAcceptanceGuide, "ResultImageHeight=210", "Metrics/Acceptance Learn document teaches the RotateScale output height gate.");
         RequireContains(metricsAcceptanceGuide, "Transform samples may be Good-only", "Metrics/Acceptance Learn document explains Good-only transform benchmarks.");
-        RequireContains(metricsAcceptanceGuide, "Good/Bad comparison is useful only when the Bad row fails for the intended metric.", "Metrics/Acceptance Learn document distinguishes intended metric failure from setup failure.");
+        RequireContains(metricsAcceptanceGuide, "Bad sample fails for the intended metric", "Metrics/Acceptance Learn document distinguishes intended metric failure from setup failure.");
         RequireNotContains(metricsAcceptanceGuide, "Public_Template_Circle", "Metrics/Acceptance Learn document must not reference non-catalog sample names.");
-        RequireContains(learnWindow, "13. Metrics / Acceptance", "OpenVision Learn topic list exposes Metrics/Acceptance.");
-        RequireContains(learnWindow, "13 => \"LEARN_METRICS_ACCEPTANCE.md\"", "OpenVision Learn topic 13 resolves Metrics/Acceptance document.");
-        RequireContains(learnWindow, "Metrics/Acceptance gates", "OpenVision Learn topic 13 exposes Metrics/Acceptance practice guidance.");
+        RequireContains(learnWindow, "13. Metrics / Acceptance", "OpenVision Learn topic list exposes Metrics / Acceptance.");
+        RequireContains(learnTopicsCatalog, "OpenVisionLearnTopicIndex.MetricsAcceptance", "OpenVision Learn topic 13 resolves Metrics/Acceptance via enum mapping.");
+        RequireContains(learnTopicsCatalog, "\"LEARN_METRICS_ACCEPTANCE.md\"", "OpenVision Learn topic 13 resolves Metrics/Acceptance document.");
+        RequireContains(learnTopicsCatalog, "Metrics/Acceptance 기준", "OpenVision Learn topic 13 exposes Metrics/Acceptance practice guidance.");
         RequireContains(learnWindow, "metricsAcceptanceTopicPanel", "OpenVision Learn has a visible Metrics/Acceptance topic panel.");
 
         string pipelineLayerRoutingGuide = Read(repoRoot, @"docs\learn\LEARN_PIPELINE_LAYER_ROUTING.md");
-        RequireContains(pipelineLayerRoutingGuide, "## Route Safety Checklist", "Pipeline/Layer Learn document has a route safety checklist.");
+        RequireContains(pipelineLayerRoutingGuide, "## Building A Route", "Pipeline/Layer Learn document explains how to build a route.");
         RequireContains(pipelineLayerRoutingGuide, "`InputLayer` is the source image", "Pipeline/Layer Learn document explains InputLayer.");
         RequireContains(pipelineLayerRoutingGuide, "`OutputLayer` is the produced result", "Pipeline/Layer Learn document explains OutputLayer.");
-        RequireContains(pipelineLayerRoutingGuide, "must not select, rewrite, or silently replace `InputLayer`", "Pipeline/Layer Learn document protects output/input isolation.");
-        RequireContains(pipelineLayerRoutingGuide, "Layer create/delete/load-image actions and visibility toggles must not run Preview/Run.", "Pipeline/Layer Learn document protects explicit execution.");
+        RequireContains(pipelineLayerRoutingGuide, "select that previous `OutputLayer` as its `InputLayer`", "Pipeline/Layer Learn document explains how consecutive steps are connected.");
+        RequireContains(pipelineLayerRoutingGuide, "Click Preview or Run Review", "Pipeline/Layer Learn document gives the operator the next review action.");
         RequireContains(pipelineLayerRoutingGuide, "## Operator Route Review Loop", "Pipeline/Layer Learn document has the operator route review loop.");
-        RequireContains(pipelineLayerRoutingGuide, "route setup, not execution evidence", "Pipeline/Layer Learn document distinguishes routing setup from execution evidence.");
+        RequireContains(pipelineLayerRoutingGuide, "inspect the previous `OutputLayer` first", "Pipeline/Layer Learn document explains how to locate the first changed result.");
         RequireContains(learnWindowXaml, "OpenVisionLearnLayerRoutingSafetyPanel", "OpenVision Learn exposes the route safety checklist panel.");
-        RequireContains(learnWindowXaml, "Routing safety checklist", "OpenVision Learn topic 11 shows route safety guidance.");
+        RequireContains(learnWindowXaml, "Layer 연결 원리", "OpenVision Learn topic 11 explains layer routing.");
         RequireContains(learnWindowXaml, "OpenVisionLearnLayerRouteReviewLoopPanel", "OpenVision Learn exposes the operator route review loop panel.");
-        RequireContains(learnWindowXaml, "Operator route review loop", "OpenVision Learn topic 11 shows the operator route review loop.");
+        RequireContains(learnWindowXaml, "Pipeline 검토 순서", "OpenVision Learn topic 11 shows the operator route review loop.");
 
         string learnSmokeScript = Read(repoRoot, @"tools\RunLearnModeUiSmokes.ps1");
         foreach (string learnSmokeTarget in new[]
@@ -926,13 +1639,19 @@ internal static class Program
         string learnScreenshotSmoke = Read(repoRoot, @"tools\PipelineViewerScreenshotSmoke\Program.cs");
         RequireContains(learnScreenshotSmoke, "wpf_openvision_learn_edge_based_matching", "Learn screenshot smoke exposes the EdgeBasedMatching topic target.");
         RequireContains(learnScreenshotSmoke, "CaptureOpenVisionLearnEdgeBasedMatching", "Learn screenshot smoke verifies the EdgeBasedMatching topic.");
-        RequireContains(learnWindow, "EdgeDetection: pixels", "OpenVision Learn Edge / Line topic distinguishes edge, line, and measurement tool roles.");
-        RequireContains(learnScreenshotSmoke, "\"LineGauge\", \"LineDistance\"", "Learn screenshot smoke verifies Edge / Line role-map guidance.");
+        RequireContains(learnWindowXaml, "EdgeDetection에서는 경계 픽셀", "OpenVision Learn Edge / Line topic distinguishes edge and line evidence.");
+        RequireContains(learnScreenshotSmoke, "\"EdgeDetection\", \"LineDistance\"", "Learn screenshot smoke verifies Edge / Line role-map guidance.");
+        RequireContains(learnScreenshotSmoke, "OpenVisionLearnEdgeDetectionPracticePanel", "Learn screenshot smoke verifies the EdgeDetection public practice panel.");
+        RequireContains(learnScreenshotSmoke, "Public_EdgeDetection_Shapes_Good", "Learn screenshot smoke verifies the EdgeDetection public Good/Bad pair.");
+        RequireContains(learnScreenshotSmoke, "OpenVisionLearnLineDistancePracticePanel", "Learn screenshot smoke verifies the LineDistance public practice panel.");
+        RequireContains(learnScreenshotSmoke, "Public_Line_Pins_Good", "Learn screenshot smoke verifies the LineDistance public Good/Bad pair.");
         RequireContains(learnScreenshotSmoke, "DistanceMmMax", "Learn screenshot smoke verifies LineDistance max/outlier guidance.");
-        RequireContains(learnWindowXaml, "Gate rule: DistanceMmAvg checks the nominal gap or pitch", "OpenVision Learn LineDistance topic explains average plus consistency gates.");
+        RequireContains(learnWindowXaml, "판정 기준: DistanceMmAvg", "OpenVision Learn LineDistance topic explains average plus consistency gates.");
         string lineGuide = Read(repoRoot, @"docs\learn\LEARN_LINE.md");
         RequireContains(lineGuide, "LineDistance outlier gate", "Line Learn document explains the LineDistance outlier gate.");
         RequireContains(lineGuide, "`DistanceMmRange`, `DistancePxRange`, `DistanceMmMax`, or `DistancePxMax`", "Line Learn document requires consistency/outlier metrics.");
+        RequireContains(lineGuide, "Practice Samples path: `line`", "Line Learn document names the Line practice path.");
+        RequireContains(lineGuide, "Public_Line_Pins_Good", "Line Learn document names the public Good sample.");
         RequireContains(learnScreenshotSmoke, "wpf_openvision_learn_arithmetic", "Learn screenshot smoke exposes the Arithmetic topic target.");
         RequireContains(learnScreenshotSmoke, "CaptureOpenVisionLearnArithmetic", "Learn screenshot smoke verifies the Arithmetic topic.");
         RequireContains(learnScreenshotSmoke, "wpf_arithmetic_tool_learn_button", "Learn screenshot smoke exposes the Arithmetic Tool View Learn button target.");
@@ -942,16 +1661,19 @@ internal static class Program
         RequireContains(learnScreenshotSmoke, "wpf_openvision_learn_color_hsv", "Learn screenshot smoke exposes the Color / HSV topic target.");
         RequireContains(learnScreenshotSmoke, "CaptureOpenVisionLearnColorHsv", "Learn screenshot smoke verifies the Color / HSV topic.");
         RequireContains(learnWindow, "14. Arithmetic / Logic", "OpenVision Learn topic list exposes Arithmetic / Logic.");
-        RequireContains(learnWindow, "14 => \"LEARN_ARITHMETIC.md\"", "OpenVision Learn topic 14 resolves Arithmetic document.");
+        RequireContains(learnTopicsCatalog, "OpenVisionLearnTopicIndex.Arithmetic", "OpenVision Learn topic 14 resolves Arithmetic via enum mapping.");
+        RequireContains(learnTopicsCatalog, "\"LEARN_ARITHMETIC.md\"", "OpenVision Learn topic 14 resolves Arithmetic document.");
         RequireContains(learnWindow, "15. Geometry Transform", "OpenVision Learn topic list exposes Geometry Transform.");
-        RequireContains(learnWindow, "15 => \"LEARN_GEOMETRY_TRANSFORM.md\"", "OpenVision Learn topic 15 resolves Geometry document.");
+        RequireContains(learnTopicsCatalog, "OpenVisionLearnTopicIndex.GeometryTransform", "OpenVision Learn topic 15 resolves Geometry via enum mapping.");
+        RequireContains(learnTopicsCatalog, "\"LEARN_GEOMETRY_TRANSFORM.md\"", "OpenVision Learn topic 15 resolves Geometry document.");
         RequireContains(learnWindow, "16. Color / HSV", "OpenVision Learn topic list exposes Color / HSV.");
-        RequireContains(learnWindow, "16 => \"LEARN_COLOR_HSV.md\"", "OpenVision Learn topic 16 resolves Color / HSV document.");
-        RequireContains(learnWindow, "16 => \"color-hsv\"", "OpenVision Learn topic 16 opens the Color / HSV practice path.");
-        RequireContains(learnWindow, "Sample Picker path 'color-hsv'", "OpenVision Learn Color / HSV practice text uses the Color / HSV path.");
-        RequireContains(learnWindow, "Public_HSV_ColorPatch", "OpenVision Learn Color / HSV practice text names the public HSV sample pair.");
+        RequireContains(learnTopicsCatalog, "OpenVisionLearnTopicIndex.ColorHsv", "OpenVision Learn topic 16 resolves Color / HSV via enum mapping.");
+        RequireContains(learnTopicsCatalog, "\"LEARN_COLOR_HSV.md\"", "OpenVision Learn topic 16 resolves Color / HSV document.");
+        RequireContains(learnTopicsCatalog, "\"color-hsv\"", "OpenVision Learn topic 16 opens the Color / HSV practice path.");
+        RequireContains(learnTopicsCatalog, "HSV 색상 샘플", "OpenVision Learn Color / HSV practice text describes the sample intent.");
+        RequireContains(learnTopicsCatalog, "MaskPixelRatio", "OpenVision Learn Color / HSV practice text names the review metric.");
         RequireContains(learnWindowXaml, "OpenVisionLearnColorSampleEvidence", "OpenVision Learn Color / HSV topic explains the current public HSV Good/Bad sample evidence.");
-        RequireContains(learnWindowXaml, "Public HSV practice samples", "OpenVision Learn Color / HSV topic labels the public HSV sample evidence.");
+        RequireContains(learnWindowXaml, "공개 HSV 실습 샘플", "OpenVision Learn Color / HSV topic labels the public HSV sample evidence.");
         RequireContains(learnWindowXaml, "Public_HSV_ColorPatch_Good", "OpenVision Learn Color / HSV topic names the public HSV Good sample.");
         RequireContains(learnWindowXaml, "MaskPixelRatio", "OpenVision Learn Color / HSV topic presents MaskPixelRatio as the current HSV metric.");
         RequireContains(learnScreenshotSmoke, "OpenVisionLearnColorSampleEvidence", "Learn screenshot smoke verifies the Color / HSV sample evidence panel.");
@@ -960,23 +1682,33 @@ internal static class Program
         RequireContains(colorHsvGuide, "Practice Samples path: `color-hsv`", "Color / HSV Learn guide names the Color / HSV practice path.");
         RequireContains(colorHsvGuide, "Public_HSV_ColorPatch_Good", "Color / HSV Learn guide names the public HSV Good sample.");
         RequireContains(colorHsvGuide, "Public_HSV_ColorPatch_Missing_Bad", "Color / HSV Learn guide names the public HSV Bad sample.");
-        RequireContains(colorHsvGuide, "`MaskPixelRatio` is the first stable HSV sample metric", "Color / HSV Learn guide scopes MaskPixelRatio as current public HSV sample evidence.");
-        RequireContains(colorHsvGuide, "## HSV Pipeline Runtime Contract", "Color / HSV Learn guide defines the runtime contract for public HSV samples.");
+        RequireContains(colorHsvGuide, "color-mask coverage with `MaskPixelRatio`", "Color / HSV Learn guide connects MaskPixelRatio to the public sample evidence.");
+        RequireContains(colorHsvGuide, "## HSV Parameters And Output", "Color / HSV Learn guide explains parameters and output.");
         RequireContains(colorHsvGuide, "`HueMin`, `HueMax`, `SaturationMin`, `SaturationMax`, `ValueMin`, `ValueMax`", "Color / HSV Learn guide defines required HSV range parameters.");
         RequireContains(colorHsvGuide, "`InputLayer` and `OutputLayer`", "Color / HSV Learn guide keeps HSV output mask routing explicit.");
         RequireContains(colorHsvGuide, "`MaskPixelCount`", "Color / HSV Learn guide requires count metrics before sample promotion.");
         RequireContains(colorHsvGuide, "bounded `MaskPixelRatio` range", "Color / HSV Learn guide requires bounded mask-ratio acceptance.");
-        RequirePathExists(repoRoot, @"1. Core\VisionPipelineHsvMaskTool.cs", "HSV pipeline runner tool exists.");
-        string hsvPipelineTool = Read(repoRoot, @"1. Core\VisionPipelineHsvMaskTool.cs");
+        RequirePathExists(repoRoot, @"1. Core\Pipeline\Tools\VisionPipelineHsvMaskTool.cs", "HSV pipeline runner tool exists.");
+        string hsvPipelineTool = Read(repoRoot, @"1. Core\Pipeline\Tools\VisionPipelineHsvMaskTool.cs");
         RequireContains(hsvPipelineTool, "VisionPipelineHsvMaskTool", "HSV pipeline runner tool is implemented.");
         RequireContains(hsvPipelineTool, "ColorConversionCodes.BGR2HSV", "HSV pipeline runner converts BGR input to HSV.");
         RequireContains(hsvPipelineTool, "MaskPixelRatio", "HSV pipeline runner reports mask ratio.");
-        string pipelineKnownMetrics = Read(repoRoot, @"1. Core\VisionPipelineKnownMetrics.cs");
+        string pipelineKnownMetrics = Read(repoRoot, @"1. Core\Pipeline\Validation\VisionPipelineKnownMetrics.cs");
         RequireContains(pipelineKnownMetrics, "public const string MaskPixelCount", "Known metrics include MaskPixelCount.");
         RequireContains(pipelineKnownMetrics, "public const string MaskPixelRatio", "Known metrics include MaskPixelRatio.");
         RequireContains(pipelineKnownMetrics, "[\"hsv\"]", "Known metrics map HSV ToolType.");
-        string pipelineValidator = Read(repoRoot, @"1. Core\VisionPipelineValidation.cs");
+        string pipelineValidator = Read(repoRoot, @"1. Core\Pipeline\Validation\VisionPipelineValidation.cs");
         RequireContains(pipelineValidator, "\"hsv\"", "Pipeline validator supports HSV ToolType.");
+        RequireContains(pipelineValidator, "Hue is circular", "Pipeline validator documents circular HSV hue validation.");
+        RequireNotContains(pipelineValidator, "ValidateMinMax(result, label, step, \"HueMin\", \"HueMax\")", "Pipeline validator allows circular HSV hue ranges.");
+        string llmToolCatalog = Read(repoRoot, @"docs\OPENVISIONLAB_LLM_TOOL_CATALOG.json");
+        RequireContains(llmToolCatalog, "\"toolType\": \"HSV\"", "LLM tool catalog exposes the HSV ToolType.");
+        RequireContains(llmToolCatalog, "\"MaskPixelRatio\"", "LLM tool catalog exposes the HSV mask-ratio metric.");
+        RequireContains(llmToolCatalog, "HueMin greater than HueMax intentionally wraps", "LLM tool catalog documents the HSV hue-wrap contract.");
+        string llmAuthoringGuide = Read(repoRoot, @"docs\OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md");
+        RequireContains(llmAuthoringGuide, "### HSV Color Mask", "LLM XML authoring guide includes the HSV color-mask pattern.");
+        RequireContains(llmAuthoringGuide, "`HSV`, `HsvMask`, `ColorHSV`, `ColorMask`", "LLM XML authoring guide lists HSV aliases.");
+        RequireContains(llmAuthoringGuide, "`HueMin > HueMax` intentionally wraps", "LLM XML authoring guide documents the HSV hue-wrap contract.");
         string geometryGuide = Read(repoRoot, @"docs\learn\LEARN_GEOMETRY_TRANSFORM.md");
         RequireContains(geometryGuide, "Public_Geometry_RotateScale_Good", "Geometry Learn guide uses the public RotateScale sample.");
         RequireContains(geometryGuide, "Public_Geometry_RotateScale_Wide_Bad", "Geometry Learn guide uses the public RotateScale Bad sample.");
@@ -985,11 +1717,12 @@ internal static class Program
         RequireContains(geometryGuide, @"docs\samples\public\Geometry_RotateScale_Synthetic_Wide_NG.png", "Geometry Learn guide points to the public-safe wide negative image.");
         RequireNotContains(geometryGuide, @"Sample\Contour.jpg", "Geometry Learn guide must not depend on the local legacy root Sample image.");
 
-        string thresholdToolXaml = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\ThresholdToolWpfView.xaml");
+        string thresholdToolXaml = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\ToolViews\ThresholdToolWpfView.xaml");
         RequireContains(thresholdToolXaml, "ThresholdToolLearnButton", "Threshold Tool exposes its compact Learn entry.");
         RequireContains(thresholdToolXaml, "Learn Threshold", "Threshold Tool Learn entry is labelled for Threshold.");
         RequireContains(learnWindow, ": this(threshold, maxValue, invert, 2)", "Threshold Tool Learn entry opens the Threshold topic.");
-        RequireContains(learnWindow, "2 => \"LEARN_THRESHOLD.md\"", "Threshold Learn topic resolves LEARN_THRESHOLD.md.");
+        RequireContains(learnTopicsCatalog, "OpenVisionLearnTopicIndex.Threshold", "Threshold Learn topic resolves LEARN_THRESHOLD.md via enum mapping.");
+        RequireContains(learnTopicsCatalog, "\"LEARN_THRESHOLD.md\"", "Threshold Learn topic resolves LEARN_THRESHOLD.md.");
         RequirePathExists(repoRoot, @"docs\learn\LEARN_THRESHOLD.md", "Threshold Tool Learn document exists.");
 
         foreach ((string Document, string Link, string Asset) evidence in new[]
@@ -1562,6 +2295,70 @@ internal static class Program
             RequireNotContains(pipeline, "Euresys", $"Product pipeline {relativePath} must not depend on Euresys sample assets.");
             RequireNotContains(pipeline, "MVTec", $"Product pipeline {relativePath} must not depend on MVTec non-commercial assets.");
         }
+    }
+
+    private static Dictionary<int, string> BuildLearnTopicIndexToEnumMap(string learnTopicsCatalog)
+    {
+        if (string.IsNullOrWhiteSpace(learnTopicsCatalog))
+        {
+            return new Dictionary<int, string>();
+        }
+
+        Dictionary<string, int> enumToIndex = new();
+        Dictionary<string, string> unresolvedAliases = new();
+        Regex enumLineRegex = new(@"^\s*(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?<value>[^,]+)\s*,", RegexOptions.Multiline);
+
+        foreach (Match match in enumLineRegex.Matches(learnTopicsCatalog))
+        {
+            string name = match.Groups["name"].Value;
+            string value = match.Groups["value"].Value.Trim();
+            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int index))
+            {
+                enumToIndex[name] = index;
+            }
+            else if (!string.IsNullOrWhiteSpace(value))
+            {
+                unresolvedAliases[name] = value;
+            }
+        }
+
+        bool changed = true;
+        while (changed && unresolvedAliases.Count > 0)
+        {
+            changed = false;
+            foreach (KeyValuePair<string, string> alias in unresolvedAliases.ToList())
+            {
+                if (enumToIndex.TryGetValue(alias.Value, out int resolvedIndex))
+                {
+                    enumToIndex[alias.Key] = resolvedIndex;
+                    unresolvedAliases.Remove(alias.Key);
+                    changed = true;
+                }
+            }
+        }
+
+        Dictionary<int, string> indexToEnum = new();
+        Regex metadataRegex = new(@"OpenVisionLearnTopicMetadata\(\s*OpenVisionLearnTopicIndex\.(?<enumName>[A-Za-z_][A-Za-z0-9_]*)\s*,", RegexOptions.Multiline);
+        foreach (Match match in metadataRegex.Matches(learnTopicsCatalog))
+        {
+            string enumName = match.Groups["enumName"].Value;
+            if (enumToIndex.TryGetValue(enumName, out int index) && !indexToEnum.ContainsKey(index))
+            {
+                indexToEnum[index] = enumName;
+            }
+        }
+
+        return indexToEnum;
+    }
+
+    private static string LearnTopicEnumNameByIndex(Dictionary<int, string> learnTopicIndexToEnum, int topicIndex)
+    {
+        if (learnTopicIndexToEnum.TryGetValue(topicIndex, out string enumName))
+        {
+            return enumName;
+        }
+
+        return "Unknown";
     }
 
     private static void RequireNotContains(string text, string token, string description)

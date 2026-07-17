@@ -1,6 +1,6 @@
 # Color, HSV, and Histogram Review
 
-Updated: 2026-07-08
+Updated: 2026-07-13
 
 Color inspection starts by separating what changed: brightness, hue, saturation, or channel distribution.
 
@@ -11,18 +11,22 @@ OpenVisionLab currently supports this area with `HSV`, `Mean`, and `Histogram` t
 | Concept | Meaning in OpenCvSharp/OpenVisionLab |
 | --- | --- |
 | BGR/RGB channel | A color image stores multiple values per pixel, not one GV value |
+| `Vec3b` | One 8-bit three-channel pixel; BGR Mat uses B/G/R and converted HSV Mat uses H/S/V |
+| `Cv2.Split` | Separate a multi-channel BGR Mat into three single-channel Mats in B, G, R order |
+| `Cv2.Merge` | Recombine single-channel Mats in the supplied order; B, G, R order restores the original BGR pixel |
+| `Scalar` | Four numeric slots; HSV lower/upper bounds use the first three slots for H/S/V |
 | HSV | Hue is color family, Saturation is color strength, Value is brightness |
 | Color range | Select pixels whose HSV values are inside a chosen range |
 | Mean | Summarize brightness or channel drift with one bounded metric |
 | Histogram | Review how pixel values are distributed before/after preprocessing |
 
-## Current Tool Coverage
+## Related Tools
 
-| Tool | Use it for | Current status |
+| Tool | Use it for | Result to review |
 | --- | --- | --- |
-| `HSV` | Color range mask review | XML runner support exists with `MaskPixelCount` and `MaskPixelRatio`; use the public HSV Good/Bad pair for first practice |
-| `Mean` | Brightness or intensity drift judgment | Has public Good/Bad samples and `MeanValueAvg` gates |
-| `Histogram` | Contrast and distribution review | Tool view exists; use as visual evidence before adding a stricter step |
+| `HSV` | Color range mask review | `MaskPixelCount`, `MaskPixelRatio`, output mask |
+| `Mean` | Brightness or intensity drift judgment | `MeanValueAvg` and Good/Bad range |
+| `Histogram` | Contrast and distribution review | Pixel-value distribution before/after preprocessing |
 
 ## Public Samples To Start With
 
@@ -44,46 +48,72 @@ Practice Samples path: `color-hsv`
 - Use `Public_Mean_Brightness_Good` and `Public_Mean_Brightness_Dark_Bad` only when the inspection intent is brightness/channel drift with `MeanValueAvg`.
 - Treat an HSV recipe as complete only when the output mask is separate from the input layer and an acceptance gate such as `MaskPixelRatio`, count, area, or a downstream measurement is checked.
 
-## Public Sample Contract
+## Good/Bad Comparison
 
-The public HSV sample pair is valid only because these conditions are true:
+Use the HSV sample pair in this order:
 
-1. The intended sample pair uses the `HSV` `VisionPipeline` ToolType and not only the exploratory Tool View.
-2. The runner emits stable color-mask metrics such as `MaskPixelCount` and `MaskPixelRatio`, or a downstream Blob/Contour metric that represents the selected color area.
-3. The Good sample passes and the Bad sample fails for the intended metric, not just for visual appearance.
-4. The smoke/readiness evidence proves validation, import, explicit Preview/Run, and result review for that metric.
+1. Open the Good image and confirm that the intended color area becomes white in the mask.
+2. Record `MaskPixelCount` and `MaskPixelRatio`, or a downstream Blob/Contour metric for that area.
+3. Open the Bad image with the same HSV range and ROI.
+4. Confirm that the Bad sample differs for the intended color defect in both the mask and metric.
 
-## HSV Pipeline Runtime Contract
+## HSV Parameters And Output
 
-The first stable HSV pipeline slice should be a mask-producing inspection step, not a visual-only color demo.
+An HSV Step converts the selected color range into a binary mask that later tools can count or measure.
 
-Required `HSV` pipeline parameters:
+Main `HSV` parameters:
 
 - `HueMin`, `HueMax`, `SaturationMin`, `SaturationMax`, `ValueMin`, `ValueMax`
 - `USE_ROI` and `CvROI` for optional area restriction
-- `InputLayer` and `OutputLayer`, where the output is a separate mask or masked-review layer and the input layer is not changed
+- `InputLayer` for the source image and `OutputLayer` for the generated mask or review image
 
-Required runner metrics before public Good/Bad samples:
+Operator type mapping:
+
+`BGR Mat pixel = Vec3b(B,G,R) = (25,185,105)`
+
+`Mat[] bgrChannels = Cv2.Split(bgrMat)` produces three `CV_8UC1` Mats whose sample values are B=25, G=185, and R=105.
+
+`Cv2.Merge(bgrChannels, mergedBgrMat)` restores `Vec3b(B,G,R) = (25,185,105)`. Channel order matters; merging R/G/B would produce a different color.
+
+`Cv2.CvtColor(bgrMat, hsvMat, ColorConversionCodes.BGR2HSV)`
+
+`HSV Mat pixel = Vec3b(H,S,V) = (45,221,185)`
+
+`Cv2.InRange(hsvMat, lowerScalar, upperScalar, mask)` compares each H/S/V channel with the corresponding lower/upper value. A pixel inside all three ranges becomes mask value 255; otherwise it becomes 0.
+
+Result metrics:
 
 - `MaskPixelCount`
 - `MaskPixelRatio`
 - `ResultImageWidth`
 - `ResultImageHeight`
 
-Required acceptance pattern:
+Good/Bad review pattern:
 
 1. Good sample passes a bounded `MaskPixelRatio` range.
 2. Bad sample fails the same bounded metric for a controlled color defect or missing color region.
 3. The sample catalog records the expected metric values, not just the output image appearance.
-4. Smoke evidence confirms that importing, validating, previewing, and running the recipe still require explicit user action.
+4. The result image, mask ratio, and any downstream count/area metric tell the same Good/Bad story.
 
 ## What To Check
 
 1. Decide whether the inspection is about hue, brightness, or geometry.
 2. If it is brightness drift, start with `Mean` and `MeanValueAvg`.
-3. If it is color range selection, use `HSV` as an exploratory preview and keep the output on a separate layer.
+3. If it is color range selection, use `HSV` and compare the source image with the output mask.
 4. If the image is low contrast, use `Histogram` to review distribution changes before choosing thresholds.
-5. Do not accept a color recipe by appearance only. Add a metric gate or a follow-up tool that produces count, area, score, or distance.
+5. Confirm the visible color difference with a metric gate or a follow-up count, area, score, or distance result.
+
+## Learn To Tool View
+
+Use `HSV Tool 열기` in this Learn topic to locate the HSV PropertyGrid and route controls.
+
+In the HSV Tool View, find these PropertyGrid and route controls:
+
+- `Hue Min/Max`, `Saturation Min/Max`, and `Value Min/Max`
+- `ROI` / `CvROI` when the background has similar colors
+- `InputLayer` and `OutputLayer`; keep the generated mask separate from the source layer
+
+After confirming those values, run Preview/Run and review `MaskPixelRatio` or a downstream count/area metric.
 
 ## Common Failures
 
@@ -94,8 +124,6 @@ Required acceptance pattern:
 | Histogram looks better but detection fails | Contrast changed without a stable downstream metric | Recheck the next Threshold/Blob/Contour step |
 | Product defect is geometric, not color | Color words in the request hid the real measurement | Use LineDistance, Matching, or Contour instead |
 
-## Completion Standard
+## Learning Check
 
-This chapter has first-pass coverage for HSV color-range masking through the public `Public_HSV_ColorPatch` Good/Bad pair. `MaskPixelRatio` is the first stable HSV sample metric; deeper channel split/merge education can be added later if the product needs dedicated color debugging tools.
-
-Opening this guide or changing HSV/Histogram/Mean parameters must not run Preview/Run automatically.
+After this topic, you should be able to explain BGR and HSV channel order, choose H/S/V ranges, use ROI to exclude similar background colors, and prove the Good/Bad difference with `MaskPixelRatio` or a downstream count/area metric.

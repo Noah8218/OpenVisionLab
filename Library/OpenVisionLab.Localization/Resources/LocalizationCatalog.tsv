@@ -11,15 +11,18 @@ Shell.WorkspaceStatus.EmptyStatus	이미지 준비 후 도구 선택	Select a to
 Shell.WorkspaceStatus.SampleTitle	샘플 파이프라인 준비됨	Sample pipeline ready
 Shell.WorkspaceStatus.SampleRoute	Pipeline Review 열기 -> Run Review 또는 첫 Step 열기	Open Pipeline Review -> Run Review or first step
 Shell.WorkspaceStatus.SampleStatus	미리보기는 수동 실행	Preview runs manually
-Shell.WorkspaceEmptyStepLoadTitle	1. 이미지 로드	1. Load image
-Shell.WorkspaceEmptyStepLoadDetail	Main 레이어에 검사할 이미지를 엽니다.	Open the image to inspect into the Main layer.
-Shell.WorkspaceEmptyStepSelectTitle	2. 도구 선택	2. Select tool
-Shell.WorkspaceEmptyStepSelectDetail	왼쪽 목록에서 스레시홀드, 매칭, 라인 같은 도구를 선택합니다.	Choose Threshold, Matching, Line, or another tool from the left list.
-Shell.WorkspaceEmptyStepPreviewTitle	3. 미리보기 확인	3. Check preview
-Shell.WorkspaceEmptyStepPreviewDetail	결과를 확인한 뒤 검증된 Step을 파이프라인에 추가합니다.	Check the result, then add the verified step to the pipeline.
+Shell.WorkspaceEmptyStepLoadTitle	1. 이미지 준비	1. Prepare image
+Shell.WorkspaceEmptyStepLoadDetail	산업 이미지나 공개 샘플을 Main 레이어에 엽니다.	Open an industrial image or public sample in the Main layer.
+Shell.WorkspaceEmptyStepSelectTitle	2. 도구 설정	2. Configure tool
+Shell.WorkspaceEmptyStepSelectDetail	검사 목적에 맞는 도구를 열고 PropertyGrid 값을 조정합니다.	Open the tool for the inspection goal and adjust its PropertyGrid values.
+Shell.WorkspaceEmptyStepPipelineTitle	3. Pipeline 구성	3. Build pipeline
+Shell.WorkspaceEmptyStepPipelineDetail	Preview로 확인한 Step을 검사 순서와 레이어 경로로 연결합니다.	Connect previewed steps in inspection order with their layer routes.
+Shell.WorkspaceEmptyStepPreviewTitle	4. 결과 검증	4. Validate results
+Shell.WorkspaceEmptyStepPreviewDetail	명시적으로 Run한 뒤 출력, 지표, Good/Bad 증거를 비교합니다.	Run explicitly, then compare output, metrics, and Good/Bad evidence.
 Shell.WorkspaceEmptySampleButton	샘플 열기	Open Sample
 Shell.WorkspaceEmptyGuideButton	Learn 열기	Open Learn
-Shell.WorkspaceEmptyLogHint	이미지를 불러오면 이 영역에서 확대, 이동, 픽셀 값을 확인하고 하단 실행 로그에서 상태를 추적합니다.	After loading an image, use this area for zoom, pan, pixel values, and the Run Log for state tracking.
+Shell.WorkspaceEmptyPipelineButton	Pipeline 열기	Open Pipeline
+Shell.WorkspaceEmptyLogHint	처음이면 Learn과 공개 샘플로 익히십시오. 실제 이미지를 연 뒤에는 확대, 이동, 픽셀 값과 실행 로그로 근거를 확인합니다.	Start with Learn and public samples. For real images, use zoom, pan, pixel values, and the Run Log to inspect the evidence.
 Shell.WorkspaceFitImage	이미지 맞춤	Fit Image
 Shell.WorkspaceSaveImage	이미지 저장	Save Image
 VisionTool.Verification.PreviewNotRun	미리보기 전	Preview not run
@@ -228,8 +231,8 @@ VisionTool.Preset.EdgeMatching.Basic.Description	엣지 기본 검사: 안전한
 VisionTool.Preset.EdgeMatching.Fast.Description	빠른 엣지 확인: 모델 포인트 축소, 거친 검색, 엄격한 점수	Fewer model points, coarse search, and strict score for quick screening.
 VisionTool.Preset.EdgeMatching.Precise.Description	정밀 엣지 확인: 더 많은 포인트, 1px 검색, 좁은 각도와 하이브리드 검증	More edge points, 1 px search, narrow angle scan, and hybrid verification.
 VisionTool.Preset.FeatureMatching.Basic.Description	특징 기본 검사: 균형 잡힌 Ratio와 RANSAC 허용 오차	Balanced ratio and RANSAC tolerance for first verification.
-VisionTool.Preset.FeatureMatching.Fast.Description	빠른 특징 확인: 더 엄격한 Ratio와 넓은 기하 허용 오차	Stricter feature ratio with wider geometry tolerance for quick checks.
-VisionTool.Preset.FeatureMatching.Precise.Description	정밀 특징 확인: 더 많은 특징 후보와 엄격한 기하 검증	Looser feature ratio with tighter geometry validation for final tuning.
+VisionTool.Preset.FeatureMatching.Fast.Description	빠른 특징 확인: 더 느슨한 Ratio와 넓은 기하 허용 오차	Looser feature ratio with wider geometry tolerance for quick checks.
+VisionTool.Preset.FeatureMatching.Precise.Description	정밀 특징 확인: 더 엄격한 Ratio와 좁은 기하 허용 오차	Stricter feature ratio with tighter geometry validation for final tuning.
 VisionTool.Preset.Blob.Basic.Description	Blob 기본 검사: 중간 면적 기준과 단순 이진화로 시작	Start with thresholded bright/dark regions and a medium area filter.
 VisionTool.Preset.Blob.Fast.Description	Blob 빠른 검사: 작은 노이즈를 무시하도록 면적 기준을 높임	Ignore small noise with a larger area floor and simple thresholding.
 VisionTool.Preset.Blob.Precise.Description	Blob 정밀 검사: 작은 영역도 보도록 면적 기준을 낮추고 적응형 이진화 사용	Keep smaller regions and enable adaptive thresholding for uneven lighting.
@@ -261,6 +264,9 @@ PipelineReview.Guide.DisabledNext	Step을 켠 뒤 판정	Enable this step before
 PipelineReview.Guide.DisabledDetail	이 Step은 꺼져 있어서 리뷰 중 건너뜁니다.	This step is skipped during review because it is disabled.
 PipelineReview.Guide.InputMissingNext	입력 레이어 연결 또는 이미지 로드	Connect or load the input layer
 PipelineReview.Guide.InputMissingDetail	선택한 입력 레이어에 이미지가 없어 아직 이 Step을 판정할 수 없습니다.	The selected input layer has no image, so this step cannot be judged yet.
+PipelineReview.Guide.InputPendingNext	리뷰 실행으로 이전 Step 입력 생성	Run Review to create this input from the earlier step
+PipelineReview.Guide.InputPendingDetail	이 입력은 이전 활성 Step이 리뷰 실행 중 생성합니다.	An earlier enabled step will create this input when Review runs.
+PipelineReview.Status.InputMissing	입력 없음	Input missing
 PipelineReview.Guide.ReadyNext	리뷰 실행으로 측정 결과 갱신	Run Review to refresh the measured result
 PipelineReview.Guide.ReadyDetail	출력 이미지는 있지만 리뷰 실행으로 측정 결과를 다시 갱신합니다.	An output image exists, but Run Review refreshes the measured result.
 PipelineReview.Guide.BeforeRunNext	리뷰 실행으로 Step 출력 생성	Run Review to create the step output
@@ -304,6 +310,7 @@ PipelineReview.Metric.ResultImageWidth	결과 폭	Result Width
 PipelineReview.Metric.ResultCount	결과 수	Result Count
 PipelineReview.Metric.MeanValueAvg	평균 밝기(Mean)	Mean Avg
 PipelineReview.Metric.DistanceMmAvg	평균 거리(Distance mm)	Distance Avg (mm)
+PipelineReview.Metric.DistanceMmRange	거리 범위(Distance mm)	Distance Range (mm)
 Arithmetic.Constant	상수	Constant
 Arithmetic.ConstantValue	상수 값	Constant Value
 Arithmetic.CopyAByOffset	A를 오프셋으로 복사	Copy A by offset
@@ -918,7 +925,7 @@ Shell.ReadySelectedFormat	준비 | 선택: {0}	Ready | Selected: {0}
 Shell.LayerDetailNoImage	이미지 없음	No image
 Shell.LayerDetailPending	레이어 대기	Layer pending
 Shell.WorkspaceEmptyTitle	이미지 없음	No image
-Shell.WorkspaceEmptyDetail	이미지를 로드하거나 샘플을 열어 테스트를 시작하십시오.	Load an image or open a sample to start testing.
+Shell.WorkspaceEmptyDetail	이미지를 준비한 뒤 도구, Pipeline, 결과 검증 순서로 진행하십시오.	Prepare an image, then proceed through tool setup, Pipeline, and result validation.
 Shell.WorkspaceLoadImage	이미지 로드...	Load Image...
 Shell.WorkspaceLoadImageButton	이미지 로드	Load Image
 Shell.OpenLayerWindow	레이어 새 창으로 보기	Open Layer in New Window
@@ -951,6 +958,9 @@ ToolView.SaveImage	이미지 저장...	Save Image...
 ToolView.RoutePreviewInputToolTip	작은 입력 썸네일입니다. 클릭하면 중앙 작업영역에서 해당 레이어를 표시합니다.	Input thumbnail. Click to show this layer in the central workspace.
 ToolView.RoutePreviewOutputToolTip	작은 출력 썸네일입니다. 클릭하면 중앙 작업영역에서 해당 결과 레이어를 표시합니다.	Output thumbnail. Click to show this result layer in the central workspace.
 PipelineReview.Title	파이프라인 리뷰	Pipeline Review
+PipelineReview.RecipeContextFormat	레시피: {0}	Recipe: {0}
+PipelineReview.ReturnToRecipe	레시피로 돌아가기	Return to Recipe
+PipelineReview.ReturnToRecipeToolTip	Pipeline Review를 닫고 선택한 레시피 요약으로 돌아갑니다.	Close Pipeline Review and return to the selected recipe summary.
 PipelineReview.StepFlow	Step 흐름	Step Flow
 PipelineReview.Step	Step	Step
 PipelineReview.Tool	Tool	Tool
@@ -963,6 +973,30 @@ PipelineReview.Parameters	파라미터	Parameters
 PipelineReview.Validation	검증	Validation
 PipelineReview.Result	결과	Result
 PipelineReview.RunLog	실행 로그	Run Log
+PipelineReview.Readiness.Title	검사 준비도	Inspection readiness
+PipelineReview.Readiness.Input	입력 이미지	Input image
+PipelineReview.Readiness.Route	Step / 경로	Steps / routes
+PipelineReview.Readiness.Acceptance	판정 기준	Acceptance
+PipelineReview.Readiness.GoodBad	Good / Bad 증거	Good / Bad evidence
+PipelineReview.Readiness.Calibration	스케일 검증	Scale verification
+PipelineReview.Readiness.NoSteps	활성 Step 없음	No enabled steps
+PipelineReview.Readiness.MissingInputFormat	입력 없음: {0}	Missing: {0}
+PipelineReview.Readiness.InputReadyFormat	외부 입력 {0}개 준비	{0} source input(s) ready
+PipelineReview.Readiness.ErrorsFormat	오류 {0}개	{0} error(s)
+PipelineReview.Readiness.WarningsFormat	경고 {0}개 검토	Review {0} warning(s)
+PipelineReview.Readiness.StepsReadyFormat	Step {0}개 연결	{0} step(s) connected
+PipelineReview.Readiness.AcceptanceReadyFormat	판정 Step {0}개	{0} judgment step(s)
+PipelineReview.Readiness.AcceptanceMissing	OK/NG 기준 없음	No OK/NG criterion
+PipelineReview.Readiness.GoodBadReady	비교 쌍 준비	Comparison pair ready
+PipelineReview.Readiness.GoodBadMissing	비교 쌍 추가 권장	Add a comparison pair
+PipelineReview.Readiness.CalibrationNotApplicable	px 또는 무단위	Pixel or unitless result
+PipelineReview.Readiness.CalibrationMissingFormat	mm Step {0}개 스케일 없음	Scale missing in {0} mm step(s)
+PipelineReview.Readiness.CalibrationMultipleFormat	mm 스케일 {0}종 확인	Review {0} mm scales
+PipelineReview.Readiness.CalibrationReferenceCheckFormat	기준물 확인 {0} mm/px	Verify ref {0} mm/px
+PipelineReview.Readiness.SummaryChecksAndAdviceFormat	확인 {0}개 / 권장 {1}개	Check {0} / recommended {1}
+PipelineReview.Readiness.SummaryChecksFormat	실행 전 확인 {0}개	Check {0} before review
+PipelineReview.Readiness.SummaryAdviceFormat	실행 가능 / 권장 {0}개	Runnable / recommended {0}
+PipelineReview.Readiness.SummaryReady	리뷰 실행 준비 완료	Ready to run review
 PipelineReview.MetaFormat	{0} / {1} Step	{0} / {1} steps
 PipelineReview.Progress.NotRun	미실행	Not run
 PipelineReview.Progress.NoSteps	Step 없음	No steps
@@ -976,9 +1010,21 @@ PipelineReview.RunReview	리뷰 실행	Run Review
 PipelineReview.PreviousStep	이전	Previous
 PipelineReview.NextStep	다음	Next
 PipelineReview.FirstIssueStep	NG Step	NG Step
+PipelineReview.OpenSelectedToolLearnButton	도구 배우기	Learn Tool
+PipelineReview.EditSelectedStepButton	설정 수정	Edit Step
+PipelineReview.EditSelectedStepToolTip	선택한 Step을 Recipe Manager 파라미터 편집기에서 엽니다.	Open the selected step in the Recipe Manager parameter editor.
 PipelineReview.PreviousStepToolTip	이전 Pipeline Step 선택	Select the previous pipeline step
 PipelineReview.NextStepToolTip	다음 Pipeline Step 선택	Select the next pipeline step
 PipelineReview.FirstIssueStepToolTip	첫 NG Pipeline Step 선택	Select the first NG pipeline step
+PipelineReview.OpenSelectedToolLearnToolTip	선택한 도구의 Learn 항목 열기	Open the Learn topic for the selected tool
+PipelineReview.FixtureTeach.Button	참조 자세 저장	Save as reference
+PipelineReview.FixtureTeach.ButtonToolTip	검토한 Matching 자세를 Pipeline 실행 없이 Fixture 참조값으로 저장합니다.	Save the reviewed Matching pose as the fixture reference without running the pipeline
+PipelineReview.FixtureTeach.Waiting	리뷰 실행 후 Matching 결과 1개를 확인하십시오.	Run Review and verify one Matching result.
+PipelineReview.FixtureTeach.ReadyFormat	X {0} / Y {1} / {2}도 · 기준 이미지 확인	X {0} / Y {1} / {2} deg. Confirm the reference image.
+PipelineReview.FixtureTeach.SavedFormat	X {0} / Y {1} / {2}도 저장 · ROI 유지 · 리뷰 재실행	Saved X {0} / Y {1} / {2} deg. ROI kept; run review again.
+PipelineReview.FixtureTeach.SaveFailedFormat	참조를 저장하지 못했습니다: {0}	Could not save reference: {0}
+PipelineReview.FixtureTeach.RunRequired	참조 저장됨	Reference saved
+PipelineReview.FixtureTeach.RunRequiredDetail	참조가 변경되었습니다. 소비 Step ROI와 입출력 경로는 유지했습니다. 리뷰 실행을 눌러 모든 결과를 갱신하십시오.	The reference changed. Consumer ROI and routing were preserved; click Run Review to refresh every result.
 PipelineReview.Ready	파이프라인 리뷰 준비됨	Pipeline review ready
 PipelineReview.SelectedFormat	선택: {0}	Selected: {0}
 PipelineReview.RunningButton	실행 중...	Running...
@@ -1000,6 +1046,7 @@ PipelineReview.RunningDetail	Pipeline 리뷰 실행 중입니다.	Pipeline revie
 PipelineReview.Execution.FailedFormat	실패: {0}	Failed: {0}
 PipelineReview.RunFailed	실행 실패	Run failed
 PipelineReview.Execution.CompletedFormat	완료 / {0} Step 결과	Completed / {0} step results
+PipelineReview.Execution.ReferenceChanged	참조 변경됨 / 리뷰 재실행 필요	Reference changed / run review required
 PipelineReview.RunLog.ReviewStateFormat	리뷰 상태: {0}	Review state: {0}
 PipelineReview.RunLog.ValidationFormat	검증: {0}	Validation: {0}
 PipelineReview.RunLog.ResultFormat	결과: {0}	Result: {0}
@@ -1018,6 +1065,7 @@ PipelineReview.Flow.UnknownInput	입력?	Input?
 PipelineReview.Flow.SourceImageFormat	원본 이미지: {0}	Source image: {0}
 PipelineReview.Flow.BranchInputFormat	분기 입력: {0} / 이전 출력: {1}	Branch input: {0} instead of previous output {1}
 PipelineReview.Flow.PreviousOutputFormat	이전 출력: {0}	Previous output: {0}
+PipelineReview.Flow.MissingInputFormat	입력 없음: {0}	Missing input: {0}
 PipelineReview.RouteFormat	{0} -> {1}	{0} -> {1}
 SimplePreprocess.HistogramType	히스토그램 타입	Histogram type
 SimplePreprocess.ClipLimit	Clip 제한	Clip limit
@@ -1445,6 +1493,7 @@ PropertyGrid.Category.Step	Step	Step
 PropertyGrid.Category.Acceptance	판정	Acceptance
 PropertyGrid.Category.Morphology	모폴로지	Morphology
 PropertyGrid.Category.Transform	변환	Transform
+PropertyGrid.Category.Fixture	기준 좌표	Fixture
 PropertyGrid.Property.NAME.DisplayName	이름	Name
 PropertyGrid.Property.PIXELPERMM.DisplayName	Pixel / mm	Pixel / mm
 PropertyGrid.Property.Enabled.DisplayName	사용	Enabled
@@ -1458,6 +1507,22 @@ PropertyGrid.Property.MaxElapsedMilliseconds.DisplayName	최대 시간(ms)	Max E
 PropertyGrid.Property.RequiredMessageText.DisplayName	필수 메시지	Required Message
 PropertyGrid.Property.AcceptanceMetricName.DisplayName	판정 지표	Acceptance Metric
 PropertyGrid.Property.AcceptanceMetricMinimum.DisplayName	지표 범위	Metric range
+PropertyGrid.Property.USE_AS_FIXTURE_FRAME.DisplayName	기준 좌표로 사용	Publish fixture frame
+PropertyGrid.Property.USE_AS_FIXTURE_FRAME.Description	단일 매칭 결과를 후속 Step이 사용할 이동 보정 기준으로 등록합니다. 매칭 개수는 1이어야 합니다.	Publish this single Matching result as a translation-only fixture frame. NUM_MATCH must be 1.
+PropertyGrid.Property.USE_FIXTURE_FRAME.DisplayName	기준 좌표 보정 사용	Use fixture frame
+PropertyGrid.Property.USE_FIXTURE_FRAME.Description	앞선 Matching Step이 등록한 기준 좌표만큼 이 Step의 단일 ROI를 이동합니다. Preview와 Run은 자동 실행되지 않습니다.	Move this step's single ROI by a previously published Matching fixture frame. Preview and Run remain explicit.
+PropertyGrid.Property.FIXTURE_FRAME_NAME.DisplayName	기준 좌표 이름	Fixture frame name
+PropertyGrid.Property.FIXTURE_FRAME_NAME.Description	기준을 등록하는 Matching Step과 사용하는 검사 Step에서 같은 이름을 지정합니다.	Use the same name on the Matching producer and each fixture consumer.
+PropertyGrid.Property.FIXTURE_REFERENCE_X.DisplayName	기준 중심 X	Reference center X
+PropertyGrid.Property.FIXTURE_REFERENCE_X.Description	기준 이미지에서 매칭된 중심의 X 픽셀 좌표입니다.	Matching center X in the taught reference image, in pixels.
+PropertyGrid.Property.FIXTURE_REFERENCE_Y.DisplayName	기준 중심 Y	Reference center Y
+PropertyGrid.Property.FIXTURE_REFERENCE_Y.Description	기준 이미지에서 매칭된 중심의 Y 픽셀 좌표입니다.	Matching center Y in the taught reference image, in pixels.
+PropertyGrid.Property.FIXTURE_REFERENCE_ANGLE.DisplayName	기준 각도	Reference angle
+PropertyGrid.Property.FIXTURE_REFERENCE_ANGLE.Description	기준 이미지에서 측정된 매칭 각도입니다.	Matching angle in the taught reference image, in degrees.
+PropertyGrid.Property.FIXTURE_MAX_ANGLE_DELTA.DisplayName	허용 각도 변화	Maximum angle delta
+PropertyGrid.Property.FIXTURE_MAX_ANGLE_DELTA.Description	현재 각도 변화가 이 값을 넘으면 ROI를 이동하지 않고 실패 처리합니다.	Fail instead of translating the ROI when the angle change exceeds this degree limit.
+PropertyGrid.Property.ALLOW_BRANCH_INPUT.DisplayName	원본 레이어 분기 허용	Allow branch input
+PropertyGrid.Property.ALLOW_BRANCH_INPUT.Description	Matching Step과 같은 원본 레이어를 의도적으로 다시 읽는 분기임을 명시합니다.	Explicitly allow this step to read the same source layer as the Matching fixture producer.
 PropertyGrid.Property.USE_THRESHOLD.DisplayName	이진화 사용	Use threshold
 PropertyGrid.Property.USE_BITWISENOT.DisplayName	결과 반전	Invert result
 PropertyGrid.Property.THRESHOLD_TYPES.DisplayName	이진화 타입	Threshold type
@@ -1632,6 +1697,27 @@ Shell.LayerResultNoneFormat	03  NewPanel_LPV  {0}	03  NewPanel_LPV  {0}
 Shell.LayerResultDisplayFormat	04  NewPanel_sbA  {0}	04  NewPanel_sbA  {0}
 Shell.ToolRailCollapse	도구 접기	Collapse tools
 Shell.ToolRailExpand	도구 펼치기	Expand tools
+Shell.ToolReadiness.InputMissingBadge	입력 없음	No input
+Shell.ToolReadiness.InputMissingDescription	Main 이미지를 로드한 뒤 이 도구를 설정하세요. Preview/Run은 자동 실행되지 않습니다.	Load a Main image before configuring this tool. Preview/Run will not start automatically.
+Shell.ToolReadiness.ConfigureBadge	설정 가능	Configure
+Shell.ToolReadiness.ConfigureDescription	Main 이미지가 준비되었습니다. 도구를 열어 파라미터를 설정한 뒤 Preview를 직접 실행하세요.	Main image is ready. Open the tool, configure parameters, then run Preview explicitly.
+Shell.ToolReadiness.TemplateMissingBadge	템플릿 필요	Template needed
+Shell.ToolReadiness.TemplateMissingDescription	Main 이미지는 준비되었지만 이 매칭 도구의 템플릿이 없습니다. 해당 도구를 열어 템플릿을 등록한 뒤 Preview를 직접 실행하세요.	The Main image is ready, but this matching tool has no registered template. Open the tool, register a template, then run Preview explicitly.
+Shell.ToolReadiness.InputBMissingBadge	B 입력 필요	B needed
+Shell.ToolReadiness.InputBMissingDescription	이 산술 연산 설정에는 Input B로 사용할 다른 이미지 레이어가 필요합니다. 해당 레이어를 로드하거나 만든 뒤 Preview를 직접 실행하세요.	This Arithmetic setting needs another image layer for Input B. Load or create that layer, then run Preview explicitly.
+Shell.ToolReadiness.LineScalePixelOnlyBadge	px 전용	PX only
+Shell.ToolReadiness.LineScalePixelOnlyDescription	Line A/B의 Pixel / mm가 0입니다. 픽셀 결과는 설정할 수 있지만 mm 결과를 사용하면 안 됩니다. Preview를 직접 실행하세요.	Line A/B Pixel / mm is 0. Pixel results can be configured, but mm results must not be used. Run Preview explicitly.
+Shell.ToolReadiness.LineScaleReviewBadge	보정 확인	Check scale
+Shell.ToolReadiness.LineScaleReviewDescription	Line A/B의 Pixel / mm 값이 없거나 유효하지 않거나 서로 다릅니다. mm 결과를 사용하기 전에 두 값을 확인하고 Preview를 직접 실행하세요.	Line A/B Pixel / mm values are missing, invalid, or inconsistent. Review both values before using mm results, then run Preview explicitly.
+Shell.ToolReadiness.LineScaleConfiguredBadgeFormat	mm {0}	mm {0}
+Shell.ToolReadiness.LineScaleConfiguredDescriptionFormat	Line A/B의 Pixel / mm 값이 {0} mm/px로 일치합니다. mm 결과를 신뢰하기 전에 실제 교정 근거를 확인하고 Preview를 직접 실행하세요.	Line A/B Pixel / mm values match at {0} mm/px. Verify the real calibration evidence before trusting mm results, then run Preview explicitly.
+Shell.ToolSearch.Hint	도구·검사·파라미터·결과 검색	Search tool, intent, parameter, or result
+Shell.ToolSearch.ClearToolTip	도구 검색 지우기	Clear tool search
+Shell.ToolSearch.OpenLearnToolTip	이 도구의 Learn 주제 열기	Open this tool's Learn topic
+Shell.ToolSearch.OpenSamplesToolTip	이 도구의 공개 샘플 열기	Open samples for this tool
+Shell.ToolSearch.OpenGuidedSetupToolTip	이 도구의 Guided Setup 열기	Open Guided Setup for this tool
+Shell.ToolSearch.AllFormat	전체 {0}개 도구	All {0} tools
+Shell.ToolSearch.ResultFormat	{0}개 도구 찾음	{0} tools found
 PropertyGrid.Type.BlobProperty.MIN_AREA.DisplayName	면적 범위	Area range
 PropertyGrid.Type.ContourProperty.MIN_AREA.DisplayName	면적 범위	Area range
 PropertyGrid.Type.MatchingProperty.FIND_ANGLE_MIN.DisplayName	각도 범위	Angle range
@@ -1640,8 +1726,8 @@ PropertyGrid.Type.MatchingProperty.CANNY_LOW.DisplayName	Canny 범위	Canny rang
 PropertyGrid.Type.MatchingProperty.CANNY_LOW.Description	Canny 전처리에 사용할 Low/High 임계값 범위입니다.	Low/High threshold range used for Canny preprocessing.
 PropertyGrid.Type.FeatureMatchingProperty.PATTERN_PATH.DisplayName	특징 템플릿 경로	Feature template path
 PropertyGrid.Type.FeatureMatchingProperty.PATTERN_PATH.Description	특징점 기반 매칭에 사용할 템플릿 이미지 파일 경로입니다.	Template image file path used for feature-based matching.
-PropertyGrid.Type.FeatureMatchingProperty.SCORE_MIN.DisplayName	최소 매칭 점수	Min match score
-PropertyGrid.Type.FeatureMatchingProperty.SCORE_MIN.Description	특징 매칭 결과로 인정할 최소 점수입니다. 높을수록 약한 특징점 매칭을 더 엄격하게 제외합니다.	Minimum score accepted as a feature match. Higher values reject weak feature matches more strictly.
+PropertyGrid.Type.FeatureMatchingProperty.SCORE_MIN.DisplayName	Ratio 기준	Ratio threshold
+PropertyGrid.Type.FeatureMatchingProperty.SCORE_MIN.Description	서로 구별되는 descriptor 매칭을 남기는 Lowe Ratio 기준입니다. 값이 작을수록 엄격하고, 클수록 더 많은 후보를 남깁니다.	Lowe ratio threshold used to keep distinctive descriptor matches. Smaller values are stricter; larger values keep more candidates.
 PropertyGrid.Type.FeatureMatchingProperty.RANSAC_REPROJ_THRESHOLD.DisplayName	RANSAC 허용 오차	RANSAC tolerance
 PropertyGrid.Type.FeatureMatchingProperty.RANSAC_REPROJ_THRESHOLD.Description	특징점 매칭 후 기하 변환을 검증할 때 사용하는 재투영 허용 오차(pixel)입니다. 값이 크면 더 많은 변형을 허용합니다.	Reprojection tolerance in pixels used to validate the geometric transform after feature matching. Higher values allow more variation.
 PropertyGrid.Property.AUTO_PREVIEW.DisplayName	자동 미리보기	Auto preview

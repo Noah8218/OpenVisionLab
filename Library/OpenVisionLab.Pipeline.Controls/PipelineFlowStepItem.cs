@@ -33,6 +33,8 @@ namespace OpenVisionLab.Pipeline.Controls
 
         public bool HasInputImage { get; set; }
 
+        public bool IsInputMissing { get; set; }
+
         public bool HasOutputImage { get; set; }
 
         public bool IsSelected

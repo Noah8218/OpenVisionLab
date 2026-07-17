@@ -2,9 +2,9 @@
 
 Updated: 2026-07-08
 
-This page explains only the OpenCvSharp concepts that an OpenVisionLab operator needs while tuning rule-based tools. It is not an OpenCV installation, camera, or programming tutorial.
+This page explains the OpenCvSharp concepts used while tuning OpenVisionLab rule-based tools: pixels, coordinates, ROI, image matrices, and layers.
 
-Opening this guide must not run Preview/Run, create layers, change input/output routing, or edit tool parameters. Use it to understand the terms, then choose a public sample and run the tool manually.
+Read the term first, choose a related sample, find the same value in the PropertyGrid, and compare the input and output after Preview.
 
 ## Operator Mental Model
 
@@ -60,18 +60,18 @@ That is why many tool parameters look like matrix operations:
 - RotateScale creates a transformed output matrix.
 - Histogram counts how often each GV or channel value appears.
 
-## ROI And Layer Rules
+## ROI And Layer Flow
 
 `Rect ROI = X,Y,Width,Height`
 
 An ROI is a deliberate restriction of where the tool looks. It should be small enough to remove unrelated background and large enough to contain the full expected variation.
 
-Layer routing must stay explicit:
+Read a layer route in this order:
 
 - `InputLayer` is the source layer for the step.
 - `OutputLayer` is the result created by the step.
-- Creating or selecting an output layer must not rewrite the input layer.
-- Loading an image, creating a layer, deleting a layer, and toggling visibility must not run Preview/Run.
+- To continue processing, select the previous step's `OutputLayer` as the next step's `InputLayer`.
+- Compare the original, input, and output layers to locate where the image changed.
 
 ## How This Maps To PropertyGrid
 
@@ -86,7 +86,7 @@ Layer routing must stay explicit:
 
 ## Practice Path
 
-Use public samples only:
+Use the provided Good/Bad samples:
 
 1. Open Topic 1 Brightness / Histogram and a `mean` Good/Bad pair.
 2. Confirm how GV changes the Mean metric.
@@ -95,4 +95,4 @@ Use public samples only:
 5. Open Topic 8 LineDistance when distance needs pixels/mm and outlier range gates.
 6. Open Topic 9 Matching when the target is a template, not a binary region.
 
-The correct habit is not "run every tool." It is "name the image concept, pick the matching tool family, then prove the result with an explicit Preview/Run or validation result."
+Name the image concept first, choose the matching tool family, then prove the result with Preview/Run output and a Good/Bad metric.

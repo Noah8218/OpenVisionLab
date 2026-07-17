@@ -1,7 +1,9 @@
-// SPDX-License-Identifier: Apache-2.0
+﻿// SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 최노아(Noah-Choi)
 
+using OpenCvSharp;
 using OpenVisionLab._1._Core;
+using OpenVisionLab.ImageCanvas;
 using OpenVisionLab.Logging;
 using System;
 using System.Threading;

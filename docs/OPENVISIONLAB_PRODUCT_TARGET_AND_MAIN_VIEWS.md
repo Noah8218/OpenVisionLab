@@ -1,6 +1,6 @@
 # OpenVisionLab Product Target And Main Views
 
-Updated: 2026-07-06 20:16 KST
+Updated: 2026-07-15 KST
 
 This is the short product-direction document for future sessions. Read this first when continuing OpenVisionLab work so the goal, view structure, completed areas, and next priorities do not need to be rediscovered.
 
@@ -70,42 +70,58 @@ Already stable enough to avoid broad rediscovery:
 - Matching, EdgeBasedMatching, FeatureMatching, Blob, Contour, Line, Threshold, Filter, Morphology, Arithmetic, and SimplePreprocess have existing PropertyGrid/runtime/controller patterns.
 - Tool code-behind cleanup has already moved repeated text/event/runtime responsibility into presenters/controllers/shared bases in several tool families, including single-input custom shells, Blob/Contour/Line single-input PropertyGrid shells, Matching-family single-input PropertyGrid shells, and the double-input Arithmetic custom shell.
 
-### 3. Recipe / Pipeline Manager View
+### 3. Recipe Manager And Pipeline Review Views
 
-Purpose: manage recipes and inspect pipeline structure.
+Purpose: keep recipe lifecycle management separate from pipeline authoring and execution review.
 
 Responsibilities:
 
-- List, search, create, duplicate, rename, delete recipes.
-- Import/export XML.
-- List pipelines within a recipe and activate/duplicate/rename/delete them.
-- Show pipeline step list, step comparison table, selected-step route, acceptance gate, and full parameters.
-- Make failed-step navigation and operator review obvious.
+- Recipe Manager lists, searches, creates, duplicates, renames, and deletes reusable recipes.
+- Recipe Manager summarizes the selected recipe, its active pipeline, selected validation sample, and latest result, then opens the existing Pipeline surface for step-level work.
+- Pipeline Review shows the owning recipe and provides an explicit return to that recipe summary after review; navigation in either direction must not execute the pipeline implicitly.
+- Pipeline owns inspection-step order, layer routing, acceptance configuration, explicit Preview/Run, and step/output comparison.
+- Tool Views own one algorithm's PropertyGrid parameters and explicit Step creation.
+- Detailed XML, validation-set, history, LLM, and report functions remain available only through an explicit advanced-review mode instead of competing with the default task.
+- Summary and advanced review are separate layouts rather than one additive screen: summary shows recipe library/search, one selected-recipe overview, and lifecycle commands; advanced review hides those outer controls, opens Pipeline review at full width, and provides an explicit return to summary.
+- Recipe Manager actions must not run Preview/Run, create layers, or change input/output routing implicitly.
 
 Already completed enough to avoid redoing:
 
 - Recipe manager has searchable list, create/duplicate/rename/delete, XML import/export, draggable title area, close affordance, and a workbench-sized overlay layout with recipe library, review workspace, and command strip zones.
+- Recipe Manager now opens on a compact selected-recipe summary. The summary provides one explicit `Open Pipeline` action, while the existing detailed tabs are hidden behind `Advanced review`; reopening the manager returns to the summary without running Preview/Run.
+- Advanced review now removes the outer recipe library, search, and create/duplicate/rename/delete controls instead of leaving them visible beside technical content. Its top-level choices are `Build inspection`, `Pipeline review`, `LLM XML`, and `Step preview`; XML import/export/review-bundle actions remain in a compact transfer strip.
+- The novice round trip is now complete: `Recipe summary -> Open Pipeline -> explicit Run Review -> Return to Recipe`. Pipeline Review shows the recipe context, and the return path restores the same summary while preserving native Preview count, layer count, active layer, and recipe/pipeline routing.
+- The summary now labels the catalog selection as the current work sample and shows a latest execution only when the sample-run result belongs to the same recipe and selected pipeline. An automatically selected catalog sample no longer appears as recipe validation evidence before a sample check.
 - Recipe library filtering now shows visible/total count and is smoke-verified with 100 temporary long recipe names.
 - Pipeline list filtering now shows visible/total count and is smoke-verified with 100 temporary long pipeline names in one recipe.
+- Pipeline inventory now excludes PropertyGrid/tool-state XML, `pipeline.active.xml`, malformed XML, and unrelated metadata by requiring an exact no-namespace `VisionPipeline` document root. Excluded files are preserved unchanged.
 - The Recipe Manager library/sample column now uses a wider 320px baseline and shortens the displayed sample id in the sample acceptance summary while keeping the full text in the tooltip.
 - Pipeline tab is split into review/history/XML-Step sub-tabs.
 - Duplicate from sample, LLM XML validation report, structured validation issue rows, pipeline preview step list, step comparison table, selected-step detail panel, selected-step operator context, selected-step input/output layer thumbnail cards with click navigation, selected-step PropertyGrid parameter review with explicit XML apply-back and corrected-output review, selected Step branch/output comparison rows, and Good/Bad role failed-Step drill-down exist.
-- Multi-step flow focus now exists: the Recipe Manager header shows the selected Step position, tool, route, previous context, and next context; the XML/Step tab also has a Step flow focus strip with explicit Previous/Next Step navigation that does not run Preview.
+- Multi-step flow focus remains in the XML/Step technical tab with explicit Previous/Next Step navigation that does not run Preview. The repeated Step/status/guided text was removed from the global Recipe Manager header.
 - The XML/Step tab now keeps the inline Step list directly under the flow focus strip, before branch/output and detail panels, so the actual Step rows are visible on the first 1600x900 workbench view instead of being pushed below dense review content.
 - Recipe library rows and XML/Step inline Step rows now use predictable single-line ellipsis with tooltips for long recipe names, long routes, and long parameter previews instead of allowing dense rows to grow unpredictably.
 - Branch/output comparison is now smoke-verified against the real `BentPin_TopBottom_Overlay` multi-branch sample, including same-input rows, input-producer rows, and multiple output consumers from one intermediate layer.
 - Branch/output comparison is also smoke-verified against the real `Contour_AllSymbolsAndFaint_LLM` 3+ fan-out sample, including three same-input alternatives and one output consumer from the selected Step.
+- Branch/output comparison now resolves declared `OverlayMerge.SourceLayers`. The real GPT four-branch pin-gap recipe shows each range-evidence Step's review-merge consumer and the final overlay's four source producers instead of classifying the overlay as an unrelated same-input alternative.
 - Failed-Step rerun/comparison action strip now exists in the Review tab: selected failed Step text, input/output comparison route, direct output/input layer navigation, parameter review, and Good/Bad rerun.
 - Operator decision board now exists in the Review tab: XML/Step, selected sample, Good/Bad, and next action are summarized above the longer operator review text.
 - Operator handoff report now exists as a Pipeline review sub-tab, summarizing current recipe/pipeline/XML/sample/Good-Bad/failure-Step/next-action state for review and next-session transfer; it also has an explicit copy action and a compact result-channel board for `Inspection.Status`, `Inspection.FailedStep`, `Inspection.Evidence`, `Inspection.Benchmark`, and `Inspection.NextAction`.
-- Run History now has an explicit selected-review copy action for sharing the selected saved run interpretation without rerunning checks.
-- The Recipe Manager header now has an explicit guided next-action button that names and runs the current next existing action from the guided setup state without adding automatic Preview/Run.
+- Run History now has an explicit selected-review copy action for sharing the selected saved run interpretation without rerunning checks, plus a compact linked-report Step bottleneck list with coverage, average, p95, and maximum.
+- Guided starter actions remain inside the dedicated `Build inspection` tab instead of being repeated in the global Recipe Manager header.
+- Recipe Manager now has a separate `Review bundle` export. The first bounded ZIP schema contains `pipeline.xml` plus `review-manifest.json`, including validation, ToolType/Step/acceptance summaries, and referenced dependency/sample path, size, and SHA-256 evidence. Referenced files are not copied, and export does not import or run Preview/Run.
+- XML import and XML/bundle load recognize `.review.zip` as a review-only source. They verify the two-entry schema, XML hash/size, package policy, manifest/XML dependency consistency, and deterministic adjacent relocation candidates, then open the existing `LLM XML` review tab without importing, copying, or running anything.
+- Relocation candidates remain explicit evidence: the operator must update the XML path and validate again. Validation NG keeps `Import` disabled; changing the XML or selected inspection intent invalidates prior import readiness.
 - Recipe combo crash and old/private recipe cleanup were handled before these latest commits.
 
 Next development focus:
 
 - Continue density/layout polish only when current screenshots show actual clipping, overlap, or workflow friction.
-- Make branch/output comparison broader only when real recipes expose multiple independent candidate correction paths beyond the current selected-step producer/consumer map.
+- Make branch/output comparison broader only when a real recipe exposes a relationship not represented by direct `InputLayer` or declared `SourceLayers`.
+- P3 review-bundle export plus import-side dry validation/path-relocation review is complete at the reference-only scope. Do not add recursive file search or silent asset copy.
+- Recipe-local user-defined Validation Sets now support named explicit image lists, bounded top-level folder registration, per-image expected OK/NG and notes, missing-file blocking, operator-selected path repair, and explicit execution through the existing result/history/failure-review flow. They are stored outside the pipeline XML directory and do not enter the public catalog.
+- Recipe Manager pipeline inventory pollution is fixed: only actual `VisionPipeline` documents are listed even though tool-state XML remains in the same legacy `VISION` directory.
+- P4 Validation Sets are complete at the bounded local workflow scope. Keep recursive search, inferred replacement, automatic path rewriting, and a second runner out of scope.
 
 ### 4. LLM XML Assistant View
 
@@ -127,7 +143,7 @@ Already completed enough to avoid redoing:
 
 Next development focus:
 
-- Collect sanitized real LLM correction-loop transcripts only after the guide/catalog are included in the prompt packet; expand the corpus when transcripts expose gaps beyond the current direct smoke cases.
+- One sanitized real GPT direct-success candidate now exists for the public pin-gap packet. Collect correction-loop transcripts only when an independent external draft naturally fails after receiving the guide/catalog; expand the corpus only when real transcripts expose gaps beyond the current direct smoke cases.
 - Expand dependency files and unresolved paths further only when real failure examples require more than the current row-level drill-down.
 - Keep the LLM workflow explicit: validate, review diff/dependencies, then import. It must not run Preview or silently accept recipes.
 
@@ -184,8 +200,8 @@ Next development focus:
 
 ## Current Weaknesses
 
-- Recipe/Pipeline Manager now has a larger workbench overlay, wider Step review column, and compact footer command strip; remaining density work should be driven only by fresh screenshots that show actual clipping or workflow friction.
-- Commercial-style guided workflow is still intentionally narrower than equipment software, but Recipe Manager now exposes a compact guided setup strip for sample readiness, XML validation, Step count, sample run, Good/Bad run, and next action.
+- Recipe Manager now has a novice-first summary and a physically separated full-width advanced-review workspace. The advanced Pipeline/XML/LLM/history surfaces remain intentionally technical; move or consolidate another function only when a real workflow proves that it duplicates the dedicated Pipeline surface.
+- Commercial-style guided workflow is still intentionally narrower than equipment software. The default Recipe Manager no longer presents its detailed guided strip as the primary task; step setup and execution guidance belong in Pipeline and Tool workflows.
 - LLM XML validation now has issue rows, before/after diff review, dependency/path action hints, and dependency drill-down rows, but real unresolved-path examples may still expose edge cases.
 - Sample review now links into failed-Step focus, selected Step flow context, rerun/comparison actions, corrected-output review after XML apply, and selected Step branch/output comparison.
 - Commercial tools are still ahead in guided setup, deployment/runtime packaging, recipe management maturity, and operator-ready polish.
@@ -246,17 +262,20 @@ Future sessions should not spend time re-discovering these unless a regression i
 - Existing selected Step ROI/template metadata card and explicit tool entry button.
 - Existing selected Step PropertyGrid parameter review and explicit XML apply-back inside Recipe Manager.
 - Existing Recipe Manager behavior where the selected Step PropertyGrid is hidden until parameters are explicitly loaded, and stale edit status is cleared when selected Step changes.
-- Existing Recipe Manager compact footer where the selected recipe name editor and recipe CRUD/XML commands stay visible together on 1600x900.
+- Existing Recipe Manager split footer: summary shows name editing and recipe lifecycle commands, while advanced review shows only XML import/export and review-bundle transfer commands.
 - Existing Recipe Manager recipe library filter count for large libraries; do not replace it with a separate browser until a real workflow needs grouping, tags, or paging beyond search.
 - Existing Recipe Manager pipeline list filter count for large recipes; do not replace it with a separate pipeline browser until a real workflow needs grouping, tags, or paging beyond search.
-- Existing Recipe Manager guided setup strip in the detail header; do not rebuild it as a separate wizard unless a real workflow requires a full-screen guided mode.
-- Existing Recipe Manager guided next-action button; extend the action routing only when current EXE evidence shows a real next action is missing.
-- Existing Recipe Manager operator decision board in the Review tab; do not replace it with a separate wizard unless current screenshots prove the compact board is insufficient.
+- Existing Recipe Manager compact summary and explicit advanced-review switch; keep recipe selection/lifecycle as the default task and do not expose every detailed review surface at once again.
+- Existing Guided Setup content is contained in the advanced `Build inspection` tab; do not repeat guided status/actions in the global header or summary.
+- Existing Recipe Manager operator decision board remains an advanced review aid; do not duplicate it in another Recipe Manager summary card.
 - Existing Recipe Manager operator handoff Report tab, compact result-channel board, detailed result-channel list, and copy action; extend this report only with real missing review fields instead of adding another reporting surface.
 - Existing Run History selected-review copy action; do not add a second history export path unless a real operator report format is required.
 - Existing single-input custom tool base, Blob/Contour/Line single-input PropertyGrid tool base, Matching-family single-input PropertyGrid tool base, double-input Arithmetic custom tool base, and Arithmetic interaction-controller event ownership; do not re-extract those shell/event forwarding paths or move Arithmetic parameter events back into view code-behind.
 - Removed top-level account/operator chrome; do not reintroduce it without real account/session requirements.
 - Existing main window minimize, maximize/restore, and close controls; do not remove or hide these with account/session cleanup.
+- Existing Pipeline Review contextual `Learn Tool` entry for supported selected Steps; it reuses the Learn topic catalog and has no Preview/Run, layer, routing, parameter, or review-state side effects.
+- Existing Pipeline Review `설정 수정` handoff for the selected Step; it opens the same recipe/pipeline/Step in Recipe Manager `Advanced > Pipeline > XML/Step`, makes the established PropertyGrid editor visible, and preserves explicit XML apply plus explicit Preview/Run semantics.
+- Existing catalog-sample edit alignment: when the selected pipeline is an exact `Sample_<catalog sample name>` workspace copy, Recipe Manager selects that same work sample before any explicit Good/Bad rerun; unrelated recipe pipelines do not change work-sample selection.
 
 ## Next Priority Order
 
@@ -264,14 +283,26 @@ Future sessions should not spend time re-discovering these unless a regression i
    - Highest-value next feature: add external LLM transcript examples only when they expose gaps beyond the current failure/correction corpus.
    - Improve guided setup/operator review only where current screenshots show unclear next action; do not add equipment integration.
 
-2. Recipe Manager density/layout follow-up
+2. Continue P6 benchmark and regression analytics when no real transcript is available
+   - The first bounded aggregate is complete: saved batch rows now provide failure rate, average, median, nearest-rank p95, and maximum in the existing Run History comparison summary.
+   - The compatible-baseline slice is complete: average and p95 deltas appear only for the same suite kind/name and exact image multiset with complete timings. Selected/Pair/Catalog/Local-set executions now persist distinct suite kinds, while outcome comparison remains independent.
+   - The Step-report evidence gate is complete: explicit selected-sample, Good/Bad pair, Catalog, and Local Validation Set suite executions save a structured metadata-only Step report and link it through `RunReportPath`; a plain single check still has no persistence side effect.
+   - The per-Step bottleneck slice is complete: Run History aggregates only complete compatible linked reports, orders enabled Steps by p95, and shows coverage, average, p95, and maximum. Missing or incompatible coverage shows a reason instead of partial numbers; no telemetry service, database, background run, or new top-level panel was added.
+   - The real multi-Step selected-Step coherence audit is complete with `Public_Matching_FixturePad`: Step 2 Blob identity, branch route, input/output previews, Fixture parameters, result metrics, and elapsed time stay aligned. Duplicate ordinal text was removed and the Step summary width was adjusted without adding a panel or automatic execution.
+   - The compact contextual Learn entry is complete. It appears only for supported selected Step ToolTypes, reuses the existing Learn window, and keeps review/workspace state unchanged.
+   - The selected-Step adjustment handoff is complete. Pipeline Review now routes `설정 수정` to the authoritative Recipe Manager PropertyGrid editor for the exact recipe/pipeline/Step; opening it does not change routing, run Preview/Run, or mutate layers.
+   - The real public Fixture round trip is complete. `MIN_AREA 700 -> 750` persists only after explicit XML apply, and the following explicit Good/Bad rerun uses `Public_Fixture_Pad_Good` plus `Public_Fixture_Pad_Missing_Bad` instead of an unrelated prior/default sample.
+   - Do not add a second editor, automatic apply, or direct detached Tool View write-back. With no real external LLM transcript, continue only from fresh evidence of Recipe Manager/LLM Assistant friction or a real multi-branch comparison gap.
+
+3. Recipe Manager responsibility follow-up
    - Use only fresh current-EXE screenshots or current-source view captures generated after the latest relevant source changes. Do not use older artifacts as current UI evidence.
-   - Fix only actual clipping, overlap, or workflow friction.
+   - The synthetic novice round trip and sample-evidence semantics are smoke-verified. Recheck with a real operator recipe before moving more advanced functions.
+   - Remove or relocate a detailed function only when it demonstrably duplicates the dedicated Pipeline workflow; preserve existing advanced capabilities meanwhile.
 
-3. Pipeline/Recipe operator review follow-up
-   - Expand branch/output comparison only when a real multi-branch sample needs more than the current selected-step producer/consumer map and the existing BentPin plus Contour_AllSymbolsAndFaint coverage.
+4. Pipeline/Recipe operator review follow-up
+   - The real GPT four-branch LineDistance/OverlayMerge recipe is covered through declared `SourceLayers`; expand comparison only when another real recipe exposes a relationship outside direct `InputLayer` and `SourceLayers`.
 
-4. Tool View code-behind cleanup continuation
+5. Tool View code-behind cleanup continuation
    - Continue only where established presenters/controllers/shared bases fit naturally.
 
 ## Session Start Checklist

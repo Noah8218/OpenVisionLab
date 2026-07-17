@@ -4,6 +4,7 @@ using Lib.OpenCV;
 using OpenVisionLab;
 using OpenVisionLab._1._Core;
 using OpenVisionLab.Logging.Controls.View;
+using OpenVisionLab.Vision._1._Tools.OpenCV;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,9 +12,12 @@ using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,15 +39,43 @@ using static OpenVisionLab.DEFINE;
 
 internal static class Program
 {
+    private static readonly string[] InternalLearnContractPhrases =
+    {
+        "must not",
+        "does not run Preview",
+        "no Preview/Run",
+        "no layer change",
+        "실행하지 않습니다",
+        "바뀌면 안",
+        "Tool View만",
+        "도구만 열",
+        "명시 Preview/Run",
+        "명시적 Preview",
+        "명시적으로 실행",
+        "명시 액션",
+        "자동 실행된다고 가정",
+        "덮어쓰지 않습니다",
+        "explicit Preview/Run",
+        "execution evidence",
+        "smoke evidence",
+        "runtime contract",
+        "public sample contract",
+        "implementation order",
+        "tool gap backlog",
+        "설치나 카메라"
+    };
+
     private static readonly Dictionary<string, Func<string, CaptureResult>> Targets = new(StringComparer.OrdinalIgnoreCase)
     {
         ["wpf_shell_preview"] = CaptureShellPreview,
         ["wpf_shell_host_window_chrome"] = CaptureShellHostWindowChrome,
+        ["wpf_shell_host_window_maximized"] = CaptureShellHostWindowMaximized,
         ["wpf_shell_host_workspace_empty"] = CaptureShellHostWorkspaceEmpty,
         ["wpf_shell_host_learn_entry"] = CaptureShellHostLearnEntry,
         ["wpf_shell_host_workspace"] = CaptureShellHostWorkspace,
         ["wpf_shell_host_workspace_avalondock_tabs"] = CaptureShellHostWorkspaceAvalonDockTabs,
         ["wpf_shell_host_workspace_image_load"] = CaptureShellHostWorkspaceImageLoad,
+        ["wpf_shell_host_tool_search"] = CaptureShellHostToolSearch,
         ["wpf_shell_host_workspace_sample_picker"] = CaptureShellHostWorkspaceSamplePicker,
         ["wpf_shell_host_workspace_sample_product_focus_picker"] = CaptureShellHostWorkspaceSampleProductFocusPicker,
         ["wpf_shell_host_workspace_sample_product_field_focus_picker"] = CaptureShellHostWorkspaceSampleProductFieldFocusPicker,
@@ -51,10 +83,15 @@ internal static class Program
         ["wpf_shell_host_workspace_sample_product_counterpart_open"] = CaptureShellHostWorkspaceSampleProductCounterpartOpen,
         ["wpf_shell_host_workspace_sample_learn_paths"] = CaptureShellHostWorkspaceSampleLearnPaths,
         ["wpf_shell_host_workspace_sample_pair_picker"] = CaptureShellHostWorkspaceSamplePairPicker,
+        ["wpf_shell_host_workspace_sample_fixture_picker"] = CaptureShellHostWorkspaceSampleFixturePicker,
         ["wpf_shell_host_workspace_sample_pair_coverage"] = CaptureShellHostWorkspaceSamplePairCoverage,
         ["wpf_shell_host_workspace_sample_bad_reference_audit"] = CaptureShellHostWorkspaceSampleBadReferenceAudit,
         ["wpf_shell_host_workspace_sample_open"] = CaptureShellHostWorkspaceSampleOpen,
         ["wpf_shell_host_workspace_sample_pipeline_review_metrics"] = CaptureShellHostWorkspaceSamplePipelineReviewMetrics,
+        ["wpf_shell_host_workspace_sample_fixture_review"] = CaptureShellHostWorkspaceSampleFixtureReview,
+        ["wpf_shell_host_pipeline_step_edit_handoff"] = CaptureShellHostPipelineStepEditHandoff,
+        ["wpf_shell_host_fixture_step_edit_apply_rerun"] = CaptureShellHostFixtureStepEditApplyRerun,
+        ["wpf_shell_host_workspace_sample_fixture_teach"] = CaptureShellHostWorkspaceSampleFixtureTeach,
         ["wpf_shell_host_workspace_product_sample_review"] = CaptureShellHostWorkspaceProductSampleReview,
         ["wpf_shell_host_workspace_product_sample_review_ng"] = CaptureShellHostWorkspaceProductSampleReviewNg,
         ["wpf_shell_host_workspace_product_sample_pair_open"] = CaptureShellHostWorkspaceProductSamplePairOpen,
@@ -68,6 +105,13 @@ internal static class Program
         ["wpf_shell_host_llm_dependency_placeholder"] = CaptureShellHostLlmDependencyPlaceholder,
         ["wpf_shell_host_recipe_output_route_isolation"] = CaptureShellHostRecipeOutputRouteIsolation,
         ["wpf_shell_host_recipe_language_controls"] = CaptureShellHostRecipeLanguageControls,
+        ["wpf_shell_host_recipe_review_bundle"] = CaptureShellHostRecipeReviewBundle,
+        ["wpf_shell_host_recipe_review_bundle_import"] = CaptureShellHostRecipeReviewBundleImport,
+        ["wpf_shell_host_recipe_local_validation_set"] = CaptureShellHostRecipeLocalValidationSet,
+        ["wpf_shell_host_recipe_manager_summary"] = CaptureShellHostRecipeManagerSummary,
+        ["wpf_shell_host_recipe_operator_decision_board"] = CaptureShellHostRecipeOperatorDecisionBoard,
+        ["wpf_shell_host_recipe_guided_setup"] = CaptureShellHostRecipeGuidedSetup,
+        ["wpf_shell_host_recipe_fixture_properties"] = CaptureShellHostRecipeFixtureProperties,
         ["wpf_shell_host_recipe_multibranch_comparison"] = CaptureShellHostRecipeMultiBranchComparison,
         ["wpf_shell_host_recipe_large_library"] = CaptureShellHostRecipeLargeLibrary,
         ["wpf_shell_host_recipe_large_pipeline_list"] = CaptureShellHostRecipeLargePipelineList,
@@ -81,6 +125,7 @@ internal static class Program
         ["wpf_shell_host_workspace_output"] = CaptureShellHostWorkspaceOutput,
         ["wpf_preprocess_output_preview_flow"] = CapturePreprocessOutputPreviewFlow,
         ["wpf_simple_preprocess_result_review"] = CaptureSimplePreprocessResultReview,
+        ["wpf_simple_preprocess_tool_learn_button"] = CaptureSimplePreprocessToolLearnButton,
         ["wpf_direct_multi_tool_inspection"] = CaptureDirectMultiToolInspection,
         ["wpf_shell_host_large_image"] = CaptureShellHostLargeImage,
         ["wpf_shell_host_large_image_16k_perf"] = CaptureShellHostLargeImage16KPerf,
@@ -107,6 +152,7 @@ internal static class Program
         ["wpf_openvision_learn_brightness"] = CaptureOpenVisionLearnBrightness,
         ["wpf_openvision_learn_filtering"] = CaptureOpenVisionLearnFiltering,
         ["wpf_openvision_learn_morphology"] = CaptureOpenVisionLearnMorphology,
+        ["wpf_openvision_learn_reopen_focus"] = CaptureOpenVisionLearnReopenFocus,
         ["wpf_openvision_learn_blob"] = CaptureOpenVisionLearnBlob,
         ["wpf_openvision_learn_contour"] = CaptureOpenVisionLearnContour,
         ["wpf_openvision_learn_edge_line"] = CaptureOpenVisionLearnEdgeLine,
@@ -123,6 +169,7 @@ internal static class Program
         ["wpf_openvision_learn_threshold_animation"] = outputPath => CaptureOpenVisionLearnThreshold(outputPath, 1),
         ["wpf_openvision_learn_threshold_apply"] = outputPath => CaptureOpenVisionLearnThreshold(outputPath, 2),
         ["wpf_shell_host_pipeline_review"] = CaptureShellHostPipelineReview,
+        ["wpf_shell_host_pipeline_review_input_state"] = CaptureShellHostPipelineReviewInputState,
         ["wpf_shell_host_pipeline_review_ng"] = CaptureShellHostPipelineReviewNg,
         ["wpf_shell_host_rotate_scale_tool"] = CaptureShellHostRotateScaleTool,
         ["wpf_filter_morphology_layout_guard"] = CaptureFilterMorphologyLayoutGuard,
@@ -360,6 +407,24 @@ internal static class Program
         });
     }
 
+    private static CaptureResult CaptureShellHostWindowMaximized(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostWindow window = new(ApplicationRuntimeContext.CreateDefault());
+        return CaptureStandaloneWindow(window, outputPath, 1600, 900, () =>
+        {
+            window.WindowState = WindowState.Maximized;
+            Pump(40);
+            AssertMaximizedWindowWithinWorkArea(window, "WPF shell host maximized window");
+            AssertVisibleAutomationIds(
+                window,
+                "WPF shell host maximized status bar",
+                "ShellStatusRecipe",
+                "ShellStatusLayer",
+                "ShellStatusTool");
+        });
+    }
+
     private static CaptureResult CaptureShellHostBridge(string outputPath)
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
@@ -489,15 +554,22 @@ internal static class Program
                     + $"Title='{shellHost.DirectResultTitleText}', Route='{shellHost.DirectResultRouteText}', Status='{shellHost.DirectResultStatusText}'");
             }
 
+            AssertToolRailReadiness(
+                shellHost,
+                OpenVisionLanguageService.T("Shell.ToolReadiness.InputMissingBadge"),
+                OpenVisionLanguageService.T("Shell.ToolReadiness.InputMissingDescription"));
+
             AssertVisibleAutomationIds(
                 shellHost,
                 "WPF workspace empty beginner flow",
                 "WorkspaceEmptyBeginnerFlow",
                 "WorkspaceEmptyBeginnerStepLoadImage",
                 "WorkspaceEmptyBeginnerStepSelectTool",
+                "WorkspaceEmptyBeginnerStepPipeline",
                 "WorkspaceEmptyBeginnerStepPreviewCheck",
                 "WorkspaceEmptySampleButton",
                 "WorkspaceEmptyGuideButton",
+                "WorkspaceEmptyPipelineButton",
                 "WorkspaceEmptyLogHint",
                 "ShellLogCollapsiblePanel",
                 "ShellLogCollapsedSummary",
@@ -507,9 +579,11 @@ internal static class Program
                 "WPF workspace empty localized beginner copy",
                 OpenVisionLanguageService.T("Shell.WorkspaceEmptyStepLoadTitle"),
                 OpenVisionLanguageService.T("Shell.WorkspaceEmptyStepSelectTitle"),
+                OpenVisionLanguageService.T("Shell.WorkspaceEmptyStepPipelineTitle"),
                 OpenVisionLanguageService.T("Shell.WorkspaceEmptyStepPreviewTitle"),
                 OpenVisionLanguageService.T("Shell.WorkspaceEmptySampleButton"),
                 OpenVisionLanguageService.T("Shell.WorkspaceEmptyGuideButton"),
+                OpenVisionLanguageService.T("Shell.WorkspaceEmptyPipelineButton"),
                 OpenVisionLanguageService.T("Shell.WorkspaceEmptyLogHint"),
                 OpenVisionLanguageService.T("Pipeline.RunLog"),
                 OpenVisionLanguageService.T("Shell.LogPanel.Open"));
@@ -526,8 +600,10 @@ internal static class Program
                 shellHost,
                 "WPF workspace empty English copy",
                 OpenVisionLanguageService.T("Shell.WorkspaceStatus.EmptyTitle"),
+                OpenVisionLanguageService.T("Shell.WorkspaceEmptyStepPipelineTitle"),
                 OpenVisionLanguageService.T("Shell.WorkspaceEmptyStepPreviewTitle"),
-                OpenVisionLanguageService.T("Shell.WorkspaceEmptySampleButton"));
+                OpenVisionLanguageService.T("Shell.WorkspaceEmptySampleButton"),
+                OpenVisionLanguageService.T("Shell.WorkspaceEmptyPipelineButton"));
             if (shellHost.IsActiveWpfToolWindowVisibleForTest || shellHost.IsNativeDocumentActive)
             {
                 throw new InvalidOperationException("Changing workspace empty language must not open a tool window.");
@@ -539,8 +615,10 @@ internal static class Program
                 shellHost,
                 "WPF workspace empty Korean copy after language restore",
                 OpenVisionLanguageService.T("Shell.WorkspaceStatus.EmptyTitle"),
+                OpenVisionLanguageService.T("Shell.WorkspaceEmptyStepPipelineTitle"),
                 OpenVisionLanguageService.T("Shell.WorkspaceEmptyStepPreviewTitle"),
-                OpenVisionLanguageService.T("Shell.WorkspaceEmptySampleButton"));
+                OpenVisionLanguageService.T("Shell.WorkspaceEmptySampleButton"),
+                OpenVisionLanguageService.T("Shell.WorkspaceEmptyPipelineButton"));
         }, captureFloatingToolWindow: false);
     }
 
@@ -566,6 +644,8 @@ internal static class Program
         {
             Pump(20);
             int beforeRuns = shellHost.NativePreviewRunCount;
+            int beforeLayerDocumentCount = shellHost.LayerDocumentCount;
+            string beforeWorkspaceLayerTitle = shellHost.WorkspaceLayerTitle;
             AssertVisibleAutomationIds(
                 shellHost,
                 "WPF shell Learn entry",
@@ -583,6 +663,8 @@ internal static class Program
             {
                 throw new InvalidOperationException("Top Learn button did not open Learn at topic 1.");
             }
+            AssertInitialKeyboardFocus(learnWindow, "OpenVisionLearnTopicList");
+            OpenVisionLearnWindow firstLearnWindow = learnWindow;
 
             if (!learnWindow.CanOpenPracticeSamplesForTest)
             {
@@ -605,20 +687,118 @@ internal static class Program
                 learnWindow,
                 "OpenVision Learn topic 1 path overview",
                 "추천 학습 경로",
-                "명시 Preview/Run");
+                "Layer의 기본 구조");
+            if (!learnWindow.FoundationToolLocationTitleForTest.Contains("Blob > ROI", StringComparison.Ordinal)
+                || !learnWindow.FoundationToolLocationTitleForTest.Contains("Filter > Kernel", StringComparison.Ordinal)
+                || !learnWindow.FoundationToolLocationTitleForTest.Contains("Rotate/Scale > Angle/Scale", StringComparison.Ordinal)
+                || !learnWindow.FoundationToolLocationDetailForTest.Contains("Preview를 눌러", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Shell Learn did not expose the initial related Tool View parameter paths.");
+            }
+
+            learnWindow.Width = 1040;
+            learnWindow.Height = 980;
+            learnWindow.BringFoundationToolLocationIntoViewForTest();
+            learnWindow.Activate();
+            Pump(12);
+            learnWindow.InvalidateVisual();
+            learnWindow.UpdateLayout();
+            Pump(8);
+            SaveVisibleAutomationElementPng(
+                learnWindow,
+                "OpenVisionLearnFoundationToolLocationPanel",
+                outputPath,
+                "foundation-tool-location-panel.png");
+            WriteElementPng(learnWindow, outputPath, 1040, 980);
             learnWindow.Close();
             Pump(8);
+            if (firstLearnWindow.IsVisible)
+            {
+                throw new InvalidOperationException("Top Learn window remained visible after Close.");
+            }
+
             ClickVisibleButtonByAutomationId(shellHost, "WorkspaceEmptyGuideButton", "workspace empty Learn button");
             Pump(12);
             learnWindow = GetVisibleLearnWindow("workspace empty Learn button");
+            if (ReferenceEquals(firstLearnWindow, learnWindow))
+            {
+                throw new InvalidOperationException("Shell reused the closed Learn window instance.");
+            }
+
             if (learnWindow.SelectedTopicIndexForTest != 0)
             {
                 throw new InvalidOperationException("Workspace empty Learn button did not open Learn at topic 1.");
             }
+            AssertInitialKeyboardFocus(learnWindow, "OpenVisionLearnTopicList");
 
             if (!learnWindow.CanOpenPracticeSamplesForTest)
             {
                 throw new InvalidOperationException("Workspace empty Learn button did not attach Practice Samples action.");
+            }
+
+            if (!learnWindow.CanOpenRelatedToolsForTest)
+            {
+                throw new InvalidOperationException("Shell Learn did not enable the related Tool View actions.");
+            }
+
+            if (!learnWindow.CanOpenColorHsvToolForTest)
+            {
+                throw new InvalidOperationException("Shell Learn did not enable the Color / HSV Tool View action.");
+            }
+
+            if (!learnWindow.CanOpenBrightnessToolsForTest)
+            {
+                throw new InvalidOperationException("Shell Learn did not enable the Mean / Histogram Tool View actions.");
+            }
+
+            if (!learnWindow.CanOpenArithmeticToolForTest)
+            {
+                throw new InvalidOperationException("Shell Learn did not enable the Arithmetic Tool View action.");
+            }
+
+            if (!learnWindow.CanOpenGeometryToolForTest)
+            {
+                throw new InvalidOperationException("Shell Learn did not enable the Rotate / Scale Tool View action.");
+            }
+
+            if (!learnWindow.CanOpenFilteringToolForTest)
+            {
+                throw new InvalidOperationException("Shell Learn did not enable the Filter Tool View action.");
+            }
+
+            if (!learnWindow.CanOpenMorphologyToolForTest)
+            {
+                throw new InvalidOperationException("Shell Learn did not enable the Morphology Tool View action.");
+            }
+
+            if (!learnWindow.CanOpenBlobToolForTest)
+            {
+                throw new InvalidOperationException("Shell Learn did not enable the Blob Tool View action.");
+            }
+
+            if (!learnWindow.CanOpenContourToolForTest)
+            {
+                throw new InvalidOperationException("Shell Learn did not enable the Contour Tool View action.");
+            }
+
+            if (!learnWindow.CanOpenEdgeLineToolsForTest)
+            {
+                throw new InvalidOperationException("Shell Learn did not enable the EdgeDetection and Line Tool View actions.");
+            }
+
+            if (!learnWindow.CanOpenLineDistanceToolForTest)
+            {
+                throw new InvalidOperationException("Shell Learn did not enable the LineDistance Line Tool View action.");
+            }
+
+            if (!learnWindow.CanOpenMatchingToolForTest)
+            {
+                throw new InvalidOperationException("Shell Learn did not enable the Matching Tool View action.");
+            }
+
+            if (!learnWindow.CanOpenFeatureMatchingToolForTest)
+            {
+                throw new InvalidOperationException("Shell Learn did not enable the FeatureMatching Tool View action.");
             }
 
             if (shellHost.NativePreviewRunCount != beforeRuns
@@ -628,8 +808,530 @@ internal static class Program
                 throw new InvalidOperationException("Opening Learn or Practice Samples triggered tool Preview/Run or opened a tool document.");
             }
 
-            WriteElementPng(learnWindow, outputPath, 1040, 700);
-            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnFoundationOpenRoiToolButton",
+                "foundation CvROI Blob tool button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "BlobToolWpfView",
+                VISION_MENU.Blob,
+                "foundation CvROI");
+            if (!learnWindow.FoundationToolLocationTitleForTest.Contains("PropertyGrid > ROI > Use ROI / ROI (CvROI)", StringComparison.Ordinal)
+                || !learnWindow.FoundationToolLocationDetailForTest.Contains("강조된 PropertyGrid", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Foundation CvROI action did not expose the Blob PropertyGrid location guide.");
+            }
+
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnFoundationOpenKernelToolButton",
+                "foundation Kernel Filter tool button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "FilterToolWpfView",
+                VISION_MENU.Filter,
+                "foundation Kernel");
+            if (!learnWindow.FoundationToolLocationTitleForTest.Contains("Filter options > Kernel Width / Kernel Height", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Foundation Kernel action did not expose the Filter parameter location guide.");
+            }
+
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnFoundationOpenOutputSizeToolButton",
+                "foundation OutputSize Rotate tool button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "SimplePreprocessToolWpfView",
+                VISION_MENU.RotateAndScale,
+                "foundation OutputSize");
+            if (!learnWindow.FoundationToolLocationTitleForTest.Contains("Angle / Scale X / Scale Y", StringComparison.Ordinal)
+                || !learnWindow.FoundationToolLocationDetailForTest.Contains("Preview 결과에서 OutputSize", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Foundation OutputSize action did not expose the Rotate/Scale parameter location guide.");
+            }
+
+            ListBox? topicList = FindVisualChildren<ListBox>(learnWindow)
+                .FirstOrDefault(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "OpenVisionLearnTopicList",
+                    StringComparison.Ordinal));
+            if (topicList == null)
+            {
+                throw new InvalidOperationException("Shell Learn topic list was not visible for Color / HSV navigation.");
+            }
+
+            topicList.SelectedIndex = (int)OpenVisionLearnTopicIndex.Threshold;
+            topicList.ScrollIntoView(topicList.SelectedItem);
+            Pump(16);
+            if (!learnWindow.CanOpenThresholdToolForTest)
+            {
+                throw new InvalidOperationException("Threshold Learn did not enable its related Tool View action.");
+            }
+
+            string thresholdPracticePathId = ClickPracticeSamplesAndCaptureSelectedLearnPath(
+                learnWindow,
+                "Threshold Learn Practice Samples button");
+            if (!string.Equals(thresholdPracticePathId, "threshold", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Threshold Learn did not open the dedicated public sample pair. Path='"
+                    + thresholdPracticePathId
+                    + "'.");
+            }
+
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnThresholdOpenToolButton",
+                "Threshold Tool View button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "ThresholdToolWpfView",
+                VISION_MENU.Threshold,
+                "Threshold Learn");
+
+            topicList.SelectedIndex = (int)OpenVisionLearnTopicIndex.Mean;
+            topicList.ScrollIntoView(topicList.SelectedItem);
+            Pump(16);
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnBrightnessOpenMeanToolButton",
+                "Brightness Mean Tool View button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "SimplePreprocessToolWpfView",
+                VISION_MENU.Mean,
+                "Brightness Mean Learn");
+            if (!learnWindow.BrightnessToolLocationTitleForTest.Contains("Mean Type", StringComparison.Ordinal)
+                || !learnWindow.BrightnessToolLocationTitleForTest.Contains("Min Mean", StringComparison.Ordinal)
+                || !learnWindow.BrightnessToolLocationDetailForTest.Contains("밝기 분포", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Brightness Mean action did not expose the Mean parameter location guide.");
+            }
+
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnBrightnessOpenHistogramToolButton",
+                "Brightness Histogram Tool View button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "SimplePreprocessToolWpfView",
+                VISION_MENU.Histogram,
+                "Brightness Histogram Learn");
+            if (!learnWindow.BrightnessToolLocationTitleForTest.Contains("Clip Limit", StringComparison.Ordinal)
+                || !learnWindow.BrightnessToolLocationTitleForTest.Contains("Normalize Alpha/Beta", StringComparison.Ordinal)
+                || !learnWindow.BrightnessToolLocationDetailForTest.Contains("결과 지표", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Brightness Histogram action did not expose the Histogram parameter location guide.");
+            }
+
+            topicList.SelectedIndex = (int)OpenVisionLearnTopicIndex.Arithmetic;
+            topicList.ScrollIntoView(topicList.SelectedItem);
+            Pump(16);
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnArithmeticOpenToolButton",
+                "Arithmetic Tool View button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "ArithmeticToolWpfView",
+                VISION_MENU.Arithmetic,
+                "Arithmetic Learn");
+            if (!learnWindow.ArithmeticToolLocationTitleForTest.Contains("Input A / Input B / Output Layer", StringComparison.Ordinal)
+                || !learnWindow.ArithmeticToolLocationTitleForTest.Contains("Arithmetic Type", StringComparison.Ordinal)
+                || !learnWindow.ArithmeticToolLocationDetailForTest.Contains("픽셀 연산 결과", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Arithmetic action did not expose the double-input parameter location guide.");
+            }
+
+            topicList.SelectedIndex = (int)OpenVisionLearnTopicIndex.GeometryTransform;
+            topicList.ScrollIntoView(topicList.SelectedItem);
+            Pump(16);
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnGeometryOpenToolButton",
+                "Geometry Rotate / Scale Tool View button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "SimplePreprocessToolWpfView",
+                VISION_MENU.RotateAndScale,
+                "Geometry Learn");
+            if (!learnWindow.GeometryToolLocationTitleForTest.Contains("Angle, Scale X, Scale Y", StringComparison.Ordinal)
+                || !learnWindow.GeometryToolLocationDetailForTest.Contains("OutputSize", StringComparison.Ordinal)
+                || !learnWindow.GeometryToolLocationDetailForTest.Contains("Preview 결과의 OutputSize", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Geometry action did not expose the Rotate / Scale parameter location guide.");
+            }
+
+            topicList.SelectedIndex = (int)OpenVisionLearnTopicIndex.Filtering;
+            topicList.ScrollIntoView(topicList.SelectedItem);
+            Pump(16);
+            string filteringPracticePathId = ClickPracticeSamplesAndCaptureSelectedLearnPath(
+                learnWindow,
+                "Filtering Learn Practice Samples button");
+            if (!string.Equals(filteringPracticePathId, "filter", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Filtering Learn did not open the dedicated public sample pair. Path='"
+                    + filteringPracticePathId
+                    + "'.");
+            }
+
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnFilteringOpenToolButton",
+                "Filtering Tool View button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "FilterToolWpfView",
+                VISION_MENU.Filter,
+                "Filtering Learn");
+            if (!learnWindow.FilteringToolLocationTitleForTest.Contains("Filter Type", StringComparison.Ordinal)
+                || !learnWindow.FilteringToolLocationTitleForTest.Contains("Kernel Width/Height", StringComparison.Ordinal)
+                || !learnWindow.FilteringToolLocationDetailForTest.Contains("Median Kernel", StringComparison.Ordinal)
+                || !learnWindow.FilteringToolLocationDetailForTest.Contains("입력과 출력 영상", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Filtering action did not expose the Filter parameter location guide.");
+            }
+
+            topicList.SelectedIndex = (int)OpenVisionLearnTopicIndex.Morphology;
+            topicList.ScrollIntoView(topicList.SelectedItem);
+            Pump(16);
+            string morphologyPracticePathId = ClickPracticeSamplesAndCaptureSelectedLearnPath(
+                learnWindow,
+                "Morphology Learn Practice Samples button");
+            if (!string.Equals(morphologyPracticePathId, "morphology", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Morphology Learn did not open the dedicated public sample pair. Path='"
+                    + morphologyPracticePathId
+                    + "'.");
+            }
+
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnMorphologyOpenToolButton",
+                "Morphology Tool View button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "MorphologyToolWpfView",
+                VISION_MENU.Morphology,
+                "Morphology Learn");
+            if (!learnWindow.MorphologyToolLocationTitleForTest.Contains("Operation", StringComparison.Ordinal)
+                || !learnWindow.MorphologyToolLocationTitleForTest.Contains("Kernel Width/Height", StringComparison.Ordinal)
+                || !learnWindow.MorphologyToolLocationDetailForTest.Contains("Kernel 프리셋", StringComparison.Ordinal)
+                || !learnWindow.MorphologyToolLocationDetailForTest.Contains("연산 전후의 형상 변화", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Morphology action did not expose the operation and kernel parameter location guide.");
+            }
+
+            topicList.SelectedIndex = (int)OpenVisionLearnTopicIndex.Blob;
+            topicList.ScrollIntoView(topicList.SelectedItem);
+            Pump(16);
+            string blobPracticePathId = ClickPracticeSamplesAndCaptureSelectedLearnPath(
+                learnWindow,
+                "Blob Learn Practice Samples button");
+            if (!string.Equals(blobPracticePathId, "blob", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Blob Learn did not open the dedicated public sample pair. Path='"
+                    + blobPracticePathId
+                    + "'.");
+            }
+
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnBlobOpenToolButton",
+                "Blob Tool View button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "BlobToolWpfView",
+                VISION_MENU.Blob,
+                "Blob Learn");
+            if (!learnWindow.BlobToolLocationTitleForTest.Contains("Use ROI / ROI", StringComparison.Ordinal)
+                || !learnWindow.BlobToolLocationTitleForTest.Contains("Min area / Max area", StringComparison.Ordinal)
+                || !learnWindow.BlobToolLocationDetailForTest.Contains("ResultCount", StringComparison.Ordinal)
+                || !learnWindow.BlobToolLocationDetailForTest.Contains("Preview 또는 Run Review에서", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Blob action did not expose the ROI, area, and result metric guide.");
+            }
+
+            topicList.SelectedIndex = (int)OpenVisionLearnTopicIndex.Contour;
+            topicList.ScrollIntoView(topicList.SelectedItem);
+            Pump(16);
+            string contourPracticePathId = ClickPracticeSamplesAndCaptureSelectedLearnPath(
+                learnWindow,
+                "Contour Learn Practice Samples button");
+            if (!string.Equals(contourPracticePathId, "contour", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Contour Learn did not open the dedicated public sample pair. Path='"
+                    + contourPracticePathId
+                    + "'.");
+            }
+
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnContourOpenToolButton",
+                "Contour Tool View button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "ContourToolWpfView",
+                VISION_MENU.Contour,
+                "Contour Learn");
+            if (!learnWindow.ContourToolLocationTitleForTest.Contains("Retrieval mode", StringComparison.Ordinal)
+                || !learnWindow.ContourToolLocationTitleForTest.Contains("Min area / Max area", StringComparison.Ordinal)
+                || !learnWindow.ContourToolLocationDetailForTest.Contains("BoundsWidthMax", StringComparison.Ordinal)
+                || !learnWindow.ContourToolLocationDetailForTest.Contains("Preview 또는 Run Review에서", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Contour action did not expose the draw, retrieval, area, and result metric guide.");
+            }
+
+            topicList.SelectedIndex = (int)OpenVisionLearnTopicIndex.EdgeDetection;
+            topicList.ScrollIntoView(topicList.SelectedItem);
+            Pump(16);
+            string edgeDetectionPracticePathId = ClickPracticeSamplesAndCaptureSelectedLearnPath(
+                learnWindow,
+                "EdgeDetection Learn Practice Samples button");
+            if (!string.Equals(edgeDetectionPracticePathId, "edge-detection", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "EdgeDetection Learn did not open the dedicated public sample pair. Path='"
+                    + edgeDetectionPracticePathId
+                    + "'.");
+            }
+
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnEdgeDetectionOpenToolButton",
+                "EdgeDetection Tool View button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "SimplePreprocessToolWpfView",
+                VISION_MENU.EdgeDetection,
+                "EdgeDetection Learn");
+            if (!learnWindow.EdgeLineToolLocationTitleForTest.Contains("Canny Low/High", StringComparison.Ordinal)
+                || !learnWindow.EdgeLineToolLocationTitleForTest.Contains("Use L2 Gradient", StringComparison.Ordinal)
+                || !learnWindow.EdgeLineToolLocationDetailForTest.Contains("Sobel/Scharr/Laplacian", StringComparison.Ordinal)
+                || !learnWindow.EdgeLineToolLocationDetailForTest.Contains("Preview에서 에지 영상", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("EdgeDetection action did not expose the edge-map parameter guide.");
+            }
+
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnEdgeLineOpenLineToolButton",
+                "Line Tool View button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "LineToolWpfView",
+                VISION_MENU.Line,
+                "Edge / Line Learn");
+            if (!learnWindow.EdgeLineToolLocationTitleForTest.Contains("Purpose", StringComparison.Ordinal)
+                || !learnWindow.EdgeLineToolLocationTitleForTest.Contains("Polarity/Direction/Contrast/Thickness", StringComparison.Ordinal)
+                || !learnWindow.EdgeLineToolLocationDetailForTest.Contains("Scan direction/interval", StringComparison.Ordinal)
+                || !learnWindow.EdgeLineToolLocationDetailForTest.Contains("Preview에서 검출선", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Line action did not expose the purpose, ROI, edge, and scan parameter guide.");
+            }
+
+            topicList.SelectedIndex = (int)OpenVisionLearnTopicIndex.LineDistance;
+            topicList.ScrollIntoView(topicList.SelectedItem);
+            Pump(16);
+            string lineDistancePracticePathId = ClickPracticeSamplesAndCaptureSelectedLearnPath(
+                learnWindow,
+                "LineDistance Learn Practice Samples button");
+            if (!string.Equals(lineDistancePracticePathId, "line", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "LineDistance Learn did not open the dedicated public sample pair. Path='"
+                    + lineDistancePracticePathId
+                    + "'.");
+            }
+
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnLineDistanceOpenToolButton",
+                "LineDistance Line Tool View button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "LineToolWpfView",
+                VISION_MENU.Line,
+                "LineDistance Learn");
+            if (!learnWindow.LineDistanceToolLocationTitleForTest.Contains("Purpose > Measure", StringComparison.Ordinal)
+                || !learnWindow.LineDistanceToolLocationTitleForTest.Contains("Line A/B", StringComparison.Ordinal)
+                || !learnWindow.LineDistanceToolLocationDetailForTest.Contains("Pixel/mm", StringComparison.Ordinal)
+                || !learnWindow.LineDistanceToolLocationDetailForTest.Contains("DistanceMmAvg", StringComparison.Ordinal)
+                || !learnWindow.LineDistanceToolLocationDetailForTest.Contains("DistanceMmRange/Max", StringComparison.Ordinal)
+                || !learnWindow.LineDistanceToolLocationDetailForTest.Contains("Preview 또는 Run Review에서", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("LineDistance action did not expose the Measure, calibration, and outlier-gate guide.");
+            }
+
+            topicList.SelectedIndex = (int)OpenVisionLearnTopicIndex.Matching;
+            topicList.ScrollIntoView(topicList.SelectedItem);
+            Pump(16);
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnMatchingOpenToolButton",
+                "Matching Tool View button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "MatchingToolWpfView",
+                VISION_MENU.Matching,
+                "Matching Learn");
+            if (!learnWindow.MatchingToolLocationTitleForTest.Contains("Template Ready / Pattern path", StringComparison.Ordinal)
+                || !learnWindow.MatchingToolLocationTitleForTest.Contains("Min score / Match count", StringComparison.Ordinal)
+                || !learnWindow.MatchingToolLocationDetailForTest.Contains("angle/scale", StringComparison.Ordinal)
+                || !learnWindow.MatchingToolLocationDetailForTest.Contains("ScoreMax", StringComparison.Ordinal)
+                || !learnWindow.MatchingToolLocationDetailForTest.Contains("ResultCount", StringComparison.Ordinal)
+                || !learnWindow.MatchingToolLocationDetailForTest.Contains("Preview 또는 Run Review에서", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Matching action did not expose the template, score, count, ROI, and result guide.");
+            }
+
+            topicList.SelectedIndex = (int)OpenVisionLearnTopicIndex.EdgeBasedMatching;
+            topicList.ScrollIntoView(topicList.SelectedItem);
+            Pump(16);
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnEdgeBasedMatchingOpenToolButton",
+                "EdgeBasedMatching Tool View button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "EdgeBasedMatchingToolWpfView",
+                VISION_MENU.EdgeBasedMatching,
+                "EdgeBasedMatching Learn");
+            if (!learnWindow.EdgeBasedMatchingToolLocationTitleForTest.Contains("Template Ready / Pattern path", StringComparison.Ordinal)
+                || !learnWindow.EdgeBasedMatchingToolLocationTitleForTest.Contains("Canny range / Max template points", StringComparison.Ordinal)
+                || !learnWindow.EdgeBasedMatchingToolLocationTitleForTest.Contains("Search step", StringComparison.Ordinal)
+                || !learnWindow.EdgeBasedMatchingToolLocationDetailForTest.Contains("edge Template", StringComparison.Ordinal)
+                || !learnWindow.EdgeBasedMatchingToolLocationDetailForTest.Contains("ScoreMax", StringComparison.Ordinal)
+                || !learnWindow.EdgeBasedMatchingToolLocationDetailForTest.Contains("ResultCount", StringComparison.Ordinal)
+                || !learnWindow.EdgeBasedMatchingToolLocationDetailForTest.Contains("Preview 또는 Run Review에서", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("EdgeBasedMatching action did not expose the edge template, Canny, search, ROI, and result guide.");
+            }
+
+            topicList.SelectedIndex = (int)OpenVisionLearnTopicIndex.FeatureMatching;
+            topicList.ScrollIntoView(topicList.SelectedItem);
+            Pump(16);
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnFeatureMatchingOpenToolButton",
+                "FeatureMatching Tool View button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "FeatureMatchingToolWpfView",
+                VISION_MENU.FeatureMatching,
+                "FeatureMatching Learn");
+            if (!learnWindow.FeatureMatchingToolLocationTitleForTest.Contains("Feature template path", StringComparison.Ordinal)
+                || !learnWindow.FeatureMatchingToolLocationTitleForTest.Contains("Ratio threshold / RANSAC tolerance", StringComparison.Ordinal)
+                || !learnWindow.FeatureMatchingToolLocationDetailForTest.Contains("Ratio 기준과 RANSAC 허용 오차", StringComparison.Ordinal)
+                || !learnWindow.FeatureMatchingToolLocationDetailForTest.Contains("ScoreMax", StringComparison.Ordinal)
+                || !learnWindow.FeatureMatchingToolLocationDetailForTest.Contains("ResultCount", StringComparison.Ordinal)
+                || !learnWindow.FeatureMatchingToolLocationDetailForTest.Contains("Preview 또는 Run Review에서", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("FeatureMatching action did not expose the template, ratio, RANSAC, ROI, and result guide.");
+            }
+
+            topicList.SelectedIndex = (int)OpenVisionLearnTopicIndex.ColorHsv;
+            topicList.ScrollIntoView(topicList.SelectedItem);
+            Pump(16);
+            ClickVisibleButtonByAutomationId(
+                learnWindow,
+                "OpenVisionLearnColorHsvOpenToolButton",
+                "Color / HSV Tool View button");
+            Pump(32);
+            AssertLearnRelatedToolOpenedWithoutRun(
+                shellHost,
+                beforeRuns,
+                beforeLayerDocumentCount,
+                beforeWorkspaceLayerTitle,
+                "SimplePreprocessToolWpfView",
+                VISION_MENU.HSV,
+                "Color / HSV Learn");
+            if (!learnWindow.ColorHsvToolLocationTitleForTest.Contains("Hue Min/Max", StringComparison.Ordinal)
+                || !learnWindow.ColorHsvToolLocationTitleForTest.Contains("OutputLayer", StringComparison.Ordinal)
+                || !learnWindow.ColorHsvToolLocationDetailForTest.Contains("Preview 또는 Run Review에서", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Color / HSV action did not expose the HSV parameter location guide.");
+            }
+
+            return new CaptureResult(1040, 980, (DateTime.UtcNow - started).TotalMilliseconds);
         }
         finally
         {
@@ -639,6 +1341,38 @@ internal static class Program
             }
 
             hostWindow.Close();
+        }
+    }
+
+    private static void AssertLearnRelatedToolOpenedWithoutRun(
+        OpenVisionShellHostView shellHost,
+        int expectedRunCount,
+        int expectedLayerDocumentCount,
+        string expectedWorkspaceLayerTitle,
+        string expectedViewType,
+        VISION_MENU expectedMenu,
+        string scenario)
+    {
+        string expectedTitle = OpenVisionLanguageService.T("VisionMenu." + expectedMenu);
+        if (!shellHost.IsNativeDocumentActive
+            || !shellHost.IsActiveWpfToolWindowVisibleForTest
+            || !shellHost.ActiveNativeDocumentTypeName.Contains(expectedViewType, StringComparison.Ordinal)
+            || !string.Equals(shellHost.ActiveWpfToolWindowTitle, expectedTitle, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                scenario + " did not open the expected Tool View. "
+                + $"Type='{shellHost.ActiveNativeDocumentTypeName}', Title='{shellHost.ActiveWpfToolWindowTitle}', ExpectedTitle='{expectedTitle}'.");
+        }
+
+        if (shellHost.NativePreviewRunCount != expectedRunCount
+            || shellHost.HasNativePreviewResult
+            || shellHost.LayerDocumentCount != expectedLayerDocumentCount
+            || !string.Equals(shellHost.WorkspaceLayerTitle, expectedWorkspaceLayerTitle, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                scenario + " changed Preview/Run or layer state. "
+                + $"Runs={shellHost.NativePreviewRunCount}, HasResult={shellHost.HasNativePreviewResult}, "
+                + $"Layers={shellHost.LayerDocumentCount}, Workspace='{shellHost.WorkspaceLayerTitle}'.");
         }
     }
 
@@ -688,11 +1422,55 @@ internal static class Program
                 "WPF recipe manager initial LLM dependency rows",
                 "대기",
                 "XML 초안");
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager LLM inspection setup entry",
+                "HostRecipeOpenGuidedSetupButton");
+            AssertVisibleTextContains(
+                shellHost,
+                "WPF recipe manager LLM inspection setup entry",
+                "\uAC80\uC0AC \uC124\uC815",
+                "\uD544\uC694\uD55C \uAC12");
             SaveVisibleAutomationElementPng(
                 shellHost,
                 "HostRecipeLlmXmlDraftPanel",
                 outputPath,
                 "llm-xml-draft-panel.png");
+
+            int previewRunsBeforeGuidedSetup = shellHost.NativePreviewRunCount;
+            int layerCountBeforeGuidedSetup = shellHost.LayerDocumentCount;
+            string draftBeforeGuidedSetup = shellHost.RecipeCommands.LlmXmlDraftText;
+            ClickVisibleButtonByAutomationId(
+                shellHost,
+                "HostRecipeOpenGuidedSetupButton",
+                "LLM XML inspection setup button");
+            Pump(40);
+            TabItem? guidedSetupTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipeGuidedSetup");
+            if (guidedSetupTab?.IsSelected != true
+                || shellHost.NativePreviewRunCount != previewRunsBeforeGuidedSetup
+                || shellHost.LayerDocumentCount != layerCountBeforeGuidedSetup
+                || shellHost.HasNativePreviewResult
+                || !string.Equals(shellHost.RecipeCommands.LlmXmlDraftText, draftBeforeGuidedSetup, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "LLM XML inspection setup button did not open Build inspection without changing runtime state. "
+                    + $"Tab={guidedSetupTab?.IsSelected}, Runs={shellHost.NativePreviewRunCount}, Layers={shellHost.LayerDocumentCount}, "
+                    + $"DraftChanged={!string.Equals(shellHost.RecipeCommands.LlmXmlDraftText, draftBeforeGuidedSetup, StringComparison.Ordinal)}.");
+            }
+
+            ToggleButton? advancedReviewToggle = FindVisualChildren<ToggleButton>(shellHost)
+                .FirstOrDefault(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "HostRecipeAdvancedReviewToggle",
+                    StringComparison.Ordinal));
+            if (advancedReviewToggle?.IsChecked == true)
+            {
+                advancedReviewToggle.IsChecked = false;
+                Pump(40);
+            }
+
+            llmXmlTab.IsSelected = true;
+            Pump(40);
         }, captureFloatingToolWindow: false);
     }
 
@@ -775,6 +1553,16 @@ internal static class Program
         button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, button));
     }
 
+    private static string ReadVisibleTextByAutomationId(DependencyObject root, string automationId)
+    {
+        TextBlock textBlock = FindVisualChildren<TextBlock>(root)
+            .FirstOrDefault(item => item.IsVisible
+                && string.Equals(AutomationProperties.GetAutomationId(item), automationId, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException($"Visible text was not found: {automationId}");
+
+        return textBlock.Text ?? string.Empty;
+    }
+
     private static void AssertToolHeaderLearnOpensTopic(
         OpenVisionShellHostView shellHost,
         int expectedTopicIndex,
@@ -804,13 +1592,329 @@ internal static class Program
                 + $"Expected={expectedTopicIndex}, Actual={learnWindow.SelectedTopicIndexForTest}");
         }
 
+        learnButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, learnButton));
+        Pump(6);
+        OpenVisionLearnWindow[] visibleLearnWindows = Application.Current.Windows
+            .OfType<OpenVisionLearnWindow>()
+            .Where(window => window.IsVisible)
+            .ToArray();
+        if (visibleLearnWindows.Length != 1 || !ReferenceEquals(visibleLearnWindows[0], learnWindow))
+        {
+            throw new InvalidOperationException(
+                name + " repeated Learn click did not reactivate the existing window. "
+                + $"Visible={visibleLearnWindows.Length}");
+        }
+
         learnWindow.Close();
+        Pump(6);
+        learnButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, learnButton));
+        Pump(8);
+        OpenVisionLearnWindow reopenedLearnWindow = GetVisibleLearnWindow(name + " reopened Learn button");
+        if (ReferenceEquals(reopenedLearnWindow, learnWindow)
+            || reopenedLearnWindow.SelectedTopicIndexForTest != expectedTopicIndex)
+        {
+            throw new InvalidOperationException(
+                name + " did not create a fresh Learn window after close. "
+                + $"ExpectedTopic={expectedTopicIndex}, ActualTopic={reopenedLearnWindow.SelectedTopicIndexForTest}");
+        }
+
+        reopenedLearnWindow.Close();
         Pump(6);
         if (shellHost.NativePreviewRunCount != beforeRuns)
         {
             throw new InvalidOperationException(
                 name + " Learn button triggered Preview/Run. "
                 + $"RunsBefore={beforeRuns}, RunsAfter={shellHost.NativePreviewRunCount}");
+        }
+    }
+
+    private static CaptureResult CaptureShellHostToolSearch(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostToolSearch");
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            Pump(12);
+            TextBox? searchBox = FindVisualChildren<TextBox>(shellHost)
+                .FirstOrDefault(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "HostToolSearchTextBox",
+                    StringComparison.Ordinal));
+            Button? clearButton = FindVisualChildren<Button>(shellHost)
+                .FirstOrDefault(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "HostToolSearchClearButton",
+                    StringComparison.Ordinal));
+            TextBlock? summary = FindVisualChildren<TextBlock>(shellHost)
+                .FirstOrDefault(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "HostToolSearchSummary",
+                    StringComparison.Ordinal));
+            if (searchBox == null || clearButton == null || summary == null)
+            {
+                throw new InvalidOperationException("Tool search controls were not available in the expanded Tool rail.");
+            }
+
+            int previewRunsBefore = shellHost.NativePreviewRunCount;
+            int layerCountBefore = shellHost.LayerDocumentCount;
+            string workspaceLayerBefore = shellHost.WorkspaceLayerTitle;
+            string inputRouteBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+            string outputRouteBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+            string llmXmlDraftBefore = shellHost.RecipeCommands.LlmXmlDraftText;
+
+            AssertToolLearnTopicCatalog();
+            AssertToolGuidedSetupCatalog();
+            AssertToolSearchResult(shellHost, "InputLayerB", 1, "Arithmetic");
+            AssertToolSearchResult(shellHost, "DistanceMmRange", 1, "Line");
+            AssertToolSearchResult(shellHost, "템플릿 ScoreMax", 1, "Matching");
+
+            shellHost.ClearToolSearchForTest();
+            Pump(8);
+            if (!string.IsNullOrEmpty(shellHost.ToolSearchTextForTest)
+                || shellHost.VisibleToolSearchItemCountForTest != 16)
+            {
+                throw new InvalidOperationException(
+                    "Clearing Tool search did not restore the full palette. "
+                    + $"Text='{shellHost.ToolSearchTextForTest}', Visible={shellHost.VisibleToolSearchItemCountForTest}");
+            }
+
+            AssertToolSearchResult(shellHost, "핀 간격 mm", 1, "Line");
+            if (!string.Equals(searchBox.Text, "핀 간격 mm", StringComparison.Ordinal)
+                || !summary.Text.Contains("1", StringComparison.Ordinal)
+                || !clearButton.IsVisible)
+            {
+                throw new InvalidOperationException(
+                    "Tool search did not expose the final query, result count, and clear action. "
+                    + $"Text='{searchBox.Text}', Summary='{summary.Text}', ClearVisible={clearButton.IsVisible}");
+            }
+
+            Button? guidedSetupShortcut = FindVisualChildren<Button>(shellHost)
+                .FirstOrDefault(item => item.IsVisible
+                    && string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "HostToolSearchGuidedSetupButton",
+                        StringComparison.Ordinal));
+            FrameworkElement? toolRail = FindNamedVisualChild<FrameworkElement>(shellHost, "toolRailBorder");
+            if (guidedSetupShortcut == null || toolRail == null)
+            {
+                throw new InvalidOperationException("Line search result did not expose a Guided Setup shortcut inside the Tool rail.");
+            }
+
+            Point guidedSetupPosition = guidedSetupShortcut.TranslatePoint(new Point(0D, 0D), toolRail);
+            if (guidedSetupPosition.X < 0D
+                || guidedSetupPosition.X + guidedSetupShortcut.ActualWidth > toolRail.ActualWidth + 0.5D)
+            {
+                throw new InvalidOperationException(
+                    "Guided Setup shortcut was clipped by the Tool rail. "
+                    + $"X={guidedSetupPosition.X:0.0}, Width={guidedSetupShortcut.ActualWidth:0.0}, RailWidth={toolRail.ActualWidth:0.0}");
+            }
+
+            ClickVisibleButtonByAutomationId(shellHost, "HostToolSearchLearnButton", "Line search result Learn button");
+            Pump(12);
+            OpenVisionLearnWindow learnWindow = GetVisibleLearnWindow("Line search result Learn button");
+            if (learnWindow.SelectedTopicIndexForTest != (int)OpenVisionLearnTopicIndex.LineDistance)
+            {
+                throw new InvalidOperationException(
+                    "Line search result opened the wrong Learn topic. "
+                    + $"Expected={(int)OpenVisionLearnTopicIndex.LineDistance}, Actual={learnWindow.SelectedTopicIndexForTest}");
+            }
+
+            learnWindow.SelectTopic(OpenVisionLearnTopicIndex.Curriculum);
+            ClickVisibleButtonByAutomationId(shellHost, "HostToolSearchLearnButton", "Line search result Learn reuse button");
+            Pump(8);
+            if (!ReferenceEquals(learnWindow, GetVisibleLearnWindow("Line search result Learn reuse button"))
+                || learnWindow.SelectedTopicIndexForTest != (int)OpenVisionLearnTopicIndex.LineDistance)
+            {
+                throw new InvalidOperationException("Tool search did not reuse the Learn window at the requested topic.");
+            }
+
+            learnWindow.Close();
+            Pump(8);
+
+            string? selectedSamplePathId = null;
+            string? samplePickerError = null;
+            Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                OpenVisionWorkspaceSamplePickerWindow? pickerWindow = Application.Current.Windows
+                    .OfType<OpenVisionWorkspaceSamplePickerWindow>()
+                    .FirstOrDefault(item => item.IsVisible);
+                if (pickerWindow == null)
+                {
+                    samplePickerError = "Line search result did not open Sample Picker.";
+                    return;
+                }
+
+                selectedSamplePathId = pickerWindow.ViewModel.SelectedLearnPathOption?.Id;
+                if (pickerWindow.ViewModel.VisibleSampleCount <= 0)
+                {
+                    samplePickerError = "Line Sample Picker path did not contain a visible public sample.";
+                }
+
+                pickerWindow.Close();
+            }), System.Windows.Threading.DispatcherPriority.ContextIdle);
+
+            ClickVisibleButtonByAutomationId(shellHost, "HostToolSearchSamplesButton", "Line search result samples button");
+            Pump(12);
+            if (!string.IsNullOrWhiteSpace(samplePickerError)
+                || !string.Equals(selectedSamplePathId, "line", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    samplePickerError
+                    ?? $"Line search result opened the wrong sample path. Expected=line, Actual={selectedSamplePathId}");
+            }
+
+            ClickVisibleButtonByAutomationId(shellHost, "HostToolSearchGuidedSetupButton", "Line search result Guided Setup button");
+            Pump(12);
+            ToggleButton? recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager");
+            TabItem? guidedSetupTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipeGuidedSetup");
+            if (recipeManagerButton?.IsChecked != true
+                || guidedSetupTab?.IsSelected != true
+                || !string.Equals(
+                    shellHost.RecipeCommands.SelectedLlmToolTemplate,
+                    OpenVisionGuidedSetupCatalog.PinGapTemplate,
+                    StringComparison.Ordinal)
+                || !string.Equals(shellHost.RecipeCommands.LlmXmlDraftText, llmXmlDraftBefore, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Line search result did not navigate to the existing pin-gap Guided Setup without generating XML. "
+                    + $"Manager={recipeManagerButton?.IsChecked}, Tab={guidedSetupTab?.IsSelected}, "
+                    + $"Intent='{shellHost.RecipeCommands.SelectedLlmToolTemplate}', "
+                    + $"DraftChanged={!string.Equals(shellHost.RecipeCommands.LlmXmlDraftText, llmXmlDraftBefore, StringComparison.Ordinal)}");
+            }
+
+            recipeManagerButton.IsChecked = false;
+            AssertToolSearchResult(shellHost, "Threshold", 1, "Threshold");
+            Pump(8);
+            if (FindVisualChildren<Button>(shellHost).Any(item =>
+                    item.IsVisible
+                    && string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "HostToolSearchGuidedSetupButton",
+                        StringComparison.Ordinal)))
+            {
+                throw new InvalidOperationException("Threshold search result must not expose an unsupported Guided Setup shortcut.");
+            }
+
+            AssertToolSearchResult(shellHost, "핀 간격 mm", 1, "Line");
+            Pump(8);
+
+            Window.GetWindow(shellHost)?.Activate();
+            shellHost.InvalidateVisual();
+            shellHost.UpdateLayout();
+            Pump(12);
+
+            if (shellHost.NativePreviewRunCount != previewRunsBefore
+                || shellHost.LayerDocumentCount != layerCountBefore
+                || !string.Equals(shellHost.WorkspaceLayerTitle, workspaceLayerBefore, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBefore, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBefore, StringComparison.Ordinal)
+                || !string.Equals(shellHost.RecipeCommands.LlmXmlDraftText, llmXmlDraftBefore, StringComparison.Ordinal)
+                || shellHost.IsActiveWpfToolWindowVisibleForTest
+                || shellHost.IsNativeDocumentActive
+                || shellHost.HasNativePreviewResult)
+            {
+                throw new InvalidOperationException(
+                    "Tool search must filter display only. "
+                    + $"Runs={previewRunsBefore}->{shellHost.NativePreviewRunCount}, "
+                    + $"Layers={layerCountBefore}->{shellHost.LayerDocumentCount}, "
+                    + $"Workspace='{workspaceLayerBefore}'->'{shellHost.WorkspaceLayerTitle}', "
+                    + $"Input='{inputRouteBefore}'->'{shellHost.ActiveNativeRouteInputLayerNameForTest}', "
+                    + $"Output='{outputRouteBefore}'->'{shellHost.ActiveNativeRouteOutputLayerNameForTest}', "
+                    + $"ToolVisible={shellHost.IsActiveWpfToolWindowVisibleForTest}, NativeActive={shellHost.IsNativeDocumentActive}, Preview={shellHost.HasNativePreviewResult}");
+            }
+        }, captureFloatingToolWindow: false, captureScreen: true);
+    }
+
+    private static void AssertToolLearnTopicCatalog()
+    {
+        (VISION_MENU Menu, OpenVisionLearnTopicIndex Topic, string PracticePath)[] expected =
+        {
+            (VISION_MENU.Morphology, OpenVisionLearnTopicIndex.Morphology, "morphology"),
+            (VISION_MENU.Filter, OpenVisionLearnTopicIndex.Filtering, "filter"),
+            (VISION_MENU.Arithmetic, OpenVisionLearnTopicIndex.Arithmetic, "preprocess"),
+            (VISION_MENU.EdgeDetection, OpenVisionLearnTopicIndex.EdgeDetection, "edge-detection"),
+            (VISION_MENU.Blob, OpenVisionLearnTopicIndex.Blob, "blob"),
+            (VISION_MENU.Contour, OpenVisionLearnTopicIndex.Contour, "contour"),
+            (VISION_MENU.Matching, OpenVisionLearnTopicIndex.Matching, "template-matching"),
+            (VISION_MENU.EdgeBasedMatching, OpenVisionLearnTopicIndex.EdgeBasedMatching, "edge-matching"),
+            (VISION_MENU.Line, OpenVisionLearnTopicIndex.LineDistance, "line"),
+            (VISION_MENU.RotateAndScale, OpenVisionLearnTopicIndex.GeometryTransform, "geometry"),
+            (VISION_MENU.Histogram, OpenVisionLearnTopicIndex.Histogram, "mean"),
+            (VISION_MENU.Mean, OpenVisionLearnTopicIndex.Mean, "mean"),
+            (VISION_MENU.HSV, OpenVisionLearnTopicIndex.ColorHsv, "color-hsv"),
+            (VISION_MENU.FeatureMatching, OpenVisionLearnTopicIndex.FeatureMatching, "feature-matching"),
+            (VISION_MENU.Pipeline, OpenVisionLearnTopicIndex.LayerRecipe, "all"),
+            (VISION_MENU.Threshold, OpenVisionLearnTopicIndex.Threshold, "threshold"),
+        };
+
+        if (expected.Length != Enum.GetValues(typeof(VISION_MENU)).Length)
+        {
+            throw new InvalidOperationException("Tool Learn topic catalog smoke does not cover every Tool rail menu.");
+        }
+
+        foreach ((VISION_MENU menu, OpenVisionLearnTopicIndex topic, string practicePath) in expected)
+        {
+            if (!OpenVisionLearnTopicCatalog.TryResolveForTool(menu, out OpenVisionLearnTopicIndex actual)
+                || actual != topic
+                || !string.Equals(
+                    OpenVisionLearnTopicCatalog.Resolve(actual).PracticePathId,
+                    practicePath,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    $"Tool Learn/sample mapping is invalid. Menu={menu}, Expected={topic}:{practicePath}, "
+                    + $"Actual={actual}:{OpenVisionLearnTopicCatalog.Resolve(actual).PracticePathId}");
+            }
+        }
+    }
+
+    private static void AssertToolGuidedSetupCatalog()
+    {
+        Dictionary<VISION_MENU, string> expected = new Dictionary<VISION_MENU, string>
+        {
+            [VISION_MENU.Line] = OpenVisionGuidedSetupCatalog.PinGapTemplate,
+            [VISION_MENU.Blob] = OpenVisionGuidedSetupCatalog.BlobTemplate,
+            [VISION_MENU.Contour] = OpenVisionGuidedSetupCatalog.ContourTemplate,
+            [VISION_MENU.Matching] = OpenVisionGuidedSetupCatalog.MatchingTemplate,
+            [VISION_MENU.FeatureMatching] = OpenVisionGuidedSetupCatalog.FeatureMatchingTemplate,
+            [VISION_MENU.EdgeBasedMatching] = OpenVisionGuidedSetupCatalog.EdgeBasedMatchingTemplate,
+            [VISION_MENU.Mean] = OpenVisionGuidedSetupCatalog.MeanTemplate,
+        };
+
+        foreach (VISION_MENU menu in Enum.GetValues(typeof(VISION_MENU)))
+        {
+            bool resolved = OpenVisionGuidedSetupCatalog.TryResolveTemplate(menu, out string actualTemplate);
+            if (expected.TryGetValue(menu, out string? expectedTemplate))
+            {
+                if (!resolved || !string.Equals(actualTemplate, expectedTemplate, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"Guided Setup mapping is invalid. Menu={menu}, Expected='{expectedTemplate}', Actual='{actualTemplate}'");
+                }
+            }
+            else if (resolved)
+            {
+                throw new InvalidOperationException(
+                    $"Unsupported tool unexpectedly exposes Guided Setup. Menu={menu}, Template='{actualTemplate}'");
+            }
+        }
+    }
+
+    private static void AssertToolSearchResult(
+        OpenVisionShellHostView shellHost,
+        string query,
+        int expectedCount,
+        string expectedCommandIds)
+    {
+        shellHost.SetToolSearchTextForTest(query);
+        Pump(8);
+        if (shellHost.VisibleToolSearchItemCountForTest != expectedCount
+            || !string.Equals(shellHost.VisibleToolSearchCommandIdsForTest, expectedCommandIds, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Tool search '{query}' returned an unexpected palette. "
+                + $"Expected={expectedCount}:{expectedCommandIds}, "
+                + $"Actual={shellHost.VisibleToolSearchItemCountForTest}:{shellHost.VisibleToolSearchCommandIdsForTest}");
         }
     }
 
@@ -823,6 +1927,7 @@ internal static class Program
         {
             return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
             {
+                int previewRunsBefore = shellHost.NativePreviewRunCount;
                 if (!shellHost.IsWorkspaceEmptyPromptVisible)
                 {
                     throw new InvalidOperationException("WPF workspace image load test must start from the empty prompt.");
@@ -852,10 +1957,352 @@ internal static class Program
                         + "'.");
                 }
 
-                if (shellHost.IsActiveWpfToolWindowVisibleForTest || shellHost.IsNativeDocumentActive)
+                if (shellHost.IsActiveWpfToolWindowVisibleForTest
+                    || shellHost.IsNativeDocumentActive
+                    || shellHost.NativePreviewRunCount != previewRunsBefore
+                    || shellHost.HasNativePreviewResult)
                 {
-                    throw new InvalidOperationException("Workspace image load must not open or retarget a tool window before the operator selects one.");
+                    throw new InvalidOperationException(
+                        "Workspace image load/readiness refresh must not open a tool or run Preview. "
+                        + $"ToolVisible={shellHost.IsActiveWpfToolWindowVisibleForTest}, NativeActive={shellHost.IsNativeDocumentActive}, "
+                        + $"Runs={previewRunsBefore}->{shellHost.NativePreviewRunCount}, Preview={shellHost.HasNativePreviewResult}");
                 }
+
+                AssertButtonTextContrast(
+                    shellHost,
+                    "WorkspaceMainActionThresholdButton",
+                    "Workspace quick Threshold button");
+                AssertButtonTextContrast(
+                    shellHost,
+                    "WorkspaceMainActionMatchingButton",
+                    "Workspace quick Matching button");
+                AssertButtonTextContrast(
+                    shellHost,
+                    "WorkspaceMainActionLineButton",
+                    "Workspace quick Line button");
+
+                VisionToolRepository repository = shellHost.VisionToolRepositoryForTest;
+                if (repository == null)
+                {
+                    throw new InvalidOperationException("Matching-family readiness repository was not available.");
+                }
+
+                LineGaugeProperty lineA = repository.Lines_L.FirstOrDefault()
+                    ?? new LineGaugeProperty("Line(L)_1");
+                if (!repository.Lines_L.Contains(lineA))
+                {
+                    repository.Lines_L.Add(lineA);
+                }
+
+                LineGaugeProperty lineB = repository.Lines_R.FirstOrDefault()
+                    ?? new LineGaugeProperty("Line(R)_1");
+                if (!repository.Lines_R.Contains(lineB))
+                {
+                    repository.Lines_R.Add(lineB);
+                }
+
+                int lineScaleReadinessRunsBefore = shellHost.NativePreviewRunCount;
+                int lineScaleLayerCountBefore = shellHost.LayerDocumentCount;
+                string lineScaleInputRouteBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string lineScaleOutputRouteBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                lineA.PIXELPERMM = 0D;
+                lineB.PIXELPERMM = 0D;
+                OpenVisionNativeToolPropertySessionStore.Save("Line(L)_1", lineA);
+                OpenVisionNativeToolPropertySessionStore.Save("Line(R)_1", lineB);
+                Pump(8);
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.Line,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.LineScalePixelOnlyBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.LineScalePixelOnlyDescription"));
+
+                lineA.PIXELPERMM = 0.006D;
+                lineB.PIXELPERMM = 0.007D;
+                OpenVisionNativeToolPropertySessionStore.Save("Line(L)_1", lineA);
+                OpenVisionNativeToolPropertySessionStore.Save("Line(R)_1", lineB);
+                Pump(8);
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.Line,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.LineScaleReviewBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.LineScaleReviewDescription"));
+
+                lineB.PIXELPERMM = 0.006D;
+                OpenVisionNativeToolPropertySessionStore.Save("Line(L)_1", lineA);
+                OpenVisionNativeToolPropertySessionStore.Save("Line(R)_1", lineB);
+                Pump(8);
+                string lineScaleText = lineA.PIXELPERMM.ToString("0.######", CultureInfo.InvariantCulture);
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.Line,
+                    string.Format(
+                        CultureInfo.CurrentCulture,
+                        OpenVisionLanguageService.T("Shell.ToolReadiness.LineScaleConfiguredBadgeFormat"),
+                        lineScaleText),
+                    string.Format(
+                        CultureInfo.CurrentCulture,
+                        OpenVisionLanguageService.T("Shell.ToolReadiness.LineScaleConfiguredDescriptionFormat"),
+                        lineScaleText));
+                if (shellHost.NativePreviewRunCount != lineScaleReadinessRunsBefore
+                    || shellHost.LayerDocumentCount != lineScaleLayerCountBefore
+                    || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, lineScaleInputRouteBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, lineScaleOutputRouteBefore, StringComparison.Ordinal)
+                    || shellHost.IsActiveWpfToolWindowVisibleForTest
+                    || shellHost.IsNativeDocumentActive
+                    || shellHost.HasNativePreviewResult)
+                {
+                    throw new InvalidOperationException(
+                        "Line scale readiness changes must be display-only. "
+                        + $"Runs={lineScaleReadinessRunsBefore}->{shellHost.NativePreviewRunCount}, "
+                        + $"Layers={lineScaleLayerCountBefore}->{shellHost.LayerDocumentCount}, "
+                        + $"Input='{lineScaleInputRouteBefore}'->'{shellHost.ActiveNativeRouteInputLayerNameForTest}', "
+                        + $"Output='{lineScaleOutputRouteBefore}'->'{shellHost.ActiveNativeRouteOutputLayerNameForTest}', "
+                        + $"ToolVisible={shellHost.IsActiveWpfToolWindowVisibleForTest}, NativeActive={shellHost.IsNativeDocumentActive}, Preview={shellHost.HasNativePreviewResult}");
+                }
+
+                string arithmeticSettingsName = OpenVisionNativeToolSettingsStore.CreateConfigName("Arithmetic");
+                ArithmeticToolSettings arithmeticSettings = new ArithmeticToolSettings
+                {
+                    SelectedOperation = "Bitwise_AND",
+                    UseConstantInput = false,
+                    UseOffsetMode = false
+                };
+                int arithmeticReadinessRunsBefore = shellHost.NativePreviewRunCount;
+                OpenVisionNativeToolSettingsStore.Save(arithmeticSettingsName, arithmeticSettings);
+                Pump(8);
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.Arithmetic,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.InputBMissingBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.InputBMissingDescription"));
+
+                arithmeticSettings.SelectedOperation = "Bitwise_NOT";
+                OpenVisionNativeToolSettingsStore.Save(arithmeticSettingsName, arithmeticSettings);
+                Pump(8);
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.Arithmetic,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.ConfigureBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.ConfigureDescription"));
+
+                arithmeticSettings.SelectedOperation = "Bitwise_AND";
+                arithmeticSettings.UseConstantInput = true;
+                OpenVisionNativeToolSettingsStore.Save(arithmeticSettingsName, arithmeticSettings);
+                Pump(8);
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.Arithmetic,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.ConfigureBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.ConfigureDescription"));
+
+                arithmeticSettings.UseConstantInput = false;
+                arithmeticSettings.UseOffsetMode = true;
+                OpenVisionNativeToolSettingsStore.Save(arithmeticSettingsName, arithmeticSettings);
+                Pump(8);
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.Arithmetic,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.ConfigureBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.ConfigureDescription"));
+
+                arithmeticSettings.UseOffsetMode = false;
+                OpenVisionNativeToolSettingsStore.Save(arithmeticSettingsName, arithmeticSettings);
+                Pump(8);
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.Arithmetic,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.InputBMissingBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.InputBMissingDescription"));
+
+                using (Bitmap arithmeticInputB = new Bitmap(imagePath))
+                {
+                    if (!shellHost.AddLayerImageForTest("Arithmetic_InputB", arithmeticInputB))
+                    {
+                        throw new InvalidOperationException("Arithmetic readiness test could not add the Input B image layer.");
+                    }
+                }
+                Pump(8);
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.Arithmetic,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.ConfigureBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.ConfigureDescription"));
+
+                if (!shellHost.DeleteLayerForTest("Arithmetic_InputB"))
+                {
+                    throw new InvalidOperationException("Arithmetic readiness test could not remove the Input B image layer.");
+                }
+                Pump(8);
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.Arithmetic,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.InputBMissingBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.InputBMissingDescription"));
+                if (shellHost.NativePreviewRunCount != arithmeticReadinessRunsBefore
+                    || shellHost.IsActiveWpfToolWindowVisibleForTest
+                    || shellHost.IsNativeDocumentActive
+                    || shellHost.HasNativePreviewResult)
+                {
+                    throw new InvalidOperationException(
+                        "Arithmetic Input B readiness changes must be display-only. "
+                        + $"Runs={arithmeticReadinessRunsBefore}->{shellHost.NativePreviewRunCount}, "
+                        + $"ToolVisible={shellHost.IsActiveWpfToolWindowVisibleForTest}, NativeActive={shellHost.IsNativeDocumentActive}, Preview={shellHost.HasNativePreviewResult}");
+                }
+
+                MatchingProperty matching = repository.Matchings.FirstOrDefault()
+                    ?? new MatchingProperty("Matching_1");
+                if (!repository.Matchings.Contains(matching))
+                {
+                    repository.Matchings.Add(matching);
+                }
+
+                EdgeBasedMatchingProperty edgeBasedMatching = repository.EdgeBasedMatchings.FirstOrDefault()
+                    ?? new EdgeBasedMatchingProperty("EdgeBasedMatching_1");
+                if (!repository.EdgeBasedMatchings.Contains(edgeBasedMatching))
+                {
+                    repository.EdgeBasedMatchings.Add(edgeBasedMatching);
+                }
+
+                FeatureMatchingProperty featureMatching = repository.Features.FirstOrDefault()
+                    ?? new FeatureMatchingProperty("Feature_1");
+                if (!repository.Features.Contains(featureMatching))
+                {
+                    repository.Features.Add(featureMatching);
+                }
+
+                int readinessResetRunsBefore = shellHost.NativePreviewRunCount;
+                matching.PATTERN_PATH = string.Empty;
+                matching.ReloadTemplateImage();
+                OpenVisionNativeToolPropertySessionStore.Save("Matching", matching);
+                edgeBasedMatching.PATTERN_PATH = string.Empty;
+                edgeBasedMatching.ReloadTemplateImage();
+                OpenVisionNativeToolPropertySessionStore.Save("EdgeBasedMatching", edgeBasedMatching);
+                featureMatching.PATTERN_PATH = string.Empty;
+                featureMatching.ReloadTemplateImage();
+                OpenVisionNativeToolPropertySessionStore.Save("FeatureMatching", featureMatching);
+                Pump(8);
+                if (shellHost.NativePreviewRunCount != readinessResetRunsBefore
+                    || shellHost.IsActiveWpfToolWindowVisibleForTest
+                    || shellHost.IsNativeDocumentActive
+                    || shellHost.HasNativePreviewResult)
+                {
+                    throw new InvalidOperationException(
+                        "Matching-family readiness baseline reset must be display-only. "
+                        + $"Runs={readinessResetRunsBefore}->{shellHost.NativePreviewRunCount}, "
+                        + $"ToolVisible={shellHost.IsActiveWpfToolWindowVisibleForTest}, NativeActive={shellHost.IsNativeDocumentActive}, Preview={shellHost.HasNativePreviewResult}");
+                }
+
+                AssertToolRailReadiness(
+                    shellHost,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.ConfigureBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.ConfigureDescription"),
+                    VISION_MENU.Arithmetic,
+                    VISION_MENU.Line,
+                    VISION_MENU.Matching,
+                    VISION_MENU.EdgeBasedMatching,
+                    VISION_MENU.FeatureMatching);
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.Matching,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.TemplateMissingBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.TemplateMissingDescription"));
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.EdgeBasedMatching,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.TemplateMissingBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.TemplateMissingDescription"));
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.FeatureMatching,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.TemplateMissingBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.TemplateMissingDescription"));
+
+                int matchingFamilyRunsBefore = shellHost.NativePreviewRunCount;
+                edgeBasedMatching.PATTERN_PATH = imagePath;
+                edgeBasedMatching.ReloadTemplateImage();
+                OpenVisionNativeToolPropertySessionStore.Save("EdgeBasedMatching", edgeBasedMatching);
+                Pump(8);
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.EdgeBasedMatching,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.ConfigureBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.ConfigureDescription"));
+
+                edgeBasedMatching.PATTERN_PATH = string.Empty;
+                edgeBasedMatching.ReloadTemplateImage();
+                OpenVisionNativeToolPropertySessionStore.Save("EdgeBasedMatching", edgeBasedMatching);
+                Pump(8);
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.EdgeBasedMatching,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.TemplateMissingBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.TemplateMissingDescription"));
+
+                featureMatching.PATTERN_PATH = imagePath;
+                featureMatching.ReloadTemplateImage();
+                OpenVisionNativeToolPropertySessionStore.Save("FeatureMatching", featureMatching);
+                Pump(8);
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.FeatureMatching,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.ConfigureBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.ConfigureDescription"));
+
+                featureMatching.PATTERN_PATH = string.Empty;
+                featureMatching.ReloadTemplateImage();
+                OpenVisionNativeToolPropertySessionStore.Save("FeatureMatching", featureMatching);
+                Pump(8);
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.FeatureMatching,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.TemplateMissingBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.TemplateMissingDescription"));
+                if (shellHost.NativePreviewRunCount != matchingFamilyRunsBefore
+                    || shellHost.IsActiveWpfToolWindowVisibleForTest
+                    || shellHost.IsNativeDocumentActive
+                    || shellHost.HasNativePreviewResult)
+                {
+                    throw new InvalidOperationException(
+                        "EdgeBasedMatching/FeatureMatching readiness changes must be display-only. "
+                        + $"Runs={matchingFamilyRunsBefore}->{shellHost.NativePreviewRunCount}, "
+                        + $"ToolVisible={shellHost.IsActiveWpfToolWindowVisibleForTest}, NativeActive={shellHost.IsNativeDocumentActive}, Preview={shellHost.HasNativePreviewResult}");
+                }
+
+                shellHost.SelectToolForTest(VISION_MENU.Matching);
+                Pump(12);
+                shellHost.ConfigureActiveMatchingForTest(property => property.AUTO_PREVIEW = false);
+                int templateChangeRunsBefore = shellHost.NativePreviewRunCount;
+                shellHost.SetActiveMatchingTemplatePathForTest(imagePath);
+                Pump(8);
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.Matching,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.ConfigureBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.ConfigureDescription"));
+
+                shellHost.SetActiveMatchingTemplatePathForTest(string.Empty);
+                Pump(8);
+                AssertToolRailItemReadiness(
+                    shellHost,
+                    VISION_MENU.Matching,
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.TemplateMissingBadge"),
+                    OpenVisionLanguageService.T("Shell.ToolReadiness.TemplateMissingDescription"));
+                if (shellHost.NativePreviewRunCount != templateChangeRunsBefore
+                    || !shellHost.CloseActiveWpfToolWindowForTest())
+                {
+                    throw new InvalidOperationException(
+                        "Matching template readiness changes must not run Preview and the test tool must close cleanly. "
+                        + $"Runs={templateChangeRunsBefore}->{shellHost.NativePreviewRunCount}");
+                }
+                Pump(8);
+                if (!shellHost.LoadMainImageFromFileForTest(imagePath)
+                    || shellHost.NativePreviewRunCount != templateChangeRunsBefore)
+                {
+                    throw new InvalidOperationException(
+                        "Restoring the image-ready workspace after the Matching readiness check must not run Preview. "
+                        + $"Runs={templateChangeRunsBefore}->{shellHost.NativePreviewRunCount}");
+                }
+                Pump(8);
 
                 if (!shellHost.IsWorkspaceMainActionVisibleForTest
                     || !shellHost.WorkspaceMainActionTitleForTest.Contains(OpenVisionLanguageService.T("Shell.MainAction.ImageReadyTitle"), StringComparison.Ordinal)
@@ -1046,7 +2493,19 @@ internal static class Program
                 "WPF workspace sample workflow",
                 "WorkspaceSampleWorkflowOverlay",
                 "WorkspaceSamplePipelineButton",
-                "WorkspaceSampleFirstStepButton");
+                "WorkspaceSampleFirstStepButton",
+                "ShellStatusRecipe",
+                "ShellStatusLayer",
+                "ShellStatusTool");
+
+            AssertButtonTextContrast(shellHost, "WorkspaceSamplePipelineButton", "Workspace sample Pipeline button");
+            AssertButtonTextContrast(shellHost, "WorkspaceSampleFirstStepButton", "Workspace sample first-step button");
+            if (FindVisualChildren<TextBlock>(shellHost).Any(item =>
+                string.Equals(item.Text, "27.7%", StringComparison.Ordinal)
+                || string.Equals(item.Text, "C:", StringComparison.Ordinal)))
+            {
+                throw new InvalidOperationException("Workspace status bar still exposes generic drive-capacity UI.");
+            }
 
             if (!shellHost.CanOpenSamplePipelineForTest
                 || !shellHost.CanOpenSampleFirstStepToolForTest
@@ -1343,8 +2802,9 @@ internal static class Program
             AssertVisibleAutomationIds(
                 shellHost,
                 "WPF recipe context status",
-                "HostRecipeContext");
-            AssertVisibleTextContains(shellHost, "WPF recipe context scope hint", "범위:");
+                "HostRecipeSelector");
+            AssertHiddenAutomationIds(shellHost, "WPF recipe context chip", "HostRecipeContext");
+            AssertVisibleTextDoesNotContain(shellHost, "WPF recipe context scope hint", "범위:");
         }, captureFloatingToolWindow: false);
     }
 
@@ -1540,6 +3000,350 @@ internal static class Program
         return pipeline;
     }
 
+    private static VisionPipeline CreateRecipeFixturePropertyPipeline()
+    {
+        VisionPipeline pipeline = new() { Name = "Fixture_PropertyGrid" };
+        VisionPipelineStep matching = new()
+        {
+            Name = "01 Locate Fixture",
+            ToolType = "Matching",
+            InputLayer = "Main",
+            OutputLayer = "FixtureMatch"
+        };
+        matching.Parameters["Name"] = "FixtureMatch";
+        matching.Parameters["NUM_MATCH"] = "1";
+        matching.Parameters["USE_AS_FIXTURE_FRAME"] = "true";
+        matching.Parameters["FIXTURE_FRAME_NAME"] = "PartFrame";
+        matching.Parameters["FIXTURE_REFERENCE_X"] = "60";
+        matching.Parameters["FIXTURE_REFERENCE_Y"] = "70";
+        matching.Parameters["FIXTURE_REFERENCE_ANGLE"] = "0";
+        matching.Parameters["FIXTURE_MAX_ANGLE_DELTA"] = "2";
+        pipeline.Steps.Add(matching);
+
+        VisionPipelineStep blob = new()
+        {
+            Name = "02 Inspect Fixture ROI",
+            ToolType = "Blob",
+            InputLayer = "Main",
+            OutputLayer = "FixtureBlob"
+        };
+        blob.Parameters["Name"] = "FixtureBlob";
+        blob.Parameters["USE_ROI"] = "true";
+        blob.Parameters["CvROI"] = "170,80,50,50";
+        blob.Parameters["USE_FIXTURE_FRAME"] = "true";
+        blob.Parameters["FIXTURE_FRAME_NAME"] = "PartFrame";
+        blob.Parameters["ALLOW_BRANCH_INPUT"] = "true";
+        pipeline.Steps.Add(blob);
+        return pipeline;
+    }
+
+    private static CaptureResult CaptureShellHostRecipeFixtureProperties(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        CleanupTransientRecipeWorkspaces();
+
+        string recipeName = "Smoke_RecipeFixtureProperties_" + Guid.NewGuid().ToString("N");
+        VisionPipeline pipeline = CreateRecipeFixturePropertyPipeline();
+        AssertFixturePropertyMapperRoundTrip(pipeline);
+        VisionPipelineStorage.Save(recipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
+
+        OpenVisionShellHostView shellHost = CreateShellHost(recipeName, seedMainLayer: false);
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            ToggleButton recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager")
+                ?? throw new InvalidOperationException("Fixture PropertyGrid smoke could not find Recipe Manager.");
+            recipeManagerButton.IsChecked = true;
+            Pump(100);
+
+            TabItem pipelineTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline")
+                ?? throw new InvalidOperationException("Fixture PropertyGrid smoke could not find the Pipeline tab.");
+            pipelineTab.IsSelected = true;
+            Pump(40);
+            TabItem xmlStepsTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineXmlSteps")
+                ?? throw new InvalidOperationException("Fixture PropertyGrid smoke could not find the XML/steps tab.");
+            xmlStepsTab.IsSelected = true;
+            Pump(40);
+
+            IReadOnlyList<OpenVisionRecipePipelineStepPreview> steps = shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps;
+            if (steps.Count != 2)
+            {
+                throw new InvalidOperationException($"Fixture PropertyGrid smoke expected two steps but found {steps.Count}.");
+            }
+
+            int previewRunsBefore = shellHost.NativePreviewRunCount;
+            CaptureRecipeFixturePropertyStep(shellHost, steps[1], outputPath, "blob-fixture-property-grid.png");
+            CaptureRecipeFixturePropertyStep(shellHost, steps[0], outputPath, "matching-fixture-property-grid.png");
+            CaptureRecipeFixturePropertyStep(shellHost, steps[1], outputPath, "blob-fixture-property-grid.png");
+            if (shellHost.NativePreviewRunCount != previewRunsBefore)
+            {
+                throw new InvalidOperationException(
+                    "Loading Fixture PropertyGrid parameters triggered Preview/Run. "
+                    + $"RunsBefore={previewRunsBefore}, RunsAfter={shellHost.NativePreviewRunCount}");
+            }
+        }, captureFloatingToolWindow: false, captureScreen: true);
+    }
+
+    private static void CaptureRecipeFixturePropertyStep(
+        OpenVisionShellHostView shellHost,
+        OpenVisionRecipePipelineStepPreview step,
+        string outputPath,
+        string fileName)
+    {
+        shellHost.RecipeCommands.SelectedPipelinePreviewStep = step;
+        Pump(40);
+        if (!shellHost.RecipeCommands.LoadSelectedStepParametersCommand.CanExecute(null))
+        {
+            throw new InvalidOperationException("Fixture PropertyGrid parameter load command was disabled for " + step.DisplayText);
+        }
+
+        shellHost.RecipeCommands.LoadSelectedStepParametersCommand.Execute(null);
+        Pump(180);
+        FrameworkElement propertyGridHost = FindVisualChildren<FrameworkElement>(shellHost)
+            .FirstOrDefault(item => item.IsVisible && string.Equals(
+                System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                "HostRecipeSelectedStepPropertyGridHost",
+                StringComparison.Ordinal))
+            ?? throw new InvalidOperationException("Fixture PropertyGrid host was not visible for " + step.DisplayText);
+        propertyGridHost.BringIntoView();
+        propertyGridHost.UpdateLayout();
+        Pump(80);
+
+        System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid = FindVisualChildren<System.Windows.Controls.WpfPropertyGrid.PropertyGrid>(propertyGridHost)
+            .FirstOrDefault(item => item.IsVisible && item.SelectedObject != null)
+            ?? throw new InvalidOperationException("Fixture PropertyGrid did not load for " + step.DisplayText);
+        TextBox searchTextBox = GetActivePropertyGridSearchTextBox(grid, "Fixture recipe step");
+        searchTextBox.Text = "Fixture";
+        searchTextBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+        grid.UpdateLayout();
+        Pump(40);
+        string[] requiredProperties = string.Equals(step.ToolType, "Matching", StringComparison.OrdinalIgnoreCase)
+            ? new[]
+            {
+                "USE_AS_FIXTURE_FRAME",
+                "FIXTURE_FRAME_NAME",
+                "FIXTURE_REFERENCE_X",
+                "FIXTURE_REFERENCE_Y",
+                "FIXTURE_REFERENCE_ANGLE",
+                "FIXTURE_MAX_ANGLE_DELTA"
+            }
+            : new[] { "USE_FIXTURE_FRAME", "FIXTURE_FRAME_NAME", "ALLOW_BRANCH_INPUT" };
+        PropertyDescriptorCollection descriptors = TypeDescriptor.GetProperties(grid.SelectedObject);
+        string[] missingProperties = requiredProperties
+            .Where(propertyName => descriptors.Find(propertyName, true) == null)
+            .ToArray();
+        if (missingProperties.Length > 0 || grid.IsSearchEmptyMessageVisibleForTest)
+        {
+            throw new InvalidOperationException(
+                "Fixture PropertyGrid did not expose the expected parameters for " + step.DisplayText + ". "
+                + "Missing=" + string.Join(",", missingProperties)
+                + ", EmptySearch=" + grid.IsSearchEmptyMessageVisibleForTest);
+        }
+
+        searchTextBox.Clear();
+        searchTextBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+        grid.UpdateLayout();
+        Pump(40);
+
+        foreach (string propertyName in requiredProperties)
+        {
+            OpenVisionLab.PropertyGrid.IPropertyGridProperty? gridProperty = grid.Properties[propertyName];
+            if (gridProperty == null || !gridProperty.IsBrowsable)
+            {
+                throw new InvalidOperationException(
+                    "Fixture PropertyGrid property was not browsable for "
+                    + step.DisplayText
+                    + ". Property="
+                    + propertyName
+                    + ", Found="
+                    + (gridProperty != null).ToString(CultureInfo.InvariantCulture)
+                    + ", Browsable="
+                    + (gridProperty?.IsBrowsable ?? false).ToString(CultureInfo.InvariantCulture));
+            }
+
+            BringPropertyGridPropertyIntoView(grid, propertyName, step.DisplayText, 0D);
+        }
+
+        double captureAdvance = string.Equals(step.ToolType, "Matching", StringComparison.OrdinalIgnoreCase) ? 160D : 120D;
+        BringPropertyGridPropertyIntoView(grid, requiredProperties[0], step.DisplayText, captureAdvance);
+        SaveCurrentWindowPng(shellHost, outputPath, fileName);
+    }
+
+    private static void BringPropertyGridPropertyIntoView(
+        System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid,
+        string propertyName,
+        string stepName,
+        double additionalOffset)
+    {
+        ScrollViewer scrollViewer = FindPrimaryPropertyGridScrollViewer(grid)
+            ?? throw new InvalidOperationException("Fixture PropertyGrid scroll viewer was not available for " + stepName);
+        double step = Math.Max(40D, scrollViewer.ViewportHeight * 0.45D);
+        double maximum = Math.Max(0D, scrollViewer.ScrollableHeight);
+        for (double offset = 0D; offset <= maximum + 1D; offset += step)
+        {
+            scrollViewer.ScrollToVerticalOffset(Math.Min(offset, maximum));
+            grid.UpdateLayout();
+            Pump(12);
+            FrameworkElement? propertyElement = FindVisualChildren<FrameworkElement>(grid)
+                .FirstOrDefault(item => item.IsVisible && string.Equals(
+                    ResolvePropertyGridPropertyName(item.DataContext),
+                    propertyName,
+                    StringComparison.OrdinalIgnoreCase));
+            if (propertyElement == null)
+            {
+                continue;
+            }
+
+            propertyElement.BringIntoView();
+            grid.UpdateLayout();
+            Pump(20);
+            scrollViewer.ScrollToVerticalOffset(Math.Min(scrollViewer.VerticalOffset + Math.Max(0D, additionalOffset), maximum));
+            grid.UpdateLayout();
+            Pump(20);
+            return;
+        }
+
+        throw new InvalidOperationException(
+            "Fixture PropertyGrid could not bring property '" + propertyName + "' into view for " + stepName + ".");
+    }
+
+    private static void AssertFixturePropertyMapperRoundTrip(VisionPipeline pipeline)
+    {
+        if (pipeline?.Steps == null || pipeline.Steps.Count != 2)
+        {
+            throw new InvalidOperationException("Fixture PropertyGrid round-trip requires the two-step fixture pipeline.");
+        }
+
+        VisionPipelineStep matching = ClonePipelineStep(pipeline.Steps[0]);
+        object matchingProperty = VisionPipelineStepPropertyMapper.CreateProperty(matching)
+            ?? throw new InvalidOperationException("Matching Fixture property object was not created.");
+        AssertPropertyValue(matchingProperty, "USE_AS_FIXTURE_FRAME", true);
+        AssertPropertyValue(matchingProperty, "FIXTURE_FRAME_NAME", "PartFrame");
+        AssertPropertyValue(matchingProperty, "FIXTURE_REFERENCE_X", 60D);
+        AssertPropertyValue(matchingProperty, "FIXTURE_REFERENCE_Y", 70D);
+        AssertPropertyValue(matchingProperty, "FIXTURE_REFERENCE_ANGLE", 0D);
+        AssertPropertyValue(matchingProperty, "FIXTURE_MAX_ANGLE_DELTA", 2D);
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(matching, matchingProperty))
+        {
+            throw new InvalidOperationException("Matching Fixture property object did not apply back to the pipeline step.");
+        }
+
+        AssertParameterValue(matching, "USE_AS_FIXTURE_FRAME", true);
+        AssertParameterValue(matching, "FIXTURE_FRAME_NAME", "PartFrame");
+        AssertParameterValue(matching, "FIXTURE_REFERENCE_X", 60D);
+        AssertParameterValue(matching, "FIXTURE_REFERENCE_Y", 70D);
+        AssertParameterValue(matching, "FIXTURE_REFERENCE_ANGLE", 0D);
+        AssertParameterValue(matching, "FIXTURE_MAX_ANGLE_DELTA", 2D);
+        AssertParameterValue(matching, "NUM_MATCH", 1D);
+
+        VisionPipelineStep blob = ClonePipelineStep(pipeline.Steps[1]);
+        object blobProperty = VisionPipelineStepPropertyMapper.CreateProperty(blob)
+            ?? throw new InvalidOperationException("Blob Fixture property object was not created.");
+        AssertPropertyValue(blobProperty, "USE_FIXTURE_FRAME", true);
+        AssertPropertyValue(blobProperty, "FIXTURE_FRAME_NAME", "PartFrame");
+        AssertPropertyValue(blobProperty, "ALLOW_BRANCH_INPUT", true);
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(blob, blobProperty))
+        {
+            throw new InvalidOperationException("Blob Fixture property object did not apply back to the pipeline step.");
+        }
+
+        AssertParameterValue(blob, "USE_FIXTURE_FRAME", true);
+        AssertParameterValue(blob, "FIXTURE_FRAME_NAME", "PartFrame");
+        AssertParameterValue(blob, "ALLOW_BRANCH_INPUT", true);
+        AssertParameterValue(blob, "CvROI", "170,80,50,50");
+        if (!string.Equals(blob.InputLayer, "Main", StringComparison.Ordinal)
+            || !string.Equals(blob.OutputLayer, "FixtureBlob", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Blob Fixture property round-trip changed layer routing. "
+                + $"Input={blob.InputLayer}, Output={blob.OutputLayer}");
+        }
+    }
+
+    private static VisionPipelineStep ClonePipelineStep(VisionPipelineStep source)
+    {
+        VisionPipelineStep clone = new()
+        {
+            Name = source.Name,
+            ToolType = source.ToolType,
+            Enabled = source.Enabled,
+            InputLayer = source.InputLayer,
+            OutputLayer = source.OutputLayer,
+            UseAcceptance = source.UseAcceptance,
+            ExpectedSuccess = source.ExpectedSuccess,
+            MaxElapsedMilliseconds = source.MaxElapsedMilliseconds,
+            RequiredMessageText = source.RequiredMessageText,
+            AcceptanceMetricName = source.AcceptanceMetricName,
+            UseAcceptanceMetricMinimum = source.UseAcceptanceMetricMinimum,
+            AcceptanceMetricMinimum = source.AcceptanceMetricMinimum,
+            UseAcceptanceMetricMaximum = source.UseAcceptanceMetricMaximum,
+            AcceptanceMetricMaximum = source.AcceptanceMetricMaximum
+        };
+        foreach ((string key, string value) in source.Parameters)
+        {
+            clone.Parameters[key] = value;
+        }
+
+        return clone;
+    }
+
+    private static void AssertPropertyValue(object target, string propertyName, object expected)
+    {
+        PropertyDescriptor descriptor = TypeDescriptor.GetProperties(target).Find(propertyName, true)
+            ?? throw new InvalidOperationException("Fixture property object is missing " + propertyName + ".");
+        AssertFixtureValue(propertyName, descriptor.GetValue(target), expected);
+    }
+
+    private static void AssertParameterValue(VisionPipelineStep step, string parameterName, object expected)
+    {
+        if (!step.Parameters.TryGetValue(parameterName, out string? actual))
+        {
+            throw new InvalidOperationException("Fixture round-trip step is missing parameter " + parameterName + ".");
+        }
+
+        AssertFixtureValue(parameterName, actual, expected);
+    }
+
+    private static void AssertFixtureValue(string name, object? actual, object expected)
+    {
+        bool matches = expected switch
+        {
+            bool expectedBool => bool.TryParse(Convert.ToString(actual, CultureInfo.InvariantCulture), out bool actualBool)
+                && actualBool == expectedBool,
+            double expectedDouble => double.TryParse(
+                    Convert.ToString(actual, CultureInfo.InvariantCulture),
+                    NumberStyles.Float,
+                    CultureInfo.InvariantCulture,
+                    out double actualDouble)
+                && Math.Abs(actualDouble - expectedDouble) < 0.0001D,
+            _ => string.Equals(
+                Convert.ToString(actual, CultureInfo.InvariantCulture),
+                Convert.ToString(expected, CultureInfo.InvariantCulture),
+                StringComparison.Ordinal)
+        };
+        if (!matches)
+        {
+            throw new InvalidOperationException(
+                "Fixture value mismatch for " + name + ". "
+                + $"Expected='{expected}', Actual='{actual}'");
+        }
+    }
+
+    private static void SaveCurrentWindowPng(FrameworkElement content, string outputPath, string fileName)
+    {
+        Window window = Window.GetWindow(content)
+            ?? throw new InvalidOperationException("Fixture PropertyGrid capture window was not available.");
+        window.Activate();
+        window.UpdateLayout();
+        Pump(80);
+        string parentDirectory = Path.GetDirectoryName(outputPath) ?? ".";
+        string outputName = Path.GetFileNameWithoutExtension(outputPath);
+        string diagnosticsDirectory = Path.Combine(parentDirectory, outputName + ".diagnostics");
+        Directory.CreateDirectory(diagnosticsDirectory);
+        string diagnosticPath = Path.Combine(diagnosticsDirectory, fileName);
+        WriteScreenPng(window, diagnosticPath);
+    }
+
     private static void SaveRecipeToolSettings<TSettings>(string recipeName, string toolName, TSettings settings)
         where TSettings : class
     {
@@ -1566,6 +3370,347 @@ internal static class Program
             }
 
             RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static CaptureResult CaptureShellHostRecipeReviewBundle(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        string recipeName = "Smoke_RecipeReviewBundle_" + Guid.NewGuid().ToString("N");
+        string pipelineName = "Matching_Review_Bundle";
+        string dependencyPath = Path.Combine(
+            Path.GetTempPath(),
+            "OpenVisionLab_review_dependency_" + Guid.NewGuid().ToString("N") + ".png");
+        string bundlePath = Path.Combine(
+            Path.GetTempPath(),
+            "OpenVisionLab_recipe_review_" + Guid.NewGuid().ToString("N") + ".review.zip");
+
+        using (Bitmap dependencyImage = CreateDockingPanelSmokeBitmap(41))
+        {
+            dependencyImage.Save(dependencyPath, ImageFormat.Png);
+        }
+
+        VisionPipeline pipeline = CreateRecipeContextSmokePipeline(pipelineName, 1);
+        VisionPipelineStep step = pipeline.Steps[0];
+        step.Name = "01 Match Review Target";
+        step.ToolType = "Matching";
+        step.Enabled = true;
+        step.Parameters["TemplatePath"] = dependencyPath;
+        step.Parameters["SCORE_MIN"] = "0.80";
+        step.Parameters["NUM_MATCH"] = "1";
+        step.UseAcceptance = true;
+        step.ExpectedSuccess = true;
+        step.AcceptanceMetricName = "ScoreMax";
+        step.UseAcceptanceMetricMinimum = true;
+        step.AcceptanceMetricMinimum = 0.80;
+        step.MaxElapsedMilliseconds = 500;
+        VisionPipelineStorage.Save(recipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipelineName);
+
+        OpenVisionShellHostView shellHost = CreateShellHost(recipeName, seedMainLayer: false);
+        try
+        {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                OpenVisionRecipeSampleOption? selectedSample = shellHost.RecipeCommands.SampleOptions
+                    .FirstOrDefault(option => option?.Sample?.CanOpen == true);
+                if (selectedSample != null)
+                {
+                    shellHost.RecipeCommands.SelectedSampleOption = selectedSample;
+                }
+
+                int previewRunsBefore = shellHost.NativePreviewRunCount;
+                int layerCountBefore = shellHost.LayerDocumentCount;
+                string workspaceLayerBefore = shellHost.WorkspaceLayerTitle;
+                string inputRouteBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string outputRouteBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                if (!shellHost.RecipeCommands.ExportRecipeReviewBundleCommand.CanExecute(null)
+                    || !shellHost.RecipeCommands.ExportActivePipelineReviewBundleToPath(bundlePath)
+                    || !File.Exists(bundlePath))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe review bundle export did not create the requested package. "
+                        + $"Path='{bundlePath}', Status='{shellHost.RecipeCommands.StatusText}'");
+                }
+
+                using (ZipArchive archive = ZipFile.OpenRead(bundlePath))
+                {
+                    if (archive.Entries.Count != 2)
+                    {
+                        throw new InvalidOperationException(
+                            "Recipe review bundle must contain only pipeline XML and manifest in the first slice. "
+                            + $"Entries='{string.Join(", ", archive.Entries.Select(entry => entry.FullName))}'");
+                    }
+
+                    ZipArchiveEntry? pipelineEntry = archive.GetEntry(OpenVisionRecipeReviewBundleExporter.PipelineEntryName);
+                    ZipArchiveEntry? manifestEntry = archive.GetEntry(OpenVisionRecipeReviewBundleExporter.ManifestEntryName);
+                    if (pipelineEntry == null || manifestEntry == null)
+                    {
+                        throw new InvalidOperationException("Recipe review bundle entries were missing.");
+                    }
+
+                    byte[] pipelineBytes;
+                    using (Stream entryStream = pipelineEntry.Open())
+                    using (MemoryStream buffer = new MemoryStream())
+                    {
+                        entryStream.CopyTo(buffer);
+                        pipelineBytes = buffer.ToArray();
+                    }
+
+                    using Stream manifestStream = manifestEntry.Open();
+                    using JsonDocument manifest = JsonDocument.Parse(manifestStream);
+                    JsonElement root = manifest.RootElement;
+                    JsonElement dependency = root.GetProperty("dependencies").EnumerateArray().Single();
+                    JsonElement packagePolicy = root.GetProperty("packagePolicy");
+                    string expectedPipelineHash = Convert.ToHexString(SHA256.HashData(pipelineBytes)).ToLowerInvariant();
+                    string expectedDependencyHash;
+                    using (FileStream dependencyStream = File.OpenRead(dependencyPath))
+                    using (SHA256 sha256 = SHA256.Create())
+                    {
+                        expectedDependencyHash = Convert.ToHexString(sha256.ComputeHash(dependencyStream)).ToLowerInvariant();
+                    }
+
+                    bool hasMatchingTool = root.GetProperty("toolTypes")
+                        .EnumerateArray()
+                        .Any(item => string.Equals(item.GetProperty("toolType").GetString(), "Matching", StringComparison.OrdinalIgnoreCase));
+                    bool hasScoreAcceptance = root.GetProperty("acceptanceMetrics")
+                        .EnumerateArray()
+                        .Any(item => string.Equals(item.GetProperty("metricName").GetString(), "ScoreMax", StringComparison.OrdinalIgnoreCase));
+                    if (!string.Equals(root.GetProperty("format").GetString(), "OpenVisionLab.RecipeReviewBundle", StringComparison.Ordinal)
+                        || root.GetProperty("schemaVersion").GetInt32() != 1
+                        || !string.Equals(root.GetProperty("recipeName").GetString(), recipeName, StringComparison.Ordinal)
+                        || !string.Equals(root.GetProperty("pipelineName").GetString(), pipelineName, StringComparison.Ordinal)
+                        || !string.Equals(root.GetProperty("validation").GetProperty("status").GetString(), "OK", StringComparison.Ordinal)
+                        || !string.Equals(root.GetProperty("pipelineXml").GetProperty("sha256").GetString(), expectedPipelineHash, StringComparison.Ordinal)
+                        || !hasMatchingTool
+                        || !hasScoreAcceptance
+                        || !dependency.GetProperty("exists").GetBoolean()
+                        || !string.Equals(dependency.GetProperty("pathKind").GetString(), "Absolute", StringComparison.Ordinal)
+                        || dependency.GetProperty("sizeBytes").GetInt64() != new FileInfo(dependencyPath).Length
+                        || !string.Equals(dependency.GetProperty("sha256").GetString(), expectedDependencyHash, StringComparison.Ordinal)
+                        || packagePolicy.GetProperty("referencedFilesCopied").GetBoolean()
+                        || packagePolicy.GetProperty("importExecuted").GetBoolean()
+                        || packagePolicy.GetProperty("previewOrRunExecuted").GetBoolean())
+                    {
+                        throw new InvalidOperationException("Recipe review manifest did not preserve validation, tool, metric, dependency, hash, and no-execution contracts.");
+                    }
+                }
+
+                if (shellHost.NativePreviewRunCount != previewRunsBefore
+                    || shellHost.LayerDocumentCount != layerCountBefore
+                    || !string.Equals(shellHost.WorkspaceLayerTitle, workspaceLayerBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBefore, StringComparison.Ordinal)
+                    || shellHost.IsActiveWpfToolWindowVisibleForTest
+                    || shellHost.IsNativeDocumentActive
+                    || shellHost.HasNativePreviewResult)
+                {
+                    throw new InvalidOperationException("Recipe review bundle export changed runtime, layer, workspace, or route state.");
+                }
+
+                ToggleButton? recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager");
+                if (recipeManagerButton == null)
+                {
+                    throw new InvalidOperationException("Recipe manager button was not found for review bundle evidence.");
+                }
+
+                recipeManagerButton.IsChecked = true;
+                Pump(80);
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "WPF recipe review bundle export",
+                    "HostRecipeManagerPanel",
+                    "HostRecipeManagerCommandStrip",
+                    "HostRecipeExportXmlButton",
+                    "HostRecipeExportReviewBundleButton");
+            }, captureFloatingToolWindow: false, captureScreen: true);
+        }
+        finally
+        {
+            File.Delete(bundlePath);
+            File.Delete(dependencyPath);
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static CaptureResult CaptureShellHostRecipeReviewBundleImport(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        string recipeName = "Smoke_RecipeReviewBundleImport_" + Guid.NewGuid().ToString("N");
+        string pipelineName = "Matching_Review_Import";
+        string temporaryRoot = Path.Combine(
+            Path.GetTempPath(),
+            "OpenVisionLab_review_import_" + Guid.NewGuid().ToString("N"));
+        string sourceDirectory = Path.Combine(temporaryRoot, "export-source");
+        string dependencyPath = Path.Combine(sourceDirectory, "review-template.png");
+        string relocatedDependencyPath = Path.Combine(temporaryRoot, Path.GetFileName(dependencyPath));
+        string bundlePath = Path.Combine(temporaryRoot, pipelineName + ".review.zip");
+        string tamperedBundlePath = Path.Combine(temporaryRoot, pipelineName + ".tampered.review.zip");
+        Directory.CreateDirectory(sourceDirectory);
+
+        using (Bitmap dependencyImage = CreateDockingPanelSmokeBitmap(53))
+        {
+            dependencyImage.Save(dependencyPath, ImageFormat.Png);
+        }
+
+        VisionPipeline pipeline = CreateRecipeContextSmokePipeline(pipelineName, 1);
+        VisionPipelineStep step = pipeline.Steps[0];
+        step.Name = "01 Review Bundle Match";
+        step.ToolType = "Matching";
+        step.Enabled = true;
+        step.InputLayer = "Main";
+        step.OutputLayer = "ReviewMatch";
+        step.Parameters["TemplatePath"] = dependencyPath;
+        step.Parameters["SCORE_MIN"] = "0.80";
+        step.Parameters["NUM_MATCH"] = "1";
+        step.UseAcceptance = true;
+        step.ExpectedSuccess = true;
+        step.AcceptanceMetricName = "ScoreMax";
+        step.UseAcceptanceMetricMinimum = true;
+        step.AcceptanceMetricMinimum = 0.80;
+        step.MaxElapsedMilliseconds = 500;
+        VisionPipelineStorage.Save(recipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipelineName);
+
+        OpenVisionShellHostView shellHost = CreateShellHost(recipeName, seedMainLayer: false);
+        try
+        {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                if (!shellHost.RecipeCommands.ExportActivePipelineReviewBundleToPath(bundlePath))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe review bundle setup export failed. Status='" + shellHost.RecipeCommands.StatusText + "'.");
+                }
+
+                CreateTamperedReviewBundle(bundlePath, tamperedBundlePath);
+                if (OpenVisionRecipeReviewBundleInspector.TryInspect(tamperedBundlePath, out OpenVisionRecipeReviewBundleInspection tamperedInspection)
+                    || !ContainsAny(tamperedInspection.IntegrityReport, "SHA-256", "무결성"))
+                {
+                    throw new InvalidOperationException(
+                        "Tampered recipe review bundle was not rejected by integrity validation. Report='"
+                        + tamperedInspection.IntegrityReport + "'.");
+                }
+
+                File.Move(dependencyPath, relocatedDependencyPath);
+                if (!OpenVisionRecipeReviewBundleInspector.TryInspect(bundlePath, out OpenVisionRecipeReviewBundleInspection inspection)
+                    || !inspection.PathReviews.Any(item =>
+                        item.IsDependency
+                        && item.State == OpenVisionRecipeReviewBundlePathState.RelocationCandidate
+                        && string.Equals(item.ReviewedPath, relocatedDependencyPath, StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe review bundle did not find the deterministic adjacent relocation candidate. Report='"
+                        + inspection.PathReport + "'.");
+                }
+
+                int previewRunsBefore = shellHost.NativePreviewRunCount;
+                int layerCountBefore = shellHost.LayerDocumentCount;
+                int pipelineCountBefore = shellHost.RecipeCommands.PipelineOptions.Count;
+                string activePipelineBefore = VisionPipelineStorage.LoadActivePipelineName(recipeName, string.Empty);
+                string workspaceLayerBefore = shellHost.WorkspaceLayerTitle;
+                string inputRouteBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string outputRouteBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                string templateDirectory = RecipeWorkspaceService.GetTemplateDirectory(recipeName);
+                int templateFileCountBefore = Directory.Exists(templateDirectory)
+                    ? Directory.GetFiles(templateDirectory, "*", SearchOption.AllDirectories).Length
+                    : 0;
+
+                if (!shellHost.RecipeCommands.ImportPipelineXmlFromPath(bundlePath))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe review bundle dry-run did not load into the existing review surface. Status='"
+                        + shellHost.RecipeCommands.StatusText + "'.");
+                }
+
+                Pump(80);
+                TabItem? llmXmlTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipeLlmXml");
+                OpenVisionRecipeDependencyReviewRow? relocationRow = shellHost.RecipeCommands.LlmXmlDraftDependencyRows
+                    .FirstOrDefault(item => ContainsAny(item.Status, "재배치", "Relocation"));
+                int templateFileCountAfter = Directory.Exists(templateDirectory)
+                    ? Directory.GetFiles(templateDirectory, "*", SearchOption.AllDirectories).Length
+                    : 0;
+                if (llmXmlTab?.IsSelected != true
+                    || relocationRow == null
+                    || !string.Equals(relocationRow.Path, relocatedDependencyPath, StringComparison.OrdinalIgnoreCase)
+                    || !shellHost.RecipeCommands.LlmXmlDraftText.Contains(pipelineName, StringComparison.Ordinal)
+                    || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftValidationReport, "검토 번들 dry-run: OK", "Review bundle dry-run: OK")
+                    || !ContainsAny(shellHost.RecipeCommands.LlmXmlDraftDependencyReport, "재배치 후보=1", "relocation candidate=1")
+                    || shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null)
+                    || !ContainsAny(shellHost.RecipeCommands.StatusText, "가져오기/Preview/Run은 실행하지 않았습니다", "Import, Preview, and Run were not executed"))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe review bundle dry-run did not expose integrity, relocation, and explicit next-action evidence. "
+                        + $"TabSelected={llmXmlTab?.IsSelected}, Row='{relocationRow?.Status}/{relocationRow?.Path}', "
+                        + $"Status='{shellHost.RecipeCommands.StatusText}', Validation='{shellHost.RecipeCommands.LlmXmlDraftValidationReport}', "
+                        + $"Dependencies='{shellHost.RecipeCommands.LlmXmlDraftDependencyReport}'.");
+                }
+
+                if (shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest()
+                    || shellHost.NativePreviewRunCount != previewRunsBefore
+                    || shellHost.LayerDocumentCount != layerCountBefore
+                    || shellHost.RecipeCommands.PipelineOptions.Count != pipelineCountBefore
+                    || !string.Equals(VisionPipelineStorage.LoadActivePipelineName(recipeName, string.Empty), activePipelineBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.WorkspaceLayerTitle, workspaceLayerBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBefore, StringComparison.Ordinal)
+                    || templateFileCountAfter != templateFileCountBefore
+                    || shellHost.IsActiveWpfToolWindowVisibleForTest
+                    || shellHost.IsNativeDocumentActive
+                    || shellHost.HasNativePreviewResult)
+                {
+                    throw new InvalidOperationException(
+                        "Recipe review bundle dry-run imported, copied, ran, or changed pipeline/layer/routing state. "
+                        + $"Runs={previewRunsBefore}->{shellHost.NativePreviewRunCount}, Layers={layerCountBefore}->{shellHost.LayerDocumentCount}, "
+                        + $"Pipelines={pipelineCountBefore}->{shellHost.RecipeCommands.PipelineOptions.Count}, "
+                        + $"Templates={templateFileCountBefore}->{templateFileCountAfter}.");
+                }
+
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "WPF recipe review bundle dry-run",
+                    "HostRecipeManagerPanel",
+                    "HostRecipeLlmXmlTab",
+                    "HostRecipeLlmXmlDraftPanel",
+                    "HostRecipeLlmDraftValidationReport",
+                    "HostRecipeLlmDependencyReport",
+                    "HostRecipeLlmDependencyPathList",
+                    "HostRecipeImportLlmXmlDraftButton");
+            }, captureFloatingToolWindow: false, captureScreen: true);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+            if (Directory.Exists(temporaryRoot))
+            {
+                Directory.Delete(temporaryRoot, recursive: true);
+            }
+        }
+    }
+
+    private static void CreateTamperedReviewBundle(string sourcePath, string targetPath)
+    {
+        Dictionary<string, byte[]> entries = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        using (ZipArchive source = ZipFile.OpenRead(sourcePath))
+        {
+            foreach (ZipArchiveEntry entry in source.Entries)
+            {
+                using Stream entryStream = entry.Open();
+                using MemoryStream buffer = new MemoryStream();
+                entryStream.CopyTo(buffer);
+                entries[entry.FullName] = buffer.ToArray();
+            }
+        }
+
+        byte[] pipelineBytes = entries[OpenVisionRecipeReviewBundleExporter.PipelineEntryName];
+        pipelineBytes[pipelineBytes.Length - 1] ^= 0x01;
+        using FileStream stream = new FileStream(targetPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None);
+        using ZipArchive target = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: false);
+        foreach (KeyValuePair<string, byte[]> entry in entries)
+        {
+            ZipArchiveEntry targetEntry = target.CreateEntry(entry.Key, CompressionLevel.Optimal);
+            using Stream targetStream = targetEntry.Open();
+            targetStream.Write(entry.Value, 0, entry.Value.Length);
         }
     }
 
@@ -2057,6 +4202,7 @@ internal static class Program
                 || !ContainsAny(
                     shellHost.RecipeCommands.LlmXmlDraftDependencyReport,
                     "Summary: detected=1, copied=1, missing=0",
+                    "요약: 감지=1, 복사=1, 누락/재배치=0",
                     "요약: 감지=1, 복사=1, 누락=0"))
             {
                 throw new InvalidOperationException(
@@ -2165,7 +4311,6 @@ internal static class Program
             AssertVisibleAutomationIds(
                 shellHost,
                 "WPF recipe/language controls",
-                "HostRecipeContext",
                 "HostRecipeSelector",
                 "HostRecipeManagerButton");
             ToggleButton? recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager");
@@ -2176,20 +4321,22 @@ internal static class Program
 
             recipeManagerButton.IsChecked = true;
             Pump(80);
+            ToggleButton initialAdvancedToggle = FindNamedVisualChild<ToggleButton>(shellHost, "recipeAdvancedReviewToggle")
+                ?? throw new InvalidOperationException("Recipe advanced review toggle was not found.");
+            initialAdvancedToggle.IsChecked = true;
+            Pump(40);
+            TabItem initialPipelineTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline")
+                ?? throw new InvalidOperationException("Recipe manager Pipeline tab was not found.");
+            initialPipelineTab.IsSelected = true;
+            Pump(80);
             AssertVisibleAutomationIds(
                 shellHost,
                 "WPF recipe manager pipeline tab",
                 "HostRecipeManagerPanel",
                 "HostRecipeManagerWorkbenchHeader",
                 "HostRecipeManagerWorkbenchGrid",
-                "HostRecipeManagerLibraryPane",
-                "HostRecipeFilterTextBox",
-                "HostRecipeManagerList",
                 "HostRecipeDetailPanel",
                 "HostRecipeDetailText",
-                "HostRecipePipelineHeaderStepFlow",
-                "HostRecipeGuidedSetupStrip",
-                "HostRecipeGuidedNextActionButton",
                 "HostRecipeDetailTabs",
                 "HostRecipePipelineTab",
                 "HostRecipePipelineManagerList",
@@ -2209,6 +4356,7 @@ internal static class Program
                 "HostRecipeOperatorDecisionSampleCard",
                 "HostRecipeOperatorDecisionPairCard",
                 "HostRecipeOperatorDecisionNextAction",
+                "HostRecipeOperatorDecisionEvidence",
                 "HostRecipeSampleMatrixPanel",
                 "HostRecipeSampleMatrixSummary",
                 "HostRecipeSampleMatrixList",
@@ -2227,17 +4375,28 @@ internal static class Program
                 "HostRecipeFailureLoadParametersButton",
                 "HostRecipeFailureRerunPairButton",
                 "HostRecipeManagerNameStrip",
+                "HostRecipeAdvancedTransferCommands",
+                "HostRecipeImportXmlButton",
+                "HostRecipeExportXmlButton",
+                "HostRecipeManagerTitleBar",
+                "HostRecipeManagerCloseButton");
+            AssertHiddenAutomationIds(
+                shellHost,
+                "WPF recipe manager separated advanced workspace",
+                "HostRecipeOverviewTab",
+                "HostRecipeManagerLibraryPane",
+                "HostRecipeFilterTextBox",
+                "HostRecipeManagerList",
+                "HostRecipePipelineHeaderStepFlow",
+                "HostRecipeGuidedSetupStrip",
+                "HostRecipeGuidedNextActionButton",
                 "HostRecipeManagerCommandStrip",
                 "HostRecipeNameEditor",
                 "HostRecipeEditValidation",
                 "HostRecipeCreateNamedButton",
                 "HostRecipeDuplicateButton",
                 "HostRecipeRenameButton",
-                "HostRecipeDeleteButton",
-                "HostRecipeImportXmlButton",
-                "HostRecipeExportXmlButton",
-                "HostRecipeManagerTitleBar",
-                "HostRecipeManagerCloseButton");
+                "HostRecipeDeleteButton");
             if (!shellHost.RecipeCommands.SampleMatrixRows.Any(row => row != null && !row.IsPlaceholder))
             {
                 throw new InvalidOperationException("Recipe sample matrix did not expose any runnable sample rows.");
@@ -2290,6 +4449,16 @@ internal static class Program
                 throw new InvalidOperationException(
                     "Recipe sample matrix selected review did not expose failed-step review text. "
                     + $"Text='{shellHost.RecipeCommands.SelectedSampleMatrixReviewText}'");
+            }
+
+            if (!ContainsAny(shellHost.RecipeCommands.OperatorDecisionEvidenceText, "Metric review")
+                || !ContainsAny(shellHost.RecipeCommands.OperatorDecisionEvidenceText, "expected")
+                || !ContainsAny(shellHost.RecipeCommands.OperatorDecisionEvidenceText, "actual")
+                || !ContainsAny(shellHost.RecipeCommands.OperatorDecisionEvidenceText, "evidence"))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager operator decision evidence did not expose metric and layer evidence. "
+                    + $"Text='{shellHost.RecipeCommands.OperatorDecisionEvidenceText}'");
             }
 
             if (!shellHost.RecipeCommands.RunCatalogBenchmarkCommand.CanExecute(null))
@@ -2412,6 +4581,7 @@ internal static class Program
                 || !ContainsAny(shellHost.RecipeCommands.OperatorHandoffReportText, "Judgement outputs", "판정 출력 정의")
                 || !ContainsAny(shellHost.RecipeCommands.OperatorHandoffReportText, "Inspection.Status")
                 || !ContainsAny(shellHost.RecipeCommands.OperatorHandoffReportText, "Good/Bad")
+                || !ContainsAny(shellHost.RecipeCommands.OperatorHandoffReportText, "Metric evidence")
                 || !ContainsAny(shellHost.RecipeCommands.OperatorHandoffReportText, "Next action", "다음 작업"))
             {
                 throw new InvalidOperationException(
@@ -2445,6 +4615,9 @@ internal static class Program
                 "HostRecipePipelineRunHistoryTab",
                 "HostRecipeRecentBatchRunList",
                 "HostRecipeRecentBatchRunSampleList",
+                "HostRecipeRecentBatchRunSampleFilterPanel",
+                "HostRecipeRecentBatchRunNgOnlyToggle",
+                "HostRecipeRecentBatchRunNgFilterSummary",
                 "HostRecipeRecentBatchRunComparisonPanel",
                 "HostRecipeBenchmarkBaselineRunSelector",
                 "HostRecipeBenchmarkBaselineRunCombo",
@@ -2467,6 +4640,38 @@ internal static class Program
                     "Recipe manager run history did not expose benchmark diff rows and review text. "
                     + $"Summary='{shellHost.RecipeCommands.RecentBatchRunComparisonSummaryText}', "
                     + $"Review='{shellHost.RecipeCommands.SelectedRecentBatchRunComparisonReviewText}'");
+            }
+
+            OpenVisionRecipeBatchRunComparisonRow? noBaselineRow = shellHost.RecipeCommands.RecentBatchRunComparisonRows
+                .FirstOrDefault(row => string.Equals(row?.StateText, "NO BASELINE", StringComparison.OrdinalIgnoreCase));
+            if (noBaselineRow != null
+                && !ContainsAny(noBaselineRow.ReviewText, "same validation suite", "\uB3D9\uC77C\uD55C \uAC80\uC99D \uC138\uD2B8"))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager no-baseline guidance did not explain the next validation-suite action. "
+                    + $"Review='{noBaselineRow.ReviewText}'");
+            }
+
+            IReadOnlyList<OpenVisionRecipeBatchSampleResultOption> allRunSamples =
+                shellHost.RecipeCommands.SelectedRecentBatchRunOption?.SampleResults
+                ?? Array.Empty<OpenVisionRecipeBatchSampleResultOption>();
+            if (allRunSamples.Any(result => result != null && !result.Success))
+            {
+                shellHost.RecipeCommands.ShowRecentBatchNgOnly = true;
+                Pump(40);
+                IReadOnlyList<OpenVisionRecipeBatchSampleResultOption> filteredRunSamples =
+                    shellHost.RecipeCommands.FilteredRecentBatchRunSampleResults;
+                if (filteredRunSamples == null
+                    || filteredRunSamples.Count == 0
+                    || filteredRunSamples.Any(result => result == null || result.Success)
+                    || !ContainsAny(shellHost.RecipeCommands.RecentBatchRunNgFilterSummaryText, "NG")
+                    || shellHost.RecipeCommands.SelectedRecentBatchSampleResultOption?.Success == true)
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager run history NG filter did not narrow to failed samples. "
+                        + $"Summary='{shellHost.RecipeCommands.RecentBatchRunNgFilterSummaryText}', "
+                        + $"Rows='{string.Join(" | ", filteredRunSamples?.Select(result => result?.DisplayText ?? "-") ?? Array.Empty<string>())}'");
+                }
             }
 
             SaveVisibleAutomationElementPng(
@@ -2606,6 +4811,8 @@ internal static class Program
                 "HostRecipeLlmGoalText",
                 "HostRecipeLlmDetectionPointsText",
                 "HostRecipeLlmResultChannelContract",
+                "HostRecipeGuidedSetupSummary",
+                "HostRecipeGuidedSetupReadiness",
                 "HostRecipeBuildLlmPromptButton",
                 "HostRecipeCopyLlmPromptButton",
                 "HostRecipeCreateLlmTemplateXmlButton",
@@ -2707,7 +4914,8 @@ internal static class Program
                     + $"After={recipeManagerOffsetAfter.X:0.0},{recipeManagerOffsetAfter.Y:0.0}");
             }
 
-            AssertVisibleTextContains(shellHost, "WPF recipe/language scope hint", "범위:");
+            AssertHiddenAutomationIds(shellHost, "WPF recipe/language context chip", "HostRecipeContext");
+            AssertVisibleTextDoesNotContain(shellHost, "WPF recipe/language scope hint", "범위:");
             xmlStepsTab.IsSelected = true;
             shellHost.RecipeCommands.SelectedPipelinePreviewStep = shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps[0];
             Pump(80);
@@ -2723,6 +4931,1459 @@ internal static class Program
                 Pump(80);
             }
         }, captureFloatingToolWindow: false, captureScreen: true);
+    }
+
+    private static CaptureResult CaptureShellHostRecipeLocalValidationSet(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        string recipeName = "Smoke_LocalValidationSet_" + Guid.NewGuid().ToString("N");
+        const string pipelineName = "Local_Set_Pipeline";
+        VisionPipelineSampleCatalogItem sample = VisionPipelineSampleCatalogItem.LoadRunnable()
+            .FirstOrDefault(item => item != null && item.CanOpen)
+            ?? throw new InvalidOperationException("No runnable image was available for local validation set smoke.");
+        VisionPipelineStorage.Save(recipeName, CreateRecipeContextSmokePipeline(pipelineName, 1));
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipelineName);
+        File.WriteAllText(
+            RecipeWorkspaceService.GetVisionConfigPath(recipeName, "Arithmetic_ToolState_Probe"),
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?><ArithmeticToolSettings />");
+        File.WriteAllText(
+            RecipeWorkspaceService.GetVisionConfigPath(recipeName, "Malformed_Pipeline_Probe"),
+            "<VisionPipeline");
+
+        string setImageDirectory = RecipeWorkspaceService.GetVisionPipelineSampleSetDirectory(
+            recipeName,
+            pipelineName,
+            "Local_Set_Evidence");
+        string ngImagePath = Path.Combine(setImageDirectory, "expected-ng" + Path.GetExtension(sample.ImageFullPath));
+        string repairedNgImagePath = Path.Combine(setImageDirectory, "expected-ng-repaired" + Path.GetExtension(sample.ImageFullPath));
+        File.Copy(sample.ImageFullPath, ngImagePath, overwrite: true);
+        string folderBatchDirectory = Path.Combine(setImageDirectory, "folder-batch");
+        string nestedFolderBatchDirectory = Path.Combine(folderBatchDirectory, "nested");
+        Directory.CreateDirectory(nestedFolderBatchDirectory);
+        string folderImageA = Path.Combine(folderBatchDirectory, "01-folder-ok" + Path.GetExtension(sample.ImageFullPath));
+        string folderImageB = Path.Combine(folderBatchDirectory, "02-folder-ok" + Path.GetExtension(sample.ImageFullPath));
+        string nestedFolderImage = Path.Combine(nestedFolderBatchDirectory, "nested-must-not-register" + Path.GetExtension(sample.ImageFullPath));
+        File.Copy(sample.ImageFullPath, folderImageA, overwrite: true);
+        File.Copy(sample.ImageFullPath, folderImageB, overwrite: true);
+        File.Copy(sample.ImageFullPath, nestedFolderImage, overwrite: true);
+        File.WriteAllText(Path.Combine(folderBatchDirectory, "unsupported.txt"), "not an image");
+
+        OpenVisionShellHostView shellHost = CreateShellHost(recipeName, seedMainLayer: false);
+        try
+        {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                string[] listedPipelineNames = RecipeWorkspaceService.GetVisionPipelineNames(recipeName);
+                string[] visiblePipelineNames = shellHost.RecipeCommands.PipelineOptions
+                    .Select(option => option.PipelineName)
+                    .ToArray();
+                if (!listedPipelineNames.SequenceEqual(new[] { pipelineName }, StringComparer.OrdinalIgnoreCase)
+                    || !visiblePipelineNames.SequenceEqual(new[] { pipelineName }, StringComparer.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe pipeline inventory included tool-state or malformed XML. "
+                        + $"Storage=[{string.Join(", ", listedPipelineNames)}], UI=[{string.Join(", ", visiblePipelineNames)}]");
+                }
+
+                int previewRunsBefore = shellHost.NativePreviewRunCount;
+                int layerCountBefore = shellHost.LayerDocumentCount;
+                string workspaceLayerBefore = shellHost.WorkspaceLayerTitle;
+                string inputRouteBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string outputRouteBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+
+                OpenVisionRecipeValidationSuiteScopeOption localScope = shellHost.RecipeCommands.ValidationSuiteScopeOptions
+                    .FirstOrDefault(option => string.Equals(
+                        option.Key,
+                        OpenVisionRecipeValidationSuiteScopeOption.LocalValidationSetKey,
+                        StringComparison.OrdinalIgnoreCase))
+                    ?? throw new InvalidOperationException("Local validation set scope was not available.");
+                shellHost.RecipeCommands.SelectedValidationSuiteScopeOption = localScope;
+                shellHost.RecipeCommands.NewValidationSetName = "Fixture OK-NG";
+                if (!shellHost.RecipeCommands.CreateValidationSetCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException("Create local validation set command was disabled.");
+                }
+
+                shellHost.RecipeCommands.CreateValidationSetCommand.Execute(null);
+                if (!shellHost.RecipeCommands.AddValidationSetImagesForTest(
+                        OpenVisionRecipeValidationSetImage.ExpectedOk,
+                        new[] { sample.ImageFullPath },
+                        "Known-good reference")
+                    || !shellHost.RecipeCommands.AddValidationSetImagesForTest(
+                        OpenVisionRecipeValidationSetImage.ExpectedNg,
+                        new[] { ngImagePath },
+                        "Expected rejection probe"))
+                {
+                    throw new InvalidOperationException("Local validation set image registration failed.");
+                }
+
+                if (!shellHost.RecipeCommands.AddValidationSetFolderForTest(
+                        OpenVisionRecipeValidationSetImage.ExpectedOk,
+                        folderBatchDirectory,
+                        "Folder batch OK")
+                    || shellHost.RecipeCommands.ValidationSetImageRows.Count != 4
+                    || shellHost.RecipeCommands.SelectedValidationSetOption?.OkCount != 3
+                    || shellHost.RecipeCommands.SelectedValidationSetOption?.NgCount != 1
+                    || shellHost.RecipeCommands.ValidationSetImageRows.Any(row =>
+                        string.Equals(row.Path, nestedFolderImage, StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException(
+                        "Top-level validation folder registration included unsupported/nested files or wrong roles. "
+                        + shellHost.RecipeCommands.ValidationSetSelectionSummaryText);
+                }
+
+                if (!shellHost.RecipeCommands.AddValidationSetFolderForTest(
+                        OpenVisionRecipeValidationSetImage.ExpectedNg,
+                        folderBatchDirectory,
+                        "Folder batch role update")
+                    || shellHost.RecipeCommands.ValidationSetImageRows.Count != 4
+                    || shellHost.RecipeCommands.SelectedValidationSetOption?.OkCount != 1
+                    || shellHost.RecipeCommands.SelectedValidationSetOption?.NgCount != 3
+                    || shellHost.RecipeCommands.ValidationSetImageRows.Count(row =>
+                        string.Equals(row.Notes, "Folder batch role update", StringComparison.Ordinal)) != 2
+                    || !shellHost.RecipeCommands.AddValidationSetFolderForTest(
+                        OpenVisionRecipeValidationSetImage.ExpectedOk,
+                        folderBatchDirectory,
+                        "Folder batch OK"))
+                {
+                    throw new InvalidOperationException("Validation folder role update duplicated rows or lost notes.");
+                }
+
+                if (!File.Exists(OpenVisionRecipeValidationSetStorage.GetPath(recipeName))
+                    || shellHost.RecipeCommands.ValidationSetImageRows.Count != 4
+                    || shellHost.RecipeCommands.SelectedValidationSetOption?.OkCount != 3
+                    || shellHost.RecipeCommands.SelectedValidationSetOption?.NgCount != 1
+                    || shellHost.RecipeCommands.PipelineOptions.Any(option =>
+                        string.Equals(option.PipelineName, "validation-sets", StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException(
+                        "Local validation set did not persist one OK and one NG image. "
+                        + shellHost.RecipeCommands.ValidationSetSelectionSummaryText);
+                }
+
+                File.Delete(ngImagePath);
+                shellHost.RecipeCommands.RefreshOptions();
+                OpenVisionRecipeValidationSetImageRow missingRow = shellHost.RecipeCommands.ValidationSetImageRows
+                    .Single(row => string.Equals(row.Path, ngImagePath, StringComparison.OrdinalIgnoreCase));
+                shellHost.RecipeCommands.SelectedValidationSetImageRow = missingRow;
+                if (shellHost.RecipeCommands.SelectedValidationSetOption?.MissingCount != 1
+                    || !shellHost.RecipeCommands.RepairValidationSetImagePathCommand.CanExecute(null)
+                    || shellHost.RecipeCommands.RunValidationSuiteCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException(
+                        "Missing local validation image did not block explicit suite run. "
+                        + shellHost.RecipeCommands.ValidationSetSelectionSummaryText);
+                }
+
+                if (shellHost.RecipeCommands.RepairValidationSetImagePathForTest(sample.ImageFullPath)
+                    || !string.Equals(missingRow.Path, ngImagePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("Validation path repair accepted an image already registered in the set.");
+                }
+
+                File.Copy(sample.ImageFullPath, repairedNgImagePath, overwrite: true);
+                if (!shellHost.RecipeCommands.RepairValidationSetImagePathForTest(repairedNgImagePath))
+                {
+                    throw new InvalidOperationException(
+                        "Explicit validation path repair failed. "
+                        + shellHost.RecipeCommands.ValidationSuiteStatusText);
+                }
+
+                OpenVisionRecipeValidationSetImageRow repairedRow = shellHost.RecipeCommands.ValidationSetImageRows
+                    .Single(row => string.Equals(row.Path, repairedNgImagePath, StringComparison.OrdinalIgnoreCase));
+                shellHost.RecipeCommands.SelectedValidationSetImageRow = repairedRow;
+                if (shellHost.RecipeCommands.SelectedValidationSetOption?.MissingCount != 0
+                    || !string.Equals(repairedRow.Expected, OpenVisionRecipeValidationSetImage.ExpectedNg, StringComparison.Ordinal)
+                    || !string.Equals(repairedRow.Notes, "Expected rejection probe", StringComparison.Ordinal)
+                    || shellHost.RecipeCommands.ValidationSetImageRows.Any(row =>
+                        string.Equals(row.Path, ngImagePath, StringComparison.OrdinalIgnoreCase))
+                    || shellHost.RecipeCommands.RepairValidationSetImagePathCommand.CanExecute(null)
+                    || !shellHost.RecipeCommands.RunValidationSuiteCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException(
+                        "Repaired local validation image did not preserve metadata or re-enable explicit suite run. "
+                        + shellHost.RecipeCommands.ValidationSetSelectionSummaryText);
+                }
+
+                if (shellHost.NativePreviewRunCount != previewRunsBefore
+                    || shellHost.LayerDocumentCount != layerCountBefore
+                    || !string.Equals(shellHost.WorkspaceLayerTitle, workspaceLayerBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBefore, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Local validation set registration changed Preview/Run, layers, workspace, or routing.");
+                }
+
+                shellHost.RecipeCommands.RunValidationSuiteCommand.Execute(null);
+                for (int attempt = 0; attempt < 2000; attempt++)
+                {
+                    Pump(1);
+                    if (shellHost.RecipeCommands.RunValidationSuiteCommand.CanExecute(null)
+                        && shellHost.RecipeCommands.ValidationSuiteStatusText.Contains("saved", StringComparison.OrdinalIgnoreCase))
+                    {
+                        break;
+                    }
+                }
+
+                OpenVisionRecipeBatchRunOption? savedRun = shellHost.RecipeCommands.RecentBatchRunOptions.FirstOrDefault();
+                VisionPipelineBatchRunSummary? savedSummary = string.IsNullOrWhiteSpace(savedRun?.SummaryPath)
+                    ? null
+                    : VisionPipelineBatchRunSummaryStorage.Load(savedRun.SummaryPath);
+                if (savedSummary == null
+                    || !string.Equals(savedSummary.SuiteName, "Fixture OK-NG", StringComparison.Ordinal)
+                    || !string.Equals(savedSummary.SuiteKind, "LocalValidationSet", StringComparison.Ordinal)
+                    || savedSummary.Results.Count != 4
+                    || savedSummary.Results.Count(result => result.Success) != 3
+                    || savedSummary.Results.Count(result => !result.Success) != 1
+                    || !savedSummary.Results.Any(result => result.ExpectedText.Contains("Expected NG", StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException(
+                        "Local validation set did not reuse saved history with expected OK/NG judgments. Status='"
+                        + shellHost.RecipeCommands.ValidationSuiteStatusText
+                        + "'.");
+                }
+
+                VisionPipelineBatchRunSummaryStorage.BatchRunStatistics savedStatistics =
+                    savedRun?.Statistics ?? new VisionPipelineBatchRunSummaryStorage.BatchRunStatistics();
+                string analyticsText = shellHost.RecipeCommands.RecentBatchRunComparisonSummaryText ?? string.Empty;
+                if (savedStatistics.ResultCount != 4
+                    || savedStatistics.TimingCount != 4
+                    || savedStatistics.FailureCount != 1
+                    || Math.Abs(savedStatistics.FailureRatePercent - 25D) > 0.001D
+                    || savedStatistics.P95Milliseconds > savedStatistics.MaximumMilliseconds
+                    || !analyticsText.Contains("p95", StringComparison.OrdinalIgnoreCase)
+                    || !analyticsText.Contains("ms", StringComparison.OrdinalIgnoreCase)
+                    || !analyticsText.Contains("%", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Run History did not expose persisted batch performance analytics. "
+                        + $"Results={savedStatistics.ResultCount}, Timings={savedStatistics.TimingCount}, "
+                        + $"Failures={savedStatistics.FailureCount}, FailureRate={savedStatistics.FailureRatePercent:0.0}, "
+                        + $"P95={savedStatistics.P95Milliseconds:0.0}, Max={savedStatistics.MaximumMilliseconds:0.0}, "
+                        + $"Text='{analyticsText}'");
+                }
+
+                VisionPipelineBatchRunSummaryStorage.BatchStepTimingAnalysis savedStepTiming =
+                    savedRun?.StepTimingAnalysis ?? new VisionPipelineBatchRunSummaryStorage.BatchStepTimingAnalysis();
+                VisionPipelineBatchRunSummaryStorage.BatchStepTimingStatistics? savedStep =
+                    savedStepTiming.Steps.SingleOrDefault();
+                if (!savedStepTiming.IsAvailable
+                    || savedStepTiming.SampleCount != 4
+                    || savedStepTiming.ReportCount != 4
+                    || savedStep == null
+                    || savedStep.TimingCount != 4
+                    || savedStep.AverageMilliseconds <= 0D
+                    || savedStep.P95Milliseconds > savedStep.MaximumMilliseconds
+                    || !(savedRun?.StepTimingStatusText ?? string.Empty).Contains("4/4", StringComparison.Ordinal)
+                    || !(savedRun?.StepTimingStatusText ?? string.Empty).Contains("p95", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Run History did not expose complete linked-report Step timing. "
+                        + $"Availability={savedStepTiming.Availability}, Samples={savedStepTiming.SampleCount}, "
+                        + $"Reports={savedStepTiming.ReportCount}, Steps={savedStepTiming.Steps.Count}, "
+                        + $"Timings={savedStep?.TimingCount ?? 0}, Status='{savedRun?.StepTimingStatusText}'");
+                }
+
+                VisionPipelineBatchRunSummaryStorage.BatchRunStatistics defensiveStatistics =
+                    VisionPipelineBatchRunSummaryStorage.CalculateStatistics(new[]
+                    {
+                        new VisionPipelineBatchSampleRunResult { Success = true, TotalMilliseconds = 4D },
+                        new VisionPipelineBatchSampleRunResult { Success = false, TotalMilliseconds = 0D },
+                        new VisionPipelineBatchSampleRunResult { Success = false, TotalMilliseconds = -1D },
+                        new VisionPipelineBatchSampleRunResult { Success = true, TotalMilliseconds = double.NaN },
+                        new VisionPipelineBatchSampleRunResult { Success = true, TotalMilliseconds = double.PositiveInfinity }
+                    });
+                if (defensiveStatistics.ResultCount != 5
+                    || defensiveStatistics.TimingCount != 1
+                    || defensiveStatistics.FailureCount != 2
+                    || Math.Abs(defensiveStatistics.FailureRatePercent - 40D) > 0.001D
+                    || Math.Abs(defensiveStatistics.AverageMilliseconds - 4D) > 0.001D)
+                {
+                    throw new InvalidOperationException(
+                        "Batch analytics did not separate invalid timing rows from correctness outcomes. "
+                        + $"Results={defensiveStatistics.ResultCount}, Timings={defensiveStatistics.TimingCount}, "
+                        + $"Failures={defensiveStatistics.FailureCount}, FailureRate={defensiveStatistics.FailureRatePercent:0.0}, "
+                        + $"Average={defensiveStatistics.AverageMilliseconds:0.0}");
+                }
+
+                VisionPipelineBatchRunSummaryStorage.BatchStepTimingAnalysis unavailableStepTiming =
+                    VisionPipelineBatchRunSummaryStorage.CalculateStepTimingAnalysis(
+                        new VisionPipelineBatchRunSummary
+                        {
+                            RecipeName = recipeName,
+                            PipelineName = pipelineName,
+                            Results = new List<VisionPipelineBatchSampleRunResult>
+                            {
+                                new VisionPipelineBatchSampleRunResult { SampleName = "missing-report" }
+                            }
+                        });
+                if (unavailableStepTiming.IsAvailable
+                    || unavailableStepTiming.Availability
+                        != VisionPipelineBatchRunSummaryStorage.StepTimingAvailability.MissingReportPath
+                    || unavailableStepTiming.Steps.Count != 0)
+                {
+                    throw new InvalidOperationException(
+                        "Step timing analysis did not reject incomplete linked-report coverage. "
+                        + unavailableStepTiming.Availability);
+                }
+
+                if (shellHost.NativePreviewRunCount != previewRunsBefore
+                    || shellHost.LayerDocumentCount != layerCountBefore
+                    || !string.Equals(shellHost.WorkspaceLayerTitle, workspaceLayerBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBefore, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Explicit local validation suite changed workspace Preview/Run, layers, or routing.");
+                }
+
+                File.Delete(repairedNgImagePath);
+                shellHost.RecipeCommands.RefreshOptions();
+                OpenVisionRecipeValidationSetImageRow captureMissingRow = shellHost.RecipeCommands.ValidationSetImageRows
+                    .Single(row => string.Equals(row.Path, repairedNgImagePath, StringComparison.OrdinalIgnoreCase));
+                shellHost.RecipeCommands.SelectedValidationSetImageRow = captureMissingRow;
+                if (!shellHost.RecipeCommands.RepairValidationSetImagePathCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException("Missing validation image repair action was not available for capture.");
+                }
+
+                ToggleButton recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager")
+                    ?? throw new InvalidOperationException("Recipe manager button was not found.");
+                recipeManagerButton.IsChecked = true;
+                Pump(80);
+
+                ToggleButton advancedToggle = FindNamedVisualChild<ToggleButton>(shellHost, "recipeAdvancedReviewToggle")
+                    ?? throw new InvalidOperationException("Recipe advanced review toggle was not found.");
+                advancedToggle.IsChecked = true;
+                Pump(80);
+
+                TabItem pipelineTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline")
+                    ?? throw new InvalidOperationException("Recipe pipeline tab was not found.");
+                pipelineTab.IsSelected = true;
+                Pump(80);
+                TabItem runHistoryTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineRunHistory")
+                    ?? throw new InvalidOperationException("Recipe run-history tab was not found.");
+                runHistoryTab.IsSelected = true;
+                Pump(100);
+
+                string expectedEvidence = shellHost.RecipeCommands.ValidationSetExpectedText;
+                string acceptanceEvidence = shellHost.RecipeCommands.ValidationSetAcceptanceText;
+                string calibrationEvidence = shellHost.RecipeCommands.ValidationSetCalibrationText;
+                string nextActionEvidence = shellHost.RecipeCommands.ValidationSetNextActionText;
+                if (!expectedEvidence.Contains("OK 3", StringComparison.OrdinalIgnoreCase)
+                    || !expectedEvidence.Contains("NG 1", StringComparison.OrdinalIgnoreCase)
+                    || (!expectedEvidence.Contains("Missing 1", StringComparison.OrdinalIgnoreCase)
+                        && !expectedEvidence.Contains("누락 1", StringComparison.OrdinalIgnoreCase))
+                    || (!acceptanceEvidence.Contains("No metric gate", StringComparison.OrdinalIgnoreCase)
+                        && !acceptanceEvidence.Contains("Metric 기준 없음", StringComparison.OrdinalIgnoreCase))
+                    || (!calibrationEvidence.Contains("Not required", StringComparison.OrdinalIgnoreCase)
+                        && !calibrationEvidence.Contains("해당 없음", StringComparison.OrdinalIgnoreCase))
+                    || (!nextActionEvidence.Contains("Repair missing", StringComparison.OrdinalIgnoreCase)
+                        && !nextActionEvidence.Contains("복구", StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException(
+                        "Local validation set evidence did not state the expected roles, gate, calibration applicability, and repair-first action. "
+                        + $"Expected='{expectedEvidence}', Gate='{acceptanceEvidence}', Calibration='{calibrationEvidence}', Next='{nextActionEvidence}'.");
+                }
+
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "WPF recipe local validation set",
+                    "HostRecipeValidationSuitePanel",
+                    "HostRecipeValidationSuiteScopeCombo",
+                    "HostRecipeRunValidationSuiteButton",
+                    "HostRecipeValidationSetEvidenceBoard",
+                    "HostRecipeValidationSetExpectedEvidence",
+                    "HostRecipeValidationSetAcceptanceEvidence",
+                    "HostRecipeValidationSetCalibrationEvidence",
+                    "HostRecipeValidationSetNextActionEvidence",
+                    "HostRecipeLocalValidationSetEditor",
+                    "HostRecipeValidationSetCombo",
+                    "HostRecipeNewValidationSetNameTextBox",
+                    "HostRecipeCreateValidationSetButton",
+                    "HostRecipeDeleteValidationSetButton",
+                    "HostRecipeValidationSetNotesTextBox",
+                    "HostRecipeAddValidationSetOkImagesButton",
+                    "HostRecipeAddValidationSetNgImagesButton",
+                    "HostRecipeAddValidationSetOkFolderButton",
+                    "HostRecipeAddValidationSetNgFolderButton",
+                    "HostRecipeRepairValidationSetImagePathButton",
+                    "HostRecipeRemoveValidationSetImageButton",
+                    "HostRecipeValidationSetImageList",
+                    "HostRecipeRecentBatchRunList",
+                    "HostRecipeRecentBatchStepTimingPanel",
+                    "HostRecipeRecentBatchStepTimingSummary",
+                    "HostRecipeRecentBatchStepTimingList");
+
+                FrameworkElement panel = FindVisualChildren<FrameworkElement>(shellHost)
+                    .FirstOrDefault(element => string.Equals(
+                        AutomationProperties.GetAutomationId(element),
+                        "HostRecipeValidationSuitePanel",
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("Local validation set panel was not found.");
+                FrameworkElement evidenceBoard = FindVisualChildren<FrameworkElement>(shellHost)
+                    .First(element => string.Equals(
+                        AutomationProperties.GetAutomationId(element),
+                        "HostRecipeValidationSetEvidenceBoard",
+                        StringComparison.Ordinal));
+                FrameworkElement editor = FindVisualChildren<FrameworkElement>(shellHost)
+                    .First(element => string.Equals(
+                        AutomationProperties.GetAutomationId(element),
+                        "HostRecipeLocalValidationSetEditor",
+                        StringComparison.Ordinal));
+                FrameworkElement imageList = FindVisualChildren<FrameworkElement>(shellHost)
+                    .First(element => string.Equals(
+                        AutomationProperties.GetAutomationId(element),
+                        "HostRecipeValidationSetImageList",
+                        StringComparison.Ordinal));
+                FrameworkElement summary = FindVisualChildren<FrameworkElement>(shellHost)
+                    .First(element => string.Equals(
+                        AutomationProperties.GetAutomationId(element),
+                        "HostRecipeValidationSuiteSummary",
+                        StringComparison.Ordinal));
+                Rect evidenceBounds = GetElementBounds(panel, evidenceBoard);
+                Rect editorBounds = GetElementBounds(panel, editor);
+                Rect listBounds = GetElementBounds(panel, imageList);
+                Rect summaryBounds = GetElementBounds(panel, summary);
+                if (evidenceBounds.Bottom > editorBounds.Top + 1D
+                    || editorBounds.Bottom > listBounds.Top + 1D
+                    || listBounds.Bottom > summaryBounds.Top + 1D)
+                {
+                    throw new InvalidOperationException(
+                        "Local validation set evidence, editor, image list, and summary overlap. "
+                        + $"Evidence={FormatRect(evidenceBounds)}, Editor={FormatRect(editorBounds)}, List={FormatRect(listBounds)}, Summary={FormatRect(summaryBounds)}");
+                }
+
+                evidenceBoard.BringIntoView();
+                shellHost.UpdateLayout();
+                Pump(100);
+            }, captureFloatingToolWindow: false, captureScreen: true);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static CaptureResult CaptureShellHostRecipeOperatorDecisionBoard(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        CleanupTransientRecipeWorkspaces();
+
+        string recipe = "Smoke_DecisionBoard_" + Guid.NewGuid().ToString("N");
+        VisionPipelineStorage.Save(recipe, CreateRecipeContextSmokePipeline("Decision_Board_Source", 1));
+        VisionPipelineStorage.SaveActivePipelineName(recipe, "Decision_Board_Source");
+
+        OpenVisionShellHostView shellHost = CreateShellHost(recipe, seedMainLayer: false);
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            ToggleButton? recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager");
+            if (recipeManagerButton == null)
+            {
+                throw new InvalidOperationException("Recipe manager button was not found.");
+            }
+
+            recipeManagerButton.IsChecked = true;
+            Pump(100);
+
+            ToggleButton advancedToggle = FindNamedVisualChild<ToggleButton>(shellHost, "recipeAdvancedReviewToggle")
+                ?? throw new InvalidOperationException("Recipe advanced review toggle was not found.");
+            advancedToggle.IsChecked = true;
+            Pump(80);
+
+            OpenVisionRecipeSampleOption? sampleOption = shellHost.RecipeCommands.SampleOptions.FirstOrDefault();
+            if (sampleOption == null)
+            {
+                throw new InvalidOperationException("Recipe manager did not expose a sample option for the decision board capture.");
+            }
+
+            shellHost.RecipeCommands.SelectedSampleOption = sampleOption;
+            if (!shellHost.RecipeCommands.DuplicateFromSampleCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Duplicate-from-sample command was disabled for the decision board capture.");
+            }
+
+            shellHost.RecipeCommands.DuplicateFromSampleCommand.Execute(null);
+            Pump(120);
+
+            TabItem? pipelineTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline");
+            if (pipelineTab == null)
+            {
+                throw new InvalidOperationException("Recipe manager Pipeline tab was not found.");
+            }
+
+            pipelineTab.IsSelected = true;
+            Pump(80);
+            TabItem? reviewTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineReview");
+            TabItem? reportTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineReport");
+            if (reviewTab == null || reportTab == null)
+            {
+                throw new InvalidOperationException("Recipe manager pipeline decision tabs were not found.");
+            }
+
+            reviewTab.IsSelected = true;
+            Pump(80);
+
+            List<OpenVisionRecipeSampleMatrixRow> matrixRows = shellHost.RecipeCommands.SampleMatrixRows
+                .Where(row => row != null && !row.IsPlaceholder)
+                .ToList();
+            if (matrixRows.Count == 0)
+            {
+                throw new InvalidOperationException("Recipe sample matrix did not expose rows for the decision board capture.");
+            }
+
+            OpenVisionRecipePipelineStepPreview? failedStep =
+                shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps.Skip(1).FirstOrDefault()
+                ?? shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps.FirstOrDefault();
+            string failedStepText = failedStep?.DisplayText ?? "02 Match [NG]";
+
+            List<OpenVisionRecipePairSampleRunSummary> injectedResults = new List<OpenVisionRecipePairSampleRunSummary>
+            {
+                OpenVisionRecipePairSampleRunSummary.CreateForTest(
+                    matrixRows[0].Role,
+                    matrixRows[0].SampleName,
+                    matrixRows.Count > 1 ? "OK" : "NG",
+                    matrixRows.Count > 1,
+                    "DistanceMmAvg=0.24 DistanceMmRange=0.01",
+                    string.Empty,
+                    matrixRows.Count > 1 ? string.Empty : failedStepText)
+            };
+            if (matrixRows.Count > 1)
+            {
+                injectedResults.Add(OpenVisionRecipePairSampleRunSummary.CreateForTest(
+                    matrixRows[1].Role,
+                    matrixRows[1].SampleName,
+                    "NG",
+                    false,
+                    "DistanceMmAvg=0.31 DistanceMmRange=0.09",
+                    "Injected operator-board NG evidence",
+                    failedStepText));
+            }
+
+            shellHost.RecipeCommands.SetPairRunSummaryForTest(injectedResults);
+            if (failedStep != null)
+            {
+                shellHost.RecipeCommands.SelectedPipelinePreviewStep = failedStep;
+            }
+            reportTab.IsSelected = true;
+            Pump(120);
+
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe operator decision board",
+                "HostRecipePipelineReportTab",
+                "HostRecipeOperatorDecisionSummaryBand",
+                "HostRecipeOperatorDecisionSummaryStatus",
+                "HostRecipeOperatorDecisionSummaryMetric",
+                "HostRecipeOperatorDecisionSummaryNextAction",
+                "HostRecipeOperatorValidationChecklistPanel",
+                "HostRecipeOperatorResultChannelsPanel");
+
+            if (!ContainsAny(shellHost.RecipeCommands.OperatorDecisionEvidenceText, "Metric review")
+                || !ContainsAny(shellHost.RecipeCommands.OperatorDecisionEvidenceText, "expected")
+                || !ContainsAny(shellHost.RecipeCommands.OperatorDecisionEvidenceText, "actual")
+                || !ContainsAny(shellHost.RecipeCommands.OperatorDecisionEvidenceText, "evidence"))
+            {
+                throw new InvalidOperationException(
+                    "Operator decision board did not expose consolidated metric evidence. "
+                    + $"Text='{shellHost.RecipeCommands.OperatorDecisionEvidenceText}'");
+            }
+        }, captureFloatingToolWindow: false, captureScreen: true);
+    }
+
+    private static CaptureResult CaptureShellHostRecipeManagerSummary(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        CleanupTransientRecipeWorkspaces();
+
+        string recipe = "Smoke_RecipeSummary_" + Guid.NewGuid().ToString("N");
+        VisionPipelineStorage.Save(recipe, CreateRecipeContextSmokePipeline("Summary_Source", 2));
+        VisionPipelineStorage.SaveActivePipelineName(recipe, "Summary_Source");
+
+        OpenVisionShellHostView shellHost = CreateShellHost(recipe, seedMainLayer: true);
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            ToggleButton recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager")
+                ?? throw new InvalidOperationException("Recipe manager button was not found.");
+            int beforeRuns = shellHost.NativePreviewRunCount;
+            int beforeLayerCount = shellHost.LayerDocumentCount;
+            string beforeActiveLayer = shellHost.ActiveHostLayerTitle;
+            string beforeRecipeLayer = shellHost.ActiveRecipeContextLayerNameForTest;
+            string beforePipeline = shellHost.ActiveRecipeContextPipelineNameForTest;
+            recipeManagerButton.IsChecked = true;
+            Pump(100);
+
+            ToggleButton advancedToggle = FindNamedVisualChild<ToggleButton>(shellHost, "recipeAdvancedReviewToggle")
+                ?? throw new InvalidOperationException("Recipe manager advanced review toggle was not found.");
+            TabItem overviewTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipeOverview")
+                ?? throw new InvalidOperationException("Recipe manager summary tab was not found.");
+            TabItem guidedSetupTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipeGuidedSetup")
+                ?? throw new InvalidOperationException("Recipe manager Guided setup tab was not found.");
+            TabItem pipelineTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline")
+                ?? throw new InvalidOperationException("Recipe manager Pipeline tab was not found.");
+            TabItem llmXmlTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipeLlmXml")
+                ?? throw new InvalidOperationException("Recipe manager LLM XML tab was not found.");
+            TabItem previewTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePreview")
+                ?? throw new InvalidOperationException("Recipe manager Preview tab was not found.");
+
+            if (!overviewTab.IsSelected
+                || advancedToggle.IsChecked == true
+                || guidedSetupTab.Visibility != Visibility.Collapsed
+                || pipelineTab.Visibility != Visibility.Collapsed
+                || llmXmlTab.Visibility != Visibility.Collapsed
+                || previewTab.Visibility != Visibility.Collapsed
+                || !shellHost.RecipeCommands.OpenPipelineReviewCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager did not open on the simplified summary state. "
+                    + $"SummarySelected={overviewTab.IsSelected}, Advanced={advancedToggle.IsChecked}, "
+                    + $"Guided={guidedSetupTab.Visibility}, Pipeline={pipelineTab.Visibility}, "
+                    + $"Llm={llmXmlTab.Visibility}, Preview={previewTab.Visibility}, "
+                    + $"OpenPipeline={shellHost.RecipeCommands.OpenPipelineReviewCommand.CanExecute(null)}");
+            }
+
+            string workSampleName = shellHost.RecipeCommands.SelectedSampleOption?.SampleName ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(workSampleName)
+                || !shellHost.RecipeCommands.RecipeOverviewSelectedSampleText.Contains("작업 샘플", StringComparison.Ordinal)
+                || !shellHost.RecipeCommands.RecipeOverviewSelectedSampleContextText.Contains("샘플 검사 실행 후", StringComparison.Ordinal)
+                || !shellHost.RecipeCommands.RecipeOverviewLastResultText.Contains("현재 레시피", StringComparison.Ordinal)
+                || shellHost.RecipeCommands.HasCurrentRecipeSampleExecution
+                || !shellHost.RecipeCommands.RecipeOverviewLastResultValueText.Contains("검사하지 않음", StringComparison.Ordinal)
+                || shellHost.RecipeCommands.RecipeOverviewLastResultValueText.Contains(workSampleName, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager summary presented a workspace sample as recipe validation evidence before an explicit sample run. "
+                    + $"Sample='{workSampleName}', Label='{shellHost.RecipeCommands.RecipeOverviewSelectedSampleText}', "
+                    + $"Context='{shellHost.RecipeCommands.RecipeOverviewSelectedSampleContextText}', "
+                    + $"LatestLabel='{shellHost.RecipeCommands.RecipeOverviewLastResultText}', "
+                    + $"Latest='{shellHost.RecipeCommands.RecipeOverviewLastResultValueText}', "
+                    + $"HasExecution={shellHost.RecipeCommands.HasCurrentRecipeSampleExecution}");
+            }
+
+            shellHost.RecipeCommands.OpenPipelineReviewCommand.Execute(null);
+            Pump(100);
+            if (recipeManagerButton.IsChecked == true
+                || !shellHost.IsActiveWpfToolWindowVisibleForTest
+                || shellHost.PipelineReviewStepCount != 2
+                || !string.Equals(shellHost.PipelineReviewRecipeContextNameForTest, recipe, StringComparison.Ordinal)
+                || !string.Equals(shellHost.PipelineReviewRecipeContextPipelineNameForTest, beforePipeline, StringComparison.Ordinal)
+                || shellHost.NativePreviewRunCount != beforeRuns
+                || shellHost.HasNativePreviewResult
+                || shellHost.RecipeCommands.HasCurrentRecipeSampleExecution
+                || shellHost.RecipeCommands.RecipeOverviewLastResultValueText.Contains(workSampleName, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Pipeline entry did not open the existing Pipeline Review without execution. "
+                    + $"ManagerOpen={recipeManagerButton.IsChecked}, ToolVisible={shellHost.IsActiveWpfToolWindowVisibleForTest}, "
+                    + $"Steps={shellHost.PipelineReviewStepCount}, Recipe='{shellHost.PipelineReviewRecipeContextNameForTest}', "
+                    + $"Pipeline='{shellHost.PipelineReviewRecipeContextPipelineNameForTest}', RunsBefore={beforeRuns}, "
+                    + $"RunsAfter={shellHost.NativePreviewRunCount}, Preview={shellHost.HasNativePreviewResult}");
+            }
+
+            DependencyObject pipelineReviewRoot = GetActiveToolVisualRoot("Recipe manager Pipeline Review");
+            AssertVisibleAutomationIds(
+                pipelineReviewRoot,
+                "Recipe manager Pipeline Review header",
+                "PipelineReviewReturnToRecipeButton",
+                "PipelineReviewRecipeContext",
+                "PipelineReviewRunReviewButton");
+            AssertActiveToolTextsVisible("Recipe manager Pipeline Review context", recipe);
+
+            WaitForTaskWithPump(shellHost.RunPipelineReviewForTestAsync(), 30000, "Recipe manager explicit Pipeline Review execution");
+            Pump(100);
+            if (!shellHost.PipelineReviewResultSummaryText.Contains("OK", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Pipeline Review did not expose an OK result after explicit Run Review. "
+                    + $"Result='{shellHost.PipelineReviewResultSummaryText}', Detail='{shellHost.PipelineReviewResultDetailText}'");
+            }
+
+            if (!shellHost.DockActiveWpfToolWindowForTest())
+            {
+                throw new InvalidOperationException("Recipe manager Pipeline Review could not be docked before return.");
+            }
+
+            Pump(80);
+            if (!shellHost.IsDockedToolInspectorVisibleForTest)
+            {
+                throw new InvalidOperationException("Recipe manager Pipeline Review docked return precondition was not visible.");
+            }
+
+            ClickFloatingButtonByName("btnReturnToRecipe", "Pipeline Review return-to-recipe button");
+            Pump(100);
+            if (recipeManagerButton.IsChecked != true
+                || shellHost.IsActiveWpfToolWindowVisibleForTest
+                || !string.Equals(shellHost.SelectedRecipeNameForTest, recipe, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveRecipeContextNameForTest, recipe, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveRecipeContextPipelineNameForTest, beforePipeline, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveRecipeContextLayerNameForTest, beforeRecipeLayer, StringComparison.Ordinal)
+                || shellHost.LayerDocumentCount != beforeLayerCount
+                || !string.Equals(shellHost.ActiveHostLayerTitle, beforeActiveLayer, StringComparison.Ordinal)
+                || shellHost.NativePreviewRunCount != beforeRuns
+                || shellHost.HasNativePreviewResult)
+            {
+                throw new InvalidOperationException(
+                    "Pipeline Review did not return to the same recipe summary without native Preview, layer, or routing side effects. "
+                    + $"ManagerOpen={recipeManagerButton.IsChecked}, ToolVisible={shellHost.IsActiveWpfToolWindowVisibleForTest}, "
+                    + $"SelectedRecipe='{shellHost.SelectedRecipeNameForTest}', Context='{shellHost.ActiveRecipeContextNameForTest}', "
+                    + $"Pipeline='{shellHost.ActiveRecipeContextPipelineNameForTest}', RecipeLayer='{shellHost.ActiveRecipeContextLayerNameForTest}', "
+                    + $"Layers={shellHost.LayerDocumentCount}/{beforeLayerCount}, ActiveLayer='{shellHost.ActiveHostLayerTitle}/{beforeActiveLayer}', "
+                    + $"Runs={shellHost.NativePreviewRunCount}/{beforeRuns}, Preview={shellHost.HasNativePreviewResult}, "
+                    + $"SampleExecution={shellHost.RecipeCommands.HasCurrentRecipeSampleExecution}, "
+                    + $"SampleResult='{shellHost.RecipeCommands.RecipeOverviewLastResultValueText}'");
+            }
+
+            advancedToggle.IsChecked = true;
+            Pump(40);
+            if (!pipelineTab.IsSelected
+                || overviewTab.Visibility != Visibility.Collapsed
+                || guidedSetupTab.Visibility != Visibility.Visible
+                || pipelineTab.Visibility != Visibility.Visible
+                || llmXmlTab.Visibility != Visibility.Visible
+                || previewTab.Visibility != Visibility.Visible)
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager advanced review did not enter the separated Pipeline workspace. "
+                    + $"Overview={overviewTab.Visibility}, PipelineSelected={pipelineTab.IsSelected}, "
+                    + $"Guided={guidedSetupTab.Visibility}, Pipeline={pipelineTab.Visibility}, "
+                    + $"Llm={llmXmlTab.Visibility}, Preview={previewTab.Visibility}");
+            }
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager advanced transfer commands",
+                "HostRecipeAdvancedTransferCommands",
+                "HostRecipeImportXmlButton",
+                "HostRecipeExportXmlButton",
+                "HostRecipeExportReviewBundleButton");
+            AssertHiddenAutomationIds(
+                shellHost,
+                "WPF recipe manager separated advanced workspace",
+                "HostRecipeManagerLibraryPane",
+                "HostRecipeFilterTextBox",
+                "HostRecipeManagerList",
+                "HostRecipeManagerCommandStrip",
+                "HostRecipeNameEditor",
+                "HostRecipeCreateNamedButton",
+                "HostRecipeDuplicateButton",
+                "HostRecipeRenameButton",
+                "HostRecipeDeleteButton");
+
+            guidedSetupTab.IsSelected = true;
+            advancedToggle.IsChecked = false;
+            Pump(40);
+            if (!overviewTab.IsSelected
+                || guidedSetupTab.Visibility != Visibility.Collapsed
+                || shellHost.NativePreviewRunCount != beforeRuns
+                || shellHost.HasNativePreviewResult)
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager summary reset changed execution state or left advanced content visible. "
+                    + $"SummarySelected={overviewTab.IsSelected}, Guided={guidedSetupTab.Visibility}, "
+                    + $"RunsBefore={beforeRuns}, RunsAfter={shellHost.NativePreviewRunCount}, Preview={shellHost.HasNativePreviewResult}");
+            }
+
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager simplified summary",
+                "HostRecipeOverviewPanel",
+                "HostRecipeOverviewName",
+                "HostRecipeOverviewPipelineCard",
+                "HostRecipeOverviewValidationCard",
+                "HostRecipeOverviewSelectedSample",
+                "HostRecipeOverviewSampleContext",
+                "HostRecipeOverviewLastResult",
+                "HostRecipeOpenPipelineReviewButton",
+                "HostRecipeAdvancedReviewToggle",
+                "HostRecipeManagerLibraryPane",
+                "HostRecipeFilterTextBox",
+                "HostRecipeManagerList",
+                "HostRecipeManagerCommandStrip",
+                "HostRecipeNameEditor",
+                "HostRecipeCreateNamedButton");
+            AssertHiddenAutomationIds(
+                shellHost,
+                "WPF recipe manager summary lifecycle separation",
+                "HostRecipeAdvancedTransferCommands",
+                "HostRecipeImportXmlButton",
+                "HostRecipeExportXmlButton",
+                "HostRecipeExportReviewBundleButton");
+        }, captureFloatingToolWindow: false);
+    }
+
+    private static CaptureResult CaptureShellHostRecipeGuidedSetup(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        CleanupTransientRecipeWorkspaces();
+
+        string recipe = "Smoke_GuidedSetup_" + Guid.NewGuid().ToString("N");
+        VisionPipelineStorage.Save(recipe, CreateRecipeContextSmokePipeline("Guided_Setup_Source", 1));
+        VisionPipelineStorage.SaveActivePipelineName(recipe, "Guided_Setup_Source");
+
+        OpenVisionShellHostView shellHost = CreateShellHost(recipe, seedMainLayer: false);
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            ToggleButton? recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager");
+            if (recipeManagerButton == null)
+            {
+                throw new InvalidOperationException("Recipe manager button was not found.");
+            }
+
+            recipeManagerButton.IsChecked = true;
+            Pump(100);
+
+            TabItem? guidedSetupTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipeGuidedSetup");
+            if (guidedSetupTab == null)
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup tab was not found.");
+            }
+
+            guidedSetupTab.IsSelected = true;
+            shellHost.RecipeCommands.SelectedLlmToolTemplate = "Pin gap / edge distance (LineDistance)";
+            Pump(80);
+
+            if (!shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("READY", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup Pin gap inputs were not ready. "
+                    + shellHost.RecipeCommands.GuidedSetupIntentInputStatusText);
+            }
+
+            int beforeRuns = shellHost.NativePreviewRunCount;
+            shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.Execute(null);
+            Pump(120);
+            if (string.IsNullOrWhiteSpace(shellHost.RecipeCommands.LlmXmlDraftText)
+                || !shellHost.RecipeCommands.LlmXmlDraftText.Contains("VisionPipeline", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmXmlDraftText.Contains("DistanceMmRange", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.IsGuidedSetupDraftStale
+                || !shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null)
+                || shellHost.NativePreviewRunCount != beforeRuns)
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not create the Pin gap starter draft without Preview/Run.");
+            }
+
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager Guided setup Pin gap inputs",
+                "HostRecipeGuidedSetupPinGapInputs",
+                "HostRecipeGuidedSetupPinGapRoiText",
+                "HostRecipeGuidedSetupPinGapMinText",
+                "HostRecipeGuidedSetupPinGapMaxText",
+                "HostRecipeGuidedSetupPinGapRangeText",
+                "HostRecipeGuidedSetupPinGapScaleText",
+                "HostRecipeGuidedSetupPinGapCalibrationReview");
+
+            string calibratedDraft = shellHost.RecipeCommands.LlmXmlDraftText;
+            shellHost.RecipeCommands.PinGapIntentScaleText = string.Empty;
+            Pump(40);
+            if (!shellHost.RecipeCommands.IsGuidedSetupDraftStale
+                || !string.Equals(shellHost.RecipeCommands.LlmXmlDraftText, calibratedDraft, StringComparison.Ordinal)
+                || shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null)
+                || shellHost.NativePreviewRunCount != beforeRuns)
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup did not preserve and mark the prior draft stale after an input change. "
+                    + $"Stale={shellHost.RecipeCommands.IsGuidedSetupDraftStale}, "
+                    + $"Label='{shellHost.RecipeCommands.GuidedSetupDraftLabelText}', "
+                    + $"DraftEqual={string.Equals(shellHost.RecipeCommands.LlmXmlDraftText, calibratedDraft, StringComparison.Ordinal)}, "
+                    + $"ImportReady={shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null)}, "
+                    + $"RunsBefore={beforeRuns}, RunsAfter={shellHost.NativePreviewRunCount}.");
+            }
+
+            shellHost.RecipeCommands.PinGapIntentDistanceMinText = "60";
+            shellHost.RecipeCommands.PinGapIntentDistanceMaxText = "90";
+            shellHost.RecipeCommands.PinGapIntentRangeMaxText = "8";
+            Pump(40);
+            if (!shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("PX-ONLY", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.PinGapIntentCalibrationReviewText.Contains("PX-ONLY", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not expose ready px-only Pin gap inputs.");
+            }
+
+            shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.Execute(null);
+            Pump(100);
+            string pixelOnlyDraft = shellHost.RecipeCommands.LlmXmlDraftText;
+            if (!pixelOnlyDraft.Contains("<AcceptanceMetricName>DistancePxAvg</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                || !pixelOnlyDraft.Contains("<AcceptanceMetricName>DistancePxRange</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                || pixelOnlyDraft.Contains("<AcceptanceMetricName>DistanceMmAvg</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                || !pixelOnlyDraft.Contains("<Key>PIXELPERMM</Key>", StringComparison.OrdinalIgnoreCase)
+                || !pixelOnlyDraft.Contains("<Value>0</Value>", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.IsGuidedSetupDraftStale
+                || !shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest()
+                || shellHost.NativePreviewRunCount != beforeRuns)
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not create the px-only Pin gap starter draft without Preview/Run.");
+            }
+
+            shellHost.RecipeCommands.LlmXmlDraftText = pixelOnlyDraft
+                .Replace("DistancePxAvg", "DistanceMmAvg", StringComparison.Ordinal)
+                .Replace("DistancePxRange", "DistanceMmRange", StringComparison.Ordinal);
+            if (shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest()
+                || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("PIXELPERMM", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block mm acceptance gates with zero calibration.");
+            }
+
+            shellHost.RecipeCommands.LlmXmlDraftText = pixelOnlyDraft;
+
+            shellHost.RecipeCommands.PinGapIntentScaleText = "invalid";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("MISSING", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block an invalid Pin gap scale input.");
+            }
+
+            shellHost.RecipeCommands.PinGapIntentDistanceMinText = "0.40";
+            shellHost.RecipeCommands.PinGapIntentDistanceMaxText = "0.55";
+            shellHost.RecipeCommands.PinGapIntentRangeMaxText = "0.06";
+            shellHost.RecipeCommands.PinGapIntentScaleText = "0.006";
+            shellHost.RecipeCommands.SelectedLlmToolTemplate = "Threshold + Blob";
+            Pump(80);
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager Guided setup Blob inputs",
+                "HostRecipeGuidedSetupBlobInputs",
+                "HostRecipeGuidedSetupBlobRoiText",
+                "HostRecipeGuidedSetupBlobThresholdText",
+                "HostRecipeGuidedSetupBlobMinCountText",
+                "HostRecipeGuidedSetupBlobMaxCountText",
+                "HostRecipeGuidedSetupBlobMinAreaText",
+                "HostRecipeGuidedSetupBlobMaxAreaText");
+
+            shellHost.RecipeCommands.BlobCountIntentThresholdText = "999";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block an invalid Blob threshold.");
+            }
+
+            shellHost.RecipeCommands.BlobCountIntentThresholdText = "128";
+            Pump(40);
+            if (!shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not restore Blob readiness.");
+            }
+
+            shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.Execute(null);
+            Pump(100);
+            if (!shellHost.RecipeCommands.LlmXmlDraftText.Contains("<ToolType>Blob</ToolType>", StringComparison.OrdinalIgnoreCase)
+                || shellHost.NativePreviewRunCount != beforeRuns)
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not create the Blob starter draft without Preview/Run.");
+            }
+
+            shellHost.RecipeCommands.SelectedLlmToolTemplate = "Shape boundary (Contour)";
+            Pump(80);
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager Guided setup Contour inputs",
+                "HostRecipeGuidedSetupContourInputs",
+                "HostRecipeGuidedSetupContourRoiText",
+                "HostRecipeGuidedSetupContourThresholdText",
+                "HostRecipeGuidedSetupContourMinCountText",
+                "HostRecipeGuidedSetupContourMaxCountText",
+                "HostRecipeGuidedSetupContourMinAreaText",
+                "HostRecipeGuidedSetupContourMaxAreaText");
+
+            shellHost.RecipeCommands.ContourCountIntentMaxAreaText = "0";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("MISSING", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block an invalid Contour max area.");
+            }
+
+            shellHost.RecipeCommands.ContourCountIntentMaxAreaText = "9000";
+            Pump(40);
+            if (!shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not restore Contour readiness.");
+            }
+
+            shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.Execute(null);
+            Pump(100);
+            if (!shellHost.RecipeCommands.LlmXmlDraftText.Contains("<ToolType>Contour</ToolType>", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmXmlDraftText.Contains("<AcceptanceMetricName>AreaMax</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                || shellHost.NativePreviewRunCount != beforeRuns)
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not create the Contour starter draft without Preview/Run.");
+            }
+
+            shellHost.RecipeCommands.SelectedLlmToolTemplate = "Template Matching";
+            shellHost.RecipeCommands.LlmReferenceImagePath = string.Empty;
+            Pump(80);
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager Guided setup Matching inputs",
+                "HostRecipeGuidedSetupMatchingInputs",
+                "HostRecipeGuidedSetupMatchingTemplatePathText",
+                "HostRecipeGuidedSetupMatchingUseSampleButton",
+                "HostRecipeGuidedSetupMatchingSearchRoiText",
+                "HostRecipeGuidedSetupMatchingScoreMinText",
+                "HostRecipeGuidedSetupMatchingExpectedCountText");
+
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("MISSING", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block a missing Matching template path.");
+            }
+
+            string matchingTemplatePath = Path.GetFullPath(Path.Combine(
+                "docs",
+                "samples",
+                "public",
+                "templates",
+                "Matching_DiePad_Synthetic_Template.png"));
+            if (!File.Exists(matchingTemplatePath))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup Matching template was not found: " + matchingTemplatePath);
+            }
+
+            shellHost.RecipeCommands.LlmReferenceImagePath = matchingTemplatePath;
+            shellHost.RecipeCommands.MatchingIntentScoreMinText = "80";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block Matching SCORE_MIN outside 0..1.");
+            }
+
+            shellHost.RecipeCommands.MatchingIntentScoreMinText = "0.75";
+            shellHost.RecipeCommands.MatchingIntentExpectedCountText = "0";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block Matching expected count <= 0.");
+            }
+
+            shellHost.RecipeCommands.MatchingIntentExpectedCountText = "1";
+            shellHost.RecipeCommands.MatchingIntentSearchRoiText = "invalid-roi";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block an invalid Matching search ROI.");
+            }
+
+            shellHost.RecipeCommands.MatchingIntentSearchRoiText = "0,0,572,420";
+            Pump(40);
+            if (!shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("READY", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup did not restore Matching readiness. "
+                    + shellHost.RecipeCommands.GuidedSetupIntentInputStatusText);
+            }
+
+            shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.Execute(null);
+            Pump(100);
+            if (!shellHost.RecipeCommands.LlmXmlDraftText.Contains("<ToolType>Matching</ToolType>", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmXmlDraftText.Contains("<Key>PATTERN_PATH</Key>", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmXmlDraftText.Contains("<Key>CvROI</Key>", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmXmlDraftText.Contains("<Value>0.75</Value>", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmXmlDraftText.Contains("<AcceptanceMetricName>ResultCount</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                || shellHost.NativePreviewRunCount != beforeRuns)
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not create the Matching starter draft without Preview/Run.");
+            }
+
+            shellHost.RecipeCommands.SelectedLlmToolTemplate = OpenVisionGuidedSetupCatalog.FeatureMatchingTemplate;
+            shellHost.RecipeCommands.LlmReferenceImagePath = string.Empty;
+            Pump(80);
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager Guided setup Feature Matching inputs",
+                "HostRecipeGuidedSetupFeatureMatchingInputs",
+                "HostRecipeGuidedSetupFeatureMatchingTemplatePathText",
+                "HostRecipeGuidedSetupFeatureMatchingUseSampleButton",
+                "HostRecipeGuidedSetupFeatureMatchingScoreMinText",
+                "HostRecipeGuidedSetupFeatureMatchingRansacReprojThresholdText",
+                "HostRecipeGuidedSetupFeatureMatchingAcceptanceScoreMinText");
+
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("MISSING", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block a missing Feature Matching template path.");
+            }
+
+            string featureMatchingTemplatePath = Path.GetFullPath(Path.Combine(
+                "docs",
+                "samples",
+                "public",
+                "templates",
+                "Feature_Card_Synthetic_Template.png"));
+            if (!File.Exists(featureMatchingTemplatePath))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup Feature Matching template was not found: " + featureMatchingTemplatePath);
+            }
+
+            shellHost.RecipeCommands.LlmReferenceImagePath = featureMatchingTemplatePath;
+            shellHost.RecipeCommands.FeatureMatchingIntentScoreMinText = "1.1";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block Feature Matching Ratio min outside 0..1.");
+            }
+
+            shellHost.RecipeCommands.FeatureMatchingIntentScoreMinText = "0.85";
+            shellHost.RecipeCommands.FeatureMatchingIntentRansacReprojThresholdText = "0";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block Feature Matching RANSAC px <= 0.");
+            }
+
+            shellHost.RecipeCommands.FeatureMatchingIntentRansacReprojThresholdText = "4";
+            shellHost.RecipeCommands.FeatureMatchingIntentAcceptanceScoreMinText = "101";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block Feature Matching ScoreMax min outside 0..100.");
+            }
+
+            shellHost.RecipeCommands.FeatureMatchingIntentAcceptanceScoreMinText = "80";
+            Pump(40);
+            if (!shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("ScoreMax", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup did not restore Feature Matching readiness. "
+                    + shellHost.RecipeCommands.GuidedSetupIntentInputStatusText);
+            }
+
+            shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.Execute(null);
+            Pump(100);
+            string featureMatchingDraft = shellHost.RecipeCommands.LlmXmlDraftText;
+            if (!featureMatchingDraft.Contains("<ToolType>FeatureMatching</ToolType>", StringComparison.OrdinalIgnoreCase)
+                || !featureMatchingDraft.Contains("<Key>RANSAC_REPROJ_THRESHOLD</Key>", StringComparison.OrdinalIgnoreCase)
+                || !featureMatchingDraft.Contains("<Key>USE_ROI</Key>", StringComparison.OrdinalIgnoreCase)
+                || !featureMatchingDraft.Contains("<Value>false</Value>", StringComparison.OrdinalIgnoreCase)
+                || !featureMatchingDraft.Contains("<AcceptanceMetricName>ScoreMax</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                || !featureMatchingDraft.Contains("<AcceptanceMetricMinimum>80</AcceptanceMetricMinimum>", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("Feature Matching contract: OK", StringComparison.OrdinalIgnoreCase)
+                || shellHost.NativePreviewRunCount != beforeRuns)
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not create the Feature Matching ScoreMax-gated starter draft without Preview/Run.");
+            }
+
+            shellHost.RecipeCommands.LlmXmlDraftText = featureMatchingDraft.Replace(
+                "<AcceptanceMetricName>ScoreMax</AcceptanceMetricName>",
+                "<AcceptanceMetricName>ResultCount</AcceptanceMetricName>",
+                StringComparison.Ordinal);
+            if (shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest()
+                || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("ScoreMax", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not reject a Feature Matching draft that used ResultCount as the only acceptance metric.");
+            }
+
+            shellHost.RecipeCommands.LlmXmlDraftText = featureMatchingDraft;
+            if (!shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest())
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not restore the Feature Matching ScoreMax-gated draft validation.");
+            }
+
+            shellHost.RecipeCommands.SelectedLlmToolTemplate = OpenVisionGuidedSetupCatalog.EdgeBasedMatchingTemplate;
+            shellHost.RecipeCommands.LlmReferenceImagePath = string.Empty;
+            Pump(80);
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager Guided setup Edge Based Matching inputs",
+                "HostRecipeGuidedSetupEdgeBasedInputs",
+                "HostRecipeGuidedSetupEdgeBasedTemplatePathText",
+                "HostRecipeGuidedSetupEdgeBasedUseSampleButton",
+                "HostRecipeGuidedSetupEdgeBasedScoreMinText",
+                "HostRecipeGuidedSetupEdgeBasedSearchCountText",
+                "HostRecipeGuidedSetupEdgeBasedCannyLowText",
+                "HostRecipeGuidedSetupEdgeBasedCannyHighText",
+                "HostRecipeGuidedSetupEdgeBasedAcceptanceScoreMinText");
+
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("MISSING", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block a missing Edge Based Matching template path.");
+            }
+
+            string edgeBasedTemplatePath = Path.GetFullPath(Path.Combine(
+                "docs",
+                "samples",
+                "public",
+                "templates",
+                "Edge_Fiducial_Synthetic_Template.png"));
+            if (!File.Exists(edgeBasedTemplatePath))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup Edge Based Matching template was not found: " + edgeBasedTemplatePath);
+            }
+
+            shellHost.RecipeCommands.LlmReferenceImagePath = edgeBasedTemplatePath;
+            shellHost.RecipeCommands.EdgeBasedIntentScoreMinText = "1.1";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block Edge Based Matching min score outside 0..1.");
+            }
+
+            shellHost.RecipeCommands.EdgeBasedIntentScoreMinText = "0.70";
+            shellHost.RecipeCommands.EdgeBasedIntentSearchCountText = "0";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block Edge Based Matching search count <= 0.");
+            }
+
+            shellHost.RecipeCommands.EdgeBasedIntentSearchCountText = "1";
+            shellHost.RecipeCommands.EdgeBasedIntentCannyLowText = "100";
+            shellHost.RecipeCommands.EdgeBasedIntentCannyHighText = "90";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block Edge Based Matching Canny low > high.");
+            }
+
+            shellHost.RecipeCommands.EdgeBasedIntentCannyLowText = "30";
+            shellHost.RecipeCommands.EdgeBasedIntentCannyHighText = "90";
+            shellHost.RecipeCommands.EdgeBasedIntentAcceptanceScoreMinText = "101";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block Edge Based Matching ScoreMax min outside 0..100.");
+            }
+
+            shellHost.RecipeCommands.EdgeBasedIntentAcceptanceScoreMinText = "70";
+            Pump(40);
+            if (!shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("ScoreMax", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup did not restore Edge Based Matching readiness. "
+                    + shellHost.RecipeCommands.GuidedSetupIntentInputStatusText);
+            }
+
+            shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.Execute(null);
+            Pump(100);
+            string edgeBasedDraft = shellHost.RecipeCommands.LlmXmlDraftText;
+            if (!edgeBasedDraft.Contains("<ToolType>EdgeBasedMatching</ToolType>", StringComparison.OrdinalIgnoreCase)
+                || !edgeBasedDraft.Contains("<Key>SCORE_MIN</Key>", StringComparison.OrdinalIgnoreCase)
+                || !edgeBasedDraft.Contains("<Key>NUM_MATCH</Key>", StringComparison.OrdinalIgnoreCase)
+                || !edgeBasedDraft.Contains("<Key>CANNY_LOW</Key>", StringComparison.OrdinalIgnoreCase)
+                || !edgeBasedDraft.Contains("<Key>CANNY_HIGH</Key>", StringComparison.OrdinalIgnoreCase)
+                || !edgeBasedDraft.Contains("<Key>USE_ROI</Key>", StringComparison.OrdinalIgnoreCase)
+                || !edgeBasedDraft.Contains("<AcceptanceMetricName>ScoreMax</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                || !edgeBasedDraft.Contains("<AcceptanceMetricMinimum>70</AcceptanceMetricMinimum>", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("Edge Based Matching contract: OK", StringComparison.OrdinalIgnoreCase)
+                || shellHost.NativePreviewRunCount != beforeRuns)
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not create the Edge Based Matching ScoreMax-gated starter draft without Preview/Run.");
+            }
+
+            shellHost.RecipeCommands.LlmXmlDraftText = edgeBasedDraft.Replace(
+                "<AcceptanceMetricName>ScoreMax</AcceptanceMetricName>",
+                "<AcceptanceMetricName>ResultCount</AcceptanceMetricName>",
+                StringComparison.Ordinal);
+            if (shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest()
+                || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("ScoreMax", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not reject an Edge Based Matching draft that used ResultCount as the only acceptance metric.");
+            }
+
+            shellHost.RecipeCommands.LlmXmlDraftText = edgeBasedDraft;
+            if (!shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest())
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not restore the Edge Based Matching ScoreMax-gated draft validation.");
+            }
+
+            shellHost.RecipeCommands.SelectedLlmToolTemplate = "Mean Intensity";
+            Pump(80);
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager Guided setup Mean inputs",
+                "HostRecipeGuidedSetupMeanInputs",
+                "HostRecipeGuidedSetupMeanRoiText",
+                "HostRecipeGuidedSetupMeanTypeSelector",
+                "HostRecipeGuidedSetupMeanMinimumText",
+                "HostRecipeGuidedSetupMeanMaximumText");
+
+            if (!shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup Mean defaults were not ready. "
+                    + shellHost.RecipeCommands.GuidedSetupIntentInputStatusText);
+            }
+
+            shellHost.RecipeCommands.MeanIntentTypeText = "Median";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block an unsupported Mean type.");
+            }
+
+            shellHost.RecipeCommands.MeanIntentTypeText = "Mean";
+            shellHost.RecipeCommands.MeanIntentMinimumText = "300";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block Mean GV outside 0..255.");
+            }
+
+            shellHost.RecipeCommands.MeanIntentMinimumText = "230";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block Mean Min GV greater than Max GV.");
+            }
+
+            shellHost.RecipeCommands.MeanIntentMinimumText = "185";
+            shellHost.RecipeCommands.MeanIntentRoiText = "invalid-roi";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block an invalid optional Mean ROI.");
+            }
+
+            shellHost.RecipeCommands.MeanIntentRoiText = string.Empty;
+            Pump(40);
+            if (!shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("READY", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup did not restore Mean readiness. "
+                    + shellHost.RecipeCommands.GuidedSetupIntentInputStatusText);
+            }
+
+            shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.Execute(null);
+            Pump(100);
+            if (!shellHost.RecipeCommands.LlmXmlDraftText.Contains("<ToolType>Mean</ToolType>", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmXmlDraftText.Contains("<Key>MEAN_TYPES</Key>", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmXmlDraftText.Contains("<Key>USE_ROI</Key>", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.LlmXmlDraftText.Contains("<Key>CvROI</Key>", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmXmlDraftText.Contains("<AcceptanceMetricName>MeanValueAvg</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmXmlDraftText.Contains("<AcceptanceMetricMinimum>185</AcceptanceMetricMinimum>", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmXmlDraftText.Contains("<AcceptanceMetricMaximum>220</AcceptanceMetricMaximum>", StringComparison.OrdinalIgnoreCase)
+                || shellHost.NativePreviewRunCount != beforeRuns)
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not create the Mean starter draft without Preview/Run.");
+            }
+
+            string meanDraft = shellHost.RecipeCommands.LlmXmlDraftText;
+            shellHost.RecipeCommands.SelectedLlmToolTemplate = "Pin gap / edge distance (LineDistance)";
+            Pump(80);
+            if (!shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("MM-READY", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.PinGapIntentCalibrationReviewText.Contains("MM-READY", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.PinGapIntentCalibrationReviewText.Contains("px", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.IsGuidedSetupDraftStale
+                || !string.Equals(shellHost.RecipeCommands.LlmXmlDraftText, meanDraft, StringComparison.Ordinal)
+                || shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null)
+                || shellHost.NativePreviewRunCount != beforeRuns)
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup did not expose the calibrated mm-to-px review while preserving and invalidating the prior draft. "
+                    + $"Calibration='{shellHost.RecipeCommands.PinGapIntentCalibrationReviewText}', "
+                    + $"DraftLabel='{shellHost.RecipeCommands.GuidedSetupDraftLabelText}'.");
+            }
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            Pump(20);
+            if (!shellHost.RecipeCommands.LlmAssistantText.Contains("검사 만들기", StringComparison.Ordinal)
+                || !shellHost.RecipeCommands.GuidedSetupSummaryText.Contains("필요한 값을 입력", StringComparison.Ordinal)
+                || !shellHost.RecipeCommands.GuidedSetupReadinessText.Contains("필수 입력", StringComparison.Ordinal)
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("준비 완료", StringComparison.Ordinal)
+                || !shellHost.RecipeCommands.PinGapIntentCalibrationReviewText.Contains("평균값만으로 판정하지 말고", StringComparison.Ordinal)
+                || !shellHost.RecipeCommands.GuidedSetupDraftLabelText.Contains("설정이 변경되었습니다", StringComparison.Ordinal)
+                || shellHost.RecipeCommands.GuidedSetupReadinessText.Contains("Required inputs", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.PinGapIntentCalibrationReviewText.Contains("average-only measurement", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup Korean operator guidance was incomplete. "
+                    + $"Title='{shellHost.RecipeCommands.LlmAssistantText}', "
+                    + $"Summary='{shellHost.RecipeCommands.GuidedSetupSummaryText}', "
+                    + $"Readiness='{shellHost.RecipeCommands.GuidedSetupReadinessText}', "
+                    + $"InputStatus='{shellHost.RecipeCommands.GuidedSetupIntentInputStatusText}', "
+                    + $"Calibration='{shellHost.RecipeCommands.PinGapIntentCalibrationReviewText}'.");
+            }
+
+            shellHost.RecipeCommands.SelectedLlmToolTemplate = OpenVisionGuidedSetupCatalog.EdgeBasedMatchingTemplate;
+            shellHost.RecipeCommands.LlmReferenceImagePath = edgeBasedTemplatePath;
+            shellHost.RecipeCommands.EdgeBasedIntentScoreMinText = "0.70";
+            shellHost.RecipeCommands.EdgeBasedIntentSearchCountText = "1";
+            shellHost.RecipeCommands.EdgeBasedIntentCannyLowText = "30";
+            shellHost.RecipeCommands.EdgeBasedIntentCannyHighText = "90";
+            shellHost.RecipeCommands.EdgeBasedIntentAcceptanceScoreMinText = "70";
+            Pump(60);
+            if (!shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("ScoreMax", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup Edge Based Matching Korean view was not ready. "
+                    + shellHost.RecipeCommands.GuidedSetupIntentInputStatusText);
+            }
+
+            shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.Execute(null);
+            Pump(100);
+            if (!shellHost.RecipeCommands.LlmXmlDraftText.Contains("<ToolType>EdgeBasedMatching</ToolType>", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.IsGuidedSetupDraftStale
+                || shellHost.NativePreviewRunCount != beforeRuns)
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup final Edge Based Matching capture state was not generated without Preview/Run.");
+            }
+
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager Guided setup Edge Based Matching",
+                "HostRecipeGuidedSetupTab",
+                "HostRecipeGuidedSetupPanel",
+                "HostRecipeGuidedSetupIntentSelector",
+                "HostRecipeGuidedSetupReadiness",
+                "HostRecipeGuidedSetupCreateStarterButton",
+                "HostRecipeGuidedSetupEdgeBasedInputs",
+                "HostRecipeGuidedSetupEdgeBasedTemplatePathText",
+                "HostRecipeGuidedSetupEdgeBasedUseSampleButton",
+                "HostRecipeGuidedSetupEdgeBasedScoreMinText",
+                "HostRecipeGuidedSetupEdgeBasedSearchCountText",
+                "HostRecipeGuidedSetupEdgeBasedCannyLowText",
+                "HostRecipeGuidedSetupEdgeBasedCannyHighText",
+                "HostRecipeGuidedSetupEdgeBasedAcceptanceScoreMinText",
+                "HostRecipeGuidedSetupIntentInputStatus",
+                "HostRecipeGuidedSetupActionBoundary",
+                "HostRecipeGuidedSetupDraftText",
+                "HostRecipeGuidedSetupNextAction");
+
+            ScrollViewer? guidedSetupScroll = FindNamedVisualChild<ScrollViewer>(shellHost, "recipeGuidedSetupScrollViewer");
+            if (guidedSetupScroll == null)
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup scroll viewer was not found.");
+            }
+
+            guidedSetupScroll.ScrollToTop();
+            Pump(80);
+        });
     }
 
     private static CaptureResult CaptureShellHostRecipeMultiBranchComparison(string outputPath)
@@ -3238,6 +6899,17 @@ internal static class Program
                 "WPF workspace sample review metrics",
                 minStepCount: 2);
 
+            DependencyObject pipelineReviewRoot = GetActiveToolVisualRoot("WPF workspace sample Pipeline Review");
+            AssertVisibleAutomationIds(
+                pipelineReviewRoot,
+                "WPF workspace sample Pipeline Review header",
+                "PipelineReviewReturnToRecipeButton",
+                "PipelineReviewRecipeContext",
+                "PipelineReviewRunReviewButton");
+            AssertActiveToolTextsVisible(
+                "WPF workspace sample Pipeline Review recipe context",
+                shellHost.PipelineReviewRecipeContextNameForTest);
+
             WaitForTaskWithPump(shellHost.RunPipelineReviewForTestAsync(), 30000, "Workspace sample pipeline review metric execution");
             Pump(120);
             shellHost.SelectPipelineReviewStepForTest(activePipelineStepCount - 1, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
@@ -3262,6 +6934,650 @@ internal static class Program
                 throw new InvalidOperationException(
                     "WPF workspace sample Pipeline Review did not expose OK decision, primary result metric, run log, and output preview. "
                     + $"ReviewText='{reviewText}', OutputPreview={shellHost.HasPipelineReviewOutputPreview}");
+            }
+        }, captureFloatingToolWindow: true);
+    }
+
+    private static CaptureResult CaptureShellHostWorkspaceSampleFixtureReview(string outputPath)
+    {
+        const string sampleName = "Public_Fixture_Pad_Good";
+
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        VisionPipelineSampleCatalogItem sample = FindRunnableCatalogSample(sampleName);
+        AssertSampleSourceKind(sample, sampleName, VisionPipelineSampleCatalogSourceKind.Public);
+        VisionPipelineSampleCheckResult sampleCheck = VisionPipelineSampleCheckService.RunSampleCheckSafe(sample);
+        string[] expectedMetrics =
+        {
+            "MergeOverlayCount",
+            "FixtureOffsetX",
+            "FixtureOffsetY",
+            "FixtureEffectiveRoiX",
+            "FixtureEffectiveRoiY"
+        };
+        string? missingMetric = expectedMetrics.FirstOrDefault(metric =>
+            !sampleCheck.MetricText.Contains(metric, StringComparison.OrdinalIgnoreCase));
+        if (!sampleCheck.Success || !string.IsNullOrWhiteSpace(missingMetric))
+        {
+            throw new InvalidOperationException(
+                "Workspace Fixture sample baseline check failed. "
+                + $"Status={sampleCheck.Status}, Missing={missingMetric ?? "-"}, Metrics={sampleCheck.MetricText}");
+        }
+
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostWorkspaceFixtureReview", seedMainLayer: false);
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            (_, int activePipelineStepCount, _) = OpenWorkspaceSamplePipelineReviewForSmoke(
+                shellHost,
+                sampleName,
+                "WPF workspace Fixture sample review",
+                minStepCount: 3);
+
+            WaitForTaskWithPump(
+                shellHost.RunPipelineReviewForTestAsync(),
+                30000,
+                "Workspace Fixture sample Pipeline Review execution");
+            Pump(120);
+            shellHost.SelectPipelineReviewStepForTest(1, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
+            Pump(80);
+
+            string reviewText = string.Join(
+                " | ",
+                shellHost.PipelineReviewResultSummaryText,
+                shellHost.PipelineReviewResultDetailText,
+                shellHost.PipelineReviewRunLogText,
+                shellHost.PipelineReviewGuideResultDecisionText,
+                shellHost.PipelineReviewGuidePairMetricText);
+            Window reviewWindow = GetActiveFloatingToolWindow("Workspace Fixture sample Pipeline Review coherence");
+            AssertVisibleAutomationIds(
+                reviewWindow,
+                "Workspace Fixture selected-tool Learn entry",
+                "PipelineReviewOpenSelectedToolLearnButton",
+                "PipelineReviewEditSelectedStepButton");
+            int previewRunsBeforeLearn = shellHost.NativePreviewRunCount;
+            int layerCountBeforeLearn = shellHost.LayerDocumentCount;
+            string activeLayerBeforeLearn = shellHost.ActiveHostLayerTitle;
+            string routeInputBeforeLearn = shellHost.ActiveNativeRouteInputLayerNameForTest;
+            string routeOutputBeforeLearn = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+            string selectedStepBeforeLearn = shellHost.PipelineReviewSelectedStepName;
+            string parameterSummaryBeforeLearn = shellHost.PipelineReviewParameterSummaryText;
+            string resultSummaryBeforeLearn = shellHost.PipelineReviewResultSummaryText;
+            string executionStateBeforeLearn = shellHost.PipelineReviewExecutionState;
+
+            ClickVisibleButtonByAutomationId(
+                reviewWindow,
+                "PipelineReviewOpenSelectedToolLearnButton",
+                "Workspace Fixture selected Blob Learn entry");
+            Pump(24);
+            OpenVisionLearnWindow learnWindow = GetVisibleLearnWindow("Workspace Fixture selected Blob Learn entry");
+            if (learnWindow.SelectedTopicIndexForTest != (int)OpenVisionLearnTopicIndex.Blob)
+            {
+                throw new InvalidOperationException(
+                    "Pipeline Review selected-tool Learn entry opened the wrong topic. "
+                    + $"Expected={(int)OpenVisionLearnTopicIndex.Blob}, Actual={learnWindow.SelectedTopicIndexForTest}");
+            }
+
+            learnWindow.Close();
+            Pump(16);
+            reviewWindow.Activate();
+            Pump(12);
+            if (shellHost.NativePreviewRunCount != previewRunsBeforeLearn
+                || shellHost.LayerDocumentCount != layerCountBeforeLearn
+                || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBeforeLearn, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, routeInputBeforeLearn, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, routeOutputBeforeLearn, StringComparison.Ordinal)
+                || !string.Equals(shellHost.PipelineReviewSelectedStepName, selectedStepBeforeLearn, StringComparison.Ordinal)
+                || !string.Equals(shellHost.PipelineReviewParameterSummaryText, parameterSummaryBeforeLearn, StringComparison.Ordinal)
+                || !string.Equals(shellHost.PipelineReviewResultSummaryText, resultSummaryBeforeLearn, StringComparison.Ordinal)
+                || !string.Equals(shellHost.PipelineReviewExecutionState, executionStateBeforeLearn, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Pipeline Review selected-tool Learn entry changed review or workspace state. "
+                    + $"Runs={shellHost.NativePreviewRunCount}/{previewRunsBeforeLearn}, "
+                    + $"Layers={shellHost.LayerDocumentCount}/{layerCountBeforeLearn}, "
+                    + $"Active='{shellHost.ActiveHostLayerTitle}'/'{activeLayerBeforeLearn}', "
+                    + $"Route='{shellHost.ActiveNativeRouteInputLayerNameForTest}->{shellHost.ActiveNativeRouteOutputLayerNameForTest}'/"
+                    + $"'{routeInputBeforeLearn}->{routeOutputBeforeLearn}', "
+                    + $"Step='{shellHost.PipelineReviewSelectedStepName}'/'{selectedStepBeforeLearn}', "
+                    + $"Execution='{shellHost.PipelineReviewExecutionState}'/'{executionStateBeforeLearn}'");
+            }
+
+            shellHost.SelectPipelineReviewStepForTest(2, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
+            Pump(16);
+            Button unsupportedLearnButton = FindVisualChildren<Button>(reviewWindow)
+                .First(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "PipelineReviewOpenSelectedToolLearnButton",
+                    StringComparison.Ordinal));
+            if (unsupportedLearnButton.IsVisible)
+            {
+                throw new InvalidOperationException("Pipeline Review exposed a Learn entry for the unsupported OverlayMerge Step.");
+            }
+
+            shellHost.SelectPipelineReviewStepForTest(1, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
+            Pump(16);
+            AssertVisibleAutomationIds(
+                reviewWindow,
+                "Workspace Fixture restored Blob Learn entry",
+                "PipelineReviewOpenSelectedToolLearnButton");
+            if (shellHost.NativePreviewRunCount != previewRunsBeforeLearn
+                || shellHost.LayerDocumentCount != layerCountBeforeLearn
+                || !string.Equals(shellHost.PipelineReviewSelectedStepName, selectedStepBeforeLearn, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Pipeline Review contextual Learn availability check changed execution, layers, or final Step selection. "
+                    + $"Runs={shellHost.NativePreviewRunCount}/{previewRunsBeforeLearn}, "
+                    + $"Layers={shellHost.LayerDocumentCount}/{layerCountBeforeLearn}, "
+                    + $"Step='{shellHost.PipelineReviewSelectedStepName}'/'{selectedStepBeforeLearn}'");
+            }
+
+            string selectedToolText = ReadVisibleTextByAutomationId(reviewWindow, "PipelineReviewSelectedToolSummary");
+            string selectedRouteText = ReadVisibleTextByAutomationId(reviewWindow, "PipelineReviewSelectedRouteSummary");
+            string selectedResultText = ReadVisibleTextByAutomationId(reviewWindow, "PipelineReviewSelectedResultSummary");
+            if (!shellHost.PipelineReviewSelectedStepName.Contains("02  Inspect Fixture Pad", StringComparison.OrdinalIgnoreCase)
+                || shellHost.PipelineReviewSelectedStepName.Contains("02  02", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewGuideCurrentStepText.Contains("02 Inspect Fixture Pad", StringComparison.OrdinalIgnoreCase)
+                || shellHost.PipelineReviewGuideCurrentStepText.Contains("02 02", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewGuideCurrentStepText.Contains("Main -> FixturePadBlob", StringComparison.OrdinalIgnoreCase)
+                || !selectedToolText.Contains("Blob", StringComparison.OrdinalIgnoreCase)
+                || !selectedRouteText.Contains("Main", StringComparison.OrdinalIgnoreCase)
+                || !selectedRouteText.Contains("FixturePadBlob", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewFlowSummaryText.Contains("FixtureMatch", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewParameterSummaryText.Contains("CvROI: 320,180,60,50", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewParameterSummaryText.Contains("FIXTURE_FRAME_NAME: PartFrame", StringComparison.OrdinalIgnoreCase)
+                || !selectedResultText.Contains("OK", StringComparison.OrdinalIgnoreCase)
+                || !selectedResultText.Contains("ms", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewResultSummaryText.Contains("OK", StringComparison.OrdinalIgnoreCase)
+                || !reviewText.Contains("Fixture", StringComparison.OrdinalIgnoreCase)
+                || !reviewText.Contains("80", StringComparison.Ordinal)
+                || !reviewText.Contains("55", StringComparison.Ordinal)
+                || !reviewText.Contains("400", StringComparison.Ordinal)
+                || !reviewText.Contains("235", StringComparison.Ordinal)
+                || !shellHost.HasPipelineReviewInputPreview
+                || !shellHost.HasPipelineReviewOutputPreview
+                || shellHost.CanSelectFirstIssuePipelineReviewStepForTest
+                || activePipelineStepCount != 3)
+            {
+                throw new InvalidOperationException(
+                    "Workspace Fixture Pipeline Review did not expose the OK decision, corrected pose metrics, and output preview. "
+                    + $"Steps={activePipelineStepCount}, Selected='{shellHost.PipelineReviewSelectedStepName}', "
+                    + $"GuideStep='{shellHost.PipelineReviewGuideCurrentStepText}', "
+                    + $"Tool='{selectedToolText}', Route='{selectedRouteText}', Input={shellHost.HasPipelineReviewInputPreview}, "
+                    + $"Output={shellHost.HasPipelineReviewOutputPreview}, FirstIssue={shellHost.CanSelectFirstIssuePipelineReviewStepForTest}, "
+                    + $"Parameters='{shellHost.PipelineReviewParameterSummaryText}', Review='{reviewText}'");
+            }
+        }, captureFloatingToolWindow: true);
+    }
+
+    private static CaptureResult CaptureShellHostPipelineStepEditHandoff(string outputPath)
+    {
+        const string sampleName = "Public_Fixture_Pad_Good";
+
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        VisionPipelineSampleCatalogItem sample = FindRunnableCatalogSample(sampleName);
+        AssertSampleSourceKind(sample, sampleName, VisionPipelineSampleCatalogSourceKind.Public);
+
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostPipelineStepEditHandoff", seedMainLayer: false);
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            (string pipelineName, int stepCount, int previewRunsBefore) = OpenWorkspaceSamplePipelineReviewForSmoke(
+                shellHost,
+                sampleName,
+                "WPF Pipeline Review selected Step edit handoff",
+                minStepCount: 3);
+
+            shellHost.SelectPipelineReviewStepForTest(1, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
+            Pump(80);
+            Window reviewWindow = GetActiveFloatingToolWindow("Pipeline Review selected Step edit handoff");
+            string recipeName = shellHost.PipelineReviewRecipeContextNameForTest;
+            int layerCountBefore = shellHost.LayerDocumentCount;
+            string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+            string routeInputBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+            string routeOutputBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+
+            ClickVisibleButtonByAutomationId(
+                reviewWindow,
+                "PipelineReviewEditSelectedStepButton",
+                "Pipeline Review selected Step edit handoff");
+            Pump(160);
+
+            ToggleButton recipeManagerButton = FindNamedVisualChild<ToggleButton>(
+                shellHost,
+                "btnHostRecipeManager")
+                ?? throw new InvalidOperationException("Pipeline Review selected Step edit handoff manager was not found.");
+            ToggleButton advancedReviewToggle = FindNamedVisualChild<ToggleButton>(
+                shellHost,
+                "recipeAdvancedReviewToggle")
+                ?? throw new InvalidOperationException("Pipeline Review selected Step edit handoff advanced review toggle was not found.");
+            TabItem pipelineTab = FindNamedVisualChild<TabItem>(
+                shellHost,
+                "tabRecipePipeline")
+                ?? throw new InvalidOperationException("Pipeline Review selected Step edit handoff pipeline tab was not found.");
+            TabItem xmlStepsTab = FindNamedVisualChild<TabItem>(
+                shellHost,
+                "tabRecipePipelineXmlSteps")
+                ?? throw new InvalidOperationException("Pipeline Review selected Step edit handoff XML/Step tab was not found.");
+            ScrollViewer pipelineScrollViewer = FindNamedVisualChild<ScrollViewer>(
+                shellHost,
+                "recipePipelineTabScrollViewer")
+                ?? throw new InvalidOperationException("Pipeline Review selected Step edit handoff Pipeline scroll viewer was not found.");
+            Border propertyGridHost = FindNamedVisualChild<Border>(
+                shellHost,
+                "recipeStepPropertyGridHost")
+                ?? throw new InvalidOperationException("Pipeline Review selected Step edit handoff PropertyGrid host was not found.");
+            Rect propertyGridBounds = propertyGridHost
+                .TransformToAncestor(pipelineScrollViewer)
+                .TransformBounds(new Rect(new Size(propertyGridHost.ActualWidth, propertyGridHost.ActualHeight)));
+            bool isPropertyGridInViewport = propertyGridBounds.Height > 0D
+                && propertyGridBounds.Bottom > 0D
+                && propertyGridBounds.Top < pipelineScrollViewer.ActualHeight;
+            OpenVisionRecipePipelineStepPreview selectedStep = shellHost.RecipeCommands.SelectedPipelinePreviewStep;
+
+            if (recipeManagerButton.IsChecked != true
+                || shellHost.IsActiveWpfToolWindowVisibleForTest
+                || advancedReviewToggle.IsChecked != true
+                || !pipelineTab.IsSelected
+                || !xmlStepsTab.IsSelected
+                || pipelineScrollViewer.VerticalOffset <= 0D
+                || !isPropertyGridInViewport
+                || !string.Equals(shellHost.SelectedRecipeNameForTest, recipeName, StringComparison.Ordinal)
+                || !string.Equals(shellHost.RecipeCommands.SelectedPipelineOption?.PipelineName, pipelineName, StringComparison.Ordinal)
+                || selectedStep?.Index != 2
+                || !string.Equals(selectedStep.ToolType, "Blob", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.SelectedStepEditObject is not BlobProperty
+                || shellHost.NativePreviewRunCount != previewRunsBefore
+                || shellHost.HasNativePreviewResult
+                || shellHost.LayerDocumentCount != layerCountBefore
+                || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, routeInputBefore, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, routeOutputBefore, StringComparison.Ordinal)
+                || stepCount != 3)
+            {
+                throw new InvalidOperationException(
+                    "Pipeline Review selected Step edit handoff did not open the authoritative PropertyGrid without execution or routing side effects. "
+                    + $"Manager={recipeManagerButton.IsChecked}, ToolVisible={shellHost.IsActiveWpfToolWindowVisibleForTest}, "
+                    + $"Advanced={advancedReviewToggle.IsChecked}, PipelineTab={pipelineTab.IsSelected}, XmlStepTab={xmlStepsTab.IsSelected}, "
+                    + $"Scroll={pipelineScrollViewer.VerticalOffset:F1}/{pipelineScrollViewer.ScrollableHeight:F1}, "
+                    + $"PropertyGrid={propertyGridBounds.Top:F1},{propertyGridBounds.Bottom:F1}/{pipelineScrollViewer.ActualHeight:F1}, "
+                    + $"Outer={pipelineScrollViewer.ExtentHeight:F1}/{pipelineScrollViewer.ViewportHeight:F1}/{pipelineScrollViewer.ScrollableHeight:F1}, "
+                    + $"Recipe='{shellHost.SelectedRecipeNameForTest}/{recipeName}', Pipeline='{shellHost.RecipeCommands.SelectedPipelineOption?.PipelineName}/{pipelineName}', "
+                    + $"Step='{selectedStep?.Index}:{selectedStep?.ToolType}', Property='{shellHost.RecipeCommands.SelectedStepEditObject?.GetType().Name}', "
+                    + $"Runs={shellHost.NativePreviewRunCount}/{previewRunsBefore}, Preview={shellHost.HasNativePreviewResult}, "
+                    + $"Layers={shellHost.LayerDocumentCount}/{layerCountBefore}, Active='{shellHost.ActiveHostLayerTitle}/{activeLayerBefore}', "
+                    + $"Route='{shellHost.ActiveNativeRouteInputLayerNameForTest}->{shellHost.ActiveNativeRouteOutputLayerNameForTest}'/"
+                    + $"'{routeInputBefore}->{routeOutputBefore}'");
+            }
+
+            AssertVisibleAutomationIds(
+                shellHost,
+                "Pipeline Review selected Step edit handoff destination",
+                "HostRecipeManagerPanel",
+                "HostRecipePipelineXmlStepsTab",
+                "HostRecipeLoadSelectedStepParametersButton",
+                "HostRecipeApplySelectedStepParametersButton",
+                "HostRecipeSelectedStepPropertyGridHost");
+        });
+    }
+
+    private static CaptureResult CaptureShellHostFixtureStepEditApplyRerun(string outputPath)
+    {
+        const string sampleName = "Public_Fixture_Pad_Good";
+        const int originalMinArea = 700;
+        const int editedMinArea = 750;
+
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        VisionPipelineSampleCatalogItem sample = FindRunnableCatalogSample(sampleName);
+        AssertSampleSourceKind(sample, sampleName, VisionPipelineSampleCatalogSourceKind.Public);
+
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostFixtureStepEditApplyRerun", seedMainLayer: false);
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            (string pipelineName, int stepCount, int nativePreviewRunsBefore) = OpenWorkspaceSamplePipelineReviewForSmoke(
+                shellHost,
+                sampleName,
+                "WPF Fixture selected Step edit/apply/rerun",
+                minStepCount: 3);
+
+            WaitForTaskWithPump(
+                shellHost.RunPipelineReviewForTestAsync(),
+                30000,
+                "WPF Fixture selected Step baseline review");
+            Pump(120);
+            shellHost.SelectPipelineReviewStepForTest(1, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
+            Pump(80);
+            if (!shellHost.PipelineReviewResultSummaryText.Contains("OK", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Fixture selected Step edit/apply/rerun baseline review did not pass. "
+                    + $"Result='{shellHost.PipelineReviewResultSummaryText}'");
+            }
+
+            Window reviewWindow = GetActiveFloatingToolWindow("Fixture selected Step edit/apply/rerun");
+            string recipeName = shellHost.PipelineReviewRecipeContextNameForTest;
+            string pipelinePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, pipelineName);
+            VisionPipeline beforePipeline = VisionPipelineStorage.Load(recipeName, pipelineName);
+            AssertParameterValue(beforePipeline.Steps[1], "MIN_AREA", originalMinArea);
+
+            int layerCountBefore = shellHost.LayerDocumentCount;
+            string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+            string routeInputBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+            string routeOutputBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+
+            ClickVisibleButtonByAutomationId(
+                reviewWindow,
+                "PipelineReviewEditSelectedStepButton",
+                "Fixture selected Step edit/apply/rerun handoff");
+            Pump(180);
+
+            BlobProperty editProperty = shellHost.RecipeCommands.SelectedStepEditObject as BlobProperty
+                ?? throw new InvalidOperationException("Fixture selected Blob Step did not load a BlobProperty editor.");
+            if (editProperty.MIN_AREA != originalMinArea
+                || !string.Equals(
+                    shellHost.RecipeCommands.SelectedSampleOption?.SampleName,
+                    sampleName,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Fixture selected Blob Step did not preserve the source sample context. "
+                    + $"MIN_AREA={editProperty.MIN_AREA}/{originalMinArea}, "
+                    + $"Sample='{shellHost.RecipeCommands.SelectedSampleOption?.SampleName}'/'{sampleName}'");
+            }
+
+            OpenVisionRecipePairRunSummary pairSummaryBeforeEdit = shellHost.RecipeCommands.LatestPairRunSummary;
+
+            TextBox[] minAreaEditors = FindVisualChildren<TextBox>(shellHost)
+                .Where(item => item.IsVisible
+                    && item.IsEnabled
+                    && string.Equals(item.Text, originalMinArea.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal))
+                .ToArray();
+            if (minAreaEditors.Length != 1)
+            {
+                throw new InvalidOperationException(
+                    $"Fixture MIN_AREA editor was not uniquely visible. Count={minAreaEditors.Length}");
+            }
+
+            TextBox minAreaEditor = minAreaEditors[0];
+            minAreaEditor.Focus();
+            minAreaEditor.Text = editedMinArea.ToString(CultureInfo.InvariantCulture);
+            Pump(40);
+            VisionPipeline pendingPipeline = VisionPipelineStorage.Load(recipeName, pipelineName);
+            AssertParameterValue(pendingPipeline.Steps[1], "MIN_AREA", originalMinArea);
+            if (editProperty.MIN_AREA != originalMinArea
+                || !string.Equals(minAreaEditor.Text, editedMinArea.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)
+                || !ReferenceEquals(shellHost.RecipeCommands.LatestPairRunSummary, pairSummaryBeforeEdit)
+                || shellHost.NativePreviewRunCount != nativePreviewRunsBefore)
+            {
+                throw new InvalidOperationException(
+                    "Typing Fixture MIN_AREA changed the bound model, XML, or execution state before explicit apply. "
+                    + $"Model={editProperty.MIN_AREA}, Editor='{minAreaEditor.Text}', "
+                    + $"Status='{shellHost.RecipeCommands.SelectedStepEditStatusText}', "
+                    + $"Runs={shellHost.NativePreviewRunCount}/{nativePreviewRunsBefore}");
+            }
+
+            Button applyButton = FindVisualChildren<Button>(shellHost)
+                .FirstOrDefault(item => item.IsVisible
+                    && string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "HostRecipeApplySelectedStepParametersButton",
+                        StringComparison.Ordinal))
+                ?? throw new InvalidOperationException("Fixture selected Step XML apply button was not visible.");
+            if (!applyButton.Focus())
+            {
+                throw new InvalidOperationException("Fixture selected Step XML apply button could not receive keyboard focus.");
+            }
+
+            Pump(80);
+            VisionPipeline focusedPipeline = VisionPipelineStorage.Load(recipeName, pipelineName);
+            AssertParameterValue(focusedPipeline.Steps[1], "MIN_AREA", originalMinArea);
+            if (editProperty.MIN_AREA != editedMinArea
+                || !shellHost.RecipeCommands.IsSelectedStepEditDirty
+                || !ContainsAny(shellHost.RecipeCommands.SelectedStepEditStatusText, "반영 전", "not yet applied")
+                || shellHost.NativePreviewRunCount != nativePreviewRunsBefore)
+            {
+                throw new InvalidOperationException(
+                    "Fixture MIN_AREA focus commit did not prepare the explicit XML apply state. "
+                    + $"Model={editProperty.MIN_AREA}, Dirty={shellHost.RecipeCommands.IsSelectedStepEditDirty}, "
+                    + $"Status='{shellHost.RecipeCommands.SelectedStepEditStatusText}', "
+                    + $"Runs={shellHost.NativePreviewRunCount}/{nativePreviewRunsBefore}");
+            }
+
+            if (applyButton.Command == null
+                || !applyButton.Command.CanExecute(applyButton.CommandParameter))
+            {
+                throw new InvalidOperationException("Fixture selected Step XML apply command was disabled after editing MIN_AREA.");
+            }
+
+            applyButton.Command.Execute(applyButton.CommandParameter);
+            Pump(260);
+            VisionPipeline appliedPipeline = VisionPipelineStorage.Load(recipeName, pipelineName);
+            AssertParameterValue(appliedPipeline.Steps[1], "MIN_AREA", editedMinArea);
+            if (shellHost.RecipeCommands.IsSelectedStepEditDirty
+                || !ContainsAny(shellHost.RecipeCommands.SelectedStepEditStatusText, "XML 반영 완료", "Applied to XML")
+                || !ContainsAny(shellHost.RecipeCommands.CorrectedOutputReviewText, "Good/Bad", "corrected output")
+                || !ReferenceEquals(shellHost.RecipeCommands.LatestPairRunSummary, pairSummaryBeforeEdit)
+                || shellHost.NativePreviewRunCount != nativePreviewRunsBefore
+                || shellHost.LayerDocumentCount != layerCountBefore
+                || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, routeInputBefore, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, routeOutputBefore, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Explicit Fixture XML apply did not persist only the edit or changed workspace execution state. "
+                    + $"Dirty={shellHost.RecipeCommands.IsSelectedStepEditDirty}, "
+                    + $"Status='{shellHost.RecipeCommands.SelectedStepEditStatusText}', "
+                    + $"Review='{shellHost.RecipeCommands.CorrectedOutputReviewText}', "
+                    + $"Runs={shellHost.NativePreviewRunCount}/{nativePreviewRunsBefore}, "
+                    + $"Layers={shellHost.LayerDocumentCount}/{layerCountBefore}, "
+                    + $"Route='{shellHost.ActiveNativeRouteInputLayerNameForTest}->{shellHost.ActiveNativeRouteOutputLayerNameForTest}'/"
+                    + $"'{routeInputBefore}->{routeOutputBefore}'");
+            }
+
+            FrameworkElement propertyGridHost = FindVisualChildren<FrameworkElement>(shellHost)
+                .FirstOrDefault(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "HostRecipeSelectedStepPropertyGridHost",
+                    StringComparison.Ordinal))
+                ?? throw new InvalidOperationException("Fixture applied Step PropertyGrid was not found.");
+            propertyGridHost.BringIntoView();
+            Pump(80);
+            SaveVisibleAutomationElementPng(
+                shellHost,
+                "HostRecipeManagerPanel",
+                outputPath,
+                "fixture-step-edit-applied.png");
+
+            if (!shellHost.RecipeCommands.RunSelectedSamplePairCheckCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Fixture Good/Bad rerun command was disabled after XML apply. "
+                    + $"Sample='{shellHost.RecipeCommands.SelectedSampleOption?.SampleName}', Pipeline='{pipelineName}'");
+            }
+
+            OpenVisionRecipePairRunSummary pairSummaryBeforeRerun = shellHost.RecipeCommands.LatestPairRunSummary;
+            shellHost.RecipeCommands.RunSelectedSamplePairCheckCommand.Execute(null);
+            Stopwatch rerunStopwatch = Stopwatch.StartNew();
+            while (ReferenceEquals(shellHost.RecipeCommands.LatestPairRunSummary, pairSummaryBeforeRerun)
+                || !shellHost.RecipeCommands.LatestPairRunSummary.HasResult)
+            {
+                Pump(8);
+                Thread.Sleep(20);
+                if (rerunStopwatch.Elapsed > TimeSpan.FromSeconds(30))
+                {
+                    throw new TimeoutException("Fixture Good/Bad rerun did not complete within 30 seconds.");
+                }
+            }
+
+            OpenVisionRecipePairRunSummary rerunSummary = shellHost.RecipeCommands.LatestPairRunSummary;
+            VisionPipeline rerunPipeline = VisionPipelineStorage.Load(recipeName, pipelineName);
+            AssertParameterValue(rerunPipeline.Steps[1], "MIN_AREA", editedMinArea);
+            if (!rerunSummary.StatusText.Contains("OK", StringComparison.OrdinalIgnoreCase)
+                || rerunSummary.SampleResults.Count != 2
+                || shellHost.NativePreviewRunCount != nativePreviewRunsBefore
+                || shellHost.LayerDocumentCount != layerCountBefore
+                || stepCount != 3
+                || !File.Exists(pipelinePath))
+            {
+                throw new InvalidOperationException(
+                    "Fixture Good/Bad explicit rerun did not preserve the applied Step and expected pair result. "
+                    + $"Status='{rerunSummary.StatusText}', Roles={rerunSummary.SampleResults.Count}, "
+                    + $"Runs={shellHost.NativePreviewRunCount}/{nativePreviewRunsBefore}, "
+                    + $"Layers={shellHost.LayerDocumentCount}/{layerCountBefore}, Steps={stepCount}, XML={File.Exists(pipelinePath)}");
+            }
+
+            TabItem pipelineTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline")
+                ?? throw new InvalidOperationException("Fixture Good/Bad rerun Pipeline tab was not found.");
+            TabItem pipelineReviewTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineReview")
+                ?? throw new InvalidOperationException("Fixture Good/Bad rerun review tab was not found.");
+            pipelineTab.IsSelected = true;
+            pipelineReviewTab.IsSelected = true;
+            Pump(80);
+
+            FrameworkElement pairSummaryPanel = FindVisualChildren<FrameworkElement>(shellHost)
+                .FirstOrDefault(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "HostRecipePairCheckSummary",
+                    StringComparison.Ordinal))
+                ?? throw new InvalidOperationException("Fixture Good/Bad rerun summary panel was not found.");
+            pairSummaryPanel.BringIntoView();
+            Pump(80);
+            SaveVisibleAutomationElementPng(
+                shellHost,
+                "HostRecipePipelineReviewPanel",
+                outputPath,
+                "fixture-pair-rerun-review.png");
+
+            AssertVisibleAutomationIds(
+                shellHost,
+                "Fixture selected Step edit/apply/rerun result",
+                "HostRecipePipelineTab",
+                "HostRecipePairCheckSummary",
+                "HostRecipeRunPairCheckButton");
+        }, captureFloatingToolWindow: false);
+    }
+
+    private static CaptureResult CaptureShellHostWorkspaceSampleFixtureTeach(string outputPath)
+    {
+        const string sampleName = "Public_Fixture_Pad_Good";
+
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        VisionPipelineSampleCatalogItem sample = FindRunnableCatalogSample(sampleName);
+        AssertSampleSourceKind(sample, sampleName, VisionPipelineSampleCatalogSourceKind.Public);
+
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostWorkspaceFixtureTeach", seedMainLayer: false);
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            (string activePipelineName, int activePipelineStepCount, int nativePreviewRunsBefore) = OpenWorkspaceSamplePipelineReviewForSmoke(
+                shellHost,
+                sampleName,
+                "WPF workspace Fixture pose teach",
+                minStepCount: 3);
+
+            WaitForTaskWithPump(
+                shellHost.RunPipelineReviewForTestAsync(),
+                30000,
+                "Workspace Fixture pose teach Pipeline Review execution");
+            Pump(120);
+            shellHost.SelectPipelineReviewStepForTest(0, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
+            Pump(80);
+
+            string reviewText = string.Join(
+                " | ",
+                shellHost.PipelineReviewResultSummaryText,
+                shellHost.PipelineReviewResultDetailText,
+                shellHost.PipelineReviewRunLogText);
+            if (!shellHost.PipelineReviewSelectedStepName.Contains("Locate Shifted Part", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewResultSummaryText.Contains("OK", StringComparison.OrdinalIgnoreCase)
+                || activePipelineStepCount != 3)
+            {
+                throw new InvalidOperationException(
+                    "Workspace Fixture pose teach baseline did not expose the reviewed Matching pose. "
+                    + $"Step={shellHost.PipelineReviewSelectedStepName}, Steps={activePipelineStepCount}, Review='{reviewText}'");
+            }
+
+            string recipeName = shellHost.PipelineReviewRecipeContextNameForTest;
+            VisionPipeline beforePipeline = VisionPipelineStorage.Load(recipeName, activePipelineName);
+            AssertParameterValue(beforePipeline.Steps[0], "FIXTURE_REFERENCE_X", 120D);
+            AssertParameterValue(beforePipeline.Steps[0], "FIXTURE_REFERENCE_Y", 100D);
+            AssertParameterValue(beforePipeline.Steps[0], "FIXTURE_REFERENCE_ANGLE", 0D);
+            string routeBefore = string.Join(
+                "|",
+                beforePipeline.Steps.Select(step => $"{step.InputLayer}>{step.OutputLayer}"));
+            string consumerParametersBefore = string.Join(
+                "|",
+                beforePipeline.Steps
+                    .Skip(1)
+                    .SelectMany(step => step.Parameters.Select(item => $"{step.Name}:{item.Key}={item.Value}"))
+                    .OrderBy(item => item, StringComparer.OrdinalIgnoreCase));
+            int layerCountBefore = shellHost.LayerDocumentCount;
+            int layerRowCountBefore = shellHost.HostLayerRowCount;
+            string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+
+            Window reviewWindow = GetActiveFloatingToolWindow("Workspace Fixture pose teach action");
+            Button fixtureTeachButton = FindVisualChildren<Button>(reviewWindow)
+                .FirstOrDefault(item => item.IsVisible
+                    && string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "PipelineReviewUseMatchingPoseButton",
+                        StringComparison.Ordinal))
+                ?? throw new InvalidOperationException("Workspace Fixture pose teach action was not visible.");
+            TextBlock fixtureTeachStatus = FindVisualChildren<TextBlock>(reviewWindow)
+                .FirstOrDefault(item => item.IsVisible
+                    && string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "PipelineReviewFixtureTeachStatus",
+                        StringComparison.Ordinal))
+                ?? throw new InvalidOperationException("Workspace Fixture pose teach status was not visible.");
+            if (!fixtureTeachButton.IsEnabled
+                || !fixtureTeachStatus.Text.Contains("X 200", StringComparison.OrdinalIgnoreCase)
+                || !fixtureTeachStatus.Text.Contains("Y 155", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Workspace Fixture pose teach action did not expose the reviewed pose. "
+                    + $"Enabled={fixtureTeachButton.IsEnabled}, Status='{fixtureTeachStatus.Text}'");
+            }
+
+            ClickVisibleButtonByAutomationId(
+                reviewWindow,
+                "PipelineReviewUseMatchingPoseButton",
+                "Workspace Fixture pose teach action");
+            Pump(120);
+
+            VisionPipeline afterPipeline = VisionPipelineStorage.Load(recipeName, activePipelineName);
+            AssertParameterValue(afterPipeline.Steps[0], "FIXTURE_REFERENCE_X", 200D);
+            AssertParameterValue(afterPipeline.Steps[0], "FIXTURE_REFERENCE_Y", 155D);
+            AssertParameterValue(afterPipeline.Steps[0], "FIXTURE_REFERENCE_ANGLE", 0D);
+            string routeAfter = string.Join(
+                "|",
+                afterPipeline.Steps.Select(step => $"{step.InputLayer}>{step.OutputLayer}"));
+            string consumerParametersAfter = string.Join(
+                "|",
+                afterPipeline.Steps
+                    .Skip(1)
+                    .SelectMany(step => step.Parameters.Select(item => $"{step.Name}:{item.Key}={item.Value}"))
+                    .OrderBy(item => item, StringComparer.OrdinalIgnoreCase));
+            string expectedExecutionState = OpenVisionLanguageService.T("PipelineReview.Execution.ReferenceChanged");
+            string expectedResultSummary = OpenVisionLanguageService.T("PipelineReview.FixtureTeach.RunRequired");
+            if (fixtureTeachButton.IsEnabled
+                || !fixtureTeachStatus.Text.Contains("ROI", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewParameterSummaryText.Contains("FIXTURE_REFERENCE_X", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewParameterSummaryText.Contains("200", StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(shellHost.PipelineReviewExecutionState, expectedExecutionState, StringComparison.Ordinal)
+                || !string.Equals(shellHost.PipelineReviewResultSummaryText, expectedResultSummary, StringComparison.Ordinal)
+                || shellHost.NativePreviewRunCount != nativePreviewRunsBefore
+                || shellHost.HasNativePreviewResult
+                || shellHost.LayerDocumentCount != layerCountBefore
+                || shellHost.HostLayerRowCount != layerRowCountBefore
+                || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal)
+                || !string.Equals(routeAfter, routeBefore, StringComparison.Ordinal)
+                || !string.Equals(consumerParametersAfter, consumerParametersBefore, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Workspace Fixture pose teach action changed runtime state outside the explicit reference fields. "
+                    + $"Button={fixtureTeachButton.IsEnabled}, Status='{fixtureTeachStatus.Text}', "
+                    + $"Execution='{shellHost.PipelineReviewExecutionState}', Result='{shellHost.PipelineReviewResultSummaryText}', "
+                    + $"NativeRuns={shellHost.NativePreviewRunCount}/{nativePreviewRunsBefore}, NativePreview={shellHost.HasNativePreviewResult}, "
+                    + $"Layers={shellHost.LayerDocumentCount}/{layerCountBefore}, Rows={shellHost.HostLayerRowCount}/{layerRowCountBefore}, "
+                    + $"Active='{shellHost.ActiveHostLayerTitle}'/'{activeLayerBefore}', Routes='{routeAfter}'/'{routeBefore}', "
+                    + $"ConsumersEqual={string.Equals(consumerParametersAfter, consumerParametersBefore, StringComparison.Ordinal)}");
             }
         }, captureFloatingToolWindow: true);
     }
@@ -3329,8 +7645,9 @@ internal static class Program
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("Pipeline", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("OK", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("NG", StringComparison.OrdinalIgnoreCase)
-                || !shellHost.PipelineReviewGuidePairMetricText.Contains("OK 기준 안", StringComparison.Ordinal)
-                || !shellHost.PipelineReviewGuidePairMetricText.Contains("NG 기준 밖", StringComparison.Ordinal)
+                || !shellHost.PipelineReviewGuidePairMetricText.Contains("샘플 범위", StringComparison.Ordinal)
+                || shellHost.PipelineReviewGuidePairMetricText.Contains("기준 안", StringComparison.Ordinal)
+                || shellHost.PipelineReviewGuidePairMetricText.Contains("기준 밖", StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("1", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuideChecklistText.Contains("Good", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuideChecklistText.Contains("Bad", StringComparison.OrdinalIgnoreCase)
@@ -3339,7 +7656,7 @@ internal static class Program
                 || !shellHost.PipelineReviewGuideChecklistText.Contains(resultCountMetricText, StringComparison.Ordinal)
                 || string.IsNullOrWhiteSpace(shellHost.PipelineReviewRunLogText)
                 || !shellHost.HasPipelineReviewOutputPreview
-                || shellHost.CanSelectFirstIssuePipelineReviewStepForTest)
+                || !shellHost.CanSelectFirstIssuePipelineReviewStepForTest)
             {
                 throw new InvalidOperationException(
                     "WPF workspace Product sample Pipeline Review did not expose OK decision, ResultCount-style detail, concrete Good/Bad PairGroup review habit, run log, and output preview. "
@@ -3506,12 +7823,14 @@ internal static class Program
         return CaptureShellHostWorkspaceSamplePipelineReviewControlledNgMetrics(
             outputPath,
             "Public_Line_Pins_WidePin_Bad",
-            "DistanceMmAvg",
+            "DistanceMmRange",
             "Distance",
             "Public line distance",
             "Smoke_WpfShellHostWorkspaceSampleReviewLineNgMetrics",
             "WPF workspace sample review LineGauge NG metrics",
-            minStepCount: 1);
+            minStepCount: 1,
+            expectedOkCount: 0,
+            expectedWaitCount: 1);
     }
 
     private static CaptureResult CaptureShellHostWorkspaceSamplePipelineReviewBlobNgMetrics(string outputPath)
@@ -3562,6 +7881,8 @@ internal static class Program
         string shellHostTitle,
         string scenarioName,
         int minStepCount,
+        int? expectedOkCount = null,
+        int? expectedWaitCount = null,
         VisionPipelineSampleCatalogSourceKind expectedSourceKind = VisionPipelineSampleCatalogSourceKind.Public)
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
@@ -3596,6 +7917,22 @@ internal static class Program
             Pump(120);
             shellHost.SelectPipelineReviewStepForTest(activePipelineStepCount - 1, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
             Pump(80);
+
+            if (!shellHost.CanSelectFirstIssuePipelineReviewStepForTest)
+            {
+                throw new InvalidOperationException(
+                    $"Workspace sample Pipeline Review {scenarioLabel} NG did not expose first-issue navigation after selecting the later Step.");
+            }
+
+            int nativePreviewRunsBeforeFirstIssue = shellHost.NativePreviewRunCount;
+            ClickFloatingButtonByName("btnFirstIssueStep", $"Workspace sample Pipeline Review {scenarioLabel} first-issue navigation");
+            Pump(80);
+            if (shellHost.NativePreviewRunCount != nativePreviewRunsBeforeFirstIssue)
+            {
+                throw new InvalidOperationException(
+                    $"Workspace sample Pipeline Review {scenarioLabel} first-issue navigation triggered Preview/Run. "
+                    + $"Before={nativePreviewRunsBeforeFirstIssue}, After={shellHost.NativePreviewRunCount}");
+            }
 
             string ngNextAction = OpenVisionLanguageService.T("PipelineReview.Guide.NgNext");
             string fixDetailPrefix = OpenVisionLanguageService.T("PipelineReview.Guide.FixDetailPrefix");
@@ -3638,8 +7975,9 @@ internal static class Program
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("Pipeline", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("OK", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuidePairMetricText.Contains("NG", StringComparison.OrdinalIgnoreCase)
-                || !shellHost.PipelineReviewGuidePairMetricText.Contains("기준 안", StringComparison.Ordinal)
-                || !shellHost.PipelineReviewGuidePairMetricText.Contains("기준 밖", StringComparison.Ordinal)
+                || !shellHost.PipelineReviewGuidePairMetricText.Contains("샘플 범위", StringComparison.Ordinal)
+                || shellHost.PipelineReviewGuidePairMetricText.Contains("기준 안", StringComparison.Ordinal)
+                || shellHost.PipelineReviewGuidePairMetricText.Contains("기준 밖", StringComparison.Ordinal)
                 || !shellHost.PipelineReviewGuideDetailText.Contains("NG", StringComparison.OrdinalIgnoreCase)
                 || (hasLocalizedMetricDisplayName && !shellHost.PipelineReviewGuideDetailText.Contains(metricDisplayName, StringComparison.Ordinal))
                 || !shellHost.PipelineReviewGuideDetailText.Contains(parameterLocationPrefix, StringComparison.Ordinal)
@@ -3663,9 +8001,9 @@ internal static class Program
 
             AssertPipelineReviewProgressText(
                 shellHost,
-                expectedOk: Math.Max(0, activePipelineStepCount - 1),
+                expectedOk: expectedOkCount ?? Math.Max(0, activePipelineStepCount - 1),
                 expectedNg: 1,
-                expectedWait: 0,
+                expectedWait: expectedWaitCount ?? 0,
                 $"Workspace sample Pipeline Review {scenarioLabel} NG");
 
             AssertVisibleAutomationIds(
@@ -3880,11 +8218,15 @@ internal static class Program
 
         OpenVisionWorkspaceSamplePickerViewModel viewModel = new(samples);
         OpenVisionWorkspaceSamplePickerWindow window = new(viewModel);
-        return CaptureStandaloneWindow(window, outputPath, 1040, 700, () =>
+        return CaptureStandaloneWindow(window, outputPath, 1040, 742, () =>
         {
             AssertVisibleAutomationIds(
                 window,
                 "WPF workspace sample picker",
+                "WorkspaceSamplePickerTitleBar",
+                "OpenVisionWindowMinimizeButton",
+                "OpenVisionWindowMaximizeRestoreButton",
+                "OpenVisionWindowCloseButton",
                 "WorkspaceSamplePickerView",
                 "WorkspaceSamplePickerSearchBox",
                 "WorkspaceSamplePickerRouteSummary",
@@ -3925,6 +8267,24 @@ internal static class Program
                 throw new InvalidOperationException("Workspace sample picker did not enable the explicit guide-plus-sample action.");
             }
 
+            if (!OpenVisionWorkspaceLearnDocumentService.TryCreateHtmlDocument(
+                    viewModel.SelectedSample,
+                    viewModel.SelectedLearnPathOption,
+                    out string htmlDocumentPath)
+                || !string.Equals(Path.GetExtension(htmlDocumentPath), ".html", StringComparison.OrdinalIgnoreCase)
+                || !File.Exists(htmlDocumentPath))
+            {
+                throw new InvalidOperationException("Workspace sample picker did not create a browser-ready HTML Learn document.");
+            }
+
+            string htmlDocument = File.ReadAllText(htmlDocumentPath);
+            if (!htmlDocument.Contains("<!doctype html>", StringComparison.OrdinalIgnoreCase)
+                || !htmlDocument.Contains("<main>", StringComparison.OrdinalIgnoreCase)
+                || !htmlDocument.Contains("<style>", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Workspace sample picker generated Learn document is not a styled HTML page.");
+            }
+
             ListBox? sampleList = FindVisualChildren<ListBox>(window)
                 .FirstOrDefault(item => string.Equals(
                     System.Windows.Automation.AutomationProperties.GetAutomationId(item),
@@ -3937,7 +8297,9 @@ internal static class Program
                     + $"Expected={viewModel.VisibleSampleCount}, Actual={sampleList?.Items.Count ?? 0}");
             }
 
-            if (viewModel.CatalogSourceOptions.Count < 3
+            if (viewModel.CatalogSourceOptions.Count != 2
+                || viewModel.CatalogSourceOptions.Any(option =>
+                    option.SourceKind == VisionPipelineSampleCatalogSourceKind.LocalLegacy)
                 || viewModel.SelectedCatalogSourceOption == null
                 || !string.Equals(viewModel.SelectedCatalogSourceOption.Id, "public", StringComparison.OrdinalIgnoreCase))
             {
@@ -3950,16 +8312,9 @@ internal static class Program
             OpenVisionWorkspaceSampleCatalogSourceOption? publicSource = viewModel.SelectedCatalogSourceOption;
             OpenVisionWorkspaceSampleCatalogSourceOption? productSource = viewModel.CatalogSourceOptions
                 .FirstOrDefault(option => string.Equals(option.Id, "product", StringComparison.OrdinalIgnoreCase));
-            OpenVisionWorkspaceSampleCatalogSourceOption? localLegacySource = viewModel.CatalogSourceOptions
-                .FirstOrDefault(option => string.Equals(option.Id, "local-legacy", StringComparison.OrdinalIgnoreCase));
             if (productSource == null)
             {
                 throw new InvalidOperationException("Workspace sample picker did not expose the Product catalog source.");
-            }
-
-            if (localLegacySource == null)
-            {
-                throw new InvalidOperationException("Workspace sample picker did not expose the Local Legacy catalog source.");
             }
 
             viewModel.SelectedCatalogSourceOption = productSource;
@@ -4004,18 +8359,6 @@ internal static class Program
                     "Workspace sample picker did not filter to the selected Product focus. "
                     + $"Focus={batteryFocus.Id}, Expected={batteryFocus.SampleCount}, Actual={sampleList.Items.Count}, "
                     + $"Selected={viewModel.SelectedSample?.SampleName ?? "-"}");
-            }
-
-            viewModel.SelectedCatalogSourceOption = localLegacySource;
-            Pump(40);
-            if (sampleList.Items.Count != localLegacySource.SampleCount
-                || viewModel.SelectedSample == null
-                || viewModel.SelectedSample.CatalogSourceKind != VisionPipelineSampleCatalogSourceKind.LocalLegacy)
-            {
-                throw new InvalidOperationException(
-                    "Workspace sample picker did not filter to Local Legacy samples. "
-                    + $"Expected={localLegacySource.SampleCount}, Actual={sampleList.Items.Count}, "
-                    + $"Selected={viewModel.SelectedSample?.CatalogSourceId ?? "-"}");
             }
 
             viewModel.SelectedCatalogSourceOption = publicSource;
@@ -4082,7 +8425,7 @@ internal static class Program
 
         OpenVisionWorkspaceSamplePickerViewModel viewModel = new(samples);
         OpenVisionWorkspaceSamplePickerWindow window = new(viewModel);
-        return CaptureStandaloneWindow(window, outputPath, 1040, 700, () =>
+        return CaptureStandaloneWindow(window, outputPath, 1040, 742, () =>
         {
             AssertVisibleAutomationIds(
                 window,
@@ -4197,7 +8540,7 @@ internal static class Program
 
         OpenVisionWorkspaceSamplePickerViewModel viewModel = new(samples);
         OpenVisionWorkspaceSamplePickerWindow window = new(viewModel);
-        return CaptureStandaloneWindow(window, outputPath, 1040, 700, () =>
+        return CaptureStandaloneWindow(window, outputPath, 1040, 742, () =>
         {
             OpenVisionWorkspaceSampleCatalogSourceOption? productSource = viewModel.CatalogSourceOptions
                 .FirstOrDefault(option => string.Equals(option.Id, "product", StringComparison.OrdinalIgnoreCase));
@@ -4472,7 +8815,7 @@ internal static class Program
 
         OpenVisionWorkspaceSamplePickerViewModel viewModel = new(samples);
         OpenVisionWorkspaceSamplePickerWindow window = new(viewModel);
-        return CaptureStandaloneWindow(window, outputPath, 1040, 700, () =>
+        return CaptureStandaloneWindow(window, outputPath, 1040, 742, () =>
         {
             AssertVisibleAutomationIds(
                 window,
@@ -4526,7 +8869,7 @@ internal static class Program
                 throw new InvalidOperationException("Workspace sample learn path smoke could not find the Learn path list.");
             }
 
-            string[] pathIds = { "preprocess", "geometry", "color-hsv", "matching", "template-matching", "edge-matching", "feature-matching", "blob", "line", "pair" };
+            string[] pathIds = { "preprocess", "edge-detection", "geometry", "color-hsv", "matching", "template-matching", "edge-matching", "feature-matching", "blob", "line", "pair" };
             List<OpenVisionWorkspaceSampleLearnPathOption> checkedPaths = viewModel.LearnPathOptions
                 .Where(option => pathIds.Contains(option.Id, StringComparer.OrdinalIgnoreCase))
                 .ToList();
@@ -4569,6 +8912,7 @@ internal static class Program
                 string? expectedPathDocument = path.Id switch
                 {
                     "template-matching" => "LEARN_MATCHING.md",
+                    "edge-detection" => "LEARN_EDGE_DETECTION.md",
                     "geometry" => "LEARN_GEOMETRY_TRANSFORM.md",
                     "edge-matching" => "LEARN_EDGE_BASED_MATCHING.md",
                     "feature-matching" => "LEARN_FEATURE_MATCHING.md",
@@ -4599,7 +8943,8 @@ internal static class Program
             }
 
             OpenVisionWorkspaceSampleLearnPathOption capturePath =
-                checkedPaths.FirstOrDefault(option => string.Equals(option.Id, "color-hsv", StringComparison.OrdinalIgnoreCase))
+                checkedPaths.FirstOrDefault(option => string.Equals(option.Id, "edge-detection", StringComparison.OrdinalIgnoreCase))
+                ?? checkedPaths.FirstOrDefault(option => string.Equals(option.Id, "color-hsv", StringComparison.OrdinalIgnoreCase))
                 ?? checkedPaths.FirstOrDefault(option => string.Equals(option.Id, "feature-matching", StringComparison.OrdinalIgnoreCase))
                 ?? checkedPaths.FirstOrDefault(option => string.Equals(option.Id, "edge-matching", StringComparison.OrdinalIgnoreCase))
                 ?? checkedPaths.FirstOrDefault(option => string.Equals(option.Id, "template-matching", StringComparison.OrdinalIgnoreCase))
@@ -4617,6 +8962,11 @@ internal static class Program
                 .FirstOrDefault(item =>
                 {
                     string text = string.Join(" ", item.ToolFlowText, item.Category, item.SampleName, item.Goal);
+                    if (string.Equals(capturePath.Id, "edge-detection", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return text.Contains("EdgeDetection", StringComparison.OrdinalIgnoreCase);
+                    }
+
                     if (string.Equals(capturePath.Id, "feature-matching", StringComparison.OrdinalIgnoreCase))
                     {
                         return text.Contains("Feature", StringComparison.OrdinalIgnoreCase);
@@ -4668,6 +9018,7 @@ internal static class Program
                 string? expectedFileName = capturePath.Id switch
                 {
                     "template-matching" => "LEARN_MATCHING.md",
+                    "edge-detection" => "LEARN_EDGE_DETECTION.md",
                     "geometry" => "LEARN_GEOMETRY_TRANSFORM.md",
                     "edge-matching" => "LEARN_EDGE_BASED_MATCHING.md",
                     "feature-matching" => "LEARN_FEATURE_MATCHING.md",
@@ -4748,7 +9099,7 @@ internal static class Program
             SelectedSample = pairedSample
         };
         OpenVisionWorkspaceSamplePickerWindow window = new(viewModel);
-        return CaptureStandaloneWindow(window, outputPath, 1040, 700, () =>
+        return CaptureStandaloneWindow(window, outputPath, 1040, 742, () =>
         {
             AssertVisibleAutomationIds(
                 window,
@@ -4860,6 +9211,90 @@ internal static class Program
         });
     }
 
+    private static CaptureResult CaptureShellHostWorkspaceSampleFixturePicker(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        List<VisionPipelineSampleCatalogItem> samples = VisionPipelineSampleCatalogItem.LoadRunnable()
+            .Where(item => item.CanOpen)
+            .ToList();
+        OpenVisionWorkspaceSamplePickerViewModel viewModel = new(samples);
+        OpenVisionWorkspaceSamplePickerWindow window = new(viewModel);
+        return CaptureStandaloneWindow(window, outputPath, 1040, 742, () =>
+        {
+            viewModel.SearchText = "Fixture";
+            Pump(60);
+
+            AssertVisibleAutomationIds(
+                window,
+                "WPF workspace Fixture sample picker",
+                "WorkspaceSamplePickerTitleBar",
+                "WorkspaceSamplePickerView",
+                "WorkspaceSamplePickerSearchBox",
+                "WorkspaceSamplePickerCatalogSourceList",
+                "WorkspaceSamplePickerSampleFocusList",
+                "WorkspaceSamplePickerLearnPathList",
+                "WorkspaceSamplePickerList",
+                "WorkspaceSamplePickerCancelButton");
+
+            ListBox? sampleList = FindVisualChildren<ListBox>(window)
+                .FirstOrDefault(item => string.Equals(
+                    System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                    "WorkspaceSamplePickerList",
+                    StringComparison.Ordinal));
+            if (sampleList == null || sampleList.Items.Count != viewModel.VisibleSampleCount)
+            {
+                throw new InvalidOperationException(
+                    "Workspace Fixture search result count does not match the rendered list. "
+                    + $"ViewModel={viewModel.VisibleSampleCount}, List={sampleList?.Items.Count ?? -1}");
+            }
+
+            VisionPipelineSampleCatalogItem? fixtureGood = samples.FirstOrDefault(item =>
+                string.Equals(item.SampleName, "Public_Fixture_Pad_Good", StringComparison.OrdinalIgnoreCase));
+            if (fixtureGood == null)
+            {
+                if (viewModel.VisibleSampleCount != 0 || viewModel.SelectedSample != null)
+                {
+                    throw new InvalidOperationException(
+                        "Fixture baseline capture expected no public Fixture sample before catalog registration.");
+                }
+
+                return;
+            }
+
+            viewModel.SelectedSample = fixtureGood;
+            Pump(40);
+            if (viewModel.VisibleSampleCount != 2
+                || !fixtureGood.HasPair
+                || !string.Equals(fixtureGood.PairGroup, "Public_Fixture_Pad", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Public Fixture search must expose one runnable Good/Bad pair. "
+                    + $"Visible={viewModel.VisibleSampleCount}, Pair={fixtureGood.PairGroup}");
+            }
+
+            string visibleText = string.Join(
+                " | ",
+                FindVisualChildren<TextBlock>(window)
+                    .Select(item => item.Text)
+                    .Where(text => !string.IsNullOrWhiteSpace(text)));
+            string[] requiredTokens =
+            {
+                fixtureGood.SampleName,
+                fixtureGood.PairGroup,
+                "Matching",
+                "Blob",
+                fixtureGood.ExpectedText
+            };
+            string? missing = requiredTokens.FirstOrDefault(token =>
+                !visibleText.Contains(token, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrWhiteSpace(missing))
+            {
+                throw new InvalidOperationException(
+                    "Workspace Fixture sample picker did not show token '" + missing + "'. Text='" + visibleText + "'");
+            }
+        });
+    }
+
     private static CaptureResult CaptureShellHostWorkspaceSamplePairCoverage(string outputPath)
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
@@ -4883,6 +9318,7 @@ internal static class Program
             "Public_Contour_Shapes",
             "Public_Line_Pins",
             "Public_Matching_DiePad",
+            "Public_Fixture_Pad",
             "Public_Edge_Fiducial",
             "Public_Feature_Card",
             "Public_Mean_BrightnessDrift",
@@ -4910,6 +9346,7 @@ internal static class Program
             "Public_Blob_Particles",
             "Public_Line_Pins",
             "Public_Matching_DiePad",
+            "Public_Fixture_Pad",
             "Public_Mean_BrightnessDrift",
             "Display_Particle"
         };
@@ -6086,12 +10523,40 @@ internal static class Program
             Pump(24);
             if (!shellHost.IsToolRailCompactForTest
                 || shellHost.ToolRailWidthForTest > 60
-                || shellHost.IsToolRailNavigationVisibleForTest
+                || !shellHost.IsToolRailNavigationVisibleForTest
                 || !shellHost.IsToolRailCompactLabelHiddenForTest)
             {
                 throw new InvalidOperationException(
-                    "Tool rail compact mode did not collapse to a clean expander handle. "
+                    "Tool rail compact mode did not keep a usable icon navigation rail. "
                     + $"Width={shellHost.ToolRailWidthForTest.ToString(CultureInfo.InvariantCulture)}, NavVisible={shellHost.IsToolRailNavigationVisibleForTest}, LabelHidden={shellHost.IsToolRailCompactLabelHiddenForTest}");
+            }
+
+            List<Button> compactToolButtons = FindVisualChildren<Button>(shellHost)
+                .Where(item => item.IsVisible && item.DataContext is OpenVisionShellNavItem)
+                .ToList();
+            Button? thresholdButton = compactToolButtons.FirstOrDefault(item =>
+                item.DataContext is OpenVisionShellNavItem navItem
+                && navItem.Menu == VISION_MENU.Threshold);
+            if (compactToolButtons.Count < 10
+                || thresholdButton?.Command == null
+                || !thresholdButton.Command.CanExecute(thresholdButton.CommandParameter))
+            {
+                throw new InvalidOperationException(
+                    "Tool rail compact mode did not expose clickable tool icons. "
+                    + $"VisibleButtons={compactToolButtons.Count}, ThresholdButton={(thresholdButton == null ? "missing" : "ready")}");
+            }
+
+            int beforeRuns = shellHost.NativePreviewRunCount;
+            thresholdButton.Command.Execute(thresholdButton.CommandParameter);
+            Pump(24);
+            if (thresholdButton.DataContext is not OpenVisionShellNavItem thresholdItem
+                || !thresholdItem.IsActive
+                || shellHost.NativePreviewRunCount != beforeRuns
+                || shellHost.HasNativePreviewResult)
+            {
+                throw new InvalidOperationException(
+                    "Compact tool icon did not activate Threshold without Preview/Run side effects. "
+                    + $"Active={((thresholdButton.DataContext as OpenVisionShellNavItem)?.IsActive).GetValueOrDefault()}, Runs={beforeRuns}->{shellHost.NativePreviewRunCount}, Preview={shellHost.HasNativePreviewResult}");
             }
         }, captureFloatingToolWindow: false);
     }
@@ -6821,6 +11286,8 @@ internal static class Program
     {
         DateTime started = DateTime.UtcNow;
         OpenVisionLearnWindow window = new(127, 255, false);
+        window.SetOpenPracticeSamplesAction(_ => { });
+        window.SetOpenRelatedToolAction(_ => { });
         int appliedThreshold = -1;
         bool appliedInvert = false;
         window.ApplyThresholdRequested += (_, e) =>
@@ -6833,6 +11300,8 @@ internal static class Program
         try
         {
             Pump(12);
+            AssertInitialKeyboardFocus(window, "OpenVisionLearnTopicList");
+            AssertOpenVisionLearnWindowChrome(window);
             window.ThresholdValueForTest = 160;
             window.IsInvertedForTest = true;
             Pump(6);
@@ -6854,12 +11323,69 @@ internal static class Program
                 throw new InvalidOperationException("Threshold guide window did not show the BinaryInv conversion rule.");
             }
 
+            if (!window.CanOpenPracticeSamplesForTest
+                || !window.CanOpenThresholdToolForTest
+                || !string.Equals(window.SelectedTopicLearnPathIdForTest, "threshold", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("Public_Threshold_BandPads_Good", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("ResultCount 4", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Threshold Learn did not expose its dedicated sample, tool, and explicit-result practice path. "
+                    + $"Path='{window.SelectedTopicLearnPathIdForTest}', Text='{window.SelectedTopicPracticeTextForTest}'.");
+            }
+
+            if (selectedTabIndex == 0)
+            {
+                AssertVisibleAutomationIds(
+                    window,
+                    "OpenVision Learn Threshold practice",
+                    "OpenVisionLearnThresholdPracticePanel",
+                    "OpenVisionLearnThresholdOpenToolButton");
+                AssertVisibleTextContains(
+                    window,
+                    "OpenVision Learn Threshold practice",
+                    "Public_Threshold_BandPads_Good",
+                    "Public_Threshold_BandPads_Missing_Bad",
+                    "ResultCount 4",
+                    "Threshold Tool 열기");
+            }
+
             window.ApplyForTest();
             if (appliedThreshold != 160 || !appliedInvert)
             {
                 throw new InvalidOperationException(
                     "Threshold guide apply event did not return the selected sandbox values. "
                     + $"Threshold={appliedThreshold}, Invert={appliedInvert}");
+            }
+
+            if (selectedTabIndex == 1)
+            {
+                AssertVisibleAutomationIds(
+                    window,
+                    "OpenVision Learn Threshold input",
+                    "OpenVisionLearnThresholdTabs",
+                    "OpenVisionLearnThresholdSlider",
+                    "OpenVisionLearnThresholdInvertCheckBox",
+                    "OpenVisionLearnThresholdAnimationButton",
+                    "OpenVisionLearnThresholdApplyButton",
+                    "OpenVisionLearnCloseButton");
+                AssertKeyboardTabRoute(
+                    window,
+                    "OpenVisionLearnThresholdTabs",
+                    "OpenVisionLearnThresholdSlider",
+                    "OpenVisionLearnThresholdInvertCheckBox",
+                    "OpenVisionLearnThresholdAnimationButton",
+                    "OpenVisionLearnThresholdApplyButton",
+                    "OpenVisionLearnCloseButton");
+                AssertKeyboardTabRoute(
+                    window,
+                    FocusNavigationDirection.Previous,
+                    "OpenVisionLearnCloseButton",
+                    "OpenVisionLearnThresholdApplyButton",
+                    "OpenVisionLearnThresholdAnimationButton",
+                    "OpenVisionLearnThresholdInvertCheckBox",
+                    "OpenVisionLearnThresholdSlider",
+                    "OpenVisionLearnThresholdTabs");
             }
 
             WriteElementPng(window, outputPath, 1040, 700);
@@ -6874,19 +11400,140 @@ internal static class Program
     private static CaptureResult CaptureOpenVisionLearnCurriculum(string outputPath)
     {
         DateTime started = DateTime.UtcNow;
-        OpenVisionLearnWindow window = new(127, 255, false, 0);
+        OpenVisionLearnWindow window = new(127, 255, false, 0)
+        {
+            Width = 1040,
+            Height = 980
+        };
         window.Show();
         try
         {
             Pump(12);
+            AssertOpenVisionLearnWindowChrome(window);
             if (window.SelectedTopicIndexForTest != 0)
             {
                 throw new InvalidOperationException("OpenVision Learn curriculum topic was not selected.");
             }
 
+            AssertOpenVisionLearnAnimationLegend(window, "OpenVision Learn foundation");
+
             AssertLearnTopicDocument(window, "OPENVISIONLAB_LEARN_CURRICULUM.md");
             AssertAllLearnTopicDocumentsResolve();
             AssertAllLearnTopicPracticeGuidesResolve();
+
+            window.ResetFoundationAnimationForTest();
+            window.ToggleFoundationAnimationForTest();
+            Thread.Sleep(600);
+            Pump(4);
+            if (window.FoundationAnimationStepForTest < 1)
+            {
+                throw new InvalidOperationException("Foundation animation timer did not advance.");
+            }
+
+            window.ResetFoundationAnimationForTest();
+            window.AdvanceFoundationAnimationForTest();
+            if (window.FoundationAnimationStepForTest != 1
+                || !window.IsFoundationPointVisibleForTest
+                || window.IsFoundationRectVisibleForTest
+                || !window.FoundationAnimationStatusTextForTest.Contains("Point(2,1)", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Foundation animation did not expose the Point step.");
+            }
+
+            window.AdvanceFoundationAnimationForTest();
+            if (window.FoundationAnimationStepForTest != 2
+                || !window.IsFoundationRectVisibleForTest
+                || !window.FoundationAnimationStatusTextForTest.Contains("Size(4,3)", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Foundation animation did not expose the Size step.");
+            }
+
+            window.AdvanceFoundationAnimationForTest();
+            if (window.FoundationAnimationStepForTest != 3
+                || window.FoundationSelectedCellCountForTest != 12
+                || !window.FoundationAnimationStatusTextForTest.Contains("CvROI=2,1,4,3", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Foundation animation did not expose the Rect/CvROI step.");
+            }
+
+            window.AdvanceFoundationAnimationForTest();
+            if (window.FoundationAnimationStepForTest != 4
+                || window.FoundationSelectedCellCountForTest != 12
+                || window.IsFoundationRotatedRectVisibleForTest
+                || window.IsFoundationRotatedBoundsVisibleForTest
+                || !window.FoundationAnimationStatusTextForTest.Contains("Mat ROI", StringComparison.Ordinal)
+                || !window.FoundationAnimationStatusTextForTest.Contains("CvROI(2,1,4,3)", StringComparison.Ordinal)
+                || !window.FoundationAnimationStatusTextForTest.Contains("12개 픽셀", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Foundation animation did not explain the Mat ROI selection.");
+            }
+
+            window.AdvanceFoundationAnimationForTest();
+            if (window.FoundationAnimationStepForTest != 5
+                || window.FoundationSelectedCellCountForTest != 0
+                || window.IsFoundationRectVisibleForTest
+                || !window.IsFoundationRotatedRectVisibleForTest
+                || !window.IsFoundationRotatedBoundsVisibleForTest
+                || !window.IsFoundationRotatedCenterVisibleForTest
+                || Math.Abs(window.FoundationRotatedRectAngleForTest - 25D) > 0.001D
+                || !window.FoundationAnimationStatusTextForTest.Contains("RotatedRect", StringComparison.Ordinal)
+                || !window.FoundationAnimationStatusTextForTest.Contains("BoundingRect", StringComparison.Ordinal)
+                || !window.FoundationAnimationStatusTextForTest.Contains("25°", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Foundation animation did not finish with the RotatedRect geometry explanation.");
+            }
+
+            window.ResetMatChannelAnimationForTest();
+            window.ToggleMatChannelAnimationForTest();
+            Thread.Sleep(700);
+            Pump(4);
+            if (window.MatChannelAnimationStepForTest < 1)
+            {
+                throw new InvalidOperationException("Mat channel animation timer did not advance.");
+            }
+
+            window.ResetMatChannelAnimationForTest();
+            window.AdvanceMatChannelAnimationForTest();
+            if (window.MatChannelAnimationStepForTest != 1
+                || window.MatChannelSplitOpacityForTest >= 0.5D
+                || window.MatChannelGrayOpacityForTest >= 0.5D
+                || window.MatChannelTypeGuideOpacityForTest >= 0.5D
+                || !window.MatChannelAnimationStatusTextForTest.Contains("OpenCV 채널 순서는 B, G, R", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Mat channel animation did not expose the BGR source step.");
+            }
+
+            window.AdvanceMatChannelAnimationForTest();
+            if (window.MatChannelAnimationStepForTest != 2
+                || window.MatChannelSplitOpacityForTest < 0.99D
+                || window.MatChannelGrayOpacityForTest >= 0.5D
+                || window.MatChannelTypeGuideOpacityForTest >= 0.5D
+                || !window.MatChannelAnimationStatusTextForTest.Contains("B=220, G=110, R=40", StringComparison.Ordinal)
+                || !string.Equals(window.MatChannelBgrShapeTextForTest, "행 x 열 x 3", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Mat channel animation did not expose the B/G/R split step.");
+            }
+
+            window.AdvanceMatChannelAnimationForTest();
+            if (window.MatChannelAnimationStepForTest != 3
+                || window.MatChannelGrayOpacityForTest < 0.99D
+                || window.MatChannelTypeGuideOpacityForTest >= 0.5D
+                || !window.MatChannelAnimationStatusTextForTest.Contains("0.114B + 0.587G + 0.299R = 102", StringComparison.Ordinal)
+                || !string.Equals(window.MatChannelGrayShapeTextForTest, "행 x 열 x 1", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Mat channel animation did not expose the grayscale conversion and Mat shape.");
+            }
+
+            window.AdvanceMatChannelAnimationForTest();
+            if (window.MatChannelAnimationStepForTest != 4
+                || window.MatChannelTypeGuideOpacityForTest < 0.99D
+                || !window.MatChannelAnimationStatusTextForTest.Contains("CV_8U는 0~255의 8비트", StringComparison.Ordinal)
+                || !string.Equals(window.MatChannelTypeTitleForTest, "Mat 형식 = 픽셀 깊이 + 채널 수", StringComparison.Ordinal)
+                || !window.MatChannelTypeDetailForTest.Contains("Gray = CV_8UC1", StringComparison.Ordinal)
+                || !window.MatChannelTypeDetailForTest.Contains("BGR = CV_8UC3", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Mat channel animation did not finish with the Mat depth and channel type interpretation.");
+            }
 
             string visibleText = string.Join(
                 " | ",
@@ -6899,15 +11546,24 @@ internal static class Program
                 "GV",
                 "ROI",
                 "Layer",
-                "OpenCvSharp operator basics",
+                "영상 도구에서 자주 만나는 네 가지 값",
                 "Point = X,Y",
                 "Rect ROI = X,Y,W,H",
-                "Mat = rows x cols x channels",
-                "Beginner path",
-                "Brightness/GV",
+                "Mat = 행 x 열 x 채널",
+                "RotatedRect: 중심점 + 크기 + 회전각",
+                "BoundingRect: 회전 영역 전체를 감싸는 축 정렬 사각형",
+                "1. 픽셀과 채널",
+                "B=220",
+                "Gray 밝기(GV)",
+                "행 x 열 x 1",
+                "Mat 형식 = 픽셀 깊이 + 채널 수",
+                "CV_8UC1",
+                "CV_8UC3",
+                "추천 순서",
+                "밝기/GV",
                 "Filter/Morphology",
                 "Blob/Contour/LineDistance",
-                "Good/Bad check",
+                "Good/Bad",
                 "Point",
                 "Size",
                 "Rect",
@@ -6919,14 +11575,16 @@ internal static class Program
                 "RotateScale",
                 "Color/HSV",
                 "Metrics/Acceptance",
-                "Practice:",
-                "Sample Picker",
+                "실습:",
+                "실습 샘플",
                 "Tool View",
-                "Practice workflow",
-                "Open Practice Samples",
-                "Good/Bad pair",
-                "Preview or Run Review explicitly",
-                "must not create layers"
+                "실습 순서",
+                "실습 샘플 열기",
+                "Good/Bad 쌍",
+                "Preview 또는 Pipeline Review",
+                "입력 이미지",
+                "출력 이미지",
+                "핵심 지표"
             };
             string? missing = requiredTokens.FirstOrDefault(token => !visibleText.Contains(token, StringComparison.Ordinal));
             if (!string.IsNullOrWhiteSpace(missing))
@@ -6935,12 +11593,14 @@ internal static class Program
                     "OpenVision Learn curriculum topic did not show expected token '" + missing + "'. Text='" + visibleText + "'");
             }
 
+            AssertNoInternalLearnContractCopy(window, "OpenVision Learn curriculum topic");
+
             bool hasDocsButton = FindVisualChildren<Button>(window)
                 .Any(item => string.Equals(
                         AutomationProperties.GetAutomationId(item),
                         "OpenVisionLearnOpenDocsButton",
                         StringComparison.Ordinal)
-                    && string.Equals(item.Content?.ToString(), "Topic Docs", StringComparison.Ordinal));
+                    && string.Equals(item.Content?.ToString(), "현재 문서", StringComparison.Ordinal));
             if (!hasDocsButton)
             {
                 throw new InvalidOperationException("OpenVision Learn curriculum did not show the Topic Docs button.");
@@ -6951,7 +11611,7 @@ internal static class Program
                         AutomationProperties.GetAutomationId(item),
                         "OpenVisionLearnOpenFoundationDocsButton",
                         StringComparison.Ordinal)
-                    && string.Equals(item.Content?.ToString(), "Foundation Docs", StringComparison.Ordinal));
+                    && string.Equals(item.Content?.ToString(), "기초 용어", StringComparison.Ordinal));
             if (!hasFoundationDocsButton)
             {
                 throw new InvalidOperationException("OpenVision Learn curriculum did not show the Foundation Docs button.");
@@ -6971,6 +11631,28 @@ internal static class Program
                 window,
                 "OpenVision Learn foundation topic",
                 "OpenVisionLearnFoundationTypeCards",
+                "OpenVisionLearnFoundationGeometryPanel",
+                "OpenVisionLearnFoundationPlayButton",
+                "OpenVisionLearnFoundationStepButton",
+                "OpenVisionLearnFoundationResetButton",
+                "OpenVisionLearnFoundationAnimationStatus",
+                "OpenVisionLearnFoundationRotatedRect",
+                "OpenVisionLearnFoundationRotatedBoundsRect",
+                "OpenVisionLearnFoundationRotatedCenterMarker",
+                "OpenVisionLearnMatChannelPanel",
+                "OpenVisionLearnMatChannelPlayButton",
+                "OpenVisionLearnMatChannelStepButton",
+                "OpenVisionLearnMatChannelResetButton",
+                "OpenVisionLearnMatChannelAnimationStatus",
+                "OpenVisionLearnMatChannelTypeGuidePanel",
+                "OpenVisionLearnMatChannelTypeTitle",
+                "OpenVisionLearnMatChannelTypeDetail",
+                "OpenVisionLearnFoundationOpenRoiToolButton",
+                "OpenVisionLearnFoundationOpenKernelToolButton",
+                "OpenVisionLearnFoundationOpenOutputSizeToolButton",
+                "OpenVisionLearnFoundationToolLocationPanel",
+                "OpenVisionLearnFoundationToolLocationTitle",
+                "OpenVisionLearnFoundationToolLocationDetail",
                 "OpenVisionLearnBeginnerPathPanel",
                 "OpenVisionLearnPracticeWorkflowPanel",
                 "OpenVisionLearnOpenFoundationDocsButton");
@@ -6981,20 +11663,106 @@ internal static class Program
                     "OpenVisionLearnPracticeSamplesButton",
                     StringComparison.Ordinal));
             if (practiceSamplesButton == null
-                || !string.Equals(practiceSamplesButton.Content?.ToString(), "Practice Samples", StringComparison.Ordinal)
+                || !string.Equals(practiceSamplesButton.Content?.ToString(), "실습 샘플", StringComparison.Ordinal)
                 || practiceSamplesButton.IsEnabled
                 || window.CanOpenPracticeSamplesForTest)
             {
                 throw new InvalidOperationException("Standalone OpenVision Learn curriculum did not show a disabled Practice Samples button.");
             }
 
-            WriteElementPng(window, outputPath, 1040, 700);
-            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+            string[] relatedToolButtonIds =
+            {
+                "OpenVisionLearnFoundationOpenRoiToolButton",
+                "OpenVisionLearnFoundationOpenKernelToolButton",
+                "OpenVisionLearnFoundationOpenOutputSizeToolButton"
+            };
+            if (window.CanOpenRelatedToolsForTest
+                || relatedToolButtonIds.Any(id => FindVisualChildren<Button>(window)
+                    .Any(item => string.Equals(AutomationProperties.GetAutomationId(item), id, StringComparison.Ordinal)
+                        && item.IsEnabled)))
+            {
+                throw new InvalidOperationException("Standalone OpenVision Learn enabled a Shell-only related Tool View action.");
+            }
+
+            VISION_MENU? capturedRelatedMenu = null;
+            window.SetOpenRelatedToolAction(menu => capturedRelatedMenu = menu);
+            ClickVisibleButtonByAutomationId(
+                window,
+                "OpenVisionLearnFoundationOpenRoiToolButton",
+                "standalone foundation CvROI visual-state button");
+            if (capturedRelatedMenu != VISION_MENU.Blob
+                || !window.FoundationToolLocationTitleForTest.Contains("PropertyGrid > ROI > Use ROI / ROI (CvROI)", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Standalone Learn related Tool View visual state did not expose the Blob location path.");
+            }
+
+            window.BringFoundationToolLocationIntoViewForTest();
+            Pump(8);
+            string focusedCapturePath = Path.Combine(
+                Path.GetDirectoryName(outputPath) ?? ".",
+                Path.GetFileNameWithoutExtension(outputPath) + "_tool_location.png");
+            WriteElementPng(window, focusedCapturePath, 1040, 980);
+            window.SetOpenRelatedToolAction(null);
+
+            foreach (ScrollViewer scrollViewer in FindVisualChildren<ScrollViewer>(window).Where(item => item.IsVisible))
+            {
+                scrollViewer.ScrollToTop();
+            }
+
+            window.InvalidateVisual();
+            window.UpdateLayout();
+            Pump(12);
+            WriteElementPng(window, outputPath, 1040, 980);
+            return new CaptureResult(1040, 980, (DateTime.UtcNow - started).TotalMilliseconds);
         }
         finally
         {
             window.Close();
         }
+    }
+
+    private static void AssertOpenVisionLearnWindowChrome(OpenVisionLearnWindow window)
+    {
+        if (window.WindowStyle != WindowStyle.None)
+        {
+            throw new InvalidOperationException("OpenVision Learn window still uses the native title bar.");
+        }
+
+        if (!FindVisualChildren<OpenVisionWindowTitleBar>(window).Any())
+        {
+            throw new InvalidOperationException("OpenVision Learn window did not render the shared title bar control.");
+        }
+
+        AssertVisibleAutomationIds(
+            window,
+            "OpenVision Learn window chrome",
+            "OpenVisionLearnTitleBar",
+            "OpenVisionWindowMinimizeButton",
+            "OpenVisionWindowMaximizeRestoreButton",
+            "OpenVisionWindowCloseButton");
+    }
+
+    private static void AssertOpenVisionLearnAnimationLegend(OpenVisionLearnWindow window, string topic)
+    {
+        const string expectedColors = "#FF525B69,#FF228491,#FF408F4D,#FFB07C2A";
+        if (!window.IsAnimationLegendVisibleForTest
+            || !string.Equals(window.AnimationLegendColorsForTest, expectedColors, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                topic + " did not expose the shared animation color contract. Colors='"
+                + window.AnimationLegendColorsForTest
+                + "'.");
+        }
+
+        AssertVisibleTextContains(
+            window,
+            topic + " animation legend",
+            "애니메이션 색상",
+            "중립",
+            "후보",
+            "OK",
+            "주의/이상치");
+        AssertVisibleAutomationIds(window, topic + " animation legend", "OpenVisionLearnAnimationLegend");
     }
 
     private static void AssertAllLearnTopicDocumentsResolve()
@@ -7032,13 +11800,23 @@ internal static class Program
                 topicWindow.Close();
             }
         }
+
+        foreach (string extraFile in new[] { "README.md", "LEARN_OPENCVSHARP_FOUNDATIONS.md", "LEARN_PRODUCT_SAMPLES.md" })
+        {
+            if (!OpenVisionWorkspaceLearnDocumentService.TryResolveLearnDocumentFile(extraFile, out string extraDocumentPath))
+            {
+                throw new InvalidOperationException("OpenVision Learn supporting document did not resolve: " + extraFile);
+            }
+
+            AssertLearnDocumentHasNoInternalContractCopy(extraDocumentPath, extraFile);
+        }
     }
 
     private static void AssertAllLearnTopicPracticeGuidesResolve()
     {
         string[] expectedTokens =
         {
-            "Sample Picker",
+            "Good/Bad",
             "Mean",
             "Threshold",
             "Filter",
@@ -7047,8 +11825,8 @@ internal static class Program
             "Contour",
             "EdgeDetection",
             "Line",
-            "Template",
-            "Feature",
+            "Matching",
+            "FeatureMatching",
             "Pipeline Review",
             "EdgeBasedMatching",
             "Metrics/Acceptance",
@@ -7060,12 +11838,12 @@ internal static class Program
         {
             "all",
             "mean",
-            "preprocess",
-            "preprocess",
-            "preprocess",
+            "threshold",
+            "filter",
+            "morphology",
             "blob",
             "contour",
-            "preprocess",
+            "edge-detection",
             "line",
             "template-matching",
             "feature-matching",
@@ -7094,10 +11872,9 @@ internal static class Program
                 Pump(4);
                 string pathId = topicWindow.SelectedTopicLearnPathIdForTest;
                 string practiceText = topicWindow.SelectedTopicPracticeTextForTest;
-                if (!practiceText.Contains("Practice:", StringComparison.Ordinal)
+                if (!practiceText.Contains("실습:", StringComparison.Ordinal)
                     || !practiceText.Contains(expectedTokens[i], StringComparison.Ordinal)
                     || !string.Equals(pathId, expectedPathIds[i], StringComparison.Ordinal)
-                    || !practiceText.Contains("'" + expectedPathIds[i] + "'", StringComparison.Ordinal)
                     || !availablePathIds.Contains(expectedPathIds[i]))
                 {
                     throw new InvalidOperationException(
@@ -7111,6 +11888,10 @@ internal static class Program
                         + practiceText
                         + "'.");
                 }
+
+                AssertNoInternalLearnContractCopy(
+                    topicWindow,
+                    "OpenVision Learn topic " + i.ToString(CultureInfo.InvariantCulture));
 
                 string? clickedPracticePathId = null;
                 topicWindow.SetOpenPracticeSamplesAction(path => clickedPracticePathId = path);
@@ -7141,6 +11922,146 @@ internal static class Program
                         + "'. Actual='"
                         + (practicePickerViewModel.SelectedLearnPathOption?.Id ?? "-")
                         + "'.");
+                }
+
+                if (i == (int)OpenVisionLearnTopicIndex.Threshold)
+                {
+                    string[] visibleThresholdSamples = practicePickerViewModel.SamplesView
+                        .Cast<VisionPipelineSampleCatalogItem>()
+                        .Select(sample => sample.SampleName)
+                        .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+                    string[] expectedThresholdSamples =
+                    {
+                        "Public_Threshold_BandPads_Good",
+                        "Public_Threshold_BandPads_Missing_Bad"
+                    };
+                    if (!visibleThresholdSamples.SequenceEqual(expectedThresholdSamples, StringComparer.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            "Threshold Learn path did not isolate the public Good/Bad pair. Visible="
+                            + string.Join(",", visibleThresholdSamples));
+                    }
+                }
+
+                if (i == (int)OpenVisionLearnTopicIndex.Filtering)
+                {
+                    string[] visibleFilterSamples = practicePickerViewModel.SamplesView
+                        .Cast<VisionPipelineSampleCatalogItem>()
+                        .Select(sample => sample.SampleName)
+                        .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+                    string[] expectedFilterSamples =
+                    {
+                        "Public_Filter_Denoise_Good",
+                        "Public_Filter_Denoise_Missing_Bad"
+                    };
+                    if (!visibleFilterSamples.SequenceEqual(expectedFilterSamples, StringComparer.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            "Filtering Learn path did not isolate the public Good/Bad pair. Visible="
+                            + string.Join(",", visibleFilterSamples));
+                    }
+                }
+
+                if (i == (int)OpenVisionLearnTopicIndex.Morphology)
+                {
+                    string[] visibleMorphologySamples = practicePickerViewModel.SamplesView
+                        .Cast<VisionPipelineSampleCatalogItem>()
+                        .Select(sample => sample.SampleName)
+                        .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+                    string[] expectedMorphologySamples =
+                    {
+                        "Public_Morphology_Cleanup_Good",
+                        "Public_Morphology_Cleanup_Missing_Bad"
+                    };
+                    if (!visibleMorphologySamples.SequenceEqual(expectedMorphologySamples, StringComparer.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            "Morphology Learn path did not isolate the public Good/Bad pair. Visible="
+                            + string.Join(",", visibleMorphologySamples));
+                    }
+                }
+
+                if (i == (int)OpenVisionLearnTopicIndex.Blob)
+                {
+                    string[] visibleBlobSamples = practicePickerViewModel.SamplesView
+                        .Cast<VisionPipelineSampleCatalogItem>()
+                        .Select(sample => sample.SampleName)
+                        .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+                    string[] expectedBlobSamples =
+                    {
+                        "Public_Blob_Particles_Good",
+                        "Public_Blob_Particles_Sparse_Bad"
+                    };
+                    if (!visibleBlobSamples.SequenceEqual(expectedBlobSamples, StringComparer.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            "Blob Learn path did not isolate the public Good/Bad pair. Visible="
+                            + string.Join(",", visibleBlobSamples));
+                    }
+                }
+
+                if (i == (int)OpenVisionLearnTopicIndex.Contour)
+                {
+                    string[] visibleContourSamples = practicePickerViewModel.SamplesView
+                        .Cast<VisionPipelineSampleCatalogItem>()
+                        .Select(sample => sample.SampleName)
+                        .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+                    string[] expectedContourSamples =
+                    {
+                        "Public_Contour_Shapes_Good",
+                        "Public_Contour_Shapes_Missing_Bad"
+                    };
+                    if (!visibleContourSamples.SequenceEqual(expectedContourSamples, StringComparer.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            "Contour Learn path did not isolate the public Good/Bad pair. Visible="
+                            + string.Join(",", visibleContourSamples));
+                    }
+                }
+
+                if (i == (int)OpenVisionLearnTopicIndex.EdgeDetection)
+                {
+                    string[] visibleEdgeDetectionSamples = practicePickerViewModel.SamplesView
+                        .Cast<VisionPipelineSampleCatalogItem>()
+                        .Select(sample => sample.SampleName)
+                        .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+                    string[] expectedEdgeDetectionSamples =
+                    {
+                        "Public_EdgeDetection_Shapes_Good",
+                        "Public_EdgeDetection_Shapes_Missing_Bad"
+                    };
+                    if (!visibleEdgeDetectionSamples.SequenceEqual(expectedEdgeDetectionSamples, StringComparer.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            "EdgeDetection Learn path did not isolate the public Good/Bad pair. Visible="
+                            + string.Join(",", visibleEdgeDetectionSamples));
+                    }
+                }
+
+                if (i == (int)OpenVisionLearnTopicIndex.LineDistance)
+                {
+                    string[] visibleLineSamples = practicePickerViewModel.SamplesView
+                        .Cast<VisionPipelineSampleCatalogItem>()
+                        .Select(sample => sample.SampleName)
+                        .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+                    string[] expectedLineSamples =
+                    {
+                        "Public_Line_Pins_Good",
+                        "Public_Line_Pins_WidePin_Bad"
+                    };
+                    if (!visibleLineSamples.SequenceEqual(expectedLineSamples, StringComparer.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            "LineDistance Learn path did not isolate the public Good/Bad pair. Visible="
+                            + string.Join(",", visibleLineSamples));
+                    }
                 }
 
                 if (!string.Equals(practicePickerViewModel.SelectedCatalogSourceOption?.Id, "public", StringComparison.OrdinalIgnoreCase))
@@ -7178,6 +12099,55 @@ internal static class Program
                 + window.SelectedTopicDocumentFileNameForTest
                 + "'.");
         }
+
+        AssertLearnDocumentHasNoInternalContractCopy(topicDocumentPath, expectedFileName);
+    }
+
+    private static void AssertLearnDocumentHasNoInternalContractCopy(string documentPath, string context)
+    {
+        string content = File.ReadAllText(documentPath);
+        string? forbidden = InternalLearnContractPhrases.FirstOrDefault(
+            phrase => content.Contains(phrase, StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrWhiteSpace(forbidden))
+        {
+            throw new InvalidOperationException(
+                "OpenVision Learn document contains internal engineering copy '"
+                + forbidden
+                + "'. Document="
+                + context);
+        }
+    }
+
+    private static void AssertNoInternalLearnContractCopy(OpenVisionLearnWindow window, string context)
+    {
+        List<string> copy = FindVisualChildren<TextBlock>(window)
+            .Select(item => item.Text)
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .ToList();
+        copy.AddRange(
+            FindVisualChildren<ContentControl>(window)
+                .Select(item => item.Content as string)
+                .OfType<string>()
+                .Where(item => !string.IsNullOrWhiteSpace(item)));
+        copy.AddRange(
+            FindVisualChildren<HeaderedContentControl>(window)
+                .Select(item => item.Header as string)
+                .OfType<string>()
+                .Where(item => !string.IsNullOrWhiteSpace(item)));
+        copy.AddRange(
+            FindVisualChildren<FrameworkElement>(window)
+                .Select(item => item.ToolTip as string)
+                .OfType<string>()
+                .Where(item => !string.IsNullOrWhiteSpace(item)));
+
+        string allCopy = string.Join(" | ", copy);
+        string? forbidden = InternalLearnContractPhrases.FirstOrDefault(
+            phrase => allCopy.Contains(phrase, StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrWhiteSpace(forbidden))
+        {
+            throw new InvalidOperationException(
+                context + " contains internal engineering copy '" + forbidden + "'.");
+        }
     }
 
     private static CaptureResult CaptureOpenVisionLearnBrightness(string outputPath)
@@ -7195,18 +12165,73 @@ internal static class Program
                 throw new InvalidOperationException("OpenVision Learn brightness topic was not selected.");
             }
 
+            if (window.CanOpenBrightnessToolsForTest)
+            {
+                throw new InvalidOperationException("Standalone Brightness Learn unexpectedly enabled Shell-only Tool View actions.");
+            }
+
+            if (!window.BrightnessToolLocationTitleForTest.Contains("Mean Type", StringComparison.Ordinal)
+                || !window.BrightnessToolLocationTitleForTest.Contains("Histogram", StringComparison.Ordinal)
+                || !window.BrightnessToolLocationDetailForTest.Contains("결과 지표", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Brightness Learn did not expose the initial Mean / Histogram parameter paths.");
+            }
+
+            window.SetOpenRelatedToolAction(_ => { });
+            if (!window.CanOpenBrightnessToolsForTest)
+            {
+                throw new InvalidOperationException("Brightness Learn did not enable Tool View actions after the Shell callback was attached.");
+            }
+
             if (!window.BrightnessFormulaTextForTest.Contains("clamp", StringComparison.OrdinalIgnoreCase)
                 || !window.BrightnessFormulaTextForTest.Contains("-35", StringComparison.Ordinal))
             {
                 throw new InvalidOperationException("Brightness guide did not explain clamped GV offset.");
             }
 
+            window.ResetBrightnessAnimationForTest();
+            window.ToggleBrightnessAnimationForTest();
+            Thread.Sleep(500);
+            Pump(4);
+            if (window.BrightnessAnimationStepForTest < 1)
+            {
+                throw new InvalidOperationException("Brightness animation timer did not advance.");
+            }
+
+            window.ResetBrightnessAnimationForTest();
+            window.AdvanceBrightnessAnimationForTest();
+            window.AdvanceBrightnessAnimationForTest();
+            window.AdvanceBrightnessAnimationForTest();
+            if (window.BrightnessAnimationStepForTest != 3
+                || !window.BrightnessAnimationStatusTextForTest.Contains("3 / 3", StringComparison.Ordinal)
+                || !window.BrightnessAnimationStatusTextForTest.Contains("Histogram shift", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Brightness animation did not finish with the histogram-shift explanation.");
+            }
+
+            AssertOpenVisionLearnAnimationLegend(window, "OpenVision Learn brightness");
+
             AssertVisibleAutomationIds(
                 window,
                 "OpenVision Learn brightness topic",
-                "OpenVisionLearnBrightnessOffsetSlider");
-            WriteElementPng(window, outputPath, 1040, 700);
-            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+                "OpenVisionLearnBrightnessOffsetSlider",
+                "OpenVisionLearnBrightnessPlayButton",
+                "OpenVisionLearnBrightnessStepButton",
+                "OpenVisionLearnBrightnessResetButton",
+                "OpenVisionLearnBrightnessAnimationStatus",
+                "OpenVisionLearnBrightnessOpenMeanToolButton",
+                "OpenVisionLearnBrightnessOpenHistogramToolButton",
+                "OpenVisionLearnBrightnessToolLocationPanel",
+                "OpenVisionLearnBrightnessToolLocationTitle",
+                "OpenVisionLearnBrightnessToolLocationDetail");
+            foreach (ScrollViewer scrollViewer in FindVisualChildren<ScrollViewer>(window).Where(item => item.IsVisible))
+            {
+                scrollViewer.ScrollToTop();
+            }
+
+            Pump(4);
+            WriteElementPng(window, outputPath, 1040, 900);
+            return new CaptureResult(1040, 900, (DateTime.UtcNow - started).TotalMilliseconds);
         }
         finally
         {
@@ -7229,17 +12254,114 @@ internal static class Program
                 throw new InvalidOperationException("OpenVision Learn filtering topic was not selected.");
             }
 
+            if (!string.Equals(window.SelectedTopicLearnPathIdForTest, "filter", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("Public_Filter_Denoise_Good", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("ResultCount 4", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Filtering Learn did not expose its dedicated sample, tool, and explicit-result practice path. "
+                    + $"Path='{window.SelectedTopicLearnPathIdForTest}', Text='{window.SelectedTopicPracticeTextForTest}'.");
+            }
+
+            if (window.CanOpenFilteringToolForTest)
+            {
+                throw new InvalidOperationException("Standalone Filtering Learn unexpectedly enabled the Shell-only Tool View action.");
+            }
+
+            if (!window.FilteringToolLocationTitleForTest.Contains("Filter Type", StringComparison.Ordinal)
+                || !window.FilteringToolLocationTitleForTest.Contains("Kernel Width/Height", StringComparison.Ordinal)
+                || !window.FilteringToolLocationDetailForTest.Contains("Median", StringComparison.Ordinal)
+                || !window.FilteringToolLocationDetailForTest.Contains("Bilateral", StringComparison.Ordinal)
+                || !window.FilteringToolLocationDetailForTest.Contains("Preview", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Filtering Learn did not expose the initial Filter parameter path.");
+            }
+
+            window.SetOpenRelatedToolAction(_ => { });
+            if (!window.CanOpenFilteringToolForTest)
+            {
+                throw new InvalidOperationException("Filtering Learn did not enable the Tool View action after the Shell callback was attached.");
+            }
+
             if (!window.FilterFormulaTextForTest.Contains("median", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException("Filtering guide did not explain the median filter calculation.");
             }
 
+            window.ResetFilterAnimationForTest();
+            window.ToggleFilterAnimationForTest();
+            Thread.Sleep(600);
+            Pump(4);
+            if (window.FilterAnimationStepForTest < 1)
+            {
+                throw new InvalidOperationException("Filter animation timer did not advance.");
+            }
+
+            window.ResetFilterAnimationForTest();
+            window.AdvanceFilterAnimationForTest();
+            window.AdvanceFilterAnimationForTest();
+            if (window.FilterAnimationStepForTest != 2
+                || !window.FilterAnimationStatusTextForTest.Contains("Sort", StringComparison.OrdinalIgnoreCase)
+                || !window.FilterAnimationStatusTextForTest.Contains("220", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Filter animation did not expose the median sort step.");
+            }
+
+            window.AdvanceFilterAnimationForTest();
+            if (window.FilterAnimationStepForTest != 3
+                || !window.FilterAnimationStatusTextForTest.Contains("3 / 3", StringComparison.Ordinal)
+                || !window.FilterAnimationStatusTextForTest.Contains("59", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Filter animation did not finish with the median output explanation.");
+            }
+
+            window.FilterModeIndexForTest = 0;
+            window.ResetFilterAnimationForTest();
+            window.AdvanceFilterAnimationForTest();
+            window.AdvanceFilterAnimationForTest();
+            if (!window.FilterAnimationStatusTextForTest.Contains("677 / 9", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Filter animation did not expose the mean calculation step.");
+            }
+
+            window.FilterModeIndexForTest = 2;
+            window.ResetFilterAnimationForTest();
+            window.AdvanceFilterAnimationForTest();
+            window.AdvanceFilterAnimationForTest();
+            if (!window.FilterAnimationStatusTextForTest.Contains("220 x 5", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Filter animation did not expose the sharpen calculation step.");
+            }
+
+            window.FilterModeIndexForTest = 1;
+            window.ResetFilterAnimationForTest();
+            window.AdvanceFilterAnimationForTest();
+            window.AdvanceFilterAnimationForTest();
+            window.AdvanceFilterAnimationForTest();
+
+            AssertOpenVisionLearnAnimationLegend(window, "OpenVision Learn filtering");
+
             AssertVisibleAutomationIds(
                 window,
                 "OpenVision Learn filtering topic",
-                "OpenVisionLearnFilterModeCombo");
-            WriteElementPng(window, outputPath, 1040, 700);
-            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+                "OpenVisionLearnFilterModeCombo",
+                "OpenVisionLearnFilterPlayButton",
+                "OpenVisionLearnFilterStepButton",
+                "OpenVisionLearnFilterResetButton",
+                "OpenVisionLearnFilterAnimationStatus",
+                "OpenVisionLearnFilteringPracticePanel",
+                "OpenVisionLearnFilteringOpenToolButton",
+                "OpenVisionLearnFilteringToolLocationPanel",
+                "OpenVisionLearnFilteringToolLocationTitle",
+                "OpenVisionLearnFilteringToolLocationDetail");
+            foreach (ScrollViewer scrollViewer in FindVisualChildren<ScrollViewer>(window).Where(item => item.IsVisible))
+            {
+                scrollViewer.ScrollToTop();
+            }
+
+            Pump(4);
+            WriteElementPng(window, outputPath, 1040, 900);
+            return new CaptureResult(1040, 900, (DateTime.UtcNow - started).TotalMilliseconds);
         }
         finally
         {
@@ -7251,10 +12373,12 @@ internal static class Program
     {
         DateTime started = DateTime.UtcNow;
         OpenVisionLearnWindow window = new(127, 255, false, 4);
+        window.SetOpenPracticeSamplesAction(_ => { });
         window.Show();
         try
         {
             Pump(12);
+            AssertInitialKeyboardFocus(window, "OpenVisionLearnTopicList");
             window.MorphologyModeIndexForTest = 2;
             Pump(8);
             if (window.SelectedTopicIndexForTest != 4)
@@ -7262,21 +12386,182 @@ internal static class Program
                 throw new InvalidOperationException("OpenVision Learn morphology topic was not selected.");
             }
 
+            if (!string.Equals(window.SelectedTopicLearnPathIdForTest, "morphology", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("Public_Morphology_Cleanup_Good", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("ResultCount 4", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Morphology Learn did not expose its dedicated sample, tool, and explicit-result practice path. "
+                    + $"Path='{window.SelectedTopicLearnPathIdForTest}', Text='{window.SelectedTopicPracticeTextForTest}'.");
+            }
+
             if (!window.MorphologyFormulaTextForTest.Contains("Opening", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException("Morphology guide did not explain the opening operation.");
             }
 
+            if (window.CanOpenMorphologyToolForTest)
+            {
+                throw new InvalidOperationException("Standalone Morphology Learn unexpectedly enabled the Shell-only Tool View action.");
+            }
+
+            if (!window.MorphologyToolLocationTitleForTest.Contains("Operation", StringComparison.Ordinal)
+                || !window.MorphologyToolLocationTitleForTest.Contains("Kernel Width/Height", StringComparison.Ordinal)
+                || !window.MorphologyToolLocationDetailForTest.Contains("Rect/Ellipse/Cross", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Morphology Learn did not expose the initial Tool View parameter guide.");
+            }
+
+            window.SetOpenRelatedToolAction(_ => { });
+            if (!window.CanOpenMorphologyToolForTest)
+            {
+                throw new InvalidOperationException("Morphology Learn did not enable the Tool View action after Shell wiring.");
+            }
+
+            window.ResetMorphologyAnimationForTest();
+            window.ToggleMorphologyAnimationForTest();
+            Thread.Sleep(350);
+            Pump(4);
+            if (window.MorphologyAnimationStepForTest < 1)
+            {
+                throw new InvalidOperationException("Morphology play control did not advance the animation timer.");
+            }
+            AssertButtonContent(window, "OpenVisionLearnMorphologyPlayButton", "Pause");
+
+            window.ResetMorphologyAnimationForTest();
+            for (int i = 0; i < 8; i++)
+            {
+                window.AdvanceMorphologyAnimationForTest();
+            }
+            Pump(4);
+            if (window.MorphologyAnimationStepForTest != 8
+                || !window.MorphologyAnimationStatusTextForTest.Contains("8 / 25", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Morphology animation did not advance one output cell at a time.");
+            }
+
             AssertVisibleAutomationIds(
                 window,
                 "OpenVision Learn morphology topic",
+                "OpenVisionLearnMorphologyModeCombo",
+                "OpenVisionLearnMorphologyPlayButton",
+                "OpenVisionLearnMorphologyStepButton",
+                "OpenVisionLearnMorphologyResetButton",
+                "OpenVisionLearnMorphologyAnimationStatus",
+                "OpenVisionLearnMorphologyPracticePanel",
+                "OpenVisionLearnMorphologyOpenToolButton",
+                "OpenVisionLearnMorphologyToolLocationPanel",
+                "OpenVisionLearnMorphologyToolLocationTitle",
+                "OpenVisionLearnMorphologyToolLocationDetail");
+            AssertButtonContent(window, "OpenVisionLearnMorphologyPlayButton", "Play");
+            AssertButtonContent(window, "OpenVisionLearnMorphologyStepButton", "Step");
+            AssertButtonContent(window, "OpenVisionLearnMorphologyResetButton", "Reset");
+            AssertAnimationKeyboardOrder(
+                window,
+                "OpenVisionLearnMorphologyPlayButton",
+                "OpenVisionLearnMorphologyStepButton",
+                "OpenVisionLearnMorphologyResetButton");
+            AssertKeyboardTabRoute(
+                window,
+                "OpenVisionWindowMinimizeButton",
+                "OpenVisionWindowMaximizeRestoreButton",
+                "OpenVisionWindowCloseButton",
+                "OpenVisionLearnTopicList");
+            AssertKeyboardTabRoute(
+                window,
+                FocusNavigationDirection.Previous,
+                "OpenVisionLearnTopicList",
+                "OpenVisionWindowCloseButton",
+                "OpenVisionWindowMaximizeRestoreButton",
+                "OpenVisionWindowMinimizeButton");
+            AssertKeyboardTabRoute(
+                window,
+                "OpenVisionLearnTopicList",
+                "OpenVisionLearnOpenDocsButton",
+                "OpenVisionLearnOpenFoundationDocsButton",
+                "OpenVisionLearnPracticeSamplesButton",
+                "OpenVisionLearnPracticeWorkflowPanel",
+                "OpenVisionLearnMorphologyOpenToolButton",
+                "OpenVisionLearnMorphologyPlayButton",
+                "OpenVisionLearnMorphologyStepButton",
+                "OpenVisionLearnMorphologyResetButton",
                 "OpenVisionLearnMorphologyModeCombo");
+            AssertKeyboardTabRoute(
+                window,
+                FocusNavigationDirection.Previous,
+                "OpenVisionLearnMorphologyModeCombo",
+                "OpenVisionLearnMorphologyResetButton",
+                "OpenVisionLearnMorphologyStepButton",
+                "OpenVisionLearnMorphologyPlayButton",
+                "OpenVisionLearnMorphologyOpenToolButton",
+                "OpenVisionLearnPracticeWorkflowPanel",
+                "OpenVisionLearnPracticeSamplesButton",
+                "OpenVisionLearnOpenFoundationDocsButton",
+                "OpenVisionLearnOpenDocsButton",
+                "OpenVisionLearnTopicList");
             WriteElementPng(window, outputPath, 1040, 700);
             return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
         }
         finally
         {
             window.Close();
+        }
+    }
+
+    private static CaptureResult CaptureOpenVisionLearnReopenFocus(string outputPath)
+    {
+        DateTime started = DateTime.UtcNow;
+        OpenVisionLearnWindow firstWindow = new(127, 255, false, 8);
+        firstWindow.Show();
+        try
+        {
+            Pump(12);
+            if (firstWindow.SelectedTopicIndexForTest != 8)
+            {
+                throw new InvalidOperationException("First Learn window did not open the requested LineDistance topic.");
+            }
+
+            AssertInitialKeyboardFocus(firstWindow, "OpenVisionLearnTopicList");
+            firstWindow.LineDistanceRangeMaxForTest = 1.5;
+            Pump(4);
+        }
+        finally
+        {
+            firstWindow.Close();
+            Pump(4);
+        }
+
+        if (firstWindow.IsVisible)
+        {
+            throw new InvalidOperationException("First Learn window remained visible after Close.");
+        }
+
+        OpenVisionLearnWindow reopenedWindow = new(127, 255, false, 4);
+        reopenedWindow.Show();
+        try
+        {
+            Pump(12);
+            if (reopenedWindow.SelectedTopicIndexForTest != 4)
+            {
+                throw new InvalidOperationException("Reopened Learn window kept the previous LineDistance topic.");
+            }
+
+            AssertInitialKeyboardFocus(reopenedWindow, "OpenVisionLearnTopicList");
+            if (reopenedWindow.MorphologyModeIndexForTest != 0
+                || Math.Abs(reopenedWindow.LineDistanceRangeMaxForTest - 0.5) > 0.0001)
+            {
+                throw new InvalidOperationException(
+                    "Reopened Learn window kept parameter state from the closed instance. "
+                    + $"MorphologyMode={reopenedWindow.MorphologyModeIndexForTest}, "
+                    + $"LineDistanceRangeMax={reopenedWindow.LineDistanceRangeMaxForTest:0.00}");
+            }
+
+            WriteElementPng(reopenedWindow, outputPath, 1040, 700);
+            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+        }
+        finally
+        {
+            reopenedWindow.Close();
         }
     }
 
@@ -7300,6 +12585,54 @@ internal static class Program
                 throw new InvalidOperationException("Blob guide did not explain ResultCount.");
             }
 
+            if (!string.Equals(window.SelectedTopicLearnPathIdForTest, "blob", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("Public_Blob_Particles_Good", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("ResultCount 8..14", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Blob Learn did not expose the dedicated public practice guidance. "
+                    + $"Path='{window.SelectedTopicLearnPathIdForTest}', Text='{window.SelectedTopicPracticeTextForTest}'.");
+            }
+
+            if (window.CanOpenBlobToolForTest)
+            {
+                throw new InvalidOperationException("Standalone Blob Learn unexpectedly enabled the Shell-only Tool View action.");
+            }
+
+            if (!window.BlobToolLocationTitleForTest.Contains("Use ROI / ROI", StringComparison.Ordinal)
+                || !window.BlobToolLocationTitleForTest.Contains("Min area / Max area", StringComparison.Ordinal)
+                || !window.BlobToolLocationDetailForTest.Contains("AreaMin/AreaMax", StringComparison.Ordinal)
+                || !window.BlobToolLocationDetailForTest.Contains("BoundsWidth/BoundsHeight", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Blob Learn did not expose the initial PropertyGrid and result metric guide.");
+            }
+
+            window.SetOpenRelatedToolAction(_ => { });
+            if (!window.CanOpenBlobToolForTest)
+            {
+                throw new InvalidOperationException("Blob Learn did not enable the Tool View action after Shell wiring.");
+            }
+
+            window.ResetBlobAnimationForTest();
+            window.ToggleBlobAnimationForTest();
+            Thread.Sleep(500);
+            Pump(4);
+            if (window.BlobAnimationStepForTest < 1)
+            {
+                throw new InvalidOperationException("Blob play control did not advance the animation timer.");
+            }
+            AssertButtonContent(window, "OpenVisionLearnBlobPlayButton", "Pause");
+
+            window.ResetBlobAnimationForTest();
+            window.AdvanceBlobAnimationForTest();
+            window.AdvanceBlobAnimationForTest();
+            Pump(4);
+            if (window.BlobAnimationStepForTest != 2
+                || !window.BlobAnimationStatusTextForTest.Contains("2 / 3", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Blob animation did not reveal connected candidates one at a time.");
+            }
+
             AssertVisibleTextContains(
                 window,
                 "OpenVision Learn Blob decision guide",
@@ -7310,7 +12643,24 @@ internal static class Program
             AssertVisibleAutomationIds(
                 window,
                 "OpenVision Learn Blob topic",
-                "OpenVisionLearnBlobMinAreaSlider");
+                "OpenVisionLearnBlobMinAreaSlider",
+                "OpenVisionLearnBlobPlayButton",
+                "OpenVisionLearnBlobStepButton",
+                "OpenVisionLearnBlobResetButton",
+                "OpenVisionLearnBlobAnimationStatus",
+                "OpenVisionLearnBlobPracticePanel",
+                "OpenVisionLearnBlobOpenToolButton",
+                "OpenVisionLearnBlobToolLocationPanel",
+                "OpenVisionLearnBlobToolLocationTitle",
+                "OpenVisionLearnBlobToolLocationDetail");
+            AssertButtonContent(window, "OpenVisionLearnBlobPlayButton", "Play");
+            AssertButtonContent(window, "OpenVisionLearnBlobStepButton", "Step");
+            AssertButtonContent(window, "OpenVisionLearnBlobResetButton", "Reset");
+            foreach (ScrollViewer scrollViewer in FindVisualChildren<ScrollViewer>(window).Where(item => item.IsVisible))
+            {
+                scrollViewer.ScrollToTop();
+            }
+            Pump(8);
             WriteElementPng(window, outputPath, 1040, 700);
             return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
         }
@@ -7330,6 +12680,10 @@ internal static class Program
             Pump(12);
             window.ContourDrawModeIndexForTest = 2;
             Pump(8);
+            window.ResetContourAnimationForTest();
+            window.AdvanceContourAnimationForTest();
+            window.AdvanceContourAnimationForTest();
+            Pump(8);
             if (window.SelectedTopicIndexForTest != 6)
             {
                 throw new InvalidOperationException("OpenVision Learn Contour topic was not selected.");
@@ -7339,6 +12693,40 @@ internal static class Program
                 || !window.ContourFormulaTextForTest.Contains("BoundingBox", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException("Contour guide did not explain contour and bounding box output.");
+            }
+
+            if (!string.Equals(window.SelectedTopicLearnPathIdForTest, "contour", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("Public_Contour_Shapes_Good", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("ResultCount 5", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Contour Learn did not expose the dedicated public practice guidance. "
+                    + $"Path='{window.SelectedTopicLearnPathIdForTest}', Text='{window.SelectedTopicPracticeTextForTest}'.");
+            }
+
+            if (window.CanOpenContourToolForTest)
+            {
+                throw new InvalidOperationException("Standalone Contour Learn unexpectedly enabled the Shell-only Tool View action.");
+            }
+
+            if (!window.ContourToolLocationTitleForTest.Contains("Retrieval mode", StringComparison.Ordinal)
+                || !window.ContourToolLocationTitleForTest.Contains("Min area / Max area", StringComparison.Ordinal)
+                || !window.ContourToolLocationDetailForTest.Contains("Approximation", StringComparison.Ordinal)
+                || !window.ContourToolLocationDetailForTest.Contains("BoundsHeightMax", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Contour Learn did not expose the initial PropertyGrid and result metric guide.");
+            }
+
+            window.SetOpenRelatedToolAction(_ => { });
+            if (!window.CanOpenContourToolForTest)
+            {
+                throw new InvalidOperationException("Contour Learn did not enable the Tool View action after Shell wiring.");
+            }
+
+            if (window.ContourAnimationStepForTest != 2
+                || !window.ContourAnimationStatusTextForTest.Contains("2 / 3", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Contour guide did not expose the animated contour-pixel step.");
             }
 
             AssertVisibleTextContains(
@@ -7351,7 +12739,21 @@ internal static class Program
             AssertVisibleAutomationIds(
                 window,
                 "OpenVision Learn Contour topic",
-                "OpenVisionLearnContourDrawModeCombo");
+                "OpenVisionLearnContourDrawModeCombo",
+                "OpenVisionLearnContourPlayButton",
+                "OpenVisionLearnContourStepButton",
+                "OpenVisionLearnContourResetButton",
+                "OpenVisionLearnContourAnimationStatus",
+                "OpenVisionLearnContourPracticePanel",
+                "OpenVisionLearnContourOpenToolButton",
+                "OpenVisionLearnContourToolLocationPanel",
+                "OpenVisionLearnContourToolLocationTitle",
+                "OpenVisionLearnContourToolLocationDetail");
+            foreach (ScrollViewer scrollViewer in FindVisualChildren<ScrollViewer>(window).Where(item => item.IsVisible))
+            {
+                scrollViewer.ScrollToTop();
+            }
+            Pump(8);
             WriteElementPng(window, outputPath, 1040, 700);
             return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
         }
@@ -7371,6 +12773,10 @@ internal static class Program
             Pump(12);
             window.EdgeThresholdForTest = 85;
             Pump(8);
+            window.ResetEdgeLineAnimationForTest();
+            window.AdvanceEdgeLineAnimationForTest();
+            window.AdvanceEdgeLineAnimationForTest();
+            Pump(8);
             if (window.SelectedTopicIndexForTest != 7)
             {
                 throw new InvalidOperationException("OpenVision Learn Edge / Line topic was not selected.");
@@ -7382,12 +12788,46 @@ internal static class Program
                 throw new InvalidOperationException("Edge / Line guide did not explain edge strength and line run.");
             }
 
+            if (window.CanOpenEdgeLineToolsForTest)
+            {
+                throw new InvalidOperationException("Standalone Edge / Line Learn unexpectedly enabled the Shell-only Tool View actions.");
+            }
+
+            if (!window.EdgeLineToolLocationTitleForTest.Contains("EdgeDetection = edge map", StringComparison.Ordinal)
+                || !window.EdgeLineToolLocationTitleForTest.Contains("Line = ROI", StringComparison.Ordinal)
+                || !window.EdgeLineToolLocationDetailForTest.Contains("EdgeDetection", StringComparison.Ordinal)
+                || !window.EdgeLineToolLocationDetailForTest.Contains("Preview", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Edge / Line Learn did not expose the initial role and parameter guide.");
+            }
+
+            if (!string.Equals(window.SelectedTopicLearnPathIdForTest, "edge-detection", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("Public_EdgeDetection_Shapes_Good", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("ResultCount 4", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "EdgeDetection Learn did not expose the dedicated public practice guidance. "
+                    + $"Path='{window.SelectedTopicLearnPathIdForTest}', Text='{window.SelectedTopicPracticeTextForTest}'.");
+            }
+
+            window.SetOpenRelatedToolAction(_ => { });
+            if (!window.CanOpenEdgeLineToolsForTest)
+            {
+                throw new InvalidOperationException("Edge / Line Learn did not enable both Tool View actions after Shell wiring.");
+            }
+
+            if (window.EdgeLineAnimationStepForTest != 2
+                || !window.EdgeLineAnimationStatusTextForTest.Contains("2 / 3", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Edge / Line guide did not expose the animated edge-threshold step.");
+            }
+
             string visibleText = string.Join(
                 " | ",
                 FindVisualChildren<TextBlock>(window)
                     .Select(item => item.Text)
                     .Where(text => !string.IsNullOrWhiteSpace(text)));
-            foreach (string token in new[] { "EdgeDetection", "EdgeBasedMatching", "LineGauge", "LineDistance" })
+            foreach (string token in new[] { "EdgeDetection", "LineDistance" })
             {
                 if (!visibleText.Contains(token, StringComparison.Ordinal))
                 {
@@ -7398,7 +12838,22 @@ internal static class Program
             AssertVisibleAutomationIds(
                 window,
                 "OpenVision Learn Edge / Line topic",
-                "OpenVisionLearnEdgeThresholdSlider");
+                "OpenVisionLearnEdgeThresholdSlider",
+                "OpenVisionLearnEdgeLinePlayButton",
+                "OpenVisionLearnEdgeLineStepButton",
+                "OpenVisionLearnEdgeLineResetButton",
+                "OpenVisionLearnEdgeLineAnimationStatus",
+                "OpenVisionLearnEdgeDetectionPracticePanel",
+                "OpenVisionLearnEdgeDetectionOpenToolButton",
+                "OpenVisionLearnEdgeLineOpenLineToolButton",
+                "OpenVisionLearnEdgeLineToolLocationPanel",
+                "OpenVisionLearnEdgeLineToolLocationTitle",
+                "OpenVisionLearnEdgeLineToolLocationDetail");
+            foreach (ScrollViewer scrollViewer in FindVisualChildren<ScrollViewer>(window).Where(item => item.IsVisible))
+            {
+                scrollViewer.ScrollToTop();
+            }
+            Pump(8);
             WriteElementPng(window, outputPath, 1040, 700);
             return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
         }
@@ -7418,6 +12873,11 @@ internal static class Program
             Pump(12);
             window.LineDistanceRangeMaxForTest = 0.5;
             Pump(8);
+            window.ResetLineDistanceAnimationForTest();
+            window.AdvanceLineDistanceAnimationForTest();
+            window.AdvanceLineDistanceAnimationForTest();
+            window.AdvanceLineDistanceAnimationForTest();
+            Pump(8);
             if (window.SelectedTopicIndexForTest != 8)
             {
                 throw new InvalidOperationException("OpenVision Learn LineDistance topic was not selected.");
@@ -7431,12 +12891,46 @@ internal static class Program
                 throw new InvalidOperationException("LineDistance guide did not explain average, range, and max metrics.");
             }
 
+            if (window.LineDistanceAnimationStepForTest != 3
+                || !window.LineDistanceAnimationStatusTextForTest.Contains("Range", StringComparison.OrdinalIgnoreCase)
+                || !window.LineDistanceAnimationStatusTextForTest.Contains("NG", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("LineDistance guide did not expose the animated range-gate step.");
+            }
+
+            if (window.CanOpenLineDistanceToolForTest)
+            {
+                throw new InvalidOperationException("Standalone LineDistance Learn unexpectedly enabled the Shell-only Line Tool View action.");
+            }
+
+            if (!window.LineDistanceToolLocationTitleForTest.Contains("Purpose > Measure", StringComparison.Ordinal)
+                || !window.LineDistanceToolLocationDetailForTest.Contains("Pixel/mm", StringComparison.Ordinal)
+                || !window.LineDistanceToolLocationDetailForTest.Contains("DistanceMmRange/Max", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("LineDistance Learn did not expose the initial Measure and outlier-gate guide.");
+            }
+
+            if (!string.Equals(window.SelectedTopicLearnPathIdForTest, "line", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("Public_Line_Pins_Good", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("DistanceMmRange 0.03", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "LineDistance Learn did not expose the dedicated public practice guidance. "
+                    + "Path='" + window.SelectedTopicLearnPathIdForTest + "', Text='" + window.SelectedTopicPracticeTextForTest + "'.");
+            }
+
+            window.SetOpenRelatedToolAction(_ => { });
+            if (!window.CanOpenLineDistanceToolForTest)
+            {
+                throw new InvalidOperationException("LineDistance Learn did not enable the Line Tool View action after Shell wiring.");
+            }
+
             string visibleText = string.Join(
                 " | ",
                 FindVisualChildren<TextBlock>(window)
                     .Select(item => item.Text)
                     .Where(text => !string.IsNullOrWhiteSpace(text)));
-            foreach (string token in new[] { "Gate rule", "DistanceMmAvg", "DistanceMmRange", "DistanceMmMax", "CvROI", "SAMPLING_STEP", "POINT_RANGE", "PIXELPERMM" })
+            foreach (string token in new[] { "DISTANCE_RANGE_MAX", "DistanceMmAvg", "DistanceMmRange", "DistanceMmMax", "CvROI", "SAMPLING_STEP", "POINT_RANGE", "PIXELPERMM" })
             {
                 if (!visibleText.Contains(token, StringComparison.Ordinal))
                 {
@@ -7447,7 +12941,32 @@ internal static class Program
             AssertVisibleAutomationIds(
                 window,
                 "OpenVision Learn LineDistance topic",
-                "OpenVisionLearnLineDistanceRangeSlider");
+                "OpenVisionLearnLineDistanceRangeSlider",
+                "OpenVisionLearnLineDistancePlayButton",
+                "OpenVisionLearnLineDistanceStepButton",
+                "OpenVisionLearnLineDistanceResetButton",
+                "OpenVisionLearnLineDistanceAnimationStatus",
+                "OpenVisionLearnLineDistancePracticePanel",
+                "OpenVisionLearnLineDistanceOpenToolButton",
+                "OpenVisionLearnLineDistanceToolLocationPanel",
+                "OpenVisionLearnLineDistanceToolLocationTitle",
+                "OpenVisionLearnLineDistanceToolLocationDetail");
+            AssertTopicChangeFocusHandoff(
+                window,
+                "OpenVisionLearnLineDistanceRangeSlider",
+                4);
+            ListBox topicList = FindVisualChildren<ListBox>(window)
+                .First(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "OpenVisionLearnTopicList",
+                    StringComparison.Ordinal));
+            topicList.SelectedIndex = (int)OpenVisionLearnTopicIndex.LineDistance;
+            topicList.ScrollIntoView(topicList.SelectedItem);
+            foreach (ScrollViewer scrollViewer in FindVisualChildren<ScrollViewer>(window).Where(item => item.IsVisible))
+            {
+                scrollViewer.ScrollToTop();
+            }
+            Pump(8);
             WriteElementPng(window, outputPath, 1040, 700);
             return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
         }
@@ -7467,9 +12986,24 @@ internal static class Program
             Pump(12);
             window.MatchingThresholdForTest = 0.85;
             Pump(8);
+            window.ResetMatchingAnimationForTest();
+            window.AdvanceMatchingAnimationForTest();
+            window.AdvanceMatchingAnimationForTest();
+            window.AdvanceMatchingAnimationForTest();
+            Pump(8);
             if (window.SelectedTopicIndexForTest != 9)
             {
                 throw new InvalidOperationException("OpenVision Learn Matching topic was not selected.");
+            }
+
+            if (window.IsPracticeWorkflowExpandedForTest)
+            {
+                throw new InvalidOperationException("Matching topic did not start with the repeated practice workflow collapsed.");
+            }
+
+            if (!window.AreMatchingFamilyDecisionsCollapsedForTest)
+            {
+                throw new InvalidOperationException("Matching topic did not start with the tool-family comparison collapsed.");
             }
 
             if (!window.MatchingFormulaTextForTest.Contains("BestScore", StringComparison.OrdinalIgnoreCase)
@@ -7478,18 +13012,58 @@ internal static class Program
                 throw new InvalidOperationException("Matching guide did not explain score threshold evaluation.");
             }
 
+            if (window.MatchingAnimationStepForTest != 3
+                || !window.MatchingAnimationStatusTextForTest.Contains("Threshold gate", StringComparison.OrdinalIgnoreCase)
+                || !window.MatchingAnimationStatusTextForTest.Contains("OK", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Matching guide did not expose the animated threshold-gate step.");
+            }
+
+            if (window.CanOpenMatchingToolForTest)
+            {
+                throw new InvalidOperationException("Standalone Matching Learn unexpectedly enabled the Shell-only Matching Tool View action.");
+            }
+
+            if (!window.MatchingToolLocationTitleForTest.Contains("Template Ready / Pattern path", StringComparison.Ordinal)
+                || !window.MatchingToolLocationTitleForTest.Contains("Min score / Match count", StringComparison.Ordinal)
+                || !window.MatchingToolLocationDetailForTest.Contains("ScoreMax", StringComparison.Ordinal)
+                || !window.MatchingToolLocationDetailForTest.Contains("ResultCount", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Matching Learn did not expose the initial Tool View parameter and result guide.");
+            }
+
+            window.SetOpenRelatedToolAction(_ => { });
+            if (!window.CanOpenMatchingToolForTest)
+            {
+                throw new InvalidOperationException("Matching Learn did not enable the Matching Tool View action after Shell wiring.");
+            }
+
+            AssertOpenVisionLearnAnimationLegend(window, "OpenVision Learn Matching");
+
             AssertVisibleTextContains(
                 window,
                 "OpenVision Learn Matching family decision guide",
-                "도구 선택: Matching / EdgeBasedMatching / FeatureMatching",
-                "Matching: 밝기와 외관",
-                "EdgeBasedMatching: 조명은 흔들려도",
-                "FeatureMatching: 회전, 크기");
+                "도구 선택: Matching / EdgeBasedMatching / FeatureMatching");
 
             AssertVisibleAutomationIds(
                 window,
                 "OpenVision Learn Matching topic",
-                "OpenVisionLearnMatchingThresholdSlider");
+                "OpenVisionLearnMatchingThresholdSlider",
+                "OpenVisionLearnMatchingPlayButton",
+                "OpenVisionLearnMatchingStepButton",
+                "OpenVisionLearnMatchingResetButton",
+                "OpenVisionLearnMatchingAnimationStatus",
+                "OpenVisionLearnMatchingOpenToolButton",
+                "OpenVisionLearnMatchingToolLocationPanel",
+                "OpenVisionLearnMatchingToolLocationTitle",
+                "OpenVisionLearnMatchingToolLocationDetail");
+            FindVisualChildren<FrameworkElement>(window)
+                .First(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "OpenVisionLearnMatchingOpenToolButton",
+                    StringComparison.Ordinal))
+                .BringIntoView();
+            Pump(8);
             WriteElementPng(window, outputPath, 1040, 700);
             return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
         }
@@ -7509,9 +13083,33 @@ internal static class Program
             Pump(12);
             window.FeatureGoodMatchMinForTest = 4;
             Pump(8);
+            window.ResetFeatureMatchingAnimationForTest();
+            window.ToggleFeatureMatchingAnimationForTest();
+            Thread.Sleep(600);
+            Pump(4);
+            if (window.FeatureMatchingAnimationStepForTest < 1)
+            {
+                throw new InvalidOperationException("Feature Matching play control did not advance the animation timer.");
+            }
+
+            window.ResetFeatureMatchingAnimationForTest();
+            window.AdvanceFeatureMatchingAnimationForTest();
+            window.AdvanceFeatureMatchingAnimationForTest();
+            window.AdvanceFeatureMatchingAnimationForTest();
+            Pump(8);
             if (window.SelectedTopicIndexForTest != 10)
             {
                 throw new InvalidOperationException("OpenVision Learn Feature Matching topic was not selected.");
+            }
+
+            if (window.IsPracticeWorkflowExpandedForTest)
+            {
+                throw new InvalidOperationException("Feature Matching topic did not start with the repeated practice workflow collapsed.");
+            }
+
+            if (!window.AreMatchingFamilyDecisionsCollapsedForTest)
+            {
+                throw new InvalidOperationException("Feature Matching topic did not start with the tool-family comparison collapsed.");
             }
 
             if (!window.FeatureMatchingFormulaTextForTest.Contains("GoodMatches", StringComparison.OrdinalIgnoreCase)
@@ -7520,18 +13118,58 @@ internal static class Program
                 throw new InvalidOperationException("Feature Matching guide did not explain good match evaluation.");
             }
 
+            if (window.FeatureMatchingAnimationStepForTest != 3
+                || !window.FeatureMatchingAnimationStatusTextForTest.Contains("GoodMatches gate", StringComparison.OrdinalIgnoreCase)
+                || !window.FeatureMatchingAnimationStatusTextForTest.Contains("RANSAC/overlay", StringComparison.OrdinalIgnoreCase)
+                || !window.FeatureMatchingAnimationStatusTextForTest.Contains("OK", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Feature Matching guide did not expose the animated geometric-review step.");
+            }
+
+            if (window.CanOpenFeatureMatchingToolForTest)
+            {
+                throw new InvalidOperationException("Standalone FeatureMatching Learn unexpectedly enabled the Shell-only Tool View action.");
+            }
+
+            if (!window.FeatureMatchingToolLocationTitleForTest.Contains("Feature template path", StringComparison.Ordinal)
+                || !window.FeatureMatchingToolLocationTitleForTest.Contains("Ratio threshold / RANSAC tolerance", StringComparison.Ordinal)
+                || !window.FeatureMatchingToolLocationDetailForTest.Contains("작을수록 엄격", StringComparison.Ordinal)
+                || !window.FeatureMatchingToolLocationDetailForTest.Contains("ScoreMax", StringComparison.Ordinal)
+                || !window.FeatureMatchingToolLocationDetailForTest.Contains("ResultCount", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("FeatureMatching Learn did not expose the initial Tool View parameter and result guide.");
+            }
+
+            window.SetOpenRelatedToolAction(_ => { });
+            if (!window.CanOpenFeatureMatchingToolForTest)
+            {
+                throw new InvalidOperationException("FeatureMatching Learn did not enable the Tool View action after Shell wiring.");
+            }
+
             AssertVisibleTextContains(
                 window,
                 "OpenVision Learn Feature Matching family decision guide",
-                "도구 선택: Matching / EdgeBasedMatching / FeatureMatching",
-                "EdgeBasedMatching: 색보다 edge",
-                "GoodMatches",
-                "RANSAC/overlay");
+                "도구 선택: Matching / EdgeBasedMatching / FeatureMatching");
 
             AssertVisibleAutomationIds(
                 window,
                 "OpenVision Learn Feature Matching topic",
-                "OpenVisionLearnFeatureMatchMinSlider");
+                "OpenVisionLearnFeatureMatchMinSlider",
+                "OpenVisionLearnFeatureMatchingPlayButton",
+                "OpenVisionLearnFeatureMatchingStepButton",
+                "OpenVisionLearnFeatureMatchingResetButton",
+                "OpenVisionLearnFeatureMatchingAnimationStatus",
+                "OpenVisionLearnFeatureMatchingOpenToolButton",
+                "OpenVisionLearnFeatureMatchingToolLocationPanel",
+                "OpenVisionLearnFeatureMatchingToolLocationTitle",
+                "OpenVisionLearnFeatureMatchingToolLocationDetail");
+            FindVisualChildren<FrameworkElement>(window)
+                .First(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "OpenVisionLearnFeatureMatchingOpenToolButton",
+                    StringComparison.Ordinal))
+                .BringIntoView();
+            Pump(8);
             WriteElementPng(window, outputPath, 1040, 700);
             return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
         }
@@ -7549,7 +13187,20 @@ internal static class Program
         try
         {
             Pump(12);
-            window.LayerRecipeSelectedStepForTest = 2;
+            window.ResetLayerRecipeAnimationForTest();
+            window.ToggleLayerRecipeAnimationForTest();
+            Thread.Sleep(600);
+            Pump(4);
+            if (window.LayerRecipeAnimationStepForTest < 1)
+            {
+                throw new InvalidOperationException("Layer / Pipeline / Recipe play control did not advance the animation timer.");
+            }
+
+            window.ResetLayerRecipeAnimationForTest();
+            window.AdvanceLayerRecipeAnimationForTest();
+            window.AdvanceLayerRecipeAnimationForTest();
+            window.AdvanceLayerRecipeAnimationForTest();
+            window.AdvanceLayerRecipeAnimationForTest();
             Pump(8);
             if (window.SelectedTopicIndexForTest != 11)
             {
@@ -7561,6 +13212,16 @@ internal static class Program
             {
                 throw new InvalidOperationException("Layer / Pipeline / Recipe guide did not explain step routing.");
             }
+
+            if (window.LayerRecipeAnimationStepForTest != 4
+                || !window.LayerRecipeAnimationStatusTextForTest.Contains("4 / 4", StringComparison.Ordinal)
+                || !window.LayerRecipeAnimationStatusTextForTest.Contains("Acceptance", StringComparison.Ordinal)
+                || !window.LayerRecipeAnimationStatusTextForTest.Contains("OK/NG", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Layer / Pipeline / Recipe animation did not finish with the acceptance explanation.");
+            }
+
+            AssertOpenVisionLearnAnimationLegend(window, "OpenVision Learn Layer / Pipeline / Recipe");
 
             string visibleText = string.Join(
                 " | ",
@@ -7579,8 +13240,19 @@ internal static class Program
                 window,
                 "OpenVision Learn Layer / Pipeline / Recipe topic",
                 "OpenVisionLearnLayerRecipeStepSlider",
+                "OpenVisionLearnLayerRecipePlayButton",
+                "OpenVisionLearnLayerRecipeStepButton",
+                "OpenVisionLearnLayerRecipeResetButton",
+                "OpenVisionLearnLayerRecipeAnimationStatus",
                 "OpenVisionLearnLayerRoutingSafetyPanel",
                 "OpenVisionLearnLayerRouteReviewLoopPanel");
+            FrameworkElement animationStatus = FindVisualChildren<FrameworkElement>(window)
+                .First(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "OpenVisionLearnLayerRecipeAnimationStatus",
+                    StringComparison.Ordinal));
+            animationStatus.BringIntoView();
+            Pump(8);
             WriteElementPng(window, outputPath, 1040, 700);
             return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
         }
@@ -7600,9 +13272,62 @@ internal static class Program
             Pump(12);
             window.MatchingThresholdForTest = 0.82;
             Pump(8);
+            window.ResetMatchingAnimationForTest();
+            window.ToggleMatchingAnimationForTest();
+            Thread.Sleep(500);
+            Pump(4);
+            if (window.MatchingAnimationStepForTest < 1)
+            {
+                throw new InvalidOperationException("EdgeBasedMatching play control did not advance the animation timer.");
+            }
+
+            window.ResetMatchingAnimationForTest();
+            window.AdvanceMatchingAnimationForTest();
+            window.AdvanceMatchingAnimationForTest();
+            window.AdvanceMatchingAnimationForTest();
+            Pump(8);
             if (window.SelectedTopicIndexForTest != 12)
             {
                 throw new InvalidOperationException("OpenVision Learn EdgeBasedMatching topic was not selected.");
+            }
+
+            if (window.IsPracticeWorkflowExpandedForTest)
+            {
+                throw new InvalidOperationException("EdgeBasedMatching topic did not start with the repeated practice workflow collapsed.");
+            }
+
+            if (!window.AreMatchingFamilyDecisionsCollapsedForTest)
+            {
+                throw new InvalidOperationException("EdgeBasedMatching topic did not start with the tool-family comparison collapsed.");
+            }
+
+            if (!window.MatchingFormulaTextForTest.Contains("EdgeScoreMax", StringComparison.OrdinalIgnoreCase)
+                || window.MatchingAnimationStepForTest != 3
+                || !window.MatchingAnimationStatusTextForTest.Contains("Edge score gate", StringComparison.OrdinalIgnoreCase)
+                || !window.MatchingAnimationStatusTextForTest.Contains("OK", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("EdgeBasedMatching topic did not expose the animated edge-score gate.");
+            }
+
+            if (window.CanOpenEdgeBasedMatchingToolForTest)
+            {
+                throw new InvalidOperationException("Standalone EdgeBasedMatching Learn unexpectedly enabled the Shell-only Tool View action.");
+            }
+
+            if (!window.EdgeBasedMatchingToolLocationTitleForTest.Contains("Template Ready / Pattern path", StringComparison.Ordinal)
+                || !window.EdgeBasedMatchingToolLocationTitleForTest.Contains("Canny range / Max template points", StringComparison.Ordinal)
+                || !window.EdgeBasedMatchingToolLocationTitleForTest.Contains("Search step", StringComparison.Ordinal)
+                || !window.EdgeBasedMatchingToolLocationDetailForTest.Contains("angle/scale search", StringComparison.Ordinal)
+                || !window.EdgeBasedMatchingToolLocationDetailForTest.Contains("ScoreMax", StringComparison.Ordinal)
+                || !window.EdgeBasedMatchingToolLocationDetailForTest.Contains("ResultCount", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("EdgeBasedMatching Learn did not expose the initial Tool View parameter and result guide.");
+            }
+
+            window.SetOpenRelatedToolAction(_ => { });
+            if (!window.CanOpenEdgeBasedMatchingToolForTest)
+            {
+                throw new InvalidOperationException("EdgeBasedMatching Learn did not enable the Tool View action after Shell wiring.");
             }
 
             AssertLearnTopicDocument(window, "LEARN_EDGE_BASED_MATCHING.md");
@@ -7635,15 +13360,27 @@ internal static class Program
             AssertVisibleTextContains(
                 window,
                 "OpenVision Learn EdgeBasedMatching family decision guide",
-                "도구 선택: Matching / EdgeBasedMatching / FeatureMatching",
-                "EdgeBasedMatching: 조명은 흔들려도",
-                "edge 형상",
-                "FeatureMatching: 회전, 크기");
+                "도구 선택: Matching / EdgeBasedMatching / FeatureMatching");
 
             AssertVisibleAutomationIds(
                 window,
                 "OpenVision Learn EdgeBasedMatching topic",
-                "OpenVisionLearnMatchingThresholdSlider");
+                "OpenVisionLearnMatchingThresholdSlider",
+                "OpenVisionLearnMatchingPlayButton",
+                "OpenVisionLearnMatchingStepButton",
+                "OpenVisionLearnMatchingResetButton",
+                "OpenVisionLearnMatchingAnimationStatus",
+                "OpenVisionLearnEdgeBasedMatchingOpenToolButton",
+                "OpenVisionLearnMatchingToolLocationPanel",
+                "OpenVisionLearnMatchingToolLocationTitle",
+                "OpenVisionLearnMatchingToolLocationDetail");
+            FindVisualChildren<FrameworkElement>(window)
+                .First(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "OpenVisionLearnEdgeBasedMatchingOpenToolButton",
+                    StringComparison.Ordinal))
+                .BringIntoView();
+            Pump(8);
             WriteElementPng(window, outputPath, 1040, 700);
             return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
         }
@@ -7661,10 +13398,40 @@ internal static class Program
         try
         {
             Pump(12);
+            window.ResetMetricsAcceptanceAnimationForTest();
+            window.ToggleMetricsAcceptanceAnimationForTest();
+            Thread.Sleep(600);
+            Pump(4);
+            if (window.MetricsAcceptanceAnimationStepForTest < 1)
+            {
+                throw new InvalidOperationException("Metrics / Acceptance play control did not advance the animation timer.");
+            }
+
+            window.ResetMetricsAcceptanceAnimationForTest();
+            window.AdvanceMetricsAcceptanceAnimationForTest();
+            window.AdvanceMetricsAcceptanceAnimationForTest();
+            window.AdvanceMetricsAcceptanceAnimationForTest();
+            Pump(8);
             if (window.SelectedTopicIndexForTest != 13)
             {
                 throw new InvalidOperationException("OpenVision Learn Metrics / Acceptance topic was not selected.");
             }
+
+            if (window.IsPracticeWorkflowExpandedForTest || window.IsMetricGateCheatSheetExpandedForTest)
+            {
+                throw new InvalidOperationException("Metrics / Acceptance repeated guidance did not start collapsed.");
+            }
+
+            if (window.MetricsAcceptanceAnimationStepForTest != 3
+                || !window.MetricsAcceptanceFormulaTextForTest.Contains("Range=", StringComparison.Ordinal)
+                || !window.MetricsAcceptanceFormulaTextForTest.Contains("Max=", StringComparison.Ordinal)
+                || !window.MetricsAcceptanceAnimationStatusTextForTest.Contains("Range/Max gate", StringComparison.OrdinalIgnoreCase)
+                || !window.MetricsAcceptanceAnimationStatusTextForTest.Contains("NG", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Metrics / Acceptance topic did not expose the animated outlier gate.");
+            }
+
+            AssertOpenVisionLearnAnimationLegend(window, "OpenVision Learn Metrics / Acceptance");
 
             AssertLearnTopicDocument(window, "LEARN_METRICS_ACCEPTANCE.md");
             if (!window.SelectedTopicPracticeTextForTest.Contains("Metrics/Acceptance", StringComparison.Ordinal)
@@ -7696,11 +13463,15 @@ internal static class Program
             AssertVisibleTextContains(
                 window,
                 "OpenVision Learn Metrics gate cheat sheet",
-                "Minimum Good/Bad gate cheat sheet",
-                "GoodMatches + ScoreMax",
-                "AreaMin/AreaMax",
-                "DistanceMmRange or DistanceMmMax",
-                "ResultImageWidth/Height");
+                "Minimum Good/Bad gate cheat sheet");
+
+            AssertVisibleAutomationIds(
+                window,
+                "OpenVision Learn Metrics / Acceptance animation",
+                "OpenVisionLearnMetricsAcceptancePlayButton",
+                "OpenVisionLearnMetricsAcceptanceStepButton",
+                "OpenVisionLearnMetricsAcceptanceResetButton",
+                "OpenVisionLearnMetricsAcceptanceAnimationStatus");
 
             WriteElementPng(window, outputPath, 1040, 700);
             return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
@@ -7726,6 +13497,24 @@ internal static class Program
                 throw new InvalidOperationException("OpenVision Learn Arithmetic / Logic topic was not selected.");
             }
 
+            if (window.CanOpenArithmeticToolForTest)
+            {
+                throw new InvalidOperationException("Standalone Arithmetic Learn unexpectedly enabled the Shell-only Tool View action.");
+            }
+
+            if (!window.ArithmeticToolLocationTitleForTest.Contains("Input A / Input B / Output Layer", StringComparison.Ordinal)
+                || !window.ArithmeticToolLocationTitleForTest.Contains("Input B Source", StringComparison.Ordinal)
+                || !window.ArithmeticToolLocationDetailForTest.Contains("계산 결과", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Arithmetic Learn did not expose the initial Tool View parameter path.");
+            }
+
+            window.SetOpenRelatedToolAction(_ => { });
+            if (!window.CanOpenArithmeticToolForTest)
+            {
+                throw new InvalidOperationException("Arithmetic Learn did not enable the Tool View action after the Shell callback was attached.");
+            }
+
             AssertLearnTopicDocument(window, "LEARN_ARITHMETIC.md");
             if (!window.SelectedTopicPracticeTextForTest.Contains("Arithmetic", StringComparison.Ordinal)
                 || !window.SelectedTopicPracticeTextForTest.Contains("Preview", StringComparison.Ordinal)
@@ -7746,6 +13535,58 @@ internal static class Program
                 throw new InvalidOperationException("Arithmetic / Logic guide did not explain the selected operation output.");
             }
 
+            window.ResetArithmeticAnimationForTest();
+            window.ToggleArithmeticAnimationForTest();
+            Thread.Sleep(600);
+            Pump(4);
+            if (window.ArithmeticAnimationStepForTest < 1)
+            {
+                throw new InvalidOperationException("Arithmetic animation timer did not advance.");
+            }
+
+            window.ResetArithmeticAnimationForTest();
+            window.AdvanceArithmeticAnimationForTest();
+            window.AdvanceArithmeticAnimationForTest();
+            if (window.ArithmeticAnimationStepForTest != 2
+                || !window.ArithmeticAnimationStatusTextForTest.Contains("AbsDiff", StringComparison.OrdinalIgnoreCase)
+                || !window.ArithmeticAnimationStatusTextForTest.Contains("|20 - 10| = 10", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Arithmetic animation did not expose the AbsDiff calculation step.");
+            }
+
+            (int Mode, string Expression)[] operationChecks =
+            {
+                (0, "clamp(20 + 10) = 30"),
+                (1, "clamp(20 - 10) = 10"),
+                (3, "20 & 10 = 0"),
+                (4, "20 | 10 = 30")
+            };
+            foreach ((int mode, string expression) in operationChecks)
+            {
+                window.ArithmeticModeIndexForTest = mode;
+                window.ResetArithmeticAnimationForTest();
+                window.AdvanceArithmeticAnimationForTest();
+                window.AdvanceArithmeticAnimationForTest();
+                if (!window.ArithmeticAnimationStatusTextForTest.Contains(expression, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Arithmetic animation did not expose operation expression '" + expression + "'.");
+                }
+            }
+
+            window.ArithmeticModeIndexForTest = 2;
+            window.ResetArithmeticAnimationForTest();
+            window.AdvanceArithmeticAnimationForTest();
+            window.AdvanceArithmeticAnimationForTest();
+            window.AdvanceArithmeticAnimationForTest();
+            if (window.ArithmeticAnimationStepForTest != 3
+                || !window.ArithmeticAnimationStatusTextForTest.Contains("3 / 3", StringComparison.Ordinal)
+                || !window.ArithmeticAnimationStatusTextForTest.Contains("Preview/Run", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Arithmetic animation did not finish at the explicit execution boundary.");
+            }
+
+            AssertOpenVisionLearnAnimationLegend(window, "OpenVision Learn Arithmetic / Logic");
+
             string visibleText = string.Join(
                 " | ",
                 FindVisualChildren<TextBlock>(window)
@@ -7762,9 +13603,23 @@ internal static class Program
             AssertVisibleAutomationIds(
                 window,
                 "OpenVision Learn Arithmetic / Logic topic",
-                "OpenVisionLearnArithmeticModeCombo");
-            WriteElementPng(window, outputPath, 1040, 700);
-            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+                "OpenVisionLearnArithmeticModeCombo",
+                "OpenVisionLearnArithmeticPlayButton",
+                "OpenVisionLearnArithmeticStepButton",
+                "OpenVisionLearnArithmeticResetButton",
+                "OpenVisionLearnArithmeticAnimationStatus",
+                "OpenVisionLearnArithmeticOpenToolButton",
+                "OpenVisionLearnArithmeticToolLocationPanel",
+                "OpenVisionLearnArithmeticToolLocationTitle",
+                "OpenVisionLearnArithmeticToolLocationDetail");
+            foreach (ScrollViewer scrollViewer in FindVisualChildren<ScrollViewer>(window).Where(item => item.IsVisible))
+            {
+                scrollViewer.ScrollToTop();
+            }
+
+            Pump(4);
+            WriteElementPng(window, outputPath, 1040, 900);
+            return new CaptureResult(1040, 900, (DateTime.UtcNow - started).TotalMilliseconds);
         }
         finally
         {
@@ -7788,6 +13643,24 @@ internal static class Program
                 throw new InvalidOperationException("OpenVision Learn Geometry Transform topic was not selected.");
             }
 
+            if (window.CanOpenGeometryToolForTest)
+            {
+                throw new InvalidOperationException("Standalone Geometry Learn unexpectedly enabled the Shell-only Tool View action.");
+            }
+
+            if (!window.GeometryToolLocationTitleForTest.Contains("Angle, Scale X, Scale Y", StringComparison.Ordinal)
+                || !window.GeometryToolLocationDetailForTest.Contains("OutputSize", StringComparison.Ordinal)
+                || !window.GeometryToolLocationDetailForTest.Contains("Preview", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Geometry Learn did not expose the initial Rotate / Scale parameter path.");
+            }
+
+            window.SetOpenRelatedToolAction(_ => { });
+            if (!window.CanOpenGeometryToolForTest)
+            {
+                throw new InvalidOperationException("Geometry Learn did not enable the Tool View action after the Shell callback was attached.");
+            }
+
             AssertLearnTopicDocument(window, "LEARN_GEOMETRY_TRANSFORM.md");
             if (!window.SelectedTopicPracticeTextForTest.Contains("RotateScale", StringComparison.Ordinal)
                 || !window.SelectedTopicPracticeTextForTest.Contains("Preview", StringComparison.Ordinal)
@@ -7808,6 +13681,43 @@ internal static class Program
                 throw new InvalidOperationException("Geometry Transform guide did not explain output size.");
             }
 
+            window.ResetGeometryAnimationForTest();
+            window.ToggleGeometryAnimationForTest();
+            Thread.Sleep(600);
+            Pump(4);
+            if (window.GeometryAnimationStepForTest < 1)
+            {
+                throw new InvalidOperationException("Geometry animation timer did not advance.");
+            }
+
+            window.ResetGeometryAnimationForTest();
+            window.AdvanceGeometryAnimationForTest();
+            if (window.GeometryAnimationStepForTest != 1
+                || Math.Abs(window.GeometryRenderedAngleForTest - 25D) > 0.001D
+                || Math.Abs(window.GeometryRenderedScaleForTest - 1D) > 0.001D
+                || !window.GeometryAnimationStatusTextForTest.Contains("Rotate", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Geometry animation did not expose the rotation-only step.");
+            }
+
+            window.AdvanceGeometryAnimationForTest();
+            if (window.GeometryAnimationStepForTest != 2
+                || Math.Abs(window.GeometryRenderedScaleForTest - 0.8D) > 0.001D
+                || !window.GeometryAnimationStatusTextForTest.Contains("OutputSize~614x461", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Geometry animation did not expose the scaled output size.");
+            }
+
+            window.AdvanceGeometryAnimationForTest();
+            if (window.GeometryAnimationStepForTest != 3
+                || !window.GeometryAnimationStatusTextForTest.Contains("ROI review", StringComparison.OrdinalIgnoreCase)
+                || !window.GeometryAnimationStatusTextForTest.Contains("Preview/Run", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Geometry animation did not finish with the coordinate review boundary.");
+            }
+
+            AssertOpenVisionLearnAnimationLegend(window, "OpenVision Learn Geometry Transform");
+
             string visibleText = string.Join(
                 " | ",
                 FindVisualChildren<TextBlock>(window)
@@ -7825,9 +13735,23 @@ internal static class Program
                 window,
                 "OpenVision Learn Geometry Transform topic",
                 "OpenVisionLearnGeometryAngleSlider",
-                "OpenVisionLearnGeometryScaleSlider");
-            WriteElementPng(window, outputPath, 1040, 700);
-            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+                "OpenVisionLearnGeometryScaleSlider",
+                "OpenVisionLearnGeometryPlayButton",
+                "OpenVisionLearnGeometryStepButton",
+                "OpenVisionLearnGeometryResetButton",
+                "OpenVisionLearnGeometryAnimationStatus",
+                "OpenVisionLearnGeometryOpenToolButton",
+                "OpenVisionLearnGeometryToolLocationPanel",
+                "OpenVisionLearnGeometryToolLocationTitle",
+                "OpenVisionLearnGeometryToolLocationDetail");
+            foreach (ScrollViewer scrollViewer in FindVisualChildren<ScrollViewer>(window).Where(item => item.IsVisible))
+            {
+                scrollViewer.ScrollToTop();
+            }
+
+            Pump(4);
+            WriteElementPng(window, outputPath, 1040, 900);
+            return new CaptureResult(1040, 900, (DateTime.UtcNow - started).TotalMilliseconds);
         }
         finally
         {
@@ -7876,12 +13800,192 @@ internal static class Program
                 throw new InvalidOperationException("Color / HSV guide did not explain mask metric support and downstream review.");
             }
 
+            if (window.CanOpenColorHsvToolForTest)
+            {
+                throw new InvalidOperationException("Standalone Color / HSV Learn unexpectedly enabled the Shell-only Tool View action.");
+            }
+
+            using (OpenCvSharp.Mat bgrPixel = new(
+                       1,
+                       1,
+                       OpenCvSharp.MatType.CV_8UC3,
+                       new OpenCvSharp.Scalar(25, 185, 105)))
+            using (OpenCvSharp.Mat hsvPixel = new())
+            {
+                OpenCvSharp.Mat[] bgrChannels = OpenCvSharp.Cv2.Split(bgrPixel);
+                try
+                {
+                    if (bgrChannels.Length != 3
+                        || bgrChannels.Any(channel => channel.Type() != OpenCvSharp.MatType.CV_8UC1)
+                        || bgrChannels[0].At<byte>(0, 0) != 25
+                        || bgrChannels[1].At<byte>(0, 0) != 185
+                        || bgrChannels[2].At<byte>(0, 0) != 105)
+                    {
+                        throw new InvalidOperationException("Color / HSV sample Cv2.Split channel values changed.");
+                    }
+
+                    using OpenCvSharp.Mat mergedBgrPixel = new();
+                    OpenCvSharp.Cv2.Merge(bgrChannels, mergedBgrPixel);
+                    OpenCvSharp.Vec3b mergedPixel = mergedBgrPixel.At<OpenCvSharp.Vec3b>(0, 0);
+                    if (mergedPixel.Item0 != 25 || mergedPixel.Item1 != 185 || mergedPixel.Item2 != 105)
+                    {
+                        throw new InvalidOperationException(
+                            "Color / HSV sample Cv2.Merge changed BGR order. Actual BGR=("
+                            + mergedPixel.Item0
+                            + ","
+                            + mergedPixel.Item1
+                            + ","
+                            + mergedPixel.Item2
+                            + ").");
+                    }
+                }
+                finally
+                {
+                    foreach (OpenCvSharp.Mat channel in bgrChannels)
+                    {
+                        channel.Dispose();
+                    }
+                }
+
+                OpenCvSharp.Cv2.CvtColor(
+                    bgrPixel,
+                    hsvPixel,
+                    OpenCvSharp.ColorConversionCodes.BGR2HSV);
+                OpenCvSharp.Vec3b convertedPixel = hsvPixel.At<OpenCvSharp.Vec3b>(0, 0);
+                if (convertedPixel.Item0 != 45
+                    || convertedPixel.Item1 != 221
+                    || convertedPixel.Item2 != 185)
+                {
+                    throw new InvalidOperationException(
+                        "Color / HSV sample conversion changed. Actual HSV=("
+                        + convertedPixel.Item0
+                        + ","
+                        + convertedPixel.Item1
+                        + ","
+                        + convertedPixel.Item2
+                        + ").");
+                }
+            }
+
+            window.ResetColorHsvAnimationForTest();
+            window.ToggleColorHsvAnimationForTest();
+            Thread.Sleep(600);
+            Pump(4);
+            if (window.ColorHsvAnimationStepForTest < 1)
+            {
+                throw new InvalidOperationException("Color / HSV animation timer did not advance.");
+            }
+
+            window.ResetColorHsvAnimationForTest();
+            if (!string.Equals(window.ColorBgrPixelValueForTest, "(25,185,105)", StringComparison.Ordinal)
+                || !string.Equals(window.ColorHsvPixelValueForTest, "(45,221,185)", StringComparison.Ordinal)
+                || window.ColorBgrSplitChannelsOpacityForTest >= 0.5D
+                || window.ColorBgrMergeResultOpacityForTest >= 0.5D
+                || window.ColorHsvConvertedPixelOpacityForTest >= 0.5D
+                || window.ColorHsvConversionArrowOpacityForTest >= 0.5D
+                || !window.ColorHsvAnimationStatusTextForTest.Contains("Vec3b(B,G,R)=(25,185,105)", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Color / HSV animation did not expose the BGR source pixel reset state.");
+            }
+
+            window.AdvanceColorHsvAnimationForTest();
+            if (window.ColorHsvAnimationStepForTest != 1
+                || window.ColorBgrSplitChannelsOpacityForTest < 0.99D
+                || window.ColorBgrMergeResultOpacityForTest >= 0.5D
+                || window.ColorHsvConvertedPixelOpacityForTest >= 0.5D
+                || window.ColorHsvConversionArrowOpacityForTest >= 0.5D
+                || window.ColorHsvVec3bTypeOpacityForTest >= 0.5D
+                || window.ColorHsvScalarBoundsOpacityForTest >= 0.5D
+                || !window.ColorHsvAnimationStatusTextForTest.Contains("Cv2.Split", StringComparison.Ordinal)
+                || !window.ColorHsvAnimationStatusTextForTest.Contains("B=25, G=185, R=105", StringComparison.Ordinal)
+                || !window.ColorHsvAnimationStatusTextForTest.Contains("CV_8UC1", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Color / HSV animation did not expose the split B/G/R channels.");
+            }
+
+            window.AdvanceColorHsvAnimationForTest();
+            if (window.ColorHsvAnimationStepForTest != 2
+                || window.ColorBgrMergeResultOpacityForTest < 0.99D
+                || !window.ColorBgrMergeResultTextForTest.Contains("Cv2.Merge(B,G,R)", StringComparison.Ordinal)
+                || window.ColorHsvConvertedPixelOpacityForTest < 0.99D
+                || window.ColorHsvConversionArrowOpacityForTest < 0.99D
+                || window.ColorHsvVec3bTypeOpacityForTest < 0.99D
+                || window.ColorHsvScalarBoundsOpacityForTest >= 0.5D
+                || !window.ColorHsvVec3bTypeTextForTest.Contains("Vec3b(H,S,V) = (45,221,185)", StringComparison.Ordinal)
+                || !window.ColorHsvAnimationStatusTextForTest.Contains("Cv2.Merge", StringComparison.Ordinal)
+                || !window.ColorHsvAnimationStatusTextForTest.Contains("Cv2.CvtColor(BGR2HSV)", StringComparison.Ordinal)
+                || !window.ColorHsvAnimationStatusTextForTest.Contains("H=45, S=221, V=185", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Color / HSV animation did not expose channel merge and HSV conversion.");
+            }
+
+            window.AdvanceColorHsvAnimationForTest();
+            if (window.ColorHsvAnimationStepForTest != 3
+                || window.ColorHsvScalarBoundsOpacityForTest < 0.99D
+                || !window.ColorHsvScalarBoundsTextForTest.Contains("lower = Scalar(35,60,185)", StringComparison.Ordinal)
+                || !window.ColorHsvScalarBoundsTextForTest.Contains("upper = Scalar(55,255,255)", StringComparison.Ordinal)
+                || !window.ColorHsvInRangeTextForTest.Contains("Cv2.InRange(hsvMat, lower, upper, mask)", StringComparison.Ordinal)
+                || !window.ColorHsvAnimationStatusTextForTest.Contains("H OK", StringComparison.Ordinal)
+                || !window.ColorHsvAnimationStatusTextForTest.Contains("S OK", StringComparison.Ordinal)
+                || !window.ColorHsvAnimationStatusTextForTest.Contains("V OK", StringComparison.Ordinal)
+                || !window.ColorHsvAnimationStatusTextForTest.Contains("IN RANGE", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Color / HSV animation did not expose the passing HSV gate.");
+            }
+
+            window.AdvanceColorHsvAnimationForTest();
+            if (window.ColorHsvAnimationStepForTest != 4
+                || !window.ColorHsvAnimationStatusTextForTest.Contains("Mask=255", StringComparison.Ordinal)
+                || !window.ColorHsvAnimationStatusTextForTest.Contains("MaskPixelRatio", StringComparison.Ordinal)
+                || !window.ColorHsvAnimationStatusTextForTest.Contains("Preview/Run", StringComparison.Ordinal)
+                || !string.Equals(window.ColorHsvPreviewLabelForTest, "MASK 255", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Color / HSV animation did not finish with the passing binary mask.");
+            }
+
+            window.ColorHueForTest = 90;
+            window.ColorValueForTest = 200;
+            window.ResetColorHsvAnimationForTest();
+            window.AdvanceColorHsvAnimationForTest();
+            window.AdvanceColorHsvAnimationForTest();
+            window.AdvanceColorHsvAnimationForTest();
+            window.AdvanceColorHsvAnimationForTest();
+            if (!window.ColorHsvAnimationStatusTextForTest.Contains("Mask=0", StringComparison.Ordinal)
+                || !string.Equals(window.ColorHsvPreviewLabelForTest, "MASK 0", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Color / HSV animation did not expose the out-of-range binary mask.");
+            }
+
+            window.ColorHueForTest = 45;
+            window.ColorValueForTest = 185;
+            window.ResetColorHsvAnimationForTest();
+            window.AdvanceColorHsvAnimationForTest();
+            window.AdvanceColorHsvAnimationForTest();
+            window.AdvanceColorHsvAnimationForTest();
+            window.AdvanceColorHsvAnimationForTest();
+            AssertOpenVisionLearnAnimationLegend(window, "OpenVision Learn Color / HSV");
+
+            VISION_MENU? capturedRelatedMenu = null;
+            window.SetOpenRelatedToolAction(menu => capturedRelatedMenu = menu);
+            ClickVisibleButtonByAutomationId(
+                window,
+                "OpenVisionLearnColorHsvOpenToolButton",
+                "standalone Color / HSV Tool View button");
+            Pump(4);
+            if (capturedRelatedMenu != VISION_MENU.HSV
+                || !window.ColorHsvToolLocationTitleForTest.Contains("Hue Min/Max", StringComparison.Ordinal)
+                || !window.ColorHsvToolLocationTitleForTest.Contains("OutputLayer", StringComparison.Ordinal)
+                || !window.ColorHsvToolLocationDetailForTest.Contains("Preview 또는 Run Review에서", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Color / HSV Learn did not route to the HSV Tool View parameter guide.");
+            }
+
             string visibleText = string.Join(
                 " | ",
                 FindVisualChildren<TextBlock>(window)
                     .Select(item => item.Text)
                     .Where(text => !string.IsNullOrWhiteSpace(text)));
-            foreach (string token in new[] { "Hue", "Saturation", "Value", "OutputLayer", "MaskPixelRatio", "Preview/Run", "Public HSV practice samples", "Public_HSV_ColorPatch_Good", "Public_HSV_ColorPatch_Missing_Bad" })
+            foreach (string token in new[] { "Hue", "Saturation", "Value", "BGR Vec3b", "HSV Vec3b", "Cv2.Split", "CV_8UC1", "Cv2.Merge", "CvtColor", "Vec3b", "Scalar", "Cv2.InRange", "OutputLayer", "MaskPixelRatio", "Preview 또는 Run Review", "공개 HSV 실습 샘플", "Public_HSV_ColorPatch_Good", "Public_HSV_ColorPatch_Missing_Bad" })
             {
                 if (!visibleText.Contains(token, StringComparison.Ordinal))
                 {
@@ -7894,9 +13998,36 @@ internal static class Program
                 "OpenVision Learn Color / HSV topic",
                 "OpenVisionLearnColorSampleEvidence",
                 "OpenVisionLearnColorHueSlider",
-                "OpenVisionLearnColorValueSlider");
-            WriteElementPng(window, outputPath, 1040, 700);
-            return new CaptureResult(1040, 700, (DateTime.UtcNow - started).TotalMilliseconds);
+                "OpenVisionLearnColorValueSlider",
+                "OpenVisionLearnColorHsvPlayButton",
+                "OpenVisionLearnColorHsvStepButton",
+                "OpenVisionLearnColorHsvResetButton",
+                "OpenVisionLearnColorHsvAnimationStatus",
+                "OpenVisionLearnColorHsvTypeGuidePanel",
+                "OpenVisionLearnColorHsvVec3bType",
+                "OpenVisionLearnColorHsvScalarBounds",
+                "OpenVisionLearnColorHsvInRange",
+                "OpenVisionLearnColorHsvConversionPanel",
+                "OpenVisionLearnColorBgrPixelCard",
+                "OpenVisionLearnColorHsvConversionArrow",
+                "OpenVisionLearnColorHsvPixelCard",
+                "OpenVisionLearnColorBgrSplitMergePanel",
+                "OpenVisionLearnColorBgrSplitTitle",
+                "OpenVisionLearnColorBgrSplitChannels",
+                "OpenVisionLearnColorBgrMergeResult",
+                "OpenVisionLearnColorHsvOpenToolButton",
+                "OpenVisionLearnColorHsvToolLocationPanel",
+                "OpenVisionLearnColorHsvToolLocationTitle",
+                "OpenVisionLearnColorHsvToolLocationDetail");
+            foreach (ScrollViewer scrollViewer in FindVisualChildren<ScrollViewer>(window).Where(item => item.IsVisible))
+            {
+                scrollViewer.ScrollToTop();
+            }
+
+            Pump(4);
+            WriteElementPng(window, outputPath, 1040, 960);
+            window.SetOpenRelatedToolAction(null);
+            return new CaptureResult(1040, 960, (DateTime.UtcNow - started).TotalMilliseconds);
         }
         finally
         {
@@ -8019,6 +14150,17 @@ internal static class Program
                 throw new InvalidOperationException("OpenVision Learn window did not open.");
             }
 
+            thresholdView.OpenThresholdGuideForTest();
+            Pump(6);
+            List<OpenVisionLearnWindow> activeGuideWindows = Application.Current.Windows
+                .OfType<OpenVisionLearnWindow>()
+                .Where(item => item.IsVisible)
+                .ToList();
+            if (activeGuideWindows.Count != 1 || !ReferenceEquals(activeGuideWindows[0], guideWindow))
+            {
+                throw new InvalidOperationException("Threshold Learn reopen created a duplicate window instead of activating the existing window.");
+            }
+
             guideWindow.ThresholdValueForTest = 142;
             guideWindow.IsInvertedForTest = true;
             Pump(6);
@@ -8031,6 +14173,19 @@ internal static class Program
             guideWindow.ApplyForTest();
             Pump(12);
             guideWindow.Close();
+            Pump(6);
+
+            thresholdView.OpenThresholdGuideForTest();
+            Pump(6);
+            OpenVisionLearnWindow? reopenedGuideWindow = Application.Current.Windows
+                .OfType<OpenVisionLearnWindow>()
+                .FirstOrDefault(item => item.IsVisible);
+            if (reopenedGuideWindow == null || ReferenceEquals(reopenedGuideWindow, guideWindow))
+            {
+                throw new InvalidOperationException("Threshold Learn window did not reopen after the previous window closed.");
+            }
+
+            reopenedGuideWindow.Close();
             Pump(6);
             if (shellHost.NativePreviewRunCount != beforeGuideApplyRuns)
             {
@@ -8294,6 +14449,51 @@ internal static class Program
         });
     }
 
+    private static CaptureResult CaptureShellHostPipelineReviewInputState(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        string recipeName = "Smoke_WpfPipelineReviewInputState_" + Guid.NewGuid().ToString("N");
+        OpenVisionShellHostView shellHost = CreateShellHost(recipeName);
+        VisionPipeline pipeline = CreatePipelineReviewInputStatePipeline();
+        VisionPipelineStorage.Save(recipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            shellHost.SelectToolForTest(VISION_MENU.Pipeline);
+            Pump(24);
+            Window reviewWindow = GetActiveFloatingToolWindow("Pipeline review input state");
+            shellHost.SelectPipelineReviewStepForTest(1, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Overlay);
+            Pump(16);
+
+            string missingInputStatus = OpenVisionLanguageService.T("PipelineReview.Status.InputMissing");
+            string missingInputFlow = string.Format(
+                CultureInfo.CurrentCulture,
+                OpenVisionLanguageService.T("PipelineReview.Flow.MissingInputFormat"),
+                "Unloaded_External");
+            string missingInputReadiness = string.Format(
+                CultureInfo.CurrentCulture,
+                OpenVisionLanguageService.T("PipelineReview.Readiness.MissingInputFormat"),
+                "Unloaded_External");
+            if (shellHost.PipelineReviewStepCount != 2
+                || !shellHost.PipelineReviewSelectedStepName.Contains("Missing External Input", StringComparison.Ordinal)
+                || !string.Equals(shellHost.PipelineReviewSelectedStatusText, missingInputStatus, StringComparison.Ordinal)
+                || !shellHost.PipelineReviewFlowSummaryText.Contains(missingInputFlow, StringComparison.Ordinal)
+                || !string.Equals(
+                    ReadVisibleTextByAutomationId(reviewWindow, "PipelineReviewReadinessInputStatus"),
+                    missingInputReadiness,
+                    StringComparison.Ordinal)
+                || shellHost.HasPipelineReviewInputPreview
+                || shellHost.NativePreviewRunCount != 0)
+            {
+                throw new InvalidOperationException(
+                    "Pipeline review did not distinguish the missing external input without execution. "
+                    + $"Steps={shellHost.PipelineReviewStepCount}, Selected='{shellHost.PipelineReviewSelectedStepName}', "
+                    + $"Status='{shellHost.PipelineReviewSelectedStatusText}', Flow='{shellHost.PipelineReviewFlowSummaryText}', "
+                    + $"InputPreview={shellHost.HasPipelineReviewInputPreview}, Runs={shellHost.NativePreviewRunCount}");
+            }
+        });
+    }
+
     private static CaptureResult CaptureShellHostPipelineReview(string outputPath)
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
@@ -8306,6 +14506,43 @@ internal static class Program
         {
             shellHost.SelectToolForTest(VISION_MENU.Pipeline);
             Pump(24);
+            Window reviewWindow = GetActiveFloatingToolWindow("Pipeline review readiness");
+            AssertVisibleAutomationIds(
+                reviewWindow,
+                "Pipeline review readiness",
+                "PipelineReviewReadinessStrip",
+                "PipelineReviewReadinessSummary",
+                "PipelineReviewReadinessInput",
+                "PipelineReviewReadinessRoute",
+                "PipelineReviewReadinessAcceptance",
+                "PipelineReviewReadinessGoodBad",
+                "PipelineReviewReadinessCalibration");
+            string expectedKoreanReadinessSummary = string.Format(
+                CultureInfo.CurrentCulture,
+                OpenVisionLanguageService.T("PipelineReview.Readiness.SummaryChecksAndAdviceFormat"),
+                1,
+                2);
+            string readinessSummary = ReadVisibleTextByAutomationId(reviewWindow, "PipelineReviewReadinessSummary");
+            string acceptanceReadiness = ReadVisibleTextByAutomationId(reviewWindow, "PipelineReviewReadinessAcceptanceStatus");
+            string calibrationReadiness = ReadVisibleTextByAutomationId(reviewWindow, "PipelineReviewReadinessCalibrationStatus");
+            if (!string.Equals(readinessSummary, expectedKoreanReadinessSummary, StringComparison.Ordinal)
+                || !string.Equals(
+                    acceptanceReadiness,
+                    OpenVisionLanguageService.T("PipelineReview.Readiness.AcceptanceMissing"),
+                    StringComparison.Ordinal)
+                || !string.Equals(
+                    calibrationReadiness,
+                    OpenVisionLanguageService.T("PipelineReview.Readiness.CalibrationNotApplicable"),
+                    StringComparison.Ordinal)
+                || shellHost.NativePreviewRunCount != 0)
+            {
+                throw new InvalidOperationException(
+                    "Pipeline review readiness did not expose the expected read-only preflight state. "
+                    + $"Summary='{readinessSummary}', Acceptance='{acceptanceReadiness}', Calibration='{calibrationReadiness}', "
+                    + $"Runs={shellHost.NativePreviewRunCount}");
+            }
+            AssertPipelineReviewCalibrationReadiness();
+
             string koreanBeforeRunDetail = OpenVisionLanguageService.T("PipelineReview.Guide.BeforeRunDetail");
             string koreanBranchFlow = string.Format(
                 CultureInfo.CurrentCulture,
@@ -8352,15 +14589,22 @@ internal static class Program
             }
 
             ClickVisibleButtonByName("btnNextStep", "Pipeline review next step button");
+            string pendingInputNext = OpenVisionLanguageService.T("PipelineReview.Guide.InputPendingNext");
+            string pendingInputDetail = OpenVisionLanguageService.T("PipelineReview.Guide.InputPendingDetail");
             if (!shellHost.PipelineReviewSelectedStepName.Contains("Morphology", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuideStageText.Contains("2/3", StringComparison.Ordinal)
+                || !string.Equals(shellHost.PipelineReviewSelectedStatusText, "WAIT", StringComparison.Ordinal)
+                || !shellHost.PipelineReviewGuideNextActionText.Contains(pendingInputNext, StringComparison.Ordinal)
+                || !shellHost.PipelineReviewGuideDetailText.Contains(pendingInputDetail, StringComparison.Ordinal)
                 || !shellHost.CanSelectPreviousPipelineReviewStepForTest
                 || !shellHost.CanSelectNextPipelineReviewStepForTest)
             {
                 throw new InvalidOperationException(
                     "Pipeline review next-step button did not select the second step. "
                     + $"Selected='{shellHost.PipelineReviewSelectedStepName}', Stage='{shellHost.PipelineReviewGuideStageText}', "
-                    + $"Prev={shellHost.CanSelectPreviousPipelineReviewStepForTest}, Next={shellHost.CanSelectNextPipelineReviewStepForTest}");
+                    + $"Status='{shellHost.PipelineReviewSelectedStatusText}', NextAction='{shellHost.PipelineReviewGuideNextActionText}', "
+                    + $"Detail='{shellHost.PipelineReviewGuideDetailText}', Prev={shellHost.CanSelectPreviousPipelineReviewStepForTest}, "
+                    + $"Next={shellHost.CanSelectNextPipelineReviewStepForTest}");
             }
 
             ClickVisibleButtonByName("btnNextStep", "Pipeline review branch step button");
@@ -8380,12 +14624,21 @@ internal static class Program
 
             OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
             Pump(16);
+            string expectedEnglishReadinessSummary = string.Format(
+                CultureInfo.CurrentCulture,
+                OpenVisionLanguageService.T("PipelineReview.Readiness.SummaryChecksAndAdviceFormat"),
+                1,
+                2);
             if (!shellHost.PipelineReviewGuideCurrentStepText.Contains("Filter", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuideDetailText.Contains("Branch:", StringComparison.Ordinal)
-                || !shellHost.PipelineReviewGuideNextActionText.Contains("Run Review", StringComparison.Ordinal))
+                || !shellHost.PipelineReviewGuideNextActionText.Contains("Run Review", StringComparison.Ordinal)
+                || !string.Equals(
+                    ReadVisibleTextByAutomationId(reviewWindow, "PipelineReviewReadinessSummary"),
+                    expectedEnglishReadinessSummary,
+                    StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
-                    "Pipeline review guide did not recalculate dynamic text after switching to English. "
+                    "Pipeline review guide and readiness did not recalculate dynamic text after switching to English. "
                     + $"Current='{shellHost.PipelineReviewGuideCurrentStepText}', Stage='{shellHost.PipelineReviewGuideStageText}', "
                     + $"Flow='{shellHost.PipelineReviewFlowSummaryText}', Next='{shellHost.PipelineReviewGuideNextActionText}', "
                     + $"Detail='{shellHost.PipelineReviewGuideDetailText}'");
@@ -8567,6 +14820,103 @@ internal static class Program
         pipeline.Steps.Add(VisionPipelineStepBuilder.FromThresholdProperty(threshold, "Threshold_Main", "Main", "Threshold_Preview"));
         pipeline.Steps.Add(VisionPipelineStepBuilder.FromMorphologyProperty(morphology, "Morphology_From_Threshold", "Threshold_Preview", "Morphology_Preview"));
         pipeline.Steps.Add(VisionPipelineStepBuilder.FromFilterProperty(branchFilter, "Filter_Branch_Main", "Main", "Filter_Branch_Preview"));
+        return pipeline;
+    }
+
+    private static void AssertPipelineReviewCalibrationReadiness()
+    {
+        VisionPipeline pipeline = new() { Name = "Calibration_Readiness" };
+        VisionPipelineStep step = new()
+        {
+            Name = "01 Distance Mm",
+            ToolType = "LineDistance",
+            Enabled = true,
+            InputLayer = "Main",
+            OutputLayer = "Distance_Preview",
+            UseAcceptance = true,
+            AcceptanceMetricName = "DistanceMmAvg",
+            UseAcceptanceMetricMinimum = true,
+            AcceptanceMetricMinimum = 0.1,
+            UseAcceptanceMetricMaximum = true,
+            AcceptanceMetricMaximum = 1.0
+        };
+        step.Parameters["PIXELPERMM"] = "0.006";
+        pipeline.Steps.Add(step);
+
+        OpenVisionPipelineReviewReadinessItem configuredItem = OpenVisionPipelineReviewReadinessPresenter.Create(
+                pipeline,
+                VisionPipelineValidator.Validate(pipeline, new[] { "Main" }),
+                _ => true,
+                false,
+                false)
+            .Items
+            .Single(item => string.Equals(item.Key, "Calibration", StringComparison.Ordinal));
+        string expectedConfigured = string.Format(
+            CultureInfo.CurrentCulture,
+            OpenVisionLanguageService.T("PipelineReview.Readiness.CalibrationReferenceCheckFormat"),
+            0.006D.ToString("0.######", CultureInfo.CurrentCulture));
+        if (!configuredItem.IsAdvisory || !string.Equals(configuredItem.StatusText, expectedConfigured, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Pipeline review readiness did not keep a configured mm scale in reference-check status. "
+                + $"Advisory={configuredItem.IsAdvisory}, Status='{configuredItem.StatusText}', Expected='{expectedConfigured}'");
+        }
+
+        step.AcceptanceMetricName = "DistancePxAvg";
+        step.Parameters["PIXELPERMM"] = "0";
+        OpenVisionPipelineReviewReadinessItem pixelOnlyItem = OpenVisionPipelineReviewReadinessPresenter.Create(
+                pipeline,
+                VisionPipelineValidator.Validate(pipeline, new[] { "Main" }),
+                _ => true,
+                false,
+                false)
+            .Items
+            .Single(item => string.Equals(item.Key, "Calibration", StringComparison.Ordinal));
+        if (!pixelOnlyItem.IsNotApplicable)
+        {
+            throw new InvalidOperationException(
+                "Pipeline review readiness did not preserve a px-only acceptance gate without calibration warning. "
+                + $"NotApplicable={pixelOnlyItem.IsNotApplicable}, Status='{pixelOnlyItem.StatusText}'");
+        }
+
+        step.AcceptanceMetricName = "DistanceMmAvg";
+        OpenVisionPipelineReviewReadinessItem missingItem = OpenVisionPipelineReviewReadinessPresenter.Create(
+                pipeline,
+                VisionPipelineValidator.Validate(pipeline, new[] { "Main" }),
+                _ => true,
+                false,
+                false)
+            .Items
+            .Single(item => string.Equals(item.Key, "Calibration", StringComparison.Ordinal));
+        if (!missingItem.IsCheck)
+        {
+            throw new InvalidOperationException(
+                "Pipeline review readiness did not flag a non-positive PIXELPERMM value. "
+                + $"Check={missingItem.IsCheck}, Status='{missingItem.StatusText}'");
+        }
+    }
+
+    private static VisionPipeline CreatePipelineReviewInputStatePipeline()
+    {
+        VisionPipeline pipeline = new()
+        {
+            Name = "Pipeline_Input_State"
+        };
+
+        ThresholdToolProperty threshold = new()
+        {
+            Threshold = 112,
+            MaxValue = 255
+        };
+        FilterToolProperty missingInputFilter = new()
+        {
+            KernelWidth = 3,
+            KernelHeight = 3,
+            MedianKernelSize = 3
+        };
+
+        pipeline.Steps.Add(VisionPipelineStepBuilder.FromThresholdProperty(threshold, "01 Source Threshold", "Main", "Threshold_Preview"));
+        pipeline.Steps.Add(VisionPipelineStepBuilder.FromFilterProperty(missingInputFilter, "02 Missing External Input", "Unloaded_External", "Missing_Input_Preview"));
         return pipeline;
     }
 
@@ -10379,6 +16729,30 @@ internal static class Program
         });
     }
 
+    private static CaptureResult CaptureSimplePreprocessToolLearnButton(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfSimplePreprocessLearnButton");
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            (VISION_MENU Menu, int TopicIndex, string Name)[] scenarios =
+            {
+                (VISION_MENU.EdgeDetection, (int)OpenVisionLearnTopicIndex.EdgeDetection, "EdgeDetection"),
+                (VISION_MENU.RotateAndScale, (int)OpenVisionLearnTopicIndex.GeometryTransform, "RotateScale"),
+                (VISION_MENU.Mean, (int)OpenVisionLearnTopicIndex.Mean, "Mean"),
+                (VISION_MENU.HSV, (int)OpenVisionLearnTopicIndex.ColorHsv, "HSV"),
+                (VISION_MENU.Histogram, (int)OpenVisionLearnTopicIndex.Histogram, "Histogram")
+            };
+
+            foreach ((VISION_MENU menu, int topicIndex, string name) in scenarios)
+            {
+                shellHost.SelectToolForTest(menu);
+                Pump(18);
+                AssertToolHeaderLearnOpensTopic(shellHost, topicIndex, $"{name} header Learn");
+            }
+        });
+    }
+
     private static CaptureResult CaptureLayerSelectionArithmeticTool(string outputPath)
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
@@ -11160,6 +17534,7 @@ internal static class Program
                 AssertResultReviewVisible("FeatureMatching result guidance", "미리보기 OK", "합격 기준:", "Ratio", "RANSAC", "다음:");
                 AssertActiveToolTextsVisible("FeatureMatching verification guide", "특징 매칭 검증", "미리보기 OK", "Ratio", "RANSAC");
                 AssertActiveToolTextsVisible("FeatureMatching teaching summary", "템플릿 준비", "Ratio", "RANSAC", "원본", "전체 이미지");
+                AssertActiveToolTextsVisible("FeatureMatching ratio PropertyGrid label", "Ratio 기준");
 
                 VisionPipelineStep step = shellHost.AddActiveNativePipelineStepForTest();
                 if (step == null
@@ -12874,6 +19249,58 @@ internal static class Program
         }
     }
 
+    private static void AssertMaximizedWindowWithinWorkArea(Window window, string name)
+    {
+        if (window.WindowState != WindowState.Maximized)
+        {
+            throw new InvalidOperationException(name + " did not enter the maximized state.");
+        }
+
+        PresentationSource? source = PresentationSource.FromVisual(window);
+        if (source?.CompositionTarget == null)
+        {
+            throw new InvalidOperationException(name + " did not expose a presentation source.");
+        }
+
+        Matrix toDevice = source.CompositionTarget.TransformToDevice;
+        Rect workArea = SystemParameters.WorkArea;
+        Point workTopLeft = toDevice.Transform(new Point(workArea.Left, workArea.Top));
+        Point workBottomRight = toDevice.Transform(new Point(workArea.Right, workArea.Bottom));
+        Point actualTopLeft = window.PointToScreen(new Point(0D, 0D));
+        double actualRight = actualTopLeft.X + (window.ActualWidth * toDevice.M11);
+        double actualBottom = actualTopLeft.Y + (window.ActualHeight * toDevice.M22);
+        const double tolerance = 2D;
+        if (actualTopLeft.X < workTopLeft.X - tolerance
+            || actualTopLeft.Y < workTopLeft.Y - tolerance
+            || actualRight > workBottomRight.X + tolerance
+            || actualBottom > workBottomRight.Y + tolerance)
+        {
+            throw new InvalidOperationException(
+                name + " escaped the Windows work area. "
+                + $"Actual={actualTopLeft.X:0.0},{actualTopLeft.Y:0.0}-{actualRight:0.0},{actualBottom:0.0}; "
+                + $"WorkArea={workTopLeft.X:0.0},{workTopLeft.Y:0.0}-{workBottomRight.X:0.0},{workBottomRight.Y:0.0}");
+        }
+
+        FrameworkElement? statusBar = FindVisualChildren<FrameworkElement>(window)
+            .FirstOrDefault(item => item.IsVisible
+                && string.Equals(
+                    System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                    "ShellStatusTool",
+                    StringComparison.Ordinal));
+        if (statusBar == null)
+        {
+            throw new InvalidOperationException(name + " did not render the bottom status bar.");
+        }
+
+        Point statusBottomRight = statusBar.PointToScreen(new Point(statusBar.ActualWidth, statusBar.ActualHeight));
+        if (statusBottomRight.Y > workBottomRight.Y + tolerance)
+        {
+            throw new InvalidOperationException(
+                name + " bottom status bar is hidden behind the Windows taskbar. "
+                + $"StatusBottom={statusBottomRight.Y:0.0}, WorkAreaBottom={workBottomRight.Y:0.0}");
+        }
+    }
+
     private static CaptureResult CaptureElement(FrameworkElement element, string outputPath, int width, int height)
     {
         DateTime started = DateTime.UtcNow;
@@ -13253,6 +19680,62 @@ internal static class Program
         }
     }
 
+    private static void AssertToolRailReadiness(
+        OpenVisionShellHostView shellHost,
+        string expectedStatusLabel,
+        string expectedDescription,
+        params VISION_MENU[] excludedMenus)
+    {
+        if (shellHost.DataContext is not OpenVisionShellPreviewViewModel viewModel)
+        {
+            throw new InvalidOperationException("Tool rail readiness view model was not available.");
+        }
+
+        List<OpenVisionShellNavItem> tools = viewModel.NavigationGroups
+            .SelectMany(group => group.Items)
+            .Where(item => item.RequiresWorkspaceImage)
+            .ToList();
+        OpenVisionShellNavItem? mismatch = tools
+            .Where(item => !excludedMenus.Contains(item.Menu))
+            .FirstOrDefault(item =>
+                !string.Equals(item.StatusLabel, expectedStatusLabel, StringComparison.Ordinal)
+                || !string.Equals(item.Description, expectedDescription, StringComparison.Ordinal)
+                || !item.ToolTip.Contains(expectedDescription, StringComparison.Ordinal));
+        if (tools.Count < 15 || mismatch != null)
+        {
+            throw new InvalidOperationException(
+                "Tool rail readiness did not describe the current Main image state. "
+                + $"Count={tools.Count}, Expected='{expectedStatusLabel}', "
+                + $"Mismatch='{mismatch?.Title}:{mismatch?.StatusLabel}:{mismatch?.Description}'");
+        }
+    }
+
+    private static void AssertToolRailItemReadiness(
+        OpenVisionShellHostView shellHost,
+        VISION_MENU menu,
+        string expectedStatusLabel,
+        string expectedDescription)
+    {
+        if (shellHost.DataContext is not OpenVisionShellPreviewViewModel viewModel)
+        {
+            throw new InvalidOperationException("Tool rail readiness view model was not available.");
+        }
+
+        OpenVisionShellNavItem? item = viewModel.NavigationGroups
+            .SelectMany(group => group.Items)
+            .FirstOrDefault(candidate => candidate.Menu == menu);
+        if (item == null
+            || !string.Equals(item.StatusLabel, expectedStatusLabel, StringComparison.Ordinal)
+            || !string.Equals(item.Description, expectedDescription, StringComparison.Ordinal)
+            || !item.ToolTip.Contains(expectedDescription, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Tool rail item readiness did not match the expected prerequisite state. "
+                + $"Menu={menu}, Expected='{expectedStatusLabel}', "
+                + $"Actual='{item?.StatusLabel}:{item?.Description}'");
+        }
+    }
+
     private static void AssertVisibleAutomationIds(DependencyObject root, string name, params string[] requiredIds)
     {
         HashSet<string> visibleIds = FindVisualChildren<FrameworkElement>(root)
@@ -13267,6 +19750,269 @@ internal static class Program
             throw new InvalidOperationException(
                 name + " did not show expected AutomationId '" + missing + "'. "
                 + "VisibleIds='" + string.Join(", ", visibleIds.OrderBy(item => item, StringComparer.Ordinal)) + "'");
+        }
+
+        foreach (string statusId in requiredIds.Where(id => id.EndsWith("AnimationStatus", StringComparison.Ordinal)))
+        {
+            FrameworkElement status = FindVisualChildren<FrameworkElement>(root)
+                .First(item => item.IsVisible
+                    && string.Equals(
+                        System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                        statusId,
+                        StringComparison.Ordinal));
+            if (System.Windows.Automation.AutomationProperties.GetLiveSetting(status) != AutomationLiveSetting.Polite
+                || string.IsNullOrWhiteSpace(System.Windows.Automation.AutomationProperties.GetName(status)))
+            {
+                throw new InvalidOperationException(
+                    name + " animation status was not exposed as a named polite live region. AutomationId='"
+                    + statusId
+                    + "'.");
+            }
+        }
+
+        foreach (string inputId in requiredIds.Where(id => id.EndsWith("Slider", StringComparison.Ordinal)
+            || id.EndsWith("Combo", StringComparison.Ordinal)))
+        {
+            Control input = FindVisualChildren<Control>(root)
+                .First(item => item.IsVisible
+                    && string.Equals(
+                        System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                        inputId,
+                        StringComparison.Ordinal));
+            if (!input.Focusable
+                || !KeyboardNavigation.GetIsTabStop(input)
+                || string.IsNullOrWhiteSpace(System.Windows.Automation.AutomationProperties.GetName(input)))
+            {
+                throw new InvalidOperationException(
+                    name + " input was not keyboard reachable with a usable label. AutomationId='"
+                    + inputId
+                    + "'.");
+            }
+
+            input.Focus();
+            Pump(2);
+            if (!input.IsKeyboardFocused)
+            {
+                throw new InvalidOperationException(
+                    name + " input did not accept keyboard focus. AutomationId='" + inputId + "'.");
+            }
+        }
+    }
+
+    private static void AssertAnimationKeyboardOrder(
+        DependencyObject root,
+        string playId,
+        string stepId,
+        string resetId)
+    {
+        Button[] buttons = { FindButton(playId), FindButton(stepId), FindButton(resetId) };
+        foreach (Button button in buttons)
+        {
+            if (!button.Focusable || !KeyboardNavigation.GetIsTabStop(button))
+            {
+                throw new InvalidOperationException(
+                    "Learn animation button is not keyboard reachable. AutomationId='"
+                    + System.Windows.Automation.AutomationProperties.GetAutomationId(button)
+                    + "'.");
+            }
+        }
+
+        buttons[0].Focus();
+        Pump(2);
+        for (int i = 1; i < buttons.Length; i++)
+        {
+            buttons[i - 1].MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+            Pump(2);
+            if (!buttons[i].IsKeyboardFocused)
+            {
+                throw new InvalidOperationException(
+                    "Learn animation keyboard order did not move from "
+                    + System.Windows.Automation.AutomationProperties.GetAutomationId(buttons[i - 1])
+                    + " to "
+                    + System.Windows.Automation.AutomationProperties.GetAutomationId(buttons[i])
+                    + ".");
+            }
+        }
+
+        Button FindButton(string automationId)
+        {
+            return FindVisualChildren<Button>(root)
+                .First(item => item.IsVisible
+                    && string.Equals(
+                        System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                        automationId,
+                        StringComparison.Ordinal));
+        }
+    }
+
+    private static void AssertKeyboardTabRoute(DependencyObject root, params string[] expectedIds)
+    {
+        AssertKeyboardTabRoute(root, FocusNavigationDirection.Next, expectedIds);
+    }
+
+    private static void AssertInitialKeyboardFocus(DependencyObject root, string expectedId)
+    {
+        string actualId = ResolveFocusedAutomationId();
+        bool selectedTopicFocused = !string.Equals(expectedId, "OpenVisionLearnTopicList", StringComparison.Ordinal)
+            || Keyboard.FocusedElement is ListBoxItem { IsSelected: true };
+        if (!string.Equals(actualId, expectedId, StringComparison.Ordinal) || !selectedTopicFocused)
+        {
+            throw new InvalidOperationException(
+                "Learn window initial keyboard focus was not on the expected navigation control. "
+                + "Expected='"
+                + expectedId
+                + "', Actual='"
+                + actualId
+                + "'.");
+        }
+    }
+
+    private static void AssertKeyboardTabRoute(
+        DependencyObject root,
+        FocusNavigationDirection direction,
+        params string[] expectedIds)
+    {
+        FrameworkElement first = FindVisualChildren<FrameworkElement>(root)
+            .First(item => item.IsVisible
+                && string.Equals(
+                    System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                    expectedIds[0],
+                    StringComparison.Ordinal));
+        if (first is ListBox listBox
+            && listBox.ItemContainerGenerator.ContainerFromIndex(listBox.SelectedIndex) is ListBoxItem selectedItem)
+        {
+            selectedItem.Focus();
+        }
+        else if (first is TabControl tabControl
+            && tabControl.ItemContainerGenerator.ContainerFromIndex(tabControl.SelectedIndex) is TabItem selectedTab)
+        {
+            selectedTab.Focus();
+        }
+        else
+        {
+            first.Focus();
+        }
+        Pump(2);
+
+        for (int i = 0; i < expectedIds.Length; i++)
+        {
+            string actualId = ResolveFocusedAutomationId();
+            if (!string.Equals(actualId, expectedIds[i], StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Learn keyboard Tab route mismatch at position "
+                    + (i + 1).ToString(CultureInfo.InvariantCulture)
+                    + ". Expected='"
+                    + expectedIds[i]
+                    + "', Actual='"
+                    + actualId
+                    + "'.");
+            }
+
+            if (i + 1 < expectedIds.Length)
+            {
+                if (Keyboard.FocusedElement is not UIElement focused
+                    || !focused.MoveFocus(new TraversalRequest(direction)))
+                {
+                    throw new InvalidOperationException(
+                        "Learn keyboard "
+                        + (direction == FocusNavigationDirection.Previous ? "Shift+Tab" : "Tab")
+                        + " route stopped after '"
+                        + actualId
+                        + "'.");
+                }
+
+                Pump(2);
+            }
+        }
+
+    }
+
+    private static void AssertTopicChangeFocusHandoff(
+        DependencyObject root,
+        string sourceControlId,
+        int targetTopicIndex)
+    {
+        FrameworkElement source = FindVisualChildren<FrameworkElement>(root)
+            .First(item => item.IsVisible
+                && string.Equals(
+                    System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                    sourceControlId,
+                    StringComparison.Ordinal));
+        ListBox topics = FindVisualChildren<ListBox>(root)
+            .First(item => string.Equals(
+                System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                "OpenVisionLearnTopicList",
+                StringComparison.Ordinal));
+        source.Focus();
+        Pump(2);
+        topics.SelectedIndex = targetTopicIndex;
+        Pump(4);
+
+        string actualId = ResolveFocusedAutomationId();
+        if (source.IsKeyboardFocusWithin
+            || !string.Equals(actualId, "OpenVisionLearnTopicList", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Learn topic change did not return keyboard focus from the hidden control to the topic list. "
+                + "Source='"
+                + sourceControlId
+                + "', Actual='"
+                + actualId
+                + "'.");
+        }
+
+        FrameworkElement persistentHeader = FindVisualChildren<FrameworkElement>(root)
+            .First(item => item.IsVisible
+                && string.Equals(
+                    System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                    "OpenVisionLearnOpenDocsButton",
+                    StringComparison.Ordinal));
+        persistentHeader.Focus();
+        topics.SelectedIndex = targetTopicIndex == 0 ? 1 : 0;
+        Pump(4);
+        if (!persistentHeader.IsKeyboardFocused)
+        {
+            throw new InvalidOperationException(
+                "Learn topic change moved focus away from a header control that remained visible.");
+        }
+
+        topics.SelectedIndex = targetTopicIndex;
+        topics.Focus();
+        Pump(2);
+    }
+
+    private static string ResolveFocusedAutomationId()
+    {
+        DependencyObject? current = Keyboard.FocusedElement as DependencyObject;
+        while (current != null)
+        {
+            string id = System.Windows.Automation.AutomationProperties.GetAutomationId(current);
+            if (!string.IsNullOrWhiteSpace(id))
+            {
+                return id;
+            }
+
+            current = VisualTreeHelper.GetParent(current);
+        }
+
+        return "<none>";
+    }
+
+    private static void AssertButtonContent(DependencyObject root, string automationId, string expected)
+    {
+        Button? button = FindVisualChildren<Button>(root)
+            .FirstOrDefault(item => item.IsVisible
+                && string.Equals(
+                    System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                    automationId,
+                    StringComparison.Ordinal));
+        string actual = button == null ? string.Empty : ExtractElementText(button.Content);
+        if (!string.Equals(actual, expected, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                automationId + " did not use the common Learn animation wording. "
+                + "Expected='" + expected + "', Actual='" + actual + "'.");
         }
     }
 
@@ -15253,6 +21999,7 @@ internal static class Program
         AssertComboBoxSelectionTextVisible(comboBox, name);
     }
 
+
     private static T? FindNamedVisualChild<T>(DependencyObject root, string name) where T : FrameworkElement
     {
         return FindVisualChildren<T>(root)
@@ -15348,6 +22095,24 @@ internal static class Program
         {
             throw new InvalidOperationException(name + " contrast is too low: " + contrast.ToString("0.00", CultureInfo.InvariantCulture));
         }
+    }
+
+    private static void AssertButtonTextContrast(DependencyObject root, string automationId, string name)
+    {
+        Button? button = FindVisualChildren<Button>(root)
+            .FirstOrDefault(item => string.Equals(
+                System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                automationId,
+                StringComparison.Ordinal));
+        TextBlock? textBlock = button == null
+            ? null
+            : FindVisualChildren<TextBlock>(button).FirstOrDefault(item => !string.IsNullOrWhiteSpace(item.Text));
+        if (button == null || textBlock == null)
+        {
+            throw new InvalidOperationException(name + " text was not found.");
+        }
+
+        AssertBrushContrast(textBlock.Foreground, button.Background, name);
     }
 
     private static double GetContrastRatio(System.Windows.Media.Color foreground, System.Windows.Media.Color background)

@@ -1,6 +1,6 @@
 # Blob으로 입자 세기
 
-Updated: 2026-07-02
+Updated: 2026-07-13
 
 Blob은 threshold 이후 연결된 객체를 세고, 면적과 box 크기를 확인하는 도구입니다.
 OpenVisionLab에서는 Blob 결과를 단순한 개수로만 보지 않고 `ResultCount`, `Area`, `BoundsWidth` 같은 metric으로 설명합니다.
@@ -34,6 +34,13 @@ ROI 안의 입자 12개가 각각 box와 중심점으로 잡혀야 정상입니�
 6. `ResultCount`와 overlay 개수가 맞는지 봅니다.
 7. Bad 샘플에서 같은 pipeline이 낮은 count를 NG로 설명하는지 확인합니다.
 
+## Learn에서 Tool View 열기
+
+- `Blob Tool 열기`는 기존 Blob Tool View를 선택합니다.
+- PropertyGrid에서 `Use ROI`, `ROI`, Blob Parameter의 `Min area`, `Max area`를 확인합니다.
+- Preview 또는 Run Review에서 `ResultCount`, `AreaMin/AreaMax`, `BoundsWidth/BoundsHeight`를 함께 확인합니다.
+- PropertyGrid에서 ROI와 면적 범위를 찾고 결과 Blob의 위치, 개수, 크기를 비교합니다.
+
 ## Blob과 Contour 구분
 
 | 질문 | Blob에서 먼저 보는 값 |
@@ -60,4 +67,4 @@ Blob은 연결된 흰 픽셀 묶음을 세는 단계입니다. 붙은 물체는 
 - Good 샘플에서 count가 정상 범위입니다.
 - Bad 샘플에서 `ResultCount` 기준으로 NG가 설명됩니다.
 - Binary/Clean Layer와 Blob 결과를 Layer Docking으로 비교할 수 있습니다.
-Opening this guide or changing Blob parameters must not run Preview/Run automatically.
+After changing Blob parameters, run Preview and confirm that the accepted regions and metrics match the intended target.

@@ -23,7 +23,7 @@ namespace OpenVisionLab.Vision._1._Tools.OpenCV
     public class FeatureMatchingProperty : OpenCvPropertyBase, IOpenCVPropertyFeatureSIFT, IOpenCvConfigurableProperty<FeatureMatchingProperty>
     {
         [PropertyOrder(1)]
-        [CategoryAttribute("Matching"), DescriptionAttribute("Minimum feature matching score. Higher values reject weak matches."), DisplayNameAttribute("Min score")]
+        [CategoryAttribute("Matching"), DescriptionAttribute("Lowe ratio threshold used to keep distinctive descriptor matches. Smaller values are stricter; larger values keep more candidates."), DisplayNameAttribute("Ratio threshold")]
         public double SCORE_MIN { get; set; } = 0.6D;
 
         [PropertyOrder(2)]

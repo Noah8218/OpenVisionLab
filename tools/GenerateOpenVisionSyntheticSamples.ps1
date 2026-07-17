@@ -1361,6 +1361,92 @@ function Save-LinePinsWidePinSyntheticSample {
     Write-Host "Generated: $imagePath"
 }
 
+function New-FixturePadSyntheticBitmap(
+    [int]$OffsetX,
+    [int]$OffsetY,
+    [bool]$IncludePad
+) {
+    $bitmap = [System.Drawing.Bitmap]::new(572, 420, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::None
+
+    $background = New-Brush 38
+    $plate = New-Brush 76
+    $plateEdge = New-Pen 138 3
+    $trace = New-Pen 112 2
+    $locator = New-Pen 232 4
+    $locatorFill = New-Brush 214
+    $pad = New-Brush 224
+    $missingPad = New-Brush 116
+    $distractor = New-Brush 196
+
+    $graphics.FillRectangle($background, 0, 0, $bitmap.Width, $bitmap.Height)
+    $graphics.FillRectangle($plate, 60 + $OffsetX, 45 + $OffsetY, 430, 260)
+    $graphics.DrawRectangle($plateEdge, 60 + $OffsetX, 45 + $OffsetY, 430, 260)
+
+    for ($i = 0; $i -lt 5; $i++) {
+        $y = 145 + $OffsetY + ($i * 20)
+        $graphics.DrawLine($trace, 105 + $OffsetX, $y, 290 + $OffsetX, $y + 4)
+    }
+
+    $locatorX = 120 + $OffsetX
+    $locatorY = 100 + $OffsetY
+    $graphics.DrawRectangle($locator, $locatorX - 21, $locatorY - 21, 42, 42)
+    $graphics.DrawLine($locator, $locatorX - 15, $locatorY + 13, $locatorX + 13, $locatorY + 13)
+    $graphics.DrawLine($locator, $locatorX - 15, $locatorY - 13, $locatorX - 15, $locatorY + 13)
+    $graphics.FillEllipse($locatorFill, $locatorX + 6, $locatorY - 13, 9, 9)
+
+    $graphics.FillEllipse($distractor, 225 + $OffsetX, 255 + $OffsetY, 24, 24)
+    $graphics.FillRectangle($distractor, 438 + $OffsetX, 125 + $OffsetY, 20, 20)
+
+    if ($IncludePad) {
+        $graphics.FillRectangle($pad, 330 + $OffsetX, 190 + $OffsetY, 36, 28)
+    }
+    else {
+        $graphics.FillRectangle($missingPad, 330 + $OffsetX, 190 + $OffsetY, 36, 28)
+    }
+    $graphics.DrawRectangle($plateEdge, 330 + $OffsetX, 190 + $OffsetY, 36, 28)
+
+    $graphics.Dispose()
+    $background.Dispose()
+    $plate.Dispose()
+    $plateEdge.Dispose()
+    $trace.Dispose()
+    $locator.Dispose()
+    $locatorFill.Dispose()
+    $pad.Dispose()
+    $missingPad.Dispose()
+    $distractor.Dispose()
+
+    return $bitmap
+}
+
+function Save-FixturePadSyntheticSamples {
+    $goodPath = Join-Path $publicDir 'Fixture_Pad_Synthetic_Shifted_OK.png'
+    $badPath = Join-Path $publicDir 'Fixture_Pad_Synthetic_Shifted_Missing_NG.png'
+    $templatePath = Join-Path $templateDir 'Fixture_Locator_Synthetic_Template.png'
+
+    $reference = New-FixturePadSyntheticBitmap 0 0 $true
+    $template = $reference.Clone(
+        [System.Drawing.Rectangle]::new(90, 70, 60, 60),
+        [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+    $template.Save($templatePath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $template.Dispose()
+    $reference.Dispose()
+
+    $good = New-FixturePadSyntheticBitmap 80 55 $true
+    $good.Save($goodPath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $good.Dispose()
+
+    $bad = New-FixturePadSyntheticBitmap 80 55 $false
+    $bad.Save($badPath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bad.Dispose()
+
+    Write-Host "Generated: $goodPath"
+    Write-Host "Generated: $badPath"
+    Write-Host "Generated: $templatePath"
+}
+
 function Save-Manifest {
     $manifestPath = Join-Path $publicDir 'OpenVisionLab.PublicSampleManifest.csv'
     $rows = @(
@@ -1369,6 +1455,9 @@ function Save-Manifest {
         'docs/samples/public/Matching_DiePad_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated grayscale matching source image',
         'docs/samples/public/Matching_DiePad_Synthetic_NoTarget_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated matching no-target negative sample',
         'docs/samples/public/templates/Matching_DiePad_Synthetic_Template.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated template crop from Matching_DiePad_Synthetic_OK.png',
+        'docs/samples/public/Fixture_Pad_Synthetic_Shifted_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated shifted fixture scene with the inspection pad present',
+        'docs/samples/public/Fixture_Pad_Synthetic_Shifted_Missing_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated shifted fixture scene with the locator present and inspection pad missing',
+        'docs/samples/public/templates/Fixture_Locator_Synthetic_Template.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated locator template crop from the reference-pose fixture scene',
         'docs/samples/public/Blob_Particles_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated blob particle source image',
         'docs/samples/public/Blob_Particles_Synthetic_Sparse_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated sparse blob negative sample',
         'docs/samples/public/Contour_Shapes_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated contour shape-count source image',
@@ -1432,4 +1521,5 @@ Save-EdgeFiducialSyntheticSample
 Save-EdgeFiducialWrongSyntheticSample
 Save-LinePinsSyntheticSample
 Save-LinePinsWidePinSyntheticSample
+Save-FixturePadSyntheticSamples
 Save-Manifest

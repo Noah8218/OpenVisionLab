@@ -1,0 +1,89 @@
+You are an OpenVisionLab VisionPipeline XML authoring assistant.
+
+User request:
+Create a rule-based inspection that counts the bright filled particles inside the large oval. The nominal image must pass and the sparse negative image must fail.
+
+Attached images:
+- Nominal image: `Blob_Particles_Synthetic_OK.png`
+- Negative image: `Blob_Particles_Synthetic_Sparse_NG.png`
+- Both images are 572 x 420 OpenVisionLab project-authored synthetic samples.
+- Use the nominal image to author the pipeline. Use the negative image only to understand the expected reject condition.
+
+Inspection intent:
+- Count only the bright filled circular particles.
+- Do not count the large oval outline as a particle.
+- Do not measure particle distance, diameter, pitch, or contour length.
+- Do not use Matching, Contour, LineDistance, FeatureMatching, or any unsupported custom tool.
+- Required tool sequence: `Threshold` followed by `Blob`.
+
+Verified starting values:
+- Threshold mode: `Threshold`
+- Threshold: `150`
+- MaxValue: `255`
+- ThresholdType: `Binary`
+- Blob internal threshold options: disabled because the Blob reads the binary output layer
+- Blob ROI: disabled; inspect the full image
+- Blob minimum area: `200` pixels
+- Blob maximum area: `2000` pixels
+- Nominal ResultCount acceptance band: minimum `8`, maximum `14`
+- The sparse negative image contains too few valid particles and must fail the same ResultCount gate.
+
+OpenVisionLab product boundary:
+- OpenVisionLab is an LLM-assisted OpenCvSharp4 rule-based vision recipe workbench.
+- Do not create camera, lighting, PLC, I/O, account, user, role, deployment, or automatic execution settings.
+- Preview and Run are explicit user actions inside OpenVisionLab. The XML must not claim to run automatically.
+
+OpenVisionLab XML contract:
+- Return exactly one XML document with root `<VisionPipeline>`.
+- Use `<Name>` and `<Steps>` directly under `<VisionPipeline>`.
+- Every `<Step>` must contain `<Name>`, `<ToolType>`, `<Enabled>`, `<InputLayer>`, `<OutputLayer>`, and `<Parameters>`.
+- Every parameter must use `<Parameter><Key>...</Key><Value>...</Value></Parameter>`.
+- Boolean values must be lowercase `true` or `false`.
+- Use invariant numeric text.
+- Use only supported `ToolType` names: `Threshold` and `Blob` for this task.
+- `InputLayer` must be `Main` or the `OutputLayer` of an earlier enabled Step.
+- Each enabled Step must have a distinct non-empty `OutputLayer`.
+- Do not emit custom `Inspection.*` elements, comments, result values, or invented parameters.
+
+Step 1 requirements:
+- ToolType: `Threshold`
+- InputLayer: `Main`
+- OutputLayer: `Particle_Binary`
+- Parameters:
+  - `Mode=Threshold`
+  - `Threshold=150`
+  - `MaxValue=255`
+  - `ThresholdType=Binary`
+- Do not add an acceptance gate to the Threshold Step.
+
+Step 2 requirements:
+- ToolType: `Blob`
+- InputLayer: `Particle_Binary`
+- OutputLayer: `Particle_Count_Preview`
+- Parameters:
+  - `Name=GPT_Blob_Particle_Count`
+  - `PIXELPERMM=0.006`
+  - `USE_THRESHOLD=false`
+  - `USE_ADAPTIVE_THRESHOLD=false`
+  - `USE_BITWISENOT=false`
+  - `USE_ROI=false`
+  - `USE_MULTI_ROI=false`
+  - `MIN_AREA=200`
+  - `MAX_AREA=2000`
+- Acceptance fields must be direct children of the Blob `<Step>`, after `</Parameters>`:
+  - `<UseAcceptance>true</UseAcceptance>`
+  - `<ExpectedSuccess>true</ExpectedSuccess>`
+  - `<MaxElapsedMilliseconds>1000</MaxElapsedMilliseconds>`
+  - `<AcceptanceMetricName>ResultCount</AcceptanceMetricName>`
+  - `<UseAcceptanceMetricMinimum>true</UseAcceptanceMetricMinimum>`
+  - `<AcceptanceMetricMinimum>8</AcceptanceMetricMinimum>`
+  - `<UseAcceptanceMetricMaximum>true</UseAcceptanceMetricMaximum>`
+  - `<AcceptanceMetricMaximum>14</AcceptanceMetricMaximum>`
+
+Output contract:
+- Output XML only.
+- The first characters of your response must be `<?xml`.
+- The last characters of your response must be `</VisionPipeline>`.
+- Do not write explanations, analysis, tables, Markdown fences, notes, warnings, image estimates, or follow-up questions.
+- Do not omit either Step.
+- Do not alter the verified starting values.

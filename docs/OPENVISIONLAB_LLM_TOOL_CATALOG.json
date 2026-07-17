@@ -1,5 +1,5 @@
 {
-  "version": "2026-07-06",
+  "version": "2026-07-16",
   "purpose": "Machine-readable guide for external LLMs that draft OpenVisionLab VisionPipeline XML.",
   "productIdentity": {
     "name": "OpenVisionLab",
@@ -49,10 +49,43 @@
     "Do not invent dependency paths; use existing paths only.",
     "SCORE_MIN, GREEDINESS, and HYBRID_VERIFY_IMAGE_WEIGHT are 0..1 decimals.",
     "Threshold, MaxValue, RangeMin, RangeMax, CANNY_LOW, and CANNY_HIGH are 0..255 gray values.",
+    "HSV HueMin and HueMax use OpenCV's 0..179 scale. HueMin may exceed HueMax to wrap through the 179/0 boundary; Saturation and Value values are 0..255 and their minimum must not exceed maximum.",
     "Kernel sizes and counts must be positive; odd-only kernels must be odd.",
     "FIND_ANGLE_MIN must be less than or equal to FIND_ANGLE_MAX.",
+    "Translation-only fixture v1 requires an earlier Matching step with NUM_MATCH=1 and USE_AS_FIXTURE_FRAME=true.",
+    "A fixture consumer must use the same source layer, one enabled CvROI, USE_FIXTURE_FRAME=true, the same FIXTURE_FRAME_NAME, and ALLOW_BRANCH_INPUT=true.",
+    "Fixture application never rewrites the saved CvROI and must not be used for rotation, scale, multi-ROI, or masks.",
     "OverlayMerge should usually be the final enabled Step when it is the operator review result."
   ],
+  "fixtureTranslationV1": {
+    "producerToolTypes": [
+      "Matching",
+      "TemplateMatching"
+    ],
+    "producerParameters": [
+      "USE_AS_FIXTURE_FRAME",
+      "FIXTURE_FRAME_NAME",
+      "FIXTURE_REFERENCE_X",
+      "FIXTURE_REFERENCE_Y",
+      "FIXTURE_REFERENCE_ANGLE",
+      "FIXTURE_MAX_ANGLE_DELTA"
+    ],
+    "consumerParameters": [
+      "USE_FIXTURE_FRAME",
+      "FIXTURE_FRAME_NAME",
+      "USE_ROI",
+      "CvROI",
+      "ALLOW_BRANCH_INPUT"
+    ],
+    "limitations": [
+      "one Matching result",
+      "one axis-aligned CvROI",
+      "same source layer",
+      "translation only",
+      "no multi-ROI",
+      "no masks"
+    ]
+  },
   "resultChannels": {
     "doNotEmitAsXml": [
       "Inspection.Status",
@@ -90,6 +123,10 @@
     "EdgeBasedTemplateMatching",
     "EdgeTemplateMatching",
     "Mean",
+    "HSV",
+    "HsvMask",
+    "ColorHSV",
+    "ColorMask",
     "RotateScale",
     "RotateAndScale",
     "Feature",
@@ -137,6 +174,16 @@
       "G",
       "R"
     ],
+    "hsvHueIntegerKeys": [
+      "HueMin",
+      "HueMax"
+    ],
+    "hsvByteIntegerKeys": [
+      "SaturationMin",
+      "SaturationMax",
+      "ValueMin",
+      "ValueMax"
+    ],
     "positiveDoubleKeys": [
       "MAGNIFIATION",
       "RANSAC_REPROJ_THRESHOLD",
@@ -182,6 +229,10 @@
       "MeanValueMin",
       "MeanValueMax",
       "MeanValueAvg"
+    ],
+    "mask": [
+      "MaskPixelCount",
+      "MaskPixelRatio"
     ],
     "edge": [
       "EdgeCount",
@@ -289,10 +340,16 @@
         "FilterType",
         "KernelWidth",
         "KernelHeight",
+        "MedianKernelSize",
+        "Diameter",
+        "SigmaColor",
+        "SigmaSpace",
         "BorderType"
       ],
       "validationHints": [
-        "Kernel dimensions must be positive."
+        "KernelWidth and KernelHeight must be positive for Blur, GaussianBlur, and BoxFilter.",
+        "MedianBlur requires an odd positive MedianKernelSize such as 3, 5, or 7.",
+        "BilateralFilter uses positive Diameter, SigmaColor, and SigmaSpace values."
       ],
       "recommendedMetrics": [
         "ResultImageWidth",
@@ -406,6 +463,12 @@
         "FIND_ANGLE",
         "FIND_ANGLE_MIN",
         "FIND_ANGLE_MAX",
+        "USE_AS_FIXTURE_FRAME",
+        "FIXTURE_FRAME_NAME",
+        "FIXTURE_REFERENCE_X",
+        "FIXTURE_REFERENCE_Y",
+        "FIXTURE_REFERENCE_ANGLE",
+        "FIXTURE_MAX_ANGLE_DELTA",
         "USE_CANNY",
         "USE_THRESHOLD",
         "USE_ADAPTIVE_THRESHOLD",
@@ -414,9 +477,10 @@
       ],
       "validationHints": [
         "TemplatePath and PATTERN_PATH must point to existing files before import.",
-        "SCORE_MIN is a 0..1 decimal.",
-        "MAGNIFIATION must be positive.",
-        "FIND_ANGLE_MIN must be less than or equal to FIND_ANGLE_MAX."
+                                              "SCORE_MIN is a 0..1 decimal.",
+                                              "MAGNIFIATION must be positive.",
+        "FIND_ANGLE_MIN must be less than or equal to FIND_ANGLE_MAX.",
+        "Fixture producers require NUM_MATCH=1, a unique FIXTURE_FRAME_NAME, and a reviewed numeric reference pose."
       ],
       "recommendedMetrics": [
         "ResultCount",
@@ -425,7 +489,13 @@
         "ScoreAvg",
         "AngleMin",
         "AngleMax",
-        "AngleAvg"
+        "AngleAvg",
+        "FixtureCenterX",
+        "FixtureCenterY",
+        "FixtureAngle",
+        "FixtureOffsetX",
+        "FixtureOffsetY",
+        "FixtureAngleDelta"
       ]
     },
     {
@@ -494,8 +564,8 @@
       ],
       "validationHints": [
         "TemplatePath and PATTERN_PATH must point to existing files before import.",
-        "SCORE_MIN is a 0..1 decimal.",
-        "RANSAC_REPROJ_THRESHOLD must be positive."
+                                              "SCORE_MIN is the Lowe descriptor-ratio threshold in the 0..1 range; smaller values are stricter and it is not the final ScoreMax acceptance value.",
+                                              "RANSAC_REPROJ_THRESHOLD must be positive."
       ],
       "recommendedMetrics": [
         "ResultCount",
@@ -527,6 +597,41 @@
         "MeanValueMin",
         "MeanValueMax",
         "MeanValueAvg"
+      ]
+    },
+    {
+      "toolType": "HSV",
+      "aliases": [
+        "HsvMask",
+        "ColorHSV",
+        "ColorMask"
+      ],
+      "role": "Create a binary mask for one HSV color range and review color coverage.",
+      "category": "color",
+      "commonParameters": [
+        "HueMin",
+        "HueMax",
+        "SaturationMin",
+        "SaturationMax",
+        "ValueMin",
+        "ValueMax",
+        "USE_ROI",
+        "CvROI",
+        "Name"
+      ],
+      "validationHints": [
+        "HueMin and HueMax are integer values in OpenCV's 0..179 hue scale.",
+        "HueMin greater than HueMax intentionally wraps through the 179/0 boundary for colors such as red.",
+        "SaturationMin must not exceed SaturationMax and ValueMin must not exceed ValueMax; both ranges are 0..255.",
+        "Keep the HSV mask in a distinct OutputLayer. A downstream Blob or Contour Step must explicitly use that mask as InputLayer.",
+        "Use MaskPixelRatio for a coverage gate and MaskPixelCount when the absolute selected area matters."
+      ],
+      "recommendedMetrics": [
+        "MaskPixelCount",
+        "MaskPixelRatio",
+        "ResultImageWidth",
+        "ResultImageHeight",
+        "ResultImageChannels"
       ]
     },
     {
@@ -710,10 +815,11 @@
   ],
   "sourceEvidence": [
     "0. UI/0) MENU/Wpf/OpenVisionShellHostRecipeCommandSurface.cs",
-    "1. Core/VisionPipelineValidation.cs",
-    "1. Core/VisionPipelineStepParameterSchema.cs",
-    "1. Core/VisionPipelineKnownMetrics.cs",
-    "1. Core/VisionPipelineArithmeticStep.cs",
+    "1. Core/Pipeline/Validation/VisionPipelineValidation.cs",
+    "1. Core/Pipeline/Definition/VisionPipelineStepParameterSchema.cs",
+    "1. Core/Pipeline/Validation/VisionPipelineKnownMetrics.cs",
+    "1. Core/Pipeline/Tools/VisionPipelineHsvMaskTool.cs",
+    "1. Core/Pipeline/Tools/VisionPipelineArithmeticStep.cs",
     "docs/samples/*.pipeline.xml",
     "OpenVisionLabDirectSmokeRunner.cs"
   ]

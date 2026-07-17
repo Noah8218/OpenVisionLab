@@ -1,0 +1,23 @@
+Your previous XML was tested unchanged in the current OpenVisionLab build and did not pass validation or the required OK/NG behavior.
+
+Original inspection contract:
+- Use exactly one `FeatureMatching` Step with the supplied feature-card template.
+- `Feature_Card_Synthetic_OK.png` must pass with `ScoreMax` from `80` through `100`.
+- `Feature_Card_Synthetic_Wrong_NG.png` must fail the same score gate. It may still return one weak geometric hypothesis, so `ResultCount=1` alone is not a valid pass condition.
+- Both template path parameters must point to the same existing template. For the current Debug workspace, the verified application-startup-relative path is `..\..\docs\samples\public\templates\Feature_Card_Synthetic_Template.png`.
+- `SCORE_MIN` remains `0.85` on the normalized 0 through 1 scale; the `ScoreMax` acceptance minimum remains `80` on the result metric's 0 through 100 scale.
+- `RANSAC_REPROJ_THRESHOLD` remains `4`.
+- Preview and Run remain explicit OpenVisionLab user actions.
+
+Actual OpenVisionLab report:
+<PASTE_THE_COMPLETE_UNEDITED_VALIDATION_OR_RUN_REPORT_HERE>
+
+Correction rules:
+- Correct only the XML defects demonstrated by the report.
+- Preserve the `Feature_Card_Inspection` pipeline name, original inspection intent, one-Step structure, and supported `FeatureMatching` ToolType.
+- Do not invent parameters, custom XML nodes, result values, absolute paths, or automatic execution behavior.
+- Return the complete corrected XML document, not a patch or explanation.
+- Output XML only.
+- The first characters must be `<?xml`.
+- The last characters must be `</VisionPipeline>`.
+- Do not use Markdown fences.

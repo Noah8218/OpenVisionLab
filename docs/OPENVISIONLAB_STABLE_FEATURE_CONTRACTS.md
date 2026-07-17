@@ -1,6 +1,6 @@
 # OpenVisionLab Stable Feature Contracts
 
-Last updated: 2026-07-02
+Last updated: 2026-07-14
 
 This document protects restored and verified behavior. Future LLM or developer work must read this before changing WPF shell, tool view, layer routing, viewer, or PropertyGrid code.
 
@@ -22,6 +22,14 @@ When a feature below is marked stable, do not refactor, simplify, replace, or re
 - Keep completed behavior covered by focused smoke tests. Run the smallest target that covers the changed path.
 - Do not replace a PropertyGrid tool with hand-written controls unless a separate design explicitly says that tool is no longer PropertyGrid based.
 - MainView image-ready guidance is display-only. Showing a next-action bar, quick tool buttons, or top status banner state must not auto-open a tool, run Preview, create an output layer, or change the selected input layer.
+- Tool rail readiness badges are display-only. The initial state may report `입력 없음` when `Main` has no image and `설정 가능` when a Main image exists, but `설정 가능` must not be presented as proof that template, second input, ROI, calibration, or other tool-specific Preview requirements are complete. Readiness refresh must not disable tool selection, open a tool, run Preview/Run, create or select a layer, or change input/output routing.
+- Matching-family template readiness must reuse the first recipe-owned `MatchingProperty`, `EdgeBasedMatchingProperty`, or `FeatureMatchingProperty` and its loaded template status. With `Main` ready, a missing or invalid template may show `템플릿 필요`; PropertyGrid template registration may refresh that display, but the refresh must not execute a tool or mutate layer or routing state.
+- Arithmetic second-input readiness must reuse `VisionPipelineArithmeticStep.RequiresInputLayerB` and the persisted `ArithmeticToolSettings`. When the current setting requires B and fewer than two non-placeholder image layers exist, the Tool rail may show `B 입력 필요`. This is an advisory setup state, not proof that the eventual A/B routes or image sizes are compatible, and settings/layer refresh must not execute a tool or mutate layer or routing state.
+- Tool rail search filters the existing tool/group visibility only. It may match canonical bilingual tool names, inspection intents, PropertyGrid terms, and result metrics, but typing or clearing a query must not open tools, run Preview/Run, create layers, change the visible workspace layer, or change input/output routing. Compact icon mode hides the search row and keeps every tool icon clickable.
+- A found Tool rail item may expose explicit Learn and public-sample shortcuts only when canonical existing destinations are available. Learn must reuse the Learn window and select the mapped topic. Samples must open the existing Sample Picker at the mapped Learn path; opening or cancelling the Picker must not load a sample, select/open the Tool View, run Preview/Run, create layers, or change workspace/input/output routing. Loading remains a separate explicit Picker confirmation.
+- A found Tool rail item may expose Guided Setup only for the five existing starter-intent contracts: Line -> pin gap/pitch, Blob -> count, Contour -> shape/count, Matching -> target presence, and Mean -> brightness. The shortcut must only open Recipe Manager, select the existing Guided Setup tab, and select the mapped intent. It must not create Starter XML, open the Tool View, run Preview/Run, create layers, or change workspace/input/output routing. Unsupported tools must not show a Guided Setup shortcut.
+- Do not label a generic Tool View as `ROI needed` merely because its property model exposes `USE_ROI`. Blob/Contour support full-image execution, Line supplies its full-image default on explicit Preview, and Matching-family tools have a template prerequisite. A fixture-consuming pipeline Step remains the proven required-ROI case and must fail closed through pipeline validation.
+- Recipe Manager review-bundle export is an explicit command separate from XML export. Schema v1 contains only `pipeline.xml` and `review-manifest.json`; the manifest records application version, validation, ToolTypes, Step routes, acceptance metrics, and referenced dependency/sample path status, size, and SHA-256. It must not copy referenced/private files, import a recipe, run Preview/Run, create layers, or change workspace/input/output routing. Any later asset-copy or import workflow must remain a separate explicit operator action with a review step.
 - Keep comments around non-obvious routing, viewer gesture, and preview/result separation logic. These are easy places for regressions.
 - Public repository material must preserve `LICENSE`, `NOTICE`, copyright text, and attribution to `최노아(Noah-Choi)`. Do not remove or obscure these notices in README, package metadata, or redistributed source copies.
 - Public sample assets must be project-authored synthetic assets or otherwise clearly licensed for redistribution. The root `Sample/` folder is local/vendor sample reference material and must not be tracked or reintroduced into public GitHub output. Public sample and tutorial flows should use `docs/samples/public/` and `docs/samples/public/product/`.
@@ -67,6 +75,7 @@ Stable behavior:
 - ROI editor results (`CvROI`, `CvROIS`, `CvMASKS`) must be stored with the tool property model and must not be treated as temporary UI-only state.
 - When an input image is loaded or refreshed, the tool input preview must display the currently configured ROI overlay so the operator can immediately see the last taught region.
 - ROI overlay display is informational; showing the ROI must not create, select, rename, or write an output layer, and must not imply that detection/run has happened.
+- Matching fixture translation is an explicit pipeline runtime option. It may clone a downstream step and translate the clone's effective `CvROI`, but it must not rewrite the saved `CvROI`, change input/output routing, create layers outside normal explicit Run output, or trigger Preview/Run. Translation-only v1 requires one Matching result, one prior named frame, the same source layer, one ROI, and an angle delta within the configured limit; unsupported rotation, multi-ROI, mask, or missing-frame cases must fail closed.
 - Blob and Contour Tool Views may show a compact verification guide above the PropertyGrid. The guide is display-only and summarizes Preview state, area/threshold/ROI criteria, and next action; it must not replace the PropertyGrid or trigger Preview/Run/Add Pipeline.
 - Blob/Contour result explanation may translate area-style metrics into beginner-facing reasons through `VisionToolAreaResultExplanation`, including count, max area, max box size, and likely threshold/ROI/area failure-cause hints. This is presentation state only; it must not change Blob/Contour detection metrics, pass/fail logic, Preview/Run execution, layer routing, output layer creation, or pipeline step parameters.
 - Line Tool View may show compact verification guidance in the shared summary/result area. The guide is display-only, summarizes Edge/Measure/Intersection Preview state and next action, and must not replace the Line PropertyGrid, Line A/B controls, ROI edit affordance, or trigger Preview/Run/Add Pipeline.
@@ -256,6 +265,20 @@ Stable behavior:
 - The no-image main workspace prompt points operators to the bottom Run Log, and the empty Run Log shows a compact waiting card instead of a bare placeholder line.
 - The no-image main workspace sample button must use a real command. When multiple runnable catalog samples exist, it opens a sample catalog picker that shows sample goal, tool flow, expected metrics, benchmark OK/NG reference state, Learn Mode guidance, recommended start, result interpretation, failure-cause summary, check guidance, NG fix guidance, image/pipeline paths, and Good/Bad pair context.
 - The sample catalog picker may expose task-oriented Learn paths such as Matching, Blob, Contour, Line, Mean, and Good/Bad. Selecting a Learn path only filters the catalog list and selected sample; it must not open a sample, run Preview/Run, open tools, create output layers, change routing, or rewrite recipe values.
+- Operator-facing sample catalogs and Recipe Manager sample selectors show only public-safe and product sample sources. Keep `LocalLegacy` loading available for old recipe/history compatibility, but do not expose Local Legacy as a new-user catalog source.
+- The sample catalog window uses the shared OpenVisionLab custom title bar with minimize, maximize/restore, and close controls; do not return it to the default Windows title bar.
+- Learn document actions render repository Markdown into a styled local HTML guide and open that HTML in the default browser. Do not shell-open `.md` files into an editor for the beginner workflow.
+- Learn topic `Tool 열기` actions may select the related PropertyGrid Tool View and show the expected parameter location, but must not run Preview/Run, create output layers, or change input routing. The Brightness/Histogram topic maps to the existing Mean Tool View (`Mean Type`, `Min Mean`, `Max Mean`) and Histogram Tool View (`Type`, `Clip Limit`, `Tile Grid`, `Normalize Alpha/Beta`). The Filtering topic maps to the existing Filter Tool View (`Input/Output Layer`, `Filter Type`, `Border Type`, Kernel `Width/Height`, plus type-specific Median/Bilateral fields). The Morphology topic maps to the existing Morphology Tool View (`Input/Output Layer`, `Operation`, Kernel `Width/Height`, size presets, and `Shape`). The Blob topic maps to the existing Blob PropertyGrid (`Use ROI`, `ROI`, `Min area`, `Max area`) and points result review to `ResultCount`, `AreaMin/AreaMax`, and `BoundsWidth/BoundsHeight`. The Contour topic maps to the existing Contour PropertyGrid (`컨투어 표시`, `Retrieval mode`, `Min area`, `Max area`, optional approximation/drawing fields) and points result review to `ResultCount`, `AreaMax`, `BoundsWidthMax`, and `BoundsHeightMax`. The Edge/Line topic separates EdgeDetection edge-map creation (`Edge Type`, Canny/Sobel/Scharr/Laplacian fields) from Line ROI-based edge/fit-line work (Purpose, Line A/B, ROI, Polarity/Direction/Contrast/Thickness, scan fields) and may open either existing Tool View explicitly. The Arithmetic topic maps to the existing double-input Tool View (`Input A`, `Input B`, `Output Layer`, `Mode`, `Arithmetic Type`, `Input B Source`). The Geometry topic maps to the existing RotateScale Tool View (`Input/Output Layer`, `Angle`, `Scale X`, `Scale Y`); `OutputSize` remains an explicit Preview result rather than an input field. The Color/HSV topic maps to the existing HSV Tool View and its Hue/Saturation/Value, ROI, and OutputLayer controls.
+- The LineDistance topic maps to the existing Line Tool View. It guides the operator to select `Purpose > Measure` explicitly, configure Line A/B, ROI, `Pixel / mm`, and edge/scan fields, then review `DistanceMmAvg` together with `DistanceMmRange`/`DistanceMmMax`. Opening the Tool View must not select Measure, mutate parameters, or run Preview/Run automatically.
+- The Matching topic maps to the existing Matching Tool View. It points to Tool Shell `Template Ready`, PropertyGrid `Pattern path`, `Matching > Min score`, `Match count`, ROI, and optional angle/scale search, then requires explicit Preview or Run Review before interpreting overlay position, `ScoreMax`, and `ResultCount`. Opening the Tool View must not register a template, mutate parameters, or run Preview/Run automatically.
+- The EdgeBasedMatching topic maps to the existing EdgeBasedMatching Tool View. It points to Tool Shell `Template Ready`, PropertyGrid `Pattern path`, `Matching > Min score / Match count`, `Edge Model > Canny range / Max template points`, `Search > Search step`, ROI, and optional angle/scale search, then requires explicit Preview or Run Review before interpreting overlay position, `ScoreMax`, and `ResultCount`. Opening the Tool View must not register a template, mutate parameters, or run Preview/Run automatically.
+- The FeatureMatching topic maps to the existing FeatureMatching Tool View. It points to Tool Shell `Template Ready`, PropertyGrid `Feature template path`, `Matching > Ratio threshold`, `RANSAC tolerance`, and ROI. The serialized key remains `SCORE_MIN` for compatibility, but its FeatureMatching meaning is the Lowe descriptor ratio and smaller values are stricter. Explicit Preview or Run Review is required before interpreting overlay position, `ScoreMax`, and `ResultCount`. Opening the Tool View must not register a template, mutate parameters, or run Preview/Run automatically.
+- The Color/HSV Learn animation may demonstrate actual `Cv2.Split`, `Cv2.Merge`, `Cv2.CvtColor`, and `Cv2.InRange` data flow. This remains display-only learning state and does not create a new pipeline ToolType, mutate image layers, or execute Preview/Run.
+- The default Shell Host bottom status bar shows current recipe, workspace layer, tool/task state, and operation status. Do not reintroduce generic or hard-coded drive-capacity bars.
+- Maximizing the custom Shell Host window must stay inside the current monitor work area so the Windows taskbar remains visible and the OpenVisionLab bottom status/log controls remain usable.
+- Compacting the left Tool rail keeps an icon-only, tooltip-enabled, clickable tool list. Do not reduce compact mode to an empty expand handle.
+- The Line Tool rail readiness reads the first recipe-owned Line A/B `PIXELPERMM` values. Equal zero values show pixel-only mode, equal positive values show the configured mm/px scale, and missing, invalid, negative, or inconsistent values require scale review.
+- A displayed positive Line scale is configuration evidence, not proof that physical calibration was performed. The readiness description must require real calibration evidence before mm results are trusted, while remaining display-only and never opening Line, running Preview/Run, creating layers, or changing routing.
 - Good/Bad pair sample picker UI may add a decision guide that explains which shared metrics separate OK and NG references, a compact validation checklist, and the recommended manual review order. This guide is display-only and must not run Preview/Run, open tools, create output layers, change routing, or rewrite recipe thresholds.
 - Good/Bad sample catalog coverage must keep representative public-safe pair groups for Blob, Contour, LineDistance, Matching, EdgeBasedMatching, FeatureMatching, Mean, Threshold, and product-domain flows. Each pair group must include both Good and Bad references, one shared baseline pipeline, bounded expected metrics, and at least one shared Good/Bad metric.
 - A Bad reference may be `ExpectedFailure` when the shared baseline pipeline intentionally rejects the sample through a stable metric acceptance gate. `Public_Mean_Brightness_Dark_Bad` is a controlled NG reference: the Mean tool still produces `MeanValueAvg`, but the public sample pipeline rejects values below the normal-brightness acceptance threshold.
@@ -267,8 +290,13 @@ Stable behavior:
 - Not every Bad reference should become `ExpectedFailure`. Some Bad references are comparative references: they must remain runnable and metric-bounded so the operator can compare Good/Bad separation without treating the shared recipe execution itself as failed.
 - Opening a selected sample loads it into `Main`, saves/activates its pipeline as a `Sample_` pipeline for the current recipe, and leaves Preview/Run/manual tool opening under explicit operator control.
 - Opening Pipeline Review from a loaded sample must bind to the active `Sample_` pipeline for the current recipe. Running Review explicitly may execute the sample pipeline and show OK/NG, metrics, run log, and output preview, but opening the sample or opening Pipeline Review must not trigger native Preview automatically.
+- Pipeline Review must show its owning recipe and provide an explicit `Return to Recipe` route. Returning must reopen the same Recipe Manager summary without rerunning Review/native Preview, creating or removing layers, changing the active layer, or changing recipe/pipeline routing.
+- Recipe Manager summary must distinguish the workspace-global current work sample from recipe-bound sample-run evidence. Selecting or automatically defaulting a catalog sample may update the work-sample name, but the latest recipe result must remain `not checked` unless the in-memory result records the same recipe and selected pipeline; recipe or pipeline switches must not present another context's result as current evidence.
+- Recipe Manager summary and advanced review are distinct workspace states. Summary owns recipe search/library, the selected-recipe overview, and create/duplicate/rename/delete lifecycle commands. Advanced review hides those outer controls, uses the detail workspace at full width, opens on Pipeline review, and exposes only technical tabs plus explicit XML/review transfer commands and `Back to summary`.
+- Switching Recipe Manager summary/advanced state is navigation only. It must not run Preview/Run, create/delete/load layers, change the active layer, modify Step parameters, or change recipe/pipeline input/output routing.
+- Smoke-created recipe workspaces must use a reserved scenario prefix plus an exact generated suffix and be deleted in `finally`. Cleanup may remove only names that match the reserved prefix and generated suffix contract; it must not delete arbitrary operator recipes.
 - After a sample is opened, the main workspace may show a compact sample workflow strip with the active `Sample_` pipeline, first step, step count, and next-action guidance. Manual image load hides the strip.
-- The Shell top bar may show an active recipe/pipeline context chip. It is display/status state only; refreshing or switching the context must not auto-open a tool, run Preview/Run, create an output layer, or change the selected input layer.
+- The Shell top bar uses the recipe selector as the single operator-facing recipe context. Do not add a separate read-only `Scope`/pipeline chip beside it; the internal recipe/pipeline context remains available to tool and recipe workflows.
 - The Shell top bar exposes a recipe selector and a new-recipe command. Selecting or creating a recipe must use the same recipe reload path as `RecipeState.Name`, refresh active recipe/pipeline context, and must not auto-open a tool, run Preview/Run, create output layers, or change input routing by itself.
 - The language selector must show readable operator text (`한국어`, `English`) in the dark Shell chrome. Changing language through the selector must persist the selected language and refresh Shell text only; it must not open tools, run Preview/Run, create layers, or change routes.
 - Native Tool View `Add Pipeline` commands must append to the active recipe/pipeline context captured when the tool is opened or reactivated from cache. They must not fall back to a global default recipe/pipeline when the Shell is showing a different active context, and they must not run Preview/Run or create output layers by themselves.
@@ -291,6 +319,10 @@ Do not:
 Relevant smoke:
 - `wpf_shell_host_workspace_empty`
   - Covers the localized empty prompt, beginner workflow, empty/start top status banner, Korean/English language refresh, and no auto tool open.
+- `wpf_shell_host_learn_entry`
+  - Covers Shell-backed Learn actions opening Foundation and Color/HSV related Tool Views without Preview/Run, layer creation, or routing side effects.
+- `wpf_openvision_learn_color_hsv`
+  - Covers actual one-pixel BGR Split/Merge values and channel order, the Color/HSV animation, BGR-to-HSV data mapping, HSV parameter-location guide, and Shell-only HSV Tool View action contract.
 - `wpf_shell_host_workspace_sample_picker`
   - Covers runnable sample search/list/detail UI, Learn path entry grouping, selected sample image, tool flow, expected metrics, benchmark strip, Learn Mode guidance, Good/Bad or single-sample reference state, and explicit no-auto Preview/Run guidance.
 - `wpf_shell_host_workspace_sample_learn_paths`
@@ -341,6 +373,7 @@ Relevant smoke:
 
 Stable behavior:
 - Pipeline Review shows the active pipeline step flow, selected step route, input/output previews, validation state, result summary, and run-log context.
+- The selected Step summary and guide strip must show one coherent Step identity even when the persisted Step name already begins with its ordinal. Do not render duplicated labels such as `02 02 ...`; the same selection must expose its tool, route, input/output previews, parameter summary, result status, and elapsed time.
 - Pipeline Review may show a compact guide strip for the selected step: review position, current step/route, next check, and result decision.
 - Pipeline Review may show a localized guide detail row. The detail row explains why a step is pre-run, missing input, disabled, branch-routed, NG, ready for the next step, or final OK.
 - Pipeline Review previous/next controls may select another review step, but they must not execute Review/Preview or alter workspace layers.
@@ -359,6 +392,8 @@ Relevant smoke:
   - Covers acceptance NG after successful tool execution, metric target guidance, populated run-log context, and retained failed-step output preview.
 - `wpf_shell_host_workspace_sample_pipeline_review_metrics`
   - Covers a real catalog sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, OK decision, primary result metric, run log, output preview, and no native Preview side effects before explicit review.
+- `wpf_shell_host_workspace_sample_fixture_review`
+  - Covers the real three-Step `Public_Matching_FixturePad` flow with Step 2 selected and verifies one non-duplicated Step identity, Blob tool, branch route, both previews, Fixture ROI/frame parameters, result metrics, elapsed time, and no first-issue state.
 - `wpf_shell_host_workspace_sample_pipeline_review_ng_metrics`
   - Covers a real catalog Bad sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, controlled metric NG, beginner next action, metric detail, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_workspace_sample_pipeline_review_feature_ng_metrics`
@@ -371,6 +406,18 @@ Relevant smoke:
   - Legacy-named target retained for compatibility; covers a public-safe Contour Bad sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, controlled `ResultCount` NG, beginner next action, result-count metric detail, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_workspace_sample_pipeline_review_film_ng_metrics`
   - Legacy-named target retained for compatibility; covers a public-safe Threshold Bad sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, controlled `ResultCount` NG, beginner next action, result-count metric detail, run log, output preview, and no native Preview side effects before explicit review.
+
+### 3B. Matching Fixture Reference Teach
+
+Stable behavior:
+- The reference-teach action is visible only for a fixture-producing Matching Step and is enabled only when an explicit successful Review has produced finite `FixtureCenterX`, `FixtureCenterY`, and `FixtureAngle` metrics.
+- The action copies only those reviewed values into `FIXTURE_REFERENCE_X`, `FIXTURE_REFERENCE_Y`, and `FIXTURE_REFERENCE_ANGLE` and saves the active pipeline.
+- Saving a reference invalidates the previous review evidence and requires another explicit Review. It must not launch Preview/Run, create or select a layer, change input/output routing, or rewrite any consumer parameter or `CvROI`.
+- The UI must tell the operator that the reference image must be confirmed and that consumer ROI is preserved.
+
+Relevant smoke:
+- `wpf_shell_host_workspace_sample_fixture_teach`
+  - Covers reviewed-pose availability, explicit save, persisted reference values, stale-result invalidation, and unchanged consumer parameters/routes/layers/native Preview count.
 
 ### 4. Tool Inline Preview Viewer
 
@@ -692,6 +739,119 @@ Relevant focused checks:
 - `.codex\MatchingRobustnessProbe`
 - `.codex\EdgeBasedAngleProbe`
 - `wpf_shell_host_edge_based_matching_tool`
+
+## Recipe Review Bundle Import Dry-Run
+
+Stable behavior:
+
+- Selecting a `.review.zip` through either XML import or XML/bundle load opens the existing Recipe Manager `LLM XML` review tab. It does not create a second import window.
+- Schema v1 accepts exactly `pipeline.xml` and `review-manifest.json`, applies bounded entry reads, and verifies format/schema, package policy, XML size/SHA-256, summary counts, and manifest dependency rows against the XML Step parameters before exposing the draft.
+- The ZIP is read in memory. No entry is extracted, no referenced file is copied, no pipeline is saved/activated, and Preview/Run, Tool View, layer, workspace, and routing state remain unchanged.
+- Missing absolute paths may expose one deterministic SHA-matched candidate beside the bundle. This is review evidence only; OpenVisionLab must not rewrite the XML path automatically.
+- A referenced dependency whose current size/SHA differs from the export manifest blocks copy/import. A missing or relocation-candidate dependency keeps XML validation NG.
+- `Import` is enabled only for the current unchanged draft after validation succeeds. Editing the draft or changing the selected inspection intent invalidates the prior import-ready state.
+
+Do not:
+
+- Treat review-bundle selection as normal XML import.
+- Search the disk recursively for replacement files.
+- auto-apply a relocation candidate, embed private/local assets, or run Preview/Run during dry validation.
+
+Relevant smoke:
+
+- `wpf_shell_host_recipe_review_bundle_import`
+- `wpf_shell_host_recipe_review_bundle`
+- latest-build direct EXE `recipe-manager-tabs`
+
+## Recipe Manager Pipeline Inventory
+
+Stable behavior:
+
+- The recipe `VISION` directory may contain both pipeline documents and PropertyGrid/tool-state XML. Recipe Manager pipeline inventory includes only well-formed, no-namespace XML documents whose root element is exactly `VisionPipeline`.
+- `pipeline.active.xml`, tool-state/property XML, malformed XML, and unrelated metadata must not appear as pipeline options.
+- Inventory refresh is read-only. Excluded files remain untouched and are not renamed, deleted, migrated, or overwritten.
+- Filtering the inventory must not activate a pipeline, run Preview/Run, create a layer, or change workspace/input/output routing.
+
+Relevant smoke:
+
+- `wpf_shell_host_recipe_local_validation_set`
+- latest-build direct EXE `recipe-manager-tabs` with `PipelineInventory: valid VisionPipeline XML only`
+
+## Recipe-Local Validation Sets
+
+Stable behavior:
+
+- Recipe Manager `Pipeline > Runs` may register named local Validation Sets without adding files to the public/product sample catalogs.
+- Schema v1 is stored under `RECIPE\<recipe>\VISION\ValidationSets\validation-sets.xml`; it must not be stored beside pipeline XML files or appear as a pipeline option.
+- Each registered image keeps an absolute local path, expected `OK` or `NG`, and optional operator notes. Adding the same path again updates its expectation/notes instead of duplicating the row.
+- Folder registration includes supported images from the selected folder's top level only. It assigns one explicit expected `OK` or `NG` role to the batch, ignores unsupported files, does not recurse into subfolders, and rejects a batch that exceeds the validation-set image limit instead of partially registering it.
+- Path repair is enabled only for one selected missing image. The operator must select an existing supported replacement image that is not already registered in the set; repair changes only that row's absolute path and preserves its expected `OK`/`NG` role and notes.
+- Path repair must not recursively search folders or disks, infer a replacement, merge rows, or rewrite any other path. The suite remains blocked while any registered image is missing.
+- Registration, selection, deletion, and missing-file review do not run Preview/Run, create/delete/load layers, open a Tool View, or change workspace/input/output routing. Deleting a set removes metadata only, never the source images.
+- Missing images remain visible and disable the explicit suite command. They must not be silently skipped.
+- The explicit Local set suite reuses the current selected pipeline, `VisionPipelineSampleCheckService`, batch result rows, run-history storage, NG filtering, failed-step actions, and baseline comparison surfaces. Expected `NG` means the pipeline is expected to reject/fail that image.
+- An unreadable or unsupported validation-set XML is preserved and blocks mutation; the UI must not overwrite it with an empty document.
+
+Relevant smoke:
+
+- `wpf_shell_host_recipe_local_validation_set`
+- latest-build direct EXE `recipe-manager-tabs`
+
+## Run History Batch Analytics
+
+Stable behavior:
+
+- The selected saved batch run derives `failure rate`, average, median, nearest-rank p95, and maximum from its persisted sample rows. No second telemetry file or database is required.
+- Correctness and performance remain separate labels: failure rate describes judgement outcomes; elapsed aggregates describe observed sample execution time.
+- Non-positive, NaN, or infinite elapsed values are excluded from timing aggregates. They do not remove the row from the correctness denominator.
+- Baseline timing comparison requires the same non-empty `SuiteKind`, `SuiteName`, and exact sample-image multiset. Result order does not matter, duplicate images still count, and a saved sample name is used only when neither image path field is available.
+- Average and p95 deltas are shown as baseline to current only when every result in both runs has a valid positive elapsed value. A different suite/sample set or incomplete timing set shows an explicit skipped-performance message; it must not be labeled a performance regression.
+- Outcome regression rows remain independent from timing compatibility. A selected baseline with the same sample names may still show `Regression`, `Recovered`, or `Still NG` even when its timing comparison is skipped.
+- Selecting a run or baseline and calculating analytics is read-only. It must not trigger Preview/Run, load an image, create a layer, or change input/output routing.
+- Explicit selected-sample, Good/Bad pair, Catalog, and Local Validation Set suite executions persist one structured Step report per sample and link it through `RunReportPath`. The plain single check remains non-persisting.
+- Per-Step timing is available only when every batch row has a readable linked report, report recipe/pipeline identity matches the batch, and Step index/name/tool/enabled/input/output definitions match across all reports.
+- Missing paths/files, unreadable reports, identity mismatch, or Step-definition mismatch must show an unavailable reason. Do not mix partial reports into apparently complete Step statistics.
+- Enabled Step rows are ordered by descending p95 and expose timing coverage plus average, nearest-rank p95, and maximum. Non-positive, NaN, and infinite Step timings are excluded and remain visible through reduced coverage.
+
+Relevant smoke:
+
+- `wpf_shell_host_recipe_local_validation_set`
+- latest-build direct EXE `recipe-manager-tabs` with linked-report Step aggregation, missing-report rejection, `RunHistoryAnalytics`, and `RunHistoryPerformanceComparison`
+
+## Pipeline Review Input-State Semantics
+
+Stable behavior:
+
+- An enabled Step with no current input image is `입력 없음` only when no earlier enabled Step produces that input layer.
+- If an earlier enabled Step produces the input layer, the downstream Step remains `WAIT` until the operator explicitly runs Review.
+- Missing-input selection, Step navigation, and status refresh are read-only. They must not trigger Preview/Run, create layers, or change input/output routing.
+- Pipeline Review reuses the existing flow document/control and must not introduce partial-run semantics merely to display this state.
+
+Relevant smoke:
+
+- `wpf_shell_host_pipeline_review_input_state`
+- `wpf_shell_host_pipeline_review`
+- latest-build direct EXE `recipe-pipeline-roundtrip`
+
+## Pipeline Review Selected-Step Edit Handoff
+
+Stable behavior:
+
+- `설정 수정` in Pipeline Review opens the same recipe, pipeline, and 1-based selected Step in Recipe Manager `Advanced > Pipeline > XML/Step`.
+- The existing Recipe Manager PropertyGrid is the authoritative selected-Step parameter editor and must be brought into the visible viewport. The separate Tool View remains a detached tool session unless a future explicit apply-back contract is designed and verified.
+- Opening the handoff must not run Preview/Run, create/delete/load layers, change the active layer, change workspace or pipeline routing, or create recipe sample evidence.
+- Parameter persistence remains an explicit Recipe Manager XML apply action; rerun remains an explicit operator action.
+- When the requested pipeline exactly matches a runnable catalog workspace pipeline (`Sample_<catalog sample name>`), the Recipe Manager work sample must align to that same catalog sample before Good/Bad rerun. It must not retain an unrelated prior/default sample.
+- A pipeline with no exact runnable catalog match must not change the current work-sample selection merely because selected-Step edit was opened.
+- An unsupported PropertyGrid mapping may still navigate to the exact XML/Step detail, but it must show an unavailable edit status rather than silently changing the Step.
+
+Relevant smoke:
+
+- `wpf_shell_host_workspace_sample_fixture_review`
+- `wpf_shell_host_pipeline_step_edit_handoff`
+- `wpf_shell_host_fixture_step_edit_apply_rerun`
+- latest-build direct EXE `recipe-pipeline-roundtrip` with `StepEditHandoff`
+- latest-build direct EXE `public-fixture-review` with Fixture `MIN_AREA` XML apply and explicit Fixture Good/Bad rerun
 
 ## Before Touching Stable Paths
 

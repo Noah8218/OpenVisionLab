@@ -134,7 +134,7 @@ Use `Pipeline Review` when you want to inspect every step before accepting the r
 
 1. Open the sample catalog and choose `Product`.
 2. Pick a Good row first. For example, `Product_Display_Particle_Good`.
-3. Open the sample. This prepares the image and `Sample_` pipeline only; it does not run Preview or Run.
+3. Open the sample and review the prepared image and `Sample_` pipeline.
 4. Run the prepared sample pipeline in Pipeline Review.
 5. Check the `Good/Bad Pair` line. For `Display_Particle`, it should point from `Product_Display_Particle_Good` to `Product_Display_Particle_Many_Bad` and use `ResultCount`.
 6. Check the output image, overlay, metric, and log together. The Good sample should stay inside `ResultCount 0..1`.
@@ -160,6 +160,6 @@ The NG review should make the failure reason visible without guessing from the i
 - Good samples produce OK with the expected metric range.
 - Bad samples produce controlled NG with the same pipeline.
 - The result can be explained by image, overlay, metric, and log together.
-- Input and output layers stay explicit; opening a sample or guide does not run Preview/Run.
+- Follow each Step from its input layer to its output layer and compare the generated result after Preview/Run.
 
 Next improvement: keep the catalog stable and improve the review habit around Good/Bad comparison. Add new samples only when the new pair teaches a distinct product-like failure case that is not already covered.

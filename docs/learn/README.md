@@ -12,18 +12,18 @@ Open the Good sample first, then open the Bad sample from the same PairGroup and
 
 Start with [OpenVisionLab Learn Curriculum](OPENVISIONLAB_LEARN_CURRICULUM.md) when you want a chapter-style learning path. Use [Learn OpenCvSharp Foundations](LEARN_OPENCVSHARP_FOUNDATIONS.md) first when `Point`, `Rect`, `Mat`, ROI, layer routing, or pixel/GV terms are unclear. The guides stay separate from the Tool Views and map machine-vision chapters 5-14 to actual OpenVisionLab tools or explicit tool gaps.
 
-## Practice Workflow Contract
+## Practice Workflow
 
 Every Learn topic should lead the operator through the same bounded practice loop:
 
 1. Open `Practice Samples` for the selected Learn path.
 2. Choose a Good/Bad sample pair.
 3. Open the related PropertyGrid Tool View.
-4. Click Preview or Run Review explicitly.
+4. Click Preview or Run Review.
 5. Compare overlay, result image, metric, and Good/Bad reason before saving a recipe.
 
-`Practice Samples` is a navigation/filtering action only. It must not create layers, change input/output routing, run Preview, run Review, or silently accept a recipe.
-`Open Guide + Sample` may open the guide and prepare the sample/pipeline, but the operator still opens the related Tool View or Pipeline Review and clicks Preview or Run Review explicitly.
+`Practice Samples` opens the sample catalog on the selected Learn path. Choose a Good/Bad pair, open its related Tool View or Pipeline Review, and run the same settings on both images.
+`Open Guide + Sample` opens the topic guide and prepares its sample/pipeline so the concept, parameter, result image, and metric can be reviewed together.
 
 ## Learn Window Topic Map
 
@@ -49,9 +49,9 @@ The Learn window exposes the topics below. Detail documents in the Tool Guides t
 | 15 | Geometry Transform | `LEARN_GEOMETRY_TRANSFORM.md` | `geometry` |
 | 16 | Color / HSV | `LEARN_COLOR_HSV.md` | `color-hsv` |
 
-Opening Topic Docs or Practice Samples must not run Preview/Run. Practice Samples only opens the sample picker on the selected Learn path.
+Topic Docs explains the selected concept. Practice Samples opens the sample picker on the matching Learn path.
 
-Color / HSV uses the `color-hsv` Practice Samples path. Opening Practice Samples only filters the picker to public HSV Good/Bad samples; it does not run Preview/Run.
+Color / HSV uses the `color-hsv` Practice Samples path and shows public HSV Good/Bad pairs for mask comparison.
 
 ## Tool Guides
 
@@ -74,25 +74,23 @@ Color / HSV uses the `color-hsv` Practice Samples path. Opening Practice Samples
 | 14 | [Learn Feature Matching](LEARN_FEATURE_MATCHING.md) | Feature score discrimination |
 | 15 | [Learn Edge Based Matching](LEARN_EDGE_BASED_MATCHING.md) | Edge geometry target checks |
 | 16 | [Learn Line](LEARN_LINE.md) | Distance, angle, and line measurement |
-| 17 | [Learn Pipeline / Layers](LEARN_PIPELINE_LAYER_ROUTING.md) | Input/output layers, branches, and explicit execution |
+| 17 | [Learn Pipeline / Layers](LEARN_PIPELINE_LAYER_ROUTING.md) | Input/output layers, branches, and Step result review |
 | 18 | [Learn Metrics / Acceptance](LEARN_METRICS_ACCEPTANCE.md) | OK/NG gates, metric names, and Good/Bad comparison |
 
-## Rules While Practicing
+## Practice Review Points
 
-- Use `docs/samples/public` and `docs/samples/public/product` for public documentation and tutorials.
-- Do not use commercial SDK sample folders in public-facing material.
-- Opening a guide or sample must not run Preview or Run.
-- Output layers and input layers must stay explicit.
-- Good/Bad decisions should be checked by bounded metrics, not only by how the image looks.
+- Start with the provided Good/Bad pair and use the same pipeline settings on both images.
+- Follow each Step from `InputLayer` through its tool to `OutputLayer` so the changed image is easy to locate.
+- Confirm Good/Bad with bounded metrics as well as the result image and overlay.
 
 ## Recommended Review Order
 
 1. Open a Good sample.
 2. Read the expected metric range.
-3. Run the prepared pipeline manually.
+3. Run the prepared pipeline.
 4. Check the result image and metric.
 5. Open the Bad sample from the same PairGroup.
-6. Run the same pipeline manually.
+6. Run the same pipeline.
 7. Confirm which metric explains NG.
 
 If the Bad sample passes, tighten the ROI, threshold, score, area, count, or distance gate before adding more samples.

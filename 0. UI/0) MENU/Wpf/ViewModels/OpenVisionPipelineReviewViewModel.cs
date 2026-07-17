@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -12,6 +13,7 @@ namespace OpenVisionLab
     {
         private string pipelineTitle = T("PipelineReview.Title", "Pipeline Review");
         private string pipelineMeta = TF("PipelineReview.MetaFormat", "{0} / {1} steps", T("Pipeline.Title", "Pipeline"), 0);
+        private string recipeContextText = TF("PipelineReview.RecipeContextFormat", "Recipe: {0}", "-");
         private string reviewProgressText = T("PipelineReview.Progress.NotRun", "Not run");
         private string selectedStepText = "-";
         private string selectedToolText = "-";
@@ -33,6 +35,8 @@ namespace OpenVisionLab
         private string runReviewButtonText = T("PipelineReview.RunReview", "Run Review");
         private bool canRunReview = true;
         private string statusText = T("PipelineReview.Ready", "Pipeline review ready");
+        private IReadOnlyList<OpenVisionPipelineReviewReadinessItem> readinessItems = Array.Empty<OpenVisionPipelineReviewReadinessItem>();
+        private string readinessSummaryText = T("PipelineReview.Readiness.SummaryReady", "Ready to run review");
         private string reviewGuideStageText = T("PipelineReview.Guide.EmptyStage", "No steps");
         private string reviewGuideCurrentStepText = "-";
         private string reviewGuideNextActionText = T("PipelineReview.Guide.EmptyNext", "Add a tool result to the pipeline");
@@ -54,11 +58,17 @@ namespace OpenVisionLab
         private bool canSelectPreviousStep;
         private bool canSelectNextStep;
         private bool canSelectFirstIssueStep;
+        private bool canOpenSelectedToolLearn;
+        private bool isFixtureTeachVisible;
+        private bool fixturePoseAvailable;
+        private bool canUseSelectedMatchingPose;
+        private string fixtureTeachStatusText = string.Empty;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         public string PipelineTitle { get => pipelineTitle; private set => SetField(ref pipelineTitle, value); }
         public string PipelineMeta { get => pipelineMeta; private set => SetField(ref pipelineMeta, value); }
+        public string RecipeContextText { get => recipeContextText; private set => SetField(ref recipeContextText, value); }
         public string ReviewProgressText { get => reviewProgressText; private set => SetField(ref reviewProgressText, value); }
         public string SelectedStepText { get => selectedStepText; private set => SetField(ref selectedStepText, value); }
         public string SelectedToolText { get => selectedToolText; private set => SetField(ref selectedToolText, value); }
@@ -80,6 +90,8 @@ namespace OpenVisionLab
         public string RunReviewButtonText { get => runReviewButtonText; private set => SetField(ref runReviewButtonText, value); }
         public bool CanRunReview { get => canRunReview; private set => SetField(ref canRunReview, value); }
         public string StatusText { get => statusText; private set => SetField(ref statusText, value); }
+        public IReadOnlyList<OpenVisionPipelineReviewReadinessItem> ReadinessItems { get => readinessItems; private set => SetField(ref readinessItems, value); }
+        public string ReadinessSummaryText { get => readinessSummaryText; private set => SetField(ref readinessSummaryText, value); }
         public string ReviewGuideStageText { get => reviewGuideStageText; private set => SetField(ref reviewGuideStageText, value); }
         public string ReviewGuideCurrentStepText { get => reviewGuideCurrentStepText; private set => SetField(ref reviewGuideCurrentStepText, value); }
         public string ReviewGuideNextActionText { get => reviewGuideNextActionText; private set => SetField(ref reviewGuideNextActionText, value); }
@@ -101,6 +113,10 @@ namespace OpenVisionLab
         public bool CanSelectPreviousStep { get => canSelectPreviousStep; private set => SetField(ref canSelectPreviousStep, value); }
         public bool CanSelectNextStep { get => canSelectNextStep; private set => SetField(ref canSelectNextStep, value); }
         public bool CanSelectFirstIssueStep { get => canSelectFirstIssueStep; private set => SetField(ref canSelectFirstIssueStep, value); }
+        public bool CanOpenSelectedToolLearn { get => canOpenSelectedToolLearn; private set => SetField(ref canOpenSelectedToolLearn, value); }
+        public bool IsFixtureTeachVisible { get => isFixtureTeachVisible; private set => SetField(ref isFixtureTeachVisible, value); }
+        public bool CanUseSelectedMatchingPose { get => canUseSelectedMatchingPose; private set => SetField(ref canUseSelectedMatchingPose, value); }
+        public string FixtureTeachStatusText { get => fixtureTeachStatusText; private set => SetField(ref fixtureTeachStatusText, value); }
         public bool HasInputPreview => InputPreviewImage != null;
         public bool HasOutputPreview => OutputPreviewImage != null;
 
@@ -109,6 +125,14 @@ namespace OpenVisionLab
             string name = string.IsNullOrWhiteSpace(pipelineName) ? T("Pipeline.Title", "Pipeline") : pipelineName.Trim();
             PipelineTitle = T("PipelineReview.Title", "Pipeline Review");
             PipelineMeta = TF("PipelineReview.MetaFormat", "{0} / {1} steps", name, stepCount);
+        }
+
+        public void SetRecipeContext(string recipeName)
+        {
+            RecipeContextText = TF(
+                "PipelineReview.RecipeContextFormat",
+                "Recipe: {0}",
+                SafeText(recipeName));
         }
 
         public void SetReviewProgress(string progressText)
@@ -151,14 +175,33 @@ namespace OpenVisionLab
         public void SetRunReviewBusy(bool isBusy)
         {
             CanRunReview = !isBusy;
+            CanUseSelectedMatchingPose = fixturePoseAvailable && !isBusy;
             RunReviewButtonText = isBusy ? T("PipelineReview.RunningButton", "Running...") : T("PipelineReview.RunReview", "Run Review");
             StatusText = isBusy ? T("PipelineReview.Running", "Pipeline review is running.") : StatusText;
+        }
+
+        public void SetFixtureTeachState(bool isVisible, bool poseAvailable, string statusText)
+        {
+            IsFixtureTeachVisible = isVisible;
+            fixturePoseAvailable = isVisible && poseAvailable;
+            CanUseSelectedMatchingPose = fixturePoseAvailable && CanRunReview;
+            FixtureTeachStatusText = isVisible && !string.IsNullOrWhiteSpace(statusText)
+                ? statusText.Trim()
+                : string.Empty;
         }
 
         public void SetValidation(string status, string details)
         {
             ValidationStatusText = SafeText(status);
             ValidationDetailText = SafeText(details);
+        }
+
+        public void SetReadiness(OpenVisionPipelineReviewReadinessState state)
+        {
+            ReadinessItems = state?.Items ?? Array.Empty<OpenVisionPipelineReviewReadinessItem>();
+            ReadinessSummaryText = string.IsNullOrWhiteSpace(state?.SummaryText)
+                ? T("PipelineReview.Readiness.SummaryReady", "Ready to run review")
+                : state.SummaryText.Trim();
         }
 
         public void SetReviewGuide(OpenVisionPipelineReviewGuideState state)
@@ -206,8 +249,14 @@ namespace OpenVisionLab
             CanSelectFirstIssueStep = canSelectFirstIssueStep;
         }
 
+        public void SetSelectedToolLearnState(bool canOpen)
+        {
+            CanOpenSelectedToolLearn = canOpen;
+        }
+
         public void SetEmptyState(string pipelineName)
         {
+            CanOpenSelectedToolLearn = false;
             SetPipelineHeader(pipelineName, 0);
             SetSelectedStep(
                 "-",
@@ -223,6 +272,7 @@ namespace OpenVisionLab
             SetReviewGuide(OpenVisionPipelineReviewGuidePresenter.CreateEmpty(pipelineName));
             SetNavigationState(-1, 0);
             SetIssueNavigationState(false);
+            SetFixtureTeachState(false, false, string.Empty);
             SetResultSummary(T("PipelineReview.NoRunResult", "No run result"), "-");
             SetReviewProgress(T("PipelineReview.Progress.NoSteps", "No steps"));
             StatusText = T("PipelineReview.NoStepsStatus", "Pipeline has no steps.");

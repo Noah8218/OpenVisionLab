@@ -1,6 +1,6 @@
 # Matching 배우기
 
-Updated: 2026-07-02
+Updated: 2026-07-14
 
 Matching은 기준 template과 비슷한 대상을 이미지 안에서 찾는 도구입니다.
 처음 볼 때는 `ScoreMax`만 보지 말고 template, 검출 위치, 중심점, output layer를 같이 봐야 합니다.
@@ -35,7 +35,7 @@ Good에서만 세 대상이 맞고 Bad에서 no-result가 나와야 template이 
 2. `Layer Route`에서 입력은 `Main`, 출력은 `Matching_Preview`인지 확인합니다.
 3. `Template Ready` 상태를 봅니다. template이 없으면 score 해석 자체가 의미 없습니다.
 4. PropertyGrid에서 score, count, angle/scale 옵션을 확인합니다.
-5. `Run Preview`를 명시적으로 누릅니다.
+5. `Run Preview`를 눌러 결과를 확인합니다.
 6. overlay box와 중심점이 실제 대상 위에 있는지 봅니다.
 7. Pipeline Review에서 `ResultCount`와 `ScoreMax`가 함께 기준으로 설명되는지 확인합니다.
 
@@ -62,4 +62,12 @@ Good에서만 세 대상이 맞고 Bad에서 no-result가 나와야 template이 
 | Shape survives lighting but edge geometry is stable | EdgeBasedMatching | Canny/edge shape score | ScoreMax, ResultCount | Weak or repeated edge shape |
 | Target changes scale/rotation/view but local features remain | FeatureMatching | Keypoint/descriptor matches | ResultCount, ScoreMax | Too few keypoints or repeated texture |
 
-Use explicit Preview/Run only. Opening this guide or changing Matching parameters must not run Preview/Run automatically.
+After changing Matching parameters, run Preview or Run Review and compare the overlay position, `ScoreMax`, and `ResultCount`.
+
+## Learn에서 Tool View 열기
+
+Matching Learn의 `Matching Tool 열기`에서 Template, 검색 ROI, score 기준을 설정합니다.
+Tool Shell의 `Template Ready`와 PropertyGrid의 `Pattern path`, `Matching > Min score`,
+`Match count`, ROI, 필요한 angle/scale 설정을 확인합니다. Preview 또는
+Run Review 후 overlay 박스와 중심 위치, `ScoreMax`, `ResultCount`를 함께
+판정합니다. Good/Bad 쌍에 같은 설정을 적용해 score와 위치가 의도대로 구분되는지 확인합니다.

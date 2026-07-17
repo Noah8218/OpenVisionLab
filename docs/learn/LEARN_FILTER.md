@@ -22,6 +22,13 @@ Filter는 검출 도구가 보기 쉬운 입력 레이어를 만들기 위한 �
 5. Preview를 직접 실행해 Filter 결과 Layer를 확인합니다.
 6. 다음 Edge/Contour 단계에서 `ResultCount`와 `AreaMax`가 어떻게 바뀌는지 확인합니다.
 
+## Learn에서 Tool View 열기
+
+- `Filter Tool 열기`는 기존 Filter Tool View를 선택합니다.
+- 공통 입력/출력 레이어와 `Filter Type`, `Border Type`, Kernel `Width/Height`를 확인합니다.
+- Median 계열은 `Median Kernel`, Bilateral은 `Diameter`, `Sigma Color`, `Sigma Space`를 추가로 확인합니다.
+- Filter Type, Kernel, Border Type을 확인한 뒤 Preview에서 입력과 출력 영상을 비교합니다.
+
 ## 실패 원인
 
 | 증상 | 먼저 볼 것 |
@@ -35,8 +42,8 @@ Filter는 검출 도구가 보기 쉬운 입력 레이어를 만들기 위한 �
 
 - Filter만으로 OK/NG를 판단하지 않습니다.
 - Filter 결과가 다음 Edge, Blob, Contour 단계의 입력으로 쓰이는지 확인합니다.
-- Filter 옵션 변경만으로 Preview/Run이 자동 실행된다고 가정하지 않습니다. 결과 확인은 사용자가 직접 Preview/Run을 실행합니다.
-Opening this guide or changing Filter parameters must not run Preview/Run automatically.
+- Filter 옵션을 바꾼 뒤 Preview에서 노이즈 제거와 경계 보존 결과를 확인합니다.
+After changing a Filter parameter, run Preview and compare noise removal, edge preservation, and the downstream result.
 
 ## Beginner path handoff
 
@@ -44,5 +51,5 @@ Opening this guide or changing Filter parameters must not run Preview/Run automa
 - This topic goal: compare whether blur/median/bilateral preprocessing makes the next Threshold, Edge, Blob, or Contour metric more stable.
 - Practice Samples path: `preprocess`.
 - Public sample pair: `Public_Filter_Denoise_Good` / `Public_Filter_Denoise_Missing_Bad`.
-- Explicit action: run Filter Preview manually, then run the downstream tool manually. Filter alone is not the final OK/NG decision.
+- Practice action: run Filter Preview, then run the downstream tool and compare its final OK/NG metric.
 - Next topic: move to Morphology when the image is already binary and the problem is small holes, specks, or broken connected regions.

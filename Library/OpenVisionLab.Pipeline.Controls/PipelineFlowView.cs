@@ -21,6 +21,8 @@ namespace OpenVisionLab.Pipeline.Controls
         private static readonly Brush SelectedBorderBrush = new SolidColorBrush(Color.FromRgb(21, 124, 134));
         private static readonly Brush BranchBrush = new SolidColorBrush(Color.FromRgb(173, 96, 0));
         private static readonly Brush BranchBackgroundBrush = new SolidColorBrush(Color.FromRgb(255, 244, 224));
+        private static readonly Brush MissingInputBrush = new SolidColorBrush(Color.FromRgb(176, 66, 48));
+        private static readonly Brush MissingInputBackgroundBrush = new SolidColorBrush(Color.FromRgb(253, 237, 234));
 
         private readonly StackPanel stepPanel;
         private readonly TextBlock emptyText;
@@ -183,7 +185,7 @@ namespace OpenVisionLab.Pipeline.Controls
             layerFlow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(24) });
             layerFlow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-            Border input = CreateLayerPill(ResolveInputPillLabel(step), step.InputLayer, step.HasInputImage, true, step.IsBranch, step.ExpectedInputLayer);
+            Border input = CreateLayerPill(ResolveInputPillLabel(step), step.InputLayer, step.HasInputImage, true, step.IsBranch, step.IsInputMissing, step.ExpectedInputLayer);
             Grid.SetColumn(input, 0);
             layerFlow.Children.Add(input);
 
@@ -191,7 +193,7 @@ namespace OpenVisionLab.Pipeline.Controls
             Grid.SetColumn(arrow, 1);
             layerFlow.Children.Add(arrow);
 
-            Border output = CreateLayerPill(OpenVisionLanguageService.T("PipelineFlow.Output"), step.OutputLayer, step.HasOutputImage, false, false, null);
+            Border output = CreateLayerPill(OpenVisionLanguageService.T("PipelineFlow.Output"), step.OutputLayer, step.HasOutputImage, false, false, false, null);
             Grid.SetColumn(output, 2);
             layerFlow.Children.Add(output);
 
@@ -237,13 +239,15 @@ namespace OpenVisionLab.Pipeline.Controls
             StepSelected?.Invoke(this, new PipelineFlowStepSelectedEventArgs(step.Index, mode));
         }
 
-        private static Border CreateLayerPill(string label, string layerName, bool hasImage, bool isInput, bool isBranch, string expectedInputLayer)
+        private static Border CreateLayerPill(string label, string layerName, bool hasImage, bool isInput, bool isBranch, bool isMissingInput, string expectedInputLayer)
         {
-            Brush background = ResolveLayerBackgroundBrush(hasImage, isInput, isBranch);
-            Brush foreground = hasImage
+            Brush background = ResolveLayerBackgroundBrush(hasImage, isInput, isBranch, isMissingInput);
+            Brush foreground = isMissingInput
+                ? MissingInputBrush
+                : hasImage
                 ? (isInput ? new SolidColorBrush(Color.FromRgb(13, 122, 85)) : new SolidColorBrush(Color.FromRgb(21, 124, 134)))
                 : MutedBrush;
-            if (isInput && isBranch)
+            if (isInput && isBranch && !isMissingInput)
             {
                 background = BranchBackgroundBrush;
                 foreground = BranchBrush;
@@ -273,7 +277,7 @@ namespace OpenVisionLab.Pipeline.Controls
             });
             content.Children.Add(new TextBlock
             {
-                Text = ResolveLayerActionText(hasImage, isInput),
+                Text = ResolveLayerActionText(hasImage, isInput, isMissingInput),
                 Foreground = foreground,
                 FontSize = 9,
                 FontWeight = FontWeights.Normal,
@@ -286,7 +290,7 @@ namespace OpenVisionLab.Pipeline.Controls
             return new Border
             {
                 Background = background,
-                BorderBrush = isBranch ? BranchBrush : hasImage ? foreground : FlowBorderBrush,
+                BorderBrush = ResolveLayerBorderBrush(hasImage, isInput, isBranch, isMissingInput),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(4),
                 MinHeight = 48,
@@ -297,8 +301,13 @@ namespace OpenVisionLab.Pipeline.Controls
             };
         }
 
-        private static string ResolveLayerActionText(bool hasImage, bool isInput)
+        private static string ResolveLayerActionText(bool hasImage, bool isInput, bool isMissingInput)
         {
+            if (isMissingInput)
+            {
+                return OpenVisionLanguageService.T("PipelineReview.Status.InputMissing");
+            }
+
             if (!hasImage)
             {
                 return OpenVisionLanguageService.T("PipelineFlow.RunPreviewRequired");
@@ -401,7 +410,7 @@ namespace OpenVisionLab.Pipeline.Controls
                 TextBlock flowState = new TextBlock
                 {
                     Text = step.FlowStateText.Trim(),
-                    Foreground = step.IsBranch ? BranchBrush : MutedBrush,
+                    Foreground = step.IsInputMissing ? MissingInputBrush : step.IsBranch ? BranchBrush : MutedBrush,
                     FontSize = 10,
                     FontWeight = FontWeights.SemiBold,
                     TextWrapping = TextWrapping.Wrap,
@@ -489,23 +498,28 @@ namespace OpenVisionLab.Pipeline.Controls
                 if (inputBorders.TryGetValue(step.Index, out Border input))
                 {
                     bool inputSelected = selected && SelectedPreviewMode == PipelineFlowPreviewMode.Input;
-                    input.Background = inputSelected ? SelectedBrush : ResolveLayerBackgroundBrush(step.HasInputImage, true, step.IsBranch);
-                    input.BorderBrush = inputSelected ? SelectedBorderBrush : ResolveLayerBorderBrush(step.HasInputImage, true, step.IsBranch);
+                    input.Background = inputSelected ? SelectedBrush : ResolveLayerBackgroundBrush(step.HasInputImage, true, step.IsBranch, step.IsInputMissing);
+                    input.BorderBrush = inputSelected ? SelectedBorderBrush : ResolveLayerBorderBrush(step.HasInputImage, true, step.IsBranch, step.IsInputMissing);
                     input.BorderThickness = inputSelected ? new Thickness(2) : new Thickness(1);
                 }
 
                 if (outputBorders.TryGetValue(step.Index, out Border output))
                 {
                     bool outputSelected = selected && SelectedPreviewMode == PipelineFlowPreviewMode.Output;
-                    output.Background = outputSelected ? SelectedBrush : ResolveLayerBackgroundBrush(step.HasOutputImage, false, false);
-                    output.BorderBrush = outputSelected ? SelectedBorderBrush : ResolveLayerBorderBrush(step.HasOutputImage, false, false);
+                    output.Background = outputSelected ? SelectedBrush : ResolveLayerBackgroundBrush(step.HasOutputImage, false, false, false);
+                    output.BorderBrush = outputSelected ? SelectedBorderBrush : ResolveLayerBorderBrush(step.HasOutputImage, false, false, false);
                     output.BorderThickness = outputSelected ? new Thickness(2) : new Thickness(1);
                 }
             }
         }
 
-        private static Brush ResolveLayerBackgroundBrush(bool hasImage, bool isInput, bool isBranch)
+        private static Brush ResolveLayerBackgroundBrush(bool hasImage, bool isInput, bool isBranch, bool isMissingInput)
         {
+            if (isMissingInput)
+            {
+                return MissingInputBackgroundBrush;
+            }
+
             if (isInput && isBranch)
             {
                 return BranchBackgroundBrush;
@@ -521,8 +535,13 @@ namespace OpenVisionLab.Pipeline.Controls
                 : new SolidColorBrush(Color.FromRgb(216, 236, 238));
         }
 
-        private static Brush ResolveLayerBorderBrush(bool hasImage, bool isInput, bool isBranch)
+        private static Brush ResolveLayerBorderBrush(bool hasImage, bool isInput, bool isBranch, bool isMissingInput)
         {
+            if (isMissingInput)
+            {
+                return MissingInputBrush;
+            }
+
             if (isInput && isBranch)
             {
                 return BranchBrush;
@@ -555,6 +574,8 @@ namespace OpenVisionLab.Pipeline.Controls
                     return new SolidColorBrush(Color.FromRgb(220, 135, 30));
                 case PipelineFlowStepStatus.Loaded:
                     return new SolidColorBrush(Color.FromRgb(21, 124, 134));
+                case PipelineFlowStepStatus.MissingInput:
+                    return MissingInputBrush;
                 case PipelineFlowStepStatus.Skipped:
                     return new SolidColorBrush(Color.FromRgb(120, 128, 138));
                 default:
@@ -582,6 +603,8 @@ namespace OpenVisionLab.Pipeline.Controls
                     return "CANCEL";
                 case PipelineFlowStepStatus.Timeout:
                     return "TIME";
+                case PipelineFlowStepStatus.MissingInput:
+                    return OpenVisionLanguageService.T("PipelineReview.Status.InputMissing");
                 default:
                     return "WAIT";
             }

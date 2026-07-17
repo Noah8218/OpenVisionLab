@@ -1,6 +1,6 @@
 # Line으로 거리 보기
 
-Updated: 2026-07-02
+Updated: 2026-07-14
 
 Line은 edge를 기준으로 직선, 각도, 거리, 교차점을 확인하는 도구입니다.
 Line 계열은 선이 그려졌는지만 보면 부족합니다. ROI, scan direction, polarity, pixel/mm, metric을 같이 봐야 합니다.
@@ -11,8 +11,12 @@ Line 계열은 선이 그려졌는지만 보면 부족합니다. ROI, scan direc
 
 | 역할 | SampleName | 기준 |
 | --- | --- | --- |
-| Good | `Public_Line_Pins_Good` | `DistanceMmAvg=0.20..0.25` |
-| Bad | `Public_Line_Pins_WidePin_Bad` | `DistanceMmAvg=0.09..0.13` |
+| Good | `Public_Line_Pins_Good` | `DistanceMmRange<=0.03`, then `DistanceMmAvg=0.20..0.25` |
+| Bad | `Public_Line_Pins_WidePin_Bad` | `DistanceMmRange=0.08..0.11` fails before the average-distance gate |
+
+공개 파이프라인은 먼저 `DistanceMmRange<=0.03`으로 여러 sampling line의 일관성을 확인하고,
+그 다음에만 `DistanceMmAvg=0.20..0.25`로 대표 거리를 확인합니다. 따라서 한 줄이 길거나
+짧게 튄 경우 평균값만 보고 통과시키지 않습니다.
 
 두 샘플은 같은 `Public_Line_Pins_Distance.pipeline.xml`을 사용합니다.
 Good은 정상 pin 간격을 만들고, Bad는 같은 설정에서 더 좁은 거리로 controlled NG가 됩니다.
@@ -48,12 +52,14 @@ Good은 정상 pin 간격을 만들고, Bad는 같은 설정에서 더 좁은 �
 - Good 샘플에서 pin 간격이 정상 범위입니다.
 - Bad 샘플에서 `DistanceMmAvg` 기준으로 NG가 설명됩니다.
 - ROI overlay와 결과 overlay가 같은 검사 의도를 가리킵니다.
-Opening this guide or changing Line/LineDistance parameters must not run Preview/Run automatically.
+After changing Line or LineDistance parameters, run Preview or Run Review and compare edge pairs, measurement lines, average, range, and maximum.
+
+Practice Samples path: `line`.
 
 ## LineDistance outlier gate
 
-For pin gap, pitch, width, or clearance, do not approve the inspection from
-`DistanceMmAvg` alone. Use two gates:
+For pin gap, pitch, width, or clearance, use `DistanceMmAvg` together with an
+outlier gate:
 
 | Gate | Metric | Purpose |
 | --- | --- | --- |
@@ -63,3 +69,11 @@ For pin gap, pitch, width, or clearance, do not approve the inspection from
 Before judging the metric, review the PropertyGrid values that decide where
 the measurement lines are created: `CvROI`, `SAMPLING_STEP`, `POINT_RANGE`,
 `LeftPRJ_DIR`, `RightPRJ_DIR`, `PRJ_PORALITY`, and `PIXELPERMM`.
+
+## Learn에서 Tool View 열기
+
+LineDistance Learn의 `Line Tool 열기`에서 Purpose, Line A/B, ROI, edge/scan 값을 찾습니다.
+도구가 열린 뒤 사용자가 Purpose를 `Measure`로 직접 선택하고, Line A/B,
+ROI, edge/scan 파라미터, `Pixel / mm`를 확인합니다. Preview 또는
+Run Review 후 `DistanceMmAvg`와 `DistanceMmRange`/`DistanceMmMax`를 함께
+판정합니다. 긴 측정선 하나가 평균값에 가려지지 않는지 결과 overlay와 함께 확인합니다.
