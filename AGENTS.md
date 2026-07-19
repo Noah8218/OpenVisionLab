@@ -59,6 +59,8 @@ At the start of a new OpenVisionLab chat, after a handoff, or whenever the user 
 - Run `git status --short` and `git log --oneline -5` before interpreting the current state.
 - Read the current handoff and contract documents before choosing the next task:
   - `AGENTS.md`
+  - `docs\OPENVISIONLAB_CURRENT_HANDOFF.md`
+  - `docs\OPENVISIONLAB_DOCUMENTATION_MAP.md`
   - `docs\OPENVISIONLAB_NEXT_CHAT_HANDOFF_PROMPT_20260706.md`
   - `docs\OPENVISIONLAB_NEXT_SESSION_HANDOFF.md`
   - `docs\OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md`
@@ -74,7 +76,7 @@ At the start of a new OpenVisionLab chat, after a handoff, or whenever the user 
   - `docs\OPENVISIONLAB_UX_COMPETITOR_REVIEW_20260701.md`
   - `docs\OPENVISIONLAB_COMPETITOR_PRIORITY_REVIEW_20260701.md`
   - `docs\OPENVISIONLAB_SELF_EVALUATION_20260703.md`
-- Use the freshest product-target/status document as the current source of truth. Treat older readiness percentages as historical or scoped estimates unless the latest docs confirm them.
+- Use `docs\OPENVISIONLAB_CURRENT_HANDOFF.md` as the current source of truth for live status, completed evidence, known gaps, and next priority. Use the product-target document and stable contracts for product/behavioral authority. Treat older readiness percentages and chronological handoff entries as historical or scoped evidence unless fresh code/tests/screenshots confirm them.
 - Before selecting work, explicitly restate:
   - current product identity;
   - current maturity/completeness estimate and its source;
@@ -203,6 +205,13 @@ Before editing:
 - When a source-check tool names a moved file path, update the check to the new explicit owner path in the same change. Do not add an unbounded file-search fallback that would conceal a misplaced source file.
 - Before a move, confirm the project includes the destination path and that the source files are tracked and clean. After each move group, run the smallest meaningful build and affected smoke/check; use full build and readiness checks when the group crosses Core/WPF boundaries.
 - New folders must have at least two coherent files or a clear near-term owner. A single exceptional file may stay at the current level until its companion responsibility exists.
+
+## Clean Runtime Evidence Contract (2026-07-19)
+
+- Use `tools\BuildCleanRuntime.ps1 -Mode Dev` for current Dev EXE evidence. It creates a new timestamped runtime under `artifacts\openvisionlab_clean_runtime_<timestamp>` and refuses to overwrite an existing directory.
+- Use `tools\BuildCleanRuntime.ps1 -Mode Release` for the release package. It publishes a new `Release` runtime only to `dist\OpenVisionLab` and refuses to overwrite an existing package directory.
+- The retained `bin\Debug` directory is a local recipe workspace, not current EXE or release evidence. Do not delete, move, migrate, or use it for current-runtime claims unless the user explicitly changes this retention decision.
+- The output contract proves a clean runtime can execute the tested XML/workbench flows. It does not by itself establish portable LLM template-dependency paths, installer readiness, or deployment qualification.
 
 ## Goal-Driven Execution
 

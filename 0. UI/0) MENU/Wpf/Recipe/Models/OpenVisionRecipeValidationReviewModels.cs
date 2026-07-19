@@ -462,7 +462,8 @@ namespace OpenVisionLab
             ToolType = string.IsNullOrWhiteSpace(step?.ToolType) ? "-" : step.ToolType.Trim();
             InputLayer = string.IsNullOrWhiteSpace(step?.InputLayer) ? "-" : step.InputLayer.Trim();
             OutputLayer = string.IsNullOrWhiteSpace(step?.OutputLayer) ? "-" : step.OutputLayer.Trim();
-            SourceLayers = ResolveSourceLayers(step);
+            SourceLayers = ResolveListParameter(step, "SourceLayers");
+            SourceSteps = ResolveListParameter(step, "SourceSteps");
             InputLayerCard = CreateLayerCard(layerCardProvider, InputLayer);
             OutputLayerCard = CreateLayerCard(layerCardProvider, OutputLayer);
             ParameterCount = step?.Parameters?.Count ?? 0;
@@ -491,6 +492,8 @@ namespace OpenVisionLab
         public string OutputLayer { get; }
 
         public IReadOnlyList<string> SourceLayers { get; }
+
+        public IReadOnlyList<string> SourceSteps { get; }
 
         public OpenVisionRecipeLayerCard InputLayerCard { get; }
 
@@ -557,15 +560,15 @@ namespace OpenVisionLab
             return layerCardProvider(layerName) ?? OpenVisionRecipeLayerCard.CreateMissing(layerName);
         }
 
-        private static IReadOnlyList<string> ResolveSourceLayers(VisionPipelineStep step)
+        private static IReadOnlyList<string> ResolveListParameter(VisionPipelineStep step, string key)
         {
-            if (step?.Parameters == null)
+            if (step?.Parameters == null || string.IsNullOrWhiteSpace(key))
             {
                 return Array.Empty<string>();
             }
 
             string value = step.Parameters
-                .Where(item => string.Equals(item.Key, "SourceLayers", StringComparison.OrdinalIgnoreCase))
+                .Where(item => string.Equals(item.Key, key, StringComparison.OrdinalIgnoreCase))
                 .Select(item => item.Value)
                 .FirstOrDefault();
             if (string.IsNullOrWhiteSpace(value))

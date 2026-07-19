@@ -1187,6 +1187,7 @@ internal static class Program
         string pipelineValidation = Read(repoRoot, @"1. Core\Pipeline\Validation\VisionPipelineValidation.cs");
         string matchingIntentSkill = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\IntentSkills\OpenVisionRecipeMatchingIntentSkill.cs");
         string meanIntentSkill = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\IntentSkills\OpenVisionRecipeMeanIntentSkill.cs");
+        string referenceDifferenceIntentSkill = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\IntentSkills\OpenVisionRecipeReferenceDifferenceIntentSkill.cs");
         string recipeOperatorDecisionPresenter = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Review\OpenVisionRecipeOperatorDecisionPresenter.cs");
         RequireContains(recipeCommandSurface, "GuidedSetupSummaryText", "Recipe Manager exposes Guided setup summary text.");
         RequireContains(recipeCommandSurface, "GuidedSetupReadinessText", "Recipe Manager exposes Guided setup readiness text.");
@@ -1225,6 +1226,7 @@ internal static class Program
             "READY: template + Search ROI + SCORE_MIN + ResultCount gate",
             "Guided setup reports Matching readiness inputs.");
         RequireContains(recipeCommandSurface, "CreateMeanIntentXmlDraft();", "Guided setup routes Mean intent to the deterministic Mean generator.");
+        RequireContains(recipeCommandSurface, "CreateReferenceDifferenceIntentXmlDraft();", "Guided setup routes Golden-reference defect intent to the deterministic ReferenceDifference generator.");
         RequireContains(recipeCommandSurface, "MeanValueAvg ", "Guided setup reports MeanValueAvg readiness inputs.");
         RequireContains(matchingIntentSkill, "ToolType = \"Matching\"", "Matching intent skill locks ToolType to Matching.");
         RequireContains(matchingIntentSkill, "step.Parameters[\"PATTERN_PATH\"]", "Matching intent skill preserves the template dependency path.");
@@ -1234,6 +1236,10 @@ internal static class Program
         RequireContains(meanIntentSkill, "step.Parameters[\"MEAN_TYPES\"]", "Mean intent skill preserves the selected mean type.");
         RequireContains(meanIntentSkill, "step.Parameters[\"USE_ROI\"]", "Mean intent skill records full-image or ROI scope.");
         RequireContains(meanIntentSkill, "AcceptanceMetricName = VisionPipelineKnownMetrics.MeanValueAvg", "Mean intent skill judges MeanValueAvg.");
+        RequireContains(referenceDifferenceIntentSkill, "ToolType = \"ReferenceDifference\"", "Golden-reference defect intent locks ToolType to ReferenceDifference.");
+        RequireContains(referenceDifferenceIntentSkill, "ReferencePath\" + (index + 1)", "Golden-reference defect intent writes up to four explicit reference paths.");
+        RequireContains(referenceDifferenceIntentSkill, "AcceptanceMetricName = VisionPipelineKnownMetrics.ResultCount", "Golden-reference defect intent judges ResultCount.");
+        RequireContains(referenceDifferenceIntentSkill, "AcceptanceMetricMaximum = 0", "Golden-reference defect intent requires zero detected defect regions.");
         RequireContains(pinGapIntentSkill, "CreatePixelPipeline", "Pin gap intent skill exposes a px-only pipeline path.");
         RequireContains(pinGapIntentSkill, "VisionPipelineKnownMetrics.DistancePxAvg", "Pin gap px-only pipeline judges DistancePxAvg.");
         RequireContains(pinGapIntentSkill, "VisionPipelineKnownMetrics.DistancePxRange", "Pin gap px-only pipeline judges DistancePxRange.");
@@ -1259,6 +1265,10 @@ internal static class Program
         RequireContains(shellHostView, "HostRecipeGuidedSetupMeanTypeSelector", "Guided setup renders the Mean type selector.");
         RequireContains(shellHostView, "HostRecipeGuidedSetupMeanMinimumText", "Guided setup renders the Mean minimum GV gate.");
         RequireContains(shellHostView, "HostRecipeGuidedSetupMeanMaximumText", "Guided setup renders the Mean maximum GV gate.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupReferenceDifferenceInputs", "Guided setup renders Golden-reference defect inputs.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupReferenceDifferencePath4Text", "Guided setup renders up to four explicit Good reference paths.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupReferenceDifferenceThresholdText", "Guided setup renders the ReferenceDifference threshold.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupReferenceDifferenceMaximumAreaText", "Guided setup renders the ReferenceDifference defect-area limits.");
         RequireContains(shellHostView, "HostRecipeGuidedSetupIntentInputStatus", "Guided setup renders READY/MISSING intent status.");
         RequireContains(shellHostView, "RecipeCommands.CreateGuidedSetupStarterXmlCommand", "Guided setup binds the deterministic Starter XML command.");
         RequireContains(shellHostView, "HostRecipeOperatorDecisionEvidence", "Recipe Manager renders consolidated result-board metric evidence.");
@@ -1292,6 +1302,9 @@ internal static class Program
         RequireContains(screenshotSmoke, "HostRecipeGuidedSetupContourInputs", "Screenshot smoke verifies Contour input controls.");
         RequireContains(screenshotSmoke, "HostRecipeGuidedSetupMatchingInputs", "Screenshot smoke verifies Matching input controls.");
         RequireContains(screenshotSmoke, "HostRecipeGuidedSetupMeanInputs", "Screenshot smoke verifies Mean input controls.");
+        RequireContains(screenshotSmoke, "HostRecipeGuidedSetupReferenceDifferenceInputs", "Screenshot smoke verifies Golden-reference defect input controls.");
+        RequireContains(screenshotSmoke, "did not block missing ReferenceDifference Good references", "Screenshot smoke verifies missing Good references are blocked.");
+        RequireContains(screenshotSmoke, "did not reject a ReferenceDifference draft without the exact ResultCount=0 gate", "Screenshot smoke verifies the Golden-reference defect acceptance contract.");
         RequireContains(screenshotSmoke, "did not expose ready px-only Pin gap inputs", "Screenshot smoke verifies Pin gap PX-ONLY readiness.");
         RequireContains(screenshotSmoke, "did not block an invalid Pin gap scale input", "Screenshot smoke verifies invalid Pin gap scale MISSING state.");
         RequireContains(screenshotSmoke, "did not block an invalid Blob threshold", "Screenshot smoke verifies Blob MISSING state.");
@@ -1304,7 +1317,9 @@ internal static class Program
         RequireContains(screenshotSmoke, "did not block Mean GV outside 0..255", "Screenshot smoke verifies Mean GV range validation.");
         RequireContains(screenshotSmoke, "did not block Mean Min GV greater than Max GV", "Screenshot smoke verifies Mean min/max ordering.");
         RequireContains(screenshotSmoke, "did not block an invalid optional Mean ROI", "Screenshot smoke verifies Mean ROI validation.");
-        RequireContains(directSmokeRunner, "GuidedSetupStandalone: Pin gap + Blob + Contour + Matching + Feature Matching + Edge Based Matching + Mean Starter XML without Preview/Run", "Direct EXE smoke records all seven standalone Guided setup intents.");
+        RequireContains(directSmokeRunner, "GuidedSetupStandalone: Pin gap + Blob + Contour + Matching + Feature Matching + Edge Based Matching + Mean + ReferenceDifference Starter XML without Preview/Run", "Direct EXE smoke records all eight standalone Guided setup intents.");
+        RequireContains(directSmokeRunner, "recipe-manager-reference-difference-guided-setup", "Direct EXE smoke exposes a deployable ReferenceDifference Guided setup scenario.");
+        RequireContains(directSmokeRunner, "LayerAndRouteStateUnchanged: true", "ReferenceDifference Guided setup EXE smoke records the no-layer/no-route side-effect contract.");
         RequireContains(directSmokeRunner, "GuidedSetupPinGapUnits: MM-READY conversion review + PX-ONLY DistancePx gates + invalid scale blocked", "Direct EXE smoke records both Pin gap unit modes.");
         RequireContains(directSmokeRunner, "GuidedSetupPinGapPublicSample: ", "Direct EXE smoke records public Pin gap Good/Bad unit parity.");
         RequireContains(directSmokeRunner, "Line_Pins_Synthetic_WidePin_NG.png", "Direct EXE smoke runs the public Pin gap Bad sample.");
@@ -1709,6 +1724,23 @@ internal static class Program
         RequireContains(llmAuthoringGuide, "### HSV Color Mask", "LLM XML authoring guide includes the HSV color-mask pattern.");
         RequireContains(llmAuthoringGuide, "`HSV`, `HsvMask`, `ColorHSV`, `ColorMask`", "LLM XML authoring guide lists HSV aliases.");
         RequireContains(llmAuthoringGuide, "`HueMin > HueMax` intentionally wraps", "LLM XML authoring guide documents the HSV hue-wrap contract.");
+        RequirePathExists(repoRoot, @"1. Core\Pipeline\Tools\VisionPipelineReferenceDifferenceTool.cs", "ReferenceDifference pipeline runner tool exists.");
+        string referenceDifferenceTool = Read(repoRoot, @"1. Core\Pipeline\Tools\VisionPipelineReferenceDifferenceTool.cs");
+        RequireContains(referenceDifferenceTool, "Cv2.FindHomography", "ReferenceDifference registers approved Good references geometrically.");
+        RequireContains(referenceDifferenceTool, "DifferencePixelRatio", "ReferenceDifference reports localized difference evidence.");
+        RequireContains(referenceDifferenceTool, "regions.Count == 0 ? 0", "ReferenceDifference treats zero detected regions as measurable evidence.");
+        string appToolFactory = Read(repoRoot, @"1. Core\Pipeline\Definition\VisionPipelineAppToolFactory.cs");
+        RequireContains(appToolFactory, "CreateReferenceDifferenceTool", "Pipeline factory creates ReferenceDifference with resolved dependencies.");
+        RequireContains(appToolFactory, "ReferencePath\" + index", "ReferenceDifference resolves each imported reference path independently.");
+        string stepPropertyMapper = Read(repoRoot, @"1. Core\Pipeline\Definition\VisionPipelineStepPropertyMapper.cs");
+        RequireContains(stepPropertyMapper, "PipelineReferenceDifferenceProperty", "Pipeline Step PropertyGrid supports ReferenceDifference.");
+        RequireContains(stepPropertyMapper, "ReferencePath4", "ReferenceDifference PropertyGrid exposes up to four approved Good references.");
+        RequireContains(pipelineValidator, "ValidateReferenceDifferenceParameters", "Pipeline validator checks ReferenceDifference parameters.");
+        RequireContains(pipelineKnownMetrics, "DifferencePixelRatio", "Known metrics include ReferenceDifference coverage.");
+        RequireContains(pipelineKnownMetrics, "RegistrationInlierRatio", "Known metrics include ReferenceDifference registration quality.");
+        RequireContains(llmToolCatalog, "\"toolType\": \"ReferenceDifference\"", "LLM tool catalog exposes ReferenceDifference.");
+        RequireContains(llmAuthoringGuide, "`ReferenceDifference` requires an existing `ReferencePath1`", "LLM authoring guide documents ReferenceDifference dependency inputs.");
+        RequireContains(learnScreenshotSmoke, "wpf_shell_host_recipe_reference_difference_properties", "Screenshot smoke covers the ReferenceDifference PropertyGrid.");
         string geometryGuide = Read(repoRoot, @"docs\learn\LEARN_GEOMETRY_TRANSFORM.md");
         RequireContains(geometryGuide, "Public_Geometry_RotateScale_Good", "Geometry Learn guide uses the public RotateScale sample.");
         RequireContains(geometryGuide, "Public_Geometry_RotateScale_Wide_Bad", "Geometry Learn guide uses the public RotateScale Bad sample.");

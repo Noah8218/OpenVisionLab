@@ -805,7 +805,7 @@ namespace OpenVisionLab
             Statistics = statistics ?? new VisionPipelineBatchRunSummaryStorage.BatchRunStatistics();
             StepTimingAnalysis = stepTimingAnalysis ?? new VisionPipelineBatchRunSummaryStorage.BatchStepTimingAnalysis();
             RunSummary = runSummary;
-            AnalyticsText = FormatAnalyticsText(Statistics);
+            AnalyticsText = FormatAnalyticsText(Statistics, IsJudgmentSuite ? SampleResults : null);
             StepTimingStatusText = FormatStepTimingStatusText(StepTimingAnalysis);
             StepTimingRows = StepTimingAnalysis.Steps
                 .Select(OpenVisionRecipeBatchStepTimingRow.Create)
@@ -832,6 +832,23 @@ namespace OpenVisionLab
 
         public IReadOnlyList<OpenVisionRecipeBatchStepTimingRow> StepTimingRows { get; }
 
+        public bool IsJudgmentSuite => SampleResults.Any(result => result?.HasExpectedOutcome == true);
+
+        public bool IsPartialRun => string.Equals(
+            RunSummary?.SuiteKind,
+            "LocalValidationSetPartial",
+            StringComparison.OrdinalIgnoreCase);
+
+        public int JudgmentCorrectCount => SampleResults.Count(result =>
+            result != null && result.HasExpectedOutcome && result.JudgmentCorrect);
+
+        public int MisclassificationCount => SampleResults.Count(result =>
+            result != null && result.HasExpectedOutcome && !result.JudgmentCorrect);
+
+        public int FalseAcceptCount => SampleResults.Count(result => result?.IsFalseAccept == true);
+
+        public int FalseRejectCount => SampleResults.Count(result => result?.IsFalseReject == true);
+
         internal static OpenVisionRecipeBatchRunOption Create(
             VisionPipelineBatchRunSummaryStorage.BatchRunSummaryInfo summary)
         {
@@ -841,16 +858,27 @@ namespace OpenVisionLab
             }
 
             VisionPipelineBatchRunSummary runSummary = VisionPipelineBatchRunSummaryStorage.Load(summary.SummaryPath);
-            string status = summary.FailCount == 0 && summary.TotalCount > 0 ? "OK" : "NG";
+            IReadOnlyList<OpenVisionRecipeBatchSampleResultOption> sampleResults = BuildSampleResults(runSummary);
+            bool judgmentSuite = sampleResults.Any(result => result?.HasExpectedOutcome == true);
+            int judgmentCorrect = sampleResults.Count(result =>
+                result != null && result.HasExpectedOutcome && result.JudgmentCorrect);
+            int misclassified = sampleResults.Count(result =>
+                result != null && result.HasExpectedOutcome && !result.JudgmentCorrect);
+            bool partial = string.Equals(runSummary?.SuiteKind, "LocalValidationSetPartial", StringComparison.OrdinalIgnoreCase);
+            string status = partial
+                ? OpenVisionRecipeText.Local("중단", "PARTIAL")
+                : (judgmentSuite ? misclassified == 0 : summary.FailCount == 0) && summary.TotalCount > 0
+                    ? "OK"
+                    : "NG";
+            int passedCount = judgmentSuite ? judgmentCorrect : summary.PassCount;
             string display = summary.StartedAt.ToString("MM-dd HH:mm:ss", CultureInfo.CurrentCulture)
                 + " | " + status
-                + " | " + summary.PassCount.ToString(CultureInfo.InvariantCulture)
+                + " | " + passedCount.ToString(CultureInfo.InvariantCulture)
                 + "/" + summary.TotalCount.ToString(CultureInfo.InvariantCulture);
-            string detail = FormatBatchRunDetail(summary, runSummary)
+            string detail = FormatBatchRunDetail(summary, runSummary, sampleResults)
                 + " | "
                 + OpenVisionRecipeText.Local("요약: ", "Summary: ")
                 + summary.SummaryPath;
-            IReadOnlyList<OpenVisionRecipeBatchSampleResultOption> sampleResults = BuildSampleResults(runSummary);
             VisionPipelineBatchRunSummaryStorage.BatchRunStatistics statistics =
                 VisionPipelineBatchRunSummaryStorage.CalculateStatistics(runSummary?.Results);
             VisionPipelineBatchRunSummaryStorage.BatchStepTimingAnalysis stepTimingAnalysis =
@@ -921,15 +949,22 @@ namespace OpenVisionLab
         }
 
         private static string FormatAnalyticsText(
-            VisionPipelineBatchRunSummaryStorage.BatchRunStatistics statistics)
+            VisionPipelineBatchRunSummaryStorage.BatchRunStatistics statistics,
+            IReadOnlyList<OpenVisionRecipeBatchSampleResultOption> judgmentResults)
         {
             if (statistics == null || statistics.ResultCount <= 0)
             {
                 return string.Empty;
             }
 
+            int judgedCount = judgmentResults?.Count(result => result?.HasExpectedOutcome == true) ?? 0;
+            int misclassified = judgmentResults?.Count(result =>
+                result?.HasExpectedOutcome == true && !result.JudgmentCorrect) ?? 0;
+            double failureRate = judgedCount > 0
+                ? misclassified * 100.0 / judgedCount
+                : statistics.FailureRatePercent;
             string correctness = OpenVisionRecipeText.Local("판정 실패율 ", "Judgment failure ")
-                + statistics.FailureRatePercent.ToString("0.0", CultureInfo.CurrentCulture)
+                + failureRate.ToString("0.0", CultureInfo.CurrentCulture)
                 + "%";
             if (statistics.TimingCount <= 0)
             {
@@ -953,8 +988,34 @@ namespace OpenVisionLab
 
         private static string FormatBatchRunDetail(
             VisionPipelineBatchRunSummaryStorage.BatchRunSummaryInfo summary,
-            VisionPipelineBatchRunSummary runSummary)
+            VisionPipelineBatchRunSummary runSummary,
+            IReadOnlyList<OpenVisionRecipeBatchSampleResultOption> sampleResults)
         {
+            if (sampleResults?.Any(result => result?.HasExpectedOutcome == true) == true)
+            {
+                int falseAccepts = sampleResults?.Count(result => result?.IsFalseAccept == true) ?? 0;
+                int falseRejects = sampleResults?.Count(result => result?.IsFalseReject == true) ?? 0;
+                int misclassified = falseAccepts + falseRejects;
+                string partial = string.Equals(
+                    runSummary?.SuiteKind,
+                    "LocalValidationSetPartial",
+                    StringComparison.OrdinalIgnoreCase)
+                    ? OpenVisionRecipeText.Local("부분 결과 · ", "Partial result · ")
+                    : string.Empty;
+                return partial
+                    + (misclassified == 0
+                        ? OpenVisionRecipeText.Local("오판 없음", "No misclassifications")
+                        : OpenVisionRecipeText.Local("오판 ", "Misclassified ")
+                            + misclassified.ToString(CultureInfo.InvariantCulture)
+                            + " ("
+                            + OpenVisionRecipeText.Local("미검 ", "false accept ")
+                            + falseAccepts.ToString(CultureInfo.InvariantCulture)
+                            + ", "
+                            + OpenVisionRecipeText.Local("과검 ", "false reject ")
+                            + falseRejects.ToString(CultureInfo.InvariantCulture)
+                            + ")");
+            }
+
             if (summary.FailCount <= 0)
             {
                 return OpenVisionRecipeText.Local("모든 샘플 통과", "All samples passed");
@@ -1082,8 +1143,8 @@ namespace OpenVisionLab
 
             bool previousExists = previous != null;
             bool currentExists = current != null;
-            bool previousSuccess = previous?.Success ?? false;
-            bool currentSuccess = current?.Success ?? false;
+            bool previousSuccess = ResolveComparisonSuccess(previous);
+            bool currentSuccess = ResolveComparisonSuccess(current);
             string state;
             bool regression = false;
             bool recovered = false;
@@ -1179,13 +1240,41 @@ namespace OpenVisionLab
                 return "-";
             }
 
-            string status = result.Success ? "OK" : "NG";
+            string status;
+            if (OpenVisionRecipeBatchSampleResultOption.TryResolveExpectedSuccess(result, out bool expectedSuccess))
+            {
+                status = OpenVisionRecipeBatchSampleResultOption.FormatJudgmentText(expectedSuccess, result.Success)
+                    + " ("
+                    + OpenVisionRecipeText.Local("기대 ", "expected ")
+                    + (expectedSuccess ? "OK" : "NG")
+                    + " → "
+                    + OpenVisionRecipeText.Local("실제 ", "actual ")
+                    + (result.Success ? "OK" : "NG")
+                    + ")";
+            }
+            else
+            {
+                status = result.Success ? "OK" : "NG";
+            }
+
             if (!string.IsNullOrWhiteSpace(result.FailedStep))
             {
                 status += " @ " + result.FailedStep.Trim();
             }
 
             return status;
+        }
+
+        private static bool ResolveComparisonSuccess(VisionPipelineBatchSampleRunResult result)
+        {
+            if (result == null)
+            {
+                return false;
+            }
+
+            return OpenVisionRecipeBatchSampleResultOption.TryResolveExpectedSuccess(result, out bool expectedSuccess)
+                ? expectedSuccess == result.Success
+                : result.Success;
         }
 
         private static string BuildReviewText(
@@ -1235,6 +1324,8 @@ namespace OpenVisionLab
             string detailText,
             string reviewText,
             bool success,
+            bool hasExpectedOutcome,
+            bool expectedSuccess,
             string failedStep,
             string sampleName,
             string reportPath)
@@ -1243,6 +1334,8 @@ namespace OpenVisionLab
             DetailText = detailText ?? string.Empty;
             ReviewText = reviewText ?? string.Empty;
             Success = success;
+            HasExpectedOutcome = hasExpectedOutcome;
+            ExpectedSuccess = expectedSuccess;
             FailedStep = failedStep ?? string.Empty;
             SampleName = sampleName ?? string.Empty;
             ReportPath = reportPath ?? string.Empty;
@@ -1255,6 +1348,16 @@ namespace OpenVisionLab
         public string ReviewText { get; }
 
         public bool Success { get; }
+
+        public bool HasExpectedOutcome { get; }
+
+        public bool ExpectedSuccess { get; }
+
+        public bool JudgmentCorrect => !HasExpectedOutcome || ExpectedSuccess == Success;
+
+        public bool IsFalseAccept => HasExpectedOutcome && !ExpectedSuccess && Success;
+
+        public bool IsFalseReject => HasExpectedOutcome && ExpectedSuccess && !Success;
 
         public string FailedStep { get; }
 
@@ -1269,9 +1372,22 @@ namespace OpenVisionLab
                 return CreateEmpty();
             }
 
-            string status = result.Success ? "OK" : "NG";
-            string display = status
+            bool hasExpectedOutcome = TryResolveExpectedSuccess(result, out bool expectedSuccess);
+            string actualStatus = result.Success ? "OK" : "NG";
+            string judgment = hasExpectedOutcome
+                ? FormatJudgmentText(expectedSuccess, result.Success)
+                : actualStatus;
+            string expectedActual = hasExpectedOutcome
+                ? OpenVisionRecipeText.Local("기대 ", "Expected ")
+                    + (expectedSuccess ? "OK" : "NG")
+                    + " → "
+                    + OpenVisionRecipeText.Local("실제 ", "Actual ")
+                    + actualStatus
+                    + " | "
+                : string.Empty;
+            string display = judgment
                 + " | "
+                + expectedActual
                 + (string.IsNullOrWhiteSpace(result.SampleName) ? "-" : result.SampleName.Trim())
                 + " | "
                 + result.TotalMilliseconds.ToString("0.0", CultureInfo.InvariantCulture)
@@ -1294,11 +1410,13 @@ namespace OpenVisionLab
                 detail += " | " + OpenVisionRecipeText.Local("최종: ", "Final: ") + result.FinalLayer.Trim();
             }
 
-            string review = result.Success
-                ? OpenVisionRecipeText.Local("판독: 통과. NG 샘플을 선택하면 실패 Step을 연결합니다.", "Review: Passed. Select an NG sample to link the failed step.")
-                : string.IsNullOrWhiteSpace(result.FailedStep)
-                    ? OpenVisionRecipeText.Local("판독: 실패했지만 실패 Step이 기록되지 않았습니다. 실행 로그와 XML 경로를 확인하세요.", "Review: Failed, but no failed step was recorded. Check the run log and XML route.")
-                    : OpenVisionRecipeText.Local("판독: 실패 Step을 선택했습니다. 입력/출력 레이어와 파라미터를 XML/Step 탭에서 확인하세요.", "Review: Failed step selected. Check input/output layers and parameters in XML/Steps.");
+            string review = hasExpectedOutcome
+                ? BuildJudgmentReview(expectedSuccess, result.Success, result.FailedStep)
+                : result.Success
+                    ? OpenVisionRecipeText.Local("판독: 통과. NG 샘플을 선택하면 실패 Step을 연결합니다.", "Review: Passed. Select an NG sample to link the failed step.")
+                    : string.IsNullOrWhiteSpace(result.FailedStep)
+                        ? OpenVisionRecipeText.Local("판독: 실패했지만 실패 Step이 기록되지 않았습니다. 실행 로그와 XML 경로를 확인하세요.", "Review: Failed, but no failed step was recorded. Check the run log and XML route.")
+                        : OpenVisionRecipeText.Local("판독: 실패 Step을 선택했습니다. 입력/출력 레이어와 파라미터를 XML/Step 탭에서 확인하세요.", "Review: Failed step selected. Check input/output layers and parameters in XML/Steps.");
             if (!string.IsNullOrWhiteSpace(result.MetricReviewText))
             {
                 review += Environment.NewLine + result.MetricReviewText.Trim();
@@ -1314,6 +1432,8 @@ namespace OpenVisionLab
                 detail,
                 review,
                 result.Success,
+                hasExpectedOutcome,
+                expectedSuccess,
                 result.FailedStep,
                 result.SampleName,
                 string.IsNullOrWhiteSpace(result.ReportPath) ? result.SampleImagePath : result.ReportPath);
@@ -1326,9 +1446,93 @@ namespace OpenVisionLab
                 OpenVisionRecipeText.Local("쌍 검사 이력을 선택하세요.", "Select a pair check run."),
                 OpenVisionRecipeText.Local("판독: 저장된 이력을 선택하세요.", "Review: Select a saved run."),
                 true,
+                false,
+                true,
                 string.Empty,
                 string.Empty,
                 string.Empty);
+        }
+
+        internal static bool TryResolveExpectedSuccess(
+            VisionPipelineBatchSampleRunResult result,
+            out bool expectedSuccess)
+        {
+            string expected = result?.ExpectedText?.Trim() ?? string.Empty;
+            if (!expected.StartsWith("ExpectedActual:", StringComparison.OrdinalIgnoreCase))
+            {
+                expectedSuccess = false;
+                return false;
+            }
+
+            string role = result?.PairRole?.Trim();
+            if (string.Equals(role, "OK", StringComparison.OrdinalIgnoreCase))
+            {
+                expectedSuccess = true;
+                return true;
+            }
+
+            if (string.Equals(role, "NG", StringComparison.OrdinalIgnoreCase))
+            {
+                expectedSuccess = false;
+                return true;
+            }
+
+            if (expected.EndsWith("OK", StringComparison.OrdinalIgnoreCase))
+            {
+                expectedSuccess = true;
+                return true;
+            }
+
+            if (expected.EndsWith("NG", StringComparison.OrdinalIgnoreCase))
+            {
+                expectedSuccess = false;
+                return true;
+            }
+
+            expectedSuccess = false;
+            return false;
+        }
+
+        internal static string FormatJudgmentText(bool expectedSuccess, bool actualSuccess)
+        {
+            if (expectedSuccess)
+            {
+                return actualSuccess
+                    ? OpenVisionRecipeText.Local("정상 수용", "Correct accept")
+                    : OpenVisionRecipeText.Local("과검", "False reject");
+            }
+
+            return actualSuccess
+                ? OpenVisionRecipeText.Local("미검", "False accept")
+                : OpenVisionRecipeText.Local("정상 거부", "Correct reject");
+        }
+
+        private static string BuildJudgmentReview(
+            bool expectedSuccess,
+            bool actualSuccess,
+            string failedStep)
+        {
+            if (expectedSuccess == actualSuccess)
+            {
+                return OpenVisionRecipeText.Local(
+                    "판독: 기대 결과와 실제 Pipeline 판정이 일치합니다.",
+                    "Review: Expected outcome matches the actual Pipeline decision.");
+            }
+
+            if (!expectedSuccess)
+            {
+                return OpenVisionRecipeText.Local(
+                    "판독: 미검입니다. 기대 NG를 실제 OK로 수용했습니다. 판정 기준과 결함 검출 지표를 확인하세요.",
+                    "Review: False accept. Expected NG was accepted as actual OK. Review the gate and defect metrics.");
+            }
+
+            return string.IsNullOrWhiteSpace(failedStep)
+                ? OpenVisionRecipeText.Local(
+                    "판독: 과검입니다. 기대 OK를 실제 NG로 거부했지만 실패 Step이 기록되지 않았습니다.",
+                    "Review: False reject. Expected OK was rejected as actual NG, but no failed Step was recorded.")
+                : OpenVisionRecipeText.Local(
+                    "판독: 과검입니다. 기대 OK를 거부한 실패 Step의 판정 기준을 확인하세요.",
+                    "Review: False reject. Review the failed Step gate that rejected expected OK.");
         }
     }
 

@@ -65,6 +65,8 @@ namespace OpenVisionLab
                 case "featurematching":
                 case "sift":
                     return CreateFeatureMatchingTool(step.Parameters);
+                case "referencedifference":
+                    return CreateReferenceDifferenceTool(step.Parameters);
                 default:
                     return VisionPipelineToolFactory.Create(step);
             }
@@ -230,7 +232,7 @@ namespace OpenVisionLab
 
             ApplyCommonOpenCvProperty(property, parameters);
 
-            string templatePath = GetString(parameters, "TemplatePath", property.PATTERN_PATH);
+            string templatePath = ResolveTemplatePath(GetString(parameters, "TemplatePath", property.PATTERN_PATH));
             if (!string.IsNullOrWhiteSpace(templatePath) && File.Exists(templatePath))
             {
                 property.ImageTemplate = Cv2.ImRead(templatePath);
@@ -282,7 +284,7 @@ namespace OpenVisionLab
             EdgeBasedTemplateMatchingTool tool = new EdgeBasedTemplateMatchingTool();
             tool.SetProperty(property);
 
-            string templatePath = GetString(parameters, "TemplatePath", property.PATTERN_PATH);
+            string templatePath = ResolveTemplatePath(GetString(parameters, "TemplatePath", property.PATTERN_PATH));
             if (!string.IsNullOrWhiteSpace(templatePath) && File.Exists(templatePath))
             {
                 property.PATTERN_PATH = templatePath;
@@ -353,7 +355,7 @@ namespace OpenVisionLab
             SiftTool tool = new SiftTool();
             tool.SetProperty(property);
 
-            string templatePath = GetString(parameters, "TemplatePath", property.PATTERN_PATH);
+            string templatePath = ResolveTemplatePath(GetString(parameters, "TemplatePath", property.PATTERN_PATH));
             if (!string.IsNullOrWhiteSpace(templatePath) && File.Exists(templatePath))
             {
                 property.ImageTemplate = Cv2.ImRead(templatePath);
@@ -361,6 +363,58 @@ namespace OpenVisionLab
             }
 
             return tool;
+        }
+
+        private static IVisionTool CreateReferenceDifferenceTool(IDictionary<string, string> parameters)
+        {
+            Dictionary<string, string> resolved = new Dictionary<string, string>(
+                parameters ?? new Dictionary<string, string>(),
+                StringComparer.OrdinalIgnoreCase);
+            for (int index = 1; index <= 4; index++)
+            {
+                string key = "ReferencePath" + index.ToString(CultureInfo.InvariantCulture);
+                string value = GetString(parameters, key, string.Empty);
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    resolved[key] = ResolveTemplatePath(value);
+                }
+            }
+
+            string legacyPaths = GetString(parameters, "ReferencePaths", string.Empty);
+            if (!string.IsNullOrWhiteSpace(legacyPaths))
+            {
+                resolved["ReferencePaths"] = string.Join(
+                    ";",
+                    legacyPaths
+                        .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(ResolveTemplatePath));
+            }
+
+            return new VisionPipelineReferenceDifferenceTool(
+                GetString(parameters, "Name", "PipelineReferenceDifference"),
+                resolved);
+        }
+
+        private static string ResolveTemplatePath(string value)
+        {
+            string candidate = (value ?? string.Empty).Trim().Trim('"');
+            if (string.IsNullOrWhiteSpace(candidate))
+            {
+                return string.Empty;
+            }
+
+            if (Path.IsPathRooted(candidate))
+            {
+                return Path.GetFullPath(candidate);
+            }
+
+            string startupRelativePath = Path.GetFullPath(Path.Combine(AppPathService.StartupPath, candidate));
+            if (File.Exists(startupRelativePath))
+            {
+                return startupRelativePath;
+            }
+
+            return Path.GetFullPath(candidate);
         }
 
         private static void ApplyCommonOpenCvProperty(OpenVisionLab.Vision._1._Tools.OpenCV.OpenCvPropertyBase property, IDictionary<string, string> parameters)

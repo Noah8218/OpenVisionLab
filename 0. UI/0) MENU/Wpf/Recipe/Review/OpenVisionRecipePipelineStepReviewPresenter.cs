@@ -209,18 +209,18 @@ namespace OpenVisionLab
             int sameInputBranches = steps.Count(step =>
                 step != null
                 && step.Index != selected.Index
-                && !HasDeclaredSourceLayers(selected)
-                && !HasDeclaredSourceLayers(step)
+                && !HasDeclaredSourceReferences(selected)
+                && !HasDeclaredSourceReferences(step)
                 && string.Equals(step.InputLayer, selected.InputLayer, StringComparison.OrdinalIgnoreCase));
             int outputConsumers = steps.Count(step =>
                 step != null
                 && step.Index != selected.Index
-                && ConsumesOutputLayer(step, selected.OutputLayer));
+                && ConsumesOutput(step, selected));
             int upstreamProducers = steps.Count(step =>
                 step != null
                 && step.Index != selected.Index
                 && (string.Equals(step.OutputLayer, selected.InputLayer, StringComparison.OrdinalIgnoreCase)
-                    || UsesDeclaredSourceLayer(selected, step.OutputLayer)));
+                    || UsesDeclaredSourceReference(selected, step)));
 
             return string.Format(
                 CultureInfo.CurrentCulture,
@@ -272,7 +272,7 @@ namespace OpenVisionLab
             foreach (OpenVisionRecipePipelineStepPreview producer in steps
                 .Where(step => step != null
                     && step.Index != selected.Index
-                    && UsesDeclaredSourceLayer(selected, step.OutputLayer)
+                    && UsesDeclaredSourceReference(selected, step)
                     && !string.Equals(step.OutputLayer, selected.InputLayer, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(step => step.Index))
             {
@@ -286,10 +286,10 @@ namespace OpenVisionLab
             foreach (OpenVisionRecipePipelineStepPreview consumer in steps
                 .Where(step => step != null
                     && step.Index != selected.Index
-                    && ConsumesOutputLayer(step, selected.OutputLayer))
+                    && ConsumesOutput(step, selected))
                 .OrderBy(step => step.Index))
             {
-                if (UsesDeclaredSourceLayer(consumer, selected.OutputLayer))
+                if (UsesDeclaredSourceReference(consumer, selected))
                 {
                     rows.Add(CreateBranchOutputRelationRow(
                         OpenVisionRecipeText.Local("검토 병합", "Review merge"),
@@ -309,8 +309,8 @@ namespace OpenVisionLab
             foreach (OpenVisionRecipePipelineStepPreview branch in steps
                 .Where(step => step != null
                     && step.Index != selected.Index
-                    && !HasDeclaredSourceLayers(selected)
-                    && !HasDeclaredSourceLayers(step)
+                    && !HasDeclaredSourceReferences(selected)
+                    && !HasDeclaredSourceReferences(step)
                     && string.Equals(step.InputLayer, selected.InputLayer, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(step => step.Index))
             {
@@ -357,24 +357,37 @@ namespace OpenVisionLab
                 action);
         }
 
-        private static bool HasDeclaredSourceLayers(OpenVisionRecipePipelineStepPreview step)
+        private static bool HasDeclaredSourceReferences(OpenVisionRecipePipelineStepPreview step)
         {
-            return step?.SourceLayers != null && step.SourceLayers.Count > 0;
+            return (step?.SourceLayers?.Count ?? 0) > 0
+                || (step?.SourceSteps?.Count ?? 0) > 0;
         }
 
-        private static bool UsesDeclaredSourceLayer(OpenVisionRecipePipelineStepPreview step, string layerName)
-        {
-            return !string.IsNullOrWhiteSpace(layerName)
-                && step?.SourceLayers != null
-                && step.SourceLayers.Any(source => string.Equals(source, layerName, StringComparison.OrdinalIgnoreCase));
-        }
-
-        private static bool ConsumesOutputLayer(OpenVisionRecipePipelineStepPreview step, string outputLayer)
+        private static bool UsesDeclaredSourceReference(
+            OpenVisionRecipePipelineStepPreview step,
+            OpenVisionRecipePipelineStepPreview candidate)
         {
             return step != null
-                && !string.IsNullOrWhiteSpace(outputLayer)
-                && (string.Equals(step.InputLayer, outputLayer, StringComparison.OrdinalIgnoreCase)
-                    || UsesDeclaredSourceLayer(step, outputLayer));
+                && candidate != null
+                && ((step.SourceLayers?.Any(source => string.Equals(
+                        source,
+                        candidate.OutputLayer,
+                        StringComparison.OrdinalIgnoreCase)) ?? false)
+                    || (step.SourceSteps?.Any(source => string.Equals(
+                        source,
+                        candidate.Name,
+                        StringComparison.OrdinalIgnoreCase)) ?? false));
+        }
+
+        private static bool ConsumesOutput(
+            OpenVisionRecipePipelineStepPreview consumer,
+            OpenVisionRecipePipelineStepPreview producer)
+        {
+            return consumer != null
+                && producer != null
+                && !string.IsNullOrWhiteSpace(producer.OutputLayer)
+                && (string.Equals(consumer.InputLayer, producer.OutputLayer, StringComparison.OrdinalIgnoreCase)
+                    || UsesDeclaredSourceReference(consumer, producer));
         }
 
         internal static string BuildStepSlotText(OpenVisionRecipePipelineStepPreview step, string emptyText)

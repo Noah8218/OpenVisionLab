@@ -21,7 +21,7 @@ namespace OpenVisionLab
             }
 
             return results
-                .Where(result => result != null && !result.Success)
+                .Where(result => result != null && IsFilteredFailure(option, result))
                 .ToList();
         }
 
@@ -40,18 +40,37 @@ namespace OpenVisionLab
             }
 
             List<OpenVisionRecipeBatchSampleResultOption> failures = results
-                .Where(result => result != null && !result.Success)
+                .Where(result => result != null && IsFilteredFailure(option, result))
                 .ToList();
+            bool judgmentSuite = option?.IsJudgmentSuite == true;
             string prefix = showNgOnly
-                ? OpenVisionRecipeText.Local("NG 필터: ", "NG filter: ")
+                ? judgmentSuite
+                    ? OpenVisionRecipeText.Local("오판 필터: ", "Misclassification filter: ")
+                    : OpenVisionRecipeText.Local("NG 필터: ", "NG filter: ")
                 : OpenVisionRecipeText.Local("샘플: ", "Samples: ");
             string counts = showNgOnly
                 ? failures.Count.ToString(CultureInfo.InvariantCulture) + "/" + total.ToString(CultureInfo.InvariantCulture)
-                : total.ToString(CultureInfo.InvariantCulture) + " / NG " + failures.Count.ToString(CultureInfo.InvariantCulture);
+                : total.ToString(CultureInfo.InvariantCulture)
+                    + (judgmentSuite ? OpenVisionRecipeText.Local(" / 오판 ", " / misclassified ") : " / NG ")
+                    + failures.Count.ToString(CultureInfo.InvariantCulture);
 
             if (failures.Count == 0)
             {
-                return prefix + counts + " | " + OpenVisionRecipeText.Local("NG 없음", "No NG samples");
+                return prefix + counts + " | " + (judgmentSuite
+                    ? OpenVisionRecipeText.Local("오판 없음", "No misclassifications")
+                    : OpenVisionRecipeText.Local("NG 없음", "No NG samples"));
+            }
+
+            if (judgmentSuite)
+            {
+                return prefix
+                    + counts
+                    + " | "
+                    + OpenVisionRecipeText.Local("미검 ", "false accept ")
+                    + failures.Count(result => result.IsFalseAccept).ToString(CultureInfo.InvariantCulture)
+                    + " · "
+                    + OpenVisionRecipeText.Local("과검 ", "false reject ")
+                    + failures.Count(result => result.IsFalseReject).ToString(CultureInfo.InvariantCulture);
             }
 
             string causes = string.Join(
@@ -61,6 +80,15 @@ namespace OpenVisionLab
                     .Select(group => group.Key + " x" + group.Count().ToString(CultureInfo.InvariantCulture))
                     .Take(3));
             return prefix + counts + " | " + OpenVisionRecipeText.Local("NG 원인: ", "NG causes: ") + causes;
+        }
+
+        private static bool IsFilteredFailure(
+            OpenVisionRecipeBatchRunOption option,
+            OpenVisionRecipeBatchSampleResultOption result)
+        {
+            return option?.IsJudgmentSuite == true
+                ? result.HasExpectedOutcome && !result.JudgmentCorrect
+                : !result.Success;
         }
 
         internal static OpenVisionRecipeBatchRunOption ResolveBaselineRunOption(

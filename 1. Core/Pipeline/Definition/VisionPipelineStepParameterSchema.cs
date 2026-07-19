@@ -100,7 +100,14 @@ namespace OpenVisionLab
             VisionPipelineArithmeticStep.ParameterG,
             VisionPipelineArithmeticStep.ParameterR,
             VisionPipelineArithmeticStep.ParameterOffsetX,
-            VisionPipelineArithmeticStep.ParameterOffsetY
+            VisionPipelineArithmeticStep.ParameterOffsetY,
+            "DifferenceThreshold",
+            "MinimumDefectArea",
+            "MaximumDefectArea",
+            "MorphologyKernel",
+            "IgnoreBorder",
+            "OrbFeatures",
+            "MinimumInliers"
         };
 
         private static readonly HashSet<string> DoubleParameters = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -140,7 +147,9 @@ namespace OpenVisionLab
             "MaxValue",
             "Angle",
             "ScaleXPercent",
-            "ScaleYPercent"
+            "ScaleYPercent",
+            "MatchRatio",
+            "RansacThreshold"
         };
 
         public static bool TryGetParameterType(string key, out Type type)

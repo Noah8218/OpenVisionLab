@@ -113,6 +113,7 @@ namespace OpenVisionLab
         private readonly OpenVisionZoomableImageController workspaceFallbackZoomController;
         private readonly OpenVisionShellHostSessionState sessionState = new OpenVisionShellHostSessionState();
         private readonly OpenVisionShellHostSessionController sessionController;
+        private readonly OpenVisionRecipeLlmBrowserAssistController llmBrowserAssistController = new OpenVisionRecipeLlmBrowserAssistController();
         private VisionToolPropertyGridHost recipeStepPropertyGridHostController;
         private bool isRecipeManagerPanelDragging;
         private Point recipeManagerPanelDragStartPoint;
@@ -758,11 +759,55 @@ namespace OpenVisionLab
             recipeGuidedSetupScrollViewer.ScrollToTop();
         }
 
+        private void HandleOpenRecipeImageListValidation(object sender, RoutedEventArgs e)
+        {
+            btnHostRecipeManager.IsChecked = true;
+            recipeAdvancedReviewToggle.IsChecked = true;
+            tabRecipePipeline.IsSelected = true;
+            tabRecipePipelineRunHistory.IsSelected = true;
+            RecipeCommands?.SelectLocalValidationSetScope();
+        }
+
         private void OpenRecipeLlmXmlReview()
         {
             btnHostRecipeManager.IsChecked = true;
             recipeAdvancedReviewToggle.IsChecked = true;
             tabRecipeLlmXml.IsSelected = true;
+        }
+
+        private void HandleOpenRecipeLlmBrowserAssist(object sender, RoutedEventArgs e)
+        {
+            OpenRecipeLlmBrowserAssist();
+        }
+
+        private void OpenRecipeLlmBrowserAssist()
+        {
+            btnHostRecipeManager.IsChecked = true;
+            recipeAdvancedReviewToggle.IsChecked = true;
+            tabRecipeLlmBrowserAssist.IsSelected = true;
+        }
+
+        private async void HandleOpenRecipeLlmBrowserAssistChatGpt(object sender, RoutedEventArgs e)
+        {
+            OpenRecipeLlmBrowserAssist();
+            recipeLlmBrowserAssistPlaceholder.Visibility = Visibility.Collapsed;
+            recipeLlmBrowserAssistWebView.Visibility = Visibility.Visible;
+
+            OpenVisionRecipeLlmBrowserAssistOpenResult result =
+                await llmBrowserAssistController.OpenChatGptAsync(recipeLlmBrowserAssistWebView);
+            RecipeCommands?.SetLlmBrowserAssistStatus(result);
+
+            if (result != OpenVisionRecipeLlmBrowserAssistOpenResult.EmbeddedChatGptOpened)
+            {
+                recipeLlmBrowserAssistWebView.Visibility = Visibility.Collapsed;
+                recipeLlmBrowserAssistPlaceholder.Visibility = Visibility.Visible;
+            }
+        }
+
+        private void HandleOpenRecipeLlmBrowserAssistExternal(object sender, RoutedEventArgs e)
+        {
+            OpenRecipeLlmBrowserAssist();
+            RecipeCommands?.SetLlmBrowserAssistStatus(llmBrowserAssistController.OpenChatGptInExternalBrowser());
         }
 
         private void OpenRecipePipelineReview()
@@ -1017,6 +1062,9 @@ namespace OpenVisionLab
 
         public void Dispose()
         {
+            recipeLlmBrowserAssistWebView?.Dispose();
+            llmBrowserAssistController.Dispose();
+
             if (!sessionController.DisposeSession())
             {
                 return;

@@ -172,6 +172,11 @@ namespace OpenVisionLab
                 return "Use ToolType=Mean for region brightness or intensity band judgment. Primary metric: MeanValueAvg.";
             }
 
+            if (IsReferenceDifferenceTemplate(template))
+            {
+                return "Use ToolType=ReferenceDifference for registered comparison against one to four operator-approved Good images. Require explicit ReferencePath1..4 values, DifferenceThreshold, defect-area limits, and an exact ResultCount=0 acceptance gate. Do not learn or replace references automatically.";
+            }
+
             return "Use ToolType=Matching for template position or presence checks with a real template path. Primary metrics: ScoreMax and ResultCount.";
         }
 
@@ -205,6 +210,11 @@ namespace OpenVisionLab
             if (IsMeanTemplate(template))
             {
                 return "Mean / MeanValueAvg";
+            }
+
+            if (IsReferenceDifferenceTemplate(template))
+            {
+                return "ReferenceDifference / ResultCount + registration evidence";
             }
 
             return "Matching / ScoreMax";
@@ -262,6 +272,14 @@ namespace OpenVisionLab
                 || value.IndexOf("brightness", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
+        internal static bool IsReferenceDifferenceTemplate(string template)
+        {
+            return string.Equals(
+                (template ?? string.Empty).Trim(),
+                OpenVisionGuidedSetupCatalog.ReferenceDifferenceTemplate,
+                StringComparison.OrdinalIgnoreCase);
+        }
+
         internal static string ResolveTemplateGuidance(string template)
         {
             if (IsLineDistanceTemplate(template))
@@ -292,6 +310,11 @@ namespace OpenVisionLab
             if (IsMeanTemplate(template))
             {
                 return "Use Mean when the judgment is based on brightness or region intensity.";
+            }
+
+            if (IsReferenceDifferenceTemplate(template))
+            {
+                return "Use ReferenceDifference for registered defect comparison against one to four approved Good references. Keep reference selection explicit and judge zero detected defect regions.";
             }
 
             return "Use Matching when a stable template image and score threshold define the target.";

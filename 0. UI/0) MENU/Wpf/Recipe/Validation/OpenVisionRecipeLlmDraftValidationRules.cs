@@ -103,8 +103,40 @@ namespace OpenVisionLab
                 return AppendFeatureMatchingIntentContractValidation(pipeline, validationLines);
             }
 
+            if (IsReferenceDifferenceTemplate(template))
+            {
+                return AppendReferenceDifferenceIntentContractValidation(pipeline, validationLines);
+            }
+
             validationLines.Add("Intent contract: SKIP - selected intent has no strict tool-family gate.");
             return true;
+        }
+
+        private static bool AppendReferenceDifferenceIntentContractValidation(
+            VisionPipeline pipeline,
+            ICollection<string> validationLines)
+        {
+            bool toolReady = AppendRequiredLlmIntentToolValidation(
+                pipeline,
+                validationLines,
+                "ReferenceDifference",
+                "Golden-reference defect",
+                "Use ToolType=ReferenceDifference for the selected Golden-reference defect intent.");
+            VisionPipelineStep step = (pipeline?.Steps ?? new List<VisionPipelineStep>())
+                .FirstOrDefault(candidate => candidate != null
+                    && candidate.Enabled
+                    && string.Equals(candidate.ToolType, "ReferenceDifference", StringComparison.OrdinalIgnoreCase));
+            bool gateReady = step != null
+                && step.UseAcceptance
+                && string.Equals(step.AcceptanceMetricName, VisionPipelineKnownMetrics.ResultCount, StringComparison.OrdinalIgnoreCase)
+                && step.UseAcceptanceMetricMinimum
+                && Math.Abs(step.AcceptanceMetricMinimum) < 0.000001D
+                && step.UseAcceptanceMetricMaximum
+                && Math.Abs(step.AcceptanceMetricMaximum) < 0.000001D;
+            validationLines.Add(gateReady
+                ? "Golden-reference defect contract: OK - ReferenceDifference uses exact ResultCount=0 acceptance."
+                : "Golden-reference defect contract: NG - require exact ResultCount=0 acceptance on the enabled ReferenceDifference Step.");
+            return toolReady && gateReady;
         }
 
         private static bool AppendEdgeBasedIntentContractValidation(

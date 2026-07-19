@@ -58,6 +58,13 @@ namespace OpenVisionLab
                     "Required inputs: optional ROI (blank means full image), Mean type, and MeanValueAvg min/max GV gate.") + setupLocation;
             }
 
+            if (OpenVisionRecipeLlmIntent.IsReferenceDifferenceTemplate(template))
+            {
+                return OpenVisionRecipeText.Local(
+                    "필수 입력: 존재하는 Good 기준 이미지 1~4개, 차이 임계값, 최소/최대 결함 면적.",
+                    "Required inputs: 1-4 existing approved Good reference images, difference threshold, and min/max defect area.") + setupLocation;
+            }
+
             if (OpenVisionRecipeLlmIntent.IsEdgeBasedTemplate(template))
             {
                 return OpenVisionRecipeText.Local(
@@ -321,6 +328,43 @@ namespace OpenVisionLab
                         + OpenVisionRecipeText.Local(" 판정", " gate"));
             }
 
+            if (OpenVisionRecipeLlmIntent.IsReferenceDifferenceTemplate(template))
+            {
+                List<string> missing = new List<string>();
+                bool referencesReady = OpenVisionRecipeReferenceDifferenceIntentSkill.TryCollectReferencePaths(
+                    input.ReferenceImagePath,
+                    input.ReferenceDifferencePath2,
+                    input.ReferenceDifferencePath3,
+                    input.ReferenceDifferencePath4,
+                    out IReadOnlyList<string> referencePaths);
+                bool thresholdReady = OpenVisionRecipeReferenceDifferenceIntentSkill.TryParseThreshold(
+                    input.ReferenceDifferenceThresholdText,
+                    out _);
+                bool minimumAreaReady = OpenVisionRecipeReferenceDifferenceIntentSkill.TryParsePositiveArea(
+                    input.ReferenceDifferenceMinimumAreaText,
+                    out int minimumArea);
+                bool maximumAreaReady = OpenVisionRecipeReferenceDifferenceIntentSkill.TryParsePositiveArea(
+                    input.ReferenceDifferenceMaximumAreaText,
+                    out int maximumArea);
+
+                if (!referencesReady) missing.Add(OpenVisionRecipeText.Local("존재하는 Good 기준 이미지 1~4개", "1-4 existing Good references"));
+                if (!thresholdReady) missing.Add(OpenVisionRecipeText.Local("차이 임계값 0..255", "Difference threshold 0..255"));
+                if (!minimumAreaReady) missing.Add(OpenVisionRecipeText.Local("최소 결함 면적 > 0", "Min defect area > 0"));
+                if (!maximumAreaReady) missing.Add(OpenVisionRecipeText.Local("최대 결함 면적 > 0", "Max defect area > 0"));
+                if (minimumAreaReady && maximumAreaReady && minimumArea > maximumArea) missing.Add(OpenVisionRecipeText.Local("최소 면적 <= 최대 면적", "Min area <= Max area"));
+
+                if (missing.Count > 0)
+                {
+                    return Status(false, OpenVisionRecipeText.Local("MISSING · 입력 필요: ", "MISSING: ") + string.Join(", ", missing));
+                }
+
+                return Status(
+                    true,
+                    OpenVisionRecipeText.Local("READY · Good 기준 ", "READY: ")
+                        + referencePaths.Count.ToString(CultureInfo.InvariantCulture)
+                        + OpenVisionRecipeText.Local("개 + 정합 + 차이 영역 + ResultCount=0 판정", " Good references + registration + difference regions + ResultCount=0 gate"));
+            }
+
             if (OpenVisionRecipeLlmIntent.IsEdgeBasedTemplate(template) || !OpenVisionRecipeLlmIntent.IsMeanTemplate(template))
             {
                 if (string.IsNullOrWhiteSpace(input.ReferenceImagePath) || !File.Exists(input.ReferenceImagePath))
@@ -415,6 +459,18 @@ namespace OpenVisionLab
         internal string MeanMinimumText { get; set; }
 
         internal string MeanMaximumText { get; set; }
+
+        internal string ReferenceDifferencePath2 { get; set; }
+
+        internal string ReferenceDifferencePath3 { get; set; }
+
+        internal string ReferenceDifferencePath4 { get; set; }
+
+        internal string ReferenceDifferenceThresholdText { get; set; }
+
+        internal string ReferenceDifferenceMinimumAreaText { get; set; }
+
+        internal string ReferenceDifferenceMaximumAreaText { get; set; }
     }
 
     internal sealed class OpenVisionRecipeGuidedSetupReadinessStatus

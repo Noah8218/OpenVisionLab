@@ -1,6 +1,6 @@
 # OpenVisionLab LLM XML Authoring Guide
 
-Updated: 2026-07-16 KST
+Updated: 2026-07-19 KST
 
 This guide is the API reference to give to GPT, Gemini, Claude, or another LLM before asking it to draft OpenVisionLab recipe XML.
 
@@ -11,7 +11,7 @@ OpenVisionLab is an OpenCvSharp4 rule-based vision workbench plus an LLM-assiste
 Use this loop when collecting real LLM transcripts:
 
 1. Give the LLM this guide plus `docs/OPENVISIONLAB_LLM_TOOL_CATALOG.json`.
-2. Provide the reference image context, inspection goal, detection points, expected OK/NG condition, and any existing template/image dependency paths.
+2. Provide the reference image context, inspection goal, detection points, expected OK/NG condition, and any existing template/image dependency paths. For a packaged runtime, the operator must supply a path the running application can access; an operator-selected absolute path is the clearest draft-time default.
 3. Ask for one `VisionPipeline` XML document only.
 4. Paste or load the XML into Recipe Manager.
 5. Run `Validate`. Do not import yet.
@@ -90,6 +90,7 @@ Parameter values are strings in XML but are validated by type. Boolean values mu
 - Do not write the same output layer from multiple Steps unless overwrite review is intentional.
 - Do not create custom `Inspection.*` XML nodes or parameters. `Inspection.Status`, `Inspection.FailedStep`, `Inspection.Evidence`, `Inspection.Benchmark`, and `Inspection.NextAction` are review channels derived by OpenVisionLab after validation/run evidence.
 - Do not use placeholder dependency paths. If a template path is unknown, omit `TemplatePath` and `PATTERN_PATH`, then explain outside XML that the user must choose a real template path.
+- Do not use catalog source paths such as `docs\samples\...` as an LLM draft dependency path in a packaged runtime. They are repository catalog references, not packaged assets. Use only an existing operator-supplied path that the running application can access; Import validates it, copies it into the recipe `Template` folder, and updates the imported XML to an installation-root-relative `RECIPE\...\Template\...` path.
 - Matching score parameters such as `SCORE_MIN`, `GREEDINESS`, and `HYBRID_VERIFY_IMAGE_WEIGHT` are 0..1 decimals. Use `0.6`, not `60` or `80`.
 - For `FeatureMatching`, `SCORE_MIN` is the Lowe descriptor-ratio threshold, not the final `ScoreMax` acceptance value. Smaller values are stricter; use a separate acceptance metric gate for `ScoreMax`.
 - Positive parameters must be positive: `MAGNIFIATION`, `RANSAC_REPROJ_THRESHOLD`, `COARSE_ANGLE_STEP`, `PIXELPERMM`, `ScaleXPercent`, `ScaleYPercent`, kernel sizes, `NUM_MATCH`, `SEARCH_STEP`.
@@ -97,6 +98,7 @@ Parameter values are strings in XML but are validated by type. Boolean values mu
 - Gray-level values such as `Threshold`, `MaxValue`, `RangeMin`, `RangeMax`, `CANNY_LOW`, and `CANNY_HIGH` must be within 0..255.
 - HSV `HueMin` and `HueMax` use OpenCV's 0..179 scale. `HueMin > HueMax` intentionally wraps across the 179/0 boundary for colors such as red; `SaturationMin <= SaturationMax` and `ValueMin <= ValueMax` remain required within 0..255.
 - `Arithmetic` operation mode needs `InputLayerB` unless the operation is `Bitwise_NOT` or `ABS`, the mode is `Offset`, or `UseConstantInput` is `true`.
+- `ReferenceDifference` requires an existing `ReferencePath1`; `ReferencePath2` through `ReferencePath4` are optional approved Good references. Keep each file in its own parameter so import can scan and copy every dependency.
 - `OverlayMerge` should be the final enabled Step when it is the user-facing review result.
 - For pin-to-pin, edge-to-edge, pitch, width, or clearance checks using `LineDistance`, do not judge only `DistancePxAvg` or `DistanceMmAvg`. Also constrain candidate consistency with `DistancePxRange`/`DistanceMmRange` or reject long outliers with `DistancePxMax`/`DistanceMmMax`. If one Step must judge the nominal distance and another must judge consistency, duplicate the same `LineDistance` parameters into a second validation Step with a separate `OutputLayer`.
 
@@ -134,9 +136,10 @@ The validator currently accepts these names case-insensitively:
 - `RotateScale`, `RotateAndScale`
 - `Feature`, `FeatureMatching`, `Sift`
 - `Arithmetic`
+- `ReferenceDifference`
 - `OverlayMerge`, `ResultMerge`, `MergeResult`
 
-Prefer the canonical names used in samples: `Threshold`, `Morphology`, `Filter`, `EdgeDetection`, `Blob`, `Contour`, `LineGauge`, `LineDistance`, `Matching`, `EdgeBasedMatching`, `FeatureMatching`, `Mean`, `HSV`, `RotateScale`, `Arithmetic`, and `OverlayMerge`.
+Prefer canonical names: `Threshold`, `Morphology`, `Filter`, `EdgeDetection`, `Blob`, `Contour`, `LineGauge`, `LineDistance`, `Matching`, `EdgeBasedMatching`, `FeatureMatching`, `Mean`, `HSV`, `RotateScale`, `Arithmetic`, `ReferenceDifference`, and `OverlayMerge`.
 
 ## Common Patterns
 
@@ -292,8 +295,6 @@ Use when a stable local template exists.
       <InputLayer>Main</InputLayer>
       <OutputLayer>Matching_Result</OutputLayer>
       <Parameters>
-        <Parameter><Key>TemplatePath</Key><Value>docs\samples\templates\Contour_7PQRS_Template.png</Value></Parameter>
-        <Parameter><Key>PATTERN_PATH</Key><Value>docs\samples\templates\Contour_7PQRS_Template.png</Value></Parameter>
         <Parameter><Key>MATCH_MODE</Key><Value>CCoeffNormed</Value></Parameter>
         <Parameter><Key>SCORE_MIN</Key><Value>0.85</Value></Parameter>
         <Parameter><Key>NUM_MATCH</Key><Value>1</Value></Parameter>
@@ -310,6 +311,8 @@ Use when a stable local template exists.
   </Steps>
 </VisionPipeline>
 ```
+
+Before validating this pattern, add both `TemplatePath` and `PATTERN_PATH` with the same existing operator-supplied image path. Import copies that file into the selected recipe's `Template` directory and rewrites the imported XML to an installation-root-relative copied path. Do not copy a literal `docs\samples\...` catalog path into an LLM draft.
 
 ### Matching Fixture Translation V1
 
@@ -445,7 +448,7 @@ Original draft:
 Repair rules:
 - Use only supported ToolType names.
 - Do not invent layers. InputLayer must be Main or a previous enabled Step OutputLayer.
-- Do not invent dependency files. Existing template/image paths only.
+- Do not invent dependency files. Use only an existing path supplied by the operator; do not replace a missing path with a `docs\samples\...` catalog reference.
 - Do not emit Inspection.* XML nodes or parameters.
 - SCORE_MIN, GREEDINESS, and HYBRID_VERIFY_IMAGE_WEIGHT are 0..1 decimals.
 - HSV HueMin/HueMax are 0..179 and may wrap when HueMin is greater than HueMax; Saturation and Value ranges remain ordered 0..255.
@@ -488,5 +491,6 @@ This guide is based on:
 - `1. Core\Pipeline\Validation\VisionPipelineKnownMetrics.cs`
 - `1. Core\Pipeline\Tools\VisionPipelineHsvMaskTool.cs`
 - `1. Core\Pipeline\Tools\VisionPipelineArithmeticStep.cs`
+- `1. Core\Pipeline\Tools\VisionPipelineReferenceDifferenceTool.cs`
 - `docs\samples\*.pipeline.xml`
 - Direct smoke coverage in `OpenVisionLabDirectSmokeRunner.cs` for malformed XML, missing input layer, unsupported ToolType, missing dependency path, invalid parameter values, matching score percentage misuse, `Inspection.*` misuse, correction-bundle copy, corrected import, and missing Arithmetic `InputLayerB`.

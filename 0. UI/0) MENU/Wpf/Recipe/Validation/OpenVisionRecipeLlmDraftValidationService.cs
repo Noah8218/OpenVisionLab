@@ -135,7 +135,6 @@ namespace OpenVisionLab
                 validationLines.Add(OpenVisionRecipeText.Local("다음: 나열된 경로/레이어/도구 오류를 수정한 뒤 가져오기 전에 다시 검증하세요.", "Next: Fix the listed route/layer/tool errors, then validate again before import."));
             }
 
-            bool resultChannelsReady = OpenVisionRecipeLlmDraftValidationRules.AppendResultChannelValidation(pipeline, xmlText, validationLines);
             bool intentContractReady;
             if (request?.ApplyIntentContract == true)
             {
@@ -151,6 +150,8 @@ namespace OpenVisionLab
                     "Review bundle intent contract: the exported pipeline is reviewed as-is, so the current Guided setup intent filter is not applied."));
                 intentContractReady = true;
             }
+
+            bool resultChannelsReady = OpenVisionRecipeLlmDraftValidationRules.AppendResultChannelValidation(pipeline, xmlText, validationLines);
 
             string referenceImagePath = request?.ReferenceImagePath ?? string.Empty;
             if (!string.IsNullOrWhiteSpace(referenceImagePath))

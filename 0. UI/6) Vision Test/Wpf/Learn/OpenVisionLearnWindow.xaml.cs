@@ -3763,7 +3763,7 @@ namespace OpenVisionLab
                 || isLayerRecipeTopic
                 ? Visibility.Visible
                 : Visibility.Collapsed;
-            practiceWorkflowExpander.IsExpanded = !(isMatchingTopic || isFeatureMatchingTopic || isEdgeBasedMatchingTopic || isMetricsAcceptanceTopic);
+            practiceWorkflowExpander.IsExpanded = !(isBlobTopic || isMatchingTopic || isFeatureMatchingTopic || isEdgeBasedMatchingTopic || isMetricsAcceptanceTopic);
             txtTopicPractice.Text = ResolveSelectedTopicPracticeText(topicList.SelectedIndex);
             if (isPixelTopic)
             {

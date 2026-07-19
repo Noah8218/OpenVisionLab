@@ -1,5 +1,5 @@
 {
-  "version": "2026-07-16",
+  "version": "2026-07-19",
   "purpose": "Machine-readable guide for external LLMs that draft OpenVisionLab VisionPipeline XML.",
   "productIdentity": {
     "name": "OpenVisionLab",
@@ -133,6 +133,7 @@
     "FeatureMatching",
     "Sift",
     "Arithmetic",
+    "ReferenceDifference",
     "OverlayMerge",
     "ResultMerge",
     "MergeResult"
@@ -158,7 +159,8 @@
     "unitIntervalKeys": [
       "SCORE_MIN",
       "GREEDINESS",
-      "HYBRID_VERIFY_IMAGE_WEIGHT"
+      "HYBRID_VERIFY_IMAGE_WEIGHT",
+      "MatchRatio"
     ],
     "grayValueKeys": [
       "Threshold",
@@ -169,6 +171,7 @@
       "CANNY_HIGH",
       "CannyThresholdLow",
       "CannyThresholdHigh",
+      "DifferenceThreshold",
       "Gray",
       "B",
       "G",
@@ -189,6 +192,7 @@
       "RANSAC_REPROJ_THRESHOLD",
       "COARSE_ANGLE_STEP",
       "PIXELPERMM",
+      "RansacThreshold",
       "ScaleXPercent",
       "ScaleYPercent"
     ],
@@ -203,7 +207,12 @@
       "SigmaSpace",
       "NUM_MATCH",
       "SEARCH_STEP",
-      "MAX_TEMPLATE_POINTS"
+      "MAX_TEMPLATE_POINTS",
+      "MinimumDefectArea",
+      "MaximumDefectArea",
+      "MorphologyKernel",
+      "OrbFeatures",
+      "MinimumInliers"
     ]
   },
   "knownMetrics": {
@@ -233,6 +242,18 @@
     "mask": [
       "MaskPixelCount",
       "MaskPixelRatio"
+    ],
+    "difference": [
+      "DifferencePixelCount",
+      "DifferencePixelRatio",
+      "DifferenceMean"
+    ],
+    "registration": [
+      "RegistrationInliers",
+      "RegistrationInlierRatio",
+      "RegistrationScore",
+      "ReferenceIndex",
+      "ValidPixelRatio"
     ],
     "edge": [
       "EdgeCount",
@@ -785,6 +806,47 @@
       ]
     },
     {
+      "toolType": "ReferenceDifference",
+      "role": "Register an input against approved Good references and detect localized absolute-difference regions.",
+      "category": "inspection",
+      "commonParameters": [
+        "ReferencePath1",
+        "ReferencePath2",
+        "ReferencePath3",
+        "ReferencePath4",
+        "DifferenceThreshold",
+        "MinimumDefectArea",
+        "MaximumDefectArea",
+        "MorphologyKernel",
+        "IgnoreBorder",
+        "OrbFeatures",
+        "MatchRatio",
+        "MinimumInliers",
+        "RansacThreshold"
+      ],
+      "validationHints": [
+        "ReferencePath1 is required; ReferencePath2 through ReferencePath4 are optional approved Good references.",
+        "Reference paths must point to existing image files so import can copy each dependency into the recipe Template folder.",
+        "DifferenceThreshold is 0..255, MinimumDefectArea must not exceed MaximumDefectArea, and MorphologyKernel must be odd and positive.",
+        "Use ResultCount minimum=0 and maximum=0 when zero detected difference regions is the OK condition.",
+        "Tune from labelled Train evidence and verify on held-out Validation/Test data; reference comparison is not automatic field qualification."
+      ],
+      "recommendedMetrics": [
+        "ResultCount",
+        "AreaMin",
+        "AreaMax",
+        "AreaAvg",
+        "DifferencePixelCount",
+        "DifferencePixelRatio",
+        "DifferenceMean",
+        "RegistrationInliers",
+        "RegistrationInlierRatio",
+        "RegistrationScore",
+        "ReferenceIndex",
+        "ValidPixelRatio"
+      ]
+    },
+    {
       "toolType": "OverlayMerge",
       "aliases": [
         "ResultMerge",
@@ -820,6 +882,7 @@
     "1. Core/Pipeline/Validation/VisionPipelineKnownMetrics.cs",
     "1. Core/Pipeline/Tools/VisionPipelineHsvMaskTool.cs",
     "1. Core/Pipeline/Tools/VisionPipelineArithmeticStep.cs",
+    "1. Core/Pipeline/Tools/VisionPipelineReferenceDifferenceTool.cs",
     "docs/samples/*.pipeline.xml",
     "OpenVisionLabDirectSmokeRunner.cs"
   ]

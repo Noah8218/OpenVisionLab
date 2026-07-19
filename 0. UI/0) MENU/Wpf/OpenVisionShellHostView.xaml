@@ -7,6 +7,7 @@
              xmlns:logView="clr-namespace:OpenVisionLab.Logging.Controls.View;assembly=OpenVisionLab.Logging.Controls"
              xmlns:mvvmBehaviors="clr-namespace:OpenVisionLab.Mvvm.Behaviors;assembly=OpenVisionLab.Mvvm"
              xmlns:local="clr-namespace:OpenVisionLab"
+             xmlns:webView2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
              MinWidth="1280"
              MinHeight="760"
              Background="#EEF2F6"
@@ -82,6 +83,14 @@
                 <Setter Property="Visibility" Value="Collapsed" />
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding RecipeCommands.SelectedLlmToolTemplate}" Value="Edge Based Matching">
+                        <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="ShellHost.ReferenceDifferenceIntentVisibilityStyle" TargetType="{x:Type FrameworkElement}">
+                <Setter Property="Visibility" Value="Collapsed" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding RecipeCommands.SelectedLlmToolTemplate}" Value="Golden-reference defect (ReferenceDifference)">
                         <Setter Property="Visibility" Value="Visible" />
                     </DataTrigger>
                 </Style.Triggers>
@@ -2808,28 +2817,48 @@
                                                            FontWeight="SemiBold"
                                                            TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
-                                            <Button Grid.Column="1"
-                                                    MinWidth="136"
-                                                    Height="34"
-                                                    Margin="18,0,0,0"
-                                                    VerticalAlignment="Center"
-                                                    Background="#157C86"
-                                                    BorderBrush="#8FEAF2"
-                                                    Foreground="#F5FAFC"
-                                                    AutomationProperties.AutomationId="HostRecipeOpenPipelineReviewButton"
-                                                    AutomationProperties.Name="{Binding RecipeCommands.OpenPipelineReviewText}"
-                                                    ToolTip="선택한 레시피의 파이프라인 검토를 엽니다."
-                                                    Command="{Binding RecipeCommands.OpenPipelineReviewCommand}">
-                                                <StackPanel Orientation="Horizontal"
-                                                            HorizontalAlignment="Center">
-                                                    <iconPacks:PackIconMaterial Kind="ChartTimelineVariant"
-                                                                                Width="15"
-                                                                                Height="15"
-                                                                                Margin="0,1,6,0" />
-                                                    <TextBlock Text="{Binding RecipeCommands.OpenPipelineReviewText}"
-                                                               Foreground="#F5FAFC" />
-                                                </StackPanel>
-                                            </Button>
+                                            <StackPanel Grid.Column="1"
+                                                        Margin="18,0,0,0"
+                                                        VerticalAlignment="Center">
+                                                <Button MinWidth="156"
+                                                        Height="34"
+                                                        Background="#157C86"
+                                                        BorderBrush="#8FEAF2"
+                                                        Foreground="#F5FAFC"
+                                                        AutomationProperties.AutomationId="HostRecipeOpenPipelineReviewButton"
+                                                        AutomationProperties.Name="{Binding RecipeCommands.OpenPipelineReviewText}"
+                                                        ToolTip="선택한 레시피의 파이프라인 검토를 엽니다."
+                                                        Command="{Binding RecipeCommands.OpenPipelineReviewCommand}">
+                                                    <StackPanel Orientation="Horizontal"
+                                                                HorizontalAlignment="Center">
+                                                        <iconPacks:PackIconMaterial Kind="ChartTimelineVariant"
+                                                                                    Width="15"
+                                                                                    Height="15"
+                                                                                    Margin="0,1,6,0" />
+                                                        <TextBlock Text="{Binding RecipeCommands.OpenPipelineReviewText}"
+                                                                   Foreground="#F5FAFC" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button MinWidth="156"
+                                                        Height="30"
+                                                        Margin="0,6,0,0"
+                                                        Background="#182E34"
+                                                        BorderBrush="#4C8790"
+                                                        Foreground="#EAFBFC"
+                                                        AutomationProperties.AutomationId="HostRecipeOpenImageListValidationButton"
+                                                        AutomationProperties.Name="{Binding RecipeCommands.OpenImageListValidationText}"
+                                                        ToolTip="{Binding RecipeCommands.OpenImageListValidationToolTipText}"
+                                                        Click="HandleOpenRecipeImageListValidation">
+                                                    <StackPanel Orientation="Horizontal"
+                                                                HorizontalAlignment="Center">
+                                                        <iconPacks:PackIconMaterial Kind="FormatListChecks"
+                                                                                    Width="14"
+                                                                                    Height="14"
+                                                                                    Margin="0,1,6,0" />
+                                                        <TextBlock Text="{Binding RecipeCommands.OpenImageListValidationText}" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
                                         </Grid>
                                     </Border>
                                     <Grid Grid.Row="1"
@@ -3480,6 +3509,105 @@
                                                                  Text="{Binding RecipeCommands.EdgeBasedIntentAcceptanceScoreMinText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                                     </StackPanel>
                                                 </WrapPanel>
+                                            </Grid>
+                                        </Border>
+                                        <Border Margin="0,6,0,0"
+                                                Padding="8"
+                                                Style="{StaticResource ShellHost.ReferenceDifferenceIntentVisibilityStyle}"
+                                                AutomationProperties.AutomationId="HostRecipeGuidedSetupReferenceDifferenceInputs"
+                                                Background="#101A1F"
+                                                BorderBrush="#38535C"
+                                                BorderThickness="1">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="96" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="104" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding RecipeCommands.ReferenceDifferencePath1LabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="1"
+                                                             Height="24"
+                                                             Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupReferenceDifferencePath1Text"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.LlmReferenceImagePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <Button Grid.Column="2"
+                                                            Height="24"
+                                                            Margin="7,0,0,0"
+                                                            AutomationProperties.AutomationId="HostRecipeGuidedSetupReferenceDifferenceUseSampleButton"
+                                                            Command="{Binding RecipeCommands.UseSelectedSampleReferenceCommand}">
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                            <iconPacks:PackIconMaterial Kind="Target" Width="11" Height="11" Margin="0,1,4,0" />
+                                                            <TextBlock Text="{Binding RecipeCommands.UseSelectedSampleReferenceText}" FontSize="10" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                </Grid>
+                                                <Grid Grid.Row="1" Margin="0,5,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="96" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding RecipeCommands.ReferenceDifferencePath2LabelText}" Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="1" Height="24" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupReferenceDifferencePath2Text"
+                                                             Text="{Binding RecipeCommands.ReferenceDifferencePath2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                </Grid>
+                                                <Grid Grid.Row="2" Margin="0,5,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="96" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding RecipeCommands.ReferenceDifferencePath3LabelText}" Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="1" Height="24" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupReferenceDifferencePath3Text"
+                                                             Text="{Binding RecipeCommands.ReferenceDifferencePath3, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                </Grid>
+                                                <Grid Grid.Row="3" Margin="0,5,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="96" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding RecipeCommands.ReferenceDifferencePath4LabelText}" Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="1" Height="24" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupReferenceDifferencePath4Text"
+                                                             Text="{Binding RecipeCommands.ReferenceDifferencePath4, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                </Grid>
+                                                <WrapPanel Grid.Row="4" Margin="96,6,0,0">
+                                                    <TextBlock Text="{Binding RecipeCommands.ReferenceDifferenceThresholdLabelText}" Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Width="58" Height="24" Margin="5,0,14,0" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupReferenceDifferenceThresholdText"
+                                                             Text="{Binding RecipeCommands.ReferenceDifferenceThresholdText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Text="{Binding RecipeCommands.ReferenceDifferenceMinimumAreaLabelText}" Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Width="70" Height="24" Margin="5,0,14,0" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupReferenceDifferenceMinimumAreaText"
+                                                             Text="{Binding RecipeCommands.ReferenceDifferenceMinimumAreaText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Text="{Binding RecipeCommands.ReferenceDifferenceMaximumAreaLabelText}" Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Width="76" Height="24" Margin="5,0,0,0" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupReferenceDifferenceMaximumAreaText"
+                                                             Text="{Binding RecipeCommands.ReferenceDifferenceMaximumAreaText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                </WrapPanel>
+                                                <TextBlock Grid.Row="5"
+                                                           Margin="96,6,0,0"
+                                                           AutomationProperties.AutomationId="HostRecipeGuidedSetupReferenceDifferenceBoundary"
+                                                           Text="{Binding RecipeCommands.ReferenceDifferenceBoundaryText}"
+                                                           Foreground="#91B9C2"
+                                                           FontSize="10"
+                                                           TextWrapping="Wrap" />
                                             </Grid>
                                         </Border>
                                         <Border Margin="0,6,0,0"
@@ -4637,17 +4765,32 @@
                                                           DisplayMemberPath="DisplayText"
                                                           ItemsSource="{Binding RecipeCommands.ValidationSuiteScopeOptions}"
                                                           SelectedItem="{Binding RecipeCommands.SelectedValidationSuiteScopeOption, Mode=TwoWay}" />
-                                                <Button Grid.Column="2"
-                                                        MinWidth="92"
-                                                        Height="24"
-                                                        Margin="8,0,0,0"
-                                                        AutomationProperties.AutomationId="HostRecipeRunValidationSuiteButton"
-                                                        Command="{Binding RecipeCommands.RunValidationSuiteCommand}">
-                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                        <iconPacks:PackIconMaterial Kind="PlayCircleOutline" Width="12" Height="12" Margin="0,1,4,0" />
-                                                        <TextBlock Text="{Binding RecipeCommands.RunValidationSuiteText}" FontSize="10" />
-                                                    </StackPanel>
-                                                </Button>
+                                                <StackPanel Grid.Column="2"
+                                                            Margin="8,0,0,0"
+                                                            Orientation="Horizontal">
+                                                    <Button MinWidth="104"
+                                                            Height="24"
+                                                            AutomationProperties.AutomationId="HostRecipeRunValidationSuiteButton"
+                                                            Command="{Binding RecipeCommands.RunValidationSuiteCommand}">
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                            <iconPacks:PackIconMaterial Kind="PlayCircleOutline" Width="12" Height="12" Margin="0,1,4,0" />
+                                                            <TextBlock Text="{Binding RecipeCommands.RunValidationSuiteText}" FontSize="10" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button MinWidth="76"
+                                                            Height="24"
+                                                            Margin="6,0,0,0"
+                                                            AutomationProperties.AutomationId="HostRecipeStopValidationSuiteButton"
+                                                            AutomationProperties.Name="{Binding RecipeCommands.StopValidationSuiteText}"
+                                                            ToolTip="현재 이미지 완료 후 중지하고 부분 결과를 저장합니다."
+                                                            Visibility="{Binding RecipeCommands.IsLocalValidationSetRunning, Converter={StaticResource ShellHost.BooleanToVisibilityConverter}}"
+                                                            Command="{Binding RecipeCommands.StopValidationSuiteCommand}">
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                            <iconPacks:PackIconMaterial Kind="StopCircleOutline" Width="12" Height="12" Margin="0,1,4,0" />
+                                                            <TextBlock Text="{Binding RecipeCommands.StopValidationSuiteText}" FontSize="10" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                </StackPanel>
                                                  <TextBlock Grid.Column="3"
                                                             Margin="8,0,0,0"
                                                             AutomationProperties.AutomationId="HostRecipeValidationSuiteStatus"
@@ -4902,11 +5045,14 @@
                                                 </Grid>
                                                  <ListBox Grid.Row="3"
                                                           Grid.ColumnSpan="4"
-                                                         MaxHeight="76"
+                                                         MaxHeight="168"
                                                          Margin="0,6,0,0"
                                                          AutomationProperties.AutomationId="HostRecipeValidationSetImageList"
                                                          ItemsSource="{Binding RecipeCommands.ValidationSetImageRows}"
                                                          SelectedItem="{Binding RecipeCommands.SelectedValidationSetImageRow, Mode=TwoWay}"
+                                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                                         VirtualizingPanel.IsVirtualizing="True"
+                                                         VirtualizingPanel.VirtualizationMode="Recycling"
                                                          Visibility="{Binding RecipeCommands.IsLocalValidationSetSelected, Converter={StaticResource ShellHost.BooleanToVisibilityConverter}}">
                                                     <ListBox.ItemTemplate>
                                                         <DataTemplate>
@@ -6171,6 +6317,14 @@
                                                         <TextBlock Text="{Binding RecipeCommands.CopyLlmPromptText}" FontSize="11" />
                                                     </StackPanel>
                                                 </Button>
+                                                <Button MinWidth="72"
+                                                        Height="24"
+                                                        Margin="0,0,5,0"
+                                                        ToolTip="{Binding RecipeCommands.OpenLlmBrowserAssistText}"
+                                                        AutomationProperties.AutomationId="HostRecipeOpenLlmBrowserAssistButton"
+                                                        Click="HandleOpenRecipeLlmBrowserAssist">
+                                                    <TextBlock Text="{Binding RecipeCommands.OpenLlmBrowserAssistText}" FontSize="11" />
+                                                </Button>
                                                 <Button MinWidth="94"
                                                         Height="24"
                                                         Margin="0,0,5,0"
@@ -6881,11 +7035,11 @@
                                         </Grid>
                                         <Grid Grid.Row="7" Margin="0,8,0,0">
                                              <Grid.RowDefinitions>
-                                                 <RowDefinition Height="*" />
+                                                 <RowDefinition Height="2*" />
                                                  <RowDefinition Height="8" />
-                                                 <RowDefinition Height="*" />
+                                                 <RowDefinition Height="0.75*" />
                                                  <RowDefinition Height="8" />
-                                                 <RowDefinition Height="*" />
+                                                 <RowDefinition Height="0.75*" />
                                              </Grid.RowDefinitions>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -7118,6 +7272,99 @@
                                         </Grid>
                                     </Grid>
                                 </ScrollViewer>
+                            </TabItem>
+                            <TabItem x:Name="tabRecipeLlmBrowserAssist"
+                                     Header="{Binding RecipeCommands.RecipeLlmBrowserAssistTabText}"
+                                     Style="{StaticResource RecipeAdvancedTabItemStyle}"
+                                     AutomationProperties.AutomationId="HostRecipeLlmBrowserAssistTab">
+                                <Grid Margin="0,8,0,0"
+                                      AutomationProperties.AutomationId="HostRecipeLlmBrowserAssistPanel">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="34" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <Border Padding="10,8"
+                                            Background="#15252A"
+                                            BorderBrush="#38535C"
+                                            BorderThickness="1">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding RecipeCommands.LlmBrowserAssistTitleText}"
+                                                       Foreground="#F5FAFC"
+                                                       FontSize="13"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock Margin="0,4,0,0"
+                                                       Text="{Binding RecipeCommands.LlmBrowserAssistBoundaryText}"
+                                                       Foreground="#A8CBD1"
+                                                       FontSize="11"
+                                                       TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Grid Grid.Row="1" Margin="0,7,0,7">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100" />
+                                            <ColumnDefinition Width="112" />
+                                            <ColumnDefinition Width="108" />
+                                            <ColumnDefinition Width="112" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button Height="26"
+                                                Margin="0,0,5,0"
+                                                AutomationProperties.AutomationId="HostRecipeBrowserAssistOpenChatGptButton"
+                                                Click="HandleOpenRecipeLlmBrowserAssistChatGpt">
+                                            <TextBlock Text="{Binding RecipeCommands.OpenLlmBrowserAssistChatGptText}" FontSize="11" />
+                                        </Button>
+                                        <Button Grid.Column="1"
+                                                Height="26"
+                                                Margin="0,0,5,0"
+                                                AutomationProperties.AutomationId="HostRecipeBrowserAssistOpenExternalButton"
+                                                Click="HandleOpenRecipeLlmBrowserAssistExternal">
+                                            <TextBlock Text="{Binding RecipeCommands.OpenLlmBrowserAssistExternalText}" FontSize="11" />
+                                        </Button>
+                                        <Button Grid.Column="2"
+                                                Height="26"
+                                                Margin="0,0,5,0"
+                                                AutomationProperties.AutomationId="HostRecipeBrowserAssistCopyPromptButton"
+                                                Command="{Binding RecipeCommands.CopyLlmPromptCommand}">
+                                            <TextBlock Text="{Binding RecipeCommands.CopyLlmPromptText}" FontSize="11" />
+                                        </Button>
+                                        <Button Grid.Column="3"
+                                                Height="26"
+                                                Margin="0,0,8,0"
+                                                AutomationProperties.AutomationId="HostRecipeBrowserAssistPasteXmlButton"
+                                                Command="{Binding RecipeCommands.PasteLlmXmlDraftFromClipboardCommand}">
+                                            <TextBlock Text="{Binding RecipeCommands.PasteLlmXmlDraftText}" FontSize="11" />
+                                        </Button>
+                                        <TextBlock Grid.Column="4"
+                                                   Text="{Binding RecipeCommands.LlmBrowserAssistStatusText}"
+                                                   Foreground="#95D6B8"
+                                                   FontSize="10"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   VerticalAlignment="Center" />
+                                    </Grid>
+                                    <Border Grid.Row="2"
+                                            BorderBrush="#38535C"
+                                            BorderThickness="1"
+                                            Background="#101A1F">
+                                        <Grid>
+                                            <Border x:Name="recipeLlmBrowserAssistPlaceholder"
+                                                    Padding="18"
+                                                    Background="#101A1F"
+                                                    AutomationProperties.AutomationId="HostRecipeBrowserAssistPlaceholder">
+                                                <TextBlock HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           Text="{Binding RecipeCommands.LlmBrowserAssistStatusText}"
+                                                           Foreground="#A8CBD1"
+                                                           FontSize="12"
+                                                           TextAlignment="Center"
+                                                           TextWrapping="Wrap" />
+                                            </Border>
+                                            <webView2:WebView2 x:Name="recipeLlmBrowserAssistWebView"
+                                                                Visibility="Collapsed"
+                                                                AutomationProperties.AutomationId="HostRecipeLlmBrowserAssistWebView" />
+                                        </Grid>
+                                    </Border>
+                                </Grid>
                             </TabItem>
                             <TabItem x:Name="tabRecipePreview"
                                      Header="{Binding RecipeCommands.RecipePreviewTabText}"

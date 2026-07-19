@@ -47,6 +47,7 @@ namespace OpenVisionLab
             OpenVisionGuidedSetupCatalog.MatchingTemplate,
             OpenVisionGuidedSetupCatalog.FeatureMatchingTemplate,
             OpenVisionGuidedSetupCatalog.EdgeBasedMatchingTemplate,
+            OpenVisionGuidedSetupCatalog.ReferenceDifferenceTemplate,
             OpenVisionGuidedSetupCatalog.ContourTemplate,
             OpenVisionGuidedSetupCatalog.BlobTemplate,
             OpenVisionGuidedSetupCatalog.MeanTemplate
@@ -114,6 +115,12 @@ namespace OpenVisionLab
         private string edgeBasedIntentCannyLowText = "30";
         private string edgeBasedIntentCannyHighText = "90";
         private string edgeBasedIntentAcceptanceScoreMinText = "70";
+        private string referenceDifferencePath2 = string.Empty;
+        private string referenceDifferencePath3 = string.Empty;
+        private string referenceDifferencePath4 = string.Empty;
+        private string referenceDifferenceThresholdText = "35";
+        private string referenceDifferenceMinimumAreaText = "80";
+        private string referenceDifferenceMaximumAreaText = "20000";
         private string meanIntentRoiText = string.Empty;
         private string meanIntentTypeText = "Mean";
         private string meanIntentMinimumText = "185";
@@ -126,6 +133,7 @@ namespace OpenVisionLab
         private string llmXmlDraftReviewReport = string.Empty;
         private string llmXmlDraftDiffReport = string.Empty;
         private string llmPromptCopyStatusText = string.Empty;
+        private string llmBrowserAssistStatusText = string.Empty;
         private string llmReviewBundleCopyStatusText = string.Empty;
         private string llmXmlDraftPasteStatusText = string.Empty;
         private string operatorHandoffReportStatusText = string.Empty;
@@ -145,6 +153,8 @@ namespace OpenVisionLab
         private bool isPairCheckRunning;
         private bool isCatalogBenchmarkRunning;
         private bool isValidationSuiteRunning;
+        private bool isLocalValidationSetRunning;
+        private bool validationSuiteStopRequested;
         private OpenVisionRecipePipelineOption selectedPipelineOption;
         private OpenVisionRecipeSampleOption selectedSampleOption;
         private OpenVisionRecipeSampleRunSummary latestSampleRunSummary = OpenVisionRecipeSampleRunSummary.Empty;
@@ -200,6 +210,7 @@ namespace OpenVisionLab
             SetLlmXmlDraftDependencyPlaceholder(LocalText(
                 "XML 초안을 붙여넣거나 로드한 뒤 검증을 실행하세요.",
                 "Paste or load an XML draft, then run validation."));
+            LlmBrowserAssistStatusText = CreateLlmBrowserAssistReadyText();
 
             CreateRecipeCommand = new RelayCommand(CreateRecipe);
             CreateNamedRecipeCommand = new RelayCommand(CreateNamedRecipe, CanCreateNamedRecipe);
@@ -226,6 +237,7 @@ namespace OpenVisionLab
             RunSelectedSamplePairCheckCommand = new RelayCommand(RunSelectedSamplePairCheck, CanRunSelectedSamplePairCheck);
             RunCatalogBenchmarkCommand = new RelayCommand(RunCatalogBenchmark, CanRunCatalogBenchmark);
             RunValidationSuiteCommand = new RelayCommand(RunValidationSuite, CanRunValidationSuite);
+            StopValidationSuiteCommand = new RelayCommand(RequestValidationSuiteStop, CanStopValidationSuite);
             CreateValidationSetCommand = new RelayCommand(CreateValidationSet, CanCreateValidationSet);
             DeleteValidationSetCommand = new RelayCommand(DeleteValidationSet, CanDeleteValidationSet);
             AddValidationSetOkImagesCommand = new RelayCommand(
@@ -428,6 +440,7 @@ namespace OpenVisionLab
                         SelectedRecentBatchRunOption,
                         ShowRecentBatchNgOnly);
                     OnPropertyChanged(nameof(FilteredRecentBatchRunSampleResults));
+                    OnPropertyChanged(nameof(RecentBatchRunNgOnlyText));
                     OnPropertyChanged(nameof(RecentBatchRunNgFilterSummaryText));
                     OnPropertyChanged(nameof(SelectedRecentBatchRunReviewText));
                     CommandManager.InvalidateRequerySuggested();
@@ -1086,6 +1099,78 @@ namespace OpenVisionLab
             }
         }
 
+        public string ReferenceDifferencePath2
+        {
+            get => referenceDifferencePath2;
+            set
+            {
+                if (SetProperty(ref referenceDifferencePath2, value ?? string.Empty))
+                {
+                    NotifyReferenceDifferenceIntentTextChanged();
+                }
+            }
+        }
+
+        public string ReferenceDifferencePath3
+        {
+            get => referenceDifferencePath3;
+            set
+            {
+                if (SetProperty(ref referenceDifferencePath3, value ?? string.Empty))
+                {
+                    NotifyReferenceDifferenceIntentTextChanged();
+                }
+            }
+        }
+
+        public string ReferenceDifferencePath4
+        {
+            get => referenceDifferencePath4;
+            set
+            {
+                if (SetProperty(ref referenceDifferencePath4, value ?? string.Empty))
+                {
+                    NotifyReferenceDifferenceIntentTextChanged();
+                }
+            }
+        }
+
+        public string ReferenceDifferenceThresholdText
+        {
+            get => referenceDifferenceThresholdText;
+            set
+            {
+                if (SetProperty(ref referenceDifferenceThresholdText, value ?? string.Empty))
+                {
+                    NotifyReferenceDifferenceIntentTextChanged();
+                }
+            }
+        }
+
+        public string ReferenceDifferenceMinimumAreaText
+        {
+            get => referenceDifferenceMinimumAreaText;
+            set
+            {
+                if (SetProperty(ref referenceDifferenceMinimumAreaText, value ?? string.Empty))
+                {
+                    NotifyReferenceDifferenceIntentTextChanged();
+                }
+            }
+        }
+
+        public string ReferenceDifferenceMaximumAreaText
+        {
+            get => referenceDifferenceMaximumAreaText;
+            set
+            {
+                if (SetProperty(ref referenceDifferenceMaximumAreaText, value ?? string.Empty))
+                {
+                    NotifyReferenceDifferenceIntentTextChanged();
+                }
+            }
+        }
+
         public IReadOnlyList<string> MeanIntentTypeOptions => OpenVisionRecipeMeanIntentSkill.MeanTypeOptions;
 
         public string MeanIntentRoiText
@@ -1368,6 +1453,8 @@ namespace OpenVisionLab
 
         public ICommand RunValidationSuiteCommand { get; }
 
+        public ICommand StopValidationSuiteCommand { get; }
+
         public ICommand CreateValidationSetCommand { get; }
 
         public ICommand DeleteValidationSetCommand { get; }
@@ -1475,6 +1562,12 @@ namespace OpenVisionLab
 
         public string OpenPipelineReviewText => LocalText("다음: 파이프라인 열기", "Next: Open Pipeline");
 
+        public string OpenImageListValidationText => LocalText("이미지 목록 검증", "Image list validation");
+
+        public string OpenImageListValidationToolTipText => LocalText(
+            "저장한 파이프라인으로 OK/NG 이미지 목록을 순차 검증하는 화면을 엽니다. 열기만 하며 실행하지 않습니다.",
+            "Opens sequential OK/NG image-list validation for the saved Pipeline. Opening does not run it.");
+
         public string ManagerWorkbenchText => LocalText("라이브러리", "Library");
 
         public string RecipeListText => LocalText("레시피 목록", "Recipe list");
@@ -1540,6 +1633,8 @@ namespace OpenVisionLab
 
         public string RecipeLlmXmlTabText => LocalText("LLM XML", "LLM XML");
 
+        public string RecipeLlmBrowserAssistTabText => LocalText("웹 보조", "Web assist");
+
         public string RecipePreviewTabText => LocalText("단계 미리보기", "Step preview");
 
         public string DuplicateFromSampleText => LocalText("샘플 복제", "Sample copy");
@@ -1598,7 +1693,9 @@ namespace OpenVisionLab
 
         public string RecentBatchRunSampleResultsText => LocalText("선택 이력 샘플 결과", "Selected run sample results");
 
-        public string RecentBatchRunNgOnlyText => LocalText("NG만 보기", "NG only");
+        public string RecentBatchRunNgOnlyText => SelectedRecentBatchRunOption?.IsJudgmentSuite == true
+            ? LocalText("오판만 보기", "Misclassified only")
+            : LocalText("NG만 보기", "NG only");
 
         public string RecentBatchRunNgFilterSummaryText =>
             OpenVisionRecipeRunHistoryPresenter.BuildNgFilterSummaryText(
@@ -1656,7 +1753,17 @@ namespace OpenVisionLab
         public string ValidationSuiteScopeLabelText => LocalText("범위", "Scope");
 
         public string RunValidationSuiteText =>
-            isValidationSuiteRunning ? LocalText("실행 중...", "Running...") : LocalText("Suite 실행", "Run suite");
+            isValidationSuiteRunning
+                ? LocalText("실행 중...", "Running...")
+                : IsLocalValidationSetSelected
+                    ? LocalText("목록 검증 실행", "Run image list")
+                    : LocalText("Suite 실행", "Run suite");
+
+        public string StopValidationSuiteText => validationSuiteStopRequested
+            ? LocalText("중지 대기", "Stopping")
+            : LocalText("실행 중지", "Stop");
+
+        public bool IsLocalValidationSetRunning => isLocalValidationSetRunning;
 
         public string ValidationSuiteSummaryText =>
             OpenVisionRecipeValidationSetPresenter.BuildValidationSuiteSummaryText(
@@ -1688,9 +1795,9 @@ namespace OpenVisionLab
 
         public string ValidationSetFolderBatchLabelText => LocalText("폴더 일괄", "Folder batch");
 
-        public string AddValidationSetOkFolderText => LocalText("OK 폴더", "OK folder");
+        public string AddValidationSetOkFolderText => LocalText("OK 폴더 불러오기", "Load OK folder");
 
-        public string AddValidationSetNgFolderText => LocalText("NG 폴더", "NG folder");
+        public string AddValidationSetNgFolderText => LocalText("NG 폴더 불러오기", "Load NG folder");
 
         public string AddValidationSetFolderToolTipText => LocalText(
             "선택한 폴더의 바로 아래 지원 이미지 파일만 추가합니다. 하위 폴더는 포함하지 않습니다.",
@@ -2143,6 +2250,24 @@ namespace OpenVisionLab
 
         public string EdgeBasedIntentAcceptanceScoreMinLabelText => LocalText("ScoreMax 최소", "ScoreMax min");
 
+        public string ReferenceDifferencePath1LabelText => LocalText("Good 기준 1", "Good reference 1");
+
+        public string ReferenceDifferencePath2LabelText => LocalText("Good 기준 2", "Good reference 2");
+
+        public string ReferenceDifferencePath3LabelText => LocalText("Good 기준 3", "Good reference 3");
+
+        public string ReferenceDifferencePath4LabelText => LocalText("Good 기준 4", "Good reference 4");
+
+        public string ReferenceDifferenceThresholdLabelText => LocalText("차이 임계값", "Difference threshold");
+
+        public string ReferenceDifferenceMinimumAreaLabelText => LocalText("최소 결함 면적", "Min defect area");
+
+        public string ReferenceDifferenceMaximumAreaLabelText => LocalText("최대 결함 면적", "Max defect area");
+
+        public string ReferenceDifferenceBoundaryText => LocalText(
+            "기준 이미지는 작업자가 승인해 직접 지정합니다. 초안 생성은 기준을 학습·교체하거나 Preview/Run을 실행하지 않습니다.",
+            "The operator explicitly approves each reference. Draft creation does not learn or replace references, Preview, or Run.");
+
         public string MeanIntentRoiLabelText => LocalText("ROI (optional)", "ROI (optional)");
 
         public string MeanIntentTypeLabelText => LocalText("Mean type", "Mean type");
@@ -2159,6 +2284,24 @@ namespace OpenVisionLab
                 " / Result channels are derived from XML validation and explicit sample runs.");
 
         public string BuildLlmPromptButtonText => LocalText("프롬프트 생성", "Build prompt");
+
+        public string OpenLlmBrowserAssistText => LocalText("웹 보조", "Web assist");
+
+        public string LlmBrowserAssistTitleText => LocalText("ChatGPT 웹으로 XML 작성", "Author XML in ChatGPT web");
+
+        public string LlmBrowserAssistBoundaryText => LocalText(
+            "API 키·계정·대화 내용은 OpenVisionLab이 관리하지 않습니다. 열기 뒤 직접 로그인·복사·붙여넣기·전송하고, XML은 명시적으로 검증/가져오기 하세요.",
+            "OpenVisionLab does not manage API keys, accounts, or chats. After opening, sign in, copy, paste, and send yourself; validate/import XML explicitly.");
+
+        public string OpenLlmBrowserAssistChatGptText => LocalText("ChatGPT 열기", "Open ChatGPT");
+
+        public string OpenLlmBrowserAssistExternalText => LocalText("외부 브라우저", "External browser");
+
+        public string LlmBrowserAssistStatusText
+        {
+            get => llmBrowserAssistStatusText;
+            private set => SetProperty(ref llmBrowserAssistStatusText, value ?? string.Empty);
+        }
 
         public string CopyLlmPromptText => LocalText("프롬프트 복사", "Copy prompt");
 
@@ -2254,6 +2397,19 @@ namespace OpenVisionLab
             RefreshCommandState();
         }
 
+        public void SelectLocalValidationSetScope()
+        {
+            OpenVisionRecipeValidationSuiteScopeOption option = validationSuiteScopeOptions.FirstOrDefault(candidate =>
+                string.Equals(
+                    candidate?.Key,
+                    OpenVisionRecipeValidationSuiteScopeOption.LocalValidationSetKey,
+                    StringComparison.OrdinalIgnoreCase));
+            if (option != null)
+            {
+                SelectedValidationSuiteScopeOption = option;
+            }
+        }
+
         public bool FocusPipelineStepForEdit(string recipeName, string pipelineName, int stepNumber)
         {
             string requestedRecipe = NormalizeRecipeName(recipeName);
@@ -2330,6 +2486,8 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(RecipeOverviewLastResultValueText));
             OnPropertyChanged(nameof(RecipeOverviewLastResultToolTipText));
             OnPropertyChanged(nameof(OpenPipelineReviewText));
+            OnPropertyChanged(nameof(OpenImageListValidationText));
+            OnPropertyChanged(nameof(OpenImageListValidationToolTipText));
             OnPropertyChanged(nameof(ManagerWorkbenchText));
             OnPropertyChanged(nameof(RecipeListText));
             OnPropertyChanged(nameof(RecipeLibraryText));
@@ -2351,6 +2509,7 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(RecipePipelineTabText));
             OnPropertyChanged(nameof(RecipeGuidedSetupTabText));
             OnPropertyChanged(nameof(RecipeLlmXmlTabText));
+            OnPropertyChanged(nameof(RecipeLlmBrowserAssistTabText));
             OnPropertyChanged(nameof(RecipePreviewTabText));
             OnPropertyChanged(nameof(DuplicateFromSampleText));
             OnPropertyChanged(nameof(PipelineListText));
@@ -2384,6 +2543,8 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(RunCatalogBenchmarkShortText));
             OnPropertyChanged(nameof(CatalogBenchmarkSummaryText));
             OnPropertyChanged(nameof(CatalogBenchmarkDetailText));
+            OnPropertyChanged(nameof(RunValidationSuiteText));
+            OnPropertyChanged(nameof(StopValidationSuiteText));
             OnPropertyChanged(nameof(ValidationSetText));
             OnPropertyChanged(nameof(ValidationSetSelectionLabelText));
             OnPropertyChanged(nameof(NewValidationSetNameLabelText));
@@ -2486,6 +2647,14 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(EdgeBasedIntentCannyLowLabelText));
             OnPropertyChanged(nameof(EdgeBasedIntentCannyHighLabelText));
             OnPropertyChanged(nameof(EdgeBasedIntentAcceptanceScoreMinLabelText));
+            OnPropertyChanged(nameof(ReferenceDifferencePath1LabelText));
+            OnPropertyChanged(nameof(ReferenceDifferencePath2LabelText));
+            OnPropertyChanged(nameof(ReferenceDifferencePath3LabelText));
+            OnPropertyChanged(nameof(ReferenceDifferencePath4LabelText));
+            OnPropertyChanged(nameof(ReferenceDifferenceThresholdLabelText));
+            OnPropertyChanged(nameof(ReferenceDifferenceMinimumAreaLabelText));
+            OnPropertyChanged(nameof(ReferenceDifferenceMaximumAreaLabelText));
+            OnPropertyChanged(nameof(ReferenceDifferenceBoundaryText));
             OnPropertyChanged(nameof(MeanIntentRoiLabelText));
             OnPropertyChanged(nameof(MeanIntentTypeLabelText));
             OnPropertyChanged(nameof(MeanIntentMinimumLabelText));
@@ -2499,6 +2668,11 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(PinGapIntentFeedbackText));
             OnPropertyChanged(nameof(PinGapIntentLatestRunText));
             OnPropertyChanged(nameof(BuildLlmPromptButtonText));
+            OnPropertyChanged(nameof(OpenLlmBrowserAssistText));
+            OnPropertyChanged(nameof(LlmBrowserAssistTitleText));
+            OnPropertyChanged(nameof(LlmBrowserAssistBoundaryText));
+            OnPropertyChanged(nameof(OpenLlmBrowserAssistChatGptText));
+            OnPropertyChanged(nameof(OpenLlmBrowserAssistExternalText));
             OnPropertyChanged(nameof(CopyLlmPromptText));
             OnPropertyChanged(nameof(CreateLlmTemplateXmlText));
             OnPropertyChanged(nameof(RefreshLlmDraftReviewText));
@@ -2522,6 +2696,32 @@ namespace OpenVisionLab
             RefreshValidationSetOptions();
             RefreshRecentBatchRunOptions();
             UpdateSelectedRecipeSummary();
+        }
+
+        internal void SetLlmBrowserAssistStatus(OpenVisionRecipeLlmBrowserAssistOpenResult result)
+        {
+            LlmBrowserAssistStatusText = result switch
+            {
+                OpenVisionRecipeLlmBrowserAssistOpenResult.EmbeddedChatGptOpened => LocalText(
+                    "ChatGPT를 웹 보조 창에 열었습니다. 직접 로그인 후 프롬프트를 복사하세요.",
+                    "ChatGPT opened in Web assist. Sign in yourself, then copy the prompt."),
+                OpenVisionRecipeLlmBrowserAssistOpenResult.ExternalChatGptOpened => LocalText(
+                    "기본 외부 브라우저에서 ChatGPT를 열었습니다.",
+                    "ChatGPT opened in the default external browser."),
+                OpenVisionRecipeLlmBrowserAssistOpenResult.EmbeddedBrowserUnavailable => LocalText(
+                    "내장 브라우저를 열 수 없습니다. 외부 브라우저를 사용하세요.",
+                    "The embedded browser is unavailable. Use the external browser."),
+                _ => LocalText(
+                    "ChatGPT를 열지 못했습니다. 외부 브라우저를 다시 시도하세요.",
+                    "ChatGPT could not be opened. Try the external browser again.")
+            };
+        }
+
+        private string CreateLlmBrowserAssistReadyText()
+        {
+            return LocalText(
+                "자동 로그인·전송·XML 가져오기·Preview/Run은 수행하지 않습니다.",
+                "No automatic sign-in, send, XML import, Preview, or Run is performed.");
         }
 
         private void SelectRecipe(string recipeName)
@@ -3418,7 +3618,11 @@ namespace OpenVisionLab
             string pipelinePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, pipelineName);
 
             isValidationSuiteRunning = true;
+            isLocalValidationSetRunning = true;
+            validationSuiteStopRequested = false;
             OnPropertyChanged(nameof(RunValidationSuiteText));
+            OnPropertyChanged(nameof(StopValidationSuiteText));
+            OnPropertyChanged(nameof(IsLocalValidationSetRunning));
             ValidationSuiteStatusText = LocalText("로컬 세트 실행 중: ", "Running local set: ") + setName;
             StatusText = ValidationSuiteStatusText;
             RefreshCommandState();
@@ -3430,12 +3634,19 @@ namespace OpenVisionLab
                 string pipelineXmlText = File.ReadAllText(pipelinePath);
                 for (int index = 0; index < images.Count; index++)
                 {
+                    if (validationSuiteStopRequested)
+                    {
+                        break;
+                    }
+
                     OpenVisionRecipeValidationSetImage image = images[index];
                     VisionPipelineSampleCatalogItem sample = CreateLocalValidationSample(setName, image, index);
                     VisionPipelineSampleCheckResult result =
                         await VisionPipelineSampleCheckService.RunSampleCheckWithReportSafeAsync(sample, pipelineXmlText, recipeName);
                     VisionPipelineBatchSampleRunResult storageResult = CreateBatchSampleRunResult(sample, result);
-                    storageResult.ExpectedText = "Expected " + image.Expected;
+                    storageResult.Success = image.IsExpectedNg ? !result.Success : result.Success;
+                    storageResult.Status = storageResult.Success ? "OK" : "NG";
+                    storageResult.ExpectedText = "ExpectedActual: Expected " + image.Expected;
                     if (!string.IsNullOrWhiteSpace(image.Notes))
                     {
                         storageResult.Message = string.IsNullOrWhiteSpace(storageResult.Message)
@@ -3452,6 +3663,10 @@ namespace OpenVisionLab
                         images.Count);
                 }
 
+                bool isPartial = validationSuiteStopRequested && storageResults.Count < images.Count;
+                string savedNotes = isPartial
+                    ? AppendPartialValidationSetNote(setNotes, storageResults.Count, images.Count)
+                    : setNotes;
                 string summaryPath = VisionPipelineBatchRunSummaryStorage.Save(
                     recipeName,
                     pipelineName,
@@ -3459,14 +3674,16 @@ namespace OpenVisionLab
                     DateTime.Now,
                     storageResults,
                     setName,
-                    "LocalValidationSet",
-                    setNotes);
+                    isPartial ? "LocalValidationSetPartial" : "LocalValidationSet",
+                    savedNotes);
                 RefreshRecentBatchRunOptions();
-                int passed = storageResults.Count(result => result.Success);
+                int correct = storageResults.Count(IsExpectedOutcomeCorrect);
                 ValidationSuiteStatusText = string.Format(
                     CultureInfo.CurrentCulture,
-                    LocalText("로컬 세트 저장됨: {0}/{1} 통과 | {2}", "Local set saved: {0}/{1} passed | {2}"),
-                    passed,
+                    isPartial
+                        ? LocalText("목록 검증 중단·부분 저장: {0}/{1} 판정 일치 | {2}", "Image-list run stopped and partially saved: {0}/{1} judgments matched | {2}")
+                        : LocalText("목록 검증 저장됨: {0}/{1} 판정 일치 | {2}", "Image-list run saved: {0}/{1} judgments matched | {2}"),
+                    correct,
                     storageResults.Count,
                     summaryPath);
                 StatusText = ValidationSuiteStatusText;
@@ -3479,10 +3696,51 @@ namespace OpenVisionLab
             finally
             {
                 isValidationSuiteRunning = false;
+                isLocalValidationSetRunning = false;
+                validationSuiteStopRequested = false;
                 OnPropertyChanged(nameof(RunValidationSuiteText));
+                OnPropertyChanged(nameof(StopValidationSuiteText));
+                OnPropertyChanged(nameof(IsLocalValidationSetRunning));
                 OnPropertyChanged(nameof(ValidationSuiteSummaryText));
                 RefreshCommandState();
             }
+        }
+
+        private bool CanStopValidationSuite()
+        {
+            return isLocalValidationSetRunning && !validationSuiteStopRequested;
+        }
+
+        private void RequestValidationSuiteStop()
+        {
+            if (!CanStopValidationSuite())
+            {
+                return;
+            }
+
+            validationSuiteStopRequested = true;
+            ValidationSuiteStatusText = LocalText(
+                "현재 이미지 완료 후 중지하고 부분 결과를 저장합니다.",
+                "Stopping after the current image and saving a partial result.");
+            StatusText = ValidationSuiteStatusText;
+            OnPropertyChanged(nameof(StopValidationSuiteText));
+            RefreshCommandState();
+        }
+
+        private static bool IsExpectedOutcomeCorrect(VisionPipelineBatchSampleRunResult result)
+        {
+            return OpenVisionRecipeBatchSampleResultOption.TryResolveExpectedSuccess(result, out bool expectedSuccess)
+                && expectedSuccess == result.Success;
+        }
+
+        private static string AppendPartialValidationSetNote(string notes, int completed, int total)
+        {
+            string partial = "Partial run: completed "
+                + completed.ToString(CultureInfo.InvariantCulture)
+                + "/"
+                + total.ToString(CultureInfo.InvariantCulture)
+                + ". This is not a full-set accuracy or timing baseline.";
+            return string.IsNullOrWhiteSpace(notes) ? partial : notes.Trim() + " | " + partial;
         }
 
         private static VisionPipelineSampleCatalogItem CreateLocalValidationSample(
@@ -3900,6 +4158,10 @@ namespace OpenVisionLab
             {
                 CreateMatchingIntentXmlDraft();
             }
+            else if (IsReferenceDifferenceTemplate(SelectedLlmToolTemplate))
+            {
+                CreateReferenceDifferenceIntentXmlDraft();
+            }
             else if (IsMeanTemplate(SelectedLlmToolTemplate))
             {
                 CreateMeanIntentXmlDraft();
@@ -3987,6 +4249,12 @@ namespace OpenVisionLab
         }
 
         private void NotifyEdgeBasedIntentTextChanged()
+        {
+            NotifyGuidedSetupIntentInputChanged();
+            RefreshCommandState();
+        }
+
+        private void NotifyReferenceDifferenceIntentTextChanged()
         {
             NotifyGuidedSetupIntentInputChanged();
             RefreshCommandState();
@@ -4356,6 +4624,58 @@ namespace OpenVisionLab
                 "Created Edge Based Matching skill XML draft. Preview/Run was not executed.");
         }
 
+        private void CreateReferenceDifferenceIntentXmlDraft()
+        {
+            if (!OpenVisionRecipeReferenceDifferenceIntentSkill.TryCollectReferencePaths(
+                    LlmReferenceImagePath,
+                    ReferenceDifferencePath2,
+                    ReferenceDifferencePath3,
+                    ReferenceDifferencePath4,
+                    out IReadOnlyList<string> referencePaths)
+                || !OpenVisionRecipeReferenceDifferenceIntentSkill.TryParseThreshold(
+                    ReferenceDifferenceThresholdText,
+                    out int differenceThreshold)
+                || !OpenVisionRecipeReferenceDifferenceIntentSkill.TryParsePositiveArea(
+                    ReferenceDifferenceMinimumAreaText,
+                    out int minimumArea)
+                || !OpenVisionRecipeReferenceDifferenceIntentSkill.TryParsePositiveArea(
+                    ReferenceDifferenceMaximumAreaText,
+                    out int maximumArea)
+                || minimumArea > maximumArea)
+            {
+                StatusText = LocalText(
+                    "Good 기준 이미지 1~4개와 차이 임계값 0..255, 양수인 최소/최대 결함 면적을 확인하세요.",
+                    "Check 1-4 existing Good references, difference threshold 0..255, and positive min/max defect areas.");
+                return;
+            }
+
+            SelectedLlmToolTemplate = OpenVisionGuidedSetupCatalog.ReferenceDifferenceTemplate;
+            VisionPipeline pipeline = OpenVisionRecipeReferenceDifferenceIntentSkill.CreatePipeline(
+                referencePaths,
+                differenceThreshold,
+                minimumArea,
+                maximumArea);
+
+            LlmPromptText = BuildLlmPromptText()
+                + Environment.NewLine
+                + Environment.NewLine
+                + "[Golden-reference defect skill inputs]"
+                + Environment.NewLine
+                + "Approved Good references: " + string.Join(" | ", referencePaths)
+                + Environment.NewLine
+                + "Difference threshold: " + differenceThreshold.ToString(CultureInfo.InvariantCulture)
+                + Environment.NewLine
+                + "Defect area: " + minimumArea.ToString(CultureInfo.InvariantCulture)
+                + ".." + maximumArea.ToString(CultureInfo.InvariantCulture)
+                + Environment.NewLine
+                + "Generated contract: ReferenceDifference registers against the approved references and accepts only ResultCount=0. References are never learned or replaced automatically. No Step runs until the user explicitly validates/imports/runs.";
+            LlmXmlDraftText = SerializePipelineToXmlText(pipeline);
+            ValidateLlmXmlDraftText(false);
+            StatusText = LocalText(
+                "Golden-reference 결함 검사 XML 초안을 만들었습니다. Preview/Run은 실행하지 않았습니다.",
+                "Created Golden-reference defect XML draft. Preview/Run was not executed.");
+        }
+
         private void CreateMeanIntentXmlDraft()
         {
             if (!OpenVisionRecipeMeanIntentSkill.TryParseOptionalRoi(MeanIntentRoiText, out bool useRoi, out int roiX, out int roiY, out int roiWidth, out int roiHeight, out string roiMessage)
@@ -4528,6 +4848,12 @@ namespace OpenVisionLab
                 EdgeBasedCannyLowText = EdgeBasedIntentCannyLowText,
                 EdgeBasedCannyHighText = EdgeBasedIntentCannyHighText,
                 EdgeBasedAcceptanceScoreMinText = EdgeBasedIntentAcceptanceScoreMinText,
+                ReferenceDifferencePath2 = ReferenceDifferencePath2,
+                ReferenceDifferencePath3 = ReferenceDifferencePath3,
+                ReferenceDifferencePath4 = ReferenceDifferencePath4,
+                ReferenceDifferenceThresholdText = ReferenceDifferenceThresholdText,
+                ReferenceDifferenceMinimumAreaText = ReferenceDifferenceMinimumAreaText,
+                ReferenceDifferenceMaximumAreaText = ReferenceDifferenceMaximumAreaText,
                 MeanRoiText = MeanIntentRoiText,
                 MeanTypeText = MeanIntentTypeText,
                 MeanMinimumText = MeanIntentMinimumText,
@@ -4537,100 +4863,10 @@ namespace OpenVisionLab
 
         private VisionPipeline CreateLlmTemplatePipeline()
         {
-            string template = SelectedLlmToolTemplate ?? string.Empty;
-            string pipelineName = "LLM_Starter_" + SanitizePathSegment(template.Replace("+", "And").Replace(" ", string.Empty));
-            VisionPipeline pipeline = new VisionPipeline { Name = pipelineName };
-
-            if (IsLineDistanceTemplate(template))
-            {
-                IReadOnlyList<OpenVisionRecipePinGapIntentSkill.RoiSample> samples =
-                    OpenVisionRecipePinGapIntentSkill.TryParseRoiSamples(PinGapIntentRoiText, out IReadOnlyList<OpenVisionRecipePinGapIntentSkill.RoiSample> parsedSamples, out _)
-                        ? parsedSamples
-                        : OpenVisionRecipePinGapIntentSkill.DefaultRoiSamples;
-                return OpenVisionRecipePinGapIntentSkill.CreatePipeline(samples, 0.40, 0.55, 0.06, 0.006);
-            }
-
-            if (IsBlobTemplate(template))
-            {
-                VisionPipelineStep threshold = CreateDraftStep("Threshold_Precheck", "Threshold", "Main", "Threshold_Preview");
-                threshold.Parameters["Threshold"] = "128";
-                threshold.Parameters["MaxValue"] = "255";
-                pipeline.Steps.Add(threshold);
-
-                VisionPipelineStep blob = CreateDraftStep("Blob_Inspect", "Blob", "Threshold_Preview", "Blob_Result");
-                blob.Parameters["MIN_AREA"] = "50";
-                blob.Parameters["MAX_AREA"] = "999999";
-                pipeline.Steps.Add(blob);
-                return pipeline;
-            }
-
-            if (IsContourTemplate(template))
-            {
-                VisionPipelineStep step = CreateDraftStep("Contour_Inspect", "Contour", "Main", "Contour_Result");
-                step.Parameters["USE_THRESHOLD"] = "True";
-                step.Parameters["THRESHOLD"] = "128";
-                step.Parameters["MIN_AREA"] = "50";
-                step.Parameters["MAX_AREA"] = "999999";
-                step.Parameters["USE_DRAW_IMAGE"] = "True";
-                step.UseAcceptance = true;
-                step.ExpectedSuccess = true;
-                step.AcceptanceMetricName = "ResultCount";
-                pipeline.Steps.Add(step);
-                return pipeline;
-            }
-
-            if (IsEdgeBasedTemplate(template))
-            {
-                return OpenVisionRecipeEdgeBasedMatchingIntentSkill.CreatePipeline(
-                    LlmReferenceImagePath,
-                    0.70,
-                    1,
-                    30,
-                    90,
-                    70);
-            }
-
-            if (IsMeanTemplate(template))
-            {
-                VisionPipelineStep step = CreateDraftStep("Mean_Check", "Mean", "Main", "Mean_Result");
-                step.Parameters["MEAN_MIN"] = "0";
-                step.Parameters["MEAN_MAX"] = "255";
-                pipeline.Steps.Add(step);
-                return pipeline;
-            }
-
-            VisionPipelineStep matching = CreateDraftStep("Template_Match", "Matching", "Main", "Matching_Result");
-            matching.Parameters["SCORE_MIN"] = "0.6";
-            matching.Parameters["NUM_MATCH"] = "1";
-            matching.Parameters["MAGNIFIATION"] = "1";
-            matching.Parameters["USE_FIND_ANGLE"] = "True";
-            matching.Parameters["FIND_ANGLE_MIN"] = "-10";
-            matching.Parameters["FIND_ANGLE_MAX"] = "10";
-            AddReferenceTemplateParameters(matching);
-            pipeline.Steps.Add(matching);
-            return pipeline;
-        }
-
-        private void AddReferenceTemplateParameters(VisionPipelineStep step)
-        {
-            if (step == null || string.IsNullOrWhiteSpace(LlmReferenceImagePath))
-            {
-                return;
-            }
-
-            step.Parameters["TemplatePath"] = LlmReferenceImagePath.Trim();
-            step.Parameters["PATTERN_PATH"] = LlmReferenceImagePath.Trim();
-        }
-
-        private static VisionPipelineStep CreateDraftStep(string name, string toolType, string inputLayer, string outputLayer)
-        {
-            return new VisionPipelineStep
-            {
-                Name = name,
-                ToolType = toolType,
-                InputLayer = inputLayer,
-                OutputLayer = outputLayer
-            };
+            return OpenVisionRecipeLlmTemplateDraftBuilder.Create(
+                SelectedLlmToolTemplate,
+                LlmReferenceImagePath,
+                PinGapIntentRoiText);
         }
 
         private static string SerializePipelineToXmlText(VisionPipeline pipeline)
@@ -6606,6 +6842,8 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(PipelineEditValidationText));
             OnPropertyChanged(nameof(RecipeGuidedNextActionText));
             OnPropertyChanged(nameof(RunValidationSuiteText));
+            OnPropertyChanged(nameof(StopValidationSuiteText));
+            OnPropertyChanged(nameof(IsLocalValidationSetRunning));
             OnPropertyChanged(nameof(ValidationSuiteSummaryText));
             CommandManager.InvalidateRequerySuggested();
         }

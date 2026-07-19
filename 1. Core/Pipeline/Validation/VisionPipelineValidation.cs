@@ -56,6 +56,7 @@ namespace OpenVisionLab
             "featurematching",
             "sift",
             "arithmetic",
+            "referencedifference",
             "overlaymerge",
             "resultmerge",
             "mergeresult"
@@ -302,6 +303,39 @@ namespace OpenVisionLab
             ValidatePositiveDouble(result, label, step, "ScaleXPercent");
             ValidatePositiveDouble(result, label, step, "ScaleYPercent");
             ValidateArithmeticParameters(result, label, step);
+            ValidateReferenceDifferenceParameters(result, label, step);
+        }
+
+        private static void ValidateReferenceDifferenceParameters(
+            VisionPipelineValidationResult result,
+            string label,
+            VisionPipelineStep step)
+        {
+            if (!string.Equals(
+                    VisionPipelineNormalizer.NormalizeToolType(step?.ToolType),
+                    "referencedifference",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            bool hasReferencePath = !string.IsNullOrWhiteSpace(ReadParameter(step, "ReferencePaths"))
+                || Enumerable.Range(1, 4).Any(index => !string.IsNullOrWhiteSpace(
+                    ReadParameter(step, "ReferencePath" + index.ToString(CultureInfo.InvariantCulture))));
+            if (!hasReferencePath)
+            {
+                result.Errors.Add($"{label} '{step.Name}': at least ReferencePath1 is required for ReferenceDifference.");
+            }
+
+            ValidateGrayValueRange(result, label, step, "DifferenceThreshold");
+            ValidateMinMax(result, label, step, "MinimumDefectArea", "MaximumDefectArea");
+            ValidatePositiveInt(result, label, step, "MinimumDefectArea", oddOnly: false);
+            ValidatePositiveInt(result, label, step, "MaximumDefectArea", oddOnly: false);
+            ValidatePositiveInt(result, label, step, "MorphologyKernel", oddOnly: true);
+            ValidatePositiveInt(result, label, step, "OrbFeatures", oddOnly: false);
+            ValidatePositiveInt(result, label, step, "MinimumInliers", oddOnly: false);
+            ValidateUnitInterval(result, label, step, "MatchRatio");
+            ValidatePositiveDouble(result, label, step, "RansacThreshold");
         }
 
         private static void ValidateArithmeticInputLayerB(

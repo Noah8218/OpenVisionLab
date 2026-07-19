@@ -89,6 +89,14 @@ namespace OpenVisionLab
         public const string FixtureAngleDelta = "FixtureAngleDelta";
         public const string FixtureEffectiveRoiX = "FixtureEffectiveRoiX";
         public const string FixtureEffectiveRoiY = "FixtureEffectiveRoiY";
+        public const string DifferencePixelCount = "DifferencePixelCount";
+        public const string DifferencePixelRatio = "DifferencePixelRatio";
+        public const string DifferenceMean = "DifferenceMean";
+        public const string RegistrationInliers = "RegistrationInliers";
+        public const string RegistrationInlierRatio = "RegistrationInlierRatio";
+        public const string RegistrationScore = "RegistrationScore";
+        public const string ReferenceIndex = "ReferenceIndex";
+        public const string ValidPixelRatio = "ValidPixelRatio";
 
         private static readonly VisionPipelineMetricDefinition[] MetricDefinitions =
         {
@@ -110,6 +118,14 @@ namespace OpenVisionLab
             new VisionPipelineMetricDefinition { Name = FixtureAngleDelta, DisplayName = "Fixture Angle Delta", Description = "Normalized current fixture angle minus its taught reference angle." },
             new VisionPipelineMetricDefinition { Name = FixtureEffectiveRoiX, DisplayName = "Effective ROI X", Description = "Runtime ROI X after fixture translation. The saved CvROI is unchanged." },
             new VisionPipelineMetricDefinition { Name = FixtureEffectiveRoiY, DisplayName = "Effective ROI Y", Description = "Runtime ROI Y after fixture translation. The saved CvROI is unchanged." },
+            new VisionPipelineMetricDefinition { Name = DifferencePixelCount, DisplayName = "Difference Pixel Count", Description = "Pixels above the reference-difference threshold inside the valid registered region." },
+            new VisionPipelineMetricDefinition { Name = DifferencePixelRatio, DisplayName = "Difference Pixel Ratio", Description = "Difference pixels divided by the valid registered comparison pixels." },
+            new VisionPipelineMetricDefinition { Name = DifferenceMean, DisplayName = "Difference Mean", Description = "Mean absolute grayscale difference after registration and brightness normalization." },
+            new VisionPipelineMetricDefinition { Name = RegistrationInliers, DisplayName = "Registration Inliers", Description = "RANSAC inlier matches used by the selected reference registration." },
+            new VisionPipelineMetricDefinition { Name = RegistrationInlierRatio, DisplayName = "Registration Inlier Ratio", Description = "RANSAC registration inliers divided by ratio-test matches." },
+            new VisionPipelineMetricDefinition { Name = RegistrationScore, DisplayName = "Registration Score", Description = "Review score derived from the registered mean difference; higher is closer." },
+            new VisionPipelineMetricDefinition { Name = ReferenceIndex, DisplayName = "Reference Index", Description = "Zero-based index of the selected reference path." },
+            new VisionPipelineMetricDefinition { Name = ValidPixelRatio, DisplayName = "Valid Pixel Ratio", Description = "Fraction of source pixels covered by the registered reference after border exclusion." },
             new VisionPipelineMetricDefinition { Name = MeanValueMin, DisplayName = "Mean Min", Description = "Minimum mean value." },
             new VisionPipelineMetricDefinition { Name = MeanValueMax, DisplayName = "Mean Max", Description = "Maximum mean value." },
             new VisionPipelineMetricDefinition { Name = MeanValueAvg, DisplayName = "Mean Avg", Description = "Average mean value." },
@@ -242,7 +258,20 @@ namespace OpenVisionLab
             ["rotateandscale"] = ImageMetricNames,
             ["overlaymerge"] = WithImageAndRectangleMetrics(ResultCount, MergeOverlayCount, MergeSourceCount),
             ["resultmerge"] = WithImageAndRectangleMetrics(ResultCount, MergeOverlayCount, MergeSourceCount),
-            ["mergeresult"] = WithImageAndRectangleMetrics(ResultCount, MergeOverlayCount, MergeSourceCount)
+            ["mergeresult"] = WithImageAndRectangleMetrics(ResultCount, MergeOverlayCount, MergeSourceCount),
+            ["referencedifference"] = WithImageAndRectangleMetrics(
+                ResultCount,
+                AreaMin,
+                AreaMax,
+                AreaAvg,
+                DifferencePixelCount,
+                DifferencePixelRatio,
+                DifferenceMean,
+                RegistrationInliers,
+                RegistrationInlierRatio,
+                RegistrationScore,
+                ReferenceIndex,
+                ValidPixelRatio)
         };
 
         private static readonly VisionPipelineAcceptancePreset[] Presets =
@@ -250,6 +279,7 @@ namespace OpenVisionLab
             new VisionPipelineAcceptancePreset { Name = "Fast Step <= 100 ms", MaxElapsedMilliseconds = 100 },
             new VisionPipelineAcceptancePreset { Name = "Detect Count >= 1", MetricName = ResultCount, ToolTypes = new[] { "blob", "contour", "corner", "matching", "templatematching", "edgebasedmatching", "edgebasedtemplatematching", "edgetemplatematching", "feature", "featurematching", "sift" }, UseMinimum = true, Minimum = 1 },
             new VisionPipelineAcceptancePreset { Name = "Detect Count = 0", MetricName = ResultCount, ToolTypes = new[] { "blob", "contour", "corner", "matching", "templatematching", "edgebasedmatching", "edgebasedtemplatematching", "edgetemplatematching", "feature", "featurematching", "sift" }, UseMinimum = true, Minimum = 0, UseMaximum = true, Maximum = 0 },
+            new VisionPipelineAcceptancePreset { Name = "Reference Defect Count = 0", MetricName = ResultCount, ToolTypes = new[] { "referencedifference" }, UseMinimum = true, Minimum = 0, UseMaximum = true, Maximum = 0 },
             new VisionPipelineAcceptancePreset { Name = "Text/Symbol Count 35..80", MetricName = ResultCount, ToolTypes = new[] { "contour", "blob" }, UseMinimum = true, Minimum = 35, UseMaximum = true, Maximum = 80, MaxElapsedMilliseconds = 1000 },
             new VisionPipelineAcceptancePreset { Name = "Area Avg 150..600", MetricName = AreaAvg, ToolTypes = new[] { "blob", "contour", "corner" }, UseMinimum = true, Minimum = 150, UseMaximum = true, Maximum = 600 },
             new VisionPipelineAcceptancePreset { Name = "Max Bounds Width <= 20 px", MetricName = BoundsWidthMax, ToolTypes = new[] { "blob", "contour", "corner", "matching", "templatematching", "edgebasedmatching", "edgebasedtemplatematching", "edgetemplatematching", "feature", "featurematching", "sift" }, UseMaximum = true, Maximum = 20 },

@@ -1,6 +1,8 @@
 # OpenVisionLab Next Chat Handoff Prompt
 
-Updated: 2026-07-16 KST
+Updated: 2026-07-17 KST
+
+> **Use first:** `docs\OPENVISIONLAB_CURRENT_HANDOFF.md` for live project state and `docs\OPENVISIONLAB_DOCUMENTATION_MAP.md` for the required reading order. This document remains a detailed prompt/history resource; its older dirty-state, commit, readiness, and priority statements are historical unless reconfirmed from the current handoff and git.
 
 Use this document when moving the work to a new Codex chat. It summarizes the current state, the active constraints, completed work that should not be rediscovered, current dirty files, verification evidence, and a paste-ready prompt.
 

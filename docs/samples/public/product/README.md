@@ -118,7 +118,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog
   -OutputDir artifacts\product_sample_catalog
 ```
 
-Expected result: all 168 rows pass the catalog gate. The eighty-four Bad rows are expected-failure cases; they should produce controlled NG results with metric values inside the Bad ranges.
+Expected result: all 184 rows pass the catalog gate. The eighty-four Bad rows are expected-failure cases; they should produce controlled NG results with metric values inside the Bad ranges.
 
 ### Quality audit
 

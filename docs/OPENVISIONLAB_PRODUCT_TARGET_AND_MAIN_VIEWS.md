@@ -2,6 +2,8 @@
 
 Updated: 2026-07-15 KST
 
+> **Live status and next priority:** Read `docs\OPENVISIONLAB_CURRENT_HANDOFF.md` first. This document owns stable product direction and main-view responsibilities; it does not replace current git/test evidence.
+
 This is the short product-direction document for future sessions. Read this first when continuing OpenVisionLab work so the goal, view structure, completed areas, and next priorities do not need to be rediscovered.
 
 ## Final Product Shape

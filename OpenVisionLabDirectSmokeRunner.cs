@@ -1,5 +1,6 @@
 using Lib.OpenCV.Pipeline;
 using Lib.OpenCV.Property;
+using Microsoft.Web.WebView2.Wpf;
 using OpenVisionLab._1._Core;
 using OpenVisionLab.Docking.Controls;
 using System;
@@ -162,6 +163,12 @@ namespace OpenVisionLab
                     || string.Equals(scenario, "llm-intent-skills", StringComparison.OrdinalIgnoreCase))
                 {
                     RunRecipeManagerLlmIntentSkills(outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "recipe-manager-reference-difference-guided-setup", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunRecipeManagerReferenceDifferenceGuidedSetup(outputDirectory);
                     return true;
                 }
 
@@ -328,6 +335,7 @@ namespace OpenVisionLab
 
             string expectedPipelineName = ResolveDraftPipelineName(draftPath);
             string imagePath = ResolveOptionalOption(args, "--image");
+            bool expectedRunSuccess = ResolveOptionalBoolOption(args, "--expect-run-success", true);
             if (!string.IsNullOrWhiteSpace(imagePath) && !File.Exists(imagePath))
             {
                 throw new FileNotFoundException("LLM XML draft verification image was not found.", imagePath);
@@ -384,15 +392,18 @@ namespace OpenVisionLab
                 VisionRecipeRunResult imageRunResult = null;
                 string imageRunReport = "ImageRun: SKIPPED";
                 bool imageRunOk = string.IsNullOrWhiteSpace(imagePath);
+                bool actualRunSuccess = false;
                 if (validationOk && imported && !string.IsNullOrWhiteSpace(imagePath))
                 {
-                    if (!SerializeHelper.TryLoadFromXmlFile(draftPath, out VisionPipeline pipeline) || pipeline == null)
+                    VisionPipeline pipeline = VisionPipelineStorage.Load(recipeName, selectedAfterImport);
+                    if (pipeline == null)
                     {
-                        throw new InvalidOperationException("LLM XML draft could not be loaded for image execution: " + draftPath);
+                        throw new InvalidOperationException("Imported LLM XML draft pipeline could not be loaded for image execution: " + selectedAfterImport);
                     }
 
                     imageRunResult = RunLlmDraftOnImage(pipeline, imagePath, outputDirectory, 5000);
-                    imageRunOk = imageRunResult != null && imageRunResult.Success;
+                    actualRunSuccess = imageRunResult != null && imageRunResult.Success;
+                    imageRunOk = actualRunSuccess == expectedRunSuccess;
                     imageRunReport = BuildLlmDraftImageRunReport(imageRunResult, imagePath);
                 }
 
@@ -407,6 +418,8 @@ namespace OpenVisionLab
                     + "Imported: " + imported + Environment.NewLine
                     + "SelectedBeforeImport: " + selectedBeforeImport + Environment.NewLine
                     + "SelectedAfterImport: " + selectedAfterImport + Environment.NewLine
+                    + "ExpectedRunSuccess: " + (string.IsNullOrWhiteSpace(imagePath) ? "-" : expectedRunSuccess.ToString()) + Environment.NewLine
+                    + "ActualRunSuccess: " + (string.IsNullOrWhiteSpace(imagePath) ? "-" : actualRunSuccess.ToString()) + Environment.NewLine
                     + imageRunReport + Environment.NewLine
                     + "ValidationReport:" + Environment.NewLine
                     + shellHost.RecipeCommands.LlmXmlDraftValidationReport + Environment.NewLine
@@ -426,7 +439,7 @@ namespace OpenVisionLab
                 {
                     throw new InvalidOperationException(
                         "LLM XML draft file did not validate/import. "
-                        + $"ValidationOk={validationOk}, ImportEnabled={importEnabled}, Imported={imported}, ImageRunOk={imageRunOk}");
+                        + $"ValidationOk={validationOk}, ImportEnabled={importEnabled}, Imported={imported}, ExpectedRunSuccess={expectedRunSuccess}, ActualRunSuccess={actualRunSuccess}, ImageRunOk={imageRunOk}");
                 }
             }
             finally
@@ -460,19 +473,25 @@ namespace OpenVisionLab
                 .FirstOrDefault(step => step != null
                     && step.Enabled
                     && string.Equals(step.ToolType, "OverlayMerge", StringComparison.OrdinalIgnoreCase)
-                    && ReadSmokeListParameter(step, "SourceLayers").Count > 0)
-                ?? throw new InvalidOperationException("Branch review requires an enabled OverlayMerge with SourceLayers.");
-            IReadOnlyList<string> sourceLayers = ReadSmokeListParameter(overlayStep, "SourceLayers");
-            List<VisionPipelineStep> sourceSteps = sourceLayers
-                .Select(layer => pipeline.Steps.FirstOrDefault(step => step != null
+                    && (ReadSmokeListParameter(step, "SourceLayers").Count > 0
+                        || ReadSmokeListParameter(step, "SourceSteps").Count > 0))
+                ?? throw new InvalidOperationException("Branch review requires an enabled OverlayMerge with SourceLayers or SourceSteps.");
+            string sourceReferenceKey = ReadSmokeListParameter(overlayStep, "SourceLayers").Count > 0
+                ? "SourceLayers"
+                : "SourceSteps";
+            IReadOnlyList<string> sourceReferences = ReadSmokeListParameter(overlayStep, sourceReferenceKey);
+            List<VisionPipelineStep> sourceSteps = sourceReferences
+                .Select(reference => pipeline.Steps.FirstOrDefault(step => step != null
                     && step.Enabled
-                    && string.Equals(step.OutputLayer, layer, StringComparison.OrdinalIgnoreCase)))
+                    && (string.Equals(sourceReferenceKey, "SourceSteps", StringComparison.OrdinalIgnoreCase)
+                        ? string.Equals(step.Name, reference, StringComparison.OrdinalIgnoreCase)
+                        : string.Equals(step.OutputLayer, reference, StringComparison.OrdinalIgnoreCase))))
                 .ToList();
             if (sourceSteps.Any(step => step == null))
             {
                 throw new InvalidOperationException(
-                    "Branch review could not resolve every OverlayMerge SourceLayers producer. "
-                    + "Sources=" + string.Join(",", sourceLayers));
+                    "Branch review could not resolve every OverlayMerge " + sourceReferenceKey + " producer. "
+                    + "Sources=" + string.Join(",", sourceReferences));
             }
 
             string recipeName = "Smoke_LlmBranch_" + Guid.NewGuid().ToString("N").Substring(0, 12);
@@ -625,11 +644,11 @@ namespace OpenVisionLab
                     + "DraftPath: " + draftPath + Environment.NewLine
                     + "Pipeline: " + pipeline.Name + Environment.NewLine
                     + "OverlayStep: " + overlayPreview.Index + " | " + overlayPreview.Name + Environment.NewLine
-                    + "DeclaredSourceLayers: " + sourceLayers.Count.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "Declared" + sourceReferenceKey + ": " + sourceReferences.Count.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
                     + "SourceConsumerRelationsVisible: " + visibleConsumerRelations.ToString(CultureInfo.InvariantCulture)
-                    + "/" + sourceLayers.Count.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "/" + sourceReferences.Count.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
                     + "OverlaySourceProducersVisible: " + visibleProducerRelations.ToString(CultureInfo.InvariantCulture)
-                    + "/" + sourceLayers.Count.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "/" + sourceReferences.Count.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
                     + "OverlayRows: " + DescribeBranchRows(overlayRows) + Environment.NewLine
                     + "ConsumerRelations:" + Environment.NewLine
                     + string.Join(Environment.NewLine, consumerReports) + Environment.NewLine
@@ -1765,6 +1784,7 @@ namespace OpenVisionLab
         private static void RunRecipeManagerLlmIntentSkills(string outputDirectory)
         {
             Directory.CreateDirectory(outputDirectory);
+            VerifyLlmTemplateDraftBuilderContract();
             CleanupKnownSmokeRecipeWorkspaces("Smoke_LlmIntentSkills_");
             string recipeName = "Smoke_LlmIntentSkills_" + Guid.NewGuid().ToString("N").Substring(0, 12);
             const string pipelineName = "Direct_LlmIntentSkill_Check";
@@ -1866,6 +1886,85 @@ namespace OpenVisionLab
                 }
 
                 SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_LlmIntentSkills_TemplateMatching.png"));
+
+                TabItem browserAssistTab = FindNamedVisualChild<TabItem>(
+                    shellHost,
+                    "tabRecipeLlmBrowserAssist",
+                    "Recipe manager LLM browser assist smoke");
+                browserAssistTab.IsSelected = true;
+                Pump(30);
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager LLM browser assist",
+                    "HostRecipeLlmBrowserAssistPanel",
+                    "HostRecipeBrowserAssistOpenChatGptButton",
+                    "HostRecipeBrowserAssistOpenExternalButton",
+                    "HostRecipeBrowserAssistCopyPromptButton",
+                    "HostRecipeBrowserAssistPasteXmlButton",
+                    "HostRecipeBrowserAssistPlaceholder");
+                AssertNotVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager LLM browser assist",
+                    "HostRecipeLlmBrowserAssistWebView");
+
+                Button openChatGptButton = FindVisualChildren<Button>(shellHost)
+                    .FirstOrDefault(item => string.Equals(
+                        System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                        "HostRecipeBrowserAssistOpenChatGptButton",
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("Recipe manager LLM browser assist could not find the ChatGPT open button.");
+                WebView2 embeddedBrowser = FindVisualChildren<WebView2>(shellHost).FirstOrDefault()
+                    ?? throw new InvalidOperationException("Recipe manager LLM browser assist did not create the embedded browser control.");
+                bool chatGptNavigationCompleted = false;
+                bool chatGptNavigationSucceeded = false;
+                embeddedBrowser.NavigationCompleted += (_, eventArgs) =>
+                {
+                    chatGptNavigationCompleted = true;
+                    chatGptNavigationSucceeded = eventArgs.IsSuccess;
+                };
+                openChatGptButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+
+                DateTime embeddedBrowserDeadline = DateTime.UtcNow.AddSeconds(30);
+                while (DateTime.UtcNow < embeddedBrowserDeadline
+                    && (embeddedBrowser.CoreWebView2 == null
+                        || !(embeddedBrowser.CoreWebView2.Source ?? string.Empty).StartsWith("https://chatgpt.com/", StringComparison.OrdinalIgnoreCase)
+                        || !chatGptNavigationCompleted
+                        || !chatGptNavigationSucceeded))
+                {
+                    Pump(1);
+                }
+
+                if (embeddedBrowser.CoreWebView2 == null
+                    || !(embeddedBrowser.CoreWebView2.Source ?? string.Empty).StartsWith("https://chatgpt.com/", StringComparison.OrdinalIgnoreCase)
+                    || !chatGptNavigationCompleted
+                    || !chatGptNavigationSucceeded)
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager LLM browser assist did not complete ChatGPT navigation after the explicit open action. "
+                        + "Source=" + (embeddedBrowser.CoreWebView2?.Source ?? "<none>")
+                        + ", Completed=" + chatGptNavigationCompleted
+                        + ", Succeeded=" + chatGptNavigationSucceeded);
+                }
+
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_LlmBrowserAssist_ChatGptOpened.png"));
+                FrameworkElement browserAssistPlaceholder = FindNamedVisualChild<FrameworkElement>(
+                    shellHost,
+                    "recipeLlmBrowserAssistPlaceholder",
+                    "Recipe manager LLM browser assist");
+                embeddedBrowser.Visibility = Visibility.Collapsed;
+                browserAssistPlaceholder.Visibility = Visibility.Visible;
+                Pump(20);
+
+                if (shellHost.NativePreviewRunCount != beforeRuns)
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager LLM browser assist opening triggered Preview/Run. "
+                        + $"Before={beforeRuns}, After={shellHost.NativePreviewRunCount}");
+                }
+
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_LlmBrowserAssist.png"));
+                llmXmlTab.IsSelected = true;
+                Pump(20);
 
                 commands.SelectedLlmToolTemplate = "Pin gap / edge distance (LineDistance)";
                 Pump(20);
@@ -2046,7 +2145,9 @@ namespace OpenVisionLab
                     + "PinGapFocus: only pin-gap skill block visible" + Environment.NewLine
                     + "BlobCountFocus: only blob-count skill block visible" + Environment.NewLine
                     + "ContourCountFocus: only contour-count skill block visible" + Environment.NewLine
+                    + "TemplateDraftBuilder: LineDistance, Blob, Contour, EdgeBasedMatching, Mean, and Matching starters verified" + Environment.NewLine
                     + "PromptBuilder: matching and LineDistance packet content verified without clipboard" + Environment.NewLine
+                    + "BrowserAssist: ChatGPT open actions and explicit copy/paste controls visible; ChatGPT navigated only after explicit click; Preview/Run unchanged" + Environment.NewLine
                     + "PinGapContourMismatch: blocked by intent contract" + Environment.NewLine
                     + "DependencyReview: existing template path found without clipboard" + Environment.NewLine
                     + "CorrectionBundle: current validation and dependency context assembled without clipboard" + Environment.NewLine
@@ -2062,6 +2163,194 @@ namespace OpenVisionLab
 
                 app.Shutdown();
                 RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+            }
+        }
+
+        private static void RunRecipeManagerReferenceDifferenceGuidedSetup(string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            CleanupKnownSmokeRecipeWorkspaces("Smoke_ReferenceDifferenceGuided_");
+            string recipeName = "Smoke_ReferenceDifferenceGuided_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+            const string pipelineName = "Direct_ReferenceDifference_Guided_Setup";
+            VisionPipelineStorage.Save(recipeName, CreateDirectSmokePipeline(pipelineName, 1));
+            VisionPipelineStorage.SaveActivePipelineName(recipeName, pipelineName);
+
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            OpenVisionShellHostWindow window = null;
+            try
+            {
+                window = new OpenVisionShellHostWindow(ApplicationRuntimeContext.CreateDefault())
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+                app.MainWindow = window;
+                window.Show();
+                window.Activate();
+                Pump(36);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("OpenVision shell host was not created.");
+                shellHost.SwitchRecipeContextForTest(recipeName);
+                Pump(40);
+
+                FindNamedVisualChild<System.Windows.Controls.Primitives.ToggleButton>(
+                    shellHost,
+                    "btnHostRecipeManager",
+                    "ReferenceDifference Guided setup smoke").IsChecked = true;
+                Pump(50);
+                FindNamedVisualChild<System.Windows.Controls.Primitives.ToggleButton>(
+                    shellHost,
+                    "recipeAdvancedReviewToggle",
+                    "ReferenceDifference Guided setup smoke").IsChecked = true;
+                Pump(40);
+                FindNamedVisualChild<TabItem>(
+                    shellHost,
+                    "tabRecipeGuidedSetup",
+                    "ReferenceDifference Guided setup smoke").IsSelected = true;
+                Pump(40);
+
+                int runsBefore = shellHost.NativePreviewRunCount;
+                int layersBefore = shellHost.LayerDocumentCount;
+                string inputRouteBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string outputRouteBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+                OpenVisionShellHostRecipeCommandSurface commands = shellHost.RecipeCommands;
+                commands.SelectedLlmToolTemplate = OpenVisionGuidedSetupCatalog.ReferenceDifferenceTemplate;
+                commands.LlmReferenceImagePath = string.Empty;
+                Pump(20);
+                if (commands.IsGuidedSetupIntentInputReady
+                    || commands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException("ReferenceDifference Guided setup accepted a missing Good reference.");
+                }
+
+                string repositoryRoot = FindRepositoryRoot();
+                string[] referencePaths = Enumerable.Range(1, 4)
+                    .Select(index => Path.Combine(repositoryRoot, "Sample", "EasyMatch", "Die Pad " + index + ".bmp"))
+                    .ToArray();
+                if (referencePaths.Any(path => !File.Exists(path)))
+                {
+                    throw new InvalidOperationException(
+                        "ReferenceDifference Guided setup references were not found: "
+                        + string.Join(" | ", referencePaths.Where(path => !File.Exists(path))));
+                }
+
+                commands.LlmReferenceImagePath = referencePaths[0];
+                commands.ReferenceDifferencePath2 = referencePaths[1];
+                commands.ReferenceDifferencePath3 = referencePaths[2];
+                commands.ReferenceDifferencePath4 = referencePaths[3];
+                commands.ReferenceDifferenceThresholdText = "35";
+                commands.ReferenceDifferenceMinimumAreaText = "80";
+                commands.ReferenceDifferenceMaximumAreaText = "20000";
+                Pump(40);
+                if (!commands.IsGuidedSetupIntentInputReady
+                    || !commands.GuidedSetupIntentInputStatusText.Contains("ResultCount=0", StringComparison.OrdinalIgnoreCase)
+                    || !commands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException(
+                        "ReferenceDifference Guided setup was not ready. "
+                        + commands.GuidedSetupIntentInputStatusText);
+                }
+
+                commands.CreateGuidedSetupStarterXmlCommand.Execute(null);
+                Pump(80);
+                if (!commands.LlmXmlDraftText.Contains("<ToolType>ReferenceDifference</ToolType>", StringComparison.OrdinalIgnoreCase)
+                    || !commands.LlmXmlDraftText.Contains("<Key>ReferencePath4</Key>", StringComparison.OrdinalIgnoreCase)
+                    || !commands.LlmXmlDraftText.Contains("<AcceptanceMetricMaximum>0</AcceptanceMetricMaximum>", StringComparison.OrdinalIgnoreCase)
+                    || !commands.ValidateLlmXmlDraftTextForTest()
+                    || !commands.ImportLlmXmlDraftCommand.CanExecute(null)
+                    || commands.LlmXmlDraftDependencyRows.Count < 4
+                    || shellHost.NativePreviewRunCount != runsBefore
+                    || shellHost.LayerDocumentCount != layersBefore
+                    || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("ReferenceDifference Guided setup draft was invalid or caused execution/layer/route side effects.");
+                }
+
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "ReferenceDifference Guided setup smoke",
+                    "HostRecipeGuidedSetupReferenceDifferenceInputs",
+                    "HostRecipeGuidedSetupReferenceDifferencePath1Text",
+                    "HostRecipeGuidedSetupReferenceDifferencePath4Text",
+                    "HostRecipeGuidedSetupReferenceDifferenceThresholdText",
+                    "HostRecipeGuidedSetupReferenceDifferenceMinimumAreaText",
+                    "HostRecipeGuidedSetupReferenceDifferenceMaximumAreaText",
+                    "HostRecipeGuidedSetupIntentInputStatus");
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_GuidedSetup_ReferenceDifference.png"));
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: recipe-manager-reference-difference-guided-setup" + Environment.NewLine
+                    + "References: 4 repository Sample\\EasyMatch Good references" + Environment.NewLine
+                    + "StarterXML: ReferenceDifference + ResultCount=0" + Environment.NewLine
+                    + "DependencyRows: " + commands.LlmXmlDraftDependencyRows.Count.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "PreviewRunCountUnchanged: " + runsBefore.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "LayerAndRouteStateUnchanged: true",
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                if (window != null)
+                {
+                    window.Close();
+                }
+
+                app.Shutdown();
+                RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+            }
+        }
+
+        private static void VerifyLlmTemplateDraftBuilderContract()
+        {
+            VisionPipeline lineDistance = OpenVisionRecipeLlmTemplateDraftBuilder.Create(
+                "Pin gap / edge distance (LineDistance)",
+                string.Empty,
+                OpenVisionRecipePinGapIntentSkill.DefaultRoiSamplesText);
+            if (!lineDistance.Steps.Any(step => string.Equals(step.ToolType, "LineDistance", StringComparison.OrdinalIgnoreCase))
+                || !lineDistance.Steps.Any(step => string.Equals(step.ToolType, "OverlayMerge", StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new InvalidOperationException("LLM template draft builder did not preserve the LineDistance starter contract.");
+            }
+
+            VisionPipeline blob = OpenVisionRecipeLlmTemplateDraftBuilder.Create("Threshold + Blob", string.Empty, string.Empty);
+            if (blob.Steps.Count != 2
+                || !string.Equals(blob.Steps[0].ToolType, "Threshold", StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(blob.Steps[1].ToolType, "Blob", StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(blob.Steps[1].InputLayer, "Threshold_Preview", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("LLM template draft builder did not preserve the Blob starter contract.");
+            }
+
+            VisionPipeline contour = OpenVisionRecipeLlmTemplateDraftBuilder.Create("Shape boundary (Contour)", string.Empty, string.Empty);
+            if (contour.Steps.Count != 1
+                || !string.Equals(contour.Steps[0].ToolType, "Contour", StringComparison.OrdinalIgnoreCase)
+                || !contour.Steps[0].UseAcceptance
+                || !string.Equals(contour.Steps[0].AcceptanceMetricName, "ResultCount", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("LLM template draft builder did not preserve the Contour starter contract.");
+            }
+
+            VisionPipeline edge = OpenVisionRecipeLlmTemplateDraftBuilder.Create("Edge Based Matching", "edge-template.png", string.Empty);
+            VisionPipeline mean = OpenVisionRecipeLlmTemplateDraftBuilder.Create("Mean Intensity", string.Empty, string.Empty);
+            VisionPipeline matching = OpenVisionRecipeLlmTemplateDraftBuilder.Create("Template Matching", "matching-template.png", string.Empty);
+            if (edge.Steps.Count != 1
+                || !string.Equals(edge.Steps[0].ToolType, "EdgeBasedMatching", StringComparison.OrdinalIgnoreCase)
+                || mean.Steps.Count != 1
+                || !string.Equals(mean.Steps[0].ToolType, "Mean", StringComparison.OrdinalIgnoreCase)
+                || matching.Steps.Count != 1
+                || !string.Equals(matching.Steps[0].ToolType, "Matching", StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(matching.Steps[0].Parameters["TemplatePath"], "matching-template.png", StringComparison.Ordinal)
+                || !string.Equals(matching.Steps[0].Parameters["PATTERN_PATH"], "matching-template.png", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("LLM template draft builder did not preserve the EdgeBasedMatching, Mean, or Matching starter contract.");
             }
         }
 
@@ -2769,6 +3058,12 @@ namespace OpenVisionLab
                 string guidedSetupEdgeCannyLowBefore = shellHost.RecipeCommands.EdgeBasedIntentCannyLowText;
                 string guidedSetupEdgeCannyHighBefore = shellHost.RecipeCommands.EdgeBasedIntentCannyHighText;
                 string guidedSetupEdgeAcceptanceBefore = shellHost.RecipeCommands.EdgeBasedIntentAcceptanceScoreMinText;
+                string guidedSetupReferenceDifferencePath2Before = shellHost.RecipeCommands.ReferenceDifferencePath2;
+                string guidedSetupReferenceDifferencePath3Before = shellHost.RecipeCommands.ReferenceDifferencePath3;
+                string guidedSetupReferenceDifferencePath4Before = shellHost.RecipeCommands.ReferenceDifferencePath4;
+                string guidedSetupReferenceDifferenceThresholdBefore = shellHost.RecipeCommands.ReferenceDifferenceThresholdText;
+                string guidedSetupReferenceDifferenceMinimumAreaBefore = shellHost.RecipeCommands.ReferenceDifferenceMinimumAreaText;
+                string guidedSetupReferenceDifferenceMaximumAreaBefore = shellHost.RecipeCommands.ReferenceDifferenceMaximumAreaText;
                 string guidedSetupMeanRoiBefore = shellHost.RecipeCommands.MeanIntentRoiText;
                 string guidedSetupMeanTypeBefore = shellHost.RecipeCommands.MeanIntentTypeText;
                 string guidedSetupMeanMinimumBefore = shellHost.RecipeCommands.MeanIntentMinimumText;
@@ -3096,6 +3391,70 @@ namespace OpenVisionLab
                     "HostRecipeGuidedSetupIntentInputStatus");
                 SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_GuidedSetup_Mean.png"));
 
+                int referenceDifferenceLayerCountBefore = shellHost.LayerDocumentCount;
+                string referenceDifferenceInputRouteBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string referenceDifferenceOutputRouteBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                string referenceDifferenceActiveLayerBefore = shellHost.ActiveHostLayerTitle;
+                string[] referenceDifferencePaths = Enumerable.Range(1, 4)
+                    .Select(index => Path.Combine(FindRepositoryRoot(), "Sample", "EasyMatch", "Die Pad " + index + ".bmp"))
+                    .ToArray();
+                if (referenceDifferencePaths.Any(path => !File.Exists(path)))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke Guided setup ReferenceDifference references were not found: "
+                        + string.Join(" | ", referenceDifferencePaths.Where(path => !File.Exists(path))));
+                }
+
+                shellHost.RecipeCommands.SelectedLlmToolTemplate = OpenVisionGuidedSetupCatalog.ReferenceDifferenceTemplate;
+                shellHost.RecipeCommands.LlmReferenceImagePath = referenceDifferencePaths[0];
+                shellHost.RecipeCommands.ReferenceDifferencePath2 = referenceDifferencePaths[1];
+                shellHost.RecipeCommands.ReferenceDifferencePath3 = referenceDifferencePaths[2];
+                shellHost.RecipeCommands.ReferenceDifferencePath4 = referenceDifferencePaths[3];
+                shellHost.RecipeCommands.ReferenceDifferenceThresholdText = "35";
+                shellHost.RecipeCommands.ReferenceDifferenceMinimumAreaText = "80";
+                shellHost.RecipeCommands.ReferenceDifferenceMaximumAreaText = "20000";
+                Pump(60);
+                if (!shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                    || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("ResultCount=0", StringComparison.OrdinalIgnoreCase)
+                    || !shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager direct smoke Guided setup ReferenceDifference inputs were not ready. "
+                        + shellHost.RecipeCommands.GuidedSetupIntentInputStatusText);
+                }
+
+                shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.Execute(null);
+                Pump(100);
+                if (!shellHost.RecipeCommands.LlmXmlDraftText.Contains("<ToolType>ReferenceDifference</ToolType>", StringComparison.OrdinalIgnoreCase)
+                    || !shellHost.RecipeCommands.LlmXmlDraftText.Contains("<Key>ReferencePath4</Key>", StringComparison.OrdinalIgnoreCase)
+                    || !shellHost.RecipeCommands.LlmXmlDraftText.Contains("<AcceptanceMetricName>ResultCount</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                    || !shellHost.RecipeCommands.LlmXmlDraftText.Contains("<AcceptanceMetricMaximum>0</AcceptanceMetricMaximum>", StringComparison.OrdinalIgnoreCase)
+                    || !shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest()
+                    || !shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null)
+                    || shellHost.RecipeCommands.LlmXmlDraftDependencyRows.Count < 4
+                    || shellHost.NativePreviewRunCount != guidedSetupRunsBefore
+                    || shellHost.LayerDocumentCount != referenceDifferenceLayerCountBefore
+                    || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, referenceDifferenceInputRouteBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, referenceDifferenceOutputRouteBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveHostLayerTitle, referenceDifferenceActiveLayerBefore, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Recipe manager direct smoke Guided setup ReferenceDifference draft was invalid or caused execution/layer/route side effects.");
+                }
+
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager direct smoke Guided setup ReferenceDifference inputs",
+                    "HostRecipeGuidedSetupReferenceDifferenceInputs",
+                    "HostRecipeGuidedSetupReferenceDifferencePath1Text",
+                    "HostRecipeGuidedSetupReferenceDifferencePath2Text",
+                    "HostRecipeGuidedSetupReferenceDifferencePath3Text",
+                    "HostRecipeGuidedSetupReferenceDifferencePath4Text",
+                    "HostRecipeGuidedSetupReferenceDifferenceThresholdText",
+                    "HostRecipeGuidedSetupReferenceDifferenceMinimumAreaText",
+                    "HostRecipeGuidedSetupReferenceDifferenceMaximumAreaText",
+                    "HostRecipeGuidedSetupIntentInputStatus");
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_GuidedSetup_ReferenceDifference.png"));
+
                 shellHost.RecipeCommands.SelectedLlmToolTemplate = guidedSetupTemplateBefore;
                 shellHost.RecipeCommands.LlmXmlDraftText = guidedSetupDraftBefore;
                 shellHost.RecipeCommands.LlmReferenceImagePath = guidedSetupReferenceBefore;
@@ -3110,6 +3469,12 @@ namespace OpenVisionLab
                 shellHost.RecipeCommands.EdgeBasedIntentCannyLowText = guidedSetupEdgeCannyLowBefore;
                 shellHost.RecipeCommands.EdgeBasedIntentCannyHighText = guidedSetupEdgeCannyHighBefore;
                 shellHost.RecipeCommands.EdgeBasedIntentAcceptanceScoreMinText = guidedSetupEdgeAcceptanceBefore;
+                shellHost.RecipeCommands.ReferenceDifferencePath2 = guidedSetupReferenceDifferencePath2Before;
+                shellHost.RecipeCommands.ReferenceDifferencePath3 = guidedSetupReferenceDifferencePath3Before;
+                shellHost.RecipeCommands.ReferenceDifferencePath4 = guidedSetupReferenceDifferencePath4Before;
+                shellHost.RecipeCommands.ReferenceDifferenceThresholdText = guidedSetupReferenceDifferenceThresholdBefore;
+                shellHost.RecipeCommands.ReferenceDifferenceMinimumAreaText = guidedSetupReferenceDifferenceMinimumAreaBefore;
+                shellHost.RecipeCommands.ReferenceDifferenceMaximumAreaText = guidedSetupReferenceDifferenceMaximumAreaBefore;
                 shellHost.RecipeCommands.MeanIntentRoiText = guidedSetupMeanRoiBefore;
                 shellHost.RecipeCommands.MeanIntentTypeText = guidedSetupMeanTypeBefore;
                 shellHost.RecipeCommands.MeanIntentMinimumText = guidedSetupMeanMinimumBefore;
@@ -5060,7 +5425,7 @@ namespace OpenVisionLab
                     + "StepRoiTemplate: " + selectedPreviewStep.RoiMetadataText + " | " + selectedPreviewStep.TemplateMetadataText + Environment.NewLine
                     + "StepToolEntry: " + shellHost.RecipeCommands.OpenSelectedStepToolText + Environment.NewLine
                     + "StepPropertyGridApply: explicit XML apply without Preview/Run" + Environment.NewLine
-                    + "GuidedSetupStandalone: Pin gap + Blob + Contour + Matching + Feature Matching + Edge Based Matching + Mean Starter XML without Preview/Run" + Environment.NewLine
+                    + "GuidedSetupStandalone: Pin gap + Blob + Contour + Matching + Feature Matching + Edge Based Matching + Mean + ReferenceDifference Starter XML without Preview/Run" + Environment.NewLine
                     + "GuidedSetupPinGapUnits: MM-READY conversion review + PX-ONLY DistancePx gates + invalid scale blocked" + Environment.NewLine
                     + "GuidedSetupPinGapPublicSample: " + pinGapUnitSampleEvidence + Environment.NewLine
                     + "OperatorDecisionSummaryBand: final Good/Bad status + expected/actual metric evidence + next action" + Environment.NewLine
@@ -6021,14 +6386,15 @@ namespace OpenVisionLab
                 learnWindow.Activate();
                 Pump(24);
 
-                if (!learnWindow.CanOpenPracticeSamplesForTest
+                if (learnWindow.IsPracticeWorkflowExpandedForTest
+                    || !learnWindow.CanOpenPracticeSamplesForTest
                     || !learnWindow.CanOpenBlobToolForTest
                     || !string.Equals(learnWindow.SelectedTopicLearnPathIdForTest, "blob", StringComparison.Ordinal)
                     || !learnWindow.SelectedTopicPracticeTextForTest.Contains("Public_Blob_Particles_Good", StringComparison.Ordinal)
                     || !learnWindow.SelectedTopicPracticeTextForTest.Contains("ResultCount 8..14", StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException(
-                        "Latest EXE Blob Learn did not expose the dedicated practice workflow. "
+                        "Latest EXE Blob Learn did not expose the compact dedicated practice workflow. "
                         + $"Path='{learnWindow.SelectedTopicLearnPathIdForTest}', Text='{learnWindow.SelectedTopicPracticeTextForTest}'.");
                 }
 

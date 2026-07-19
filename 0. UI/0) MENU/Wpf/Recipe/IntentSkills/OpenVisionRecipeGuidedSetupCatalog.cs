@@ -8,6 +8,7 @@ namespace OpenVisionLab
         internal const string MatchingTemplate = "Template Matching";
         internal const string FeatureMatchingTemplate = "Feature Matching";
         internal const string EdgeBasedMatchingTemplate = "Edge Based Matching";
+        internal const string ReferenceDifferenceTemplate = "Golden-reference defect (ReferenceDifference)";
         internal const string ContourTemplate = "Shape boundary (Contour)";
         internal const string BlobTemplate = "Threshold + Blob";
         internal const string MeanTemplate = "Mean Intensity";

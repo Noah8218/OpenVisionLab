@@ -1,6 +1,6 @@
 # OpenVisionLab Release and Version Policy
 
-Updated: 2026-06-21
+Updated: 2026-07-19
 
 이 문서는 OpenVisionLab, vendored Library-Noah DLL, WPG PropertyGrid DLL, ImageCompare standalone 산출물을 어떤 기준으로 릴리즈할지 정의합니다.
 
@@ -72,6 +72,14 @@ Updated: 2026-06-21
 - ImageCompare standalone packages are regenerated with `scripts\Publish-ImageCompare.ps1`.
 - Normal clone/build validation must use committed source files and vendored DLLs under `dll\`, not tracked publish outputs.
 - `dll\Library-Noah\OpenCvSharpExtern.dll` must stay removed. The native OpenCVSharp runtime is shared from `dll\OpenCVSharp\OpenCvSharpExtern.dll`.
+
+## Clean Runtime Output Contract (2026-07-19)
+
+- Dev EXE evidence is built with `powershell -NoProfile -ExecutionPolicy Bypass -File tools\BuildCleanRuntime.ps1 -Mode Dev`. The command creates a new timestamped runtime under `artifacts\openvisionlab_clean_runtime_<timestamp>`.
+- The release package is published with `powershell -NoProfile -ExecutionPolicy Bypass -File tools\BuildCleanRuntime.ps1 -Mode Release` to `dist\OpenVisionLab` using the `Release` configuration.
+- Both modes reject an existing output directory. Release mode accepts only `dist\OpenVisionLab`; this prevents a stale package from being silently reused or overwritten.
+- `bin\Debug` remains a retained local recipe workspace. It is not a clean-runtime evidence path or a release package and is not deleted, moved, or migrated automatically.
+- P134/P137 verify the template-dependency part of the output contract: Import copies an operator-accessible template into the recipe and stores an installation-root-relative `RECIPE\...\Template\...` reference; Matching, EdgeBasedMatching, and FeatureMatching resolve that path from the running installation root. A freshly published `dist\OpenVisionLab` package was copied to another root and replayed successfully. This does not establish installer, signing, update, or production-deployment qualification.
 
 ## Current Policy Decision
 

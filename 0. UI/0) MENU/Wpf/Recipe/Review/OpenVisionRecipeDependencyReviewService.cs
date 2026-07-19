@@ -327,7 +327,7 @@ namespace OpenVisionLab
             string templateDirectory = RecipeWorkspaceService.GetTemplateDirectory(recipeName);
             string targetPath = CreateUniqueFilePath(templateDirectory, Path.GetFileName(sourcePath));
             File.Copy(sourcePath, targetPath, overwrite: false);
-            return targetPath;
+            return Path.GetRelativePath(AppPathService.StartupPath, targetPath);
         }
 
         private static string CreateUniqueFilePath(string directory, string fileName)

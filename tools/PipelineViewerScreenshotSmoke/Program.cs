@@ -108,10 +108,12 @@ internal static class Program
         ["wpf_shell_host_recipe_review_bundle"] = CaptureShellHostRecipeReviewBundle,
         ["wpf_shell_host_recipe_review_bundle_import"] = CaptureShellHostRecipeReviewBundleImport,
         ["wpf_shell_host_recipe_local_validation_set"] = CaptureShellHostRecipeLocalValidationSet,
+        ["wpf_shell_host_recipe_local_validation_dataset"] = CaptureShellHostRecipeLocalValidationDataset,
         ["wpf_shell_host_recipe_manager_summary"] = CaptureShellHostRecipeManagerSummary,
         ["wpf_shell_host_recipe_operator_decision_board"] = CaptureShellHostRecipeOperatorDecisionBoard,
         ["wpf_shell_host_recipe_guided_setup"] = CaptureShellHostRecipeGuidedSetup,
         ["wpf_shell_host_recipe_fixture_properties"] = CaptureShellHostRecipeFixtureProperties,
+        ["wpf_shell_host_recipe_reference_difference_properties"] = CaptureShellHostRecipeReferenceDifferenceProperties,
         ["wpf_shell_host_recipe_multibranch_comparison"] = CaptureShellHostRecipeMultiBranchComparison,
         ["wpf_shell_host_recipe_large_library"] = CaptureShellHostRecipeLargeLibrary,
         ["wpf_shell_host_recipe_large_pipeline_list"] = CaptureShellHostRecipeLargePipelineList,
@@ -3042,7 +3044,7 @@ internal static class Program
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
         CleanupTransientRecipeWorkspaces();
 
-        string recipeName = "Smoke_RecipeFixtureProperties_" + Guid.NewGuid().ToString("N");
+        string recipeName = "Smoke_RecipeFixtureProperties_" + Guid.NewGuid().ToString("N").Substring(0, 12);
         VisionPipeline pipeline = CreateRecipeFixturePropertyPipeline();
         AssertFixturePropertyMapperRoundTrip(pipeline);
         VisionPipelineStorage.Save(recipeName, pipeline);
@@ -3082,6 +3084,128 @@ internal static class Program
                     + $"RunsBefore={previewRunsBefore}, RunsAfter={shellHost.NativePreviewRunCount}");
             }
         }, captureFloatingToolWindow: false, captureScreen: true);
+    }
+
+    private static CaptureResult CaptureShellHostRecipeReferenceDifferenceProperties(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        CleanupTransientRecipeWorkspaces();
+
+        string recipeName = "Smoke_RecipeReferenceDifference_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+        string referenceRoot = Path.Combine(Directory.GetCurrentDirectory(), "Sample", "EasyMatch");
+        VisionPipeline pipeline = new() { Name = "ReferenceDifference_PropertyGrid" };
+        VisionPipelineStep step = new()
+        {
+            Name = "01 Registered Good Reference Difference",
+            ToolType = "ReferenceDifference",
+            InputLayer = "Main",
+            OutputLayer = "Reference_Difference_Review",
+            UseAcceptance = true,
+            AcceptanceMetricName = "ResultCount",
+            UseAcceptanceMetricMinimum = true,
+            AcceptanceMetricMinimum = 0,
+            UseAcceptanceMetricMaximum = true,
+            AcceptanceMetricMaximum = 0
+        };
+        for (int index = 1; index <= 4; index++)
+        {
+            step.Parameters["ReferencePath" + index.ToString(CultureInfo.InvariantCulture)] =
+                Path.Combine(referenceRoot, "Die Pad " + index.ToString(CultureInfo.InvariantCulture) + ".bmp");
+        }
+
+        step.Parameters["DifferenceThreshold"] = "35";
+        step.Parameters["MinimumDefectArea"] = "80";
+        step.Parameters["MaximumDefectArea"] = "20000";
+        step.Parameters["MorphologyKernel"] = "3";
+        step.Parameters["IgnoreBorder"] = "8";
+        step.Parameters["OrbFeatures"] = "1600";
+        step.Parameters["MatchRatio"] = "0.75";
+        step.Parameters["MinimumInliers"] = "12";
+        step.Parameters["RansacThreshold"] = "3";
+        pipeline.Steps.Add(step);
+
+        object mappedProperty = VisionPipelineStepPropertyMapper.CreateProperty(step)
+            ?? throw new InvalidOperationException("ReferenceDifference PropertyGrid mapper returned no property object.");
+        VisionPipelineStep roundTrip = new()
+        {
+            Name = step.Name,
+            ToolType = step.ToolType,
+            InputLayer = step.InputLayer,
+            OutputLayer = step.OutputLayer
+        };
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(roundTrip, mappedProperty)
+            || !string.Equals(roundTrip.Parameters["ReferencePath4"], step.Parameters["ReferencePath4"], StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(roundTrip.Parameters["DifferenceThreshold"], "35", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("ReferenceDifference PropertyGrid mapper did not round-trip its parameters.");
+        }
+
+        VisionPipelineStorage.Save(recipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
+        OpenVisionShellHostView shellHost = CreateShellHost(recipeName, seedMainLayer: false);
+        try
+        {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                ToggleButton recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager")
+                    ?? throw new InvalidOperationException("ReferenceDifference PropertyGrid smoke could not find Recipe Manager.");
+                recipeManagerButton.IsChecked = true;
+                Pump(100);
+
+                FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline")!.IsSelected = true;
+                Pump(40);
+                FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineXmlSteps")!.IsSelected = true;
+                Pump(40);
+
+                OpenVisionRecipePipelineStepPreview preview = shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps.Single();
+                shellHost.RecipeCommands.SelectedPipelinePreviewStep = preview;
+                shellHost.RecipeCommands.LoadSelectedStepParametersCommand.Execute(null);
+                Pump(180);
+
+                FrameworkElement propertyGridHost = FindVisualChildren<FrameworkElement>(shellHost)
+                    .FirstOrDefault(item => item.IsVisible && string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "HostRecipeSelectedStepPropertyGridHost",
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("ReferenceDifference PropertyGrid host was not visible.");
+                propertyGridHost.BringIntoView();
+                propertyGridHost.UpdateLayout();
+                Pump(80);
+
+                System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid =
+                    FindVisualChildren<System.Windows.Controls.WpfPropertyGrid.PropertyGrid>(propertyGridHost)
+                        .FirstOrDefault(item => item.IsVisible && item.SelectedObject != null)
+                    ?? throw new InvalidOperationException("ReferenceDifference PropertyGrid did not load.");
+                string[] requiredProperties =
+                {
+                    "ReferencePath1", "ReferencePath2", "ReferencePath3", "ReferencePath4",
+                    "DifferenceThreshold", "MinimumDefectArea", "MaximumDefectArea", "MorphologyKernel",
+                    "IgnoreBorder", "OrbFeatures", "MatchRatio", "MinimumInliers", "RansacThreshold"
+                };
+                PropertyDescriptorCollection descriptors = TypeDescriptor.GetProperties(grid.SelectedObject);
+                string[] missing = requiredProperties.Where(name => descriptors.Find(name, true) == null).ToArray();
+                if (missing.Length > 0)
+                {
+                    throw new InvalidOperationException(
+                        "ReferenceDifference PropertyGrid missed parameters: " + string.Join(",", missing));
+                }
+
+                TextBox searchTextBox = GetActivePropertyGridSearchTextBox(grid, "ReferenceDifference recipe step");
+                searchTextBox.Text = "Reference Path";
+                searchTextBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+                grid.UpdateLayout();
+                Pump(60);
+                if (grid.IsSearchEmptyMessageVisibleForTest || shellHost.NativePreviewRunCount != 0)
+                {
+                    throw new InvalidOperationException(
+                        "ReferenceDifference PropertyGrid search failed or loading parameters triggered Preview/Run.");
+                }
+            }, captureFloatingToolWindow: false, captureScreen: true);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
     }
 
     private static void CaptureRecipeFixturePropertyStep(
@@ -5115,14 +5239,24 @@ internal static class Program
                 }
 
                 shellHost.RecipeCommands.RunValidationSuiteCommand.Execute(null);
-                for (int attempt = 0; attempt < 2000; attempt++)
+                DateTime fullRunDeadline = DateTime.UtcNow.AddSeconds(30);
+                while (DateTime.UtcNow < fullRunDeadline)
                 {
-                    Pump(1);
+                    Pump(10);
                     if (shellHost.RecipeCommands.RunValidationSuiteCommand.CanExecute(null)
-                        && shellHost.RecipeCommands.ValidationSuiteStatusText.Contains("saved", StringComparison.OrdinalIgnoreCase))
+                        && shellHost.RecipeCommands.RecentBatchRunOptions.Any(option =>
+                            !string.IsNullOrWhiteSpace(option?.SummaryPath)))
                     {
                         break;
                     }
+                }
+
+                if (!shellHost.RecipeCommands.RunValidationSuiteCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException(
+                        "Local validation set did not finish within 30 seconds. Status='"
+                        + shellHost.RecipeCommands.ValidationSuiteStatusText
+                        + "'.");
                 }
 
                 OpenVisionRecipeBatchRunOption? savedRun = shellHost.RecipeCommands.RecentBatchRunOptions.FirstOrDefault();
@@ -5133,9 +5267,14 @@ internal static class Program
                     || !string.Equals(savedSummary.SuiteName, "Fixture OK-NG", StringComparison.Ordinal)
                     || !string.Equals(savedSummary.SuiteKind, "LocalValidationSet", StringComparison.Ordinal)
                     || savedSummary.Results.Count != 4
-                    || savedSummary.Results.Count(result => result.Success) != 3
-                    || savedSummary.Results.Count(result => !result.Success) != 1
-                    || !savedSummary.Results.Any(result => result.ExpectedText.Contains("Expected NG", StringComparison.OrdinalIgnoreCase)))
+                    || savedSummary.Results.Count(result => result.Success) != 4
+                    || savedSummary.Results.Count(result => !result.Success) != 0
+                    || !savedSummary.Results.Any(result => result.ExpectedText.Contains("Expected NG", StringComparison.OrdinalIgnoreCase))
+                    || savedRun?.JudgmentCorrectCount != 3
+                    || savedRun.MisclassificationCount != 1
+                    || savedRun.FalseAcceptCount != 1
+                    || savedRun.FalseRejectCount != 0
+                    || !savedRun.AnalyticsText.Contains("25.0%", StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException(
                         "Local validation set did not reuse saved history with expected OK/NG judgments. Status='"
@@ -5143,13 +5282,35 @@ internal static class Program
                         + "'.");
                 }
 
+                VisionPipelineBatchSampleRunResult[] judgmentCases =
+                {
+                    new VisionPipelineBatchSampleRunResult { PairRole = "OK", ExpectedText = "ExpectedActual: Expected OK", Success = true, SampleName = "correct-accept" },
+                    new VisionPipelineBatchSampleRunResult { PairRole = "OK", ExpectedText = "ExpectedActual: Expected OK", Success = false, SampleName = "false-reject" },
+                    new VisionPipelineBatchSampleRunResult { PairRole = "NG", ExpectedText = "ExpectedActual: Expected NG", Success = true, SampleName = "false-accept" },
+                    new VisionPipelineBatchSampleRunResult { PairRole = "NG", ExpectedText = "ExpectedActual: Expected NG", Success = false, SampleName = "correct-reject" }
+                };
+                OpenVisionRecipeBatchSampleResultOption[] judgmentOptions = judgmentCases
+                    .Select(OpenVisionRecipeBatchSampleResultOption.Create)
+                    .ToArray();
+                if (!judgmentOptions[0].JudgmentCorrect
+                    || judgmentOptions[0].IsFalseAccept
+                    || judgmentOptions[0].IsFalseReject
+                    || !judgmentOptions[1].IsFalseReject
+                    || !judgmentOptions[2].IsFalseAccept
+                    || !judgmentOptions[3].JudgmentCorrect
+                    || judgmentOptions[3].IsFalseAccept
+                    || judgmentOptions[3].IsFalseReject)
+                {
+                    throw new InvalidOperationException("Expected/actual judgment classification did not cover all four outcomes.");
+                }
+
                 VisionPipelineBatchRunSummaryStorage.BatchRunStatistics savedStatistics =
                     savedRun?.Statistics ?? new VisionPipelineBatchRunSummaryStorage.BatchRunStatistics();
                 string analyticsText = shellHost.RecipeCommands.RecentBatchRunComparisonSummaryText ?? string.Empty;
                 if (savedStatistics.ResultCount != 4
                     || savedStatistics.TimingCount != 4
-                    || savedStatistics.FailureCount != 1
-                    || Math.Abs(savedStatistics.FailureRatePercent - 25D) > 0.001D
+                    || savedStatistics.FailureCount != 0
+                    || Math.Abs(savedStatistics.FailureRatePercent) > 0.001D
                     || savedStatistics.P95Milliseconds > savedStatistics.MaximumMilliseconds
                     || !analyticsText.Contains("p95", StringComparison.OrdinalIgnoreCase)
                     || !analyticsText.Contains("ms", StringComparison.OrdinalIgnoreCase)
@@ -5236,8 +5397,75 @@ internal static class Program
                     throw new InvalidOperationException("Explicit local validation suite changed workspace Preview/Run, layers, or routing.");
                 }
 
+                shellHost.RecipeCommands.RunValidationSuiteCommand.Execute(null);
+                if (!shellHost.RecipeCommands.StopValidationSuiteCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException("Local validation stop command was not available during execution.");
+                }
+
+                shellHost.RecipeCommands.StopValidationSuiteCommand.Execute(null);
+                DateTime partialRunDeadline = DateTime.UtcNow.AddSeconds(30);
+                while (DateTime.UtcNow < partialRunDeadline)
+                {
+                    Pump(10);
+                    if (shellHost.RecipeCommands.RunValidationSuiteCommand.CanExecute(null)
+                        && shellHost.RecipeCommands.RecentBatchRunOptions.Any(option =>
+                            !string.IsNullOrWhiteSpace(option?.SummaryPath)
+                            && !string.Equals(option.SummaryPath, savedRun?.SummaryPath, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        break;
+                    }
+                }
+
+                OpenVisionRecipeBatchRunOption? partialRun = shellHost.RecipeCommands.RecentBatchRunOptions.FirstOrDefault();
+                VisionPipelineBatchRunSummary? partialSummary = string.IsNullOrWhiteSpace(partialRun?.SummaryPath)
+                    ? null
+                    : VisionPipelineBatchRunSummaryStorage.Load(partialRun.SummaryPath);
+                if (partialRun == null
+                    || partialSummary == null
+                    || !partialRun.IsPartialRun
+                    || !string.Equals(partialSummary.SuiteKind, "LocalValidationSetPartial", StringComparison.Ordinal)
+                    || partialSummary.Results.Count <= 0
+                    || partialSummary.Results.Count >= 4
+                    || !partialSummary.Notes.Contains("not a full-set accuracy or timing baseline", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Stopped local validation did not persist an explicit partial result. Status='"
+                        + shellHost.RecipeCommands.ValidationSuiteStatusText
+                        + "'.");
+                }
+
+                shellHost.RecipeCommands.SelectedRecentBatchRunOption = savedRun;
+
                 File.Delete(repairedNgImagePath);
                 shellHost.RecipeCommands.RefreshOptions();
+                OpenVisionRecipeBatchRunOption captureRun = shellHost.RecipeCommands.RecentBatchRunOptions
+                    .FirstOrDefault(option => string.Equals(
+                        option?.SummaryPath,
+                        savedRun?.SummaryPath,
+                        StringComparison.OrdinalIgnoreCase))
+                    ?? throw new InvalidOperationException("Completed local validation run was not retained for capture.");
+                shellHost.RecipeCommands.SelectedRecentBatchRunOption = captureRun;
+                string judgmentFilterText = shellHost.RecipeCommands.RecentBatchRunNgOnlyText;
+                string judgmentFilterSummary = shellHost.RecipeCommands.RecentBatchRunNgFilterSummaryText;
+                if ((!judgmentFilterText.Contains("Misclassified", StringComparison.OrdinalIgnoreCase)
+                        && !judgmentFilterText.Contains("오판", StringComparison.Ordinal))
+                    || (!judgmentFilterSummary.Contains("misclassified 1", StringComparison.OrdinalIgnoreCase)
+                        && !judgmentFilterSummary.Contains("오판 1", StringComparison.Ordinal)))
+                {
+                    throw new InvalidOperationException(
+                        "Local validation Run History did not present expected/actual misclassification semantics. "
+                        + judgmentFilterSummary);
+                }
+
+                shellHost.RecipeCommands.ShowRecentBatchNgOnly = true;
+                if (shellHost.RecipeCommands.FilteredRecentBatchRunSampleResults.Count != 1
+                    || shellHost.RecipeCommands.FilteredRecentBatchRunSampleResults[0].IsFalseAccept != true)
+                {
+                    throw new InvalidOperationException("Misclassification filter did not isolate the expected-NG false accept.");
+                }
+
+                shellHost.RecipeCommands.ShowRecentBatchNgOnly = false;
                 OpenVisionRecipeValidationSetImageRow captureMissingRow = shellHost.RecipeCommands.ValidationSetImageRows
                     .Single(row => string.Equals(row.Path, repairedNgImagePath, StringComparison.OrdinalIgnoreCase));
                 shellHost.RecipeCommands.SelectedValidationSetImageRow = captureMissingRow;
@@ -5251,19 +5479,32 @@ internal static class Program
                 recipeManagerButton.IsChecked = true;
                 Pump(80);
 
+                Button imageListValidationButton = FindVisualChildren<Button>(shellHost)
+                    .FirstOrDefault(element => string.Equals(
+                        AutomationProperties.GetAutomationId(element),
+                        "HostRecipeOpenImageListValidationButton",
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("Image-list validation summary entry was not found.");
                 ToggleButton advancedToggle = FindNamedVisualChild<ToggleButton>(shellHost, "recipeAdvancedReviewToggle")
                     ?? throw new InvalidOperationException("Recipe advanced review toggle was not found.");
-                advancedToggle.IsChecked = true;
-                Pump(80);
-
-                TabItem pipelineTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline")
-                    ?? throw new InvalidOperationException("Recipe pipeline tab was not found.");
-                pipelineTab.IsSelected = true;
-                Pump(80);
-                TabItem runHistoryTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineRunHistory")
-                    ?? throw new InvalidOperationException("Recipe run-history tab was not found.");
-                runHistoryTab.IsSelected = true;
+                int navigationPreviewRunsBefore = shellHost.NativePreviewRunCount;
+                int navigationLayerCountBefore = shellHost.LayerDocumentCount;
+                imageListValidationButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 Pump(100);
+                TabItem pipelineTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline")
+                    ?? throw new InvalidOperationException("Recipe pipeline tab was not found after image-list navigation.");
+                TabItem runHistoryTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineRunHistory")
+                    ?? throw new InvalidOperationException("Recipe run-history tab was not found after image-list navigation.");
+                if (advancedToggle.IsChecked != true
+                    || !pipelineTab.IsSelected
+                    || !runHistoryTab.IsSelected
+                    || !shellHost.RecipeCommands.IsLocalValidationSetSelected
+                    || shellHost.NativePreviewRunCount != navigationPreviewRunsBefore
+                    || shellHost.LayerDocumentCount != navigationLayerCountBefore)
+                {
+                    throw new InvalidOperationException(
+                        "Image-list validation entry did not navigate without running or changing layers.");
+                }
 
                 string expectedEvidence = shellHost.RecipeCommands.ValidationSetExpectedText;
                 string acceptanceEvidence = shellHost.RecipeCommands.ValidationSetAcceptanceText;
@@ -5362,6 +5603,328 @@ internal static class Program
         {
             RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
         }
+    }
+
+    private static CaptureResult CaptureShellHostRecipeLocalValidationDataset(string outputPath)
+    {
+        string datasetRoot = Environment.GetEnvironmentVariable("OPENVISIONLAB_VALIDATION_DATASET_ROOT") ?? string.Empty;
+        string sourcePipelinePath = Environment.GetEnvironmentVariable("OPENVISIONLAB_VALIDATION_PIPELINE_PATH") ?? string.Empty;
+        string requestedPipelineName = Environment.GetEnvironmentVariable("OPENVISIONLAB_VALIDATION_PIPELINE_NAME") ?? string.Empty;
+        string suiteName = Environment.GetEnvironmentVariable("OPENVISIONLAB_VALIDATION_SUITE_NAME") ?? string.Empty;
+        string boundary = Environment.GetEnvironmentVariable("OPENVISIONLAB_VALIDATION_BOUNDARY") ?? string.Empty;
+        string templatePath = Environment.GetEnvironmentVariable("OPENVISIONLAB_VALIDATION_TEMPLATE_PATH") ?? string.Empty;
+        int maximumPerRole = int.TryParse(
+            Environment.GetEnvironmentVariable("OPENVISIONLAB_VALIDATION_MAX_PER_ROLE"),
+            NumberStyles.Integer,
+            CultureInfo.InvariantCulture,
+            out int requestedMaximum)
+            ? Math.Max(1, requestedMaximum)
+            : int.MaxValue;
+        if (string.IsNullOrWhiteSpace(datasetRoot) || !Directory.Exists(datasetRoot))
+        {
+            throw new DirectoryNotFoundException(
+                "Set OPENVISIONLAB_VALIDATION_DATASET_ROOT to a folder containing all_images\\OK and all_images\\NG.");
+        }
+
+        string okFolder = Directory.Exists(Path.Combine(datasetRoot, "OK"))
+            ? Path.Combine(datasetRoot, "OK")
+            : Path.Combine(datasetRoot, "all_images", "OK");
+        string ngFolder = Directory.Exists(Path.Combine(datasetRoot, "NG"))
+            ? Path.Combine(datasetRoot, "NG")
+            : Path.Combine(datasetRoot, "all_images", "NG");
+        if (!Directory.Exists(okFolder) || !Directory.Exists(ngFolder))
+        {
+            throw new DirectoryNotFoundException("Dataset does not contain OK and NG folders: " + datasetRoot);
+        }
+
+        string repoRoot = Directory.GetCurrentDirectory();
+        bool useDefaultMatchingBaseline = string.IsNullOrWhiteSpace(sourcePipelinePath);
+        if (useDefaultMatchingBaseline && string.IsNullOrWhiteSpace(templatePath))
+        {
+            templatePath = Path.Combine(repoRoot, "bin", "Debug", "EasyMatch", "Die Pad Model 1.bmp");
+        }
+
+        if (useDefaultMatchingBaseline && !File.Exists(templatePath))
+        {
+            throw new FileNotFoundException("Validation Matching template was not found.", templatePath);
+        }
+
+        if (useDefaultMatchingBaseline)
+        {
+            sourcePipelinePath = Path.Combine(repoRoot, "docs", "samples", "public", "Public_Matching_DiePad.pipeline.xml");
+        }
+
+        if (!File.Exists(sourcePipelinePath))
+        {
+            throw new FileNotFoundException("Validation pipeline was not found.", sourcePipelinePath);
+        }
+
+        string recipeName = "Smoke_LocalValidationDataset_" + Guid.NewGuid().ToString("N");
+        string pipelineName = string.IsNullOrWhiteSpace(requestedPipelineName)
+            ? useDefaultMatchingBaseline
+                ? "DiePad500_Matching_Baseline"
+                : Path.GetFileNameWithoutExtension(sourcePipelinePath)
+            : requestedPipelineName.Trim();
+        string pipelineXml = File.ReadAllText(sourcePipelinePath);
+        if (useDefaultMatchingBaseline)
+        {
+            pipelineXml = pipelineXml
+                .Replace("<Name>Public_Matching_DiePad</Name>", "<Name>" + pipelineName + "</Name>", StringComparison.Ordinal)
+                .Replace("<Value>Public_Matching_DiePad</Value>", "<Value>" + pipelineName + "</Value>", StringComparison.Ordinal)
+                .Replace(
+                    "docs\\samples\\public\\templates\\Matching_DiePad_Synthetic_Template.png",
+                    templatePath,
+                    StringComparison.OrdinalIgnoreCase)
+                .Replace(
+                    "docs/samples/public/templates/Matching_DiePad_Synthetic_Template.png",
+                    templatePath,
+                    StringComparison.OrdinalIgnoreCase);
+        }
+
+        if (string.IsNullOrWhiteSpace(suiteName))
+        {
+            suiteName = useDefaultMatchingBaseline ? "Die Pad 500 Matching baseline" : pipelineName;
+        }
+
+        if (string.IsNullOrWhiteSpace(boundary))
+        {
+            boundary = useDefaultMatchingBaseline
+                ? "Matching-only baseline; not a tuned multi-tool defect recipe or field qualification."
+                : "Caller-supplied validation pipeline; interpret only within the supplied dataset split and gate.";
+        }
+        string pipelinePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, pipelineName);
+        Directory.CreateDirectory(Path.GetDirectoryName(pipelinePath)!);
+        File.WriteAllText(pipelinePath, pipelineXml);
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipelineName);
+
+        OpenVisionShellHostView shellHost = CreateShellHost(recipeName, seedMainLayer: false);
+        try
+        {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                string artifactDirectory = Path.GetDirectoryName(outputPath) ?? repoRoot;
+                Directory.CreateDirectory(artifactDirectory);
+                string progressPath = Path.Combine(artifactDirectory, "progress.txt");
+                shellHost.RecipeCommands.SelectLocalValidationSetScope();
+                shellHost.RecipeCommands.NewValidationSetName = suiteName;
+                if (!shellHost.RecipeCommands.CreateValidationSetCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException("Dataset validation set create command was disabled.");
+                }
+
+                shellHost.RecipeCommands.CreateValidationSetCommand.Execute(null);
+                string[] okPaths = Directory.GetFiles(okFolder)
+                    .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+                    .Take(maximumPerRole)
+                    .ToArray();
+                string[] ngPaths = Directory.GetFiles(ngFolder)
+                    .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+                    .Take(maximumPerRole)
+                    .ToArray();
+                if (!shellHost.RecipeCommands.AddValidationSetImagesForTest(
+                        OpenVisionRecipeValidationSetImage.ExpectedOk,
+                        okPaths,
+                        "Provided OK folder")
+                    || !shellHost.RecipeCommands.AddValidationSetImagesForTest(
+                        OpenVisionRecipeValidationSetImage.ExpectedNg,
+                        ngPaths,
+                        "Provided NG folder"))
+                {
+                    throw new InvalidOperationException(
+                        "Dataset folder registration failed. " + shellHost.RecipeCommands.ValidationSuiteStatusText);
+                }
+
+                int okCount = shellHost.RecipeCommands.SelectedValidationSetOption?.OkCount ?? 0;
+                int ngCount = shellHost.RecipeCommands.SelectedValidationSetOption?.NgCount ?? 0;
+                int expectedOkCount = okPaths.Length;
+                int expectedNgCount = ngPaths.Length;
+                if (okCount != expectedOkCount
+                    || ngCount != expectedNgCount
+                    || !shellHost.RecipeCommands.RunValidationSuiteCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException(
+                        $"Dataset registration expected OK {expectedOkCount} / NG {expectedNgCount}, actual OK {okCount} / NG {ngCount}. "
+                        + shellHost.RecipeCommands.ValidationSetSelectionSummaryText);
+                }
+
+                File.WriteAllText(progressPath, $"Registered OK {okCount} / NG {ngCount}{Environment.NewLine}");
+                shellHost.RecipeCommands.RunValidationSuiteCommand.Execute(null);
+                DateTime deadline = DateTime.UtcNow.AddMinutes(10);
+                DateTime nextProgressWrite = DateTime.MinValue;
+                while (DateTime.UtcNow < deadline)
+                {
+                    Pump(20);
+                    if (DateTime.UtcNow >= nextProgressWrite)
+                    {
+                        File.AppendAllText(
+                            progressPath,
+                            DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture)
+                            + " | "
+                            + shellHost.RecipeCommands.ValidationSuiteStatusText
+                            + Environment.NewLine);
+                        nextProgressWrite = DateTime.UtcNow.AddSeconds(2);
+                    }
+
+                    if (shellHost.RecipeCommands.RunValidationSuiteCommand.CanExecute(null)
+                        && shellHost.RecipeCommands.RecentBatchRunOptions.Any(option =>
+                            !string.IsNullOrWhiteSpace(option?.SummaryPath)))
+                    {
+                        break;
+                    }
+                }
+
+                OpenVisionRecipeBatchRunOption run = shellHost.RecipeCommands.RecentBatchRunOptions.FirstOrDefault()
+                    ?? throw new InvalidOperationException("Dataset validation did not create a saved Run History row.");
+                VisionPipelineBatchRunSummary? summary = string.IsNullOrWhiteSpace(run.SummaryPath)
+                    ? null
+                    : VisionPipelineBatchRunSummaryStorage.Load(run.SummaryPath);
+                int expectedTotal = expectedOkCount + expectedNgCount;
+                if (summary?.Results == null || summary.Results.Count != expectedTotal)
+                {
+                    throw new InvalidOperationException(
+                        "Dataset validation did not save the expected result count. Status='"
+                        + shellHost.RecipeCommands.ValidationSuiteStatusText
+                        + "'.");
+                }
+
+                File.WriteAllText(Path.Combine(artifactDirectory, "pipeline.xml"), pipelineXml);
+                File.WriteAllText(
+                    Path.Combine(artifactDirectory, "batch_summary.json"),
+                    JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true }));
+                WriteValidationDatasetCsv(Path.Combine(artifactDirectory, "misclassification_table.csv"), summary.Results);
+                File.WriteAllText(
+                    Path.Combine(artifactDirectory, "audit_summary.json"),
+                    JsonSerializer.Serialize(
+                        new
+                        {
+                            DatasetRoot = datasetRoot,
+                            TemplatePath = templatePath,
+                            Pipeline = pipelineName,
+                            Total = summary.Results.Count,
+                            CorrectAccept = summary.Results.Count(result => IsDatasetJudgment(result, expectedOk: true, actualOk: true)),
+                            FalseReject = summary.Results.Count(result => IsDatasetJudgment(result, expectedOk: true, actualOk: false)),
+                            FalseAccept = summary.Results.Count(result => IsDatasetJudgment(result, expectedOk: false, actualOk: true)),
+                            CorrectReject = summary.Results.Count(result => IsDatasetJudgment(result, expectedOk: false, actualOk: false)),
+                            AverageMilliseconds = summary.Results.Average(result => result.TotalMilliseconds),
+                            Boundary = boundary
+                        },
+                        new JsonSerializerOptions { WriteIndented = true }));
+
+                ToggleButton recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager")
+                    ?? throw new InvalidOperationException("Recipe manager button was not found.");
+                recipeManagerButton.IsChecked = true;
+                Pump(60);
+                ToggleButton advancedToggle = FindNamedVisualChild<ToggleButton>(shellHost, "recipeAdvancedReviewToggle")
+                    ?? throw new InvalidOperationException("Recipe advanced review toggle was not found.");
+                advancedToggle.IsChecked = true;
+                Pump(60);
+                FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline")!.IsSelected = true;
+                Pump(40);
+                FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineRunHistory")!.IsSelected = true;
+                Pump(80);
+            }, captureFloatingToolWindow: false, captureScreen: true);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static bool IsDatasetJudgment(
+        VisionPipelineBatchSampleRunResult result,
+        bool expectedOk,
+        bool actualOk)
+    {
+        return result != null
+            && string.Equals(result.PairRole, expectedOk ? "OK" : "NG", StringComparison.OrdinalIgnoreCase)
+            && result.Success == actualOk;
+    }
+
+    private static void WriteValidationDatasetCsv(
+        string path,
+        IReadOnlyList<VisionPipelineBatchSampleRunResult> results)
+    {
+        static string Escape(string? value)
+        {
+            string text = value ?? string.Empty;
+            return "\"" + text.Replace("\"", "\"\"") + "\"";
+        }
+
+        List<string> lines = new List<string>
+        {
+            "SampleName,Expected,Actual,Judgment,PipelineAccepted,ResultCount,ScoreMax,AreaMin,AreaMax,AreaAvg,BoundsWidthMax,BoundsHeightMax,MeanValueAvg,DifferencePixelCount,DifferencePixelRatio,DifferenceMean,RegistrationInliers,RegistrationInlierRatio,RegistrationScore,ReferenceIndex,ValidPixelRatio,AcceptanceMessage,FailedStep,MetricText,ElapsedMilliseconds,ImagePath"
+        };
+        foreach (VisionPipelineBatchSampleRunResult result in results ?? Array.Empty<VisionPipelineBatchSampleRunResult>())
+        {
+            bool expectedOk = string.Equals(result?.PairRole, "OK", StringComparison.OrdinalIgnoreCase);
+            bool actualOk = result?.Success == true;
+            VisionPipelineRunReport? report = !string.IsNullOrWhiteSpace(result?.RunReportPath)
+                ? VisionPipelineRunReportStorage.Load(result.RunReportPath)
+                : null;
+            VisionPipelineStepRunReport? finalStep = report?.Steps?
+                .LastOrDefault(step => step != null && step.Enabled && !step.Skipped);
+            double? resultCount = finalStep?.Metrics?
+                .FirstOrDefault(metric => string.Equals(metric?.Name, "ResultCount", StringComparison.OrdinalIgnoreCase))
+                ?.Value;
+            double? scoreMax = finalStep?.Metrics?
+                .FirstOrDefault(metric => string.Equals(metric?.Name, "ScoreMax", StringComparison.OrdinalIgnoreCase))
+                ?.Value;
+            double? areaMin = FindMetric(finalStep, "AreaMin");
+            double? areaMax = FindMetric(finalStep, "AreaMax");
+            double? areaAvg = FindMetric(finalStep, "AreaAvg");
+            double? boundsWidthMax = FindMetric(finalStep, "BoundsWidthMax");
+            double? boundsHeightMax = FindMetric(finalStep, "BoundsHeightMax");
+            double? meanValueAvg = FindMetric(finalStep, "MeanValueAvg");
+            double? differencePixelCount = FindMetric(finalStep, "DifferencePixelCount");
+            double? differencePixelRatio = FindMetric(finalStep, "DifferencePixelRatio");
+            double? differenceMean = FindMetric(finalStep, "DifferenceMean");
+            double? registrationInliers = FindMetric(finalStep, "RegistrationInliers");
+            double? registrationInlierRatio = FindMetric(finalStep, "RegistrationInlierRatio");
+            double? registrationScore = FindMetric(finalStep, "RegistrationScore");
+            double? referenceIndex = FindMetric(finalStep, "ReferenceIndex");
+            double? validPixelRatio = FindMetric(finalStep, "ValidPixelRatio");
+            string judgment = expectedOk
+                ? actualOk ? "CorrectAccept" : "FalseReject"
+                : actualOk ? "FalseAccept" : "CorrectReject";
+            lines.Add(string.Join(",", new[]
+            {
+                Escape(result?.SampleName),
+                Escape(expectedOk ? "OK" : "NG"),
+                Escape(actualOk ? "OK" : "NG"),
+                Escape(judgment),
+                Escape(report?.Success == true ? "true" : "false"),
+                resultCount?.ToString("0.###", CultureInfo.InvariantCulture) ?? string.Empty,
+                scoreMax?.ToString("0.###", CultureInfo.InvariantCulture) ?? string.Empty,
+                areaMin?.ToString("0.###", CultureInfo.InvariantCulture) ?? string.Empty,
+                areaMax?.ToString("0.###", CultureInfo.InvariantCulture) ?? string.Empty,
+                areaAvg?.ToString("0.###", CultureInfo.InvariantCulture) ?? string.Empty,
+                boundsWidthMax?.ToString("0.###", CultureInfo.InvariantCulture) ?? string.Empty,
+                boundsHeightMax?.ToString("0.###", CultureInfo.InvariantCulture) ?? string.Empty,
+                meanValueAvg?.ToString("0.###", CultureInfo.InvariantCulture) ?? string.Empty,
+                differencePixelCount?.ToString("0.###", CultureInfo.InvariantCulture) ?? string.Empty,
+                differencePixelRatio?.ToString("0.######", CultureInfo.InvariantCulture) ?? string.Empty,
+                differenceMean?.ToString("0.###", CultureInfo.InvariantCulture) ?? string.Empty,
+                registrationInliers?.ToString("0.###", CultureInfo.InvariantCulture) ?? string.Empty,
+                registrationInlierRatio?.ToString("0.######", CultureInfo.InvariantCulture) ?? string.Empty,
+                registrationScore?.ToString("0.###", CultureInfo.InvariantCulture) ?? string.Empty,
+                referenceIndex?.ToString("0", CultureInfo.InvariantCulture) ?? string.Empty,
+                validPixelRatio?.ToString("0.######", CultureInfo.InvariantCulture) ?? string.Empty,
+                Escape(finalStep?.AcceptanceMessage),
+                Escape(result?.FailedStep),
+                Escape(result?.MetricText),
+                (result?.TotalMilliseconds ?? 0D).ToString("0.###", CultureInfo.InvariantCulture),
+                Escape(result?.SampleImagePath)
+            }));
+        }
+
+        File.WriteAllLines(path, lines);
+    }
+
+    private static double? FindMetric(VisionPipelineStepRunReport? step, string name)
+    {
+        return step?.Metrics?
+            .FirstOrDefault(metric => string.Equals(metric?.Name, name, StringComparison.OrdinalIgnoreCase))
+            ?.Value;
     }
 
     private static CaptureResult CaptureShellHostRecipeOperatorDecisionBoard(string outputPath)
@@ -6374,6 +6937,121 @@ internal static class Program
                 "HostRecipeGuidedSetupActionBoundary",
                 "HostRecipeGuidedSetupDraftText",
                 "HostRecipeGuidedSetupNextAction");
+
+            int referenceDifferenceRunsBefore = shellHost.NativePreviewRunCount;
+            int referenceDifferenceLayersBefore = shellHost.LayerDocumentCount;
+            string referenceDifferenceInputRouteBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+            string referenceDifferenceOutputRouteBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+            string referenceDifferenceActiveLayerBefore = shellHost.ActiveHostLayerTitle;
+            shellHost.RecipeCommands.SelectedLlmToolTemplate = OpenVisionGuidedSetupCatalog.ReferenceDifferenceTemplate;
+            shellHost.RecipeCommands.LlmReferenceImagePath = string.Empty;
+            shellHost.RecipeCommands.ReferenceDifferencePath2 = string.Empty;
+            shellHost.RecipeCommands.ReferenceDifferencePath3 = string.Empty;
+            shellHost.RecipeCommands.ReferenceDifferencePath4 = string.Empty;
+            Pump(60);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("MISSING", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block missing ReferenceDifference Good references.");
+            }
+
+            string[] referenceDifferencePaths = Enumerable.Range(1, 4)
+                .Select(index => Path.GetFullPath(Path.Combine("Sample", "EasyMatch", "Die Pad " + index + ".bmp")))
+                .ToArray();
+            if (referenceDifferencePaths.Any(path => !File.Exists(path)))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup ReferenceDifference reference was not found: "
+                    + string.Join(" | ", referenceDifferencePaths.Where(path => !File.Exists(path))));
+            }
+
+            shellHost.RecipeCommands.LlmReferenceImagePath = referenceDifferencePaths[0];
+            shellHost.RecipeCommands.ReferenceDifferencePath2 = referenceDifferencePaths[1];
+            shellHost.RecipeCommands.ReferenceDifferencePath3 = referenceDifferencePaths[2];
+            shellHost.RecipeCommands.ReferenceDifferencePath4 = referenceDifferencePaths[3];
+            shellHost.RecipeCommands.ReferenceDifferenceThresholdText = "999";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not block ReferenceDifference threshold outside 0..255.");
+            }
+
+            shellHost.RecipeCommands.ReferenceDifferenceThresholdText = "35";
+            shellHost.RecipeCommands.ReferenceDifferenceMinimumAreaText = "80";
+            shellHost.RecipeCommands.ReferenceDifferenceMaximumAreaText = "20000";
+            Pump(60);
+            if (!shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("ResultCount=0", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup did not restore ReferenceDifference readiness. "
+                    + shellHost.RecipeCommands.GuidedSetupIntentInputStatusText);
+            }
+
+            shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.Execute(null);
+            Pump(120);
+            string referenceDifferenceDraft = shellHost.RecipeCommands.LlmXmlDraftText;
+            if (!referenceDifferenceDraft.Contains("<ToolType>ReferenceDifference</ToolType>", StringComparison.OrdinalIgnoreCase)
+                || !referenceDifferenceDraft.Contains("<Key>ReferencePath1</Key>", StringComparison.OrdinalIgnoreCase)
+                || !referenceDifferenceDraft.Contains("<Key>ReferencePath4</Key>", StringComparison.OrdinalIgnoreCase)
+                || !referenceDifferenceDraft.Contains("<Key>DifferenceThreshold</Key>", StringComparison.OrdinalIgnoreCase)
+                || !referenceDifferenceDraft.Contains("<Value>35</Value>", StringComparison.OrdinalIgnoreCase)
+                || !referenceDifferenceDraft.Contains("<AcceptanceMetricName>ResultCount</AcceptanceMetricName>", StringComparison.OrdinalIgnoreCase)
+                || !referenceDifferenceDraft.Contains("<AcceptanceMetricMaximum>0</AcceptanceMetricMaximum>", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest()
+                || !shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null)
+                || shellHost.RecipeCommands.LlmXmlDraftDependencyRows.Count < 4
+                || shellHost.NativePreviewRunCount != referenceDifferenceRunsBefore
+                || shellHost.LayerDocumentCount != referenceDifferenceLayersBefore
+                || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, referenceDifferenceInputRouteBefore, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, referenceDifferenceOutputRouteBefore, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveHostLayerTitle, referenceDifferenceActiveLayerBefore, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup did not create a validated ReferenceDifference draft without Preview/Run, layer, or route side effects. "
+                    + $"Runs={referenceDifferenceRunsBefore}->{shellHost.NativePreviewRunCount}, "
+                    + $"Layers={referenceDifferenceLayersBefore}->{shellHost.LayerDocumentCount}, "
+                    + $"Dependencies={shellHost.RecipeCommands.LlmXmlDraftDependencyRows.Count}.");
+            }
+
+            shellHost.RecipeCommands.LlmXmlDraftText = referenceDifferenceDraft.Replace(
+                "<AcceptanceMetricMaximum>0</AcceptanceMetricMaximum>",
+                "<AcceptanceMetricMaximum>1</AcceptanceMetricMaximum>",
+                StringComparison.Ordinal);
+            if (shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest()
+                || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("ResultCount=0", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not reject a ReferenceDifference draft without the exact ResultCount=0 gate.");
+            }
+
+            shellHost.RecipeCommands.LlmXmlDraftText = referenceDifferenceDraft;
+            if (!shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest()
+                || !shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null)
+                || shellHost.NativePreviewRunCount != referenceDifferenceRunsBefore
+                || shellHost.LayerDocumentCount != referenceDifferenceLayersBefore)
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not restore the valid ReferenceDifference draft without execution side effects.");
+            }
+
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager Guided setup ReferenceDifference",
+                "HostRecipeGuidedSetupTab",
+                "HostRecipeGuidedSetupPanel",
+                "HostRecipeGuidedSetupIntentSelector",
+                "HostRecipeGuidedSetupReferenceDifferenceInputs",
+                "HostRecipeGuidedSetupReferenceDifferencePath1Text",
+                "HostRecipeGuidedSetupReferenceDifferencePath2Text",
+                "HostRecipeGuidedSetupReferenceDifferencePath3Text",
+                "HostRecipeGuidedSetupReferenceDifferencePath4Text",
+                "HostRecipeGuidedSetupReferenceDifferenceThresholdText",
+                "HostRecipeGuidedSetupReferenceDifferenceMinimumAreaText",
+                "HostRecipeGuidedSetupReferenceDifferenceMaximumAreaText",
+                "HostRecipeGuidedSetupReferenceDifferenceBoundary",
+                "HostRecipeGuidedSetupIntentInputStatus");
 
             ScrollViewer? guidedSetupScroll = FindNamedVisualChild<ScrollViewer>(shellHost, "recipeGuidedSetupScrollViewer");
             if (guidedSetupScroll == null)
