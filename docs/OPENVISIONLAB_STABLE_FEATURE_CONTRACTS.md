@@ -1,6 +1,6 @@
 # OpenVisionLab Stable Feature Contracts
 
-Last updated: 2026-07-14
+Last updated: 2026-07-23
 
 This document protects restored and verified behavior. Future LLM or developer work must read this before changing WPF shell, tool view, layer routing, viewer, or PropertyGrid code.
 
@@ -21,6 +21,7 @@ When a feature below is marked stable, do not refactor, simplify, replace, or re
 - Renaming a layer must preserve the layer image and refresh host/docked titles. `Main` is the stable default layer name and must not be renamed through the operator-facing rename command.
 - Keep completed behavior covered by focused smoke tests. Run the smallest target that covers the changed path.
 - Do not replace a PropertyGrid tool with hand-written controls unless a separate design explicitly says that tool is no longer PropertyGrid based.
+- Large-corpus recipe evidence must not equate execution success with semantic correctness. Preserve source/result hashes and current-run drawings, select the review queue deterministically, and stop per-image tuning according to `OPENVISIONLAB_SCALABLE_SKILL_VALIDATION_PROTOCOL.md`.
 - MainView image-ready guidance is display-only. Showing a next-action bar, quick tool buttons, or top status banner state must not auto-open a tool, run Preview, create an output layer, or change the selected input layer.
 - Tool rail readiness badges are display-only. The initial state may report `입력 없음` when `Main` has no image and `설정 가능` when a Main image exists, but `설정 가능` must not be presented as proof that template, second input, ROI, calibration, or other tool-specific Preview requirements are complete. Readiness refresh must not disable tool selection, open a tool, run Preview/Run, create or select a layer, or change input/output routing.
 - Matching-family template readiness must reuse the first recipe-owned `MatchingProperty`, `EdgeBasedMatchingProperty`, or `FeatureMatchingProperty` and its loaded template status. With `Main` ready, a missing or invalid template may show `템플릿 필요`; PropertyGrid template registration may refresh that display, but the refresh must not execute a tool or mutate layer or routing state.
@@ -34,6 +35,16 @@ When a feature below is marked stable, do not refactor, simplify, replace, or re
 - Public repository material must preserve `LICENSE`, `NOTICE`, copyright text, and attribution to `최노아(Noah-Choi)`. Do not remove or obscure these notices in README, package metadata, or redistributed source copies.
 - Public sample assets must be project-authored synthetic assets or otherwise clearly licensed for redistribution. The root `Sample/` folder is local/vendor sample reference material and must not be tracked or reintroduced into public GitHub output. Public sample and tutorial flows should use `docs/samples/public/` and `docs/samples/public/product/`.
 - Public README/tutorial/Learn content must not mention private goals such as portfolio, hiring, submission, or internal-only intent. Keep those notes in recovery/handoff documents only.
+
+### LLM Maintenance-Mode Boundary
+
+- Planned LLM feature expansion is frozen by P196. Existing LLM Assistant, Guided Setup, XML prompt/guide/catalog, validation, correction display, and explicit import behavior remain supported compatibility surfaces.
+- Do not add a provider, consumer-web automation, API credential dependency, prompt family, intent skill, or transcript campaign without an explicit user decision to reopen the track.
+- Maintenance changes require a concrete regression, unsafe XML acceptance/import behavior, data-loss risk, or compatibility break. Cosmetic or speculative LLM improvements are not current priorities.
+- LLM draft creation, paste, validation, diff/dependency review, and import must never run Preview/Run, create or select layers, change routing, or silently accept a recipe.
+- The workbench must remain fully operable without an LLM account, provider session, API key, transcript, or generated XML.
+- Historical incomplete LLM gates, including the missing natural Pin Phase 3 failure and frozen P169 Test replay, are deferred evidence rather than active blockers. Preserve them unchanged; do not manufacture a failure or execute reserved evidence early.
+- Reopening requires an explicit user decision after the equivalent non-LLM workflow and deterministic N-sample evidence exist.
 
 ## Stable Contracts
 
@@ -229,6 +240,58 @@ Relevant smoke:
 - `artifacts\actual_exe_matching_pyramid_scale_20260628`
 - `artifacts\ui_precheck_matching_pyramid_property_grid_20260628`
 
+#### Affine Transform v1 Addendum
+
+Stable behavior:
+
+- `AffineTransform` is a PropertyGrid-based three-point pixel transform. Canonical
+  XML uses `AffineTransform`; `Affine` and `AffineMatrix` remain accepted aliases.
+- The source/destination point order is authoritative. Both point triangles must be
+  non-collinear even when the configured minimum-area gate is zero.
+- The separately built Library-Noah `Lib.OpenCV.dll` owns matrix validation,
+  `WarpAffine`, matrix/decomposition/triangle/valid-pixel metrics, stable errors,
+  and destination-point/triangle/transformed-source-frame drawings. Do not copy a
+  second Affine calculation into OpenVisionLab.
+- The Affine Tool View exposes source/destination points, output size, interpolation,
+  border policy, and validation gates. Unrelated inherited Threshold, ROI, masking,
+  and pixel/mm rows remain hidden.
+- Opening the view, editing PropertyGrid values, selecting layers, or adding a Step
+  must not execute Preview/Run. One explicit Preview may write the chosen output
+  layer and must preserve the input route.
+- Successful result review shows the authoritative 2 x 3 matrix, valid-pixel ratio,
+  determinant, and source/destination triangle areas. The current-run output draws
+  the three destination points, destination triangle, and transformed input frame.
+- The public known-matrix sample and focused contract are regression evidence, not
+  automatic correspondence, homography, camera/lens calibration, calibrated-unit,
+  industrial-accuracy, unseen-robustness, or field-qualification evidence.
+- The frozen DLL identity is assembly `2.1.0.0`, file `2.8.0.0`, SHA-256
+  `B128CA282C0CD02C36F5CCF0C78C69C6F4834C3376158E8667EEAA7DE494A08B`.
+- Missing `USE_DETECTED_SOURCE_POINTS` keeps the fixed numeric P218 behavior.
+  When the flag is true, `SOURCE_POINT_1_FEATURE` through
+  `SOURCE_POINT_3_FEATURE` must name three distinct earlier accepted typed
+  `Point` results in the same input coordinate layer and image size.
+- `Matching`/`TemplateMatching` and the three accepted EdgeBasedMatching aliases
+  declare `Center` and publish it only for one usable result. The Affine source
+  picker may also use declared Line, CircleGauge, and GeometryMeasure Point
+  outputs.
+- Detected-point Affine never silently falls back to the saved fixed source
+  coordinates. Missing, duplicate, failed/NG, ambiguous, wrong-kind,
+  cross-frame, non-finite, or out-of-image Point sources fail closed before the
+  Library-Noah transform executes.
+- The ordered source/destination correspondence remains operator-authored.
+  OpenVisionLab does not reorder, infer, or automatically select points.
+- Runtime review retains the three resolved source coordinates through
+  `AffineDetectedSourcePointCount` and `AffineSourcePoint*X/Y`; downstream
+  inspection continues to use a fixed ROI on the reference-coordinate output.
+
+Relevant smoke:
+
+- `--affine-transform-contract`
+- `wpf_shell_host_affine_transform_tool`
+- `wpf_openvision_learn_geometry`
+- `wpf_shell_host_rotate_scale_tool`
+- `artifacts\p218_affine_transform_v1_20260723`
+
 ### 2. Layer Selection And Routing
 
 Stable behavior:
@@ -284,6 +347,12 @@ Stable behavior:
 - A Bad reference may be `ExpectedFailure` when the shared baseline pipeline intentionally rejects the sample through a stable metric acceptance gate. `Public_Mean_Brightness_Dark_Bad` is a controlled NG reference: the Mean tool still produces `MeanValueAvg`, but the public sample pipeline rejects values below the normal-brightness acceptance threshold.
 - Feature score-discrimination Bad references are controlled NG references. `Public_Feature_Card.pipeline.xml` must gate acceptance on `ScoreMax` for the normal target range, so low-score/wrong-target Feature hypotheses can still produce a result image while Pipeline Review reports metric NG.
 - LineDistance Bad references may be controlled NG references when the shared pipeline measures edge spacing. `Public_Line_Pins_Distance.pipeline.xml` gates acceptance on `DistanceMmAvg` in the normal range, so width/spacing drift can still produce line overlays while Pipeline Review reports metric NG.
+- Pipeline `LineDistance` keeps raw edge-point intersections as the default. When both paired gauges carry the existing `USE_EXTEND_FIT_LINE=true`, distance samples are intersections against the two fitted edges; every reported endpoint must remain inside the source image and its configured gauge ROI. The runtime evidence must retain the measurement ROI, both fitted edges, and the final distance lines. `EXTEND_FIT_LINE_VALUE` continues to control the displayed fit-line extent; it is not a tolerance, calibration, or acceptance value.
+- Pipeline `LineDistance` drawing evidence must represent both configured gauge ROIs. Equal Line A/B ROIs retain one compact `Measurement ROI` overlay; distinct ROIs retain separately labelled `Line A ROI` and `Line B ROI` overlays. This drawing rule must not change edge detection, paired-distance values, acceptance, output routing, or explicit Preview/Run behavior.
+- Recipe Manager selected-Step PropertyGrid must preserve Line A/B identity. ROI/use-ROI, primary and vertical projection direction, polarity, and manual-angle fields are independently labelled and independently serialized. Applying an unchanged edit object must not collapse unrepresented per-line values to Line A; changing an explicitly shared compact field may continue to apply that field to both lines. Load/apply/save/reload must not trigger Preview/Run or change layer routing.
+- General `LineDistance` orientation/polarity teaching must use the actual projection-direction contract, not ROI rotation alone. Horizontal opposing edges use `X_LTOR/X_RTOL`; the exact 90-degree clockwise equivalent uses `Y_TTOB/Y_BTOT`, transformed A/B ROIs, and the corresponding scan-angle frame. Bright/dark inversion changes polarity but must retain the same physical boundary and distance distribution. P200 is the frozen public synthetic reference for this contract; it does not establish calibration or general industrial robustness.
+- `PinArrayGap` measurement semantics must remain explicit. Missing `MeasurementMode` and `MeasurementMode=EdgeGap` measure adjacent empty clearance and publish `DistancePx*`; `MeasurementMode=CenterPitch` measures adjacent detected dark-pin centers and publishes `PitchCount` plus `PitchPxMin/Max/Avg/Range`. CenterPitch must not publish mm pitch without a separately verified calibration contract, and the frozen LLM Pin Guided Setup v1 must remain EdgeGap-only until explicitly reopened. Recipe Manager PropertyGrid load/apply/save must preserve mode, row ROI, detection values, unrepresented parameters, and zero Preview/Run side effects. Exact drawings must show the reviewed row ROI, detected pins, center points, and `P#` center-to-center lines.
+- The `Dark band thickness / Gap (LineDistance)` intent is a separate measurement-only contract. It requires exactly one operator-reviewed coarse ROI and one `LineDistance` Step with `USE_GAP_EDGE_PAIR=true` and `PIXELPERMM=0`; it must not silently add Matching, locator, normalization, template dependencies, acceptance, or calibration. The selected lower edge must be fitted from the nearest sustained bright transition after the dark core below a supported upper edge; a farther Hough line is not an eligible substitute. Explicit Run evidence must retain the coarse ROI, all candidate lines, selected upper/lower edges, five Gap samples, named PASS/REJECT state, and distance/stage/support/dark-coverage/ambiguity metrics.
 - Blob density Bad references may be controlled NG references when the shared pipeline measures particle count. `Public_Blob_Particles.pipeline.xml` gates acceptance on `ResultCount` in the normal dense-particle range, so sparse-density samples can still produce Blob result images while Pipeline Review reports metric NG.
 - Contour Bad references may be controlled NG references when the shared pipeline measures shape count. `Public_Contour_Shapes.pipeline.xml` gates acceptance on `ResultCount` in the normal shape-count range, so missing-shape samples can still produce contour result images while Pipeline Review reports metric NG.
 - Threshold Bad references may be controlled NG references when the shared pipeline measures isolated pad count. `Public_Threshold_BandPads.pipeline.xml` gates acceptance on `ResultCount` in the normal pad-count range, so missing-pad samples can still produce threshold/contour result images while Pipeline Review reports metric NG.
@@ -394,6 +463,8 @@ Relevant smoke:
   - Covers a real catalog sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, OK decision, primary result metric, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_workspace_sample_fixture_review`
   - Covers the real three-Step `Public_Matching_FixturePad` flow with Step 2 selected and verifies one non-duplicated Step identity, Blob tool, branch route, both previews, Fixture ROI/frame parameters, result metrics, elapsed time, and no first-issue state.
+- `wpf_shell_host_workspace_sample_normalize_fixture_review`
+  - Covers the public non-LLM four-Step `Matching -> RotateScale NormalizeImage -> Threshold -> Blob` flow. It verifies the Good and controlled missing-pad catalog contracts, explicit Review execution, reference-sized `DeviceAligned` output, unchanged fixed `CvROI=320,180,60,50`, final Blob result, both previews, and no first-issue state. This is one synthetic-pair workflow contract, not a general fixture-robustness claim.
 - `wpf_shell_host_workspace_sample_pipeline_review_ng_metrics`
   - Covers a real catalog Bad sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, controlled metric NG, beginner next action, metric detail, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_workspace_sample_pipeline_review_feature_ng_metrics`
@@ -410,14 +481,38 @@ Relevant smoke:
 ### 3B. Matching Fixture Reference Teach
 
 Stable behavior:
-- The reference-teach action is visible only for a fixture-producing Matching Step and is enabled only when an explicit successful Review has produced finite `FixtureCenterX`, `FixtureCenterY`, and `FixtureAngle` metrics.
-- The action copies only those reviewed values into `FIXTURE_REFERENCE_X`, `FIXTURE_REFERENCE_Y`, and `FIXTURE_REFERENCE_ANGLE` and saves the active pipeline.
+- The reference-teach action is visible only for a fixture-producing Matching Step and is enabled only when an explicit successful Review has produced finite `FixtureCenterX`, `FixtureCenterY`, `FixtureAngle`, and positive `FixtureScale` metrics.
+- The action copies only those reviewed values into `FIXTURE_REFERENCE_X`, `FIXTURE_REFERENCE_Y`, `FIXTURE_REFERENCE_ANGLE`, and `FIXTURE_REFERENCE_SCALE` and saves the active pipeline.
 - Saving a reference invalidates the previous review evidence and requires another explicit Review. It must not launch Preview/Run, create or select a layer, change input/output routing, or rewrite any consumer parameter or `CvROI`.
 - The UI must tell the operator that the reference image must be confirmed and that consumer ROI is preserved.
 
 Relevant smoke:
 - `wpf_shell_host_workspace_sample_fixture_teach`
-  - Covers reviewed-pose availability, explicit save, persisted reference values, stale-result invalidation, and unchanged consumer parameters/routes/layers/native Preview count.
+  - Covers reviewed-pose availability, explicit save, persisted center/angle/scale reference values, stale-result invalidation, and unchanged consumer parameters/routes/layers/native Preview count.
+
+### 3C. Fixture And Relative-ROI Designer
+
+Stable behavior:
+- Pipeline Review shows the designer only when one enabled named Matching fixture producer reaches one enabled `NormalizeImage` consumer and a later enabled single-`CvROI` Step through declared layer routing.
+- The designer is read-only evidence plus explicit workflow entry points. It shows the named relationship, template/search ROI, reference pose/image size, current pose, score, same-template preflight margin when present, normalized valid-pixel ratio, and the saved downstream ROI.
+- The saved reference-coordinate ROI is drawn as a transformed polygon on the current source only when a current reviewed pose exists, and as the unchanged rectangle on the current normalized image only when NormalizeImage succeeded.
+- `참조 자세 저장`, producer edit, measurement-ROI edit, and `리뷰 실행` reuse the existing reference-teach, Recipe Manager PropertyGrid, and explicit Run Review paths.
+- Selecting the tab or either drawing must not execute Preview/Run, create/select a layer, change the active layer, alter input/output routing, or modify the saved recipe.
+- Translation-only legacy Fixture reference teach remains available for pipelines without a NormalizeImage/downstream-ROI chain.
+
+Do not:
+- Add a locator, move the saved ROI per image, infer a margin from an unrelated Matching Step, silently weaken gates, or present the designer as recipe qualification.
+- Add a second parameter editor or make template/ROI/reference edits auto-run the pipeline.
+
+Relevant smoke:
+- `wpf_shell_host_workspace_sample_normalize_fixture_review`
+  - Covers relationship resolution, source and normalized ROI drawings, template/reference/current/quality state, explicit action availability, and zero tab-selection execution/layer/routing side effects.
+- `wpf_shell_host_workspace_sample_fixture_teach`
+  - Preserves legacy translation-Fixture reference teach and its zero-auto-run contract.
+- `wpf_shell_host_pipeline_step_edit_handoff`
+  - Covers the authoritative Recipe Manager PropertyGrid edit route.
+- `wpf_shell_host_recipe_fixture_properties`
+  - Covers Matching/NormalizeImage Fixture parameter round trip.
 
 ### 4. Tool Inline Preview Viewer
 
@@ -689,6 +784,7 @@ Stable behavior:
 - 2026-06-28 pyramid proposal center mapping fix: scaled proposal candidates must be mapped back through `TemplateCenter`, then converted to the full-resolution model origin per refine angle. Do not revert this to `proposal.Center / scale`; that reintroduces large-template shifted verification windows. Validation artifact: `artifacts\edge_based_pyramid_center_mapping_guard_20260628`.
 - Pyramid proposal acceptance must keep the weak-verified fallback guard. A proposal whose full-resolution verified edge score only barely clears the configured threshold must fall back to the normal full search rather than being accepted as a confident proposal result.
 - 2026-06-28 scale/subpixel pass: EdgeBasedMatching has opt-in scale search through `USE_FIND_SCALE`, `FIND_SCALE_MIN`, `FIND_SCALE_MAX`, and `FIND_SCALE_STEP`, plus final-candidate `USE_SUBPIXEL_REFINE`. Scale search builds scale-specific edge template models and reports result `Scale`; it must not be simulated by resizing only the source while keeping a fixed template model. Subpixel refine is a local 3x3 score-peak center refinement and must not change `SCORE_MIN` semantics.
+- P225 Pipeline mapping guard: EdgeBasedMatching PropertyGrid/Pipeline creation and runtime factory execution must preserve scale, subpixel, and pyramid proposal settings. Do not silently restore their defaults when a saved Step explicitly contains these keys.
 - When EdgeBasedMatching scale search is enabled, `Pyramid proposal` is intentionally bypassed for correctness. The current scale path uses the full edge search over angle x scale candidates, while Hybrid verify can still re-rank the selected edge candidates with scale-aware verification templates.
 - 2026-06-28 EdgeBasedMatching scale multi-match speed path: when `USE_FIND_SCALE=true`, `USE_FIND_ANGLE=false`, `USE_HYBRID_VERIFY=true`, `USE_MULTI_ROI=false`, and `NUM_MATCH>1`, the tool may reuse the first full edge-search candidate seed pool to select multiple non-overlapping matches. If the seed pool is depleted, it must fall back to the existing full edge search for the remaining results. Do not broaden this to angle search or multi-ROI without a separate validation pass.
 - EdgeBasedMatching result center semantics are now the visual template center. Drawing edge-model outlines must convert this result center back to the rotated/scaled model center through `TemplateCenterOffset`; do not mix edge-centroid and template-center coordinate contracts.
@@ -739,6 +835,44 @@ Relevant focused checks:
 - `.codex\MatchingRobustnessProbe`
 - `.codex\EdgeBasedAngleProbe`
 - `wpf_shell_host_edge_based_matching_tool`
+- `wpf_shell_host_edge_based_matching_auto_mpoint`
+
+### EdgeBasedMatching Unique-Result Addendum
+
+Stable behavior:
+
+- Unique-result validation is opt-in. Missing XML keys restore
+  `USE_UNIQUE_MATCH_VALIDATION=false` and
+  `UNIQUE_MATCH_MIN_SCORE_MARGIN=0.03`.
+- Enabled mode accepts only `NUM_MATCH=1`, `USE_MULTI_ROI=false`, and a finite
+  normalized margin in `0..1`.
+- The Library-Noah matcher retains at least eight internal candidates even when
+  the external result count is one.
+- A candidate below the existing `SCORE_MIN` is `MatchingNoResult`; a
+  spatially distinct plausible alternative whose score margin is below the
+  configured gate is `MatchingAmbiguous`. Both return zero `MatchingResult`
+  rows.
+- A success returns exactly one result and publishes normalized
+  `UniqueMatch.State`, `UniqueMatch.PlausibleAlternativeCount`, and
+  `UniqueMatch.ScoreMargin` metrics. The result-row margin uses percentage
+  points; legacy-disabled rows keep it unavailable.
+- PropertyGrid edits and XML mapping do not auto-run Preview. Pipeline validation
+  fails closed for invalid one-result/one-region combinations, and Pipeline
+  diagnostics retain the exact Library-Noah ambiguity reason.
+
+Do not:
+
+- infer uniqueness from external `NUM_MATCH=1` alone;
+- lower the margin merely to force a repeated template to pass;
+- relabel bounded synthetic evidence as template, ROI, pose, or field
+  qualification;
+- begin joint refinement, adaptive size, ODB/CAD, Homography, or multi-anchor
+  expansion without the separately required fixed-ROI evidence.
+
+Evidence:
+
+- `artifacts\p224_unique_match_runtime_20260724`
+- `docs\OPENVISIONLAB_EDGE_BASED_UNIQUE_MATCH_V1_CONTRACT.md`
 
 ## Recipe Review Bundle Import Dry-Run
 
@@ -812,10 +946,15 @@ Stable behavior:
 - Per-Step timing is available only when every batch row has a readable linked report, report recipe/pipeline identity matches the batch, and Step index/name/tool/enabled/input/output definitions match across all reports.
 - Missing paths/files, unreadable reports, identity mismatch, or Step-definition mismatch must show an unavailable reason. Do not mix partial reports into apparently complete Step statistics.
 - Enabled Step rows are ordered by descending p95 and expose timing coverage plus average, nearest-rank p95, and maximum. Non-positive, NaN, and infinite Step timings are excluded and remain visible through reduced coverage.
+- New saved batch summaries persist their deterministic review-queue policy, canonical SHA-256, selected result indices, and per-row reasons. Selection is derived once at save time so reopening Run History cannot silently change the reviewed population.
+- The v1 generic queue contains every runtime failure, every false accept/false reject when expected roles exist, every missing or unreadable source/report/drawing evidence row, minimum and maximum rows for each varying finite Step metric, and three content-hash-ordered audit rows per declared role stratum (or `ALL`). An invariant metric must not generate fake minimum/maximum rows.
+- Older saved summaries without this data must display the queue as unavailable and require a new explicit suite run. They must not recompute a different historical queue or claim equivalent evidence.
+- `검토 큐만` is a read-only filter, mutually exclusive with the existing NG/misclassification filter. Selecting a queued row and opening its retained drawing must reuse the current sample-result viewer and must not trigger Preview/Run, create layers, or change routing.
 
 Relevant smoke:
 
 - `wpf_shell_host_recipe_local_validation_set`
+- `wpf_shell_host_recipe_run_history_review_queue`
 - latest-build direct EXE `recipe-manager-tabs` with linked-report Step aggregation, missing-report rejection, `RunHistoryAnalytics`, and `RunHistoryPerformanceComparison`
 
 ## Pipeline Review Input-State Semantics
@@ -852,6 +991,74 @@ Relevant smoke:
 - `wpf_shell_host_fixture_step_edit_apply_rerun`
 - latest-build direct EXE `recipe-pipeline-roundtrip` with `StepEditHandoff`
 - latest-build direct EXE `public-fixture-review` with Fixture `MIN_AREA` XML apply and explicit Fixture Good/Bad rerun
+
+## Tool View N-Image Verification
+
+Stable behavior:
+
+- The common action is visible only for native single-input Tool Views with a
+  current one-Step Pipeline adapter. Arithmetic, HSV, Histogram, AutoMPoint, and
+  Pipeline-only families do not silently execute a substituted algorithm.
+- Selecting files or one top-level folder, clearing rows, selecting a result,
+  opening/closing the modal window, and exporting do not run the Tool View
+  Preview, create/select/delete a layer, or change input/output routing.
+- Explicit N-image Run creates and serializes the current Step exactly once,
+  then freezes its SHA-256 and the ordered deduplicated image list.
+- The transient Step always executes from isolated `Main` to `NImageResult`.
+  Native Tool View grayscale normalization is applied only to the execution
+  copy. The saved source snapshot remains the original loaded image and is
+  verified by SHA-256.
+- Phase 1 executes sequentially. Stop is checked between images and therefore
+  means stop after the current image. Do not describe this as parallel
+  execution.
+- Every completed row retains its source snapshot, result drawing, run report,
+  status, message, metrics, and elapsed time. The batch retains XML/TSV summary,
+  Pipeline snapshot, and the same deterministic review-queue contract used by
+  current batch history.
+- The HTML report must use retained summary/report/image evidence only. It must
+  not instantiate or rerun the tool, and missing or hash-mismatched evidence is
+  labelled explicitly.
+- Changing the file list clears the retained session. The modal owner prevents
+  editing the underlying Tool View parameters while results are open.
+- A successful row means the frozen Step executed and passed only its explicit
+  Step acceptance contract. The quick surface does not infer expected OK/NG
+  roles, accuracy, semantic correctness, or recipe qualification.
+- Formal labelled OK/NG validation and saved recipe history remain Recipe
+  Manager Validation Set and Run History responsibilities.
+- A completed all-success `Matching`, `EdgeBasedMatching`, or
+  `FeatureMatching` Tool View session may be explicitly promoted as a
+  hash-locked locator expected-success set. Promotion must preserve the exact
+  one-Step Pipeline name/text/SHA-256, dependency/template hashes, ordered
+  original-file hashes, and image-set hash. It must not activate the Pipeline,
+  start Preview/Run, or mutate layers/routing.
+- Every promoted row is `Expected OK` only for locator execution. Source-corpus
+  defect OK/NG roles must not be copied or inferred. The retained source hash
+  and decoded-pixel identity must validate before the current original bytes
+  are locked.
+- A hash-locked set is idempotent and read-only at row level. A different
+  selected Pipeline is not runnable; Pipeline, dependency, or image hash drift
+  fails before image execution. Legacy unlocked Validation Sets keep their
+  existing add/remove/repair and OK/NG behavior.
+- P234's first real-folder acceptance must remain reproducible: the frozen P230
+  Die Pad 1 Step SHA-256
+  `7CEAEC5D50259ED1337AB912F0F0A63C673F4A74E692DCDEA01BAA14FC25658F`
+  registers and executes a deterministic 12 OK + 12 NG top-level folder with
+  once-only Step creation, 24/24 retained drawings, verified source
+  SHA-256/decoded pixels, and `ScoreMax` parity within `0.1` percentage points.
+  The role labels balance the integration sample only and must not be presented
+  as an OK/NG classification result.
+
+Relevant smoke:
+
+- `wpf_shell_host_edge_based_matching_tool`
+- `wpf_tool_n_image_verification_window`
+- `wpf_tool_n_image_locator_promotion_window`
+- `p235_locator_validation_promotion`
+- `wpf_tool_n_image_entry_side_effect_contract`
+- `--tool-n-image-verification-contract` in `VisionRecipeRunnerSmoke`
+- `--tool-n-image-real-folder-acceptance` in `VisionRecipeRunnerSmoke`, with
+  the frozen P230 dataset/template/baseline arguments recorded in
+  `artifacts\p234_tool_n_image_real_folder_acceptance_20260724`
 
 ## Before Touching Stable Paths
 

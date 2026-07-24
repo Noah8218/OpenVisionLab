@@ -849,6 +849,15 @@ namespace OpenVisionLab
 
         public int FalseRejectCount => SampleResults.Count(result => result?.IsFalseReject == true);
 
+        public int ReviewQueueCount => SampleResults.Count(result => result?.IsInReviewQueue == true);
+
+        public string ReviewQueuePolicy => RunSummary?.ReviewQueuePolicy ?? string.Empty;
+
+        public string ReviewQueueSha256 => RunSummary?.ReviewQueueSha256 ?? string.Empty;
+
+        public bool HasPersistedReviewQueue => !string.IsNullOrWhiteSpace(ReviewQueuePolicy)
+            && !string.IsNullOrWhiteSpace(ReviewQueueSha256);
+
         internal static OpenVisionRecipeBatchRunOption Create(
             VisionPipelineBatchRunSummaryStorage.BatchRunSummaryInfo summary)
         {
@@ -1051,9 +1060,19 @@ namespace OpenVisionLab
 
         private static IReadOnlyList<OpenVisionRecipeBatchSampleResultOption> BuildSampleResults(VisionPipelineBatchRunSummary runSummary)
         {
+            Dictionary<int, VisionPipelineBatchReviewQueueEntry> queueByIndex = (runSummary?.ReviewQueue
+                    ?? new List<VisionPipelineBatchReviewQueueEntry>())
+                .Where(entry => entry != null)
+                .GroupBy(entry => entry.ResultIndex)
+                .ToDictionary(group => group.Key, group => group.First());
             List<OpenVisionRecipeBatchSampleResultOption> results = runSummary?.Results?
-                .Where(result => result != null)
-                .Select(OpenVisionRecipeBatchSampleResultOption.Create)
+                .Select((result, index) => new { Result = result, Index = index })
+                .Where(item => item.Result != null)
+                .Select(item =>
+                {
+                    queueByIndex.TryGetValue(item.Index, out VisionPipelineBatchReviewQueueEntry entry);
+                    return OpenVisionRecipeBatchSampleResultOption.Create(item.Result, entry?.Reasons);
+                })
                 .ToList() ?? new List<OpenVisionRecipeBatchSampleResultOption>();
 
             if (results.Count == 0)
@@ -1328,7 +1347,10 @@ namespace OpenVisionLab
             bool expectedSuccess,
             string failedStep,
             string sampleName,
-            string reportPath)
+            string reportPath,
+            string sampleImagePath,
+            string runReportPath,
+            IReadOnlyList<string> reviewReasons)
         {
             DisplayText = displayText ?? string.Empty;
             DetailText = detailText ?? string.Empty;
@@ -1339,6 +1361,11 @@ namespace OpenVisionLab
             FailedStep = failedStep ?? string.Empty;
             SampleName = sampleName ?? string.Empty;
             ReportPath = reportPath ?? string.Empty;
+            SampleImagePath = sampleImagePath ?? string.Empty;
+            RunReportPath = runReportPath ?? string.Empty;
+            ReviewReasons = reviewReasons ?? Array.Empty<string>();
+            ReviewReasonsText = FormatReviewReasons(ReviewReasons, compact: true);
+            ReviewReasonsToolTipText = FormatReviewReasons(ReviewReasons, compact: false);
         }
 
         public string DisplayText { get; }
@@ -1365,7 +1392,23 @@ namespace OpenVisionLab
 
         public string ReportPath { get; }
 
-        internal static OpenVisionRecipeBatchSampleResultOption Create(VisionPipelineBatchSampleRunResult result)
+        // ReportPath predates persisted per-sample run reports and can point to the source image.
+        // Keep the explicit paths so a Run History row can reopen its stored drawing evidence.
+        public string SampleImagePath { get; }
+
+        public string RunReportPath { get; }
+
+        public IReadOnlyList<string> ReviewReasons { get; }
+
+        public bool IsInReviewQueue => ReviewReasons.Count > 0;
+
+        public string ReviewReasonsText { get; }
+
+        public string ReviewReasonsToolTipText { get; }
+
+        internal static OpenVisionRecipeBatchSampleResultOption Create(
+            VisionPipelineBatchSampleRunResult result,
+            IReadOnlyList<string> reviewReasons = null)
         {
             if (result == null)
             {
@@ -1436,7 +1479,10 @@ namespace OpenVisionLab
                 expectedSuccess,
                 result.FailedStep,
                 result.SampleName,
-                string.IsNullOrWhiteSpace(result.ReportPath) ? result.SampleImagePath : result.ReportPath);
+                string.IsNullOrWhiteSpace(result.ReportPath) ? result.SampleImagePath : result.ReportPath,
+                result.SampleImagePath,
+                result.RunReportPath,
+                reviewReasons);
         }
 
         public static OpenVisionRecipeBatchSampleResultOption CreateEmpty()
@@ -1450,7 +1496,66 @@ namespace OpenVisionLab
                 true,
                 string.Empty,
                 string.Empty,
-                string.Empty);
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                Array.Empty<string>());
+        }
+
+        private static string FormatReviewReasons(IReadOnlyList<string> reasons, bool compact)
+        {
+            if (reasons == null || reasons.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            IEnumerable<string> visibleReasons = compact ? reasons.Take(3) : reasons;
+            string suffix = compact && reasons.Count > 3
+                ? " +" + (reasons.Count - 3).ToString(CultureInfo.InvariantCulture)
+                : string.Empty;
+            return OpenVisionRecipeText.Local("검토 큐: ", "Review queue: ")
+                + string.Join(" · ", visibleReasons.Select(FormatReviewReason))
+                + suffix;
+        }
+
+        private static string FormatReviewReason(string reason)
+        {
+            if (string.Equals(reason, "runtime-failure", StringComparison.Ordinal))
+            {
+                return OpenVisionRecipeText.Local("실행 실패", "runtime failure");
+            }
+
+            if (string.Equals(reason, "false-accept", StringComparison.Ordinal))
+            {
+                return OpenVisionRecipeText.Local("미검출", "false accept");
+            }
+
+            if (string.Equals(reason, "false-reject", StringComparison.Ordinal))
+            {
+                return OpenVisionRecipeText.Local("과검출", "false reject");
+            }
+
+            if (string.Equals(reason, "evidence-gap", StringComparison.Ordinal))
+            {
+                return OpenVisionRecipeText.Local("도면 증거 없음", "drawing evidence missing");
+            }
+
+            if (reason?.StartsWith("metric-min:", StringComparison.Ordinal) == true)
+            {
+                return OpenVisionRecipeText.Local("최솟값 ", "minimum ") + reason.Substring("metric-min:".Length);
+            }
+
+            if (reason?.StartsWith("metric-max:", StringComparison.Ordinal) == true)
+            {
+                return OpenVisionRecipeText.Local("최댓값 ", "maximum ") + reason.Substring("metric-max:".Length);
+            }
+
+            if (reason?.StartsWith("hash-audit:", StringComparison.Ordinal) == true)
+            {
+                return OpenVisionRecipeText.Local("해시 표본 ", "hash audit ") + reason.Substring("hash-audit:".Length);
+            }
+
+            return reason ?? string.Empty;
         }
 
         internal static bool TryResolveExpectedSuccess(

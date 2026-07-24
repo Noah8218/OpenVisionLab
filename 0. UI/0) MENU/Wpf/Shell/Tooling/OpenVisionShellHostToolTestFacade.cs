@@ -1,6 +1,7 @@
 using Lib.OpenCV.Pipeline;
 using OpenVisionLab._1._Core;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using static OpenVisionLab.DEFINE;
@@ -141,6 +142,20 @@ namespace OpenVisionLab
         public string PipelineReviewResultDetailText => statePresenter.PipelineReviewResultDetailText;
 
         public string PipelineReviewRunLogText => statePresenter.PipelineReviewRunLogText;
+
+        public int PipelineReviewObjectResultCount => statePresenter.PipelineReviewObjectResultCount;
+
+        public bool IsPipelineReviewFixtureDesignerVisible => statePresenter.IsPipelineReviewFixtureDesignerVisible;
+
+        public string PipelineReviewFixtureRelationshipText => statePresenter.PipelineReviewFixtureRelationshipText;
+
+        public int PipelineReviewFixtureProducerStepNumber => statePresenter.PipelineReviewFixtureProducerStepNumber;
+
+        public int PipelineReviewFixtureMeasurementStepNumber => statePresenter.PipelineReviewFixtureMeasurementStepNumber;
+
+        public int PipelineReviewSelectedObjectResultNumber => statePresenter.PipelineReviewSelectedObjectResultNumber;
+
+        public bool HasPipelineReviewObjectHighlight => statePresenter.HasPipelineReviewObjectHighlight;
 
         public string PipelineReviewExecutionState => statePresenter.PipelineReviewExecutionState;
 
@@ -390,6 +405,13 @@ namespace OpenVisionLab
             refreshCoordinator.RefreshHostLayerRows();
         }
 
+        public void ConfigureActiveAffineTransform(Action<AffineTransformProperty> configure)
+        {
+            documentController.ActiveNativeDocument?.ConfigureAffineTransformForTest(configure);
+            chromeController.RefreshDirectRouteText();
+            refreshCoordinator.RefreshHostLayerRows();
+        }
+
         public void SetActiveEdgeBasedMatchingTemplatePath(string path)
         {
             documentController.ActiveNativeDocument?.SetEdgeBasedMatchingTemplatePathForTest(path);
@@ -400,6 +422,13 @@ namespace OpenVisionLab
         public void ConfigureActiveEdgeBasedMatching(Action<EdgeBasedMatchingProperty> configure)
         {
             documentController.ActiveNativeDocument?.ConfigureEdgeBasedMatchingForTest(configure);
+            chromeController.RefreshDirectRouteText();
+            refreshCoordinator.RefreshHostLayerRows();
+        }
+
+        public void SetActiveAutoMPointRepresentativeImages(IEnumerable<string> paths)
+        {
+            documentController.ActiveNativeDocument?.SetAutoMPointRepresentativeImagesForTest(paths);
             chromeController.RefreshDirectRouteText();
             refreshCoordinator.RefreshHostLayerRows();
         }
@@ -429,6 +458,16 @@ namespace OpenVisionLab
         public bool OpenPipelineReviewPairSample()
         {
             return documentController.ActivePipelineReviewDocument?.OpenPairSampleForTest() == true;
+        }
+
+        public void SelectPipelineReviewObjectResult(int index)
+        {
+            documentController.ActivePipelineReviewDocument?.SelectObjectResultForTest(index);
+        }
+
+        public void SelectPipelineReviewObjectResultFromImage(int index)
+        {
+            documentController.ActivePipelineReviewDocument?.SelectObjectResultFromImageForTest(index);
         }
     }
 

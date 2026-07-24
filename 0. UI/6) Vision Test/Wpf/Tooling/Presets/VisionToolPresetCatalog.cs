@@ -363,6 +363,7 @@ namespace OpenVisionLab
                         property.GREEDINESS = 0.9D;
                         property.USE_PYRAMID_POSITION_PROPOSAL = false;
                         property.USE_HYBRID_VERIFY = false;
+                        property.USE_UNIQUE_MATCH_VALIDATION = false;
                     }),
                 new VisionToolPreset<EdgeBasedMatchingProperty>(
                     "fast",
@@ -386,6 +387,7 @@ namespace OpenVisionLab
                         property.USE_PYRAMID_POSITION_PROPOSAL = true;
                         property.PYRAMID_POSITION_TOP_N = 4;
                         property.USE_HYBRID_VERIFY = false;
+                        property.USE_UNIQUE_MATCH_VALIDATION = false;
                     }),
                 new VisionToolPreset<EdgeBasedMatchingProperty>(
                     "precise",
@@ -412,6 +414,7 @@ namespace OpenVisionLab
                         property.USE_PYRAMID_POSITION_PROPOSAL = false;
                         property.USE_HYBRID_VERIFY = true;
                         property.HYBRID_VERIFY_TOP_N = 5;
+                        property.USE_UNIQUE_MATCH_VALIDATION = false;
                     })
             };
         }

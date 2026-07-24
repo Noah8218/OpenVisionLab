@@ -34,6 +34,10 @@ namespace OpenVisionLab
         public string DiagnosticHint { get; set; } = string.Empty;
         public string SuggestedFix { get; set; } = string.Empty;
         public Dictionary<string, double> Metrics { get; set; } = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        public IReadOnlyList<VisionPipelineObjectResult> ObjectResults { get; set; } = Array.Empty<VisionPipelineObjectResult>();
+        public int ObjectResultCount => ObjectResults?.Count ?? 0;
+        public IReadOnlyList<VisionPipelineGeometryFeatureResult> GeometryFeatures { get; set; } = Array.Empty<VisionPipelineGeometryFeatureResult>();
+        public int GeometryFeatureCount => GeometryFeatures?.Count ?? 0;
         public string ResultImageSizeText => HasResultImage
             ? $"{ResultImageWidth} x {ResultImageHeight}"
             : string.Empty;
@@ -82,7 +86,9 @@ namespace OpenVisionLab
                 DiagnosticHint = VisionPipelineStepDiagnosticService.ResolveDiagnosticHint(stepResult, resolvedMessage),
                 SuggestedFix = VisionPipelineStepDiagnosticService.ResolveSuggestedFix(stepResult, resolvedMessage),
                 Metrics = VisionPipelineKnownMetrics.OrderMetrics(toolResult?.Metrics)
-                    .ToDictionary(metric => metric.Key, metric => metric.Value, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(metric => metric.Key, metric => metric.Value, StringComparer.OrdinalIgnoreCase),
+                ObjectResults = VisionPipelineObjectResultStore.Get(toolResult).ToList(),
+                GeometryFeatures = VisionPipelineGeometryFeatureStore.Get(toolResult).Select(item => item.Clone()).ToList()
             };
         }
 
@@ -260,17 +266,24 @@ namespace OpenVisionLab
                         return string.Empty;
                     }
 
-                    return "No blob was detected. Check threshold polarity, morphology, ROI, MIN_AREA, and MAX_AREA.";
+                    return "No blob was detected. Check threshold polarity, morphology, ROI, area filters, and bounding width/height filters.";
                 case "contour":
                     if (!HasZeroMetric(toolResult, VisionPipelineKnownMetrics.ResultCount))
                     {
                         return string.Empty;
                     }
 
-                    return "No contour was detected. Check threshold polarity, morphology, ROI, MIN_AREA, MAX_AREA, and retrieval mode.";
+                    return "No contour was detected. Check threshold polarity, morphology, ROI, area filters, bounding width/height filters, and retrieval mode.";
                 case "edgebasedmatching":
                 case "edgebasedtemplatematching":
                 case "edgetemplatematching":
+                    if (toolResult.ErrorCode == VisionToolErrorCode.MatchingAmbiguous)
+                    {
+                        return string.IsNullOrWhiteSpace(toolResult.Message)
+                            ? "Edge based template matching rejected multiple plausible unique-match candidates."
+                            : toolResult.Message;
+                    }
+
                     if (!HasZeroMetric(toolResult, VisionPipelineKnownMetrics.ResultCount))
                     {
                         return string.Empty;

@@ -253,6 +253,8 @@ if ($isProductCatalog) {
 else {
     foreach ($required in @(
         "Public_Matching_DiePad_Good",
+        "Public_Fixture_Normalize_RelativeRoi_Good",
+        "Public_Fixture_Normalize_RelativeRoi_Missing_Bad",
         "Public_Blob_Particles_Good",
         "Public_Contour_Shapes_Good",
         "Public_Threshold_BandPads_Good",
@@ -274,6 +276,7 @@ else {
 
     foreach ($required in @(
         "docs/samples/public/Public_Matching_DiePad.pipeline.xml",
+        "docs/samples/public/Public_Matching_NormalizeImage_RelativeRoi.pipeline.xml",
         "docs/samples/public/Public_Blob_Particles.pipeline.xml",
         "docs/samples/public/Public_Contour_Shapes.pipeline.xml",
         "docs/samples/public/Public_Threshold_BandPads.pipeline.xml",

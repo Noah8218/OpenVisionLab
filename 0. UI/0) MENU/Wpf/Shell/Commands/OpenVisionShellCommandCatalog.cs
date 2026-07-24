@@ -629,6 +629,7 @@ namespace OpenVisionLab
                         WpfTool(VISION_MENU.Arithmetic, PackIconMaterialKind.CalculatorVariant),
                         WpfTool(VISION_MENU.EdgeDetection, PackIconMaterialKind.ImageFilterHdr),
                         WpfTool(VISION_MENU.RotateAndScale, PackIconMaterialKind.Rotate3dVariant),
+                        WpfTool(VISION_MENU.AffineTransform, PackIconMaterialKind.Rotate3dVariant),
                         WpfTool(VISION_MENU.Histogram, PackIconMaterialKind.ChartHistogram),
                         WpfTool(VISION_MENU.HSV, PackIconMaterialKind.Palette),
                         WpfTool(VISION_MENU.Mean, PackIconMaterialKind.FunctionVariant)
@@ -728,7 +729,9 @@ namespace OpenVisionLab
                 case VISION_MENU.EdgeDetection:
                     return "에지 경계선 캐니 미분 edge canny sobel scharr laplacian hough gradient";
                 case VISION_MENU.RotateAndScale:
-                    return "회전 크기 변환 기하학 어파인 rotate scale affine geometry angle scalex scaley";
+                    return "회전 크기 변환 기하학 rotate scale geometry angle scalex scaley";
+                case VISION_MENU.AffineTransform:
+                    return "어파인 행렬 3점 좌표 보정 기하 변환 affine matrix three point transform shear translation warp";
                 case VISION_MENU.Histogram:
                     return "히스토그램 명암비 밝기 평활화 histogram contrast brightness equalize clahe normalize";
                 case VISION_MENU.HSV:

@@ -21,6 +21,11 @@ namespace OpenVisionLab
                 return false;
             }
 
+            if (propertyName.StartsWith("AUTO_MPOINT_", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
             if (e?.TargetObject is MatchingProperty matching)
             {
                 if (string.Equals(propertyName, nameof(MatchingProperty.AUTO_PREVIEW), StringComparison.Ordinal))
@@ -56,11 +61,17 @@ namespace OpenVisionLab
                 case nameof(ContourProperty.DrawMode):
                 case nameof(ContourProperty.DrawColor):
                 case nameof(ContourProperty.DrawThickness):
+                case nameof(BlobProperty.MIN_WIDTH):
+                case nameof(BlobProperty.MAX_WIDTH):
+                case nameof(BlobProperty.MIN_HEIGHT):
+                case nameof(BlobProperty.MAX_HEIGHT):
                 case nameof(MatchingProperty.USE_FIND_ANGLE):
                 case nameof(MatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH):
                 case nameof(MatchingProperty.USE_PYRAMID_POSITION_PROPOSAL):
                 case nameof(MatchingProperty.USE_CANNY):
                 case nameof(EdgeBasedMatchingProperty.USE_HYBRID_VERIFY):
+                case nameof(EdgeBasedMatchingProperty.USE_UNIQUE_MATCH_VALIDATION):
+                case nameof(EdgeBasedMatchingProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN):
                 case nameof(LineGaugeProperty.USE_MANUAL_ANGLE):
                 case nameof(LineGaugeProperty.USE_EXTEND_FIT_LINE):
                 case nameof(LineGaugeProperty.USE_AVERAGE_FILTER):

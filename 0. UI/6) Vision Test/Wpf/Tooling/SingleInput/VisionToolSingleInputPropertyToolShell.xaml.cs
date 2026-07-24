@@ -181,6 +181,7 @@ namespace OpenVisionLab
         public HeaderedContentControl ParameterGroup => gbParameters;
         public TextBlock TitleText => txtTitle;
         public TextBlock AddPipelineText => txtAddPipelineText;
+        public TextBlock NImageVerificationText => txtNImageVerificationText;
         public TextBlock RunPreviewText => txtRunPreviewText;
         public TextBlock StatusText => txtStatus;
         public TextBlock SummaryText => txtSummary;
@@ -211,6 +212,7 @@ namespace OpenVisionLab
         public Button CreateOutputLayerButton => btnCreateOutputLayer;
         public Button RunPreviewButton => btnRunPreview;
         public Button AddPipelineButton => btnAddPipeline;
+        public Button NImageVerificationButton => btnNImageVerification;
         public Border PropertyGridHost => propertyGridHost;
 
         private static void OnIsDockedInspectorModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

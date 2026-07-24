@@ -56,3 +56,18 @@ Good은 L 형태 fiducial을 찾고, Bad는 T 형태의 wrong fiducial이라 no-
 | Target changes scale/rotation/view but local features remain | FeatureMatching | Keypoint/descriptor matches | ResultCount, ScoreMax | Too few keypoints or repeated texture |
 
 After changing EdgeBasedMatching parameters, run Preview or Run Review and compare edge overlay position, `ScoreMax`, and `ResultCount`.
+
+## Auto MPoint teaching
+
+Auto MPoint is a training-time suggestion step for choosing a distinctive fixed-size EdgeBasedMatching template. It does not qualify the pattern and it is not an inspection Pipeline Step.
+
+1. Expand the collapsed `Auto MPoint` panel. It is collapsed by default so the docked PropertyGrid keeps its working height.
+2. Set the candidate width/height and stride in the `Auto MPoint` PropertyGrid category. Optionally enable and teach an analysis ROI.
+3. Select at least three same-product/same-capture representative images.
+4. Click `Find best pattern`. Review the automatically selected `BEST` ROI, representative success rate, minimum uniqueness, and drawing.
+5. Click `Save N-image report` to retain the complete result table and deterministic review drawings. Export does not rerun matching.
+6. Click `Use this pattern` only after reviewing the report. The selected ROI is saved as the current matching template.
+7. Run `Preview` explicitly and confirm the actual match drawing and score on the current image.
+8. Qualify the selected pattern separately through Recipe Manager Validation Set/Run History when OK/NG roles and recipe acceptance are required.
+
+Changing Auto MPoint teaching fields, analyzing candidates, selecting a row, exporting a report, or applying a suggestion must not automatically run Preview/Run or change layers and routing.

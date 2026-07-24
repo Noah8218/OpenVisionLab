@@ -30,6 +30,7 @@ namespace OpenVisionLab
                 LargeTool(VISION_MENU.FeatureMatching, OpenVisionNativePropertyGridToolFactory.CreateFeatureMatching, nameof(FeatureMatchingToolWpfView), warmHostedLayout: true),
                 Tool(VISION_MENU.EdgeDetection, OpenVisionNativeSimplePreprocessDocumentFactory.CreateEdgeDetectionDocument, nameof(SimplePreprocessToolWpfView)),
                 Tool(VISION_MENU.RotateAndScale, OpenVisionNativeSimplePreprocessDocumentFactory.CreateRotateScaleDocument, nameof(SimplePreprocessToolWpfView)),
+                LargeTool(VISION_MENU.AffineTransform, OpenVisionNativePropertyGridToolFactory.CreateAffineTransform, nameof(AffineTransformToolWpfView), warmHostedLayout: true),
                 Tool(VISION_MENU.HSV, OpenVisionNativeSimplePreprocessDocumentFactory.CreateHsvDocument, nameof(SimplePreprocessToolWpfView)),
                 Tool(VISION_MENU.Mean, OpenVisionNativeSimplePreprocessDocumentFactory.CreateMeanDocument, nameof(SimplePreprocessToolWpfView)),
                 Tool(VISION_MENU.Histogram, OpenVisionNativeSimplePreprocessDocumentFactory.CreateHistogramDocument, nameof(SimplePreprocessToolWpfView))

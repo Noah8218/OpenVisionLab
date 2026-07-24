@@ -150,9 +150,42 @@ namespace OpenVisionLab
                     break;
                 }
 
+                VisionPipelineAffinePointBindingApplication affinePointApplication =
+                    VisionPipelineAffinePointBindingService.PrepareRuntimeStep(
+                        runtimeStep,
+                        input,
+                        runResult);
+                if (!affinePointApplication.Success)
+                {
+                    stepStopwatch.Stop();
+                    StepRuntimeValidationResult affinePointValidation = new StepRuntimeValidationResult
+                    {
+                        ErrorCode = affinePointApplication.ErrorCode,
+                        Message = affinePointApplication.Message
+                    };
+                    VisionPipelineStepResult failedStepResult = CreateFailedStepResult(
+                        step,
+                        affinePointValidation,
+                        stepStopwatch.Elapsed);
+                    runResult.StepResults.Add(failedStepResult);
+                    stepUpdate?.Invoke(new VisionPipelineStepExecutionUpdate
+                    {
+                        Step = step,
+                        Status = VisionPipelineResultSummaryService.ResolveStatus(failedStepResult),
+                        Message = affinePointValidation.Message,
+                        StepResult = failedStepResult
+                    });
+
+                    input?.Dispose();
+                    break;
+                }
+
+                runtimeStep = affinePointApplication.RuntimeStep ?? runtimeStep;
                 Task<VisionToolResult> runTask = Task.Run(() =>
                     VisionPipelineOverlayMergeService.IsMergeTool(runtimeStep.ToolType)
                         ? VisionPipelineOverlayMergeService.Execute(runtimeStep, input, runResult)
+                        : VisionPipelineGeometryMeasureService.IsGeometryMeasure(runtimeStep.ToolType)
+                            ? VisionPipelineGeometryMeasureService.Execute(runtimeStep, input, runResult)
                         : VisionPipelineArithmeticStep.IsArithmetic(runtimeStep)
                             ? VisionPipelineArithmeticStep.Execute(runtimeStep, input, context)
                             : ExecuteStep(runtimeStep, input));
@@ -184,6 +217,7 @@ namespace OpenVisionLab
 
                 VisionPipelineMetricEnrichmentService.Enrich(toolResult, runtimeStep);
                 VisionPipelineFixtureFrameService.AddApplicationMetrics(toolResult, fixtureApplication);
+                VisionPipelineAffinePointBindingService.AddApplicationMetrics(toolResult, affinePointApplication);
                 VisionPipelineFixtureFrame pendingFixtureFrame = null;
                 if (toolResult.Success
                     && !VisionPipelineFixtureFrameService.TryCreatePublishedFrame(
@@ -193,19 +227,21 @@ namespace OpenVisionLab
                         out string fixturePublishMessage))
                 {
                     toolResult.ResultImage?.Dispose();
-                    toolResult = VisionToolResult.Failed(
-                        VisionToolErrorCode.InvalidParameter,
-                        fixturePublishMessage,
-                        toolResult.Elapsed);
+                    toolResult.ResultImage = null;
+                    toolResult.Success = false;
+                    toolResult.ErrorCode = VisionToolErrorCode.InvalidParameter;
+                    toolResult.ResultStatus = VisionToolResultStatus.InvalidParameter;
+                    toolResult.Message = fixturePublishMessage;
                 }
 
                 if (pendingFixtureFrame != null && fixtureFrames.ContainsKey(pendingFixtureFrame.Name))
                 {
                     toolResult.ResultImage?.Dispose();
-                    toolResult = VisionToolResult.Failed(
-                        VisionToolErrorCode.InvalidParameter,
-                        $"Fixture frame '{pendingFixtureFrame.Name}' was already published by an earlier step.",
-                        toolResult.Elapsed);
+                    toolResult.ResultImage = null;
+                    toolResult.Success = false;
+                    toolResult.ErrorCode = VisionToolErrorCode.InvalidParameter;
+                    toolResult.ResultStatus = VisionToolResultStatus.InvalidParameter;
+                    toolResult.Message = $"Fixture frame '{pendingFixtureFrame.Name}' was already published by an earlier step.";
                     pendingFixtureFrame = null;
                 }
 
@@ -299,6 +335,9 @@ namespace OpenVisionLab
                         $"Vision tool '{step?.ToolType ?? "-"}' returned no result.",
                         stopwatch.Elapsed);
                 }
+
+                VisionPipelineObjectResultCaptureService.Capture(step, input, tool, result);
+                VisionPipelineGeometryFeatureCaptureService.Capture(step, input, tool, result);
 
                 return result;
             }

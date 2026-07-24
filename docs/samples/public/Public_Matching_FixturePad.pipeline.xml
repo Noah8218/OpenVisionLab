@@ -25,6 +25,7 @@
         <Parameter><Key>FIXTURE_REFERENCE_X</Key><Value>120</Value></Parameter>
         <Parameter><Key>FIXTURE_REFERENCE_Y</Key><Value>100</Value></Parameter>
         <Parameter><Key>FIXTURE_REFERENCE_ANGLE</Key><Value>0</Value></Parameter>
+        <Parameter><Key>FIXTURE_REFERENCE_SCALE</Key><Value>1</Value></Parameter>
         <Parameter><Key>FIXTURE_MAX_ANGLE_DELTA</Key><Value>1</Value></Parameter>
       </Parameters>
       <UseAcceptance>true</UseAcceptance>

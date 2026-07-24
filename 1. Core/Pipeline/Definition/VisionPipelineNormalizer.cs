@@ -233,6 +233,9 @@ namespace OpenVisionLab
                 case "colorhsv":
                 case "colormask":
                 case "arithmetic":
+                case "affine":
+                case "affinematrix":
+                case "affinetransform":
                     return true;
                 default:
                     return false;
@@ -249,6 +252,15 @@ namespace OpenVisionLab
                 case "linegauge":
                 case "linedistance":
                 case "linedistancegauge":
+                case "pinarraygap":
+                case "adjacentpingap":
+                case "curvebandprofile":
+                case "darkbandcurve":
+                case "outercornerintersection":
+                case "brightobjectcorner":
+                case "circlegauge":
+                case "geometrymeasure":
+                case "geometricmeasurement":
                 case "edgebasedmatching":
                 case "edgebasedtemplatematching":
                 case "edgetemplatematching":

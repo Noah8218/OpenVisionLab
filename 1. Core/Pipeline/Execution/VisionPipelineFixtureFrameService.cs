@@ -4,10 +4,17 @@ using OpenCvSharp;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 
 namespace OpenVisionLab
 {
+    internal enum VisionPipelineFixtureApplyMode
+    {
+        TranslationRoi,
+        NormalizeImage
+    }
+
     internal sealed class VisionPipelineFixtureFrame
     {
         public string Name { get; set; } = string.Empty;
@@ -15,13 +22,20 @@ namespace OpenVisionLab
         public double ReferenceX { get; set; }
         public double ReferenceY { get; set; }
         public double ReferenceAngle { get; set; }
+        public double ReferenceScale { get; set; } = 1d;
         public double CurrentX { get; set; }
         public double CurrentY { get; set; }
         public double CurrentAngle { get; set; }
+        public double CurrentScale { get; set; } = 1d;
         public double MaximumAngleDelta { get; set; }
+        public double MinimumScaleRatio { get; set; }
+        public double MaximumScaleRatio { get; set; } = double.MaxValue;
+        public int ReferenceImageWidth { get; set; }
+        public int ReferenceImageHeight { get; set; }
         public double OffsetX => CurrentX - ReferenceX;
         public double OffsetY => CurrentY - ReferenceY;
         public double AngleDelta => VisionPipelineFixtureFrameService.NormalizeAngle(CurrentAngle - ReferenceAngle);
+        public double ScaleRatio => CurrentScale / ReferenceScale;
     }
 
     internal sealed class VisionPipelineFixtureApplication
@@ -33,6 +47,7 @@ namespace OpenVisionLab
         public VisionPipelineStep RuntimeStep { get; set; }
         public VisionPipelineFixtureFrame Frame { get; set; }
         public Rect EffectiveRoi { get; set; }
+        public bool HasEffectiveRoi { get; set; }
     }
 
     internal static class VisionPipelineFixtureFrameService
@@ -43,9 +58,23 @@ namespace OpenVisionLab
         public const string ReferenceXParameter = "FIXTURE_REFERENCE_X";
         public const string ReferenceYParameter = "FIXTURE_REFERENCE_Y";
         public const string ReferenceAngleParameter = "FIXTURE_REFERENCE_ANGLE";
+        public const string ReferenceScaleParameter = "FIXTURE_REFERENCE_SCALE";
         public const string MaximumAngleDeltaParameter = "FIXTURE_MAX_ANGLE_DELTA";
+        public const string MinimumScaleRatioParameter = "FIXTURE_MIN_SCALE_RATIO";
+        public const string MaximumScaleRatioParameter = "FIXTURE_MAX_SCALE_RATIO";
+        public const string ReferenceImageWidthParameter = "FIXTURE_REFERENCE_IMAGE_WIDTH";
+        public const string ReferenceImageHeightParameter = "FIXTURE_REFERENCE_IMAGE_HEIGHT";
+        public const string ApplyModeParameter = "FIXTURE_APPLY_MODE";
+        public const string MinimumValidPixelRatioParameter = "FIXTURE_MIN_VALID_PIXEL_RATIO";
+        public const string RuntimeReferenceXParameter = "FIXTURE_RUNTIME_REFERENCE_X";
+        public const string RuntimeReferenceYParameter = "FIXTURE_RUNTIME_REFERENCE_Y";
+        public const string RuntimeCurrentXParameter = "FIXTURE_RUNTIME_CURRENT_X";
+        public const string RuntimeCurrentYParameter = "FIXTURE_RUNTIME_CURRENT_Y";
+        public const string RuntimeAngleDeltaParameter = "FIXTURE_RUNTIME_ANGLE_DELTA";
+        public const string RuntimeScaleRatioParameter = "FIXTURE_RUNTIME_SCALE_RATIO";
 
         private const double DefaultMaximumAngleDelta = 2d;
+        internal const double DefaultMinimumValidPixelRatio = 0.25d;
 
         public static bool IsProducer(VisionPipelineStep step)
         {
@@ -55,6 +84,20 @@ namespace OpenVisionLab
         public static bool IsConsumer(VisionPipelineStep step)
         {
             return GetBool(step?.Parameters, ConsumeParameter, false);
+        }
+
+        public static bool IsNormalizeImageConsumer(VisionPipelineStep step)
+        {
+            return IsConsumer(step) && IsNormalizeImageParameters(step?.Parameters);
+        }
+
+        public static bool IsNormalizeImageParameters(IDictionary<string, string> parameters)
+        {
+            return Enum.TryParse(
+                    GetString(parameters, ApplyModeParameter),
+                    true,
+                    out VisionPipelineFixtureApplyMode mode)
+                && mode == VisionPipelineFixtureApplyMode.NormalizeImage;
         }
 
         public static VisionPipelineFixtureApplication PrepareRuntimeStep(
@@ -84,7 +127,12 @@ namespace OpenVisionLab
             {
                 return Failure(
                     VisionToolErrorCode.InvalidParameter,
-                    $"Step '{step.Name}' reads layer '{step.InputLayer}', but fixture frame '{frame.Name}' was located on '{frame.SourceLayer}'. Translation-only fixture consumers must use the same source layer.");
+                    $"Step '{step.Name}' reads layer '{step.InputLayer}', but fixture frame '{frame.Name}' was located on '{frame.SourceLayer}'. Fixture consumers must branch from the same unannotated source layer.");
+            }
+
+            if (IsNormalizeImageConsumer(step))
+            {
+                return PrepareNormalizeImageRuntimeStep(step, frame);
             }
 
             if (GetBool(step.Parameters, "USE_MULTI_ROI", false)
@@ -139,7 +187,91 @@ namespace OpenVisionLab
                 RuntimeStep = runtimeStep,
                 Frame = frame,
                 EffectiveRoi = effectiveRoi,
+                HasEffectiveRoi = true,
                 Message = $"Fixture '{frame.Name}' moved ROI by ({offsetX},{offsetY}) px."
+            };
+        }
+
+        private static VisionPipelineFixtureApplication PrepareNormalizeImageRuntimeStep(
+            VisionPipelineStep step,
+            VisionPipelineFixtureFrame frame)
+        {
+            string toolType = VisionPipelineNormalizer.NormalizeToolType(step.ToolType);
+            if (toolType != "rotatescale" && toolType != "rotateandscale")
+            {
+                return Failure(
+                    VisionToolErrorCode.InvalidParameter,
+                    $"Step '{step.Name}' must use RotateScale when {ApplyModeParameter}=NormalizeImage.");
+            }
+
+            if (GetBool(step.Parameters, "USE_ROI", false)
+                || GetBool(step.Parameters, "USE_MULTI_ROI", false)
+                || GetBool(step.Parameters, "USE_MASKING", false))
+            {
+                return Failure(
+                    VisionToolErrorCode.InvalidParameter,
+                    $"Step '{step.Name}' must normalize the complete source image without ROI or masks.");
+            }
+
+            if (!IsFinite(frame.AngleDelta)
+                || Math.Abs(frame.AngleDelta) > frame.MaximumAngleDelta)
+            {
+                return Failure(
+                    VisionToolErrorCode.InvalidParameter,
+                    $"Fixture frame '{frame.Name}' angle delta {frame.AngleDelta:0.###} deg exceeds the normalization limit {frame.MaximumAngleDelta:0.###} deg.");
+            }
+
+            if (!IsFinite(frame.ScaleRatio) || frame.ScaleRatio <= 0d)
+            {
+                return Failure(
+                    VisionToolErrorCode.InvalidParameter,
+                    $"Fixture frame '{frame.Name}' produced an invalid scale ratio.");
+            }
+
+            if (frame.ScaleRatio < frame.MinimumScaleRatio || frame.ScaleRatio > frame.MaximumScaleRatio)
+            {
+                return Failure(
+                    VisionToolErrorCode.InvalidParameter,
+                    $"Fixture frame '{frame.Name}' scale ratio {frame.ScaleRatio:0.###} is outside the configured range {frame.MinimumScaleRatio:0.###}..{frame.MaximumScaleRatio:0.###}.");
+            }
+
+            if (frame.ReferenceImageWidth <= 0 || frame.ReferenceImageHeight <= 0)
+            {
+                return Failure(
+                    VisionToolErrorCode.InvalidParameter,
+                    $"Fixture frame '{frame.Name}' requires taught {ReferenceImageWidthParameter} and {ReferenceImageHeightParameter} before NormalizeImage can run.");
+            }
+
+            double minimumValidPixelRatio = GetDouble(
+                step.Parameters,
+                MinimumValidPixelRatioParameter,
+                DefaultMinimumValidPixelRatio);
+            if (!IsFinite(minimumValidPixelRatio)
+                || minimumValidPixelRatio <= 0d
+                || minimumValidPixelRatio > 1d)
+            {
+                return Failure(
+                    VisionToolErrorCode.InvalidParameter,
+                    $"Step '{step.Name}' requires 0 < {MinimumValidPixelRatioParameter} <= 1.");
+            }
+
+            VisionPipelineStep runtimeStep = CloneStep(step);
+            SetDouble(runtimeStep.Parameters, RuntimeReferenceXParameter, frame.ReferenceX);
+            SetDouble(runtimeStep.Parameters, RuntimeReferenceYParameter, frame.ReferenceY);
+            SetDouble(runtimeStep.Parameters, RuntimeCurrentXParameter, frame.CurrentX);
+            SetDouble(runtimeStep.Parameters, RuntimeCurrentYParameter, frame.CurrentY);
+            SetDouble(runtimeStep.Parameters, RuntimeAngleDeltaParameter, frame.AngleDelta);
+            SetDouble(runtimeStep.Parameters, RuntimeScaleRatioParameter, frame.ScaleRatio);
+            runtimeStep.Parameters[ReferenceImageWidthParameter] = frame.ReferenceImageWidth.ToString(CultureInfo.InvariantCulture);
+            runtimeStep.Parameters[ReferenceImageHeightParameter] = frame.ReferenceImageHeight.ToString(CultureInfo.InvariantCulture);
+
+            return new VisionPipelineFixtureApplication
+            {
+                Success = true,
+                Applied = true,
+                RuntimeStep = runtimeStep,
+                Frame = frame,
+                Message = $"Fixture '{frame.Name}' prepared inverse similarity normalization ({frame.AngleDelta:0.###} deg, scale {frame.ScaleRatio:0.###})."
             };
         }
 
@@ -176,6 +308,21 @@ namespace OpenVisionLab
                 return false;
             }
 
+            double referenceScale = GetDouble(step.Parameters, ReferenceScaleParameter, 1d);
+            if (!IsFinite(referenceScale) || referenceScale <= 0d)
+            {
+                message = $"Fixture producer '{step.Name}' requires {ReferenceScaleParameter} > 0.";
+                return false;
+            }
+
+            int referenceImageWidth = GetInt(step.Parameters, ReferenceImageWidthParameter, 0);
+            int referenceImageHeight = GetInt(step.Parameters, ReferenceImageHeightParameter, 0);
+            if ((referenceImageWidth > 0) != (referenceImageHeight > 0))
+            {
+                message = $"Fixture producer '{step.Name}' requires both {ReferenceImageWidthParameter} and {ReferenceImageHeightParameter}.";
+                return false;
+            }
+
             string maximumAngleText = GetString(step.Parameters, MaximumAngleDeltaParameter);
             double maximumAngleDelta = DefaultMaximumAngleDelta;
             if ((!string.IsNullOrWhiteSpace(maximumAngleText)
@@ -184,6 +331,15 @@ namespace OpenVisionLab
                 || maximumAngleDelta < 0d)
             {
                 message = $"Fixture producer '{step.Name}' requires {MaximumAngleDeltaParameter} >= 0.";
+                return false;
+            }
+
+            if (!TryGetScaleRatioLimits(
+                    step,
+                    out double minimumScaleRatio,
+                    out double maximumScaleRatio,
+                    out message))
+            {
                 return false;
             }
 
@@ -217,6 +373,11 @@ namespace OpenVisionLab
                 return false;
             }
 
+            if (!TryResolveMatchingScale(step, overlay, out double currentScale, out message))
+            {
+                return false;
+            }
+
             frame = new VisionPipelineFixtureFrame
             {
                 Name = GetString(step.Parameters, FrameNameParameter),
@@ -224,10 +385,16 @@ namespace OpenVisionLab
                 ReferenceX = referenceX,
                 ReferenceY = referenceY,
                 ReferenceAngle = referenceAngle,
+                ReferenceScale = referenceScale,
                 CurrentX = currentX,
                 CurrentY = currentY,
                 CurrentAngle = overlay.Angle,
-                MaximumAngleDelta = maximumAngleDelta
+                CurrentScale = currentScale,
+                MaximumAngleDelta = maximumAngleDelta,
+                MinimumScaleRatio = minimumScaleRatio,
+                MaximumScaleRatio = maximumScaleRatio,
+                ReferenceImageWidth = referenceImageWidth,
+                ReferenceImageHeight = referenceImageHeight
             };
 
             if (string.IsNullOrWhiteSpace(frame.Name))
@@ -239,7 +406,15 @@ namespace OpenVisionLab
 
             if (Math.Abs(frame.AngleDelta) > frame.MaximumAngleDelta)
             {
-                message = $"Fixture frame '{frame.Name}' angle delta {frame.AngleDelta:0.###} deg exceeds the translation-only limit {frame.MaximumAngleDelta:0.###} deg.";
+                message = $"Fixture frame '{frame.Name}' angle delta {frame.AngleDelta:0.###} deg exceeds the configured limit {frame.MaximumAngleDelta:0.###} deg.";
+                frame = null;
+                return false;
+            }
+
+
+            if (frame.ScaleRatio < frame.MinimumScaleRatio || frame.ScaleRatio > frame.MaximumScaleRatio)
+            {
+                message = $"Fixture frame '{frame.Name}' scale ratio {frame.ScaleRatio:0.###} is outside the configured range {frame.MinimumScaleRatio:0.###}..{frame.MaximumScaleRatio:0.###}.";
                 frame = null;
                 return false;
             }
@@ -256,8 +431,11 @@ namespace OpenVisionLab
             }
 
             AddFrameMetrics(result.Metrics, application.Frame);
-            result.Metrics[VisionPipelineKnownMetrics.FixtureEffectiveRoiX] = application.EffectiveRoi.X;
-            result.Metrics[VisionPipelineKnownMetrics.FixtureEffectiveRoiY] = application.EffectiveRoi.Y;
+            if (application.HasEffectiveRoi)
+            {
+                result.Metrics[VisionPipelineKnownMetrics.FixtureEffectiveRoiX] = application.EffectiveRoi.X;
+                result.Metrics[VisionPipelineKnownMetrics.FixtureEffectiveRoiY] = application.EffectiveRoi.Y;
+            }
         }
 
         public static void ValidatePipelineDefinition(
@@ -313,10 +491,28 @@ namespace OpenVisionLab
                     ValidateRequiredDouble(step, label, ReferenceXParameter, errors);
                     ValidateRequiredDouble(step, label, ReferenceYParameter, errors);
                     ValidateRequiredDouble(step, label, ReferenceAngleParameter, errors);
+                    double referenceScale = GetDouble(step.Parameters, ReferenceScaleParameter, 1d);
+                    if (!IsFinite(referenceScale) || referenceScale <= 0d)
+                    {
+                        errors?.Add($"{label}: {ReferenceScaleParameter} must be greater than zero.");
+                    }
                     double maximumAngle = GetDouble(step.Parameters, MaximumAngleDeltaParameter, DefaultMaximumAngleDelta);
                     if (!IsFinite(maximumAngle) || maximumAngle < 0d)
                     {
                         errors?.Add($"{label}: {MaximumAngleDeltaParameter} must be zero or greater.");
+                    }
+
+
+                    if (!TryGetScaleRatioLimits(step, out _, out _, out string scaleLimitMessage))
+                    {
+                        errors?.Add($"{label}: {scaleLimitMessage}");
+                    }
+
+                    int referenceImageWidth = GetInt(step.Parameters, ReferenceImageWidthParameter, 0);
+                    int referenceImageHeight = GetInt(step.Parameters, ReferenceImageHeightParameter, 0);
+                    if ((referenceImageWidth > 0) != (referenceImageHeight > 0))
+                    {
+                        errors?.Add($"{label}: set both {ReferenceImageWidthParameter} and {ReferenceImageHeightParameter}, or leave both unset for translation-only v1.");
                     }
                 }
 
@@ -327,7 +523,7 @@ namespace OpenVisionLab
 
                 if (producer)
                 {
-                    errors?.Add($"{label}: one step cannot publish and consume a fixture frame in the translation-only workflow.");
+                    errors?.Add($"{label}: one step cannot publish and consume a fixture frame.");
                 }
 
                 if (string.IsNullOrWhiteSpace(frameName) || !producers.TryGetValue(frameName, out VisionPipelineStep fixtureStep))
@@ -336,16 +532,53 @@ namespace OpenVisionLab
                     continue;
                 }
 
-                if (!GetBool(step.Parameters, "USE_ROI", false)
-                    || !TryParseRect(GetString(step.Parameters, "CvROI"), out _))
+                bool normalizeImage = IsNormalizeImageConsumer(step);
+                if (normalizeImage)
                 {
-                    errors?.Add($"{label}: one enabled CvROI is required when {ConsumeParameter}=true.");
-                }
+                    string consumerToolType = VisionPipelineNormalizer.NormalizeToolType(step.ToolType);
+                    if (consumerToolType != "rotatescale" && consumerToolType != "rotateandscale")
+                    {
+                        errors?.Add($"{label}: {ApplyModeParameter}=NormalizeImage requires RotateScale.");
+                    }
 
-                if (GetBool(step.Parameters, "USE_MULTI_ROI", false)
-                    || GetBool(step.Parameters, "USE_MASKING", false))
+                    if (GetBool(step.Parameters, "USE_ROI", false)
+                        || GetBool(step.Parameters, "USE_MULTI_ROI", false)
+                        || GetBool(step.Parameters, "USE_MASKING", false))
+                    {
+                        errors?.Add($"{label}: NormalizeImage works on the complete source image and does not accept ROI or masks.");
+                    }
+
+                    int referenceImageWidth = GetInt(fixtureStep.Parameters, ReferenceImageWidthParameter, 0);
+                    int referenceImageHeight = GetInt(fixtureStep.Parameters, ReferenceImageHeightParameter, 0);
+                    if (referenceImageWidth <= 0 || referenceImageHeight <= 0)
+                    {
+                        errors?.Add($"{label}: producer '{fixtureStep.Name}' requires taught reference image width and height before NormalizeImage can run.");
+                    }
+
+                    double minimumValidPixelRatio = GetDouble(
+                        step.Parameters,
+                        MinimumValidPixelRatioParameter,
+                        DefaultMinimumValidPixelRatio);
+                    if (!IsFinite(minimumValidPixelRatio)
+                        || minimumValidPixelRatio <= 0d
+                        || minimumValidPixelRatio > 1d)
+                    {
+                        errors?.Add($"{label}: {MinimumValidPixelRatioParameter} must be greater than zero and no more than one.");
+                    }
+                }
+                else
                 {
-                    errors?.Add($"{label}: translation-only fixture v1 supports one CvROI and does not transform multi-ROI or masks.");
+                    if (!GetBool(step.Parameters, "USE_ROI", false)
+                        || !TryParseRect(GetString(step.Parameters, "CvROI"), out _))
+                    {
+                        errors?.Add($"{label}: one enabled CvROI is required when {ConsumeParameter}=true.");
+                    }
+
+                    if (GetBool(step.Parameters, "USE_MULTI_ROI", false)
+                        || GetBool(step.Parameters, "USE_MASKING", false))
+                    {
+                        errors?.Add($"{label}: translation-only fixture v1 supports one CvROI and does not transform multi-ROI or masks.");
+                    }
                 }
 
                 if (!string.Equals(step.InputLayer, fixtureStep.InputLayer, StringComparison.OrdinalIgnoreCase))
@@ -385,9 +618,124 @@ namespace OpenVisionLab
             metrics[VisionPipelineKnownMetrics.FixtureCenterX] = frame.CurrentX;
             metrics[VisionPipelineKnownMetrics.FixtureCenterY] = frame.CurrentY;
             metrics[VisionPipelineKnownMetrics.FixtureAngle] = frame.CurrentAngle;
+            metrics[VisionPipelineKnownMetrics.FixtureScale] = frame.CurrentScale;
             metrics[VisionPipelineKnownMetrics.FixtureOffsetX] = frame.OffsetX;
             metrics[VisionPipelineKnownMetrics.FixtureOffsetY] = frame.OffsetY;
             metrics[VisionPipelineKnownMetrics.FixtureAngleDelta] = frame.AngleDelta;
+            metrics[VisionPipelineKnownMetrics.FixtureScaleRatio] = frame.ScaleRatio;
+            if (frame.ReferenceImageWidth > 0 && frame.ReferenceImageHeight > 0)
+            {
+                metrics[VisionPipelineKnownMetrics.FixtureReferenceImageWidth] = frame.ReferenceImageWidth;
+                metrics[VisionPipelineKnownMetrics.FixtureReferenceImageHeight] = frame.ReferenceImageHeight;
+            }
+        }
+
+        private static void SetDouble(IDictionary<string, string> parameters, string key, double value)
+        {
+            parameters[key] = value.ToString("R", CultureInfo.InvariantCulture);
+        }
+
+        private static bool TryResolveMatchingScale(
+            VisionPipelineStep step,
+            VisionToolOverlay overlay,
+            out double scale,
+            out string message)
+        {
+            scale = 1d;
+            message = string.Empty;
+            if (!GetBool(step.Parameters, "USE_FIND_SCALE", false))
+            {
+                return true;
+            }
+
+            double scaleMinimum = GetDouble(step.Parameters, "FIND_SCALE_MIN", 0.9d);
+            double scaleMaximum = GetDouble(step.Parameters, "FIND_SCALE_MAX", 1.1d);
+            double scaleStep = GetDouble(step.Parameters, "FIND_SCALE_STEP", 0.05d);
+            if (!IsFinite(scaleMinimum)
+                || !IsFinite(scaleMaximum)
+                || !IsFinite(scaleStep)
+                || scaleMinimum <= 0d
+                || scaleMaximum < scaleMinimum
+                || scaleStep <= 0d)
+            {
+                message = $"Fixture producer '{step.Name}' has an invalid Matching scale-search range.";
+                return false;
+            }
+
+            string templatePath = GetString(step.Parameters, "PATTERN_PATH");
+            if (string.IsNullOrWhiteSpace(templatePath))
+            {
+                templatePath = GetString(step.Parameters, "TemplatePath");
+            }
+
+            templatePath = VisionPipelineAppToolFactory.ResolveTemplatePath(templatePath);
+
+            if (string.IsNullOrWhiteSpace(templatePath) || !File.Exists(templatePath))
+            {
+                message = $"Fixture producer '{step.Name}' cannot derive scale because its template path is unavailable.";
+                return false;
+            }
+
+            using Mat template = Cv2.ImRead(templatePath, ImreadModes.Unchanged);
+            if (template.Empty() || template.Width <= 0 || template.Height <= 0)
+            {
+                message = $"Fixture producer '{step.Name}' cannot derive scale from its template image.";
+                return false;
+            }
+
+            double widthScale = overlay.Bounds.Width / template.Width;
+            double heightScale = overlay.Bounds.Height / template.Height;
+            double measuredScale = (widthScale + heightScale) / 2d;
+            if (!IsFinite(measuredScale) || measuredScale <= 0d || Math.Abs(widthScale - heightScale) > 0.05d)
+            {
+                message = $"Fixture producer '{step.Name}' returned inconsistent uniform-scale geometry.";
+                return false;
+            }
+
+            double candidateIndex = Math.Round((measuredScale - scaleMinimum) / scaleStep, MidpointRounding.AwayFromZero);
+            double snappedScale = scaleMinimum + candidateIndex * scaleStep;
+            snappedScale = Math.Max(scaleMinimum, Math.Min(scaleMaximum, snappedScale));
+            if (Math.Abs(snappedScale - measuredScale) > Math.Max(0.03d, scaleStep))
+            {
+                message = $"Fixture producer '{step.Name}' scale geometry does not match its configured search grid.";
+                return false;
+            }
+
+            scale = snappedScale;
+            return true;
+        }
+
+        private static bool TryGetScaleRatioLimits(
+            VisionPipelineStep step,
+            out double minimum,
+            out double maximum,
+            out string message)
+        {
+            minimum = 0d;
+            maximum = double.MaxValue;
+            message = string.Empty;
+            string minimumText = GetString(step?.Parameters, MinimumScaleRatioParameter);
+            string maximumText = GetString(step?.Parameters, MaximumScaleRatioParameter);
+            bool hasMinimum = !string.IsNullOrWhiteSpace(minimumText);
+            bool hasMaximum = !string.IsNullOrWhiteSpace(maximumText);
+            if (!hasMinimum && !hasMaximum)
+            {
+                return true;
+            }
+
+            if (!hasMinimum || !hasMaximum
+                || !double.TryParse(minimumText, NumberStyles.Float, CultureInfo.InvariantCulture, out minimum)
+                || !double.TryParse(maximumText, NumberStyles.Float, CultureInfo.InvariantCulture, out maximum)
+                || !IsFinite(minimum)
+                || !IsFinite(maximum)
+                || minimum <= 0d
+                || maximum < minimum)
+            {
+                message = $"set both {MinimumScaleRatioParameter} and {MaximumScaleRatioParameter} with 0 < minimum <= maximum.";
+                return false;
+            }
+
+            return true;
         }
 
         private static VisionPipelineFixtureApplication Failure(VisionToolErrorCode errorCode, string message)

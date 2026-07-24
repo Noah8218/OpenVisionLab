@@ -23,6 +23,30 @@ namespace OpenVisionLab
         [CategoryAttribute("Blob Parameter"), DescriptionAttribute("Area(가로*세로) 최대 사이즈입니다. 그 이상는 필터링 됩니다."), DisplayNameAttribute("Max area")]
         public int MAX_AREA { get; set; } = 1000000;
 
+        [PropertyOrder(3)]
+        [Browsable(true)]
+        [PropertyEditor(typeof(WpgRangeEditor))]
+        [RangeEditor(0, 1000000, 10, 0, nameof(MIN_WIDTH), nameof(MAX_WIDTH))]
+        [CategoryAttribute("Blob Parameter"), DescriptionAttribute("개별 Blob의 축 정렬 바운딩 박스 최소 폭(px)입니다."), DisplayNameAttribute("Min bounding width")]
+        public int MIN_WIDTH { get; set; } = 0;
+
+        [PropertyOrder(4)]
+        [Browsable(true)]
+        [CategoryAttribute("Blob Parameter"), DescriptionAttribute("개별 Blob의 축 정렬 바운딩 박스 최대 폭(px)입니다."), DisplayNameAttribute("Max bounding width")]
+        public int MAX_WIDTH { get; set; } = 1000000;
+
+        [PropertyOrder(5)]
+        [Browsable(true)]
+        [PropertyEditor(typeof(WpgRangeEditor))]
+        [RangeEditor(0, 1000000, 10, 0, nameof(MIN_HEIGHT), nameof(MAX_HEIGHT))]
+        [CategoryAttribute("Blob Parameter"), DescriptionAttribute("개별 Blob의 축 정렬 바운딩 박스 최소 높이(px)입니다."), DisplayNameAttribute("Min bounding height")]
+        public int MIN_HEIGHT { get; set; } = 0;
+
+        [PropertyOrder(6)]
+        [Browsable(true)]
+        [CategoryAttribute("Blob Parameter"), DescriptionAttribute("개별 Blob의 축 정렬 바운딩 박스 최대 높이(px)입니다."), DisplayNameAttribute("Max bounding height")]
+        public int MAX_HEIGHT { get; set; } = 1000000;
+
         public BlobProperty(string strName)
         {
             NAME = strName;

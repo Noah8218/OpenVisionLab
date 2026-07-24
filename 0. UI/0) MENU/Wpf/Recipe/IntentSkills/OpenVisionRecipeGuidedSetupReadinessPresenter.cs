@@ -16,6 +16,27 @@ namespace OpenVisionLab
                 " 위 값은 검사 설정 탭에서 입력합니다.",
                 " Enter these values in the Build inspection tab.");
 
+            if (OpenVisionRecipeLlmIntent.IsHybridRelativeRoiGapTemplate(template))
+            {
+                return OpenVisionRecipeText.Local(
+                    "필수 입력: 배경을 최소화한 locator 템플릿, 검색 ROI, 검토한 기준 자세, 기준좌표 검사 ROI, 점수·모호성·각도·배율·유효영역 제한. 출력은 위치검출로 정규화한 뒤 수행하는 px 전용 Gap 측정이며 Gap 합격 공차는 포함하지 않습니다.",
+                    "Required inputs: cropped locator template, search ROI, reviewed reference pose, reference-coordinate measurement ROI, and score/ambiguity/angle/scale/coverage limits. Output is a locator-normalized px-only Gap measurement without a Gap acceptance tolerance.") + setupLocation;
+            }
+
+            if (IsPinArrayGapTemplate(template))
+            {
+                return OpenVisionRecipeText.Local(
+                    "필수 입력: 원본 이미지, 한 행씩 검토한 ROI, Dark 핀, 인접 엣지 간격, DarkThreshold, 최소 암영 비율, 핀/끊김/간격 폭. 허용 Range px를 비우면 측정 전용입니다.",
+                    "Required inputs: source image, reviewed single-row ROIs, Dark pins, adjacent edge-to-edge clearance, DarkThreshold, minimum dark coverage, and pin/break/gap widths. Leave Range px blank for measurement only.") + setupLocation;
+            }
+
+            if (OpenVisionRecipeLlmIntent.IsDarkBandGapTemplate(template))
+            {
+                return OpenVisionRecipeText.Local(
+                    "필수 입력: 의도한 긴 검은 띠를 포함하는 작업자 검토 coarse ROI 하나. 출력은 px 측정 전용이며 공차와 mm 교정은 포함하지 않습니다.",
+                    "Required input: one operator-reviewed coarse ROI containing the intended long dark band. Output is px measurement-only; tolerance and mm calibration are not included.") + setupLocation;
+            }
+
             if (OpenVisionRecipeLlmIntent.IsLineDistanceTemplate(template))
             {
                 return OpenVisionRecipeText.Local(
@@ -81,6 +102,60 @@ namespace OpenVisionLab
         {
             input = input ?? new OpenVisionRecipeGuidedSetupReadinessInput();
             string template = input.Template ?? string.Empty;
+            if (OpenVisionRecipeLlmIntent.IsHybridRelativeRoiGapTemplate(template))
+            {
+                if (!OpenVisionRecipeHybridRelativeRoiIntentSkill.TryValidateInputs(
+                        input.ReferenceImagePath,
+                        input.HybridSearchRoiText,
+                        input.HybridRelativeRoiText,
+                        input.HybridReferencePoseText,
+                        input.HybridScoreMinimumText,
+                        input.HybridScoreMarginText,
+                        input.HybridAngleMinimumText,
+                        input.HybridAngleMaximumText,
+                        input.HybridScaleRatioMinimumText,
+                        input.HybridScaleRatioMaximumText,
+                        input.HybridMinimumValidPixelRatioText,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out string message))
+                {
+                    return Status(false, "MISSING: " + message);
+                }
+
+                return Status(
+                    true,
+                    "LOCATION GATED / MEASURE READY / NOT JUDGED: Matching -> NormalizeImage -> relative-ROI LineDistance / px-only");
+            }
+
+            if (IsPinArrayGapTemplate(template))
+            {
+                return EvaluatePinArrayGap(input);
+            }
+
+            if (OpenVisionRecipeLlmIntent.IsDarkBandGapTemplate(template))
+            {
+                if (!OpenVisionRecipeDarkBandGapIntentSkill.TryParseCoarseRoi(
+                        input.DarkBandGapRoiText,
+                        out _,
+                        out string message))
+                {
+                    return Status(false, "MISSING: " + message);
+                }
+
+                return Status(
+                    true,
+                    "MEASURE READY / NOT JUDGED: one coarse ROI / LineDistance Gap edge pair / px-only");
+            }
+
             if (OpenVisionRecipeLlmIntent.IsLineDistanceTemplate(template))
             {
                 List<string> missing = new List<string>();
@@ -382,6 +457,136 @@ namespace OpenVisionLab
                     "READY: built-in defaults; review parameters before Import"));
         }
 
+        private static OpenVisionRecipeGuidedSetupReadinessStatus EvaluatePinArrayGap(
+            OpenVisionRecipeGuidedSetupReadinessInput input)
+        {
+            string polarity = (input.PinArrayGapPolarityText ?? string.Empty).Trim();
+            if (polarity.Length > 0
+                && !string.Equals(
+                    polarity,
+                    OpenVisionRecipePinArrayGapIntentSkill.SupportedPinPolarity,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return Status(
+                    false,
+                    "WAIT - unsupported: "
+                        + OpenVisionRecipeText.Local(
+                            "v1은 Dark 핀만 검출합니다.",
+                            "v1 detects dark pins only."));
+            }
+
+            string measurementDefinition = (input.PinArrayGapMeasurementText ?? string.Empty).Trim();
+            if (measurementDefinition.Length > 0
+                && !string.Equals(
+                    measurementDefinition,
+                    OpenVisionRecipePinArrayGapIntentSkill.SupportedMeasurementDefinition,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return Status(
+                    false,
+                    "WAIT - unsupported: "
+                        + OpenVisionRecipeText.Local(
+                            "v1은 인접 엣지 간 간격만 측정하며 중심 간 피치는 지원하지 않습니다.",
+                            "v1 measures adjacent edge-to-edge clearance, not center-to-center pitch."));
+            }
+
+            List<string> missing = new List<string>();
+            string sourceImagePath = (input.PinArrayGapSourceImagePath ?? string.Empty).Trim();
+            bool sourceReady = sourceImagePath.Length > 0 && File.Exists(sourceImagePath);
+            bool roiReady = OpenVisionRecipePinArrayGapIntentSkill.TryParseRowRois(
+                input.PinArrayGapRoiText,
+                out IReadOnlyList<OpenVisionRecipePinGapIntentSkill.RoiSample> rowRois,
+                out _);
+            bool thresholdReady = TryParseInvariantInt(input.PinArrayGapDarkThresholdText, out int darkThreshold)
+                && darkThreshold >= 0
+                && darkThreshold <= 255;
+            bool coverageReady = TryParseInvariantDouble(input.PinArrayGapMinDarkCoverageRatioText, out double minimumCoverage)
+                && IsFinite(minimumCoverage)
+                && minimumCoverage > 0D
+                && minimumCoverage <= 1D;
+            bool minimumPinWidthReady = TryParseInvariantInt(input.PinArrayGapMinPinWidthText, out int minimumPinWidth)
+                && minimumPinWidth > 0;
+            bool maximumBreakWidthReady = TryParseInvariantInt(input.PinArrayGapMaxPinBreakWidthText, out int maximumBreakWidth)
+                && maximumBreakWidth >= 0;
+            bool minimumGapWidthReady = TryParseInvariantInt(input.PinArrayGapMinGapWidthText, out int minimumGapWidth)
+                && minimumGapWidth > 0;
+            string rangeText = (input.PinArrayGapRangeMaxText ?? string.Empty).Trim();
+            bool measurementOnly = rangeText.Length == 0;
+            bool rangeReady = measurementOnly
+                || (TryParseInvariantDouble(rangeText, out double rangeMaximum)
+                    && IsFinite(rangeMaximum)
+                    && rangeMaximum > 0D);
+
+            if (!sourceReady) missing.Add(OpenVisionRecipeText.Local("존재하는 원본 이미지", "existing source image"));
+            if (!roiReady) missing.Add(OpenVisionRecipeText.Local("한 행 이상의 ROI", "one or more single-row ROIs"));
+            if (polarity.Length == 0) missing.Add(OpenVisionRecipeText.Local("핀 극성", "pin polarity"));
+            if (measurementDefinition.Length == 0) missing.Add(OpenVisionRecipeText.Local("측정 정의", "measurement definition"));
+            if (!thresholdReady) missing.Add("DarkThreshold 0..255");
+            if (!coverageReady) missing.Add("MinDarkCoverageRatio > 0..1");
+            if (!minimumPinWidthReady) missing.Add("MinPinWidth > 0");
+            if (!maximumBreakWidthReady) missing.Add("MaxPinBreakWidth >= 0");
+            if (!minimumGapWidthReady) missing.Add("MinGapWidth > 0");
+            if (!rangeReady) missing.Add(OpenVisionRecipeText.Local("Range px는 비움 또는 양수", "Range px blank or > 0"));
+
+            if (missing.Count > 0)
+            {
+                return Status(false, "MISSING: " + string.Join(", ", missing));
+            }
+
+            string rowCount = rowRois.Count.ToString(CultureInfo.InvariantCulture);
+            if (measurementOnly)
+            {
+                return Status(
+                    true,
+                    "MEASURE READY / NOT JUDGED: "
+                        + rowCount
+                        + OpenVisionRecipeText.Local(
+                            "개 단일 행 ROI / PinArrayGap / DistancePxRange 측정",
+                            " single-row ROI(s) / PinArrayGap / DistancePxRange measurement"));
+            }
+
+            return Status(
+                true,
+                "JUDGED XML READY / VALIDATION PENDING: "
+                    + rowCount
+                    + OpenVisionRecipeText.Local(
+                        "개 단일 행 ROI / PinArrayGap / DistancePxRange <= ",
+                        " single-row ROI(s) / PinArrayGap / DistancePxRange <= ")
+                    + rangeText
+                    + " px");
+        }
+
+        private static bool IsPinArrayGapTemplate(string template)
+        {
+            return string.Equals(
+                (template ?? string.Empty).Trim(),
+                OpenVisionGuidedSetupCatalog.PinArrayGapTemplate,
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool TryParseInvariantInt(string text, out int value)
+        {
+            return int.TryParse(
+                (text ?? string.Empty).Trim(),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out value);
+        }
+
+        private static bool TryParseInvariantDouble(string text, out double value)
+        {
+            return double.TryParse(
+                (text ?? string.Empty).Trim(),
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out value);
+        }
+
+        private static bool IsFinite(double value)
+        {
+            return !double.IsNaN(value) && !double.IsInfinity(value);
+        }
+
         private static OpenVisionRecipeGuidedSetupReadinessStatus Status(bool isReady, string text)
         {
             return new OpenVisionRecipeGuidedSetupReadinessStatus(isReady, text);
@@ -396,6 +601,28 @@ namespace OpenVisionLab
 
         internal string PinGapRoiText { get; set; }
 
+        internal string DarkBandGapRoiText { get; set; }
+
+        internal string HybridReferencePoseText { get; set; }
+
+        internal string HybridRelativeRoiText { get; set; }
+
+        internal string HybridSearchRoiText { get; set; }
+
+        internal string HybridScoreMinimumText { get; set; }
+
+        internal string HybridScoreMarginText { get; set; }
+
+        internal string HybridAngleMinimumText { get; set; }
+
+        internal string HybridAngleMaximumText { get; set; }
+
+        internal string HybridScaleRatioMinimumText { get; set; }
+
+        internal string HybridScaleRatioMaximumText { get; set; }
+
+        internal string HybridMinimumValidPixelRatioText { get; set; }
+
         internal bool PinGapPixelOnly { get; set; }
 
         internal string PinGapDistanceMinText { get; set; }
@@ -405,6 +632,26 @@ namespace OpenVisionLab
         internal string PinGapRangeMaxText { get; set; }
 
         internal string PinGapScaleText { get; set; }
+
+        internal string PinArrayGapRoiText { get; set; }
+
+        internal string PinArrayGapSourceImagePath { get; set; }
+
+        internal string PinArrayGapPolarityText { get; set; }
+
+        internal string PinArrayGapMeasurementText { get; set; }
+
+        internal string PinArrayGapRangeMaxText { get; set; }
+
+        internal string PinArrayGapDarkThresholdText { get; set; }
+
+        internal string PinArrayGapMinDarkCoverageRatioText { get; set; }
+
+        internal string PinArrayGapMinPinWidthText { get; set; }
+
+        internal string PinArrayGapMaxPinBreakWidthText { get; set; }
+
+        internal string PinArrayGapMinGapWidthText { get; set; }
 
         internal string BlobCountRoiText { get; set; }
 

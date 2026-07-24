@@ -169,7 +169,8 @@ namespace OpenVisionLab
             HSV,
             FeatureMatching,
             Pipeline,
-            Threshold
+            Threshold,
+            AffineTransform
         }
 
         public enum PROCESS_TYPES

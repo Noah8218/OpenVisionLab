@@ -390,6 +390,10 @@ namespace OpenVisionLab
                 SelectToolMenu,
                 () => sampleWorkflowPresenter.FirstStepMenu,
                 () => sampleWorkflowPresenter.CounterpartSampleName);
+            OpenVisionRecipeRunEvidenceViewerController runEvidenceViewerController =
+                new OpenVisionRecipeRunEvidenceViewerController(
+                    () => Window.GetWindow(this),
+                    layerViewerWindows);
             RecipeCommands = new OpenVisionShellHostRecipeCommandSurface(
                 ResolveRuntimeRecipeName,
                 recipeName => runtimeContext.Global.Recipe.Name = recipeName,
@@ -413,7 +417,9 @@ namespace OpenVisionLab
                 SelectValidationSetFolderPath,
                 SelectValidationSetReplacementImagePath,
                 ConfirmDeleteValidationSet,
-                OpenRecipePipelineReview);
+                OpenRecipePipelineReview,
+                evidence => runEvidenceViewerController.Open(evidence),
+                OpenRecipeImageListValidation);
             AttachRecipeStepPropertyGridHost();
             ChromeCommands = new OpenVisionShellHostChromeCommandSurface(
                 () => IsToolRailCompact = !IsToolRailCompact,
@@ -637,8 +643,8 @@ namespace OpenVisionLab
                 RecipeCommands.SelectedStepEditObject,
                 (_, __) => RecipeCommands?.MarkSelectedStepEditDirty());
             recipeStepPropertyGridHostController.SetCompactDensity(true);
-            recipeStepPropertyGridHostController.Grid.Foreground = Brushes.Black;
-            recipeStepPropertyGridHostController.Grid.Background = Brushes.White;
+            recipeStepPropertyGridHostController.SetThemeVariant(
+                System.Windows.Controls.WpfPropertyGrid.PropertyGridThemeVariant.Dark);
             lifecycle.Track(
                 () => RecipeCommands.PropertyChanged += OnRecipeCommandsPropertyChanged,
                 () => RecipeCommands.PropertyChanged -= OnRecipeCommandsPropertyChanged);
@@ -760,6 +766,11 @@ namespace OpenVisionLab
         }
 
         private void HandleOpenRecipeImageListValidation(object sender, RoutedEventArgs e)
+        {
+            OpenRecipeImageListValidation();
+        }
+
+        private void OpenRecipeImageListValidation()
         {
             btnHostRecipeManager.IsChecked = true;
             recipeAdvancedReviewToggle.IsChecked = true;

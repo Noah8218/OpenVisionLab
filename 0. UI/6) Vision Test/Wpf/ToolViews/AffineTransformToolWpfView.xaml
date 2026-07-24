@@ -1,0 +1,11 @@
+<local:VisionToolSingleInputPropertyToolViewBase x:Class="OpenVisionLab.AffineTransformToolWpfView"
+                                                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                                                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                                                 xmlns:local="clr-namespace:OpenVisionLab">
+    <local:VisionToolSingleInputPropertyToolShell x:Name="toolShell"
+                                                  TitleIconKind="Rotate3dVariant"
+                                                  LearnButtonVisibility="Visible"
+                                                  LearnButtonText="Learn Affine Transform"
+                                                  LearnTopicIndex="15"
+                                                  ToolContentVisibility="Collapsed" />
+</local:VisionToolSingleInputPropertyToolViewBase>

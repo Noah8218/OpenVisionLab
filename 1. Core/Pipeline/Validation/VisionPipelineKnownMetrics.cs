@@ -33,6 +33,10 @@ namespace OpenVisionLab
         public const string ScoreMin = "ScoreMin";
         public const string ScoreMax = "ScoreMax";
         public const string ScoreAvg = "ScoreAvg";
+        public const string ScoreMargin = "ScoreMargin";
+        public const string UniqueMatchState = "UniqueMatch.State";
+        public const string UniqueMatchPlausibleAlternativeCount = "UniqueMatch.PlausibleAlternativeCount";
+        public const string UniqueMatchScoreMargin = "UniqueMatch.ScoreMargin";
         public const string AngleMin = "AngleMin";
         public const string AngleMax = "AngleMax";
         public const string AngleAvg = "AngleAvg";
@@ -52,6 +56,9 @@ namespace OpenVisionLab
         public const string LineAngleMin = "LineAngleMin";
         public const string LineAngleMax = "LineAngleMax";
         public const string LineAngleAvg = "LineAngleAvg";
+        public const string IntersectionX = "IntersectionX";
+        public const string IntersectionY = "IntersectionY";
+        public const string CornerOuterContourVerified = "CornerOuterContourVerified";
         public const string DistanceCount = "DistanceCount";
         public const string DistancePxMin = "DistancePxMin";
         public const string DistancePxMax = "DistancePxMax";
@@ -61,6 +68,34 @@ namespace OpenVisionLab
         public const string DistanceMmMax = "DistanceMmMax";
         public const string DistanceMmAvg = "DistanceMmAvg";
         public const string DistanceMmRange = "DistanceMmRange";
+        public const string PitchCount = "PitchCount";
+        public const string PitchPxMin = "PitchPxMin";
+        public const string PitchPxMax = "PitchPxMax";
+        public const string PitchPxAvg = "PitchPxAvg";
+        public const string PitchPxRange = "PitchPxRange";
+        public const string GapCandidateLineCount = "GapCandidateLineCount";
+        public const string GapCandidatePairCount = "GapCandidatePairCount";
+        public const string GapOverlapPairCount = "GapOverlapPairCount";
+        public const string GapSeparationPairCount = "GapSeparationPairCount";
+        public const string GapParallelPairCount = "GapParallelPairCount";
+        public const string GapContrastPairCount = "GapContrastPairCount";
+        public const string GapBestDarkContrast = "GapBestDarkContrast";
+        public const string GapBestDarkCoverageRatio = "GapBestDarkCoverageRatio";
+        public const string GapSelectedAngleDeltaDeg = "GapSelectedAngleDeltaDeg";
+        public const string GapSelectedSupportRatio = "GapSelectedSupportRatio";
+        public const string GapDarkContrast = "GapDarkContrast";
+        public const string GapDarkCoverageRatio = "GapDarkCoverageRatio";
+        public const string GapBandMeanGray = "GapBandMeanGray";
+        public const string GapScoreMargin = "GapScoreMargin";
+        public const string GapUpperSupportPointCount = "GapUpperSupportPointCount";
+        public const string GapLowerSupportPointCount = "GapLowerSupportPointCount";
+        public const string CurveOuterArcLengthPx = "CurveOuterArcLengthPx";
+        public const string CurveInnerArcLengthPx = "CurveInnerArcLengthPx";
+        public const string CurveCenterArcLengthPx = "CurveCenterArcLengthPx";
+        public const string CurveOuterArcLengthMm = "CurveOuterArcLengthMm";
+        public const string CurveInnerArcLengthMm = "CurveInnerArcLengthMm";
+        public const string CurveCenterArcLengthMm = "CurveCenterArcLengthMm";
+        public const string CurveProfileRowCount = "CurveProfileRowCount";
         public const string MergeOverlayCount = "MergeOverlayCount";
         public const string MergeSourceCount = "MergeSourceCount";
         public const string BoundsWidthMin = "BoundsWidthMin";
@@ -84,11 +119,45 @@ namespace OpenVisionLab
         public const string FixtureCenterX = "FixtureCenterX";
         public const string FixtureCenterY = "FixtureCenterY";
         public const string FixtureAngle = "FixtureAngle";
+        public const string FixtureScale = "FixtureScale";
         public const string FixtureOffsetX = "FixtureOffsetX";
         public const string FixtureOffsetY = "FixtureOffsetY";
         public const string FixtureAngleDelta = "FixtureAngleDelta";
+        public const string FixtureScaleRatio = "FixtureScaleRatio";
+        public const string FixtureReferenceImageWidth = "FixtureReferenceImageWidth";
+        public const string FixtureReferenceImageHeight = "FixtureReferenceImageHeight";
+        public const string FixtureNormalizedImageWidth = "FixtureNormalizedImageWidth";
+        public const string FixtureNormalizedImageHeight = "FixtureNormalizedImageHeight";
+        public const string FixtureValidPixelRatio = "FixtureValidPixelRatio";
+        public const string FixtureAppliedCenterX = "FixtureAppliedCenterX";
+        public const string FixtureAppliedCenterY = "FixtureAppliedCenterY";
+        public const string FixtureAppliedAngle = "FixtureAppliedAngle";
+        public const string FixtureAppliedScaleRatio = "FixtureAppliedScaleRatio";
         public const string FixtureEffectiveRoiX = "FixtureEffectiveRoiX";
         public const string FixtureEffectiveRoiY = "FixtureEffectiveRoiY";
+        public const string AffineM11 = "AffineM11";
+        public const string AffineM12 = "AffineM12";
+        public const string AffineM13 = "AffineM13";
+        public const string AffineM21 = "AffineM21";
+        public const string AffineM22 = "AffineM22";
+        public const string AffineM23 = "AffineM23";
+        public const string AffineDeterminant = "AffineDeterminant";
+        public const string AffineScaleX = "AffineScaleX";
+        public const string AffineScaleY = "AffineScaleY";
+        public const string AffineRotationDeg = "AffineRotationDeg";
+        public const string AffineShearCosine = "AffineShearCosine";
+        public const string AffineTranslationX = "AffineTranslationX";
+        public const string AffineTranslationY = "AffineTranslationY";
+        public const string AffineSourceTriangleArea = "AffineSourceTriangleArea";
+        public const string AffineDestinationTriangleArea = "AffineDestinationTriangleArea";
+        public const string AffineValidPixelRatio = "AffineValidPixelRatio";
+        public const string AffineDetectedSourcePointCount = "AffineDetectedSourcePointCount";
+        public const string AffineSourcePoint1X = "AffineSourcePoint1X";
+        public const string AffineSourcePoint1Y = "AffineSourcePoint1Y";
+        public const string AffineSourcePoint2X = "AffineSourcePoint2X";
+        public const string AffineSourcePoint2Y = "AffineSourcePoint2Y";
+        public const string AffineSourcePoint3X = "AffineSourcePoint3X";
+        public const string AffineSourcePoint3Y = "AffineSourcePoint3Y";
         public const string DifferencePixelCount = "DifferencePixelCount";
         public const string DifferencePixelRatio = "DifferencePixelRatio";
         public const string DifferenceMean = "DifferenceMean";
@@ -97,25 +166,99 @@ namespace OpenVisionLab
         public const string RegistrationScore = "RegistrationScore";
         public const string ReferenceIndex = "ReferenceIndex";
         public const string ValidPixelRatio = "ValidPixelRatio";
+        public const string GeometryDistancePx = "GeometryDistancePx";
+        public const string GeometryDistanceMm = "GeometryDistanceMm";
+        public const string GeometryAngleDeg = "GeometryAngleDeg";
+        public const string GeometrySignedClearancePx = "GeometrySignedClearancePx";
+        public const string GeometrySignedClearanceMm = "GeometrySignedClearanceMm";
+        public const string GeometryParallelDeltaDeg = "GeometryParallelDeltaDeg";
+        public const string GeometryExtensionAPx = "GeometryExtensionAPx";
+        public const string GeometryExtensionBPx = "GeometryExtensionBPx";
+        public const string CircleCenterX = "CircleCenterX";
+        public const string CircleCenterY = "CircleCenterY";
+        public const string CircleRadiusPx = "CircleRadiusPx";
+        public const string CircleDiameterPx = "CircleDiameterPx";
+        public const string CircleRadiusMm = "CircleRadiusMm";
+        public const string CircleDiameterMm = "CircleDiameterMm";
+        public const string CircleSupportCount = "CircleSupportCount";
+        public const string CircleSupportRatio = "CircleSupportRatio";
+        public const string CircleCoverageDeg = "CircleCoverageDeg";
+        public const string CircleFitResidualPx = "CircleFitResidualPx";
 
         private static readonly VisionPipelineMetricDefinition[] MetricDefinitions =
         {
             new VisionPipelineMetricDefinition { Name = ResultCount, DisplayName = "Result Count", Description = "Number of result items detected by the tool." },
+            new VisionPipelineMetricDefinition { Name = AffineM11, DisplayName = "Affine M11", Description = "First row, first column of the authoritative 2 x 3 affine matrix." },
+            new VisionPipelineMetricDefinition { Name = AffineM12, DisplayName = "Affine M12", Description = "First row, second column of the authoritative 2 x 3 affine matrix." },
+            new VisionPipelineMetricDefinition { Name = AffineM13, DisplayName = "Affine M13", Description = "Horizontal translation coefficient of the authoritative affine matrix." },
+            new VisionPipelineMetricDefinition { Name = AffineM21, DisplayName = "Affine M21", Description = "Second row, first column of the authoritative 2 x 3 affine matrix." },
+            new VisionPipelineMetricDefinition { Name = AffineM22, DisplayName = "Affine M22", Description = "Second row, second column of the authoritative 2 x 3 affine matrix." },
+            new VisionPipelineMetricDefinition { Name = AffineM23, DisplayName = "Affine M23", Description = "Vertical translation coefficient of the authoritative affine matrix." },
+            new VisionPipelineMetricDefinition { Name = AffineDeterminant, DisplayName = "Affine Determinant", Description = "Signed area-scale determinant of the affine linear component." },
+            new VisionPipelineMetricDefinition { Name = AffineScaleX, DisplayName = "Affine Scale X", Description = "Review scale of the first affine basis vector." },
+            new VisionPipelineMetricDefinition { Name = AffineScaleY, DisplayName = "Affine Scale Y", Description = "Review scale of the second affine basis vector." },
+            new VisionPipelineMetricDefinition { Name = AffineRotationDeg, DisplayName = "Affine Rotation (deg)", Description = "Review rotation derived from the first affine basis vector." },
+            new VisionPipelineMetricDefinition { Name = AffineShearCosine, DisplayName = "Affine Shear Cosine", Description = "Cosine between transformed basis vectors; zero indicates orthogonal basis vectors." },
+            new VisionPipelineMetricDefinition { Name = AffineTranslationX, DisplayName = "Affine Translation X", Description = "Horizontal affine translation in output pixels." },
+            new VisionPipelineMetricDefinition { Name = AffineTranslationY, DisplayName = "Affine Translation Y", Description = "Vertical affine translation in output pixels." },
+            new VisionPipelineMetricDefinition { Name = AffineSourceTriangleArea, DisplayName = "Affine Source Triangle Area", Description = "Pixel area spanned by the three taught source points." },
+            new VisionPipelineMetricDefinition { Name = AffineDestinationTriangleArea, DisplayName = "Affine Destination Triangle Area", Description = "Pixel area spanned by the three taught destination points." },
+            new VisionPipelineMetricDefinition { Name = AffineValidPixelRatio, DisplayName = "Affine Valid Pixel Ratio", Description = "Fraction of the output canvas covered by transformed source pixels." },
+            new VisionPipelineMetricDefinition { Name = AffineDetectedSourcePointCount, DisplayName = "Affine Detected Source Point Count", Description = "Number of earlier accepted typed Point features resolved for this Affine run." },
+            new VisionPipelineMetricDefinition { Name = AffineSourcePoint1X, DisplayName = "Affine Source Point 1 X", Description = "Runtime X coordinate resolved from source Point feature 1." },
+            new VisionPipelineMetricDefinition { Name = AffineSourcePoint1Y, DisplayName = "Affine Source Point 1 Y", Description = "Runtime Y coordinate resolved from source Point feature 1." },
+            new VisionPipelineMetricDefinition { Name = AffineSourcePoint2X, DisplayName = "Affine Source Point 2 X", Description = "Runtime X coordinate resolved from source Point feature 2." },
+            new VisionPipelineMetricDefinition { Name = AffineSourcePoint2Y, DisplayName = "Affine Source Point 2 Y", Description = "Runtime Y coordinate resolved from source Point feature 2." },
+            new VisionPipelineMetricDefinition { Name = AffineSourcePoint3X, DisplayName = "Affine Source Point 3 X", Description = "Runtime X coordinate resolved from source Point feature 3." },
+            new VisionPipelineMetricDefinition { Name = AffineSourcePoint3Y, DisplayName = "Affine Source Point 3 Y", Description = "Runtime Y coordinate resolved from source Point feature 3." },
+            new VisionPipelineMetricDefinition { Name = GeometryDistancePx, DisplayName = "Geometry Distance (px)", Description = "Pixel distance produced by the selected typed feature relationship." },
+            new VisionPipelineMetricDefinition { Name = GeometryDistanceMm, DisplayName = "Geometry Distance (mm)", Description = "Typed geometry distance converted by the positive legacy PIXELPERMM value, whose runtime semantics are mm per pixel." },
+            new VisionPipelineMetricDefinition { Name = GeometryAngleDeg, DisplayName = "Geometry Angle (deg)", Description = "Smaller undirected angle between two source segments." },
+            new VisionPipelineMetricDefinition { Name = GeometrySignedClearancePx, DisplayName = "Signed Circle Clearance (px)", Description = "Finite-segment center distance minus fitted circle radius; negative values indicate overlap." },
+            new VisionPipelineMetricDefinition { Name = GeometrySignedClearanceMm, DisplayName = "Signed Circle Clearance (mm)", Description = "Signed circle clearance converted by the positive legacy PIXELPERMM value, whose runtime semantics are mm per pixel." },
+            new VisionPipelineMetricDefinition { Name = GeometryParallelDeltaDeg, DisplayName = "Parallel Delta (deg)", Description = "Smaller undirected angle delta used by the LineLineDistance parallel gate." },
+            new VisionPipelineMetricDefinition { Name = GeometryExtensionAPx, DisplayName = "Intersection Extension A (px)", Description = "Required extension beyond source segment A to reach the fitted-line intersection." },
+            new VisionPipelineMetricDefinition { Name = GeometryExtensionBPx, DisplayName = "Intersection Extension B (px)", Description = "Required extension beyond source segment B to reach the fitted-line intersection." },
+            new VisionPipelineMetricDefinition { Name = CircleCenterX, DisplayName = "Circle Center X", Description = "Fitted circle center X in the producer coordinate layer." },
+            new VisionPipelineMetricDefinition { Name = CircleCenterY, DisplayName = "Circle Center Y", Description = "Fitted circle center Y in the producer coordinate layer." },
+            new VisionPipelineMetricDefinition { Name = CircleRadiusPx, DisplayName = "Circle Radius (px)", Description = "Robust radial-caliper fitted radius in pixels." },
+            new VisionPipelineMetricDefinition { Name = CircleDiameterPx, DisplayName = "Circle Diameter (px)", Description = "Twice the fitted circle radius in pixels." },
+            new VisionPipelineMetricDefinition { Name = CircleRadiusMm, DisplayName = "Circle Radius (mm)", Description = "Fitted circle radius converted by the positive legacy PIXELPERMM value, whose runtime semantics are mm per pixel." },
+            new VisionPipelineMetricDefinition { Name = CircleDiameterMm, DisplayName = "Circle Diameter (mm)", Description = "Fitted circle diameter converted by the positive legacy PIXELPERMM value, whose runtime semantics are mm per pixel." },
+            new VisionPipelineMetricDefinition { Name = CircleSupportCount, DisplayName = "Circle Support Count", Description = "Accepted radial edge samples used by the fitted circle." },
+            new VisionPipelineMetricDefinition { Name = CircleSupportRatio, DisplayName = "Circle Support Ratio", Description = "Accepted radial samples divided by requested scans." },
+            new VisionPipelineMetricDefinition { Name = CircleCoverageDeg, DisplayName = "Circle Coverage (deg)", Description = "Configured angular sweep multiplied by accepted radial-sample ratio." },
+            new VisionPipelineMetricDefinition { Name = CircleFitResidualPx, DisplayName = "Circle Fit Residual (px)", Description = "RMS radial residual of accepted support points." },
             new VisionPipelineMetricDefinition { Name = AreaMin, DisplayName = "Area Min", Description = "Minimum detected area." },
             new VisionPipelineMetricDefinition { Name = AreaMax, DisplayName = "Area Max", Description = "Maximum detected area." },
             new VisionPipelineMetricDefinition { Name = AreaAvg, DisplayName = "Area Avg", Description = "Average detected area." },
             new VisionPipelineMetricDefinition { Name = ScoreMin, DisplayName = "Score Min", Description = "Minimum matching score." },
             new VisionPipelineMetricDefinition { Name = ScoreMax, DisplayName = "Score Max", Description = "Maximum matching score." },
             new VisionPipelineMetricDefinition { Name = ScoreAvg, DisplayName = "Score Avg", Description = "Average matching score." },
+            new VisionPipelineMetricDefinition { Name = ScoreMargin, DisplayName = "Best/Second Score Margin", Description = "Best score minus second-best score in percentage points when Matching requests exactly two candidates; a missing second candidate contributes zero." },
+            new VisionPipelineMetricDefinition { Name = UniqueMatchState, DisplayName = "Unique Match State", Description = "Unique-match runtime state: 1 NoMatch, 2 Success, 3 Ambiguous." },
+            new VisionPipelineMetricDefinition { Name = UniqueMatchPlausibleAlternativeCount, DisplayName = "Unique Alternatives", Description = "Spatially distinct alternatives above SCORE_MIN whose selected-minus-alternative score margin violates the unique-match gate." },
+            new VisionPipelineMetricDefinition { Name = UniqueMatchScoreMargin, DisplayName = "Unique Score Margin", Description = "Normalized 0..1 selected score minus strongest spatially distinct alternative score." },
             new VisionPipelineMetricDefinition { Name = AngleMin, DisplayName = "Angle Min", Description = "Minimum result angle." },
             new VisionPipelineMetricDefinition { Name = AngleMax, DisplayName = "Angle Max", Description = "Maximum result angle." },
             new VisionPipelineMetricDefinition { Name = AngleAvg, DisplayName = "Angle Avg", Description = "Average result angle." },
             new VisionPipelineMetricDefinition { Name = FixtureCenterX, DisplayName = "Fixture Center X", Description = "Current X coordinate published by the fixture Matching step." },
             new VisionPipelineMetricDefinition { Name = FixtureCenterY, DisplayName = "Fixture Center Y", Description = "Current Y coordinate published by the fixture Matching step." },
             new VisionPipelineMetricDefinition { Name = FixtureAngle, DisplayName = "Fixture Angle", Description = "Current angle published by the fixture Matching step." },
+            new VisionPipelineMetricDefinition { Name = FixtureScale, DisplayName = "Fixture Scale", Description = "Current uniform Matching scale published by the fixture Matching step." },
             new VisionPipelineMetricDefinition { Name = FixtureOffsetX, DisplayName = "Fixture Offset X", Description = "Current fixture X minus its taught reference X." },
             new VisionPipelineMetricDefinition { Name = FixtureOffsetY, DisplayName = "Fixture Offset Y", Description = "Current fixture Y minus its taught reference Y." },
             new VisionPipelineMetricDefinition { Name = FixtureAngleDelta, DisplayName = "Fixture Angle Delta", Description = "Normalized current fixture angle minus its taught reference angle." },
+            new VisionPipelineMetricDefinition { Name = FixtureScaleRatio, DisplayName = "Fixture Scale Ratio", Description = "Current fixture scale divided by its taught reference scale." },
+            new VisionPipelineMetricDefinition { Name = FixtureReferenceImageWidth, DisplayName = "Fixture Reference Width", Description = "Reviewed reference image width used by fixture normalization." },
+            new VisionPipelineMetricDefinition { Name = FixtureReferenceImageHeight, DisplayName = "Fixture Reference Height", Description = "Reviewed reference image height used by fixture normalization." },
+            new VisionPipelineMetricDefinition { Name = FixtureNormalizedImageWidth, DisplayName = "Normalized Width", Description = "Output width of the inverse-similarity normalized image." },
+            new VisionPipelineMetricDefinition { Name = FixtureNormalizedImageHeight, DisplayName = "Normalized Height", Description = "Output height of the inverse-similarity normalized image." },
+            new VisionPipelineMetricDefinition { Name = FixtureValidPixelRatio, DisplayName = "Normalized Valid Pixel Ratio", Description = "Fraction of the normalized canvas covered by transformed source pixels." },
+            new VisionPipelineMetricDefinition { Name = FixtureAppliedCenterX, DisplayName = "Applied Current Center X", Description = "Current fixture center X used by inverse-similarity normalization." },
+            new VisionPipelineMetricDefinition { Name = FixtureAppliedCenterY, DisplayName = "Applied Current Center Y", Description = "Current fixture center Y used by inverse-similarity normalization." },
+            new VisionPipelineMetricDefinition { Name = FixtureAppliedAngle, DisplayName = "Applied Correction Angle", Description = "Inverse angle correction applied to produce the normalized image." },
+            new VisionPipelineMetricDefinition { Name = FixtureAppliedScaleRatio, DisplayName = "Applied Correction Scale", Description = "Inverse uniform scale applied to produce the normalized image." },
             new VisionPipelineMetricDefinition { Name = FixtureEffectiveRoiX, DisplayName = "Effective ROI X", Description = "Runtime ROI X after fixture translation. The saved CvROI is unchanged." },
             new VisionPipelineMetricDefinition { Name = FixtureEffectiveRoiY, DisplayName = "Effective ROI Y", Description = "Runtime ROI Y after fixture translation. The saved CvROI is unchanged." },
             new VisionPipelineMetricDefinition { Name = DifferencePixelCount, DisplayName = "Difference Pixel Count", Description = "Pixels above the reference-difference threshold inside the valid registered region." },
@@ -142,6 +285,9 @@ namespace OpenVisionLab
             new VisionPipelineMetricDefinition { Name = LineAngleMin, DisplayName = "Line Angle Min", Description = "Minimum fitted line overlay angle in degrees." },
             new VisionPipelineMetricDefinition { Name = LineAngleMax, DisplayName = "Line Angle Max", Description = "Maximum fitted line overlay angle in degrees." },
             new VisionPipelineMetricDefinition { Name = LineAngleAvg, DisplayName = "Line Angle Avg", Description = "Average fitted line overlay angle in degrees." },
+            new VisionPipelineMetricDefinition { Name = IntersectionX, DisplayName = "Intersection X", Description = "Horizontal image coordinate of the fitted line intersection." },
+            new VisionPipelineMetricDefinition { Name = IntersectionY, DisplayName = "Intersection Y", Description = "Vertical image coordinate of the fitted line intersection." },
+            new VisionPipelineMetricDefinition { Name = CornerOuterContourVerified, DisplayName = "Corner Outer Contour Verified", Description = "1 when the corner comes from fitted lower/right support points on the selected outer contour; it does not prove agreement with an operator target. 0 when profile or edge fallback was required." },
             new VisionPipelineMetricDefinition { Name = DistanceCount, DisplayName = "Distance Count", Description = "Number of valid distance lines between paired edges." },
             new VisionPipelineMetricDefinition { Name = DistancePxMin, DisplayName = "Distance Min (px)", Description = "Minimum distance between paired edge points in pixels." },
             new VisionPipelineMetricDefinition { Name = DistancePxMax, DisplayName = "Distance Max (px)", Description = "Maximum distance between paired edge points in pixels." },
@@ -151,6 +297,34 @@ namespace OpenVisionLab
             new VisionPipelineMetricDefinition { Name = DistanceMmMax, DisplayName = "Distance Max (mm)", Description = "Maximum distance between paired edge points converted by PIXELPERMM." },
             new VisionPipelineMetricDefinition { Name = DistanceMmAvg, DisplayName = "Distance Avg (mm)", Description = "Average distance between paired edge points converted by PIXELPERMM." },
             new VisionPipelineMetricDefinition { Name = DistanceMmRange, DisplayName = "Distance Range (mm)", Description = "Spread between maximum and minimum paired edge distances converted by PIXELPERMM." },
+            new VisionPipelineMetricDefinition { Name = PitchCount, DisplayName = "Pitch Count", Description = "Number of adjacent center-to-center pin pitch measurements." },
+            new VisionPipelineMetricDefinition { Name = PitchPxMin, DisplayName = "Pitch Min (px)", Description = "Minimum adjacent pin center-to-center pitch in pixels." },
+            new VisionPipelineMetricDefinition { Name = PitchPxMax, DisplayName = "Pitch Max (px)", Description = "Maximum adjacent pin center-to-center pitch in pixels." },
+            new VisionPipelineMetricDefinition { Name = PitchPxAvg, DisplayName = "Pitch Avg (px)", Description = "Average adjacent pin center-to-center pitch in pixels." },
+            new VisionPipelineMetricDefinition { Name = PitchPxRange, DisplayName = "Pitch Range (px)", Description = "Spread between maximum and minimum adjacent pin center-to-center pitch in pixels." },
+            new VisionPipelineMetricDefinition { Name = GapCandidateLineCount, DisplayName = "Gap Candidate Lines", Description = "Near-horizontal edge lines retained inside the reviewed Gap ROI before pairing." },
+            new VisionPipelineMetricDefinition { Name = GapCandidatePairCount, DisplayName = "Gap Candidate Pairs", Description = "Parallel dark-band edge pairs that passed separation, support, and contrast gates." },
+            new VisionPipelineMetricDefinition { Name = GapOverlapPairCount, DisplayName = "Gap Overlap Pairs", Description = "Candidate pairs whose shared horizontal support passed the reviewed minimum ratio." },
+            new VisionPipelineMetricDefinition { Name = GapSeparationPairCount, DisplayName = "Gap Separation Pairs", Description = "Overlap-supported pairs whose measured separation remained inside the configured Gap range." },
+            new VisionPipelineMetricDefinition { Name = GapParallelPairCount, DisplayName = "Gap Parallel Pairs", Description = "Separation-supported pairs whose angle delta passed the parallel-line gate." },
+            new VisionPipelineMetricDefinition { Name = GapContrastPairCount, DisplayName = "Gap Contrast Pairs", Description = "Parallel pairs whose between-edge band was darker than its surroundings by the configured contrast." },
+            new VisionPipelineMetricDefinition { Name = GapBestDarkContrast, DisplayName = "Gap Best Dark Contrast", Description = "Highest surrounding-minus-band gray-value contrast among geometry-supported pairs, including rejected pairs." },
+            new VisionPipelineMetricDefinition { Name = GapBestDarkCoverageRatio, DisplayName = "Gap Best Dark Coverage", Description = "Highest fraction of sampled columns with sufficient local dark-band contrast among geometry-supported pairs." },
+            new VisionPipelineMetricDefinition { Name = GapSelectedAngleDeltaDeg, DisplayName = "Gap Parallel Delta (deg)", Description = "Absolute angle difference between the selected upper and lower Gap edges." },
+            new VisionPipelineMetricDefinition { Name = GapSelectedSupportRatio, DisplayName = "Gap Support Ratio", Description = "Selected edge-pair horizontal overlap divided by the reviewed ROI width." },
+            new VisionPipelineMetricDefinition { Name = GapDarkContrast, DisplayName = "Gap Dark Contrast", Description = "Mean surrounding brightness minus mean brightness between the selected Gap edges." },
+            new VisionPipelineMetricDefinition { Name = GapDarkCoverageRatio, DisplayName = "Gap Dark Coverage", Description = "Fraction of selected-pair sample columns whose local dark-band contrast passed the configured gate." },
+            new VisionPipelineMetricDefinition { Name = GapBandMeanGray, DisplayName = "Gap Band Mean Gray", Description = "Mean gray value between the selected edges; lower values provide evidence that the pair encloses the intended dark band." },
+            new VisionPipelineMetricDefinition { Name = GapScoreMargin, DisplayName = "Gap Score Margin", Description = "Selected edge-pair score minus the next candidate score; small values are rejected as ambiguous." },
+            new VisionPipelineMetricDefinition { Name = GapUpperSupportPointCount, DisplayName = "Gap Upper Support Points", Description = "Canny edge points supporting the selected upper fitted line." },
+            new VisionPipelineMetricDefinition { Name = GapLowerSupportPointCount, DisplayName = "Gap Lower Support Points", Description = "Canny edge points supporting the selected lower fitted line." },
+            new VisionPipelineMetricDefinition { Name = CurveOuterArcLengthPx, DisplayName = "Curve Outer Arc (px)", Description = "Arc length of the detected dark-band outer edge in pixels." },
+            new VisionPipelineMetricDefinition { Name = CurveInnerArcLengthPx, DisplayName = "Curve Inner Arc (px)", Description = "Arc length of the detected dark-band inner edge in pixels." },
+            new VisionPipelineMetricDefinition { Name = CurveCenterArcLengthPx, DisplayName = "Curve Center Arc (px)", Description = "Arc length of the detected dark-band center path in pixels." },
+            new VisionPipelineMetricDefinition { Name = CurveOuterArcLengthMm, DisplayName = "Curve Outer Arc (mm)", Description = "Outer edge arc length converted by PIXELPERMM." },
+            new VisionPipelineMetricDefinition { Name = CurveInnerArcLengthMm, DisplayName = "Curve Inner Arc (mm)", Description = "Inner edge arc length converted by PIXELPERMM." },
+            new VisionPipelineMetricDefinition { Name = CurveCenterArcLengthMm, DisplayName = "Curve Center Arc (mm)", Description = "Center path arc length converted by PIXELPERMM." },
+            new VisionPipelineMetricDefinition { Name = CurveProfileRowCount, DisplayName = "Curve Profile Rows", Description = "Number of image rows contributing to the detected curve profile." },
             new VisionPipelineMetricDefinition { Name = MergeOverlayCount, DisplayName = "Merge Overlay Count", Description = "Number of overlays collected into the merged result." },
             new VisionPipelineMetricDefinition { Name = MergeSourceCount, DisplayName = "Merge Source Count", Description = "Number of previous steps that contributed overlays." },
             new VisionPipelineMetricDefinition { Name = BoundsWidthMin, DisplayName = "Bounds Width Min", Description = "Minimum rectangle overlay width." },
@@ -225,16 +399,56 @@ namespace OpenVisionLab
             DistanceMmRange
         };
 
+        private static readonly string[] PinPitchMetricNames =
+        {
+            PitchCount,
+            PitchPxMin,
+            PitchPxMax,
+            PitchPxAvg,
+            PitchPxRange
+        };
+
+        private static readonly string[] GapEdgePairMetricNames =
+        {
+            GapCandidateLineCount,
+            GapCandidatePairCount,
+            GapOverlapPairCount,
+            GapSeparationPairCount,
+            GapParallelPairCount,
+            GapContrastPairCount,
+            GapBestDarkContrast,
+            GapBestDarkCoverageRatio,
+            GapSelectedAngleDeltaDeg,
+            GapSelectedSupportRatio,
+            GapDarkContrast,
+            GapDarkCoverageRatio,
+            GapBandMeanGray,
+            GapScoreMargin,
+            GapUpperSupportPointCount,
+            GapLowerSupportPointCount
+        };
+
+        private static readonly string[] CurveBandMetricNames =
+        {
+            CurveOuterArcLengthPx,
+            CurveInnerArcLengthPx,
+            CurveCenterArcLengthPx,
+            CurveOuterArcLengthMm,
+            CurveInnerArcLengthMm,
+            CurveCenterArcLengthMm,
+            CurveProfileRowCount
+        };
+
         private static readonly Dictionary<string, string[]> ToolMetricNames = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
         {
             ["blob"] = WithImageAndRectangleMetrics(ResultCount, AreaMin, AreaMax, AreaAvg, AngleMin, AngleMax, AngleAvg),
             ["contour"] = WithImageAndRectangleMetrics(ResultCount, AreaMin, AreaMax, AreaAvg, AngleMin, AngleMax, AngleAvg),
             ["corner"] = WithImageAndRectangleMetrics(ResultCount, AreaMin, AreaMax, AreaAvg),
-            ["matching"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg),
-            ["templatematching"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg),
-            ["edgebasedmatching"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg),
-            ["edgebasedtemplatematching"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg),
-            ["edgetemplatematching"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg),
+            ["matching"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, ScoreMargin, AngleMin, AngleMax, AngleAvg, FixtureCenterX, FixtureCenterY, FixtureAngle, FixtureScale, FixtureOffsetX, FixtureOffsetY, FixtureAngleDelta, FixtureScaleRatio, FixtureReferenceImageWidth, FixtureReferenceImageHeight),
+            ["templatematching"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, ScoreMargin, AngleMin, AngleMax, AngleAvg, FixtureCenterX, FixtureCenterY, FixtureAngle, FixtureScale, FixtureOffsetX, FixtureOffsetY, FixtureAngleDelta, FixtureScaleRatio, FixtureReferenceImageWidth, FixtureReferenceImageHeight),
+            ["edgebasedmatching"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg, UniqueMatchState, UniqueMatchPlausibleAlternativeCount, UniqueMatchScoreMargin),
+            ["edgebasedtemplatematching"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg, UniqueMatchState, UniqueMatchPlausibleAlternativeCount, UniqueMatchScoreMargin),
+            ["edgetemplatematching"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg, UniqueMatchState, UniqueMatchPlausibleAlternativeCount, UniqueMatchScoreMargin),
             ["feature"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg),
             ["featurematching"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg),
             ["sift"] = WithImageAndRectangleMetrics(ResultCount, ScoreMin, ScoreMax, ScoreAvg, AngleMin, AngleMax, AngleAvg),
@@ -245,17 +459,29 @@ namespace OpenVisionLab
             ["colormask"] = WithImageMetrics(MaskPixelCount, MaskPixelRatio),
             ["line"] = WithImageAndLineMetrics(ResultCount, EdgeCount, EdgePointCount),
             ["linegauge"] = WithImageAndLineMetrics(ResultCount, EdgeCount, EdgePointCount),
-            ["linedistance"] = WithImageAndLineMetrics(new[] { ResultCount, EdgeCount, EdgePointCount }.Concat(DistanceMetricNames).ToArray()),
-            ["linedistancegauge"] = WithImageAndLineMetrics(new[] { ResultCount, EdgeCount, EdgePointCount }.Concat(DistanceMetricNames).ToArray()),
-            ["lineintersection"] = WithImageAndLineMetrics(ResultCount, EdgeCount, EdgePointCount),
-            ["lineintersectiongauge"] = WithImageAndLineMetrics(ResultCount, EdgeCount, EdgePointCount),
+            ["linedistance"] = WithImageAndLineMetrics(new[] { ResultCount, EdgeCount, EdgePointCount }.Concat(DistanceMetricNames).Concat(GapEdgePairMetricNames).ToArray()),
+            ["linedistancegauge"] = WithImageAndLineMetrics(new[] { ResultCount, EdgeCount, EdgePointCount }.Concat(DistanceMetricNames).Concat(GapEdgePairMetricNames).ToArray()),
+            ["pinarraygap"] = WithImageAndLineMetrics(new[] { ResultCount, EdgeCount, EdgePointCount }.Concat(DistanceMetricNames).Concat(PinPitchMetricNames).ToArray()),
+            ["adjacentpingap"] = WithImageAndLineMetrics(new[] { ResultCount, EdgeCount, EdgePointCount }.Concat(DistanceMetricNames).Concat(PinPitchMetricNames).ToArray()),
+            ["curvebandprofile"] = WithImageAndRectangleMetrics(new[] { ResultCount, EdgeCount, EdgePointCount }.Concat(DistanceMetricNames).Concat(CurveBandMetricNames).ToArray()),
+            ["darkbandcurve"] = WithImageAndRectangleMetrics(new[] { ResultCount, EdgeCount, EdgePointCount }.Concat(DistanceMetricNames).Concat(CurveBandMetricNames).ToArray()),
+            ["outercornerintersection"] = WithImageAndRectangleMetrics(new[] { ResultCount, EdgeCount, EdgePointCount, IntersectionX, IntersectionY, CornerOuterContourVerified }.Concat(LineOverlayMetricNames).ToArray()),
+            ["brightobjectcorner"] = WithImageAndRectangleMetrics(new[] { ResultCount, EdgeCount, EdgePointCount, IntersectionX, IntersectionY, CornerOuterContourVerified }.Concat(LineOverlayMetricNames).ToArray()),
+            ["lineintersection"] = WithImageAndLineMetrics(new[] { ResultCount, EdgeCount, EdgePointCount, IntersectionX, IntersectionY }.Concat(LineOverlayMetricNames).ToArray()),
+            ["lineintersectiongauge"] = WithImageAndLineMetrics(new[] { ResultCount, EdgeCount, EdgePointCount, IntersectionX, IntersectionY }.Concat(LineOverlayMetricNames).ToArray()),
+            ["geometrymeasure"] = WithImageAndLineMetrics(ResultCount, GeometryDistancePx, GeometryDistanceMm, GeometryAngleDeg, GeometrySignedClearancePx, GeometrySignedClearanceMm, GeometryParallelDeltaDeg, GeometryExtensionAPx, GeometryExtensionBPx, IntersectionX, IntersectionY),
+            ["geometricmeasurement"] = WithImageAndLineMetrics(ResultCount, GeometryDistancePx, GeometryDistanceMm, GeometryAngleDeg, GeometrySignedClearancePx, GeometrySignedClearanceMm, GeometryParallelDeltaDeg, GeometryExtensionAPx, GeometryExtensionBPx, IntersectionX, IntersectionY),
+            ["circlegauge"] = WithImageMetrics(ResultCount, CircleCenterX, CircleCenterY, CircleRadiusPx, CircleDiameterPx, CircleRadiusMm, CircleDiameterMm, CircleSupportCount, CircleSupportRatio, CircleCoverageDeg, CircleFitResidualPx),
             ["threshold"] = ImageMetricNames,
             ["morphology"] = ImageMetricNames,
             ["filter"] = ImageMetricNames,
             ["edgedetection"] = ImageMetricNames,
             ["edge"] = ImageMetricNames,
-            ["rotatescale"] = ImageMetricNames,
-            ["rotateandscale"] = ImageMetricNames,
+            ["rotatescale"] = WithImageMetrics(FixtureReferenceImageWidth, FixtureReferenceImageHeight, FixtureNormalizedImageWidth, FixtureNormalizedImageHeight, FixtureValidPixelRatio, FixtureAppliedCenterX, FixtureAppliedCenterY, FixtureAppliedAngle, FixtureAppliedScaleRatio, FixtureCenterX, FixtureCenterY, FixtureAngle, FixtureScale, FixtureOffsetX, FixtureOffsetY, FixtureAngleDelta, FixtureScaleRatio),
+            ["rotateandscale"] = WithImageMetrics(FixtureReferenceImageWidth, FixtureReferenceImageHeight, FixtureNormalizedImageWidth, FixtureNormalizedImageHeight, FixtureValidPixelRatio, FixtureAppliedCenterX, FixtureAppliedCenterY, FixtureAppliedAngle, FixtureAppliedScaleRatio, FixtureCenterX, FixtureCenterY, FixtureAngle, FixtureScale, FixtureOffsetX, FixtureOffsetY, FixtureAngleDelta, FixtureScaleRatio),
+            ["affine"] = WithImageAndLineMetrics(AffineM11, AffineM12, AffineM13, AffineM21, AffineM22, AffineM23, AffineDeterminant, AffineScaleX, AffineScaleY, AffineRotationDeg, AffineShearCosine, AffineTranslationX, AffineTranslationY, AffineSourceTriangleArea, AffineDestinationTriangleArea, AffineValidPixelRatio, AffineDetectedSourcePointCount, AffineSourcePoint1X, AffineSourcePoint1Y, AffineSourcePoint2X, AffineSourcePoint2Y, AffineSourcePoint3X, AffineSourcePoint3Y),
+            ["affinematrix"] = WithImageAndLineMetrics(AffineM11, AffineM12, AffineM13, AffineM21, AffineM22, AffineM23, AffineDeterminant, AffineScaleX, AffineScaleY, AffineRotationDeg, AffineShearCosine, AffineTranslationX, AffineTranslationY, AffineSourceTriangleArea, AffineDestinationTriangleArea, AffineValidPixelRatio, AffineDetectedSourcePointCount, AffineSourcePoint1X, AffineSourcePoint1Y, AffineSourcePoint2X, AffineSourcePoint2Y, AffineSourcePoint3X, AffineSourcePoint3Y),
+            ["affinetransform"] = WithImageAndLineMetrics(AffineM11, AffineM12, AffineM13, AffineM21, AffineM22, AffineM23, AffineDeterminant, AffineScaleX, AffineScaleY, AffineRotationDeg, AffineShearCosine, AffineTranslationX, AffineTranslationY, AffineSourceTriangleArea, AffineDestinationTriangleArea, AffineValidPixelRatio, AffineDetectedSourcePointCount, AffineSourcePoint1X, AffineSourcePoint1Y, AffineSourcePoint2X, AffineSourcePoint2Y, AffineSourcePoint3X, AffineSourcePoint3Y),
             ["overlaymerge"] = WithImageAndRectangleMetrics(ResultCount, MergeOverlayCount, MergeSourceCount),
             ["resultmerge"] = WithImageAndRectangleMetrics(ResultCount, MergeOverlayCount, MergeSourceCount),
             ["mergeresult"] = WithImageAndRectangleMetrics(ResultCount, MergeOverlayCount, MergeSourceCount),
@@ -287,6 +513,7 @@ namespace OpenVisionLab
             new VisionPipelineAcceptancePreset { Name = "Max Bounds Height <= 20 px", MetricName = BoundsHeightMax, ToolTypes = new[] { "blob", "contour", "corner", "matching", "templatematching", "edgebasedmatching", "edgebasedtemplatematching", "edgetemplatematching", "feature", "featurematching", "sift" }, UseMaximum = true, Maximum = 20 },
             new VisionPipelineAcceptancePreset { Name = "Max Bounds Height >= 20 px", MetricName = BoundsHeightMax, ToolTypes = new[] { "blob", "contour", "corner", "matching", "templatematching", "edgebasedmatching", "edgebasedtemplatematching", "edgetemplatematching", "feature", "featurematching", "sift" }, UseMinimum = true, Minimum = 20 },
             new VisionPipelineAcceptancePreset { Name = "Best Score >= 80", MetricName = ScoreMax, ToolTypes = new[] { "matching", "templatematching", "edgebasedmatching", "edgebasedtemplatematching", "edgetemplatematching", "feature", "featurematching", "sift" }, UseMinimum = true, Minimum = 80 },
+            new VisionPipelineAcceptancePreset { Name = "Best/Second Score Margin >= 10", MetricName = ScoreMargin, ToolTypes = new[] { "matching", "templatematching" }, UseMinimum = true, Minimum = 10 },
             new VisionPipelineAcceptancePreset { Name = "Best Score >= 60", MetricName = ScoreMax, ToolTypes = new[] { "feature", "featurematching", "sift" }, UseMinimum = true, Minimum = 60 },
             new VisionPipelineAcceptancePreset { Name = "Mean <= 180", MetricName = MeanValueAvg, ToolTypes = new[] { "mean" }, UseMaximum = true, Maximum = 180 },
             new VisionPipelineAcceptancePreset { Name = "Mask Ratio 0.10..0.90", MetricName = MaskPixelRatio, ToolTypes = new[] { "hsv", "hsvmask", "colorhsv", "colormask" }, UseMinimum = true, Minimum = 0.10, UseMaximum = true, Maximum = 0.90 },

@@ -28,6 +28,7 @@ namespace OpenVisionLab
             BlobTool tool = new BlobTool();
             tool.SetProperty(property);
             VisionToolResult result = tool.Execute(source);
+            VisionPipelineObjectResultCaptureService.ApplyNativeFilter(property, tool, result);
             view.SetResultReview(tool.results);
             if (result?.Success == true)
             {
@@ -55,6 +56,7 @@ namespace OpenVisionLab
             ContourTool tool = new ContourTool();
             tool.SetProperty(property);
             VisionToolResult result = tool.Execute(source);
+            VisionPipelineObjectResultCaptureService.ApplyNativeFilter(property, tool, result);
             view.SetResultReview(tool.results);
 
             if (result?.Success == true)
@@ -65,6 +67,24 @@ namespace OpenVisionLab
                     result.ResultImage?.Dispose();
                     result.ResultImage = visual;
                 }
+            }
+
+            return result;
+        }
+
+        public static VisionToolResult ExecuteAffineTransformPreview(Mat source, AffineTransformToolWpfView view)
+        {
+            AffineTransformTool tool = new AffineTransformTool();
+            tool.SetProperty(view.CreateProperty());
+            VisionToolResult result = tool.Execute(source);
+            view.SetResultReview(result);
+            if (result?.ResultImage != null && !result.ResultImage.Empty())
+            {
+                Mat visual = OpenVisionNativeToolPreviewOverlayRenderer.CreateAffineTransformPreviewImage(
+                    result.ResultImage,
+                    result.Overlays);
+                result.ResultImage.Dispose();
+                result.ResultImage = visual;
             }
 
             return result;

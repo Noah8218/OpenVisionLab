@@ -61,6 +61,28 @@ namespace OpenVisionLab
         [CategoryAttribute("Contour"), DescriptionAttribute(""), DisplayNameAttribute("Max area")]
         public int MAX_AREA { get; set; } = 1000000;
 
+        [PropertyOrder(10)]
+        [PropertyEditor(typeof(WpgRangeEditor))]
+        [RangeEditor(0, 1000000, 10, 0, nameof(MIN_WIDTH), nameof(MAX_WIDTH))]
+        [CategoryAttribute("Contour"), DescriptionAttribute("개별 Contour의 축 정렬 바운딩 박스 최소 폭(px)입니다."), DisplayNameAttribute("Min bounding width")]
+        public int MIN_WIDTH { get; set; } = 0;
+
+        [PropertyOrder(11)]
+        [Browsable(true)]
+        [CategoryAttribute("Contour"), DescriptionAttribute("개별 Contour의 축 정렬 바운딩 박스 최대 폭(px)입니다."), DisplayNameAttribute("Max bounding width")]
+        public int MAX_WIDTH { get; set; } = 1000000;
+
+        [PropertyOrder(12)]
+        [PropertyEditor(typeof(WpgRangeEditor))]
+        [RangeEditor(0, 1000000, 10, 0, nameof(MIN_HEIGHT), nameof(MAX_HEIGHT))]
+        [CategoryAttribute("Contour"), DescriptionAttribute("개별 Contour의 축 정렬 바운딩 박스 최소 높이(px)입니다."), DisplayNameAttribute("Min bounding height")]
+        public int MIN_HEIGHT { get; set; } = 0;
+
+        [PropertyOrder(13)]
+        [Browsable(true)]
+        [CategoryAttribute("Contour"), DescriptionAttribute("개별 Contour의 축 정렬 바운딩 박스 최대 높이(px)입니다."), DisplayNameAttribute("Max bounding height")]
+        public int MAX_HEIGHT { get; set; } = 1000000;
+
         [PropertyOrder(3)]
         [CategoryAttribute("Contour"), DescriptionAttribute("Contour overlay color."), DisplayNameAttribute("표시 색상")]
         [PropertyEditor(typeof(WpgColorEditor))]

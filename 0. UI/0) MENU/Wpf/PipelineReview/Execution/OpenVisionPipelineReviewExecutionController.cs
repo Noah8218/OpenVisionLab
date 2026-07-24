@@ -45,6 +45,17 @@ namespace OpenVisionLab
             return stepResultSummaries.TryGetValue(step, out summary);
         }
 
+        public IReadOnlyList<VisionPipelineGeometryFeatureResult> GetCurrentGeometryFeatures()
+        {
+            return stepResultSummaries.Values
+                .SelectMany(summary => summary?.GeometryFeatures ?? Array.Empty<VisionPipelineGeometryFeatureResult>())
+                .Where(item => item != null)
+                .Select(item => item.Clone())
+                .OrderBy(item => item.SourceStep, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(item => item.FeatureName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
         public Bitmap ResolveCachedOutput(string layerName)
         {
             if (string.IsNullOrWhiteSpace(layerName))

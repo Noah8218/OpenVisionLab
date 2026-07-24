@@ -47,6 +47,11 @@ namespace OpenVisionLab.Composition
             return new ContourToolViewModel(property);
         }
 
+        public static IAffineTransformToolViewModel CreateAffineTransformToolViewModel(AffineTransformProperty property)
+        {
+            return new AffineTransformToolViewModel(property);
+        }
+
         public static IMatchingToolViewModel CreateMatchingToolViewModel(MatchingProperty property)
         {
             return new MatchingToolViewModel(property);

@@ -361,6 +361,8 @@ namespace OpenVisionLab
 
         public bool CanOpenGeometryToolForTest => btnGeometryOpenTool.IsEnabled;
 
+        public bool CanOpenAffineTransformToolForTest => btnGeometryOpenAffineTool.IsEnabled;
+
         public bool CanOpenFilteringToolForTest => btnFilteringOpenTool.IsEnabled;
 
         public bool CanOpenMorphologyToolForTest => btnMorphologyOpenTool.IsEnabled;
@@ -460,6 +462,7 @@ namespace OpenVisionLab
             btnBrightnessOpenHistogramTool.IsEnabled = enabled;
             btnArithmeticOpenTool.IsEnabled = enabled;
             btnGeometryOpenTool.IsEnabled = enabled;
+            btnGeometryOpenAffineTool.IsEnabled = enabled;
             btnFilteringOpenTool.IsEnabled = enabled;
             btnMorphologyOpenTool.IsEnabled = enabled;
             btnBlobOpenTool.IsEnabled = enabled;
@@ -3184,6 +3187,7 @@ namespace OpenVisionLab
                 + "x"
                 + outputHeight.ToString(CultureInfo.InvariantCulture);
             txtGeometryMeaning.Text = "회전과 배율이 바뀌면 기존 ROI와 측정점의 좌표도 달라집니다. Preview 결과에서 새 위치를 확인하고 ROI를 다시 맞추세요.";
+            txtGeometryMeaning.Text = "회전과 배율이 바뀌면 기존 ROI와 측정점의 좌표도 달라집니다. Preview 결과에서 새 위치를 확인하고 ROI를 다시 맞추세요.";
             PaintGeometryAnimationFrame(angle, scale, outputWidth, outputHeight);
         }
 
@@ -3214,6 +3218,18 @@ namespace OpenVisionLab
                     + "x"
                     + outputHeight.ToString(CultureInfo.InvariantCulture),
                 _ => "3 / 3 - ROI 검토: 변환 결과에서 Rect, Template, Edge 방향, Pixel/mm 기준의 새 위치를 확인합니다."
+            };
+            txtGeometryAnimationStatus.Text = visibleStep switch
+            {
+                0 => "0 / 3 - Reset: 원본 ROI와 좌표를 확인합니다.",
+                1 => "1 / 3 - Rotate: 중심 기준 " + angle.ToString("0", CultureInfo.InvariantCulture) + " deg 회전으로 좌표가 이동합니다.",
+                2 => "2 / 3 - Scale: "
+                    + scale.ToString("0", CultureInfo.InvariantCulture)
+                    + "% 적용 후 OutputSize~"
+                    + outputWidth.ToString(CultureInfo.InvariantCulture)
+                    + "x"
+                    + outputHeight.ToString(CultureInfo.InvariantCulture),
+                _ => "3 / 3 - ROI review: 변환 결과에서 Rect, Template, Edge 방향, Pixel/mm 기준의 새 위치를 확인한 뒤 Preview/Run을 명시적으로 실행합니다."
             };
         }
 
@@ -4790,6 +4806,15 @@ namespace OpenVisionLab
                     return;
                 }
 
+                if (menu == VISION_MENU.AffineTransform && ReferenceEquals(button, btnGeometryOpenAffineTool))
+                {
+                    txtGeometryToolLocationTitle.Text =
+                        "열림: Affine Transform | 찾을 위치: Source/Destination Points, Output, Sampling, Validation Gates";
+                    txtGeometryToolLocationDetail.Text =
+                        "대응하는 세 점을 같은 순서로 입력하고 Preview에서 destination triangle, transformed frame, Affine 2x3 행렬, AffineValidPixelRatio를 확인하세요.";
+                    return;
+                }
+
                 if (menu == VISION_MENU.Arithmetic)
                 {
                     txtArithmeticToolLocationTitle.Text =
@@ -4823,11 +4848,15 @@ namespace OpenVisionLab
                     VISION_MENU.Blob => "열림: Blob | 찾을 위치: PropertyGrid > ROI > Use ROI / ROI (CvROI)",
                     VISION_MENU.Filter => "열림: Filter | 찾을 위치: Filter options > Kernel Width / Kernel Height",
                     VISION_MENU.RotateAndScale => "열림: Rotate / Scale | 찾을 위치: Angle / Scale X / Scale Y",
+                    VISION_MENU.AffineTransform => "열림: Affine Transform | 찾을 위치: Source/Destination 3 points / Validation Gates",
                     _ => "열림: " + menu + " | 찾을 위치: Parameter panel"
                 };
-                txtFoundationToolLocationDetail.Text = menu == VISION_MENU.RotateAndScale
-                    ? "Angle과 Scale X/Y를 설정하고 Preview 결과에서 OutputSize와 영상 방향을 확인하세요."
-                    : "강조된 PropertyGrid 항목과 입력 레이어를 확인하고 Preview에서 값의 영향을 비교하세요.";
+                txtFoundationToolLocationDetail.Text = menu switch
+                {
+                    VISION_MENU.RotateAndScale => "Angle과 Scale X/Y를 설정하고 Preview 결과에서 OutputSize와 영상 방향을 확인하세요.",
+                    VISION_MENU.AffineTransform => "세 대응점을 입력하고 Preview에서 destination/frame 드로잉과 valid-pixel ratio를 확인하세요.",
+                    _ => "강조된 PropertyGrid 항목과 입력 레이어를 확인하고 Preview에서 값의 영향을 비교하세요."
+                };
             }
         }
 

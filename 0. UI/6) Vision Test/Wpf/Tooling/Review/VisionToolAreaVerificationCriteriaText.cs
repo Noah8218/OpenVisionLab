@@ -12,6 +12,10 @@ namespace OpenVisionLab
                 resolvedProperty,
                 resolvedProperty.MIN_AREA,
                 resolvedProperty.MAX_AREA,
+                resolvedProperty.MIN_WIDTH,
+                resolvedProperty.MAX_WIDTH,
+                resolvedProperty.MIN_HEIGHT,
+                resolvedProperty.MAX_HEIGHT,
                 resolvedProperty.USE_MASKING ? VisionToolVerificationText.MaskOn : VisionToolVerificationText.MaskOff);
         }
 
@@ -22,6 +26,10 @@ namespace OpenVisionLab
                 resolvedProperty,
                 resolvedProperty.MIN_AREA,
                 resolvedProperty.MAX_AREA,
+                resolvedProperty.MIN_WIDTH,
+                resolvedProperty.MAX_WIDTH,
+                resolvedProperty.MIN_HEIGHT,
+                resolvedProperty.MAX_HEIGHT,
                 resolvedProperty.DrawMode.ToString());
         }
 
@@ -29,6 +37,10 @@ namespace OpenVisionLab
             OpenCvPropertyBase property,
             int minArea,
             int maxArea,
+            int minWidth,
+            int maxWidth,
+            int minHeight,
+            int maxHeight,
             string suffix)
         {
             string roiText = property.USE_ROI
@@ -38,12 +50,22 @@ namespace OpenVisionLab
                 ? VisionToolVerificationText.FormatThreshold(property.THRESHOLD)
                 : VisionToolVerificationText.ThresholdOff;
 
-            return VisionToolVerificationText.FormatAreaCriteria(
+            string areaText = VisionToolVerificationText.FormatAreaCriteria(
                 minArea,
                 maxArea,
                 thresholdText,
                 roiText,
                 suffix ?? string.Empty);
+            string maxWidthText = maxWidth >= 1000000 ? "*" : maxWidth.ToString(CultureInfo.CurrentCulture);
+            string maxHeightText = maxHeight >= 1000000 ? "*" : maxHeight.ToString(CultureInfo.CurrentCulture);
+            return string.Format(
+                CultureInfo.CurrentCulture,
+                "{0} / Bounding W {1}-{2}px / H {3}-{4}px",
+                areaText,
+                minWidth,
+                maxWidthText,
+                minHeight,
+                maxHeightText);
         }
     }
 }

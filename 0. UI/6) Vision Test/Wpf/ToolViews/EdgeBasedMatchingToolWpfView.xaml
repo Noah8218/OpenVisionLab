@@ -7,5 +7,10 @@
                                                   LearnButtonVisibility="Visible"
                                                   LearnButtonText="Learn Edge Match"
                                                   LearnTopicIndex="12"
-                                                  TemplateStatusVisibility="Visible" />
+                                                  TemplateStatusVisibility="Visible"
+                                                  ToolContentVisibility="Visible">
+        <local:VisionToolSingleInputPropertyToolShell.ToolContent>
+            <local:AutoMPointTeachingPanel />
+        </local:VisionToolSingleInputPropertyToolShell.ToolContent>
+    </local:VisionToolSingleInputPropertyToolShell>
 </local:VisionToolSingleInputPropertyToolViewBase>

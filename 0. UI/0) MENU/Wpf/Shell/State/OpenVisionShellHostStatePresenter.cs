@@ -96,5 +96,16 @@ namespace OpenVisionLab
         public bool CanSelectFirstIssuePipelineReviewStep => documentController.ActivePipelineReviewDocument?.CanSelectFirstIssueStep ?? false;
         public bool HasPipelineReviewInputPreview => documentController.ActivePipelineReviewDocument?.HasInputPreview ?? false;
         public bool HasPipelineReviewOutputPreview => documentController.ActivePipelineReviewDocument?.HasOutputPreview ?? false;
+        public int PipelineReviewObjectResultCount => documentController.ActivePipelineReviewDocument?.ObjectResultCount ?? 0;
+
+        public bool IsPipelineReviewFixtureDesignerVisible => documentController.ActivePipelineReviewDocument?.IsFixtureDesignerVisible == true;
+
+        public string PipelineReviewFixtureRelationshipText => documentController.ActivePipelineReviewDocument?.FixtureRelationshipText ?? string.Empty;
+
+        public int PipelineReviewFixtureProducerStepNumber => documentController.ActivePipelineReviewDocument?.FixtureProducerStepNumber ?? 0;
+
+        public int PipelineReviewFixtureMeasurementStepNumber => documentController.ActivePipelineReviewDocument?.FixtureMeasurementStepNumber ?? 0;
+        public int PipelineReviewSelectedObjectResultNumber => documentController.ActivePipelineReviewDocument?.SelectedObjectResultNumber ?? 0;
+        public bool HasPipelineReviewObjectHighlight => documentController.ActivePipelineReviewDocument?.HasObjectHighlight ?? false;
     }
 }

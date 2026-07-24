@@ -1097,7 +1097,7 @@
                     Visibility="Collapsed">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Text="기하 변환은 픽셀과 좌표의 위치·크기를 바꿉니다."
+                        <TextBlock Text="기하 변환은 픽셀과 좌표의 위치·크기·기울기를 바꿉니다."
                                    FontWeight="SemiBold" />
                         <TextBlock Margin="0,8,0,0"
                                    Style="{StaticResource LearnMutedTextStyle}"
@@ -1105,10 +1105,15 @@
                         <TextBlock Margin="0,5,0,0"
                                    Style="{StaticResource LearnMutedTextStyle}"
                                    Text="Rotate/Scale은 이미지를 회전하거나 확대·축소하고 새 좌표와 결과 크기를 만듭니다. Angle과 Scale을 정한 뒤 Preview에서 여백과 ROI 위치를 확인하세요." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="AffineTransform은 서로 대응하는 Source/Destination 3점을 이용해 이동·회전·배율·기울기 변환을 한 번에 만듭니다. 세 점은 서로 일직선이 아니어야 하며, 같은 물리 특징 순서로 입력해야 합니다." />
 
                         <Grid Margin="0,12,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="8" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock VerticalAlignment="Center"
@@ -1125,6 +1130,17 @@
                                     ToolTip="Rotate/Scale Tool View의 Angle, Scale X, Scale Y 위치를 엽니다."
                                     Click="OpenRelatedToolButton_Click"
                                     AutomationProperties.AutomationId="OpenVisionLearnGeometryOpenToolButton" />
+                            <Button x:Name="btnGeometryOpenAffineTool"
+                                    Grid.Column="3"
+                                    MinWidth="158"
+                                    Height="30"
+                                    Padding="10,4"
+                                    Content="Affine Transform Tool 열기"
+                                    IsEnabled="False"
+                                    Tag="AffineTransform"
+                                    ToolTip="Affine Transform Tool View의 Source/Destination 3점과 coverage gate를 엽니다."
+                                    Click="OpenRelatedToolButton_Click"
+                                    AutomationProperties.AutomationId="OpenVisionLearnGeometryOpenAffineToolButton" />
                         </Grid>
                         <StackPanel x:Name="geometryToolLocationPanel"
                                     Margin="0,8,0,0"
@@ -1132,16 +1148,30 @@
                             <Separator Margin="0,0,0,7" />
                             <TextBlock x:Name="txtGeometryToolLocationTitle"
                                        FontWeight="SemiBold"
-                                       Text="찾을 위치: Input/Output Layer, Angle, Scale X, Scale Y"
+                                       Text="Rotate/Scale: Angle, Scale X/Y | Affine: Source/Destination 3점, Output, Validation Gates"
                                        TextWrapping="Wrap"
                                        AutomationProperties.AutomationId="OpenVisionLearnGeometryToolLocationTitle" />
                             <TextBlock x:Name="txtGeometryToolLocationDetail"
                                        Margin="0,4,0,0"
                                        Style="{StaticResource LearnMutedTextStyle}"
-                                       Text="OutputSize는 Angle과 Scale을 적용한 결과 이미지의 폭과 높이입니다."
+                                       Text="Preview를 명시적으로 실행한 뒤 OutputSize, Affine 2x3 행렬, destination triangle/frame 드로잉, AffineValidPixelRatio를 확인합니다."
                                        TextWrapping="Wrap"
                                        AutomationProperties.AutomationId="OpenVisionLearnGeometryToolLocationDetail" />
                         </StackPanel>
+
+                        <Border Margin="0,10,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Affine 3점 티칭 순서"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="1) 넓게 떨어진 안정 특징 3개 선택 → 2) Source/Destination을 같은 순서로 입력 → 3) triangle area gate 확인 → 4) Preview → 5) 노란 destination triangle과 파란 transformed frame 확인 → 6) AffineValidPixelRatio 확인 후 downstream 고정 ROI를 티칭합니다." />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="이 기능은 2D 픽셀 좌표 보정입니다. 원근/렌즈 보정, 자동 특징점 탐색, mm 교정은 포함하지 않습니다." />
+                            </StackPanel>
+                        </Border>
 
                         <Grid Margin="0,12,0,0">
                             <Grid.ColumnDefinitions>

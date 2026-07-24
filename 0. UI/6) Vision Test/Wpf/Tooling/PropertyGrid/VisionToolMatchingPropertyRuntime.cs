@@ -347,6 +347,14 @@ namespace OpenVisionLab
                     Math.Max(1, property.HYBRID_VERIFY_TOP_N));
             }
 
+            if (property.USE_UNIQUE_MATCH_VALIDATION)
+            {
+                search += string.Format(
+                    CultureInfo.CurrentCulture,
+                    " / Unique {0:0.###}",
+                    property.UNIQUE_MATCH_MIN_SCORE_MARGIN);
+            }
+
             return search;
         }
 

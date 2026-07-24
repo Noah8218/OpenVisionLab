@@ -53,6 +53,11 @@ namespace OpenVisionLab
                 OpenVisionRecipeText.Local("결과: ", "Result: ") + (sample?.DetailText ?? "-")
             };
 
+            if (sample?.IsInReviewQueue == true)
+            {
+                lines.Add(sample.ReviewReasonsToolTipText);
+            }
+
             if (!string.IsNullOrWhiteSpace(sample?.FailedStep))
             {
                 lines.Add(OpenVisionRecipeText.Local("다음: 실패 Step을 선택했습니다. 미리보기 목록에서 입력/출력과 기준을 확인하세요.", "Next: Failed step is selected. Review input/output and gates in the preview step list."));

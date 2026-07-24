@@ -51,6 +51,23 @@ namespace OpenVisionLab
                 VisionToolAreaVerificationCriteriaText.CreateContour);
         }
 
+        public static OpenVisionNativeToolDocument CreateAffineTransform(IDisplayManager displayManager)
+        {
+            AffineTransformProperty property = OpenVisionToolOpenProfiler.Measure(
+                "CreateAffineTransformProperty",
+                () => OpenVisionNativeToolPropertySessionStore.GetOrLoad(
+                    "AffineTransform_1",
+                    () => new AffineTransformProperty("AffineTransform_1")));
+            return CreatePropertyGridDocument(
+                displayManager,
+                "AffineTransform",
+                "AffineTransform_Preview",
+                property,
+                item => VisionToolCompositionService.CreateAffineTransformToolViewModel(item),
+                presenter => new AffineTransformToolWpfView(presenter),
+                OpenVisionNativeToolPreviewExecutor.ExecuteAffineTransformPreview);
+        }
+
         public static OpenVisionNativeToolDocument CreateMatching(IDisplayManager displayManager)
         {
             MatchingProperty property = OpenVisionToolOpenProfiler.Measure(

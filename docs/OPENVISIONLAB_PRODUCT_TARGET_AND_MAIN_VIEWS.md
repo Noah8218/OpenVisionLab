@@ -1,6 +1,6 @@
 # OpenVisionLab Product Target And Main Views
 
-Updated: 2026-07-15 KST
+Updated: 2026-07-24 KST
 
 > **Live status and next priority:** Read `docs\OPENVISIONLAB_CURRENT_HANDOFF.md` first. This document owns stable product direction and main-view responsibilities; it does not replace current git/test evidence.
 
@@ -8,21 +8,47 @@ This is the short product-direction document for future sessions. Read this firs
 
 ## Final Product Shape
 
-OpenVisionLab is an LLM-assisted OpenCvSharp4 rule-based vision recipe workbench.
+OpenVisionLab is an OpenCvSharp4 rule-based vision recipe workbench. Direct deterministic teaching and repeatable evidence are the product core; the existing LLM XML assistant is optional and frozen in maintenance mode.
 
 It is not intended to become a camera, lighting, PLC, or I/O integration platform. Its primary value is the workflow before equipment integration:
 
 1. Load or choose sample images.
-2. Describe the inspection target and detection points.
-3. Use GPT, Gemini, Claude, or another LLM to draft OpenVisionLab XML recipes/pipelines.
-4. Load and validate the XML inside OpenVisionLab.
-5. Verify the pipeline with OpenCvSharp4 rule-based tools.
-6. Review Good/Bad samples, failed steps, metrics, layers, ROI, templates, and parameters.
+2. Teach the inspection target, ROI, template, measurement region, and tolerance through PropertyGrid-based tools.
+3. Compose and validate the Pipeline and its layer routes.
+4. Run Preview or Run explicitly with OpenCvSharp4 rule-based tools.
+5. Review Good/Bad samples, failed steps, metrics, layers, ROI, templates, parameters, and current-run drawings.
+6. Replay a frozen recipe on N samples and review its deterministic queue.
 7. Save a validated recipe for learning, review, and later integration by another system.
+
+The preserved LLM Assistant may optionally draft or validate XML at the composition step. GPT, Gemini, Claude, browser automation, or API credentials are not required for the core workflow.
 
 One-line product definition:
 
-> OpenVisionLab is a desktop workbench for creating and validating OpenCvSharp4 rule-based inspection recipes from sample images, operator intent, and LLM-generated XML.
+> OpenVisionLab is a desktop workbench for directly teaching, executing, and validating OpenCvSharp4 rule-based inspection recipes from sample images and operator-owned inspection intent.
+
+## LLM Maintenance-Mode Product Contract
+
+P196 freezes planned LLM expansion. The existing assistant remains a supported optional authoring surface, but current development must not add providers, browser automation, prompt families, new intent skills, or transcript campaigns. Work on it only for a demonstrated regression, unsafe XML acceptance, broken compatibility, or an explicit user decision to reopen the track.
+
+The frozen evidence below remains useful as a compatibility and safety contract; it is not the active roadmap:
+
+The product bet remains valid only as **guided initial recipe setup**, not autonomous inspection discovery from an arbitrary image. The primary LLM development unit is a reusable OpenVisionLab inspection-intent skill: operator intent and required inputs -> locked verified tool family -> starter XML -> explicit execution -> N-sample drawings/metrics/error table -> genuine correction evidence -> held-out completion gate.
+
+- Phase 1 proves that the named intent and required inputs produce valid, importable starter XML. XML validity is not recipe-quality proof.
+- Phase 2 proves the recipe on multiple samples with exact runtime drawings, metrics, and an operator-readable error table. Successful execution without semantic drawing evidence is not a pass.
+- Phase 3 preserves a genuine failed first draft, uses its validator/runtime evidence for an LLM correction, and replays the correction on held-out data without hiding regressions.
+- Complete one skill before starting another. Do not create a new algorithm family merely because one sample or draft fails when an existing bounded tool family can implement the intent.
+- The first LLM pilot is `Pin row gap / pitch consistency`, with its v1 Guided Setup locked to `PinArrayGap` adjacent edge-to-edge clearance. P201 separately adds and verifies direct deterministic dark-pin, pixel-only `CenterPitch`; this does not reopen the frozen LLM skill. Edge gap, center pitch, pixel results, and calibrated units must remain explicit and separate.
+- `docs/OPENVISIONLAB_PIN_ROW_GAP_INTENT_SKILL.md` is the approved v1 contract. Its user-visible supported intent is `Pin row edge-gap consistency`; measurement-only XML remains visibly unjudged until an explicit range gate and Train/Validation/Test evidence exist.
+- P168 completes bounded Phase 2 for this pilot in Dev: three existing Local Validation Sets can be frozen with the exact skill/XML/set identity including image-content hashes, the unchanged two-row P148 recipe replays with sample error rows and current-run drawings, and the viewer retains a SHA-256-verified run-time source snapshot plus every executed row drawing. This is adjacent edge-gap evidence only, not center-pitch, calibrated-unit, or other-defect classification evidence.
+- P169 freezes a new non-overlapping 72-image held-out Test split and preserves a fresh judged GPT response. That response passed strict validation and the allowed Train/Validation replay directly, so there was no legitimate correction step and the Test remains unexecuted. Do not repeat prompts to force a failure.
+- P170 freezes target-bearing working Train/Validation manifests for the next natural Phase 3 attempt: Train Good 178 / `pitch_error` 26 and Validation Good 36 / `pitch_error` 12, with zero path/content overlap against the P169 target Test. Every working row was previously observed, so this improves pre-Test coverage without becoming blind evidence or Phase 3 completion.
+- `OuterCornerIntersection` remains experimental and is not a default LLM skill or recommendation. Its current card evidence does not prove that the fitted lower line is supported by the operator-intended physical card-bottom edge.
+- Manual prompt copy/XML paste through free web accounts is a supported optional transport. Consumer-web automation and API credentials are not hard dependencies of the skill workflow.
+
+Frozen maturity: P167 completes Phase 1 authoring/strict validation and P168 completes bounded Phase 2 Train/Validation/Test identity, replay, error-row, and multi-row drawing evidence for the first `Pin row edge-gap consistency` skill. P195 separately completes Phase 1 for the bounded hybrid relative-ROI authoring contract. Phase 3 still lacks a genuine natural failure -> correction -> one-time held-out replay, but that missing evidence is intentionally deferred rather than an active blocker for rule-based development.
+
+Reopen planned LLM work only after an explicit user decision and all three conditions hold: the same target can be configured without LLM assistance; its deterministic tool family has stable metrics/drawings and frozen N-sample evidence; and the XML contract is stable enough that the LLM composes verified capabilities instead of compensating for missing rule-based behavior.
 
 ## Product Boundaries
 
@@ -127,7 +153,7 @@ Next development focus:
 
 ### 4. LLM XML Assistant View
 
-Purpose: use LLMs to draft and review OpenVisionLab XML safely.
+Purpose: preserve an optional maintenance-mode surface for drafting and reviewing OpenVisionLab XML safely.
 
 Responsibilities:
 
@@ -145,9 +171,9 @@ Already completed enough to avoid redoing:
 
 Next development focus:
 
-- One sanitized real GPT direct-success candidate now exists for the public pin-gap packet. Collect correction-loop transcripts only when an independent external draft naturally fails after receiving the guide/catalog; expand the corpus only when real transcripts expose gaps beyond the current direct smoke cases.
-- Expand dependency files and unresolved paths further only when real failure examples require more than the current row-level drill-down.
-- Keep the LLM workflow explicit: validate, review diff/dependencies, then import. It must not run Preview or silently accept recipes.
+- No planned feature expansion. Preserve current behavior and fix only evidence-backed regressions, unsafe validation/import behavior, or compatibility defects.
+- Do not request new provider transcripts, add browser automation, or create another intent skill while maintenance mode is active.
+- Keep the workflow explicit: validate, review diff/dependencies, then import. It must not run Preview or silently accept recipes.
 
 ### 5. Sample Review / Validation View
 
@@ -195,7 +221,7 @@ Next development focus:
 
 - Clear product identity: rule-based OpenCvSharp4 workbench, not a full equipment platform.
 - PropertyGrid-based tools preserve recipe/model compatibility.
-- LLM XML workflow is a unique differentiator against common commercial equipment software.
+- The preserved LLM XML workflow is an optional convenience layer over the deterministic workbench, not its readiness claim.
 - Good/Bad sample catalog and metric gates make recipe validation explainable.
 - Viewer/layer/docking/ROI/template foundations are already in place.
 - Explicit Preview/Run contracts reduce accidental state changes.
@@ -207,6 +233,7 @@ Next development focus:
 - LLM XML validation now has issue rows, before/after diff review, dependency/path action hints, and dependency drill-down rows, but real unresolved-path examples may still expose edge cases.
 - Sample review now links into failed-Step focus, selected Step flow context, rerun/comparison actions, corrected-output review after XML apply, and selected Step branch/output comparison.
 - Commercial tools are still ahead in guided setup, deployment/runtime packaging, recipe management maturity, and operator-ready polish.
+- P216 completes the P215-selected per-object Blob/Contour bounding-width/height slice. The four optional pixel-bound keys filter individual accepted objects and `ResultCount`, preserve legacy missing-key behavior, and publish exact P211/Run History reject reasons. Full region-feature evaluation, rotated dimensions, automatic parameter suggestion, OCR/barcode, and navigation rewrites remain deferred.
 
 ## Commercial Comparison Summary
 
@@ -221,12 +248,12 @@ Official sources rechecked on 2026-07-06:
 - KEYENCE CV-X: stronger controller/simulator/terminal ecosystem. KEYENCE positions CV-X around cameras/lighting/high-volume inspection and provides PC simulator/terminal software for configuring settings and manipulating controller screens. OpenVisionLab should not compete as a controller platform; its value is local image-based recipe design and LLM-assisted XML generation.
   - Sources: https://www.keyence.com/products/vision/vision-sys/ and https://www.keyence.com/support/user/cv-x/code/
 
-Current completion estimate:
+Historical completion estimate recorded before the P165 inspection-intent-skill decision (not current status; use `docs\OPENVISIONLAB_CURRENT_HANDOFF.md`):
 
 - Versus commercial equipment platforms: about 25-30%.
 - Versus the intended LLM-assisted rule-based recipe workbench: about 62-66%.
 
-Current self-evaluation:
+Historical self-evaluation from the same pre-P165 snapshot:
 
 - Strongest differentiated area: LLM-generated XML prompt/draft/load/validate/import review, because common commercial equipment tools do not center GPT/Gemini/Claude-style XML generation as the core authoring loop.
 - Strongest matured area: Recipe Manager review flow, including Good/Bad role drill-down, selected Step review, explicit XML apply-back, corrected-output review, operator report, and run-history review copy.
@@ -278,8 +305,30 @@ Future sessions should not spend time re-discovering these unless a regression i
 - Existing Pipeline Review contextual `Learn Tool` entry for supported selected Steps; it reuses the Learn topic catalog and has no Preview/Run, layer, routing, parameter, or review-state side effects.
 - Existing Pipeline Review `설정 수정` handoff for the selected Step; it opens the same recipe/pipeline/Step in Recipe Manager `Advanced > Pipeline > XML/Step`, makes the established PropertyGrid editor visible, and preserves explicit XML apply plus explicit Preview/Run semantics.
 - Existing catalog-sample edit alignment: when the selected pipeline is an exact `Sample_<catalog sample name>` workspace copy, Recipe Manager selects that same work sample before any explicit Good/Bad rerun; unrelated recipe pipelines do not change work-sample selection.
+- Existing `PinArrayGap` repeated-pin teaching now has two explicit deterministic meanings: legacy/default `EdgeGap` publishes `DistancePx*`, while `CenterPitch` publishes `PitchPx*` from adjacent dark-pin centers. Recipe Manager PropertyGrid can edit both without automatic execution. The frozen LLM Pin Guided Setup v1 remains EdgeGap-only.
+- Existing Pipeline Review Fixture/relative-ROI designer detects one named `Matching -> NormalizeImage -> downstream CvROI` chain and shows template/search ROI, taught and current pose, score/margin/valid-pixel evidence, and paired source/normalized ROI drawings. Its actions reuse reference teach, Recipe Manager PropertyGrid, and explicit Run Review; it is not a locator algorithm or qualification claim.
+- Completed P213 General Geometric Measurement Workspace keeps editing PropertyGrid-based and adds reusable same-run point/segment/circle evidence, radial CircleGauge, seven GeometryMeasure relations, and a read-only Geometry Review with two-way drawing/table selection. Its evidence is pixel-only and synthetic/UI-bounded.
+- Completed P214 Two-Point Scale Teaching adds a separate Pipeline Review calibration tab that hash-locks two same-run points and a user-supplied known distance, derives one uniform mm/px value, and applies it explicitly to one compatible measurement Step without Preview/Run or layer/routing mutation. It preserves the legacy `PIXELPERMM` key for compatibility and is not lens/camera or certified metrology calibration.
+- Completed P216 Blob/Contour object-dimension filtering adds PropertyGrid min/max ranges for axis-aligned pixel width and height, filters before accepted-object metrics/`ResultCount`, and preserves exact rejected-object evidence in P211 and Run History. Missing keys remain area-only.
+- P217 statically rechecked the end-to-end deterministic operator path after P216 and selected no additional feature. PropertyGrid teaching, explicit Run Review, Object/Fixture/Geometry/Scale review, recipe round trip, saved drawings/object rows, batch history, and the deterministic review queue are connected; no remaining commercial candidate has a named blocked operator task and current reproduction.
+- P218 responds to a later explicit operator request with one bounded deterministic extension: Library-Noah calculates and executes a three-point pixel Affine transform, while OpenVisionLab provides PropertyGrid teaching, explicit Preview, XML/Pipeline round trip, drawings/metrics, result review, a public sample, and Geometry Learn. It is not automatic correspondence, homography, or camera calibration.
+- P219 connects three earlier deterministic typed Point results to that same Library-Noah Affine source triangle. Matching can publish one accepted `Center`; Recipe Manager provides ordered source pickers; the normalized output feeds unchanged fixed-coordinate downstream ROIs. This is explicit same-run correspondence wiring, not automatic point selection or per-image ROI motion.
+- P220 applies the operator-approved card `R`/`5`/expiry-mark centers to a frozen 12-row real-image pilot. After one search-ROI-only correction, all 12 reached Affine output and 10 met the pre-frozen `<=3 px` normalized-center gate; two retained `4.12/5.00 px`. The current Matching-center candidate is therefore not qualified for a `<=3 px` downstream inspection.
+- P221 records the operator's separate acceptance of the observed `<=5 px` envelope for one coarse date-area ROI. The unchanged Matching x3/Affine result feeds exact `CardReference` ROI `250,315,190,80` into the existing unjudged Mean tool on all 12 rows, with finite metrics and runtime drawings. This proves fixed-coordinate linkage only, not defect classification or locator qualification.
+- P222 implements the separately requested Library-Noah Auto MPoint core as a one-image, fixed-size matching-candidate suggestion engine. It reuses the existing edge matcher for uniqueness, synthetic pose replay, precision, runtime, and drawings; it is not a Pipeline Step or automatic recipe mutation.
+- P223 integrates that core into the existing Edge Based Matching Tool View. PropertyGrid teaching settings, explicit `Analyze candidates`, candidate rows/drawing, and explicit `Use this pattern` preserve Preview/Run count, layers, active layer, and routing. The source/vendored/current-build Library-Noah DLL identity is retained. The UI labels candidates `Suggested`, not `Qualified`.
+- The P223 GPT Pro research review confirmed that the current matcher was the correct base and selected unique-result acceptance before least-squares refinement, adaptive pattern sizing, ODB, or multi-anchor expansion.
+- P224 completes that optional acceptance slice. Library-Noah now retains an internal Top-8 candidate pool independently of external `NUM_MATCH=1`, distinguishes `NoMatch`, `Success`, and `Ambiguous`, and returns no result with an exact reason for either failure state. OpenVisionLab exposes the backward-compatible fields through the existing PropertyGrid/XML path without automatic Preview and retains normalized review metrics.
+- P225 rejects the first real-image fixed-ROI candidate. The approved card `R` anchor produced no correct accepts in reviewed-ROI unique mode and retained wrong accepts in broad unique mode; one exact drawing shows a unique high-score selection on `T`. The unique gate remains useful for ambiguity rejection, but it is not a semantic identity test. EdgeBased single-result `Center` and existing scale/refinement Pipeline settings are now wired for future Affine/relative-ROI use only after a different candidate qualifies.
+- P226 presents current Auto MPoint suggestions on five diverse public EasyMatch sources without applying them. Four sources produced 20 displayed suggestions, while the repeated `Frame 1` pattern rejected all eight finalists. Repeated floppy hubs could still rank because their fixed orientations differed, so the operator must approve physical identity before any cross-image qualification.
 
-## Next Priority Order
+## Current Next Priority Order
+
+1. Select and explicitly approve one P226 Auto MPoint sample/rank/ROI before any cross-image Matching qualification. Prerequisite: operator confirmation that the suggested ROI is the same durable physical feature across the representative set; score alone is insufficient. Recommended model: none until operator candidate approval | Reasoning effort: none until operator candidate approval.
+
+The user closed repeated image inspection, dataset tuning, and LLM validation as active work. Do not resume them without a new explicit request. See `docs\OPENVISIONLAB_RULE_BASED_UI_GAP_AUDIT_20260723.md`.
+
+## Historical Priority Order (superseded by the first inspection-intent skill)
 
 1. Continue LLM XML correction-loop coverage
    - Highest-value next feature: add external LLM transcript examples only when they expose gaps beyond the current failure/correction corpus.

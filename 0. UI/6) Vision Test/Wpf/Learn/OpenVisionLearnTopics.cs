@@ -86,7 +86,7 @@ namespace OpenVisionLab
             new OpenVisionLearnTopicMetadata(OpenVisionLearnTopicIndex.Arithmetic, "LEARN_ARITHMETIC.md", "preprocess",
                 "실습: Arithmetic에서 Add, Subtract, AbsDiff, Bitwise 연산의 입력 A/B와 결과 레이어를 비교하세요."),
             new OpenVisionLearnTopicMetadata(OpenVisionLearnTopicIndex.GeometryTransform, "LEARN_GEOMETRY_TRANSFORM.md", "geometry",
-                "실습: RotateScale에서 Angle과 Scale을 바꾸고 OutputSize, 여백, ROI 좌표 변화를 확인하세요."),
+                "실습: RotateScale 또는 AffineTransform을 Preview하고 OutputSize, 변환 드로잉, valid-pixel ratio, ROI 좌표 변화를 확인하세요."),
             new OpenVisionLearnTopicMetadata(OpenVisionLearnTopicIndex.ColorHsv, "LEARN_COLOR_HSV.md", "color-hsv",
                 "실습: HSV 색상 샘플에서 Hue/Saturation/Value 범위와 MaskPixelRatio가 Good/Bad를 구분하는지 확인하세요.")
         };
@@ -141,6 +141,7 @@ namespace OpenVisionLab
                     topicIndex = OpenVisionLearnTopicIndex.LineDistance;
                     return true;
                 case VISION_MENU.RotateAndScale:
+                case VISION_MENU.AffineTransform:
                     topicIndex = OpenVisionLearnTopicIndex.GeometryTransform;
                     return true;
                 case VISION_MENU.Histogram:
@@ -220,6 +221,9 @@ namespace OpenVisionLab
                     return true;
                 case "rotatescale":
                 case "rotateandscale":
+                case "affine":
+                case "affinematrix":
+                case "affinetransform":
                     topicIndex = OpenVisionLearnTopicIndex.GeometryTransform;
                     return true;
                 case "hsv":

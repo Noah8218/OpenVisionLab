@@ -170,6 +170,18 @@ namespace OpenVisionLab
 
         public string SelectedOutputLayer => inputRuntime.SelectedOutputLayer;
 
+        public string ResultReviewText
+        {
+            get
+            {
+                string summary = resultReviewText?.Text ?? string.Empty;
+                string guidance = resultGuidanceText?.Text ?? string.Empty;
+                return string.IsNullOrWhiteSpace(guidance)
+                    ? summary
+                    : summary + " / " + guidance;
+            }
+        }
+
         public static VisionToolSingleInputPropertyToolRuntime<TProperty> Attach(
             FrameworkElement owner,
             VisionToolPropertyGridPresenter<TProperty> presenter,
@@ -220,6 +232,20 @@ namespace OpenVisionLab
             }
 
             return presenter.CreateProperty();
+        }
+
+        public void ConfigurePropertyForTest(Action<TProperty> configure)
+        {
+            if (configure == null || !(presenter.SelectedObject is TProperty property))
+            {
+                return;
+            }
+
+            configure(property);
+            presenter.PersistSelectedObject();
+            propertyChangeController.RefreshAfterExternalUpdate(propertyGridController, applyVisibilityRules: true);
+            UpdateSummary();
+            ClearResultReview();
         }
 
         public void SetLayerList(IEnumerable<string> layerNames, string selectedInputLayer, string selectedOutputLayer)
@@ -273,9 +299,19 @@ namespace OpenVisionLab
             RefreshVerificationGuide();
         }
 
-        public void ShowResultReview(string summary, bool isSuccess, IEnumerable<VisionToolResultReviewItem> items)
+        public void ShowResultReview(
+            string summary,
+            bool isSuccess,
+            IEnumerable<VisionToolResultReviewItem> items,
+            string guidance = null)
         {
             VisionToolResultReviewPresenter.Show(owner, resultReviewText, resultReviewChips, summary, isSuccess, items);
+            if (!string.IsNullOrWhiteSpace(guidance))
+            {
+                resultGuidanceText.Text = guidance.Trim();
+                resultGuidanceText.ToolTip = resultGuidanceText.Text;
+                resultGuidanceText.Foreground = VisionToolResultReviewPresenter.ResolveStatusBrush(owner, isSuccess);
+            }
         }
 
         public void ClearResultReview()

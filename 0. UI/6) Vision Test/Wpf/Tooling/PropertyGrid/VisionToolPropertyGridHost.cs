@@ -49,6 +49,14 @@ namespace OpenVisionLab
             }
         }
 
+        public void SetThemeVariant(System.Windows.Controls.WpfPropertyGrid.PropertyGridThemeVariant themeVariant)
+        {
+            if (!disposed)
+            {
+                Grid.ThemeVariant = themeVariant;
+            }
+        }
+
         public static VisionToolPropertyGridHost Attach(
             Border host,
             object selectedObject,

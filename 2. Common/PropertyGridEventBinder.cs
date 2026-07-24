@@ -148,6 +148,38 @@ namespace OpenVisionLab._2._Common
                 changed |= SetBrowsableIfExists(propertyGrid, selected, nameof(global::OpenVisionLab.LineGaugeProperty.AVERAGE_FILTER_TYPE), line.USE_AVERAGE_FILTER);
             }
 
+            if (selected is global::OpenVisionLab.AffineTransformProperty)
+            {
+                string[] unrelatedInheritedProperties =
+                {
+                    nameof(OpenCvPropertyBase.PIXELPERMM),
+                    nameof(OpenCvPropertyBase.USE_THRESHOLD),
+                    nameof(OpenCvPropertyBase.USE_BITWISENOT),
+                    nameof(OpenCvPropertyBase.THRESHOLD_TYPES),
+                    nameof(OpenCvPropertyBase.THRESHOLD),
+                    nameof(OpenCvPropertyBase.USE_ADAPTIVE_THRESHOLD),
+                    nameof(OpenCvPropertyBase.ADAPTIVE_THRESHOLD),
+                    nameof(OpenCvPropertyBase.ADAPTIVE_THRESHOLD_TYPES),
+                    nameof(OpenCvPropertyBase.ADAPTIVE_THRESHOLD_ALGORITHM),
+                    nameof(OpenCvPropertyBase.BlockSize),
+                    nameof(OpenCvPropertyBase.Weight),
+                    nameof(OpenCvPropertyBase.USE_ROI),
+                    nameof(OpenCvPropertyBase.USE_MULTI_ROI),
+                    nameof(OpenCvPropertyBase.CvROI),
+                    nameof(OpenCvPropertyBase.CvROIS),
+                    nameof(OpenCvPropertyBase.USE_MASKING),
+                    nameof(OpenCvPropertyBase.CvMASKS),
+                    nameof(OpenCvPropertyBase.CvROIXml),
+                    nameof(OpenCvPropertyBase.CvROISXml),
+                    nameof(OpenCvPropertyBase.CvMASKSXml)
+                };
+
+                foreach (string propertyName in unrelatedInheritedProperties)
+                {
+                    changed |= SetBrowsableIfExists(propertyGrid, selected, propertyName, false);
+                }
+            }
+
             return changed;
         }
 

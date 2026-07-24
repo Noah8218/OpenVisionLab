@@ -201,6 +201,48 @@ namespace OpenVisionLab
             return canvas;
         }
 
+        public static Mat CreateAffineTransformPreviewImage(Mat transformedImage, IEnumerable<VisionToolOverlay> overlays)
+        {
+            Mat canvas = CreateColorCanvas(transformedImage);
+            foreach (VisionToolOverlay overlay in overlays ?? Enumerable.Empty<VisionToolOverlay>())
+            {
+                if (overlay == null)
+                {
+                    continue;
+                }
+
+                if (overlay.Kind == VisionToolOverlayKind.Point)
+                {
+                    Cv2.DrawMarker(
+                        canvas,
+                        new OpenCvSharp.Point((int)Math.Round(overlay.Center.X), (int)Math.Round(overlay.Center.Y)),
+                        new Scalar(0, 230, 80),
+                        MarkerTypes.Cross,
+                        16,
+                        2,
+                        LineTypes.AntiAlias);
+                    continue;
+                }
+
+                if (overlay.Kind != VisionToolOverlayKind.Line)
+                {
+                    continue;
+                }
+
+                bool isDestination = (overlay.Label ?? string.Empty).IndexOf("Destination", StringComparison.OrdinalIgnoreCase) >= 0;
+                Scalar color = isDestination ? new Scalar(0, 220, 255) : new Scalar(255, 190, 0);
+                Cv2.Line(
+                    canvas,
+                    new OpenCvSharp.Point((int)Math.Round(overlay.Start.X), (int)Math.Round(overlay.Start.Y)),
+                    new OpenCvSharp.Point((int)Math.Round(overlay.End.X), (int)Math.Round(overlay.End.Y)),
+                    color,
+                    2,
+                    LineTypes.AntiAlias);
+            }
+
+            return canvas;
+        }
+
         public static Mat CreateMatchingOverlayImage(
             Mat resultImage,
             Mat source,

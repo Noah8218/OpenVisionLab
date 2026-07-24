@@ -11,10 +11,18 @@ namespace OpenVisionLab
     {
         internal static IReadOnlyList<OpenVisionRecipeBatchSampleResultOption> BuildFilteredSampleResults(
             OpenVisionRecipeBatchRunOption option,
-            bool showNgOnly)
+            bool showNgOnly,
+            bool showReviewQueueOnly)
         {
             IReadOnlyList<OpenVisionRecipeBatchSampleResultOption> results =
                 option?.SampleResults ?? Array.Empty<OpenVisionRecipeBatchSampleResultOption>();
+            if (showReviewQueueOnly)
+            {
+                return results
+                    .Where(result => result?.IsInReviewQueue == true)
+                    .ToList();
+            }
+
             if (!showNgOnly)
             {
                 return results;
@@ -23,6 +31,35 @@ namespace OpenVisionLab
             return results
                 .Where(result => result != null && IsFilteredFailure(option, result))
                 .ToList();
+        }
+
+        internal static string BuildReviewQueueSummaryText(OpenVisionRecipeBatchRunOption option)
+        {
+            int total = option?.SampleResults?.Count(result => result != null) ?? 0;
+            if (option == null || string.IsNullOrWhiteSpace(option.SummaryPath))
+            {
+                return OpenVisionRecipeText.Local(
+                    "저장된 실행을 선택하면 검토 큐를 표시합니다.",
+                    "Select a saved run to show its review queue.");
+            }
+
+            if (!option.HasPersistedReviewQueue)
+            {
+                return OpenVisionRecipeText.Local(
+                    "이 과거 실행에는 저장된 검토 큐가 없습니다. 새 Suite 실행부터 생성됩니다.",
+                    "This older run has no saved review queue. New suite runs create one.");
+            }
+
+            string shortHash = option.ReviewQueueSha256.Length <= 12
+                ? option.ReviewQueueSha256
+                : option.ReviewQueueSha256.Substring(0, 12);
+            string policyVersion = option.ReviewQueuePolicy.Split('|').FirstOrDefault() ?? "v1";
+            return OpenVisionRecipeText.Local("검토 큐 ", "Review queue ")
+                + option.ReviewQueueCount.ToString(CultureInfo.InvariantCulture)
+                + "/"
+                + total.ToString(CultureInfo.InvariantCulture)
+                + " | " + policyVersion
+                + " | SHA-256 " + shortHash;
         }
 
         internal static string BuildNgFilterSummaryText(

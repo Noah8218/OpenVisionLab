@@ -47,6 +47,30 @@
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
+            <Style x:Key="ShellHost.PinArrayGapIntentVisibilityStyle" TargetType="{x:Type FrameworkElement}">
+                <Setter Property="Visibility" Value="Collapsed" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding RecipeCommands.SelectedLlmToolTemplate}" Value="Pin row edge-gap consistency (PinArrayGap)">
+                        <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="ShellHost.DarkBandGapIntentVisibilityStyle" TargetType="{x:Type FrameworkElement}">
+                <Setter Property="Visibility" Value="Collapsed" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding RecipeCommands.SelectedLlmToolTemplate}" Value="Dark band thickness / Gap (LineDistance)">
+                        <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="ShellHost.HybridRelativeRoiIntentVisibilityStyle" TargetType="{x:Type FrameworkElement}">
+                <Setter Property="Visibility" Value="Collapsed" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding RecipeCommands.SelectedLlmToolTemplate}" Value="Locator-aligned Gap (NormalizeImage)">
+                        <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
             <Style x:Key="ShellHost.BlobCountIntentVisibilityStyle" TargetType="{x:Type FrameworkElement}">
                 <Setter Property="Visibility" Value="Collapsed" />
                 <Style.Triggers>
@@ -3140,6 +3164,313 @@
                                         </Border>
                                         <Border Margin="0,6,0,0"
                                                 Padding="8"
+                                                Style="{StaticResource ShellHost.DarkBandGapIntentVisibilityStyle}"
+                                                AutomationProperties.AutomationId="HostRecipeGuidedSetupDarkBandGapInputs"
+                                                Background="#101A1F"
+                                                BorderBrush="#38535C"
+                                                BorderThickness="1">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="96" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding RecipeCommands.DarkBandGapIntentRoiLabelText}"
+                                                           Foreground="#A8CBD1"
+                                                           FontSize="10"
+                                                           VerticalAlignment="Center" />
+                                                <TextBox Grid.Column="1"
+                                                         Height="24"
+                                                         Padding="5,1"
+                                                         AutomationProperties.AutomationId="HostRecipeGuidedSetupDarkBandGapRoiText"
+                                                         Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                         CaretBrush="#8FE8F0"
+                                                         BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                         Background="{StaticResource ShellHost.FieldBrush}"
+                                                         Text="{Binding RecipeCommands.DarkBandGapIntentRoiText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                <TextBlock Grid.Column="2"
+                                                           Margin="8,0,0,0"
+                                                           Text="{Binding RecipeCommands.DarkBandGapIntentBoundaryText}"
+                                                           Foreground="#F3D79B"
+                                                           FontSize="10"
+                                                           TextWrapping="Wrap"
+                                                           VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Border>
+                                        <Border Margin="0,6,0,0"
+                                                Padding="8"
+                                                Style="{StaticResource ShellHost.HybridRelativeRoiIntentVisibilityStyle}"
+                                                AutomationProperties.AutomationId="HostRecipeGuidedSetupHybridRelativeRoiInputs"
+                                                Background="#101A1F"
+                                                BorderBrush="#38535C"
+                                                BorderThickness="1">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="100" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding RecipeCommands.HybridLocatorTemplateLabelText}"
+                                                               Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="1" Height="24" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupHybridLocatorTemplatePath"
+                                                             Text="{Binding RecipeCommands.LlmReferenceImagePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                             ToolTip="Cropped distinctive locator template path" />
+                                                </Grid>
+                                                <Grid Grid.Row="1" Margin="0,6,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="100" />
+                                                        <ColumnDefinition Width="190" />
+                                                        <ColumnDefinition Width="90" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding RecipeCommands.HybridSearchRoiLabelText}"
+                                                               Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="1" Height="24" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupHybridSearchRoiText"
+                                                             Text="{Binding RecipeCommands.MatchingIntentSearchRoiText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                             ToolTip="x,y,w,h in the reference image" />
+                                                    <TextBlock Grid.Column="2" Margin="10,0,0,0"
+                                                               Text="{Binding RecipeCommands.HybridReferencePoseLabelText}"
+                                                               Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="3" Height="24" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupHybridReferencePoseText"
+                                                             Text="{Binding RecipeCommands.HybridReferencePoseText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                             ToolTip="x,y,angle,scale,imageWidth,imageHeight" />
+                                                </Grid>
+                                                <Grid Grid.Row="2" Margin="0,6,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="100" />
+                                                        <ColumnDefinition Width="190" />
+                                                        <ColumnDefinition Width="90" />
+                                                        <ColumnDefinition Width="70" />
+                                                        <ColumnDefinition Width="90" />
+                                                        <ColumnDefinition Width="70" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding RecipeCommands.HybridRelativeRoiLabelText}"
+                                                               Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="1" Height="24" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupHybridMeasurementRoiText"
+                                                             Text="{Binding RecipeCommands.HybridRelativeRoiText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                             ToolTip="x,y,w,h after NormalizeImage" />
+                                                    <TextBlock Grid.Column="2" Margin="10,0,0,0"
+                                                               Text="{Binding RecipeCommands.HybridScoreMinimumLabelText}"
+                                                               Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="3" Height="24" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupHybridScoreMinimumText"
+                                                             Text="{Binding RecipeCommands.MatchingIntentScoreMinText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="4" Margin="10,0,0,0"
+                                                               Text="{Binding RecipeCommands.HybridScoreMarginLabelText}"
+                                                               Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="5" Height="24" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupHybridScoreMarginText"
+                                                             Text="{Binding RecipeCommands.HybridScoreMarginText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                             ToolTip="percentage points" />
+                                                </Grid>
+                                                <WrapPanel Grid.Row="3" Margin="100,6,0,0">
+                                                    <TextBlock Text="{Binding RecipeCommands.HybridAngleRangeLabelText}" Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Width="58" Height="24" Margin="5,0,3,0" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupHybridAngleMinimumText"
+                                                             Text="{Binding RecipeCommands.HybridAngleMinimumText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Text=".." Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Width="58" Height="24" Margin="3,0,14,0" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupHybridAngleMaximumText"
+                                                             Text="{Binding RecipeCommands.HybridAngleMaximumText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Text="{Binding RecipeCommands.HybridScaleRatioRangeLabelText}" Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Width="58" Height="24" Margin="5,0,3,0" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupHybridScaleRatioMinimumText"
+                                                             Text="{Binding RecipeCommands.HybridScaleRatioMinimumText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Text=".." Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Width="58" Height="24" Margin="3,0,14,0" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupHybridScaleRatioMaximumText"
+                                                             Text="{Binding RecipeCommands.HybridScaleRatioMaximumText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Text="{Binding RecipeCommands.HybridMinimumValidPixelRatioLabelText}" Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Width="58" Height="24" Margin="5,0,0,0" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupHybridMinimumValidPixelRatioText"
+                                                             Text="{Binding RecipeCommands.HybridMinimumValidPixelRatioText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                </WrapPanel>
+                                                <TextBlock Grid.Row="4" Margin="100,6,0,0"
+                                                           AutomationProperties.AutomationId="HostRecipeGuidedSetupHybridBoundary"
+                                                           Text="{Binding RecipeCommands.HybridRelativeRoiBoundaryText}"
+                                                           Foreground="#9FD9FF" FontSize="10" TextWrapping="Wrap" />
+                                            </Grid>
+                                        </Border>
+                                        <Border Margin="0,6,0,0"
+                                                Padding="8"
+                                                Style="{StaticResource ShellHost.PinArrayGapIntentVisibilityStyle}"
+                                                AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapInputs"
+                                                Background="#101A1F"
+                                                BorderBrush="#38535C"
+                                                BorderThickness="1">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="78" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding RecipeCommands.PinArrayGapRoiLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="1"
+                                                             Height="24"
+                                                             Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapRoiText"
+                                                             Text="{Binding RecipeCommands.PinArrayGapRoiText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                             ToolTip="x,y,w,h; x,y,w,h" />
+                                                </Grid>
+                                                <WrapPanel Grid.Row="1" Margin="78,6,0,0">
+                                                    <TextBlock Text="{Binding RecipeCommands.PinArrayGapPolarityLabelText}" Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <ComboBox Width="92" Height="24" Margin="5,0,12,0"
+                                                              AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapPolarity"
+                                                              ItemsSource="{Binding RecipeCommands.PinArrayGapPolarityOptions}"
+                                                              SelectedItem="{Binding RecipeCommands.PinArrayGapPolarityText, Mode=TwoWay}" />
+                                                    <TextBlock Text="{Binding RecipeCommands.PinArrayGapMeasurementLabelText}" Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <ComboBox Width="228" Height="24" Margin="5,0,12,0"
+                                                              AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapMeasurement"
+                                                              ItemsSource="{Binding RecipeCommands.PinArrayGapMeasurementOptions}"
+                                                              SelectedItem="{Binding RecipeCommands.PinArrayGapMeasurementText, Mode=TwoWay}" />
+                                                    <TextBlock Text="{Binding RecipeCommands.PinArrayGapRangeMaxLabelText}" Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Width="82" Height="24" Margin="5,0,0,0" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapRangeMaxText"
+                                                             Text="{Binding RecipeCommands.PinArrayGapRangeMaxText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                             ToolTip="Blank = measurement only; positive = judged" />
+                                                </WrapPanel>
+                                                <WrapPanel Grid.Row="2" Margin="78,6,0,0">
+                                                    <TextBlock Text="{Binding RecipeCommands.PinArrayGapDarkThresholdLabelText}" Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Width="58" Height="24" Margin="5,0,12,0" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapDarkThresholdText"
+                                                             Text="{Binding RecipeCommands.PinArrayGapDarkThresholdText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Text="{Binding RecipeCommands.PinArrayGapMinDarkCoverageRatioLabelText}" Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Width="58" Height="24" Margin="5,0,12,0" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapMinDarkCoverageRatioText"
+                                                             Text="{Binding RecipeCommands.PinArrayGapMinDarkCoverageRatioText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Text="{Binding RecipeCommands.PinArrayGapMinPinWidthLabelText}" Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Width="50" Height="24" Margin="5,0,12,0" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapMinPinWidthText"
+                                                             Text="{Binding RecipeCommands.PinArrayGapMinPinWidthText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Text="{Binding RecipeCommands.PinArrayGapMaxPinBreakWidthLabelText}" Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Width="50" Height="24" Margin="5,0,12,0" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapMaxPinBreakWidthText"
+                                                             Text="{Binding RecipeCommands.PinArrayGapMaxPinBreakWidthText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Text="{Binding RecipeCommands.PinArrayGapMinGapWidthLabelText}" Foreground="#A8CBD1" FontSize="10" VerticalAlignment="Center" />
+                                                    <TextBox Width="50" Height="24" Margin="5,0,0,0" Padding="5,1"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapMinGapWidthText"
+                                                             Text="{Binding RecipeCommands.PinArrayGapMinGapWidthText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                </WrapPanel>
+                                                <TextBlock Grid.Row="3"
+                                                           Margin="78,6,0,0"
+                                                           AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapContract"
+                                                           Text="{Binding RecipeCommands.PinArrayGapIntentContractText}"
+                                                           Foreground="#9FD9FF"
+                                                           FontSize="10"
+                                                           TextWrapping="Wrap" />
+                                                <Grid Grid.Row="4" Margin="0,7,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="78" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding RecipeCommands.PinArrayGapValidationSetsLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1" Margin="0,0,5,0"
+                                                               Text="{Binding RecipeCommands.PinArrayGapTrainLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               VerticalAlignment="Center" />
+                                                    <ComboBox Grid.Column="2" Height="24" Margin="0,0,10,0"
+                                                              AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapTrainSet"
+                                                              AutomationProperties.Name="{Binding RecipeCommands.PinArrayGapTrainLabelText}"
+                                                              ItemsSource="{Binding RecipeCommands.ValidationSetOptions}"
+                                                              SelectedItem="{Binding RecipeCommands.PinArrayGapTrainValidationSetOption, Mode=TwoWay}"
+                                                              DisplayMemberPath="DisplayText" />
+                                                    <TextBlock Grid.Column="3" Margin="0,0,5,0"
+                                                               Text="{Binding RecipeCommands.PinArrayGapValidationLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               VerticalAlignment="Center" />
+                                                    <ComboBox Grid.Column="4" Height="24" Margin="0,0,10,0"
+                                                              AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapValidationSet"
+                                                              AutomationProperties.Name="{Binding RecipeCommands.PinArrayGapValidationLabelText}"
+                                                              ItemsSource="{Binding RecipeCommands.ValidationSetOptions}"
+                                                              SelectedItem="{Binding RecipeCommands.PinArrayGapValidationValidationSetOption, Mode=TwoWay}"
+                                                              DisplayMemberPath="DisplayText" />
+                                                    <TextBlock Grid.Column="5" Margin="0,0,5,0"
+                                                               Text="{Binding RecipeCommands.PinArrayGapTestLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               VerticalAlignment="Center" />
+                                                    <ComboBox Grid.Column="6" Height="24"
+                                                              AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapTestSet"
+                                                              AutomationProperties.Name="{Binding RecipeCommands.PinArrayGapTestLabelText}"
+                                                              ItemsSource="{Binding RecipeCommands.ValidationSetOptions}"
+                                                              SelectedItem="{Binding RecipeCommands.PinArrayGapTestValidationSetOption, Mode=TwoWay}"
+                                                              DisplayMemberPath="DisplayText" />
+                                                </Grid>
+                                                <Grid Grid.Row="5" Margin="78,6,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapValidationStatus"
+                                                               Text="{Binding RecipeCommands.PinArrayGapValidationStatusText}"
+                                                               FontSize="10"
+                                                               TextWrapping="Wrap"
+                                                               VerticalAlignment="Center">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="#FFCA66" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding RecipeCommands.IsPinArrayGapValidationIdentityFrozen}" Value="True">
+                                                                        <Setter Property="Foreground" Value="#7FE3A5" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <Button Grid.Column="1" Height="26" Margin="10,0,0,0" Padding="10,2"
+                                                            AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapFreezeButton"
+                                                            Command="{Binding RecipeCommands.FreezePinArrayGapValidationIdentityCommand}"
+                                                            Content="{Binding RecipeCommands.FreezePinArrayGapValidationIdentityText}" />
+                                                    <Button Grid.Column="2" Height="26" Margin="6,0,0,0" Padding="10,2"
+                                                            AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapOpenRunsButton"
+                                                            Command="{Binding RecipeCommands.OpenPinArrayGapValidationRunsCommand}"
+                                                            Content="{Binding RecipeCommands.OpenPinArrayGapValidationRunsText}" />
+                                                </Grid>
+                                                <TextBlock Grid.Row="6"
+                                                           Margin="78,4,0,0"
+                                                           AutomationProperties.AutomationId="HostRecipeGuidedSetupPinArrayGapValidationBoundary"
+                                                           Text="{Binding RecipeCommands.PinArrayGapValidationBoundaryText}"
+                                                           Foreground="#8198A3"
+                                                           FontSize="9"
+                                                           TextWrapping="Wrap" />
+                                            </Grid>
+                                        </Border>
+                                        <Border Margin="0,6,0,0"
+                                                Padding="8"
                                                 Style="{StaticResource ShellHost.BlobCountIntentVisibilityStyle}"
                                                 AutomationProperties.AutomationId="HostRecipeGuidedSetupBlobInputs"
                                                 Background="#101A1F"
@@ -5225,6 +5556,16 @@
                                                                 <TextBlock Text="{Binding RecipeCommands.LoadSelectedRunSampleImageToInputLayerText}" FontSize="10" />
                                                             </StackPanel>
                                                         </Button>
+                                                        <Button MinWidth="88"
+                                                                Height="24"
+                                                                Margin="0,0,5,0"
+                                                                AutomationProperties.AutomationId="HostRecipeRunHistoryViewDrawingButton"
+                                                                Command="{Binding RecipeCommands.OpenSelectedRecentBatchRunEvidenceCommand}">
+                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                <iconPacks:PackIconMaterial Kind="ImageMultipleOutline" Width="12" Height="12" Margin="0,1,4,0" />
+                                                                <TextBlock Text="{Binding RecipeCommands.OpenSelectedRecentBatchRunEvidenceText}" FontSize="10" />
+                                                            </StackPanel>
+                                                        </Button>
                                                         <Button MinWidth="82"
                                                                 Height="24"
                                                                 Margin="0,0,5,0"
@@ -5292,14 +5633,20 @@
                                                 </ListBox.ItemTemplate>
                                             </ListBox>
                                             <StackPanel Grid.Column="1"
-                                                        Margin="8,0,0,0">
+                                                        Margin="8,0,0,0"
+                                                        AutomationProperties.AutomationId="HostRecipeRecentBatchReviewQueuePanel">
                                                 <TextBlock Text="{Binding RecipeCommands.RecentBatchRunSampleResultsText}"
                                                            Foreground="#A8CBD1"
                                                            FontSize="11"
                                                            FontWeight="SemiBold" />
                                                 <Grid Margin="0,3,0,0"
                                                       AutomationProperties.AutomationId="HostRecipeRecentBatchRunSampleFilterPanel">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
                                                     <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
                                                         <ColumnDefinition Width="Auto" />
                                                         <ColumnDefinition Width="*" />
                                                     </Grid.ColumnDefinitions>
@@ -5308,7 +5655,14 @@
                                                               Content="{Binding RecipeCommands.RecentBatchRunNgOnlyText}"
                                                               Foreground="#EAFBFC"
                                                               IsChecked="{Binding RecipeCommands.ShowRecentBatchNgOnly, Mode=TwoWay}" />
-                                                    <TextBlock Grid.Column="1"
+                                                    <CheckBox Grid.Column="1"
+                                                              Margin="10,0,0,0"
+                                                              VerticalAlignment="Center"
+                                                              AutomationProperties.AutomationId="HostRecipeRecentBatchReviewQueueOnlyToggle"
+                                                              Content="{Binding RecipeCommands.RecentBatchRunReviewQueueOnlyText}"
+                                                              Foreground="#EAFBFC"
+                                                              IsChecked="{Binding RecipeCommands.ShowRecentBatchReviewQueueOnly, Mode=TwoWay}" />
+                                                    <TextBlock Grid.Column="2"
                                                                Margin="8,0,0,0"
                                                                AutomationProperties.AutomationId="HostRecipeRecentBatchRunNgFilterSummary"
                                                                Text="{Binding RecipeCommands.RecentBatchRunNgFilterSummaryText, Mode=OneWay}"
@@ -5317,8 +5671,17 @@
                                                                FontSize="10"
                                                                TextTrimming="CharacterEllipsis"
                                                                VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Row="1"
+                                                               Grid.ColumnSpan="3"
+                                                               Margin="0,3,0,0"
+                                                               AutomationProperties.AutomationId="HostRecipeRecentBatchReviewQueueSummary"
+                                                               Text="{Binding RecipeCommands.RecentBatchRunReviewQueueSummaryText, Mode=OneWay}"
+                                                               ToolTip="{Binding RecipeCommands.SelectedRecentBatchRunOption.ReviewQueuePolicy, Mode=OneWay}"
+                                                               Foreground="#FFD76A"
+                                                               FontSize="10"
+                                                               TextTrimming="CharacterEllipsis" />
                                                 </Grid>
-                                                <ListBox MaxHeight="64"
+                                                <ListBox MaxHeight="82"
                                                          Margin="0,3,0,0"
                                                          AutomationProperties.AutomationId="HostRecipeRecentBatchRunSampleList"
                                                          Background="#101A1F"
@@ -5350,6 +5713,12 @@
                                                                            ToolTip="{Binding ReviewText}"
                                                                            Foreground="#95D6B8"
                                                                            FontSize="10"
+                                                                           TextWrapping="Wrap" />
+                                                                <TextBlock Text="{Binding ReviewReasonsText}"
+                                                                           ToolTip="{Binding ReviewReasonsToolTipText}"
+                                                                           Foreground="#FFD76A"
+                                                                           FontSize="10"
+                                                                           FontWeight="SemiBold"
                                                                            TextWrapping="Wrap" />
                                                             </StackPanel>
                                                         </DataTemplate>
@@ -6569,6 +6938,43 @@
                                                                FontSize="10"
                                                                TextWrapping="Wrap" />
                                                 </StackPanel>
+                                                <Grid Grid.Row="2"
+                                                      Margin="0,5,0,0"
+                                                      Style="{StaticResource ShellHost.DarkBandGapIntentVisibilityStyle}"
+                                                      AutomationProperties.AutomationId="HostRecipeLlmDarkBandGapIntentSkill">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="110" />
+                                                        <ColumnDefinition Width="78" />
+                                                        <ColumnDefinition Width="360" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding RecipeCommands.DarkBandGapIntentSkillText}"
+                                                               Foreground="#9FE5DE"
+                                                               FontSize="10"
+                                                               FontWeight="SemiBold"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding RecipeCommands.DarkBandGapIntentRoiLabelText}"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="2"
+                                                             Height="22"
+                                                             Padding="5,0"
+                                                             AutomationProperties.AutomationId="HostRecipeDarkBandGapIntentRoiText"
+                                                             Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                             CaretBrush="#8FE8F0"
+                                                             BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
+                                                             Background="{StaticResource ShellHost.FieldBrush}"
+                                                             Text="{Binding RecipeCommands.DarkBandGapIntentRoiText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="3"
+                                                               Margin="8,0,0,0"
+                                                               Text="{Binding RecipeCommands.DarkBandGapIntentBoundaryText}"
+                                                               Foreground="#F3D79B"
+                                                               FontSize="10"
+                                                               TextWrapping="Wrap"
+                                                               VerticalAlignment="Center" />
+                                                </Grid>
                                                 <TextBlock Grid.Row="3"
                                                            Margin="0,4,0,0"
                                                            Style="{StaticResource ShellHost.PinGapIntentVisibilityStyle}"

@@ -4,6 +4,7 @@ using OpenCvSharp;
 using OpenVisionLab._1._Core;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using static OpenVisionLab.DEFINE;
 
@@ -17,6 +18,7 @@ namespace OpenVisionLab
         private readonly FrameworkElement element;
         private readonly string toolName;
         private readonly string defaultOutputLayer;
+        private readonly Func<string, string, VisionPipelineStep> createStep;
         private readonly Func<Mat, VisionToolResult> executePreview;
         private readonly bool normalizeSingleChannelInput;
         private readonly OpenVisionNativePreviewLayerPublisher previewLayerPublisher;
@@ -29,6 +31,8 @@ namespace OpenVisionLab
         private readonly OpenVisionNativeRoiCommandController roiCommandController;
         private readonly OpenVisionNativeToolStatusPresenter statusPresenter;
         private readonly OpenVisionNativeToolEventBinder eventBinder;
+        private VisionToolSingleInputPropertyToolShell nImageVerificationShell;
+        private VisionToolLanguageChangeController nImageVerificationLanguageController;
         private OpenVisionRecipeContext recipeContext;
         private bool disposed;
 
@@ -64,6 +68,7 @@ namespace OpenVisionLab
             this.defaultOutputLayer = string.IsNullOrWhiteSpace(defaultOutputLayer)
                 ? this.toolName + "_Preview"
                 : defaultOutputLayer;
+            this.createStep = createStep;
             layerRouteController = new OpenVisionNativeLayerRouteController(
                 this.displayManager,
                 this.defaultOutputLayer,
@@ -109,6 +114,7 @@ namespace OpenVisionLab
                 OnLoadPreviewImageRequested,
                 OnSavePreviewImageRequested,
                 OnLineEditSelectedRoiRequested);
+            ConfigureNImageVerification();
             RefreshLayerState();
         }
 
@@ -212,6 +218,11 @@ namespace OpenVisionLab
                 if (view is SimplePreprocessToolWpfView simplePreprocessView)
                 {
                     return simplePreprocessView.ResultReviewTextForTest;
+                }
+
+                if (view is AffineTransformToolWpfView affineTransformView)
+                {
+                    return affineTransformView.ResultReviewTextForTest;
                 }
 
                 return string.Empty;
@@ -377,6 +388,14 @@ namespace OpenVisionLab
             }
         }
 
+        public void ConfigureAffineTransformForTest(Action<AffineTransformProperty> configure)
+        {
+            if (view is AffineTransformToolWpfView affineTransformView)
+            {
+                affineTransformView.ConfigurePropertyForTest(configure);
+            }
+        }
+
         public void SetEdgeBasedMatchingTemplatePathForTest(string path)
         {
             if (view is EdgeBasedMatchingToolWpfView edgeBasedMatchingView)
@@ -390,6 +409,14 @@ namespace OpenVisionLab
             if (view is EdgeBasedMatchingToolWpfView edgeBasedMatchingView)
             {
                 edgeBasedMatchingView.ConfigurePropertyForTest(configure);
+            }
+        }
+
+        public void SetAutoMPointRepresentativeImagesForTest(IEnumerable<string> paths)
+        {
+            if (view is EdgeBasedMatchingToolWpfView edgeBasedMatchingView)
+            {
+                edgeBasedMatchingView.SetAutoMPointRepresentativeImagesForTest(paths);
             }
         }
 
@@ -416,8 +443,71 @@ namespace OpenVisionLab
             }
 
             disposed = true;
+            if (nImageVerificationShell != null)
+            {
+                nImageVerificationShell.NImageVerificationButton.Click -= OnNImageVerificationRequested;
+                nImageVerificationShell = null;
+            }
+
+            nImageVerificationLanguageController?.Dispose();
+            nImageVerificationLanguageController = null;
             eventBinder.Dispose();
             DisposeHostedView();
+        }
+
+        private void ConfigureNImageVerification()
+        {
+            if (createStep == null
+                || element.FindName("toolShell") is not VisionToolSingleInputPropertyToolShell shell)
+            {
+                return;
+            }
+
+            nImageVerificationShell = shell;
+            shell.NImageVerificationButton.Visibility = Visibility.Visible;
+            shell.NImageVerificationButton.Click += OnNImageVerificationRequested;
+            ApplyNImageVerificationLocalization();
+            nImageVerificationLanguageController =
+                VisionToolLanguageChangeController.Attach(ApplyNImageVerificationLocalization);
+        }
+
+        private void ApplyNImageVerificationLocalization()
+        {
+            if (nImageVerificationShell == null)
+            {
+                return;
+            }
+
+            string text = OpenVisionLanguageService.T("ToolView.NImageVerification");
+            string tooltip = OpenVisionLanguageService.T("ToolView.NImageVerification.ToolTip");
+            nImageVerificationShell.NImageVerificationText.Text = text;
+            VisionToolChromePresenter.ApplyTooltip(
+                nImageVerificationShell.NImageVerificationButton,
+                tooltip);
+        }
+
+        private void OnNImageVerificationRequested(object sender, RoutedEventArgs e)
+        {
+            if (disposed || createStep == null)
+            {
+                return;
+            }
+
+            VisionToolNImageVerificationController controller =
+                new VisionToolNImageVerificationController(
+                    toolName,
+                    ResolveRecipeContext().Name,
+                    () => createStep("Main", "NImageResult"),
+                    normalizeSingleChannelInput);
+            VisionToolNImageVerificationWindow window =
+                new VisionToolNImageVerificationWindow(controller);
+            System.Windows.Window owner = System.Windows.Window.GetWindow(element);
+            if (owner != null)
+            {
+                window.Owner = owner;
+            }
+
+            window.ShowDialog();
         }
 
         private void DisposeHostedView()

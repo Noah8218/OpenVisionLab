@@ -466,6 +466,8 @@ internal static class Program
         RequireContains(publicCatalog, "Public_Geometry_RotateScale_Good", "Public sample catalog includes RotateScale geometry benchmark.");
         RequireContains(publicCatalog, "Public_Geometry_RotateScale_Wide_Bad", "Public sample catalog includes RotateScale geometry Bad benchmark.");
         RequireContains(publicCatalog, "ResultImageWidth;ResultImageHeight", "Public RotateScale benchmark checks output width and height.");
+        RequireContains(publicCatalog, "Public_AffineTransform_Synthetic_Good", "Public sample catalog includes the AffineTransform synthetic benchmark.");
+        RequireContains(publicCatalog, "AffineM11;AffineM12;AffineM13;AffineM21;AffineM22;AffineM23;AffineValidPixelRatio", "Public AffineTransform benchmark checks the matrix and retained-source coverage.");
         RequireContains(publicCatalog, "ExpectedFailure", "Public sample catalog includes controlled NG rows.");
         RequireContains(publicCatalog, "Public_Matching_DiePad,Bad", "Public sample catalog groups Matching Good/Bad pair.");
         RequireContains(publicCatalog, "Public_Blob_Particles,Bad", "Public sample catalog groups Blob Good/Bad pair.");
@@ -495,6 +497,7 @@ internal static class Program
         RequireContains(publicCatalog, @"docs\samples\public\Public_Edge_Fiducial.pipeline.xml", "Public sample catalog points EdgeBasedMatching to a public pipeline.");
         RequireContains(publicCatalog, @"docs\samples\public\Public_Line_Pins_Distance.pipeline.xml", "Public sample catalog points LineDistance to a public pipeline.");
         RequireContains(publicCatalog, @"docs\samples\public\Public_Geometry_RotateScale.pipeline.xml", "Public sample catalog points RotateScale to a public pipeline.");
+        RequireContains(publicCatalog, @"docs\samples\public\Public_AffineTransform_Synthetic.pipeline.xml", "Public sample catalog points AffineTransform to a public pipeline.");
         RequireNotContains(publicCatalog, @"Sample\", "Public sample catalog must not use legacy SDK Sample paths.");
         RequireNotContains(publicCatalog, @"Sample/", "Public sample catalog must not use legacy SDK Sample paths.");
         RequireNotContains(publicCatalog, @"bin\Debug\EasyMatch", "Public sample catalog must not use local EasyMatch output paths.");
@@ -555,6 +558,7 @@ internal static class Program
             @"docs\samples\public\Public_Edge_Fiducial.pipeline.xml",
             @"docs\samples\public\Public_Line_Pins_Distance.pipeline.xml",
             @"docs\samples\public\Public_Geometry_RotateScale.pipeline.xml",
+            @"docs\samples\public\Public_AffineTransform_Synthetic.pipeline.xml",
         })
         {
             string pipeline = Read(repoRoot, relativePath);
@@ -618,6 +622,17 @@ internal static class Program
         string guidedSetupCatalog = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\IntentSkills\OpenVisionRecipeGuidedSetupCatalog.cs");
         RequireContains(guidedSetupCatalog, "internal static class OpenVisionGuidedSetupCatalog", "Guided setup catalog has an IntentSkills owner.");
         RequireContains(guidedSetupCatalog, "TryResolveTemplate", "Guided setup catalog keeps deterministic tool-to-template mapping.");
+        RequireContains(guidedSetupCatalog, "internal const string PinArrayGapTemplate = \"Pin row edge-gap consistency (PinArrayGap)\"", "Guided setup catalog exposes the exact PinArrayGap pilot template.");
+
+        string pinArrayGapIntentSkill = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\IntentSkills\OpenVisionRecipePinArrayGapIntentSkill.cs");
+        RequireContains(pinArrayGapIntentSkill, "internal static class OpenVisionRecipePinArrayGapIntentSkill", "PinArrayGap intent skill has an explicit IntentSkills owner.");
+        RequireContains(pinArrayGapIntentSkill, "SupportedMeasurementDefinition = \"Adjacent edge-to-edge clearance\"", "PinArrayGap intent skill locks the supported edge-gap measurement.");
+        RequireContains(pinArrayGapIntentSkill, "SupportedPinPolarity = \"Dark\"", "PinArrayGap intent skill locks the v1 dark-pin polarity.");
+        RequireContains(pinArrayGapIntentSkill, "SupportedUnitMode = \"px\"", "PinArrayGap intent skill locks the v1 pixel-only unit mode.");
+        RequireContains(pinArrayGapIntentSkill, "CreateMeasurementPipeline", "PinArrayGap intent skill exposes a measurement-only starter path.");
+        RequireContains(pinArrayGapIntentSkill, "CreateJudgedPipeline", "PinArrayGap intent skill exposes an explicitly judged starter path.");
+        RequireContains(pinArrayGapIntentSkill, "ToolType = \"PinArrayGap\"", "PinArrayGap intent skill locks every generated row Step to PinArrayGap.");
+        RequireContains(pinArrayGapIntentSkill, "AcceptanceMetricName = VisionPipelineKnownMetrics.DistancePxRange", "PinArrayGap judged starter uses the DistancePxRange consistency gate.");
 
         string recipeText = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Models\OpenVisionRecipeText.cs");
         RequireContains(recipeText, "internal static class OpenVisionRecipeText", "Recipe text localization has a Models owner.");
@@ -628,6 +643,11 @@ internal static class Program
         RequireContains(llmPromptBuilder, "internal sealed class OpenVisionRecipeLlmPromptRequest", "LLM prompt construction receives an explicit host-state request.");
         RequireContains(llmPromptBuilder, "Do not run Preview/Run automatically.", "LLM prompt construction preserves the explicit Preview/Run contract.");
         RequireContains(llmPromptBuilder, "internal static class OpenVisionRecipeLlmIntent", "LLM tool-family contracts have an IntentSkills owner.");
+        RequireContains(llmPromptBuilder, "Use only ToolType=PinArrayGap. Do not substitute LineDistance, Contour, Blob, matching, or bounding-box measurements.", "PinArrayGap prompt packet locks the tool family.");
+        RequireContains(llmPromptBuilder, "Supported measurement: ", "PinArrayGap prompt packet states the locked edge-gap definition.");
+        RequireContains(llmPromptBuilder, "Do not claim center-to-center pitch.", "PinArrayGap prompt packet blocks unsupported center-pitch claims.");
+        RequireContains(llmPromptBuilder, "Do not generate a bright-pin recipe.", "PinArrayGap prompt packet blocks unsupported bright-pin claims.");
+        RequireContains(llmPromptBuilder, "Do not add PIXELPERMM or claim physical units.", "PinArrayGap prompt packet keeps v1 output pixel-only.");
 
         string llmReviewBundleBuilder = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\IntentSkills\OpenVisionRecipeLlmReviewBundleBuilder.cs");
         RequireContains(llmReviewBundleBuilder, "internal static class OpenVisionRecipeLlmReviewBundleBuilder", "LLM correction-packet construction has an IntentSkills owner.");
@@ -640,6 +660,14 @@ internal static class Program
         RequireContains(llmDraftValidationRules, "internal static bool AppendResultChannelValidation", "LLM draft validation owns result-channel checks.");
         RequireContains(llmDraftValidationRules, "internal static bool AppendIntentContractValidation", "LLM draft validation owns intent-contract checks.");
         RequireContains(llmDraftValidationRules, "internal static bool TryValidateXmlSyntax", "LLM draft validation owns XML syntax checks.");
+        RequireContains(llmDraftValidationRules, "AppendPinArrayGapIntentContractValidation", "LLM draft validation has a dedicated PinArrayGap contract path.");
+        RequireContains(llmDraftValidationRules, "PinArrayGap contract: MEASURE ONLY / NOT JUDGED - no acceptance gate is present.", "PinArrayGap validation labels an ungated draft as measurement-only.");
+        RequireContains(llmDraftValidationRules, "VisionPipelineKnownMetrics.DistancePxRange", "PinArrayGap validation requires the locked consistency metric.");
+        RequireContains(llmDraftValidationRules, "every row uses a positive DistancePxRange maximum acceptance gate", "PinArrayGap validation requires the exact judged gate on every row.");
+        RequireContains(llmDraftValidationRules, "does not match the reviewed ROI count", "PinArrayGap validation compares the returned row count with the current reviewed ROI state.");
+        RequireContains(llmDraftValidationRules, "valid ROI/detection parameters matching the reviewed state", "PinArrayGap validation compares returned ROI and detection values with the current Guided Setup state.");
+        RequireContains(llmDraftValidationRules, "the current Guided Setup state requires a DistancePxRange maximum on every row", "PinArrayGap validation rejects a measurement-only response when the current skill state is judged.");
+        RequireContains(llmDraftValidationRules, "source-bounded ROI", "PinArrayGap strict validation keeps every reviewed ROI inside the selected source image.");
 
         string dependencyReviewService = Read(repoRoot, @"0. UI\0) MENU\Wpf\Recipe\Review\OpenVisionRecipeDependencyReviewService.cs");
         RequireContains(dependencyReviewService, "internal static class OpenVisionRecipeDependencyReviewService", "Dependency review execution has a Recipe Review owner.");
@@ -740,6 +768,8 @@ internal static class Program
             "VisionToolWpfStatusPresenter.cs",
             "VisionToolWpfTheme.xaml");
         RequireToolViewOwnerFiles(repoRoot, @"0. UI\6) Vision Test\Wpf\Tooling\Review",
+            "AffineTransformResultReviewPresenter.cs",
+            "AutoMPointHtmlReportExporter.cs",
             "LineToolResultExplanation.cs",
             "LineToolResultReviewPresenter.cs",
             "LineToolReviewController.cs",
@@ -786,8 +816,12 @@ internal static class Program
             "VisionToolDoubleInputViewModel.cs",
             "VisionToolDoubleInputViewRuntime.cs");
         RequireToolViewOwnerFiles(repoRoot, @"0. UI\6) Vision Test\Wpf\ToolViews",
+            "AffineTransformToolWpfView.xaml",
+            "AffineTransformToolWpfView.xaml.cs",
             "ArithmeticToolWpfView.xaml",
             "ArithmeticToolWpfView.xaml.cs",
+            "AutoMPointTeachingPanel.xaml",
+            "AutoMPointTeachingPanel.xaml.cs",
             "BlobToolWpfView.xaml",
             "BlobToolWpfView.xaml.cs",
             "ContourToolWpfView.xaml",
@@ -1217,6 +1251,17 @@ internal static class Program
         RequireContains(recipeCommandSurface, "GuidedSetupActionBoundaryText", "Guided setup exposes its no-auto-run boundary text.");
         RequireContains(recipeCommandSurface, "CreateGuidedSetupStarterXmlCommand", "Guided setup exposes one deterministic Starter XML command.");
         RequireContains(recipeCommandSurface, "OpenVisionRecipeGuidedSetupReadinessPresenter.Evaluate", "Guided setup validates intent-specific readiness before Starter XML creation.");
+        RequireContains(recipeCommandSurface, "OpenVisionGuidedSetupCatalog.PinArrayGapTemplate", "Guided setup exposes the dedicated PinArrayGap pilot template.");
+        RequireContains(recipeCommandSurface, "CreatePinArrayGapIntentXmlDraft();", "Guided setup routes the PinArrayGap pilot to its deterministic starter generator.");
+        RequireContains(recipeCommandSurface, "PinArrayGapRoiText", "Guided setup captures one or more reviewed PinArrayGap row ROIs.");
+        RequireContains(recipeCommandSurface, "PinArrayGapPolarityText", "Guided setup captures the PinArrayGap polarity contract.");
+        RequireContains(recipeCommandSurface, "PinArrayGapMeasurementText", "Guided setup captures the PinArrayGap measurement definition.");
+        RequireContains(recipeCommandSurface, "PinArrayGapRangeMaxText", "Guided setup captures the optional DistancePxRange judgement gate.");
+        RequireContains(recipeCommandSurface, "PinArrayGapDarkThresholdText", "Guided setup captures the PinArrayGap dark-threshold parameter.");
+        RequireContains(recipeCommandSurface, "PinArrayGapMinDarkCoverageRatioText", "Guided setup captures the PinArrayGap dark-coverage parameter.");
+        RequireContains(recipeCommandSurface, "PinArrayGapMinPinWidthText", "Guided setup captures the PinArrayGap minimum pin width.");
+        RequireContains(recipeCommandSurface, "PinArrayGapMaxPinBreakWidthText", "Guided setup captures the PinArrayGap maximum pin-break width.");
+        RequireContains(recipeCommandSurface, "PinArrayGapMinGapWidthText", "Guided setup captures the PinArrayGap minimum gap width.");
         RequireContains(recipeCommandSurface, "CreatePinGapIntentXmlDraft();", "Guided setup routes distance intent to the existing Pin gap generator.");
         RequireContains(recipeCommandSurface, "CreateBlobCountIntentXmlDraft();", "Guided setup routes Blob intent to the existing Blob generator.");
         RequireContains(recipeCommandSurface, "CreateContourCountIntentXmlDraft();", "Guided setup routes Contour intent to the existing Contour generator.");
@@ -1251,6 +1296,16 @@ internal static class Program
         RequireContains(shellHostView, "HostRecipeGuidedSetupCreateStarterButton", "Guided setup exposes explicit Starter XML creation.");
         RequireContains(shellHostView, "HostRecipeGuidedSetupActionBoundary", "Guided setup states its no-auto-run action boundary.");
         RequireContains(shellHostView, "HostRecipeGuidedSetupDraftText", "Guided setup renders the generated starter draft.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupPinArrayGapInputs", "Guided setup renders the dedicated PinArrayGap pilot inputs.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupPinArrayGapRoiText", "Guided setup renders the PinArrayGap row-ROI input.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupPinArrayGapPolarity", "Guided setup renders the PinArrayGap polarity selector.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupPinArrayGapMeasurement", "Guided setup renders the PinArrayGap measurement selector.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupPinArrayGapRangeMaxText", "Guided setup renders the optional DistancePxRange maximum.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupPinArrayGapDarkThresholdText", "Guided setup renders the PinArrayGap dark threshold.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupPinArrayGapMinDarkCoverageRatioText", "Guided setup renders the PinArrayGap dark coverage ratio.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupPinArrayGapMinPinWidthText", "Guided setup renders the PinArrayGap minimum pin width.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupPinArrayGapMaxPinBreakWidthText", "Guided setup renders the PinArrayGap maximum pin-break width.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupPinArrayGapMinGapWidthText", "Guided setup renders the PinArrayGap minimum gap width.");
         RequireContains(shellHostView, "HostRecipeGuidedSetupPinGapInputs", "Guided setup renders Pin gap intent inputs.");
         RequireContains(shellHostView, "HostRecipeGuidedSetupPinGapCalibrationReview", "Guided setup renders Pin gap calibration state and conversion review.");
         RequireContains(shellHostView, "HostRecipeGuidedSetupBlobInputs", "Guided setup renders Blob intent inputs.");
@@ -1533,6 +1588,7 @@ internal static class Program
             (@"0. UI\6) Vision Test\Wpf\ToolViews\MatchingToolWpfView.xaml", "Learn Matching", 9, "LEARN_MATCHING.md"),
             (@"0. UI\6) Vision Test\Wpf\ToolViews\FeatureMatchingToolWpfView.xaml", "Learn Feature", 10, "LEARN_FEATURE_MATCHING.md"),
             (@"0. UI\6) Vision Test\Wpf\ToolViews\ArithmeticToolWpfView.xaml", "Learn Arithmetic", 14, "LEARN_ARITHMETIC.md"),
+            (@"0. UI\6) Vision Test\Wpf\ToolViews\AffineTransformToolWpfView.xaml", "Learn Affine Transform", 15, "LEARN_GEOMETRY_TRANSFORM.md"),
         })
         {
             string toolXaml = Read(repoRoot, toolLearn.Xaml);
@@ -1748,6 +1804,22 @@ internal static class Program
         RequireContains(geometryGuide, @"docs\samples\public\Geometry_RotateScale_Synthetic_OK.png", "Geometry Learn guide points to a public-safe synthetic image.");
         RequireContains(geometryGuide, @"docs\samples\public\Geometry_RotateScale_Synthetic_Wide_NG.png", "Geometry Learn guide points to the public-safe wide negative image.");
         RequireNotContains(geometryGuide, @"Sample\Contour.jpg", "Geometry Learn guide must not depend on the local legacy root Sample image.");
+        RequireContains(geometryGuide, "AffineTransform", "Geometry Learn guide teaches the three-point AffineTransform path.");
+        RequireContains(geometryGuide, "AffineValidPixelRatio", "Geometry Learn guide teaches the Affine valid-pixel gate.");
+        RequireContains(pipelineKnownMetrics, "public const string AffineM11", "Known metrics include the Affine matrix.");
+        RequireContains(pipelineKnownMetrics, "public const string AffineValidPixelRatio", "Known metrics include Affine retained-source coverage.");
+        RequireContains(pipelineKnownMetrics, "public const string AffineDetectedSourcePointCount", "Known metrics include dynamic Affine source-point resolution.");
+        RequireContains(pipelineValidator, "ValidateAffineParameters", "Pipeline validator checks Affine point geometry and gates.");
+        RequireContains(stepPropertyMapper, "PipelineAffineTransformToolProperty", "Pipeline selected-Step PropertyGrid supports AffineTransform.");
+        RequireContains(stepPropertyMapper, "UseDetectedSourcePoints", "AffineTransform PropertyGrid supports explicit typed Point source binding.");
+        RequireContains(stepPropertyMapper, "SourcePoint3Feature", "AffineTransform PropertyGrid exposes all three ordered typed Point references.");
+        RequireContains(llmToolCatalog, "\"toolType\": \"AffineTransform\"", "Tool catalog exposes AffineTransform and its aliases.");
+        RequireContains(llmToolCatalog, "\"USE_DETECTED_SOURCE_POINTS\"", "Tool catalog exposes detected-source Point binding without changing fixed numeric defaults.");
+        RequireContains(llmToolCatalog, "\"AffineDetectedSourcePointCount\"", "Tool catalog exposes dynamic Affine source-point evidence metrics.");
+        RequireContains(llmAuthoringGuide, "### Three-Point Pixel Mapping With AffineTransform", "XML authoring guide includes the AffineTransform pattern.");
+        RequireContains(llmAuthoringGuide, "<Key>SOURCE_POINT_3_FEATURE</Key>", "XML authoring guide includes the ordered detected Point binding pattern.");
+        RequireContains(geometryGuide, "### Same-Run Detected Source Points", "Geometry Learn guide teaches detected Point to Affine normalization.");
+        RequireContains(learnScreenshotSmoke, "wpf_shell_host_affine_transform_tool", "Screenshot smoke covers the AffineTransform PropertyGrid Tool View.");
 
         string thresholdToolXaml = Read(repoRoot, @"0. UI\6) Vision Test\Wpf\ToolViews\ThresholdToolWpfView.xaml");
         RequireContains(thresholdToolXaml, "ThresholdToolLearnButton", "Threshold Tool exposes its compact Learn entry.");

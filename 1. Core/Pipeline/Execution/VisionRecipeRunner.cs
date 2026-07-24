@@ -212,7 +212,9 @@ namespace OpenVisionLab
                         StringComparer.OrdinalIgnoreCase),
                     Metrics = metrics,
                     MetricsText = VisionPipelineKnownMetrics.FormatMetrics(metrics),
-                    Overlays = overlays
+                    Overlays = overlays,
+                    ObjectResults = VisionPipelineObjectResultStore.Get(stepResult?.ToolResult).ToList(),
+                    GeometryFeatures = VisionPipelineGeometryFeatureStore.Get(stepResult?.ToolResult).Select(item => item.Clone()).ToList()
                 });
             }
 
@@ -460,6 +462,8 @@ namespace OpenVisionLab
         public Dictionary<string, double> Metrics { get; set; } = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
         public string MetricsText { get; set; } = string.Empty;
         public List<VisionRecipeOverlaySummary> Overlays { get; set; } = new List<VisionRecipeOverlaySummary>();
+        public List<VisionPipelineObjectResult> ObjectResults { get; set; } = new List<VisionPipelineObjectResult>();
+        public List<VisionPipelineGeometryFeatureResult> GeometryFeatures { get; set; } = new List<VisionPipelineGeometryFeatureResult>();
         public string ResultImageSizeText => ResultImageWidth > 0 && ResultImageHeight > 0
             ? $"{ResultImageWidth} x {ResultImageHeight}"
             : string.Empty;

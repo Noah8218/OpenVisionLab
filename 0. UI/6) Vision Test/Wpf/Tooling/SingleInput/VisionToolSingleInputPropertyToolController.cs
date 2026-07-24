@@ -108,6 +108,8 @@ namespace OpenVisionLab
 
         public string SelectedOutputLayer => toolRuntime.SelectedOutputLayer;
 
+        public string ResultReviewText => toolRuntime.ResultReviewText;
+
         public static VisionToolSingleInputPropertyToolController<TProperty> Attach(
             FrameworkElement owner,
             VisionToolPropertyGridPresenter<TProperty> presenter,
@@ -130,6 +132,11 @@ namespace OpenVisionLab
         public TProperty CreateProperty()
         {
             return toolRuntime.CreateProperty();
+        }
+
+        public void ConfigurePropertyForTest(Action<TProperty> configure)
+        {
+            toolRuntime.ConfigurePropertyForTest(configure);
         }
 
         public void SetLayerList(IEnumerable<string> layerNames, string selectedInputLayer, string selectedOutputLayer)
@@ -157,6 +164,15 @@ namespace OpenVisionLab
             toolRuntime.ClearResultReview();
         }
 
+        public void ShowResultReview(
+            string summary,
+            bool isSuccess,
+            IEnumerable<VisionToolResultReviewItem> items,
+            string guidance)
+        {
+            toolRuntime.ShowResultReview(summary, isSuccess, items, guidance);
+        }
+
         public void ShowAreaResultReview<TResult>(
             string title,
             string emptyState,
@@ -169,7 +185,7 @@ namespace OpenVisionLab
             where TResult : class
         {
             VisionToolAreaResultReviewPresenter.Show(
-                toolRuntime.ShowResultReview,
+                (summary, isSuccess, items) => toolRuntime.ShowResultReview(summary, isSuccess, items),
                 title,
                 emptyState,
                 results,

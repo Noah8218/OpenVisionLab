@@ -168,6 +168,12 @@ namespace System.Windows.Controls.WpfPropertyGrid
         public string MaxPropertyName { get; }
     }
 
+    public enum PropertyGridThemeVariant
+    {
+        Default,
+        Dark
+    }
+
     public class PropertyGrid : UserControl, IPropertyGridView
     {
         private readonly WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyGrid innerPropertyGrid;
@@ -221,15 +227,21 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 typeof(PropertyGrid),
                 new PropertyMetadata(null));
         private static readonly Lazy<ControlTemplate> SharedComboBoxTemplate =
-            new Lazy<ControlTemplate>(CreateComboBoxTemplateCore);
+            new Lazy<ControlTemplate>(() => CreateComboBoxTemplateCore(darkTheme: false));
         private static readonly Lazy<Style> SharedComboBoxItemStyle =
-            new Lazy<Style>(() => CreateComboBoxItemStyleCore(compactDensity: false));
+            new Lazy<Style>(() => CreateComboBoxItemStyleCore(compactDensity: false, darkTheme: false));
         public static readonly DependencyProperty IsCompactDensityProperty =
             DependencyProperty.Register(
                 nameof(IsCompactDensity),
                 typeof(bool),
                 typeof(PropertyGrid),
                 new PropertyMetadata(false, OnIsCompactDensityChanged));
+        public static readonly DependencyProperty ThemeVariantProperty =
+            DependencyProperty.Register(
+                nameof(ThemeVariant),
+                typeof(PropertyGridThemeVariant),
+                typeof(PropertyGrid),
+                new PropertyMetadata(PropertyGridThemeVariant.Default, OnThemeVariantChanged));
         private bool languageChangedSubscribed;
         private bool normalizeScheduled;
         private bool searchFeedbackUpdateScheduled;
@@ -268,6 +280,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
             Panel.SetZIndex(searchEmptyOverlay, 100);
             contentHost.Children.Add(searchEmptyOverlay);
             Content = contentHost;
+            ApplySearchFeedbackTheme();
 
             innerPropertyGrid.PropertyValueChanged += InnerPropertyGrid_PropertyValueChanged;
             innerPropertyGrid.SelectedObjectsChanged += (sender, e) =>
@@ -293,11 +306,26 @@ namespace System.Windows.Controls.WpfPropertyGrid
             set { SetValue(IsCompactDensityProperty, value); }
         }
 
+        public PropertyGridThemeVariant ThemeVariant
+        {
+            get { return (PropertyGridThemeVariant)GetValue(ThemeVariantProperty); }
+            set { SetValue(ThemeVariantProperty, value); }
+        }
+
         private static void OnIsCompactDensityChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is PropertyGrid grid)
             {
                 grid.ApplyBridgeDensity();
+            }
+        }
+
+        private static void OnThemeVariantChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is PropertyGrid grid)
+            {
+                grid.ApplyBridgeDensity();
+                grid.ApplySearchFeedbackTheme();
             }
         }
 
@@ -311,11 +339,27 @@ namespace System.Windows.Controls.WpfPropertyGrid
             // Docked inspectors need higher information density, while floating tools
             // keep the larger editor spacing that operators already verified.
             bool compactDensity = IsCompactDensity;
-            ApplyBridgeVisualStyle(innerPropertyGrid.Resources, compactDensity);
-            ApplyBridgeSurfaceStyle(innerPropertyGrid, compactDensity);
+            bool darkTheme = ThemeVariant == PropertyGridThemeVariant.Dark;
+            ApplyBridgeVisualStyle(innerPropertyGrid.Resources, compactDensity, darkTheme);
+            ApplyBridgeSurfaceStyle(innerPropertyGrid, compactDensity, darkTheme);
+            innerPropertyGrid.ItemsBackground = darkTheme ? BrushFromRgb(14, 32, 38) : BrushFromRgb(255, 255, 255);
+            innerPropertyGrid.ItemsForeground = darkTheme ? BrushFromRgb(215, 239, 242) : BrushFromRgb(39, 54, 74);
             innerPropertyGrid.InvalidateMeasure();
             innerPropertyGrid.InvalidateArrange();
             ScheduleNormalizeInnerEditorControls();
+        }
+
+        private void ApplySearchFeedbackTheme()
+        {
+            if (searchEmptyOverlay == null || searchEmptyMessage == null)
+            {
+                return;
+            }
+
+            bool darkTheme = ThemeVariant == PropertyGridThemeVariant.Dark;
+            searchEmptyOverlay.Background = darkTheme ? BrushFromRgb(16, 36, 42) : BrushFromRgb(245, 250, 252);
+            searchEmptyOverlay.BorderBrush = darkTheme ? BrushFromRgb(76, 135, 144) : BrushFromRgb(190, 211, 225);
+            searchEmptyMessage.Foreground = darkTheme ? BrushFromRgb(168, 203, 209) : BrushFromRgb(66, 91, 112);
         }
 
         private static void EnsureOriginalWpfResources()
@@ -375,18 +419,18 @@ namespace System.Windows.Controls.WpfPropertyGrid
             }
         }
 
-        private static void ApplyBridgeVisualStyle(ResourceDictionary resources, bool compactDensity)
+        private static void ApplyBridgeVisualStyle(ResourceDictionary resources, bool compactDensity, bool darkTheme)
         {
             if (resources == null)
             {
                 return;
             }
 
-            resources[typeof(TextBox)] = CreateTextBoxStyle(compactDensity);
-            resources[typeof(ComboBox)] = CreateComboBoxStyle(compactDensity);
-            resources[typeof(ComboBoxItem)] = CreateComboBoxItemStyle(compactDensity);
-            resources[typeof(CheckBox)] = CreateCheckBoxStyle(compactDensity);
-            resources[typeof(Slider)] = CreateSliderStyle(compactDensity);
+            resources[typeof(TextBox)] = CreateTextBoxStyle(compactDensity, darkTheme);
+            resources[typeof(ComboBox)] = CreateComboBoxStyle(compactDensity, darkTheme);
+            resources[typeof(ComboBoxItem)] = CreateComboBoxItemStyle(compactDensity, darkTheme);
+            resources[typeof(CheckBox)] = CreateCheckBoxStyle(compactDensity, darkTheme);
+            resources[typeof(Slider)] = CreateSliderStyle(compactDensity, darkTheme);
         }
 
         private static void ApplyBridgeContainerStyles(ResourceDictionary resources)
@@ -478,41 +522,42 @@ namespace System.Windows.Controls.WpfPropertyGrid
             return style;
         }
 
-        private static void ApplyBridgeSurfaceStyle(Control control, bool compactDensity)
+        private static void ApplyBridgeSurfaceStyle(Control control, bool compactDensity, bool darkTheme)
         {
             if (control == null)
             {
                 return;
             }
 
-            control.Background = BrushFromRgb(238, 244, 250);
-            control.BorderBrush = BrushFromRgb(194, 210, 226);
+            control.Background = darkTheme ? BrushFromRgb(11, 21, 25) : BrushFromRgb(238, 244, 250);
+            control.Foreground = darkTheme ? BrushFromRgb(215, 239, 242) : BrushFromRgb(39, 54, 74);
+            control.BorderBrush = darkTheme ? BrushFromRgb(56, 83, 92) : BrushFromRgb(194, 210, 226);
             control.BorderThickness = new Thickness(1);
             control.Padding = new Thickness(compactDensity ? 1D : 2D);
         }
 
-        private static Style CreateTextBoxStyle(bool compactDensity)
+        private static Style CreateTextBoxStyle(bool compactDensity, bool darkTheme)
         {
             Style style = new Style(typeof(TextBox));
             style.Setters.Add(new Setter(Control.FontFamilyProperty, new FontFamily("Segoe UI")));
             style.Setters.Add(new Setter(Control.FontSizeProperty, 12D));
-            style.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(22, 64, 103)));
-            style.Setters.Add(new Setter(Control.BackgroundProperty, BrushFromRgb(250, 252, 253)));
-            style.Setters.Add(new Setter(Control.BorderBrushProperty, BrushFromRgb(175, 197, 221)));
+            style.Setters.Add(new Setter(Control.ForegroundProperty, darkTheme ? BrushFromRgb(215, 239, 242) : BrushFromRgb(22, 64, 103)));
+            style.Setters.Add(new Setter(Control.BackgroundProperty, darkTheme ? BrushFromRgb(14, 32, 38) : BrushFromRgb(250, 252, 253)));
+            style.Setters.Add(new Setter(Control.BorderBrushProperty, darkTheme ? BrushFromRgb(76, 135, 144) : BrushFromRgb(175, 197, 221)));
             style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
             style.Setters.Add(new Setter(Control.PaddingProperty, compactDensity ? new Thickness(6, 2, 6, 2) : new Thickness(8, 3, 8, 3)));
             style.Setters.Add(new Setter(FrameworkElement.MarginProperty, compactDensity ? new Thickness(0, 1, 0, 1) : new Thickness(0, 2, 0, 2)));
             return style;
         }
 
-        private static Style CreateComboBoxStyle(bool compactDensity)
+        private static Style CreateComboBoxStyle(bool compactDensity, bool darkTheme)
         {
             Style style = new Style(typeof(ComboBox));
             style.Setters.Add(new Setter(Control.FontFamilyProperty, new FontFamily("Segoe UI")));
             style.Setters.Add(new Setter(Control.FontSizeProperty, 12D));
-            style.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(22, 64, 103)));
-            style.Setters.Add(new Setter(Control.BackgroundProperty, BrushFromRgb(250, 252, 253)));
-            style.Setters.Add(new Setter(Control.BorderBrushProperty, BrushFromRgb(175, 197, 221)));
+            style.Setters.Add(new Setter(Control.ForegroundProperty, darkTheme ? BrushFromRgb(215, 239, 242) : BrushFromRgb(22, 64, 103)));
+            style.Setters.Add(new Setter(Control.BackgroundProperty, darkTheme ? BrushFromRgb(14, 32, 38) : BrushFromRgb(250, 252, 253)));
+            style.Setters.Add(new Setter(Control.BorderBrushProperty, darkTheme ? BrushFromRgb(76, 135, 144) : BrushFromRgb(175, 197, 221)));
             style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
             style.Setters.Add(new Setter(Control.PaddingProperty, compactDensity ? new Thickness(6, 2, 6, 2) : new Thickness(8, 3, 8, 3)));
             style.Setters.Add(new Setter(FrameworkElement.MarginProperty, compactDensity ? new Thickness(0, 1, 0, 1) : new Thickness(0, 2, 0, 2)));
@@ -520,24 +565,24 @@ namespace System.Windows.Controls.WpfPropertyGrid
             style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch));
             style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
             style.Setters.Add(new Setter(ComboBox.MaxDropDownHeightProperty, 260D));
-            style.Setters.Add(new Setter(ItemsControl.ItemContainerStyleProperty, CreateComboBoxItemStyle(compactDensity)));
-            style.Setters.Add(new Setter(Control.TemplateProperty, CreateComboBoxTemplate()));
+            style.Setters.Add(new Setter(ItemsControl.ItemContainerStyleProperty, CreateComboBoxItemStyle(compactDensity, darkTheme)));
+            style.Setters.Add(new Setter(Control.TemplateProperty, CreateComboBoxTemplate(darkTheme)));
             return style;
         }
 
-        private static ControlTemplate CreateComboBoxTemplate()
+        private static ControlTemplate CreateComboBoxTemplate(bool darkTheme)
         {
-            return SharedComboBoxTemplate.Value;
+            return darkTheme ? CreateComboBoxTemplateCore(darkTheme: true) : SharedComboBoxTemplate.Value;
         }
 
-        private static ControlTemplate CreateComboBoxTemplateCore()
+        private static ControlTemplate CreateComboBoxTemplateCore(bool darkTheme)
         {
-            SolidColorBrush backgroundBrush = BrushFromRgb(250, 252, 253);
-            SolidColorBrush hoverBrush = BrushFromRgb(242, 248, 252);
-            SolidColorBrush borderBrush = BrushFromRgb(175, 197, 221);
-            SolidColorBrush focusBrush = BrushFromRgb(47, 111, 171);
-            SolidColorBrush textBrush = BrushFromRgb(22, 64, 103);
-            SolidColorBrush popupBrush = BrushFromRgb(255, 255, 255);
+            SolidColorBrush backgroundBrush = darkTheme ? BrushFromRgb(14, 32, 38) : BrushFromRgb(250, 252, 253);
+            SolidColorBrush hoverBrush = darkTheme ? BrushFromRgb(24, 57, 67) : BrushFromRgb(242, 248, 252);
+            SolidColorBrush borderBrush = darkTheme ? BrushFromRgb(76, 135, 144) : BrushFromRgb(175, 197, 221);
+            SolidColorBrush focusBrush = darkTheme ? BrushFromRgb(37, 183, 194) : BrushFromRgb(47, 111, 171);
+            SolidColorBrush textBrush = darkTheme ? BrushFromRgb(215, 239, 242) : BrushFromRgb(22, 64, 103);
+            SolidColorBrush popupBrush = darkTheme ? BrushFromRgb(16, 36, 42) : BrushFromRgb(255, 255, 255);
 
             FrameworkElementFactory root = new FrameworkElementFactory(typeof(Grid));
             root.SetValue(UIElement.SnapsToDevicePixelsProperty, true);
@@ -644,20 +689,20 @@ namespace System.Windows.Controls.WpfPropertyGrid
             return template;
         }
 
-        private static Style CreateComboBoxItemStyle(bool compactDensity)
+        private static Style CreateComboBoxItemStyle(bool compactDensity, bool darkTheme)
         {
-            return compactDensity
-                ? CreateComboBoxItemStyleCore(compactDensity: true)
+            return darkTheme || compactDensity
+                ? CreateComboBoxItemStyleCore(compactDensity, darkTheme)
                 : SharedComboBoxItemStyle.Value;
         }
 
-        private static Style CreateComboBoxItemStyleCore(bool compactDensity)
+        private static Style CreateComboBoxItemStyleCore(bool compactDensity, bool darkTheme)
         {
             Style style = new Style(typeof(ComboBoxItem));
             style.Setters.Add(new Setter(Control.FontFamilyProperty, new FontFamily("Segoe UI")));
             style.Setters.Add(new Setter(Control.FontSizeProperty, 12D));
-            style.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(22, 64, 103)));
-            style.Setters.Add(new Setter(Control.BackgroundProperty, BrushFromRgb(250, 252, 253)));
+            style.Setters.Add(new Setter(Control.ForegroundProperty, darkTheme ? BrushFromRgb(215, 239, 242) : BrushFromRgb(22, 64, 103)));
+            style.Setters.Add(new Setter(Control.BackgroundProperty, darkTheme ? BrushFromRgb(16, 36, 42) : BrushFromRgb(250, 252, 253)));
             style.Setters.Add(new Setter(Control.PaddingProperty, compactDensity ? new Thickness(8, 4, 8, 4) : new Thickness(9, 6, 9, 6)));
             style.Setters.Add(new Setter(FrameworkElement.HeightProperty, compactDensity ? 28D : 32D));
             style.Setters.Add(new Setter(FrameworkElement.MinHeightProperty, compactDensity ? 28D : 32D));
@@ -666,21 +711,21 @@ namespace System.Windows.Controls.WpfPropertyGrid
             return style;
         }
 
-        private static Style CreateCheckBoxStyle(bool compactDensity)
+        private static Style CreateCheckBoxStyle(bool compactDensity, bool darkTheme)
         {
             Style style = new Style(typeof(CheckBox));
             style.Setters.Add(new Setter(Control.FontFamilyProperty, new FontFamily("Segoe UI")));
             style.Setters.Add(new Setter(Control.FontSizeProperty, 12D));
-            style.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(22, 64, 103)));
+            style.Setters.Add(new Setter(Control.ForegroundProperty, darkTheme ? BrushFromRgb(215, 239, 242) : BrushFromRgb(22, 64, 103)));
             style.Setters.Add(new Setter(FrameworkElement.MarginProperty, compactDensity ? new Thickness(0, 2, 0, 2) : new Thickness(0, 4, 0, 4)));
             return style;
         }
 
-        private static Style CreateSliderStyle(bool compactDensity)
+        private static Style CreateSliderStyle(bool compactDensity, bool darkTheme)
         {
             Style style = new Style(typeof(Slider));
-            style.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(47, 111, 171)));
-            style.Setters.Add(new Setter(Control.BackgroundProperty, BrushFromRgb(218, 230, 241)));
+            style.Setters.Add(new Setter(Control.ForegroundProperty, darkTheme ? BrushFromRgb(37, 183, 194) : BrushFromRgb(47, 111, 171)));
+            style.Setters.Add(new Setter(Control.BackgroundProperty, darkTheme ? BrushFromRgb(56, 83, 92) : BrushFromRgb(218, 230, 241)));
             style.Setters.Add(new Setter(FrameworkElement.MarginProperty, compactDensity ? new Thickness(0, 3, 6, 3) : new Thickness(0, 6, 8, 6)));
             style.Setters.Add(new Setter(FrameworkElement.MinHeightProperty, compactDensity ? 28D : 34D));
             return style;
@@ -1025,7 +1070,8 @@ namespace System.Windows.Controls.WpfPropertyGrid
             }
 
             bool compactDensity = IsCompactDensity;
-            Style comboItemStyle = CreateComboBoxItemStyle(compactDensity);
+            bool darkTheme = ThemeVariant == PropertyGridThemeVariant.Dark;
+            Style comboItemStyle = CreateComboBoxItemStyle(compactDensity, darkTheme);
             List<FrameworkElement> editorElements = new List<FrameworkElement>();
             foreach (FrameworkElement element in FindVisualChildren<FrameworkElement>(innerPropertyGrid))
             {
@@ -1040,13 +1086,18 @@ namespace System.Windows.Controls.WpfPropertyGrid
                     continue;
                 }
 
+                if (darkTheme && element is TextBox editorTextBox)
+                {
+                    ApplyDarkEditorStyle(editorTextBox);
+                }
+
                 if (element is ComboBox comboBox)
                 {
                     // The WPG enum editor can retain editable chrome from the legacy bridge;
                     // keep it as a pure selector so the selected text is rendered once.
                     comboBox.IsEditable = false;
                     comboBox.StaysOpenOnEdit = false;
-                    comboBox.Template = CreateComboBoxTemplate();
+                    comboBox.Template = CreateComboBoxTemplate(darkTheme);
                     comboBox.MinHeight = Math.Max(comboBox.MinHeight, compactDensity ? 28D : 30D);
                     comboBox.HorizontalContentAlignment = HorizontalAlignment.Stretch;
                     comboBox.VerticalContentAlignment = VerticalAlignment.Center;
@@ -1058,11 +1109,18 @@ namespace System.Windows.Controls.WpfPropertyGrid
                     comboBox.PreviewMouseLeftButtonDown += ComboBox_PreviewMouseLeftButtonDown;
                 }
 
+                NormalizeThemeSurface(element, darkTheme);
                 NormalizeRangeEditorLayout(element);
                 NormalizeChildParameterRow(element);
 
                 if (element is Slider slider)
                 {
+                    if (darkTheme)
+                    {
+                        slider.Foreground = BrushFromRgb(37, 183, 194);
+                        slider.Background = BrushFromRgb(56, 83, 92);
+                    }
+
                     if (FindRangeEditorElement(slider) != null)
                     {
                         slider.MinHeight = Math.Max(slider.MinHeight, 20D);
@@ -1080,6 +1138,13 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
                 if (element is Button button && IsPropertyGridDialogButton(button))
                 {
+                    if (darkTheme)
+                    {
+                        button.Foreground = BrushFromRgb(215, 239, 242);
+                        button.Background = BrushFromRgb(20, 49, 58);
+                        button.BorderBrush = BrushFromRgb(76, 135, 144);
+                    }
+
                     object dialogPropertyValue = ResolveDialogPropertyValue(button);
                     if (CanInvokeDialogEditorDirect(dialogPropertyValue))
                     {
@@ -1117,6 +1182,52 @@ namespace System.Windows.Controls.WpfPropertyGrid
             ScheduleSearchFeedbackUpdate();
         }
 
+        private static void NormalizeThemeSurface(FrameworkElement element, bool darkTheme)
+        {
+            if (!darkTheme || !(element is Border rowBorder)
+                || !string.Equals(rowBorder.Name, "RowBorder", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            rowBorder.Background = BrushFromRgb(14, 32, 38);
+            rowBorder.BorderBrush = BrushFromRgb(56, 83, 92);
+            foreach (Border border in FindVisualChildren<Border>(rowBorder))
+            {
+                if (string.Equals(border.Name, "NameCell", StringComparison.Ordinal))
+                {
+                    border.Background = BrushFromRgb(20, 49, 58);
+                    border.BorderBrush = BrushFromRgb(56, 83, 92);
+                }
+                else if (Grid.GetColumn(border) == 1)
+                {
+                    border.Background = BrushFromRgb(14, 32, 38);
+                }
+                else if (!string.Equals(border.Name, "RowAccent", StringComparison.Ordinal))
+                {
+                    border.Background = BrushFromRgb(14, 32, 38);
+                }
+            }
+
+            foreach (TextBlock textBlock in FindVisualChildren<TextBlock>(rowBorder))
+            {
+                string typeName = textBlock.GetType().FullName ?? string.Empty;
+                if (typeName.EndsWith(".Design.PropertyNameTextBlock", StringComparison.Ordinal))
+                {
+                    textBlock.Foreground = BrushFromRgb(168, 203, 209);
+                }
+            }
+        }
+
+        private static void ApplyDarkEditorStyle(TextBox textBox)
+        {
+            textBox.Foreground = BrushFromRgb(215, 239, 242);
+            textBox.Background = BrushFromRgb(14, 32, 38);
+            textBox.BorderBrush = BrushFromRgb(76, 135, 144);
+            textBox.CaretBrush = BrushFromRgb(215, 239, 242);
+            textBox.SelectionBrush = BrushFromRgb(37, 183, 194);
+        }
+
         private void NormalizeSearchTextBox(TextBox searchTextBox, bool compactDensity)
         {
             // Keep the vendor WPG filter path, but make the search field predictable for
@@ -1127,6 +1238,10 @@ namespace System.Windows.Controls.WpfPropertyGrid
             TrySetSearchTextBoxProperty(searchTextBox, "SearchMode", "Instant");
             TrySetSearchTextBoxProperty(searchTextBox, "SearchEventTimeDelay", 80);
             TrySetSearchTextBoxProperty(searchTextBox, "LabelText", SearchLabelText());
+            if (ThemeVariant == PropertyGridThemeVariant.Dark)
+            {
+                ApplyDarkEditorStyle(searchTextBox);
+            }
 
             searchTextBox.KeyDown -= SearchTextBox_KeyDown;
             searchTextBox.KeyDown += SearchTextBox_KeyDown;
@@ -1427,19 +1542,20 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
             // Conditional rows are children of a switch/selector above them. Give them a quiet inset treatment
             // so operators can read the generated PropertyGrid hierarchy without changing the model-driven flow.
-            rowBorder.Background = BrushFromRgb(250, 253, 255);
-            rowBorder.BorderBrush = BrushFromRgb(210, 226, 239);
+            bool darkTheme = ThemeVariant == PropertyGridThemeVariant.Dark;
+            rowBorder.Background = darkTheme ? BrushFromRgb(16, 36, 42) : BrushFromRgb(250, 253, 255);
+            rowBorder.BorderBrush = darkTheme ? BrushFromRgb(56, 83, 92) : BrushFromRgb(210, 226, 239);
 
             foreach (Border border in FindVisualChildren<Border>(rowBorder))
             {
                 if (string.Equals(border.Name, "RowAccent", StringComparison.Ordinal))
                 {
                     border.Width = 4D;
-                    border.Background = BrushFromRgb(93, 154, 205);
+                    border.Background = darkTheme ? BrushFromRgb(37, 183, 194) : BrushFromRgb(93, 154, 205);
                 }
                 else if (string.Equals(border.Name, "NameCell", StringComparison.Ordinal))
                 {
-                    border.Background = BrushFromRgb(229, 239, 247);
+                    border.Background = darkTheme ? BrushFromRgb(20, 49, 58) : BrushFromRgb(229, 239, 247);
                 }
             }
 
@@ -1456,7 +1572,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
                     textBlock.Margin.Top,
                     textBlock.Margin.Right,
                     textBlock.Margin.Bottom);
-                textBlock.Foreground = BrushFromRgb(66, 91, 112);
+                textBlock.Foreground = darkTheme ? BrushFromRgb(168, 203, 209) : BrushFromRgb(66, 91, 112);
             }
         }
 
@@ -1512,6 +1628,11 @@ namespace System.Windows.Controls.WpfPropertyGrid
             // Keep those columns explicit so long values such as 1000000 do not clip into the slider.
             grid.MinWidth = Math.Max(grid.MinWidth, 390D);
             grid.MinHeight = Math.Max(grid.MinHeight, 72D);
+            bool darkTheme = ThemeVariant == PropertyGridThemeVariant.Dark;
+            if (darkTheme)
+            {
+                grid.Background = BrushFromRgb(14, 32, 38);
+            }
             grid.VerticalAlignment = VerticalAlignment.Stretch;
             grid.Margin = new Thickness(
                 grid.Margin.Left,
@@ -1534,6 +1655,10 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
             foreach (TextBlock textBlock in FindVisualChildren<TextBlock>(grid))
             {
+                if (darkTheme)
+                {
+                    textBlock.Foreground = BrushFromRgb(168, 203, 209);
+                }
                 textBlock.TextTrimming = TextTrimming.None;
                 textBlock.TextWrapping = TextWrapping.NoWrap;
                 textBlock.HorizontalAlignment = HorizontalAlignment.Center;
@@ -1545,6 +1670,10 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
             foreach (TextBox textBox in FindVisualChildren<TextBox>(grid))
             {
+                if (darkTheme)
+                {
+                    ApplyDarkEditorStyle(textBox);
+                }
                 textBox.MinWidth = Math.Max(textBox.MinWidth, 78D);
                 textBox.HorizontalContentAlignment = HorizontalAlignment.Center;
                 textBox.LostKeyboardFocus -= RangeEditorTextBox_LostKeyboardFocus;
@@ -1556,6 +1685,11 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
             foreach (Slider slider in FindVisualChildren<Slider>(grid))
             {
+                if (darkTheme)
+                {
+                    slider.Foreground = BrushFromRgb(37, 183, 194);
+                    slider.Background = BrushFromRgb(56, 83, 92);
+                }
                 slider.MinHeight = Math.Max(slider.MinHeight, 20D);
                 slider.Margin = new Thickness(slider.Margin.Left, 0D, slider.Margin.Right, 0D);
                 slider.ValueChanged -= RangeEditorSlider_ValueChanged;
@@ -2558,6 +2692,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
                     }
                 }
             }
+
         }
 
         internal static bool TryGetProgressivePropertyViewport(object instance, out int visiblePropertyCount)

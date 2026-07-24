@@ -1,5 +1,7 @@
 using Lib.OpenCV.Pipeline;
 using Lib.OpenCV.Property;
+using Lib.OpenCV.Result;
+using Lib.OpenCV.Tool;
 using Lib.OpenCV;
 using OpenVisionLab;
 using OpenVisionLab._1._Core;
@@ -33,6 +35,9 @@ using Bitmap = System.Drawing.Bitmap;
 using DrawingColor = System.Drawing.Color;
 using DrawingRectangle = System.Drawing.Rectangle;
 using DrawingRectangleF = System.Drawing.RectangleF;
+using Cv = OpenCvSharp.Cv2;
+using CvImreadModes = OpenCvSharp.ImreadModes;
+using CvMat = OpenCvSharp.Mat;
 using DrawingSize = System.Drawing.Size;
 using Graphics = System.Drawing.Graphics;
 using static OpenVisionLab.DEFINE;
@@ -89,6 +94,7 @@ internal static class Program
         ["wpf_shell_host_workspace_sample_open"] = CaptureShellHostWorkspaceSampleOpen,
         ["wpf_shell_host_workspace_sample_pipeline_review_metrics"] = CaptureShellHostWorkspaceSamplePipelineReviewMetrics,
         ["wpf_shell_host_workspace_sample_fixture_review"] = CaptureShellHostWorkspaceSampleFixtureReview,
+        ["wpf_shell_host_workspace_sample_normalize_fixture_review"] = CaptureShellHostWorkspaceSampleNormalizeFixtureReview,
         ["wpf_shell_host_pipeline_step_edit_handoff"] = CaptureShellHostPipelineStepEditHandoff,
         ["wpf_shell_host_fixture_step_edit_apply_rerun"] = CaptureShellHostFixtureStepEditApplyRerun,
         ["wpf_shell_host_workspace_sample_fixture_teach"] = CaptureShellHostWorkspaceSampleFixtureTeach,
@@ -101,19 +107,35 @@ internal static class Program
         ["wpf_shell_host_workspace_sample_pipeline_review_blob_ng_metrics"] = CaptureShellHostWorkspaceSamplePipelineReviewBlobNgMetrics,
         ["wpf_shell_host_workspace_sample_pipeline_review_bentpin_ng_metrics"] = CaptureShellHostWorkspaceSamplePipelineReviewBentPinNgMetrics,
         ["wpf_shell_host_workspace_sample_pipeline_review_film_ng_metrics"] = CaptureShellHostWorkspaceSamplePipelineReviewFilmNgMetrics,
+        ["p213_geometry_review"] = CaptureP213GeometryReview,
+        ["p213_geometry_property_grid"] = CaptureP213GeometryPropertyGrid,
+        ["p219_affine_point_binding_property_grid"] = CaptureP219AffinePointBindingPropertyGrid,
+        ["p214_two_point_scale"] = CaptureP214TwoPointScale,
         ["wpf_shell_host_recipe_context_switch"] = CaptureShellHostRecipeContextSwitch,
         ["wpf_shell_host_llm_dependency_placeholder"] = CaptureShellHostLlmDependencyPlaceholder,
+        ["wpf_shell_host_outer_corner_llm_review"] = CaptureShellHostOuterCornerLlmReview,
         ["wpf_shell_host_recipe_output_route_isolation"] = CaptureShellHostRecipeOutputRouteIsolation,
         ["wpf_shell_host_recipe_language_controls"] = CaptureShellHostRecipeLanguageControls,
         ["wpf_shell_host_recipe_review_bundle"] = CaptureShellHostRecipeReviewBundle,
         ["wpf_shell_host_recipe_review_bundle_import"] = CaptureShellHostRecipeReviewBundleImport,
-        ["wpf_shell_host_recipe_local_validation_set"] = CaptureShellHostRecipeLocalValidationSet,
-        ["wpf_shell_host_recipe_local_validation_dataset"] = CaptureShellHostRecipeLocalValidationDataset,
+        ["wpf_shell_host_recipe_local_validation_set"] = outputPath =>
+            CaptureShellHostRecipeLocalValidationSet(outputPath, captureReviewQueue: false),
+        ["wpf_shell_host_recipe_run_history_review_queue"] = outputPath =>
+            CaptureShellHostRecipeLocalValidationSet(outputPath, captureReviewQueue: true),
+        ["wpf_shell_host_recipe_local_validation_dataset"] = outputPath =>
+            CaptureShellHostRecipeLocalValidationDataset(outputPath, openDrawingEvidence: false),
+        ["wpf_shell_host_recipe_local_validation_dataset_review_queue"] = outputPath =>
+            CaptureShellHostRecipeLocalValidationDataset(outputPath, openDrawingEvidence: false, captureReviewQueue: true),
+        ["wpf_shell_host_recipe_local_validation_drawing_evidence"] = outputPath =>
+            CaptureShellHostRecipeLocalValidationDataset(outputPath, openDrawingEvidence: true),
         ["wpf_shell_host_recipe_manager_summary"] = CaptureShellHostRecipeManagerSummary,
         ["wpf_shell_host_recipe_operator_decision_board"] = CaptureShellHostRecipeOperatorDecisionBoard,
         ["wpf_shell_host_recipe_guided_setup"] = CaptureShellHostRecipeGuidedSetup,
+        ["wpf_shell_host_recipe_hybrid_relative_roi_guided_setup"] = CaptureShellHostRecipeHybridRelativeRoiGuidedSetup,
         ["wpf_shell_host_recipe_fixture_properties"] = CaptureShellHostRecipeFixtureProperties,
         ["wpf_shell_host_recipe_reference_difference_properties"] = CaptureShellHostRecipeReferenceDifferenceProperties,
+        ["wpf_shell_host_recipe_pinarraygap_properties"] = CaptureShellHostRecipePinArrayGapProperties,
+        ["wpf_shell_host_recipe_line_pair_properties"] = CaptureShellHostRecipeLinePairProperties,
         ["wpf_shell_host_recipe_multibranch_comparison"] = CaptureShellHostRecipeMultiBranchComparison,
         ["wpf_shell_host_recipe_large_library"] = CaptureShellHostRecipeLargeLibrary,
         ["wpf_shell_host_recipe_large_pipeline_list"] = CaptureShellHostRecipeLargePipelineList,
@@ -174,11 +196,13 @@ internal static class Program
         ["wpf_shell_host_pipeline_review_input_state"] = CaptureShellHostPipelineReviewInputState,
         ["wpf_shell_host_pipeline_review_ng"] = CaptureShellHostPipelineReviewNg,
         ["wpf_shell_host_rotate_scale_tool"] = CaptureShellHostRotateScaleTool,
+        ["wpf_shell_host_affine_transform_tool"] = CaptureShellHostAffineTransformTool,
         ["wpf_filter_morphology_layout_guard"] = CaptureFilterMorphologyLayoutGuard,
         ["wpf_threshold_output_then_blob_open"] = CaptureThresholdOutputThenBlobOpen,
         ["wpf_threshold_to_blob_detection_e2e"] = CaptureThresholdToBlobDetectionE2E,
         ["wpf_shell_host_blob_tool"] = CaptureShellHostBlobTool,
         ["wpf_shell_host_blob_tool_docked_verification"] = CaptureShellHostBlobTool,
+        ["p216_object_dimension_filters_property_grid"] = CaptureP216ObjectDimensionFiltersPropertyGrid,
         ["wpf_shell_host_contour_tool"] = CaptureShellHostContourTool,
         ["wpf_shell_host_contour_tool_docked_verification"] = CaptureShellHostContourTool,
         ["wpf_shell_host_area_tool_presets"] = CaptureShellHostAreaToolPresets,
@@ -204,6 +228,11 @@ internal static class Program
         ["wpf_layer_selection_all_native_tools"] = CaptureLayerSelectionAllNativeTools,
         ["wpf_algorithm_output_preview_flow"] = CaptureAlgorithmOutputPreviewFlow,
         ["wpf_shell_host_edge_based_matching_tool"] = CaptureShellHostEdgeBasedMatchingTool,
+        ["wpf_shell_host_edge_based_matching_auto_mpoint"] = CaptureShellHostEdgeBasedMatchingAutoMPoint,
+        ["wpf_tool_n_image_verification_window"] = CaptureToolNImageVerificationWindow,
+        ["wpf_tool_n_image_locator_promotion_window"] = CaptureToolNImageLocatorPromotionWindow,
+        ["p235_locator_validation_promotion"] = CaptureP235LocatorValidationPromotion,
+        ["wpf_tool_n_image_entry_side_effect_contract"] = CaptureToolNImageEntrySideEffectContract,
         ["wpf_shell_host_feature_matching_tool"] = CaptureShellHostFeatureMatchingTool,
         ["wpf_shell_host_pending_tool"] = CaptureShellHostPendingTool,
         ["wpf_tool_window_reopen_same_tool"] = CaptureToolWindowReopenSameTool,
@@ -1474,6 +1503,74 @@ internal static class Program
             llmXmlTab.IsSelected = true;
             Pump(40);
         }, captureFloatingToolWindow: false);
+    }
+
+    private static CaptureResult CaptureShellHostOuterCornerLlmReview(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        CleanupTransientRecipeWorkspaces();
+
+        string recipe = "Smoke_OuterCornerLlmReview_" + Guid.NewGuid().ToString("N");
+        VisionPipelineStorage.Save(recipe, CreateRecipeContextSmokePipeline("OuterCorner_Source", 1));
+        VisionPipelineStorage.SaveActivePipelineName(recipe, "OuterCorner_Source");
+
+        OpenVisionShellHostView shellHost = CreateShellHost(recipe, seedMainLayer: true);
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            ToggleButton recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager")
+                ?? throw new InvalidOperationException("Outer-corner LLM review recipe manager button was not found.");
+            int previewRunsBefore = shellHost.NativePreviewRunCount;
+            int layerCountBefore = shellHost.LayerDocumentCount;
+            recipeManagerButton.IsChecked = true;
+            Pump(80);
+
+            ToggleButton advancedToggle = FindNamedVisualChild<ToggleButton>(shellHost, "recipeAdvancedReviewToggle")
+                ?? throw new InvalidOperationException("Outer-corner LLM review advanced toggle was not found.");
+            advancedToggle.IsChecked = true;
+            Pump(40);
+            TabItem llmXmlTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipeLlmXml")
+                ?? throw new InvalidOperationException("Outer-corner LLM review XML tab was not found.");
+            llmXmlTab.IsSelected = true;
+            Pump(40);
+
+            VisionPipeline draft = CreateRecipeContextSmokePipeline("OuterCorner_Llm_Draft", 1);
+            VisionPipelineStep step = draft.Steps[0];
+            step.Name = "01 Verify Card Bottom Right Corner";
+            step.ToolType = "OuterCornerIntersection";
+            step.InputLayer = "Main";
+            step.OutputLayer = "CardCornerEvidence";
+            step.Parameters.Clear();
+            step.Parameters["ForegroundThreshold"] = "45";
+            step.Parameters["MinComponentArea"] = "10000";
+            step.Parameters["EdgeFitEndPercent"] = "0.80";
+            step.Parameters["SampleStep"] = "4";
+            step.UseAcceptance = true;
+            step.ExpectedSuccess = true;
+            step.AcceptanceMetricName = VisionPipelineKnownMetrics.IntersectionX;
+            step.UseAcceptanceMetricMinimum = true;
+            step.AcceptanceMetricMinimum = 300;
+
+            string draftPath = Path.Combine(Path.GetTempPath(), "OpenVisionLab_outer_corner_llm_review_" + Guid.NewGuid().ToString("N") + ".xml");
+            SerializeHelper.SaveXmlFile(draftPath, draft);
+            shellHost.RecipeCommands.LlmXmlDraftText = File.ReadAllText(draftPath);
+            if (!shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest()
+                || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("Corner WAIT: same image; red/green + hough/projection/outer vs mark; no gate if fallback.", StringComparison.Ordinal)
+                || shellHost.NativePreviewRunCount != previewRunsBefore
+                || shellHost.LayerDocumentCount != layerCountBefore
+                || shellHost.HasNativePreviewResult)
+            {
+                throw new InvalidOperationException(
+                    "Outer-corner LLM draft validation did not expose the required visual-review WAIT state without execution. "
+                    + $"Validation='{shellHost.RecipeCommands.LlmXmlDraftValidationReport}', Runs={shellHost.NativePreviewRunCount}/{previewRunsBefore}, Layers={shellHost.LayerDocumentCount}/{layerCountBefore}.");
+            }
+
+            AssertVisibleAutomationIds(
+                shellHost,
+                "Outer-corner LLM visual-review evidence",
+                "HostRecipeLlmXmlDraftPanel",
+                "HostRecipeLlmDraftValidationReport",
+                "HostRecipeImportLlmXmlDraftButton");
+        }, captureFloatingToolWindow: false, captureScreen: true);
     }
 
     private static OpenVisionLearnWindow GetVisibleLearnWindow(string source)
@@ -3014,28 +3111,46 @@ internal static class Program
         };
         matching.Parameters["Name"] = "FixtureMatch";
         matching.Parameters["NUM_MATCH"] = "1";
+        matching.Parameters["USE_FIND_ANGLE"] = "true";
+        matching.Parameters["FIND_ANGLE_MIN"] = "-5";
+        matching.Parameters["FIND_ANGLE_MAX"] = "5";
+        matching.Parameters["FIND_ANGLE"] = "0.5";
+        matching.Parameters["USE_FIND_SCALE"] = "true";
+        matching.Parameters["FIND_SCALE_MIN"] = "0.75";
+        matching.Parameters["FIND_SCALE_MAX"] = "1.35";
+        matching.Parameters["FIND_SCALE_STEP"] = "0.05";
         matching.Parameters["USE_AS_FIXTURE_FRAME"] = "true";
         matching.Parameters["FIXTURE_FRAME_NAME"] = "PartFrame";
         matching.Parameters["FIXTURE_REFERENCE_X"] = "60";
         matching.Parameters["FIXTURE_REFERENCE_Y"] = "70";
         matching.Parameters["FIXTURE_REFERENCE_ANGLE"] = "0";
+        matching.Parameters["FIXTURE_REFERENCE_SCALE"] = "1";
         matching.Parameters["FIXTURE_MAX_ANGLE_DELTA"] = "2";
+        matching.Parameters["FIXTURE_MIN_SCALE_RATIO"] = "0.8";
+        matching.Parameters["FIXTURE_MAX_SCALE_RATIO"] = "1.8";
+        matching.Parameters["FIXTURE_REFERENCE_IMAGE_WIDTH"] = "640";
+        matching.Parameters["FIXTURE_REFERENCE_IMAGE_HEIGHT"] = "480";
         pipeline.Steps.Add(matching);
 
-        VisionPipelineStep blob = new()
+        VisionPipelineStep normalize = new()
         {
-            Name = "02 Inspect Fixture ROI",
-            ToolType = "Blob",
+            Name = "02 Normalize Device Image",
+            ToolType = "RotateScale",
             InputLayer = "Main",
-            OutputLayer = "FixtureBlob"
+            OutputLayer = "DeviceAligned"
         };
-        blob.Parameters["Name"] = "FixtureBlob";
-        blob.Parameters["USE_ROI"] = "true";
-        blob.Parameters["CvROI"] = "170,80,50,50";
-        blob.Parameters["USE_FIXTURE_FRAME"] = "true";
-        blob.Parameters["FIXTURE_FRAME_NAME"] = "PartFrame";
-        blob.Parameters["ALLOW_BRANCH_INPUT"] = "true";
-        pipeline.Steps.Add(blob);
+        normalize.Parameters["Name"] = "DeviceNormalize";
+        normalize.Parameters["Angle"] = "0";
+        normalize.Parameters["ScaleXPercent"] = "100";
+        normalize.Parameters["ScaleYPercent"] = "100";
+        normalize.Parameters["Interpolation"] = "Linear";
+        normalize.Parameters["BorderType"] = "Constant";
+        normalize.Parameters["USE_FIXTURE_FRAME"] = "true";
+        normalize.Parameters["FIXTURE_FRAME_NAME"] = "PartFrame";
+        normalize.Parameters["FIXTURE_APPLY_MODE"] = "NormalizeImage";
+        normalize.Parameters["FIXTURE_MIN_VALID_PIXEL_RATIO"] = "0.25";
+        normalize.Parameters["ALLOW_BRANCH_INPUT"] = "true";
+        pipeline.Steps.Add(normalize);
         return pipeline;
     }
 
@@ -3048,6 +3163,9 @@ internal static class Program
         VisionPipeline pipeline = CreateRecipeFixturePropertyPipeline();
         AssertFixturePropertyMapperRoundTrip(pipeline);
         VisionPipelineStorage.Save(recipeName, pipeline);
+        VisionPipeline reloadedPipeline = VisionPipelineStorage.Load(recipeName, pipeline.Name)
+            ?? throw new InvalidOperationException("Fixture PropertyGrid pipeline did not reload after XML save.");
+        AssertFixturePropertyMapperRoundTrip(reloadedPipeline);
         VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
 
         OpenVisionShellHostView shellHost = CreateShellHost(recipeName, seedMainLayer: false);
@@ -3074,9 +3192,9 @@ internal static class Program
             }
 
             int previewRunsBefore = shellHost.NativePreviewRunCount;
-            CaptureRecipeFixturePropertyStep(shellHost, steps[1], outputPath, "blob-fixture-property-grid.png");
+            CaptureRecipeFixturePropertyStep(shellHost, steps[1], outputPath, "normalize-image-fixture-property-grid.png");
             CaptureRecipeFixturePropertyStep(shellHost, steps[0], outputPath, "matching-fixture-property-grid.png");
-            CaptureRecipeFixturePropertyStep(shellHost, steps[1], outputPath, "blob-fixture-property-grid.png");
+            CaptureRecipeFixturePropertyStep(shellHost, steps[1], outputPath, "normalize-image-fixture-property-grid.png");
             if (shellHost.NativePreviewRunCount != previewRunsBefore)
             {
                 throw new InvalidOperationException(
@@ -3208,6 +3326,338 @@ internal static class Program
         }
     }
 
+    private static CaptureResult CaptureShellHostRecipePinArrayGapProperties(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        CleanupTransientRecipeWorkspaces();
+
+        string recipeName = "Smoke_RecipePinPitch_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+        VisionPipeline pipeline = new() { Name = "PinArrayGap_PropertyGrid" };
+        VisionPipelineStep step = new()
+        {
+            Name = "01 Pin Center Pitch",
+            ToolType = "PinArrayGap",
+            InputLayer = "Main",
+            OutputLayer = "PinPitch_Result",
+            AcceptanceMetricName = "PitchPxRange",
+            UseAcceptance = true,
+            UseAcceptanceMetricMaximum = true,
+            AcceptanceMetricMaximum = 2D
+        };
+        step.Parameters["MeasurementMode"] = "CenterPitch";
+        step.Parameters["USE_ROI"] = "true";
+        step.Parameters["CvROI"] = "50,50,540,140";
+        step.Parameters["DarkThreshold"] = "128";
+        step.Parameters["MinDarkCoverageRatio"] = "0.55";
+        step.Parameters["MinPinWidth"] = "5";
+        step.Parameters["MaxPinBreakWidth"] = "2";
+        step.Parameters["MinGapWidth"] = "3";
+        step.Parameters["ALLOW_BRANCH_INPUT"] = "true";
+        pipeline.Steps.Add(step);
+
+        object mappedProperty = VisionPipelineStepPropertyMapper.CreateProperty(step)
+            ?? throw new InvalidOperationException("PinArrayGap PropertyGrid mapper returned no property object.");
+        VisionPipelineStep roundTrip = new()
+        {
+            Name = step.Name,
+            ToolType = step.ToolType,
+            InputLayer = step.InputLayer,
+            OutputLayer = step.OutputLayer
+        };
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(roundTrip, mappedProperty)
+            || !string.Equals(roundTrip.Parameters.GetValueOrDefault("MeasurementMode"), "CenterPitch", StringComparison.Ordinal)
+            || !string.Equals(roundTrip.Parameters.GetValueOrDefault("CvROI"), "50,50,540,140", StringComparison.Ordinal)
+            || !string.Equals(roundTrip.Parameters.GetValueOrDefault("ALLOW_BRANCH_INPUT"), "true", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("PinArrayGap PropertyGrid direct round trip lost mode, ROI, or an unrepresented parameter.");
+        }
+
+        VisionPipelineStorage.Save(recipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
+        OpenVisionShellHostView shellHost = CreateShellHost(recipeName, seedMainLayer: false);
+        try
+        {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                ToggleButton recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager")
+                    ?? throw new InvalidOperationException("PinArrayGap PropertyGrid smoke could not find Recipe Manager.");
+                recipeManagerButton.IsChecked = true;
+                Pump(100);
+
+                FindNamedVisualChild<ToggleButton>(shellHost, "recipeAdvancedReviewToggle")!.IsChecked = true;
+                Pump(60);
+                FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline")!.IsSelected = true;
+                Pump(40);
+                FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineXmlSteps")!.IsSelected = true;
+                Pump(40);
+
+                OpenVisionRecipePipelineStepPreview preview = shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps.Single();
+                shellHost.RecipeCommands.SelectedPipelinePreviewStep = preview;
+                if (!shellHost.RecipeCommands.LoadSelectedStepParametersCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException("PinArrayGap PropertyGrid load command remained disabled.");
+                }
+
+                shellHost.RecipeCommands.LoadSelectedStepParametersCommand.Execute(null);
+                Pump(180);
+
+                FrameworkElement propertyGridHost = FindVisualChildren<FrameworkElement>(shellHost)
+                    .FirstOrDefault(item => item.IsVisible && string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "HostRecipeSelectedStepPropertyGridHost",
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("PinArrayGap PropertyGrid host was not visible.");
+                System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid =
+                    FindVisualChildren<System.Windows.Controls.WpfPropertyGrid.PropertyGrid>(propertyGridHost)
+                        .FirstOrDefault(item => item.IsVisible && item.SelectedObject != null)
+                    ?? throw new InvalidOperationException("PinArrayGap PropertyGrid did not load.");
+                string[] requiredProperties =
+                {
+                    "MeasurementMode", "UseRoi", "Roi", "DarkThreshold", "MinimumDarkCoverageRatio",
+                    "MinimumPinWidth", "MaximumPinBreakWidth", "MinimumGapWidth", "AcceptanceMetricName"
+                };
+                PropertyDescriptorCollection descriptors = TypeDescriptor.GetProperties(grid.SelectedObject);
+                string[] missingProperties = requiredProperties
+                    .Where(propertyName => descriptors.Find(propertyName, true) == null)
+                    .ToArray();
+                if (missingProperties.Length > 0)
+                {
+                    throw new InvalidOperationException("PinArrayGap PropertyGrid missed: " + string.Join(",", missingProperties));
+                }
+
+                int previewRunsBeforeApply = shellHost.NativePreviewRunCount;
+                shellHost.RecipeCommands.ApplySelectedStepParametersCommand.Execute(null);
+                Pump(220);
+                VisionPipeline savedPipeline = VisionPipelineStorage.Load(recipeName, pipeline.Name);
+                VisionPipelineStep savedStep = savedPipeline.Steps.Single();
+                if (!string.Equals(savedStep.Parameters.GetValueOrDefault("MeasurementMode"), "CenterPitch", StringComparison.Ordinal)
+                    || !string.Equals(savedStep.Parameters.GetValueOrDefault("CvROI"), "50,50,540,140", StringComparison.Ordinal)
+                    || !string.Equals(savedStep.Parameters.GetValueOrDefault("ALLOW_BRANCH_INPUT"), "true", StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(savedStep.AcceptanceMetricName, "PitchPxRange", StringComparison.Ordinal)
+                    || shellHost.NativePreviewRunCount != previewRunsBeforeApply)
+                {
+                    throw new InvalidOperationException("Recipe Manager PinArrayGap apply/save/reload lost its contract or triggered Preview/Run.");
+                }
+
+                TextBox searchTextBox = GetActivePropertyGridSearchTextBox(grid, "PinArrayGap recipe step");
+                searchTextBox.Text = "Measurement";
+                searchTextBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+                grid.UpdateLayout();
+                Pump(60);
+
+                ScrollViewer pipelineScrollViewer = FindNamedVisualChild<ScrollViewer>(
+                    shellHost,
+                    "recipePipelineTabScrollViewer")
+                    ?? throw new InvalidOperationException("PinArrayGap Pipeline scroll viewer was not found.");
+                pipelineScrollViewer.ScrollToBottom();
+                pipelineScrollViewer.UpdateLayout();
+                Pump(80);
+                BringPropertyGridPropertyIntoView(grid, "MeasurementMode", "PinArrayGap recipe step", 0D);
+                if (grid.IsSearchEmptyMessageVisibleForTest || shellHost.NativePreviewRunCount != 0)
+                {
+                    throw new InvalidOperationException("PinArrayGap PropertyGrid Pitch search failed or changed Preview/Run state.");
+                }
+            }, captureFloatingToolWindow: false, captureScreen: true);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static CaptureResult CaptureShellHostRecipeLinePairProperties(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        CleanupTransientRecipeWorkspaces();
+
+        string recipeName = "Smoke_RecipeLinePair_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+        VisionPipeline pipeline = new() { Name = "LinePair_PropertyGrid" };
+        VisionPipelineStep step = new()
+        {
+            Name = "01 Asymmetric Line Pair",
+            ToolType = "LineDistance",
+            InputLayer = "Main",
+            OutputLayer = "LinePair_Result"
+        };
+        step.Parameters["LeftUSE_ROI"] = "true";
+        step.Parameters["LeftCvROI"] = "430,170,55,145";
+        step.Parameters["LeftPRJ_PORALITY"] = "WTOB";
+        step.Parameters["LeftPRJ_DIR"] = "X_LTOR";
+        step.Parameters["LeftVER_PRJ_DIR"] = "Y_TTOB";
+        step.Parameters["LeftUSE_MANUAL_ANGLE"] = "true";
+        step.Parameters["LeftMANUAL_ANGLE_VALUE"] = "89";
+        step.Parameters["LeftCONTRAST"] = "18";
+        step.Parameters["LeftTHICKNESS"] = "2";
+        step.Parameters["LeftUSE_THRESHOLD"] = "false";
+        step.Parameters["RightUSE_ROI"] = "true";
+        step.Parameters["RightCvROI"] = "485,170,70,145";
+        step.Parameters["RightPRJ_PORALITY"] = "BTOW";
+        step.Parameters["RightPRJ_DIR"] = "X_RTOL";
+        step.Parameters["RightVER_PRJ_DIR"] = "Y_BTOT";
+        step.Parameters["RightUSE_MANUAL_ANGLE"] = "false";
+        step.Parameters["RightMANUAL_ANGLE_VALUE"] = "-7";
+        step.Parameters["RightCONTRAST"] = "44";
+        step.Parameters["RightTHICKNESS"] = "7";
+        step.Parameters["RightUSE_THRESHOLD"] = "true";
+        pipeline.Steps.Add(step);
+
+        object mappedProperty = VisionPipelineStepPropertyMapper.CreateProperty(step)
+            ?? throw new InvalidOperationException("Line pair PropertyGrid mapper returned no property object.");
+        VisionPipelineStep roundTrip = new()
+        {
+            Name = step.Name,
+            ToolType = step.ToolType,
+            InputLayer = step.InputLayer,
+            OutputLayer = step.OutputLayer
+        };
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(roundTrip, mappedProperty))
+        {
+            throw new InvalidOperationException("Line pair PropertyGrid mapper could not apply its property object.");
+        }
+
+        string[] asymmetricParameters =
+        {
+            "LeftUSE_ROI", "LeftCvROI", "LeftPRJ_PORALITY", "LeftPRJ_DIR", "LeftVER_PRJ_DIR",
+            "LeftUSE_MANUAL_ANGLE", "LeftMANUAL_ANGLE_VALUE", "LeftCONTRAST", "LeftTHICKNESS", "LeftUSE_THRESHOLD",
+            "RightUSE_ROI", "RightCvROI", "RightPRJ_PORALITY", "RightPRJ_DIR", "RightVER_PRJ_DIR",
+            "RightUSE_MANUAL_ANGLE", "RightMANUAL_ANGLE_VALUE", "RightCONTRAST", "RightTHICKNESS", "RightUSE_THRESHOLD"
+        };
+        string[] lostParameters = asymmetricParameters
+            .Where(key => !roundTrip.Parameters.TryGetValue(key, out string? actual)
+                || !string.Equals(actual, step.Parameters[key], StringComparison.OrdinalIgnoreCase))
+            .Select(key => key + "='" + roundTrip.Parameters.GetValueOrDefault(key, "<missing>")
+                + "' expected '" + step.Parameters[key] + "'")
+            .ToArray();
+        if (lostParameters.Length > 0)
+        {
+            throw new InvalidOperationException(
+                "Line pair PropertyGrid mapper lost asymmetric A/B parameters: "
+                + string.Join("; ", lostParameters));
+        }
+
+        PropertyDescriptorCollection editDescriptors = TypeDescriptor.GetProperties(mappedProperty);
+        editDescriptors["RightRoi"]?.SetValue(mappedProperty, new OpenCvSharp.Rect(500, 175, 72, 140));
+        editDescriptors["RightManualAngleValue"]?.SetValue(mappedProperty, -11D);
+        editDescriptors["Contrast"]?.SetValue(mappedProperty, 21D);
+        VisionPipelineStep editedRoundTrip = new()
+        {
+            Name = step.Name,
+            ToolType = step.ToolType,
+            InputLayer = step.InputLayer,
+            OutputLayer = step.OutputLayer
+        };
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(editedRoundTrip, mappedProperty)
+            || !string.Equals(editedRoundTrip.Parameters["LeftCvROI"], "430,170,55,145", StringComparison.Ordinal)
+            || !string.Equals(editedRoundTrip.Parameters["RightCvROI"], "500,175,72,140", StringComparison.Ordinal)
+            || !string.Equals(editedRoundTrip.Parameters["LeftMANUAL_ANGLE_VALUE"], "89", StringComparison.Ordinal)
+            || !string.Equals(editedRoundTrip.Parameters["RightMANUAL_ANGLE_VALUE"], "-11", StringComparison.Ordinal)
+            || !string.Equals(editedRoundTrip.Parameters["LeftCONTRAST"], "21", StringComparison.Ordinal)
+            || !string.Equals(editedRoundTrip.Parameters["RightCONTRAST"], "21", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Line pair PropertyGrid mapper did not edit Line B independently of Line A.");
+        }
+
+        VisionPipelineStorage.Save(recipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
+        OpenVisionShellHostView shellHost = CreateShellHost(recipeName, seedMainLayer: false);
+        try
+        {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                ToggleButton recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager")
+                    ?? throw new InvalidOperationException("Line pair PropertyGrid smoke could not find Recipe Manager.");
+                recipeManagerButton.IsChecked = true;
+                Pump(100);
+
+                FindNamedVisualChild<ToggleButton>(shellHost, "recipeAdvancedReviewToggle")!.IsChecked = true;
+                Pump(60);
+                FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline")!.IsSelected = true;
+                Pump(40);
+                FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineXmlSteps")!.IsSelected = true;
+                Pump(40);
+
+                OpenVisionRecipePipelineStepPreview preview = shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps.Single();
+                shellHost.RecipeCommands.SelectedPipelinePreviewStep = preview;
+                shellHost.RecipeCommands.LoadSelectedStepParametersCommand.Execute(null);
+                Pump(180);
+
+                FrameworkElement propertyGridHost = FindVisualChildren<FrameworkElement>(shellHost)
+                    .FirstOrDefault(item => item.IsVisible && string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "HostRecipeSelectedStepPropertyGridHost",
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("Line pair PropertyGrid host was not visible.");
+                propertyGridHost.BringIntoView();
+                propertyGridHost.UpdateLayout();
+                Pump(80);
+
+                System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid =
+                    FindVisualChildren<System.Windows.Controls.WpfPropertyGrid.PropertyGrid>(propertyGridHost)
+                        .FirstOrDefault(item => item.IsVisible && item.SelectedObject != null)
+                    ?? throw new InvalidOperationException("Line pair PropertyGrid did not load.");
+                string[] requiredProperties =
+                {
+                    "UseRoi", "Roi", "LeftDirection", "Polarity", "VerticalProjectionDirection",
+                    "UseManualAngle", "ManualAngleValue", "RightUseRoi", "RightRoi", "RightDirection",
+                    "RightPolarity", "RightVerticalProjectionDirection", "RightUseManualAngle", "RightManualAngleValue"
+                };
+                PropertyDescriptorCollection descriptors = TypeDescriptor.GetProperties(grid.SelectedObject);
+                string[] missingProperties = requiredProperties
+                    .Where(name => descriptors.Find(name, true) == null)
+                    .ToArray();
+                if (missingProperties.Length > 0)
+                {
+                    throw new InvalidOperationException(
+                        "Line pair PropertyGrid missed independent A/B properties: "
+                        + string.Join(",", missingProperties));
+                }
+
+                int previewRunsBeforeApply = shellHost.NativePreviewRunCount;
+                shellHost.RecipeCommands.ApplySelectedStepParametersCommand.Execute(null);
+                Pump(220);
+                VisionPipeline savedPipeline = VisionPipelineStorage.Load(recipeName, pipeline.Name);
+                VisionPipelineStep savedStep = savedPipeline.Steps.Single();
+                string[] savedLosses = asymmetricParameters
+                    .Where(key => !savedStep.Parameters.TryGetValue(key, out string? actual)
+                        || !string.Equals(actual, step.Parameters[key], StringComparison.OrdinalIgnoreCase))
+                    .Select(key => key + "='" + savedStep.Parameters.GetValueOrDefault(key, "<missing>")
+                        + "' expected '" + step.Parameters[key] + "'")
+                    .ToArray();
+                if (savedLosses.Length > 0
+                    || shellHost.NativePreviewRunCount != previewRunsBeforeApply)
+                {
+                    throw new InvalidOperationException(
+                        "Recipe Manager Line pair apply/save/reload lost A/B parameters or triggered Preview/Run. "
+                        + "Lost=" + string.Join("; ", savedLosses)
+                        + $", Runs={shellHost.NativePreviewRunCount}/{previewRunsBeforeApply}");
+                }
+
+                TextBox searchTextBox = GetActivePropertyGridSearchTextBox(grid, "Line pair recipe step");
+                searchTextBox.Text = "ROI";
+                searchTextBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+                grid.UpdateLayout();
+                Pump(60);
+                ScrollViewer pipelineScrollViewer = FindNamedVisualChild<ScrollViewer>(
+                    shellHost,
+                    "recipePipelineTabScrollViewer")
+                    ?? throw new InvalidOperationException("Line pair Pipeline scroll viewer was not found.");
+                pipelineScrollViewer.ScrollToBottom();
+                pipelineScrollViewer.UpdateLayout();
+                Pump(60);
+                BringPropertyGridPropertyIntoView(grid, "RightRoi", "Line pair recipe step", 0D);
+                if (grid.IsSearchEmptyMessageVisibleForTest || shellHost.NativePreviewRunCount != 0)
+                {
+                    throw new InvalidOperationException(
+                        "Line pair PropertyGrid ROI search failed or loading parameters triggered Preview/Run.");
+                }
+            }, captureFloatingToolWindow: false, captureScreen: true);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
     private static void CaptureRecipeFixturePropertyStep(
         OpenVisionShellHostView shellHost,
         OpenVisionRecipePipelineStepPreview step,
@@ -3236,6 +3686,10 @@ internal static class Program
         System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid = FindVisualChildren<System.Windows.Controls.WpfPropertyGrid.PropertyGrid>(propertyGridHost)
             .FirstOrDefault(item => item.IsVisible && item.SelectedObject != null)
             ?? throw new InvalidOperationException("Fixture PropertyGrid did not load for " + step.DisplayText);
+        if (grid.ThemeVariant != System.Windows.Controls.WpfPropertyGrid.PropertyGridThemeVariant.Dark)
+        {
+            throw new InvalidOperationException("Recipe Manager PropertyGrid did not select the dark host theme.");
+        }
         TextBox searchTextBox = GetActivePropertyGridSearchTextBox(grid, "Fixture recipe step");
         searchTextBox.Text = "Fixture";
         searchTextBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
@@ -3249,9 +3703,25 @@ internal static class Program
                 "FIXTURE_REFERENCE_X",
                 "FIXTURE_REFERENCE_Y",
                 "FIXTURE_REFERENCE_ANGLE",
-                "FIXTURE_MAX_ANGLE_DELTA"
+                "FIXTURE_REFERENCE_SCALE",
+                "FIXTURE_MAX_ANGLE_DELTA",
+                "FIXTURE_MIN_SCALE_RATIO",
+                "FIXTURE_MAX_SCALE_RATIO",
+                "FIXTURE_REFERENCE_IMAGE_WIDTH",
+                "FIXTURE_REFERENCE_IMAGE_HEIGHT",
+                "USE_FIND_SCALE",
+                "FIND_SCALE_MIN",
+                "FIND_SCALE_MAX",
+                "FIND_SCALE_STEP"
             }
-            : new[] { "USE_FIXTURE_FRAME", "FIXTURE_FRAME_NAME", "ALLOW_BRANCH_INPUT" };
+            : new[]
+            {
+                "USE_FIXTURE_FRAME",
+                "FIXTURE_FRAME_NAME",
+                "FIXTURE_APPLY_MODE",
+                "FIXTURE_MIN_VALID_PIXEL_RATIO",
+                "ALLOW_BRANCH_INPUT"
+            };
         PropertyDescriptorCollection descriptors = TypeDescriptor.GetProperties(grid.SelectedObject);
         string[] missingProperties = requiredProperties
             .Where(propertyName => descriptors.Find(propertyName, true) == null)
@@ -3288,8 +3758,10 @@ internal static class Program
             BringPropertyGridPropertyIntoView(grid, propertyName, step.DisplayText, 0D);
         }
 
-        double captureAdvance = string.Equals(step.ToolType, "Matching", StringComparison.OrdinalIgnoreCase) ? 160D : 120D;
-        BringPropertyGridPropertyIntoView(grid, requiredProperties[0], step.DisplayText, captureAdvance);
+        bool matchingStep = string.Equals(step.ToolType, "Matching", StringComparison.OrdinalIgnoreCase);
+        string captureProperty = matchingStep ? "FIXTURE_MIN_SCALE_RATIO" : requiredProperties[0];
+        double captureAdvance = matchingStep ? 20D : 120D;
+        BringPropertyGridPropertyIntoView(grid, captureProperty, step.DisplayText, captureAdvance);
         SaveCurrentWindowPng(shellHost, outputPath, fileName);
     }
 
@@ -3346,7 +3818,16 @@ internal static class Program
         AssertPropertyValue(matchingProperty, "FIXTURE_REFERENCE_X", 60D);
         AssertPropertyValue(matchingProperty, "FIXTURE_REFERENCE_Y", 70D);
         AssertPropertyValue(matchingProperty, "FIXTURE_REFERENCE_ANGLE", 0D);
+        AssertPropertyValue(matchingProperty, "FIXTURE_REFERENCE_SCALE", 1D);
         AssertPropertyValue(matchingProperty, "FIXTURE_MAX_ANGLE_DELTA", 2D);
+        AssertPropertyValue(matchingProperty, "FIXTURE_MIN_SCALE_RATIO", 0.8D);
+        AssertPropertyValue(matchingProperty, "FIXTURE_MAX_SCALE_RATIO", 1.8D);
+        AssertPropertyValue(matchingProperty, "FIXTURE_REFERENCE_IMAGE_WIDTH", 640);
+        AssertPropertyValue(matchingProperty, "FIXTURE_REFERENCE_IMAGE_HEIGHT", 480);
+        AssertPropertyValue(matchingProperty, "USE_FIND_SCALE", true);
+        AssertPropertyValue(matchingProperty, "FIND_SCALE_MIN", 0.75D);
+        AssertPropertyValue(matchingProperty, "FIND_SCALE_MAX", 1.35D);
+        AssertPropertyValue(matchingProperty, "FIND_SCALE_STEP", 0.05D);
         if (!VisionPipelineStepPropertyMapper.ApplyProperty(matching, matchingProperty))
         {
             throw new InvalidOperationException("Matching Fixture property object did not apply back to the pipeline step.");
@@ -3357,30 +3838,42 @@ internal static class Program
         AssertParameterValue(matching, "FIXTURE_REFERENCE_X", 60D);
         AssertParameterValue(matching, "FIXTURE_REFERENCE_Y", 70D);
         AssertParameterValue(matching, "FIXTURE_REFERENCE_ANGLE", 0D);
+        AssertParameterValue(matching, "FIXTURE_REFERENCE_SCALE", 1D);
         AssertParameterValue(matching, "FIXTURE_MAX_ANGLE_DELTA", 2D);
+        AssertParameterValue(matching, "FIXTURE_MIN_SCALE_RATIO", 0.8D);
+        AssertParameterValue(matching, "FIXTURE_MAX_SCALE_RATIO", 1.8D);
+        AssertParameterValue(matching, "FIXTURE_REFERENCE_IMAGE_WIDTH", 640D);
+        AssertParameterValue(matching, "FIXTURE_REFERENCE_IMAGE_HEIGHT", 480D);
         AssertParameterValue(matching, "NUM_MATCH", 1D);
+        AssertParameterValue(matching, "USE_FIND_SCALE", true);
+        AssertParameterValue(matching, "FIND_SCALE_MIN", 0.75D);
+        AssertParameterValue(matching, "FIND_SCALE_MAX", 1.35D);
+        AssertParameterValue(matching, "FIND_SCALE_STEP", 0.05D);
 
-        VisionPipelineStep blob = ClonePipelineStep(pipeline.Steps[1]);
-        object blobProperty = VisionPipelineStepPropertyMapper.CreateProperty(blob)
-            ?? throw new InvalidOperationException("Blob Fixture property object was not created.");
-        AssertPropertyValue(blobProperty, "USE_FIXTURE_FRAME", true);
-        AssertPropertyValue(blobProperty, "FIXTURE_FRAME_NAME", "PartFrame");
-        AssertPropertyValue(blobProperty, "ALLOW_BRANCH_INPUT", true);
-        if (!VisionPipelineStepPropertyMapper.ApplyProperty(blob, blobProperty))
+        VisionPipelineStep normalize = ClonePipelineStep(pipeline.Steps[1]);
+        object normalizeProperty = VisionPipelineStepPropertyMapper.CreateProperty(normalize)
+            ?? throw new InvalidOperationException("NormalizeImage Fixture property object was not created.");
+        AssertPropertyValue(normalizeProperty, "USE_FIXTURE_FRAME", true);
+        AssertPropertyValue(normalizeProperty, "FIXTURE_FRAME_NAME", "PartFrame");
+        AssertPropertyValue(normalizeProperty, "FIXTURE_APPLY_MODE", VisionPipelineFixtureApplyMode.NormalizeImage);
+        AssertPropertyValue(normalizeProperty, "FIXTURE_MIN_VALID_PIXEL_RATIO", 0.25D);
+        AssertPropertyValue(normalizeProperty, "ALLOW_BRANCH_INPUT", true);
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(normalize, normalizeProperty))
         {
-            throw new InvalidOperationException("Blob Fixture property object did not apply back to the pipeline step.");
+            throw new InvalidOperationException("NormalizeImage Fixture property object did not apply back to the pipeline step.");
         }
 
-        AssertParameterValue(blob, "USE_FIXTURE_FRAME", true);
-        AssertParameterValue(blob, "FIXTURE_FRAME_NAME", "PartFrame");
-        AssertParameterValue(blob, "ALLOW_BRANCH_INPUT", true);
-        AssertParameterValue(blob, "CvROI", "170,80,50,50");
-        if (!string.Equals(blob.InputLayer, "Main", StringComparison.Ordinal)
-            || !string.Equals(blob.OutputLayer, "FixtureBlob", StringComparison.Ordinal))
+        AssertParameterValue(normalize, "USE_FIXTURE_FRAME", true);
+        AssertParameterValue(normalize, "FIXTURE_FRAME_NAME", "PartFrame");
+        AssertParameterValue(normalize, "FIXTURE_APPLY_MODE", "NormalizeImage");
+        AssertParameterValue(normalize, "FIXTURE_MIN_VALID_PIXEL_RATIO", 0.25D);
+        AssertParameterValue(normalize, "ALLOW_BRANCH_INPUT", true);
+        if (!string.Equals(normalize.InputLayer, "Main", StringComparison.Ordinal)
+            || !string.Equals(normalize.OutputLayer, "DeviceAligned", StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
-                "Blob Fixture property round-trip changed layer routing. "
-                + $"Input={blob.InputLayer}, Output={blob.OutputLayer}");
+                "NormalizeImage Fixture property round-trip changed layer routing. "
+                + $"Input={normalize.InputLayer}, Output={normalize.OutputLayer}");
         }
     }
 
@@ -5057,7 +5550,9 @@ internal static class Program
         }, captureFloatingToolWindow: false, captureScreen: true);
     }
 
-    private static CaptureResult CaptureShellHostRecipeLocalValidationSet(string outputPath)
+    private static CaptureResult CaptureShellHostRecipeLocalValidationSet(
+        string outputPath,
+        bool captureReviewQueue = false)
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
         string recipeName = "Smoke_LocalValidationSet_" + Guid.NewGuid().ToString("N");
@@ -5282,6 +5777,24 @@ internal static class Program
                         + "'.");
                 }
 
+                VisionPipelineBatchRunSummaryStorage.BatchReviewQueue rebuiltReviewQueue =
+                    VisionPipelineBatchRunSummaryStorage.BuildReviewQueue(savedSummary.Results);
+                VisionPipelineBatchReviewQueueEntry? falseAcceptReview = savedSummary.ReviewQueue
+                    .FirstOrDefault(entry => entry?.Reasons?.Contains("false-accept", StringComparer.Ordinal) == true);
+                if (!string.Equals(savedSummary.ReviewQueuePolicy, VisionPipelineBatchRunSummaryStorage.ReviewQueuePolicyV1, StringComparison.Ordinal)
+                    || savedSummary.ReviewQueueSha256.Length != 64
+                    || savedSummary.ReviewQueue.Count != 4
+                    || falseAcceptReview == null
+                    || !string.Equals(savedSummary.ReviewQueueSha256, rebuiltReviewQueue.Sha256, StringComparison.Ordinal)
+                    || rebuiltReviewQueue.Entries.Count != savedSummary.ReviewQueue.Count)
+                {
+                    throw new InvalidOperationException(
+                        "Local validation set did not persist a deterministic review queue. "
+                        + $"Policy='{savedSummary.ReviewQueuePolicy}', Hash='{savedSummary.ReviewQueueSha256}', "
+                        + $"Rows={savedSummary.ReviewQueue.Count}, RebuiltHash='{rebuiltReviewQueue.Sha256}'.");
+                }
+                AssertReviewQueueMetricExtremes(savedSummary);
+
                 VisionPipelineBatchSampleRunResult[] judgmentCases =
                 {
                     new VisionPipelineBatchSampleRunResult { PairRole = "OK", ExpectedText = "ExpectedActual: Expected OK", Success = true, SampleName = "correct-accept" },
@@ -5290,7 +5803,7 @@ internal static class Program
                     new VisionPipelineBatchSampleRunResult { PairRole = "NG", ExpectedText = "ExpectedActual: Expected NG", Success = false, SampleName = "correct-reject" }
                 };
                 OpenVisionRecipeBatchSampleResultOption[] judgmentOptions = judgmentCases
-                    .Select(OpenVisionRecipeBatchSampleResultOption.Create)
+                    .Select(result => OpenVisionRecipeBatchSampleResultOption.Create(result))
                     .ToArray();
                 if (!judgmentOptions[0].JudgmentCorrect
                     || judgmentOptions[0].IsFalseAccept
@@ -5466,6 +5979,54 @@ internal static class Program
                 }
 
                 shellHost.RecipeCommands.ShowRecentBatchNgOnly = false;
+                int reviewQueuePreviewRunsBefore = shellHost.NativePreviewRunCount;
+                int reviewQueueLayerCountBefore = shellHost.LayerDocumentCount;
+                string reviewQueueInputBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string reviewQueueOutputBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                shellHost.RecipeCommands.ShowRecentBatchReviewQueueOnly = true;
+                Pump(40);
+                IReadOnlyList<OpenVisionRecipeBatchSampleResultOption> reviewQueueRows =
+                    shellHost.RecipeCommands.FilteredRecentBatchRunSampleResults;
+                if (shellHost.RecipeCommands.ShowRecentBatchNgOnly
+                    || reviewQueueRows.Count != savedSummary.ReviewQueue.Count
+                    || reviewQueueRows.Any(result => result?.IsInReviewQueue != true)
+                    || shellHost.RecipeCommands.SelectedRecentBatchSampleResultOption?.IsInReviewQueue != true
+                    || !shellHost.RecipeCommands.RecentBatchRunReviewQueueSummaryText.Contains(
+                        savedSummary.ReviewQueueSha256.Substring(0, 12),
+                        StringComparison.Ordinal)
+                    || !shellHost.RecipeCommands.OpenSelectedRecentBatchRunEvidenceCommand.CanExecute(null)
+                    || shellHost.NativePreviewRunCount != reviewQueuePreviewRunsBefore
+                    || shellHost.LayerDocumentCount != reviewQueueLayerCountBefore
+                    || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, reviewQueueInputBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, reviewQueueOutputBefore, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Run History deterministic review-queue filter or drawing navigation failed. "
+                        + $"Rows={reviewQueueRows.Count}, Summary='{shellHost.RecipeCommands.RecentBatchRunReviewQueueSummaryText}'.");
+                }
+
+                if (!OpenVisionRecipeRunEvidence.TryCreate(
+                        shellHost.RecipeCommands.SelectedRecentBatchSampleResultOption,
+                        out OpenVisionRecipeRunEvidence reviewQueueEvidence,
+                        out string reviewQueueEvidenceReason))
+                {
+                    throw new InvalidOperationException(
+                        "Review-queue selection could not resolve its retained drawing: " + reviewQueueEvidenceReason);
+                }
+
+                using (OpenVisionRecipeRunEvidenceViewerView reviewQueueEvidenceProbe = new OpenVisionRecipeRunEvidenceViewerView())
+                {
+                    if (!reviewQueueEvidenceProbe.TrySetEvidence(reviewQueueEvidence)
+                        || !reviewQueueEvidenceProbe.HasSourceImage
+                        || !reviewQueueEvidenceProbe.HasDrawingImage)
+                    {
+                        throw new InvalidOperationException(
+                            "Review-queue retained source/drawing could not be loaded into the existing viewer: "
+                            + reviewQueueEvidenceProbe.LoadError);
+                    }
+                }
+
+                shellHost.RecipeCommands.ShowRecentBatchReviewQueueOnly = false;
                 OpenVisionRecipeValidationSetImageRow captureMissingRow = shellHost.RecipeCommands.ValidationSetImageRows
                     .Single(row => string.Equals(row.Path, repairedNgImagePath, StringComparison.OrdinalIgnoreCase));
                 shellHost.RecipeCommands.SelectedValidationSetImageRow = captureMissingRow;
@@ -5551,9 +6112,23 @@ internal static class Program
                     "HostRecipeRemoveValidationSetImageButton",
                     "HostRecipeValidationSetImageList",
                     "HostRecipeRecentBatchRunList",
+                    "HostRecipeRecentBatchReviewQueuePanel",
+                    "HostRecipeRecentBatchReviewQueueOnlyToggle",
+                    "HostRecipeRecentBatchReviewQueueSummary",
                     "HostRecipeRecentBatchStepTimingPanel",
                     "HostRecipeRecentBatchStepTimingSummary",
                     "HostRecipeRecentBatchStepTimingList");
+
+                shellHost.RecipeCommands.ShowRecentBatchReviewQueueOnly = true;
+                FrameworkElement reviewQueuePanel = FindVisualChildren<FrameworkElement>(shellHost)
+                    .First(element => string.Equals(
+                        AutomationProperties.GetAutomationId(element),
+                        "HostRecipeRecentBatchReviewQueuePanel",
+                        StringComparison.Ordinal));
+                reviewQueuePanel.BringIntoView();
+                shellHost.UpdateLayout();
+                Pump(80);
+                shellHost.RecipeCommands.ShowRecentBatchReviewQueueOnly = false;
 
                 FrameworkElement panel = FindVisualChildren<FrameworkElement>(shellHost)
                     .FirstOrDefault(element => string.Equals(
@@ -5594,7 +6169,40 @@ internal static class Program
                         + $"Evidence={FormatRect(evidenceBounds)}, Editor={FormatRect(editorBounds)}, List={FormatRect(listBounds)}, Summary={FormatRect(summaryBounds)}");
                 }
 
-                evidenceBoard.BringIntoView();
+                if (captureReviewQueue)
+                {
+                    string evidenceDirectory = Path.Combine(
+                        Path.GetDirectoryName(outputPath) ?? ".",
+                        Path.GetFileNameWithoutExtension(outputPath) + ".evidence");
+                    Directory.CreateDirectory(evidenceDirectory);
+                    string savedSummaryPath = savedRun?.SummaryPath
+                        ?? throw new InvalidOperationException("Review-queue evidence summary path is missing.");
+                    File.Copy(savedSummaryPath, Path.Combine(evidenceDirectory, "summary.xml"), overwrite: true);
+                    string summaryTsvPath = Path.Combine(Path.GetDirectoryName(savedSummaryPath) ?? string.Empty, "summary.tsv");
+                    if (File.Exists(summaryTsvPath))
+                    {
+                        File.Copy(summaryTsvPath, Path.Combine(evidenceDirectory, "summary.tsv"), overwrite: true);
+                    }
+                    File.WriteAllLines(
+                        Path.Combine(evidenceDirectory, "review-queue-contract.txt"),
+                        new[]
+                        {
+                            "Policy=" + savedSummary.ReviewQueuePolicy,
+                            "Sha256=" + savedSummary.ReviewQueueSha256,
+                            "Rows=" + savedSummary.ReviewQueue.Count.ToString(CultureInfo.InvariantCulture),
+                            "Total=" + savedSummary.Results.Count.ToString(CultureInfo.InvariantCulture),
+                            "FalseAcceptIncluded=" + (falseAcceptReview != null),
+                            "DrawingResolved=true",
+                            "PreviewRunCountUnchanged=" + (shellHost.NativePreviewRunCount == reviewQueuePreviewRunsBefore),
+                            "LayerCountUnchanged=" + (shellHost.LayerDocumentCount == reviewQueueLayerCountBefore)
+                        });
+                    shellHost.RecipeCommands.ShowRecentBatchReviewQueueOnly = true;
+                    reviewQueuePanel.BringIntoView();
+                }
+                else
+                {
+                    evidenceBoard.BringIntoView();
+                }
                 shellHost.UpdateLayout();
                 Pump(100);
             }, captureFloatingToolWindow: false, captureScreen: true);
@@ -5605,7 +6213,10 @@ internal static class Program
         }
     }
 
-    private static CaptureResult CaptureShellHostRecipeLocalValidationDataset(string outputPath)
+    private static CaptureResult CaptureShellHostRecipeLocalValidationDataset(
+        string outputPath,
+        bool openDrawingEvidence = false,
+        bool captureReviewQueue = false)
     {
         string datasetRoot = Environment.GetEnvironmentVariable("OPENVISIONLAB_VALIDATION_DATASET_ROOT") ?? string.Empty;
         string sourcePipelinePath = Environment.GetEnvironmentVariable("OPENVISIONLAB_VALIDATION_PIPELINE_PATH") ?? string.Empty;
@@ -5792,6 +6403,7 @@ internal static class Program
                     Path.Combine(artifactDirectory, "batch_summary.json"),
                     JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true }));
                 WriteValidationDatasetCsv(Path.Combine(artifactDirectory, "misclassification_table.csv"), summary.Results);
+                WriteMisclassificationEvidence(artifactDirectory, summary.Results);
                 File.WriteAllText(
                     Path.Combine(artifactDirectory, "audit_summary.json"),
                     JsonSerializer.Serialize(
@@ -5822,11 +6434,412 @@ internal static class Program
                 Pump(40);
                 FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineRunHistory")!.IsSelected = true;
                 Pump(80);
-            }, captureFloatingToolWindow: false, captureScreen: true);
+
+                if (captureReviewQueue)
+                {
+                    int previewRunsBeforeQueue = shellHost.NativePreviewRunCount;
+                    int layerCountBeforeQueue = shellHost.LayerDocumentCount;
+                    string inputRouteBeforeQueue = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                    string outputRouteBeforeQueue = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                    bool containsPitchMetric = summary.ReviewQueue.Any(entry =>
+                        entry?.Reasons?.Any(reason => reason.Contains("PitchPx", StringComparison.Ordinal)) == true);
+                    shellHost.RecipeCommands.ShowRecentBatchReviewQueueOnly = true;
+                    Pump(60);
+                    IReadOnlyList<OpenVisionRecipeBatchSampleResultOption> reviewRows =
+                        shellHost.RecipeCommands.FilteredRecentBatchRunSampleResults;
+                    if (summary.ReviewQueue.Count == 0
+                        || summary.ReviewQueueSha256.Length != 64
+                        || !containsPitchMetric
+                        || reviewRows.Count != summary.ReviewQueue.Count
+                        || reviewRows.Any(row => row?.IsInReviewQueue != true)
+                        || !shellHost.RecipeCommands.RecentBatchRunReviewQueueSummaryText.Contains(
+                            summary.ReviewQueueSha256.Substring(0, 12),
+                            StringComparison.Ordinal)
+                        || shellHost.NativePreviewRunCount != previewRunsBeforeQueue
+                        || shellHost.LayerDocumentCount != layerCountBeforeQueue
+                        || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBeforeQueue, StringComparison.Ordinal)
+                        || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBeforeQueue, StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "Dataset Run History review queue did not preserve Pitch metrics, identity, or workspace state. "
+                            + $"Rows={reviewRows.Count}/{summary.ReviewQueue.Count}, Hash='{summary.ReviewQueueSha256}', Pitch={containsPitchMetric}.");
+                    }
+
+                    FrameworkElement reviewQueuePanel = FindVisualChildren<FrameworkElement>(shellHost)
+                        .First(element => string.Equals(
+                            AutomationProperties.GetAutomationId(element),
+                            "HostRecipeRecentBatchReviewQueuePanel",
+                            StringComparison.Ordinal));
+                    reviewQueuePanel.BringIntoView();
+                    shellHost.UpdateLayout();
+                    Pump(100);
+
+                    if (!string.IsNullOrWhiteSpace(run.SummaryPath) && File.Exists(run.SummaryPath))
+                    {
+                        File.Copy(run.SummaryPath, Path.Combine(artifactDirectory, "saved_batch_summary.xml"), overwrite: true);
+                    }
+                    File.WriteAllLines(
+                        Path.Combine(artifactDirectory, "review_queue_contract.txt"),
+                        new[]
+                        {
+                            "Policy=" + summary.ReviewQueuePolicy,
+                            "Sha256=" + summary.ReviewQueueSha256,
+                            "Rows=" + summary.ReviewQueue.Count.ToString(CultureInfo.InvariantCulture),
+                            "Total=" + summary.Results.Count.ToString(CultureInfo.InvariantCulture),
+                            "ContainsPitchMetric=" + containsPitchMetric,
+                            "PreviewRunCountUnchanged=" + (shellHost.NativePreviewRunCount == previewRunsBeforeQueue),
+                            "LayerCountUnchanged=" + (shellHost.LayerDocumentCount == layerCountBeforeQueue)
+                        });
+                }
+
+                if (openDrawingEvidence)
+                {
+                    int layerCountBefore = shellHost.LayerDocumentCount;
+                    int previewRunsBefore = shellHost.NativePreviewRunCount;
+                    string inputRouteBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                    string outputRouteBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                    string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+                    bool previewResultBefore = shellHost.HasNativePreviewResult;
+                    if (!OpenVisionRecipeRunEvidence.TryCreate(
+                            shellHost.RecipeCommands.SelectedRecentBatchSampleResultOption,
+                            out OpenVisionRecipeRunEvidence storedEvidence,
+                            out string evidenceReason))
+                    {
+                        throw new InvalidOperationException("Stored batch evidence could not be resolved: " + evidenceReason);
+                    }
+
+                    if (!storedEvidence.IsStoredSourceVerified)
+                    {
+                        throw new InvalidOperationException(
+                            "Stored batch evidence did not use a SHA-256-verified run-time source snapshot.");
+                    }
+
+                    bool expectsTwoPinArrayGapDrawings = SerializeHelper.TryLoadFromXmlText(
+                            pipelineXml,
+                            out VisionPipeline drawingEvidencePipeline,
+                            out _)
+                        && drawingEvidencePipeline.Steps.Count(step => step?.Enabled == true) == 2
+                        && drawingEvidencePipeline.Steps
+                            .Where(step => step?.Enabled == true)
+                            .All(step => string.Equals(step.ToolType, "PinArrayGap", StringComparison.OrdinalIgnoreCase));
+                    if (expectsTwoPinArrayGapDrawings
+                        && (storedEvidence.Drawings.Count != 2
+                            || storedEvidence.Drawings.Any(drawing =>
+                                !string.Equals(drawing?.ToolType, "PinArrayGap", StringComparison.OrdinalIgnoreCase))))
+                    {
+                        throw new InvalidOperationException(
+                            "Stored PinArrayGap evidence must contain exactly two executed row drawings. "
+                            + "DrawingCount=" + storedEvidence.Drawings.Count.ToString(CultureInfo.InvariantCulture));
+                    }
+
+                    if (expectsTwoPinArrayGapDrawings)
+                    {
+                        AssertExecutedPinArrayGapFailurePreservesPriorRowDrawing(
+                            recipeName,
+                            pipelineXml,
+                            okPaths[0]);
+                    }
+
+                    string evidenceArtifactDirectory = Path.Combine(artifactDirectory, "selected_run_report");
+                    Directory.CreateDirectory(evidenceArtifactDirectory);
+                    string sourceReportDirectory = Path.GetDirectoryName(storedEvidence.DrawingImagePath) ?? string.Empty;
+                    foreach (string artifact in Directory.GetFiles(sourceReportDirectory))
+                    {
+                        File.Copy(artifact, Path.Combine(evidenceArtifactDirectory, Path.GetFileName(artifact)), overwrite: true);
+                    }
+
+                    using (OpenVisionRecipeRunEvidenceViewerView evidenceProbe = new OpenVisionRecipeRunEvidenceViewerView())
+                    {
+                        if (!evidenceProbe.TrySetEvidence(storedEvidence))
+                        {
+                            throw new InvalidOperationException(
+                                "Stored batch evidence images could not be assigned to the viewer: "
+                                + evidenceProbe.LoadError);
+                        }
+                        if (expectsTwoPinArrayGapDrawings)
+                        {
+                            ComboBox drawingSelector = evidenceProbe.FindName("cmbStoredDrawing") as ComboBox
+                                ?? throw new InvalidOperationException("Stored drawing selector was not found.");
+                            drawingSelector.SelectedIndex = 0;
+                            drawingSelector.SelectedIndex = 1;
+                            if (evidenceProbe.DrawingCount != 2
+                                || !evidenceProbe.HasDrawingImage
+                                || !string.Equals(
+                                    evidenceProbe.SelectedStepText,
+                                    storedEvidence.Drawings[1].StepText,
+                                    StringComparison.Ordinal))
+                            {
+                                throw new InvalidOperationException(
+                                    "Stored evidence viewer could not select the second PinArrayGap row drawing. "
+                                    + $"DrawingCount={evidenceProbe.DrawingCount}, Selected='{evidenceProbe.SelectedStepText}'.");
+                            }
+                        }
+                    }
+
+                    if (!shellHost.RecipeCommands.OpenSelectedRecentBatchRunEvidenceCommand.CanExecute(null))
+                    {
+                        shellHost.RecipeCommands.OpenSelectedRecentBatchRunEvidenceCommand.Execute(null);
+                        throw new InvalidOperationException(
+                            "Stored batch evidence was not available for the selected sample. "
+                            + "SampleImage='" + shellHost.RecipeCommands.SelectedRecentBatchSampleResultOption?.SampleImagePath + "', "
+                            + "RunReport='" + shellHost.RecipeCommands.SelectedRecentBatchSampleResultOption?.RunReportPath + "', "
+                            + "ReportExists=" + File.Exists(shellHost.RecipeCommands.SelectedRecentBatchSampleResultOption?.RunReportPath)
+                            + ". "
+                            + "Reason='" + shellHost.RecipeCommands.StatusText + "'. "
+                            + shellHost.RecipeCommands.SelectedRecentBatchRunReviewText);
+                    }
+
+                    shellHost.RecipeCommands.OpenSelectedRecentBatchRunEvidenceCommand.Execute(null);
+                    Pump(120);
+                    OpenVisionFloatingToolWindow? evidenceWindow = Application.Current.Windows
+                        .OfType<OpenVisionFloatingToolWindow>()
+                        .LastOrDefault(item => item.IsVisible);
+                    OpenVisionRecipeRunEvidenceViewerView? evidenceViewer = evidenceWindow?.HostedContent
+                        as OpenVisionRecipeRunEvidenceViewerView;
+                    if (evidenceWindow == null
+                        || evidenceViewer == null
+                        || !evidenceViewer.HasSourceImage
+                        || !evidenceViewer.HasDrawingImage
+                        || shellHost.LayerDocumentCount != layerCountBefore
+                        || shellHost.NativePreviewRunCount != previewRunsBefore
+                        || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBefore, StringComparison.Ordinal)
+                        || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBefore, StringComparison.Ordinal)
+                        || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal)
+                        || shellHost.HasNativePreviewResult != previewResultBefore)
+                    {
+                        throw new InvalidOperationException(
+                            "Stored batch evidence viewer did not keep source/drawing images or changed workspace execution state. "
+                            + $"ViewerType={evidenceWindow?.HostedContent?.GetType().Name ?? "-"}, "
+                            + $"Source={evidenceViewer?.HasSourceImage}, Drawing={evidenceViewer?.HasDrawingImage}, "
+                            + $"Status='{shellHost.RecipeCommands.StatusText}', "
+                            + $"Layers={layerCountBefore}->{shellHost.LayerDocumentCount}, "
+                            + $"Preview={previewRunsBefore}->{shellHost.NativePreviewRunCount}, "
+                            + $"Input={inputRouteBefore}->{shellHost.ActiveNativeRouteInputLayerNameForTest}, "
+                            + $"Output={outputRouteBefore}->{shellHost.ActiveNativeRouteOutputLayerNameForTest}, "
+                            + $"Active={activeLayerBefore}->{shellHost.ActiveHostLayerTitle}, "
+                            + $"PreviewResult={previewResultBefore}->{shellHost.HasNativePreviewResult}");
+                    }
+                }
+            }, captureFloatingToolWindow: openDrawingEvidence, captureScreen: true);
         }
         finally
         {
             RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static void AssertExecutedPinArrayGapFailurePreservesPriorRowDrawing(
+        string recipeName,
+        string pipelineXml,
+        string sourceImagePath)
+    {
+        if (!SerializeHelper.TryLoadFromXmlText(pipelineXml, out VisionPipeline pipeline, out string parseError)
+            || pipeline == null
+            || pipeline.Steps.Count(step => step?.Enabled == true) != 2)
+        {
+            throw new InvalidOperationException("Could not prepare the executed-row drawing boundary smoke: " + parseError);
+        }
+
+        using CvMat source = Cv.ImRead(sourceImagePath, CvImreadModes.Unchanged);
+        if (source.Empty())
+        {
+            throw new InvalidOperationException("Executed-row drawing boundary smoke source could not be loaded.");
+        }
+
+        List<VisionPipelineStep> steps = pipeline.Steps.Where(step => step?.Enabled == true).ToList();
+        steps[0].Name = "Row";
+        steps[1].Name = "Row Bottom";
+        VisionRecipeStepRunSummary CreateSummary(VisionPipelineStep step, int index, bool success)
+        {
+            return new VisionRecipeStepRunSummary
+            {
+                Index = index,
+                Name = step.Name,
+                ToolType = step.ToolType,
+                Enabled = true,
+                Skipped = false,
+                InputLayer = step.InputLayer,
+                OutputLayer = step.OutputLayer,
+                Status = success ? "OK" : "ERROR",
+                ToolSuccess = success,
+                Success = success,
+                AcceptancePassed = success,
+                AcceptanceMessage = success ? "Acceptance passed." : "Synthetic executed failure before geometry.",
+                Message = success ? "Completed." : "Synthetic executed failure before geometry.",
+                ErrorCode = success ? 0 : -1,
+                ErrorName = success ? "None" : "SmokeExecutedFailure",
+                Parameters = new Dictionary<string, string>(step.Parameters, StringComparer.OrdinalIgnoreCase)
+            };
+        }
+
+        using VisionRecipeRunResult result = new VisionRecipeRunResult
+        {
+            PipelineName = pipeline.Name,
+            Success = false,
+            Message = "Synthetic second-row executed failure for persisted-drawing coverage.",
+            ResultImage = source.Clone(),
+            ResultImageWidth = source.Width,
+            ResultImageHeight = source.Height,
+            Steps = new List<VisionRecipeStepRunSummary>
+            {
+                CreateSummary(steps[0], 1, success: true),
+                CreateSummary(steps[1], 2, success: false)
+            }
+        };
+        DateTime startedAt = DateTime.UtcNow;
+        string reportPath = VisionPipelineRunReportStorage.Save(
+            recipeName,
+            pipeline,
+            result,
+            startedAt,
+            startedAt.AddMilliseconds(1),
+            "ExecutedRowDrawingBoundary",
+            source);
+        VisionPipelineRunReport report = VisionPipelineRunReportStorage.Load(reportPath)
+            ?? throw new InvalidOperationException("Executed-row drawing boundary report could not be loaded.");
+        string reportDirectory = Path.GetDirectoryName(reportPath) ?? string.Empty;
+        List<VisionPipelineStepRunReport> storedRows = report.Steps
+            .Where(step => step?.Enabled == true
+                && !step.Skipped
+                && string.Equals(step.ToolType, "PinArrayGap", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (storedRows.Count != 2
+            || storedRows.Any(step => string.IsNullOrWhiteSpace(step.OverlayImageFile)
+                || !File.Exists(Path.Combine(reportDirectory, step.OverlayImageFile))))
+        {
+            throw new InvalidOperationException(
+                "An executed PinArrayGap failure did not preserve both row drawings. "
+                + "Stored=" + storedRows.Count.ToString(CultureInfo.InvariantCulture));
+        }
+
+        OpenVisionRecipeBatchSampleResultOption selectionProbe = OpenVisionRecipeBatchSampleResultOption.Create(
+            new VisionPipelineBatchSampleRunResult
+            {
+                SampleName = "Prefix-name default drawing probe",
+                Status = "NG",
+                Success = false,
+                FailedStep = "02 Row Bottom [ERROR] - Synthetic executed failure before geometry.",
+                SampleImagePath = sourceImagePath,
+                ReportPath = sourceImagePath,
+                PairRole = "NG",
+                ExpectedText = "ExpectedActual:NG",
+                RunReportPath = reportPath
+            });
+        if (!OpenVisionRecipeRunEvidence.TryCreate(
+                selectionProbe,
+                out OpenVisionRecipeRunEvidence selectionEvidence,
+                out string selectionError)
+            || !selectionEvidence.IsStoredSourceVerified
+            || selectionEvidence.DefaultDrawing?.Index != 2)
+        {
+            throw new InvalidOperationException(
+                "Stored evidence did not resolve the stable failed-Step index before a prefix name. "
+                + selectionError);
+        }
+    }
+
+    private static void AssertReviewQueueMetricExtremes(VisionPipelineBatchRunSummary summary)
+    {
+        List<VisionPipelineBatchSampleRunResult> sourceRows = summary?.Results?
+            .Where(result => result != null
+                && !string.IsNullOrWhiteSpace(result.RunReportPath)
+                && File.Exists(result.RunReportPath))
+            .Take(2)
+            .ToList() ?? new List<VisionPipelineBatchSampleRunResult>();
+        if (sourceRows.Count != 2)
+        {
+            throw new InvalidOperationException("Review-queue metric-extreme probe requires two linked reports.");
+        }
+
+        string probeDirectory = Path.Combine(Path.GetTempPath(), "OpenVisionLabReviewQueue_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(probeDirectory);
+        try
+        {
+            List<VisionPipelineBatchSampleRunResult> probeRows = new List<VisionPipelineBatchSampleRunResult>();
+            int metricStepIndex = 0;
+            for (int index = 0; index < sourceRows.Count; index++)
+            {
+                VisionPipelineRunReport report = VisionPipelineRunReportStorage.Load(sourceRows[index].RunReportPath)
+                    ?? throw new InvalidOperationException("Review-queue metric-extreme probe could not load a linked report.");
+                VisionPipelineStepRunReport step = report.Steps?.FirstOrDefault(item => item != null)
+                    ?? throw new InvalidOperationException("Review-queue metric-extreme probe report has no Step.");
+                metricStepIndex = step.Index;
+                step.Metrics ??= new List<VisionPipelineMetricRunReport>();
+                step.Metrics.Add(new VisionPipelineMetricRunReport
+                {
+                    Name = "ReviewQueueProbe",
+                    Value = index == 0 ? 10D : 20D
+                });
+                report.SourceImageSha256 = (index + 1).ToString("X64", CultureInfo.InvariantCulture);
+                string reportPath = Path.Combine(probeDirectory, "report-" + index.ToString(CultureInfo.InvariantCulture) + ".xml");
+                SerializeHelper.SaveXmlFile(reportPath, report);
+                probeRows.Add(new VisionPipelineBatchSampleRunResult
+                {
+                    SampleName = "metric-probe-" + index.ToString(CultureInfo.InvariantCulture),
+                    SampleImagePath = sourceRows[index].SampleImagePath,
+                    RunReportPath = reportPath,
+                    Success = true,
+                    PairRole = index == 0 ? "A" : "B"
+                });
+            }
+
+            VisionPipelineBatchRunSummaryStorage.BatchReviewQueue queue =
+                VisionPipelineBatchRunSummaryStorage.BuildReviewQueue(probeRows);
+            string minimumReason = "metric-min:" + metricStepIndex.ToString(CultureInfo.InvariantCulture) + ":ReviewQueueProbe";
+            string maximumReason = "metric-max:" + metricStepIndex.ToString(CultureInfo.InvariantCulture) + ":ReviewQueueProbe";
+            if (queue.Entries.FirstOrDefault(entry => entry.ResultIndex == 0)?.Reasons.Contains(minimumReason, StringComparer.Ordinal) != true
+                || queue.Entries.FirstOrDefault(entry => entry.ResultIndex == 1)?.Reasons.Contains(maximumReason, StringComparer.Ordinal) != true
+                || queue.Entries.Any(entry => !entry.Reasons.Contains("evidence-gap", StringComparer.Ordinal))
+                || !string.Equals(
+                    queue.Sha256,
+                    VisionPipelineBatchRunSummaryStorage.BuildReviewQueue(probeRows).Sha256,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Review-queue metric extrema, copied-report evidence gaps, or deterministic hash were not preserved.");
+            }
+
+            VisionPipelineBatchRunSummaryStorage.BatchReviewQueue evidenceGapQueue =
+                VisionPipelineBatchRunSummaryStorage.BuildReviewQueue(new[]
+                {
+                    new VisionPipelineBatchSampleRunResult { SampleName = "missing-pass", Success = true },
+                    new VisionPipelineBatchSampleRunResult { SampleName = "missing-fail", Success = false }
+                });
+            if (evidenceGapQueue.Entries.Count != 2
+                || evidenceGapQueue.Entries.Any(entry => !entry.Reasons.Contains("evidence-gap", StringComparer.Ordinal))
+                || evidenceGapQueue.Entries.First(entry => entry.ResultIndex == 1)
+                    .Reasons.Contains("runtime-failure", StringComparer.Ordinal) != true)
+            {
+                throw new InvalidOperationException("Review-queue runtime failure or missing-evidence coverage was not preserved.");
+            }
+
+            List<VisionPipelineBatchSampleRunResult> scaleRows = Enumerable.Range(0, 500)
+                .Select(index => new VisionPipelineBatchSampleRunResult
+                {
+                    SampleName = "scale-" + index.ToString("D4", CultureInfo.InvariantCulture),
+                    SampleImagePath = "scale-" + index.ToString("D4", CultureInfo.InvariantCulture) + ".png",
+                    RunReportPath = sourceRows[0].RunReportPath,
+                    Success = true,
+                    PairRole = index < 250 ? "OK" : "NG"
+                })
+                .ToList();
+            VisionPipelineBatchRunSummaryStorage.BatchReviewQueue scaleQueue =
+                VisionPipelineBatchRunSummaryStorage.BuildReviewQueue(scaleRows);
+            if (scaleQueue.Entries.Count != 6
+                || scaleQueue.Entries.Count(entry => entry.Reasons.Contains("hash-audit:OK", StringComparer.Ordinal)) != 3
+                || scaleQueue.Entries.Count(entry => entry.Reasons.Contains("hash-audit:NG", StringComparer.Ordinal)) != 3)
+            {
+                throw new InvalidOperationException(
+                    "Review-queue 500-row bounded hash audit was not 3 rows per declared stratum. "
+                    + "Rows=" + scaleQueue.Entries.Count.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(probeDirectory))
+            {
+                Directory.Delete(probeDirectory, recursive: true);
+            }
         }
     }
 
@@ -5918,6 +6931,128 @@ internal static class Program
         }
 
         File.WriteAllLines(path, lines);
+    }
+
+    private static void WriteMisclassificationEvidence(
+        string artifactDirectory,
+        IReadOnlyList<VisionPipelineBatchSampleRunResult> results)
+    {
+        string evidenceRoot = Path.Combine(artifactDirectory, "misclassification_evidence");
+        Directory.CreateDirectory(evidenceRoot);
+        List<string> manifest = new List<string>
+        {
+            "EvidenceId,Expected,Actual,Judgment,SampleName,OriginalImage,DrawingImage,RunReport,FailedStep,Message"
+        };
+        int evidenceIndex = 0;
+        foreach (VisionPipelineBatchSampleRunResult result in results ?? Array.Empty<VisionPipelineBatchSampleRunResult>())
+        {
+            bool expectedOk = string.Equals(result?.PairRole, "OK", StringComparison.OrdinalIgnoreCase);
+            bool actualOk = result?.Success == true;
+            if (result == null || expectedOk == actualOk)
+            {
+                continue;
+            }
+
+            evidenceIndex++;
+            string evidenceId = evidenceIndex.ToString("000", CultureInfo.InvariantCulture)
+                + "_"
+                + (expectedOk ? "FalseReject" : "FalseAccept")
+                + "_"
+                + SanitizeArtifactFileName(Path.GetFileNameWithoutExtension(result.SampleName));
+            string sampleDirectory = Path.Combine(evidenceRoot, evidenceId);
+            Directory.CreateDirectory(sampleDirectory);
+
+            string originalFile = CopyArtifactFile(result.SampleImagePath, sampleDirectory, "original");
+            string runReportFile = CopyArtifactFile(result.RunReportPath, sampleDirectory, "run_report");
+            VisionPipelineRunReport? report = string.IsNullOrWhiteSpace(result.RunReportPath)
+                ? null
+                : VisionPipelineRunReportStorage.Load(result.RunReportPath);
+            string reportDirectory = string.IsNullOrWhiteSpace(result.RunReportPath)
+                ? string.Empty
+                : Path.GetDirectoryName(result.RunReportPath) ?? string.Empty;
+            VisionPipelineStepRunReport? displayStep = report?.Steps?
+                .Where(step => step != null)
+                .Reverse()
+                .FirstOrDefault(step => !string.IsNullOrWhiteSpace(ResolveReportArtifactPath(reportDirectory, step.OverlayImageFile))
+                    || !string.IsNullOrWhiteSpace(ResolveReportArtifactPath(reportDirectory, step.ResultImageFile)));
+            string drawingPath = displayStep == null
+                ? string.Empty
+                : FirstExistingArtifactPath(
+                    ResolveReportArtifactPath(reportDirectory, displayStep.OverlayImageFile),
+                    ResolveReportArtifactPath(reportDirectory, displayStep.ResultImageFile));
+            string drawingFile = CopyArtifactFile(drawingPath, sampleDirectory, "drawing");
+
+            manifest.Add(string.Join(",", new[]
+            {
+                EscapeCsv(evidenceId),
+                EscapeCsv(expectedOk ? "OK" : "NG"),
+                EscapeCsv(actualOk ? "OK" : "NG"),
+                EscapeCsv(expectedOk ? "FalseReject" : "FalseAccept"),
+                EscapeCsv(result.SampleName),
+                EscapeCsv(originalFile),
+                EscapeCsv(drawingFile),
+                EscapeCsv(runReportFile),
+                EscapeCsv(result.FailedStep),
+                EscapeCsv(result.Message)
+            }));
+        }
+
+        File.WriteAllLines(Path.Combine(evidenceRoot, "manifest.csv"), manifest);
+        File.WriteAllText(
+            Path.Combine(evidenceRoot, "README.md"),
+            "# Misclassification drawing evidence" + Environment.NewLine + Environment.NewLine
+            + "Each child folder contains the original sample, persisted detection drawing, and Run Report for one False Reject or False Accept." + Environment.NewLine
+            + "The runner copies this evidence before it cleans its reserved Smoke recipe workspace." + Environment.NewLine
+            + "Rows: " + evidenceIndex.ToString(CultureInfo.InvariantCulture) + Environment.NewLine);
+    }
+
+    private static string CopyArtifactFile(string sourcePath, string destinationDirectory, string destinationStem)
+    {
+        if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath))
+        {
+            return string.Empty;
+        }
+
+        string extension = Path.GetExtension(sourcePath);
+        string destinationFile = destinationStem + (string.IsNullOrWhiteSpace(extension) ? string.Empty : extension);
+        File.Copy(sourcePath, Path.Combine(destinationDirectory, destinationFile), overwrite: true);
+        return destinationFile;
+    }
+
+    private static string ResolveReportArtifactPath(string reportDirectory, string imageFile)
+    {
+        if (string.IsNullOrWhiteSpace(imageFile))
+        {
+            return string.Empty;
+        }
+
+        string path = Path.IsPathRooted(imageFile)
+            ? imageFile
+            : Path.Combine(reportDirectory, imageFile);
+        return File.Exists(path) ? path : string.Empty;
+    }
+
+    private static string FirstExistingArtifactPath(params string[] paths)
+    {
+        return paths?.FirstOrDefault(path => !string.IsNullOrWhiteSpace(path) && File.Exists(path)) ?? string.Empty;
+    }
+
+    private static string SanitizeArtifactFileName(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "Sample";
+        }
+
+        char[] invalid = Path.GetInvalidFileNameChars();
+        string sanitized = new string(value.Select(character => invalid.Contains(character) ? '_' : character).ToArray());
+        return string.IsNullOrWhiteSpace(sanitized) ? "Sample" : sanitized;
+    }
+
+    private static string EscapeCsv(string? value)
+    {
+        string text = value ?? string.Empty;
+        return "\"" + text.Replace("\"", "\"\"") + "\"";
     }
 
     private static double? FindMetric(VisionPipelineStepRunReport? step, string name)
@@ -6272,6 +7407,190 @@ internal static class Program
         }, captureFloatingToolWindow: false);
     }
 
+    private static CaptureResult CaptureShellHostRecipeHybridRelativeRoiGuidedSetup(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        CleanupTransientRecipeWorkspaces();
+
+        string recipe = "Smoke_HybridRelativeRoi_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+        VisionPipelineStorage.Save(recipe, CreateRecipeContextSmokePipeline("Hybrid_Relative_Roi_Source", 1));
+        VisionPipelineStorage.SaveActivePipelineName(recipe, "Hybrid_Relative_Roi_Source");
+        OpenVisionShellHostView shellHost = CreateShellHost(recipe, seedMainLayer: false);
+        try
+        {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                ToggleButton recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager")
+                    ?? throw new InvalidOperationException("Hybrid relative-ROI smoke could not find Recipe Manager.");
+                recipeManagerButton.IsChecked = true;
+                Pump(100);
+                TabItem guidedSetupTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipeGuidedSetup")
+                    ?? throw new InvalidOperationException("Hybrid relative-ROI smoke could not find Guided Setup.");
+                guidedSetupTab.IsSelected = true;
+
+                string templatePath = Path.GetFullPath(Path.Combine(
+                    "docs",
+                    "samples",
+                    "public",
+                    "templates",
+                    "Matching_DiePad_Synthetic_Template.png"));
+                if (!File.Exists(templatePath))
+                {
+                    throw new InvalidOperationException("Hybrid relative-ROI smoke locator template is missing: " + templatePath);
+                }
+
+                int runsBefore = shellHost.NativePreviewRunCount;
+                int layersBefore = shellHost.LayerDocumentCount;
+                shellHost.RecipeCommands.SelectedLlmToolTemplate = OpenVisionGuidedSetupCatalog.HybridRelativeRoiGapTemplate;
+                shellHost.RecipeCommands.LlmReferenceImagePath = templatePath;
+                shellHost.RecipeCommands.MatchingIntentSearchRoiText = "0,0,572,420";
+                shellHost.RecipeCommands.HybridReferencePoseText = "286,210,0,1,572,420";
+                shellHost.RecipeCommands.HybridRelativeRoiText = "100,80,300,100";
+                shellHost.RecipeCommands.MatchingIntentScoreMinText = "0.8";
+                shellHost.RecipeCommands.HybridScoreMarginText = "10";
+                shellHost.RecipeCommands.HybridAngleMinimumText = "-5";
+                shellHost.RecipeCommands.HybridAngleMaximumText = "5";
+                shellHost.RecipeCommands.HybridScaleRatioMinimumText = "0.8";
+                shellHost.RecipeCommands.HybridScaleRatioMaximumText = "1.8";
+                shellHost.RecipeCommands.HybridMinimumValidPixelRatioText = "0.25";
+                Pump(80);
+
+                FrameworkElement panel = FindVisualChildren<FrameworkElement>(shellHost)
+                    .First(item => string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "HostRecipeGuidedSetupHybridRelativeRoiInputs",
+                        StringComparison.Ordinal));
+                panel.BringIntoView();
+                shellHost.UpdateLayout();
+                Pump(80);
+
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "Hybrid relative-ROI Guided Setup inputs",
+                    "HostRecipeGuidedSetupHybridRelativeRoiInputs",
+                    "HostRecipeGuidedSetupHybridLocatorTemplatePath",
+                    "HostRecipeGuidedSetupHybridSearchRoiText",
+                    "HostRecipeGuidedSetupHybridReferencePoseText",
+                    "HostRecipeGuidedSetupHybridMeasurementRoiText",
+                    "HostRecipeGuidedSetupHybridScoreMinimumText",
+                    "HostRecipeGuidedSetupHybridScoreMarginText",
+                    "HostRecipeGuidedSetupHybridAngleMinimumText",
+                    "HostRecipeGuidedSetupHybridAngleMaximumText",
+                    "HostRecipeGuidedSetupHybridScaleRatioMinimumText",
+                    "HostRecipeGuidedSetupHybridScaleRatioMaximumText",
+                    "HostRecipeGuidedSetupHybridMinimumValidPixelRatioText",
+                    "HostRecipeGuidedSetupHybridBoundary");
+                if (!shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                    || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("LOCATION GATED", StringComparison.OrdinalIgnoreCase)
+                    || !shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException(
+                        "Hybrid relative-ROI Guided Setup did not become ready. "
+                        + shellHost.RecipeCommands.GuidedSetupIntentInputStatusText);
+                }
+
+                shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.Execute(null);
+                Pump(120);
+                string validXml = shellHost.RecipeCommands.LlmXmlDraftText;
+                if (!SerializeHelper.TryLoadFromXmlText(validXml, out VisionPipeline validPipeline, out string parseError))
+                {
+                    throw new InvalidOperationException("Hybrid relative-ROI starter XML could not be parsed: " + parseError);
+                }
+
+                string[] expectedTools = { "Matching", "Matching", "RotateScale", "LineDistance" };
+                string[] actualTools = validPipeline.Steps.Where(step => step != null && step.Enabled).Select(step => step.ToolType).ToArray();
+                if (!actualTools.SequenceEqual(expectedTools, StringComparer.OrdinalIgnoreCase)
+                    || !string.Equals(validPipeline.Steps[2].InputLayer, "Main", StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(validPipeline.Steps[2].OutputLayer, "DeviceAligned", StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(validPipeline.Steps[3].InputLayer, "DeviceAligned", StringComparison.OrdinalIgnoreCase)
+                    || !validPipeline.Steps[3].Parameters.TryGetValue("CvROI", out string? measurementRoi)
+                    || !string.Equals(measurementRoi, "100,80,300,100", StringComparison.Ordinal)
+                    || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("Hybrid relative-ROI contract: OK", StringComparison.OrdinalIgnoreCase)
+                    || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("LOCATION GATED / MEASURE ONLY / NOT JUDGED", StringComparison.OrdinalIgnoreCase)
+                    || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("drawings: WAIT", StringComparison.OrdinalIgnoreCase)
+                    || !shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null)
+                    || shellHost.NativePreviewRunCount != runsBefore
+                    || shellHost.LayerDocumentCount != layersBefore)
+                {
+                    throw new InvalidOperationException(
+                        "Hybrid relative-ROI starter did not preserve its locked four-Step route or no-auto-run contract. "
+                        + shellHost.RecipeCommands.LlmXmlDraftValidationReport);
+                }
+
+                Func<VisionPipeline, string> serializeMutation = pipeline =>
+                {
+                    string tempPath = Path.Combine(Path.GetTempPath(), "OpenVisionLab_hybrid_relative_roi_" + Guid.NewGuid().ToString("N") + ".xml");
+                    try
+                    {
+                        if (!SerializeHelper.SaveXmlFile(tempPath, pipeline))
+                        {
+                            throw new InvalidOperationException("Could not serialize a hybrid relative-ROI mutation.");
+                        }
+
+                        return File.ReadAllText(tempPath);
+                    }
+                    finally
+                    {
+                        TryDeleteFile(tempPath);
+                    }
+                };
+
+                if (!SerializeHelper.TryLoadFromXmlText(validXml, out VisionPipeline wrongToolPipeline, out _))
+                {
+                    throw new InvalidOperationException("Could not clone the hybrid relative-ROI starter for tool mutation.");
+                }
+
+                wrongToolPipeline.Steps[2].ToolType = "Threshold";
+                shellHost.RecipeCommands.LlmXmlDraftText = serializeMutation(wrongToolPipeline);
+                if (shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest()
+                    || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("Hybrid relative-ROI contract: NG", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("Hybrid relative-ROI validation accepted a changed NormalizeImage tool family.");
+                }
+
+                if (!SerializeHelper.TryLoadFromXmlText(validXml, out VisionPipeline wrongRoiPipeline, out _))
+                {
+                    throw new InvalidOperationException("Could not clone the hybrid relative-ROI starter for ROI mutation.");
+                }
+
+                wrongRoiPipeline.Steps[3].Parameters["CvROI"] = "101,80,300,100";
+                shellHost.RecipeCommands.LlmXmlDraftText = serializeMutation(wrongRoiPipeline);
+                if (shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest())
+                {
+                    throw new InvalidOperationException("Hybrid relative-ROI validation accepted a changed measurement ROI.");
+                }
+
+                if (!SerializeHelper.TryLoadFromXmlText(validXml, out VisionPipeline weakGatePipeline, out _))
+                {
+                    throw new InvalidOperationException("Could not clone the hybrid relative-ROI starter for gate mutation.");
+                }
+
+                weakGatePipeline.Steps[0].AcceptanceMetricMinimum = 1D;
+                shellHost.RecipeCommands.LlmXmlDraftText = serializeMutation(weakGatePipeline);
+                if (shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest())
+                {
+                    throw new InvalidOperationException("Hybrid relative-ROI validation accepted a weakened ambiguity gate.");
+                }
+
+                shellHost.RecipeCommands.LlmXmlDraftText = validXml;
+                if (!shellHost.RecipeCommands.ValidateLlmXmlDraftTextForTest()
+                    || shellHost.NativePreviewRunCount != runsBefore
+                    || shellHost.LayerDocumentCount != layersBefore)
+                {
+                    throw new InvalidOperationException("Hybrid relative-ROI valid starter did not restore import readiness without side effects.");
+                }
+
+                panel.BringIntoView();
+                shellHost.UpdateLayout();
+                Pump(80);
+            }, captureFloatingToolWindow: false, captureScreen: false);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipe);
+        }
+    }
+
     private static CaptureResult CaptureShellHostRecipeGuidedSetup(string outputPath)
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
@@ -6282,8 +7601,10 @@ internal static class Program
         VisionPipelineStorage.SaveActivePipelineName(recipe, "Guided_Setup_Source");
 
         OpenVisionShellHostView shellHost = CreateShellHost(recipe, seedMainLayer: false);
-        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        try
         {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
             ToggleButton? recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager");
             if (recipeManagerButton == null)
             {
@@ -7053,6 +8374,641 @@ internal static class Program
                 "HostRecipeGuidedSetupReferenceDifferenceBoundary",
                 "HostRecipeGuidedSetupIntentInputStatus");
 
+            int pinArrayGapSelectionRunsBefore = shellHost.NativePreviewRunCount;
+            int pinArrayGapSelectionLayersBefore = shellHost.LayerDocumentCount;
+            string pinArrayGapSelectionInputBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+            string pinArrayGapSelectionOutputBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+            string pinArrayGapSelectionActiveLayerBefore = shellHost.ActiveHostLayerTitle;
+            bool pinArrayGapSelectionPreviewResultBefore = shellHost.HasNativePreviewResult;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+            OpenVisionRecipeSampleOption? pinArrayGapSample = shellHost.RecipeCommands.SelectedSampleOption
+                ?? shellHost.RecipeCommands.SampleOptions.FirstOrDefault(option =>
+                    option?.Sample != null
+                    && !string.IsNullOrWhiteSpace(option.Sample.ImageFullPath)
+                    && File.Exists(option.Sample.ImageFullPath));
+            string pinArrayGapSamplePath = pinArrayGapSample?.Sample?.ImageFullPath ?? string.Empty;
+            if (pinArrayGapSample == null || !File.Exists(pinArrayGapSamplePath))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup PinArrayGap smoke requires an existing selected sample image.");
+            }
+
+            shellHost.RecipeCommands.SelectedSampleOption = pinArrayGapSample;
+            int pinArrayGapSourceWidth;
+            int pinArrayGapSourceHeight;
+            using (Bitmap sourceImage = new Bitmap(pinArrayGapSamplePath))
+            {
+                pinArrayGapSourceWidth = sourceImage.Width;
+                pinArrayGapSourceHeight = sourceImage.Height;
+            }
+
+            if (pinArrayGapSourceWidth <= 0 || pinArrayGapSourceHeight < 4)
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup PinArrayGap selected sample is too small for two row ROIs. "
+                    + $"Path='{pinArrayGapSamplePath}', Size={pinArrayGapSourceWidth}x{pinArrayGapSourceHeight}");
+            }
+
+            int pinArrayGapBandHeight = Math.Max(1, pinArrayGapSourceHeight / 8);
+            int pinArrayGapFirstY = Math.Min(
+                Math.Max(0, pinArrayGapSourceHeight / 6),
+                pinArrayGapSourceHeight - pinArrayGapBandHeight);
+            int pinArrayGapSecondY = Math.Min(
+                Math.Max(pinArrayGapFirstY + pinArrayGapBandHeight, pinArrayGapSourceHeight / 2),
+                pinArrayGapSourceHeight - pinArrayGapBandHeight);
+            if (pinArrayGapSecondY <= pinArrayGapFirstY)
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup PinArrayGap could not derive two distinct in-image row ROIs. "
+                    + $"Size={pinArrayGapSourceWidth}x{pinArrayGapSourceHeight}, BandHeight={pinArrayGapBandHeight}");
+            }
+
+            if (shellHost.NativePreviewRunCount != pinArrayGapSelectionRunsBefore
+                || shellHost.LayerDocumentCount != pinArrayGapSelectionLayersBefore
+                || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, pinArrayGapSelectionInputBefore, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, pinArrayGapSelectionOutputBefore, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveHostLayerTitle, pinArrayGapSelectionActiveLayerBefore, StringComparison.Ordinal)
+                || shellHost.HasNativePreviewResult != pinArrayGapSelectionPreviewResultBefore)
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup PinArrayGap sample selection changed Preview/Run, layer, or routing state.");
+            }
+
+            string pinArrayGapRois = string.Join(";", new[]
+            {
+                "0," + pinArrayGapFirstY.ToString(CultureInfo.InvariantCulture)
+                    + "," + pinArrayGapSourceWidth.ToString(CultureInfo.InvariantCulture)
+                    + "," + pinArrayGapBandHeight.ToString(CultureInfo.InvariantCulture),
+                "0," + pinArrayGapSecondY.ToString(CultureInfo.InvariantCulture)
+                    + "," + pinArrayGapSourceWidth.ToString(CultureInfo.InvariantCulture)
+                    + "," + pinArrayGapBandHeight.ToString(CultureInfo.InvariantCulture)
+            });
+
+            int pinArrayGapRunsBefore = shellHost.NativePreviewRunCount;
+            int pinArrayGapLayersBefore = shellHost.LayerDocumentCount;
+            string pinArrayGapInputRouteBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+            string pinArrayGapOutputRouteBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+            string pinArrayGapActiveLayerBefore = shellHost.ActiveHostLayerTitle;
+            bool pinArrayGapPreviewResultBefore = shellHost.HasNativePreviewResult;
+            Action<string> assertPinArrayGapNoSideEffects = phase =>
+            {
+                if (shellHost.NativePreviewRunCount != pinArrayGapRunsBefore
+                    || shellHost.LayerDocumentCount != pinArrayGapLayersBefore
+                    || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, pinArrayGapInputRouteBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, pinArrayGapOutputRouteBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveHostLayerTitle, pinArrayGapActiveLayerBefore, StringComparison.Ordinal)
+                    || shellHost.HasNativePreviewResult != pinArrayGapPreviewResultBefore)
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager Guided setup PinArrayGap changed Preview/Run, layer, or routing state during "
+                        + phase
+                        + ". "
+                        + $"Runs={pinArrayGapRunsBefore}->{shellHost.NativePreviewRunCount}, "
+                        + $"Layers={pinArrayGapLayersBefore}->{shellHost.LayerDocumentCount}, "
+                        + $"Input={pinArrayGapInputRouteBefore}->{shellHost.ActiveNativeRouteInputLayerNameForTest}, "
+                        + $"Output={pinArrayGapOutputRouteBefore}->{shellHost.ActiveNativeRouteOutputLayerNameForTest}, "
+                        + $"Active={pinArrayGapActiveLayerBefore}->{shellHost.ActiveHostLayerTitle}, "
+                        + $"PreviewResult={pinArrayGapPreviewResultBefore}->{shellHost.HasNativePreviewResult}.");
+                }
+            };
+
+            shellHost.RecipeCommands.SelectedLlmToolTemplate = OpenVisionGuidedSetupCatalog.PinArrayGapTemplate;
+            shellHost.RecipeCommands.PinArrayGapRoiText = pinArrayGapRois;
+            shellHost.RecipeCommands.PinArrayGapPolarityText = OpenVisionRecipePinArrayGapIntentSkill.SupportedPinPolarity;
+            shellHost.RecipeCommands.PinArrayGapMeasurementText = OpenVisionRecipePinArrayGapIntentSkill.SupportedMeasurementDefinition;
+            shellHost.RecipeCommands.PinArrayGapDarkThresholdText = OpenVisionRecipePinArrayGapIntentSkill.DefaultDarkThreshold.ToString(CultureInfo.InvariantCulture);
+            shellHost.RecipeCommands.PinArrayGapMinDarkCoverageRatioText = OpenVisionRecipePinArrayGapIntentSkill.DefaultMinimumDarkCoverageRatio.ToString(CultureInfo.InvariantCulture);
+            shellHost.RecipeCommands.PinArrayGapMinPinWidthText = OpenVisionRecipePinArrayGapIntentSkill.DefaultMinimumPinWidth.ToString(CultureInfo.InvariantCulture);
+            shellHost.RecipeCommands.PinArrayGapMaxPinBreakWidthText = OpenVisionRecipePinArrayGapIntentSkill.DefaultMaximumPinBreakWidth.ToString(CultureInfo.InvariantCulture);
+            shellHost.RecipeCommands.PinArrayGapMinGapWidthText = OpenVisionRecipePinArrayGapIntentSkill.DefaultMinimumGapWidth.ToString(CultureInfo.InvariantCulture);
+            shellHost.RecipeCommands.PinArrayGapRangeMaxText = string.Empty;
+            Pump(80);
+            if (!shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("MEASURE READY / NOT JUDGED", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup PinArrayGap measurement-only inputs were not ready. "
+                    + shellHost.RecipeCommands.GuidedSetupIntentInputStatusText);
+            }
+
+            shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.Execute(null);
+            Pump(100);
+            if (!SerializeHelper.TryLoadFromXmlText(
+                    shellHost.RecipeCommands.LlmXmlDraftText,
+                    out VisionPipeline pinArrayGapMeasurementPipeline,
+                    out string pinArrayGapMeasurementParseError))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup PinArrayGap measurement-only XML could not be parsed: "
+                    + pinArrayGapMeasurementParseError);
+            }
+
+            List<VisionPipelineStep> pinArrayGapMeasurementSteps = pinArrayGapMeasurementPipeline.Steps
+                .Where(step => step != null && step.Enabled)
+                .ToList();
+            if (pinArrayGapMeasurementSteps.Count != 2
+                || pinArrayGapMeasurementSteps.Any(step =>
+                    !string.Equals(step.ToolType, "PinArrayGap", StringComparison.OrdinalIgnoreCase)
+                    || step.UseAcceptance
+                    || step.UseAcceptanceMetricMinimum
+                    || step.UseAcceptanceMetricMaximum
+                    || !string.IsNullOrWhiteSpace(step.AcceptanceMetricName))
+                || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("MEASURE ONLY / NOT JUDGED", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.IsGuidedSetupDraftStale
+                || !shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup PinArrayGap measurement-only draft did not preserve the no-acceptance contract. "
+                    + $"Steps={pinArrayGapMeasurementSteps.Count}, Validation='{shellHost.RecipeCommands.LlmXmlDraftValidationReport}'.");
+            }
+            assertPinArrayGapNoSideEffects("measurement-only draft creation");
+
+            shellHost.RecipeCommands.PinArrayGapRangeMaxText = "6";
+            Pump(60);
+            if (!shellHost.RecipeCommands.IsGuidedSetupDraftStale
+                || !shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("JUDGED XML READY", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null)
+                || shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup PinArrayGap did not mark the measurement draft stale and expose judged readiness. "
+                    + $"Stale={shellHost.RecipeCommands.IsGuidedSetupDraftStale}, "
+                    + $"Status='{shellHost.RecipeCommands.GuidedSetupIntentInputStatusText}'.");
+            }
+            assertPinArrayGapNoSideEffects("judged input change");
+
+            shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.Execute(null);
+            Pump(100);
+            if (!SerializeHelper.TryLoadFromXmlText(
+                    shellHost.RecipeCommands.LlmXmlDraftText,
+                    out VisionPipeline pinArrayGapJudgedPipeline,
+                    out string pinArrayGapJudgedParseError))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup judged PinArrayGap XML could not be parsed: "
+                    + pinArrayGapJudgedParseError);
+            }
+
+            List<VisionPipelineStep> pinArrayGapJudgedSteps = pinArrayGapJudgedPipeline.Steps
+                .Where(step => step != null && step.Enabled)
+                .ToList();
+            bool pinArrayGapSecondRowBranches = pinArrayGapJudgedSteps.Count == 2
+                && pinArrayGapJudgedSteps[1].Parameters.TryGetValue("ALLOW_BRANCH_INPUT", out string? pinArrayGapBranchValue)
+                && string.Equals(pinArrayGapBranchValue, "true", StringComparison.OrdinalIgnoreCase);
+            if (pinArrayGapJudgedSteps.Count != 2
+                || pinArrayGapJudgedSteps.Any(step =>
+                    !string.Equals(step.ToolType, "PinArrayGap", StringComparison.OrdinalIgnoreCase)
+                    || !step.UseAcceptance
+                    || !step.ExpectedSuccess
+                    || !string.Equals(step.AcceptanceMetricName, VisionPipelineKnownMetrics.DistancePxRange, StringComparison.OrdinalIgnoreCase)
+                    || step.UseAcceptanceMetricMinimum
+                    || !step.UseAcceptanceMetricMaximum
+                    || Math.Abs(step.AcceptanceMetricMaximum - 6D) > 0.000001D)
+                || !pinArrayGapSecondRowBranches
+                || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("PinArrayGap contract: OK", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.IsGuidedSetupDraftStale
+                || !shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup judged PinArrayGap draft did not apply the exact shared DistancePxRange maximum and branch contract. "
+                    + $"Steps={pinArrayGapJudgedSteps.Count}, Branch={pinArrayGapSecondRowBranches}, "
+                    + $"Validation='{shellHost.RecipeCommands.LlmXmlDraftValidationReport}'.");
+            }
+            assertPinArrayGapNoSideEffects("judged draft creation");
+
+            string validPinArrayGapJudgedDraft = shellHost.RecipeCommands.LlmXmlDraftText;
+            Func<VisionPipeline, string> serializePinArrayGapDraft = pipeline =>
+            {
+                string tempPath = Path.Combine(
+                    Path.GetTempPath(),
+                    "OpenVisionLab_pinarraygap_contract_smoke_" + Guid.NewGuid().ToString("N") + ".xml");
+                try
+                {
+                    if (!SerializeHelper.SaveXmlFile(tempPath, pipeline))
+                    {
+                        throw new InvalidOperationException("Could not serialize a PinArrayGap contract mutation.");
+                    }
+
+                    return File.ReadAllText(tempPath);
+                }
+                finally
+                {
+                    if (File.Exists(tempPath))
+                    {
+                        File.Delete(tempPath);
+                    }
+                }
+            };
+
+            if (!SerializeHelper.TryLoadFromXmlText(
+                    validPinArrayGapJudgedDraft,
+                    out VisionPipeline pinArrayGapMissingGatePipeline,
+                    out string pinArrayGapMissingGateParseError))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup valid PinArrayGap XML could not be cloned for missing-gate validation: "
+                    + pinArrayGapMissingGateParseError);
+            }
+
+            foreach (VisionPipelineStep step in pinArrayGapMissingGatePipeline.Steps)
+            {
+                step.UseAcceptance = false;
+                step.AcceptanceMetricName = string.Empty;
+                step.UseAcceptanceMetricMinimum = false;
+                step.UseAcceptanceMetricMaximum = false;
+            }
+
+            shellHost.RecipeCommands.LlmXmlDraftText = serializePinArrayGapDraft(pinArrayGapMissingGatePipeline);
+            shellHost.RecipeCommands.RefreshLlmDraftReviewCommand.Execute(null);
+            Pump(40);
+            if (!shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("PinArrayGap contract: NG", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("current Guided Setup state requires a DistancePxRange maximum on every row", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup PinArrayGap accepted a measurement-only response while the current state was judged. "
+                    + shellHost.RecipeCommands.LlmXmlDraftValidationReport);
+            }
+            assertPinArrayGapNoSideEffects("missing judged gate validation");
+
+            pinArrayGapJudgedSteps[1].AcceptanceMetricMaximum = 7D;
+            shellHost.RecipeCommands.LlmXmlDraftText = serializePinArrayGapDraft(pinArrayGapJudgedPipeline);
+            if (!shellHost.RecipeCommands.RefreshLlmDraftReviewCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup PinArrayGap mismatched-gate draft could not be refreshed/validated.");
+            }
+
+            shellHost.RecipeCommands.RefreshLlmDraftReviewCommand.Execute(null);
+            Pump(40);
+            if (!shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("PinArrayGap contract: NG", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("same positive DistancePxRange maximum-only", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup PinArrayGap accepted mismatched row gates or omitted the frozen-maximum contract message. "
+                    + shellHost.RecipeCommands.LlmXmlDraftValidationReport);
+            }
+            assertPinArrayGapNoSideEffects("mismatched row-gate validation");
+
+            if (!SerializeHelper.TryLoadFromXmlText(
+                    validPinArrayGapJudgedDraft,
+                    out VisionPipeline pinArrayGapMixedToolPipeline,
+                    out string pinArrayGapMixedToolParseError))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup valid PinArrayGap XML could not be cloned for mixed-tool validation: "
+                    + pinArrayGapMixedToolParseError);
+            }
+
+            pinArrayGapMixedToolPipeline.Steps[1].ToolType = "LineDistance";
+            shellHost.RecipeCommands.LlmXmlDraftText = serializePinArrayGapDraft(pinArrayGapMixedToolPipeline);
+            shellHost.RecipeCommands.RefreshLlmDraftReviewCommand.Execute(null);
+            Pump(40);
+            if (!shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("PinArrayGap contract: NG", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("every enabled Step must use ToolType=PinArrayGap", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup PinArrayGap accepted a mixed enabled ToolType. "
+                    + shellHost.RecipeCommands.LlmXmlDraftValidationReport);
+            }
+            assertPinArrayGapNoSideEffects("mixed ToolType validation");
+
+            if (!SerializeHelper.TryLoadFromXmlText(
+                    validPinArrayGapJudgedDraft,
+                    out VisionPipeline pinArrayGapMissingRoiPipeline,
+                    out string pinArrayGapMissingRoiParseError))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup valid PinArrayGap XML could not be cloned for missing-ROI validation: "
+                    + pinArrayGapMissingRoiParseError);
+            }
+
+            pinArrayGapMissingRoiPipeline.Steps[0].Parameters.Remove("CvROI");
+            shellHost.RecipeCommands.LlmXmlDraftText = serializePinArrayGapDraft(pinArrayGapMissingRoiPipeline);
+            shellHost.RecipeCommands.RefreshLlmDraftReviewCommand.Execute(null);
+            Pump(40);
+            if (!shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("PinArrayGap row contract: NG", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("valid ROI/detection parameters", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup PinArrayGap accepted a row without the required CvROI parameter. "
+                    + shellHost.RecipeCommands.LlmXmlDraftValidationReport);
+            }
+            assertPinArrayGapNoSideEffects("missing ROI validation");
+
+            shellHost.RecipeCommands.LlmXmlDraftText = validPinArrayGapJudgedDraft;
+            shellHost.RecipeCommands.RefreshLlmDraftReviewCommand.Execute(null);
+            Pump(40);
+            if (!shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("PinArrayGap contract: OK", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup PinArrayGap did not restore the valid judged draft after negative contract checks.");
+            }
+            assertPinArrayGapNoSideEffects("valid judged draft restoration");
+
+            shellHost.RecipeCommands.PinArrayGapPolarityText = "Bright";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("WAIT", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup PinArrayGap did not block the unsupported Bright polarity.");
+            }
+            assertPinArrayGapNoSideEffects("unsupported Bright polarity review");
+
+            shellHost.RecipeCommands.PinArrayGapPolarityText = OpenVisionRecipePinArrayGapIntentSkill.SupportedPinPolarity;
+            shellHost.RecipeCommands.PinArrayGapMeasurementText = "Center-to-center pitch";
+            Pump(40);
+            if (shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("WAIT", StringComparison.OrdinalIgnoreCase)
+                || shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup PinArrayGap did not block the unsupported center-to-center pitch definition.");
+            }
+            assertPinArrayGapNoSideEffects("unsupported center-to-center pitch review");
+
+            shellHost.RecipeCommands.PinArrayGapMeasurementText = OpenVisionRecipePinArrayGapIntentSkill.SupportedMeasurementDefinition;
+            Pump(40);
+            if (!shellHost.RecipeCommands.IsGuidedSetupIntentInputReady
+                || !shellHost.RecipeCommands.GuidedSetupIntentInputStatusText.Contains("JUDGED XML READY", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Guided setup PinArrayGap did not restore judged readiness after unsupported choices. "
+                    + shellHost.RecipeCommands.GuidedSetupIntentInputStatusText);
+            }
+
+            shellHost.RecipeCommands.CreateGuidedSetupStarterXmlCommand.Execute(null);
+            Pump(100);
+            if (shellHost.RecipeCommands.IsGuidedSetupDraftStale
+                || !shellHost.RecipeCommands.LlmXmlDraftValidationReport.Contains("PinArrayGap contract: OK", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup PinArrayGap did not restore the final judged draft state.");
+            }
+            assertPinArrayGapNoSideEffects("final judged capture state");
+
+            if (!shellHost.RecipeCommands.ImportLlmXmlDraftCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup final judged PinArrayGap draft was not importable.");
+            }
+
+            shellHost.RecipeCommands.ImportLlmXmlDraftCommand.Execute(null);
+            Pump(100);
+            if (shellHost.RecipeCommands.SelectedPipelineOption == null
+                || !shellHost.RecipeCommands.SelectedPipelineOption.PipelineName.Contains("Pin_Row_EdgeGap", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Recipe manager Guided setup did not select the imported PinArrayGap pipeline.");
+            }
+            assertPinArrayGapNoSideEffects("judged import");
+
+            List<string> phase2ImagePaths = shellHost.RecipeCommands.SampleOptions
+                .Select(option => option?.Sample?.ImageFullPath ?? string.Empty)
+                .Where(path => !string.IsNullOrWhiteSpace(path) && File.Exists(path))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(4)
+                .ToList();
+            if (phase2ImagePaths.Count < 4)
+            {
+                throw new InvalidOperationException("PinArrayGap Phase 2 smoke requires four distinct existing sample images.");
+            }
+
+            string phase2HashSmokeDirectory = Path.Combine(
+                RecipeWorkspaceService.GetRecipeWorkspaceDirectory(recipe),
+                "Phase2HashSmoke");
+            Directory.CreateDirectory(phase2HashSmokeDirectory);
+            string phase2TrainImagePath = Path.Combine(
+                phase2HashSmokeDirectory,
+                Path.GetFileName(phase2ImagePaths[0]));
+            File.Copy(phase2ImagePaths[0], phase2TrainImagePath, overwrite: true);
+
+            void CreatePhase2Set(string name, string path, string notes)
+            {
+                shellHost.RecipeCommands.NewValidationSetName = name;
+                if (!shellHost.RecipeCommands.CreateValidationSetCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException("Could not create Phase 2 validation set: " + name);
+                }
+
+                shellHost.RecipeCommands.CreateValidationSetCommand.Execute(null);
+                if (!string.Equals(shellHost.RecipeCommands.SelectedValidationSetOption?.Name, name, StringComparison.OrdinalIgnoreCase)
+                    || !shellHost.RecipeCommands.AddValidationSetImagesForTest(
+                        OpenVisionRecipeValidationSetImage.ExpectedOk,
+                        new[] { path },
+                        notes))
+                {
+                    throw new InvalidOperationException("Could not populate Phase 2 validation set: " + name);
+                }
+            }
+
+            const string phase2TrainName = "P168_PinGap_Train";
+            const string phase2ValidationName = "P168_PinGap_Validation";
+            const string phase2TestName = "P168_PinGap_Test";
+            CreatePhase2Set(phase2TrainName, phase2TrainImagePath, "Phase 2 identity smoke Train");
+            CreatePhase2Set(phase2ValidationName, phase2ImagePaths[1], "Phase 2 identity smoke Validation");
+            CreatePhase2Set(phase2TestName, phase2ImagePaths[2], "Phase 2 identity smoke Test");
+
+            OpenVisionRecipeValidationSetOption? phase2Train = shellHost.RecipeCommands.ValidationSetOptions.FirstOrDefault(option =>
+                string.Equals(option?.Name, phase2TrainName, StringComparison.OrdinalIgnoreCase));
+            OpenVisionRecipeValidationSetOption? phase2Validation = shellHost.RecipeCommands.ValidationSetOptions.FirstOrDefault(option =>
+                string.Equals(option?.Name, phase2ValidationName, StringComparison.OrdinalIgnoreCase));
+            OpenVisionRecipeValidationSetOption? phase2Test = shellHost.RecipeCommands.ValidationSetOptions.FirstOrDefault(option =>
+                string.Equals(option?.Name, phase2TestName, StringComparison.OrdinalIgnoreCase));
+            if (phase2Train == null || phase2Validation == null || phase2Test == null)
+            {
+                throw new InvalidOperationException("PinArrayGap Phase 2 validation set selectors could not resolve all three sets.");
+            }
+
+            shellHost.RecipeCommands.PinArrayGapTrainValidationSetOption = phase2Train;
+            shellHost.RecipeCommands.PinArrayGapValidationValidationSetOption = phase2Train;
+            shellHost.RecipeCommands.PinArrayGapTestValidationSetOption = phase2Test;
+            if (!shellHost.RecipeCommands.FreezePinArrayGapValidationIdentityCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("PinArrayGap Phase 2 freeze command was unexpectedly disabled for overlap review.");
+            }
+
+            shellHost.RecipeCommands.FreezePinArrayGapValidationIdentityCommand.Execute(null);
+            if (shellHost.RecipeCommands.IsPinArrayGapValidationIdentityFrozen
+                || !shellHost.RecipeCommands.PinArrayGapValidationStatusText.Contains("disjoint", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "PinArrayGap Phase 2 accepted overlapping Train/Validation paths. "
+                    + shellHost.RecipeCommands.PinArrayGapValidationStatusText);
+            }
+            assertPinArrayGapNoSideEffects("overlapping split rejection");
+
+            shellHost.RecipeCommands.PinArrayGapValidationValidationSetOption = phase2Validation;
+            shellHost.RecipeCommands.FreezePinArrayGapValidationIdentityCommand.Execute(null);
+            bool phase2RecordLoaded = OpenVisionRecipePinArrayGapValidationRecordStorage.TryLoad(
+                recipe,
+                out OpenVisionRecipePinArrayGapValidationRecord phase2Record,
+                out string phase2RecordError);
+            if (!shellHost.RecipeCommands.IsPinArrayGapValidationIdentityFrozen
+                || !shellHost.RecipeCommands.PinArrayGapValidationStatusText.Contains("PHASE 2 FROZEN", StringComparison.OrdinalIgnoreCase)
+                || !phase2RecordLoaded
+                || phase2Record.Train.ImageCount != 1
+                || phase2Record.Validation.ImageCount != 1
+                || phase2Record.Test.ImageCount != 1
+                || Math.Abs(phase2Record.DistancePxRangeMaximum - 6D) > 0.000001D)
+            {
+                throw new InvalidOperationException(
+                    "PinArrayGap Phase 2 identity was not frozen with the three selected sets and Range=6. "
+                    + phase2RecordError
+                    + " | "
+                    + shellHost.RecipeCommands.PinArrayGapValidationStatusText);
+            }
+            assertPinArrayGapNoSideEffects("identity freeze");
+
+            File.Copy(phase2ImagePaths[3], phase2TrainImagePath, overwrite: true);
+            shellHost.RecipeCommands.RefreshOptions();
+            if (shellHost.RecipeCommands.IsPinArrayGapValidationIdentityFrozen
+                || !shellHost.RecipeCommands.PinArrayGapValidationStatusText.Contains("STALE", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "PinArrayGap Phase 2 did not expose same-path image-content drift. "
+                    + shellHost.RecipeCommands.PinArrayGapValidationStatusText);
+            }
+            assertPinArrayGapNoSideEffects("same-path content drift detection");
+
+            File.Copy(phase2ImagePaths[0], phase2TrainImagePath, overwrite: true);
+            shellHost.RecipeCommands.RefreshOptions();
+            if (!shellHost.RecipeCommands.IsPinArrayGapValidationIdentityFrozen)
+            {
+                throw new InvalidOperationException(
+                    "PinArrayGap Phase 2 did not restore the frozen identity after restoring source bytes. "
+                    + shellHost.RecipeCommands.PinArrayGapValidationStatusText);
+            }
+            assertPinArrayGapNoSideEffects("same-path source restore");
+
+            if (!SerializeHelper.TryLoadFromXmlText(
+                    validPinArrayGapJudgedDraft,
+                    out VisionPipeline branchlessPipeline,
+                    out string branchlessParseError))
+            {
+                throw new InvalidOperationException("Could not create branchless Phase 2 mutation: " + branchlessParseError);
+            }
+
+            branchlessPipeline.Steps[1].Parameters.Remove("ALLOW_BRANCH_INPUT");
+            string branchlessXml = serializePinArrayGapDraft(branchlessPipeline);
+            if (OpenVisionRecipePinArrayGapValidationRecordStorage.TrySave(
+                    recipe,
+                    branchlessXml,
+                    shellHost.RecipeCommands.PinArrayGapTrainValidationSetOption,
+                    shellHost.RecipeCommands.PinArrayGapValidationValidationSetOption,
+                    shellHost.RecipeCommands.PinArrayGapTestValidationSetOption,
+                    out _,
+                    out string branchlessError)
+                || !branchlessError.Contains("ALLOW_BRANCH_INPUT", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("PinArrayGap Phase 2 accepted a second row without explicit branch input.");
+            }
+
+            if (!SerializeHelper.TryLoadFromXmlText(
+                    validPinArrayGapJudgedDraft,
+                    out VisionPipeline invalidRuntimePipeline,
+                    out string invalidRuntimeParseError))
+            {
+                throw new InvalidOperationException("Could not create invalid-runtime Phase 2 mutation: " + invalidRuntimeParseError);
+            }
+
+            invalidRuntimePipeline.Steps[0].MaxElapsedMilliseconds = -1;
+            string invalidRuntimeXml = serializePinArrayGapDraft(invalidRuntimePipeline);
+            if (OpenVisionRecipePinArrayGapValidationRecordStorage.TrySave(
+                    recipe,
+                    invalidRuntimeXml,
+                    shellHost.RecipeCommands.PinArrayGapTrainValidationSetOption,
+                    shellHost.RecipeCommands.PinArrayGapValidationValidationSetOption,
+                    shellHost.RecipeCommands.PinArrayGapTestValidationSetOption,
+                    out _,
+                    out string invalidRuntimeError)
+                || !invalidRuntimeError.Contains("MaxElapsedMilliseconds", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "PinArrayGap Phase 2 accepted a generically invalid runtime pipeline. " + invalidRuntimeError);
+            }
+
+            shellHost.RecipeCommands.SelectedValidationSetOption = shellHost.RecipeCommands.PinArrayGapTrainValidationSetOption;
+            if (!shellHost.RecipeCommands.AddValidationSetImagesForTest(
+                    OpenVisionRecipeValidationSetImage.ExpectedOk,
+                    new[] { phase2ImagePaths[3] },
+                    "Phase 2 drift smoke"))
+            {
+                throw new InvalidOperationException("PinArrayGap Phase 2 could not add the Train drift sample.");
+            }
+
+            if (shellHost.RecipeCommands.IsPinArrayGapValidationIdentityFrozen
+                || !shellHost.RecipeCommands.PinArrayGapValidationStatusText.Contains("STALE", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "PinArrayGap Phase 2 did not expose set-content drift. "
+                    + shellHost.RecipeCommands.PinArrayGapValidationStatusText);
+            }
+            assertPinArrayGapNoSideEffects("set drift detection");
+
+            shellHost.RecipeCommands.FreezePinArrayGapValidationIdentityCommand.Execute(null);
+            if (!shellHost.RecipeCommands.IsPinArrayGapValidationIdentityFrozen)
+            {
+                throw new InvalidOperationException("PinArrayGap Phase 2 could not refreeze the reviewed Train change.");
+            }
+
+            shellHost.RecipeCommands.PinArrayGapTrainValidationSetOption = null;
+            shellHost.RecipeCommands.PinArrayGapValidationValidationSetOption = null;
+            shellHost.RecipeCommands.PinArrayGapTestValidationSetOption = null;
+            shellHost.RecipeCommands.RefreshOptions();
+            if (!shellHost.RecipeCommands.IsPinArrayGapValidationIdentityFrozen
+                || !string.Equals(shellHost.RecipeCommands.PinArrayGapTrainValidationSetOption?.Name, phase2TrainName, StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(shellHost.RecipeCommands.PinArrayGapValidationValidationSetOption?.Name, phase2ValidationName, StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(shellHost.RecipeCommands.PinArrayGapTestValidationSetOption?.Name, phase2TestName, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("PinArrayGap Phase 2 frozen selectors were not restored from the durable record.");
+            }
+            assertPinArrayGapNoSideEffects("frozen identity restore");
+
+            if (!shellHost.RecipeCommands.OpenPinArrayGapValidationRunsCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("PinArrayGap Phase 2 explicit-runs navigation was unavailable.");
+            }
+
+            shellHost.RecipeCommands.OpenPinArrayGapValidationRunsCommand.Execute(null);
+            Pump(60);
+            TabItem? phase2PipelineTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline");
+            TabItem? phase2RunHistoryTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineRunHistory");
+            if (phase2PipelineTab?.IsSelected != true
+                || phase2RunHistoryTab?.IsSelected != true
+                || !shellHost.RecipeCommands.IsLocalValidationSetSelected
+                || !string.Equals(shellHost.RecipeCommands.SelectedValidationSetOption?.Name, phase2TrainName, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("PinArrayGap Phase 2 did not navigate to the existing explicit Validation Set run surface.");
+            }
+            assertPinArrayGapNoSideEffects("explicit-runs navigation");
+
+            guidedSetupTab.IsSelected = true;
+            Pump(60);
+
+            AssertVisibleAutomationIds(
+                shellHost,
+                "WPF recipe manager Guided setup PinArrayGap inputs",
+                "HostRecipeGuidedSetupPinArrayGapInputs",
+                "HostRecipeGuidedSetupPinArrayGapRoiText",
+                "HostRecipeGuidedSetupPinArrayGapPolarity",
+                "HostRecipeGuidedSetupPinArrayGapMeasurement",
+                "HostRecipeGuidedSetupPinArrayGapRangeMaxText",
+                "HostRecipeGuidedSetupPinArrayGapDarkThresholdText",
+                "HostRecipeGuidedSetupPinArrayGapMinDarkCoverageRatioText",
+                "HostRecipeGuidedSetupPinArrayGapMinPinWidthText",
+                "HostRecipeGuidedSetupPinArrayGapMaxPinBreakWidthText",
+                "HostRecipeGuidedSetupPinArrayGapMinGapWidthText",
+                "HostRecipeGuidedSetupPinArrayGapContract",
+                "HostRecipeGuidedSetupPinArrayGapTrainSet",
+                "HostRecipeGuidedSetupPinArrayGapValidationSet",
+                "HostRecipeGuidedSetupPinArrayGapTestSet",
+                "HostRecipeGuidedSetupPinArrayGapValidationStatus",
+                "HostRecipeGuidedSetupPinArrayGapFreezeButton",
+                "HostRecipeGuidedSetupPinArrayGapOpenRunsButton",
+                "HostRecipeGuidedSetupPinArrayGapValidationBoundary");
+
             ScrollViewer? guidedSetupScroll = FindNamedVisualChild<ScrollViewer>(shellHost, "recipeGuidedSetupScrollViewer");
             if (guidedSetupScroll == null)
             {
@@ -7060,8 +9016,13 @@ internal static class Program
             }
 
             guidedSetupScroll.ScrollToTop();
-            Pump(80);
-        });
+                Pump(80);
+            });
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipe);
+        }
     }
 
     private static CaptureResult CaptureShellHostRecipeMultiBranchComparison(string outputPath)
@@ -7571,7 +9532,7 @@ internal static class Program
         OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostWorkspaceSampleReviewMetrics", seedMainLayer: false);
         return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
         {
-            (_, int activePipelineStepCount, _) = OpenWorkspaceSamplePipelineReviewForSmoke(
+            (_, int activePipelineStepCount, int previewRunsBefore) = OpenWorkspaceSamplePipelineReviewForSmoke(
                 shellHost,
                 sampleName,
                 "WPF workspace sample review metrics",
@@ -7786,6 +9747,179 @@ internal static class Program
         }, captureFloatingToolWindow: true);
     }
 
+    private static CaptureResult CaptureShellHostWorkspaceSampleNormalizeFixtureReview(string outputPath)
+    {
+        const string goodSampleName = "Public_Fixture_Normalize_RelativeRoi_Good";
+        const string badSampleName = "Public_Fixture_Normalize_RelativeRoi_Missing_Bad";
+
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        VisionPipelineSampleCatalogItem goodSample = FindRunnableCatalogSample(goodSampleName);
+        VisionPipelineSampleCatalogItem badSample = FindRunnableCatalogSample(badSampleName);
+        AssertSampleSourceKind(goodSample, goodSampleName, VisionPipelineSampleCatalogSourceKind.Public);
+        AssertSampleSourceKind(badSample, badSampleName, VisionPipelineSampleCatalogSourceKind.Public);
+
+        VisionPipelineSampleCheckResult goodCheck = VisionPipelineSampleCheckService.RunSampleCheckSafe(goodSample);
+        VisionPipelineSampleCheckResult badCheck = VisionPipelineSampleCheckService.RunSampleCheckSafe(badSample);
+        string[] requiredGoodMetrics =
+        {
+            "ResultCount=1",
+            "FixtureOffsetX=80",
+            "FixtureOffsetY=55",
+            "FixtureValidPixelRatio",
+            "FixtureNormalizedImageWidth=572",
+            "FixtureNormalizedImageHeight=420"
+        };
+        string? missingGoodMetric = requiredGoodMetrics.FirstOrDefault(metric =>
+            !goodCheck.MetricText.Contains(metric, StringComparison.OrdinalIgnoreCase));
+        if (!goodCheck.Success
+            || !badCheck.Success
+            || !badSample.ExpectsFailure
+            || !string.IsNullOrWhiteSpace(missingGoodMetric)
+            || !badCheck.MetricText.Contains("ResultCount=0", StringComparison.OrdinalIgnoreCase)
+            || !badCheck.MetricText.Contains("FixtureValidPixelRatio", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "NormalizeImage reference-ROI public sample contract failed. "
+                + $"Good={goodCheck.Status}, GoodMissing={missingGoodMetric ?? "-"}, GoodMetrics='{goodCheck.MetricText}', "
+                + $"Bad={badCheck.Status}, BadExpectedFailure={badSample.ExpectsFailure}, BadMetrics='{badCheck.MetricText}'");
+        }
+
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostWorkspaceNormalizeFixtureReview", seedMainLayer: false);
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            (_, int activePipelineStepCount, int previewRunsBefore) = OpenWorkspaceSamplePipelineReviewForSmoke(
+                shellHost,
+                goodSampleName,
+                "WPF workspace NormalizeImage reference-ROI sample review",
+                minStepCount: 4);
+
+            WaitForTaskWithPump(
+                shellHost.RunPipelineReviewForTestAsync(),
+                30000,
+                "Workspace NormalizeImage reference-ROI Pipeline Review execution");
+            Pump(120);
+
+            shellHost.SelectPipelineReviewStepForTest(1, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
+            Pump(40);
+            string normalizeText = string.Join(
+                " | ",
+                shellHost.PipelineReviewSelectedStepName,
+                shellHost.PipelineReviewParameterSummaryText,
+                shellHost.PipelineReviewResultSummaryText,
+                shellHost.PipelineReviewResultDetailText,
+                shellHost.PipelineReviewRunLogText);
+            if (!normalizeText.Contains("Normalize", StringComparison.OrdinalIgnoreCase)
+                || !normalizeText.Contains("NormalizeImage", StringComparison.OrdinalIgnoreCase)
+                || !normalizeText.Contains("PartFrame", StringComparison.OrdinalIgnoreCase)
+                || !normalizeText.Contains("572", StringComparison.OrdinalIgnoreCase)
+                || !normalizeText.Contains("420", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.HasPipelineReviewOutputPreview)
+            {
+                throw new InvalidOperationException(
+                    "Pipeline Review did not expose the normalized reference image and fixture metrics. "
+                    + $"Text='{normalizeText}', Output={shellHost.HasPipelineReviewOutputPreview}");
+            }
+
+            shellHost.SelectPipelineReviewStepForTest(3, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
+            Pump(80);
+            string blobText = string.Join(
+                " | ",
+                shellHost.PipelineReviewSelectedStepName,
+                shellHost.PipelineReviewGuideCurrentStepText,
+                shellHost.PipelineReviewFlowSummaryText,
+                shellHost.PipelineReviewParameterSummaryText,
+                shellHost.PipelineReviewResultSummaryText,
+                shellHost.PipelineReviewResultDetailText,
+                shellHost.PipelineReviewRunLogText);
+            if (activePipelineStepCount != 4
+                || !blobText.Contains("Inspect Pad In Reference ROI", StringComparison.OrdinalIgnoreCase)
+                || !blobText.Contains("AlignedPadBinary", StringComparison.OrdinalIgnoreCase)
+                || !blobText.Contains("CvROI: 320,180,60,50", StringComparison.OrdinalIgnoreCase)
+                || !blobText.Contains("Result", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewResultSummaryText.Contains("OK", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.HasPipelineReviewInputPreview
+                || !shellHost.HasPipelineReviewOutputPreview
+                || shellHost.CanSelectFirstIssuePipelineReviewStepForTest)
+            {
+                throw new InvalidOperationException(
+                    "Pipeline Review did not prove the fixed reference-coordinate ROI inspection. "
+                    + $"Steps={activePipelineStepCount}, Input={shellHost.HasPipelineReviewInputPreview}, "
+                    + $"Output={shellHost.HasPipelineReviewOutputPreview}, FirstIssue={shellHost.CanSelectFirstIssuePipelineReviewStepForTest}, "
+                    + $"Text='{blobText}'");
+            }
+
+            Window reviewWindow = GetActiveFloatingToolWindow("Fixture / relative-ROI designer");
+            TabItem fixtureDesignerTab = FindNamedVisualChild<TabItem>(reviewWindow, "fixtureDesignerTab")
+                ?? throw new InvalidOperationException("Fixture designer tab was not visible for the existing fixture chain.");
+            int layerCountBeforeDesigner = shellHost.LayerDocumentCount;
+            string activeLayerBeforeDesigner = shellHost.ActiveHostLayerTitle;
+            string routeInputBeforeDesigner = shellHost.ActiveNativeRouteInputLayerNameForTest;
+            string routeOutputBeforeDesigner = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+            fixtureDesignerTab.IsSelected = true;
+            Pump(120);
+
+            System.Windows.Controls.Image sourcePreview = FindNamedVisualChild<System.Windows.Controls.Image>(
+                reviewWindow,
+                "fixtureSourcePreviewImage")
+                ?? throw new InvalidOperationException("Fixture designer source preview was not created.");
+            System.Windows.Controls.Image normalizedPreview = FindNamedVisualChild<System.Windows.Controls.Image>(
+                reviewWindow,
+                "fixtureNormalizedPreviewImage")
+                ?? throw new InvalidOperationException("Fixture designer normalized preview was not created.");
+            System.Windows.Controls.Image templatePreview = FindNamedVisualChild<System.Windows.Controls.Image>(
+                reviewWindow,
+                "fixtureTemplatePreviewImage")
+                ?? throw new InvalidOperationException("Fixture designer template preview was not created.");
+            Button teachButton = FindNamedVisualChild<Button>(reviewWindow, "btnUseSelectedMatchingPose")
+                ?? throw new InvalidOperationException("Fixture designer teach-reference action was not created.");
+            Button producerEditButton = FindNamedVisualChild<Button>(reviewWindow, "btnFixtureProducerEdit")
+                ?? throw new InvalidOperationException("Fixture designer producer edit action was not created.");
+            Button measurementEditButton = FindNamedVisualChild<Button>(reviewWindow, "btnFixtureMeasurementEdit")
+                ?? throw new InvalidOperationException("Fixture designer measurement ROI edit action was not created.");
+            Button runButton = FindNamedVisualChild<Button>(reviewWindow, "btnFixtureRun")
+                ?? throw new InvalidOperationException("Fixture designer explicit Run Review action was not created.");
+
+            AssertVisibleTextContains(
+                reviewWindow,
+                "Fixture / relative-ROI designer",
+                "PartFrame",
+                "Locate And Publish Reference Pose",
+                "Normalize To Reference Coordinates",
+                "Inspect Pad In Reference ROI",
+                "320,180,60,50",
+                "572x420",
+                "유효 74.8%");
+            if (!shellHost.IsPipelineReviewFixtureDesignerVisibleForTest
+                || shellHost.PipelineReviewFixtureProducerStepNumberForTest != 1
+                || shellHost.PipelineReviewFixtureMeasurementStepNumberForTest != 4
+                || !shellHost.PipelineReviewFixtureRelationshipTextForTest.Contains("PartFrame", StringComparison.Ordinal)
+                || sourcePreview.Source == null
+                || normalizedPreview.Source == null
+                || templatePreview.Source == null
+                || !teachButton.IsEnabled
+                || !producerEditButton.IsEnabled
+                || !measurementEditButton.IsEnabled
+                || !runButton.IsEnabled
+                || shellHost.NativePreviewRunCount != previewRunsBefore
+                || shellHost.LayerDocumentCount != layerCountBeforeDesigner
+                || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBeforeDesigner, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, routeInputBeforeDesigner, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, routeOutputBeforeDesigner, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Fixture designer did not consolidate the existing chain without execution, layer, or routing side effects. "
+                    + $"Visible={shellHost.IsPipelineReviewFixtureDesignerVisibleForTest}, "
+                    + $"Steps={shellHost.PipelineReviewFixtureProducerStepNumberForTest}/{shellHost.PipelineReviewFixtureMeasurementStepNumberForTest}, "
+                    + $"Images={sourcePreview.Source != null}/{normalizedPreview.Source != null}/{templatePreview.Source != null}, "
+                    + $"Actions={teachButton.IsEnabled}/{producerEditButton.IsEnabled}/{measurementEditButton.IsEnabled}/{runButton.IsEnabled}, "
+                    + $"Runs={shellHost.NativePreviewRunCount}/{previewRunsBefore}, Layers={shellHost.LayerDocumentCount}/{layerCountBeforeDesigner}, "
+                    + $"Active='{shellHost.ActiveHostLayerTitle}/{activeLayerBeforeDesigner}', "
+                    + $"Route='{shellHost.ActiveNativeRouteInputLayerNameForTest}->{shellHost.ActiveNativeRouteOutputLayerNameForTest}'/"
+                    + $"'{routeInputBeforeDesigner}->{routeOutputBeforeDesigner}'");
+            }
+        }, captureFloatingToolWindow: true);
+    }
+
     private static CaptureResult CaptureShellHostPipelineStepEditHandoff(string outputPath)
     {
         const string sampleName = "Public_Fixture_Pad_Good";
@@ -7806,6 +9940,10 @@ internal static class Program
             shellHost.SelectPipelineReviewStepForTest(1, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
             Pump(80);
             Window reviewWindow = GetActiveFloatingToolWindow("Pipeline Review selected Step edit handoff");
+            TabItem stepDetailsTab = FindNamedVisualChild<TabItem>(reviewWindow, "stepDetailsTab")
+                ?? throw new InvalidOperationException("Pipeline Review Step Details tab was not available for edit handoff.");
+            stepDetailsTab.IsSelected = true;
+            Pump(40);
             string recipeName = shellHost.PipelineReviewRecipeContextNameForTest;
             int layerCountBefore = shellHost.LayerDocumentCount;
             string activeLayerBefore = shellHost.ActiveHostLayerTitle;
@@ -8176,6 +10314,7 @@ internal static class Program
             AssertParameterValue(beforePipeline.Steps[0], "FIXTURE_REFERENCE_X", 120D);
             AssertParameterValue(beforePipeline.Steps[0], "FIXTURE_REFERENCE_Y", 100D);
             AssertParameterValue(beforePipeline.Steps[0], "FIXTURE_REFERENCE_ANGLE", 0D);
+            AssertParameterValue(beforePipeline.Steps[0], "FIXTURE_REFERENCE_SCALE", 1D);
             string routeBefore = string.Join(
                 "|",
                 beforePipeline.Steps.Select(step => $"{step.InputLayer}>{step.OutputLayer}"));
@@ -8206,7 +10345,8 @@ internal static class Program
                 ?? throw new InvalidOperationException("Workspace Fixture pose teach status was not visible.");
             if (!fixtureTeachButton.IsEnabled
                 || !fixtureTeachStatus.Text.Contains("X 200", StringComparison.OrdinalIgnoreCase)
-                || !fixtureTeachStatus.Text.Contains("Y 155", StringComparison.OrdinalIgnoreCase))
+                || !fixtureTeachStatus.Text.Contains("Y 155", StringComparison.OrdinalIgnoreCase)
+                || !fixtureTeachStatus.Text.Contains("1", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException(
                     "Workspace Fixture pose teach action did not expose the reviewed pose. "
@@ -8223,6 +10363,9 @@ internal static class Program
             AssertParameterValue(afterPipeline.Steps[0], "FIXTURE_REFERENCE_X", 200D);
             AssertParameterValue(afterPipeline.Steps[0], "FIXTURE_REFERENCE_Y", 155D);
             AssertParameterValue(afterPipeline.Steps[0], "FIXTURE_REFERENCE_ANGLE", 0D);
+            AssertParameterValue(afterPipeline.Steps[0], "FIXTURE_REFERENCE_SCALE", 1D);
+            AssertParameterValue(afterPipeline.Steps[0], "FIXTURE_REFERENCE_IMAGE_WIDTH", 572D);
+            AssertParameterValue(afterPipeline.Steps[0], "FIXTURE_REFERENCE_IMAGE_HEIGHT", 420D);
             string routeAfter = string.Join(
                 "|",
                 afterPipeline.Steps.Select(step => $"{step.InputLayer}>{step.OutputLayer}"));
@@ -8238,6 +10381,8 @@ internal static class Program
                 || !fixtureTeachStatus.Text.Contains("ROI", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewParameterSummaryText.Contains("FIXTURE_REFERENCE_X", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewParameterSummaryText.Contains("200", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewParameterSummaryText.Contains("FIXTURE_REFERENCE_IMAGE_WIDTH", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewParameterSummaryText.Contains("572", StringComparison.OrdinalIgnoreCase)
                 || !string.Equals(shellHost.PipelineReviewExecutionState, expectedExecutionState, StringComparison.Ordinal)
                 || !string.Equals(shellHost.PipelineReviewResultSummaryText, expectedResultSummary, StringComparison.Ordinal)
                 || shellHost.NativePreviewRunCount != nativePreviewRunsBefore
@@ -8612,6 +10757,74 @@ internal static class Program
                     + $"Before={nativePreviewRunsBeforeFirstIssue}, After={shellHost.NativePreviewRunCount}");
             }
 
+            bool isObjectResultScenario = sampleName.Contains("Blob", StringComparison.OrdinalIgnoreCase)
+                || sampleName.Contains("Contour", StringComparison.OrdinalIgnoreCase);
+            if (isObjectResultScenario)
+            {
+                int objectCount = shellHost.PipelineReviewObjectResultCountForTest;
+                int initiallySelectedObjectNumber = shellHost.PipelineReviewSelectedObjectResultNumberForTest;
+                int runsBeforeObjectSelection = shellHost.NativePreviewRunCount;
+                int layersBeforeObjectSelection = shellHost.LayerDocumentCount;
+                string activeLayerBeforeObjectSelection = shellHost.ActiveHostLayerTitle;
+                string inputRouteBeforeObjectSelection = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string outputRouteBeforeObjectSelection = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                if (objectCount <= 0 || !shellHost.HasPipelineReviewObjectHighlightForTest)
+                {
+                    throw new InvalidOperationException(
+                        $"Workspace sample Pipeline Review {scenarioLabel} did not expose object rows and the selected-object drawing. "
+                        + $"Count={objectCount}, Highlight={shellHost.HasPipelineReviewObjectHighlightForTest}");
+                }
+
+                shellHost.SelectPipelineReviewObjectResultForTest(0);
+                Pump(40);
+                if (shellHost.PipelineReviewSelectedObjectResultNumberForTest != 1
+                    || !shellHost.HasPipelineReviewObjectHighlightForTest
+                    || shellHost.NativePreviewRunCount != runsBeforeObjectSelection)
+                {
+                    throw new InvalidOperationException(
+                        $"Workspace sample Pipeline Review {scenarioLabel} table selection did not highlight the same object without Preview/Run. "
+                        + $"Selected={shellHost.PipelineReviewSelectedObjectResultNumberForTest}, "
+                        + $"Highlight={shellHost.HasPipelineReviewObjectHighlightForTest}, "
+                        + $"Runs={runsBeforeObjectSelection}->{shellHost.NativePreviewRunCount}");
+                }
+
+                int imageSelectionIndex = Math.Min(1, objectCount - 1);
+                shellHost.SelectPipelineReviewObjectResultFromImageForTest(imageSelectionIndex);
+                Pump(40);
+                if (shellHost.PipelineReviewSelectedObjectResultNumberForTest != imageSelectionIndex + 1
+                    || shellHost.NativePreviewRunCount != runsBeforeObjectSelection)
+                {
+                    throw new InvalidOperationException(
+                        $"Workspace sample Pipeline Review {scenarioLabel} image hit did not select the matching object row without Preview/Run. "
+                        + $"Expected={imageSelectionIndex + 1}, Selected={shellHost.PipelineReviewSelectedObjectResultNumberForTest}, "
+                        + $"Runs={runsBeforeObjectSelection}->{shellHost.NativePreviewRunCount}");
+                }
+
+                shellHost.SelectPipelineReviewObjectResultForTest(Math.Max(0, initiallySelectedObjectNumber - 1));
+                Pump(40);
+                if (shellHost.PipelineReviewSelectedObjectResultNumberForTest != initiallySelectedObjectNumber
+                    || shellHost.NativePreviewRunCount != runsBeforeObjectSelection)
+                {
+                    throw new InvalidOperationException(
+                        $"Workspace sample Pipeline Review {scenarioLabel} could not restore the reviewed accepted object without Preview/Run.");
+                }
+
+                if (shellHost.LayerDocumentCount != layersBeforeObjectSelection
+                    || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBeforeObjectSelection, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBeforeObjectSelection, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBeforeObjectSelection, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"Workspace sample Pipeline Review {scenarioLabel} object inspection changed layers or routing. "
+                        + $"Layers={layersBeforeObjectSelection}->{shellHost.LayerDocumentCount}, "
+                        + $"Active={activeLayerBeforeObjectSelection}->{shellHost.ActiveHostLayerTitle}, "
+                        + $"Input={inputRouteBeforeObjectSelection}->{shellHost.ActiveNativeRouteInputLayerNameForTest}, "
+                        + $"Output={outputRouteBeforeObjectSelection}->{shellHost.ActiveNativeRouteOutputLayerNameForTest}");
+                }
+
+                AssertObjectResultReportPersistence(outputPath);
+            }
+
             string ngNextAction = OpenVisionLanguageService.T("PipelineReview.Guide.NgNext");
             string fixDetailPrefix = OpenVisionLanguageService.T("PipelineReview.Guide.FixDetailPrefix");
             string parameterLocationPrefix = OpenVisionLanguageService.T("PipelineReview.Guide.ParameterLocationPrefix");
@@ -8690,6 +10903,134 @@ internal static class Program
                 "PipelineReviewStepFlowOperatorFocus",
                 "PipelineReviewFirstIssueStepButton");
         }, captureFloatingToolWindow: true);
+    }
+
+    private static void AssertObjectResultReportPersistence(string screenshotOutputPath)
+    {
+        string recipeName = "Smoke_ObjectResults_" + Guid.NewGuid().ToString("N");
+        try
+        {
+            VisionPipelineStep step = new VisionPipelineStep
+            {
+                Name = "Object Count",
+                ToolType = "Blob",
+                Enabled = true,
+                InputLayer = "Main",
+                OutputLayer = "Blob_Result"
+            };
+            VisionPipeline pipeline = new VisionPipeline { Name = "ObjectResultPersistence" };
+            pipeline.Steps.Add(step);
+            using VisionRecipeRunResult result = new VisionRecipeRunResult
+            {
+                PipelineName = pipeline.Name,
+                Success = true,
+                Message = "Object result persistence smoke.",
+                Steps = new List<VisionRecipeStepRunSummary>
+                {
+                    new VisionRecipeStepRunSummary
+                    {
+                        Index = 1,
+                        Name = step.Name,
+                        ToolType = step.ToolType,
+                        Enabled = true,
+                        InputLayer = step.InputLayer,
+                        OutputLayer = step.OutputLayer,
+                        Status = "OK",
+                        ToolSuccess = true,
+                        Success = true,
+                        AcceptancePassed = true,
+                        ObjectResults = new List<VisionPipelineObjectResult>
+                        {
+                            new VisionPipelineObjectResult
+                            {
+                                Number = 1,
+                                Accepted = true,
+                                Area = 640,
+                                CenterX = 42,
+                                CenterY = 54,
+                                BoundsX = 30,
+                                BoundsY = 40,
+                                BoundsWidth = 24,
+                                BoundsHeight = 28,
+                                Angle = 1.25
+                            },
+                            new VisionPipelineObjectResult
+                            {
+                                Number = 2,
+                                Accepted = false,
+                                Area = 12,
+                                CenterX = 80,
+                                CenterY = 54,
+                                BoundsX = 77,
+                                BoundsY = 51,
+                                BoundsWidth = 6,
+                                BoundsHeight = 6,
+                                Angle = 0,
+                                RejectReason = "Area 12 < MIN_AREA 200"
+                            }
+                        }
+                    }
+                }
+            };
+
+            DateTime startedAt = DateTime.UtcNow;
+            VisionRecipeStepRunSummary recipeStepSummary = result.Steps.Single();
+            VisionToolResult directToolResult = new VisionToolResult { Success = true };
+            VisionPipelineObjectResultStore.Set(directToolResult, recipeStepSummary.ObjectResults);
+            VisionPipelineRunResult directRunResult = new VisionPipelineRunResult();
+            directRunResult.StepResults.Add(new VisionPipelineStepResult
+            {
+                Step = step,
+                ToolResult = directToolResult,
+                AcceptancePassed = true,
+                AcceptanceMessage = "Acceptance passed."
+            });
+            string directReportPath = VisionPipelineRunReportStorage.Save(
+                recipeName,
+                pipeline,
+                directRunResult,
+                startedAt,
+                startedAt.AddMilliseconds(1),
+                false,
+                "ObjectResultsDirect");
+            VisionPipelineRunReport directReport = VisionPipelineRunReportStorage.Load(directReportPath)
+                ?? throw new InvalidOperationException("Direct object result report could not be loaded.");
+            AssertPersistedObjectRows(directReport, "Direct object result report");
+
+            string recipeReportPath = VisionPipelineRunReportStorage.Save(
+                recipeName,
+                pipeline,
+                result,
+                startedAt,
+                startedAt.AddMilliseconds(1),
+                "ObjectResults");
+            VisionPipelineRunReport recipeReport = VisionPipelineRunReportStorage.Load(recipeReportPath)
+                ?? throw new InvalidOperationException("Object result report could not be loaded.");
+            AssertPersistedObjectRows(recipeReport, "Recipe object result report");
+
+            string artifactDirectory = Path.GetDirectoryName(screenshotOutputPath) ?? string.Empty;
+            Directory.CreateDirectory(artifactDirectory);
+            File.Copy(directReportPath, Path.Combine(artifactDirectory, "object_results_direct_report.xml"), true);
+            File.Copy(recipeReportPath, Path.Combine(artifactDirectory, "object_results_recipe_report.xml"), true);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static void AssertPersistedObjectRows(VisionPipelineRunReport report, string context)
+    {
+        List<VisionPipelineObjectRunReport> objects = report?.Steps?.SingleOrDefault()?.Objects
+            ?? new List<VisionPipelineObjectRunReport>();
+        if (objects.Count != 2
+            || !objects[0].Accepted
+            || objects[1].Accepted
+            || !objects[1].RejectReason.Contains("MIN_AREA", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                context + " did not preserve accepted/rejected rows and reject reason.");
+        }
     }
 
     private static void AssertPipelineReviewProgressText(
@@ -14316,27 +16657,30 @@ internal static class Program
             window.GeometryAngleForTest = 25;
             window.GeometryScaleForTest = 80;
             Pump(8);
+            WriteElementPng(window, outputPath, 1040, 900);
             if (window.SelectedTopicIndexForTest != 15)
             {
                 throw new InvalidOperationException("OpenVision Learn Geometry Transform topic was not selected.");
             }
 
-            if (window.CanOpenGeometryToolForTest)
+            if (window.CanOpenGeometryToolForTest || window.CanOpenAffineTransformToolForTest)
             {
-                throw new InvalidOperationException("Standalone Geometry Learn unexpectedly enabled the Shell-only Tool View action.");
+                throw new InvalidOperationException("Standalone Geometry Learn unexpectedly enabled a Shell-only Tool View action.");
             }
 
-            if (!window.GeometryToolLocationTitleForTest.Contains("Angle, Scale X, Scale Y", StringComparison.Ordinal)
+            if (!window.GeometryToolLocationTitleForTest.Contains("Rotate/Scale", StringComparison.Ordinal)
+                || !window.GeometryToolLocationTitleForTest.Contains("Affine", StringComparison.Ordinal)
+                || !window.GeometryToolLocationTitleForTest.Contains("3점", StringComparison.Ordinal)
                 || !window.GeometryToolLocationDetailForTest.Contains("OutputSize", StringComparison.Ordinal)
-                || !window.GeometryToolLocationDetailForTest.Contains("Preview", StringComparison.Ordinal))
+                || !window.GeometryToolLocationDetailForTest.Contains("AffineValidPixelRatio", StringComparison.Ordinal))
             {
-                throw new InvalidOperationException("Geometry Learn did not expose the initial Rotate / Scale parameter path.");
+                throw new InvalidOperationException("Geometry Learn did not expose both RotateScale and Affine parameter/evidence paths.");
             }
 
             window.SetOpenRelatedToolAction(_ => { });
-            if (!window.CanOpenGeometryToolForTest)
+            if (!window.CanOpenGeometryToolForTest || !window.CanOpenAffineTransformToolForTest)
             {
-                throw new InvalidOperationException("Geometry Learn did not enable the Tool View action after the Shell callback was attached.");
+                throw new InvalidOperationException("Geometry Learn did not enable both Tool View actions after the Shell callback was attached.");
             }
 
             AssertLearnTopicDocument(window, "LEARN_GEOMETRY_TRANSFORM.md");
@@ -14401,7 +16745,7 @@ internal static class Program
                 FindVisualChildren<TextBlock>(window)
                     .Select(item => item.Text)
                     .Where(text => !string.IsNullOrWhiteSpace(text)));
-            foreach (string token in new[] { "RotateScale", "ROI", "OutputSize", "Preview/Run", "pixel/mm" })
+            foreach (string token in new[] { "RotateScale", "AffineTransform", "3점", "AffineValidPixelRatio", "ROI", "OutputSize", "Preview/Run", "pixel/mm" })
             {
                 if (!visibleText.Contains(token, StringComparison.Ordinal))
                 {
@@ -14419,6 +16763,7 @@ internal static class Program
                 "OpenVisionLearnGeometryResetButton",
                 "OpenVisionLearnGeometryAnimationStatus",
                 "OpenVisionLearnGeometryOpenToolButton",
+                "OpenVisionLearnGeometryOpenAffineToolButton",
                 "OpenVisionLearnGeometryToolLocationPanel",
                 "OpenVisionLearnGeometryToolLocationTitle",
                 "OpenVisionLearnGeometryToolLocationDetail");
@@ -15170,6 +17515,1209 @@ internal static class Program
                     + $"InputPreview={shellHost.HasPipelineReviewInputPreview}, Runs={shellHost.NativePreviewRunCount}");
             }
         });
+    }
+
+    private static CaptureResult CaptureShellHostAffineTransformTool(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostAffineTransform");
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            int previewCountBeforeOpen = shellHost.NativePreviewRunCount;
+            shellHost.SelectToolForTest(VISION_MENU.AffineTransform);
+            Pump(20);
+            if (!shellHost.IsNativeDocumentActive
+                || !shellHost.ActiveNativeDocumentTypeName.Contains("AffineTransformToolWpfView", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("AffineTransform did not open the PropertyGrid Tool View.");
+            }
+
+            shellHost.ConfigureActiveAffineTransformForTest(property =>
+            {
+                property.SourcePoint1X = 20;
+                property.SourcePoint1Y = 20;
+                property.SourcePoint2X = 200;
+                property.SourcePoint2Y = 20;
+                property.SourcePoint3X = 20;
+                property.SourcePoint3Y = 180;
+                property.DestinationPoint1X = 30;
+                property.DestinationPoint1Y = 25;
+                property.DestinationPoint2X = 210;
+                property.DestinationPoint2Y = 35;
+                property.DestinationPoint3X = 40;
+                property.DestinationPoint3Y = 185;
+                property.MinimumSourceTriangleArea = 100;
+                property.MinimumDestinationTriangleArea = 100;
+                property.MinimumValidPixelRatio = 0.7;
+            });
+            Pump(20);
+
+            if (shellHost.NativePreviewRunCount != previewCountBeforeOpen || shellHost.HasNativePreviewResult)
+            {
+                throw new InvalidOperationException(
+                    "AffineTransform open/property changes must not auto-run Preview. "
+                    + $"Before={previewCountBeforeOpen}, After={shellHost.NativePreviewRunCount}, HasResult={shellHost.HasNativePreviewResult}.");
+            }
+
+            foreach (string inheritedLabel in new[] { "Pixel / mm", "이진화 사용", "적응형 이진화 사용" })
+            {
+                if (FloatingToolTextContains(inheritedLabel))
+                {
+                    throw new InvalidOperationException(
+                        "AffineTransform PropertyGrid exposed an unrelated inherited field: " + inheritedLabel);
+                }
+            }
+
+            shellHost.RunActiveNativePreviewForTest();
+            Pump(28);
+            if (!shellHost.HasNativePreviewResult
+                || shellHost.NativePreviewRunCount != previewCountBeforeOpen + 1
+                || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, "AffineTransform_Preview", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, "AffineTransform_Preview", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "AffineTransform explicit Preview did not preserve the expected route contract. "
+                    + $"Input={shellHost.ActiveNativeRouteInputLayerNameForTest}, "
+                    + $"Output={shellHost.ActiveNativeRouteOutputLayerNameForTest}, "
+                    + $"Runs={shellHost.NativePreviewRunCount}, Status={shellHost.ActiveNativeStatusText}.");
+            }
+
+            if (!shellHost.ActiveNativeStatusText.Contains("Preview OK", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.ActiveNativeResultReviewText.Contains("Affine 2x3", StringComparison.Ordinal)
+                || !shellHost.ActiveNativeResultReviewText.Contains("유효 픽셀", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "AffineTransform Preview did not publish its status and operator review card. "
+                    + $"Status={shellHost.ActiveNativeStatusText}, Review={shellHost.ActiveNativeResultReviewText}.");
+            }
+
+            AssertFloatingInlinePreviewSlotCount("AffineTransform", 2);
+        });
+    }
+
+    private static CaptureResult CaptureP213GeometryReview(string outputPath)
+    {
+        AssertP213GeometryCore(outputPath);
+        using Bitmap preview = new(640, 420);
+        using (Graphics graphics = Graphics.FromImage(preview))
+        {
+            graphics.Clear(DrawingColor.FromArgb(36, 43, 47));
+            using System.Drawing.Pen featurePen = new(DrawingColor.Gold, 3f);
+            using System.Drawing.Pen constructionPen = new(DrawingColor.DeepSkyBlue, 3f);
+            graphics.DrawEllipse(featurePen, 145, 75, 210, 210);
+            graphics.DrawLine(constructionPen, 250, 180, 500, 310);
+            graphics.DrawLine(constructionPen, 420, 70, 420, 350);
+        }
+
+        OpenVisionPipelineReviewView view = new();
+        view.SetSelectedStep(
+            "03 Circle / Segment Clearance",
+            "GeometryMeasure",
+            "OK",
+            "Reference",
+            preview,
+            "Geometry_Result",
+            preview,
+            "Typed same-run features in Reference coordinates",
+            "CircleFeature/Circle -> DatumLine/Segment",
+            "Explicit Run / GeometrySignedClearancePx=65.217");
+        view.SetObjectResults(false, Array.Empty<VisionPipelineObjectResult>());
+        view.SetGeometryResults(true, new[]
+        {
+            new VisionPipelineGeometryFeatureResult
+            {
+                SourceStep = "CircleFeature", FeatureName = "Circle", Kind = VisionPipelineGeometryKind.Circle,
+                CoordinateLayer = "Reference", ImageWidth = 640, ImageHeight = 420,
+                CenterX = 250, CenterY = 180, RadiusPx = 105,
+                SupportCount = 176, SupportRatio = 0.978, CoverageDeg = 352, FitResidualPx = 0.42
+            },
+            new VisionPipelineGeometryFeatureResult
+            {
+                SourceStep = "DatumLine", FeatureName = "Segment", Kind = VisionPipelineGeometryKind.Segment,
+                CoordinateLayer = "Reference", ImageWidth = 640, ImageHeight = 420,
+                X1 = 420, Y1 = 70, X2 = 420, Y2 = 350, CenterX = 420, CenterY = 210,
+                SupportCount = 36, SupportRatio = 1, FitResidualPx = 0.31
+            },
+            new VisionPipelineGeometryFeatureResult
+            {
+                SourceStep = "Clearance", FeatureName = "MeasureEnd", Kind = VisionPipelineGeometryKind.Point,
+                CoordinateLayer = "Reference", ImageWidth = 640, ImageHeight = 420,
+                X1 = 420, Y1 = 180, CenterX = 420, CenterY = 180,
+                SupportCount = 1, SupportRatio = 1
+            }
+        });
+        if (!view.SelectGeometryAtImagePointForTest(420D, 200D)
+            || view.SelectedGeometryIdentityForTest != "DatumLine/Segment")
+        {
+            throw new InvalidOperationException("P213 drawing-to-row geometry selection failed.");
+        }
+        view.Measure(new System.Windows.Size(1180, 890));
+        view.Arrange(new System.Windows.Rect(0, 0, 1180, 890));
+        view.UpdateLayout();
+        Pump(4);
+        return CaptureElement(view, outputPath, 1180, 890);
+    }
+
+    private static CaptureResult CaptureP214TwoPointScale(string outputPath)
+    {
+        string artifactDirectory = Path.GetDirectoryName(outputPath)
+            ?? throw new InvalidOperationException("P214 artifact directory is missing.");
+        Directory.CreateDirectory(artifactDirectory);
+
+        using Bitmap contractImage = new(100, 100);
+        using (Graphics graphics = Graphics.FromImage(contractImage))
+        {
+            graphics.Clear(DrawingColor.FromArgb(42, 48, 52));
+            graphics.FillEllipse(System.Drawing.Brushes.Gold, 8, 8, 5, 5);
+            graphics.FillEllipse(System.Drawing.Brushes.DeepSkyBlue, 11, 12, 5, 5);
+        }
+
+        VisionPipelineGeometryFeatureResult contractA = PointFeature("ScaleA", 10, 10);
+        VisionPipelineGeometryFeatureResult contractB = PointFeature("ScaleB", 13, 14);
+        contractA.CoordinateLayer = contractB.CoordinateLayer = "Reference";
+        contractA.ImageWidth = contractB.ImageWidth = 100;
+        contractA.ImageHeight = contractB.ImageHeight = 100;
+
+        VisionPipelineScaleCalibrationRecord millimeterRecord = CalculateScale(
+            contractA, contractB, 10D, VisionScaleCalibrationUnit.Millimeter, contractImage);
+        VisionPipelineScaleCalibrationRecord micrometerRecord = CalculateScale(
+            contractA, contractB, 10000D, VisionScaleCalibrationUnit.Micrometer, contractImage);
+        VisionPipelineScaleCalibrationRecord inchRecord = CalculateScale(
+            contractA, contractB, 10D / 25.4D, VisionScaleCalibrationUnit.Inch, contractImage);
+        if (Math.Abs(millimeterRecord.PixelDistance - 5D) > 0.000000001D
+            || Math.Abs(millimeterRecord.MillimetersPerPixel - 2D) > 0.000000001D
+            || Math.Abs(micrometerRecord.MillimetersPerPixel - 2D) > 0.000000001D
+            || Math.Abs(inchRecord.MillimetersPerPixel - 2D) > 0.000000001D)
+        {
+            throw new InvalidOperationException("P214 unit conversion or 3-4-5 scale calculation failed.");
+        }
+
+        string recipeName = "Smoke_P214Scale_" + Guid.NewGuid().ToString("N").Substring(0, 10);
+        try
+        {
+            string saveError = string.Empty;
+            string loadError = string.Empty;
+            if (!VisionPipelineScaleCalibrationStorage.TrySave(
+                    recipeName,
+                    millimeterRecord,
+                    out string evidencePath,
+                    out saveError)
+                || !VisionPipelineScaleCalibrationStorage.TryLoad(
+                    recipeName,
+                    millimeterRecord.PipelineName,
+                    out VisionPipelineScaleCalibrationRecord loaded,
+                    out loadError)
+                || loaded.SourceImageSha256 != millimeterRecord.SourceImageSha256
+                || Math.Abs(loaded.MillimetersPerPixel - 2D) > 0.000000001D)
+            {
+                throw new InvalidOperationException("P214 calibration evidence round trip failed. " + saveError + " " + loadError);
+            }
+
+            VisionPipelineStep target = new()
+            {
+                Name = "GapCaliper",
+                ToolType = "LineDistance",
+                Enabled = true,
+                InputLayer = "Reference",
+                OutputLayer = "Gap_Result"
+            };
+            VisionPipelineStep untouched = new()
+            {
+                Name = "OtherCircle",
+                ToolType = "CircleGauge",
+                Enabled = true,
+                InputLayer = "Reference",
+                OutputLayer = "Circle_Result"
+            };
+            if (!VisionPipelineScaleCalibrationStorage.TryApply(loaded, contractImage, target, out string applyError)
+                || target.Parameters.GetValueOrDefault("PIXELPERMM") != "2"
+                || target.Parameters.GetValueOrDefault("LeftPIXELPERMM") != "2"
+                || target.Parameters.GetValueOrDefault("RightPIXELPERMM") != "2"
+                || untouched.Parameters.ContainsKey("PIXELPERMM"))
+            {
+                throw new InvalidOperationException("P214 explicit single-target apply failed. " + applyError);
+            }
+
+            if (!VisionPipelineScaleCalibrationStorage.TrySave(
+                    recipeName,
+                    loaded,
+                    out evidencePath,
+                    out string appliedAuditError))
+            {
+                throw new InvalidOperationException("P214 applied-Step evidence did not round-trip. " + appliedAuditError);
+            }
+
+            VisionPipeline pipeline = new() { Name = loaded.PipelineName };
+            pipeline.Steps.Add(target);
+            pipeline.Steps.Add(untouched);
+            VisionPipelineStorage.Save(recipeName, pipeline);
+            if (!VisionPipelineStorage.TryValidateRoundTrip(recipeName, pipeline, out string roundTripMessage))
+            {
+                throw new InvalidOperationException("P214 pipeline round trip failed. " + roundTripMessage);
+            }
+
+            using Bitmap changedImage = new(contractImage);
+            changedImage.SetPixel(50, 50, DrawingColor.Red);
+            VisionPipelineStep changedTarget = new()
+            {
+                Name = "ChangedImageTarget", ToolType = "Line", Enabled = true,
+                InputLayer = "Reference", OutputLayer = "Changed_Result"
+            };
+            if (VisionPipelineScaleCalibrationStorage.TryApply(loaded, changedImage, changedTarget, out string changedError)
+                || !changedError.Contains("content changed", StringComparison.OrdinalIgnoreCase)
+                || changedTarget.Parameters.ContainsKey("PIXELPERMM"))
+            {
+                throw new InvalidOperationException("P214 changed-image evidence did not fail closed.");
+            }
+
+            VisionPipelineGeometryFeatureResult sameIdentityB = contractB.Clone();
+            sameIdentityB.SourceStep = contractA.SourceStep;
+            sameIdentityB.FeatureName = contractA.FeatureName;
+            if (VisionPipelineScaleCalibrationStorage.TryCalculate(
+                    "P214_Scale", contractA, sameIdentityB, 10D, VisionScaleCalibrationUnit.Millimeter,
+                    contractImage, out _, out string sameError)
+                || !sameError.Contains("different", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("P214 same-point selection did not fail closed.");
+            }
+
+            VisionPipelineGeometryFeatureResult crossLayerB = contractB.Clone();
+            crossLayerB.CoordinateLayer = "Other";
+            if (VisionPipelineScaleCalibrationStorage.TryCalculate(
+                    "P214_Scale", contractA, crossLayerB, 10D, VisionScaleCalibrationUnit.Millimeter,
+                    contractImage, out _, out string layerError)
+                || !layerError.Contains("same coordinate layer", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("P214 cross-layer point selection did not fail closed.");
+            }
+
+            VisionPipelineStep incompatible = new()
+            {
+                Name = "Threshold", ToolType = "Threshold", Enabled = true,
+                InputLayer = "Reference", OutputLayer = "Threshold_Result"
+            };
+            if (VisionPipelineScaleCalibrationStorage.TryApply(loaded, contractImage, incompatible, out string incompatibleError)
+                || !incompatibleError.Contains("compatible", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("P214 incompatible target did not fail closed.");
+            }
+
+            VisionToolResult metricResult = VisionToolResult.Passed(null, TimeSpan.Zero);
+            metricResult.Metrics[VisionPipelineKnownMetrics.GeometryDistancePx] = 25D;
+            metricResult.Metrics[VisionPipelineKnownMetrics.GeometrySignedClearancePx] = -2D;
+            metricResult.Metrics[VisionPipelineKnownMetrics.CircleRadiusPx] = 5D;
+            metricResult.Metrics[VisionPipelineKnownMetrics.CircleDiameterPx] = 10D;
+            VisionPipelineStep metricStep = new() { ToolType = "GeometryMeasure" };
+            metricStep.Parameters["PIXELPERMM"] = "0.04";
+            VisionPipelineMetricEnrichmentService.Enrich(metricResult, metricStep);
+            if (Math.Abs(metricResult.Metrics.GetValueOrDefault(VisionPipelineKnownMetrics.GeometryDistanceMm) - 1D) > 0.000000001D
+                || Math.Abs(metricResult.Metrics.GetValueOrDefault(VisionPipelineKnownMetrics.GeometrySignedClearanceMm) + 0.08D) > 0.000000001D
+                || Math.Abs(metricResult.Metrics.GetValueOrDefault(VisionPipelineKnownMetrics.CircleRadiusMm) - 0.2D) > 0.000000001D
+                || Math.Abs(metricResult.Metrics.GetValueOrDefault(VisionPipelineKnownMetrics.CircleDiameterMm) - 0.4D) > 0.000000001D)
+            {
+                throw new InvalidOperationException("P214 calibrated P213 mm metric enrichment failed.");
+            }
+
+            File.Copy(evidencePath, Path.Combine(artifactDirectory, "two_point_scale_record.xml"), true);
+            File.WriteAllText(
+                Path.Combine(artifactDirectory, "verification.txt"),
+                "P214 two-point scale contract passed.\n"
+                + "3-4-5 pixel distance: 5 px\n"
+                + "Known distance: 10 mm / 10000 um / 0.3937007874 inch\n"
+                + "Derived scale: 2 mm/px\n"
+                + "Changed image, same identity, cross layer, and incompatible target: fail closed\n"
+                + "Explicit target: GapCaliper only; legacy PIXELPERMM + Left/Right values persisted\n"
+                + "GeometryDistanceMm and CircleRadiusMm enrichment passed\n");
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+
+        AssertP214DocumentIntegration(artifactDirectory);
+
+        using Bitmap preview = new(640, 420);
+        using (Graphics graphics = Graphics.FromImage(preview))
+        {
+            graphics.Clear(DrawingColor.FromArgb(34, 41, 45));
+            using System.Drawing.Pen railPen = new(DrawingColor.FromArgb(115, 132, 138), 2F);
+            using System.Drawing.Pen objectPen = new(DrawingColor.FromArgb(190, 205, 210), 5F);
+            for (int x = 60; x <= 580; x += 40)
+            {
+                graphics.DrawLine(railPen, x, 70, x, 350);
+            }
+            graphics.DrawRectangle(objectPen, 95, 95, 450, 230);
+            graphics.DrawEllipse(System.Drawing.Pens.Gold, 155, 295, 10, 10);
+            graphics.DrawEllipse(System.Drawing.Pens.DeepSkyBlue, 495, 135, 10, 10);
+        }
+
+        VisionPipelineGeometryFeatureResult uiA = PointFeature("DatumA", 160, 300);
+        VisionPipelineGeometryFeatureResult uiB = PointFeature("DatumB", 500, 140);
+        uiA.CoordinateLayer = uiB.CoordinateLayer = "Reference";
+        uiA.ImageWidth = uiB.ImageWidth = 640;
+        uiA.ImageHeight = uiB.ImageHeight = 420;
+        VisionPipelineScaleCalibrationRecord uiRecord = CalculateScale(
+            uiA, uiB, 12.5D, VisionScaleCalibrationUnit.Millimeter, preview);
+        VisionPipeline uiPipeline = new() { Name = "P214_Two_Point_Scale" };
+        uiPipeline.Steps.Add(new VisionPipelineStep
+        {
+            Name = "PinPitch", ToolType = "LineDistance", Enabled = true,
+            InputLayer = "Reference", OutputLayer = "Pitch_Result"
+        });
+
+        OpenVisionPipelineReviewView view = new();
+        view.SetPipelineHeader(uiPipeline.Name, uiPipeline.Steps.Count);
+        view.SetRecipeContext("P214_Scale_Demo");
+        view.SetSelectedStep(
+            "01 PinPitch",
+            "LineDistance",
+            "WAIT / apply scale",
+            "Reference",
+            preview,
+            "Pitch_Result",
+            preview,
+            "Reference -> PinPitch -> Pitch_Result",
+            "PIXELPERMM=0 (legacy key; runtime meaning mm/px)",
+            "Explicit Run remains required after Apply");
+        view.SetObjectResults(false, Array.Empty<VisionPipelineObjectResult>());
+        view.SetGeometryResults(false, Array.Empty<VisionPipelineGeometryFeatureResult>());
+        view.SetScaleCalibrationState(
+            new[] { uiA, uiB },
+            VisionPipelineScaleCalibrationStorage.GetCompatibleTargets(uiPipeline),
+            uiRecord,
+            preview,
+            "Evidence hash matches. Apply to the selected Step only; no Preview/Run occurs.");
+        view.SelectScaleCalibrationTabForTest();
+        view.Measure(new System.Windows.Size(1180, 890));
+        view.Arrange(new System.Windows.Rect(0, 0, 1180, 890));
+        view.UpdateLayout();
+        Pump(4);
+        return CaptureElement(view, outputPath, 1180, 890);
+    }
+
+    private static void AssertP214DocumentIntegration(string artifactDirectory)
+    {
+        string recipeName = "Smoke_P214Document_" + Guid.NewGuid().ToString("N").Substring(0, 10);
+        DisplayManagerService displayManager = new();
+        using Bitmap source = new(240, 180);
+        using (Graphics graphics = Graphics.FromImage(source))
+        {
+            graphics.Clear(DrawingColor.White);
+            using System.Drawing.Pen pen = new(DrawingColor.Black, 5F);
+            graphics.DrawLine(pen, 100, 20, 100, 160);
+        }
+        displayManager.CreateLayerDisplay(source, "Reference", false);
+        displayManager.SelectedItem = "Reference";
+
+        VisionPipeline pipeline = new() { Name = "P214_Document_Integration" };
+        VisionPipelineStep line = new()
+        {
+            Name = "ScaleLine",
+            ToolType = "Line",
+            Enabled = true,
+            InputLayer = "Reference",
+            OutputLayer = "ScaleLine_Result"
+        };
+        AddParameters(line,
+            ("USE_ROI", "true"), ("CvROI", "70,10,60,160"),
+            ("PRJ_DIR", "X_LTOR"), ("PRJ_PORALITY", "WTOB"),
+            ("CONTRAST", "20"), ("THICKNESS", "3"), ("SAMPLING_STEP", "8"),
+            ("SHOW_EDGE", "true"), ("SHOW_FITLINE", "true"));
+        pipeline.Steps.Add(line);
+        VisionPipelineStorage.Save(recipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
+
+        try
+        {
+            using OpenVisionPipelineReviewDocument document = new(displayManager, recipeName);
+            Task run = document.RunReviewForTestAsync();
+            WaitForTaskWithPump(run, 30000, "P214 explicit Pipeline Review Run");
+            string executionState = document.ReviewExecutionState;
+            string sourceHashBefore = VisionPipelineScaleCalibrationStorage.ComputeBitmapSha256(displayManager.GetLayerImage("Reference"));
+            int layerCountBefore = displayManager.LayerCount;
+
+            if (!document.TeachScaleForTest(
+                    "ScaleLine/Start",
+                    "ScaleLine/End",
+                    14D,
+                    VisionScaleCalibrationUnit.Millimeter)
+                || !document.ScaleCalibrationStatusText.Contains("Saved exact two-point evidence", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "P214 Pipeline Review did not calculate and save same-run point evidence. "
+                    + document.ScaleCalibrationStatusText);
+            }
+
+            if (!document.ApplyScaleForTest(0)
+                || !document.ScaleCalibrationStatusText.Contains("no Preview/Run occurred", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "P214 Pipeline Review did not apply the saved scale explicitly. "
+                    + document.ScaleCalibrationStatusText);
+            }
+
+            VisionPipeline saved = VisionPipelineStorage.Load(recipeName, pipeline.Name);
+            string? scaleText = saved.Steps.Single().Parameters.GetValueOrDefault("PIXELPERMM");
+            string sourceHashAfter = VisionPipelineScaleCalibrationStorage.ComputeBitmapSha256(displayManager.GetLayerImage("Reference"));
+            if (!double.TryParse(scaleText, NumberStyles.Float, CultureInfo.InvariantCulture, out double scale)
+                || scale <= 0D
+                || document.ReviewExecutionState != executionState
+                || displayManager.LayerCount != layerCountBefore
+                || sourceHashAfter != sourceHashBefore)
+            {
+                throw new InvalidOperationException(
+                    "P214 Apply changed execution/layers/source or failed pipeline persistence. "
+                    + $"Scale={scaleText}, StateBefore={executionState}, StateAfter={document.ReviewExecutionState}, "
+                    + $"LayersBefore={layerCountBefore}, LayersAfter={displayManager.LayerCount}");
+            }
+
+            if (!VisionPipelineScaleCalibrationStorage.TryLoad(
+                    recipeName,
+                    pipeline.Name,
+                    out VisionPipelineScaleCalibrationRecord record,
+                    out string loadError)
+                || !record.AppliedStepNames.Contains("ScaleLine", StringComparer.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("P214 applied-Step audit did not persist. " + loadError);
+            }
+
+            File.AppendAllText(
+                Path.Combine(artifactDirectory, "verification.txt"),
+                "Pipeline Review integration: explicit Run supplied points; calculate/apply preserved execution state, layer count, routing image hash, and applied exactly one Step.\n");
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static VisionPipelineScaleCalibrationRecord CalculateScale(
+        VisionPipelineGeometryFeatureResult pointA,
+        VisionPipelineGeometryFeatureResult pointB,
+        double knownDistance,
+        VisionScaleCalibrationUnit unit,
+        Bitmap image)
+    {
+        if (!VisionPipelineScaleCalibrationStorage.TryCalculate(
+                "P214_Scale",
+                pointA,
+                pointB,
+                knownDistance,
+                unit,
+                image,
+                out VisionPipelineScaleCalibrationRecord record,
+                out string error))
+        {
+            throw new InvalidOperationException("P214 scale calculation failed: " + error);
+        }
+
+        return record;
+    }
+
+    private static CaptureResult CaptureP213GeometryPropertyGrid(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        CleanupTransientRecipeWorkspaces();
+
+        string recipeName = "Smoke_P213GeometryProperty_" + Guid.NewGuid().ToString("N").Substring(0, 10);
+        VisionPipeline pipeline = new() { Name = "P213_Geometry_PropertyGrid" };
+        pipeline.Steps.Add(new VisionPipelineStep
+        {
+            Name = "DatumHorizontal", ToolType = "Line", Enabled = true,
+            InputLayer = "Main", OutputLayer = "DatumHorizontal_Result"
+        });
+        pipeline.Steps.Add(new VisionPipelineStep
+        {
+            Name = "DatumVertical", ToolType = "Line", Enabled = true,
+            InputLayer = "Main", OutputLayer = "DatumVertical_Result"
+        });
+        VisionPipelineStep geometry = CreateGeometryMeasureStep(
+            GeometryMeasurementMode.LineLineIntersection,
+            Segment("DatumHorizontal", 40, 160, 400, 160),
+            Segment("DatumVertical", 320, 40, 320, 300));
+        geometry.Name = "CardCorner";
+        geometry.InputLayer = "Main";
+        geometry.OutputLayer = "CardCorner_Result";
+        geometry.Parameters[VisionPipelineGeometryMeasureService.MaximumExtensionAParameter] = "12";
+        geometry.Parameters[VisionPipelineGeometryMeasureService.MaximumExtensionBParameter] = "12";
+        pipeline.Steps.Add(geometry);
+
+        VisionPipelineStorage.Save(recipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
+        OpenVisionShellHostView shellHost = CreateShellHost(recipeName, seedMainLayer: false);
+        try
+        {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                ToggleButton recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager")
+                    ?? throw new InvalidOperationException("P213 PropertyGrid smoke could not find Recipe Manager.");
+                recipeManagerButton.IsChecked = true;
+                Pump(100);
+                FindNamedVisualChild<ToggleButton>(shellHost, "recipeAdvancedReviewToggle")!.IsChecked = true;
+                Pump(60);
+                FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline")!.IsSelected = true;
+                Pump(40);
+                FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineXmlSteps")!.IsSelected = true;
+                Pump(40);
+
+                shellHost.RecipeCommands.SelectedPipelinePreviewStep =
+                    shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps.Single(item => item.Name == "CardCorner");
+                shellHost.RecipeCommands.LoadSelectedStepParametersCommand.Execute(null);
+                Pump(180);
+
+                FrameworkElement propertyGridHost = FindVisualChildren<FrameworkElement>(shellHost)
+                    .FirstOrDefault(item => item.IsVisible && string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "HostRecipeSelectedStepPropertyGridHost",
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("P213 GeometryMeasure PropertyGrid host was not visible.");
+                System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid =
+                    FindVisualChildren<System.Windows.Controls.WpfPropertyGrid.PropertyGrid>(propertyGridHost)
+                        .FirstOrDefault(item => item.IsVisible && item.SelectedObject != null)
+                    ?? throw new InvalidOperationException("P213 GeometryMeasure PropertyGrid did not load.");
+                PropertyDescriptorCollection descriptors = TypeDescriptor.GetProperties(grid.SelectedObject);
+                foreach (string required in new[] { "MeasurementMode", "SourceA", "SourceB", "MaximumExtensionAPx", "MaximumExtensionBPx" })
+                {
+                    if (descriptors.Find(required, true) == null)
+                    {
+                        throw new InvalidOperationException("P213 GeometryMeasure PropertyGrid missed " + required + ".");
+                    }
+                }
+
+                PropertyDescriptor sourceA = descriptors.Find("SourceA", true)!;
+                TypeConverter.StandardValuesCollection? choices = sourceA.Converter.GetStandardValues(new PropertyContext(grid.SelectedObject, sourceA));
+                string[] references = choices?.Cast<object>().Select(item => Convert.ToString(item) ?? string.Empty).Where(value => !string.IsNullOrWhiteSpace(value)).ToArray()
+                    ?? Array.Empty<string>();
+                if (!references.Contains("DatumHorizontal/Segment", StringComparer.OrdinalIgnoreCase)
+                    || !references.Contains("DatumVertical/Segment", StringComparer.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("P213 compatible earlier-feature picker did not expose both Line segments.");
+                }
+
+                int runsBefore = shellHost.NativePreviewRunCount;
+                shellHost.RecipeCommands.ApplySelectedStepParametersCommand.Execute(null);
+                Pump(180);
+                VisionPipeline saved = VisionPipelineStorage.Load(recipeName, pipeline.Name);
+                VisionPipelineStep savedGeometry = saved.Steps.Single(item => item.Name == "CardCorner");
+                if (savedGeometry.Parameters.GetValueOrDefault(VisionPipelineGeometryMeasureService.SourceStepAParameter) != "DatumHorizontal"
+                    || savedGeometry.Parameters.GetValueOrDefault(VisionPipelineGeometryMeasureService.SourceFeatureAParameter) != "Segment"
+                    || savedGeometry.Parameters.GetValueOrDefault(VisionPipelineGeometryMeasureService.SourceStepBParameter) != "DatumVertical"
+                    || savedGeometry.Parameters.GetValueOrDefault(VisionPipelineGeometryMeasureService.SourceFeatureBParameter) != "Segment"
+                    || shellHost.NativePreviewRunCount != runsBefore)
+                {
+                    throw new InvalidOperationException("P213 GeometryMeasure apply/save/reload lost source identity or triggered Preview/Run.");
+                }
+
+                TextBox search = GetActivePropertyGridSearchTextBox(grid, "P213 GeometryMeasure recipe step");
+                search.Text = "Source";
+                search.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+                grid.UpdateLayout();
+                Pump(60);
+                ScrollViewer pipelineScroll = FindNamedVisualChild<ScrollViewer>(shellHost, "recipePipelineTabScrollViewer")
+                    ?? throw new InvalidOperationException("P213 Pipeline scroll viewer was not found.");
+                pipelineScroll.ScrollToBottom();
+                pipelineScroll.UpdateLayout();
+                Pump(80);
+                BringPropertyGridPropertyIntoView(grid, "SourceA", "P213 GeometryMeasure recipe step", 0D);
+                if (grid.IsSearchEmptyMessageVisibleForTest || shellHost.NativePreviewRunCount != 0)
+                {
+                    throw new InvalidOperationException("P213 source-picker search failed or changed Preview/Run state.");
+                }
+            }, captureFloatingToolWindow: false, captureScreen: true);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static CaptureResult CaptureP219AffinePointBindingPropertyGrid(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        CleanupTransientRecipeWorkspaces();
+
+        string recipeName = "Smoke_P219AffinePointBinding_" + Guid.NewGuid().ToString("N").Substring(0, 10);
+        VisionPipeline pipeline = new() { Name = "P219_Affine_Point_Binding" };
+        foreach (string name in new[] { "LocateTopLeft", "LocateTopRight", "LocateBottomLeft" })
+        {
+            pipeline.Steps.Add(new VisionPipelineStep
+            {
+                Name = name,
+                ToolType = "Matching",
+                Enabled = true,
+                InputLayer = "Main",
+                OutputLayer = name + "_Result"
+            });
+        }
+
+        AffineTransformToolProperty property = new AffineTransformToolProperty
+        {
+            SourcePoint1X = 100,
+            SourcePoint1Y = 100,
+            SourcePoint2X = 500,
+            SourcePoint2Y = 100,
+            SourcePoint3X = 100,
+            SourcePoint3Y = 350,
+            DestinationPoint1X = 80,
+            DestinationPoint1Y = 80,
+            DestinationPoint2X = 480,
+            DestinationPoint2Y = 80,
+            DestinationPoint3X = 80,
+            DestinationPoint3Y = 330,
+            OutputWidth = 640,
+            OutputHeight = 480
+        };
+        VisionPipelineStep affine = VisionPipelineStepBuilder.FromAffineTransformProperty(
+            property,
+            "NormalizeFromThreePoints",
+            "Main",
+            "Reference");
+        affine.Parameters[VisionPipelineAffinePointBindingService.UseDetectedSourcePointsParameter] = "true";
+        affine.Parameters[VisionPipelineAffinePointBindingService.SourcePoint1FeatureParameter] = "LocateTopLeft/Center";
+        affine.Parameters[VisionPipelineAffinePointBindingService.SourcePoint2FeatureParameter] = "LocateTopRight/Center";
+        affine.Parameters[VisionPipelineAffinePointBindingService.SourcePoint3FeatureParameter] = "LocateBottomLeft/Center";
+        pipeline.Steps.Add(affine);
+
+        VisionPipelineStorage.Save(recipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
+        OpenVisionShellHostView shellHost = CreateShellHost(recipeName, seedMainLayer: false);
+        try
+        {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                ToggleButton recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager")
+                    ?? throw new InvalidOperationException("P219 PropertyGrid smoke could not find Recipe Manager.");
+                recipeManagerButton.IsChecked = true;
+                Pump(100);
+                FindNamedVisualChild<ToggleButton>(shellHost, "recipeAdvancedReviewToggle")!.IsChecked = true;
+                Pump(60);
+                FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline")!.IsSelected = true;
+                Pump(40);
+                FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineXmlSteps")!.IsSelected = true;
+                Pump(40);
+
+                shellHost.RecipeCommands.SelectedPipelinePreviewStep =
+                    shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps.Single(item => item.Name == "NormalizeFromThreePoints");
+                shellHost.RecipeCommands.LoadSelectedStepParametersCommand.Execute(null);
+                Pump(180);
+
+                FrameworkElement propertyGridHost = FindVisualChildren<FrameworkElement>(shellHost)
+                    .FirstOrDefault(item => item.IsVisible && string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "HostRecipeSelectedStepPropertyGridHost",
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("P219 AffineTransform PropertyGrid host was not visible.");
+                System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid =
+                    FindVisualChildren<System.Windows.Controls.WpfPropertyGrid.PropertyGrid>(propertyGridHost)
+                        .FirstOrDefault(item => item.IsVisible && item.SelectedObject != null)
+                    ?? throw new InvalidOperationException("P219 AffineTransform PropertyGrid did not load.");
+                PropertyDescriptorCollection descriptors = TypeDescriptor.GetProperties(grid.SelectedObject);
+                foreach (string required in new[]
+                {
+                    "UseDetectedSourcePoints",
+                    "SourcePoint1Feature",
+                    "SourcePoint2Feature",
+                    "SourcePoint3Feature",
+                    "SourcePoint1X",
+                    "SourcePoint1Y",
+                    "SourcePoint2X",
+                    "SourcePoint2Y",
+                    "SourcePoint3X",
+                    "SourcePoint3Y"
+                })
+                {
+                    if (descriptors.Find(required, true) == null)
+                    {
+                        throw new InvalidOperationException("P219 AffineTransform PropertyGrid missed " + required + ".");
+                    }
+                }
+
+                PropertyDescriptor sourcePoint1Feature = descriptors.Find("SourcePoint1Feature", true)!;
+                TypeConverter.StandardValuesCollection? choices =
+                    sourcePoint1Feature.Converter.GetStandardValues(new PropertyContext(grid.SelectedObject, sourcePoint1Feature));
+                string[] references = choices?.Cast<object>()
+                    .Select(item => Convert.ToString(item) ?? string.Empty)
+                    .Where(value => !string.IsNullOrWhiteSpace(value))
+                    .ToArray()
+                    ?? Array.Empty<string>();
+                foreach (string expected in new[] { "LocateTopLeft/Center", "LocateTopRight/Center", "LocateBottomLeft/Center" })
+                {
+                    if (!references.Contains(expected, StringComparer.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException("P219 Point picker missed " + expected + ".");
+                    }
+                }
+
+                int runsBefore = shellHost.NativePreviewRunCount;
+                shellHost.RecipeCommands.ApplySelectedStepParametersCommand.Execute(null);
+                Pump(180);
+                VisionPipeline saved = VisionPipelineStorage.Load(recipeName, pipeline.Name);
+                VisionPipelineStep savedAffine = saved.Steps.Single(item => item.Name == "NormalizeFromThreePoints");
+                if (savedAffine.Parameters.GetValueOrDefault(VisionPipelineAffinePointBindingService.UseDetectedSourcePointsParameter) != "True"
+                    || savedAffine.Parameters.GetValueOrDefault(VisionPipelineAffinePointBindingService.SourcePoint1FeatureParameter) != "LocateTopLeft/Center"
+                    || savedAffine.Parameters.GetValueOrDefault(VisionPipelineAffinePointBindingService.SourcePoint3FeatureParameter) != "LocateBottomLeft/Center"
+                    || shellHost.NativePreviewRunCount != runsBefore)
+                {
+                    throw new InvalidOperationException("P219 detected Point bindings did not round-trip or triggered Preview/Run.");
+                }
+
+                TextBox search = GetActivePropertyGridSearchTextBox(grid, "P219 AffineTransform recipe step");
+                search.Text = "Source point";
+                search.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+                grid.UpdateLayout();
+                Pump(60);
+                ScrollViewer pipelineScroll = FindNamedVisualChild<ScrollViewer>(shellHost, "recipePipelineTabScrollViewer")
+                    ?? throw new InvalidOperationException("P219 Pipeline scroll viewer was not found.");
+                pipelineScroll.ScrollToBottom();
+                pipelineScroll.UpdateLayout();
+                Pump(80);
+                if (grid.IsSearchEmptyMessageVisibleForTest || shellHost.NativePreviewRunCount != 0)
+                {
+                    throw new InvalidOperationException("P219 source-point search failed or changed Preview/Run state.");
+                }
+            }, captureFloatingToolWindow: false, captureScreen: true);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static void AssertP213GeometryCore(string screenshotOutputPath)
+    {
+        string directory = Path.GetDirectoryName(screenshotOutputPath) ?? ".";
+        Directory.CreateDirectory(directory);
+        using CvMat lineImage = new(300, 400, OpenCvSharp.MatType.CV_8UC1, OpenCvSharp.Scalar.White);
+        Cv.Rectangle(lineImage, new OpenCvSharp.Rect(200, 0, 200, 300), OpenCvSharp.Scalar.Black, -1);
+        VisionPipelineStep lineStep = new() { Name = "LineFeature", ToolType = "Line", InputLayer = "Reference", OutputLayer = "Line_Result" };
+        AddParameters(lineStep,
+            ("USE_ROI", "true"), ("CvROI", "150,30,100,240"),
+            ("PRJ_DIR", "X_LTOR"), ("PRJ_PORALITY", "WTOB"),
+            ("CONTRAST", "20"), ("THICKNESS", "3"), ("SAMPLING_STEP", "8"),
+            ("SHOW_EDGE", "true"), ("SHOW_FITLINE", "true"));
+        IVisionTool lineTool = VisionPipelineAppToolFactory.Create(lineStep);
+        VisionToolResult lineResult = lineTool.Execute(lineImage);
+        VisionPipelineGeometryFeatureCaptureService.Capture(lineStep, lineImage, lineTool, lineResult);
+        IReadOnlyList<VisionPipelineGeometryFeatureResult> lineFeatures = VisionPipelineGeometryFeatureStore.Get(lineResult);
+        if (lineResult?.Success != true
+            || lineFeatures.Count != 4
+            || lineFeatures.Single(item => item.FeatureName == "Segment").Kind != VisionPipelineGeometryKind.Segment)
+        {
+            throw new InvalidOperationException("P213 existing Line typed-feature export failed. " + (lineResult?.Message ?? "no result"));
+        }
+        Cv.ImWrite(Path.Combine(directory, "line_typed_feature_export.png"), lineResult.ResultImage);
+
+        using CvMat circleImage = new(300, 400, OpenCvSharp.MatType.CV_8UC1, OpenCvSharp.Scalar.White);
+        Cv.Circle(circleImage, new OpenCvSharp.Point(200, 150), 70, OpenCvSharp.Scalar.Black, 4, OpenCvSharp.LineTypes.AntiAlias);
+        VisionPipelineStep circleStep = new()
+        {
+            Name = "CircleFeature", ToolType = "CircleGauge", InputLayer = "Reference", OutputLayer = "Circle_Result"
+        };
+        AddParameters(circleStep,
+            ("USE_ROI", "true"), ("CvROI", "100,50,200,200"),
+            ("CENTER_X", "200"), ("CENTER_Y", "150"),
+            ("RADIUS_MIN", "60"), ("RADIUS_MAX", "80"),
+            ("START_ANGLE_DEG", "0"), ("SWEEP_ANGLE_DEG", "360"),
+            ("SCAN_COUNT", "180"), ("EDGE_POLARITY", "LightToDark"),
+            ("MIN_CONTRAST", "20"), ("MIN_SUPPORT_RATIO", "0.8"),
+            ("MAX_FIT_RESIDUAL_PX", "2"));
+        VisionToolResult circleResult = VisionPipelineAppToolFactory.Create(circleStep).Execute(circleImage);
+        if (circleResult?.Success != true
+            || !circleResult.Metrics.TryGetValue(VisionPipelineKnownMetrics.CircleRadiusPx, out double radius)
+            || Math.Abs(radius - 68D) > 4D
+            || VisionPipelineGeometryFeatureStore.Get(circleResult).Count != 2)
+        {
+            throw new InvalidOperationException("P213 CircleGauge full-circle contract failed. " + (circleResult?.Message ?? "no result"));
+        }
+        Cv.ImWrite(Path.Combine(directory, "circle_gauge_full_circle.png"), circleResult.ResultImage);
+
+        VisionPipelineStep partialStep = CloneStep(circleStep);
+        partialStep.Name = "PartialArc";
+        partialStep.Parameters["START_ANGLE_DEG"] = "20";
+        partialStep.Parameters["SWEEP_ANGLE_DEG"] = "160";
+        partialStep.Parameters["SCAN_COUNT"] = "80";
+        VisionToolResult partialResult = VisionPipelineAppToolFactory.Create(partialStep).Execute(circleImage);
+        if (partialResult?.Success != true || partialResult.Metrics.GetValueOrDefault(VisionPipelineKnownMetrics.CircleCoverageDeg) < 150D)
+        {
+            throw new InvalidOperationException("P213 CircleGauge partial-arc contract failed. " + partialResult?.Message);
+        }
+        Cv.ImWrite(Path.Combine(directory, "circle_gauge_partial_arc.png"), partialResult.ResultImage);
+
+        using CvMat noEdgeImage = new(300, 400, OpenCvSharp.MatType.CV_8UC1, OpenCvSharp.Scalar.White);
+        VisionToolResult noEdgeResult = VisionPipelineAppToolFactory.Create(circleStep).Execute(noEdgeImage);
+        if (noEdgeResult.Success || !noEdgeResult.Message.Contains("support", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("P213 CircleGauge no-edge/support gate did not fail closed.");
+        }
+        Cv.ImWrite(Path.Combine(directory, "circle_gauge_no_edge_reject.png"), noEdgeResult.ResultImage);
+
+        using CvMat polarityImage = new(300, 400, OpenCvSharp.MatType.CV_8UC1, OpenCvSharp.Scalar.White);
+        Cv.Circle(polarityImage, new OpenCvSharp.Point(200, 150), 70, OpenCvSharp.Scalar.Black, -1, OpenCvSharp.LineTypes.AntiAlias);
+        VisionToolResult polarityResult = VisionPipelineAppToolFactory.Create(circleStep).Execute(polarityImage);
+        if (polarityResult.Success || !polarityResult.Message.Contains("support", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("P213 CircleGauge wrong-polarity gate did not fail closed.");
+        }
+        Cv.ImWrite(Path.Combine(directory, "circle_gauge_wrong_polarity_reject.png"), polarityResult.ResultImage);
+
+        VisionPipelineStep missingRoiCircleStep = CloneStep(circleStep);
+        missingRoiCircleStep.Parameters["USE_ROI"] = "false";
+        VisionToolResult missingRoiResult = VisionPipelineAppToolFactory.Create(missingRoiCircleStep).Execute(circleImage);
+        if (missingRoiResult.Success || !missingRoiResult.Message.Contains("USE_ROI=true", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("P213 CircleGauge reviewed-ROI gate did not fail closed.");
+        }
+        missingRoiResult.ResultImage?.Dispose();
+
+        using CvMat sparseArcImage = new(300, 400, OpenCvSharp.MatType.CV_8UC1, OpenCvSharp.Scalar.White);
+        Cv.Ellipse(sparseArcImage, new OpenCvSharp.Point(200, 150), new OpenCvSharp.Size(70, 70), 0, 0, 80, OpenCvSharp.Scalar.Black, 4, OpenCvSharp.LineTypes.AntiAlias);
+        VisionToolResult sparseResult = VisionPipelineAppToolFactory.Create(circleStep).Execute(sparseArcImage);
+        if (sparseResult.Success || !sparseResult.Message.Contains("support", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("P213 CircleGauge insufficient-coverage gate did not fail closed.");
+        }
+        Cv.ImWrite(Path.Combine(directory, "circle_gauge_insufficient_coverage_reject.png"), sparseResult.ResultImage);
+
+        using CvMat ellipseImage = new(300, 400, OpenCvSharp.MatType.CV_8UC1, OpenCvSharp.Scalar.White);
+        Cv.Ellipse(ellipseImage, new OpenCvSharp.Point(200, 150), new OpenCvSharp.Size(70, 60), 0, 0, 360, OpenCvSharp.Scalar.Black, 4, OpenCvSharp.LineTypes.AntiAlias);
+        VisionPipelineStep residualStep = CloneStep(circleStep);
+        residualStep.Parameters["RADIUS_MIN"] = "50";
+        residualStep.Parameters["MAX_FIT_RESIDUAL_PX"] = "0.5";
+        VisionToolResult residualResult = VisionPipelineAppToolFactory.Create(residualStep).Execute(ellipseImage);
+        if (residualResult.Success || !residualResult.Message.Contains("residual", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("P213 CircleGauge excessive-residual gate did not fail closed. " + residualResult.Message);
+        }
+        Cv.ImWrite(Path.Combine(directory, "circle_gauge_excessive_residual_reject.png"), residualResult.ResultImage);
+
+        using CvMat geometryImage = new(400, 500, OpenCvSharp.MatType.CV_8UC3, new OpenCvSharp.Scalar(32, 32, 32));
+        foreach (GeometryMeasurementMode mode in Enum.GetValues<GeometryMeasurementMode>())
+        {
+            (VisionPipelineGeometryFeatureResult a, VisionPipelineGeometryFeatureResult b) = CreateGeometrySmokeInputs(mode);
+            VisionPipelineRunResult priorRun = CreateGeometryPriorRun(a, b, geometryImage);
+            VisionPipelineStep measure = CreateGeometryMeasureStep(mode, a, b);
+            VisionToolResult measured = VisionPipelineGeometryMeasureService.Execute(measure, geometryImage, priorRun);
+            if (measured?.Success != true || measured.Metrics.GetValueOrDefault(VisionPipelineKnownMetrics.ResultCount) != 1D)
+            {
+                throw new InvalidOperationException($"P213 geometry mode {mode} failed: {measured?.Message}");
+            }
+            Cv.ImWrite(Path.Combine(directory, "geometry_" + mode + ".png"), measured.ResultImage);
+            measured.ResultImage?.Dispose();
+            DisposePriorRun(priorRun);
+        }
+
+        VisionPipelineGeometryFeatureResult farA = Segment("LineA", 10, 10, 20, 10);
+        VisionPipelineGeometryFeatureResult farB = Segment("LineB", 200, 200, 200, 220);
+        VisionPipelineRunResult farRun = CreateGeometryPriorRun(farA, farB, geometryImage);
+        VisionPipelineStep farMeasure = CreateGeometryMeasureStep(GeometryMeasurementMode.LineLineIntersection, farA, farB);
+        farMeasure.Parameters[VisionPipelineGeometryMeasureService.MaximumExtensionAParameter] = "5";
+        farMeasure.Parameters[VisionPipelineGeometryMeasureService.MaximumExtensionBParameter] = "5";
+        VisionToolResult farResult = VisionPipelineGeometryMeasureService.Execute(farMeasure, geometryImage, farRun);
+        if (farResult.Success || !farResult.Message.Contains("extension", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("P213 far-intersection gate did not fail closed.");
+        }
+        farResult.ResultImage?.Dispose();
+        DisposePriorRun(farRun);
+
+        AssertP213GeometryReject(
+            geometryImage,
+            GeometryMeasurementMode.PointPointDistance,
+            Segment("WrongKind", 10, 10, 20, 10),
+            PointFeature("PointB", 30, 30),
+            "kind mismatch");
+
+        VisionPipelineGeometryFeatureResult mismatchedFrame = PointFeature("PointA", 30, 30);
+        mismatchedFrame.ImageWidth = 499;
+        AssertP213GeometryReject(
+            geometryImage,
+            GeometryMeasurementMode.PointPointDistance,
+            mismatchedFrame,
+            PointFeature("PointB", 40, 40),
+            "coordinate frame");
+
+        AssertP213GeometryReject(
+            geometryImage,
+            GeometryMeasurementMode.LineLineAngle,
+            Segment("Degenerate", 20, 20, 20, 20),
+            Segment("LineB", 20, 20, 100, 20),
+            "greater than zero");
+
+        VisionPipelineGeometryFeatureResult roiA = Segment("LineA", 20, 100, 180, 100);
+        VisionPipelineGeometryFeatureResult roiB = Segment("LineB", 100, 20, 100, 180);
+        VisionPipelineRunResult invalidRoiRun = CreateGeometryPriorRun(roiA, roiB, geometryImage);
+        VisionPipelineStep invalidRoiMeasure = CreateGeometryMeasureStep(GeometryMeasurementMode.LineLineIntersection, roiA, roiB);
+        invalidRoiMeasure.Parameters["USE_ROI"] = "true";
+        VisionToolResult invalidRoiResult = VisionPipelineGeometryMeasureService.Execute(invalidRoiMeasure, geometryImage, invalidRoiRun);
+        if (invalidRoiResult.Success || !invalidRoiResult.Message.Contains("valid CvROI", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("P213 invalid intersection result-ROI gate did not fail closed.");
+        }
+        invalidRoiResult.ResultImage?.Dispose();
+        DisposePriorRun(invalidRoiRun);
+
+        AssertP213PropertyRoundTrip(circleStep);
+        VisionPipeline pipeline = new() { Name = "P213Validation" };
+        VisionPipelineStep lineA = new() { Name = "LineA", ToolType = "Line", Enabled = true, InputLayer = "Reference", OutputLayer = "LineA_Result" };
+        VisionPipelineStep lineB = new() { Name = "LineB", ToolType = "Line", Enabled = true, InputLayer = "Reference", OutputLayer = "LineB_Result" };
+        VisionPipelineStep geometry = CreateGeometryMeasureStep(GeometryMeasurementMode.LineLineAngle, Segment("LineA", 10, 10, 100, 10), Segment("LineB", 10, 10, 10, 100));
+        geometry.InputLayer = "Reference";
+        pipeline.Steps.Add(lineA); pipeline.Steps.Add(lineB); pipeline.Steps.Add(geometry);
+        VisionPipelineValidationResult validation = VisionPipelineValidator.Validate(pipeline, new[] { "Reference" });
+        if (!validation.Success)
+        {
+            throw new InvalidOperationException("P213 valid geometry pipeline did not validate: " + validation.FormatErrors());
+        }
+
+        VisionPipeline invalidCirclePipeline = new() { Name = "P213InvalidCircle" };
+        invalidCirclePipeline.Steps.Add(missingRoiCircleStep);
+        VisionPipelineValidationResult invalidCircleValidation = VisionPipelineValidator.Validate(invalidCirclePipeline, new[] { "Reference" });
+        if (invalidCircleValidation.Success
+            || !invalidCircleValidation.FormatErrors().Contains("USE_ROI=true", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("P213 validator accepted CircleGauge without a reviewed ROI.");
+        }
+
+        AssertP213GeometryReportPersistence(directory, lineFeatures);
+
+        circleResult.ResultImage?.Dispose();
+        lineResult.ResultImage?.Dispose();
+        partialResult.ResultImage?.Dispose();
+        noEdgeResult.ResultImage?.Dispose();
+        polarityResult.ResultImage?.Dispose();
+        sparseResult.ResultImage?.Dispose();
+        residualResult.ResultImage?.Dispose();
+    }
+
+    private static void AssertP213GeometryReject(
+        CvMat image,
+        GeometryMeasurementMode mode,
+        VisionPipelineGeometryFeatureResult a,
+        VisionPipelineGeometryFeatureResult b,
+        string expectedMessage)
+    {
+        VisionPipelineRunResult priorRun = CreateGeometryPriorRun(a, b, image);
+        try
+        {
+            VisionPipelineStep measure = CreateGeometryMeasureStep(mode, a, b);
+            VisionToolResult result = VisionPipelineGeometryMeasureService.Execute(measure, image, priorRun);
+            try
+            {
+                if (result.Success || !result.Message.Contains(expectedMessage, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        $"P213 {mode} negative gate did not fail with '{expectedMessage}': {result.Message}");
+                }
+            }
+            finally
+            {
+                result.ResultImage?.Dispose();
+            }
+        }
+        finally
+        {
+            DisposePriorRun(priorRun);
+        }
+    }
+
+    private static void AssertP213GeometryReportPersistence(
+        string artifactDirectory,
+        IReadOnlyList<VisionPipelineGeometryFeatureResult> features)
+    {
+        string recipeName = "Smoke_P213Geometry_" + Guid.NewGuid().ToString("N");
+        try
+        {
+            VisionPipelineStep step = new() { Name = "LineFeature", ToolType = "Line", Enabled = true, InputLayer = "Reference", OutputLayer = "Line_Result" };
+            VisionPipeline pipeline = new() { Name = "GeometryPersistence" };
+            pipeline.Steps.Add(step);
+            DateTime started = DateTime.UtcNow;
+
+            VisionToolResult directToolResult = VisionToolResult.Passed(null, TimeSpan.Zero);
+            VisionPipelineGeometryFeatureStore.Set(directToolResult, features);
+            VisionPipelineRunResult directRun = new();
+            directRun.StepResults.Add(new VisionPipelineStepResult { Step = step, ToolResult = directToolResult, AcceptancePassed = true });
+            string directPath = VisionPipelineRunReportStorage.Save(recipeName, pipeline, directRun, started, started.AddMilliseconds(1), false, "GeometryDirect");
+            VisionPipelineRunReport directReport = VisionPipelineRunReportStorage.Load(directPath)
+                ?? throw new InvalidOperationException("P213 direct geometry report could not be loaded.");
+            AssertGeometryRows(directReport, "direct");
+
+            using VisionRecipeRunResult recipeResult = new()
+            {
+                PipelineName = pipeline.Name,
+                Success = true,
+                Steps = new List<VisionRecipeStepRunSummary>
+                {
+                    new VisionRecipeStepRunSummary
+                    {
+                        Index = 1, Name = step.Name, ToolType = step.ToolType, Enabled = true,
+                        InputLayer = step.InputLayer, OutputLayer = step.OutputLayer,
+                        Status = "OK", ToolSuccess = true, Success = true, AcceptancePassed = true,
+                        GeometryFeatures = features.Select(item => item.Clone()).ToList()
+                    }
+                }
+            };
+            string recipePath = VisionPipelineRunReportStorage.Save(recipeName, pipeline, recipeResult, started, started.AddMilliseconds(1), "GeometryRecipe");
+            VisionPipelineRunReport recipeReport = VisionPipelineRunReportStorage.Load(recipePath)
+                ?? throw new InvalidOperationException("P213 recipe geometry report could not be loaded.");
+            AssertGeometryRows(recipeReport, "recipe");
+
+            File.Copy(directPath, Path.Combine(artifactDirectory, "geometry_direct_report.xml"), true);
+            File.Copy(recipePath, Path.Combine(artifactDirectory, "geometry_recipe_report.xml"), true);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static void AssertGeometryRows(VisionPipelineRunReport report, string context)
+    {
+        List<VisionPipelineGeometryFeatureResult> rows = report?.Steps?.SingleOrDefault()?.GeometryFeatures
+            ?? new List<VisionPipelineGeometryFeatureResult>();
+        if (rows.Count != 4
+            || rows.SingleOrDefault(item => item.FeatureName == "Segment")?.Kind != VisionPipelineGeometryKind.Segment
+            || rows.Any(item => item.CoordinateLayer != "Reference" || item.ImageWidth <= 0 || item.ImageHeight <= 0))
+        {
+            throw new InvalidOperationException("P213 " + context + " report did not preserve typed geometry rows and provenance.");
+        }
+    }
+
+    private static void AssertP213PropertyRoundTrip(VisionPipelineStep circleStep)
+    {
+        object circleProperty = VisionPipelineStepPropertyMapper.CreateProperty(circleStep)
+            ?? throw new InvalidOperationException("P213 CircleGauge PropertyGrid mapping returned null.");
+        VisionPipelineStep circleRoundTrip = CloneStep(circleStep);
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(circleRoundTrip, circleProperty)
+            || circleRoundTrip.ToolType != "CircleGauge"
+            || circleRoundTrip.Parameters.GetValueOrDefault("EDGE_POLARITY") != "LightToDark"
+            || circleRoundTrip.Parameters.GetValueOrDefault("SCAN_COUNT") != "180")
+        {
+            throw new InvalidOperationException("P213 CircleGauge PropertyGrid round trip failed.");
+        }
+
+        VisionPipelineStep geometry = CreateGeometryMeasureStep(
+            GeometryMeasurementMode.LineLineIntersection,
+            Segment("LineA", 0, 0, 100, 0),
+            Segment("LineB", 50, -50, 50, 50));
+        VisionPipeline pipeline = new() { Name = "FeaturePicker" };
+        pipeline.Steps.Add(new VisionPipelineStep { Name = "LineA", ToolType = "Line", InputLayer = "Reference", OutputLayer = "A" });
+        pipeline.Steps.Add(new VisionPipelineStep { Name = "LineB", ToolType = "Line", InputLayer = "Reference", OutputLayer = "B" });
+        pipeline.Steps.Add(geometry);
+        VisionPipelineStepPropertyMapper.SetGeometryFeatureContext((mode, sourceA) =>
+            VisionPipelineStepPropertyMapper.GetCompatibleGeometryFeatureReferences(pipeline, 2, mode, sourceA));
+        object property = VisionPipelineStepPropertyMapper.CreateProperty(geometry)
+            ?? throw new InvalidOperationException("P213 GeometryMeasure PropertyGrid mapping returned null.");
+        PropertyDescriptor sourceAProperty = TypeDescriptor.GetProperties(property)["SourceA"]
+            ?? throw new InvalidOperationException("P213 feature picker SourceA property is missing.");
+        TypeConverter.StandardValuesCollection? values = sourceAProperty.Converter.GetStandardValues(new PropertyContext(property, sourceAProperty));
+        if (values == null || !values.Cast<object>().Select(item => Convert.ToString(item) ?? string.Empty).Contains("LineA/Segment", StringComparer.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("P213 compatible feature picker did not list the earlier Line segment.");
+        }
+        VisionPipelineStep roundTrip = CloneStep(geometry);
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(roundTrip, property)
+            || roundTrip.Parameters.GetValueOrDefault(VisionPipelineGeometryMeasureService.SourceFeatureAParameter) != "Segment")
+        {
+            throw new InvalidOperationException("P213 GeometryMeasure PropertyGrid round trip failed.");
+        }
+    }
+
+    private static VisionPipelineStep CreateGeometryMeasureStep(GeometryMeasurementMode mode, VisionPipelineGeometryFeatureResult a, VisionPipelineGeometryFeatureResult b)
+    {
+        VisionPipelineStep step = new() { Name = "Measure", ToolType = "GeometryMeasure", InputLayer = "Reference", OutputLayer = "Measure_Result" };
+        AddParameters(step,
+            (VisionPipelineGeometryMeasureService.ModeParameter, mode.ToString()),
+            (VisionPipelineGeometryMeasureService.SourceStepAParameter, a.SourceStep),
+            (VisionPipelineGeometryMeasureService.SourceFeatureAParameter, a.FeatureName),
+            (VisionPipelineGeometryMeasureService.SourceStepBParameter, b.SourceStep),
+            (VisionPipelineGeometryMeasureService.SourceFeatureBParameter, b.FeatureName),
+            (VisionPipelineGeometryMeasureService.MaximumParallelAngleDeltaParameter, "3"),
+            (VisionPipelineGeometryMeasureService.MaximumExtensionAParameter, "500"),
+            (VisionPipelineGeometryMeasureService.MaximumExtensionBParameter, "500"),
+            (VisionPipelineGeometryMeasureService.RequireResultInImageParameter, "true"),
+            (VisionPipelineNormalizer.AllowBranchInputParameter, "true"));
+        return step;
+    }
+
+    private static (VisionPipelineGeometryFeatureResult A, VisionPipelineGeometryFeatureResult B) CreateGeometrySmokeInputs(GeometryMeasurementMode mode)
+    {
+        return mode switch
+        {
+            GeometryMeasurementMode.PointPointDistance => (PointFeature("PointA", 50, 50), PointFeature("PointB", 80, 90)),
+            GeometryMeasurementMode.PointLineDistance => (PointFeature("PointA", 50, 80), Segment("LineB", 20, 40, 160, 40)),
+            GeometryMeasurementMode.SegmentSegmentDistance => (Segment("LineA", 20, 40, 120, 40), Segment("LineB", 150, 70, 150, 160)),
+            GeometryMeasurementMode.LineLineDistance => (Segment("LineA", 20, 40, 180, 40), Segment("LineB", 20, 90, 180, 90)),
+            GeometryMeasurementMode.LineLineAngle => (Segment("LineA", 20, 40, 180, 40), Segment("LineB", 50, 20, 50, 180)),
+            GeometryMeasurementMode.LineLineIntersection => (Segment("LineA", 20, 100, 180, 100), Segment("LineB", 100, 20, 100, 180)),
+            GeometryMeasurementMode.CircleSegmentClearance => (CircleFeature("CircleA", 100, 100, 30), Segment("LineB", 160, 20, 160, 180)),
+            _ => throw new ArgumentOutOfRangeException(nameof(mode))
+        };
+    }
+
+    private static VisionPipelineRunResult CreateGeometryPriorRun(VisionPipelineGeometryFeatureResult a, VisionPipelineGeometryFeatureResult b, CvMat image)
+    {
+        VisionPipelineRunResult run = new();
+        foreach (IGrouping<string, VisionPipelineGeometryFeatureResult> group in new[] { a, b }.GroupBy(item => item.SourceStep, StringComparer.OrdinalIgnoreCase))
+        {
+            VisionToolResult toolResult = VisionToolResult.Passed(image.Clone(), TimeSpan.Zero);
+            VisionPipelineGeometryFeatureStore.Set(toolResult, group);
+            run.StepResults.Add(new VisionPipelineStepResult
+            {
+                Step = new VisionPipelineStep { Name = group.Key, ToolType = group.First().Kind == VisionPipelineGeometryKind.Circle ? "CircleGauge" : "Line", Enabled = true, InputLayer = "Reference", OutputLayer = group.Key + "_Result" },
+                ToolResult = toolResult,
+                AcceptancePassed = true
+            });
+        }
+        return run;
+    }
+
+    private static void DisposePriorRun(VisionPipelineRunResult run)
+    {
+        foreach (VisionPipelineStepResult item in run.StepResults) item.ToolResult?.ResultImage?.Dispose();
+    }
+
+    private static VisionPipelineGeometryFeatureResult PointFeature(string step, double x, double y) => new()
+    {
+        SourceStep = step, FeatureName = "Midpoint", Kind = VisionPipelineGeometryKind.Point,
+        CoordinateLayer = "Reference", ImageWidth = 500, ImageHeight = 400,
+        X1 = x, Y1 = y, CenterX = x, CenterY = y, SupportCount = 1, SupportRatio = 1
+    };
+    private static VisionPipelineGeometryFeatureResult Segment(string step, double x1, double y1, double x2, double y2) => new()
+    {
+        SourceStep = step, FeatureName = "Segment", Kind = VisionPipelineGeometryKind.Segment,
+        CoordinateLayer = "Reference", ImageWidth = 500, ImageHeight = 400,
+        X1 = x1, Y1 = y1, X2 = x2, Y2 = y2, CenterX = (x1 + x2) / 2, CenterY = (y1 + y2) / 2,
+        SupportCount = 12, SupportRatio = 1
+    };
+    private static VisionPipelineGeometryFeatureResult CircleFeature(string step, double x, double y, double radius) => new()
+    {
+        SourceStep = step, FeatureName = "Circle", Kind = VisionPipelineGeometryKind.Circle,
+        CoordinateLayer = "Reference", ImageWidth = 500, ImageHeight = 400,
+        X1 = x, Y1 = y, CenterX = x, CenterY = y, RadiusPx = radius,
+        SupportCount = 120, SupportRatio = 1, CoverageDeg = 360
+    };
+
+    private static void AddParameters(VisionPipelineStep step, params (string Key, string Value)[] parameters)
+    {
+        foreach ((string key, string value) in parameters) step.Parameters[key] = value;
+    }
+
+    private static VisionPipelineStep CloneStep(VisionPipelineStep source)
+    {
+        VisionPipelineStep clone = new() { Name = source.Name, ToolType = source.ToolType, Enabled = source.Enabled, InputLayer = source.InputLayer, OutputLayer = source.OutputLayer };
+        foreach (KeyValuePair<string, string> item in source.Parameters) clone.Parameters[item.Key] = item.Value;
+        return clone;
+    }
+
+    private sealed class PropertyContext : ITypeDescriptorContext
+    {
+        public PropertyContext(object instance, PropertyDescriptor descriptor) { Instance = instance; PropertyDescriptor = descriptor; }
+        public IContainer? Container => null;
+        public object Instance { get; }
+        public PropertyDescriptor PropertyDescriptor { get; }
+        public object? GetService(Type serviceType) => null;
+        public bool OnComponentChanging() => true;
+        public void OnComponentChanged() { }
     }
 
     private static CaptureResult CaptureShellHostPipelineReview(string outputPath)
@@ -15981,6 +19529,10 @@ internal static class Program
                 || step.Parameters == null
                 || !step.Parameters.ContainsKey("MIN_AREA")
                 || !step.Parameters.ContainsKey("MAX_AREA")
+                || !step.Parameters.ContainsKey("MIN_WIDTH")
+                || !step.Parameters.ContainsKey("MAX_WIDTH")
+                || !step.Parameters.ContainsKey("MIN_HEIGHT")
+                || !step.Parameters.ContainsKey("MAX_HEIGHT")
                 || !step.Parameters.ContainsKey("THRESHOLD"))
             {
                 throw new InvalidOperationException("Blob WPF tool did not create a valid pipeline step.");
@@ -16073,6 +19625,70 @@ internal static class Program
             AssertDockedSingleInputToolLayout("Docked Blob tool layout after cross-tool reselect");
             AssertActiveToolTextsVisible("Docked Blob verification guide after cross-tool reselect", "Blob 검증", "미리보기 OK", "면적 ", "다음:");
             AssertDirectResultOkBanner(shellHost, "Docked Blob after cross-tool reselect");
+        });
+    }
+
+    private static CaptureResult CaptureP216ObjectDimensionFiltersPropertyGrid(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_P216ObjectDimensionFilters");
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            shellHost.SelectToolForTest(VISION_MENU.Blob);
+            Pump(20);
+            System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid =
+                GetActiveFloatingPropertyGrid("P216 Blob dimension filter PropertyGrid");
+            PropertyDescriptorCollection descriptors = TypeDescriptor.GetProperties(grid.SelectedObject);
+            foreach (string required in new[] { "MIN_WIDTH", "MAX_WIDTH", "MIN_HEIGHT", "MAX_HEIGHT" })
+            {
+                if (descriptors.Find(required, true) == null)
+                {
+                    throw new InvalidOperationException("P216 Blob PropertyGrid missed " + required + ".");
+                }
+            }
+
+            AssertPropertyValue(grid.SelectedObject, "MIN_WIDTH", 0);
+            AssertPropertyValue(grid.SelectedObject, "MAX_WIDTH", 1000000);
+            AssertPropertyValue(grid.SelectedObject, "MIN_HEIGHT", 0);
+            AssertPropertyValue(grid.SelectedObject, "MAX_HEIGHT", 1000000);
+
+            int runsBefore = shellHost.NativePreviewRunCount;
+            SetFloatingPropertyGridPropertyValue("P216 minimum width", "MIN_WIDTH", 15);
+            SetFloatingPropertyGridPropertyValue("P216 maximum width", "MAX_WIDTH", 30);
+            SetFloatingPropertyGridPropertyValue("P216 minimum height", "MIN_HEIGHT", 16);
+            SetFloatingPropertyGridPropertyValue("P216 maximum height", "MAX_HEIGHT", 40);
+            Pump(80);
+            AssertPropertyValue(grid.SelectedObject, "MIN_WIDTH", 15);
+            AssertPropertyValue(grid.SelectedObject, "MAX_WIDTH", 30);
+            AssertPropertyValue(grid.SelectedObject, "MIN_HEIGHT", 16);
+            AssertPropertyValue(grid.SelectedObject, "MAX_HEIGHT", 40);
+            if (shellHost.NativePreviewRunCount != runsBefore)
+            {
+                throw new InvalidOperationException("P216 dimension edits triggered Preview/Run.");
+            }
+
+            TextBox search = GetActivePropertyGridSearchTextBox(grid, "P216 Blob dimension filters");
+            search.Text = "바운딩";
+            search.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+            grid.UpdateLayout();
+            Pump(80);
+            BringPropertyGridPropertyIntoView(grid, "MIN_HEIGHT", "P216 Blob dimension filters", 0D);
+            if (grid.IsSearchEmptyMessageVisibleForTest || shellHost.NativePreviewRunCount != runsBefore)
+            {
+                throw new InvalidOperationException("P216 dimension search failed or triggered Preview/Run.");
+            }
+
+            if (!shellHost.DockActiveWpfToolWindowForTest())
+            {
+                throw new InvalidOperationException("P216 Blob PropertyGrid could not be docked for evidence capture.");
+            }
+
+            shellHost.SetDockedToolInspectorWidthForTest(720D);
+            Pump(40);
+            if (shellHost.NativePreviewRunCount != runsBefore)
+            {
+                throw new InvalidOperationException("P216 PropertyGrid docking changed Preview/Run count.");
+            }
         });
     }
 
@@ -16207,6 +19823,10 @@ internal static class Program
                 || step.Parameters == null
                 || !step.Parameters.ContainsKey("MIN_AREA")
                 || !step.Parameters.ContainsKey("MAX_AREA")
+                || !step.Parameters.ContainsKey("MIN_WIDTH")
+                || !step.Parameters.ContainsKey("MAX_WIDTH")
+                || !step.Parameters.ContainsKey("MIN_HEIGHT")
+                || !step.Parameters.ContainsKey("MAX_HEIGHT")
                 || !step.Parameters.ContainsKey("DetectMode"))
             {
                 throw new InvalidOperationException("Contour WPF tool did not create a valid pipeline step.");
@@ -16475,6 +20095,11 @@ internal static class Program
                 AssertComboBoxPopupLayout(outputLayerCombo, "Matching output layer combo");
                 AssertFloatingPropertyGridRowsRendered("Matching property grid");
                 AssertFloatingPropertyGridMinimumSize("Matching property grid", 600D, 380D);
+                if (GetActiveFloatingPropertyGrid("Matching property grid").ThemeVariant
+                    != System.Windows.Controls.WpfPropertyGrid.PropertyGridThemeVariant.Default)
+                {
+                    throw new InvalidOperationException("Matching Tool View must retain the default PropertyGrid theme.");
+                }
                 SetFloatingPropertyGridPropertyValue("Matching auto preview off by default", "AUTO_PREVIEW", false);
                 SetFloatingPropertyGridPropertyValue("Matching reset angle search", "USE_FIND_ANGLE", true);
                 SetFloatingPropertyGridPropertyValue("Matching reset canny", "USE_CANNY", false);
@@ -18088,10 +21713,541 @@ internal static class Program
 
     private static CaptureResult CaptureShellHostEdgeBasedMatchingTool(string outputPath)
     {
+        return CaptureShellHostEdgeBasedMatchingToolCore(outputPath, dockAfterVerification: true);
+    }
+
+    private static CaptureResult CaptureShellHostEdgeBasedMatchingAutoMPoint(string outputPath)
+    {
+        return CaptureShellHostEdgeBasedMatchingToolCore(outputPath, dockAfterVerification: false);
+    }
+
+    private static CaptureResult CaptureToolNImageVerificationWindow(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        string inputDirectory = Path.Combine(
+            Path.GetDirectoryName(outputPath) ?? Path.GetTempPath(),
+            "n_image_window_inputs");
+        Directory.CreateDirectory(inputDirectory);
+        List<string> imagePaths = new List<string>();
+        for (int index = 0; index < 8; index++)
+        {
+            string path = Path.Combine(inputDirectory, $"threshold_{index + 1:00}.png");
+            using Bitmap bitmap = new Bitmap(320, 220, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            using Graphics graphics = Graphics.FromImage(bitmap);
+            graphics.Clear(DrawingColor.FromArgb(28 + (index * 2), 34 + (index * 2), 42 + (index * 2)));
+            using System.Drawing.SolidBrush objectBrush =
+                new System.Drawing.SolidBrush(DrawingColor.FromArgb(205, 220, 235));
+            graphics.FillRectangle(objectBrush, 46 + (index * 3), 52, 112, 82);
+            graphics.FillEllipse(objectBrush, 205, 74 + (index % 3), 44, 44);
+            bitmap.Save(path, ImageFormat.Png);
+            imagePaths.Add(path);
+        }
+
+        VisionToolNImageVerificationController controller =
+            new VisionToolNImageVerificationController(
+                "Threshold",
+                "Smoke_ToolNImageVerification",
+                () => VisionPipelineStepBuilder.FromThresholdProperty(
+                    new ThresholdToolProperty(),
+                    "Threshold",
+                    "Main",
+                    "NImageResult"),
+                normalizeInputToGray: true);
+        controller.AddImagePaths(imagePaths);
+        Task.Run(controller.RunAsync).GetAwaiter().GetResult();
+        VisionToolNImageVerificationWindow window =
+            new VisionToolNImageVerificationWindow(controller);
+        return CaptureStandaloneWindow(window, outputPath, 1380, 840, () =>
+        {
+            if (controller.Rows.Count != imagePaths.Count)
+            {
+                throw new InvalidOperationException(
+                    $"N-image verification window retained {controller.Rows.Count} rows; expected {imagePaths.Count}.");
+            }
+
+            if (!controller.CanExport
+                || controller.SelectedRow == null
+                || controller.SelectedSourceImage == null
+                || controller.SelectedDrawingImage == null)
+            {
+                throw new InvalidOperationException(
+                    "N-image verification window did not retain selectable source/drawing/report evidence.");
+            }
+        });
+    }
+
+    private static CaptureResult CaptureToolNImageLocatorPromotionWindow(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        string recipeName = "Smoke_NImageLocatorPromotion_" + Guid.NewGuid().ToString("N");
+        string inputDirectory = Path.Combine(
+            Path.GetDirectoryName(outputPath) ?? Path.GetTempPath(),
+            "locator_promotion_inputs");
+        Directory.CreateDirectory(inputDirectory);
+        using Bitmap source = CreateMatchingSmokeBitmap();
+        string templatePath = CreateMatchingTemplateFile(source);
+        List<string> imagePaths = new List<string>();
+        for (int index = 0; index < 6; index++)
+        {
+            string path = Path.Combine(inputDirectory, $"locator_{index + 1:00}.jpg");
+            source.Save(path, ImageFormat.Jpeg);
+            imagePaths.Add(path);
+        }
+
+        VisionToolNImageVerificationController controller =
+            new VisionToolNImageVerificationController(
+                "Matching",
+                recipeName,
+                () =>
+                {
+                    MatchingProperty property = new MatchingProperty("Matching")
+                    {
+                        PATTERN_PATH = templatePath,
+                        SCORE_MIN = 0.5D,
+                        NUM_MATCH = 1,
+                        USE_FIND_ANGLE = false,
+                        USE_FIND_SCALE = false,
+                        USE_CANNY = false
+                    };
+                    return VisionPipelineStepBuilder.FromProperty(
+                        property,
+                        "Main",
+                        "NImageResult");
+                },
+                normalizeInputToGray: false);
+        try
+        {
+            controller.AddImagePaths(imagePaths);
+            Task.Run(controller.RunAsync).GetAwaiter().GetResult();
+            if (!controller.CanPromoteLocatorValidation
+                || !controller.PromoteLocatorValidation()
+                || controller.LastPromotionResult?.ImageCount != imagePaths.Count)
+            {
+                throw new InvalidOperationException(
+                    "N-image locator promotion action was not available after a complete locator run. "
+                    + controller.StatusText);
+            }
+
+            VisionToolNImageVerificationWindow window =
+                new VisionToolNImageVerificationWindow(controller);
+            return CaptureStandaloneWindow(window, outputPath, 1380, 840, () =>
+            {
+                Button promoteButton = FindVisualChildren<Button>(window)
+                    .FirstOrDefault(item => string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "VisionToolNImagePromoteLocatorValidationButton",
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException(
+                        "N-image locator promotion button was not visible.");
+                if (!promoteButton.IsVisible
+                    || !promoteButton.IsEnabled
+                    || !controller.StatusText.Contains("승격 완료", StringComparison.Ordinal)
+                    || controller.Rows.Count != imagePaths.Count
+                    || controller.Rows.Any(row => !row.Success))
+                {
+                    throw new InvalidOperationException(
+                        "N-image locator promotion window did not retain its actionable completed state.");
+                }
+            });
+        }
+        finally
+        {
+            controller.Dispose();
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+            TryDeleteFile(templatePath);
+        }
+    }
+
+    private static CaptureResult CaptureP235LocatorValidationPromotion(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        string retainedRoot = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "artifacts",
+            "p234_tool_n_image_real_folder_acceptance_20260724");
+        string summaryPath = Path.Combine(retainedRoot, "summary.xml");
+        string pipelinePath = Path.Combine(retainedRoot, "pipeline.xml");
+        VisionPipelineBatchRunSummary summary = VisionPipelineBatchRunSummaryStorage.Load(summaryPath)
+            ?? throw new InvalidOperationException("P234 retained summary could not be loaded.");
+        string pipelineXml = File.ReadAllText(pipelinePath);
+        const string expectedDefinitionSha256 =
+            "7CEAEC5D50259ED1337AB912F0F0A63C673F4A74E692DCDEA01BAA14FC25658F";
+        string definitionSha256 = OpenVisionRecipeValidationSetStorage.ComputeTextSha256(pipelineXml);
+        if (summary.Results.Count != 24
+            || summary.Results.Any(item => item?.Success != true)
+            || !string.Equals(definitionSha256, expectedDefinitionSha256, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "P234 retained identity changed before promotion. "
+                + $"Rows={summary.Results.Count}, StepSHA={definitionSha256}.");
+        }
+
+        List<VisionToolNImageVerificationRow> rows = new List<VisionToolNImageVerificationRow>();
+        for (int index = 0; index < summary.Results.Count; index++)
+        {
+            VisionPipelineBatchSampleRunResult retained = summary.Results[index]
+                ?? throw new InvalidOperationException("P234 retained row is null.");
+            VisionPipelineRunReport report = VisionPipelineRunReportStorage.Load(retained.RunReportPath)
+                ?? throw new InvalidOperationException("P234 retained report could not be loaded: " + retained.RunReportPath);
+            string reportDirectory = Path.GetDirectoryName(retained.RunReportPath) ?? string.Empty;
+            string sourcePath = Path.IsPathRooted(report.SourceImageFile)
+                ? report.SourceImageFile
+                : Path.Combine(reportDirectory, report.SourceImageFile ?? string.Empty);
+            if (!File.Exists(retained.SampleImagePath)
+                || !VisionPipelineRunReportStorage.IsFileSha256Match(
+                    sourcePath,
+                    report.SourceImageSha256))
+            {
+                throw new InvalidOperationException(
+                    "P234 retained source identity mismatch: " + retained.SampleImagePath);
+            }
+
+            rows.Add(new VisionToolNImageVerificationRow
+            {
+                Index = index + 1,
+                ImagePath = retained.SampleImagePath,
+                Status = retained.Status,
+                Success = retained.Success,
+                TotalMilliseconds = retained.TotalMilliseconds,
+                Message = retained.Message,
+                MetricText = retained.MetricText,
+                RunReportPath = retained.RunReportPath,
+                SourceSnapshotPath = sourcePath,
+                SourceSha256 = report.SourceImageSha256,
+                FailedStep = retained.FailedStep
+            });
+        }
+
+        VisionToolNImageVerificationSession session = new VisionToolNImageVerificationSession
+        {
+            ToolName = "EdgeBasedMatching",
+            PipelineName = summary.PipelineName,
+            PipelineXml = pipelineXml,
+            StepDefinitionSha256 = definitionSha256,
+            BatchSummaryPath = summaryPath,
+            WasCancelled = false,
+            StartedAt = DateTime.Parse(summary.StartedAt, CultureInfo.InvariantCulture),
+            FinishedAt = DateTime.Parse(summary.FinishedAt, CultureInfo.InvariantCulture),
+            Rows = rows
+        };
+
+        string recipeName = "Smoke_P235LocatorPromotion_" + Guid.NewGuid().ToString("N");
+        const string sentinelPipelineName = "Sentinel_Active_Pipeline";
+        VisionPipelineStorage.Save(
+            recipeName,
+            CreateRecipeContextSmokePipeline(sentinelPipelineName, 1));
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, sentinelPipelineName);
+        try
+        {
+            if (!VisionToolNImageValidationPromotionService.TryPromoteLocatorExpectedSuccess(
+                    recipeName,
+                    session,
+                    out VisionToolNImageValidationPromotionResult promoted,
+                    out string promotionError))
+            {
+                throw new InvalidOperationException("P235 promotion failed: " + promotionError);
+            }
+
+            if (!VisionToolNImageValidationPromotionService.TryPromoteLocatorExpectedSuccess(
+                    recipeName,
+                    session,
+                    out VisionToolNImageValidationPromotionResult reused,
+                    out string reuseError)
+                || !reused.ReusedExistingIdentity
+                || !string.Equals(reused.ValidationSetName, promoted.ValidationSetName, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("P235 idempotent promotion failed: " + reuseError);
+            }
+
+            if (!string.Equals(
+                    VisionPipelineStorage.LoadActivePipelineName(recipeName, sentinelPipelineName),
+                    sentinelPipelineName,
+                    StringComparison.Ordinal)
+                || Directory.EnumerateFiles(
+                        RecipeWorkspaceService.GetRecipeWorkspaceDirectory(recipeName),
+                        "summary.xml",
+                        SearchOption.AllDirectories)
+                    .Any())
+            {
+                throw new InvalidOperationException(
+                    "P235 promotion changed the active Pipeline or executed a validation run.");
+            }
+
+            if (!OpenVisionRecipeValidationSetStorage.TryLoad(
+                    recipeName,
+                    out OpenVisionRecipeValidationSetDocument document,
+                    out string loadError))
+            {
+                throw new InvalidOperationException("P235 validation set reload failed: " + loadError);
+            }
+
+            OpenVisionRecipeValidationSet set = document.Sets.Single(item =>
+                string.Equals(item.Name, promoted.ValidationSetName, StringComparison.Ordinal));
+            string savedPipelineXml = File.ReadAllText(promoted.PipelinePath);
+            bool frozenIdentityValid =
+                OpenVisionRecipeValidationSetStorage.TryValidateFrozenIdentity(
+                    set,
+                    summary.PipelineName,
+                    savedPipelineXml,
+                    out string identityError);
+            if (!set.IsIdentityLocked
+                || set.Images.Count != 24
+                || set.Images.Any(item =>
+                    !string.Equals(
+                        item.Expected,
+                        OpenVisionRecipeValidationSetImage.ExpectedOk,
+                        StringComparison.Ordinal))
+                || !string.Equals(
+                    set.PipelineDefinitionSha256,
+                    expectedDefinitionSha256,
+                    StringComparison.Ordinal)
+                || !frozenIdentityValid)
+            {
+                throw new InvalidOperationException(
+                    "P235 reloaded identity did not preserve the exact P234 Step/images: " + identityError);
+            }
+
+            string retainedImageSha = set.Images[0].Sha256;
+            set.Images[0].Sha256 = new string('0', 64);
+            if (OpenVisionRecipeValidationSetStorage.TryValidateFrozenIdentity(
+                    set,
+                    summary.PipelineName,
+                    savedPipelineXml,
+                    out _))
+            {
+                throw new InvalidOperationException("P235 image hash tamper was not rejected.");
+            }
+
+            set.Images[0].Sha256 = retainedImageSha;
+            if (!OpenVisionRecipeValidationSetStorage.TryValidateFrozenIdentity(
+                    set,
+                    summary.PipelineName,
+                    savedPipelineXml,
+                    out string restoredIdentityError))
+            {
+                throw new InvalidOperationException(
+                    "P235 restored image hash did not revalidate: " + restoredIdentityError);
+            }
+
+            OpenVisionShellHostView shellHost = CreateShellHost(recipeName, seedMainLayer: false);
+            CaptureResult capture = CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                OpenVisionRecipeValidationSetOption lockedOption =
+                    shellHost.RecipeCommands.ValidationSetOptions.Single(option =>
+                        string.Equals(
+                            option.Name,
+                            promoted.ValidationSetName,
+                            StringComparison.Ordinal));
+                shellHost.RecipeCommands.SelectedValidationSetOption = lockedOption;
+                shellHost.RecipeCommands.SelectedValidationSuiteScopeOption =
+                    shellHost.RecipeCommands.ValidationSuiteScopeOptions.Single(option =>
+                        string.Equals(
+                            option.Key,
+                            OpenVisionRecipeValidationSuiteScopeOption.LocalValidationSetKey,
+                            StringComparison.OrdinalIgnoreCase));
+
+                OpenVisionRecipePipelineOption sentinelOption =
+                    shellHost.RecipeCommands.PipelineOptions.Single(option =>
+                        string.Equals(
+                            option.PipelineName,
+                            sentinelPipelineName,
+                            StringComparison.Ordinal));
+                shellHost.RecipeCommands.SelectedPipelineOption = sentinelOption;
+                if (shellHost.RecipeCommands.RunValidationSuiteCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException(
+                        "P235 locked set allowed execution with the wrong Pipeline.");
+                }
+
+                OpenVisionRecipePipelineOption locatorOption =
+                    shellHost.RecipeCommands.PipelineOptions.Single(option =>
+                        string.Equals(
+                            option.PipelineName,
+                            summary.PipelineName,
+                            StringComparison.Ordinal));
+                shellHost.RecipeCommands.SelectedPipelineOption = locatorOption;
+                if (!shellHost.RecipeCommands.RunValidationSuiteCommand.CanExecute(null)
+                    || shellHost.RecipeCommands.AddValidationSetOkImagesCommand.CanExecute(null)
+                    || shellHost.RecipeCommands.AddValidationSetNgImagesCommand.CanExecute(null)
+                    || shellHost.RecipeCommands.RemoveValidationSetImageCommand.CanExecute(null)
+                    || shellHost.RecipeCommands.RepairValidationSetImagePathCommand.CanExecute(null)
+                    || lockedOption.ImageCount != 24
+                    || lockedOption.OkCount != 24
+                    || lockedOption.NgCount != 0
+                    || !lockedOption.DisplayText.Contains("해시 잠금", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "P235 Recipe Manager locked-set state was incomplete: "
+                        + shellHost.RecipeCommands.ValidationSetSelectionSummaryText);
+                }
+
+                int previewRunsBefore = shellHost.NativePreviewRunCount;
+                int layerCountBefore = shellHost.LayerDocumentCount;
+                ToggleButton recipeManagerButton =
+                    FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager")
+                    ?? throw new InvalidOperationException("P235 Recipe Manager button was not found.");
+                recipeManagerButton.IsChecked = true;
+                Pump(80);
+                FindNamedVisualChild<ToggleButton>(shellHost, "recipeAdvancedReviewToggle")!.IsChecked = true;
+                Pump(40);
+                FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline")!.IsSelected = true;
+                Pump(30);
+                FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineRunHistory")!.IsSelected = true;
+                Pump(60);
+                FrameworkElement evidence =
+                    FindVisualChildren<FrameworkElement>(shellHost).FirstOrDefault(item =>
+                        string.Equals(
+                            AutomationProperties.GetAutomationId(item),
+                            "HostRecipeValidationSetEvidenceBoard",
+                            StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("P235 Validation Set evidence board was not found.");
+                evidence.BringIntoView();
+                evidence.UpdateLayout();
+                Pump(60);
+                if (shellHost.NativePreviewRunCount != previewRunsBefore
+                    || shellHost.LayerDocumentCount != layerCountBefore
+                    || !shellHost.RecipeCommands.ValidationSetExpectedText.Contains(
+                        "위치검출 기대 성공",
+                        StringComparison.Ordinal)
+                    || !shellHost.RecipeCommands.ValidationSetNextActionText.Contains(
+                        summary.PipelineName,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "P235 Recipe Manager presentation changed state or lost locator semantics.");
+                }
+            }, captureFloatingToolWindow: false, captureScreen: true);
+
+            string evidenceDirectory =
+                Path.GetDirectoryName(outputPath) ?? Directory.GetCurrentDirectory();
+            Directory.CreateDirectory(evidenceDirectory);
+            File.Copy(
+                promoted.PipelinePath,
+                Path.Combine(evidenceDirectory, "promoted-pipeline.xml"),
+                overwrite: true);
+            File.Copy(
+                promoted.ValidationSetPath,
+                Path.Combine(evidenceDirectory, "promoted-validation-sets.xml"),
+                overwrite: true);
+            File.WriteAllLines(
+                Path.Combine(evidenceDirectory, "completion_record.txt"),
+                new[]
+                {
+                    "Status: Complete",
+                    "Scope: Exact retained P234 EdgeBasedMatching one-Step/24-image promotion into a hash-locked Recipe Manager locator expected-success Validation Set.",
+                    "Acceptance criteria: exact Step SHA -> PASS "
+                        + promoted.PipelineDefinitionSha256
+                        + "; images -> 24/24 Expected OK; idempotent repeat -> PASS; wrong Pipeline blocked -> PASS; image-hash tamper rejected -> PASS; active Pipeline unchanged -> PASS; automatic Preview/Run -> 0.",
+                    "Verification: current-build p235_locator_validation_promotion screenshot smoke; legacy Validation Set, N-image window, and entry side-effect regressions.",
+                    "Evidence: promoted-pipeline.xml; promoted-validation-sets.xml; p235_locator_validation_promotion.png; image-set SHA-256 "
+                        + promoted.ImageSetSha256
+                        + "; dependency count "
+                        + promoted.DependencyCount.ToString(CultureInfo.InvariantCulture)
+                        + ".",
+                    "Boundary / next dependency: Every row means locator expected success, not defect OK/NG classification. This promotion does not rerun or semantically requalify P234, add parallel execution, or prove field robustness."
+                },
+                new System.Text.UTF8Encoding(false));
+            return capture;
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static CaptureResult CaptureToolNImageEntrySideEffectContract(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_ToolNImageEntrySideEffects");
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            shellHost.SelectToolForTest(VISION_MENU.Threshold);
+            Pump(16);
+            int previewRuns = shellHost.NativePreviewRunCount;
+            int layerCount = shellHost.LayerDocumentCount;
+            string inputRoute = shellHost.ActiveNativeRouteInputLayerNameForTest;
+            string outputRoute = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+            string activeLayer = shellHost.ActiveHostLayerTitle;
+            Button button = FindActiveToolVisualRoots()
+                .SelectMany(FindVisualChildren<Button>)
+                .FirstOrDefault(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "VisionToolNImageVerificationButton",
+                    StringComparison.Ordinal))
+                ?? throw new InvalidOperationException("N-image verification entry button was not visible.");
+            if (!button.IsVisible || !button.IsEnabled)
+            {
+                throw new InvalidOperationException("N-image verification entry button was not actionable.");
+            }
+
+            Exception? nestedFailure = null;
+            Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    VisionToolNImageVerificationWindow verificationWindow =
+                        Application.Current.Windows
+                            .OfType<VisionToolNImageVerificationWindow>()
+                            .FirstOrDefault(item => item.IsVisible)
+                        ?? throw new InvalidOperationException(
+                            "N-image verification window did not open from the Tool View entry.");
+                    if (verificationWindow.DataContext is not VisionToolNImageVerificationController)
+                    {
+                        throw new InvalidOperationException(
+                            "N-image verification window did not receive the shared controller.");
+                    }
+
+                    verificationWindow.Close();
+                }
+                catch (Exception ex)
+                {
+                    nestedFailure = ex;
+                    Application.Current.Windows
+                        .OfType<VisionToolNImageVerificationWindow>()
+                        .FirstOrDefault(item => item.IsVisible)
+                        ?.Close();
+                }
+            }));
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, button));
+            Pump(8);
+            if (nestedFailure != null)
+            {
+                throw nestedFailure;
+            }
+
+            if (shellHost.NativePreviewRunCount != previewRuns
+                || shellHost.LayerDocumentCount != layerCount
+                || !string.Equals(
+                    shellHost.ActiveNativeRouteInputLayerNameForTest,
+                    inputRoute,
+                    StringComparison.Ordinal)
+                || !string.Equals(
+                    shellHost.ActiveNativeRouteOutputLayerNameForTest,
+                    outputRoute,
+                    StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayer, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Opening and closing N-image verification changed Preview/Run, layers, or routing. "
+                    + $"Runs={previewRuns}->{shellHost.NativePreviewRunCount}, "
+                    + $"Layers={layerCount}->{shellHost.LayerDocumentCount}, "
+                    + $"Input={inputRoute}->{shellHost.ActiveNativeRouteInputLayerNameForTest}, "
+                    + $"Output={outputRoute}->{shellHost.ActiveNativeRouteOutputLayerNameForTest}, "
+                    + $"Active={activeLayer}->{shellHost.ActiveHostLayerTitle}.");
+            }
+        });
+    }
+
+    private static CaptureResult CaptureShellHostEdgeBasedMatchingToolCore(string outputPath, bool dockAfterVerification)
+    {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
         OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostEdgeBasedMatching");
         using Bitmap matchingBitmap = CreateMatchingSmokeBitmap();
         string templatePath = CreateMatchingTemplateFile(matchingBitmap);
+        List<string> autoMPointRepresentativePaths =
+            CreateAutoMPointRepresentativeFiles(matchingBitmap, 3);
+        List<string> autoMPointBulkReportPaths = new List<string>();
+        string autoMPointTemplatePath = string.Empty;
         try
         {
             shellHost.SetMainLayerImageForTest(matchingBitmap);
@@ -18140,6 +22296,232 @@ internal static class Program
                 AssertResultReviewVisible("EdgeBasedMatching", "Edge Match /", "검출", "점수");
                 AssertActiveToolTextsVisible("EdgeBasedMatching verification guide", "엣지", "Canny", "포인트", "미리보기 OK");
 
+                int autoMPointPreviewRuns = shellHost.NativePreviewRunCount;
+                int autoMPointLayerCount = shellHost.LayerDocumentCount;
+                string autoMPointInputRoute = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string autoMPointOutputRoute = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                string autoMPointActiveLayer = shellHost.ActiveHostLayerTitle;
+                shellHost.ConfigureActiveEdgeBasedMatchingForTest(property =>
+                {
+                    property.SCORE_MIN = 0.45D;
+                    property.NUM_MATCH = 1;
+                    property.USE_UNIQUE_MATCH_VALIDATION = true;
+                    property.UNIQUE_MATCH_MIN_SCORE_MARGIN = 0.07D;
+                    property.SEARCH_STEP = 2;
+                    property.USE_POSITION_REFINE = true;
+                    property.USE_SUBPIXEL_REFINE = true;
+                    property.AUTO_MPOINT_PATTERN_WIDTH = 96;
+                    property.AUTO_MPOINT_PATTERN_HEIGHT = 96;
+                    property.AUTO_MPOINT_STRIDE = 32;
+                    property.AUTO_MPOINT_MAX_RESULTS = 3;
+                    property.AUTO_MPOINT_MIN_FEATURE_QUALITY = 0.02D;
+                    property.AUTO_MPOINT_MIN_UNIQUENESS = 0D;
+                    property.AUTO_MPOINT_MAX_POSITION_ERROR = 10D;
+                    property.AUTO_MPOINT_MIN_REPRESENTATIVE_IMAGES = 3;
+                    property.AUTO_MPOINT_MIN_REPRESENTATIVE_SUCCESS_RATE = 1D;
+                });
+                Pump(8);
+                if (shellHost.NativePreviewRunCount != autoMPointPreviewRuns)
+                {
+                    throw new InvalidOperationException("Auto MPoint PropertyGrid teaching settings triggered Preview.");
+                }
+
+                AssertFloatingSelectedObjectBooleanProperty(
+                    "EdgeBasedMatching unique-match option",
+                    "USE_UNIQUE_MATCH_VALIDATION",
+                    true);
+                AssertFloatingSelectedObjectNumericPropertyWithin(
+                    "EdgeBasedMatching unique-match margin",
+                    "UNIQUE_MATCH_MIN_SCORE_MARGIN",
+                    0.07D,
+                    0.000001D);
+                AssertFloatingSelectedObjectBooleanProperty(
+                    "EdgeBasedMatching grayscale edge default",
+                    "USE_THRESHOLD",
+                    false);
+
+                AutoMPointTeachingPanel teachingPanel = FindActiveToolVisualRoots()
+                    .SelectMany(FindVisualChildren<AutoMPointTeachingPanel>)
+                    .FirstOrDefault()
+                    ?? throw new InvalidOperationException("Auto MPoint teaching panel was not visible.");
+                EdgeBasedMatchingToolWpfView matchingView = FindActiveToolVisualRoots()
+                    .OfType<EdgeBasedMatchingToolWpfView>()
+                    .Concat(FindActiveToolVisualRoots()
+                        .SelectMany(FindVisualChildren<EdgeBasedMatchingToolWpfView>))
+                    .FirstOrDefault()
+                    ?? throw new InvalidOperationException("Auto MPoint Edge Based Matching view was not visible.");
+                teachingPanel.DetailsExpander.IsExpanded = true;
+                Pump(4);
+                shellHost.SetActiveAutoMPointRepresentativeImagesForTest(
+                    autoMPointRepresentativePaths);
+                Pump(4);
+                if (teachingPanel.RepresentativeCountText.Text.IndexOf(
+                        "3",
+                        StringComparison.Ordinal) < 0)
+                {
+                    throw new InvalidOperationException(
+                        "Auto MPoint representative-image selection count was not displayed.");
+                }
+
+                Button analyzeButton = FindActiveToolVisualRoots()
+                    .SelectMany(FindVisualChildren<Button>)
+                    .FirstOrDefault(item => string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "AutoMPointAnalyzeCandidates",
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("Auto MPoint analyze button was not visible.");
+                ListBox candidateList = FindActiveToolVisualRoots()
+                    .SelectMany(FindVisualChildren<ListBox>)
+                    .FirstOrDefault(item => string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "AutoMPointCandidateList",
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("Auto MPoint candidate list was not visible.");
+                Button usePatternButton = FindActiveToolVisualRoots()
+                    .SelectMany(FindVisualChildren<Button>)
+                    .FirstOrDefault(item => string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "AutoMPointUsePattern",
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("Auto MPoint use-pattern button was not visible.");
+                Button reportButton = FindActiveToolVisualRoots()
+                    .SelectMany(FindVisualChildren<Button>)
+                    .FirstOrDefault(item => string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "AutoMPointExportReport",
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("Auto MPoint report button was not visible.");
+
+                analyzeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, analyzeButton));
+                Pump(12);
+                if (candidateList.Items.Count < 1
+                    || candidateList.SelectedIndex < 0
+                    || !usePatternButton.IsEnabled
+                    || !reportButton.IsEnabled)
+                {
+                    throw new InvalidOperationException(
+                        "Auto MPoint did not expose an operator-reviewable accepted suggestion. "
+                        + $"Count={candidateList.Items.Count}, Selected={candidateList.SelectedIndex}, "
+                        + $"UseEnabled={usePatternButton.IsEnabled}, ReportEnabled={reportButton.IsEnabled}");
+                }
+                string bestCandidateText =
+                    (candidateList.SelectedItem as ListBoxItem)?.Content?.ToString() ?? string.Empty;
+                AutoMPointCandidateResult selectedCandidate =
+                    (candidateList.SelectedItem as ListBoxItem)?.Tag as AutoMPointCandidateResult
+                    ?? throw new InvalidOperationException("Auto MPoint selected candidate evidence was unavailable.");
+                if (!bestCandidateText.Contains("BEST", StringComparison.Ordinal)
+                    || !bestCandidateText.Contains("Samples 3/3", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Auto MPoint did not automatically select the representative-image best pattern. "
+                        + bestCandidateText);
+                }
+
+                usePatternButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, usePatternButton));
+                Pump(8);
+                string reportPath = Path.Combine(
+                    Path.GetDirectoryName(outputPath) ?? ".",
+                    "auto_mpoint_n_image_report.html");
+                if (!matchingView.ExportAutoMPointReportForTest(reportPath) || !File.Exists(reportPath))
+                {
+                    throw new InvalidOperationException(
+                        "Auto MPoint did not export the already-computed N-image report.");
+                }
+
+                string reportHtml = File.ReadAllText(reportPath);
+                int reportRowCount = Regex.Matches(reportHtml, "<tr data-row=").Count;
+                int embeddedImageCount = Regex.Matches(reportHtml, "src=\"data:image/png;base64,").Count;
+                if (reportRowCount != autoMPointRepresentativePaths.Count
+                    || embeddedImageCount != autoMPointRepresentativePaths.Count + 1
+                    || !reportHtml.Contains("결정적 검토 드로잉", StringComparison.Ordinal)
+                    || !reportHtml.Contains("매칭을 다시 실행", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Auto MPoint HTML report missed rows, drawings, or the no-rerun boundary. "
+                        + $"Rows={reportRowCount}, Embedded={embeddedImageCount}, Path={reportPath}");
+                }
+
+                autoMPointBulkReportPaths.AddRange(
+                    CreateAutoMPointRepresentativeFiles(matchingBitmap, 30));
+                AutoMPointCandidateResult bulkCandidate = new AutoMPointCandidateResult
+                {
+                    Rank = selectedCandidate.Rank,
+                    PatternRoi = selectedCandidate.PatternRoi,
+                    RepresentativeImageCount = autoMPointBulkReportPaths.Count,
+                    RepresentativeSuccessCount = autoMPointBulkReportPaths.Count - 2
+                };
+                for (int index = 0; index < autoMPointBulkReportPaths.Count; index++)
+                {
+                    bool success = index != 6 && index != 22;
+                    bulkCandidate.RepresentativeMatches.Add(new AutoMPointRepresentativeMatchResult
+                    {
+                        ImageIndex = index + 1,
+                        Success = success,
+                        Outcome = success ? "Success" : "NoMatch",
+                        Message = success ? string.Empty : "Synthetic bounded report-queue failure.",
+                        Center = selectedCandidate.RepresentativeMatches[0].Center,
+                        Score = 80D + index * 0.5D,
+                        UniquenessMargin = 0.05D + index * 0.002D,
+                        Angle = index % 5 - 2,
+                        Scale = 0.96D + (index % 5) * 0.02D,
+                        RuntimeMilliseconds = 10D + index
+                    });
+                }
+
+                string bulkReportPath = Path.Combine(
+                    Path.GetDirectoryName(outputPath) ?? ".",
+                    "auto_mpoint_n_image_report_30.html");
+                if (!AutoMPointHtmlReportExporter.TryExport(
+                        matchingBitmap,
+                        autoMPointBulkReportPaths,
+                        bulkCandidate,
+                        "P231 deterministic queue smoke",
+                        bulkReportPath,
+                        out string bulkReportError))
+                {
+                    throw new InvalidOperationException(
+                        "Auto MPoint 30-image bounded report export failed: " + bulkReportError);
+                }
+
+                string bulkReportHtml = File.ReadAllText(bulkReportPath);
+                int bulkRowCount = Regex.Matches(bulkReportHtml, "<tr data-row=").Count;
+                int bulkEmbeddedImageCount = Regex.Matches(
+                    bulkReportHtml,
+                    "src=\"data:image/png;base64,").Count;
+                if (bulkRowCount != 30
+                    || bulkEmbeddedImageCount <= 4
+                    || bulkEmbeddedImageCount >= 31
+                    || !bulkReportHtml.Contains(">failure<", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Auto MPoint 30-image report did not preserve the full table and bounded review queue. "
+                        + $"Rows={bulkRowCount}, Embedded={bulkEmbeddedImageCount}, Path={bulkReportPath}");
+                }
+
+                if (shellHost.NativePreviewRunCount != autoMPointPreviewRuns
+                    || shellHost.LayerDocumentCount != autoMPointLayerCount
+                    || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, autoMPointInputRoute, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, autoMPointOutputRoute, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveHostLayerTitle, autoMPointActiveLayer, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Auto MPoint analysis/application/report export changed Preview, layers, routing, or the active layer. "
+                        + $"Preview={autoMPointPreviewRuns}->{shellHost.NativePreviewRunCount}, "
+                        + $"Layers={autoMPointLayerCount}->{shellHost.LayerDocumentCount}, "
+                        + $"Route={autoMPointInputRoute}->{autoMPointOutputRoute}/"
+                        + $"{shellHost.ActiveNativeRouteInputLayerNameForTest}->{shellHost.ActiveNativeRouteOutputLayerNameForTest}, "
+                        + $"Active={autoMPointActiveLayer}->{shellHost.ActiveHostLayerTitle}");
+                }
+
+                AssertNoAutoDockedLayers(shellHost, "Auto MPoint analyze/apply/report export");
+                AssertActiveToolTextsVisible(
+                    "Auto MPoint teaching panel",
+                    "Auto MPoint",
+                    "대표 이미지 선택",
+                    "최적 패턴 찾기",
+                    "N-이미지 보고서 저장",
+                    "이 패턴 사용");
+
                 VisionPipelineStep step = shellHost.AddActiveNativePipelineStepForTest();
                 if (step == null
                     || !string.Equals(step.ToolType, "EdgeBasedMatching", StringComparison.Ordinal)
@@ -18148,20 +22530,127 @@ internal static class Program
                     || step.Parameters == null
                     || !step.Parameters.ContainsKey("PATTERN_PATH")
                     || !step.Parameters.ContainsKey("SCORE_MIN")
+                    || !string.Equals(step.Parameters["USE_UNIQUE_MATCH_VALIDATION"], "true", StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(step.Parameters["UNIQUE_MATCH_MIN_SCORE_MARGIN"], "0.07", StringComparison.Ordinal)
+                    || !string.Equals(step.Parameters["USE_THRESHOLD"], "false", StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(step.Parameters["USE_ADAPTIVE_THRESHOLD"], "false", StringComparison.OrdinalIgnoreCase)
                     || !step.Parameters.ContainsKey("CANNY_LOW"))
                 {
                     throw new InvalidOperationException("EdgeBasedMatching WPF tool did not create a valid pipeline step.");
                 }
 
-                AssertDockActiveNativeTool(shellHost, "EdgeBasedMatchingToolWpfView", "Docked EdgeBasedMatching tool layout");
-                AssertFloatingPropertyGridMinimumSize("Docked EdgeBasedMatching property grid", 600D, 380D);
-                AssertResultReviewVisible("Docked EdgeBasedMatching", "Edge Match /", "검출", "점수");
-                AssertActiveToolTextsVisible("Docked EdgeBasedMatching verification guide", "엣지", "Canny", "포인트", "미리보기 OK");
+                EdgeBasedMatchingProperty? roundTripProperty =
+                    VisionPipelineStepPropertyMapper.CreateProperty(step) as EdgeBasedMatchingProperty;
+                if (roundTripProperty == null
+                    || !roundTripProperty.USE_UNIQUE_MATCH_VALIDATION
+                    || roundTripProperty.USE_THRESHOLD
+                    || roundTripProperty.USE_ADAPTIVE_THRESHOLD
+                    || Math.Abs(roundTripProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN - 0.07D) > 0.000001D)
+                {
+                    throw new InvalidOperationException(
+                        "EdgeBasedMatching unique-match settings did not survive Pipeline PropertyGrid round trip.");
+                }
+
+                VisionPipelineStep explicitThresholdStep = CloneStep(step);
+                explicitThresholdStep.Parameters["USE_THRESHOLD"] = "true";
+                EdgeBasedMatchingProperty? explicitThresholdProperty =
+                    VisionPipelineStepPropertyMapper.CreateProperty(explicitThresholdStep) as EdgeBasedMatchingProperty;
+                if (explicitThresholdProperty == null || !explicitThresholdProperty.USE_THRESHOLD)
+                {
+                    throw new InvalidOperationException(
+                        "Explicit legacy EdgeBasedMatching USE_THRESHOLD=true was not preserved.");
+                }
+
+                VisionPipelineStep legacyStep = CloneStep(step);
+                legacyStep.Parameters.Remove("USE_UNIQUE_MATCH_VALIDATION");
+                legacyStep.Parameters.Remove("UNIQUE_MATCH_MIN_SCORE_MARGIN");
+                EdgeBasedMatchingProperty? legacyProperty =
+                    VisionPipelineStepPropertyMapper.CreateProperty(legacyStep) as EdgeBasedMatchingProperty;
+                if (legacyProperty == null
+                    || legacyProperty.USE_UNIQUE_MATCH_VALIDATION
+                    || Math.Abs(legacyProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN - 0.03D) > 0.000001D)
+                {
+                    throw new InvalidOperationException(
+                        "Legacy EdgeBasedMatching XML without unique-match keys did not restore disabled/0.03 defaults.");
+                }
+
+                VisionPipeline validPipeline = new VisionPipeline { Name = "P224 Unique Match Valid" };
+                validPipeline.Steps.Add(CloneStep(step));
+                VisionPipelineValidationResult validDefinition =
+                    VisionPipelineValidator.Validate(validPipeline, new[] { "Main" });
+                if (!validDefinition.Success)
+                {
+                    throw new InvalidOperationException(
+                        "Valid unique-match pipeline was rejected: " + validDefinition.FormatErrors());
+                }
+
+                VisionPipeline invalidPipeline = new VisionPipeline { Name = "P224 Unique Match Invalid" };
+                VisionPipelineStep invalidStep = CloneStep(step);
+                invalidStep.Parameters["NUM_MATCH"] = "2";
+                invalidPipeline.Steps.Add(invalidStep);
+                VisionPipelineValidationResult invalidDefinition =
+                    VisionPipelineValidator.Validate(invalidPipeline, new[] { "Main" });
+                if (invalidDefinition.Success
+                    || !invalidDefinition.Errors.Any(error =>
+                        error.Contains("requires NUM_MATCH=1", StringComparison.Ordinal)))
+                {
+                    throw new InvalidOperationException(
+                        "Unique-match validator did not fail closed for NUM_MATCH=2.");
+                }
+
+                autoMPointTemplatePath = step.Parameters["PATTERN_PATH"];
+                if (string.IsNullOrWhiteSpace(autoMPointTemplatePath)
+                    || !File.Exists(autoMPointTemplatePath)
+                    || string.Equals(autoMPointTemplatePath, templatePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Auto MPoint did not persist the selected suggestion as a new matching template. "
+                        + $"Original={templatePath}, Applied={autoMPointTemplatePath}");
+                }
+
+                if (dockAfterVerification)
+                {
+                    int explicitPreviewRuns = shellHost.NativePreviewRunCount;
+                    shellHost.RunActiveNativePreviewForTest();
+                    Pump(16);
+                    if (shellHost.NativePreviewRunCount != explicitPreviewRuns + 1
+                        || !shellHost.HasNativePreviewResult)
+                    {
+                        throw new InvalidOperationException(
+                            "EdgeBasedMatching did not run only after the explicit post-apply Preview action.");
+                    }
+
+                    teachingPanel.DetailsExpander.IsExpanded = false;
+                    Pump(4);
+                    AssertDockActiveNativeTool(shellHost, "EdgeBasedMatchingToolWpfView", "Docked EdgeBasedMatching tool layout");
+                    AssertFloatingPropertyGridMinimumSize("Docked EdgeBasedMatching property grid", 600D, 380D);
+                    AssertResultReviewVisible("Docked EdgeBasedMatching", "Edge Match /", "검출", "점수");
+                    AssertActiveToolTextsVisible("Docked EdgeBasedMatching verification guide", "엣지", "Canny", "포인트", "미리보기 OK");
+                }
+                else
+                {
+                    SetActivePropertyGridSearchText("P227 unique-match PropertyGrid evidence", "고유");
+                    Pump(6);
+                    AssertActiveToolTextsVisible(
+                        "P227 unique-match PropertyGrid rows",
+                        "고유 매칭 요구",
+                        "최소 고유 점수 여유");
+                }
             });
         }
         finally
         {
             TryDeleteFile(templatePath);
+            TryDeleteFile(autoMPointTemplatePath);
+            TryDeleteFile(Path.ChangeExtension(autoMPointTemplatePath, ".roi"));
+            foreach (string path in autoMPointRepresentativePaths)
+            {
+                TryDeleteFile(path);
+            }
+            foreach (string path in autoMPointBulkReportPaths)
+            {
+                TryDeleteFile(path);
+            }
         }
     }
 
@@ -19101,6 +23590,25 @@ internal static class Program
         using Bitmap template = source.Clone(new DrawingRectangle(150, 100, 120, 96), source.PixelFormat);
         template.Save(path, System.Drawing.Imaging.ImageFormat.Png);
         return path;
+    }
+
+    private static List<string> CreateAutoMPointRepresentativeFiles(Bitmap source, int count)
+    {
+        List<string> paths = new List<string>();
+        for (int index = 0; index < count; index++)
+        {
+            string path = Path.Combine(
+                Path.GetTempPath(),
+                "OpenVisionLab_auto_mpoint_representative_"
+                + index.ToString(CultureInfo.InvariantCulture)
+                + "_"
+                + Guid.NewGuid().ToString("N")
+                + ".png");
+            source.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+            paths.Add(path);
+        }
+
+        return paths;
     }
 
     private static string CreateWorkspaceLoadSmokeImageFile()
@@ -22053,7 +26561,9 @@ internal static class Program
         bool docked = IsInsideDockedToolInspector(grid);
         double requiredWidth = docked ? Math.Min(minWidth, 320D) : minWidth;
         double requiredHeight = docked ? Math.Min(minHeight, 280D) : minHeight;
-        if (grid.ActualWidth < requiredWidth || grid.ActualHeight < requiredHeight)
+        const double layoutRoundingTolerance = 2D;
+        if (grid.ActualWidth + layoutRoundingTolerance < requiredWidth
+            || grid.ActualHeight + layoutRoundingTolerance < requiredHeight)
         {
             throw new InvalidOperationException(
                 name + " is too small for comfortable parameter editing. "

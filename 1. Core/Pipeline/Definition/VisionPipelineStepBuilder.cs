@@ -20,6 +20,15 @@ namespace OpenVisionLab
                 throw new ArgumentNullException(nameof(property));
             }
 
+            if (property is AffineTransformProperty affineTransform)
+            {
+                return FromAffineTransformProperty(
+                    affineTransform,
+                    string.IsNullOrWhiteSpace(affineTransform.NAME) ? "AffineTransform" : affineTransform.NAME,
+                    inputLayer,
+                    outputLayer);
+            }
+
             VisionPipelineStep step = CreateStep(property.NAME, GetToolType(property), inputLayer, outputLayer);
             AddCommonOpenCvParameters(step.Parameters, property);
 
@@ -27,6 +36,10 @@ namespace OpenVisionLab
             {
                 Add(step.Parameters, nameof(BlobProperty.MIN_AREA), blob.MIN_AREA);
                 Add(step.Parameters, nameof(BlobProperty.MAX_AREA), blob.MAX_AREA);
+                Add(step.Parameters, nameof(BlobProperty.MIN_WIDTH), blob.MIN_WIDTH);
+                Add(step.Parameters, nameof(BlobProperty.MAX_WIDTH), blob.MAX_WIDTH);
+                Add(step.Parameters, nameof(BlobProperty.MIN_HEIGHT), blob.MIN_HEIGHT);
+                Add(step.Parameters, nameof(BlobProperty.MAX_HEIGHT), blob.MAX_HEIGHT);
             }
             else if (property is ContourProperty contour)
             {
@@ -38,6 +51,10 @@ namespace OpenVisionLab
                 Add(step.Parameters, nameof(ContourProperty.EPSILON), contour.EPSILON);
                 Add(step.Parameters, nameof(ContourProperty.MIN_AREA), contour.MIN_AREA);
                 Add(step.Parameters, nameof(ContourProperty.MAX_AREA), contour.MAX_AREA);
+                Add(step.Parameters, nameof(ContourProperty.MIN_WIDTH), contour.MIN_WIDTH);
+                Add(step.Parameters, nameof(ContourProperty.MAX_WIDTH), contour.MAX_WIDTH);
+                Add(step.Parameters, nameof(ContourProperty.MIN_HEIGHT), contour.MIN_HEIGHT);
+                Add(step.Parameters, nameof(ContourProperty.MAX_HEIGHT), contour.MAX_HEIGHT);
                 Add(step.Parameters, nameof(ContourProperty.ClrGridHtml), contour.ClrGridHtml);
                 Add(step.Parameters, nameof(ContourProperty.DrawThickness), contour.DrawThickness);
             }
@@ -75,6 +92,10 @@ namespace OpenVisionLab
                 Add(step.Parameters, nameof(MatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH), matching.USE_COARSE_TO_FINE_ANGLE_SEARCH);
                 Add(step.Parameters, nameof(MatchingProperty.COARSE_ANGLE_STEP), matching.COARSE_ANGLE_STEP);
                 Add(step.Parameters, nameof(MatchingProperty.COARSE_ANGLE_TOP_K), matching.COARSE_ANGLE_TOP_K);
+                Add(step.Parameters, nameof(MatchingProperty.USE_FIND_SCALE), matching.USE_FIND_SCALE);
+                Add(step.Parameters, nameof(MatchingProperty.FIND_SCALE_MIN), matching.FIND_SCALE_MIN);
+                Add(step.Parameters, nameof(MatchingProperty.FIND_SCALE_MAX), matching.FIND_SCALE_MAX);
+                Add(step.Parameters, nameof(MatchingProperty.FIND_SCALE_STEP), matching.FIND_SCALE_STEP);
                 Add(step.Parameters, nameof(MatchingProperty.PATTERN_PATH), matching.PATTERN_PATH);
                 Add(step.Parameters, "TemplatePath", matching.PATTERN_PATH);
                 Add(step.Parameters, nameof(MatchingProperty.USE_CANNY), matching.USE_CANNY);
@@ -86,6 +107,8 @@ namespace OpenVisionLab
             {
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.SCORE_MIN), edgeMatching.SCORE_MIN);
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.NUM_MATCH), edgeMatching.NUM_MATCH);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_UNIQUE_MATCH_VALIDATION), edgeMatching.USE_UNIQUE_MATCH_VALIDATION);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN), edgeMatching.UNIQUE_MATCH_MIN_SCORE_MARGIN);
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.PATTERN_PATH), edgeMatching.PATTERN_PATH);
                 Add(step.Parameters, "TemplatePath", edgeMatching.PATTERN_PATH);
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_FIND_ANGLE), edgeMatching.USE_FIND_ANGLE);
@@ -95,6 +118,10 @@ namespace OpenVisionLab
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH), edgeMatching.USE_COARSE_TO_FINE_ANGLE_SEARCH);
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.COARSE_ANGLE_STEP), edgeMatching.COARSE_ANGLE_STEP);
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.COARSE_ANGLE_TOP_K), edgeMatching.COARSE_ANGLE_TOP_K);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_FIND_SCALE), edgeMatching.USE_FIND_SCALE);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.FIND_SCALE_MIN), edgeMatching.FIND_SCALE_MIN);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.FIND_SCALE_MAX), edgeMatching.FIND_SCALE_MAX);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.FIND_SCALE_STEP), edgeMatching.FIND_SCALE_STEP);
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.CANNY_LOW), edgeMatching.CANNY_LOW);
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.CANNY_HIGH), edgeMatching.CANNY_HIGH);
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.CANNY_APERTURE_SIZE), edgeMatching.CANNY_APERTURE_SIZE);
@@ -104,6 +131,10 @@ namespace OpenVisionLab
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.GREEDINESS), edgeMatching.GREEDINESS);
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.SEARCH_STEP), edgeMatching.SEARCH_STEP);
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_POSITION_REFINE), edgeMatching.USE_POSITION_REFINE);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_SUBPIXEL_REFINE), edgeMatching.USE_SUBPIXEL_REFINE);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_PYRAMID_POSITION_PROPOSAL), edgeMatching.USE_PYRAMID_POSITION_PROPOSAL);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.PYRAMID_POSITION_TOP_N), edgeMatching.PYRAMID_POSITION_TOP_N);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.PYRAMID_POSITION_MIN_SCORE), edgeMatching.PYRAMID_POSITION_MIN_SCORE);
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_HYBRID_VERIFY), edgeMatching.USE_HYBRID_VERIFY);
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.HYBRID_VERIFY_TOP_N), edgeMatching.HYBRID_VERIFY_TOP_N);
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.HYBRID_VERIFY_IMAGE_WEIGHT), edgeMatching.HYBRID_VERIFY_IMAGE_WEIGHT);
@@ -231,6 +262,38 @@ namespace OpenVisionLab
             Add(step.Parameters, nameof(RotateScaleToolProperty.ScaleYPercent), property.ScaleYPercent);
             Add(step.Parameters, nameof(RotateScaleToolProperty.Interpolation), property.Interpolation);
             Add(step.Parameters, nameof(RotateScaleToolProperty.BorderType), property.BorderType);
+            return step;
+        }
+
+        public static VisionPipelineStep FromAffineTransformProperty(
+            IAffineTransformToolProperty property,
+            string name,
+            string inputLayer,
+            string outputLayer)
+        {
+            if (property == null) { throw new ArgumentNullException(nameof(property)); }
+
+            VisionPipelineStep step = CreateStep(name, "AffineTransform", inputLayer, outputLayer);
+            Add(step.Parameters, nameof(property.SourcePoint1X), property.SourcePoint1X);
+            Add(step.Parameters, nameof(property.SourcePoint1Y), property.SourcePoint1Y);
+            Add(step.Parameters, nameof(property.SourcePoint2X), property.SourcePoint2X);
+            Add(step.Parameters, nameof(property.SourcePoint2Y), property.SourcePoint2Y);
+            Add(step.Parameters, nameof(property.SourcePoint3X), property.SourcePoint3X);
+            Add(step.Parameters, nameof(property.SourcePoint3Y), property.SourcePoint3Y);
+            Add(step.Parameters, nameof(property.DestinationPoint1X), property.DestinationPoint1X);
+            Add(step.Parameters, nameof(property.DestinationPoint1Y), property.DestinationPoint1Y);
+            Add(step.Parameters, nameof(property.DestinationPoint2X), property.DestinationPoint2X);
+            Add(step.Parameters, nameof(property.DestinationPoint2Y), property.DestinationPoint2Y);
+            Add(step.Parameters, nameof(property.DestinationPoint3X), property.DestinationPoint3X);
+            Add(step.Parameters, nameof(property.DestinationPoint3Y), property.DestinationPoint3Y);
+            Add(step.Parameters, nameof(property.OutputWidth), property.OutputWidth);
+            Add(step.Parameters, nameof(property.OutputHeight), property.OutputHeight);
+            Add(step.Parameters, nameof(property.Interpolation), property.Interpolation);
+            Add(step.Parameters, nameof(property.BorderType), property.BorderType);
+            Add(step.Parameters, nameof(property.BorderValue), property.BorderValue);
+            Add(step.Parameters, nameof(property.MinimumSourceTriangleArea), property.MinimumSourceTriangleArea);
+            Add(step.Parameters, nameof(property.MinimumDestinationTriangleArea), property.MinimumDestinationTriangleArea);
+            Add(step.Parameters, nameof(property.MinimumValidPixelRatio), property.MinimumValidPixelRatio);
             return step;
         }
 

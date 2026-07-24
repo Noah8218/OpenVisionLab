@@ -1,4 +1,5 @@
 using Lib.OpenCV.Pipeline;
+using Lib.OpenCV.Property;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -38,8 +39,17 @@ namespace OpenVisionLab
             "linegauge",
             "linedistance",
             "linedistancegauge",
+            "pinarraygap",
+            "adjacentpingap",
+            "curvebandprofile",
+            "darkbandcurve",
+            "outercornerintersection",
+            "brightobjectcorner",
             "lineintersection",
             "lineintersectiongauge",
+            "circlegauge",
+            "geometrymeasure",
+            "geometricmeasurement",
             "matching",
             "templatematching",
             "edgebasedmatching",
@@ -52,6 +62,9 @@ namespace OpenVisionLab
             "colormask",
             "rotatescale",
             "rotateandscale",
+            "affine",
+            "affinematrix",
+            "affinetransform",
             "feature",
             "featurematching",
             "sift",
@@ -126,6 +139,7 @@ namespace OpenVisionLab
                 enabledSteps.Add(step);
                 ValidateAcceptance(result, label, step);
                 ValidateParameters(result, label, step);
+                ValidateGeometryMeasureSources(result, label, step, enabledSteps.Take(enabledSteps.Count - 1).ToList());
 
                 bool isMergeStep = VisionPipelineOverlayMergeService.IsMergeTool(step.ToolType);
                 if (isMergeStep)
@@ -197,6 +211,9 @@ namespace OpenVisionLab
                 pipeline,
                 result.Errors,
                 result.Warnings);
+            VisionPipelineAffinePointBindingService.ValidatePipelineDefinition(
+                pipeline,
+                result.Errors);
             ValidateFinalReviewIntent(result, enabledSteps);
 
             return result;
@@ -254,6 +271,12 @@ namespace OpenVisionLab
             }
 
             ValidateMinMax(result, label, step, "MIN_AREA", "MAX_AREA");
+            ValidateMinMax(result, label, step, "MIN_WIDTH", "MAX_WIDTH");
+            ValidateMinMax(result, label, step, "MIN_HEIGHT", "MAX_HEIGHT");
+            ValidateNonNegativeDouble(result, label, step, "MIN_WIDTH");
+            ValidateNonNegativeDouble(result, label, step, "MAX_WIDTH");
+            ValidateNonNegativeDouble(result, label, step, "MIN_HEIGHT");
+            ValidateNonNegativeDouble(result, label, step, "MAX_HEIGHT");
             ValidateMinMax(result, label, step, "RangeMin", "RangeMax");
             ValidateMinMax(result, label, step, "MEAN_MIN", "MEAN_MAX");
             ValidateGrayValueRange(result, label, step, "Threshold");
@@ -275,12 +298,17 @@ namespace OpenVisionLab
             ValidateBoundedInt(result, label, step, "ValueMin", 0, 255);
             ValidateBoundedInt(result, label, step, "ValueMax", 0, 255);
             ValidateMinMax(result, label, step, "FIND_ANGLE_MIN", "FIND_ANGLE_MAX");
+            ValidateMinMax(result, label, step, "FIND_SCALE_MIN", "FIND_SCALE_MAX");
             ValidateUnitInterval(result, label, step, "SCORE_MIN");
             ValidateUnitInterval(result, label, step, "GREEDINESS");
             ValidateUnitInterval(result, label, step, "HYBRID_VERIFY_IMAGE_WEIGHT");
+            ValidateUnitInterval(result, label, step, nameof(EdgeBasedMatchingProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN));
             ValidatePositiveDouble(result, label, step, "MAGNIFIATION");
             ValidatePositiveDouble(result, label, step, "RANSAC_REPROJ_THRESHOLD");
             ValidatePositiveDouble(result, label, step, "COARSE_ANGLE_STEP");
+            ValidatePositiveDouble(result, label, step, "FIND_SCALE_MIN");
+            ValidatePositiveDouble(result, label, step, "FIND_SCALE_MAX");
+            ValidatePositiveDouble(result, label, step, "FIND_SCALE_STEP");
             ValidatePositiveInt(result, label, step, "BlockSize", oddOnly: true);
             ValidatePositiveInt(result, label, step, "KernelWidth", oddOnly: false);
             ValidatePositiveInt(result, label, step, "KernelHeight", oddOnly: false);
@@ -299,11 +327,250 @@ namespace OpenVisionLab
             ValidateOddKernelInRange(result, label, step, "SobelKernelSize", 1, 31);
             ValidatePositiveInt(result, label, step, "LaplacianKernelSize", oddOnly: true);
             ValidateNonNegativeDouble(result, label, step, "PIXELPERMM");
+            ValidateGrayValueRange(result, label, step, "DarkThreshold");
+            ValidateGrayValueRange(result, label, step, "ForegroundThreshold");
+            ValidateUnitInterval(result, label, step, "MinDarkCoverageRatio");
+            ValidatePositiveInt(result, label, step, "MinPinWidth", oddOnly: false);
+            ValidateNonNegativeDouble(result, label, step, "MaxPinBreakWidth");
+            ValidatePositiveInt(result, label, step, "MinGapWidth", oddOnly: false);
+            ValidatePositiveInt(result, label, step, "MinComponentArea", oddOnly: false);
+            ValidatePositiveInt(result, label, step, "MinComponentHeight", oddOnly: false);
+            ValidateUnitInterval(result, label, step, "MinComponentHeightRatio");
+            ValidateUnitInterval(result, label, step, "EdgeFitEndPercent");
             ValidateMetricCalibration(result, label, step);
             ValidatePositiveDouble(result, label, step, "ScaleXPercent");
             ValidatePositiveDouble(result, label, step, "ScaleYPercent");
             ValidateArithmeticParameters(result, label, step);
             ValidateReferenceDifferenceParameters(result, label, step);
+            ValidateGapEdgePairParameters(result, label, step);
+            ValidateGeometryParameters(result, label, step);
+            ValidateAffineParameters(result, label, step);
+            ValidateUniqueEdgeMatchContract(result, label, step);
+        }
+
+        private static void ValidateAffineParameters(
+            VisionPipelineValidationResult result,
+            string label,
+            VisionPipelineStep step)
+        {
+            string toolType = VisionPipelineNormalizer.NormalizeToolType(step?.ToolType);
+            if (toolType != "affine" && toolType != "affinematrix" && toolType != "affinetransform")
+            {
+                return;
+            }
+
+            ValidateBoundedInt(result, label, step, nameof(AffineTransformToolProperty.OutputWidth), 0, 32768);
+            ValidateBoundedInt(result, label, step, nameof(AffineTransformToolProperty.OutputHeight), 0, 32768);
+            ValidateNonNegativeDouble(result, label, step, nameof(AffineTransformToolProperty.MinimumSourceTriangleArea));
+            ValidateNonNegativeDouble(result, label, step, nameof(AffineTransformToolProperty.MinimumDestinationTriangleArea));
+            ValidateUnitInterval(result, label, step, nameof(AffineTransformToolProperty.MinimumValidPixelRatio));
+
+            double sourceArea = TriangleArea(
+                GetDoubleOrDefault(step, nameof(AffineTransformToolProperty.SourcePoint1X), 0d),
+                GetDoubleOrDefault(step, nameof(AffineTransformToolProperty.SourcePoint1Y), 0d),
+                GetDoubleOrDefault(step, nameof(AffineTransformToolProperty.SourcePoint2X), 100d),
+                GetDoubleOrDefault(step, nameof(AffineTransformToolProperty.SourcePoint2Y), 0d),
+                GetDoubleOrDefault(step, nameof(AffineTransformToolProperty.SourcePoint3X), 0d),
+                GetDoubleOrDefault(step, nameof(AffineTransformToolProperty.SourcePoint3Y), 100d));
+            double destinationArea = TriangleArea(
+                GetDoubleOrDefault(step, nameof(AffineTransformToolProperty.DestinationPoint1X), 0d),
+                GetDoubleOrDefault(step, nameof(AffineTransformToolProperty.DestinationPoint1Y), 0d),
+                GetDoubleOrDefault(step, nameof(AffineTransformToolProperty.DestinationPoint2X), 100d),
+                GetDoubleOrDefault(step, nameof(AffineTransformToolProperty.DestinationPoint2Y), 0d),
+                GetDoubleOrDefault(step, nameof(AffineTransformToolProperty.DestinationPoint3X), 0d),
+                GetDoubleOrDefault(step, nameof(AffineTransformToolProperty.DestinationPoint3Y), 100d));
+            double minimumSourceArea = GetDoubleOrDefault(
+                step,
+                nameof(AffineTransformToolProperty.MinimumSourceTriangleArea),
+                1d);
+            double minimumDestinationArea = GetDoubleOrDefault(
+                step,
+                nameof(AffineTransformToolProperty.MinimumDestinationTriangleArea),
+                1d);
+
+            if (!VisionPipelineAffinePointBindingService.IsDetectedPointConsumer(step)
+                && (sourceArea <= 1e-9d || sourceArea < minimumSourceArea))
+            {
+                result.Errors.Add(
+                    $"{label} '{step.Name}': source point triangle area {sourceArea:0.######} is below MinimumSourceTriangleArea {minimumSourceArea:0.######}.");
+            }
+
+            if (destinationArea <= 1e-9d || destinationArea < minimumDestinationArea)
+            {
+                result.Errors.Add(
+                    $"{label} '{step.Name}': destination point triangle area {destinationArea:0.######} is below MinimumDestinationTriangleArea {minimumDestinationArea:0.######}.");
+            }
+        }
+
+        private static void ValidateGeometryParameters(
+            VisionPipelineValidationResult result,
+            string label,
+            VisionPipelineStep step)
+        {
+            string toolType = VisionPipelineNormalizer.NormalizeToolType(step?.ToolType);
+            if (toolType == "geometrymeasure" || toolType == "geometricmeasurement")
+            {
+                ValidateNonNegativeDouble(result, label, step, VisionPipelineGeometryMeasureService.MaximumParallelAngleDeltaParameter);
+                ValidateNonNegativeDouble(result, label, step, VisionPipelineGeometryMeasureService.MaximumExtensionAParameter);
+                ValidateNonNegativeDouble(result, label, step, VisionPipelineGeometryMeasureService.MaximumExtensionBParameter);
+            }
+
+            if (toolType == "circlegauge")
+            {
+                if (!bool.TryParse(ReadParameter(step, "USE_ROI"), out bool useRoi) || !useRoi)
+                {
+                    result.Errors.Add($"{label} '{step.Name}': CircleGauge requires USE_ROI=true and one reviewed CvROI.");
+                }
+                if (string.IsNullOrWhiteSpace(ReadParameter(step, "CvROI")))
+                {
+                    result.Errors.Add($"{label} '{step.Name}': CircleGauge requires a non-empty CvROI.");
+                }
+                ValidatePositiveDouble(result, label, step, "RADIUS_MIN");
+                ValidatePositiveDouble(result, label, step, "RADIUS_MAX");
+                ValidateMinMax(result, label, step, "RADIUS_MIN", "RADIUS_MAX");
+                ValidatePositiveDouble(result, label, step, "SWEEP_ANGLE_DEG");
+                ValidatePositiveInt(result, label, step, "SCAN_COUNT", oddOnly: false);
+                ValidateNonNegativeDouble(result, label, step, "MIN_CONTRAST");
+                ValidateUnitInterval(result, label, step, "MIN_SUPPORT_RATIO");
+                ValidateNonNegativeDouble(result, label, step, "MAX_FIT_RESIDUAL_PX");
+            }
+        }
+
+        private static void ValidateGeometryMeasureSources(
+            VisionPipelineValidationResult result,
+            string label,
+            VisionPipelineStep step,
+            IReadOnlyList<VisionPipelineStep> earlierEnabledSteps)
+        {
+            if (!VisionPipelineGeometryMeasureService.IsGeometryMeasure(step?.ToolType))
+            {
+                return;
+            }
+
+            if (!Enum.TryParse(ReadParameter(step, VisionPipelineGeometryMeasureService.ModeParameter), true, out GeometryMeasurementMode mode))
+            {
+                result.Errors.Add($"{label} '{step.Name}': MeasurementMode must be one of {string.Join(", ", Enum.GetNames(typeof(GeometryMeasurementMode)))}.");
+                return;
+            }
+
+            ValidateGeometrySource(result, label, step, earlierEnabledSteps, "A", mode);
+            ValidateGeometrySource(result, label, step, earlierEnabledSteps, "B", mode);
+        }
+
+        private static void ValidateGeometrySource(
+            VisionPipelineValidationResult result,
+            string label,
+            VisionPipelineStep consumer,
+            IReadOnlyList<VisionPipelineStep> earlierEnabledSteps,
+            string role,
+            GeometryMeasurementMode mode)
+        {
+            string sourceStepKey = role == "A" ? VisionPipelineGeometryMeasureService.SourceStepAParameter : VisionPipelineGeometryMeasureService.SourceStepBParameter;
+            string sourceFeatureKey = role == "A" ? VisionPipelineGeometryMeasureService.SourceFeatureAParameter : VisionPipelineGeometryMeasureService.SourceFeatureBParameter;
+            string sourceStepName = ReadParameter(consumer, sourceStepKey);
+            string sourceFeatureName = ReadParameter(consumer, sourceFeatureKey);
+            if (string.IsNullOrWhiteSpace(sourceStepName) || string.IsNullOrWhiteSpace(sourceFeatureName))
+            {
+                result.Errors.Add($"{label} '{consumer.Name}': {sourceStepKey} and {sourceFeatureKey} are required.");
+                return;
+            }
+
+            List<VisionPipelineStep> matches = (earlierEnabledSteps ?? Array.Empty<VisionPipelineStep>())
+                .Where(item => string.Equals(item?.Name, sourceStepName, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (matches.Count != 1)
+            {
+                result.Errors.Add(matches.Count == 0
+                    ? $"{label} '{consumer.Name}': geometry source '{sourceStepName}' must be an earlier enabled Step."
+                    : $"{label} '{consumer.Name}': geometry source '{sourceStepName}' is ambiguous ({matches.Count} earlier Steps).");
+                return;
+            }
+
+            VisionPipelineStep producer = matches[0];
+            if (!string.Equals(producer.InputLayer, consumer.InputLayer, StringComparison.OrdinalIgnoreCase))
+            {
+                result.Errors.Add($"{label} '{consumer.Name}': source '{sourceStepName}' uses coordinate layer '{producer.InputLayer}', but the consumer input is '{consumer.InputLayer}'.");
+            }
+
+            if (!TryGetProducedGeometryKind(producer, sourceFeatureName, out VisionPipelineGeometryKind actualKind))
+            {
+                result.Errors.Add($"{label} '{consumer.Name}': source feature '{sourceStepName}/{sourceFeatureName}' is not a supported typed output of '{producer.ToolType}'.");
+                return;
+            }
+
+            VisionPipelineGeometryKind requiredKind = RequiredKind(mode, role);
+            if (actualKind != requiredKind)
+            {
+                result.Errors.Add($"{label} '{consumer.Name}': source {role} requires {requiredKind} for {mode}, but '{sourceStepName}/{sourceFeatureName}' is {actualKind}.");
+            }
+        }
+
+        private static VisionPipelineGeometryKind RequiredKind(GeometryMeasurementMode mode, string role)
+        {
+            if (mode == GeometryMeasurementMode.PointPointDistance) return VisionPipelineGeometryKind.Point;
+            if (mode == GeometryMeasurementMode.PointLineDistance) return role == "A" ? VisionPipelineGeometryKind.Point : VisionPipelineGeometryKind.Segment;
+            if (mode == GeometryMeasurementMode.CircleSegmentClearance) return role == "A" ? VisionPipelineGeometryKind.Circle : VisionPipelineGeometryKind.Segment;
+            return VisionPipelineGeometryKind.Segment;
+        }
+
+        private static bool TryGetProducedGeometryKind(
+            VisionPipelineStep producer,
+            string featureName,
+            out VisionPipelineGeometryKind kind)
+        {
+            kind = VisionPipelineGeometryKind.Point;
+            string type = VisionPipelineNormalizer.NormalizeToolType(producer?.ToolType);
+            if (type == "line" || type == "linegauge")
+            {
+                if (string.Equals(featureName, "Segment", StringComparison.OrdinalIgnoreCase)) { kind = VisionPipelineGeometryKind.Segment; return true; }
+                if (new[] { "Start", "End", "Midpoint" }.Any(name => string.Equals(featureName, name, StringComparison.OrdinalIgnoreCase))) { kind = VisionPipelineGeometryKind.Point; return true; }
+                return false;
+            }
+            if (type == "circlegauge")
+            {
+                if (string.Equals(featureName, "Circle", StringComparison.OrdinalIgnoreCase)) { kind = VisionPipelineGeometryKind.Circle; return true; }
+                if (string.Equals(featureName, "Center", StringComparison.OrdinalIgnoreCase)) { kind = VisionPipelineGeometryKind.Point; return true; }
+                return false;
+            }
+            if (type == "geometrymeasure" || type == "geometricmeasurement")
+            {
+                if (!Enum.TryParse(ReadParameter(producer, VisionPipelineGeometryMeasureService.ModeParameter), true, out GeometryMeasurementMode mode)) return false;
+                if (mode == GeometryMeasurementMode.LineLineIntersection && string.Equals(featureName, "Intersection", StringComparison.OrdinalIgnoreCase)) { kind = VisionPipelineGeometryKind.Point; return true; }
+                if (mode != GeometryMeasurementMode.LineLineAngle && new[] { "MeasureStart", "MeasureEnd" }.Any(name => string.Equals(featureName, name, StringComparison.OrdinalIgnoreCase))) { kind = VisionPipelineGeometryKind.Point; return true; }
+            }
+            return false;
+        }
+
+        private static void ValidateGapEdgePairParameters(
+            VisionPipelineValidationResult result,
+            string label,
+            VisionPipelineStep step)
+        {
+            string toolType = VisionPipelineNormalizer.NormalizeToolType(step?.ToolType);
+            if (toolType != "linedistance" && toolType != "linedistancegauge")
+            {
+                return;
+            }
+
+            if (!bool.TryParse(ReadParameter(step, VisionPipelineGapEdgePairTool.UseParameter), out bool enabled) || !enabled)
+            {
+                return;
+            }
+
+            if (!bool.TryParse(ReadParameter(step, "USE_ROI"), out bool useRoi) || !useRoi)
+            {
+                result.Errors.Add($"{label} '{step.Name}': Gap edge-pair mode requires USE_ROI=true and one reviewed CvROI.");
+            }
+
+            ValidateMinMax(result, label, step, VisionPipelineGapEdgePairTool.MinimumGapParameter, VisionPipelineGapEdgePairTool.MaximumGapParameter);
+            ValidatePositiveDouble(result, label, step, VisionPipelineGapEdgePairTool.MinimumGapParameter);
+            ValidatePositiveDouble(result, label, step, VisionPipelineGapEdgePairTool.MaximumGapParameter);
+            ValidatePositiveDouble(result, label, step, VisionPipelineGapEdgePairTool.MaximumAngleParameter);
+            ValidatePositiveDouble(result, label, step, VisionPipelineGapEdgePairTool.MaximumParallelDeltaParameter);
+            ValidateUnitInterval(result, label, step, VisionPipelineGapEdgePairTool.MinimumSupportRatioParameter);
+            ValidateNonNegativeDouble(result, label, step, VisionPipelineGapEdgePairTool.MinimumDarkContrastParameter);
+            ValidateUnitInterval(result, label, step, VisionPipelineGapEdgePairTool.MinimumDarkCoverageParameter);
+            ValidateNonNegativeDouble(result, label, step, VisionPipelineGapEdgePairTool.MinimumScoreMarginParameter);
         }
 
         private static void ValidateReferenceDifferenceParameters(
@@ -473,6 +740,12 @@ namespace OpenVisionLab
                 || normalized == "contour"
                 || normalized == "line"
                 || normalized == "linegauge"
+                || normalized == "pinarraygap"
+                || normalized == "adjacentpingap"
+                || normalized == "curvebandprofile"
+                || normalized == "darkbandcurve"
+                || normalized == "outercornerintersection"
+                || normalized == "brightobjectcorner"
                 || normalized == "matching"
                 || normalized == "templatematching"
                 || normalized == "edgebasedmatching"
@@ -608,6 +881,37 @@ namespace OpenVisionLab
             }
         }
 
+        private static void ValidateUniqueEdgeMatchContract(
+            VisionPipelineValidationResult result,
+            string label,
+            VisionPipelineStep step)
+        {
+            string toolType = VisionPipelineNormalizer.NormalizeToolType(step?.ToolType);
+            bool isEdgeMatcher = toolType == "edgebasedmatching"
+                || toolType == "edgebasedtemplatematching"
+                || toolType == "edgetemplatematching";
+            if (!isEdgeMatcher
+                || !TryGetBool(step, nameof(EdgeBasedMatchingProperty.USE_UNIQUE_MATCH_VALIDATION), out bool enabled)
+                || !enabled)
+            {
+                return;
+            }
+
+            if (TryGetInt(step, nameof(EdgeBasedMatchingProperty.NUM_MATCH), out int matchCount)
+                && matchCount != 1)
+            {
+                result.Errors.Add(
+                    $"{label} '{step.Name}': {nameof(EdgeBasedMatchingProperty.USE_UNIQUE_MATCH_VALIDATION)} requires NUM_MATCH=1.");
+            }
+
+            if (TryGetBool(step, "USE_MULTI_ROI", out bool useMultiRoi)
+                && useMultiRoi)
+            {
+                result.Errors.Add(
+                    $"{label} '{step.Name}': {nameof(EdgeBasedMatchingProperty.USE_UNIQUE_MATCH_VALIDATION)} requires USE_MULTI_ROI=false.");
+            }
+        }
+
         private static void ValidateUnitInterval(VisionPipelineValidationResult result, string label, VisionPipelineStep step, string key)
         {
             if (TryGetDouble(step, key, out double value) && (value < 0 || value > 1))
@@ -628,6 +932,30 @@ namespace OpenVisionLab
             value = 0;
             return step.Parameters.TryGetValue(key, out string text)
                 && double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
+        }
+
+        private static bool TryGetBool(VisionPipelineStep step, string key, out bool value)
+        {
+            value = false;
+            return step?.Parameters != null
+                && step.Parameters.TryGetValue(key, out string text)
+                && bool.TryParse(text, out value);
+        }
+
+        private static double GetDoubleOrDefault(VisionPipelineStep step, string key, double defaultValue)
+        {
+            return TryGetDouble(step, key, out double value) ? value : defaultValue;
+        }
+
+        private static double TriangleArea(
+            double x1,
+            double y1,
+            double x2,
+            double y2,
+            double x3,
+            double y3)
+        {
+            return Math.Abs(((x2 - x1) * (y3 - y1)) - ((y2 - y1) * (x3 - x1))) * 0.5d;
         }
 
         private static string ReadParameter(VisionPipelineStep step, string key, string defaultValue = "")

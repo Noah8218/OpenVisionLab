@@ -78,6 +78,10 @@ namespace OpenVisionLab.ViewModels
         {
             // Edge matching is sensitive to invalid search/canny values, so normalize at the ViewModel boundary.
             property.SCORE_MIN = VisionToolPropertySummaryViewModel.ClampDouble(property.SCORE_MIN, 0D, 1D);
+            property.UNIQUE_MATCH_MIN_SCORE_MARGIN = VisionToolPropertySummaryViewModel.ClampDouble(
+                property.UNIQUE_MATCH_MIN_SCORE_MARGIN,
+                0D,
+                1D);
             property.GREEDINESS = VisionToolPropertySummaryViewModel.ClampDouble(property.GREEDINESS, 0D, 1D);
             property.NUM_MATCH = Math.Max(1, property.NUM_MATCH);
             property.SEARCH_STEP = Math.Max(1, property.SEARCH_STEP);
@@ -132,6 +136,14 @@ namespace OpenVisionLab.ViewModels
                     " / Hybrid top {0} w {1:0.###}",
                     property.HYBRID_VERIFY_TOP_N,
                     property.HYBRID_VERIFY_IMAGE_WEIGHT);
+            }
+
+            if (property.USE_UNIQUE_MATCH_VALIDATION)
+            {
+                search += string.Format(
+                    CultureInfo.CurrentCulture,
+                    " / Unique margin {0:0.###}",
+                    property.UNIQUE_MATCH_MIN_SCORE_MARGIN);
             }
 
             return search;

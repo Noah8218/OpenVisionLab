@@ -1,6 +1,8 @@
 using Lib.Common;
+using Lib.OpenCV;
 using Lib.OpenCV.Pipeline;
 using OpenCvSharp;
+using OpenVisionLab.Vision._1._Tools.OpenCV;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -40,9 +42,14 @@ namespace OpenVisionLab
         public static Task<VisionPipelineSampleCheckResult> RunSampleCheckWithReportSafeAsync(
             VisionPipelineSampleCatalogItem sample,
             string pipelineXmlText,
-            string recipeName)
+            string recipeName,
+            bool normalizeInputToGray = false)
         {
-            return Task.Run(() => RunSampleCheckSafe(sample, pipelineXmlText, recipeName));
+            return Task.Run(() => RunSampleCheckSafe(
+                sample,
+                pipelineXmlText,
+                recipeName,
+                normalizeInputToGray));
         }
 
         public static VisionPipelineSampleCheckResult RunSampleCheckSafe(
@@ -55,7 +62,8 @@ namespace OpenVisionLab
         private static VisionPipelineSampleCheckResult RunSampleCheckSafe(
             VisionPipelineSampleCatalogItem sample,
             string pipelineXmlText,
-            string reportRecipeName)
+            string reportRecipeName,
+            bool normalizeInputToGray = false)
         {
             try
             {
@@ -74,7 +82,11 @@ namespace OpenVisionLab
                     return CreateErrorResult($"Sample pipeline is missing: {sample.SampleName}");
                 }
 
-                return RunSampleCheck(sample, pipelineXmlText, reportRecipeName);
+                return RunSampleCheck(
+                    sample,
+                    pipelineXmlText,
+                    reportRecipeName,
+                    normalizeInputToGray);
             }
             catch (Exception ex)
             {
@@ -148,12 +160,18 @@ namespace OpenVisionLab
         private static VisionPipelineSampleCheckResult RunSampleCheck(
             VisionPipelineSampleCatalogItem sample,
             string pipelineXmlText,
-            string reportRecipeName)
+            string reportRecipeName,
+            bool normalizeInputToGray)
         {
             DateTime checkedAt = DateTime.Now;
             using (Bitmap bitmap = new Bitmap(sample.ImageFullPath))
             using (Mat source = BitmapImageConverter.ToMat(bitmap))
-            using (VisionRecipeRunResult result = RunRecipe(sample, source, pipelineXmlText, out VisionPipeline pipeline))
+            using (Mat executionSource = normalizeInputToGray ? source.Clone() : null)
+            using (VisionRecipeRunResult result = RunRecipe(
+                sample,
+                PrepareExecutionSource(source, executionSource, normalizeInputToGray),
+                pipelineXmlText,
+                out VisionPipeline pipeline))
             {
                 DateTime finishedAt = DateTime.Now;
                 string runReportPath = string.IsNullOrWhiteSpace(reportRecipeName)
@@ -163,7 +181,8 @@ namespace OpenVisionLab
                         pipeline,
                         result,
                         checkedAt,
-                        finishedAt);
+                        finishedAt,
+                        sourceImage: source);
                 List<string> messages = new List<string>();
                 bool expectedFailure = sample.ExpectsFailure;
                 if (!result.Success && !expectedFailure && !string.IsNullOrWhiteSpace(result.Message))
@@ -287,6 +306,20 @@ namespace OpenVisionLab
                 .RunAsync(pipeline, source, "Main", VisionRecipeRunner.DefaultStepTimeoutMilliseconds)
                 .GetAwaiter()
                 .GetResult();
+        }
+
+        private static Mat PrepareExecutionSource(
+            Mat source,
+            Mat executionSource,
+            bool normalizeInputToGray)
+        {
+            if (!normalizeInputToGray)
+            {
+                return source;
+            }
+
+            OpenCvHelper.SetImageChannel1(executionSource);
+            return executionSource;
         }
 
         private static int GetPairRoleOrder(string pairRole)

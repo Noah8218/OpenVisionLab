@@ -31,6 +31,19 @@ namespace OpenVisionLab
                 + " | " + OpenVisionRecipeText.Local("준비 ", "Ready ")
                 + option.ReadyCount.ToString(CultureInfo.InvariantCulture)
                 + "/" + option.ImageCount.ToString(CultureInfo.InvariantCulture);
+            if (option.IsIdentityLocked)
+            {
+                return OpenVisionRecipeText.Local("위치검출 기대 성공 ", "Locator expected success ")
+                    + option.OkCount.ToString(CultureInfo.InvariantCulture)
+                    + "/"
+                    + option.ImageCount.ToString(CultureInfo.InvariantCulture)
+                    + " | "
+                    + OpenVisionRecipeText.Local("파이프라인 ", "Pipeline ")
+                    + option.PipelineName
+                    + " | SHA "
+                    + ShortHash(option.PipelineDefinitionSha256);
+            }
+
             return option.MissingCount > 0
                 ? summary + " | " + OpenVisionRecipeText.Local("누락 ", "Missing ") + option.MissingCount.ToString(CultureInfo.InvariantCulture)
                 : summary;
@@ -61,6 +74,29 @@ namespace OpenVisionLab
                 return OpenVisionRecipeText.Local(
                     "세트 이름을 입력하고 만들기를 누른 뒤 예상 OK/NG 이미지를 추가하세요.",
                     "Enter a set name, click Create, then add expected OK and NG images.");
+            }
+
+            if (option.IsIdentityLocked)
+            {
+                if (option.MissingCount > 0)
+                {
+                    return OpenVisionRecipeText.Local(
+                        "해시 잠금 세트의 이미지가 누락되었습니다. 원본 N장 증거를 복원하거나 세트를 다시 승격하세요.",
+                        "A hash-locked image is missing. Restore the original N-image evidence or promote the set again.");
+                }
+
+                if (!hasSelectedPipeline)
+                {
+                    return OpenVisionRecipeText.Local(
+                        "연결된 위치검출 파이프라인을 선택하세요: ",
+                        "Select the linked locator pipeline: ")
+                        + option.PipelineName;
+                }
+
+                return OpenVisionRecipeText.Local(
+                    "연결된 파이프라인을 선택한 뒤 명시적으로 Suite 실행을 누르세요. 실행 직전에 파이프라인·템플릿·이미지 해시를 다시 확인합니다: ",
+                    "Select the linked pipeline, then explicitly click Run suite. Pipeline, template, and image hashes are checked immediately before execution: ")
+                    + option.PipelineName;
             }
 
             if (option.MissingCount > 0)
@@ -129,6 +165,18 @@ namespace OpenVisionLab
                 + " / "
                 + OpenVisionRecipeText.Local("누락 ", "Missing ")
                 + option.MissingCount.ToString(CultureInfo.InvariantCulture);
+            if (option.IsIdentityLocked)
+            {
+                summary += " | "
+                    + OpenVisionRecipeText.Local("위치검출 기대 성공 · 해시 잠금", "Locator expected success · Hash locked")
+                    + " | "
+                    + option.PipelineName
+                    + " | Step "
+                    + ShortHash(option.PipelineDefinitionSha256)
+                    + " | Images "
+                    + ShortHash(option.ImageSetSha256);
+            }
+
             if (option.MissingCount <= 0)
             {
                 return summary;
@@ -190,6 +238,12 @@ namespace OpenVisionLab
         private static string Normalize(string value)
         {
             return string.IsNullOrWhiteSpace(value) ? "-" : value.Trim();
+        }
+
+        private static string ShortHash(string value)
+        {
+            string normalized = value?.Trim() ?? string.Empty;
+            return normalized.Length <= 12 ? normalized : normalized.Substring(0, 12);
         }
     }
 }

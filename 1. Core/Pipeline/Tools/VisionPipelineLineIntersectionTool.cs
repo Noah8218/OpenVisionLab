@@ -199,8 +199,8 @@ namespace OpenVisionLab
                 [VisionPipelineKnownMetrics.EdgePointCount] = (leftTool.resultList?.Sum(item => item.EdgePointCount) ?? 0)
                     + (rightTool.resultList?.Sum(item => item.EdgePointCount) ?? 0),
                 ["IntersectionCross"] = crosses ? 1 : 0,
-                ["IntersectionX"] = intersection.X,
-                ["IntersectionY"] = intersection.Y,
+                [VisionPipelineKnownMetrics.IntersectionX] = intersection.X,
+                [VisionPipelineKnownMetrics.IntersectionY] = intersection.Y,
                 [VisionPipelineKnownMetrics.SourceImageWidth] = source.Width,
                 [VisionPipelineKnownMetrics.SourceImageHeight] = source.Height,
                 [VisionPipelineKnownMetrics.SourceImageChannels] = source.Channels(),

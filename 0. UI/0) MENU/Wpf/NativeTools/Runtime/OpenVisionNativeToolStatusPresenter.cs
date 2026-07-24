@@ -23,6 +23,9 @@ namespace OpenVisionLab
                 case ContourToolWpfView contourView:
                     contourView.SetStatus(status);
                     break;
+                case AffineTransformToolWpfView affineTransformView:
+                    affineTransformView.SetStatus(status);
+                    break;
                 case LineToolWpfView lineView:
                     lineView.SetStatus(status);
                     break;

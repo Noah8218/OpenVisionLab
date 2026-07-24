@@ -8,6 +8,118 @@ using System.Linq;
 
 namespace OpenVisionLab
 {
+    internal sealed class OpenVisionRecipePinArrayGapIntentValidationContext
+    {
+        internal OpenVisionRecipePinArrayGapIntentValidationContext(
+            string rowRoiText,
+            string polarityText,
+            string measurementText,
+            string rangeMaximumText,
+            string darkThresholdText,
+            string minimumDarkCoverageRatioText,
+            string minimumPinWidthText,
+            string maximumPinBreakWidthText,
+            string minimumGapWidthText,
+            int sourceWidth,
+            int sourceHeight)
+        {
+            RowRoiText = rowRoiText ?? string.Empty;
+            PolarityText = polarityText ?? string.Empty;
+            MeasurementText = measurementText ?? string.Empty;
+            RangeMaximumText = rangeMaximumText ?? string.Empty;
+            DarkThresholdText = darkThresholdText ?? string.Empty;
+            MinimumDarkCoverageRatioText = minimumDarkCoverageRatioText ?? string.Empty;
+            MinimumPinWidthText = minimumPinWidthText ?? string.Empty;
+            MaximumPinBreakWidthText = maximumPinBreakWidthText ?? string.Empty;
+            MinimumGapWidthText = minimumGapWidthText ?? string.Empty;
+            SourceWidth = sourceWidth;
+            SourceHeight = sourceHeight;
+        }
+
+        internal string RowRoiText { get; }
+
+        internal string PolarityText { get; }
+
+        internal string MeasurementText { get; }
+
+        internal string RangeMaximumText { get; }
+
+        internal string DarkThresholdText { get; }
+
+        internal string MinimumDarkCoverageRatioText { get; }
+
+        internal string MinimumPinWidthText { get; }
+
+        internal string MaximumPinBreakWidthText { get; }
+
+        internal string MinimumGapWidthText { get; }
+
+        internal int SourceWidth { get; }
+
+        internal int SourceHeight { get; }
+    }
+
+    internal sealed class OpenVisionRecipeDarkBandGapIntentValidationContext
+    {
+        internal OpenVisionRecipeDarkBandGapIntentValidationContext(string coarseRoiText)
+        {
+            CoarseRoiText = coarseRoiText ?? string.Empty;
+        }
+
+        internal string CoarseRoiText { get; }
+    }
+
+    internal sealed class OpenVisionRecipeHybridRelativeRoiIntentValidationContext
+    {
+        internal OpenVisionRecipeHybridRelativeRoiIntentValidationContext(
+            string locatorTemplatePath,
+            string searchRoiText,
+            string measurementRoiText,
+            string referencePoseText,
+            string scoreMinimumText,
+            string scoreMarginText,
+            string angleMinimumText,
+            string angleMaximumText,
+            string scaleRatioMinimumText,
+            string scaleRatioMaximumText,
+            string minimumValidPixelRatioText)
+        {
+            LocatorTemplatePath = locatorTemplatePath ?? string.Empty;
+            SearchRoiText = searchRoiText ?? string.Empty;
+            MeasurementRoiText = measurementRoiText ?? string.Empty;
+            ReferencePoseText = referencePoseText ?? string.Empty;
+            ScoreMinimumText = scoreMinimumText ?? string.Empty;
+            ScoreMarginText = scoreMarginText ?? string.Empty;
+            AngleMinimumText = angleMinimumText ?? string.Empty;
+            AngleMaximumText = angleMaximumText ?? string.Empty;
+            ScaleRatioMinimumText = scaleRatioMinimumText ?? string.Empty;
+            ScaleRatioMaximumText = scaleRatioMaximumText ?? string.Empty;
+            MinimumValidPixelRatioText = minimumValidPixelRatioText ?? string.Empty;
+        }
+
+        internal string LocatorTemplatePath { get; }
+
+        internal string SearchRoiText { get; }
+
+        internal string MeasurementRoiText { get; }
+
+        internal string ReferencePoseText { get; }
+
+        internal string ScoreMinimumText { get; }
+
+        internal string ScoreMarginText { get; }
+
+        internal string AngleMinimumText { get; }
+
+        internal string AngleMaximumText { get; }
+
+        internal string ScaleRatioMinimumText { get; }
+
+        internal string ScaleRatioMaximumText { get; }
+
+        internal string MinimumValidPixelRatioText { get; }
+    }
+
     internal sealed class OpenVisionRecipeLlmDraftValidationRequest
     {
         internal OpenVisionRecipeLlmDraftValidationRequest(
@@ -17,7 +129,10 @@ namespace OpenVisionLab
             string referenceImagePath,
             bool applyIntentContract,
             OpenVisionRecipeReviewBundleInspection reviewBundleInspection,
-            bool copyDependencies)
+            bool copyDependencies,
+            OpenVisionRecipePinArrayGapIntentValidationContext pinArrayGapIntentContext,
+            OpenVisionRecipeDarkBandGapIntentValidationContext darkBandGapIntentContext,
+            OpenVisionRecipeHybridRelativeRoiIntentValidationContext hybridRelativeRoiIntentContext)
         {
             XmlText = xmlText ?? string.Empty;
             RecipeName = recipeName ?? string.Empty;
@@ -26,6 +141,9 @@ namespace OpenVisionLab
             ApplyIntentContract = applyIntentContract;
             ReviewBundleInspection = reviewBundleInspection;
             CopyDependencies = copyDependencies;
+            PinArrayGapIntentContext = pinArrayGapIntentContext;
+            DarkBandGapIntentContext = darkBandGapIntentContext;
+            HybridRelativeRoiIntentContext = hybridRelativeRoiIntentContext;
         }
 
         internal string XmlText { get; }
@@ -41,6 +159,12 @@ namespace OpenVisionLab
         internal OpenVisionRecipeReviewBundleInspection ReviewBundleInspection { get; }
 
         internal bool CopyDependencies { get; }
+
+        internal OpenVisionRecipePinArrayGapIntentValidationContext PinArrayGapIntentContext { get; }
+
+        internal OpenVisionRecipeDarkBandGapIntentValidationContext DarkBandGapIntentContext { get; }
+
+        internal OpenVisionRecipeHybridRelativeRoiIntentValidationContext HybridRelativeRoiIntentContext { get; }
     }
 
     internal sealed class OpenVisionRecipeLlmDraftValidationResult
@@ -141,6 +265,9 @@ namespace OpenVisionLab
                 intentContractReady = OpenVisionRecipeLlmDraftValidationRules.AppendIntentContractValidation(
                     pipeline,
                     request.SelectedTemplate,
+                    request.PinArrayGapIntentContext,
+                    request.DarkBandGapIntentContext,
+                    request.HybridRelativeRoiIntentContext,
                     validationLines);
             }
             else

@@ -1,6 +1,6 @@
 # OpenVisionLab Next Session Handoff (Chronological Detail)
 
-Updated: 2026-07-18 KST
+Updated: 2026-07-24 KST
 
 > **Current continuation source:** Read `docs\OPENVISIONLAB_CURRENT_HANDOFF.md` and `docs\OPENVISIONLAB_DOCUMENTATION_MAP.md` before using this file. They hold current status, evidence-based maturity, and the active priority.
 >
@@ -13,6 +13,19 @@ Work starts in `C:\Git\OpenVisionLab_Dev`; only reviewed and stabilized changes 
 - Read `docs\OPENVISIONLAB_CURRENT_HANDOFF.md` for current status and `docs\OPENVISIONLAB_DOCUMENTATION_MAP.md` for authority/read order.
 - Read `docs\OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md` for the final product shape and view responsibilities, then `docs\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md` before changing behavior.
 - Use this chronological log only to locate detailed evidence after the current source of truth identifies the relevant P-number or artifact.
+
+## Numbering Continuity Notes
+
+- `P5` appears in
+  `docs\OPENVISIONLAB_BEGINNER_LEARN_MODE_AND_RECIPE_CONTEXT_20260701.md` as
+  the roadmap label `Tool Preset Expansion`, not as a separately closed
+  chronological execution record. Do not invent a P5 completion artifact.
+- P143-P145 were completed and documented in the current handoff but were
+  missing from this chronology; their evidence summaries are restored below
+  before P146/P147.
+- No durable `P194` task/evidence record exists in the repository. Numbering
+  moves from the P192/P193 hybrid candidate to P195. Preserve the gap rather
+  than fabricating a feature or completion claim.
 
 ## P105 Current-EXE Novice Workflow Audit On 2026-07-17
 
@@ -3094,3 +3107,1114 @@ git log --oneline -5
 - The user-approved ignored local `Sample` root was inspected read-only. It contains 341 images across measurement, matching, object, OCR, code-reading, and related example groups. No local asset, path, XML, or screenshot was sent to an LLM provider or copied into a public path.
 - A single explicit Good/NG pin pair was visually confirmed as straight-pin reference versus bent-pin negative, but it has only one image per outcome. Larger repeated candidate groups exist but have no operator-supplied Good/NG meaning, ROI, or gate. Treat them as unlabelled candidates; do not infer labels from filename sequence or image appearance.
 - No recipe, public catalog, source code, or product claim changed. The evidence was the current read-only file inventory, label-name search, image dimension/SHA comparison, and local visual review. The exact local paths remain out of this handoff because the source is local SDK/vendor material.
+
+## 2026-07-19 P143 Image-List Validation And Die Pad 500 Baseline
+
+- Added the explicit Recipe Manager `Image list validation` entry and local
+  Validation Set workflow with separate OK/NG folders, virtualized rows,
+  sequential execution, finish-current cancellation, persisted partial results,
+  and separate Pipeline acceptance versus expected/actual judgement.
+- Current-source UI and fresh clean-runtime Recipe Manager smokes passed without
+  automatic image load, Preview/Run, layer creation, or route changes.
+- The operator-supplied Die Pad corpus supplied 250 OK and 250 NG rows. The
+  frozen Matching-only baseline completed all 500 but achieved only 50.0%
+  accuracy and 2.8% NG rejection, proving the batch workflow while rejecting
+  Matching-only as the varied-defect recipe.
+- Status: Complete for the product workflow and baseline audit, not production
+  qualification. Evidence:
+  `artifacts\p143_batch_image_list_ui_20260719_170756`.
+
+## 2026-07-19 P144 Die Pad Reference-Difference Recipe And Frozen Test
+
+- Added the bounded `ReferenceDifference` Pipeline family after Train-only
+  existing-tool probes could not separate the supplied defect variation. It
+  registers against up to four explicit approved Good references, normalizes
+  grayscale intensity, detects localized difference regions, retains drawings,
+  and lets an explicit `ResultCount=0` gate own judgement.
+- Frozen Train produced 98.89% accuracy, Validation 98.75%, then the one-time
+  untouched 30 OK + 30 NG Test produced 98.33% accuracy with one false accept.
+  The post-Test dependency-parameter portability change reproduced Validation
+  without rerunning Test.
+- PropertyGrid, XML validation/import, four dependency copies, clean-runtime
+  Good/NG execution, full build, policy, catalog, and diff checks passed.
+- Status: Complete for the supplied synthetic 500-image corpus, not real-field
+  robustness. Evidence: `artifacts\p144_die_pad_multitool_20260719`.
+
+## 2026-07-19 P145 Golden-Reference Defect Guided Setup
+
+- Added Recipe Manager `Golden-reference defect (ReferenceDifference)` Guided
+  Setup with one to four operator-approved references, difference threshold,
+  defect-area bounds, deterministic P144 defaults, and exact zero-result
+  acceptance.
+- Reference selection, draft creation, and validation remain explicit and do
+  not learn/replace references, import, Preview/Run, create/select layers, or
+  change routing. A weakened result gate was rejected and the restored starter
+  returned to import-ready state.
+- Current-source UI, clean-runtime focused EXE, full solution build, policy, and
+  diff checks passed. A separate broad historical Matching dependency failure
+  is not counted against this feature.
+- Status: Complete for bounded Guided Setup/validation integration. Evidence:
+  `artifacts\p145_reference_difference_guided_setup_20260719`.
+
+## 2026-07-20 P146/P147 Batch Drawing Evidence And Pin_1 GPT XML Audit
+
+- P146 closes the previously missing batch-review evidence path: a selected Run History sample now has an explicit `도면 보기` action that opens its original and stored detection drawing side by side. It reads saved evidence only; the focused current-source smoke verified that Preview/Run count, layer count, and active input/output routes remain unchanged. The batch report storage writes only one review overlay per sample (failed Step first; otherwise the last relevant overlay Step) to avoid storing every intermediate image.
+- P147 ran the saved third GPT correction XML against the user-supplied local Pin_1 folders (250 expected OK plus 250 expected NG) without any recipe tuning. Result: correct accept 49, false reject 201, false accept 37, correct reject 213; accuracy 52.40%, OK recall 19.60%, NG recall 85.20%, average 2.268 ms. This is a negative quality finding for the recipe, not a claim about the LLM provider or production use.
+- The runner copied evidence for every false row before cleaning its reserved Smoke workspace. `artifacts\p147_pin1_gpt_full_batch_drawing_audit_20260720\misclassification_evidence\manifest.csv` indexes 238 folders, each containing original, drawing, and Run Report. A post-run integrity pass verified 238 manifest rows, 238 folders, and zero missing/unreadable image/report files. Current-source comparison capture: `artifacts\p147_pin1_gpt_full_batch_drawing_audit_20260720\wpf_shell_host_recipe_local_validation_drawing_evidence.png`.
+- Do not retune on this undifferentiated evaluation corpus. Obtain an operator-approved inspection intent, ROI, acceptance rules, and Train/Validation/Test split before any recipe revision; preserve P147 as the immutable baseline.
+
+## 2026-07-20 P148 Dynamic PinArrayGap And Frozen Pin_1 Pitch Evidence
+
+- P148 preserved the user-supplied local Pin_1 Train/Validation/Test split and used no provider/API/public-sample transfer. The prior fixed-ROI `LineDistance` all-pair experiment completed 42/356 Train images; its translation-only fixture variant completed 31/356. Those results establish that fixed pair coordinates cannot be calibrated safely on this augmented corpus.
+- Added `PinArrayGap`/`AdjacentPinGap`: one dark-pin row ROI -> dynamic pin runs -> every adjacent edge-to-edge clearance -> count/min/max/average/range and drawing overlays. XML validation, known metrics, diagnostic text, tool catalog, and authoring guide were updated together. Batch runner CSV now persists ResultCount and distance min/max/average/range.
+- Train-derived and frozen gate is `DistancePxRange <= 6` for top/bottom rows. Train Expected Good=178/178 pass and pitch_error=38/38 reject; Validation Expected Good=36/36 pass and has no pitch label; Test Expected Good=36/36 pass and pitch_error=12/12 reject. Do not describe this as a whole Pin_1 classifier: short pin and bridge contamination generally pass, while bent/missing may trigger the range gate. It proves only the named full-row clearance/pitch signal.
+- Full reproducible report and artifacts: `artifacts\p148_pin1_all_pitch_measurement_20260720\README.md`.
+- Final verification: Debug solution build 0 warnings/errors; `VisionRecipeRunnerSmoke` rebuild; readiness; external-reference/public-sample policy; catalog JSON/PinArrayGap contract; and `git diff --check` all passed (only CRLF notices). Current-build Good smoke passed; current-build pitch-error smoke returned expected `DistancePxRange=35 > 6` with the PinArrayGap-specific diagnostic.
+
+## 2026-07-20 P149 Card Intersection And Curved-Band Measurement Evidence
+
+- P149 used only the user-approved local `card_original` and `device_left` datasets. No source image, label, XML, or result was transmitted to an LLM/provider or copied into public sample content.
+- `LineIntersection` completed all 500 `card_original` split rows and retained fitted-line/crosspoint overlays. This validates geometry execution only: the class-0 defect boxes neither identify the intended two lines nor contain a ground-truth crosspoint. Fitted infinite lines may meet outside the visible frame, so no coordinate acceptance gate was fitted.
+- Added XML runtime tool `CurveBandProfile` (alias `DarkBandCurve`). It selects the leftmost eligible dark component inside an explicit ROI, draws inner/outer profiles and sampled width lines, and reports profile/outer/inner/center arc-length metrics. The factory, validator, diagnostics, known metrics, batch CSV, LLM catalog, and authoring guide were updated together.
+- The finalized curve recipe completed all 500 `device_left` split rows; center-arc averages were Train 191.659 px, Validation 191.061 px, and Test 191.016 px. Reviewed current overlays show the profile still follows the intended curve after lateral motion. No quality gate or physical-unit claim is valid: the supplied OK/NG metric ranges overlap, and reviewed NG boxes are independent central defects rather than an annotated curve tolerance.
+- Evidence: `artifacts\p149_card_intersection_device_curve_measurement_20260720\README.md`, its two pipeline XML files, six split CSVs, and four current-build overlay images. Final checks passed: Debug solution build, runner build, readiness, external-reference/public-sample policy, catalog JSON parse, and `git diff --check` (line-ending notices only).
+
+## 2026-07-20 P150 Dynamic Card Bottom-Right Outer-Corner Evidence
+
+- The user reviewed P149's card overlay and correctly rejected it: broad `LineIntersection` ROIs had selected text/diagonal candidates rather than the card's lower/right outer edges. Preserve P149 only as rejected diagnostic evidence.
+- Added validated/importable XML tool `OuterCornerIntersection` (alias `BrightObjectCorner`). It finds the virtual sharp lower-right corner from the two intended outer edges, using a bright component when reliable and bottom/right directional edge fallback under illumination/frame variation. It draws both red edge lines to the common green corner and returns `IntersectionX`/`IntersectionY`.
+- Final local-only split evidence: Train 350/350, Validation 75/75, Test 75/75; all 500 result rows succeeded. Coordinate range X=334.883..632.715, Y=317.528..473.586; mean elapsed time=4.608 ms. No OK/NG defect claim, physical-unit claim, or coordinate tolerance was added.
+- Full recipes, final CSVs, current overlays, and the rejected fixed-ROI baseline are in `artifacts\p150_card_bottom_right_intersection_20260720\README.md`.
+
+## 2026-07-20 P151 GPT PinArrayGap Direct-Success Evidence
+
+- A new user-authorized conversation in the `룰베이스 LLM 연동` GPT project received only public bundled `Sample\EasyGauge\Pin 1.jpg`. The prompt, first XML document content, conversation URL, command result, and current drawing are in `artifacts\p151_gpt_pinarraygap_direct_success_20260720\README.md`.
+- The unchanged first response contained one `PinArrayGap` Step with `Main -> Top_Pin_Clearance` and upper-row ROI `0,90,768,170`. Current Debug LLM XML validation/import passed (`ValidationOk=True`, `ImportEnabled=True`, `Imported=True`, zero errors/warnings); explicit image run passed at 49.653 ms with 15 visible pin edges, 14 adjacent edge-to-edge gaps, `DistancePxMin=43`, `DistancePxMax=44`, and `DistancePxRange=1`.
+- No initial validation or runtime failure occurred. P151 is a real GPT direct-success transcript, not correction-loop evidence. Do not send a fabricated correction request; wait for a future genuine public-sample failure before requesting same-conversation repair.
+- Final project verification passed: Debug solution build (0 warnings/errors), readiness, public-sample policy, XML parse, and `git diff --check` (line-ending notices only).
+
+## 2026-07-20 P152 Card-Corner Acceptance Evidence Preparation
+
+- P152 adds read-only `LineAngleMin`, `LineAngleMax`, and `LineAngleAvg` columns to `VisionRecipeRunnerSmoke` batch CSV output because `OuterCornerIntersection` already produced those metrics but P150's original CSV retained only X/Y. No detection selection, XML parameter, or acceptance gate changed.
+- The P150 XML reran successfully over Train 350/350, Validation 75/75, and Test 75/75 with zero missing images. `artifacts\p150_card_bottom_right_intersection_20260720\P150_OPERATOR_ACCEPTANCE_SPEC.md` contains observed coordinate/angle distributions and the exact operator fields needed to define a card position/rotation/out-of-frame rule.
+- The existing defect boxes/masks are not corner or angle ground truth, and observed OK/NG coordinate/angle values overlap. P152 is evidence preparation, not a card judgement or calibration claim.
+- Final verification passed: Debug solution build (0 warnings/errors), runner build, three angle-CSV completeness checks, readiness, external-reference policy, and public-sample policy (`CatalogRows=30`, `ManifestAssets=229`, `Pipelines=15`).
+
+## 2026-07-20 P153 Algorithm Drawing-Evidence Contract And Card-Corner Visual Replay
+
+- Added a durable `AGENTS.md` rule: image-algorithm validation must preserve and render current runtime detection drawings, not CSV/PASS counts alone. Evidence must bind the executed source, XML, selected ROI/geometry, final point/line/contour/measurement, metrics, and visual inspection; batch work must include representative normal and difficult/boundary/failure cases when available.
+- Current rebuilt `VisionRecipeRunnerSmoke` reran P150's exact XML on normal OK_0058, the operator-reviewed NG_0066, and lower-position NG_0246. `artifacts\p153_card_corner_visual_evidence_20260720\README.md` and its source/result/overlay files preserve the executable proof. Red is the selected bottom/right outer edges; the green cross is the resulting virtual corner. No manual marks were used.
+- Every replay completed with `ResultCount=1`, `EdgeCount=2`, and `IntersectionCross=1`. This is visual geometry-execution proof only; position/angle judgement still requires the P150 operator acceptance specification.
+
+> Superseded by P154: the P153 NG_0066 profile drawing was rejected by later operator review. Preserve it only as an incorrect-detection baseline, not as semantic card-corner correctness evidence.
+
+## 2026-07-20 P154 Card-Corner False-Positive Repair And LLM Visual-Review Contract
+
+- P154 fixes the specific failure mode exposed by the user: the prior bright-component profile fit could return an in-frame mathematical intersection without proving both lines were the selected card's adjacent lower/right outer sides. The tool now first takes the lower/right adjacent sides of the selected bright contour's rotated outer rectangle. On NG_0066, the current result moved from `(551.136, 354.271)` to `(534.113, 357.586)`; current result drawing: `artifacts\p154_card_corner_false_positive_repair_20260720\result_ng_0066_outer_contour_verified_current.png`.
+- Added `CornerOuterContourVerified` runtime metric and batch CSV column. It is `1` for the outer-contour path and `0` for profile/edge fallback. LLM tool catalog/authoring guidance now prohibits deriving coordinate/angle gates from a `0` run without retained overlay review/correction. The Recipe Manager LLM XML validation report now emits a concise `Outer-corner: WAIT` visual-review instruction for every OuterCorner draft. Current-source smoke `wpf_shell_host_outer_corner_llm_review` passed at 1600x900 with the complete line visible and no Preview/Run or layer side effect.
+- Measurement-only current rerun remained Train `350/350`, Validation `75/75`, Test `75/75`; however only `5/500` rows report `CornerOuterContourVerified=1`, and strict metric gate `>=1` passes only `5/500`. Do not use that strict gate by default or claim full semantic correctness. The 495 fallback rows require visual/ground-truth review.
+- P154 closure remains **Incomplete**. The external prerequisite is operator ground-truth marks for NG_0066 and representative fallback samples (two intended edges plus accepted virtual corner), then a completed P150 acceptance specification. Existing defect boxes/masks do not identify this geometry.
+
+## 2026-07-20 P155 Card-Corner Operator-Mark Comparison And Honest LLM Review
+
+- Matched the user's blue-mark screen to `card_original_NG_0066.jpg` by normalized grayscale correlation across all 500 local `card_original` images: `0.941901` top match versus `0.854018` next candidate. Its displayed 640 x 480 source rectangle maps the freehand blue centre to approximately `(530,391)` (+/-18 px).
+- Replaced the preferred min-area-rectangle line source with lower/right support-point fits from the selected bright contour. Current NG_0066 runtime evidence used 129 support points and returned `(531.274,352.716)`. This is 38.305 px from the recovered user mark, so it is recorded as a failed semantic target rather than a repair claim. `CornerOuterContourVerified=1` now only asserts outer-contour support, never semantic target agreement.
+- Current artifacts: `artifacts\p155_card_corner_contour_tangent_repair_20260720\result_ng_0066_before.png`, `result_ng_0066_after.png`, `comparison_ng_0066_operator_mark_vs_after.png`, `P155_OPERATOR_MARK_COMPARISON.md`. The comparison image labels blue as a separately added operator mark; the red/green drawing remains exact runtime output.
+- Current measurement-only replay completed Train `350/350`, Validation `75/75`, Test `75/75` with `CornerOuterContourVerified=1` on only `4/500` rows. This is structural source evidence only, not a 500-image correctness result.
+- LLM validator wording now requires comparison of red edges/green corner with an operator mark before a coordinate/angle gate. Fresh current-source before/after WPF smoke captures are under `llm_review_before` and `llm_review_after_final`; after smoke passed 1600x900 with layout/text/internal checks all zero and no Preview/Run or layer side effect.
+- P155 remains **Incomplete**: one mark cannot establish whether the required virtual point is a tangent intersection, rounded-corner offset, or separate fiducial. Obtain two translated target/edge marks before a further geometry change or acceptance gate.
+
+## 2026-07-20 P156 Card-Corner Operator-Mark Packet
+
+- Created `artifacts\p156_card_corner_operator_mark_packet_20260720` to collect the two remaining translated geometry marks without inventing targets. It contains source-only 50 px grids, exact runtime result/all-overlay drawings, measurement-only XML, and raw run logs for `card_original_NG_0207.jpg` and `card_original_NG_0246.jpg`.
+- `NG_0207` is the left-shifted meaningful fallback case: current `(369.509,389.785)` visibly sends its vertical candidate through printed content. `NG_0246` is the lower/right-shifted fallback case: current `(601.540,444.077)`. Both are `CornerOuterContourVerified=0`, therefore neither is current semantic/gate evidence.
+- `P156_OPERATOR_MARK_PACKET.md` defines the exact source-coordinate form: two lower/right edge segments, virtual corner, and the intended interpretation (tangent intersection, rounded-corner offset, or fiducial). Runner build passed with 0 warnings/errors; both runs returned `Success=True`, `ResultCount=1`, `EdgeCount=2`, and `IntersectionCross=1`. The current source/grid/runtime images were inspected.
+
+## 2026-07-20 P157 Card-Corner Manual-Tolerance Fallback Repair
+
+- The user supplied the translated marks. They were mapped through the shown grid as approximate intent, not pixel-exact labels: `NG_0207=(546,390)` and `NG_0246=(601,441)`, each with +/-20 px tolerance. The exact mapping, source images, raw operator screenshots, XML, logs, runtime drawings, and comparison drawings are in `artifacts\p157_card_corner_manual_tolerance_repair_20260720\P157_MANUAL_TOLERANCE_REPAIR.md`.
+- The `NG_0207` fallback had selected printed content at `(369.509,389.785)` because the old code accepted projection before evaluating its available outer-edge Hough pair. The smallest repair evaluates the direction-constrained Hough pair first when the bright component touches the frame. Latest runtime now returns `(547,389)` (difference `(1,-1)` px to the approximate mark); its red runtime lines follow the lower/right card boundary. `NG_0246` stays on the projection path at `(601.540,444.077)`, within the mapped mark tolerance.
+- Result drawings now label the geometry source as `hough`, `projection`, or `outer`. Both fallback labels still publish `CornerOuterContourVerified=0`; LLM XML authoring guide/catalog explicitly say they are visual-review conditions, not coordinate/angle gate evidence. Do not re-label a fallback as verified merely because it coincides with a freehand mark.
+- The fresh `bin\Any CPU\Debug` Runner DLL (not the stale default `bin\Debug` runner) completed Train `350/350`, Validation `75/75`, and Test `75/75`, zero missing rows. This proves execution stability, not 500-image semantic correctness. `NG_0066` remains `(531.274,352.716)` versus the prior recovered mark `(530,391)`, 38.305 px outside tolerance; it is preserved as the required remaining mismatch.
+- P157 is **Incomplete**. A remaining geometry definition is needed for `NG_0066`: confirm whether the desired point is the actual two-edge tangent, a rounded-corner offset, or a separate fixed fiducial before further changing the contour path or adding an acceptance gate.
+
+## 2026-07-20 P158 LLM Assistant Outer-Corner Correction Contract
+
+- P158 converts P157's visual result into an in-product LLM XML authoring contract. An enabled `OuterCornerIntersection`/`BrightObjectCorner` draft now visibly reports `Corner WAIT: run; red/green + hough/projection/outer vs mark; no coordinate gate if fallback.` It tells the operator to execute explicitly, compare exact runtime geometry and selected source label with the mark, then request/carry out a correction only when that evidence shows a mismatch.
+- The report is intentionally advisory, not an import blocker: XML validation has no image execution evidence and must not auto-run Preview/Run, create layers, or change routing. A draft is not a provider transcript or a proof of card geometry.
+- Fresh current-source before/after Recipe Manager captures are under `artifacts\p158_llm_outer_corner_correction_contract_20260720\llm_review_before` and `llm_review_after`. The final 1600 x 900 view shows the entire compact line; the focused smoke passed `layout=0`, `text=0`, and `internal=0`. P158 is **Complete**. Preserve P157's `NG_0066` discrepancy as the remaining independent geometry task.
+
+## 2026-07-20 P159 NG_0066 Card-Corner Interpretation Packet
+
+- P159 reran the exact current Debug runtime on `NG_0066`: outer tangent `(531.274,352.716)`, `CornerOuterContourVerified=1`, 129 support points. It remains 38.305 px from the retained recovered mark `(530,391) +/-20 px`. `artifacts\p159_card_corner_interpretation_packet_20260720\P159_OPERATOR_INTERPRETATION_PACKET.md` binds the current source/XML/log/runtime drawing and separately labelled manual-mark comparison.
+- The packet closes the safe evidence-preparation work without guessing an algorithm change. Its reusable LLM prompt supplies the result, mark, and tolerance, and asks the operator to choose exactly one contract: true outer-edge tangent, intentional rounded/cropped-corner offset, or separate fiducial. The LLM guide now explicitly forbids silently turning an out-of-tolerance mark into an XML parameter change or coordinate gate.
+- P159 is **Complete** as a decision packet. The card-corner judgement remains externally blocked until that inspection meaning is chosen; do not retune `OuterCornerIntersection` from this one disagreement.
+
+## 2026-07-20 P160 Same-Image Card-Corner Validation Correction
+
+- The operator corrected the prior assumption: the freehand mark recovered for `NG_0066` may be from a different card image. Therefore its `(530,391)` coordinate and the previously reported 38.305 px difference cannot be treated as same-image ground truth. P155/P159 coordinate comparison is invalidated for semantics, XML tuning, tolerance, gate, and LLM correction. Keep only the exact runtime execution artifact as historical evidence.
+- The LLM Assistant now visibly requires `Corner WAIT: same image; red/green + hough/projection/outer vs mark; no gate if fallback.` It makes source-image provenance explicit: review only the exact source/XML/runtime drawing/mark set, never absolute intersections across translated cards. The authoring guide and catalog contain the same rule.
+- Fresh current-source before/after WPF captures are in `artifacts\p160_same_image_corner_validation_20260720\llm_review_before` and `llm_review_after`; final 1600 x 900 smoke passed with `layout=0`, `text=0`, and `internal=0`. P160 is **Complete**. The next evidence task is same-image visual review of representative translated card samples, not a fixed-coordinate gate.
+
+## 2026-07-20 P161 Same-Image Card-Corner Review Packet
+
+- P161 creates the required same-source visual-review set at `artifacts\p161_card_corner_same_image_review_packet_20260720`. Six case folders each retain a copied execution input, exact card-corner XML, raw current-run log, runtime overlay, source-grid/runtime-overlay pair, and SHA-256 manifest. The grid is an operator aid; only the lime lines/cross are runtime output.
+- The packet includes normal, translated, prior fallback-investigation, outer-contour, left-shifted, and high-in-frame card examples. It reran the unchanged measurement XML on all local splits: Train `350/350`, Validation `75/75`, Test `75/75`, with zero missing images. This proves current execution/pair provenance only; it does not claim semantic corner correctness or a judgement gate.
+- When resuming, request or process only marks made on the matching P161 source grid. Keep case ID, mark, source, XML, and overlay together. Never compare absolute X/Y across the individual cards. No code/XML/LLM change is warranted until that same-image ground truth exists.
+
+## 2026-07-20 P162 Confirmed Hough Frame False Positive
+
+- The operator reviewed P161 `05_left_shift_ng` and correctly rejected the result. The exact runtime image is `artifacts\p161_card_corner_same_image_review_packet_20260720\cases\05_left_shift_ng\runtime_result.png`: it is labelled `hough`, selects the frame row `(12,473) -> (346.319,473)`, and joins it to a diagonal `(418,24) -> (346.319,473)`. These are not the card's adjacent lower/right outer edges.
+- The current Hough selection allows this because its candidate/inside-image limits accept the 480 px image row `y=473`, while its score explicitly favors a lower/larger intersection and long lines. This is a reproducible false positive, not a valid measurement. Do not cite P161's 500/500 result as semantic correctness.
+- First next implementation task: require card-boundary support for Hough candidates and reject the frame false positive, without adding a brittle fixed margin. Verify the exact failed source plus representative P161 cases through fresh overlays before rerunning the batch. The card gate itself still requires same-image marks after the mechanical false positive is fixed.
+
+## 2026-07-20 P163 Card-Boundary-Supported Hough Repair
+
+- P163 resolves the P162 frame false positive in `VisionPipelineOuterCornerIntersectionTool`. A detached large bright card candidate is found at higher thresholds only when the configured threshold joins it to the frame. Hough/projection intersections must be supported by that candidate's lower-right contour region, and Hough horizontal candidates must have repeated card-inside-above/card-outside-below support. This is component-relative support, not a fixed frame margin.
+- Current evidence is `artifacts\p163_card_boundary_support_repair_20260720`. The rejected `05_left_shift_ng` changed from frame `(346.319,473.000)` to outer `(534.118,379.121)`. Review also caught an internal-band Hough error on `06_low_corner_ng`; it now returns `(530.321,392.620)` on the card lower/right boundary. Current copied source/XML/log/result pairs and SHA-256 manifest are retained. `02_hough_ng` and the low-contrast `NG_0172` projection remain executable.
+- Latest local measurement replay is Train `350/350`, Validation `75/75`, Test `75/75`, zero missing rows. This confirms runtime completion and the repaired reviewed cases, not a card defect classifier or coordinate gate. Resume with P163 same-image marks only; do not compare absolute points across card images.
+
+## 2026-07-20 P164 Card Virtual-Corner Definition
+
+- A subsequent operator review invalidated P164's interpretation. The required proof was that the fitted lower line came from the physical card-bottom edge; changing the label to `Virtual corner` did not establish that boundary ownership. The replay remains execution evidence only, and `CornerOuterContourVerified=1` refers to the selected threshold contour rather than the operator-intended physical boundary.
+- P164 is **Incomplete** and superseded by P165. Preserve `artifacts\p164_card_virtual_corner_definition_20260720` as a rejected interpretation baseline; do not cite it as correct card geometry or continue image-by-image tuning.
+
+## 2026-07-20 P165 Inspection-Intent Skill Strategy
+
+- The product keeps LLM-assisted rule-based recipe authoring, but narrows the promise to guided initial setup and evidence-backed correction. Arbitrary image plus prompt -> autonomous correct inspection is explicitly rejected. The operator provides intent, ROI/measurement region, tolerance, and sample evidence; the LLM drafts constrained XML; deterministic execution and explicit review decide acceptance.
+- OpenVisionLab inspection-intent skills are now the primary development unit: required inputs, locked existing tool family, starter XML, metrics/gates, N-sample drawings/error table, genuine correction packet, and held-out completion gate. They are in-product recipe-wizard/template contracts, not Codex plugins.
+- First pilot: `Pin row gap / pitch consistency`, initially using `PinArrayGap` adjacent edge-to-edge clearance and requiring explicit ROI, polarity, edge-gap versus center-pitch intent, units/calibration boundary, tolerance, and sample split. P151 direct success, P147's 52.40% broad-recipe failure, and P148 frozen split evidence are the decision basis.
+- Phase 1 infrastructure is broadly present; Phase 2 infrastructure exists but needs the complete skill workflow; Phase 3 correction-loop evidence is limited. `OuterCornerIntersection` remains experimental and outside default LLM recommendations. P165 is **Complete** as a product-priority documentation decision. The global/project agent rules, product target, current/chronological handoffs, next-chat prompt, LLM guide, and JSON catalog agree; catalog parsing, `git diff --check`, and `OpenVisionReadinessCheck` passed. It changes no runtime/UI behavior.
+
+## 2026-07-20 P166 Pin Row Edge-Gap Skill V1 Design
+
+- Added `docs\OPENVISIONLAB_PIN_ROW_GAP_INTENT_SKILL.md` as the approved v1 contract. The supported intent is one or more independently reviewed single-row ROIs of roughly vertical dark pins, measured as adjacent edge-to-edge pixel clearances with an explicit row `DistancePxRange` maximum. Center pitch, bright pins, unverified mm, and unrelated defect families are blocked or out of scope.
+- The skill state model separates measurement-only XML from a judged recipe. P151 remains real GPT direct-success measurement evidence but has no acceptance gate; its generic `Inspection.Evidence` wording and runtime `Acceptance=True` must not be cited as Good/NG quality proof. A strict intent validator must check `PinArrayGap`, ROIs, locked parameters, units, row count, and explicit range gates rather than relying on generic import validation.
+- The design preserves the existing LineDistance pin-gap skill and reuses existing Local Validation Sets, batch outcomes/error rows, Pipeline Review, Run History, and runtime drawings. Three existing sets carry Train/Validation/Test; no new dataset schema, runner, algorithm, or provider automation is introduced.
+- P148 is the two-row synthetic regression baseline, not new blind evidence or a universal tolerance. Its frozen Test result remains Good 36/36 and `pitch_error` 12/12, but a single top row detects only part of the labelled pitch defects and other pin defect families remain outside the skill.
+- P166 is **Complete** as documentation/design only. The next work is Phase 1 implementation of the separate template, readiness states, locked prompt/starter, strict validator, UI evidence, and no-auto-run checks; then Phase 2 product integration and P148 replay; then one natural GPT correction loop on previously unused held-out data.
+
+## 2026-07-20 P167 Pin Row Edge-Gap Skill Phase 1
+
+- P167 implements the first inspection-intent skill as a separate `Pin row edge-gap consistency (PinArrayGap)` Guided Setup option. The existing LineDistance pin-gap workflow remains unchanged. The compact panel captures one or more reviewed row ROIs, Dark/Bright polarity, edge-gap/center-pitch definition, optional Range maximum, and the five PinArrayGap detection values.
+- Blank Range creates an importable two-or-more-row measurement draft with no acceptance fields and `MEASURE READY / NOT JUDGED`. A positive Range creates a judged XML draft whose every row uses the same `DistancePxRange` maximum, while the UI remains explicit that Validation is pending. Bright and center-pitch selections are WAIT and disable creation; v1 remains px-only.
+- The locked LLM packet and strict validator share the Guided Setup state. Validation compares row count/order, exact ROI values, locked parameters, tool type, unique outputs, later-row branch input, and the requested judgement state. Focused negative replays reject row maxima `6/7`, a mixed `LineDistance` Step, and a missing `CvROI`, leaving Import disabled.
+- Current-source WPF smoke kept all 11 new controls visible at 1600x900 and proved that sample selection, field changes, starter creation, and negative validation do not run Preview/Run or change layers, routes, active layer, or preview results. The direct intent smoke also covers valid measurement/judged builders plus Bright, center-pitch, and out-of-bounds ROI rejection.
+- P167 is **Complete** for Phase 1 only. Evidence and exact commands are in `artifacts\p167_pinarraygap_intent_skill_20260720\README.md`. Next: connect three existing Local Validation Sets as Train/Validation/Test, persist the frozen skill identity, replay P148, and expose row metrics, error outcomes, and exact runtime drawings before calling the skill validation-complete.
+
+## 2026-07-20 P168 Pin Row Edge-Gap Skill Phase 2
+
+- P168 connects the P167 Guided Setup to three existing Local Validation Set selectors and persists a frozen v1 identity covering the judged XML SHA, common range maximum, row ROIs/detection values, and Train/Validation/Test names, counts, canonical path/expected/notes/per-image-content hashes, and disjointness. Path or same-path byte drift is shown as stale; selecting, freezing, refreshing, and opening the existing explicit-run path do not run Preview/Run or change layers/routing.
+- The unchanged P148 two-row XML SHA is `9F8F60E615B9F90CA9D010BE0EC43C0C897BDB3BE5BA0333CF810E0DE139A4F2`. The source split-list file identities are Train 356 / `4BD979B72B5AB6E61689C0609C05DB570658B77AC05AE4859D92914ED133F20E`, Validation 72 / `80D7B1895491459C909FB1565396EBB5F8DC4A463E7B3EF41DEEA00A9CF8747D`, and Test 72 / `F4F483C5FE01B54191D1FD2C1F6DA53D58D27437714D41F110D3F72057D6A3EC`; the product stores separate canonical set-content hashes.
+- Current-source replay had zero image-load/runtime errors. Train accepted Good 178/178 and rejected `pitch_error` 38/38; Validation accepted Good 36/36 and has no `pitch_error`; frozen Test accepted Good 36/36 and rejected `pitch_error` 12/12. Full rows are under `artifacts\p168_pinarraygap_phase2_20260720\current_runner`.
+- Representative exact-run drawings under `artifacts\p168_pinarraygap_phase2_20260720\representative_overlays` show the ROI, selected pins, adjacent gap lines, labels, and row metrics for ordinary/boundary Good, nearest/worst pitch NG, and one explicitly excluded short-pin outlier. Run Report storage/viewing now retains a SHA-256-verified run-time source snapshot and every executed `PinArrayGap` row drawing; final current-source multi-row viewer evidence is under `artifacts\p168_pinarraygap_phase2_20260720\multistep_current_source_verified`.
+- P168 is **Complete** for Phase 2 only: dark pins, pixel units, adjacent edge-gap consistency, and the frozen P148 pilot. It does not prove center pitch, calibrated units, or bend/missing/short/bridge/contamination classification. The P148 Test split is already reviewed and cannot be reused as previously unused Phase 3 evidence.
+- Next priority: after a genuine GPT draft naturally fails and a genuinely unused held-out set exists, preserve the first response and complete failure -> evidence-backed correction -> frozen held-out replay. Do not fabricate a failure. Recommended model: GPT-5.3-Codex | Reasoning effort: high.
+
+## 2026-07-21 P169 Phase 3 Prerequisite And GPT Direct Success
+
+- Selected `D:\라벨테스트\Pin_2_Bad_Bent_500_OK_NG\Pin_2_Bad_Bent` as a new synthetic/augmented Phase 3 candidate. Its native Train 356 / Validation 72 / Test 72 lists are pairwise disjoint, all 500 images are unique, and there is no raw-image SHA overlap with the P148 corpus.
+- Froze the 72-image Test identity with 72 non-empty, unique per-image hashes in `artifacts\p169_pin2_phase3_prerequisite_20260721\reserved_test_manifest.csv` (SHA-256 `60FD1EA7820919816EA168B6CC31F3C5932750F5DD75D831293381E9C12F06B6`). It contains Good 36, `pitch_error` 12, `short_pin` 12, and `bridge_contamination` 12. Good plus `pitch_error` are the 48 in-scope target rows. No reserved Test image appears in the 428 unique Train/Validation images executed by P169.
+- Sent one product-constrained judged prompt through the user's logged-in ChatGPT project without transmitting a local path or image. The exact prompt SHA is `4292A3A485BF361828D2F7802E73FFB1BB5F59628EBFDA1658C6CF21B9C5E3DE`; the unchanged first response SHA is `CB6BB116DCDD9572F6A3BB8D913ECB93881EB308B0F6FEF188037B45F2943F6B`. The visible UI did not provide a reliable model identifier, so the record says model unknown.
+- The response passed the current strict `PinArrayGap` intent validator with zero errors and one non-blocking OverlayMerge review warning. Its unchanged two-row `DistancePxRange <= 6` recipe had zero load/runtime errors, accepted Train Good 178/178, rejected Train `pitch_error` 38/38, and accepted Validation Good 36/36; that Validation split contains no `pitch_error`. Runtime overlays were opened and verified for ordinary Good and pitch-error NG cases.
+- Because this real first response succeeded directly, there was no genuine failure to correct. No correction message was sent and the Test split was not executed. P169 status is **Blocked** for Phase 3 until a judged first response fails naturally in normal use. Do not repeat equivalent prompts to force a failure. This supersedes P168's historical statement that both a failure and unused held-out set were missing; only the natural failure remains missing.
+- Current next priority: preserve that future natural failure, correct from Train/Validation evidence only, freeze the corrected XML, and run the reserved Test once. Until the failure exists, no model work is recommended. Recommended model: 해당 없음 (자연 실패 증거 확보 전 모델 작업 불필요) | Reasoning effort: 해당 없음.
+
+## 2026-07-21 P170 Target-Bearing Working Validation Readiness
+
+- P169's native Validation had Good 36 but no `pitch_error`, so it could not reject a future correction candidate that missed every target pitch defect. P170 prepares a separate target-bearing working split without changing P169, calling an LLM, executing an algorithm, or opening/running reserved Test images.
+- `working_train_target_manifest.csv` contains Good 178 / `pitch_error` 26 and SHA-256 `D3A35087CFB2AFA26D5A1D9EB67FE72A224F7BFC6B86FADBFCD87CCFC8D02745`. `working_validation_target_manifest.csv` contains Good 36 / `pitch_error` 12 and SHA-256 `952BAEA1038C0A8AD77524D685E6F69A5CA60E3D539F4CF817147E9EAF30B90B`.
+- The Validation pitch rows are the deterministic 12 lowest content hashes from P169 native Train and are removed from Working Train. The two working manifests cover every in-scope non-Test row once, have zero path/content overlap with each other, and have zero path/content overlap with the 48 target rows in the P169 Test manifest.
+- All working rows were previously executed in P169. The record therefore labels this `previously observed working Validation`, not blind or unused evidence. It cannot retroactively create a P169 correction event and cannot replace the held-out completion gate.
+- P170 is **Complete** for target-bearing split readiness. Evidence: `artifacts\p170_pin2_target_validation_readiness_20260721`. The next project priority is unchanged: wait for a natural judged first-response failure, correct using working Train/Validation only, freeze the candidate, and execute the reserved Test once. Recommended model: 해당 없음 (자연 실패 증거 확보 전 모델 작업 불필요) | Reasoning effort: 해당 없음.
+
+## 2026-07-21 P171 Local Validation Set Provisioning Audit
+
+- Audited the P170 manifests against the existing recipe-local Validation Set storage and Guided Setup selection path. Working Train 204 and Working Validation 48 contain valid OK/NG roles, resolve to existing supported non-Test image files, fit the 5,000-image/64-set limits, and retain zero duplicate or cross-set absolute paths.
+- The manifests are not directly product-selectable. Current UI routes are multi-file selection and a top-level folder with one shared OK/NG role; P170 uses selective subsets of the same physical OK/NG folders. No manifest importer exists, and its evidence-logical relative path requires an explicit corpus-root mapping.
+- No production or UI change was made. A general importer would be speculative before a natural failure identifies the exact target recipe and before the workflow recurs. At that point, use a narrow dry-run operation with explicit manifest, corpus root, recipe name, and set names; validate all 252 paths/roles/hashes/overlap before merging only Train/Validation into that named recipe. Do not register or execute the reserved Test.
+- P171 is **Complete** as a no-change audit. Evidence: `artifacts\p171_validation_set_manifest_import_20260721`. The natural judged first-response failure remains the only current project prerequisite; do not reopen manifest-import work without changed evidence.
+
+## 2026-07-21 P172 Device Top-Left Black-Band Gap Measurement
+
+- The operator selected the vertical pixel thickness of the long black horizontal strip in the `device_top_left` corpus. The bounded contract uses one existing `LineDistance` Step, `PIXELPERMM=0`, and no acceptance gate; it is unrelated to `PinArrayGap` Phase 3.
+- A real GPT first response used broad ROI `20,70,510,210` and passed schema/runtime checks, but exact drawings showed 25/63 reference measurements terminating on lower hardware. The same conversation received only that evidence and the reviewed reference ROI, then returned a correction using `20,200,510,60` and manual angle 0. No local image or path was sent to GPT.
+- A fresh 0-warning/0-error full build preceded the final current `bin\Debug` validation/import/reference replay. The corrected recipe produced 64 vertical strip-thickness measurements with `Min=22`, `Max=38`, `Avg=28.219`, and `Range=16`; the drawing was opened and confirmed against the exact copied source.
+- Full corpus replay exposed the fixed-ROI boundary: first XML mechanical success 461/500, correction 382/500, with inspected false-success and shifted edge-not-found examples. Corpus OK/NG labels are not strip-thickness truth, all three lists were diagnostic replays rather than a blind gate, and no classification accuracy is claimed.
+- P172 is **Complete** for the reference-pose GPT failure -> correction loop and boundary audit only. Evidence: `artifacts\p172_device_top_left_black_band_gap_20260721`. No production source changed. Further work requires an operator decision between pose-stable acquisition and a verified rotation/scale-aware fixture; the main project priority remains the naturally failing first response required for the `PinArrayGap` Phase 3 gate.
+
+## 2026-07-21 P173 Device Top-Left Similarity-Fixture Contract
+
+- The user approved continuing the P172 pose-correction decision. A deterministic 24-image audit sampled four filename-quantile OK and four NG images from each Train/Validation/Test list. All 24 audit overlays were opened. Observed strip center Y was `45.55..361.23 px`, angle `-2.544..+2.154 deg`, visible length `435..640 px`, and outer thickness `36.70..78.66 px`; every sampled strip touched the left frame boundary. These heuristic measurements reject a fixed narrow ROI but are not runtime, calibration, or label truth.
+- Source inspection confirmed that the current Matching fixture stores X/Y/Angle, applies only X/Y to a cloned common ROI, and does not publish scale. Matching scale search is not round-tripped through pipeline XML/PropertyGrid, LineDistance uses a separate left/right ROI serialization contract, and existing reports can render saved geometry over the wrong image coordinate space.
+- The approved v2 design uses `Matching -> fixture-driven RotateScale NormalizeImage -> LineDistance`: one reviewed rigid locator publishes current center/angle/scale; an inverse uniform-similarity warp creates a reference-coordinate layer; the unchanged taught LineDistance ROI measures that layer. It explicitly rejects a rotated-ROI enclosing-box shortcut, silent fallback, generic affine frames, perspective correction, per-image tuning, and unsupported OK/NG or millimetre claims.
+- The design contract is `docs\OPENVISIONLAB_MATCHING_SIMILARITY_FIXTURE_V2_SPEC.md`. P173 evidence is `artifacts\p173_device_top_left_similarity_fixture_contract_20260721`, including summary/CSV, Train/Validation/Test contact sheets, 24 individual audit overlays, work contract, and verification record.
+- P173 status is **Complete for design only**; no production source or supported LLM XML contract changed. At P173 closure, the next prerequisite was an operator-reviewed stable locator-template ROI plus reviewed reference pose and score/angle/scale limits. P174/P175 subsequently resolved C9 selection, reference pose, and the observed angle/scale search envelope; a deployable score/ambiguity gate remains open but does not block the isolated Pipeline/XML round-trip plumbing slice. Later slices still need dynamic normalization, bounded LineDistance handling, coordinate-correct reports, and current-build N-sample visual proof. The separate `PinArrayGap` Phase 3 natural-failure prerequisite remains unchanged.
+
+## 2026-07-21 P174 Device Top-Left Locator Candidate Audit
+
+- Registration identifies the exact operator-marked source as `device_top_left_OK_0001.jpg` (SHA-256 `4EDD5C5B36ACE3053066AD810E2F5CF75C0E5EFA5C5EC2F047289D74B65C5241`). P172's current-build replay instead used the separate corpus `source.png` copy (SHA-256 `30766834777142F2DBA57265A27E591EDF926A324D5BA546EC74E9F2D468483C`). P174 records that provenance distinction and uses OK_0001 for locator teaching; it does not invalidate the P172 runtime result bound to source.png.
+- The first P0 locator `130,260,200,35` appeared correct on the deterministic 24-row subset, but a subsequent all-500 audit rejected it: 82/250 NG masks intersected P0, and fully visible `NG_0248` contained 1,531 defect pixels and produced roughly 274/300 px normalized/fixed wrong-region errors. The complete first run is preserved as a rejected baseline.
+- C9 `240,270,65,60` is the best balanced replacement. It is 10 px below the P172 measurement ROI, has zero intersection area, remained fully visible on 491/500 and at least 90% visible on 494/500, and passed the pose-normalized heuristic on every fully visible row. NG mask overlap is 43/250 rather than P0's 82/250. Fixed-scale matching passed only 404/500 and has a reviewed 202.5 px wrong-region case, so scale-aware location remains necessary.
+- A separate frozen 24-row OpenCV-Python multiscale run produced score `0.815127..1.0`, independent center-consensus error `0.092..1.776 px`, and 24/24 visually reviewed correct-locator drawings. It is explicitly prototype/non-blind evidence and not current `Lib.OpenCV.MatchingTool`, XML, Pipeline, or EXE proof.
+- P174 evidence is `artifacts\p174_device_top_left_locator_candidate_20260721`. The user subsequently approved C9 for the next native qualification step, so P174 is **Complete for candidate selection**. Production source and supported XML did not change in P174. The separate `PinArrayGap` Phase 3 natural-failure requirement is unchanged.
+- Reproducibility boundary: the exact 24-row prototype script is retained, but the all-500 registration audit ran as inline Python and its exact source was not saved. Method settings plus all output tables/drawings are recorded under `all500_audit`; do not describe the all-500 audit as exactly replayable from the artifact.
+
+## 2026-07-21 P175 Device Top-Left C9 Native Matching Qualification
+
+- Added `matching-c9-batch` to the existing actual-EXE direct smoke runner. The final scenario uses the real Matching Tool View, requires explicit evidence paths and a new/empty output, keeps automatic Preview off, and records image-load count delta `0`, explicit Preview delta `+1`, current native result presence, and a fresh Preview PNG per case. Its exact `Smoke_MatchingC9_<12 hex>` workspace is removed in `finally`.
+- Current EXE/native-library field semantics passed three synthetic angle/scale cases (`3/3`). The exact P174 observed set passed `24/24`: minimum score `80.358`, maximum center error `2.032 px`, minimum box/polygon IoU `0.895`, maximum scale error `0.05691`, and maximum local black-strip angle error `0.92995 deg`. The explicit-run contract passed `27/27`, all three contact sheets and extrema drawings were opened, and every result selected the intended C9 joint.
+- r1 is rejected because localized result parsing prevented a usable report. r2 produced `18/24` by comparing local C9 angle with whole-device ORB rotation. r3 corrected the angle oracle and produced valid `24/24` drawings, but a later audit found hardcoded ignored-artifact inputs, missing Preview-count proof, and a leaked fixed Smoke recipe. r4 closes those harness defects while retaining P173 local strip angle as the measurement-relevant oracle and ORB-global angle only as diagnostic.
+- P175 is **Complete for current native Matching Tool View qualification only**. Evidence: `artifacts\p175_device_top_left_c9_native_matching_20260721_r4`. It does not prove a deployable score threshold, Pipeline XML scale round trip, fixture normalization, Gap measurement, OK/NG classification, calibration, unseen-data robustness, or production readiness.
+- Next priority: implement the bounded Matching pose/scale Pipeline round trip and reference-pose metrics before inverse similarity normalization. Recommended model: GPT-5.3-Codex | Reasoning effort: high.
+
+## 2026-07-21 P176 Die Pad 1 Native Matching Batch Qualification
+
+- The operator rejected using the P175 `device_top_left` C9 fixture patch as representative general Matching evidence. C9 remains valid only as the approved black-strip Gap fixture locator. P176 switches generic Matching validation to the dedicated local `EasyMatch_Die_Pad_500` corpus.
+- `OpenVisionLabDirectSmokeRunner.cs` now includes the test-only `matching-die-pad-batch` scenario. It freezes only the `Die Pad 1.bmp` metadata family, verifies all source MD5 values, uses Train/OK `die_pad_001_ok.jpg` and template ROI `90,150,270,220`, saves/loads the native Matching property XML, runs the actual Tool View only through explicit Preview, and retains source/native preview/evidence overlay for every row.
+- r3 passed all 122 rows: Train 82/82, Validation 27/27, Test 13/13, OK-role 62/62, and NG-role 60/60. Scores were `89.689..99.347` with average `95.271`; loads caused zero Preview increments and explicit Preview incremented exactly once in 122/122. All 122 sources, previews, and overlays existed, their input MD5 checks passed, and no reserved Smoke workspace remained.
+- The final source state passed the full Debug build with 0 warnings/0 errors and `OpenVisionReadinessCheck` with every contract `OK`. A separate artifact audit repeated all 122 metadata MD5 comparisons and found zero empty evidence files.
+- Visual review opened the Train/Validation/Test contact sheets, representative/boundary sheet, reference ROI, and minimum-score `train_NG_die_pad_109_ng` overlay. Every yellow runtime box and green detected center stayed on the intended pad/trace corner. r1/r2 are rejected zero-row command-line quoting failures and are not algorithm evidence.
+- Evidence: `artifacts\p176_die_pad_1_native_matching_20260721_r3`. P176 is complete only for single-target localization on this one synthetic source family. OK/NG remain defect-role labels, and missing generator transform metadata prevents exact pose-error claims. Next: use P176 as the generic Matching evidence for pose/scale Pipeline/XML round trip, then use the same proven plumbing with C9 only for the P172 Gap fixture workflow. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-21 P177 Operator-Approved Zero-Degree Die Pad Matching Template
+
+- The operator selected the lower-right Die Pad feature instead of P176's broad contextual ROI. The frozen ROI is `190,220,175,145` and includes the right two pads/holes, stepped traces, and outer bottom/right L corner. P176 remains preserved as the prior broad-template comparison.
+- The `matching-die-pad-batch --profile zero-reference` path measures the reference outer baseline inside `170,320,210,60`, rotates the full reference around the approved ROI center by the measured `-1.789910608°`, requires a residual within `0.2°`, then crops the template. The final detected residual was exactly `0.000°`; the before/after image and detected lines are retained. This is rotation rectification, not perspective correction or calibration.
+- After a fresh 0-warning/0-error Debug build, the current EXE passed 122/122 actual Matching Tool View runs: Train 82/82, Validation 27/27, Test 13/13; role labels OK 62/62 and NG 60/60. Score min/avg/max was `85.554 / 96.426 / 99.629`, angle range `-2.5..+2.5`, scale range `0.9..1.15`, and explicit-run contract 122/122.
+- All 122 metadata MD5 values matched and no current-run source, native preview, or overlay was missing. Visual review opened all split sheets plus zero-degree, ROI, representative, and minimum-score drawings; every result selected the approved feature. Minimum-score `val_NG_die_pad_198_ng` remained correctly localized despite a defect crossing the template's left side.
+- Evidence: `artifacts\p177_die_pad_1_zero_degree_matching_20260721_r1`. P177 completes only the approved 0° native single-target template on one synthetic source family. The next priority is Matching pose/scale Pipeline/XML round trip using this template; C9 remains only the black-strip Gap fixture locator. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-21 P178 Object-Bounded Zero-Degree Die Pad Matching Template
+
+- The operator rejected including P177's remaining uniform lower background in the taught feature. The new `object-only-zero-reference` profile preserves P176/P177 and freezes ROI `190,220,175,130`, removing 15 px below the physical object while retaining the right two pads/holes, stepped traces, and outer L boundary.
+- The same Train/OK reference baseline measured `-1.789910608 deg`; full-reference rotation produced a `0.000 deg` residual before cropping the 175x130 template. A fresh full Debug build passed with zero warnings and zero errors.
+- Current EXE execution passed 122/122: Train 82/82, Validation 27/27, Test 13/13, OK-role 62/62, NG-role 60/60. Score minimum/average/maximum was `84.731 / 96.272 / 99.568`, and the explicit-run contract passed 122/122.
+- Independent audit found zero MD5 mismatch, zero Preview-contract violation, and zero missing source/preview/overlay files. The exact template, ROI, representative, and minimum-score drawings were opened; every reviewed yellow runtime box remained on the intended object. Minimum-score `val_NG_die_pad_198_ng` remained correct at center `(266,261)`, angle `+1.5 deg`, and scale `0.95`.
+- Evidence: `artifacts\p178_die_pad_1_object_only_zero_degree_matching_20260721_r1`. P178 is complete only for the tight rectangular 0° native locator on one synthetic source family; it is not alpha-masked matching, defect classification, exact pose truth, Pipeline XML round trip, or field qualification. Next: implement Matching pose/scale Pipeline/XML round trip with P178 as the generic proof and retain C9 only for the Gap fixture. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-21 P179 Matching Pose/Scale Pipeline/XML Round Trip
+
+- Added the existing native Matching uniform-scale fields to the app-owned Pipeline builder, PropertyGrid mapper, parameter schema, validator, and app tool factory. No new matcher or automatic Preview path was added. Startup-relative template paths are resolved consistently by both Matching execution and fixture scale publication.
+- Fixture publication now preserves reviewed/current scale, emits `FixtureScale` and `FixtureScaleRatio`, and rejects non-positive or inconsistent scale geometry. Because `VisionToolOverlay` has no scale property, current scale is derived from its runtime bounds divided by the resolved template dimensions and snapped to the configured native scale grid.
+- Pipeline Review reference teach now requires and saves reviewed center, angle, and scale. Focused smokes verify PropertyGrid -> XML save/load -> apply-back preservation, no Preview during mapping or reference save, and unchanged consumer route/ROI/layer state. The current fixture consumer still applies only X/Y translation.
+- The current Debug EXE ran one startup-relative XML on four images with zero validation errors/warnings and four successful explicit runs. Three exact P178 rows matched the native Tool View center/angle/scale values at `0.90/+3`, `0.95/-2.5`, and `1.15/+2.5`; fresh runtime overlays show rotated boxes on the approved tight two-pad object. The XML snapshot, decoded source, result image, runtime overlay, hashes, metrics, and overlay geometry are colocated per case.
+- Full build and current-source UI smokes passed. Evidence: `artifacts\p179_matching_pose_scale_pipeline_roundtrip_20260721`. P179 is complete only for pose/scale round trip and evidence publication. Next: preserve reviewed reference image width/height and implement fail-closed inverse-similarity `NormalizeImage` before adding LineDistance. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-21 P180 Matching Report Angle Convention And Host PropertyGrid Theme
+
+- The operator correctly found that P179's report overlay used the opposite visible tilt from the native Matching Tool View for the same `+2.5 deg` result. Metrics/detection were unchanged; the defect was isolated to report drawing in image coordinates.
+- `VisionPipelineRunReportImageRenderer` now uses the native image-coordinate sign and adds a yellow local-X orientation mark. Replaying the unchanged P179 XML on exact image `die_pad_199_ng` retained score `97.064`, center `(278,278)`, angle `+2.5`, scale `1.15`, and produced a corrected rectangle matching the native tilt.
+- The WPG bridge now has per-instance `Default` and `Dark` theme variants. Recipe Manager selects `Dark`; Matching and other Tool Views retain the WPG-CUSTOM-derived `Default`. No WPG-CUSTOM source/DLL was modified or duplicated.
+- Full Debug build and focused Recipe Manager/Matching UI smokes passed with current-source images. Evidence: `artifacts\p180_matching_angle_and_property_grid_host_theme_20260721`. P180 does not normalize images or compensate measurement ROIs. Next priority remains reviewed reference dimensions plus fail-closed inverse-similarity `NormalizeImage`. Recommended model: GPT-5.3-Codex | Reasoning effort: high.
+
+## 2026-07-21 P181 Matching Similarity NormalizeImage
+
+- Reference teach now persists source width/height with Matching center/angle/scale. Recipe Manager PropertyGrid/XML round trip covers the new producer dimensions and the `RotateScale` fixture consumer fields without automatic Preview/Run.
+- `RotateScale` now dispatches to a bounded full-image inverse-similarity path only when `USE_FIXTURE_FRAME=true` and `FIXTURE_APPLY_MODE=NormalizeImage`. It creates a clean reference-sized output layer and separate runtime overlays/metrics for valid boundary, reference axes/center, valid-pixel ratio, and applied correction. Fixed RotateScale remains unchanged otherwise.
+- Runtime and definition validation fail closed on missing dimensions, size mismatch, invalid frame/pose/scale/angle, ROI/masks, and invalid/insufficient valid coverage. No routing or saved ROI is rewritten and there is no unnormalized fallback.
+- Current-build XML/runtime evidence passed identity, `-5/+5 deg`, and `0.8/1.2` scale boundaries with reviewed-region mean absolute differences `0 / 2.225 / 2.208 / 2.990 / 2.016`. Three configuration failures and fixed RotateScale compatibility also passed. Fresh before/after UI and current-run algorithm drawings are under `artifacts\p181_matching_similarity_normalize_image_20260721`.
+- Final verification passed the full Debug build with zero warnings/errors, `OpenVisionFixtureSmoke`, both focused PropertyGrid/reference-teach screenshot targets, readiness, external-reference policy, public-sample policy, catalog JSON parsing, and diff whitespace checks. Use `after_verified` as the final P181 UI evidence folder.
+- P181 is complete only for `Matching -> NormalizeImage`. Next: run C9 on the exact P175 24 rows, attach the unchanged P172 `LineDistance` ROI to `DeviceAligned`, preserve coordinate-correct drawings for every Step, and compare with an identical unnormalized control. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-21 P182 C9 Normalized LineDistance Coordinate Evidence
+
+- Replayed the exact P175 24-row manifest with the frozen C9 producer, the P181 `NormalizeImage` consumer, and the unchanged P172 ROI `20,200,510,60` on `DeviceAligned`; no per-image tuning was used.
+- Pipeline `LineDistance` keeps raw edge-point intersections by default. With the existing paired `USE_EXTEND_FIT_LINE=true`, it measures between the two fitted edges, rejects endpoints outside the source/ROI, and retains overlays for the ROI, fitted edges, edge points, and final distance lines.
+- Normalized execution was mechanical/ROI-valid on `24/24`; the identical raw-coordinate control executed on `18/24`. Observed normalized `DistancePxAvg` was `38.5..50.5`, maximum `DistancePxRange` was `23`, minimum Matching score was `80.367`, and minimum valid-pixel ratio was `0.309`.
+- Every row retains source, clean normalized image, per-Step overlays, source hash, and normalized/control XML hashes. Train/Validation/Test sheets and ordinary, extreme, high-scale, and raw-failure rows were visually reviewed. Final post-build evidence: `artifacts\p182_c9_normalized_gap_20260721_r10`.
+- P182 is complete only for the observed-set coordinate/drawing path. Next priority is deliberate no-target/ambiguous/out-of-angle/out-of-scale/insufficient-coverage evidence and a frozen fail-closed operating policy before broader C9 replay. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-21 P183 C9 Fail-Closed Pre-Measurement Gate
+
+- Added a separate `NUM_MATCH=2` C9 preflight and the `ScoreMargin` metric so exact duplicate strong targets fail before the existing `NUM_MATCH=1` fixture producer. Added optional paired `FIXTURE_MIN_SCALE_RATIO`/`FIXTURE_MAX_SCALE_RATIO` gates without changing older recipes that omit them. Fixture-publish failure summaries now retain the runtime Matching rectangle and metrics.
+- The bounded operating policy is `SCORE_MIN=0.8`, `ScoreMargin >= 10` percentage points, absolute angle delta `<= 5.25` degrees, scale ratio `0.8..1.8`, and NormalizeImage valid-pixel ratio `>= 0.25`. Exact P175 observed rows passed `24/24`; deliberate no-target, duplicate, 8-degree, 1.9x, and `0.227`-coverage cases failed at Steps 1/1/2/2/3 respectively. The angle/coverage exercise XMLs widen only the upstream search/bound needed to reach the downstream gate and are not operating policy.
+- Final evidence is `artifacts\p183_c9_fail_closed_thresholds_20260721\gate_r6`, including source copies, pipeline XMLs/hashes, `rows.csv`, failure messages, and current-run overlays. P183 is complete only for this C9/P175 starter gate; it is not a general Matching default, black-strip OK/NG truth, all-500/unseen evidence, calibration, or field qualification.
+- Next: replay the broader `device_top_left` corpus using the frozen P183 gate plus the P182 normalized LineDistance ROI, retain per-Step drawings/hashes, and report gate failures separately from successful pixel measurements without inventing OK/NG truth. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-21 P184 Device Top-Left Full-Corpus Guarded Gap Replay
+
+- Added `OpenVisionFixtureSmoke --c9-gap-corpus` as a focused evidence harness. It executes one saved XML containing the frozen P183 pre-measurement gate and the unchanged P182 `20,200,510,60` pixel Gap ROI; no production algorithm behavior, fallback, or per-image tuning was added.
+- The exact 500 unique `device_top_left` images produced 487 ROI-valid pixel measurements and 13 classified fail-closed outcomes: 10 no-target/low-score and 3 out-of-scale. There were no unclassified/load/thrown runtime failures. `DistancePxAvg` min/median/max was `20.308 / 46 / 51.512`, and `DistancePxRange` min/median/max was `0 / 7 / 37`.
+- Every source copy/hash, runtime result, and executed-Step drawing is retained. The final set contains 500 source copies, 500 runtime results, 1,964 overlays, 22 contact/representative sheets, source manifest SHA-256 `1A103450773D9E0242BA2EAAD51F6EC6744EDFF32DCC218DBF08E74E7755DEEA`, and XML SHA-256 `8963A7528EBDEF493541C5CF6E781BB4F7A5ABCD04E92C7B802A5D86D8D1E1CB` under `artifacts\p184_c9_full_corpus_gap_20260721_r1`.
+- Visual review found no repeatable runtime/report defect that justified weakening the gate or tuning per image. Large-range/low-count rows remain explicit operator-review evidence because no independent black-strip tolerance or calibration was supplied. OK/NG folder names remain label-only and are not Gap truth.
+- The other directions are not coordinate variants of this recipe: top-right is the closest physical intent but needs a separately reviewed reference/ROI/locator, bottom images expose different boundaries, and left/right expose curved-width intents. Next: prepare a top-right candidate drawing and obtain operator review before XML teaching or any 500-image replay. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-22 P185 Device Top-Right Contract Approval Candidate
+
+- Used canonical `device_top_right/source.png` rather than mirroring the top-left recipe. Compared three Gap widths and three non-overlapping locator patches on all 500 images by SIFT/RANSAC geometry projection, visibility, reference texture, and NG-mask overlap. This is design evidence only.
+- Rejected the first audit because an inlier-count-only rule admitted degenerate homographies. The final audit also bounds estimated scale to `0.5..3.0` and absolute angle to `<=10` degrees, accepting 492/500 rows.
+- Final proposal: Gap ROI `330,245,260,40` on the black strip and locator `460,286,70,52` on the center joint, with zero area overlap. Their >=90% visibility counts are 435/492 and 440/492. The left/right locator alternatives reached 344/492 and 323/492.
+- Final evidence is `artifacts\p185_device_top_right_contract_candidate_20260722_r5`, including the selected-only canonical drawing and variant sheet. P185 is blocked on explicit operator approval of both marked regions. No XML, template teaching, OpenVisionLab Matching, normalization, Gap execution, or 500-image recipe run has occurred. Recommended model before approval: 해당 없음 | Reasoning effort: 해당 없음.
+
+## 2026-07-22 P186 Device Top-Right Gap-Only Correction And Small-Split Failure Evidence
+
+- The operator corrected P185: the target is only the vertical thickness of the marked long dark upper/lower-plate Gap. The locator, Matching, template teaching, and NormalizeImage are explicitly excluded and the r5 locator proposal is superseded.
+- The r6 XML contains one raw-image `LineDistance` Step at ROI `330,245,260,40`. The canonical source and exact ten-image representative split were executed from the latest explicitly built `VisionRecipeRunnerSmoke`; the batch completed 10/10 inputs with five runtime successes and five `LineGaugeEdgeNotFound` failures.
+- Current-run visual review found semantic false successes: several images moved the intended strip above the fixed ROI, while LineDistance measured a partial or unrelated lower edge pair. Three broader raw-coordinate ROIs executed 10/10 but connected unrelated distant edges and are rejected. Do not trade semantic correctness for execution count.
+- The smoke overlay renderer now uses the loaded pipeline Step definition to draw the configured ROI even when a failed runtime summary omits parameters. This changes evidence rendering only, not algorithm execution.
+- Evidence is `artifacts\p185_device_top_right_gap_only_20260722_r6`; status is Incomplete. Do not run all 500 and do not restore Matching. Next: add the smallest bounded direct-Gap pair-selection mode inside `LineDistance` using an operator coarse ROI plus expected separation/orientation/support/uniqueness gates, then replay the same small split with candidate/selected-line drawings. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-22 P187 Device Top-Right Direct Dark-Band Gap Edge Pair
+
+- Added `USE_GAP_EDGE_PAIR=true` as an opt-in `LineDistance` path. It operates only inside one reviewed coarse ROI, merges collinear edge fragments, and gates a selected pair by separation, orientation, shared support, local dark coverage, band darkness, and distinct-candidate margin. The legacy LineDistance path remains unchanged when the flag is absent; no Matching, locator, template, NormalizeImage, hidden ROI movement, or per-image coordinate was added.
+- The frozen P187 XML uses coarse ROI `100,80,530,230`, pixel-only separation `12..60`, maximum line angle `8 deg`, parallel delta `4 deg`, support ratio `0.26`, local dark contrast `8`, dark coverage `0.25`, and score margin `0.05`. PropertyGrid, schema validation, known metrics, LLM catalog, and authoring guide carry the same contract.
+- Latest-built current runtime replay completed the canonical source and all ten exact P186 rows. Final drawings were opened for every row: green ROI, yellow candidates, blue/magenta selected edges, and five red Gap samples all followed the reviewed dark band. Split `DistancePxAvg` values were `22.4..51.0 px`; canonical was `25.0 px`. This is measurement evidence, not OK/NG truth.
+- Evidence: `artifacts\p187_gap_edge_pair_20260722`. P187 is complete only for this top-right small split. Next: freeze it as an in-product inspection-intent skill contract, then replay the unchanged XML on all 500 with per-row drawings and named fail-closed outcomes. Recommended model: GPT-5.3-Codex | Reasoning effort: medium for the contract; gpt-5.6-sol | Reasoning effort: high for all-500 replay.
+
+## 2026-07-22 P188 Dark-Band Gap Inspection-Intent Skill Contract
+
+- Added the distinct Guided Setup intent `Dark band thickness / Gap (LineDistance)` with one operator-reviewed coarse ROI and an explicit px-only, measurement-only boundary. The generated starter is one `LineDistance` Step using the frozen P187 Gap-edge parameters; Matching, locator, normalization, Blob, Contour, calibration, and acceptance are excluded.
+- Prompt and strict validator share the same contract. Current-build smoke accepted the generated starter and rejected an unapproved acceptance gate, Matching substitution, and an ROI changed from the operator input. Required distance/stage/support/dark-coverage/ambiguity metrics are registered; drawings remain `WAIT` until explicit Run.
+- The persisted starter round-trips through the runtime file loader. Its original canonical `25 px` drawing was later rejected by the user because the magenta line selected a farther lower structure; P189 supersedes that runtime evidence.
+- PropertyGrid wording now names expected thickness, edge tilt, shared support, local dark evidence, and distinct-pair margin. Contract: `docs\OPENVISIONLAB_DARK_BAND_GAP_INTENT_SKILL.md`. Evidence: `artifacts\p188_dark_band_gap_skill_20260722`.
+- P188 completes Phase 1. P187's small-split semantic evidence is superseded by P189 below. Next: replay the unchanged starter with the P189 runtime on all 500 `device_top_right` rows with hashes, current-run drawings, stage metrics, representative/extreme sheets, and named fail-closed outcomes. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-22 P189 Nearest Same-Band Lower-Edge Correction
+
+- Corrected `USE_GAP_EDGE_PAIR` without changing the P188 starter XML or adding parameters. The selected lower edge is now fitted from the nearest sustained bright transition after the dark core immediately below each supported upper candidate; a farther Hough edge is not accepted as the same band merely because the wider region remains dark on average.
+- Canonical evidence moved from the invalid `25 px` line to `DistancePxAvg=14.4`, `DistancePxRange=2`; the selected lower support is `x=219..629`, `y=278.5..266.5` and visually follows the marked black-band bottom. The exact ten-row split completed `10/10`, all rows are on the current contact sheet, boundary/extreme rows were opened full size, and a no-band diagnostic failed closed with zero candidate pairs.
+- Evidence: `artifacts\p189_gap_lower_edge_correction_20260722`. Next: replay this unchanged XML/runtime on all 500 `device_top_right` rows with hashes, current drawings, stage metrics, representative/extreme sheets, and named fail-closed outcomes. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-22 P190 Full-Corpus Scalable Dark-Band Gap Audit
+
+- The unchanged P189/P188 XML accounted for all 500 unique top-right rows: 448 measurements, 52 named fail-closed outcomes, zero missing images. Every row retains a source snapshot/hash, runtime drawing/hash, metrics, and elapsed value.
+- The frozen deterministic baseline queue contained 128 rows and all 12 contact sheets were reviewed. It exposed repeated successful measurements on lower secondary structures when the intended upper band was clipped or weak; execution count was therefore not accepted as semantic accuracy.
+- One bounded correction changed only shared support `0.26 -> 0.60` and replayed all 500 rows. It produced 329 measurements and 171 fail-closed outcomes; all 21 correction sheets were reviewed. Short secondary errors improved, but long lower structures still wrong-passed, so the candidate was rejected and numeric tuning stopped.
+- Decision: `Keep with documented limits` only for an operator ROI containing exactly one complete intended long band and no competing long band. General raw-coordinate robustness, OK/NG truth, calibration, other directions, unseen data, and field readiness remain unproved. Evidence: `artifacts\p190_dark_band_gap_full_corpus_20260722`.
+- Next: integrate the deterministic queue policy into existing image-list validation / Run History and retained drawing navigation. Recommended model: GPT-5.3-Codex | Reasoning effort: medium.
+
+## 2026-07-22 P191 Deterministic Run History Review Queue
+
+- Extended the existing batch-summary format with a save-time frozen review queue: exact v1 policy, canonical queue SHA-256, result indices, and per-row reasons. Old summaries remain readable but do not fabricate equivalent evidence.
+- The generic queue includes all runtime failures, labelled misclassifications, evidence gaps, min/max rows for each varying finite Step metric, and three content-hash-ordered audit rows per declared role stratum. Invariant metrics are omitted from the extrema set.
+- Run History adds a read-only `검토 큐만` filter that is mutually exclusive with the existing NG/misclassification filter. Selected rows reuse the retained runtime drawing viewer; no Preview/Run, layer, or route mutation occurs.
+- Current-source smoke passed policy/hash persistence, labelled false-accept inclusion, missing-report/runtime-failure inclusion, metric extrema, retained drawing resolution, and a bounded 500-row/two-stratum selection of six audit rows. Full solution build completed with zero warnings and zero errors; readiness, external-reference, and public-sample checks passed. Evidence: `artifacts\p191_run_history_review_queue_20260722`.
+- P191 is complete as workflow/deterministic-selection evidence. It is not a 10,000-row performance qualification or semantic-correctness claim. Next priority is blocked on choosing the dark-band operating boundary; the Pin Phase 3 priority remains blocked until a natural judged GPT failure exists.
+
+## 2026-07-22 P192/P193 Approved Hybrid Locator -> Relative ROI Gap Candidate
+
+- The user approved a bounded hybrid workflow: deterministic Matching locates center/angle/uniform scale, NormalizeImage maps into the reviewed reference coordinate system, and LineDistance measures only the stored reference-coordinate Gap ROI. This supersedes the P191 product-choice blocker; it does not turn the LLM into a per-image detector.
+- P192 froze a four-Step candidate using existing tool families only. On the exact ten-row split it produced four operator-intended measurements and six locator-ambiguity fail-closed outcomes. All success and failure drawings were reviewed.
+- P193 replayed the unchanged candidate on all 500 frozen `device_top_right` rows: 356 measurements, 144 named fail-closed outcomes, zero missing. Terminal failures were 139 ambiguity audit, four pose publication, and one Gap edge selection.
+- The deterministic queue retained all 144 failures plus 106 measured stage/metric extremes and role-hash audits. All 18 measured and 24 fail-closed sheets were opened. No reviewed measurement repeated P190's lower-secondary-structure wrong-pass pattern. Some successes used short edge support, and the locator remained ambiguous on 28.8%, so the result is not product-ready.
+- Decision: `Hybrid candidate`. Contract: `docs\OPENVISIONLAB_HYBRID_LOCATOR_RELATIVE_ROI_INTENT_SKILL.md`. Evidence: `artifacts\p192_top_right_hybrid_gap_20260722`, `artifacts\p193_top_right_hybrid_gap_full_corpus_20260722`.
+- Next: implement this approved contract as a separate Guided Setup/LLM intent skill with strict locked-sequence validation and explicit-Run `WAIT` behavior. Recommended model: GPT-5.3-Codex | Reasoning effort: medium. The current locator may be replaced only after the operator approves a more distinctive feature/template; no model work is recommended before that prerequisite.
+
+## 2026-07-22 P195 Hybrid Relative-ROI Guided Setup/LLM Skill Phase 1
+
+- Added `Locator-aligned Gap (NormalizeImage)` as a separate Guided Setup/LLM intent; the direct raw-coordinate dark-band skill remains unchanged.
+- Guided Setup collects the locator template/search ROI, reviewed reference center/angle/scale/image dimensions, reference-coordinate measurement ROI, and score/margin/angle/scale/valid-pixel gates. Its starter is exactly `Matching audit -> Matching fixture publisher -> RotateScale NormalizeImage -> DarkBandGap LineDistance`.
+- Prompt and strict validation share this locked contract. Current-source smoke accepted and loaded the valid draft while rejecting a changed normalization tool, changed measurement ROI, and weakened ScoreMargin. It also proved that draft creation/import readiness did not run Preview/Run or mutate layer/routing counts.
+- The operator-visible state is `LOCATION GATED / MEASURE READY / NOT JUDGED`; the result channel keeps drawings in `WAIT` until explicit Run. Stale translation-only fixture descriptions were corrected without changing V1 translation behavior.
+- Evidence: `artifacts\p195_hybrid_relative_roi_phase1_20260722`. P195 completes Phase 1 only and adds no new semantic runtime proof beyond P192/P193.
+- Next priority: obtain operator approval for a more distinctive top-right locator/template before another hybrid replay. Recommended model: 해당 없음 (operator-approved locator feature/template prerequisite) | Reasoning effort: 해당 없음. After approval, freeze the P195-generated candidate and use the scalable N-image protocol. Recommended model: GPT-5.3-Codex | Reasoning effort: high.
+
+## 2026-07-22 P196 Rule-Based-First Direction And LLM Maintenance Mode
+
+- The user approved freezing planned LLM expansion because further provider/prompt/transcript work has diminishing product value while physical target, ROI, tolerance, and semantic truth remain operator-owned.
+- Preserve the current LLM Assistant, Guided Setup/XML generation, guide/catalog, strict validation/import, and recorded P168/P195 evidence. Maintenance mode permits concrete regression, unsafe XML acceptance/import, and compatibility fixes; it does not permit new providers, browser automation, API dependencies, prompt families, intent skills, or transcript campaigns without an explicit reopen decision.
+- The product is now described as an OpenCvSharp4 rule-based vision recipe workbench with an optional maintenance-mode LLM XML assistant. It must remain fully usable without an LLM account, session, API key, transcript, or generated XML.
+- The missing natural Pin Phase 3 failure, frozen P169 Test, and P193 locator limitation remain preserved evidence boundaries, not active next-priority blockers.
+- Next priority: complete the non-LLM operator path for `Matching -> NormalizeImage -> reference-coordinate ROI -> deterministic inspection`. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+- Remaining priorities: audit and minimally strengthen the existing LineDistance/Gap family as a general Caliper/EdgePair primitive, then validate each approved change with frozen N-sample metrics, fail-closed reasons, current-run drawings, and the deterministic review queue. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-22 P197 Non-LLM Matching Normalization And Reference-ROI Workflow
+
+- Audited the existing rule-based operator path and found that PropertyGrid fixture parameters, Pipeline/XML save-load, explicit reviewed-pose teaching, full-image `NormalizeImage`, layer comparison, and explicit Pipeline Review were already implemented. The missing product piece was a complete public example, not another algorithm or LLM wizard.
+- Added the public four-Step `Public_Matching_NormalizeImage_RelativeRoi.pipeline.xml`: Matching publishes `PartFrame`, RotateScale normalizes `Main` into the `572x420` reference image, Threshold creates `AlignedPadBinary`, and Blob inspects unchanged reference `CvROI=320,180,60,50`.
+- The Good sample completed `4/4` with center `(200,155)`, offset `(80,55)`, valid-pixel ratio `0.748`, and `ResultCount=1`. The paired missing-pad row reached the same fixed ROI and failed there with `ResultCount=0`, which the public catalog records as the controlled expected failure.
+- Added focused current-source Pipeline Review smoke and exact-run Good/Bad overlay evidence under `artifacts\p197_rule_based_fixture_workflow_20260722`. Public policy now reports `CatalogRows=32`, `ManifestAssets=229`, and `Pipelines=16`.
+- Status: Complete for one synthetic translated Good/Bad pair only. It does not prove general rotation/scale, unseen data, industrial truth, calibration, or field robustness.
+- Next priority: audit the existing LineDistance/Gap family as a general Caliper/EdgePair primitive and identify dataset-proven missing controls, metrics, or drawings before editing runtime code. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-22 P198 LineDistance / Gap Caliper Audit And Distinct-ROI Drawing Correction
+
+- Audited the general `LineDistance` and opt-in specialized `GapEdgePair` paths before adding another metrology family. General LineDistance already supports independent Line A/B ROI, polarity, scan direction/angle, fitted-edge distance, pixel/mm values, and min/max/average/range metrics. GapEdgePair remains intentionally limited to one reviewed long near-horizontal dark band.
+- Reproduced a drawing-evidence defect with two distinct public pin ROIs: runtime measurement used both but retained only the first ROI overlay. Equal A/B ROIs now retain the existing compact `Measurement ROI`; distinct A/B ROIs retain labelled `Line A ROI` and `Line B ROI` overlays.
+- The frozen public OK replay remained `ResultCount=22`, `DistancePxAvg=37.014`, `DistancePxRange=1.999`. The same measurement-only XML produced `18.300` / `3.994` on the Wide-Pin comparison with both ROIs; this is measurement evidence, not an OK classification. The shared-ROI public pipeline remained compatible, and the P189 specialized Gap canonical remained `14.4 px` with range `2` and its existing drawing set.
+- Fresh Line Tool UI smokes passed with zero layout/text/internal findings. Evidence: `artifacts\p198_line_caliper_audit_20260722`.
+- Full Debug build, exact focused replays, readiness, external-reference, public-sample (`32` rows / `229` assets / `16` pipelines), and `git diff --check` passed; diff check reported line-ending notices only.
+- Status: Complete for the audit, drawing correction, and named regressions. It does not prove industrial semantic correctness, calibration, arbitrary orientation/polarity behavior, or broad-corpus robustness.
+- Next priority: prove whether Recipe Manager selected-Step PropertyGrid load/apply/save independently preserves Line A/B ROI, polarity, scan direction, and angle. Do not edit until a loss is reproduced. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+- Remaining priority: if and only if that audit proves a loss, fix the affected mapper fields and then freeze a small orientation/polarity Caliper matrix with current-run drawings. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-22 P199 Line Pair PropertyGrid A/B Round-Trip Fidelity
+
+- Reproduced a no-edit Recipe Manager apply loss with one deliberately asymmetric `LineDistance` Step. Right ROI, polarity, vertical projection, and manual-angle settings were replaced by Line A values.
+- Corrected the selected-Step mapper only. The PropertyGrid now labels A/B ROI, projection direction, polarity, vertical projection, and manual-angle values independently; loaded baselines preserve unrepresented per-line settings, while changed compact shared fields still apply to both.
+- Direct mapper round trip preserved 20 asymmetric parameters; a direct Right ROI/angle edit left Line A unchanged; shared Contrast still updated both. Actual Recipe Manager apply/save/reload preserved the original XML with zero Preview/Run executions.
+- Current-source UI shows both distinct ROIs and `Round-trip validation passed`. ReferenceDifference, Fixture, Line measure, and Line pins measure regression smokes passed. The P198 exact runtime remained `22` results, `37.014 px` average, `1.999 px` range, and two ROI overlays.
+- Full Debug build, focused/current UI smoke, readiness, external-reference, public-sample (`32` rows / `229` assets / `16` pipelines), and `git diff --check` passed. Evidence: `artifacts\p199_line_pair_property_roundtrip_20260722`.
+- Status: Complete for A/B Recipe Manager edit/persistence fidelity only. It is not semantic orientation/polarity, calibration, or field-robustness proof.
+- Next priority: define and freeze a small LineDistance Caliper matrix with named intents, reviewed ROIs, expected pixel intervals, horizontal/vertical directions, and dark/bright polarity cases. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+- Remaining priority: replay that matrix without per-image tuning and change runtime only if a repeated defect is proven. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-22 P200 LineDistance Caliper Orientation/Polarity Matrix
+
+- Froze one public synthetic pin-to-datum clearance as four deterministic `LineDistance` cases: horizontal/vertical and bright/dark object polarity. Inputs are an exact public baseline, exact intensity inversion, exact 90-degree clockwise rotation, and the combined transform.
+- Horizontal uses the reviewed P198 A/B ROIs and `X_LTOR/X_RTOL`. Vertical uses mathematically transformed ROIs and the actual `Y_TTOB/Y_BTOT` projection directions. No per-image tuning or new runtime mode was added.
+- All four final current-source runs returned `ResultCount=22`; horizontal measured `DistancePxAvg=37.014`, `DistancePxRange=1.999`, and vertical measured `37`, `2`. Every row passed the external `Avg=35..39 px` plus `Range<=3 px` gate.
+- Exact current-run overlays were opened individually and as a contact sheet. They show separate Line A/B ROIs, edge points, and 22 final distances between the same transformed rightmost/bottom pin and datum rail boundaries. Bright/dark variants have identical per-orientation metrics.
+- Initial omitted raw-gray threshold flags and vertical X-direction settings failed closed at `703:LineGaugeEdgeNotFound`; correcting the known recipe configuration contract resolved them. No repeated runtime defect was found, so product source was not changed.
+- Full solution and runner builds passed with zero warnings/errors. Evidence: `artifacts\p200_line_caliper_matrix_20260722`.
+- Status: Complete for one four-case public synthetic configuration matrix; not adjacent pin-gap, center-pitch, calibration, unseen-data, or field-robustness proof.
+- Next priority: audit `PinArrayGap` for a separately named center-to-center pitch-consistency contract before any implementation. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-22 P201 PinArrayGap Center-Pitch Semantic Extension
+
+- The audit proved the existing `PinArrayGap` runtime, v1 Guided Setup, metrics, and drawings were adjacent EdgeGap-only, and Recipe Manager selected-Step PropertyGrid treated the tool as unsupported.
+- Added optional `MeasurementMode=CenterPitch` without changing legacy XML: absent mode remains `EdgeGap`. CenterPitch derives adjacent centers from the same detected dark-pin runs, publishes only `PitchCount` and `PitchPxMin/Max/Avg/Range`, and draws visible center points plus `P1..Pn` lines. EdgeGap retains `DistancePx*`, optional legacy mm values, and `G1..Gn` drawings.
+- Recipe Manager PropertyGrid now exposes the mode, one reviewed row ROI, detection fields, and acceptance. Direct mapper and actual apply/save/reload preserved the mode, ROI, and an unrepresented `ALLOW_BRANCH_INPUT`; `NativePreviewRunCount` remained zero.
+- The frozen three-case matrix passed: uniform widths and varied widths with identical centers both produced `PitchPxAvg=60`, `PitchPxRange=0`; one 12px center shift produced `PitchPxRange=12` and expected `PitchPxRange <= 2` rejection. Missing-mode and explicit-EdgeGap result drawings were SHA-256 identical.
+- Full runtime evidence and exact drawings are under `artifacts\p201_pin_center_pitch_20260722\runtime`. Fresh current-source UI before/after images are under `artifacts\p201_pin_center_pitch_20260722\ui`; the before image shows `Unsupported step tool: PinArrayGap`, while the after image shows the editable `CenterPitch` selector and successful round-trip state.
+- Status: Complete for the dark-pin, one-row, pixel-only synthetic contract and Recipe Manager persistence path. It is not bright-pin, calibration, real-corpus tolerance, non-tuned N-sample, unseen-data, or field-robustness evidence. The frozen LLM Pin Guided Setup v1 remains EdgeGap-only.
+- Next priority: audit P148/P168/P170 manifests and reviewed row ROIs for a direct non-LLM CenterPitch N-sample replay without opening the reserved P169 LLM Phase-3 Test. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-22 P202 PinArrayGap CenterPitch N-Sample Validation
+
+- Audited the P170 Working Train/Validation manifests against the local Pin_2 corpus: 252/252 files exist, all content hashes match, all 252 are unique 768x576 8-bit images, and the roles are explicitly `Good` / `pitch_error`. Reused the reviewed P168 top `0,120,768,130` and bottom `0,330,768,130` row ROIs. The reserved P169 Test was not listed, opened, copied, or executed.
+- Measurement-only Train replay completed 204/204 images. Using each image's maximum top/bottom `PitchPxRange`, the highest Good was 12 px and the lowest `pitch_error` was 13.5 px. Froze `PitchPxRange <= 12` in XML SHA-256 `5704FC0F76E37FD86EE62C0DA13FF62BEBCB3BAEB0AD9AAB24CD3420AB63247C` before Validation.
+- Frozen judged results: Train Good 178/178 accepted and pitch_error 26/26 rejected; Validation Good 36/36 accepted and pitch_error 12/12 rejected. Zero missing images, runtime errors, or misclassifications.
+- Corrected one evidence-tool defect: batch evidence previously saved only the final Step result image, hiding the top-row drawing. It now retains a combined all-executed-Step overlay. Production runtime and CenterPitch measurement were not changed.
+- Verified all 252 source/drawing hashes. The deterministic queue contains 44 rows (SHA-256 `53826B35F14BE53C7A0ED414A410BFB0D37EA0AFCB9B6B11A9E3C3260280438B`) selected from Pitch metric extrema, three hash audits per split/class, and explicit decision boundaries. Opened all 11 sheets; pin rectangles, centers, and adjacent center-to-center lines remained on the intended top/bottom dark-pin rows.
+- Status: Complete; decision `Keep with documented limits`. Evidence: `artifacts\p202_pin_center_pitch_nsamples_20260722`. This is one synthetic/augmented, previously observed, pixel-only dark-pin corpus; it is not independent blind Test, calibration, real-production, or field-robustness evidence.
+- Next priority: prove the frozen P202 Validation candidate through the existing Recipe Manager saved-validation and Run History workflow, showing Pitch metrics, combined two-row drawings, and queue identity without a manifest importer or automatic Preview/Run. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+- Remaining dependency: independent qualification requires a non-P169, operator-approved, content-hash-disjoint pitch-error Test set with the same physical target and reviewed row geometry. Recommended model: 해당 없음 (data prerequisite) | Reasoning effort: 해당 없음.
+
+## 2026-07-22 P203 CenterPitch Product Saved-Validation Workflow
+
+- Staged the exact P170 Working Validation manifest into a task-local OK/NG folder layout after verifying every source SHA-256: 48 unique rows, 36 OK and 12 NG. The reserved P169 Test was not listed, opened, copied, or executed.
+- Executed the frozen P202 two-row `PitchPxRange <= 12` XML through the existing Recipe Manager local Validation Set path. Saved judgement was 36 correct accepts and 12 correct rejects with zero false accepts, false rejects, load errors, or runtime errors.
+- Current-source product evidence retained both row gates and both stored PinArrayGap Step drawings. One selected NG row showed `PitchPxMin=45.5`, `PitchPxMax=65`, `PitchPxAvg=56.792`, `PitchPxRange=19.5`, `PitchCount=12`, and the correct `19.5 > 12` verdict without Preview/Run replay.
+- Saved Run History retained a 24/48 deterministic queue with policy/SHA-256 identity `196A8EF87728A867F4542F0A09D0AEEFB9C803E6041544893EB089770589E21F`, Pitch metric extrema, and content-hash audit reasons. Queue-only filtering preserved Preview/Run count, layers, and routing.
+- No product integration loss was reproduced, so no product runtime/UI code changed. One screenshot-smoke target was added to make the review-queue identity and side-effect assertions reusable. Evidence: `artifacts\p203_center_pitch_product_workflow_20260722`.
+- Status: Complete for saved-validation/Run History integration only. P202's independent-data, polarity, calibration, real-production, and field-qualification limits remain; stop CenterPitch tuning on this corpus.
+- Next priority: audit the operator-provided pin corpora for a separately labelled missing-pin/row-count intent and compare existing PinArrayGap/Blob/Contour capabilities before any runtime edit. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+- Remaining dependency: independent CenterPitch qualification requires a non-P169, operator-approved, content-hash-disjoint pitch-error Test set with the same physical target and reviewed row geometry. Recommended model: 해당 없음 (data prerequisite) | Reasoning effort: 해당 없음.
+
+## 2026-07-22 P204 Missing-Pin / Row-Count Data And Tool Audit
+
+- Audited `D:\라벨테스트\Pins_500_OK_NG\Pins` without changing source data or product code. The NG set is five balanced classes; global class 30 isolates exactly 50 `Pins:missing_pin` rows from the other 200 NG images.
+- Froze an audit manifest containing all 250 OK and 50 target rows. All 300 image hashes are unique and all images are 768x576 grayscale. Every OK label is empty and mask is zero; every target row has exactly one class-30 label and a non-empty mask fully covered by its supplied YOLO box.
+- Provided split accounting is Train 178 OK/38 missing, Validation 36/12, and Test 36/0. The current Test cannot prove target rejection.
+- Selected the existing `Threshold -> Blob` ResultCount family for the first semantic matrix because the target row contains bright connected pin bodies. Rejected current dark-run `PinArrayGap` for this intent and kept Contour only as a fallback if Blob filtering/drawings prove inadequate.
+- Status: Complete for data/tool selection only. Evidence: `artifacts\p204_missing_pin_count_audit_20260722`. No ROI, threshold, area interval, count gate, N-sample candidate, or independent Test claim is frozen yet.
+- Next priority: draw/review one upper-row ROI and freeze a small product-runtime `Threshold -> Blob` semantic matrix with count metrics and current-run drawings before any full replay. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+- Remaining dependency: independent qualification requires an operator-approved, content-hash-disjoint target-bearing Test split because the supplied Test has no missing-pin rows. Recommended model: 해당 없음 (data prerequisite) | Reasoning effort: 해당 없음.
+
+## 2026-07-22 P205 Missing-Pin Fixed-Raw-ROI Blob Matrix
+
+- Froze a six-row semantic matrix from P204: two hash-min Train rows plus one hash-min Validation row per OK/missing role. Raw ROI `0,40,768,360` contains the upper bright-pin row and every selected truth box but intersects bright slanted rails.
+- Actual product measurement at threshold 150 and Blob area `200..5000` returned 11 on all OK rows, 10 on two missing rows, and 12 on `Pins_NG_0001`; source-backed runtime drawings proved rail fragments were counted.
+- One bounded area correction to `1700..3000`, with expected OK count exactly 11, numerically accepted 3/3 OK and rejected 3/3 missing at count 10. Visual review still invalidated `Pins_NG_0001`: one horizontal rail Blob remained while the right border pin was missed, so the count was coincidental.
+- Rejected the fixed raw ROI candidate and stopped numeric tuning. Contour has the same geometric ROI problem. Do not run Train/Validation or report the numerical 6/6 as semantic success.
+- Corrected the evidence harness only: `VisionRecipeRunnerSmoke --batch-evidence` now clones the source before execution so combined drawings use the original image rather than a Threshold-mutated binary Mat. Product Blob runtime is unchanged; focused runner build passed with zero warnings/errors.
+- Status: Incomplete because the all-physical-pin drawing criterion failed. Evidence: `artifacts\p205_missing_pin_blob_semantic_matrix_20260722`.
+- Next priority: audit one existing fixed `RotateScale -> Threshold -> Blob` rectification on the same six rows, with one aligned ROI above the rails and physical-pin-only drawings. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+- Remaining dependency: independent qualification requires an operator-approved content-hash-disjoint target-bearing Test split; current Test contains no missing-pin rows. Recommended model: 해당 없음 (data prerequisite) | Reasoning effort: 해당 없음.
+
+## 2026-07-22 P206 Fixed-Rectification Missing-Pin Blob Matrix
+
+- Reused the exact P205 six rows and existing tools only. Product `RotateScale` sign probes proved `+10 deg` straightens the shared pin row and `-10 deg` increases its slant.
+- Initial aligned ROI `0,140,768,175` still admitted rail fragments. Correction 1 raised the bottom boundary to `y=298`, removing rails. Correction 2 excluded unstable source-border-truncated pins and froze the common nine-slot interior ROI `40,140,660,158`; threshold 150 and Blob area `200..5000` remained broad and unchanged.
+- Frozen three-Step candidate uses `+10 deg`, 100% scale, Binary 150, area `200..5000`, and exact `ResultCount=9`. Raw-source replay accepted OK 3/3 at count 9 and rejected missing 3/3 at count 8.
+- Opened all six aligned-stage current-run drawings at original resolution. Every selected component is a physical interior pin; no rail, noise component, or truncated source-border pin is counted. Source, aligned-image, and candidate XML SHA-256 identities are retained.
+- Status: Complete for this bounded six-row shared-pose/interior-slot candidate. Evidence: `artifacts\p206_missing_pin_rectified_blob_matrix_20260722`. This does not prove pose extremes, full Train/Validation, independent Test, unseen variation, lighting, or field robustness.
+- Next priority: freeze the exact P206 XML and replay one small hash-deterministic pose/border extreme matrix without parameter changes; reject rather than tune if drawing fidelity fails. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+- Remaining dependency: independent missing-pin qualification still requires an operator-approved content-hash-disjoint target-bearing Test split. Recommended model: 해당 없음 (data prerequisite) | Reasoning effort: 해당 없음.
+
+## 2026-07-22 P207 Frozen Missing-Pin Pose/Border Extreme Matrix
+
+- Selected eight rows before candidate execution using source geometry, supplied labels, and hashes only: per role, unique minimum/maximum pin-base fit angle and minimum aligned left/right margin. Excluded all P205/P206 rows; missing rows were eligible only when supplied truth mapped inside the P206 aligned ROI.
+- Current-build replay kept the P206 candidate XML byte-identical at SHA-256 `A74AE17F44F2076F7277DBF92106DE2BE869D6E1456FD4908FCB6DF982204BE8`.
+- Six rows were correct. `Pins_OK_0243` false-rejected at count 10 because a right boundary pin entered the ROI. `Pins_NG_0111` false-accepted at count 9 because the same boundary pin offset a true interior missing pin.
+- Opened all eight aligned-coordinate runtime drawings at original resolution and marked both failures red. No parameter correction was attempted.
+- Decision: `Reject` the P206 fixed-rectification/interior-ROI candidate and do not run Train/Validation from it. Status: Complete for the extreme audit. Evidence: `artifacts\p207_missing_pin_pose_border_extremes_20260722`.
+- Next priority: P208 proposal review now supersedes this line; obtain operator confirmation of Candidate B before any existing `Matching -> NormalizeImage -> Threshold -> Blob` execution. Recommended model: none (operator decision) | Reasoning effort: none.
+
+## 2026-07-22 P208 Missing-Pin Locator Proposal Review
+
+- Used the exact P207 eight source hashes and created proposal-only full-image overlays plus focused crops. No Matching, Preview, Run, recipe change, runtime change, or LLM work was performed.
+- Candidate A, the long carrier rail, is secondary angle/Y support only because it is horizontally repetitive. Candidate C, the seam/corner, is clipped and absent in two rows and is rejected as a sole locator.
+- Candidate B, the central asymmetric curved machining mark on the lower rail, is outside the judged pins and visually present in all eight crops. It remains unapproved until the operator confirms it is the same durable physical fixture feature rather than glare, dirt, or changing surface texture.
+- Status: Complete for the proposal task. Evidence: `artifacts\p208_missing_pin_locator_proposals_20260722`.
+- Next priority: obtain the operator decision. If approved, audit the existing hybrid path on the exact P207 eight rows; if rejected, stop this intent for the current framing rather than tune per image. Recommended model after approval: gpt-5.6-sol | Reasoning effort: high.
+- Remaining dependency: independent target qualification still requires an operator-approved hash-disjoint missing-pin Test split. Recommended model: 해당 없음 (data prerequisite) | Reasoning effort: 해당 없음.
+
+## 2026-07-22 P209 Missing-Pin Hybrid Locator Audit
+
+- The user approved P208 Candidate B. A rectified template was cropped from the current-build P207 `+10 degree` reference and audited with existing `Matching audit -> Matching fixture publisher -> NormalizeImage -> Threshold -> Blob` on the exact P207 eight rows.
+- Full-image search failed the frozen `ScoreMargin >= 10` gate on all eight (`1.51..4.82`) because drawings showed a second similar rail location.
+- One bounded correction used only the pre-approved Candidate B union as coarse search ROI `220,350,260,220`. It cleared ambiguity but produced two OK false rejects at unchanged `SCORE_MIN=0.8` and one missing-pin false accept.
+- `Pins_NG_0186` counted eight physical pins plus one lower horizontal rail fragment as 9. Operational classification was 5/8. Every full-image and coarse-ROI drawing was opened; no further tuning occurred.
+- Decision: `Reject` and stop the missing-pin/count intent for the current framing/composition. Evidence: `artifacts\p209_missing_pin_hybrid_locator_audit_20260722`.
+- Next priority: audit the supplied `short_pin` labels/masks, physical length target, split/hash integrity, geometry variation, and existing deterministic tool fit before implementation. Recommended model: gpt-5.6-terra | Reasoning effort: low.
+
+## 2026-07-23 P210 Repeated-Validation Closure And Rule-Based UI Gap Audit
+
+- The user closed repeated image inspection, dataset switching/tuning, and LLM XML/provider validation as active development work. These tasks require a new explicit user request before they may resume.
+- Static source and document inspection found 21 canonical tool families, broad deterministic preprocessing/segmentation/matching/metrology coverage, explicit PropertyGrid and Preview/Run contracts, aggregate metrics/drawings, and saved Run History evidence.
+- The decisive gap is UI/result depth rather than another image campaign. Blob/Contour currently expose area-oriented configuration and aggregate Pipeline metrics; an unused legacy `DefectListResult` can hold per-object area/angle/center/bounds, but current Pipeline reports do not persist first-class per-object rows.
+- Official Cognex, MVTec MERLIC, KEYENCE, and Zebra materials support three selected workbench gaps: Object Results Inspector first; unified Fixture/relative-ROI designer second; general circle/point/line geometric measurement workspace third.
+- No product code, UI, image, Preview/Run, batch validation, or LLM provider work was performed. Audit: `docs\OPENVISIONLAB_RULE_BASED_UI_GAP_AUDIT_20260723.md`.
+- Status: Complete for the static audit and priority decision. Next dependency is explicit user selection/approval of one UI item.
+
+## 2026-07-23 P211 Object Results Inspector
+
+- The user approved the first P210 UI priority. Pipeline Review now retains and displays stable Blob/Contour object rows with accepted/rejected state, area, center, bounds, angle, and an area-filter reject reason.
+- Table selection draws a same-run object rectangle/cross; clicking the object preview selects the same row. Focused smokes verified no extra Preview/Run, layer, active-layer, or route mutation.
+- Object rows now round-trip through direct Pipeline and saved recipe-run report contracts. The focused report artifact preserves accepted and rejected rows plus the `MIN_AREA` reason.
+- Blob exposes its full area-audit candidates. Contour intentionally audits only candidates at or above 25% of configured `MIN_AREA` in addition to all accepted rows; the earlier unbounded audit exceeded two minutes on pixel-noise contours, while the bounded current-build Contour smoke completed normally.
+- Fresh current-build Blob and Contour UI smokes passed. Evidence: `artifacts\p211_object_results_inspector_20260723`.
+- Status: Complete for this bounded UI/result-contract slice. Next priority is the Fixture And Relative-ROI Designer over existing Matching -> NormalizeImage -> reference-coordinate ROI behavior. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-23 P212 Fixture And Relative-ROI Designer
+
+- The user approved the second P210 UI priority. Pipeline Review now resolves one existing named `Matching producer -> NormalizeImage consumer -> reachable downstream single-CvROI Step` chain and shows it in one `Fixture / 상대 ROI` tab.
+- The tab shows the template/search ROI, taught reference pose and image size, current Matching pose, score, only a same-template preflight margin when present, and NormalizeImage valid-pixel ratio.
+- The saved downstream ROI is drawn as a transformed magenta polygon on the current source and as a green unchanged rectangle on the normalized image. Before explicit Review, the source remains visible but transformed/normalized evidence remains run-required.
+- Explicit reference teach, Matching producer edit, measurement ROI edit, and Run Review reuse the existing persistence, Recipe Manager PropertyGrid, and execution paths. No locator, matching, normalization, measurement, automatic ROI, automatic run, or LLM feature was added.
+- The full Debug build passed with zero warnings/errors. Focused current-build smokes passed for the designer, legacy Fixture reference teach, selected-Step PropertyGrid handoff, and Fixture PropertyGrid round trip. Tab selection preserved Preview/Run count, layers, active layer, and routing.
+- Status: Complete for this bounded UI-consolidation slice. Evidence: `artifacts\p212_fixture_relative_roi_designer_20260723`.
+- Historical next priority at P212: obtain approval for P213. Superseded by the completed P213 record below.
+
+## 2026-07-23 P213 General Geometric Measurement Workspace
+
+- Static source review confirmed that existing `LineDistance` and `LineIntersection` execute their own Line A/B gauges and expose metrics/overlays, but no earlier Step publishes a typed feature that a later Step can reference by name.
+- The proposal defines one additive same-run `Point`/`Segment`/`Circle` result sidecar addressed by `SourceStep + FeatureName`, exact coordinate/provenance checks, existing-Line export, a radial-caliper `CircleGauge`, seven pixel-only `GeometryMeasure` modes, PropertyGrid teaching, Pipeline Review table/drawing selection, saved-report persistence, and named fail-closed reasons.
+- Legacy Line/LineDistance/LineIntersection behavior remains unchanged. Experimental OuterCornerIntersection, calibration/mm, automatic feature/ROI selection, LLM expansion, a new graph engine, and dataset tuning remain outside the contract.
+- Contract state: Complete on 2026-07-23. Existing Line typed export, radial CircleGauge, all seven GeometryMeasure modes, compatible PropertyGrid source selection, Geometry Review two-way selection, and direct/recipe report persistence passed the frozen gates. Full/focused builds and legacy Line/LineDistance/LineIntersection regressions remained green.
+- Evidence: `artifacts\p213_general_geometric_measurement_workspace_20260723`. Boundary: pixel-only synthetic algorithm/UI evidence, not calibration, industrial semantics, unseen robustness, field qualification, automatic feature selection, or OuterCornerIntersection correctness.
+- Next priority: bounded two-point scale teaching with source/hash, two reviewed points, known distance/unit, derived scale, and explicit apply. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-23 P214 Two-Point Scale Teaching
+
+- Contract: `docs\OPENVISIONLAB_TWO_POINT_SCALE_TEACHING_CONTRACT.md`. Status: Complete.
+- Pipeline Review now accepts two distinct P213 Point results from the same explicit Run/coordinate frame, draws their A/B evidence and pixel distance, converts an operator-entered mm/µm/inch distance to one uniform mm/px value, and saves exact point coordinates plus coordinate-layer image SHA-256 before any recipe mutation.
+- Explicit Apply targets exactly one compatible measurement Step. It writes the legacy-compatible `PIXELPERMM` value (runtime semantics mm per pixel) and the existing Left/Right keys for LineDistance, round-trips the pipeline and applied-Step audit, and does not invoke Preview/Run or change layers/routing.
+- Same identity/coincident points, cross-frame/dimension mismatch, missing or changed image content, invalid distance, incompatible target, and target input-layer mismatch fail closed. Positive scale also enables P213 geometry-distance/clearance and circle-radius/diameter mm metrics.
+- Current Debug/focused builds, numeric/unit conversions, negative gates, evidence/pipeline round trips, actual Pipeline Review Run/calculate/apply isolation, fresh UI capture, and P213 geometry plus legacy Line-family regressions passed. Evidence: `artifacts\p214_two_point_scale_teaching_20260723`.
+- Boundary: uniform image-plane scale only; no distortion/perspective/non-uniform correction, physical-standard verification, uncertainty, certified metrology, or field qualification.
+- Next priority: statically reassess remaining commercial UI/tool gaps after P211-P214 and select at most one bounded deterministic workbench slice from fresh evidence. Do not resume image campaigns or LLM development by default. Recommended model: gpt-5.6-sol | Reasoning effort: medium.
+
+## 2026-07-23 P215 Post-P214 Commercial UI/Tool Gap Reassessment
+
+- Completed a documentation/source-only reassessment. No image, Preview, Run, batch, recipe tuning, or LLM workflow was executed.
+- The current catalog contains 23 canonical tool families and 42 accepted names/aliases. P211 already persists Blob/Contour area, center, bounding rectangle, angle, state, reject reason, and table/drawing selection.
+- Current `BlobProperty`/`ContourProperty`, Pipeline property mapper/builder/factory, and per-object acceptance logic still use only `MIN_AREA` and `MAX_AREA`. Width and height are visible evidence, and aggregate Step gates such as `BoundsWidthMax` can reject a whole run, but they cannot filter the accepted object set or its `ResultCount`.
+- Official MERLIC 5.8 `Evaluate Regions` confirms the commercial pattern of evaluating accepted/rejected regions by explicit features including width and height. OpenVisionLab will adopt only the smallest proven subset rather than its full descriptor catalog.
+- Selected next slice: optional Blob/Contour bounding-width/height min/max gates, backward-compatible missing-key behavior, exact P211 reject reasons, and report persistence. Verify with deterministic synthetic shapes and fresh UI evidence; do not reopen an operator dataset.
+- Deferred: angle/aspect/circularity/holes/gray features, easyTouch-style automatic suggestions, navigation rewrites, OCR/barcode, general region algebra, graph engines, image campaigns, and LLM work.
+- Status: Complete for audit/selection only. Audit: `docs\OPENVISIONLAB_RULE_BASED_UI_GAP_AUDIT_20260723.md`.
+- Next priority: implement the bounded object dimension filter v1 contract. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-23 P216 Blob/Contour Object Dimension Filters v1
+
+- Added optional `MIN_WIDTH`, `MAX_WIDTH`, `MIN_HEIGHT`, and `MAX_HEIGHT` axis-aligned pixel bounds to Blob/Contour PropertyGrid and Pipeline/XML round trip. Missing keys preserve legacy `0..1000000` unbounded dimensions.
+- Deterministic runtime removes dimension-rejected objects before `ResultCount`, object metrics, bounds metrics, accepted drawings, and acceptance. P211 Object Results Inspector and saved Run History retain the rejected rows and exact failed gate.
+- A five-shape synthetic contract passed for Blob and Contour: one accepted, four exact width/height rejects. Removing the new keys restored all five accepted objects. Actual report persistence retained all four reasons.
+- Fresh current-build Blob, Contour, dimension-PropertyGrid, and existing Pipeline Review UI smokes passed. PropertyGrid search/docking did not invoke Preview/Run.
+- Full evidence: `artifacts\p216_object_dimension_filters_20260723`.
+- Status: Complete for the bounded axis-aligned pixel feature. It is not rotated-size, aspect/circularity, semantic classification, operator-dataset, calibration, industrial robustness, or field qualification evidence.
+- Next priority: one static post-P216 deterministic-workflow reassessment that selects at most one concrete operator gap or closes further feature expansion. Do not run an image campaign. Recommended model: gpt-5.6-terra | Reasoning effort: low.
+
+## 2026-07-23 P217 Post-P216 Deterministic Workflow Reassessment
+
+- Completed a current-source/document-only review of PropertyGrid teaching, selected-Step edit handoff, explicit Run Review, Pipeline Review evidence, recipe persistence, saved Run Reports, batch history, and the deterministic review queue.
+- The connected review surfaces now include P211 Object Results, P212 Fixture/relative ROI, P213 Geometry Review, P214 Scale Calibration, and P216 Blob/Contour dimension-filter evidence. Recipe storage has an explicit round-trip validator, and saved review evidence is opened read-only rather than silently rerunning Preview or Run.
+- The P210 commercial shortlist is complete. The remaining descriptors, automatic suggestions, navigation changes, OCR/barcode, region algebra, and new algorithm families do not have a named operator task plus a reproducible current blocker.
+- Decision: select no further feature slice and close proactive expansion. No product code, UI, image, Preview/Run, batch, recipe-tuning, or LLM provider work was performed.
+- Status: Complete. Evidence: `artifacts\p217_post_p216_workflow_reassessment_20260723` and `docs\OPENVISIONLAB_RULE_BASED_UI_GAP_AUDIT_20260723.md`.
+- Next trigger: a concrete operator-blocking workflow or verified regression reproduced on current source. Prerequisite first; no model work is recommended until that evidence exists.
+
+## 2026-07-23 P218 Affine Transform v1
+
+- The user supplied the named post-P217 need: add deterministic Affine matrix support to Library-Noah, build its DLL, consume it from OpenVisionLab, expose a Tool View, and add Learn guidance.
+- The bounded v1 is three ordered non-collinear source points to three destination points in pixel coordinates. Library-Noah owns validation, `GetAffineTransform`/`WarpAffine`, coverage, matrix/decomposition/triangle metrics, error codes, and ten destination/frame drawings. Homography, calibration, automatic correspondence, and mm are excluded.
+- Library-Noah file version is `2.8.0.0`; assembly ABI remains `2.1.0.0` so OpenVisionLab can retain its existing `Lib.Common`/`Lib.OpenCV.Blob` 2.1 runtime. Source, vendored, and build-output `Lib.OpenCV.dll` hashes are identical at `B128CA282C0CD02C36F5CCF0C78C69C6F4834C3376158E8667EEAA7DE494A08B`.
+- OpenVisionLab adds the Affine PropertyGrid, explicit Preview, result card, canonical/alias XML round trip, strict validation, public sample, and Geometry Learn. The Tool View hides unrelated inherited fields and preserves input/output routing.
+- The public known transform recovered `[0.9 0.1 20; 0.05 0.9 10]`, determinant `0.805`, valid pixels `0.805`, output `572x420`, and ten drawings. Canonical/alias, mapper round trip, collinear and coverage fail-closed gates passed.
+- Final verification passed Library-Noah build and 57/57 smoke, OpenVisionLab zero-warning build, focused Affine contract/public-sample/current-source UI smokes, readiness/public-sample checks, and RotateScale regression.
+- Status: Complete. Evidence: `artifacts\p218_affine_transform_v1_20260723` and `docs\OPENVISIONLAB_AFFINE_TRANSFORM_V1_CONTRACT.md`.
+- Next trigger: the operator must provide three same-order physical point pairs, the downstream reference ROI/inspection, representative samples, and acceptance criteria for a real use case. No model work is recommended before those inputs exist.
+
+## 2026-07-23 P219 Detected-Point Affine Fixture
+
+- Audited the current runtime and confirmed that P218 accepted fixed numeric source points only; the one-Matching `NormalizeImage` path was similarity-only and could not consume three independent detections.
+- Reused the P213 typed geometry result contract instead of adding another transform algorithm. Successful single-result Matching now publishes `Center`; the Affine selected-Step PropertyGrid lists compatible earlier Point outputs and persists three ordered references.
+- At explicit Run, OpenVisionLab verifies that all three source Steps are earlier, enabled, successful, accepted, distinct, finite, inside the image, and in the same input layer/dimensions. It injects their coordinates into a cloned runtime Step; saved XML is unchanged. Library-Noah still owns the actual Affine calculation, WarpAffine, gates, metrics, errors, and drawings.
+- The actual six-Step representative pipeline `Matching x3 -> AffineTransform -> Threshold -> fixed-ROI Blob` passed. All three Center Points matched the known source coordinates, the matrix matched an independent `GetAffineTransform`, provenance metrics retained all six coordinates, and unchanged `CvROI=170,120,70,60` returned `ResultCount=1`.
+- Duplicate source references failed both strict definition validation and direct execution. Fixed numeric P218 XML still passes its separate regression contract.
+- Fresh Recipe Manager before/after evidence shows the toggle and three Point pickers; PropertyGrid apply/XML round trip kept Preview/Run count zero.
+- Status: Complete. Evidence: `artifacts\p219_dynamic_affine_fixture_20260723` and `docs\OPENVISIONLAB_AFFINE_DETECTED_POINT_FIXTURE_CONTRACT.md`.
+- Boundary: deterministic same-run correspondence wiring only; not automatic correspondence, locator qualification, per-image ROI movement, homography, calibration, unseen robustness, or field qualification.
+- Next trigger: one real operator-selected physical three-point fixture plus destination coordinates, downstream reference ROI/inspection, representative samples, and acceptance criteria. Recommended model: none until operator teaching/data exists | Reasoning effort: none until operator teaching/data exists.
+
+## 2026-07-23 P220 Operator-Approved Card Affine Pilot
+
+- The operator approved `R`, `5`, and the lower expiry mark as three distinct non-collinear physical card features before Matching was executed.
+- The evidence harness froze six evenly spaced OK and six evenly spaced NG rows, all source/template/XML hashes, Matching score/angle/scale settings, and an independent normalized-output gate of minimum template score `>=0.65` plus maximum center residual `<=3 px`.
+- The first run passed 8/12. Current-run drawings proved the original `5` coarse search ROI clipped two real positions and the original `R` region admitted the visually similar left `P`.
+- One geometry-only r2 correction excluded `P` and widened the `5` search region. No score, angle, scale, Affine, or residual gate changed.
+- r2 produced three typed Points and Affine output on 12/12. Ten rows retained `0..2 px` maximum residual; `OK_0051` retained `5.00 px` and `NG_0150` retained `4.12 px`.
+- Status: Incomplete at `<=3 px`. Evidence: `artifacts\p220_affine_fixture_point_candidates_20260723` and `docs\OPENVISIONLAB_CARD_AFFINE_PILOT_20260723.md`.
+- Next trigger: the operator supplies the downstream fixed ROI/inspection and maximum safe registration error. Do not lower the gate, run all 500, switch features, or add Homography before that requirement exists.
+
+## 2026-07-23 P221 Card Affine Fixed-ROI Linkage
+
+- The operator accepted the current card registration for one coarse downstream ROI. This separate decision uses the observed `<=5 px` envelope and does not rewrite P220's failed `<=3 px` gate.
+- The unchanged Matching x3 -> Library-Noah Affine path feeds one existing unjudged Mean Step on `CardReference` with exact `CvROI=250,315,190,80`.
+- The same frozen 12 rows completed 12/12. XML retained the exact input/ROI, all rows published finite `MeanValueAvg=111.4..170.1`, normalized score stayed `>=0.836786`, maximum residual was `5.00 px`, and all runtime ROI drawings stayed over the intended `10/05` area.
+- Status: Complete for bounded fixed-coordinate downstream linkage. Evidence: `artifacts\p221_card_affine_fixed_roi_20260723_r2` and `docs\OPENVISIONLAB_CARD_AFFINE_FIXED_ROI_20260723.md`.
+- Boundary: no OK/NG classification, Mean tolerance, unseen-data robustness, Homography, or production-locator qualification is claimed.
+- Next trigger: operator-selected actual inspection target/ROI, existing rule-based tool, and Good/NG tolerance. Recommended model: none until operator teaching/tolerance exists | Reasoning effort: none until operator teaching/tolerance exists.
+
+## 2026-07-24 P222 Auto MPoint Library Core
+
+- The operator explicitly requested an automatic matching-point teaching tool in
+  Library-Noah and approved a one-reference-image, fixed-pattern-size V1 before
+  implementation.
+- Added `AutoMPointToolProperty`, `AutoMPointCandidateResult`, stable error codes,
+  and `AutoMPointTool`. The tool scans the full image or one analysis ROI, ranks
+  deterministic contrast/edge-distribution windows, suppresses overlap, and uses
+  the existing `EdgeBasedTemplateMatchingTool` only on the strongest finalists.
+- Exact gates cover self-location, strongest distant alternative, uniqueness,
+  three known synthetic transforms, position/angle/scale error, and optional
+  runtime. Results retain the authored ROI-center MPoint, native edge-model center
+  and offset, exact reject reasons, metrics, drawings, and overlays.
+- The tool is deliberately not registered as a Pipeline Step. It does not save a
+  template, mutate a recipe, change layers/routing, Preview, or Run.
+- Library-Noah Release build passed with zero warnings/errors and the complete
+  smoke runner passed 60/60. A unique asymmetric feature ranked first at
+  `64,64,64,64`; two identical patterns both failed the uniqueness gate; invalid
+  ROI/pattern definitions failed closed; repeat executions retained identical
+  ranking and drawing pixels.
+- Source-library `Lib.OpenCV.dll` is assembly `2.1.0.0`, file `2.8.0.0`, SHA-256
+  `3D7A0B5D392B096DB3C14091D08E52BBB840772C1BDD1B30BEB15475ABAE28D9`.
+  OpenVisionLab Dev had not consumed that build at the P222 checkpoint; P223 below
+  supersedes this integration state.
+- Status: Complete for the Library-Noah core. Evidence:
+  `C:\Git\Library-Noah\artifacts\auto_mpoint_v1_20260724`,
+  `C:\Git\Library-Noah\docs\AUTO_MPOINT_V1.md`, and
+  `docs\OPENVISIONLAB_AUTO_MPOINT_V1_CONTRACT.md`.
+- Boundary: OpenVisionLab PropertyGrid/DLL integration, operator-confirmed real
+  samples, automatic size selection, N-image qualification, and field robustness
+  remain pending.
+- Next priority: integrate this core into an explicit OpenVisionLab teaching UI
+  with `Analyze candidates` and `Use this pattern`, candidate rows/drawing, current
+  DLL provenance, and zero automatic Preview/Run or routing side effects.
+  Recommended model: GPT-5.3-Codex | Reasoning effort: medium.
+
+## 2026-07-24 P223 Auto MPoint Teaching UI And Direction Review
+
+- Integrated the P222 Library-Noah core into the existing Edge Based Matching
+  Tool View. It remains teaching-time assistance rather than a Pipeline Step.
+- Added Auto MPoint PropertyGrid settings, explicit `Analyze candidates`, a
+  `Suggested` candidate list, the Library-Noah drawing, and explicit
+  `Use this pattern` through the existing template save path.
+- Property edits, analysis, row selection, and apply preserve Preview/Run count,
+  input/output layers, active layer, and routes. Matching still requires an
+  explicit Preview after a template is applied.
+- Source, vendored, and current Debug `Lib.OpenCV.dll` are assembly `2.1.0.0`,
+  file `2.8.0.0`, SHA-256
+  `3D7A0B5D392B096DB3C14091D08E52BBB840772C1BDD1B30BEB15475ABAE28D9`.
+- Reviewed the operator-provided GPT Pro investigation against current source and
+  official HALCON/Cognex documentation. The existing matcher remains the base.
+  Current ambiguity values are diagnostic only; current subpixel refinement is
+  independent X/Y five-score interpolation; model reduction is sequential; and
+  hybrid selection diagnostics are not exposed by `MatchingResult`.
+- Adopted order: opt-in fail-closed unique-match contract, then a frozen fixed-ROI
+  repeatability/false-accept matrix, then translation-only joint refinement if
+  measured error requires it. Balanced real-valued refinement points follow only
+  with evidence. Adaptive window growth, ODB/CAD, global anchors, Homography, and
+  production auto-tuning are deferred.
+- Status: Complete for the bounded UI integration and direction review. Evidence:
+  `artifacts\p223_auto_mpoint_ui_20260724` and
+  `docs\OPENVISIONLAB_AUTO_MPOINT_V1_CONTRACT.md`.
+- Boundary: suggestion, explicit apply, and one-image synthetic evidence do not
+  prove runtime uniqueness, subpixel production accuracy, N-image robustness, or
+  commercial-library parity.
+- Next priority: add the optional unique-match contract to Library-Noah while
+  preserving absent-key legacy behavior. Recommended model: GPT-5.3-Codex |
+  Reasoning effort: high.
+
+## 2026-07-24 P224 Edge-Based Unique Match Runtime
+
+- Added an opt-in fail-closed unique-result contract to the existing
+  Library-Noah `EdgeBasedTemplateMatchingTool`; legacy missing-key execution
+  remains unchanged.
+- Enabled mode requires `NUM_MATCH=1`, `USE_MULTI_ROI=false`, and a finite
+  normalized margin. At least eight internal candidates are retained independently
+  of the external one-result request.
+- Exactly one accepted candidate returns `Success`. No candidate returns
+  `MatchingNoResult`; a spatially distinct plausible alternative inside the
+  failed margin returns `MatchingAmbiguous`. Both failures return zero
+  `MatchingResult` rows.
+- Normalized `UniqueMatch.*` metrics retain state, internal Top-K, alternative
+  count, selected/alternative scores, actual/required margin, and spatial
+  threshold. Successful result rows also retain edge/image/final score and
+  percentage-point margin evidence; legacy rows leave that margin unavailable.
+- OpenVisionLab adds the two PropertyGrid/XML fields, absent-key defaults,
+  fail-closed pipeline validation, known metrics, exact diagnostics, and
+  no-auto-Preview behavior. The current-source capture visibly shows the enabled
+  option and `0.07` margin.
+- Library-Noah Release build and full smoke passed 64/64. The focused matrix
+  proves legacy repeated-pattern success, distinct unique success,
+  repeated-pattern ambiguity rejection, and absent-pattern no-match rejection.
+- Source, vendored, and current Debug `Lib.OpenCV.dll` are assembly `2.1.0.0`,
+  file `2.8.0.0`, SHA-256
+  `000C75A7D0E796E166DF6F24C95F264FC001927881B1ED7DE7BAE31913099F6D`.
+- Status: Complete for the bounded runtime/XML/UI contract. Evidence:
+  `artifacts\p224_unique_match_runtime_20260724` and
+  `docs\OPENVISIONLAB_EDGE_BASED_UNIQUE_MATCH_V1_CONTRACT.md`.
+- Boundary: no physical anchor, ROI, default margin, pose accuracy,
+  repeatability, false-accept rate, unseen variation, or field robustness is
+  qualified.
+- Next priority: frozen fixed-ROI repeatability/false-accept evidence only after
+  the operator supplies the anchor/ROI, motion envelope, representative images,
+  and allowable pose-error gate. Recommended model: none until those inputs are
+  frozen | Reasoning effort: none until those inputs are frozen.
+
+## 2026-07-24 P225 Card R Fixed-ROI Edge Matching Matrix
+
+- Reused the operator-approved P220/P221 `R` template and exact 12-row
+  `card_original` hashes. Frozen settings were score `0.45`, unique margin
+  `0.03`, angle `-8..8°`, scale `0.9..1.1`, and prior-center error `<=5 px`.
+- Executed reviewed-ROI unique, original broad-ROI legacy, and original
+  broad-ROI unique modes without post-result tuning.
+- Reviewed-ROI unique produced `0/12` correct accepts, two baseline mismatches,
+  two ambiguity rejects, and eight no-match rejects. Broad legacy produced one
+  correct accept and two wrong accepts; broad unique produced no correct accepts
+  and retained those two wrong accepts.
+- Opened the exact current-run and comparison drawings. One reviewed-ROI result
+  selected `T` instead of `R` with score `74.237` and no plausible alternative.
+  A uniqueness margin therefore does not prove intended physical identity.
+- Closed two Pipeline handoff gaps exposed by the matrix: existing EdgeBased
+  scale/subpixel/pyramid settings now survive builder/factory execution, and one
+  successful EdgeBased result publishes typed `Center`.
+- Focused runner build passed 0/0. The final 36-row replay completed with zero
+  infrastructure/runtime errors and frozen hash/XML/drawing/CSV evidence.
+- Status: Complete audit; fixed candidate decision `Reject`. Evidence:
+  `artifacts\p225_edge_unique_card_r_matrix_20260724`.
+- Boundary: prior P220/P221 centers are reviewed baselines, not independent
+  metrology ground truth. Do not lower gates, retune `R`, run a larger set, or
+  begin joint pose refinement.
+- Next priority: a second matrix is blocked until the operator explicitly
+  approves one different Auto MPoint candidate as the same durable physical
+  feature across representative images. Recommended model: none until operator
+  candidate approval | Reasoning effort: none until operator candidate approval.
+
+## 2026-07-24 P226 Public EasyMatch Auto MPoint Candidate Presentation
+
+- Ran the existing Library-Noah Auto MPoint engine once on `BOARD.JPG`,
+  `Die Pad 1.bmp`, `Floppies.jpg`, `Frame 1.tif`, and `Switch1.tif` under
+  `Sample\EasyMatch`.
+- Froze the current UI-equivalent defaults before observing results: `96x96`,
+  stride `16`, eight exact finalists, top-five display, feature quality `0.15`,
+  matching score `0.75`, uniqueness `0.05`, and maximum synthetic position
+  error `2.5 px`. No result-dependent tuning occurred.
+- Retained five current-run drawings, 40 evaluated rows, 28 gate-passed
+  candidates, 20 displayed suggestions/crops, and exact source/evidence hashes.
+  Four of five images produced suggestions.
+- `Frame 1.tif` rejected all finalists on uniqueness
+  (`0.0011..0.0054 < 0.05`). `Floppies.jpg` still suggested repeated hubs
+  because their fixed orientations were numerically distinct while angle search
+  was off. This is direct drawing evidence that automatic score and uniqueness
+  cannot supply physical-feature semantics.
+- No suggestion was applied and no cross-image Matching/Affine/inspection run
+  occurred.
+- Status: Complete for candidate presentation. Evidence:
+  `artifacts\p226_auto_mpoint_easymatch_candidates_20260724_r2`.
+- Next priority: operator names one sample and displayed rank/ROI and confirms
+  the same durable physical feature across representative images. Only then
+  freeze a cross-image Matching qualification. Recommended model: none until
+  operator candidate approval | Reasoning effort: none until operator candidate
+  approval.
+
+## 2026-07-24 P227 Six-Corpus Auto MPoint Pilot And Report
+
+- Audited six operator-provided EasyMatch 500-image packages as 3,000 unique
+  `all_images` rows and 16 separate `source_file` template strata.
+- Froze one canonical OK teaching image plus four OK/four NG MD5-spread pilot
+  rows per stratum. No parameter was changed after observing candidate results.
+- The initial product-path replay correctly failed the task rather than
+  mislabelling candidate quality: 88/104 rows had no usable template edges.
+  Root cause was a contract mismatch between Auto MPoint's grayscale verifier
+  and `EdgeBasedMatchingProperty`'s inherited threshold-on default.
+- New EdgeBasedMatching and explicit Auto MPoint application now default to
+  grayscale-edge matching. Explicit legacy `USE_THRESHOLD=true` remains
+  preserved. The current PropertyGrid/apply/Pipeline UI smoke passed with zero
+  automatic Preview/Run or routing/layer mutation.
+- The corrected replay produced suggestions for 13/16 strata, executed 104
+  rows with zero runtime/integrity errors, and mechanically advanced 12 strata.
+  All 13 contact sheets were opened.
+- Drawing review stopped Frame 1/2/3, Frame 4, Die1, and Die2. Ten strata remain
+  bounded expansion candidates only.
+- Status: Complete for the pilot/report/contract repair. Evidence:
+  `artifacts\p227_auto_mpoint_six_corpus_pilot_20260724_r4`.
+- Primary review document:
+  `artifacts\p227_auto_mpoint_six_corpus_pilot_20260724_r4\OPENVISIONLAB_AUTO_MPOINT_SIX_CORPUS_REPORT.md`.
+- Next priority: the operator reviews that report and names one expansion
+  candidate before a 500-row qualification. Recommended model: none until
+  operator candidate approval | Reasoning effort: none until operator candidate
+  approval.
+
+## 2026-07-24 P228 Self-Contained HTML Report Export
+
+- Extended the P227 command with a dependency-free, self-contained HTML export.
+  The candidate overview and all 13 available Matching contact sheets are
+  embedded in the HTML; the report also retains the full table, Korean review
+  reasons, companion CSV links, and a browser `인쇄 / PDF 저장` action.
+- A fresh 104-row replay reproduced the P227 logical results exactly: 3,000
+  metadata rows, 16 strata, 13 suggestions, zero runtime/integrity errors, ten
+  expansion candidates, and six stopped strata.
+- Structural verification found 14 embedded images and zero missing companion
+  links. A current Chrome render was opened and visually checked.
+- Status: Complete for report export and rendering. Evidence:
+  `artifacts\p227_auto_mpoint_six_corpus_pilot_20260724_r5_html`.
+- Primary review document:
+  `artifacts\p227_auto_mpoint_six_corpus_pilot_20260724_r5_html\OPENVISIONLAB_AUTO_MPOINT_SIX_CORPUS_REPORT.html`.
+- Boundary: this is presentation/export evidence only and does not qualify a
+  locator.
+- Next priority: the operator reviews the HTML report and names one expansion
+  candidate before a 500-row qualification. Recommended model: none until
+  operator candidate approval | Reasoning effort: none until operator candidate
+  approval.
+
+## 2026-07-24 P229 Representative-Image Automatic Best Pattern
+
+- Added an optional Library-Noah AutoMPoint overload that evaluates one-image
+  finalists across multiple same-size representative images. Missing
+  representative images preserve the legacy one-image behavior.
+- Multi-image candidates are rejected below the configured success rate and ranked
+  by representative success rate, minimum uniqueness margin, mean score, then
+  original one-image score. Per-image success/no-match/ambiguous, score,
+  uniqueness, pose, runtime, and aggregate evidence are retained.
+- OpenVisionLab's existing Edge Based Matching teaching panel now selects
+  representative files, shows their count, marks rank one as `BEST`, and selects
+  it without automatically applying it, Previewing, Running, or mutating
+  layer/routing state.
+- A deterministic `Die Pad 1.bmp` pilot automatically selected
+  `128,256,96,96`, the same ROI retained by P227. Four OK plus four NG
+  representative rows and a disjoint four OK plus four NG held-out set both
+  replayed at `8/8`; runtime and hash-integrity errors were zero. All drawings
+  follow the same central pad/trace.
+- The first execution failed closed with no candidate because the command omitted
+  the existing angle/scale envelope and clustered its sample selection. The one
+  bounded correction restored angle `-8..8`, scale `0.9..1.1`, and deterministic
+  spread rows without lowering score, uniqueness, or success gates.
+- Library-Noah Release build and 66/66 smoke passed. Source/vendored/current Debug
+  DLL SHA-256:
+  `B456BE7AFC002BA1535A5892092B746FB44560300961BD71342AAC0E7741B180`.
+- Status: Complete for bounded automatic selection/UI/split replay. Evidence:
+  `C:\Git\Library-Noah\artifacts\auto_mpoint_representative_v2_20260724` and
+  `artifacts\p229_auto_mpoint_representative_best_20260724`.
+- Primary review document:
+  `artifacts\p229_auto_mpoint_representative_best_20260724\die_pad_1_r3_current\OPENVISIONLAB_AUTO_MPOINT_REPRESENTATIVE_BEST_REPORT.html`.
+- Boundary: one synthetic/augmented same-source stratum only; no semantic,
+  all-500, real-capture, production, or field qualification.
+- Next priority: the operator reviews the P229 representative and held-out
+  drawings and confirms that the selected central pad/trace is one durable
+  feature before any 500-row replay. Recommended model: none until operator
+  drawing approval | Reasoning effort: none until operator drawing approval.
+
+## 2026-07-24 P230 Die Pad 1 Full-Stratum Qualification
+
+- After operator drawing approval, froze the exact P229 template ROI
+  `128,256,96,96` and replayed the unchanged matcher contract on all 122
+  `Die Pad 1.bmp` rows. Auto MPoint was not rerun and no parameter was tuned.
+- Results: 122/122 success, including 62/62 OK and 60/60 NG; ambiguous 0,
+  no-match 0, runtime errors 0, integrity errors 0, drawings 122/122.
+- Opened the deterministic 35-row decision queue and all nine supplied-defect-mask
+  overlap drawings. Every runtime result remained on the same central pad/trace;
+  no wrong-location result was observed.
+- Nine NG masks intersect the 96x96 template bounds. They remain an explicit
+  production-variation risk, so the decision is `Keep with documented limits`.
+- The first report incorrectly treated mask intersection as a wrong-location
+  failure. Corrected report semantics only; source, template, parameters,
+  drawings, scores, and runtime outcomes were unchanged.
+- Status: Complete for this source stratum. Primary report:
+  `artifacts\p230_auto_mpoint_die_pad_1_full_stratum_20260724_r2\OPENVISIONLAB_AUTO_MPOINT_FULL_STRATUM_REPORT.html`.
+- Boundary: Die Pad 2-4 are distinct source strata and this result is not
+  real-capture, production, or field qualification. Do not rerun or retune the
+  same 122 rows.
+- Next priority: audit whether representative selection and the P230 N-image HTML
+  evidence export are exposed through the actual operator UI; connect the existing
+  contracts only if that product path is missing. Recommended model:
+  gpt-5.6-terra | Reasoning effort: medium.
+
+## 2026-07-24 P231 Product-UI Auto MPoint N-Image Report
+
+- Audited the Edge Based Matching Tool View and confirmed that representative
+  selection/ranking/apply existed while HTML evidence export was validation-tool
+  only.
+- Added one explicit `Save N-image report` action after representative analysis.
+  It serializes the selected candidate's retained results rather than rerunning
+  matching.
+- The self-contained HTML retains source/template identity, every N-row metric and
+  file SHA-256, all failures, bounded score/uniqueness/runtime/angle/scale
+  extremes, SHA-256-spread review drawings, and every drawing when N <= 24.
+- Changed source/settings/representative file identity and missing/count-mismatched
+  evidence fail closed. Export does not apply a candidate, Preview/Run, or mutate
+  layers/routing.
+- Current-source UI/report smoke passed: 3 rows, 4 embedded PNGs, zero external
+  image links, visible report button, and unchanged workspace state. Evidence:
+  `artifacts\p231_auto_mpoint_operator_html_report_20260724\after_current_build_r3`.
+- Boundary: locator-teaching evidence only; Recipe Manager Validation Set and Run
+  History remain the OK/NG classification/report path.
+- Status: Complete. Do not expand AutoMPoint or start another image campaign until
+  the operator supplies a named workflow blocker or a current-build regression.
+  Recommended model: none until evidence exists | Reasoning effort: none until
+  evidence exists.
+
+## 2026-07-24 P232 Tool View N-Image Verification Design
+
+- Audited the current Tool View, Recipe Manager, Pipeline execution, batch
+  storage, per-image report, and Run History paths without changing product
+  source or running another dataset.
+- Recipe Manager Local Validation Sets already support multi-file/top-level-folder
+  registration with explicit OK/NG roles and a 5,000-image limit. Their explicit
+  suite run saves per-image Step reports/drawings, `summary.xml`, `summary.tsv`,
+  analytics, comparison, and a deterministic review queue.
+- The native common Tool View shell remains a one-image teaching surface with
+  explicit Preview and Add Pipeline. AutoMPoint P231 is a specialized
+  representative-image report only.
+- Current local-set/pair/catalog implementations await each image in an ordered
+  loop. This proves N-image batch execution, not simultaneous parallel execution.
+- Froze a minimal shared design: eligible Tool Views expose one `N장 검증` entry
+  that opens one shared window; the current PropertyGrid state is committed
+  through the existing Add Pipeline Step adapter into a frozen transient
+  one-Step Pipeline; retained results drive the table, drawings, deterministic
+  review queue, and self-contained HTML without rerun.
+- Thirteen single-input native Tool Views are eligible in Phase 1. Arithmetic is
+  deferred until A/B file pairing is explicit; HSV/Histogram need native Step
+  contracts; AutoMPoint stays separate; Pipeline-only tool families stay in
+  Recipe Manager.
+- Status: Complete as design/audit only. Design:
+  `docs\OPENVISIONLAB_TOOL_VIEW_N_IMAGE_VERIFICATION_DESIGN.md`.
+- Next priority after operator acceptance: implement the shared sequential Phase
+  1 surface and prove result equivalence against Recipe Manager on Threshold,
+  Blob, Line, and Edge Based Matching. Recommended model: gpt-5.6-terra |
+  Reasoning effort: medium.
+- Later priority: bounded `1/2/4` workers only after isolated-worker,
+  thread-safety, memory, cancellation, and exact sequential-equivalence evidence.
+  Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+## 2026-07-24 P233 Shared Tool View N-Image Verification Phase 1
+
+- Implemented one shared `N-image verification` action for the thirteen current
+  single-input native Tool Views that already have a one-Step Pipeline adapter.
+  Arithmetic, HSV, Histogram, AutoMPoint, and Pipeline-only families retain
+  their separate or deferred contracts.
+- The modal window accepts selected files or one top-level folder up to 5,000
+  images. Explicit Run creates and hashes the current Step exactly once, freezes
+  the ordered image list, and runs a transient `Main -> NImageResult` Pipeline
+  sequentially with stop-after-current behavior.
+- Native Tool View channel normalization is preserved for execution, while each
+  original source snapshot is retained and SHA-256 verified. Per-image run
+  reports, drawings, metrics, messages, and times feed the XML/TSV summary,
+  Pipeline snapshot, deterministic review queue, and retained-only
+  self-contained HTML.
+- Threshold, Blob, Line, Matching, EdgeBasedMatching, and AffineTransform each
+  passed 30/30 deterministic rows. Direct frozen-Pipeline replay matched every
+  retained status and published metric; HTML export left all run-report
+  timestamps unchanged.
+- Browser rendering verified all 30 EdgeBasedMatching rows, six embedded review
+  images, and no page-level horizontal overflow after long SHA-256 cards wrap.
+- Current-build UI smoke verified the common entry, the actual retained-result
+  table/source/drawing window, and unchanged Preview/Run count, layers, active
+  layer, and routes after open/close.
+- Status: Complete for Phase 1. Evidence:
+  `artifacts\p233_tool_view_n_image_verification_20260724`.
+- Boundary: this is sequential quick execution verification, not automatic
+  expected OK/NG labelling, accuracy qualification, parallel execution, or
+  field robustness.
+- Next priority: wait for one concrete operator workflow blocker or regression
+  from real use before changing this surface. Recommended model: none until
+  evidence exists | Reasoning effort: none until evidence exists.
+- If explicitly requested after that review, the next bounded feature is exact
+  frozen-Step promotion into Recipe Manager Validation Set. Recommended model:
+  gpt-5.6-terra | Reasoning effort: medium.
+
+## 2026-07-24 P234 First P233 Real-Folder Acceptance
+
+- Ran the exact frozen P230 `Die Pad 1` EdgeBasedMatching Step through P233's
+  actual top-level-folder registration and shared N-image service. No locator
+  parameters or product runtime were changed.
+- The task-local folder contains a deterministic MD5-spread 12 OK + 12 NG copy
+  from the operator-supplied `EasyMatch_Die_Pad_500(1)` corpus.
+- Folder registration passed 24/24, the Step factory ran exactly once,
+  execution passed 24/24, and drawings were retained 24/24. The Step SHA-256 is
+  `7CEAEC5D50259ED1337AB912F0F0A63C673F4A74E692DCDEA01BAA14FC25658F`.
+- Retained source files passed SHA-256 and decoded-pixel equality checks.
+  `ScoreMax` reproduced P230 within at most `0.068` percentage points under the
+  frozen `<=0.1` integration-equivalence gate.
+- The minimum-score row (`die_pad_240_ok.jpg`, `83.76%`) and maximum-delta row
+  (`die_pad_089_ng.jpg`, `-0.068` percentage points) were opened. Both exact
+  runtime drawings remained on the approved central pad/trace feature.
+- Status: Complete. Evidence:
+  `artifacts\p234_tool_n_image_real_folder_acceptance_20260724`.
+  Primary HTML:
+  `artifacts\p234_tool_n_image_real_folder_acceptance_20260724\P234_DIE_PAD_REAL_FOLDER_REPORT.html`.
+- Boundary: this is one frozen locator's folder-to-report integration
+  acceptance. It does not infer OK/NG accuracy, qualify other strata, retune the
+  locator, prove parallelism, or establish field robustness.
+- Historical next action: exact frozen-Step/image-set promotion into Recipe
+  Manager was explicitly requested and is completed by P235 below.
+
+## 2026-07-24 P235 Hash-Locked Locator Validation Promotion
+
+- Implemented the operator-requested handoff from a completed all-success
+  `Matching`, `EdgeBasedMatching`, or `FeatureMatching` Tool View N-image
+  session to Recipe Manager through one explicit `Promote locator set` action.
+- Promotion saves the exact one-Step Pipeline text/name and SHA-256, all
+  readable dependency/template hashes, each ordered original image hash, and
+  an image-set hash. The retained report source hash and decoded pixels must
+  still match the current original before promotion.
+- All promoted rows are `Expected OK` for locator execution only. Original
+  corpus defect OK/NG roles are neither copied nor inferred.
+- Hash-locked sets are idempotent and row-read-only. A different selected
+  Pipeline is disabled, and Pipeline/dependency/image drift fails before image
+  execution. Promotion does not activate the Pipeline or start Preview/Run.
+- The exact P234 Step hash
+  `7CEAEC5D50259ED1337AB912F0F0A63C673F4A74E692DCDEA01BAA14FC25658F`
+  and 24 retained images passed promotion/reload, repeat reuse,
+  wrong-Pipeline blocking, tamper rejection, current-source Recipe Manager UI,
+  and zero automatic run checks. Legacy manual OK/NG Validation Set and N-image
+  entry/window regressions passed.
+- Status: Complete. Evidence:
+  `artifacts\p235_n_image_locator_validation_promotion_20260724`.
+- Boundary: this is locator-stability ownership, not defect classification,
+  semantic requalification, parallelism, or field robustness.
+- Next priority: none until a concrete operator blocker or verified regression
+  exists. Recommended model: none until evidence exists | Reasoning effort:
+  none until evidence exists.
+- If the operator later supplies a measured sequential bottleneck and explicitly
+  requests parallelism, the bounded candidate is isolated-worker `1/2/4`
+  equivalence and thread-safety audit. Recommended model: gpt-5.6-sol |
+  Reasoning effort: high.
+
+## 2026-07-24 P236 Current-State Handoff Consolidation
+
+- The user requested a durable next-chat record of all work completed so far,
+  incomplete or rejected work, the current product identity, evidence limits,
+  and the next-priority state.
+- Added a compact current-state ledger to
+  `docs\OPENVISIONLAB_CURRENT_HANDOFF.md`. It groups the detailed P1-P235 work
+  into the workbench, LLM maintenance, deterministic fixture/metrology,
+  affine, Auto MPoint, N-image/promotion, and runtime/release tracks.
+- Explicitly preserved P220 as incomplete at its frozen `<=3 px` gate, the
+  failed missing-pin and card `R` candidates as completed rejections, parallel
+  workers as unimplemented, LLM expansion as frozen, and production
+  calibration/field qualification as unproven.
+- Updated the repository snapshot, documentation map, AGENTS starting contract,
+  and next-chat prompt. Historical readiness percentages remain historical; no
+  current completion percentage was invented.
+- The user also explicitly requested Dev and original repository commit/push.
+  The pre-publication check found Dev on `codex/public-sample-ux-docs` with the
+  accumulated source work, original `main` clean, and GitHub CLI installed but
+  unauthenticated. Dev is authoritative; import to original must use a reviewed
+  Git patch/commit, not a bulk directory copy.
+- Status: documentation complete after structure/link/diff verification.
+  External push remains dependent on successful GitHub authentication.

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Xml.Serialization;
 
 namespace OpenVisionLab
@@ -21,10 +23,36 @@ namespace OpenVisionLab
         [XmlAttribute]
         public string Name { get; set; } = string.Empty;
 
+        [XmlAttribute]
+        public string PipelineName { get; set; } = string.Empty;
+
+        [XmlAttribute]
+        public string PipelineDefinitionSha256 { get; set; } = string.Empty;
+
+        [XmlAttribute]
+        public string ImageSetSha256 { get; set; } = string.Empty;
+
         public string Notes { get; set; } = string.Empty;
+
+        [XmlArray("Dependencies")]
+        [XmlArrayItem("Dependency")]
+        public List<OpenVisionRecipeValidationSetDependency> Dependencies { get; set; } =
+            new List<OpenVisionRecipeValidationSetDependency>();
 
         [XmlElement("Image")]
         public List<OpenVisionRecipeValidationSetImage> Images { get; set; } = new List<OpenVisionRecipeValidationSetImage>();
+
+        [XmlIgnore]
+        public bool IsIdentityLocked => !string.IsNullOrWhiteSpace(PipelineDefinitionSha256);
+    }
+
+    public sealed class OpenVisionRecipeValidationSetDependency
+    {
+        [XmlAttribute]
+        public string Path { get; set; } = string.Empty;
+
+        [XmlAttribute]
+        public string Sha256 { get; set; } = string.Empty;
     }
 
     public sealed class OpenVisionRecipeValidationSetImage
@@ -37,6 +65,9 @@ namespace OpenVisionLab
 
         [XmlAttribute]
         public string Path { get; set; } = string.Empty;
+
+        [XmlAttribute]
+        public string Sha256 { get; set; } = string.Empty;
 
         public string Notes { get; set; } = string.Empty;
 
@@ -156,7 +187,7 @@ namespace OpenVisionLab
         {
             updatedCount = 0;
             skippedCount = 0;
-            if (set == null)
+            if (set == null || set.IsIdentityLocked)
             {
                 return 0;
             }
@@ -211,6 +242,12 @@ namespace OpenVisionLab
         {
             repairedPath = string.Empty;
             error = string.Empty;
+            if (set?.IsIdentityLocked == true)
+            {
+                error = "Hash-locked validation images cannot be repaired.";
+                return false;
+            }
+
             if (set?.Images == null || image == null || !set.Images.Any(item => ReferenceEquals(item, image)))
             {
                 error = "The selected validation image is no longer available.";
@@ -311,6 +348,101 @@ namespace OpenVisionLab
             };
         }
 
+        public static string ComputeFileSha256(string path)
+        {
+            using FileStream stream = File.OpenRead(path);
+            return Convert.ToHexString(SHA256.HashData(stream));
+        }
+
+        public static string ComputeTextSha256(string value)
+        {
+            return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value ?? string.Empty)));
+        }
+
+        public static string ComputeImageSetSha256(IEnumerable<OpenVisionRecipeValidationSetImage> images)
+        {
+            StringBuilder canonical = new StringBuilder();
+            int index = 0;
+            foreach (OpenVisionRecipeValidationSetImage image in images ?? Enumerable.Empty<OpenVisionRecipeValidationSetImage>())
+            {
+                canonical
+                    .Append(index++.ToString("D6", System.Globalization.CultureInfo.InvariantCulture))
+                    .Append('|')
+                    .Append(Path.GetFullPath(image?.Path ?? string.Empty))
+                    .Append('|')
+                    .Append((image?.Sha256 ?? string.Empty).Trim().ToUpperInvariant())
+                    .AppendLine();
+            }
+
+            return ComputeTextSha256(canonical.ToString());
+        }
+
+        public static bool TryValidateFrozenIdentity(
+            OpenVisionRecipeValidationSet set,
+            string pipelineName,
+            string pipelineXml,
+            out string error)
+        {
+            error = string.Empty;
+            if (set == null || !set.IsIdentityLocked)
+            {
+                return true;
+            }
+
+            if (!string.Equals(set.PipelineName, pipelineName, StringComparison.Ordinal))
+            {
+                error = $"Frozen validation Pipeline mismatch. Expected '{set.PipelineName}', actual '{pipelineName}'.";
+                return false;
+            }
+
+            string definitionSha256 = ComputeTextSha256(pipelineXml);
+            if (!string.Equals(
+                    set.PipelineDefinitionSha256,
+                    definitionSha256,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                error = "Frozen validation Pipeline definition SHA-256 mismatch.";
+                return false;
+            }
+
+            foreach (OpenVisionRecipeValidationSetDependency dependency in
+                set.Dependencies ?? Enumerable.Empty<OpenVisionRecipeValidationSetDependency>())
+            {
+                if (string.IsNullOrWhiteSpace(dependency?.Path)
+                    || !File.Exists(dependency.Path)
+                    || !IsFileSha256Match(dependency.Path, dependency.Sha256))
+                {
+                    error = "Frozen validation dependency SHA-256 mismatch: " + (dependency?.Path ?? string.Empty);
+                    return false;
+                }
+            }
+
+            foreach (OpenVisionRecipeValidationSetImage image in
+                set.Images ?? Enumerable.Empty<OpenVisionRecipeValidationSetImage>())
+            {
+                if (string.IsNullOrWhiteSpace(image?.Sha256))
+                {
+                    error = "Frozen validation image SHA-256 is missing: " + (image?.Path ?? string.Empty);
+                    return false;
+                }
+
+                if (!image.Exists || !IsFileSha256Match(image.Path, image.Sha256))
+                {
+                    error = "Frozen validation image SHA-256 mismatch: " + (image?.Path ?? string.Empty);
+                    return false;
+                }
+            }
+
+            string imageSetSha256 = ComputeImageSetSha256(set.Images);
+            if (!string.Equals(set.ImageSetSha256, imageSetSha256, StringComparison.OrdinalIgnoreCase))
+            {
+                error = "Frozen validation image-set SHA-256 mismatch.";
+                return false;
+            }
+
+            return true;
+        }
+
         private static void Normalize(OpenVisionRecipeValidationSetDocument document)
         {
             document.Sets ??= new List<OpenVisionRecipeValidationSet>();
@@ -326,7 +458,23 @@ namespace OpenVisionLab
                 }
 
                 set.Name = name;
+                set.PipelineName = set.PipelineName?.Trim() ?? string.Empty;
+                set.PipelineDefinitionSha256 = NormalizeSha256(set.PipelineDefinitionSha256);
+                set.ImageSetSha256 = NormalizeSha256(set.ImageSetSha256);
                 set.Notes = set.Notes?.Trim() ?? string.Empty;
+                set.Dependencies ??= new List<OpenVisionRecipeValidationSetDependency>();
+                set.Dependencies = set.Dependencies
+                    .Where(item => item != null && !string.IsNullOrWhiteSpace(item.Path))
+                    .Select(item =>
+                    {
+                        item.Path = NormalizeExistingOrDeclaredPath(item.Path);
+                        item.Sha256 = NormalizeSha256(item.Sha256);
+                        return item;
+                    })
+                    .Where(item => !string.IsNullOrWhiteSpace(item.Path))
+                    .GroupBy(item => item.Path, StringComparer.OrdinalIgnoreCase)
+                    .Select(group => group.First())
+                    .ToList();
                 set.Images ??= new List<OpenVisionRecipeValidationSetImage>();
                 HashSet<string> imagePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 List<OpenVisionRecipeValidationSetImage> images = new List<OpenVisionRecipeValidationSetImage>();
@@ -340,6 +488,7 @@ namespace OpenVisionLab
 
                     image.Path = path;
                     image.Expected = NormalizeExpected(image.Expected);
+                    image.Sha256 = NormalizeSha256(image.Sha256);
                     image.Notes = image.Notes?.Trim() ?? string.Empty;
                     images.Add(image);
                 }
@@ -379,6 +528,29 @@ namespace OpenVisionLab
                 ? OpenVisionRecipeValidationSetImage.ExpectedNg
                 : OpenVisionRecipeValidationSetImage.ExpectedOk;
         }
+
+        private static string NormalizeExistingOrDeclaredPath(string path)
+        {
+            try
+            {
+                return Path.GetFullPath(path?.Trim() ?? string.Empty);
+            }
+            catch (Exception ex) when (ex is ArgumentException || ex is NotSupportedException || ex is PathTooLongException)
+            {
+                return string.Empty;
+            }
+        }
+
+        private static string NormalizeSha256(string value)
+        {
+            return (value ?? string.Empty).Trim().ToUpperInvariant();
+        }
+
+        private static bool IsFileSha256Match(string path, string expected)
+        {
+            return !string.IsNullOrWhiteSpace(expected)
+                && string.Equals(ComputeFileSha256(path), expected, StringComparison.OrdinalIgnoreCase);
+        }
     }
 
     public sealed class OpenVisionRecipeValidationSetOption
@@ -402,6 +574,14 @@ namespace OpenVisionLab
 
         public int NgCount => Set.Images?.Count(image => image != null && image.IsExpectedNg) ?? 0;
 
+        public bool IsIdentityLocked => Set.IsIdentityLocked;
+
+        public string PipelineName => Set.PipelineName ?? string.Empty;
+
+        public string PipelineDefinitionSha256 => Set.PipelineDefinitionSha256 ?? string.Empty;
+
+        public string ImageSetSha256 => Set.ImageSetSha256 ?? string.Empty;
+
         public string DisplayText => Name
             + " | "
             + ReadyCount
@@ -409,6 +589,9 @@ namespace OpenVisionLab
             + ImageCount
             + (MissingCount > 0
                 ? " | " + OpenVisionRecipeText.Local("누락 ", "Missing ") + MissingCount
+                : string.Empty)
+            + (Set.IsIdentityLocked
+                ? " | " + OpenVisionRecipeText.Local("해시 잠금", "Hash locked")
                 : string.Empty);
     }
 

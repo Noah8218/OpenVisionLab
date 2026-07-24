@@ -42,13 +42,20 @@ namespace OpenVisionLab
             ["MATCH_MODE"] = typeof(TemplateMatchModes),
             ["CONTOUR_RETRIEVAL_MODE"] = typeof(RetrievalModes),
             ["CONTOUR_APPROXIMATION_MODE"] = typeof(ContourApproximationModes),
-            ["MEAN_TYPES"] = typeof(MeanType)
+            ["MEAN_TYPES"] = typeof(MeanType),
+            ["MeasurementMode"] = typeof(PinArrayGapMeasurementMode),
+            ["EDGE_POLARITY"] = typeof(CircleGaugeEdgePolarity),
+            [VisionPipelineFixtureFrameService.ApplyModeParameter] = typeof(VisionPipelineFixtureApplyMode)
         };
 
         private static readonly HashSet<string> IntegerParameters = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "MIN_AREA",
             "MAX_AREA",
+            "MIN_WIDTH",
+            "MAX_WIDTH",
+            "MIN_HEIGHT",
+            "MAX_HEIGHT",
             "DrawThickness",
             "POINT_RANGE",
             "LeftPOINT_RANGE",
@@ -107,7 +114,19 @@ namespace OpenVisionLab
             "MorphologyKernel",
             "IgnoreBorder",
             "OrbFeatures",
-            "MinimumInliers"
+            "MinimumInliers",
+            "DarkThreshold",
+            "ForegroundThreshold",
+            "MinPinWidth",
+            "MaxPinBreakWidth",
+            "MinGapWidth",
+            "MinComponentArea",
+            "MinComponentHeight",
+            "SCAN_COUNT",
+            VisionPipelineFixtureFrameService.ReferenceImageWidthParameter,
+            VisionPipelineFixtureFrameService.ReferenceImageHeightParameter,
+            nameof(AffineTransformToolProperty.OutputWidth),
+            nameof(AffineTransformToolProperty.OutputHeight)
         };
 
         private static readonly HashSet<string> DoubleParameters = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -131,13 +150,27 @@ namespace OpenVisionLab
             "RightSAMPLING_STEP",
             "RightMANUAL_ANGLE_VALUE",
             "SCORE_MIN",
+            "UNIQUE_MATCH_MIN_SCORE_MARGIN",
             "MAGNIFIATION",
             "FIND_ANGLE",
             "COARSE_ANGLE_STEP",
+            "FIND_SCALE_MIN",
+            "FIND_SCALE_MAX",
+            "FIND_SCALE_STEP",
             VisionPipelineFixtureFrameService.ReferenceXParameter,
             VisionPipelineFixtureFrameService.ReferenceYParameter,
             VisionPipelineFixtureFrameService.ReferenceAngleParameter,
+            VisionPipelineFixtureFrameService.ReferenceScaleParameter,
             VisionPipelineFixtureFrameService.MaximumAngleDeltaParameter,
+            VisionPipelineFixtureFrameService.MinimumScaleRatioParameter,
+            VisionPipelineFixtureFrameService.MaximumScaleRatioParameter,
+            VisionPipelineFixtureFrameService.MinimumValidPixelRatioParameter,
+            VisionPipelineFixtureFrameService.RuntimeReferenceXParameter,
+            VisionPipelineFixtureFrameService.RuntimeReferenceYParameter,
+            VisionPipelineFixtureFrameService.RuntimeCurrentXParameter,
+            VisionPipelineFixtureFrameService.RuntimeCurrentYParameter,
+            VisionPipelineFixtureFrameService.RuntimeAngleDeltaParameter,
+            VisionPipelineFixtureFrameService.RuntimeScaleRatioParameter,
             "RANSAC_REPROJ_THRESHOLD",
             "GREEDINESS",
             "HYBRID_VERIFY_IMAGE_WEIGHT",
@@ -149,7 +182,46 @@ namespace OpenVisionLab
             "ScaleXPercent",
             "ScaleYPercent",
             "MatchRatio",
-            "RansacThreshold"
+            "RansacThreshold",
+            "MinDarkCoverageRatio",
+            "MinComponentHeightRatio",
+            "EdgeFitEndPercent",
+            VisionPipelineGapEdgePairTool.MinimumGapParameter,
+            VisionPipelineGapEdgePairTool.MaximumGapParameter,
+            VisionPipelineGapEdgePairTool.MaximumAngleParameter,
+            VisionPipelineGapEdgePairTool.MaximumParallelDeltaParameter,
+            VisionPipelineGapEdgePairTool.MinimumSupportRatioParameter,
+            VisionPipelineGapEdgePairTool.MinimumDarkContrastParameter,
+            VisionPipelineGapEdgePairTool.MinimumDarkCoverageParameter,
+            VisionPipelineGapEdgePairTool.MinimumScoreMarginParameter,
+            "CENTER_X",
+            "CENTER_Y",
+            "RADIUS_MIN",
+            "RADIUS_MAX",
+            "START_ANGLE_DEG",
+            "SWEEP_ANGLE_DEG",
+            "MIN_CONTRAST",
+            "MIN_SUPPORT_RATIO",
+            "MAX_FIT_RESIDUAL_PX",
+            VisionPipelineGeometryMeasureService.MaximumParallelAngleDeltaParameter,
+            VisionPipelineGeometryMeasureService.MaximumExtensionAParameter,
+            VisionPipelineGeometryMeasureService.MaximumExtensionBParameter,
+            nameof(AffineTransformToolProperty.SourcePoint1X),
+            nameof(AffineTransformToolProperty.SourcePoint1Y),
+            nameof(AffineTransformToolProperty.SourcePoint2X),
+            nameof(AffineTransformToolProperty.SourcePoint2Y),
+            nameof(AffineTransformToolProperty.SourcePoint3X),
+            nameof(AffineTransformToolProperty.SourcePoint3Y),
+            nameof(AffineTransformToolProperty.DestinationPoint1X),
+            nameof(AffineTransformToolProperty.DestinationPoint1Y),
+            nameof(AffineTransformToolProperty.DestinationPoint2X),
+            nameof(AffineTransformToolProperty.DestinationPoint2Y),
+            nameof(AffineTransformToolProperty.DestinationPoint3X),
+            nameof(AffineTransformToolProperty.DestinationPoint3Y),
+            nameof(AffineTransformToolProperty.BorderValue),
+            nameof(AffineTransformToolProperty.MinimumSourceTriangleArea),
+            nameof(AffineTransformToolProperty.MinimumDestinationTriangleArea),
+            nameof(AffineTransformToolProperty.MinimumValidPixelRatio)
         };
 
         public static bool TryGetParameterType(string key, out Type type)
@@ -184,6 +256,19 @@ namespace OpenVisionLab
         public static bool TryValidateValue(string key, string value, out string message)
         {
             message = string.Empty;
+            if (string.Equals(key, "MeasurementMode", StringComparison.OrdinalIgnoreCase))
+            {
+                string candidate = value ?? string.Empty;
+                if (Enum.TryParse(candidate, true, out PinArrayGapMeasurementMode _)
+                    || Enum.TryParse(candidate, true, out GeometryMeasurementMode _))
+                {
+                    return true;
+                }
+
+                message = $"'{key}' expects a PinArrayGap or GeometryMeasure mode.";
+                return false;
+            }
+
             if (!TryGetParameterType(key, out Type type))
             {
                 return true;
@@ -258,9 +343,11 @@ namespace OpenVisionLab
                     || string.Equals(key, "BurnIn", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, "DrawLabels", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, "AllowEmpty", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(key, "IgnoreLeftBorderTouching", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, VisionPipelineArithmeticStep.ParameterUseConstantInput, StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, VisionPipelineArithmeticStep.ParameterUseColorConstant, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(key, "UseL2Gradient", StringComparison.OrdinalIgnoreCase));
+                    || string.Equals(key, "UseL2Gradient", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(key, VisionPipelineGeometryMeasureService.RequireResultInImageParameter, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

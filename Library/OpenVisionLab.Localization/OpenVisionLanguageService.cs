@@ -243,20 +243,74 @@ namespace OpenVisionLab
             {
                 "PipelineReview.FixtureTeach.ReadyFormat",
                 new DefaultCatalogMigration(
-                    "\uAC80\uD1A0 \uC790\uC138 \uC900\uBE44: X {0}, Y {1}, \uAC01\uB3C4 {2}\uB3C4. \uAE30\uC900 \uC774\uBBF8\uC9C0\uC5D0\uC11C\uB9CC \uC800\uC7A5\uD558\uC2ED\uC2DC\uC624.",
-                    "Reviewed pose ready: X {0}, Y {1}, angle {2} deg. Save only on the reference image.")
+                    "X {0} / Y {1} / {2}\uB3C4 \u00B7 \uAE30\uC900 \uC774\uBBF8\uC9C0 \uD655\uC778",
+                    "X {0} / Y {1} / {2} deg. Confirm the reference image.")
             },
             {
                 "PipelineReview.FixtureTeach.SavedFormat",
                 new DefaultCatalogMigration(
-                    "\uCC38\uC870 \uC800\uC7A5: X {0}, Y {1}, \uAC01\uB3C4 {2}\uB3C4. \uC18C\uBE44 Step ROI\uB294 \uBCC0\uACBD\uD558\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uB9AC\uBDF0 \uC2E4\uD589\uD558\uC2ED\uC2DC\uC624.",
-                    "Reference saved: X {0}, Y {1}, angle {2} deg. Consumer ROI was not changed. Run Review again.")
+                    "X {0} / Y {1} / {2}\uB3C4 \uC800\uC7A5 \u00B7 ROI \uC720\uC9C0 \u00B7 \uB9AC\uBDF0 \uC7AC\uC2E4\uD589",
+                    "Saved X {0} / Y {1} / {2} deg. ROI kept; run review again.")
+            },
+            {
+                "PipelineReview.FixtureTeach.ReadyWithDimensionsFormat",
+                new DefaultCatalogMigration(
+                    "X {0} / Y {1} / {2}\uB3C4 / {3}\uBC30 / \uAE30\uC900 {4} x {5} \u00B7 \uAE30\uC900 \uC774\uBBF8\uC9C0 \uD655\uC778",
+                    "X {0} / Y {1} / {2} deg / scale {3} / reference {4} x {5}. Confirm the reference image.")
+            },
+            {
+                "PipelineReview.FixtureTeach.SavedWithDimensionsFormat",
+                new DefaultCatalogMigration(
+                    "X {0} / Y {1} / {2}\uB3C4 / {3}\uBC30 / \uAE30\uC900 {4} x {5} \uC800\uC7A5 \u00B7 \uB9AC\uBDF0 \uC7AC\uC2E4\uD589",
+                    "Saved X {0} / Y {1} / {2} deg / scale {3} / reference {4} x {5}. Run review again.")
             },
             {
                 "PipelineReview.FixtureTeach.RunRequired",
                 new DefaultCatalogMigration(
                     "\uCC38\uC870 \uC800\uC7A5\uB428 / \uB9AC\uBDF0 \uC7AC\uC2E4\uD589 \uD544\uC694",
                     "Reference saved / run review required")
+            },
+            {
+                "VisionTool.AutoMPoint.Title",
+                new DefaultCatalogMigration(
+                    "Auto MPoint 패턴 제안",
+                    "Auto MPoint pattern suggestions")
+            },
+            {
+                "VisionTool.AutoMPoint.Suggested",
+                new DefaultCatalogMigration(
+                    "제안 후보",
+                    "Suggested")
+            },
+            {
+                "VisionTool.AutoMPoint.Analyze",
+                new DefaultCatalogMigration(
+                    "후보 분석",
+                    "Analyze candidates")
+            },
+            {
+                "VisionTool.AutoMPoint.AnalyzeToolTip",
+                new DefaultCatalogMigration(
+                    "현재 입력 이미지와 PropertyGrid 조건으로 패턴 후보를 분석합니다. Preview/Run 또는 레이어 변경은 실행하지 않습니다.",
+                    "Analyze pattern candidates from the current input and PropertyGrid settings. This does not run Preview/Run or change layers.")
+            },
+            {
+                "VisionTool.AutoMPoint.Ready",
+                new DefaultCatalogMigration(
+                    "PropertyGrid에서 분석 조건을 정한 뒤 후보 분석을 명시적으로 실행하십시오.",
+                    "Set the analysis conditions in PropertyGrid, then analyze candidates explicitly.")
+            },
+            {
+                "VisionTool.AutoMPoint.Analyzing",
+                new DefaultCatalogMigration(
+                    "후보를 분석하고 합성 재배치 정밀도·고유성·속도를 검증하는 중입니다.",
+                    "Analyzing candidates and checking synthetic relocation precision, uniqueness, and runtime.")
+            },
+            {
+                "VisionTool.AutoMPoint.SuccessFormat",
+                new DefaultCatalogMigration(
+                    "제안 후보 {0}개입니다. 드로잉과 수치를 검토한 뒤 하나를 선택해 적용하고, Preview는 별도로 실행하십시오.",
+                    "{0} suggestions found. Review the drawing and metrics, apply one, then run Preview separately.")
             }
         };
         private static bool loaded;

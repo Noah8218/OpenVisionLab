@@ -38,9 +38,26 @@ namespace OpenVisionLab
                 case "linedistance":
                 case "linedistancegauge":
                     return CreateLineDistanceTool(step.Parameters);
+                case "pinarraygap":
+                case "adjacentpingap":
+                    return new VisionPipelinePinArrayGapTool(
+                        GetString(step.Parameters, "Name", "PipelinePinArrayGap"),
+                        step.Parameters);
+                case "curvebandprofile":
+                case "darkbandcurve":
+                    return new VisionPipelineCurveBandProfileTool(
+                        GetString(step.Parameters, "Name", "PipelineCurveBandProfile"),
+                        step.Parameters);
+                case "outercornerintersection":
+                case "brightobjectcorner":
+                    return new VisionPipelineOuterCornerIntersectionTool(
+                        GetString(step.Parameters, "Name", "PipelineOuterCornerIntersection"),
+                        step.Parameters);
                 case "lineintersection":
                 case "lineintersectiongauge":
                     return CreateLineIntersectionTool(step.Parameters);
+                case "circlegauge":
+                    return new VisionPipelineCircleGaugeTool(step);
                 case "matching":
                 case "templatematching":
                     return CreateMatchingTool(step.Parameters);
@@ -77,7 +94,11 @@ namespace OpenVisionLab
             BlobProperty property = new BlobProperty(GetString(parameters, "Name", "PipelineBlob"))
             {
                 MIN_AREA = GetInt(parameters, nameof(BlobProperty.MIN_AREA), 200),
-                MAX_AREA = GetInt(parameters, nameof(BlobProperty.MAX_AREA), 1000000)
+                MAX_AREA = GetInt(parameters, nameof(BlobProperty.MAX_AREA), 1000000),
+                MIN_WIDTH = GetInt(parameters, nameof(BlobProperty.MIN_WIDTH), 0),
+                MAX_WIDTH = GetInt(parameters, nameof(BlobProperty.MAX_WIDTH), 1000000),
+                MIN_HEIGHT = GetInt(parameters, nameof(BlobProperty.MIN_HEIGHT), 0),
+                MAX_HEIGHT = GetInt(parameters, nameof(BlobProperty.MAX_HEIGHT), 1000000)
             };
 
             ApplyCommonOpenCvProperty(property, parameters);
@@ -99,6 +120,10 @@ namespace OpenVisionLab
                 EPSILON = GetDouble(parameters, nameof(ContourProperty.EPSILON), 0.01),
                 MIN_AREA = GetInt(parameters, nameof(ContourProperty.MIN_AREA), 200),
                 MAX_AREA = GetInt(parameters, nameof(ContourProperty.MAX_AREA), 1000000),
+                MIN_WIDTH = GetInt(parameters, nameof(ContourProperty.MIN_WIDTH), 0),
+                MAX_WIDTH = GetInt(parameters, nameof(ContourProperty.MAX_WIDTH), 1000000),
+                MIN_HEIGHT = GetInt(parameters, nameof(ContourProperty.MIN_HEIGHT), 0),
+                MAX_HEIGHT = GetInt(parameters, nameof(ContourProperty.MAX_HEIGHT), 1000000),
                 ClrGridHtml = GetString(parameters, nameof(ContourProperty.ClrGridHtml), "#ff0000"),
                 DrawThickness = GetInt(parameters, nameof(ContourProperty.DrawThickness), 2)
             };
@@ -155,7 +180,7 @@ namespace OpenVisionLab
                 name + "_Right",
                 PROJECTION_DIR.X_RTOL);
 
-            return new VisionPipelineLineDistanceTool(name, left, right);
+            return new VisionPipelineLineDistanceTool(name, left, right, parameters);
         }
 
         private static IVisionTool CreateLineIntersectionTool(IDictionary<string, string> parameters)
@@ -223,6 +248,10 @@ namespace OpenVisionLab
                 USE_COARSE_TO_FINE_ANGLE_SEARCH = GetBool(parameters, nameof(MatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH), false),
                 COARSE_ANGLE_STEP = GetDouble(parameters, nameof(MatchingProperty.COARSE_ANGLE_STEP), 5.0),
                 COARSE_ANGLE_TOP_K = GetInt(parameters, nameof(MatchingProperty.COARSE_ANGLE_TOP_K), 3),
+                USE_FIND_SCALE = GetBool(parameters, nameof(MatchingProperty.USE_FIND_SCALE), false),
+                FIND_SCALE_MIN = GetDouble(parameters, nameof(MatchingProperty.FIND_SCALE_MIN), 0.9),
+                FIND_SCALE_MAX = GetDouble(parameters, nameof(MatchingProperty.FIND_SCALE_MAX), 1.1),
+                FIND_SCALE_STEP = GetDouble(parameters, nameof(MatchingProperty.FIND_SCALE_STEP), 0.05),
                 PATTERN_PATH = GetString(parameters, nameof(MatchingProperty.PATTERN_PATH), string.Empty),
                 USE_CANNY = GetBool(parameters, nameof(MatchingProperty.USE_CANNY), false),
                 CANNY_HIGH = GetInt(parameters, nameof(MatchingProperty.CANNY_HIGH), 60),
@@ -254,6 +283,8 @@ namespace OpenVisionLab
             {
                 SCORE_MIN = GetDouble(parameters, nameof(EdgeBasedMatchingProperty.SCORE_MIN), 0.75),
                 NUM_MATCH = GetInt(parameters, nameof(EdgeBasedMatchingProperty.NUM_MATCH), 1),
+                USE_UNIQUE_MATCH_VALIDATION = GetBool(parameters, nameof(EdgeBasedMatchingProperty.USE_UNIQUE_MATCH_VALIDATION), false),
+                UNIQUE_MATCH_MIN_SCORE_MARGIN = GetDouble(parameters, nameof(EdgeBasedMatchingProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN), 0.03),
                 PATTERN_PATH = GetString(parameters, nameof(EdgeBasedMatchingProperty.PATTERN_PATH), GetString(parameters, "TemplatePath", string.Empty)),
                 USE_FIND_ANGLE = GetBool(parameters, nameof(EdgeBasedMatchingProperty.USE_FIND_ANGLE), false),
                 FIND_ANGLE = GetDouble(parameters, nameof(EdgeBasedMatchingProperty.FIND_ANGLE), 1.0),
@@ -262,6 +293,10 @@ namespace OpenVisionLab
                 USE_COARSE_TO_FINE_ANGLE_SEARCH = GetBool(parameters, nameof(EdgeBasedMatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH), false),
                 COARSE_ANGLE_STEP = GetDouble(parameters, nameof(EdgeBasedMatchingProperty.COARSE_ANGLE_STEP), 5.0),
                 COARSE_ANGLE_TOP_K = GetInt(parameters, nameof(EdgeBasedMatchingProperty.COARSE_ANGLE_TOP_K), 3),
+                USE_FIND_SCALE = GetBool(parameters, nameof(EdgeBasedMatchingProperty.USE_FIND_SCALE), false),
+                FIND_SCALE_MIN = GetDouble(parameters, nameof(EdgeBasedMatchingProperty.FIND_SCALE_MIN), 0.9),
+                FIND_SCALE_MAX = GetDouble(parameters, nameof(EdgeBasedMatchingProperty.FIND_SCALE_MAX), 1.1),
+                FIND_SCALE_STEP = GetDouble(parameters, nameof(EdgeBasedMatchingProperty.FIND_SCALE_STEP), 0.05),
                 CANNY_LOW = GetInt(parameters, nameof(EdgeBasedMatchingProperty.CANNY_LOW), 30),
                 CANNY_HIGH = GetInt(parameters, nameof(EdgeBasedMatchingProperty.CANNY_HIGH), 90),
                 CANNY_APERTURE_SIZE = GetInt(parameters, nameof(EdgeBasedMatchingProperty.CANNY_APERTURE_SIZE), 3),
@@ -271,6 +306,10 @@ namespace OpenVisionLab
                 GREEDINESS = GetDouble(parameters, nameof(EdgeBasedMatchingProperty.GREEDINESS), 0.9),
                 SEARCH_STEP = GetInt(parameters, nameof(EdgeBasedMatchingProperty.SEARCH_STEP), 2),
                 USE_POSITION_REFINE = GetBool(parameters, nameof(EdgeBasedMatchingProperty.USE_POSITION_REFINE), false),
+                USE_SUBPIXEL_REFINE = GetBool(parameters, nameof(EdgeBasedMatchingProperty.USE_SUBPIXEL_REFINE), false),
+                USE_PYRAMID_POSITION_PROPOSAL = GetBool(parameters, nameof(EdgeBasedMatchingProperty.USE_PYRAMID_POSITION_PROPOSAL), false),
+                PYRAMID_POSITION_TOP_N = GetInt(parameters, nameof(EdgeBasedMatchingProperty.PYRAMID_POSITION_TOP_N), 6),
+                PYRAMID_POSITION_MIN_SCORE = GetDouble(parameters, nameof(EdgeBasedMatchingProperty.PYRAMID_POSITION_MIN_SCORE), 0.70),
                 USE_HYBRID_VERIFY = GetBool(parameters, nameof(EdgeBasedMatchingProperty.USE_HYBRID_VERIFY), false),
                 HYBRID_VERIFY_TOP_N = GetInt(parameters, nameof(EdgeBasedMatchingProperty.HYBRID_VERIFY_TOP_N), 5),
                 HYBRID_VERIFY_IMAGE_WEIGHT = GetDouble(parameters, nameof(EdgeBasedMatchingProperty.HYBRID_VERIFY_IMAGE_WEIGHT), 0.35),
@@ -327,6 +366,13 @@ namespace OpenVisionLab
 
         private static IVisionTool CreateRotateScaleTool(IDictionary<string, string> parameters)
         {
+            if (VisionPipelineFixtureFrameService.IsNormalizeImageParameters(parameters))
+            {
+                return new VisionPipelineNormalizeImageTool(
+                    GetString(parameters, "Name", "NormalizeImage"),
+                    parameters);
+            }
+
             RotateScaleToolProperty property = new RotateScaleToolProperty
             {
                 Angle = GetDouble(parameters, nameof(RotateScaleToolProperty.Angle), 0d),
@@ -395,7 +441,7 @@ namespace OpenVisionLab
                 resolved);
         }
 
-        private static string ResolveTemplatePath(string value)
+        internal static string ResolveTemplatePath(string value)
         {
             string candidate = (value ?? string.Empty).Trim().Trim('"');
             if (string.IsNullOrWhiteSpace(candidate))

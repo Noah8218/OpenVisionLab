@@ -143,6 +143,10 @@ namespace OpenVisionLab.Contracts
     {
     }
 
+    internal interface IAffineTransformToolViewModel : IPropertyGridToolViewModel<AffineTransformProperty>
+    {
+    }
+
     internal interface IMatchingToolViewModel : ITemplateBackedPropertyGridToolViewModel<MatchingProperty>
     {
     }

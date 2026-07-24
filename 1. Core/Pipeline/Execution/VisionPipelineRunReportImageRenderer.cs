@@ -38,20 +38,102 @@ namespace OpenVisionLab
             using (Graphics graphics = Graphics.FromImage(target))
             {
                 graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                DrawOverlays(graphics, stepResult?.ToolResult?.Overlays, target.Size, overlayColor, textBackColor);
+                DrawOverlays(
+                    graphics,
+                    stepResult?.ToolResult?.Overlays,
+                    stepResult?.Step?.ToolType,
+                    target.Size,
+                    overlayColor,
+                    textBackColor);
                 DrawStepBadge(graphics, stepResult?.Step, summary, target.Size, textBackColor);
             }
         }
 
-        private static void DrawOverlays(Graphics graphics, IEnumerable<VisionToolOverlay> overlays, Size imageSize, Color overlayColor, Color textBackColor)
+        // Batch sample checks retain summaries after the native step images are disposed.
+        // Re-render the persisted overlay summaries onto the original sample without rerunning the recipe.
+        public static void RenderInPlace(Bitmap target, VisionRecipeStepRunSummary summary, VisionPipelineStep step)
+        {
+            if (target == null || summary == null)
+            {
+                return;
+            }
+
+            Color overlayColor = ResolveOverlayColor(summary.Status);
+            Color textBackColor = ResolveOverlayTextBackColor(summary.Status);
+            using (Graphics graphics = Graphics.FromImage(target))
+            {
+                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                DrawOverlays(
+                    graphics,
+                    CreateSummaryOverlays(summary.Overlays),
+                    summary.ToolType,
+                    target.Size,
+                    overlayColor,
+                    textBackColor);
+                string label = (string.IsNullOrWhiteSpace(summary.Status) ? "-" : summary.Status)
+                    + " | "
+                    + (string.IsNullOrWhiteSpace(step?.Name) ? summary.Name : step.Name);
+                if (IsFailureStatus(summary.Status) && !string.IsNullOrWhiteSpace(summary.Message))
+                {
+                    label += " | " + TruncateText(summary.Message, 72);
+                }
+
+                using (Brush textBrush = new SolidBrush(Color.White))
+                using (Brush textBackBrush = new SolidBrush(textBackColor))
+                using (Font font = new Font("Segoe UI", 10F, FontStyle.Bold, GraphicsUnit.Pixel))
+                {
+                    DrawOverlayLabel(graphics, label, new PointF(6F, 24F), target.Size, textBrush, textBackBrush, font);
+                }
+            }
+        }
+
+        private static IEnumerable<VisionToolOverlay> CreateSummaryOverlays(IEnumerable<VisionRecipeOverlaySummary> summaries)
+        {
+            foreach (VisionRecipeOverlaySummary summary in summaries ?? Enumerable.Empty<VisionRecipeOverlaySummary>())
+            {
+                if (summary == null
+                    || !Enum.TryParse(summary.Kind, true, out VisionToolOverlayKind kind))
+                {
+                    continue;
+                }
+
+                VisionToolOverlay overlay = new VisionToolOverlay
+                {
+                    Kind = kind,
+                    Label = summary.Label ?? string.Empty,
+                    Bounds = new RectangleF(summary.BoundsX, summary.BoundsY, summary.BoundsWidth, summary.BoundsHeight),
+                    Center = new PointF(summary.CenterX, summary.CenterY),
+                    Start = new PointF(summary.StartX, summary.StartY),
+                    End = new PointF(summary.EndX, summary.EndY),
+                    Angle = summary.Angle
+                };
+                overlay.Points.AddRange((summary.Points ?? new List<VisionRecipeOverlayPointSummary>())
+                    .Select(point => new PointF(point.X, point.Y)));
+                yield return overlay;
+            }
+        }
+
+        private static void DrawOverlays(
+            Graphics graphics,
+            IEnumerable<VisionToolOverlay> overlays,
+            string toolType,
+            Size imageSize,
+            Color overlayColor,
+            Color textBackColor)
         {
             using (Pen boxPen = new Pen(overlayColor, 2F))
             using (Pen centerPen = new Pen(Color.FromArgb(245, overlayColor), 2F))
+            using (Pen orientationPen = new Pen(Color.FromArgb(245, 255, 196, 0), 2F))
+            using (Pen pinArrayRoiPen = new Pen(Color.FromArgb(0, 210, 225), 2F))
+            using (Pen pinArrayPinPen = new Pen(Color.FromArgb(0, 220, 90), 2F))
+            using (Pen pinArrayGapPen = new Pen(Color.FromArgb(235, 60, 60), 2F))
             using (Brush pointBrush = new SolidBrush(Color.FromArgb(210, overlayColor)))
             using (Brush textBrush = new SolidBrush(Color.White))
             using (Brush textBackBrush = new SolidBrush(textBackColor))
             using (Font font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Pixel))
             {
+                bool isPinArrayGap = string.Equals(toolType, "PinArrayGap", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(toolType, "AdjacentPinGap", StringComparison.OrdinalIgnoreCase);
                 foreach (VisionToolOverlay overlay in overlays ?? Enumerable.Empty<VisionToolOverlay>())
                 {
                     if (overlay == null)
@@ -59,10 +141,20 @@ namespace OpenVisionLab
                         continue;
                     }
 
+                    Pen geometryPen = boxPen;
+                    if (isPinArrayGap)
+                    {
+                        geometryPen = overlay.Kind == VisionToolOverlayKind.Line
+                            ? pinArrayGapPen
+                            : (overlay.Label ?? string.Empty).StartsWith("Row ROI", StringComparison.OrdinalIgnoreCase)
+                                ? pinArrayRoiPen
+                                : pinArrayPinPen;
+                    }
+
                     switch (overlay.Kind)
                     {
                         case VisionToolOverlayKind.Rectangle:
-                            DrawRectangleOverlay(graphics, overlay, imageSize, boxPen, centerPen, textBrush, textBackBrush, font);
+                            DrawRectangleOverlay(graphics, overlay, imageSize, geometryPen, geometryPen, orientationPen, textBrush, textBackBrush, font);
                             break;
                         case VisionToolOverlayKind.Point:
                             DrawCenterMarker(graphics, overlay.Center, imageSize, centerPen, pointBrush);
@@ -72,7 +164,7 @@ namespace OpenVisionLab
                             DrawPointOverlay(graphics, overlay, imageSize, pointBrush);
                             break;
                         case VisionToolOverlayKind.Line:
-                            DrawLineOverlay(graphics, overlay, imageSize, boxPen, centerPen, textBrush, textBackBrush, font);
+                            DrawLineOverlay(graphics, overlay, imageSize, geometryPen, geometryPen, textBrush, textBackBrush, font);
                             break;
                     }
                 }
@@ -85,6 +177,7 @@ namespace OpenVisionLab
             Size imageSize,
             Pen boxPen,
             Pen centerPen,
+            Pen orientationPen,
             Brush textBrush,
             Brush textBackBrush,
             Font font)
@@ -95,9 +188,54 @@ namespace OpenVisionLab
                 return;
             }
 
-            graphics.DrawRectangle(boxPen, bounds.X, bounds.Y, bounds.Width, bounds.Height);
-            DrawCenterMarker(graphics, overlay.Center, imageSize, centerPen, null);
+            PointF center = IsFinitePoint(overlay.Center)
+                ? ClampPoint(overlay.Center, imageSize)
+                : new PointF(bounds.X + bounds.Width / 2F, bounds.Y + bounds.Height / 2F);
+            if (Math.Abs(overlay.Angle) < 0.000001)
+            {
+                graphics.DrawRectangle(boxPen, bounds.X, bounds.Y, bounds.Width, bounds.Height);
+            }
+            else
+            {
+                float halfWidth = bounds.Width / 2F;
+                float halfHeight = bounds.Height / 2F;
+                // Native Matching publishes a positive angle in image coordinates (Y grows downward),
+                // so the report drawing must negate the mathematical rotation used by System.Drawing.
+                double radians = -overlay.Angle * Math.PI / 180d;
+                float cos = (float)Math.Cos(radians);
+                float sin = (float)Math.Sin(radians);
+                PointF[] corners =
+                {
+                    RotateAroundCenter(-halfWidth, -halfHeight, center, cos, sin),
+                    RotateAroundCenter(halfWidth, -halfHeight, center, cos, sin),
+                    RotateAroundCenter(halfWidth, halfHeight, center, cos, sin),
+                    RotateAroundCenter(-halfWidth, halfHeight, center, cos, sin)
+                };
+                graphics.DrawPolygon(boxPen, corners);
+
+                float axisLength = Math.Min(Math.Max(halfWidth * 0.4F, 18F), 52F);
+                PointF axisEnd = RotateAroundCenter(axisLength, 0F, center, cos, sin);
+                graphics.DrawLine(orientationPen, center, axisEnd);
+                graphics.FillEllipse(orientationPen.Brush, axisEnd.X - 2.5F, axisEnd.Y - 2.5F, 5F, 5F);
+            }
+
+            DrawCenterMarker(graphics, center, imageSize, centerPen, null);
             DrawOverlayLabel(graphics, overlay.Label, new PointF(bounds.X, bounds.Y), imageSize, textBrush, textBackBrush, font);
+        }
+
+        private static PointF RotateAroundCenter(float x, float y, PointF center, float cos, float sin)
+        {
+            return new PointF(
+                center.X + x * cos - y * sin,
+                center.Y + x * sin + y * cos);
+        }
+
+        private static bool IsFinitePoint(PointF point)
+        {
+            return !float.IsNaN(point.X)
+                && !float.IsInfinity(point.X)
+                && !float.IsNaN(point.Y)
+                && !float.IsInfinity(point.Y);
         }
 
         private static void DrawLineOverlay(

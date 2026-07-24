@@ -135,6 +135,13 @@ namespace OpenVisionLab
         public bool CanSelectFirstIssuePipelineReviewStepForTest => toolTestFacade.CanSelectFirstIssuePipelineReviewStep;
         public bool HasPipelineReviewInputPreview => toolTestFacade.HasPipelineReviewInputPreview;
         public bool HasPipelineReviewOutputPreview => toolTestFacade.HasPipelineReviewOutputPreview;
+        public int PipelineReviewObjectResultCountForTest => toolTestFacade.PipelineReviewObjectResultCount;
+        public bool IsPipelineReviewFixtureDesignerVisibleForTest => toolTestFacade.IsPipelineReviewFixtureDesignerVisible;
+        public string PipelineReviewFixtureRelationshipTextForTest => toolTestFacade.PipelineReviewFixtureRelationshipText;
+        public int PipelineReviewFixtureProducerStepNumberForTest => toolTestFacade.PipelineReviewFixtureProducerStepNumber;
+        public int PipelineReviewFixtureMeasurementStepNumberForTest => toolTestFacade.PipelineReviewFixtureMeasurementStepNumber;
+        public int PipelineReviewSelectedObjectResultNumberForTest => toolTestFacade.PipelineReviewSelectedObjectResultNumber;
+        public bool HasPipelineReviewObjectHighlightForTest => toolTestFacade.HasPipelineReviewObjectHighlight;
 
         public void SelectToolForTest(VISION_MENU menu) => toolTestFacade.SelectTool(menu);
 
@@ -426,11 +433,17 @@ namespace OpenVisionLab
         public void ConfigureActiveMatchingForTest(Action<MatchingProperty> configure) =>
             toolTestFacade.ConfigureActiveMatching(configure);
 
+        public void ConfigureActiveAffineTransformForTest(Action<AffineTransformProperty> configure) =>
+            toolTestFacade.ConfigureActiveAffineTransform(configure);
+
         public void SetActiveEdgeBasedMatchingTemplatePathForTest(string path) =>
             toolTestFacade.SetActiveEdgeBasedMatchingTemplatePath(path);
 
         public void ConfigureActiveEdgeBasedMatchingForTest(Action<EdgeBasedMatchingProperty> configure) =>
             toolTestFacade.ConfigureActiveEdgeBasedMatching(configure);
+
+        public void SetActiveAutoMPointRepresentativeImagesForTest(IEnumerable<string> paths) =>
+            toolTestFacade.SetActiveAutoMPointRepresentativeImages(paths);
 
         public void SetActiveFeatureMatchingTemplatePathForTest(string path) =>
             toolTestFacade.SetActiveFeatureMatchingTemplatePath(path);
@@ -443,5 +456,11 @@ namespace OpenVisionLab
         public Task RunPipelineReviewForTestAsync() => toolTestFacade.RunPipelineReviewAsync();
 
         public bool OpenPipelineReviewPairSampleForTest() => toolTestFacade.OpenPipelineReviewPairSample();
+
+        public void SelectPipelineReviewObjectResultForTest(int index) =>
+            toolTestFacade.SelectPipelineReviewObjectResult(index);
+
+        public void SelectPipelineReviewObjectResultFromImageForTest(int index) =>
+            toolTestFacade.SelectPipelineReviewObjectResultFromImage(index);
     }
 }

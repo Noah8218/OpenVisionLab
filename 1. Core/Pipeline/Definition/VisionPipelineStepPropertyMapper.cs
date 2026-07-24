@@ -18,10 +18,69 @@ namespace OpenVisionLab
     internal static class VisionPipelineStepPropertyMapper
     {
         private static Func<IEnumerable<string>> layerNameAccessor = () => Enumerable.Empty<string>();
+        private static Func<GeometryMeasurementMode, bool, IEnumerable<string>> geometryFeatureAccessor
+            = (_, __) => Enumerable.Empty<string>();
+        private static Func<IEnumerable<string>> pointFeatureAccessor = () => Enumerable.Empty<string>();
 
         public static void SetLayerNameContext(Func<IEnumerable<string>> accessor)
         {
             layerNameAccessor = accessor ?? (() => Enumerable.Empty<string>());
+        }
+
+        public static void SetGeometryFeatureContext(Func<GeometryMeasurementMode, bool, IEnumerable<string>> accessor)
+        {
+            geometryFeatureAccessor = accessor ?? ((_, __) => Enumerable.Empty<string>());
+        }
+
+        public static void SetPointFeatureContext(Func<IEnumerable<string>> accessor)
+        {
+            pointFeatureAccessor = accessor ?? (() => Enumerable.Empty<string>());
+        }
+
+        public static IEnumerable<string> GetCompatibleGeometryFeatureReferences(
+            VisionPipeline pipeline,
+            int currentStepIndex,
+            GeometryMeasurementMode mode,
+            bool sourceA)
+        {
+            VisionPipelineGeometryKind required = mode == GeometryMeasurementMode.PointPointDistance
+                ? VisionPipelineGeometryKind.Point
+                : mode == GeometryMeasurementMode.PointLineDistance
+                    ? (sourceA ? VisionPipelineGeometryKind.Point : VisionPipelineGeometryKind.Segment)
+                    : mode == GeometryMeasurementMode.CircleSegmentClearance
+                        ? (sourceA ? VisionPipelineGeometryKind.Circle : VisionPipelineGeometryKind.Segment)
+                        : VisionPipelineGeometryKind.Segment;
+            return (pipeline?.Steps ?? new List<VisionPipelineStep>())
+                .Take(Math.Max(0, currentStepIndex))
+                .Where(candidate => candidate?.Enabled == true)
+                .SelectMany(GetDeclaredGeometryFeatures)
+                .Where(item => item.Kind == required)
+                .Select(item => item.Reference)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        public static IEnumerable<string> GetCompatiblePointFeatureReferences(
+            VisionPipeline pipeline,
+            int currentStepIndex)
+        {
+            VisionPipelineStep consumer = pipeline?.Steps != null
+                && currentStepIndex >= 0
+                && currentStepIndex < pipeline.Steps.Count
+                    ? pipeline.Steps[currentStepIndex]
+                    : null;
+            return (pipeline?.Steps ?? new List<VisionPipelineStep>())
+                .Take(Math.Max(0, currentStepIndex))
+                .Where(candidate => candidate?.Enabled == true
+                    && consumer != null
+                    && string.Equals(candidate.InputLayer, consumer.InputLayer, StringComparison.OrdinalIgnoreCase))
+                .SelectMany(GetDeclaredGeometryFeatures)
+                .Where(item => item.Kind == VisionPipelineGeometryKind.Point)
+                .Select(item => item.Reference)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
         }
 
         public static object CreateProperty(VisionPipelineStep step)
@@ -113,6 +172,10 @@ namespace OpenVisionLab
                     {
                         MIN_AREA = GetInt(step.Parameters, nameof(BlobProperty.MIN_AREA), 200),
                         MAX_AREA = GetInt(step.Parameters, nameof(BlobProperty.MAX_AREA), 1000000),
+                        MIN_WIDTH = GetInt(step.Parameters, nameof(BlobProperty.MIN_WIDTH), 0),
+                        MAX_WIDTH = GetInt(step.Parameters, nameof(BlobProperty.MAX_WIDTH), 1000000),
+                        MIN_HEIGHT = GetInt(step.Parameters, nameof(BlobProperty.MIN_HEIGHT), 0),
+                        MAX_HEIGHT = GetInt(step.Parameters, nameof(BlobProperty.MAX_HEIGHT), 1000000),
                         USE_FIXTURE_FRAME = GetBool(step.Parameters, VisionPipelineFixtureFrameService.ConsumeParameter, false),
                         FIXTURE_FRAME_NAME = GetString(step.Parameters, VisionPipelineFixtureFrameService.FrameNameParameter, string.Empty),
                         ALLOW_BRANCH_INPUT = GetBool(step.Parameters, VisionPipelineNormalizer.AllowBranchInputParameter, false)
@@ -128,6 +191,10 @@ namespace OpenVisionLab
                         EPSILON = GetDouble(step.Parameters, nameof(ContourProperty.EPSILON), 0.01),
                         MIN_AREA = GetInt(step.Parameters, nameof(ContourProperty.MIN_AREA), 200),
                         MAX_AREA = GetInt(step.Parameters, nameof(ContourProperty.MAX_AREA), 1000000),
+                        MIN_WIDTH = GetInt(step.Parameters, nameof(ContourProperty.MIN_WIDTH), 0),
+                        MAX_WIDTH = GetInt(step.Parameters, nameof(ContourProperty.MAX_WIDTH), 1000000),
+                        MIN_HEIGHT = GetInt(step.Parameters, nameof(ContourProperty.MIN_HEIGHT), 0),
+                        MAX_HEIGHT = GetInt(step.Parameters, nameof(ContourProperty.MAX_HEIGHT), 1000000),
                         DrawThickness = GetInt(step.Parameters, nameof(ContourProperty.DrawThickness), 2),
                         ClrGridHtml = GetString(step.Parameters, nameof(ContourProperty.ClrGridHtml), "#ff0000")
                     }, step.Parameters), name, step.InputLayer, step.OutputLayer);
@@ -157,6 +224,14 @@ namespace OpenVisionLab
                 case "linedistance":
                 case "lineintersection":
                     return AttachStepMetadata(CreatePipelineLinePairProperty(step, name), name, step.InputLayer, step.OutputLayer);
+                case "pinarraygap":
+                case "adjacentpingap":
+                    return AttachStepMetadata(new PipelinePinArrayGapProperty(step, name), name, step.InputLayer, step.OutputLayer);
+                case "geometrymeasure":
+                case "geometricmeasurement":
+                    return AttachStepMetadata(new PipelineGeometryMeasureProperty(step, name), name, step.InputLayer, step.OutputLayer);
+                case "circlegauge":
+                    return AttachStepMetadata(new PipelineCircleGaugeProperty(step, name), name, step.InputLayer, step.OutputLayer);
                 case "matching":
                 case "templatematching":
                     return AttachStepMetadata(ApplyCommonOpenCvProperty(new PipelineMatchingProperty(name)
@@ -172,6 +247,10 @@ namespace OpenVisionLab
                         USE_COARSE_TO_FINE_ANGLE_SEARCH = GetBool(step.Parameters, nameof(MatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH), false),
                         COARSE_ANGLE_STEP = GetDouble(step.Parameters, nameof(MatchingProperty.COARSE_ANGLE_STEP), 5.0),
                         COARSE_ANGLE_TOP_K = GetInt(step.Parameters, nameof(MatchingProperty.COARSE_ANGLE_TOP_K), 3),
+                        USE_FIND_SCALE = GetBool(step.Parameters, nameof(MatchingProperty.USE_FIND_SCALE), false),
+                        FIND_SCALE_MIN = GetDouble(step.Parameters, nameof(MatchingProperty.FIND_SCALE_MIN), 0.9),
+                        FIND_SCALE_MAX = GetDouble(step.Parameters, nameof(MatchingProperty.FIND_SCALE_MAX), 1.1),
+                        FIND_SCALE_STEP = GetDouble(step.Parameters, nameof(MatchingProperty.FIND_SCALE_STEP), 0.05),
                         PATTERN_PATH = GetString(step.Parameters, nameof(MatchingProperty.PATTERN_PATH), GetString(step.Parameters, "TemplatePath", string.Empty)),
                         USE_CANNY = GetBool(step.Parameters, nameof(MatchingProperty.USE_CANNY), false),
                         CANNY_HIGH = GetInt(step.Parameters, nameof(MatchingProperty.CANNY_HIGH), 60),
@@ -182,7 +261,12 @@ namespace OpenVisionLab
                         FIXTURE_REFERENCE_X = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.ReferenceXParameter, 0D),
                         FIXTURE_REFERENCE_Y = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.ReferenceYParameter, 0D),
                         FIXTURE_REFERENCE_ANGLE = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.ReferenceAngleParameter, 0D),
-                        FIXTURE_MAX_ANGLE_DELTA = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.MaximumAngleDeltaParameter, 2D)
+                        FIXTURE_REFERENCE_SCALE = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.ReferenceScaleParameter, 1D),
+                        FIXTURE_MAX_ANGLE_DELTA = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.MaximumAngleDeltaParameter, 2D),
+                        FIXTURE_MIN_SCALE_RATIO = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.MinimumScaleRatioParameter, 0D),
+                        FIXTURE_MAX_SCALE_RATIO = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.MaximumScaleRatioParameter, 0D),
+                        FIXTURE_REFERENCE_IMAGE_WIDTH = GetInt(step.Parameters, VisionPipelineFixtureFrameService.ReferenceImageWidthParameter, 0),
+                        FIXTURE_REFERENCE_IMAGE_HEIGHT = GetInt(step.Parameters, VisionPipelineFixtureFrameService.ReferenceImageHeightParameter, 0)
                     }, step.Parameters), name, step.InputLayer, step.OutputLayer);
                 case "edgebasedmatching":
                 case "edgebasedtemplatematching":
@@ -191,6 +275,8 @@ namespace OpenVisionLab
                     {
                         SCORE_MIN = GetDouble(step.Parameters, nameof(EdgeBasedMatchingProperty.SCORE_MIN), 0.75),
                         NUM_MATCH = GetInt(step.Parameters, nameof(EdgeBasedMatchingProperty.NUM_MATCH), 1),
+                        USE_UNIQUE_MATCH_VALIDATION = GetBool(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_UNIQUE_MATCH_VALIDATION), false),
+                        UNIQUE_MATCH_MIN_SCORE_MARGIN = GetDouble(step.Parameters, nameof(EdgeBasedMatchingProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN), 0.03),
                         PATTERN_PATH = GetString(step.Parameters, nameof(EdgeBasedMatchingProperty.PATTERN_PATH), GetString(step.Parameters, "TemplatePath", string.Empty)),
                         USE_FIND_ANGLE = GetBool(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_FIND_ANGLE), false),
                         FIND_ANGLE = GetDouble(step.Parameters, nameof(EdgeBasedMatchingProperty.FIND_ANGLE), 1.0),
@@ -247,7 +333,42 @@ namespace OpenVisionLab
                         ScaleXPercent = GetDouble(step.Parameters, nameof(RotateScaleToolProperty.ScaleXPercent), 100d),
                         ScaleYPercent = GetDouble(step.Parameters, nameof(RotateScaleToolProperty.ScaleYPercent), 100d),
                         Interpolation = GetEnum(step.Parameters, nameof(RotateScaleToolProperty.Interpolation), InterpolationFlags.Linear),
-                        BorderType = GetEnum(step.Parameters, nameof(RotateScaleToolProperty.BorderType), BorderTypes.Constant)
+                        BorderType = GetEnum(step.Parameters, nameof(RotateScaleToolProperty.BorderType), BorderTypes.Constant),
+                        USE_FIXTURE_FRAME = GetBool(step.Parameters, VisionPipelineFixtureFrameService.ConsumeParameter, false),
+                        FIXTURE_FRAME_NAME = GetString(step.Parameters, VisionPipelineFixtureFrameService.FrameNameParameter, string.Empty),
+                        FIXTURE_APPLY_MODE = GetEnum(step.Parameters, VisionPipelineFixtureFrameService.ApplyModeParameter, VisionPipelineFixtureApplyMode.TranslationRoi),
+                        FIXTURE_MIN_VALID_PIXEL_RATIO = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.MinimumValidPixelRatioParameter, VisionPipelineFixtureFrameService.DefaultMinimumValidPixelRatio),
+                        ALLOW_BRANCH_INPUT = GetBool(step.Parameters, VisionPipelineNormalizer.AllowBranchInputParameter, false)
+                    }, name, step.InputLayer, step.OutputLayer);
+                case "affine":
+                case "affinematrix":
+                case "affinetransform":
+                    return AttachStepMetadata(new PipelineAffineTransformToolProperty
+                    {
+                        UseDetectedSourcePoints = GetBool(step.Parameters, VisionPipelineAffinePointBindingService.UseDetectedSourcePointsParameter, false),
+                        SourcePoint1Feature = GetString(step.Parameters, VisionPipelineAffinePointBindingService.SourcePoint1FeatureParameter, string.Empty),
+                        SourcePoint2Feature = GetString(step.Parameters, VisionPipelineAffinePointBindingService.SourcePoint2FeatureParameter, string.Empty),
+                        SourcePoint3Feature = GetString(step.Parameters, VisionPipelineAffinePointBindingService.SourcePoint3FeatureParameter, string.Empty),
+                        SourcePoint1X = GetDouble(step.Parameters, nameof(AffineTransformToolProperty.SourcePoint1X), 0d),
+                        SourcePoint1Y = GetDouble(step.Parameters, nameof(AffineTransformToolProperty.SourcePoint1Y), 0d),
+                        SourcePoint2X = GetDouble(step.Parameters, nameof(AffineTransformToolProperty.SourcePoint2X), 100d),
+                        SourcePoint2Y = GetDouble(step.Parameters, nameof(AffineTransformToolProperty.SourcePoint2Y), 0d),
+                        SourcePoint3X = GetDouble(step.Parameters, nameof(AffineTransformToolProperty.SourcePoint3X), 0d),
+                        SourcePoint3Y = GetDouble(step.Parameters, nameof(AffineTransformToolProperty.SourcePoint3Y), 100d),
+                        DestinationPoint1X = GetDouble(step.Parameters, nameof(AffineTransformToolProperty.DestinationPoint1X), 0d),
+                        DestinationPoint1Y = GetDouble(step.Parameters, nameof(AffineTransformToolProperty.DestinationPoint1Y), 0d),
+                        DestinationPoint2X = GetDouble(step.Parameters, nameof(AffineTransformToolProperty.DestinationPoint2X), 100d),
+                        DestinationPoint2Y = GetDouble(step.Parameters, nameof(AffineTransformToolProperty.DestinationPoint2Y), 0d),
+                        DestinationPoint3X = GetDouble(step.Parameters, nameof(AffineTransformToolProperty.DestinationPoint3X), 0d),
+                        DestinationPoint3Y = GetDouble(step.Parameters, nameof(AffineTransformToolProperty.DestinationPoint3Y), 100d),
+                        OutputWidth = GetInt(step.Parameters, nameof(AffineTransformToolProperty.OutputWidth), 0),
+                        OutputHeight = GetInt(step.Parameters, nameof(AffineTransformToolProperty.OutputHeight), 0),
+                        Interpolation = GetEnum(step.Parameters, nameof(AffineTransformToolProperty.Interpolation), InterpolationFlags.Linear),
+                        BorderType = GetEnum(step.Parameters, nameof(AffineTransformToolProperty.BorderType), BorderTypes.Constant),
+                        BorderValue = GetDouble(step.Parameters, nameof(AffineTransformToolProperty.BorderValue), 0d),
+                        MinimumSourceTriangleArea = GetDouble(step.Parameters, nameof(AffineTransformToolProperty.MinimumSourceTriangleArea), 1d),
+                        MinimumDestinationTriangleArea = GetDouble(step.Parameters, nameof(AffineTransformToolProperty.MinimumDestinationTriangleArea), 1d),
+                        MinimumValidPixelRatio = GetDouble(step.Parameters, nameof(AffineTransformToolProperty.MinimumValidPixelRatio), 0d)
                     }, name, step.InputLayer, step.OutputLayer);
                 case "feature":
                 case "featurematching":
@@ -303,9 +424,21 @@ namespace OpenVisionLab
             {
                 mapped = referenceDifference.ToStep(inputLayer, outputLayer);
             }
+            else if (property is PipelinePinArrayGapProperty pinArrayGap)
+            {
+                mapped = pinArrayGap.ToStep(inputLayer, outputLayer);
+            }
             else if (property is PipelineLinePairProperty linePair)
             {
                 mapped = linePair.ToStep(inputLayer, outputLayer);
+            }
+            else if (property is PipelineGeometryMeasureProperty geometryMeasure)
+            {
+                mapped = geometryMeasure.ToStep(inputLayer, outputLayer);
+            }
+            else if (property is PipelineCircleGaugeProperty circleGauge)
+            {
+                mapped = circleGauge.ToStep(inputLayer, outputLayer);
             }
             else if (property is OpenCvPropertyBase openCvProperty)
             {
@@ -331,6 +464,14 @@ namespace OpenVisionLab
             {
                 mapped = VisionPipelineStepBuilder.FromRotateScaleProperty(rotateScale, GetPropertyName(property, target.Name), inputLayer, outputLayer);
             }
+            else if (property is AffineTransformToolProperty affineTransform)
+            {
+                mapped = VisionPipelineStepBuilder.FromAffineTransformProperty(
+                    affineTransform,
+                    GetPropertyName(property, target.Name),
+                    inputLayer,
+                    outputLayer);
+            }
 
             if (mapped == null)
             {
@@ -344,6 +485,23 @@ namespace OpenVisionLab
             else if (property is PipelineBlobProperty blobFixture)
             {
                 blobFixture.ApplyFixtureParameters(mapped.Parameters);
+            }
+            else if (property is PipelineRotateScaleToolProperty normalizeFixture)
+            {
+                normalizeFixture.ApplyFixtureParameters(mapped.Parameters);
+            }
+            else if (property is PipelineAffineTransformToolProperty affinePointBinding)
+            {
+                AddParameter(
+                    mapped.Parameters,
+                    VisionPipelineAffinePointBindingService.UseDetectedSourcePointsParameter,
+                    affinePointBinding.UseDetectedSourcePoints);
+                mapped.Parameters[VisionPipelineAffinePointBindingService.SourcePoint1FeatureParameter] =
+                    affinePointBinding.SourcePoint1Feature?.Trim() ?? string.Empty;
+                mapped.Parameters[VisionPipelineAffinePointBindingService.SourcePoint2FeatureParameter] =
+                    affinePointBinding.SourcePoint2Feature?.Trim() ?? string.Empty;
+                mapped.Parameters[VisionPipelineAffinePointBindingService.SourcePoint3FeatureParameter] =
+                    affinePointBinding.SourcePoint3Feature?.Trim() ?? string.Empty;
             }
 
             CopyStep(target, mapped);
@@ -393,7 +551,18 @@ namespace OpenVisionLab
 
             return new PipelineLinePairProperty(name, toolType, left, right)
             {
-                Purpose = GetString(step?.Parameters, "LinePurpose", toolType)
+                Purpose = GetString(step?.Parameters, "LinePurpose", toolType),
+                UseGapEdgePair = GetBool(step?.Parameters, VisionPipelineGapEdgePairTool.UseParameter, false),
+                GapCannyLow = GetInt(step?.Parameters, "CANNY_LOW", 10),
+                GapCannyHigh = GetInt(step?.Parameters, "CANNY_HIGH", 45),
+                GapMinimumPixels = GetDouble(step?.Parameters, VisionPipelineGapEdgePairTool.MinimumGapParameter, 12D),
+                GapMaximumPixels = GetDouble(step?.Parameters, VisionPipelineGapEdgePairTool.MaximumGapParameter, 60D),
+                GapMaximumAngleDegrees = GetDouble(step?.Parameters, VisionPipelineGapEdgePairTool.MaximumAngleParameter, 8D),
+                GapMaximumParallelDeltaDegrees = GetDouble(step?.Parameters, VisionPipelineGapEdgePairTool.MaximumParallelDeltaParameter, 4D),
+                GapMinimumSupportRatio = GetDouble(step?.Parameters, VisionPipelineGapEdgePairTool.MinimumSupportRatioParameter, 0.26D),
+                GapMinimumDarkContrast = GetDouble(step?.Parameters, VisionPipelineGapEdgePairTool.MinimumDarkContrastParameter, 8D),
+                GapMinimumDarkCoverageRatio = GetDouble(step?.Parameters, VisionPipelineGapEdgePairTool.MinimumDarkCoverageParameter, 0.25D),
+                GapMinimumScoreMargin = GetDouble(step?.Parameters, VisionPipelineGapEdgePairTool.MinimumScoreMarginParameter, 0.05D)
             };
         }
 
@@ -741,6 +910,62 @@ namespace OpenVisionLab
             }
         }
 
+        public sealed class PipelineGeometryFeatureConverter : StringConverter
+        {
+            public override bool GetStandardValuesSupported(ITypeDescriptorContext context) => true;
+            public override bool GetStandardValuesExclusive(ITypeDescriptorContext context) => true;
+
+            public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext context)
+            {
+                if (!(context?.Instance is PipelineGeometryMeasureProperty property))
+                {
+                    return new StandardValuesCollection(Array.Empty<string>());
+                }
+
+                bool sourceA = string.Equals(
+                    context.PropertyDescriptor?.Name,
+                    nameof(PipelineGeometryMeasureProperty.SourceA),
+                    StringComparison.Ordinal);
+                string[] values = geometryFeatureAccessor(property.MeasurementMode, sourceA)
+                    .Where(item => !string.IsNullOrWhiteSpace(item))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+                return new StandardValuesCollection(values);
+            }
+        }
+
+        public sealed class PipelinePointFeatureConverter : StringConverter
+        {
+            public override bool GetStandardValuesSupported(ITypeDescriptorContext context) => true;
+            public override bool GetStandardValuesExclusive(ITypeDescriptorContext context) => true;
+
+            public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext context)
+            {
+                if (!(context?.Instance is PipelineAffineTransformToolProperty))
+                {
+                    return new StandardValuesCollection(Array.Empty<string>());
+                }
+
+                string[] values = pointFeatureAccessor()
+                    .Where(item => !string.IsNullOrWhiteSpace(item))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+                return new StandardValuesCollection(values);
+            }
+        }
+
+        private static IEnumerable<(string Reference, VisionPipelineGeometryKind Kind)> GetDeclaredGeometryFeatures(VisionPipelineStep step)
+        {
+            string prefix = (step?.Name ?? string.Empty) + "/";
+            foreach ((string FeatureName, VisionPipelineGeometryKind Kind) item
+                in VisionPipelineGeometryFeatureCatalog.GetDeclaredFeatures(step))
+            {
+                yield return (prefix + item.FeatureName, item.Kind);
+            }
+        }
+
         private static string ResolveMetricToolType(object instance)
         {
             switch (instance)
@@ -752,6 +977,12 @@ namespace OpenVisionLab
                 case PipelineLineGaugeProperty _:
                 case PipelineLinePairProperty _:
                     return "LineGauge";
+                case PipelinePinArrayGapProperty _:
+                    return "PinArrayGap";
+                case PipelineGeometryMeasureProperty _:
+                    return "GeometryMeasure";
+                case PipelineCircleGaugeProperty _:
+                    return "CircleGauge";
                 case PipelineMatchingProperty _:
                     return "Matching";
                 case PipelineEdgeBasedMatchingProperty _:
@@ -772,6 +1003,8 @@ namespace OpenVisionLab
                     return "EdgeDetection";
                 case PipelineRotateScaleToolProperty _:
                     return "RotateScale";
+                case PipelineAffineTransformToolProperty _:
+                    return "AffineTransform";
                 default:
                     return string.Empty;
             }
@@ -999,18 +1232,24 @@ namespace OpenVisionLab
 
         [CategoryOrder("Step", -1)]
         [CategoryOrder("Line Pair", 0)]
+        [CategoryOrder("Gap Edge Pair", 5)]
         [CategoryOrder("Left Line", 10)]
         [CategoryOrder("Right Line", 11)]
         [CategoryOrder("Threshold", 20)]
         [CategoryOrder("Acceptance", 40)]
         private sealed class PipelineLinePairProperty : IPipelineStepMetadata
         {
+            private readonly LineGaugeProperty leftBaseline;
+            private readonly LineGaugeProperty rightBaseline;
+
             public PipelineLinePairProperty(
                 string name,
                 string toolType,
                 LineGaugeProperty left,
                 LineGaugeProperty right)
             {
+                leftBaseline = (LineGaugeProperty)(left?.DeepCopy() ?? new LineGaugeProperty(name + "_Left"));
+                rightBaseline = (LineGaugeProperty)(right?.DeepCopy() ?? new LineGaugeProperty(name + "_Right"));
                 PipelineStepName = string.IsNullOrWhiteSpace(name) ? "LineDistance" : name;
                 ToolType = string.IsNullOrWhiteSpace(toolType) ? "LineDistance" : toolType.Trim();
                 Purpose = ToolType;
@@ -1042,6 +1281,12 @@ namespace OpenVisionLab
                 ShowFitLine = left?.SHOW_FITLINE ?? true;
                 LeftDirection = left?.PRJ_DIR ?? PROJECTION_DIR.X_LTOR;
                 RightDirection = right?.PRJ_DIR ?? PROJECTION_DIR.X_RTOL;
+                RightUseRoi = right?.USE_ROI ?? false;
+                RightRoi = right?.CvROI ?? default;
+                RightPolarity = right?.PRJ_PORALITY ?? PROJECTION_POLARITY.BTOW;
+                RightVerticalProjectionDirection = right?.VER_PRJ_DIR ?? PROJECTION_DIR.X_LTOR;
+                RightUseManualAngle = right?.USE_MANUAL_ANGLE ?? false;
+                RightManualAngleValue = right?.MANUAL_ANGLE_VALUE ?? 0D;
             }
 
             [PropertyOrder(-3)]
@@ -1081,30 +1326,111 @@ namespace OpenVisionLab
             [DisplayName("Pixel per mm")]
             public double PixelPerMm { get; set; }
 
+            [PropertyOrder(0)]
+            [Category("Gap Edge Pair")]
+            [DisplayName("Use dark Gap edge pair")]
+            [Description("Find and measure one long dark band's upper/lower edges inside the reviewed ROI. Ambiguous pairs fail closed.")]
+            public bool UseGapEdgePair { get; set; }
+
+            [PropertyOrder(1)]
+            [Category("Gap Edge Pair")]
+            [DisplayName("Canny low")]
+            [Description("Lower edge threshold used to collect candidate boundaries inside the coarse ROI.")]
+            public int GapCannyLow { get; set; } = 10;
+
+            [PropertyOrder(2)]
+            [Category("Gap Edge Pair")]
+            [DisplayName("Canny high")]
+            [Description("Upper edge threshold used to collect candidate boundaries inside the coarse ROI.")]
+            public int GapCannyHigh { get; set; } = 45;
+
             [PropertyOrder(3)]
-            [Category("Line Pair")]
-            [DisplayName("Use ROI")]
-            public bool UseRoi { get; set; }
+            [Category("Gap Edge Pair")]
+            [DisplayName("Expected minimum thickness (px)")]
+            [Description("Reject edge pairs whose upper-to-lower separation is smaller than the expected dark-band thickness.")]
+            public double GapMinimumPixels { get; set; } = 12D;
 
             [PropertyOrder(4)]
-            [Category("Line Pair")]
-            [DisplayName("ROI")]
-            public Rect Roi { get; set; }
+            [Category("Gap Edge Pair")]
+            [DisplayName("Expected maximum thickness (px)")]
+            [Description("Reject edge pairs whose upper-to-lower separation is larger than the expected dark-band thickness.")]
+            public double GapMaximumPixels { get; set; } = 60D;
+
+            [PropertyOrder(5)]
+            [Category("Gap Edge Pair")]
+            [DisplayName("Maximum edge tilt (deg)")]
+            [Description("Reject candidates whose absolute angle is too far from the expected horizontal band direction.")]
+            public double GapMaximumAngleDegrees { get; set; } = 8D;
+
+            [PropertyOrder(6)]
+            [Category("Gap Edge Pair")]
+            [DisplayName("Maximum parallel delta (deg)")]
+            [Description("Maximum allowed angle difference between the selected upper and lower edges.")]
+            public double GapMaximumParallelDeltaDegrees { get; set; } = 4D;
+
+            [PropertyOrder(7)]
+            [Category("Gap Edge Pair")]
+            [DisplayName("Minimum shared support ratio")]
+            [Description("Minimum shared horizontal edge support divided by coarse ROI width.")]
+            public double GapMinimumSupportRatio { get; set; } = 0.26D;
+
+            [PropertyOrder(8)]
+            [Category("Gap Edge Pair")]
+            [DisplayName("Minimum local dark contrast (GV)")]
+            [Description("Minimum surrounding-minus-band gray-value contrast required for a dark-band pair.")]
+            public double GapMinimumDarkContrast { get; set; } = 8D;
+
+            [PropertyOrder(9)]
+            [Category("Gap Edge Pair")]
+            [DisplayName("Minimum local dark coverage")]
+            [Description("Minimum fraction of sampled columns that must support local dark-band contrast.")]
+            public double GapMinimumDarkCoverageRatio { get; set; } = 0.25D;
+
+            [PropertyOrder(10)]
+            [Category("Gap Edge Pair")]
+            [DisplayName("Minimum distinct-pair score margin")]
+            [Description("Reject the result when the selected pair is not sufficiently better than the next physically distinct pair.")]
+            public double GapMinimumScoreMargin { get; set; } = 0.05D;
 
             [PropertyOrder(0)]
             [Category("Left Line")]
-            [DisplayName("Projection direction")]
+            [DisplayName("Line A use ROI")]
+            public bool UseRoi { get; set; }
+
+            [PropertyOrder(1)]
+            [Category("Left Line")]
+            [DisplayName("Line A ROI")]
+            public Rect Roi { get; set; }
+
+            [PropertyOrder(2)]
+            [Category("Left Line")]
+            [DisplayName("Line A projection direction")]
             public PROJECTION_DIR LeftDirection { get; set; }
 
             [PropertyOrder(0)]
             [Category("Right Line")]
-            [DisplayName("Projection direction")]
-            public PROJECTION_DIR RightDirection { get; set; }
+            [DisplayName("Line B use ROI")]
+            public bool RightUseRoi { get; set; }
 
             [PropertyOrder(1)]
-            [Category("Line Pair")]
-            [DisplayName("Polarity")]
+            [Category("Right Line")]
+            [DisplayName("Line B ROI")]
+            public Rect RightRoi { get; set; }
+
+            [PropertyOrder(2)]
+            [Category("Right Line")]
+            [DisplayName("Line B projection direction")]
+            public PROJECTION_DIR RightDirection { get; set; }
+
+            [PropertyOrder(3)]
+            [Category("Left Line")]
+            [DisplayName("Line A polarity")]
             public PROJECTION_POLARITY Polarity { get; set; }
+
+            [PropertyOrder(3)]
+            [Category("Right Line")]
+            [DisplayName("Line B polarity")]
+            public PROJECTION_POLARITY RightPolarity { get; set; }
 
             [PropertyOrder(2)]
             [Category("Line Pair")]
@@ -1121,25 +1447,40 @@ namespace OpenVisionLab
             [DisplayName("Sampling step")]
             public double SamplingStep { get; set; }
 
-            [PropertyOrder(5)]
-            [Category("Line Pair")]
-            [DisplayName("Vertical projection")]
+            [PropertyOrder(4)]
+            [Category("Left Line")]
+            [DisplayName("Line A vertical projection")]
             public PROJECTION_DIR VerticalProjectionDirection { get; set; }
+
+            [PropertyOrder(4)]
+            [Category("Right Line")]
+            [DisplayName("Line B vertical projection")]
+            public PROJECTION_DIR RightVerticalProjectionDirection { get; set; }
 
             [PropertyOrder(6)]
             [Category("Line Pair")]
             [DisplayName("Point range")]
             public int PointRange { get; set; }
 
-            [PropertyOrder(7)]
-            [Category("Line Pair")]
-            [DisplayName("Use manual angle")]
+            [PropertyOrder(5)]
+            [Category("Left Line")]
+            [DisplayName("Line A use manual angle")]
             public bool UseManualAngle { get; set; }
 
-            [PropertyOrder(8)]
-            [Category("Line Pair")]
-            [DisplayName("Manual angle")]
+            [PropertyOrder(6)]
+            [Category("Left Line")]
+            [DisplayName("Line A manual angle")]
             public double ManualAngleValue { get; set; }
+
+            [PropertyOrder(5)]
+            [Category("Right Line")]
+            [DisplayName("Line B use manual angle")]
+            public bool RightUseManualAngle { get; set; }
+
+            [PropertyOrder(6)]
+            [Category("Right Line")]
+            [DisplayName("Line B manual angle")]
+            public double RightManualAngleValue { get; set; }
 
             [PropertyOrder(9)]
             [Category("Line Pair")]
@@ -1269,7 +1610,7 @@ namespace OpenVisionLab
 
             public VisionPipelineStep ToStep(string inputLayer, string outputLayer)
             {
-                return VisionPipelineStepBuilder.FromLineGaugePair(
+                VisionPipelineStep step = VisionPipelineStepBuilder.FromLineGaugePair(
                     PipelineStepName,
                     string.IsNullOrWhiteSpace(ToolType) ? "LineDistance" : ToolType,
                     CreateLeftProperty(),
@@ -1277,56 +1618,402 @@ namespace OpenVisionLab
                     inputLayer,
                     outputLayer,
                     Purpose);
+                if (UseGapEdgePair)
+                {
+                    AddParameter(step.Parameters, VisionPipelineGapEdgePairTool.UseParameter, true);
+                    AddParameter(step.Parameters, "CANNY_LOW", GapCannyLow);
+                    AddParameter(step.Parameters, "CANNY_HIGH", GapCannyHigh);
+                    AddParameter(step.Parameters, VisionPipelineGapEdgePairTool.MinimumGapParameter, GapMinimumPixels);
+                    AddParameter(step.Parameters, VisionPipelineGapEdgePairTool.MaximumGapParameter, GapMaximumPixels);
+                    AddParameter(step.Parameters, VisionPipelineGapEdgePairTool.MaximumAngleParameter, GapMaximumAngleDegrees);
+                    AddParameter(step.Parameters, VisionPipelineGapEdgePairTool.MaximumParallelDeltaParameter, GapMaximumParallelDeltaDegrees);
+                    AddParameter(step.Parameters, VisionPipelineGapEdgePairTool.MinimumSupportRatioParameter, GapMinimumSupportRatio);
+                    AddParameter(step.Parameters, VisionPipelineGapEdgePairTool.MinimumDarkContrastParameter, GapMinimumDarkContrast);
+                    AddParameter(step.Parameters, VisionPipelineGapEdgePairTool.MinimumDarkCoverageParameter, GapMinimumDarkCoverageRatio);
+                    AddParameter(step.Parameters, VisionPipelineGapEdgePairTool.MinimumScoreMarginParameter, GapMinimumScoreMargin);
+                }
+
+                return step;
             }
 
             public LineGaugeProperty CreateLeftProperty()
             {
-                return CreateLineProperty(PipelineStepName + "_Left", LeftDirection);
+                return CreateLineProperty(leftBaseline, false);
             }
 
             public LineGaugeProperty CreateRightProperty()
             {
-                return CreateLineProperty(PipelineStepName + "_Right", RightDirection);
+                return CreateLineProperty(rightBaseline, true);
             }
 
-            private LineGaugeProperty CreateLineProperty(string name, PROJECTION_DIR direction)
+            private LineGaugeProperty CreateLineProperty(LineGaugeProperty baseline, bool right)
             {
-                return new LineGaugeProperty(name)
+                LineGaugeProperty property = (LineGaugeProperty)baseline.DeepCopy();
+                property.USE_ROI = right ? RightUseRoi : UseRoi;
+                property.CvROI = right ? RightRoi : Roi;
+                property.PRJ_PORALITY = right ? RightPolarity : Polarity;
+                property.PRJ_DIR = right ? RightDirection : LeftDirection;
+                property.VER_PRJ_DIR = right ? RightVerticalProjectionDirection : VerticalProjectionDirection;
+                property.USE_MANUAL_ANGLE = right ? RightUseManualAngle : UseManualAngle;
+                property.MANUAL_ANGLE_VALUE = right ? RightManualAngleValue : ManualAngleValue;
+
+                if (!right || PixelPerMm != leftBaseline.PIXELPERMM)
                 {
-                    PIXELPERMM = PixelPerMm,
-                    USE_ROI = UseRoi,
-                    CvROI = Roi,
-                    USE_THRESHOLD = UseThreshold,
-                    USE_BITWISENOT = UseBitwiseNot,
-                    THRESHOLD_TYPES = ThresholdType,
-                    THRESHOLD = Threshold,
-                    USE_ADAPTIVE_THRESHOLD = UseAdaptiveThreshold,
-                    ADAPTIVE_THRESHOLD = AdaptiveThreshold,
-                    PRJ_PORALITY = Polarity,
-                    PRJ_DIR = direction,
-                    CONTRAST = Contrast,
-                    THICKNESS = Thickness,
-                    SAMPLING_STEP = SamplingStep,
-                    VER_PRJ_DIR = VerticalProjectionDirection,
-                    POINT_RANGE = PointRange,
-                    USE_MANUAL_ANGLE = UseManualAngle,
-                    MANUAL_ANGLE_VALUE = ManualAngleValue,
-                    USE_EXTEND_FIT_LINE = UseExtendFitLine,
-                    EXTEND_FIT_LINE_VALUE = ExtendFitLineValue,
-                    USE_AVERAGE_FILTER = UseAverageFilter,
-                    AVERAGE_Diff = AverageDiff,
-                    AVERAGE_FILTER_TYPE = AverageFilterType,
-                    SHOW_VERTICAL_LINE = ShowVerticalLine,
-                    SHOW_EDGE = ShowEdge,
-                    SHOW_CONTOUR = ShowContour,
-                    SHOW_FITLINE = ShowFitLine
-                };
+                    property.PIXELPERMM = PixelPerMm;
+                }
+
+                if (!right || UseThreshold != leftBaseline.USE_THRESHOLD) property.USE_THRESHOLD = UseThreshold;
+                if (!right || UseBitwiseNot != leftBaseline.USE_BITWISENOT) property.USE_BITWISENOT = UseBitwiseNot;
+                if (!right || ThresholdType != leftBaseline.THRESHOLD_TYPES) property.THRESHOLD_TYPES = ThresholdType;
+                if (!right || Threshold != leftBaseline.THRESHOLD) property.THRESHOLD = Threshold;
+                if (!right || UseAdaptiveThreshold != leftBaseline.USE_ADAPTIVE_THRESHOLD) property.USE_ADAPTIVE_THRESHOLD = UseAdaptiveThreshold;
+                if (!right || AdaptiveThreshold != leftBaseline.ADAPTIVE_THRESHOLD) property.ADAPTIVE_THRESHOLD = AdaptiveThreshold;
+                if (!right || Contrast != leftBaseline.CONTRAST) property.CONTRAST = Contrast;
+                if (!right || Thickness != leftBaseline.THICKNESS) property.THICKNESS = Thickness;
+                if (!right || SamplingStep != leftBaseline.SAMPLING_STEP) property.SAMPLING_STEP = SamplingStep;
+                if (!right || PointRange != leftBaseline.POINT_RANGE) property.POINT_RANGE = PointRange;
+                if (!right || UseExtendFitLine != leftBaseline.USE_EXTEND_FIT_LINE) property.USE_EXTEND_FIT_LINE = UseExtendFitLine;
+                if (!right || ExtendFitLineValue != leftBaseline.EXTEND_FIT_LINE_VALUE) property.EXTEND_FIT_LINE_VALUE = ExtendFitLineValue;
+                if (!right || UseAverageFilter != leftBaseline.USE_AVERAGE_FILTER) property.USE_AVERAGE_FILTER = UseAverageFilter;
+                if (!right || AverageDiff != leftBaseline.AVERAGE_Diff) property.AVERAGE_Diff = AverageDiff;
+                if (!right || AverageFilterType != leftBaseline.AVERAGE_FILTER_TYPE) property.AVERAGE_FILTER_TYPE = AverageFilterType;
+                if (!right || ShowVerticalLine != leftBaseline.SHOW_VERTICAL_LINE) property.SHOW_VERTICAL_LINE = ShowVerticalLine;
+                if (!right || ShowEdge != leftBaseline.SHOW_EDGE) property.SHOW_EDGE = ShowEdge;
+                if (!right || ShowContour != leftBaseline.SHOW_CONTOUR) property.SHOW_CONTOUR = ShowContour;
+                if (!right || ShowFitLine != leftBaseline.SHOW_FITLINE) property.SHOW_FITLINE = ShowFitLine;
+                return property;
             }
         }
 
         private static void AddParameter(IDictionary<string, string> parameters, string key, object value)
         {
             parameters[key] = Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
+        }
+
+        private abstract class PipelineGeometryPropertyBase : IPipelineStepMetadata
+        {
+            protected PipelineGeometryPropertyBase(VisionPipelineStep step, string name)
+            {
+                BaselineParameters = step?.Parameters == null
+                    ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    : new Dictionary<string, string>(step.Parameters, StringComparer.OrdinalIgnoreCase);
+                PipelineStepName = name;
+            }
+
+            protected Dictionary<string, string> BaselineParameters { get; }
+            [Category("Step"), DisplayName("Step Name"), PropertyOrder(-3)] public string PipelineStepName { get; set; }
+            [Category("Step"), DisplayName("Input Layer"), TypeConverter(typeof(PipelineLayerNameConverter)), PropertyOrder(-2)] public string InputLayer { get; set; } = "Main";
+            [Category("Step"), DisplayName("Output Layer"), TypeConverter(typeof(PipelineLayerNameConverter)), PropertyOrder(-1)] public string OutputLayer { get; set; } = "Geometry_Output";
+            [Category("Step"), DisplayName("Enabled"), PropertyOrder(0)] public bool Enabled { get; set; } = true;
+            [Category("Acceptance"), DisplayName("Use Acceptance"), PropertyOrder(1)] public bool UseAcceptance { get; set; }
+            [Category("Acceptance"), DisplayName("Expected Success"), PropertyOrder(2)] public bool ExpectedSuccess { get; set; } = true;
+            [Category("Acceptance"), DisplayName("Max Elapsed (ms)"), PropertyOrder(3)] public double MaxElapsedMilliseconds { get; set; }
+            [Category("Acceptance"), DisplayName("Required Message"), PropertyOrder(4)] public string RequiredMessageText { get; set; } = string.Empty;
+            [Category("Acceptance"), DisplayName("Acceptance Metric"), TypeConverter(typeof(PipelineMetricNameConverter)), PropertyOrder(5)] public string AcceptanceMetricName { get; set; } = string.Empty;
+            [Browsable(false)] public bool UseAcceptanceMetricMinimum { get; set; }
+            [Category("Acceptance"), DisplayName("Metric range"), PropertyEditor(typeof(WpgMetricRangeEditor)), MetricRangeEditor(3, nameof(UseAcceptanceMetricMinimum), nameof(AcceptanceMetricMinimum), nameof(UseAcceptanceMetricMaximum), nameof(AcceptanceMetricMaximum)), PropertyOrder(7)] public double AcceptanceMetricMinimum { get; set; }
+            [Browsable(false)] public bool UseAcceptanceMetricMaximum { get; set; }
+            [Browsable(false)] public double AcceptanceMetricMaximum { get; set; }
+
+            protected VisionPipelineStep CreateStep(string toolType, string inputLayer, string outputLayer)
+            {
+                VisionPipelineStep mapped = new VisionPipelineStep
+                {
+                    Name = string.IsNullOrWhiteSpace(PipelineStepName) ? toolType : PipelineStepName,
+                    ToolType = toolType,
+                    InputLayer = string.IsNullOrWhiteSpace(inputLayer) ? "Main" : inputLayer,
+                    OutputLayer = string.IsNullOrWhiteSpace(outputLayer) ? toolType + "_Output" : outputLayer
+                };
+                foreach (KeyValuePair<string, string> item in BaselineParameters) mapped.Parameters[item.Key] = item.Value;
+                return mapped;
+            }
+        }
+
+        [CategoryOrder("Step", -1)]
+        [CategoryOrder("Sources", 0)]
+        [CategoryOrder("Geometry Gates", 1)]
+        [CategoryOrder("Acceptance", 20)]
+        private sealed class PipelineGeometryMeasureProperty : PipelineGeometryPropertyBase
+        {
+            public PipelineGeometryMeasureProperty(VisionPipelineStep step, string name) : base(step, name)
+            {
+                OutputLayer = string.IsNullOrWhiteSpace(step?.OutputLayer) ? "GeometryMeasure_Output" : step.OutputLayer;
+                MeasurementMode = GetEnum(step?.Parameters, VisionPipelineGeometryMeasureService.ModeParameter, GeometryMeasurementMode.PointPointDistance);
+                SourceA = JoinGeometryReference(GetString(step?.Parameters, VisionPipelineGeometryMeasureService.SourceStepAParameter, string.Empty), GetString(step?.Parameters, VisionPipelineGeometryMeasureService.SourceFeatureAParameter, string.Empty));
+                SourceB = JoinGeometryReference(GetString(step?.Parameters, VisionPipelineGeometryMeasureService.SourceStepBParameter, string.Empty), GetString(step?.Parameters, VisionPipelineGeometryMeasureService.SourceFeatureBParameter, string.Empty));
+                MaximumParallelAngleDeltaDeg = GetDouble(step?.Parameters, VisionPipelineGeometryMeasureService.MaximumParallelAngleDeltaParameter, 2D);
+                MaximumExtensionAPx = GetDouble(step?.Parameters, VisionPipelineGeometryMeasureService.MaximumExtensionAParameter, 100D);
+                MaximumExtensionBPx = GetDouble(step?.Parameters, VisionPipelineGeometryMeasureService.MaximumExtensionBParameter, 100D);
+                RequireResultInImage = GetBool(step?.Parameters, VisionPipelineGeometryMeasureService.RequireResultInImageParameter, true);
+                UseResultRoi = GetBool(step?.Parameters, "USE_ROI", false);
+                ResultRoi = GetRect(step?.Parameters, "CvROI", default);
+            }
+
+            [Category("Sources"), DisplayName("Measurement mode"), PropertyOrder(0)] public GeometryMeasurementMode MeasurementMode { get; set; }
+            [Category("Sources"), DisplayName("Source A"), Description("Compatible typed feature from an earlier enabled Step."), TypeConverter(typeof(PipelineGeometryFeatureConverter)), PropertyOrder(1)] public string SourceA { get; set; } = string.Empty;
+            [Category("Sources"), DisplayName("Source B"), Description("Compatible typed feature from an earlier enabled Step."), TypeConverter(typeof(PipelineGeometryFeatureConverter)), PropertyOrder(2)] public string SourceB { get; set; } = string.Empty;
+            [Category("Geometry Gates"), DisplayName("Maximum parallel delta (deg)"), PropertyOrder(0)] public double MaximumParallelAngleDeltaDeg { get; set; } = 2D;
+            [Category("Geometry Gates"), DisplayName("Maximum extension A (px)"), PropertyOrder(1)] public double MaximumExtensionAPx { get; set; } = 100D;
+            [Category("Geometry Gates"), DisplayName("Maximum extension B (px)"), PropertyOrder(2)] public double MaximumExtensionBPx { get; set; } = 100D;
+            [Category("Geometry Gates"), DisplayName("Require result in image"), PropertyOrder(3)] public bool RequireResultInImage { get; set; } = true;
+            [Category("Geometry Gates"), DisplayName("Use result ROI"), PropertyOrder(4)] public bool UseResultRoi { get; set; }
+            [Category("Geometry Gates"), DisplayName("Result ROI"), PropertyOrder(5)] public Rect ResultRoi { get; set; }
+
+            public VisionPipelineStep ToStep(string inputLayer, string outputLayer)
+            {
+                SplitGeometryReference(SourceA, out string stepA, out string featureA);
+                SplitGeometryReference(SourceB, out string stepB, out string featureB);
+                VisionPipelineStep mapped = CreateStep("GeometryMeasure", inputLayer, outputLayer);
+                AddParameter(mapped.Parameters, VisionPipelineGeometryMeasureService.ModeParameter, MeasurementMode);
+                AddParameter(mapped.Parameters, VisionPipelineGeometryMeasureService.SourceStepAParameter, stepA);
+                AddParameter(mapped.Parameters, VisionPipelineGeometryMeasureService.SourceFeatureAParameter, featureA);
+                AddParameter(mapped.Parameters, VisionPipelineGeometryMeasureService.SourceStepBParameter, stepB);
+                AddParameter(mapped.Parameters, VisionPipelineGeometryMeasureService.SourceFeatureBParameter, featureB);
+                AddParameter(mapped.Parameters, VisionPipelineGeometryMeasureService.MaximumParallelAngleDeltaParameter, MaximumParallelAngleDeltaDeg);
+                AddParameter(mapped.Parameters, VisionPipelineGeometryMeasureService.MaximumExtensionAParameter, MaximumExtensionAPx);
+                AddParameter(mapped.Parameters, VisionPipelineGeometryMeasureService.MaximumExtensionBParameter, MaximumExtensionBPx);
+                AddParameter(mapped.Parameters, VisionPipelineGeometryMeasureService.RequireResultInImageParameter, RequireResultInImage);
+                AddParameter(mapped.Parameters, "USE_ROI", UseResultRoi);
+                AddParameter(mapped.Parameters, "CvROI", FormatGeometryRect(ResultRoi));
+                AddParameter(mapped.Parameters, VisionPipelineNormalizer.AllowBranchInputParameter, true);
+                return mapped;
+            }
+        }
+
+        [CategoryOrder("Step", -1)]
+        [CategoryOrder("Annular Sector", 0)]
+        [CategoryOrder("Edge Fit", 1)]
+        [CategoryOrder("Acceptance", 20)]
+        private sealed class PipelineCircleGaugeProperty : PipelineGeometryPropertyBase
+        {
+            public PipelineCircleGaugeProperty(VisionPipelineStep step, string name) : base(step, name)
+            {
+                OutputLayer = string.IsNullOrWhiteSpace(step?.OutputLayer) ? "CircleGauge_Output" : step.OutputLayer;
+                UseRoi = GetBool(step?.Parameters, "USE_ROI", true); Roi = GetRect(step?.Parameters, "CvROI", default);
+                CenterX = GetDouble(step?.Parameters, "CENTER_X", 0D); CenterY = GetDouble(step?.Parameters, "CENTER_Y", 0D);
+                MinimumRadius = GetDouble(step?.Parameters, "RADIUS_MIN", 20D); MaximumRadius = GetDouble(step?.Parameters, "RADIUS_MAX", 60D);
+                StartAngleDeg = GetDouble(step?.Parameters, "START_ANGLE_DEG", 0D); SweepAngleDeg = GetDouble(step?.Parameters, "SWEEP_ANGLE_DEG", 360D);
+                ScanCount = GetInt(step?.Parameters, "SCAN_COUNT", 180); EdgePolarity = GetEnum(step?.Parameters, "EDGE_POLARITY", CircleGaugeEdgePolarity.Either);
+                MinimumContrast = GetDouble(step?.Parameters, "MIN_CONTRAST", 12D); MinimumSupportRatio = GetDouble(step?.Parameters, "MIN_SUPPORT_RATIO", 0.6D);
+                MaximumFitResidualPx = GetDouble(step?.Parameters, "MAX_FIT_RESIDUAL_PX", 2D);
+            }
+            [Category("Annular Sector"), DisplayName("Use ROI"), PropertyOrder(0)] public bool UseRoi { get; set; }
+            [Category("Annular Sector"), DisplayName("ROI"), PropertyOrder(1)] public Rect Roi { get; set; }
+            [Category("Annular Sector"), DisplayName("Center X"), PropertyOrder(2)] public double CenterX { get; set; }
+            [Category("Annular Sector"), DisplayName("Center Y"), PropertyOrder(3)] public double CenterY { get; set; }
+            [Category("Annular Sector"), DisplayName("Minimum radius (px)"), PropertyOrder(4)] public double MinimumRadius { get; set; }
+            [Category("Annular Sector"), DisplayName("Maximum radius (px)"), PropertyOrder(5)] public double MaximumRadius { get; set; }
+            [Category("Annular Sector"), DisplayName("Start angle (deg)"), PropertyOrder(6)] public double StartAngleDeg { get; set; }
+            [Category("Annular Sector"), DisplayName("Sweep angle (deg)"), PropertyOrder(7)] public double SweepAngleDeg { get; set; }
+            [Category("Annular Sector"), DisplayName("Radial scan count"), PropertyOrder(8)] public int ScanCount { get; set; }
+            [Category("Edge Fit"), DisplayName("Edge polarity"), PropertyOrder(0)] public CircleGaugeEdgePolarity EdgePolarity { get; set; }
+            [Category("Edge Fit"), DisplayName("Minimum contrast"), PropertyOrder(1)] public double MinimumContrast { get; set; }
+            [Category("Edge Fit"), DisplayName("Minimum support ratio"), PropertyOrder(2)] public double MinimumSupportRatio { get; set; }
+            [Category("Edge Fit"), DisplayName("Maximum fit residual (px)"), PropertyOrder(3)] public double MaximumFitResidualPx { get; set; }
+            public VisionPipelineStep ToStep(string inputLayer, string outputLayer)
+            {
+                VisionPipelineStep mapped = CreateStep("CircleGauge", inputLayer, outputLayer);
+                AddParameter(mapped.Parameters, "USE_ROI", UseRoi); AddParameter(mapped.Parameters, "CvROI", FormatGeometryRect(Roi));
+                AddParameter(mapped.Parameters, "CENTER_X", CenterX); AddParameter(mapped.Parameters, "CENTER_Y", CenterY);
+                AddParameter(mapped.Parameters, "RADIUS_MIN", MinimumRadius); AddParameter(mapped.Parameters, "RADIUS_MAX", MaximumRadius);
+                AddParameter(mapped.Parameters, "START_ANGLE_DEG", StartAngleDeg); AddParameter(mapped.Parameters, "SWEEP_ANGLE_DEG", SweepAngleDeg);
+                AddParameter(mapped.Parameters, "SCAN_COUNT", ScanCount); AddParameter(mapped.Parameters, "EDGE_POLARITY", EdgePolarity);
+                AddParameter(mapped.Parameters, "MIN_CONTRAST", MinimumContrast); AddParameter(mapped.Parameters, "MIN_SUPPORT_RATIO", MinimumSupportRatio);
+                AddParameter(mapped.Parameters, "MAX_FIT_RESIDUAL_PX", MaximumFitResidualPx);
+                return mapped;
+            }
+        }
+
+        private static string JoinGeometryReference(string step, string feature)
+        {
+            return string.IsNullOrWhiteSpace(step) || string.IsNullOrWhiteSpace(feature) ? string.Empty : step.Trim() + "/" + feature.Trim();
+        }
+
+        private static void SplitGeometryReference(string reference, out string step, out string feature)
+        {
+            int slash = (reference ?? string.Empty).LastIndexOf('/');
+            step = slash > 0 ? reference.Substring(0, slash).Trim() : string.Empty;
+            feature = slash > 0 && slash < reference.Length - 1 ? reference.Substring(slash + 1).Trim() : string.Empty;
+        }
+
+        private static string FormatGeometryRect(Rect roi)
+        {
+            return string.Format(CultureInfo.InvariantCulture, "{0},{1},{2},{3}", roi.X, roi.Y, roi.Width, roi.Height);
+        }
+
+        [CategoryOrder("Step", -1)]
+        [CategoryOrder("Measurement", 0)]
+        [CategoryOrder("ROI", 1)]
+        [CategoryOrder("Pin Detection", 2)]
+        [CategoryOrder("Acceptance", 20)]
+        private sealed class PipelinePinArrayGapProperty : IPipelineStepMetadata
+        {
+            private readonly Dictionary<string, string> baselineParameters;
+            private readonly string toolType;
+
+            public PipelinePinArrayGapProperty(VisionPipelineStep step, string name)
+            {
+                baselineParameters = step?.Parameters == null
+                    ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    : new Dictionary<string, string>(step.Parameters, StringComparer.OrdinalIgnoreCase);
+                toolType = string.IsNullOrWhiteSpace(step?.ToolType) ? "PinArrayGap" : step.ToolType.Trim();
+                NAME = string.IsNullOrWhiteSpace(name) ? "PinArrayGap" : name;
+                MeasurementMode = GetEnum(step?.Parameters, "MeasurementMode", PinArrayGapMeasurementMode.EdgeGap);
+                UseRoi = GetBool(step?.Parameters, "USE_ROI", false);
+                Roi = GetRect(step?.Parameters, "CvROI", default);
+                DarkThreshold = GetInt(step?.Parameters, "DarkThreshold", 128);
+                MinimumDarkCoverageRatio = GetDouble(step?.Parameters, "MinDarkCoverageRatio", 0.55D);
+                MinimumPinWidth = GetInt(step?.Parameters, "MinPinWidth", 5);
+                MaximumPinBreakWidth = GetInt(step?.Parameters, "MaxPinBreakWidth", 2);
+                MinimumGapWidth = GetInt(step?.Parameters, "MinGapWidth", 3);
+            }
+
+            [PropertyOrder(-3)]
+            [Category("Step")]
+            [DisplayName("Step Name")]
+            public string NAME { get; set; }
+
+            [Browsable(false)]
+            public string PipelineStepName
+            {
+                get => NAME;
+                set => NAME = value;
+            }
+
+            [PropertyOrder(-2)]
+            [Category("Step")]
+            [DisplayName("Input Layer")]
+            [TypeConverter(typeof(PipelineLayerNameConverter))]
+            public string InputLayer { get; set; } = "Main";
+
+            [PropertyOrder(-1)]
+            [Category("Step")]
+            [DisplayName("Output Layer")]
+            [TypeConverter(typeof(PipelineLayerNameConverter))]
+            public string OutputLayer { get; set; } = "PinArrayGap_Output";
+
+            [PropertyOrder(0)]
+            [Category("Step")]
+            [DisplayName("Enabled")]
+            public bool Enabled { get; set; } = true;
+
+            [PropertyOrder(0)]
+            [Category("Measurement")]
+            [DisplayName("Measurement mode")]
+            [Description("EdgeGap measures adjacent empty clearance. CenterPitch measures adjacent detected pin centers. Both modes are pixel-based in this editor.")]
+            public PinArrayGapMeasurementMode MeasurementMode { get; set; } = PinArrayGapMeasurementMode.EdgeGap;
+
+            [PropertyOrder(0)]
+            [Category("ROI")]
+            [DisplayName("Use row ROI")]
+            [Description("PinArrayGap requires one reviewed ROI containing exactly one dark pin row.")]
+            public bool UseRoi { get; set; }
+
+            [PropertyOrder(1)]
+            [Category("ROI")]
+            [DisplayName("Row ROI")]
+            public Rect Roi { get; set; }
+
+            [PropertyOrder(0)]
+            [Category("Pin Detection")]
+            [DisplayName("Dark threshold")]
+            public int DarkThreshold { get; set; } = 128;
+
+            [PropertyOrder(1)]
+            [Category("Pin Detection")]
+            [DisplayName("Minimum dark coverage ratio")]
+            [Description("Minimum vertical dark-pixel coverage required for a column to belong to a pin.")]
+            public double MinimumDarkCoverageRatio { get; set; } = 0.55D;
+
+            [PropertyOrder(2)]
+            [Category("Pin Detection")]
+            [DisplayName("Minimum pin width")]
+            public int MinimumPinWidth { get; set; } = 5;
+
+            [PropertyOrder(3)]
+            [Category("Pin Detection")]
+            [DisplayName("Maximum pin break width")]
+            [Description("Merge dark column runs separated by no more than this many pixels.")]
+            public int MaximumPinBreakWidth { get; set; } = 2;
+
+            [PropertyOrder(4)]
+            [Category("Pin Detection")]
+            [DisplayName("Minimum edge gap width")]
+            [Description("Minimum empty clearance used by EdgeGap mode. CenterPitch does not use this filter.")]
+            public int MinimumGapWidth { get; set; } = 3;
+
+            [PropertyOrder(1)]
+            [Category("Acceptance")]
+            [DisplayName("Use Acceptance")]
+            public bool UseAcceptance { get; set; }
+
+            [PropertyOrder(2)]
+            [Category("Acceptance")]
+            [DisplayName("Expected Success")]
+            public bool ExpectedSuccess { get; set; } = true;
+
+            [PropertyOrder(3)]
+            [Category("Acceptance")]
+            [DisplayName("Max Elapsed (ms)")]
+            public double MaxElapsedMilliseconds { get; set; }
+
+            [PropertyOrder(4)]
+            [Category("Acceptance")]
+            [DisplayName("Required Message")]
+            public string RequiredMessageText { get; set; } = string.Empty;
+
+            [PropertyOrder(5)]
+            [Category("Acceptance")]
+            [DisplayName("Acceptance Metric")]
+            [TypeConverter(typeof(PipelineMetricNameConverter))]
+            public string AcceptanceMetricName { get; set; } = string.Empty;
+
+            [Browsable(false)]
+            public bool UseAcceptanceMetricMinimum { get; set; }
+
+            [PropertyOrder(7)]
+            [Category("Acceptance")]
+            [DisplayName("Metric range")]
+            [PropertyEditor(typeof(WpgMetricRangeEditor))]
+            [MetricRangeEditor(3, nameof(UseAcceptanceMetricMinimum), nameof(AcceptanceMetricMinimum), nameof(UseAcceptanceMetricMaximum), nameof(AcceptanceMetricMaximum))]
+            public double AcceptanceMetricMinimum { get; set; }
+
+            [Browsable(false)]
+            public bool UseAcceptanceMetricMaximum { get; set; }
+
+            [Browsable(false)]
+            public double AcceptanceMetricMaximum { get; set; }
+
+            public VisionPipelineStep ToStep(string inputLayer, string outputLayer)
+            {
+                VisionPipelineStep step = new VisionPipelineStep
+                {
+                    Name = string.IsNullOrWhiteSpace(NAME) ? "PinArrayGap" : NAME,
+                    ToolType = toolType,
+                    InputLayer = string.IsNullOrWhiteSpace(inputLayer) ? "Main" : inputLayer,
+                    OutputLayer = string.IsNullOrWhiteSpace(outputLayer) ? "PinArrayGap_Output" : outputLayer
+                };
+                foreach (KeyValuePair<string, string> parameter in baselineParameters)
+                {
+                    step.Parameters[parameter.Key] = parameter.Value;
+                }
+
+                AddParameter(step.Parameters, "MeasurementMode", MeasurementMode);
+                AddParameter(step.Parameters, "USE_ROI", UseRoi);
+                AddParameter(step.Parameters, "CvROI", string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0},{1},{2},{3}",
+                    Roi.X,
+                    Roi.Y,
+                    Roi.Width,
+                    Roi.Height));
+                AddParameter(step.Parameters, "DarkThreshold", DarkThreshold);
+                AddParameter(step.Parameters, "MinDarkCoverageRatio", MinimumDarkCoverageRatio);
+                AddParameter(step.Parameters, "MinPinWidth", MinimumPinWidth);
+                AddParameter(step.Parameters, "MaxPinBreakWidth", MaximumPinBreakWidth);
+                AddParameter(step.Parameters, "MinGapWidth", MinimumGapWidth);
+                return step;
+            }
         }
 
         private static string GetReferencePath(IDictionary<string, string> parameters, int index)
@@ -1470,9 +2157,39 @@ namespace OpenVisionLab
 
             [PropertyOrder(5)]
             [Category("Fixture")]
+            [DisplayName("Reference Scale")]
+            [Description("Matching scale in the taught reference image. Use 1.0 for the original template size.")]
+            public double FIXTURE_REFERENCE_SCALE { get; set; } = 1D;
+
+            [PropertyOrder(6)]
+            [Category("Fixture")]
             [DisplayName("Maximum Angle Delta")]
-            [Description("Fail instead of translating the ROI when the angle change exceeds this degree limit.")]
+            [Description("Fail fixture application when the angle change exceeds this degree limit.")]
             public double FIXTURE_MAX_ANGLE_DELTA { get; set; } = 2D;
+
+            [PropertyOrder(7)]
+            [Category("Fixture")]
+            [DisplayName("Minimum Scale Ratio")]
+            [Description("Optional fail-closed minimum current/reference scale ratio. Set both scale-ratio limits above zero to enable.")]
+            public double FIXTURE_MIN_SCALE_RATIO { get; set; }
+
+            [PropertyOrder(8)]
+            [Category("Fixture")]
+            [DisplayName("Maximum Scale Ratio")]
+            [Description("Optional fail-closed maximum current/reference scale ratio. Set both scale-ratio limits above zero to enable.")]
+            public double FIXTURE_MAX_SCALE_RATIO { get; set; }
+
+            [PropertyOrder(9)]
+            [Category("Fixture")]
+            [DisplayName("Reference Image Width")]
+            [Description("Width of the operator-reviewed reference image. Required by NormalizeImage consumers.")]
+            public int FIXTURE_REFERENCE_IMAGE_WIDTH { get; set; }
+
+            [PropertyOrder(10)]
+            [Category("Fixture")]
+            [DisplayName("Reference Image Height")]
+            [Description("Height of the operator-reviewed reference image. Required by NormalizeImage consumers.")]
+            public int FIXTURE_REFERENCE_IMAGE_HEIGHT { get; set; }
 
             public void ApplyFixtureParameters(IDictionary<string, string> parameters)
             {
@@ -1486,7 +2203,18 @@ namespace OpenVisionLab
                 parameters[VisionPipelineFixtureFrameService.ReferenceXParameter] = Convert.ToString(FIXTURE_REFERENCE_X, CultureInfo.InvariantCulture);
                 parameters[VisionPipelineFixtureFrameService.ReferenceYParameter] = Convert.ToString(FIXTURE_REFERENCE_Y, CultureInfo.InvariantCulture);
                 parameters[VisionPipelineFixtureFrameService.ReferenceAngleParameter] = Convert.ToString(FIXTURE_REFERENCE_ANGLE, CultureInfo.InvariantCulture);
+                parameters[VisionPipelineFixtureFrameService.ReferenceScaleParameter] = Convert.ToString(FIXTURE_REFERENCE_SCALE, CultureInfo.InvariantCulture);
                 parameters[VisionPipelineFixtureFrameService.MaximumAngleDeltaParameter] = Convert.ToString(FIXTURE_MAX_ANGLE_DELTA, CultureInfo.InvariantCulture);
+                if (FIXTURE_MIN_SCALE_RATIO > 0D && FIXTURE_MAX_SCALE_RATIO > 0D)
+                {
+                    parameters[VisionPipelineFixtureFrameService.MinimumScaleRatioParameter] = Convert.ToString(FIXTURE_MIN_SCALE_RATIO, CultureInfo.InvariantCulture);
+                    parameters[VisionPipelineFixtureFrameService.MaximumScaleRatioParameter] = Convert.ToString(FIXTURE_MAX_SCALE_RATIO, CultureInfo.InvariantCulture);
+                }
+                if (FIXTURE_REFERENCE_IMAGE_WIDTH > 0 && FIXTURE_REFERENCE_IMAGE_HEIGHT > 0)
+                {
+                    parameters[VisionPipelineFixtureFrameService.ReferenceImageWidthParameter] = Convert.ToString(FIXTURE_REFERENCE_IMAGE_WIDTH, CultureInfo.InvariantCulture);
+                    parameters[VisionPipelineFixtureFrameService.ReferenceImageHeightParameter] = Convert.ToString(FIXTURE_REFERENCE_IMAGE_HEIGHT, CultureInfo.InvariantCulture);
+                }
             }
 
             [PropertyOrder(-2)]
@@ -1987,7 +2715,123 @@ namespace OpenVisionLab
         }
 
         [CategoryOrder("Step", -1)]
+        [CategoryOrder("Source Binding", 0)]
+        [CategoryOrder("Source Points", 1)]
+        [CategoryOrder("Destination Points", 2)]
+        [CategoryOrder("Output", 3)]
+        [CategoryOrder("Sampling", 4)]
+        [CategoryOrder("Validation Gates", 5)]
+        [CategoryOrder("Acceptance", 20)]
+        private sealed class PipelineAffineTransformToolProperty : AffineTransformToolProperty, IPipelineStepMetadata
+        {
+            [PropertyOrder(-3), Category("Step"), DisplayName("Step Name")]
+            public string NAME { get; set; } = "AffineTransform";
+
+            [Browsable(false)]
+            public string PipelineStepName
+            {
+                get => NAME;
+                set => NAME = value;
+            }
+
+            [PropertyOrder(-2), Category("Step"), DisplayName("Input Layer")]
+            [TypeConverter(typeof(PipelineLayerNameConverter))]
+            public string InputLayer { get; set; } = "Main";
+
+            [PropertyOrder(-1), Category("Step"), DisplayName("Output Layer")]
+            [TypeConverter(typeof(PipelineLayerNameConverter))]
+            public string OutputLayer { get; set; } = "Pipeline_Output";
+
+            [PropertyOrder(0), Category("Step"), DisplayName("Enabled")]
+            public bool Enabled { get; set; } = true;
+
+            [PropertyOrder(0), Category("Source Binding"), DisplayName("Use detected Point features")]
+            [Description("When enabled, resolve three earlier accepted Point features at Run time and ignore the fixed source coordinates below.")]
+            public bool UseDetectedSourcePoints { get; set; }
+
+            [PropertyOrder(1), Category("Source Binding"), DisplayName("Source point 1 feature")]
+            [TypeConverter(typeof(PipelinePointFeatureConverter))]
+            public string SourcePoint1Feature { get; set; } = string.Empty;
+
+            [PropertyOrder(2), Category("Source Binding"), DisplayName("Source point 2 feature")]
+            [TypeConverter(typeof(PipelinePointFeatureConverter))]
+            public string SourcePoint2Feature { get; set; } = string.Empty;
+
+            [PropertyOrder(3), Category("Source Binding"), DisplayName("Source point 3 feature")]
+            [TypeConverter(typeof(PipelinePointFeatureConverter))]
+            public string SourcePoint3Feature { get; set; } = string.Empty;
+
+            [PropertyOrder(0), Category("Source Points"), DisplayName("Source point 1 X")]
+            public new double SourcePoint1X { get => base.SourcePoint1X; set => base.SourcePoint1X = value; }
+            [PropertyOrder(1), Category("Source Points"), DisplayName("Source point 1 Y")]
+            public new double SourcePoint1Y { get => base.SourcePoint1Y; set => base.SourcePoint1Y = value; }
+            [PropertyOrder(2), Category("Source Points"), DisplayName("Source point 2 X")]
+            public new double SourcePoint2X { get => base.SourcePoint2X; set => base.SourcePoint2X = value; }
+            [PropertyOrder(3), Category("Source Points"), DisplayName("Source point 2 Y")]
+            public new double SourcePoint2Y { get => base.SourcePoint2Y; set => base.SourcePoint2Y = value; }
+            [PropertyOrder(4), Category("Source Points"), DisplayName("Source point 3 X")]
+            public new double SourcePoint3X { get => base.SourcePoint3X; set => base.SourcePoint3X = value; }
+            [PropertyOrder(5), Category("Source Points"), DisplayName("Source point 3 Y")]
+            public new double SourcePoint3Y { get => base.SourcePoint3Y; set => base.SourcePoint3Y = value; }
+
+            [PropertyOrder(0), Category("Destination Points"), DisplayName("Destination point 1 X")]
+            public new double DestinationPoint1X { get => base.DestinationPoint1X; set => base.DestinationPoint1X = value; }
+            [PropertyOrder(1), Category("Destination Points"), DisplayName("Destination point 1 Y")]
+            public new double DestinationPoint1Y { get => base.DestinationPoint1Y; set => base.DestinationPoint1Y = value; }
+            [PropertyOrder(2), Category("Destination Points"), DisplayName("Destination point 2 X")]
+            public new double DestinationPoint2X { get => base.DestinationPoint2X; set => base.DestinationPoint2X = value; }
+            [PropertyOrder(3), Category("Destination Points"), DisplayName("Destination point 2 Y")]
+            public new double DestinationPoint2Y { get => base.DestinationPoint2Y; set => base.DestinationPoint2Y = value; }
+            [PropertyOrder(4), Category("Destination Points"), DisplayName("Destination point 3 X")]
+            public new double DestinationPoint3X { get => base.DestinationPoint3X; set => base.DestinationPoint3X = value; }
+            [PropertyOrder(5), Category("Destination Points"), DisplayName("Destination point 3 Y")]
+            public new double DestinationPoint3Y { get => base.DestinationPoint3Y; set => base.DestinationPoint3Y = value; }
+
+            [PropertyOrder(0), Category("Output"), DisplayName("Output width")]
+            public new int OutputWidth { get => base.OutputWidth; set => base.OutputWidth = value; }
+            [PropertyOrder(1), Category("Output"), DisplayName("Output height")]
+            public new int OutputHeight { get => base.OutputHeight; set => base.OutputHeight = value; }
+
+            [PropertyOrder(0), Category("Sampling"), DisplayName("Interpolation")]
+            public new InterpolationFlags Interpolation { get => base.Interpolation; set => base.Interpolation = value; }
+            [PropertyOrder(1), Category("Sampling"), DisplayName("Border type")]
+            public new BorderTypes BorderType { get => base.BorderType; set => base.BorderType = value; }
+            [PropertyOrder(2), Category("Sampling"), DisplayName("Border value")]
+            public new double BorderValue { get => base.BorderValue; set => base.BorderValue = value; }
+
+            [PropertyOrder(0), Category("Validation Gates"), DisplayName("Minimum source triangle area")]
+            public new double MinimumSourceTriangleArea { get => base.MinimumSourceTriangleArea; set => base.MinimumSourceTriangleArea = value; }
+            [PropertyOrder(1), Category("Validation Gates"), DisplayName("Minimum destination triangle area")]
+            public new double MinimumDestinationTriangleArea { get => base.MinimumDestinationTriangleArea; set => base.MinimumDestinationTriangleArea = value; }
+            [PropertyOrder(2), Category("Validation Gates"), DisplayName("Minimum valid pixel ratio")]
+            public new double MinimumValidPixelRatio { get => base.MinimumValidPixelRatio; set => base.MinimumValidPixelRatio = value; }
+
+            [PropertyOrder(1), Category("Acceptance"), DisplayName("Use Acceptance")]
+            public bool UseAcceptance { get; set; }
+            [PropertyOrder(2), Category("Acceptance"), DisplayName("Expected Success")]
+            public bool ExpectedSuccess { get; set; } = true;
+            [PropertyOrder(3), Category("Acceptance"), DisplayName("Max Elapsed (ms)")]
+            public double MaxElapsedMilliseconds { get; set; }
+            [PropertyOrder(4), Category("Acceptance"), DisplayName("Required Message")]
+            public string RequiredMessageText { get; set; } = string.Empty;
+            [PropertyOrder(5), Category("Acceptance"), DisplayName("Acceptance Metric")]
+            [TypeConverter(typeof(PipelineMetricNameConverter))]
+            public string AcceptanceMetricName { get; set; } = string.Empty;
+            [PropertyOrder(6), Browsable(false), Category("Acceptance")]
+            public bool UseAcceptanceMetricMinimum { get; set; }
+            [PropertyOrder(7), Category("Acceptance"), DisplayName("Metric range")]
+            [PropertyEditor(typeof(WpgMetricRangeEditor))]
+            [MetricRangeEditor(3, nameof(UseAcceptanceMetricMinimum), nameof(AcceptanceMetricMinimum), nameof(UseAcceptanceMetricMaximum), nameof(AcceptanceMetricMaximum))]
+            public double AcceptanceMetricMinimum { get; set; }
+            [PropertyOrder(8), Browsable(false), Category("Acceptance")]
+            public bool UseAcceptanceMetricMaximum { get; set; }
+            [PropertyOrder(9), Browsable(false), Category("Acceptance")]
+            public double AcceptanceMetricMaximum { get; set; }
+        }
+
+        [CategoryOrder("Step", -1)]
         [CategoryOrder("Transform", 0)]
+        [CategoryOrder("Fixture", 10)]
         [CategoryOrder("Acceptance", 20)]
         private sealed class PipelineRotateScaleToolProperty : RotateScaleToolProperty, IPipelineStepMetadata
         {
@@ -2072,6 +2916,49 @@ namespace OpenVisionLab
             {
                 get => base.BorderType;
                 set => base.BorderType = value;
+            }
+
+            [PropertyOrder(0)]
+            [Category("Fixture")]
+            [DisplayName("Use Fixture Frame")]
+            [Description("Use a previously published Matching fixture frame. Fixed Angle/Scale values remain unchanged when this is off.")]
+            public bool USE_FIXTURE_FRAME { get; set; }
+
+            [PropertyOrder(1)]
+            [Category("Fixture")]
+            [DisplayName("Fixture Frame Name")]
+            public string FIXTURE_FRAME_NAME { get; set; } = string.Empty;
+
+            [PropertyOrder(2)]
+            [Category("Fixture")]
+            [DisplayName("보정 방식")]
+            [Description("NormalizeImage applies the inverse Matching pose to the complete source image. TranslationRoi is reserved for ROI-capable consumers.")]
+            public VisionPipelineFixtureApplyMode FIXTURE_APPLY_MODE { get; set; } = VisionPipelineFixtureApplyMode.TranslationRoi;
+
+            [PropertyOrder(3)]
+            [Category("Fixture")]
+            [DisplayName("최소 유효 비율")]
+            [Description("Fail NormalizeImage when transformed source coverage is below this 0..1 ratio.")]
+            public double FIXTURE_MIN_VALID_PIXEL_RATIO { get; set; } = VisionPipelineFixtureFrameService.DefaultMinimumValidPixelRatio;
+
+            [PropertyOrder(4)]
+            [Category("Fixture")]
+            [DisplayName("Allow Branch Input")]
+            [Description("Confirms that this normalization intentionally reads the same source layer as Matching instead of the previous Step output.")]
+            public bool ALLOW_BRANCH_INPUT { get; set; }
+
+            public void ApplyFixtureParameters(IDictionary<string, string> parameters)
+            {
+                if (parameters == null || !USE_FIXTURE_FRAME)
+                {
+                    return;
+                }
+
+                parameters[VisionPipelineFixtureFrameService.ConsumeParameter] = Convert.ToString(true, CultureInfo.InvariantCulture);
+                parameters[VisionPipelineFixtureFrameService.FrameNameParameter] = FIXTURE_FRAME_NAME?.Trim() ?? string.Empty;
+                parameters[VisionPipelineFixtureFrameService.ApplyModeParameter] = Convert.ToString(FIXTURE_APPLY_MODE, CultureInfo.InvariantCulture);
+                parameters[VisionPipelineFixtureFrameService.MinimumValidPixelRatioParameter] = Convert.ToString(FIXTURE_MIN_VALID_PIXEL_RATIO, CultureInfo.InvariantCulture);
+                parameters[VisionPipelineNormalizer.AllowBranchInputParameter] = Convert.ToString(ALLOW_BRANCH_INPUT, CultureInfo.InvariantCulture);
             }
 
             [PropertyOrder(1)]

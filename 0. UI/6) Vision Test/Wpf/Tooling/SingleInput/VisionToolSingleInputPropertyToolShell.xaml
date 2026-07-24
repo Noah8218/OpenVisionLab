@@ -406,13 +406,29 @@
                     <RowDefinition x:Name="rowRunPreviewGap" Height="4" />
                     <RowDefinition x:Name="rowRunPreviewAction" Height="36" />
                 </Grid.RowDefinitions>
-                <Button x:Name="btnAddPipeline"
-                        Grid.Row="0">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <iconPacks:PackIconMaterial Kind="PlaylistPlus" Width="16" Height="16" Margin="0,0,7,0" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                        <TextBlock x:Name="txtAddPipelineText" Text="Add Pipeline" FontWeight="SemiBold" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                    </StackPanel>
-                </Button>
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="4" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="btnAddPipeline"
+                            Grid.Column="0">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <iconPacks:PackIconMaterial Kind="PlaylistPlus" Width="16" Height="16" Margin="0,0,7,0" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            <TextBlock x:Name="txtAddPipelineText" Text="Add Pipeline" FontWeight="SemiBold" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="btnNImageVerification"
+                            Grid.Column="2"
+                            Visibility="Collapsed"
+                            AutomationProperties.AutomationId="VisionToolNImageVerificationButton">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <iconPacks:PackIconMaterial Kind="ImageSearch" Width="16" Height="16" Margin="0,0,7,0" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            <TextBlock x:Name="txtNImageVerificationText" Text="N-image verification" FontWeight="SemiBold" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
                 <Button x:Name="btnRunPreview"
                         Grid.Row="2"
                         Style="{StaticResource VisionTool.PrimaryActionButtonStyle}">

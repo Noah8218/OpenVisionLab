@@ -38,11 +38,16 @@ namespace OpenVisionLab
         private readonly Func<string, OpenVisionRecipeLayerCard> layerCardProvider;
         private readonly Func<string, bool> navigateLayer;
         private readonly Func<string, string, bool> loadImageIntoLayer;
+        private readonly Func<OpenVisionRecipeRunEvidence, bool> openSelectedBatchRunEvidence;
+        private readonly Action openPinArrayGapValidationRuns;
         private readonly Action<VISION_MENU> selectStepTool;
         private readonly Func<bool> commitSelectedStepEdit;
         private readonly IReadOnlyList<string> llmToolTemplateOptions = new[]
         {
             OpenVisionGuidedSetupCatalog.PinGapTemplate,
+            OpenVisionGuidedSetupCatalog.PinArrayGapTemplate,
+            OpenVisionGuidedSetupCatalog.DarkBandGapTemplate,
+            OpenVisionGuidedSetupCatalog.HybridRelativeRoiGapTemplate,
             "Line Measurement",
             OpenVisionGuidedSetupCatalog.MatchingTemplate,
             OpenVisionGuidedSetupCatalog.FeatureMatchingTemplate,
@@ -72,6 +77,9 @@ namespace OpenVisionLab
         private OpenVisionRecipeBatchRunComparisonRow selectedRecentBatchRunComparisonRow;
         private OpenVisionRecipeSampleMatrixRow selectedSampleMatrixRow;
         private OpenVisionRecipeValidationSetOption selectedValidationSetOption;
+        private OpenVisionRecipeValidationSetOption pinArrayGapTrainValidationSetOption;
+        private OpenVisionRecipeValidationSetOption pinArrayGapValidationValidationSetOption;
+        private OpenVisionRecipeValidationSetOption pinArrayGapTestValidationSetOption;
         private OpenVisionRecipeValidationSetImageRow selectedValidationSetImageRow;
         private OpenVisionRecipePipelineStepPreview selectedPipelinePreviewStep;
         private object selectedStepEditObject;
@@ -82,16 +90,45 @@ namespace OpenVisionLab
         private string recipeFilterText = string.Empty;
         private string pipelineFilterText = string.Empty;
         private bool showRecentBatchNgOnly;
+        private bool showRecentBatchReviewQueueOnly;
         private string editRecipeName = string.Empty;
         private string pipelineEditName = string.Empty;
         private string selectedLlmToolTemplate = "Template Matching";
         private string llmInspectionGoalText = string.Empty;
         private string llmDetectionPointText = string.Empty;
         private string pinGapIntentRoiText = OpenVisionRecipePinGapIntentSkill.DefaultRoiSamplesText;
+        private string darkBandGapIntentRoiText = OpenVisionRecipeDarkBandGapIntentSkill.DefaultRoiText;
+        private string hybridReferencePoseText = string.Empty;
+        private string hybridRelativeRoiText = string.Empty;
+        private string hybridScoreMarginText = OpenVisionRecipeHybridRelativeRoiIntentSkill.DefaultScoreMargin.ToString(CultureInfo.InvariantCulture);
+        private string hybridAngleMinimumText = OpenVisionRecipeHybridRelativeRoiIntentSkill.DefaultAngleMinimum.ToString(CultureInfo.InvariantCulture);
+        private string hybridAngleMaximumText = OpenVisionRecipeHybridRelativeRoiIntentSkill.DefaultAngleMaximum.ToString(CultureInfo.InvariantCulture);
+        private string hybridScaleRatioMinimumText = OpenVisionRecipeHybridRelativeRoiIntentSkill.DefaultScaleRatioMinimum.ToString(CultureInfo.InvariantCulture);
+        private string hybridScaleRatioMaximumText = OpenVisionRecipeHybridRelativeRoiIntentSkill.DefaultScaleRatioMaximum.ToString(CultureInfo.InvariantCulture);
+        private string hybridMinimumValidPixelRatioText = OpenVisionRecipeHybridRelativeRoiIntentSkill.DefaultMinimumValidPixelRatio.ToString(CultureInfo.InvariantCulture);
         private string pinGapIntentDistanceMinText = "0.40";
         private string pinGapIntentDistanceMaxText = "0.55";
         private string pinGapIntentRangeMaxText = "0.06";
         private string pinGapIntentScaleText = "0.006";
+        private readonly IReadOnlyList<string> pinArrayGapPolarityOptions = new[]
+        {
+            OpenVisionRecipePinArrayGapIntentSkill.SupportedPinPolarity,
+            "Bright"
+        };
+        private readonly IReadOnlyList<string> pinArrayGapMeasurementOptions = new[]
+        {
+            OpenVisionRecipePinArrayGapIntentSkill.SupportedMeasurementDefinition,
+            "Center-to-center pitch"
+        };
+        private string pinArrayGapRoiText = string.Empty;
+        private string pinArrayGapPolarityText = OpenVisionRecipePinArrayGapIntentSkill.SupportedPinPolarity;
+        private string pinArrayGapMeasurementText = OpenVisionRecipePinArrayGapIntentSkill.SupportedMeasurementDefinition;
+        private string pinArrayGapRangeMaxText = string.Empty;
+        private string pinArrayGapDarkThresholdText = OpenVisionRecipePinArrayGapIntentSkill.DefaultDarkThreshold.ToString(CultureInfo.InvariantCulture);
+        private string pinArrayGapMinDarkCoverageRatioText = OpenVisionRecipePinArrayGapIntentSkill.DefaultMinimumDarkCoverageRatio.ToString(CultureInfo.InvariantCulture);
+        private string pinArrayGapMinPinWidthText = OpenVisionRecipePinArrayGapIntentSkill.DefaultMinimumPinWidth.ToString(CultureInfo.InvariantCulture);
+        private string pinArrayGapMaxPinBreakWidthText = OpenVisionRecipePinArrayGapIntentSkill.DefaultMaximumPinBreakWidth.ToString(CultureInfo.InvariantCulture);
+        private string pinArrayGapMinGapWidthText = OpenVisionRecipePinArrayGapIntentSkill.DefaultMinimumGapWidth.ToString(CultureInfo.InvariantCulture);
         private string blobCountIntentRoiText = "0,0,572,420";
         private string blobCountIntentThresholdText = "128";
         private string blobCountIntentMinCountText = "1";
@@ -139,6 +176,8 @@ namespace OpenVisionLab
         private string operatorHandoffReportStatusText = string.Empty;
         private string selectedRecentBatchRunReviewCopyStatusText = string.Empty;
         private string validationSuiteStatusText = string.Empty;
+        private string pinArrayGapValidationStatusText = string.Empty;
+        private bool isPinArrayGapValidationIdentityFrozen;
         private string newValidationSetName = "Local_Validation_Set";
         private string validationSetPendingNotes = string.Empty;
         private string statusText = string.Empty;
@@ -182,7 +221,9 @@ namespace OpenVisionLab
             Func<string, string> selectValidationSetFolderPath = null,
             Func<string, string> selectValidationSetReplacementImagePath = null,
             Func<string, bool> confirmDeleteValidationSet = null,
-            Action openPipelineReview = null)
+            Action openPipelineReview = null,
+            Func<OpenVisionRecipeRunEvidence, bool> openSelectedBatchRunEvidence = null,
+            Action openPinArrayGapValidationRuns = null)
         {
             this.currentRecipeProvider = currentRecipeProvider ?? throw new ArgumentNullException(nameof(currentRecipeProvider));
             this.switchRecipe = switchRecipe ?? throw new ArgumentNullException(nameof(switchRecipe));
@@ -201,6 +242,8 @@ namespace OpenVisionLab
             this.layerCardProvider = layerCardProvider ?? OpenVisionRecipeLayerCard.CreateMissing;
             this.navigateLayer = navigateLayer ?? (_ => false);
             this.loadImageIntoLayer = loadImageIntoLayer ?? ((_, _) => false);
+            this.openSelectedBatchRunEvidence = openSelectedBatchRunEvidence ?? (_ => false);
+            this.openPinArrayGapValidationRuns = openPinArrayGapValidationRuns ?? (() => { });
             this.selectStepTool = selectStepTool;
             this.commitSelectedStepEdit = commitSelectedStepEdit ?? (() => true);
             selectedValidationSuiteScopeOption = validationSuiteScopeOptions.FirstOrDefault();
@@ -270,6 +313,13 @@ namespace OpenVisionLab
             NavigateSelectedStepOutputLayerCommand = new RelayCommand(NavigateSelectedStepOutputLayer, CanNavigateSelectedStepOutputLayer);
             FocusSelectedRunFailureStepCommand = new RelayCommand(FocusSelectedRunFailureStep, CanFocusSelectedRunFailureStep);
             LoadSelectedRunSampleImageToInputLayerCommand = new RelayCommand(LoadSelectedRunSampleImageToInputLayer, CanLoadSelectedRunSampleImageToInputLayer);
+            OpenSelectedRecentBatchRunEvidenceCommand = new RelayCommand(OpenSelectedRecentBatchRunEvidence, CanOpenSelectedRecentBatchRunEvidence);
+            FreezePinArrayGapValidationIdentityCommand = new RelayCommand(
+                FreezePinArrayGapValidationIdentity,
+                CanFreezePinArrayGapValidationIdentity);
+            OpenPinArrayGapValidationRunsCommand = new RelayCommand(
+                OpenPinArrayGapValidationRuns,
+                CanOpenPinArrayGapValidationRuns);
             SelectPreviousPipelinePreviewStepCommand = new RelayCommand(SelectPreviousPipelinePreviewStep, CanSelectPreviousPipelinePreviewStep);
             SelectNextPipelinePreviewStepCommand = new RelayCommand(SelectNextPipelinePreviewStep, CanSelectNextPipelinePreviewStep);
             OpenSelectedStepToolCommand = new RelayCommand(OpenSelectedStepTool, CanOpenSelectedStepTool);
@@ -382,6 +432,61 @@ namespace OpenVisionLab
             }
         }
 
+        public OpenVisionRecipeValidationSetOption PinArrayGapTrainValidationSetOption
+        {
+            get => pinArrayGapTrainValidationSetOption;
+            set
+            {
+                if (SetProperty(ref pinArrayGapTrainValidationSetOption, value))
+                {
+                    RefreshPinArrayGapValidationIdentityState();
+                    RefreshCommandState();
+                }
+            }
+        }
+
+        public OpenVisionRecipeValidationSetOption PinArrayGapValidationValidationSetOption
+        {
+            get => pinArrayGapValidationValidationSetOption;
+            set
+            {
+                if (SetProperty(ref pinArrayGapValidationValidationSetOption, value))
+                {
+                    RefreshPinArrayGapValidationIdentityState();
+                    RefreshCommandState();
+                }
+            }
+        }
+
+        public OpenVisionRecipeValidationSetOption PinArrayGapTestValidationSetOption
+        {
+            get => pinArrayGapTestValidationSetOption;
+            set
+            {
+                if (SetProperty(ref pinArrayGapTestValidationSetOption, value))
+                {
+                    RefreshPinArrayGapValidationIdentityState();
+                    RefreshCommandState();
+                }
+            }
+        }
+
+        public string PinArrayGapValidationStatusText
+        {
+            get => string.IsNullOrWhiteSpace(pinArrayGapValidationStatusText)
+                ? LocalText(
+                    "2단계 미고정 | 판정용 PinArrayGap 파이프라인과 서로 겹치지 않는 Train/Validation/Test 세트를 선택하세요.",
+                    "PHASE 2 NOT FROZEN | Select a judged PinArrayGap pipeline and disjoint Train/Validation/Test sets.")
+                : pinArrayGapValidationStatusText;
+            private set => SetProperty(ref pinArrayGapValidationStatusText, value ?? string.Empty);
+        }
+
+        public bool IsPinArrayGapValidationIdentityFrozen
+        {
+            get => isPinArrayGapValidationIdentityFrozen;
+            private set => SetProperty(ref isPinArrayGapValidationIdentityFrozen, value);
+        }
+
         public IReadOnlyList<OpenVisionRecipeValidationSetImageRow> ValidationSetImageRows
         {
             get => validationSetImageRows;
@@ -427,7 +532,8 @@ namespace OpenVisionLab
         public IReadOnlyList<OpenVisionRecipeBatchSampleResultOption> FilteredRecentBatchRunSampleResults =>
             OpenVisionRecipeRunHistoryPresenter.BuildFilteredSampleResults(
                 SelectedRecentBatchRunOption,
-                ShowRecentBatchNgOnly);
+                ShowRecentBatchNgOnly,
+                ShowRecentBatchReviewQueueOnly);
 
         public bool ShowRecentBatchNgOnly
         {
@@ -436,12 +542,46 @@ namespace OpenVisionLab
             {
                 if (SetProperty(ref showRecentBatchNgOnly, value))
                 {
+                    if (value && showRecentBatchReviewQueueOnly)
+                    {
+                        showRecentBatchReviewQueueOnly = false;
+                        OnPropertyChanged(nameof(ShowRecentBatchReviewQueueOnly));
+                    }
+
                     SelectedRecentBatchSampleResultOption = SelectDefaultBatchSampleResult(
                         SelectedRecentBatchRunOption,
-                        ShowRecentBatchNgOnly);
+                        ShowRecentBatchNgOnly,
+                        ShowRecentBatchReviewQueueOnly);
                     OnPropertyChanged(nameof(FilteredRecentBatchRunSampleResults));
                     OnPropertyChanged(nameof(RecentBatchRunNgOnlyText));
                     OnPropertyChanged(nameof(RecentBatchRunNgFilterSummaryText));
+                    OnPropertyChanged(nameof(RecentBatchRunReviewQueueSummaryText));
+                    OnPropertyChanged(nameof(SelectedRecentBatchRunReviewText));
+                    CommandManager.InvalidateRequerySuggested();
+                }
+            }
+        }
+
+        public bool ShowRecentBatchReviewQueueOnly
+        {
+            get => showRecentBatchReviewQueueOnly;
+            set
+            {
+                if (SetProperty(ref showRecentBatchReviewQueueOnly, value))
+                {
+                    if (value && showRecentBatchNgOnly)
+                    {
+                        showRecentBatchNgOnly = false;
+                        OnPropertyChanged(nameof(ShowRecentBatchNgOnly));
+                    }
+
+                    SelectedRecentBatchSampleResultOption = SelectDefaultBatchSampleResult(
+                        SelectedRecentBatchRunOption,
+                        ShowRecentBatchNgOnly,
+                        ShowRecentBatchReviewQueueOnly);
+                    OnPropertyChanged(nameof(FilteredRecentBatchRunSampleResults));
+                    OnPropertyChanged(nameof(RecentBatchRunNgFilterSummaryText));
+                    OnPropertyChanged(nameof(RecentBatchRunReviewQueueSummaryText));
                     OnPropertyChanged(nameof(SelectedRecentBatchRunReviewText));
                     CommandManager.InvalidateRequerySuggested();
                 }
@@ -511,12 +651,16 @@ namespace OpenVisionLab
             {
                 if (SetProperty(ref selectedRecentBatchRunOption, value))
                 {
-                    SelectedRecentBatchSampleResultOption = SelectDefaultBatchSampleResult(value, ShowRecentBatchNgOnly);
+                    SelectedRecentBatchSampleResultOption = SelectDefaultBatchSampleResult(
+                        value,
+                        ShowRecentBatchNgOnly,
+                        ShowRecentBatchReviewQueueOnly);
                     RefreshBenchmarkBaselineRunOptions();
                     RefreshRecentBatchRunComparison();
                     SelectedRecentBatchRunReviewCopyStatusText = string.Empty;
                     OnPropertyChanged(nameof(FilteredRecentBatchRunSampleResults));
                     OnPropertyChanged(nameof(RecentBatchRunNgFilterSummaryText));
+                    OnPropertyChanged(nameof(RecentBatchRunReviewQueueSummaryText));
                     OnPropertyChanged(nameof(SelectedRecentBatchRunReviewText));
                     OnPropertyChanged(nameof(OperatorDecisionEvidenceText));
                     OnPropertyChanged(nameof(FailureReviewText));
@@ -627,6 +771,10 @@ namespace OpenVisionLab
 
         public IReadOnlyList<string> LlmToolTemplateOptions => llmToolTemplateOptions;
 
+        public IReadOnlyList<string> PinArrayGapPolarityOptions => pinArrayGapPolarityOptions;
+
+        public IReadOnlyList<string> PinArrayGapMeasurementOptions => pinArrayGapMeasurementOptions;
+
         public string SelectedRecipeName
         {
             get => selectedRecipeName;
@@ -695,6 +843,7 @@ namespace OpenVisionLab
                     llmXmlDraftImportReady = false;
                     OnPropertyChanged(nameof(GuidedSetupReadinessText));
                     OnPropertyChanged(nameof(LlmResultChannelContractSummaryText));
+                    RefreshPinArrayGapValidationIdentityState();
                     NotifyGuidedSetupIntentInputChanged();
                     RefreshCommandState();
                 }
@@ -749,6 +898,115 @@ namespace OpenVisionLab
                     OnPropertyChanged(nameof(PinGapIntentLatestRunText));
                     NotifyGuidedSetupIntentInputChanged();
                     RefreshCommandState();
+                }
+            }
+        }
+
+        public string DarkBandGapIntentRoiText
+        {
+            get => darkBandGapIntentRoiText;
+            set
+            {
+                if (SetProperty(ref darkBandGapIntentRoiText, value ?? string.Empty))
+                {
+                    NotifyGuidedSetupIntentInputChanged();
+                    RefreshCommandState();
+                }
+            }
+        }
+
+        public string HybridReferencePoseText
+        {
+            get => hybridReferencePoseText;
+            set
+            {
+                if (SetProperty(ref hybridReferencePoseText, value ?? string.Empty))
+                {
+                    NotifyHybridRelativeRoiIntentTextChanged();
+                }
+            }
+        }
+
+        public string HybridRelativeRoiText
+        {
+            get => hybridRelativeRoiText;
+            set
+            {
+                if (SetProperty(ref hybridRelativeRoiText, value ?? string.Empty))
+                {
+                    NotifyHybridRelativeRoiIntentTextChanged();
+                }
+            }
+        }
+
+        public string HybridScoreMarginText
+        {
+            get => hybridScoreMarginText;
+            set
+            {
+                if (SetProperty(ref hybridScoreMarginText, value ?? string.Empty))
+                {
+                    NotifyHybridRelativeRoiIntentTextChanged();
+                }
+            }
+        }
+
+        public string HybridAngleMinimumText
+        {
+            get => hybridAngleMinimumText;
+            set
+            {
+                if (SetProperty(ref hybridAngleMinimumText, value ?? string.Empty))
+                {
+                    NotifyHybridRelativeRoiIntentTextChanged();
+                }
+            }
+        }
+
+        public string HybridAngleMaximumText
+        {
+            get => hybridAngleMaximumText;
+            set
+            {
+                if (SetProperty(ref hybridAngleMaximumText, value ?? string.Empty))
+                {
+                    NotifyHybridRelativeRoiIntentTextChanged();
+                }
+            }
+        }
+
+        public string HybridScaleRatioMinimumText
+        {
+            get => hybridScaleRatioMinimumText;
+            set
+            {
+                if (SetProperty(ref hybridScaleRatioMinimumText, value ?? string.Empty))
+                {
+                    NotifyHybridRelativeRoiIntentTextChanged();
+                }
+            }
+        }
+
+        public string HybridScaleRatioMaximumText
+        {
+            get => hybridScaleRatioMaximumText;
+            set
+            {
+                if (SetProperty(ref hybridScaleRatioMaximumText, value ?? string.Empty))
+                {
+                    NotifyHybridRelativeRoiIntentTextChanged();
+                }
+            }
+        }
+
+        public string HybridMinimumValidPixelRatioText
+        {
+            get => hybridMinimumValidPixelRatioText;
+            set
+            {
+                if (SetProperty(ref hybridMinimumValidPixelRatioText, value ?? string.Empty))
+                {
+                    NotifyHybridRelativeRoiIntentTextChanged();
                 }
             }
         }
@@ -819,6 +1077,114 @@ namespace OpenVisionLab
                     OnPropertyChanged(nameof(PinGapIntentLatestRunText));
                     NotifyGuidedSetupIntentInputChanged();
                     RefreshCommandState();
+                }
+            }
+        }
+
+        public string PinArrayGapRoiText
+        {
+            get => pinArrayGapRoiText;
+            set
+            {
+                if (SetProperty(ref pinArrayGapRoiText, value ?? string.Empty))
+                {
+                    NotifyPinArrayGapIntentTextChanged();
+                }
+            }
+        }
+
+        public string PinArrayGapPolarityText
+        {
+            get => pinArrayGapPolarityText;
+            set
+            {
+                if (SetProperty(ref pinArrayGapPolarityText, value ?? string.Empty))
+                {
+                    NotifyPinArrayGapIntentTextChanged();
+                }
+            }
+        }
+
+        public string PinArrayGapMeasurementText
+        {
+            get => pinArrayGapMeasurementText;
+            set
+            {
+                if (SetProperty(ref pinArrayGapMeasurementText, value ?? string.Empty))
+                {
+                    NotifyPinArrayGapIntentTextChanged();
+                }
+            }
+        }
+
+        public string PinArrayGapRangeMaxText
+        {
+            get => pinArrayGapRangeMaxText;
+            set
+            {
+                if (SetProperty(ref pinArrayGapRangeMaxText, value ?? string.Empty))
+                {
+                    NotifyPinArrayGapIntentTextChanged();
+                }
+            }
+        }
+
+        public string PinArrayGapDarkThresholdText
+        {
+            get => pinArrayGapDarkThresholdText;
+            set
+            {
+                if (SetProperty(ref pinArrayGapDarkThresholdText, value ?? string.Empty))
+                {
+                    NotifyPinArrayGapIntentTextChanged();
+                }
+            }
+        }
+
+        public string PinArrayGapMinDarkCoverageRatioText
+        {
+            get => pinArrayGapMinDarkCoverageRatioText;
+            set
+            {
+                if (SetProperty(ref pinArrayGapMinDarkCoverageRatioText, value ?? string.Empty))
+                {
+                    NotifyPinArrayGapIntentTextChanged();
+                }
+            }
+        }
+
+        public string PinArrayGapMinPinWidthText
+        {
+            get => pinArrayGapMinPinWidthText;
+            set
+            {
+                if (SetProperty(ref pinArrayGapMinPinWidthText, value ?? string.Empty))
+                {
+                    NotifyPinArrayGapIntentTextChanged();
+                }
+            }
+        }
+
+        public string PinArrayGapMaxPinBreakWidthText
+        {
+            get => pinArrayGapMaxPinBreakWidthText;
+            set
+            {
+                if (SetProperty(ref pinArrayGapMaxPinBreakWidthText, value ?? string.Empty))
+                {
+                    NotifyPinArrayGapIntentTextChanged();
+                }
+            }
+        }
+
+        public string PinArrayGapMinGapWidthText
+        {
+            get => pinArrayGapMinGapWidthText;
+            set
+            {
+                if (SetProperty(ref pinArrayGapMinGapWidthText, value ?? string.Empty))
+                {
+                    NotifyPinArrayGapIntentTextChanged();
                 }
             }
         }
@@ -1305,6 +1671,7 @@ namespace OpenVisionLab
                     OnPropertyChanged(nameof(RunSelectedSamplePairCheckText));
                     OnPropertyChanged(nameof(ValidationSuiteSummaryText));
                     OnPropertyChanged(nameof(RecipeGuidedSetupText));
+                    NotifyGuidedSetupIntentInputChanged();
                     RefreshCommandState();
                 }
             }
@@ -1494,6 +1861,12 @@ namespace OpenVisionLab
         public ICommand FocusSelectedRunFailureStepCommand { get; }
 
         public ICommand LoadSelectedRunSampleImageToInputLayerCommand { get; }
+
+        public ICommand OpenSelectedRecentBatchRunEvidenceCommand { get; }
+
+        public ICommand FreezePinArrayGapValidationIdentityCommand { get; }
+
+        public ICommand OpenPinArrayGapValidationRunsCommand { get; }
 
         public ICommand SelectPreviousPipelinePreviewStepCommand { get; }
 
@@ -1702,6 +2075,11 @@ namespace OpenVisionLab
                 SelectedRecentBatchRunOption,
                 ShowRecentBatchNgOnly);
 
+        public string RecentBatchRunReviewQueueOnlyText => LocalText("검토 큐만", "Review queue");
+
+        public string RecentBatchRunReviewQueueSummaryText =>
+            OpenVisionRecipeRunHistoryPresenter.BuildReviewQueueSummaryText(SelectedRecentBatchRunOption);
+
         public string RecentBatchRunComparisonText => LocalText("Benchmark 회귀 비교", "Benchmark regression diff");
 
         public string RecentBatchRunStepTimingText => LocalText("Step 병목", "Step bottlenecks");
@@ -1731,6 +2109,8 @@ namespace OpenVisionLab
                 FindPipelinePreviewStep(SelectedRecentBatchSampleResultOption?.FailedStep));
 
         public string CopySelectedRecentBatchRunReviewText => LocalText("판독 복사", "Copy review");
+
+        public string OpenSelectedRecentBatchRunEvidenceText => LocalText("도면 보기", "View drawing");
 
         public string CatalogBenchmarkText => LocalText("카탈로그 벤치마크", "Catalog benchmark");
 
@@ -2095,6 +2475,40 @@ namespace OpenVisionLab
 
         public string SuggestPinGapIntentRoiSamplesText => LocalText("샘플 ROI", "Sample ROI");
 
+        public string DarkBandGapIntentSkillText => LocalText("검은 띠 Gap 측정", "Dark-band Gap measurement");
+
+        public string DarkBandGapIntentRoiLabelText => "Coarse ROI";
+
+        public string DarkBandGapIntentBoundaryText => LocalText(
+            "PX 측정 전용 · 파란색=상단, 자홍색=하단, 빨간색=Gap · 공차/mm 판정 없음",
+            "PX measurement only · blue=upper, magenta=lower, red=Gap · no tolerance/mm judgement");
+
+        public string HybridRelativeRoiIntentSkillText => LocalText(
+            "위치 보정 후 상대 ROI Gap 측정",
+            "Locator-aligned relative-ROI Gap measurement");
+
+        public string HybridLocatorTemplateLabelText => LocalText("Locator 템플릿", "Locator template");
+
+        public string HybridSearchRoiLabelText => LocalText("검색 ROI", "Search ROI");
+
+        public string HybridReferencePoseLabelText => LocalText("기준 자세", "Reference pose");
+
+        public string HybridRelativeRoiLabelText => LocalText("검사 ROI", "Measurement ROI");
+
+        public string HybridScoreMinimumLabelText => "SCORE_MIN";
+
+        public string HybridScoreMarginLabelText => LocalText("점수 차", "Score margin");
+
+        public string HybridAngleRangeLabelText => LocalText("각도 범위", "Angle range");
+
+        public string HybridScaleRatioRangeLabelText => LocalText("배율 비율", "Scale ratio");
+
+        public string HybridMinimumValidPixelRatioLabelText => LocalText("최소 유효 비율", "Min valid ratio");
+
+        public string HybridRelativeRoiBoundaryText => LocalText(
+            "Matching이 위치·각도·배율을 찾고 NormalizeImage가 기준 좌표로 보정한 뒤, 고정 검사 ROI에서 px Gap만 측정합니다. 위치검출 실패는 NG 판정이 아니라 검사 불가로 차단됩니다.",
+            "Matching finds position/angle/scale, NormalizeImage restores reference coordinates, then the fixed measurement ROI reports px Gap only. Locator failure is inspection-unavailable, not an NG part judgement.");
+
         public string PinGapIntentWorkflowText =>
             LocalText("판정: ", "Gates: ")
             + PinGapIntentAverageMetricName
@@ -2138,6 +2552,44 @@ namespace OpenVisionLab
                 PinGapIntentDistanceMinText,
                 PinGapIntentDistanceMaxText,
                 PinGapIntentRangeMaxText);
+
+        public string PinArrayGapRoiLabelText => LocalText("행 ROI", "Row ROI(s)");
+
+        public string PinArrayGapPolarityLabelText => LocalText("핀 극성", "Pin polarity");
+
+        public string PinArrayGapMeasurementLabelText => LocalText("측정 정의", "Measurement");
+
+        public string PinArrayGapRangeMaxLabelText => LocalText("Range 최대 px", "Range max px");
+
+        public string PinArrayGapDarkThresholdLabelText => "DarkThreshold";
+
+        public string PinArrayGapMinDarkCoverageRatioLabelText => "Min dark ratio";
+
+        public string PinArrayGapMinPinWidthLabelText => "Min pin width";
+
+        public string PinArrayGapMaxPinBreakWidthLabelText => "Max break width";
+
+        public string PinArrayGapMinGapWidthLabelText => "Min gap width";
+
+        public string PinArrayGapIntentContractText => LocalText(
+            "각 ROI에는 어두운 세로 핀 한 행만 포함해야 합니다. Range를 비우면 측정 전용(판정 아님), 양수를 입력하면 모든 행을 DistancePxRange 최대값으로 판정합니다. v1은 edge-to-edge와 px만 지원합니다.",
+            "Each ROI must contain one row of dark, roughly vertical pins. Blank Range is measurement only (not judged); a positive value judges every row with a DistancePxRange maximum. v1 supports edge-to-edge and px only.");
+
+        public string PinArrayGapValidationSetsLabelText => LocalText("2단계 세트", "Phase 2 sets");
+
+        public string PinArrayGapTrainLabelText => "Train";
+
+        public string PinArrayGapValidationLabelText => "Validation";
+
+        public string PinArrayGapTestLabelText => "Test";
+
+        public string FreezePinArrayGapValidationIdentityText => LocalText("검증 기준 고정", "Freeze identity");
+
+        public string OpenPinArrayGapValidationRunsText => LocalText("명시적 실행·증거 열기", "Open explicit runs");
+
+        public string PinArrayGapValidationBoundaryText => LocalText(
+            "이 버튼은 XML·세트 해시만 고정합니다. 실행은 기존 Validation Set 화면에서 사용자가 명시적으로 시작합니다.",
+            "Freeze records XML/set hashes only. Runs remain explicit in the existing Validation Set screen.");
 
         public string BlobCountIntentSkillText => LocalText("Blob count skill", "Blob count skill");
 
@@ -2531,6 +2983,8 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(RecentBatchRunSampleResultsText));
             OnPropertyChanged(nameof(RecentBatchRunNgOnlyText));
             OnPropertyChanged(nameof(RecentBatchRunNgFilterSummaryText));
+            OnPropertyChanged(nameof(RecentBatchRunReviewQueueOnlyText));
+            OnPropertyChanged(nameof(RecentBatchRunReviewQueueSummaryText));
             OnPropertyChanged(nameof(RecentBatchRunComparisonText));
             OnPropertyChanged(nameof(BenchmarkBaselineRunText));
             OnPropertyChanged(nameof(RecentBatchRunComparisonSummaryText));
@@ -2538,6 +2992,7 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(SelectedRecentBatchRunReviewLabelText));
             OnPropertyChanged(nameof(SelectedRecentBatchRunReviewText));
             OnPropertyChanged(nameof(CopySelectedRecentBatchRunReviewText));
+            OnPropertyChanged(nameof(OpenSelectedRecentBatchRunEvidenceText));
             OnPropertyChanged(nameof(CatalogBenchmarkText));
             OnPropertyChanged(nameof(RunCatalogBenchmarkText));
             OnPropertyChanged(nameof(RunCatalogBenchmarkShortText));
@@ -2664,9 +3119,42 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(LlmDetectionPointLabelText));
             OnPropertyChanged(nameof(LlmResultChannelContractSummaryText));
             OnPropertyChanged(nameof(PinGapIntentWorkflowText));
+            OnPropertyChanged(nameof(DarkBandGapIntentSkillText));
+            OnPropertyChanged(nameof(DarkBandGapIntentRoiLabelText));
+            OnPropertyChanged(nameof(DarkBandGapIntentBoundaryText));
+            OnPropertyChanged(nameof(HybridRelativeRoiIntentSkillText));
+            OnPropertyChanged(nameof(HybridLocatorTemplateLabelText));
+            OnPropertyChanged(nameof(HybridSearchRoiLabelText));
+            OnPropertyChanged(nameof(HybridReferencePoseLabelText));
+            OnPropertyChanged(nameof(HybridRelativeRoiLabelText));
+            OnPropertyChanged(nameof(HybridScoreMinimumLabelText));
+            OnPropertyChanged(nameof(HybridScoreMarginLabelText));
+            OnPropertyChanged(nameof(HybridAngleRangeLabelText));
+            OnPropertyChanged(nameof(HybridScaleRatioRangeLabelText));
+            OnPropertyChanged(nameof(HybridMinimumValidPixelRatioLabelText));
+            OnPropertyChanged(nameof(HybridRelativeRoiBoundaryText));
             OnPropertyChanged(nameof(PinGapIntentCalibrationReviewText));
             OnPropertyChanged(nameof(PinGapIntentFeedbackText));
             OnPropertyChanged(nameof(PinGapIntentLatestRunText));
+            OnPropertyChanged(nameof(PinArrayGapRoiLabelText));
+            OnPropertyChanged(nameof(PinArrayGapPolarityLabelText));
+            OnPropertyChanged(nameof(PinArrayGapMeasurementLabelText));
+            OnPropertyChanged(nameof(PinArrayGapRangeMaxLabelText));
+            OnPropertyChanged(nameof(PinArrayGapDarkThresholdLabelText));
+            OnPropertyChanged(nameof(PinArrayGapMinDarkCoverageRatioLabelText));
+            OnPropertyChanged(nameof(PinArrayGapMinPinWidthLabelText));
+            OnPropertyChanged(nameof(PinArrayGapMaxPinBreakWidthLabelText));
+            OnPropertyChanged(nameof(PinArrayGapMinGapWidthLabelText));
+            OnPropertyChanged(nameof(PinArrayGapIntentContractText));
+            OnPropertyChanged(nameof(PinArrayGapValidationSetsLabelText));
+            OnPropertyChanged(nameof(PinArrayGapTrainLabelText));
+            OnPropertyChanged(nameof(PinArrayGapValidationLabelText));
+            OnPropertyChanged(nameof(PinArrayGapTestLabelText));
+            OnPropertyChanged(nameof(FreezePinArrayGapValidationIdentityText));
+            OnPropertyChanged(nameof(OpenPinArrayGapValidationRunsText));
+            OnPropertyChanged(nameof(PinArrayGapValidationBoundaryText));
+            RefreshPinArrayGapValidationIdentityState();
+            OnPropertyChanged(nameof(PinArrayGapValidationStatusText));
             OnPropertyChanged(nameof(BuildLlmPromptButtonText));
             OnPropertyChanged(nameof(OpenLlmBrowserAssistText));
             OnPropertyChanged(nameof(LlmBrowserAssistTitleText));
@@ -2784,6 +3272,7 @@ namespace OpenVisionLab
             LatestCatalogBenchmarkSummary = OpenVisionRecipeCatalogBenchmarkSummary.Empty;
             UpdateSelectedRecipeSummary();
             RefreshRecentBatchRunOptions();
+            RefreshPinArrayGapValidationIdentityState();
             NotifyValidationSetEvidenceChanged();
             RefreshCommandState();
         }
@@ -3632,6 +4121,15 @@ namespace OpenVisionLab
             try
             {
                 string pipelineXmlText = File.ReadAllText(pipelinePath);
+                if (!OpenVisionRecipeValidationSetStorage.TryValidateFrozenIdentity(
+                        option.Set,
+                        pipelineName,
+                        pipelineXmlText,
+                        out string identityError))
+                {
+                    throw new InvalidDataException(identityError);
+                }
+
                 for (int index = 0; index < images.Count; index++)
                 {
                     if (validationSuiteStopRequested)
@@ -4134,7 +4632,19 @@ namespace OpenVisionLab
 
         private void CreateGuidedSetupStarterXml()
         {
-            if (IsLineDistanceTemplate(SelectedLlmToolTemplate))
+            if (OpenVisionRecipeLlmIntent.IsHybridRelativeRoiGapTemplate(SelectedLlmToolTemplate))
+            {
+                CreateHybridRelativeRoiIntentXmlDraft();
+            }
+            else if (OpenVisionRecipeLlmIntent.IsPinArrayGapTemplate(SelectedLlmToolTemplate))
+            {
+                CreatePinArrayGapIntentXmlDraft();
+            }
+            else if (OpenVisionRecipeLlmIntent.IsDarkBandGapTemplate(SelectedLlmToolTemplate))
+            {
+                CreateDarkBandGapIntentXmlDraft();
+            }
+            else if (IsLineDistanceTemplate(SelectedLlmToolTemplate))
             {
                 CreatePinGapIntentXmlDraft();
             }
@@ -4193,6 +4703,195 @@ namespace OpenVisionLab
         private string PinGapIntentRangeMetricName => IsPinGapPixelOnly
             ? VisionPipelineKnownMetrics.DistancePxRange
             : VisionPipelineKnownMetrics.DistanceMmRange;
+
+        private bool CanFreezePinArrayGapValidationIdentity()
+        {
+            return OpenVisionRecipeLlmIntent.IsPinArrayGapTemplate(SelectedLlmToolTemplate)
+                && !isValidationSuiteRunning
+                && validationSetStorageReady
+                && CanUseSelectedPipeline()
+                && PinArrayGapTrainValidationSetOption != null
+                && PinArrayGapValidationValidationSetOption != null
+                && PinArrayGapTestValidationSetOption != null;
+        }
+
+        private void FreezePinArrayGapValidationIdentity()
+        {
+            if (!CanFreezePinArrayGapValidationIdentity())
+            {
+                return;
+            }
+
+            string recipeName = NormalizeRecipeName(selectedRecipeName);
+            if (!TryReadSelectedPipelineXml(out string pipelineXmlText, out string error)
+                || !OpenVisionRecipePinArrayGapValidationRecordStorage.TrySave(
+                    recipeName,
+                    pipelineXmlText,
+                    PinArrayGapTrainValidationSetOption,
+                    PinArrayGapValidationValidationSetOption,
+                    PinArrayGapTestValidationSetOption,
+                    out OpenVisionRecipePinArrayGapValidationRecord record,
+                    out error))
+            {
+                IsPinArrayGapValidationIdentityFrozen = false;
+                PinArrayGapValidationStatusText = LocalText("2단계 검토 필요 | ", "PHASE 2 REVIEW | ") + error;
+                StatusText = PinArrayGapValidationStatusText;
+                RefreshCommandState();
+                return;
+            }
+
+            IsPinArrayGapValidationIdentityFrozen = true;
+            PinArrayGapValidationStatusText = BuildPinArrayGapFrozenStatus(record);
+            StatusText = PinArrayGapValidationStatusText;
+            RefreshCommandState();
+        }
+
+        private bool CanOpenPinArrayGapValidationRuns()
+        {
+            return OpenVisionRecipeLlmIntent.IsPinArrayGapTemplate(SelectedLlmToolTemplate)
+                && validationSetStorageReady
+                && CanUseSelectedPipeline()
+                && PinArrayGapTrainValidationSetOption != null;
+        }
+
+        private void OpenPinArrayGapValidationRuns()
+        {
+            if (!CanOpenPinArrayGapValidationRuns())
+            {
+                return;
+            }
+
+            SelectedValidationSetOption = PinArrayGapTrainValidationSetOption;
+            SelectLocalValidationSetScope();
+            openPinArrayGapValidationRuns();
+            StatusText = LocalText(
+                "Train 세트를 선택했습니다. Validation Set 화면에서 Run suite를 명시적으로 실행하세요.",
+                "Train set selected. Explicitly run the suite in the Validation Set screen.");
+        }
+
+        private void RefreshPinArrayGapValidationIdentityState()
+        {
+            IsPinArrayGapValidationIdentityFrozen = false;
+            if (SelectedPipelineOption == null
+                || PinArrayGapTrainValidationSetOption == null
+                || PinArrayGapValidationValidationSetOption == null
+                || PinArrayGapTestValidationSetOption == null)
+            {
+                PinArrayGapValidationStatusText = string.Empty;
+                return;
+            }
+
+            string recipeName = NormalizeRecipeName(selectedRecipeName);
+            if (!TryReadSelectedPipelineXml(out string pipelineXmlText, out string error))
+            {
+                PinArrayGapValidationStatusText = LocalText("2단계 검토 필요 | ", "PHASE 2 REVIEW | ") + error;
+                return;
+            }
+
+            if (!OpenVisionRecipePinArrayGapValidationRecordStorage.TryLoad(
+                    recipeName,
+                    out OpenVisionRecipePinArrayGapValidationRecord record,
+                    out error))
+            {
+                PinArrayGapValidationStatusText = error.Contains("does not exist", StringComparison.OrdinalIgnoreCase)
+                    ? LocalText(
+                        "2단계 미고정 | 세 분할과 선택된 XML을 검토한 뒤 검증 기준을 고정하세요.",
+                        "PHASE 2 NOT FROZEN | Review the three splits and selected XML, then freeze identity.")
+                    : LocalText("2단계 검토 필요 | ", "PHASE 2 REVIEW | ") + error;
+                return;
+            }
+
+            if (!OpenVisionRecipePinArrayGapValidationRecordStorage.TryMatchesCurrent(
+                    recipeName,
+                    pipelineXmlText,
+                    PinArrayGapTrainValidationSetOption,
+                    PinArrayGapValidationValidationSetOption,
+                    PinArrayGapTestValidationSetOption,
+                    record,
+                    out bool matches,
+                    out error))
+            {
+                PinArrayGapValidationStatusText = LocalText("2단계 검토 필요 | ", "PHASE 2 REVIEW | ") + error;
+                return;
+            }
+
+            if (!matches)
+            {
+                PinArrayGapValidationStatusText = LocalText(
+                    "2단계 변경됨 | XML 또는 세트 내용이 고정 기록과 다릅니다. 검토 후 다시 고정하세요.",
+                    "PHASE 2 STALE | XML or set content differs from the frozen record. Review and freeze again.");
+                return;
+            }
+
+            IsPinArrayGapValidationIdentityFrozen = true;
+            PinArrayGapValidationStatusText = BuildPinArrayGapFrozenStatus(record);
+        }
+
+        private bool TryReadSelectedPipelineXml(out string pipelineXmlText, out string error)
+        {
+            pipelineXmlText = string.Empty;
+            string pipelineName = SelectedPipelineOption?.PipelineName ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(pipelineName))
+            {
+                error = "Select the imported PinArrayGap pipeline.";
+                return false;
+            }
+
+            string path = RecipeWorkspaceService.GetVisionPipelinePath(
+                NormalizeRecipeName(selectedRecipeName),
+                pipelineName);
+            if (!File.Exists(path))
+            {
+                error = "Selected pipeline XML was not found: " + path;
+                return false;
+            }
+
+            try
+            {
+                pipelineXmlText = File.ReadAllText(path);
+                error = string.Empty;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = ex.GetBaseException().Message;
+                return false;
+            }
+        }
+
+        private static string BuildPinArrayGapFrozenStatus(OpenVisionRecipePinArrayGapValidationRecord record)
+        {
+            if (record == null)
+            {
+                return string.Empty;
+            }
+
+            return "PHASE 2 FROZEN | "
+                + record.PipelineName
+                + " | Train "
+                + record.Train.ImageCount.ToString(CultureInfo.InvariantCulture)
+                + " / Validation "
+                + record.Validation.ImageCount.ToString(CultureInfo.InvariantCulture)
+                + " / Test "
+                + record.Test.ImageCount.ToString(CultureInfo.InvariantCulture)
+                + " | DistancePxRange <= "
+                + record.DistancePxRangeMaximum.ToString("0.###", CultureInfo.InvariantCulture)
+                + " px";
+        }
+
+        private void NotifyPinArrayGapIntentTextChanged()
+        {
+            OnPropertyChanged(nameof(PinArrayGapIntentContractText));
+            NotifyGuidedSetupIntentInputChanged();
+            RefreshCommandState();
+        }
+
+        private void NotifyHybridRelativeRoiIntentTextChanged()
+        {
+            OnPropertyChanged(nameof(HybridRelativeRoiBoundaryText));
+            NotifyGuidedSetupIntentInputChanged();
+            RefreshCommandState();
+        }
 
         private void NotifyBlobCountIntentTextChanged()
         {
@@ -4266,6 +4965,189 @@ namespace OpenVisionLab
             RefreshCommandState();
         }
 
+        private void CreateHybridRelativeRoiIntentXmlDraft()
+        {
+            if (!OpenVisionRecipeHybridRelativeRoiIntentSkill.TryValidateInputs(
+                    LlmReferenceImagePath,
+                    MatchingIntentSearchRoiText,
+                    HybridRelativeRoiText,
+                    HybridReferencePoseText,
+                    MatchingIntentScoreMinText,
+                    HybridScoreMarginText,
+                    HybridAngleMinimumText,
+                    HybridAngleMaximumText,
+                    HybridScaleRatioMinimumText,
+                    HybridScaleRatioMaximumText,
+                    HybridMinimumValidPixelRatioText,
+                    out OpenVisionRecipePinGapIntentSkill.RoiSample searchRoi,
+                    out OpenVisionRecipePinGapIntentSkill.RoiSample measurementRoi,
+                    out OpenVisionRecipeHybridRelativeRoiIntentSkill.ReferencePose referencePose,
+                    out double scoreMinimum,
+                    out double scoreMargin,
+                    out double angleMinimum,
+                    out double angleMaximum,
+                    out double scaleRatioMinimum,
+                    out double scaleRatioMaximum,
+                    out double minimumValidPixelRatio,
+                    out string message))
+            {
+                StatusText = LocalText("상대 ROI Gap 입력을 확인하세요: ", "Check locator-aligned Gap inputs: ") + message;
+                return;
+            }
+
+            VisionPipeline pipeline = OpenVisionRecipeHybridRelativeRoiIntentSkill.CreateMeasurementPipeline(
+                LlmReferenceImagePath,
+                searchRoi,
+                measurementRoi,
+                referencePose,
+                scoreMinimum,
+                scoreMargin,
+                angleMinimum,
+                angleMaximum,
+                scaleRatioMinimum,
+                scaleRatioMaximum,
+                minimumValidPixelRatio);
+            SelectedLlmToolTemplate = OpenVisionGuidedSetupCatalog.HybridRelativeRoiGapTemplate;
+            LlmPromptText = BuildLlmPromptText();
+            LlmXmlDraftText = SerializePipelineToXmlText(pipeline);
+            ValidateLlmXmlDraftText(false);
+            StatusText = LocalText(
+                "위치 보정 후 상대 ROI Gap 측정 XML 초안을 만들었습니다. 위치검출 gate만 포함하며 Gap 판정, Preview, Run은 실행하지 않았습니다.",
+                "Created the locator-aligned relative-ROI Gap XML draft. It includes locator gates but no Gap judgement, Preview, or Run.");
+        }
+
+        private void CreatePinArrayGapIntentXmlDraft()
+        {
+            string sourceImagePath = ResolvePinGapRoiSuggestionImagePath();
+            if (string.IsNullOrWhiteSpace(sourceImagePath))
+            {
+                StatusText = LocalText(
+                    "Pin row edge-gap 스킬에 사용할 선택 샘플 또는 참조 이미지가 필요합니다.",
+                    "Select a sample or reference image for the Pin row edge-gap skill.");
+                return;
+            }
+
+            bool roiReady = OpenVisionRecipePinArrayGapIntentSkill.TryParseRowRois(
+                PinArrayGapRoiText,
+                out IReadOnlyList<OpenVisionRecipePinGapIntentSkill.RoiSample> rowRois,
+                out string roiMessage);
+            bool thresholdReady = int.TryParse(
+                PinArrayGapDarkThresholdText,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int darkThreshold);
+            bool coverageReady = double.TryParse(
+                PinArrayGapMinDarkCoverageRatioText,
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out double minimumDarkCoverageRatio);
+            bool minimumPinWidthReady = int.TryParse(
+                PinArrayGapMinPinWidthText,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int minimumPinWidth);
+            bool maximumBreakWidthReady = int.TryParse(
+                PinArrayGapMaxPinBreakWidthText,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int maximumPinBreakWidth);
+            bool minimumGapWidthReady = int.TryParse(
+                PinArrayGapMinGapWidthText,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int minimumGapWidth);
+            string rangeText = (PinArrayGapRangeMaxText ?? string.Empty).Trim();
+            bool measurementOnly = rangeText.Length == 0;
+            bool rangeReady = measurementOnly
+                || (double.TryParse(
+                        rangeText,
+                        NumberStyles.Float,
+                        CultureInfo.InvariantCulture,
+                        out double parsedRangeMaximum)
+                    && !double.IsNaN(parsedRangeMaximum)
+                    && !double.IsInfinity(parsedRangeMaximum)
+                    && parsedRangeMaximum > 0D);
+
+            if (!roiReady
+                || !thresholdReady
+                || !coverageReady
+                || !minimumPinWidthReady
+                || !maximumBreakWidthReady
+                || !minimumGapWidthReady
+                || !rangeReady)
+            {
+                StatusText = LocalText(
+                    "Pin row edge-gap 입력을 확인하세요. 행 ROI는 x,y,w,h 형식이며 검출값은 유효한 수치, Range는 공란 또는 양수여야 합니다. ",
+                    "Check Pin row edge-gap inputs. Row ROIs must be x,y,w,h, detection values must be valid numbers, and Range must be blank or positive. ")
+                    + roiMessage;
+                return;
+            }
+
+            try
+            {
+                BitmapFrame frame = BitmapFrame.Create(
+                    new Uri(sourceImagePath, UriKind.Absolute),
+                    BitmapCreateOptions.DelayCreation,
+                    BitmapCacheOption.OnLoad);
+                if (!OpenVisionRecipePinArrayGapIntentSkill.TryValidateV1Inputs(
+                        PinArrayGapMeasurementText,
+                        PinArrayGapPolarityText,
+                        OpenVisionRecipePinArrayGapIntentSkill.SupportedUnitMode,
+                        rowRois,
+                        frame.PixelWidth,
+                        frame.PixelHeight,
+                        darkThreshold,
+                        minimumDarkCoverageRatio,
+                        minimumPinWidth,
+                        maximumPinBreakWidth,
+                        minimumGapWidth,
+                        out string validationMessage))
+                {
+                    StatusText = validationMessage;
+                    return;
+                }
+
+                double maximumDistancePxRange = measurementOnly
+                    ? 0D
+                    : double.Parse(rangeText, NumberStyles.Float, CultureInfo.InvariantCulture);
+                VisionPipeline pipeline = measurementOnly
+                    ? OpenVisionRecipePinArrayGapIntentSkill.CreateMeasurementPipeline(
+                        rowRois,
+                        darkThreshold,
+                        minimumDarkCoverageRatio,
+                        minimumPinWidth,
+                        maximumPinBreakWidth,
+                        minimumGapWidth)
+                    : OpenVisionRecipePinArrayGapIntentSkill.CreateJudgedPipeline(
+                        rowRois,
+                        darkThreshold,
+                        minimumDarkCoverageRatio,
+                        minimumPinWidth,
+                        maximumPinBreakWidth,
+                        minimumGapWidth,
+                        maximumDistancePxRange);
+
+                SelectedLlmToolTemplate = OpenVisionGuidedSetupCatalog.PinArrayGapTemplate;
+                LlmPromptText = BuildLlmPromptText();
+                LlmXmlDraftText = SerializePipelineToXmlText(pipeline);
+                ValidateLlmXmlDraftText(false);
+                StatusText = measurementOnly
+                    ? LocalText(
+                        "Pin row edge-gap 측정 전용 XML 초안을 만들었습니다. 판정 기준은 없으며 Preview/Run은 실행하지 않았습니다.",
+                        "Created a Pin row edge-gap measurement-only XML draft. It is not judged, and Preview/Run was not executed.")
+                    : LocalText(
+                        "모든 행에 DistancePxRange 최대 판정이 있는 Pin row edge-gap XML 초안을 만들었습니다. Validation Set과 Preview/Run은 실행하지 않았습니다.",
+                        "Created a Pin row edge-gap XML draft with a DistancePxRange maximum gate on every row. Validation Set and Preview/Run were not executed.");
+            }
+            catch (Exception ex)
+            {
+                StatusText = LocalText(
+                    "Pin row edge-gap XML 초안 생성 실패: ",
+                    "Pin row edge-gap XML draft creation failed: ")
+                    + ex.GetBaseException().Message;
+            }
+        }
+
         private void CreatePinGapIntentXmlDraft()
         {
             bool pixelOnly = IsPinGapPixelOnly;
@@ -4327,6 +5209,27 @@ namespace OpenVisionLab
             StatusText = LocalText(
                 "핀 간격 skill XML 초안을 생성했습니다. Preview/Run은 실행하지 않았습니다.",
                 "Created Pin gap skill XML draft. Preview/Run was not executed.");
+        }
+
+        private void CreateDarkBandGapIntentXmlDraft()
+        {
+            if (!OpenVisionRecipeDarkBandGapIntentSkill.TryParseCoarseRoi(
+                    DarkBandGapIntentRoiText,
+                    out OpenVisionRecipePinGapIntentSkill.RoiSample roi,
+                    out string message))
+            {
+                StatusText = "Check dark-band Gap ROI: " + message;
+                return;
+            }
+
+            SelectedLlmToolTemplate = OpenVisionGuidedSetupCatalog.DarkBandGapTemplate;
+            VisionPipeline pipeline = OpenVisionRecipeDarkBandGapIntentSkill.CreateMeasurementPipeline(roi);
+            LlmPromptText = BuildLlmPromptText();
+            LlmXmlDraftText = SerializePipelineToXmlText(pipeline);
+            ValidateLlmXmlDraftText(false);
+            StatusText = LocalText(
+                "검은 띠 Gap 측정 전용 XML 초안을 만들었습니다. 판정 기준은 없으며 Preview/Run은 실행하지 않았습니다.",
+                "Created a dark-band Gap measurement-only XML draft. It is not judged, and Preview/Run was not executed.");
         }
 
         private void CreateBlobCountIntentXmlDraft()
@@ -4800,7 +5703,9 @@ namespace OpenVisionLab
                 Template = SelectedLlmToolTemplate,
                 InspectionGoal = LlmInspectionGoalText,
                 DetectionPoints = LlmDetectionPointText,
-                ReferenceImagePath = LlmReferenceImagePath,
+                ReferenceImagePath = OpenVisionRecipeLlmIntent.IsPinArrayGapTemplate(SelectedLlmToolTemplate)
+                    ? ResolvePinGapRoiSuggestionImagePath()
+                    : LlmReferenceImagePath,
                 PinGapAverageMetricName = PinGapIntentAverageMetricName,
                 PinGapRangeMetricName = PinGapIntentRangeMetricName,
                 PinGapRoiText = PinGapIntentRoiText,
@@ -4809,7 +5714,27 @@ namespace OpenVisionLab
                 PinGapDistanceMaxText = PinGapIntentDistanceMaxText,
                 PinGapRangeMaxText = PinGapIntentRangeMaxText,
                 PinGapUnitText = PinGapIntentUnitText,
-                PinGapScaleText = PinGapIntentScaleText
+                PinGapScaleText = PinGapIntentScaleText,
+                PinArrayGapRoiText = PinArrayGapRoiText,
+                PinArrayGapPolarityText = PinArrayGapPolarityText,
+                PinArrayGapMeasurementText = PinArrayGapMeasurementText,
+                PinArrayGapRangeMaxText = PinArrayGapRangeMaxText,
+                PinArrayGapDarkThresholdText = PinArrayGapDarkThresholdText,
+                PinArrayGapMinDarkCoverageRatioText = PinArrayGapMinDarkCoverageRatioText,
+                PinArrayGapMinPinWidthText = PinArrayGapMinPinWidthText,
+                PinArrayGapMaxPinBreakWidthText = PinArrayGapMaxPinBreakWidthText,
+                PinArrayGapMinGapWidthText = PinArrayGapMinGapWidthText,
+                DarkBandGapRoiText = DarkBandGapIntentRoiText,
+                HybridReferencePoseText = HybridReferencePoseText,
+                HybridRelativeRoiText = HybridRelativeRoiText,
+                HybridSearchRoiText = MatchingIntentSearchRoiText,
+                HybridScoreMinimumText = MatchingIntentScoreMinText,
+                HybridScoreMarginText = HybridScoreMarginText,
+                HybridAngleMinimumText = HybridAngleMinimumText,
+                HybridAngleMaximumText = HybridAngleMaximumText,
+                HybridScaleRatioMinimumText = HybridScaleRatioMinimumText,
+                HybridScaleRatioMaximumText = HybridScaleRatioMaximumText,
+                HybridMinimumValidPixelRatioText = HybridMinimumValidPixelRatioText
             });
         }
 
@@ -4820,11 +5745,32 @@ namespace OpenVisionLab
                 Template = SelectedLlmToolTemplate,
                 ReferenceImagePath = LlmReferenceImagePath,
                 PinGapRoiText = PinGapIntentRoiText,
+                DarkBandGapRoiText = DarkBandGapIntentRoiText,
+                HybridReferencePoseText = HybridReferencePoseText,
+                HybridRelativeRoiText = HybridRelativeRoiText,
+                HybridSearchRoiText = MatchingIntentSearchRoiText,
+                HybridScoreMinimumText = MatchingIntentScoreMinText,
+                HybridScoreMarginText = HybridScoreMarginText,
+                HybridAngleMinimumText = HybridAngleMinimumText,
+                HybridAngleMaximumText = HybridAngleMaximumText,
+                HybridScaleRatioMinimumText = HybridScaleRatioMinimumText,
+                HybridScaleRatioMaximumText = HybridScaleRatioMaximumText,
+                HybridMinimumValidPixelRatioText = HybridMinimumValidPixelRatioText,
                 PinGapPixelOnly = IsPinGapPixelOnly,
                 PinGapDistanceMinText = PinGapIntentDistanceMinText,
                 PinGapDistanceMaxText = PinGapIntentDistanceMaxText,
                 PinGapRangeMaxText = PinGapIntentRangeMaxText,
                 PinGapScaleText = PinGapIntentScaleText,
+                PinArrayGapRoiText = PinArrayGapRoiText,
+                PinArrayGapSourceImagePath = ResolvePinGapRoiSuggestionImagePath(),
+                PinArrayGapPolarityText = PinArrayGapPolarityText,
+                PinArrayGapMeasurementText = PinArrayGapMeasurementText,
+                PinArrayGapRangeMaxText = PinArrayGapRangeMaxText,
+                PinArrayGapDarkThresholdText = PinArrayGapDarkThresholdText,
+                PinArrayGapMinDarkCoverageRatioText = PinArrayGapMinDarkCoverageRatioText,
+                PinArrayGapMinPinWidthText = PinArrayGapMinPinWidthText,
+                PinArrayGapMaxPinBreakWidthText = PinArrayGapMaxPinBreakWidthText,
+                PinArrayGapMinGapWidthText = PinArrayGapMinGapWidthText,
                 BlobCountRoiText = BlobCountIntentRoiText,
                 BlobCountThresholdText = BlobCountIntentThresholdText,
                 BlobCountMinCountText = BlobCountIntentMinCountText,
@@ -4866,7 +5812,11 @@ namespace OpenVisionLab
             return OpenVisionRecipeLlmTemplateDraftBuilder.Create(
                 SelectedLlmToolTemplate,
                 LlmReferenceImagePath,
-                PinGapIntentRoiText);
+                OpenVisionRecipeLlmIntent.IsPinArrayGapTemplate(SelectedLlmToolTemplate)
+                    ? PinArrayGapRoiText
+                    : OpenVisionRecipeLlmIntent.IsDarkBandGapTemplate(SelectedLlmToolTemplate)
+                        ? DarkBandGapIntentRoiText
+                        : PinGapIntentRoiText);
         }
 
         private static string SerializePipelineToXmlText(VisionPipeline pipeline)
@@ -4942,13 +5892,75 @@ namespace OpenVisionLab
                         LlmReferenceImagePath,
                         loadedReviewBundleInspection == null,
                         loadedReviewBundleInspection,
-                        copyDependencies));
+                        copyDependencies,
+                        OpenVisionRecipeLlmIntent.IsPinArrayGapTemplate(SelectedLlmToolTemplate)
+                            ? CreatePinArrayGapIntentValidationContext()
+                            : null,
+                        OpenVisionRecipeLlmIntent.IsDarkBandGapTemplate(SelectedLlmToolTemplate)
+                            ? new OpenVisionRecipeDarkBandGapIntentValidationContext(DarkBandGapIntentRoiText)
+                            : null,
+                        OpenVisionRecipeLlmIntent.IsHybridRelativeRoiGapTemplate(SelectedLlmToolTemplate)
+                            ? CreateHybridRelativeRoiIntentValidationContext()
+                            : null));
 
             pipeline = result.Pipeline;
             validationReport = result.ValidationReport;
             dependencyReport = result.DependencyReport;
             LlmXmlDraftDependencyRows = result.DependencyRows;
             return result.Success;
+        }
+
+        private OpenVisionRecipePinArrayGapIntentValidationContext CreatePinArrayGapIntentValidationContext()
+        {
+            int sourceWidth = 0;
+            int sourceHeight = 0;
+            string sourceImagePath = ResolvePinGapRoiSuggestionImagePath();
+            if (!string.IsNullOrWhiteSpace(sourceImagePath))
+            {
+                try
+                {
+                    BitmapFrame frame = BitmapFrame.Create(
+                        new Uri(sourceImagePath, UriKind.Absolute),
+                        BitmapCreateOptions.DelayCreation,
+                        BitmapCacheOption.OnLoad);
+                    sourceWidth = frame.PixelWidth;
+                    sourceHeight = frame.PixelHeight;
+                }
+                catch
+                {
+                    sourceWidth = 0;
+                    sourceHeight = 0;
+                }
+            }
+
+            return new OpenVisionRecipePinArrayGapIntentValidationContext(
+                PinArrayGapRoiText,
+                PinArrayGapPolarityText,
+                PinArrayGapMeasurementText,
+                PinArrayGapRangeMaxText,
+                PinArrayGapDarkThresholdText,
+                PinArrayGapMinDarkCoverageRatioText,
+                PinArrayGapMinPinWidthText,
+                PinArrayGapMaxPinBreakWidthText,
+                PinArrayGapMinGapWidthText,
+                sourceWidth,
+                sourceHeight);
+        }
+
+        private OpenVisionRecipeHybridRelativeRoiIntentValidationContext CreateHybridRelativeRoiIntentValidationContext()
+        {
+            return new OpenVisionRecipeHybridRelativeRoiIntentValidationContext(
+                LlmReferenceImagePath,
+                MatchingIntentSearchRoiText,
+                HybridRelativeRoiText,
+                HybridReferencePoseText,
+                MatchingIntentScoreMinText,
+                HybridScoreMarginText,
+                HybridAngleMinimumText,
+                HybridAngleMaximumText,
+                HybridScaleRatioMinimumText,
+                HybridScaleRatioMaximumText,
+                HybridMinimumValidPixelRatioText);
         }
 
         private void SetLlmXmlDraftDependencyPlaceholder(string action)
@@ -5428,6 +6440,15 @@ namespace OpenVisionLab
                 return false;
             }
 
+            if (option.Set.IsIdentityLocked
+                && !string.Equals(
+                    option.Set.PipelineName,
+                    SelectedPipelineOption.PipelineName,
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
+
             string pipelinePath = RecipeWorkspaceService.GetVisionPipelinePath(
                 NormalizeRecipeName(selectedRecipeName),
                 SelectedPipelineOption.PipelineName);
@@ -5723,7 +6744,8 @@ namespace OpenVisionLab
         {
             return validationSetStorageReady
                 && !isValidationSuiteRunning
-                && SelectedValidationSetOption?.Set != null;
+                && SelectedValidationSetOption?.Set != null
+                && !SelectedValidationSetOption.Set.IsIdentityLocked;
         }
 
         private void RepairValidationSetImagePath()
@@ -5795,6 +6817,7 @@ namespace OpenVisionLab
             return validationSetStorageReady
                 && !isValidationSuiteRunning
                 && SelectedValidationSetOption?.Set != null
+                && !SelectedValidationSetOption.Set.IsIdentityLocked
                 && SelectedValidationSetImageRow?.Image != null
                 && SelectedValidationSetImageRow.IsMissing;
         }
@@ -5825,6 +6848,7 @@ namespace OpenVisionLab
             return validationSetStorageReady
                 && !isValidationSuiteRunning
                 && SelectedValidationSetOption?.Set != null
+                && !SelectedValidationSetOption.Set.IsIdentityLocked
                 && SelectedValidationSetImageRow?.Image != null;
         }
 
@@ -5849,6 +6873,9 @@ namespace OpenVisionLab
             string previousName = preferredSetName
                 ?? SelectedValidationSetOption?.Name
                 ?? string.Empty;
+            string previousTrainName = PinArrayGapTrainValidationSetOption?.Name ?? string.Empty;
+            string previousValidationName = PinArrayGapValidationValidationSetOption?.Name ?? string.Empty;
+            string previousTestName = PinArrayGapTestValidationSetOption?.Name ?? string.Empty;
             validationSetStorageReady = OpenVisionRecipeValidationSetStorage.TryLoad(
                 recipeName,
                 out validationSetDocument,
@@ -5858,10 +6885,26 @@ namespace OpenVisionLab
             {
                 ValidationSetOptions = Array.Empty<OpenVisionRecipeValidationSetOption>();
                 SelectedValidationSetOption = null;
+                PinArrayGapTrainValidationSetOption = null;
+                PinArrayGapValidationValidationSetOption = null;
+                PinArrayGapTestValidationSetOption = null;
                 RefreshValidationSetImageRows();
                 ValidationSuiteStatusText = LocalText("로컬 검증 세트 로드 ERROR: ", "Local validation set load ERROR: ") + error;
                 RefreshCommandState();
                 return;
+            }
+
+            if (string.IsNullOrWhiteSpace(previousTrainName)
+                && string.IsNullOrWhiteSpace(previousValidationName)
+                && string.IsNullOrWhiteSpace(previousTestName)
+                && OpenVisionRecipePinArrayGapValidationRecordStorage.TryLoad(
+                    recipeName,
+                    out OpenVisionRecipePinArrayGapValidationRecord frozenRecord,
+                    out _))
+            {
+                previousTrainName = frozenRecord.Train?.SetName ?? string.Empty;
+                previousValidationName = frozenRecord.Validation?.SetName ?? string.Empty;
+                previousTestName = frozenRecord.Test?.SetName ?? string.Empty;
             }
 
             IReadOnlyList<OpenVisionRecipeValidationSetOption> options = validationSetDocument.Sets
@@ -5874,6 +6917,9 @@ namespace OpenVisionLab
                     string.Equals(option.Name, previousName, StringComparison.OrdinalIgnoreCase))
                 ?? options.FirstOrDefault();
             SelectedValidationSetOption = selected;
+            PinArrayGapTrainValidationSetOption = FindValidationSetOption(options, previousTrainName);
+            PinArrayGapValidationValidationSetOption = FindValidationSetOption(options, previousValidationName);
+            PinArrayGapTestValidationSetOption = FindValidationSetOption(options, previousTestName);
             if (selected == null)
             {
                 RefreshValidationSetImageRows();
@@ -5882,6 +6928,16 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(ValidationSetSelectionSummaryText));
             OnPropertyChanged(nameof(ValidationSuiteSummaryText));
             RefreshCommandState();
+        }
+
+        private static OpenVisionRecipeValidationSetOption FindValidationSetOption(
+            IEnumerable<OpenVisionRecipeValidationSetOption> options,
+            string name)
+        {
+            return string.IsNullOrWhiteSpace(name)
+                ? null
+                : options?.FirstOrDefault(option =>
+                    string.Equals(option?.Name, name, StringComparison.OrdinalIgnoreCase));
         }
 
         private void RefreshValidationSetImageRows()
@@ -5985,6 +7041,7 @@ namespace OpenVisionLab
             LatestCatalogBenchmarkSummary = OpenVisionRecipeCatalogBenchmarkSummary.Empty;
             RefreshRecentBatchRunOptions();
             UpdateSelectedRecipeSummary();
+            RefreshPinArrayGapValidationIdentityState();
             RefreshCommandState();
         }
 
@@ -6039,10 +7096,16 @@ namespace OpenVisionLab
 
         private static OpenVisionRecipeBatchSampleResultOption SelectDefaultBatchSampleResult(
             OpenVisionRecipeBatchRunOption option,
-            bool ngOnly = false)
+            bool ngOnly = false,
+            bool reviewQueueOnly = false)
         {
             IReadOnlyList<OpenVisionRecipeBatchSampleResultOption> results =
                 option?.SampleResults ?? Array.Empty<OpenVisionRecipeBatchSampleResultOption>();
+            if (reviewQueueOnly)
+            {
+                return results.FirstOrDefault(result => result?.IsInReviewQueue == true);
+            }
+
             if (ngOnly)
             {
                 return results.FirstOrDefault(result => result != null && !result.Success);
@@ -6298,6 +7361,36 @@ namespace OpenVisionLab
                 && File.Exists(ResolveSelectedRunSampleImagePath());
         }
 
+        private void OpenSelectedRecentBatchRunEvidence()
+        {
+            if (!OpenVisionRecipeRunEvidence.TryCreate(
+                    SelectedRecentBatchSampleResultOption,
+                    out OpenVisionRecipeRunEvidence evidence,
+                    out string reason))
+            {
+                StatusText = reason;
+                return;
+            }
+
+            if (openSelectedBatchRunEvidence(evidence))
+            {
+                StatusText = LocalText("저장된 원본/검출 도면을 열었습니다: ", "Opened the persisted source/detection drawing: ")
+                    + evidence.SampleName;
+            }
+            else
+            {
+                StatusText = LocalText("저장된 검출 도면 창을 열지 못했습니다.", "Could not open the persisted detection drawing window.");
+            }
+        }
+
+        private bool CanOpenSelectedRecentBatchRunEvidence()
+        {
+            return OpenVisionRecipeRunEvidence.TryCreate(
+                SelectedRecentBatchSampleResultOption,
+                out _,
+                out _);
+        }
+
         private OpenVisionRecipePipelineStepPreview ResolveSelectedRunFailureStep()
         {
             string failedStep = SelectedRecentBatchRunComparisonRow?.FailedStep;
@@ -6543,7 +7636,7 @@ namespace OpenVisionLab
 
         private bool LoadSelectedStepParametersForEdit(bool updateStatus)
         {
-            if (!TryLoadSelectedPipelineStep(out _, out string pipelineName, out _, out VisionPipelineStep step, out string message))
+            if (!TryLoadSelectedPipelineStep(out _, out string pipelineName, out VisionPipeline pipeline, out VisionPipelineStep step, out string message))
             {
                 ClearSelectedStepEdit();
                 if (updateStatus)
@@ -6554,6 +7647,11 @@ namespace OpenVisionLab
                 return false;
             }
 
+            int selectedStepIndex = Math.Max(0, (pipeline?.Steps ?? new List<VisionPipelineStep>()).IndexOf(step));
+            VisionPipelineStepPropertyMapper.SetGeometryFeatureContext((mode, sourceA) =>
+                VisionPipelineStepPropertyMapper.GetCompatibleGeometryFeatureReferences(pipeline, selectedStepIndex, mode, sourceA));
+            VisionPipelineStepPropertyMapper.SetPointFeatureContext(() =>
+                VisionPipelineStepPropertyMapper.GetCompatiblePointFeatureReferences(pipeline, selectedStepIndex));
             object property = VisionPipelineStepPropertyMapper.CreateProperty(step);
             if (property == null)
             {
@@ -6820,7 +7918,15 @@ namespace OpenVisionLab
             if (changed)
             {
                 llmXmlDraftImportReady = false;
+                pinArrayGapTrainValidationSetOption = null;
+                pinArrayGapValidationValidationSetOption = null;
+                pinArrayGapTestValidationSetOption = null;
+                PinArrayGapValidationStatusText = string.Empty;
+                IsPinArrayGapValidationIdentityFrozen = false;
                 OnPropertyChanged(nameof(SelectedRecipeName));
+                OnPropertyChanged(nameof(PinArrayGapTrainValidationSetOption));
+                OnPropertyChanged(nameof(PinArrayGapValidationValidationSetOption));
+                OnPropertyChanged(nameof(PinArrayGapTestValidationSetOption));
             }
 
             if (!string.Equals(editRecipeName, normalized, StringComparison.Ordinal))

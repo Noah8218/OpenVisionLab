@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using Lib.OpenCV.Pipeline;
 
 namespace OpenVisionLab
 {
@@ -20,6 +23,19 @@ namespace OpenVisionLab
         public int PassCount { get; set; }
         public int FailCount { get; set; }
         public List<VisionPipelineBatchSampleRunResult> Results { get; set; } = new List<VisionPipelineBatchSampleRunResult>();
+        public string ReviewQueuePolicy { get; set; } = string.Empty;
+        public string ReviewQueueSha256 { get; set; } = string.Empty;
+        public List<VisionPipelineBatchReviewQueueEntry> ReviewQueue { get; set; } = new List<VisionPipelineBatchReviewQueueEntry>();
+    }
+
+    public sealed class VisionPipelineBatchReviewQueueEntry
+    {
+        public int ResultIndex { get; set; }
+        public string SampleName { get; set; } = string.Empty;
+        public string SampleImagePath { get; set; } = string.Empty;
+        public string RunReportPath { get; set; } = string.Empty;
+        public string SourceSha256 { get; set; } = string.Empty;
+        public List<string> Reasons { get; set; } = new List<string>();
     }
 
     public sealed class VisionPipelineBatchSampleRunResult
@@ -45,6 +61,16 @@ namespace OpenVisionLab
 
     internal static class VisionPipelineBatchRunSummaryStorage
     {
+        internal const string ReviewQueuePolicyV1 =
+            "v1|all-runtime-failures|all-misclassifications|all-evidence-gaps|metric-min-max|hash-audit-3-per-stratum";
+
+        internal sealed class BatchReviewQueue
+        {
+            public string Policy { get; set; } = ReviewQueuePolicyV1;
+            public string Sha256 { get; set; } = string.Empty;
+            public List<VisionPipelineBatchReviewQueueEntry> Entries { get; set; } = new List<VisionPipelineBatchReviewQueueEntry>();
+        }
+
         public sealed class BatchRunStatistics
         {
             public int ResultCount { get; set; }
@@ -118,7 +144,8 @@ namespace OpenVisionLab
             IEnumerable<VisionPipelineBatchSampleRunResult> results,
             string suiteName = "Validation Suite",
             string suiteKind = "Batch",
-            string notes = "")
+            string notes = "",
+            VisionPipeline pipelineSnapshot = null)
         {
             List<VisionPipelineBatchSampleRunResult> resultList = (results ?? Enumerable.Empty<VisionPipelineBatchSampleRunResult>()).ToList();
             string batchName = CreateUniqueBatchName(recipeName, pipelineName, startedAt);
@@ -130,6 +157,7 @@ namespace OpenVisionLab
                 PipelineName = pipelineName ?? string.Empty,
                 SuiteName = string.IsNullOrWhiteSpace(suiteName) ? "Validation Suite" : suiteName.Trim(),
                 SuiteKind = string.IsNullOrWhiteSpace(suiteKind) ? "Batch" : suiteKind.Trim(),
+                PipelineSnapshotFile = pipelineSnapshot == null ? string.Empty : "pipeline.xml",
                 Notes = notes?.Trim() ?? string.Empty,
                 StartedAt = startedAt.ToString("o"),
                 FinishedAt = finishedAt.ToString("o"),
@@ -139,11 +167,254 @@ namespace OpenVisionLab
                 FailCount = resultList.Count(result => !result.Success),
                 Results = resultList
             };
+            BatchReviewQueue reviewQueue = BuildReviewQueue(resultList);
+            summary.ReviewQueuePolicy = reviewQueue.Policy;
+            summary.ReviewQueueSha256 = reviewQueue.Sha256;
+            summary.ReviewQueue = reviewQueue.Entries;
+
+            if (pipelineSnapshot != null)
+            {
+                SerializeHelper.SaveXmlFile(Path.Combine(directory, summary.PipelineSnapshotFile), pipelineSnapshot);
+            }
 
             string xmlPath = Path.Combine(directory, "summary.xml");
             SerializeHelper.SaveXmlFile(xmlPath, summary);
             File.WriteAllLines(Path.Combine(directory, "summary.tsv"), CreateTsvLines(summary));
             return xmlPath;
+        }
+
+        internal static BatchReviewQueue BuildReviewQueue(
+            IEnumerable<VisionPipelineBatchSampleRunResult> results)
+        {
+            List<VisionPipelineBatchSampleRunResult> resultList = (results
+                    ?? Enumerable.Empty<VisionPipelineBatchSampleRunResult>())
+                .Where(result => result != null)
+                .ToList();
+            Dictionary<int, ReviewEvidence> evidenceByIndex = resultList
+                .Select((result, index) => LoadReviewEvidence(index, result))
+                .ToDictionary(evidence => evidence.ResultIndex);
+            Dictionary<int, HashSet<string>> reasonsByIndex = new Dictionary<int, HashSet<string>>();
+
+            foreach (ReviewEvidence evidence in evidenceByIndex.Values)
+            {
+                if (!evidence.Result.Success)
+                {
+                    AddReviewReason(reasonsByIndex, evidence.ResultIndex, "runtime-failure");
+                }
+
+                string misclassification = ResolveMisclassificationReason(evidence.Result);
+                if (!string.IsNullOrWhiteSpace(misclassification))
+                {
+                    AddReviewReason(reasonsByIndex, evidence.ResultIndex, misclassification);
+                }
+
+                if (!evidence.HasCompleteEvidence)
+                {
+                    AddReviewReason(reasonsByIndex, evidence.ResultIndex, "evidence-gap");
+                }
+            }
+
+            IEnumerable<string> metricNames = evidenceByIndex.Values
+                .SelectMany(evidence => evidence.Metrics.Keys)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(name => name, StringComparer.Ordinal);
+            foreach (string metricName in metricNames)
+            {
+                List<ReviewEvidence> available = evidenceByIndex.Values
+                    .Where(evidence => evidence.Metrics.TryGetValue(metricName, out double value) && IsFinite(value))
+                    .OrderBy(evidence => evidence.Metrics[metricName])
+                    .ThenBy(evidence => evidence.AuditKey, StringComparer.Ordinal)
+                    .ToList();
+                if (available.Count < 2
+                    || available[0].Metrics[metricName] == available[available.Count - 1].Metrics[metricName])
+                {
+                    continue;
+                }
+
+                AddReviewReason(reasonsByIndex, available[0].ResultIndex, "metric-min:" + metricName);
+                AddReviewReason(reasonsByIndex, available[available.Count - 1].ResultIndex, "metric-max:" + metricName);
+            }
+
+            foreach (IGrouping<string, ReviewEvidence> stratum in evidenceByIndex.Values
+                .GroupBy(evidence => ResolveReviewStratum(evidence.Result), StringComparer.OrdinalIgnoreCase)
+                .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                foreach (ReviewEvidence evidence in stratum
+                    .OrderBy(item => item.AuditKey, StringComparer.Ordinal)
+                    .ThenBy(item => item.ResultIndex)
+                    .Take(3))
+                {
+                    AddReviewReason(reasonsByIndex, evidence.ResultIndex, "hash-audit:" + stratum.Key);
+                }
+            }
+
+            BatchReviewQueue queue = new BatchReviewQueue();
+            foreach (KeyValuePair<int, HashSet<string>> pair in reasonsByIndex.OrderBy(pair => pair.Key))
+            {
+                ReviewEvidence evidence = evidenceByIndex[pair.Key];
+                queue.Entries.Add(new VisionPipelineBatchReviewQueueEntry
+                {
+                    ResultIndex = pair.Key,
+                    SampleName = evidence.Result.SampleName ?? string.Empty,
+                    SampleImagePath = evidence.Result.SampleImagePath ?? string.Empty,
+                    RunReportPath = evidence.Result.RunReportPath ?? string.Empty,
+                    SourceSha256 = evidence.SourceSha256,
+                    Reasons = pair.Value.OrderBy(reason => reason, StringComparer.Ordinal).ToList()
+                });
+            }
+
+            string canonical = queue.Policy + "\n" + string.Join(
+                "\n",
+                queue.Entries.Select(entry =>
+                    entry.ResultIndex.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    + "|" + entry.SampleName
+                    + "|" + entry.SampleImagePath
+                    + "|" + entry.SourceSha256
+                    + "|" + string.Join(";", entry.Reasons)));
+            queue.Sha256 = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
+            return queue;
+        }
+
+        private static ReviewEvidence LoadReviewEvidence(
+            int resultIndex,
+            VisionPipelineBatchSampleRunResult result)
+        {
+            VisionPipelineRunReport report = null;
+            if (!string.IsNullOrWhiteSpace(result.RunReportPath) && File.Exists(result.RunReportPath))
+            {
+                try
+                {
+                    report = VisionPipelineRunReportStorage.Load(result.RunReportPath);
+                }
+                catch
+                {
+                    report = null;
+                }
+            }
+
+            Dictionary<string, double> metrics = new Dictionary<string, double>(StringComparer.Ordinal);
+            if (report?.Steps != null)
+            {
+                foreach (VisionPipelineStepRunReport step in report.Steps.Where(step => step != null))
+                {
+                    foreach (VisionPipelineMetricRunReport metric in step.Metrics?.Where(metric => metric != null)
+                        ?? Enumerable.Empty<VisionPipelineMetricRunReport>())
+                    {
+                        if (string.IsNullOrWhiteSpace(metric.Name) || !IsFinite(metric.Value))
+                        {
+                            continue;
+                        }
+
+                        metrics[step.Index.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                            + ":" + metric.Name.Trim()] = metric.Value;
+                    }
+                }
+            }
+
+            string sourceSha256 = report?.SourceImageSha256?.Trim() ?? string.Empty;
+            string reportDirectory = Path.GetDirectoryName(result.RunReportPath ?? string.Empty) ?? string.Empty;
+            string storedSourcePath = ResolveReportArtifactPath(reportDirectory, report?.SourceImageFile);
+            bool hasVerifiedSource = !string.IsNullOrWhiteSpace(storedSourcePath)
+                && VisionPipelineRunReportStorage.IsFileSha256Match(storedSourcePath, sourceSha256);
+            bool hasDrawing = report?.Steps?.Any(step => step != null
+                && (!string.IsNullOrWhiteSpace(ResolveReportArtifactPath(reportDirectory, step.OverlayImageFile))
+                    || !string.IsNullOrWhiteSpace(ResolveReportArtifactPath(reportDirectory, step.ResultImageFile)))) == true;
+            bool hasCompleteEvidence = report != null && hasVerifiedSource && hasDrawing;
+            string auditIdentity = string.IsNullOrWhiteSpace(sourceSha256)
+                ? (result.SampleImagePath ?? string.Empty) + "|" + (result.SampleName ?? string.Empty) + "|" + resultIndex
+                : sourceSha256;
+            string auditKey = string.IsNullOrWhiteSpace(sourceSha256)
+                ? Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(auditIdentity)))
+                : sourceSha256.ToUpperInvariant();
+            return new ReviewEvidence(resultIndex, result, hasCompleteEvidence, sourceSha256, auditKey, metrics);
+        }
+
+        private static string ResolveReportArtifactPath(string reportDirectory, string storedPath)
+        {
+            if (string.IsNullOrWhiteSpace(storedPath))
+            {
+                return string.Empty;
+            }
+
+            string candidate = Path.IsPathRooted(storedPath)
+                ? storedPath
+                : Path.Combine(reportDirectory ?? string.Empty, storedPath);
+            return File.Exists(candidate) ? candidate : string.Empty;
+        }
+
+        private static void AddReviewReason(
+            IDictionary<int, HashSet<string>> reasonsByIndex,
+            int resultIndex,
+            string reason)
+        {
+            if (!reasonsByIndex.TryGetValue(resultIndex, out HashSet<string> reasons))
+            {
+                reasons = new HashSet<string>(StringComparer.Ordinal);
+                reasonsByIndex[resultIndex] = reasons;
+            }
+
+            reasons.Add(reason);
+        }
+
+        private static string ResolveMisclassificationReason(VisionPipelineBatchSampleRunResult result)
+        {
+            if (!(result?.ExpectedText?.Trim().StartsWith("ExpectedActual:", StringComparison.OrdinalIgnoreCase) == true))
+            {
+                return string.Empty;
+            }
+
+            if (string.Equals(result.PairRole?.Trim(), "OK", StringComparison.OrdinalIgnoreCase))
+            {
+                return result.Success ? string.Empty : "false-reject";
+            }
+
+            if (string.Equals(result.PairRole?.Trim(), "NG", StringComparison.OrdinalIgnoreCase))
+            {
+                return result.Success ? "false-accept" : string.Empty;
+            }
+
+            return string.Empty;
+        }
+
+        private static string ResolveReviewStratum(VisionPipelineBatchSampleRunResult result)
+        {
+            if (!string.IsNullOrWhiteSpace(result?.PairRole))
+            {
+                return result.PairRole.Trim().ToUpperInvariant();
+            }
+
+            return "ALL";
+        }
+
+        private static bool IsFinite(double value)
+        {
+            return !double.IsNaN(value) && !double.IsInfinity(value);
+        }
+
+        private sealed class ReviewEvidence
+        {
+            internal ReviewEvidence(
+                int resultIndex,
+                VisionPipelineBatchSampleRunResult result,
+                bool hasCompleteEvidence,
+                string sourceSha256,
+                string auditKey,
+                Dictionary<string, double> metrics)
+            {
+                ResultIndex = resultIndex;
+                Result = result;
+                HasCompleteEvidence = hasCompleteEvidence;
+                SourceSha256 = sourceSha256 ?? string.Empty;
+                AuditKey = auditKey ?? string.Empty;
+                Metrics = metrics ?? new Dictionary<string, double>(StringComparer.Ordinal);
+            }
+
+            internal int ResultIndex { get; }
+            internal VisionPipelineBatchSampleRunResult Result { get; }
+            internal bool HasCompleteEvidence { get; }
+            internal string SourceSha256 { get; }
+            internal string AuditKey { get; }
+            internal Dictionary<string, double> Metrics { get; }
         }
 
         public static List<BatchRunSummaryInfo> List(string recipeName, string pipelineName)
@@ -413,9 +684,16 @@ namespace OpenVisionLab
 
         private static IEnumerable<string> CreateTsvLines(VisionPipelineBatchRunSummary summary)
         {
-            yield return "SampleName\tStatus\tSuccess\tTotalMilliseconds\tFailedStep\tMessage\tReportPath\tSampleImagePath\tPairGroup\tPairRole\tExpectedText\tMetricText\tMetricReviewText\tFinalLayer\tOverlayCount\tActionSummary\tRunReportPath";
-            foreach (VisionPipelineBatchSampleRunResult result in summary.Results)
+            yield return "SampleName\tStatus\tSuccess\tTotalMilliseconds\tFailedStep\tMessage\tReportPath\tSampleImagePath\tPairGroup\tPairRole\tExpectedText\tMetricText\tMetricReviewText\tFinalLayer\tOverlayCount\tActionSummary\tRunReportPath\tReviewReasons";
+            Dictionary<int, VisionPipelineBatchReviewQueueEntry> queueByIndex = (summary.ReviewQueue
+                    ?? new List<VisionPipelineBatchReviewQueueEntry>())
+                .Where(entry => entry != null)
+                .GroupBy(entry => entry.ResultIndex)
+                .ToDictionary(group => group.Key, group => group.First());
+            for (int index = 0; index < summary.Results.Count; index++)
             {
+                VisionPipelineBatchSampleRunResult result = summary.Results[index];
+                queueByIndex.TryGetValue(index, out VisionPipelineBatchReviewQueueEntry queueEntry);
                 yield return string.Join(
                     "\t",
                     Escape(result.SampleName),
@@ -434,7 +712,8 @@ namespace OpenVisionLab
                     Escape(result.FinalLayer),
                     Escape(result.OverlayCount),
                     Escape(result.ActionSummary),
-                    Escape(result.RunReportPath));
+                    Escape(result.RunReportPath),
+                    Escape(string.Join(";", queueEntry?.Reasons ?? new List<string>())));
             }
         }
 

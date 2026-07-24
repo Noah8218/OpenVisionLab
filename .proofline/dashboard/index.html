@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Proofline Pulse</title>
+  <script>
+    // 저장된 선택을 먼저 적용해 초기 테마 깜빡임을 막습니다.
+    (() => {
+      const systemTheme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      try {
+        document.documentElement.dataset.theme = localStorage.getItem('proofline-dashboard-theme') || systemTheme;
+      } catch {
+        document.documentElement.dataset.theme = systemTheme;
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-context-bar">
+    <div class="app-context">
+      <h1 class="app-title">Proofline Pulse</h1>
+      <label class="global-search">
+        <span class="sr-only">검색</span>
+        <input id="search-input" type="search" placeholder="이슈 검색">
+      </label>
+      <div class="app-context-actions">
+        <div class="folder-actions">
+          <!-- 상단 조작은 화면 크기와 무관하게 아이콘으로 표시하고 설명은 툴팁과 접근성 이름으로 제공합니다. -->
+          <button id="reload-button" class="icon-action" type="button" data-icon="↻" aria-label="다시 읽기" title="다시 읽기">다시 읽기</button>
+          <button id="connect-button" class="button-primary icon-action" type="button" data-icon="📁" aria-label="초기 폴더 설정" title="초기 폴더 설정">초기 폴더 설정</button>
+          <button id="change-folder-button" class="icon-action" type="button" data-icon="📁" aria-label="폴더 재지정" title="폴더 재지정" hidden>폴더 재지정</button>
+          <label id="folder-picker" class="file-button icon-action" data-icon="📁" aria-label="이슈 폴더 선택" title="이슈 폴더 선택" hidden>
+            <span>이슈 폴더 선택</span>
+            <input id="folder-input" type="file" accept=".md" webkitdirectory multiple>
+          </label>
+        </div>
+        <!-- 배경과 테마 조작은 폴더 조작과 분리해 좁은 화면에서도 함께 묶입니다. -->
+        <div class="appearance-actions">
+          <label class="background-mode">
+            <span class="sr-only">배경</span>
+            <select id="background-mode" aria-label="배경">
+              <option value="color" selected>배경: 단색</option>
+              <option value="image">배경: 이미지</option>
+            </select>
+          </label>
+          <label id="background-image-picker" class="file-button background-image-picker icon-action" data-icon="↥" aria-label="배경 이미지 변경" title="배경 이미지 변경" hidden>
+            <span>이미지 변경</span>
+            <input id="background-image-input" type="file" accept="image/*">
+          </label>
+          <label class="accent-picker" title="테마 색상">
+            <span class="sr-only">테마 색상</span>
+            <input id="accent-picker" type="color" value="#c2410c" aria-label="테마 색상">
+          </label>
+          <button id="theme-toggle" class="theme-toggle icon-action" type="button" data-icon="◐" aria-label="다크 모드로 전환" title="다크 모드로 전환">다크 모드</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="issue-workspace">
+    <section id="folder-status" class="connection-bar" data-status="loading" aria-labelledby="load-title">
+      <div class="connection-copy">
+        <h2 id="load-title">이슈 폴더</h2>
+        <p id="load-status" class="status-message" aria-live="polite">저장된 이슈 폴더에 연결하는 중입니다.</p>
+        <p id="auto-refresh-status" class="auto-refresh-status">폴더 연결 후 변경을 자동 확인합니다.</p>
+      </div>
+    </section>
+
+    <!-- 상태 보기와 필터를 한 행에 묶어 같은 탐색 흐름으로 보여줍니다. -->
+    <div class="view-toolbar">
+      <nav class="issue-tabs" aria-label="이슈 상태 보기">
+        <button class="issue-tab" type="button" data-status-filter="all" aria-label="전체 이슈" aria-pressed="false">
+          <!-- 상태 아이콘은 같은 선 굵기의 SVG로 통일해 운영체제별 이모지 차이를 피합니다. -->
+          <svg class="tab-icon tab-icon-grid" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+            <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+            <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+            <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+          </svg>
+          <strong id="summary-total">0</strong>
+        </button>
+        <button class="issue-tab" type="button" data-status-filter="open" aria-label="활성 이슈" aria-pressed="true">
+          <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 12h4l2.5-6 5 12 2.5-6h4"></path>
+          </svg>
+          <strong id="summary-open">0</strong>
+        </button>
+        <button class="issue-tab" type="button" data-status-filter="blocked" aria-label="보류 이슈" aria-pressed="false">
+          <svg class="tab-icon tab-icon-fill" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="5" y="4" width="5" height="16" rx="1"></rect>
+            <rect x="14" y="4" width="5" height="16" rx="1"></rect>
+          </svg>
+          <strong id="summary-blocked">0</strong>
+        </button>
+        <button class="issue-tab" type="button" data-status-filter="resolved" aria-label="완료 이슈" aria-pressed="false">
+          <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m4 12 5 5L20 6"></path>
+          </svg>
+          <strong id="summary-resolved">0</strong>
+        </button>
+      </nav>
+
+      <section class="query-toolbar" aria-labelledby="filter-title">
+        <h2 id="filter-title" class="sr-only">이슈 필터 및 정렬</h2>
+        <label class="filter-control">
+          <span class="sr-only">상태</span>
+          <select id="status-filter" aria-label="상태">
+            <option value="all">상태·전체</option>
+            <option value="open" selected>상태·활성</option>
+            <option value="doing">상태·작업</option>
+            <option value="blocked">상태·보류</option>
+            <option value="resolved">상태·완료</option>
+            <option value="ignored">상태·제외</option>
+          </select>
+        </label>
+        <label class="filter-control">
+          <span class="sr-only">위험도</span>
+          <select id="risk-filter" aria-label="위험도">
+            <option value="all">위험·전체</option>
+            <option value="critical">위험·치명</option>
+            <option value="high">위험·높음</option>
+            <option value="medium">위험·중간</option>
+            <option value="low">위험·낮음</option>
+          </select>
+        </label>
+        <label class="filter-control">
+          <span class="sr-only">정렬</span>
+          <select id="sort-order" aria-label="정렬">
+            <option value="priority-asc" selected>우선↑</option>
+            <option value="priority-desc">우선↓</option>
+            <option value="date-desc">최신순</option>
+            <option value="date-asc">오래된순</option>
+            <option value="number-desc">번호↓</option>
+            <option value="number-asc">번호↑</option>
+          </select>
+        </label>
+      </section>
+    </div>
+
+    <section class="issues-section" aria-label="이슈 목록">
+      <div id="issues-list" class="issue-groups">
+        <article class="empty-state">
+          <h3>표시할 이슈가 없습니다.</h3>
+          <p><code>.proofline/issues</code> 폴더를 연결하거나 필터를 바꿔보세요.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <!-- 필요할 때 hidden만 제거해 다시 사용할 수 있는 글래스 조정 패널입니다. -->
+  <details id="tuning-panel" class="tuning-panel" hidden>
+    <summary>글래스 조정</summary>
+    <div class="tuning-controls">
+      <label>
+        <span>텍스트 밝기 보정 <output for="tuning-text-lightness">0</output>%</span>
+        <input id="tuning-text-lightness" type="range" min="0" max="20" value="0" data-tuning-variable="--tuning-text-brightness" data-unit="%">
+      </label>
+      <label>
+        <span>카드 불투명도 <output for="tuning-glass-opacity">0.15</output></span>
+        <input id="tuning-glass-opacity" type="range" min="0.1" max="0.8" step="0.01" value="0.15" data-tuning-variable="--tuning-glass-opacity">
+      </label>
+      <label>
+        <span>컨트롤 불투명도 <output for="tuning-control-opacity">0.75</output></span>
+        <input id="tuning-control-opacity" type="range" min="0.1" max="0.9" step="0.01" value="0.75" data-tuning-variable="--tuning-control-opacity">
+      </label>
+      <label>
+        <span>백드롭 밝기 <output for="tuning-backdrop-brightness">1.06</output></span>
+        <input id="tuning-backdrop-brightness" type="range" min="0.7" max="1.3" step="0.01" value="1.06" data-tuning-variable="--tuning-backdrop-brightness">
+      </label>
+    </div>
+  </details>
+
+  <template id="issue-group-template">
+    <details class="issue-group" open>
+      <summary class="issue-group-header">
+        <h3 class="issue-group-title"></h3>
+        <span class="issue-group-count"></span>
+        <span class="group-chevron" aria-hidden="true"></span>
+      </summary>
+      <div class="issue-group-rows"></div>
+    </details>
+  </template>
+
+  <template id="issue-template">
+    <article class="issue-row">
+      <details class="issue-disclosure">
+        <summary class="issue-summary">
+          <p class="issue-id"></p>
+          <h4 class="issue-title"></h4>
+          <span class="risk-label"></span>
+          <time class="issue-updated"></time>
+          <span class="issue-chevron" aria-hidden="true"></span>
+        </summary>
+
+        <div class="issue-detail">
+          <dl class="issue-meta">
+            <div>
+              <dt>발견 맥락</dt>
+              <dd class="issue-discovered"></dd>
+            </div>
+            <div>
+              <dt>권장 다음 조치</dt>
+              <dd class="issue-next-step"></dd>
+            </div>
+          </dl>
+          <details class="issue-section issue-evidence">
+            <summary>근거 <span class="issue-evidence-count"></span></summary>
+            <div class="issue-evidence-content"></div>
+          </details>
+          <section class="issue-section issue-body-wrap" aria-label="상세 내용">
+            <h4>상세 내용</h4>
+            <div class="issue-body markdown-body"></div>
+          </section>
+        </div>
+      </details>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>

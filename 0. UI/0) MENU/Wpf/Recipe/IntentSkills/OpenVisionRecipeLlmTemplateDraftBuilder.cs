@@ -14,6 +14,38 @@ namespace OpenVisionLab
             string pipelineName = "LLM_Starter_" + SanitizePathSegment(selectedTemplate.Replace("+", "And").Replace(" ", string.Empty));
             VisionPipeline pipeline = new VisionPipeline { Name = pipelineName };
 
+            if (OpenVisionRecipeLlmIntent.IsPinArrayGapTemplate(selectedTemplate))
+            {
+                if (!OpenVisionRecipePinArrayGapIntentSkill.TryParseRowRois(
+                        pinGapRoiText,
+                        out IReadOnlyList<OpenVisionRecipePinGapIntentSkill.RoiSample> rowRois,
+                        out _))
+                {
+                    return pipeline;
+                }
+
+                return OpenVisionRecipePinArrayGapIntentSkill.CreateMeasurementPipeline(
+                    rowRois,
+                    OpenVisionRecipePinArrayGapIntentSkill.DefaultDarkThreshold,
+                    OpenVisionRecipePinArrayGapIntentSkill.DefaultMinimumDarkCoverageRatio,
+                    OpenVisionRecipePinArrayGapIntentSkill.DefaultMinimumPinWidth,
+                    OpenVisionRecipePinArrayGapIntentSkill.DefaultMaximumPinBreakWidth,
+                    OpenVisionRecipePinArrayGapIntentSkill.DefaultMinimumGapWidth);
+            }
+
+            if (OpenVisionRecipeLlmIntent.IsDarkBandGapTemplate(selectedTemplate))
+            {
+                if (!OpenVisionRecipeDarkBandGapIntentSkill.TryParseCoarseRoi(
+                        pinGapRoiText,
+                        out OpenVisionRecipePinGapIntentSkill.RoiSample roi,
+                        out _))
+                {
+                    return pipeline;
+                }
+
+                return OpenVisionRecipeDarkBandGapIntentSkill.CreateMeasurementPipeline(roi);
+            }
+
             if (OpenVisionRecipeLlmIntent.IsLineDistanceTemplate(selectedTemplate))
             {
                 IReadOnlyList<OpenVisionRecipePinGapIntentSkill.RoiSample> samples =

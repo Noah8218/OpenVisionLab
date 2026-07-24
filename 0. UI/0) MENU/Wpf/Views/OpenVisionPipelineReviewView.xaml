@@ -833,6 +833,8 @@
                             <Border Grid.Row="2" Style="{StaticResource PreviewWellStyle}">
                                 <Image x:Name="imgOutputPreview"
                                        Stretch="Uniform"
+                                       Cursor="Cross"
+                                       MouseLeftButtonDown="ImgOutputPreview_MouseLeftButtonDown"
                                        Source="{Binding OutputPreviewImage}" />
                             </Border>
                             <StackPanel Grid.Row="4">
@@ -848,7 +850,9 @@
                     </Border>
                 </Grid>
 
-                <Grid Grid.Row="4">
+                <TabControl x:Name="reviewDetailTabs" Grid.Row="4">
+                    <TabItem x:Name="stepDetailsTab" Header="Step Details">
+                <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="10" />
@@ -924,9 +928,9 @@
                                     BorderThickness="1"
                                     Padding="6"
                                     Margin="0,6,0,0"
-                                    Visibility="{Binding IsFixtureTeachVisible, Converter={StaticResource PipelineReview.BooleanToVisibilityConverter}}">
+                                    Visibility="{Binding IsLegacyFixtureTeachVisible, Converter={StaticResource PipelineReview.BooleanToVisibilityConverter}}">
                                 <StackPanel>
-                                    <Button x:Name="btnUseSelectedMatchingPose"
+                                    <Button x:Name="btnLegacyUseSelectedMatchingPose"
                                             AutomationProperties.AutomationId="PipelineReviewUseMatchingPoseButton"
                                             IsEnabled="{Binding CanUseSelectedMatchingPose}"
                                             Click="BtnUseSelectedMatchingPose_Click"
@@ -935,11 +939,8 @@
                                             HorizontalAlignment="Left"
                                             Padding="9,0">
                                         <StackPanel Orientation="Horizontal">
-                                            <iconPacks:PackIconMaterial Kind="ContentSave"
-                                                                        Width="15"
-                                                                        Height="15"
-                                                                        Margin="0,0,6,0" />
-                                            <TextBlock x:Name="txtUseSelectedMatchingPoseButton"
+                                            <iconPacks:PackIconMaterial Kind="ContentSave" Width="15" Height="15" Margin="0,0,6,0" />
+                                            <TextBlock x:Name="txtLegacyUseSelectedMatchingPoseButton"
                                                        Text="Save as reference"
                                                        VerticalAlignment="Center" />
                                         </StackPanel>
@@ -1023,6 +1024,442 @@
                         </Grid>
                     </Border>
                 </Grid>
+                    </TabItem>
+                    <TabItem x:Name="fixtureDesignerTab"
+                             Header="Fixture / Relative ROI"
+                             AutomationProperties.AutomationId="PipelineReviewFixtureDesignerTab"
+                             Visibility="{Binding IsFixtureDesignerVisible, Converter={StaticResource PipelineReview.BooleanToVisibilityConverter}}">
+                        <Grid Margin="6">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="4" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.05*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="1.05*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="1.35*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="190" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Row="0"
+                                    Grid.ColumnSpan="5"
+                                    Background="#EAF7F8"
+                                    BorderBrush="{StaticResource PipelineReview.LineBrush}"
+                                    BorderThickness="1"
+                                    Padding="6,3">
+                                <DockPanel LastChildFill="True">
+                                    <TextBlock x:Name="lblFixtureRelationship"
+                                               DockPanel.Dock="Left"
+                                               Text="Fixture relationship"
+                                               FontWeight="SemiBold"
+                                               FontSize="10"
+                                               Margin="0,0,8,0" />
+                                    <TextBlock AutomationProperties.AutomationId="PipelineReviewFixtureRelationship"
+                                               Text="{Binding FixtureRelationshipText}"
+                                               TextTrimming="CharacterEllipsis"
+                                               FontSize="10" />
+                                </DockPanel>
+                            </Border>
+
+                            <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource PreviewWellStyle}">
+                                <Grid>
+                                    <Image x:Name="fixtureSourcePreviewImage"
+                                           AutomationProperties.AutomationId="PipelineReviewFixtureSourcePreview"
+                                           Source="{Binding FixtureSourcePreviewImage}"
+                                           Stretch="Uniform" />
+                                    <Border HorizontalAlignment="Left" VerticalAlignment="Top" Background="#D51A3038" Padding="5,2">
+                                        <TextBlock x:Name="lblFixtureSource" Text="Source + transformed ROI" Foreground="White" FontSize="10" />
+                                    </Border>
+                                    <TextBlock Text="{Binding FixtureSourceText}"
+                                               VerticalAlignment="Bottom"
+                                               Background="#D51A3038"
+                                               Foreground="White"
+                                               Padding="5,2"
+                                               FontSize="10"
+                                               TextTrimming="CharacterEllipsis" />
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource PreviewWellStyle}">
+                                <Grid>
+                                    <Image x:Name="fixtureNormalizedPreviewImage"
+                                           AutomationProperties.AutomationId="PipelineReviewFixtureNormalizedPreview"
+                                           Source="{Binding FixtureNormalizedPreviewImage}"
+                                           Stretch="Uniform" />
+                                    <Border HorizontalAlignment="Left" VerticalAlignment="Top" Background="#D51A3038" Padding="5,2">
+                                        <TextBlock x:Name="lblFixtureNormalized" Text="Normalized + reference ROI" Foreground="White" FontSize="10" />
+                                    </Border>
+                                    <TextBlock Text="{Binding FixtureNormalizedText}"
+                                               VerticalAlignment="Bottom"
+                                               Background="#D51A3038"
+                                               Foreground="White"
+                                               Padding="5,2"
+                                               FontSize="10"
+                                               TextTrimming="CharacterEllipsis" />
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Row="2" Grid.Column="4" Style="{StaticResource ReviewPanelStyle}" Padding="6">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock x:Name="lblFixtureState" Text="Reference and current state" Style="{StaticResource SectionTitleStyle}" />
+                                    <Grid Grid.Row="1" Margin="0,4,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="46" />
+                                            <ColumnDefinition Width="6" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Background="#102027" BorderBrush="{StaticResource PipelineReview.LineBrush}" BorderThickness="1">
+                                            <Image x:Name="fixtureTemplatePreviewImage"
+                                                   AutomationProperties.AutomationId="PipelineReviewFixtureTemplatePreview"
+                                                   Source="{Binding FixtureTemplatePreviewImage}"
+                                                   Stretch="Uniform" />
+                                        </Border>
+                                        <StackPanel Grid.Column="2">
+                                                <TextBlock Text="{Binding FixtureTemplateText}" ToolTip="{Binding FixtureTemplateText}" FontSize="10" Foreground="{StaticResource PipelineReview.MutedTextBrush}" />
+                                                <TextBlock Text="{Binding FixtureReferenceText}" ToolTip="{Binding FixtureReferenceText}" FontSize="10" />
+                                                <TextBlock Text="{Binding FixtureCurrentText}" ToolTip="{Binding FixtureCurrentText}" FontSize="10" />
+                                                <TextBlock Text="{Binding FixtureQualityText}" ToolTip="{Binding FixtureQualityText}" FontSize="10" Foreground="{StaticResource PipelineReview.AccentBrush}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+
+                            <StackPanel Grid.Row="0" Grid.RowSpan="3" Grid.Column="6" VerticalAlignment="Center">
+                                <Button x:Name="btnUseSelectedMatchingPose"
+                                        AutomationProperties.AutomationId="PipelineReviewUseMatchingPoseButton"
+                                        IsEnabled="{Binding CanUseSelectedMatchingPose}"
+                                        Click="BtnUseSelectedMatchingPose_Click"
+                                        Height="27" Padding="8,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <iconPacks:PackIconMaterial Kind="ContentSave" Width="14" Height="14" Margin="0,0,5,0" />
+                                        <TextBlock x:Name="txtUseSelectedMatchingPoseButton" Text="Save as reference" FontSize="10" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="btnFixtureProducerEdit"
+                                        AutomationProperties.AutomationId="PipelineReviewFixtureProducerEditButton"
+                                        IsEnabled="{Binding CanEditFixtureProducer}"
+                                        Click="BtnEditFixtureProducer_Click"
+                                        Height="27" Padding="8,0" Margin="0,4,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <iconPacks:PackIconMaterial Kind="ImageSearchOutline" Width="14" Height="14" Margin="0,0,5,0" />
+                                        <TextBlock x:Name="txtFixtureProducerEditButton" Text="Edit template / search ROI" FontSize="10" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="btnFixtureMeasurementEdit"
+                                        AutomationProperties.AutomationId="PipelineReviewFixtureMeasurementEditButton"
+                                        IsEnabled="{Binding CanEditFixtureMeasurement}"
+                                        Click="BtnEditFixtureMeasurement_Click"
+                                        Height="27" Padding="8,0" Margin="0,4,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <iconPacks:PackIconMaterial Kind="Crop" Width="14" Height="14" Margin="0,0,5,0" />
+                                        <TextBlock x:Name="txtFixtureMeasurementEditButton" Text="Edit measurement ROI" FontSize="10" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="btnFixtureRun"
+                                        AutomationProperties.AutomationId="PipelineReviewFixtureRunReviewButton"
+                                        IsEnabled="{Binding CanRunReview}"
+                                        Click="BtnRunReview_Click"
+                                        Height="27" Padding="8,0" Margin="0,4,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <iconPacks:PackIconMaterial Kind="Play" Width="14" Height="14" Margin="0,0,5,0" />
+                                        <TextBlock x:Name="txtFixtureRunButton" Text="Run Review" FontSize="10" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </TabItem>
+                    <TabItem x:Name="objectInspectorTab"
+                             Header="Object Results"
+                             Visibility="Collapsed">
+                        <Grid Margin="6">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="6" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="190" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="objectResultCountText"
+                                       Grid.ColumnSpan="3"
+                                       AutomationProperties.AutomationId="PipelineReviewObjectResultCount"
+                                       Foreground="{StaticResource PipelineReview.AccentBrush}"
+                                       FontWeight="SemiBold"
+                                       Text="Objects 0 / accepted 0 / rejected 0" />
+                            <Border Grid.Row="2"
+                                    Grid.Column="0"
+                                    Style="{StaticResource PreviewWellStyle}">
+                                <Grid>
+                                    <Image x:Name="imgObjectResultPreview"
+                                           AutomationProperties.AutomationId="PipelineReviewObjectHighlightPreview"
+                                           Stretch="Uniform"
+                                           Cursor="Cross"
+                                           MouseLeftButtonDown="ImgOutputPreview_MouseLeftButtonDown"
+                                           Source="{Binding OutputPreviewImage}" />
+                                    <Border HorizontalAlignment="Left"
+                                            VerticalAlignment="Top"
+                                            Background="#CC102027"
+                                            Padding="5,2">
+                                        <TextBlock x:Name="lblObjectHighlight"
+                                                   Text="Selected object highlight"
+                                                   Foreground="White"
+                                                   FontSize="10" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+                            <DataGrid x:Name="objectResultsGrid"
+                                      Grid.Row="2"
+                                      Grid.Column="2"
+                                      AutomationProperties.AutomationId="PipelineReviewObjectResultsTable"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      IsReadOnly="True"
+                                      SelectionMode="Single"
+                                      SelectionUnit="FullRow"
+                                      SelectionChanged="ObjectResultsGrid_SelectionChanged"
+                                      HeadersVisibility="Column"
+                                      GridLinesVisibility="Horizontal">
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Setter Property="Foreground" Value="{StaticResource PipelineReview.OkBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Accepted}" Value="False">
+                                                <Setter Property="Foreground" Value="#B5473A" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="#" Binding="{Binding Number}" Width="42" />
+                                    <DataGridTextColumn Header="판정" Binding="{Binding StateText}" Width="62" />
+                                    <DataGridTextColumn Header="면적" Binding="{Binding Area, StringFormat={}{0:0.###}}" Width="68" />
+                                    <DataGridTextColumn Header="중심 X" Binding="{Binding CenterX, StringFormat={}{0:0.##}}" Width="64" />
+                                    <DataGridTextColumn Header="중심 Y" Binding="{Binding CenterY, StringFormat={}{0:0.##}}" Width="64" />
+                                    <DataGridTextColumn Header="W" Binding="{Binding BoundsWidth}" Width="44" />
+                                    <DataGridTextColumn Header="H" Binding="{Binding BoundsHeight}" Width="44" />
+                                    <DataGridTextColumn Header="각도" Binding="{Binding Angle, StringFormat={}{0:0.##}}" Width="58" />
+                                    <DataGridTextColumn Header="제외 사유" Binding="{Binding RejectReason}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </TabItem>
+                    <TabItem x:Name="geometryReviewTab"
+                             Header="Geometry Review"
+                             Visibility="Collapsed">
+                        <Grid Margin="6">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="6" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="230" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="geometryResultCountText"
+                                       Grid.ColumnSpan="3"
+                                       AutomationProperties.AutomationId="PipelineReviewGeometryResultCount"
+                                       Foreground="{StaticResource PipelineReview.AccentBrush}"
+                                       FontWeight="SemiBold"
+                                       Text="Typed features 0 / same-run, pixel-only" />
+                            <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource PreviewWellStyle}">
+                                <Grid>
+                                    <Image x:Name="imgGeometryResultPreview"
+                                           AutomationProperties.AutomationId="PipelineReviewGeometryHighlightPreview"
+                                           Stretch="Uniform"
+                                           Cursor="Cross"
+                                           MouseLeftButtonDown="ImgGeometryResultPreview_MouseLeftButtonDown"
+                                           Source="{Binding OutputPreviewImage}" />
+                                    <Border HorizontalAlignment="Left" VerticalAlignment="Top" Background="#CC102027" Padding="5,2">
+                                        <TextBlock x:Name="lblGeometryHighlight" Text="Selected geometry highlight" Foreground="White" FontSize="10" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+                            <DataGrid x:Name="geometryResultsGrid"
+                                      Grid.Row="2" Grid.Column="2"
+                                      AutomationProperties.AutomationId="PipelineReviewGeometryResultsTable"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      IsReadOnly="True"
+                                      SelectionMode="Single"
+                                      SelectionUnit="FullRow"
+                                      SelectionChanged="GeometryResultsGrid_SelectionChanged"
+                                      HeadersVisibility="Column"
+                                      GridLinesVisibility="Horizontal">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Step / Feature" Binding="{Binding Identity}" Width="150" />
+                                    <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="70" />
+                                    <DataGridTextColumn Header="Geometry" Binding="{Binding GeometryText}" Width="220" />
+                                    <DataGridTextColumn Header="Coordinate layer" Binding="{Binding CoordinateLayer}" Width="110" />
+                                    <DataGridTextColumn Header="Fit evidence" Binding="{Binding QualityText}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </TabItem>
+                    <TabItem x:Name="scaleCalibrationTab"
+                             Header="Scale Calibration"
+                             AutomationProperties.AutomationId="PipelineReviewScaleCalibrationTab">
+                        <Grid Margin="6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.05*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="1.15*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="0.95*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0" Style="{StaticResource PreviewWellStyle}">
+                                <Grid>
+                                    <Image x:Name="imgScaleCalibrationPreview"
+                                           AutomationProperties.AutomationId="PipelineReviewScaleCalibrationPreview"
+                                           Source="{Binding ScaleCalibrationPreviewImage}"
+                                           Stretch="Uniform" />
+                                    <Border HorizontalAlignment="Left" VerticalAlignment="Top" Background="#D51A3038" Padding="5,2">
+                                        <TextBlock x:Name="lblScaleCalibrationPreview"
+                                                   Text="Point A/B evidence"
+                                                   Foreground="White"
+                                                   FontSize="10" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Column="2" Style="{StaticResource ReviewPanelStyle}" Padding="7">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock x:Name="lblScaleCalibrationInputs"
+                                               Text="Same-run point evidence"
+                                               FontSize="10"
+                                               Style="{StaticResource SectionTitleStyle}" />
+                                    <Grid Grid.Row="1" Margin="0,3,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="16" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="5" />
+                                            <ColumnDefinition Width="16" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="A" VerticalAlignment="Center" FontWeight="SemiBold" />
+                                        <ComboBox x:Name="cmbScalePointA"
+                                                  Grid.Column="1"
+                                                  AutomationProperties.AutomationId="PipelineReviewScalePointA"
+                                                  DisplayMemberPath="Identity"
+                                                  ToolTip="{Binding RelativeSource={RelativeSource Self}, Path=SelectedItem.Identity}"
+                                                  SelectionChanged="ScalePoint_SelectionChanged" />
+                                        <TextBlock Grid.Column="3" Text="B" VerticalAlignment="Center" FontWeight="SemiBold" />
+                                        <ComboBox x:Name="cmbScalePointB"
+                                                  Grid.Column="4"
+                                                  AutomationProperties.AutomationId="PipelineReviewScalePointB"
+                                                  DisplayMemberPath="Identity"
+                                                  ToolTip="{Binding RelativeSource={RelativeSource Self}, Path=SelectedItem.Identity}"
+                                                  SelectionChanged="ScalePoint_SelectionChanged" />
+                                    </Grid>
+                                    <Grid Grid.Row="2" Margin="0,4,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="30" />
+                                            <ColumnDefinition Width="50" />
+                                            <ColumnDefinition Width="4" />
+                                            <ColumnDefinition Width="70" />
+                                            <ColumnDefinition Width="5" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Name="lblScaleKnownDistance" Text="Real" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="10" />
+                                        <TextBox x:Name="txtScaleKnownDistance"
+                                                 Grid.Column="1"
+                                                 AutomationProperties.AutomationId="PipelineReviewScaleKnownDistance"
+                                                 Text="10" />
+                                        <ComboBox x:Name="cmbScaleUnit"
+                                                  Grid.Column="3"
+                                                  AutomationProperties.AutomationId="PipelineReviewScaleUnit" />
+                                        <Button x:Name="btnCalculateScaleCalibration"
+                                                Grid.Column="5"
+                                                AutomationProperties.AutomationId="PipelineReviewCalculateScaleButton"
+                                                Height="24"
+                                                Padding="5,0"
+                                                Click="BtnCalculateScaleCalibration_Click">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <iconPacks:PackIconMaterial Kind="ChartTimelineVariant" Width="13" Height="13" Margin="0,0,4,0" />
+                                                <TextBlock x:Name="txtCalculateScaleCalibrationButton" Text="Calculate + save" FontSize="9" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Column="4" Style="{StaticResource ReviewPanelStyle}" Padding="7">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock x:Name="lblScaleCalibrationResult"
+                                               Text="Saved scale (mm/px)"
+                                               FontSize="10"
+                                               Style="{StaticResource SectionTitleStyle}" />
+                                    <TextBlock x:Name="txtScaleCalibrationResult"
+                                               Grid.Row="1"
+                                               AutomationProperties.AutomationId="PipelineReviewScaleResult"
+                                               Text="Not taught"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource PipelineReview.AccentBrush}"
+                                               Margin="0,3,0,0"
+                                               FontSize="9"
+                                               TextWrapping="Wrap"
+                                               MaxHeight="30" />
+                                    <Grid Grid.Row="2" Margin="0,3,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="1.05*" />
+                                            <ColumnDefinition Width="5" />
+                                            <ColumnDefinition Width="0.95*" />
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox x:Name="cmbScaleTargetStep"
+                                                  AutomationProperties.AutomationId="PipelineReviewScaleTargetStep"
+                                                  DisplayMemberPath="DisplayText"
+                                                  ToolTip="{Binding RelativeSource={RelativeSource Self}, Path=SelectedItem.DisplayText}" />
+                                        <Button x:Name="btnApplyScaleCalibration"
+                                                Grid.Column="2"
+                                                AutomationProperties.AutomationId="PipelineReviewApplyScaleButton"
+                                                Height="24"
+                                                Padding="5,0"
+                                                Click="BtnApplyScaleCalibration_Click">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <iconPacks:PackIconMaterial Kind="ContentSave" Width="13" Height="13" Margin="0,0,4,0" />
+                                                <TextBlock x:Name="txtApplyScaleCalibrationButton" Text="Apply to Step" FontSize="9" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                    <TextBlock x:Name="txtScaleCalibrationStatus"
+                                               Grid.Row="3"
+                                               AutomationProperties.AutomationId="PipelineReviewScaleStatus"
+                                               Text="Run Review to obtain two typed points."
+                                               Foreground="{StaticResource PipelineReview.MutedTextBrush}"
+                                               FontSize="9"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding RelativeSource={RelativeSource Self}, Path=Text}"
+                                               Margin="0,3,0,0" />
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
             </Grid>
         </Grid>
 

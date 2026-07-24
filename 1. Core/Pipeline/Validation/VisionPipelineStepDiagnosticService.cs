@@ -145,6 +145,16 @@ namespace OpenVisionLab
                     return "Feature matching adaptive threshold block size is invalid.";
                 case VisionToolErrorCode.RotateScaleInvalidScale:
                     return "Rotate/Scale scale value is invalid.";
+                case VisionToolErrorCode.AffineInvalidPoint:
+                case VisionToolErrorCode.AffineDegenerateSource:
+                case VisionToolErrorCode.AffineDegenerateDestination:
+                    return "Affine point teaching is non-finite, collinear, or below the configured triangle-area gate.";
+                case VisionToolErrorCode.AffineInvalidOutputSize:
+                case VisionToolErrorCode.AffineInvalidSampling:
+                case VisionToolErrorCode.AffineInvalidGate:
+                    return "Affine output, interpolation, border, or validation-gate parameters are invalid.";
+                case VisionToolErrorCode.AffineInsufficientCoverage:
+                    return "The affine transform left too little valid source coverage on the output canvas.";
                 case VisionToolErrorCode.ContourNoResult:
                 case VisionToolErrorCode.BlobNoResult:
                 case VisionToolErrorCode.MatchingNoResult:
@@ -155,6 +165,10 @@ namespace OpenVisionLab
                 case VisionToolErrorCode.FeatureHomographyFailed:
                 case VisionToolErrorCode.FeatureNoResult:
                     return ResolveNoResultHint(step, toolResult);
+                case VisionToolErrorCode.MatchingAmbiguous:
+                    return string.IsNullOrWhiteSpace(toolResult.Message)
+                        ? "Edge based template matching rejected multiple plausible unique-match candidates."
+                        : toolResult.Message;
                 default:
                     return string.IsNullOrWhiteSpace(toolResult.Message)
                         ? "Tool execution failed before producing an accepted result."
@@ -237,6 +251,18 @@ namespace OpenVisionLab
                     return "Set Feature adaptive BlockSize to an odd value greater than 1.";
                 case VisionToolErrorCode.RotateScaleInvalidScale:
                     return "Set scale to a positive value. Use 1.0 for original size.";
+                case VisionToolErrorCode.AffineInvalidPoint:
+                case VisionToolErrorCode.AffineDegenerateSource:
+                case VisionToolErrorCode.AffineDegenerateDestination:
+                    return "Teach three well-separated non-collinear source points and three non-collinear destination points in matching order.";
+                case VisionToolErrorCode.AffineInvalidOutputSize:
+                    return "Use 0 to keep an input dimension, or set each output dimension to 1..32768.";
+                case VisionToolErrorCode.AffineInvalidSampling:
+                    return "Use Nearest, Linear, Cubic, or Lanczos4 interpolation and a supported OpenCV border policy.";
+                case VisionToolErrorCode.AffineInvalidGate:
+                    return "Use non-negative triangle-area gates and a valid-pixel ratio between 0 and 1.";
+                case VisionToolErrorCode.AffineInsufficientCoverage:
+                    return "Review destination points and output size, then lower the coverage gate only when the intended crop is visible in the retained drawing.";
                 case VisionToolErrorCode.ContourNoResult:
                 case VisionToolErrorCode.BlobNoResult:
                 case VisionToolErrorCode.MatchingNoResult:
@@ -247,6 +273,8 @@ namespace OpenVisionLab
                 case VisionToolErrorCode.FeatureHomographyFailed:
                 case VisionToolErrorCode.FeatureNoResult:
                     return ResolveNoResultFix(step, toolResult);
+                case VisionToolErrorCode.MatchingAmbiguous:
+                    return "Review the template drawing and search ROI, then choose a more distinctive pattern or narrow the reviewed ROI. Do not lower the uniqueness margin only to force a pass.";
                 default:
                     return ResolveToolSpecificFix(step);
             }
@@ -319,6 +347,15 @@ namespace OpenVisionLab
                 case "linedistance":
                 case "linedistancegauge":
                     return $"LineGauge did not find enough edge points or could not fit a line from input layer '{ResolveInputLayerText(step)}'.{FormatDiagnosticMetricSuffix(step, toolResult)}";
+                case "pinarraygap":
+                case "adjacentpingap":
+                    return $"PinArrayGap did not find at least two pin runs in the taught row ROI from input layer '{ResolveInputLayerText(step)}'.{FormatDiagnosticMetricSuffix(step, toolResult)}";
+                case "curvebandprofile":
+                case "darkbandcurve":
+                    return $"CurveBandProfile did not find one eligible dark band across the taught ROI from input layer '{ResolveInputLayerText(step)}'.{FormatDiagnosticMetricSuffix(step, toolResult)}";
+                case "outercornerintersection":
+                case "brightobjectcorner":
+                    return $"OuterCornerIntersection did not find one stable bright object and its lower/right outer edges from input layer '{ResolveInputLayerText(step)}'.{FormatDiagnosticMetricSuffix(step, toolResult)}";
                 case "matching":
                 case "templatematching":
                     return $"Template matching did not find a match above the score threshold from input layer '{ResolveInputLayerText(step)}'.{FormatDiagnosticMetricSuffix(step, toolResult)}";
@@ -350,6 +387,15 @@ namespace OpenVisionLab
                 case "linedistance":
                 case "linedistancegauge":
                     return "Check whether InputLayer is the edge/preprocessed layer expected by LineGauge, then tune ROI, projection direction, polarity, contrast, sampling interval, and threshold.";
+                case "pinarraygap":
+                case "adjacentpingap":
+                    return "Check that CvROI covers one pin row, then tune DarkThreshold, MinDarkCoverageRatio, MinPinWidth, MaxPinBreakWidth, and MinGapWidth before changing acceptance gates.";
+                case "curvebandprofile":
+                case "darkbandcurve":
+                    return "Check that CvROI contains the whole curved dark band, then tune DarkThreshold, MinComponentArea, MinComponentHeight, MinComponentHeightRatio, and IgnoreLeftBorderTouching before changing acceptance gates.";
+                case "outercornerintersection":
+                case "brightobjectcorner":
+                    return "Check that the target object is the largest bright component, then tune ForegroundThreshold, MinComponentArea, and EdgeFitEndPercent before changing a corner gate.";
                 case "matching":
                 case "templatematching":
                     return "Check template image and whether InputLayer is the intended source/preprocessed layer, then tune ROI, score threshold, angle search, and scale search.";
@@ -402,6 +448,15 @@ namespace OpenVisionLab
                 case "linedistance":
                 case "linedistancegauge":
                     return "For line metrics, first check ROI placement, edge layer selection, polarity/contrast, sampling interval, projection direction, and Pixel/mm calibration.";
+                case "pinarraygap":
+                case "adjacentpingap":
+                    return "For pin-array metrics, first confirm the one-row ROI, detected pin rectangles, and the G# edge-gap or P# center-pitch drawings. Then tune dark-column coverage and pin widths before changing the matching DistancePx or PitchPx gate.";
+                case "curvebandprofile":
+                case "darkbandcurve":
+                    return "For curved-band metrics, first confirm the selected dark component and its outer/inner overlays, then tune the ROI and component filters before changing width or arc-length gates.";
+                case "outercornerintersection":
+                case "brightobjectcorner":
+                    return "For outer-corner metrics, first confirm the bright-object contour plus the drawn bottom and right outer edges before changing intersection gates.";
                 case "matching":
                 case "templatematching":
                     return normalizedMetric.Contains("score")
@@ -497,6 +552,8 @@ namespace OpenVisionLab
                 case "linegauge":
                 case "linedistance":
                 case "linedistancegauge":
+                case "pinarraygap":
+                case "adjacentpingap":
                     return new[]
                     {
                         VisionPipelineKnownMetrics.EdgeCount,
@@ -505,11 +562,28 @@ namespace OpenVisionLab
                         VisionPipelineKnownMetrics.DistancePxAvg,
                         VisionPipelineKnownMetrics.LineLengthMax
                     };
+                case "curvebandprofile":
+                case "darkbandcurve":
+                    return new[]
+                    {
+                        VisionPipelineKnownMetrics.EdgeCount,
+                        VisionPipelineKnownMetrics.EdgePointCount,
+                        VisionPipelineKnownMetrics.DistanceMmAvg,
+                        VisionPipelineKnownMetrics.DistancePxAvg,
+                        VisionPipelineKnownMetrics.CurveCenterArcLengthPx
+                    };
+                case "outercornerintersection":
+                case "brightobjectcorner":
+                    return new[]
+                    {
+                        VisionPipelineKnownMetrics.EdgeCount,
+                        VisionPipelineKnownMetrics.EdgePointCount,
+                        VisionPipelineKnownMetrics.LineLengthMax,
+                        VisionPipelineKnownMetrics.LineAngleAvg,
+                        VisionPipelineKnownMetrics.CornerOuterContourVerified
+                    };
                 case "matching":
                 case "templatematching":
-                case "edgebasedmatching":
-                case "edgebasedtemplatematching":
-                case "edgetemplatematching":
                 case "feature":
                 case "featurematching":
                 case "sift":
@@ -518,6 +592,20 @@ namespace OpenVisionLab
                         VisionPipelineKnownMetrics.ResultCount,
                         VisionPipelineKnownMetrics.ScoreMax,
                         VisionPipelineKnownMetrics.ScoreAvg,
+                        VisionPipelineKnownMetrics.BoundsWidthMax,
+                        VisionPipelineKnownMetrics.BoundsHeightMax
+                    };
+                case "edgebasedmatching":
+                case "edgebasedtemplatematching":
+                case "edgetemplatematching":
+                    return new[]
+                    {
+                        VisionPipelineKnownMetrics.ResultCount,
+                        VisionPipelineKnownMetrics.ScoreMax,
+                        VisionPipelineKnownMetrics.ScoreAvg,
+                        VisionPipelineKnownMetrics.UniqueMatchState,
+                        VisionPipelineKnownMetrics.UniqueMatchPlausibleAlternativeCount,
+                        VisionPipelineKnownMetrics.UniqueMatchScoreMargin,
                         VisionPipelineKnownMetrics.BoundsWidthMax,
                         VisionPipelineKnownMetrics.BoundsHeightMax
                     };

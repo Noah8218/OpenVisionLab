@@ -9,13 +9,14 @@ namespace OpenVisionLab
 {
     [CategoryOrder("Parameter", 0)]
     [CategoryOrder("Matching", 1)]
-    [CategoryOrder("Edge Model", 2)]
-    [CategoryOrder("Angle", 3)]
-    [CategoryOrder("Scale", 4)]
-    [CategoryOrder("Search", 5)]
-    [CategoryOrder("ROI", 6)]
-    [CategoryOrder("Threshold", 7)]
-    [CategoryOrder("Image Process", 8)]
+    [CategoryOrder("Auto MPoint", 2)]
+    [CategoryOrder("Edge Model", 3)]
+    [CategoryOrder("Angle", 4)]
+    [CategoryOrder("Scale", 5)]
+    [CategoryOrder("Search", 6)]
+    [CategoryOrder("ROI", 7)]
+    [CategoryOrder("Threshold", 8)]
+    [CategoryOrder("Image Process", 9)]
     [System.Xml.Serialization.XmlRoot("CPropertyEdgeBasedMatching")]
     public class EdgeBasedMatchingProperty : OpenCvPropertyBase, IOpenCVPropertyEdgeBasedTemplateMatching, IOpenCvConfigurableProperty<EdgeBasedMatchingProperty>
     {
@@ -33,8 +34,61 @@ namespace OpenVisionLab
         public int NUM_MATCH { get; set; } = 1;
 
         [PropertyOrder(3)]
+        [Category("Matching"), Description("Require exactly one spatially distinct candidate. This opt-in mode keeps internal Top-K candidates even though Match count must be 1, and returns Ambiguous with no match when the score-margin gate fails."), DisplayName("Require unique match")]
+        public bool USE_UNIQUE_MATCH_VALIDATION { get; set; } = false;
+
+        [PropertyOrder(4)]
+        [Category("Matching"), Description("Minimum normalized 0..1 score difference between the selected candidate and the strongest spatially distinct candidate. Used only when Require unique match is enabled."), DisplayName("Min unique margin")]
+        public double UNIQUE_MATCH_MIN_SCORE_MARGIN { get; set; } = 0.03D;
+
+        [PropertyOrder(5)]
         [Category("Matching"), Description("Draw the detected template outline and center point on the output image. Non-zero angle results must be drawn as rotated outlines."), DisplayName("Draw result")]
         public bool USE_DRAW_IMAGE { get; set; } = true;
+
+        [PropertyOrder(0)]
+        [Category("Auto MPoint"), Description("Restrict automatic pattern candidate analysis to the reviewed analysis ROI. This teaching option never runs matching Preview by itself."), DisplayName("Use analysis ROI")]
+        public bool AUTO_MPOINT_USE_ANALYSIS_ROI { get; set; } = false;
+
+        [PropertyOrder(1)]
+        [PropertyEditor(typeof(WpgROIEditor))]
+        [Category("Auto MPoint"), Description("Optional source-image region in which Auto MPoint searches for distinctive pattern candidates."), DisplayName("Analysis ROI")]
+        public Rect AUTO_MPOINT_ANALYSIS_ROI { get; set; } = new Rect();
+
+        [PropertyOrder(2)]
+        [Category("Auto MPoint"), Description("Width in pixels of each candidate pattern window."), DisplayName("Pattern width")]
+        public int AUTO_MPOINT_PATTERN_WIDTH { get; set; } = 96;
+
+        [PropertyOrder(3)]
+        [Category("Auto MPoint"), Description("Height in pixels of each candidate pattern window."), DisplayName("Pattern height")]
+        public int AUTO_MPOINT_PATTERN_HEIGHT { get; set; } = 96;
+
+        [PropertyOrder(4)]
+        [Category("Auto MPoint"), Description("Grid interval in pixels between candidate windows. Smaller values inspect more positions and take longer."), DisplayName("Candidate stride")]
+        public int AUTO_MPOINT_STRIDE { get; set; } = 16;
+
+        [PropertyOrder(5)]
+        [Category("Auto MPoint"), Description("Maximum number of accepted suggestions shown for operator review."), DisplayName("Max suggestions")]
+        public int AUTO_MPOINT_MAX_RESULTS { get; set; } = 5;
+
+        [PropertyOrder(6)]
+        [Category("Auto MPoint"), Description("Minimum normalized contrast, edge coverage, and directional-balance quality required before exact matching checks."), DisplayName("Min feature quality")]
+        public double AUTO_MPOINT_MIN_FEATURE_QUALITY { get; set; } = 0.15D;
+
+        [PropertyOrder(7)]
+        [Category("Auto MPoint"), Description("Minimum score margin between the taught location and the strongest competing location. Raise this for repetitive images."), DisplayName("Min uniqueness")]
+        public double AUTO_MPOINT_MIN_UNIQUENESS { get; set; } = 0.05D;
+
+        [PropertyOrder(8)]
+        [Category("Auto MPoint"), Description("Maximum synthetic relocation error in pixels allowed for a suggested pattern."), DisplayName("Max position error")]
+        public double AUTO_MPOINT_MAX_POSITION_ERROR { get; set; } = 2.5D;
+
+        [PropertyOrder(9)]
+        [Category("Auto MPoint"), Description("Minimum number of additional representative images required when Auto MPoint ranks candidates by actual cross-image matching performance."), DisplayName("Min representative images")]
+        public int AUTO_MPOINT_MIN_REPRESENTATIVE_IMAGES { get; set; } = 3;
+
+        [PropertyOrder(10)]
+        [Category("Auto MPoint"), Description("Minimum 0..1 matching success rate across the selected representative images. Candidates below this rate are rejected."), DisplayName("Min representative success")]
+        public double AUTO_MPOINT_MIN_REPRESENTATIVE_SUCCESS_RATE { get; set; } = 0.75D;
 
         [PropertyOrder(0)]
         [PropertyEditor(typeof(WpgRangeEditor))]
@@ -160,9 +214,15 @@ namespace OpenVisionLab
 
         internal Mat ImageTemplate { get; set; } = new Mat();
 
-        public EdgeBasedMatchingProperty() : base() { }
+        public EdgeBasedMatchingProperty() : base()
+        {
+            USE_THRESHOLD = false;
+        }
 
-        public EdgeBasedMatchingProperty(string strName) : base(strName) { }
+        public EdgeBasedMatchingProperty(string strName) : base(strName)
+        {
+            USE_THRESHOLD = false;
+        }
 
         public EdgeBasedMatchingProperty DeepCopy()
         {

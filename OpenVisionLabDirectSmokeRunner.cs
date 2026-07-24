@@ -1,3 +1,4 @@
+using Lib.Common;
 using Lib.OpenCV.Pipeline;
 using Lib.OpenCV.Property;
 using Microsoft.Web.WebView2.Wpf;
@@ -87,6 +88,18 @@ namespace OpenVisionLab
                 if (string.Equals(scenario, "matching-pyramid-scale", StringComparison.OrdinalIgnoreCase))
                 {
                     RunMatchingPyramidScale(outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "matching-c9-batch", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunMatchingC9Batch(args, outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "matching-die-pad-batch", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunMatchingDiePadBatch(args, outputDirectory);
                     return true;
                 }
 
@@ -291,6 +304,8 @@ namespace OpenVisionLab
                 throw new InvalidOperationException("LLM XML draft could not be loaded for image execution: " + draftPath);
             }
 
+            File.Copy(draftPath, Path.Combine(outputDirectory, "LlmDraft.pipeline.xml"), true);
+
             VisionPipelineValidationResult validation = VisionPipelineValidator.Validate(pipeline, new[] { "Main" });
             VisionRecipeRunResult imageRunResult = RunLlmDraftOnImage(pipeline, imagePath, outputDirectory, timeoutMilliseconds);
             bool actualRunSuccess = imageRunResult != null && imageRunResult.Success;
@@ -301,7 +316,10 @@ namespace OpenVisionLab
                 "Result: " + (pass ? "PASS" : "FAIL") + Environment.NewLine
                 + "Scenario: llm-xml-image-run" + Environment.NewLine
                 + "DraftPath: " + draftPath + Environment.NewLine
+                + "DraftSnapshot: LlmDraft.pipeline.xml" + Environment.NewLine
+                + "DraftSha256: " + ComputeC9FileSha256(draftPath) + Environment.NewLine
                 + "ImagePath: " + imagePath + Environment.NewLine
+                + "ImageSha256: " + ComputeC9FileSha256(imagePath) + Environment.NewLine
                 + "TimeoutMs: " + timeoutMilliseconds.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
                 + "ExpectedRunSuccess: " + expectedRunSuccess + Environment.NewLine
                 + "ActualRunSuccess: " + actualRunSuccess + Environment.NewLine
@@ -742,6 +760,8 @@ namespace OpenVisionLab
                     throw new InvalidOperationException("LLM XML draft verification image could not be loaded: " + imagePath);
                 }
 
+                OpenCvSharp.Cv2.ImWrite(Path.Combine(outputDirectory, "LlmDraft_Source.png"), source);
+
                 VisionRecipeRunner runner = new VisionRecipeRunner();
                 Task<VisionRecipeRunResult> runTask = runner.RunAsync(
                     pipeline,
@@ -761,6 +781,32 @@ namespace OpenVisionLab
                 if (result?.ResultImage != null && !result.ResultImage.Empty())
                 {
                     OpenCvSharp.Cv2.ImWrite(Path.Combine(outputDirectory, "LlmDraft_RunResult.png"), result.ResultImage);
+                }
+
+
+                VisionRecipeStepRunSummary overlaySummary = result?.Steps?
+                    .LastOrDefault(step => step?.Overlays != null && step.Overlays.Count > 0);
+                if (overlaySummary != null)
+                {
+                    int stepIndex = overlaySummary.Index - 1;
+                    VisionPipelineStep pipelineStep = stepIndex >= 0 && stepIndex < (pipeline.Steps?.Count ?? 0)
+                        ? pipeline.Steps[stepIndex]
+                        : pipeline.Steps?.FirstOrDefault(step => string.Equals(step?.Name, overlaySummary.Name, StringComparison.OrdinalIgnoreCase));
+                    using OpenCvSharp.Mat overlaySource = new OpenCvSharp.Mat();
+                    if (source.Channels() == 1)
+                    {
+                        OpenCvSharp.Cv2.CvtColor(source, overlaySource, OpenCvSharp.ColorConversionCodes.GRAY2BGR);
+                    }
+                    else
+                    {
+                        source.CopyTo(overlaySource);
+                    }
+
+                    using Bitmap overlayBitmap = BitmapImageConverter.ToBitmap(overlaySource);
+                    VisionPipelineRunReportImageRenderer.RenderInPlace(overlayBitmap, overlaySummary, pipelineStep);
+                    overlayBitmap.Save(
+                        Path.Combine(outputDirectory, "LlmDraft_RuntimeOverlay.png"),
+                        System.Drawing.Imaging.ImageFormat.Png);
                 }
 
                 return result;
@@ -797,6 +843,22 @@ namespace OpenVisionLab
                 if (!string.IsNullOrWhiteSpace(step.MetricsText))
                 {
                     builder.AppendLine("ImageRunMetrics: " + step.MetricsText);
+                }
+
+                foreach (VisionRecipeOverlaySummary overlay in step.Overlays ?? new List<VisionRecipeOverlaySummary>())
+                {
+                    builder.AppendLine(
+                        "ImageRunOverlay: Kind=" + overlay.Kind
+                        + " | Label=" + overlay.Label
+                        + " | Bounds="
+                        + overlay.BoundsX.ToString("0.###", CultureInfo.InvariantCulture) + ","
+                        + overlay.BoundsY.ToString("0.###", CultureInfo.InvariantCulture) + ","
+                        + overlay.BoundsWidth.ToString("0.###", CultureInfo.InvariantCulture) + ","
+                        + overlay.BoundsHeight.ToString("0.###", CultureInfo.InvariantCulture)
+                        + " | Center="
+                        + overlay.CenterX.ToString("0.###", CultureInfo.InvariantCulture) + ","
+                        + overlay.CenterY.ToString("0.###", CultureInfo.InvariantCulture)
+                        + " | Angle=" + overlay.Angle.ToString("0.###", CultureInfo.InvariantCulture));
                 }
 
                 if (step.Metrics != null && step.Metrics.TryGetValue("BoundsHeightAvg", out double boundsHeightAvg))
@@ -2005,6 +2067,138 @@ namespace OpenVisionLab
 
                 SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_LlmIntentSkills_PinGap.png"));
 
+                commands.SelectedLlmToolTemplate = OpenVisionGuidedSetupCatalog.DarkBandGapTemplate;
+                commands.DarkBandGapIntentRoiText = OpenVisionRecipeDarkBandGapIntentSkill.DefaultRoiText;
+                Pump(20);
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager LLM dark-band Gap intent focus",
+                    "HostRecipeLlmDarkBandGapIntentSkill",
+                    "HostRecipeDarkBandGapIntentRoiText");
+                AssertNotVisibleAutomationIds(
+                    shellHost,
+                    "Recipe manager LLM dark-band Gap intent focus",
+                    "HostRecipeLlmPinGapIntentSkill",
+                    "HostRecipeLlmBlobCountIntentSkill",
+                    "HostRecipeLlmContourCountIntentSkill");
+                commands.BuildLlmPromptCommand.Execute(null);
+                Pump(20);
+                string darkBandGapPrompt = commands.LlmPromptText ?? string.Empty;
+                if (!darkBandGapPrompt.Contains("direct dark-band Gap measurement", StringComparison.OrdinalIgnoreCase)
+                    || !darkBandGapPrompt.Contains("USE_GAP_EDGE_PAIR=true", StringComparison.OrdinalIgnoreCase)
+                    || !darkBandGapPrompt.Contains("Do not add Matching", StringComparison.OrdinalIgnoreCase)
+                    || !darkBandGapPrompt.Contains("acceptance gate", StringComparison.OrdinalIgnoreCase)
+                    || !darkBandGapPrompt.Contains("candidate lines", StringComparison.OrdinalIgnoreCase)
+                    || !darkBandGapPrompt.Contains("nearest sustained bright transition", StringComparison.OrdinalIgnoreCase)
+                    || !darkBandGapPrompt.Contains("farther Hough line", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager LLM intent skill did not build the expected dark-band Gap prompt packet. "
+                        + darkBandGapPrompt);
+                }
+
+                if (!commands.CreateGuidedSetupStarterXmlCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException("Dark-band Gap Guided Setup starter was not ready for one reviewed coarse ROI.");
+                }
+
+                commands.CreateGuidedSetupStarterXmlCommand.Execute(null);
+                Pump(40);
+                string darkBandGapXml = commands.LlmXmlDraftText ?? string.Empty;
+                string darkBandGapValidation = commands.LlmXmlDraftValidationReport ?? string.Empty;
+                if (!darkBandGapXml.Contains("<ToolType>LineDistance</ToolType>", StringComparison.OrdinalIgnoreCase)
+                    || !darkBandGapXml.Contains("<Key>USE_GAP_EDGE_PAIR</Key>", StringComparison.OrdinalIgnoreCase)
+                    || !darkBandGapXml.Contains("<Value>100,80,530,230</Value>", StringComparison.OrdinalIgnoreCase)
+                    || !darkBandGapXml.Contains("<Key>PIXELPERMM</Key>", StringComparison.OrdinalIgnoreCase)
+                    || !darkBandGapValidation.Contains("MEASURE ONLY / NOT JUDGED", StringComparison.OrdinalIgnoreCase)
+                    || !darkBandGapValidation.Contains("Dark-band Gap evidence metrics: OK", StringComparison.OrdinalIgnoreCase)
+                    || !darkBandGapValidation.Contains("Dark-band Gap drawings: WAIT", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Dark-band Gap starter XML or strict intent validation did not match the frozen contract. "
+                        + darkBandGapValidation
+                        + Environment.NewLine
+                        + darkBandGapXml);
+                }
+
+                commands.LlmXmlDraftText = darkBandGapXml.Replace(
+                    "<UseAcceptance>false</UseAcceptance>",
+                    "<UseAcceptance>true</UseAcceptance>",
+                    StringComparison.OrdinalIgnoreCase);
+                commands.ValidateLlmXmlDraftCommand.Execute(null);
+                Pump(20);
+                if (!commands.LlmXmlDraftValidationReport.Contains("Dark-band Gap contract: NG", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("Dark-band Gap intent validation accepted an unapproved product acceptance gate.");
+                }
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "DarkBandGapRejectedAcceptanceValidation.txt"),
+                    commands.LlmXmlDraftValidationReport,
+                    Encoding.UTF8);
+
+                commands.LlmXmlDraftText = darkBandGapXml.Replace(
+                    "<ToolType>LineDistance</ToolType>",
+                    "<ToolType>Matching</ToolType>",
+                    StringComparison.OrdinalIgnoreCase);
+                commands.ValidateLlmXmlDraftCommand.Execute(null);
+                Pump(20);
+                if (!commands.LlmXmlDraftValidationReport.Contains("Dark-band Gap contract: NG", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("Dark-band Gap intent validation accepted Matching in the locked tool family.");
+                }
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "DarkBandGapRejectedMatchingValidation.txt"),
+                    commands.LlmXmlDraftValidationReport,
+                    Encoding.UTF8);
+
+                commands.LlmXmlDraftText = darkBandGapXml.Replace(
+                    "<Value>100,80,530,230</Value>",
+                    "<Value>101,80,530,230</Value>",
+                    StringComparison.OrdinalIgnoreCase);
+                commands.ValidateLlmXmlDraftCommand.Execute(null);
+                Pump(20);
+                if (!commands.LlmXmlDraftValidationReport.Contains("Dark-band Gap contract: NG", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("Dark-band Gap intent validation accepted an ROI different from the operator-reviewed coarse ROI.");
+                }
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "DarkBandGapRejectedRoiValidation.txt"),
+                    commands.LlmXmlDraftValidationReport,
+                    Encoding.UTF8);
+
+                commands.LlmXmlDraftText = darkBandGapXml;
+                commands.ValidateLlmXmlDraftCommand.Execute(null);
+                Pump(20);
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "DarkBandGapPrompt.txt"),
+                    darkBandGapPrompt,
+                    Encoding.UTF8);
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "DarkBandGapStarter.pipeline.xml"),
+                    darkBandGapXml,
+                    Encoding.Unicode);
+                if (!SerializeHelper.TryLoadFromXmlFile(
+                        Path.Combine(outputDirectory, "DarkBandGapStarter.pipeline.xml"),
+                        out VisionPipeline persistedDarkBandGapPipeline)
+                    || persistedDarkBandGapPipeline == null
+                    || persistedDarkBandGapPipeline.Steps.Count != 1)
+                {
+                    throw new InvalidOperationException(
+                        "Persisted dark-band Gap starter XML did not round-trip through the runtime file loader.");
+                }
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "DarkBandGapValidation.txt"),
+                    commands.LlmXmlDraftValidationReport,
+                    Encoding.UTF8);
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_LlmIntentSkills_DarkBandGap.png"));
+
+                if (shellHost.NativePreviewRunCount != beforeRuns)
+                {
+                    throw new InvalidOperationException(
+                        "Recipe manager LLM dark-band Gap prompt/XML validation triggered Preview/Run. "
+                        + $"Before={beforeRuns}, After={shellHost.NativePreviewRunCount}");
+                }
+
                 commands.SelectedLlmToolTemplate = "Threshold + Blob";
                 Pump(20);
                 AssertVisibleAutomationIds(
@@ -2143,10 +2337,11 @@ namespace OpenVisionLab
                     + "Scenario: recipe-manager-llm-intent-skills" + Environment.NewLine
                     + "TemplateMatching: intent skill blocks collapsed" + Environment.NewLine
                     + "PinGapFocus: only pin-gap skill block visible" + Environment.NewLine
+                    + "DarkBandGapFocus: one coarse ROI, px-only starter, strict direct-Gap validation, and no Preview/Run" + Environment.NewLine
                     + "BlobCountFocus: only blob-count skill block visible" + Environment.NewLine
                     + "ContourCountFocus: only contour-count skill block visible" + Environment.NewLine
                     + "TemplateDraftBuilder: LineDistance, Blob, Contour, EdgeBasedMatching, Mean, and Matching starters verified" + Environment.NewLine
-                    + "PromptBuilder: matching and LineDistance packet content verified without clipboard" + Environment.NewLine
+                    + "PromptBuilder: matching, generic LineDistance, and dark-band Gap packet content verified without clipboard" + Environment.NewLine
                     + "BrowserAssist: ChatGPT open actions and explicit copy/paste controls visible; ChatGPT navigated only after explicit click; Preview/Run unchanged" + Environment.NewLine
                     + "PinGapContourMismatch: blocked by intent contract" + Environment.NewLine
                     + "DependencyReview: existing template path found without clipboard" + Environment.NewLine
@@ -7811,6 +8006,1892 @@ namespace OpenVisionLab
                 }
 
                 app.Shutdown();
+            }
+        }
+
+        private static void RunMatchingC9Batch(string[] args, string outputDirectory)
+        {
+            if (Directory.Exists(outputDirectory)
+                && Directory.EnumerateFileSystemEntries(outputDirectory).Any())
+            {
+                throw new InvalidOperationException(
+                    "Matching C9 batch output must be a new or empty directory: " + outputDirectory);
+            }
+
+            Directory.CreateDirectory(outputDirectory);
+            string sourceRoot = ResolveRequiredOption(args, "--source-root");
+            string p174RowsPath = ResolveRequiredOption(args, "--rows");
+            string p174TransformsPath = ResolveRequiredOption(args, "--transforms");
+            string p173StripMetricsPath = ResolveRequiredOption(args, "--strip-metrics");
+            string p174TemplatePath = ResolveRequiredOption(args, "--template");
+            string p174ReferencePath = ResolveRequiredOption(args, "--reference");
+            string p174ReferenceOverlayPath = ResolveRequiredOption(args, "--reference-overlay");
+            if (!Directory.Exists(sourceRoot))
+            {
+                throw new DirectoryNotFoundException("Matching C9 source root was not found: " + sourceRoot);
+            }
+
+            foreach (string requiredPath in new[]
+            {
+                p174RowsPath,
+                p174TransformsPath,
+                p173StripMetricsPath,
+                p174TemplatePath,
+                p174ReferencePath,
+                p174ReferenceOverlayPath
+            })
+            {
+                if (!File.Exists(requiredPath))
+                {
+                    throw new FileNotFoundException("P174 C9 evidence input was not found.", requiredPath);
+                }
+            }
+
+            string referenceDirectory = Path.Combine(outputDirectory, "reference");
+            string calibrationDirectory = Path.Combine(outputDirectory, "calibration");
+            string runsDirectory = Path.Combine(outputDirectory, "runs");
+            string contactsDirectory = Path.Combine(outputDirectory, "contacts");
+            Directory.CreateDirectory(referenceDirectory);
+            Directory.CreateDirectory(calibrationDirectory);
+            Directory.CreateDirectory(runsDirectory);
+            Directory.CreateDirectory(contactsDirectory);
+
+            string templatePath = Path.Combine(referenceDirectory, "locator_template.png");
+            File.Copy(p174TemplatePath, templatePath, true);
+            File.Copy(p174ReferencePath, Path.Combine(referenceDirectory, "operator_reference_ok0001.jpg"), true);
+            File.Copy(p174ReferenceOverlayPath, Path.Combine(referenceDirectory, "locator_and_measurement_roi_overlay.png"), true);
+            File.Copy(p174RowsPath, Path.Combine(referenceDirectory, "p174_rows.csv"), true);
+            File.Copy(p174TransformsPath, Path.Combine(referenceDirectory, "p174_transforms.csv"), true);
+            File.Copy(p173StripMetricsPath, Path.Combine(referenceDirectory, "p173_strip_metrics.csv"), true);
+
+            const string expectedTemplateSha256 = "BA09B78D79D3A2936504B04FE70DDA066021754395772E49465B9F2BA192D9D2";
+            string templateSha256 = ComputeC9FileSha256(templatePath);
+            if (!string.Equals(templateSha256, expectedTemplateSha256, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "C9 template hash changed. Expected=" + expectedTemplateSha256 + ", Actual=" + templateSha256);
+            }
+
+            List<Dictionary<string, string>> sourceRows = ReadC9Csv(p174RowsPath);
+            if (sourceRows.Count != 24)
+            {
+                throw new InvalidOperationException("P174 C9 native batch requires exactly 24 source rows. Actual=" + sourceRows.Count);
+            }
+
+            Dictionary<string, Dictionary<string, string>> transformsByImage = ReadC9Csv(p174TransformsPath)
+                .ToDictionary(row => row["image"], row => row, StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, Dictionary<string, string>> stripMetricsByImage = ReadC9Csv(p173StripMetricsPath)
+                .ToDictionary(row => row["image"], row => row, StringComparer.OrdinalIgnoreCase);
+            foreach (Dictionary<string, string> sourceRow in sourceRows)
+            {
+                if (!transformsByImage.ContainsKey(sourceRow["Image"]))
+                {
+                    throw new InvalidOperationException("P174 transform is missing for " + sourceRow["Image"]);
+                }
+
+                if (!stripMetricsByImage.ContainsKey(sourceRow["Image"]))
+                {
+                    throw new InvalidOperationException("P173 local strip-angle metric is missing for " + sourceRow["Image"]);
+                }
+            }
+
+            RecipeWorkspaceService.DeleteVisionWorkspace("Codex_MatchingC9BatchSmoke");
+            CleanupKnownSmokeRecipeWorkspaces("Smoke_MatchingC9_");
+            string recipeName = "Smoke_MatchingC9_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+
+            List<MatchingC9CalibrationRow> calibrationRows = new List<MatchingC9CalibrationRow>();
+            List<MatchingC9EvidenceRow> evidenceRows = new List<MatchingC9EvidenceRow>();
+            OpenVisionShellHostWindow window = null;
+            try
+            {
+                ApplicationRuntimeContext runtimeContext = ApplicationRuntimeContext.CreateDefault();
+                runtimeContext.Global.Recipe.Name = recipeName;
+                window = new OpenVisionShellHostWindow(runtimeContext)
+                {
+                    Width = 1500,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen
+                };
+
+                app.MainWindow = window;
+                window.Show();
+                Pump(24);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("OpenVision shell host was not created.");
+                shellHost.SelectToolForTest(VISION_MENU.Matching);
+                Pump(60);
+                shellHost.SetActiveMatchingTemplatePathForTest(templatePath);
+                Pump(12);
+                shellHost.ConfigureActiveMatchingForTest(ConfigureMatchingC9Property);
+                Pump(12);
+
+                MatchingProperty property = runtimeContext.Global.VisionTools.Matchings.Count > 0
+                    ? runtimeContext.Global.VisionTools.Matchings[0]
+                    : throw new InvalidOperationException("Matching_1 repository property was not created.");
+                string propertyXmlPath = Path.Combine(referenceDirectory, "Matching_1.c9-native.xml");
+                property.SaveTestConfig(propertyXmlPath);
+                MatchingProperty loadedProperty = new MatchingProperty("Matching_1").LoadTestConfig(propertyXmlPath);
+                ValidateMatchingC9Property(loadedProperty);
+
+                MatchingC9SyntheticCase[] syntheticCases =
+                {
+                    new MatchingC9SyntheticCase("scale_0p8_angle_m3", 0.8D, -3D),
+                    new MatchingC9SyntheticCase("scale_1p0_angle_0", 1.0D, 0D),
+                    new MatchingC9SyntheticCase("scale_1p8_angle_p3", 1.8D, 3D)
+                };
+                foreach (MatchingC9SyntheticCase syntheticCase in syntheticCases)
+                {
+                    string caseDirectory = Path.Combine(calibrationDirectory, syntheticCase.Name);
+                    Directory.CreateDirectory(caseDirectory);
+                    string sourcePath = Path.Combine(caseDirectory, "source.png");
+                    CreateMatchingC9SyntheticSource(templatePath, sourcePath, syntheticCase.Scale, syntheticCase.Angle, 320D, 240D);
+                    MatchingC9PreviewCapture capture = CaptureMatchingC9Preview(
+                        shellHost,
+                        sourcePath,
+                        caseDirectory,
+                        syntheticCase.Name,
+                        320D,
+                        240D,
+                        Array.Empty<System.Drawing.PointF>());
+                    calibrationRows.Add(new MatchingC9CalibrationRow(syntheticCase, capture));
+                }
+
+                bool calibrationPassed = calibrationRows.All(row => row.Pass);
+
+                foreach (Dictionary<string, string> sourceRow in sourceRows)
+                {
+                    string rowId = sourceRow["RowId"];
+                    string sourcePath = Path.GetFullPath(Path.Combine(sourceRoot, sourceRow["CopiedSourcePath"].Replace('/', Path.DirectorySeparatorChar)));
+                    if (!File.Exists(sourcePath))
+                    {
+                        throw new FileNotFoundException("P174 copied source was not found.", sourcePath);
+                    }
+
+                    string actualSourceSha256 = ComputeC9FileSha256(sourcePath);
+                    string expectedSourceSha256 = sourceRow["SourceSha256"];
+                    if (!string.Equals(actualSourceSha256, expectedSourceSha256, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            "P174 source hash changed for " + rowId + ". Expected=" + expectedSourceSha256 + ", Actual=" + actualSourceSha256);
+                    }
+
+                    Dictionary<string, string> transform = transformsByImage[sourceRow["Image"]];
+                    double oracleScale = ParseC9Double(transform["scale"]);
+                    double oracleAngle = ParseC9Double(transform["angle_deg"]);
+                    double stripAngle = ParseC9Double(stripMetricsByImage[sourceRow["Image"]]["angle_deg"]);
+                    double tx = ParseC9Double(transform["tx"]);
+                    double ty = ParseC9Double(transform["ty"]);
+                    System.Drawing.PointF[] expectedPolygon = CreateMatchingC9ExpectedPolygon(oracleScale, oracleAngle, tx, ty);
+                    double expectedCenterX = ParseC9Double(sourceRow["ConsensusCenterX"]);
+                    double expectedCenterY = ParseC9Double(sourceRow["ConsensusCenterY"]);
+                    string rowDirectory = Path.Combine(runsDirectory, rowId);
+                    Directory.CreateDirectory(rowDirectory);
+                    string copiedSourcePath = Path.Combine(rowDirectory, "source.jpg");
+                    File.Copy(sourcePath, copiedSourcePath, true);
+
+                    MatchingC9PreviewCapture capture = CaptureMatchingC9Preview(
+                        shellHost,
+                        sourcePath,
+                        rowDirectory,
+                        rowId,
+                        expectedCenterX,
+                        expectedCenterY,
+                        expectedPolygon);
+                    MatchingC9EvidenceRow evidenceRow = new MatchingC9EvidenceRow(
+                        sourceRow,
+                        transform,
+                        capture,
+                        expectedCenterX,
+                        expectedCenterY,
+                        oracleScale,
+                        oracleAngle,
+                        stripAngle,
+                        expectedPolygon,
+                        actualSourceSha256,
+                        rowDirectory);
+                    evidenceRows.Add(evidenceRow);
+                    DrawMatchingC9EvidenceOverlay(evidenceRow);
+                }
+
+                foreach (IGrouping<string, MatchingC9EvidenceRow> split in evidenceRows.GroupBy(row => row.Split))
+                {
+                    SaveMatchingC9ContactSheet(
+                        split.OrderBy(row => row.RoleLabelOnly, StringComparer.Ordinal).ThenBy(row => row.Image, StringComparer.Ordinal),
+                        Path.Combine(contactsDirectory, split.Key + ".png"));
+                }
+
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_MatchingC9Batch_Final.png"));
+                WriteMatchingC9Outputs(
+                    outputDirectory,
+                    templateSha256,
+                    calibrationRows,
+                    calibrationPassed,
+                    evidenceRows);
+
+                if (!calibrationPassed || evidenceRows.Any(row => !row.Pass))
+                {
+                    throw new InvalidOperationException(
+                        "Matching C9 native batch did not satisfy every gate. CalibrationPass="
+                        + calibrationPassed
+                        + ", DatasetPass="
+                        + evidenceRows.Count(row => row.Pass)
+                        + "/"
+                        + evidenceRows.Count
+                        + ". See native_rows.csv and current-run overlays.");
+                }
+            }
+            finally
+            {
+                if (window != null)
+                {
+                    window.Close();
+                }
+
+                app.Shutdown();
+                RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+            }
+        }
+
+        private static void RunMatchingDiePadBatch(string[] args, string outputDirectory)
+        {
+            if (Directory.Exists(outputDirectory)
+                && Directory.EnumerateFileSystemEntries(outputDirectory).Any())
+            {
+                throw new InvalidOperationException(
+                    "Matching Die Pad batch output must be a new or empty directory: " + outputDirectory);
+            }
+
+            Directory.CreateDirectory(outputDirectory);
+            string datasetRoot = ResolveRequiredOption(args, "--dataset-root");
+            const string sourceFile = "Die Pad 1.bmp";
+            string referenceImagePath = ResolveRequiredOption(args, "--reference");
+            string profile = ResolveOptionalTextOption(args, "--profile");
+            bool zeroReferenceProfile = string.Equals(profile, "zero-reference", StringComparison.OrdinalIgnoreCase);
+            bool objectOnlyZeroReferenceProfile = string.Equals(profile, "object-only-zero-reference", StringComparison.OrdinalIgnoreCase);
+            if (!string.IsNullOrWhiteSpace(profile) && !zeroReferenceProfile && !objectOnlyZeroReferenceProfile)
+            {
+                throw new ArgumentException("Unsupported Matching Die Pad profile: " + profile);
+            }
+
+            zeroReferenceProfile = zeroReferenceProfile || objectOnlyZeroReferenceProfile;
+            profile = objectOnlyZeroReferenceProfile
+                ? "object-only-zero-reference"
+                : zeroReferenceProfile ? "zero-reference" : "legacy-p176";
+            string metadataPath = Path.Combine(datasetRoot, "metadata.csv");
+            string generatorPath = Path.Combine(datasetRoot, "scripts", "generate_dataset.py");
+            foreach (string requiredPath in new[] { metadataPath, generatorPath, referenceImagePath })
+            {
+                if (!File.Exists(requiredPath))
+                {
+                    throw new FileNotFoundException("Matching Die Pad evidence input was not found.", requiredPath);
+                }
+            }
+
+            List<Dictionary<string, string>> rows = ReadC9Csv(metadataPath)
+                .Where(row => string.Equals(row["source_file"], sourceFile, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(row => MatchingDiePadSplitOrder(row["detection_segmentation_split"]))
+                .ThenBy(row => row["status"], StringComparer.Ordinal)
+                .ThenBy(row => row["filename"], StringComparer.Ordinal)
+                .ToList();
+            if (rows.Count != 122
+                || rows.Count(row => string.Equals(row["status"], "OK", StringComparison.OrdinalIgnoreCase)) != 62
+                || rows.Count(row => string.Equals(row["status"], "NG", StringComparison.OrdinalIgnoreCase)) != 60)
+            {
+                throw new InvalidOperationException(
+                    "Matching Die Pad 1 subset identity changed. Expected 122 rows (OK 62 / NG 60). Actual="
+                    + rows.Count
+                    + " (OK "
+                    + rows.Count(row => string.Equals(row["status"], "OK", StringComparison.OrdinalIgnoreCase))
+                    + " / NG "
+                    + rows.Count(row => string.Equals(row["status"], "NG", StringComparison.OrdinalIgnoreCase))
+                    + ").");
+            }
+
+            string referenceFileName = Path.GetFileName(referenceImagePath);
+            if (!rows.Any(row => string.Equals(row["filename"], referenceFileName, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(row["status"], "OK", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(row["detection_segmentation_split"], "train", StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new InvalidOperationException("Matching Die Pad reference must be an OK/train row in the selected source family.");
+            }
+
+            string referenceDirectory = Path.Combine(outputDirectory, "reference");
+            string runsDirectory = Path.Combine(outputDirectory, "runs");
+            string contactsDirectory = Path.Combine(outputDirectory, "contacts");
+            Directory.CreateDirectory(referenceDirectory);
+            Directory.CreateDirectory(runsDirectory);
+            Directory.CreateDirectory(contactsDirectory);
+            File.Copy(metadataPath, Path.Combine(referenceDirectory, "metadata.csv"), true);
+            File.Copy(generatorPath, Path.Combine(referenceDirectory, "generate_dataset.py"), true);
+            string copiedReferencePath = Path.Combine(referenceDirectory, referenceFileName);
+            File.Copy(referenceImagePath, copiedReferencePath, true);
+
+            System.Drawing.Rectangle templateRoi = objectOnlyZeroReferenceProfile
+                ? new System.Drawing.Rectangle(190, 220, 175, 130)
+                : zeroReferenceProfile
+                    ? new System.Drawing.Rectangle(190, 220, 175, 145)
+                    : new System.Drawing.Rectangle(90, 150, 270, 220);
+            System.Drawing.RectangleF allowedCenterRegion = zeroReferenceProfile
+                ? new System.Drawing.RectangleF(140F, 180F, 250F, 230F)
+                : new System.Drawing.RectangleF(120F, 175F, 220F, 205F);
+            double angleMinimum = zeroReferenceProfile ? -5D : -3D;
+            double angleMaximum = zeroReferenceProfile ? 5D : 3D;
+            double referenceAngleBefore = 0D;
+            double referenceCorrectionApplied = 0D;
+            double referenceAngleAfter = 0D;
+            string preparedReferencePath = copiedReferencePath;
+            if (zeroReferenceProfile)
+            {
+                preparedReferencePath = Path.Combine(referenceDirectory, "die_pad_001_ok_zero_degree.png");
+                string angleEvidencePath = Path.Combine(referenceDirectory, "zero_degree_reference_evidence.png");
+                CreateMatchingDiePadZeroDegreeReference(
+                    copiedReferencePath,
+                    preparedReferencePath,
+                    angleEvidencePath,
+                    templateRoi,
+                    out referenceAngleBefore,
+                    out referenceCorrectionApplied,
+                    out referenceAngleAfter);
+            }
+
+            string templatePath = Path.Combine(referenceDirectory, "die_pad_1_template.png");
+            string referenceOverlayPath = Path.Combine(referenceDirectory, "die_pad_1_template_roi.png");
+            CreateMatchingDiePadReference(preparedReferencePath, templatePath, referenceOverlayPath, templateRoi, allowedCenterRegion);
+            string templateSha256 = ComputeC9FileSha256(templatePath);
+
+            RecipeWorkspaceService.DeleteVisionWorkspace("Codex_MatchingDiePadBatchSmoke");
+            CleanupKnownSmokeRecipeWorkspaces("Smoke_MatchingDiePad_");
+            string recipeName = "Smoke_MatchingDiePad_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            List<MatchingDiePadEvidenceRow> evidenceRows = new List<MatchingDiePadEvidenceRow>();
+            OpenVisionShellHostWindow window = null;
+            try
+            {
+                ApplicationRuntimeContext runtimeContext = ApplicationRuntimeContext.CreateDefault();
+                runtimeContext.Global.Recipe.Name = recipeName;
+                window = new OpenVisionShellHostWindow(runtimeContext)
+                {
+                    Width = 1500,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen
+                };
+
+                app.MainWindow = window;
+                window.Show();
+                Pump(24);
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("OpenVision shell host was not created.");
+                shellHost.SelectToolForTest(VISION_MENU.Matching);
+                Pump(60);
+                shellHost.SetActiveMatchingTemplatePathForTest(templatePath);
+                Pump(12);
+                shellHost.ConfigureActiveMatchingForTest(property => ConfigureMatchingDiePadProperty(property, zeroReferenceProfile));
+                Pump(12);
+
+                MatchingProperty property = runtimeContext.Global.VisionTools.Matchings.Count > 0
+                    ? runtimeContext.Global.VisionTools.Matchings[0]
+                    : throw new InvalidOperationException("Matching_1 repository property was not created.");
+                string propertyXmlPath = Path.Combine(referenceDirectory, "Matching_1.die-pad-native.xml");
+                property.SaveTestConfig(propertyXmlPath);
+                MatchingProperty loadedProperty = new MatchingProperty("Matching_1").LoadTestConfig(propertyXmlPath);
+                ValidateMatchingDiePadProperty(loadedProperty, zeroReferenceProfile);
+
+                foreach (Dictionary<string, string> sourceRow in rows)
+                {
+                    string status = sourceRow["status"];
+                    string filename = sourceRow["filename"];
+                    string split = sourceRow["detection_segmentation_split"];
+                    string sourcePath = Path.Combine(datasetRoot, "all_images", status, filename);
+                    if (!File.Exists(sourcePath))
+                    {
+                        throw new FileNotFoundException("Matching Die Pad source image was not found.", sourcePath);
+                    }
+
+                    string actualMd5 = ComputeMatchingDiePadMd5(sourcePath);
+                    if (!string.Equals(actualMd5, sourceRow["md5"], StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            "Matching Die Pad source hash changed for " + filename + ". Expected=" + sourceRow["md5"] + ", Actual=" + actualMd5);
+                    }
+
+                    string rowId = split + "_" + status + "_" + Path.GetFileNameWithoutExtension(filename);
+                    string rowDirectory = Path.Combine(runsDirectory, rowId);
+                    Directory.CreateDirectory(rowDirectory);
+                    string copiedSourcePath = Path.Combine(rowDirectory, "source.jpg");
+                    File.Copy(sourcePath, copiedSourcePath, true);
+                    MatchingC9PreviewCapture capture = CaptureMatchingC9Preview(
+                        shellHost,
+                        sourcePath,
+                        rowDirectory,
+                        rowId,
+                        templateRoi.X + (templateRoi.Width / 2D),
+                        templateRoi.Y + (templateRoi.Height / 2D),
+                        Array.Empty<System.Drawing.PointF>());
+                    MatchingDiePadEvidenceRow evidenceRow = new MatchingDiePadEvidenceRow(
+                        sourceRow,
+                        capture,
+                        actualMd5,
+                        ComputeC9FileSha256(sourcePath),
+                        rowDirectory,
+                        allowedCenterRegion,
+                        templateRoi,
+                        angleMinimum,
+                        angleMaximum,
+                        0.75D,
+                        1.35D);
+                    evidenceRows.Add(evidenceRow);
+                    DrawMatchingDiePadEvidenceOverlay(evidenceRow);
+                }
+
+                foreach (IGrouping<string, MatchingDiePadEvidenceRow> split in evidenceRows.GroupBy(row => row.Split))
+                {
+                    SaveMatchingDiePadContactSheet(
+                        split.OrderBy(row => row.RoleLabelOnly, StringComparer.Ordinal).ThenBy(row => row.Filename, StringComparer.Ordinal),
+                        Path.Combine(contactsDirectory, split.Key + ".png"));
+                }
+
+                SaveMatchingDiePadContactSheet(
+                    SelectMatchingDiePadReviewRows(evidenceRows),
+                    Path.Combine(contactsDirectory, "representative_boundary_failures.png"));
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_MatchingDiePadBatch_Final.png"));
+                WriteMatchingDiePadOutputs(
+                    outputDirectory,
+                    sourceFile,
+                    profile,
+                    templateRoi,
+                    allowedCenterRegion,
+                    templateSha256,
+                    angleMinimum,
+                    angleMaximum,
+                    referenceAngleBefore,
+                    referenceCorrectionApplied,
+                    referenceAngleAfter,
+                    evidenceRows);
+                if (evidenceRows.Any(row => !row.Pass))
+                {
+                    throw new InvalidOperationException(
+                        "Matching Die Pad native batch did not satisfy every gate. Pass="
+                        + evidenceRows.Count(row => row.Pass)
+                        + "/"
+                        + evidenceRows.Count
+                        + ". See native_rows.csv and current-run overlays.");
+                }
+            }
+            finally
+            {
+                if (window != null)
+                {
+                    window.Close();
+                }
+
+                app.Shutdown();
+                RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+            }
+        }
+
+        private static int MatchingDiePadSplitOrder(string split)
+        {
+            if (string.Equals(split, "train", StringComparison.OrdinalIgnoreCase))
+            {
+                return 0;
+            }
+
+            if (string.Equals(split, "val", StringComparison.OrdinalIgnoreCase))
+            {
+                return 1;
+            }
+
+            return 2;
+        }
+
+        private static void CreateMatchingDiePadReference(
+            string referencePath,
+            string templatePath,
+            string overlayPath,
+            System.Drawing.Rectangle templateRoi,
+            System.Drawing.RectangleF allowedCenterRegion)
+        {
+            using Bitmap reference = new Bitmap(referencePath);
+            if (templateRoi.Left < 0
+                || templateRoi.Top < 0
+                || templateRoi.Right > reference.Width
+                || templateRoi.Bottom > reference.Height)
+            {
+                throw new InvalidOperationException("Matching Die Pad template ROI is outside the reference image.");
+            }
+
+            using (Bitmap template = reference.Clone(templateRoi, reference.PixelFormat))
+            {
+                template.Save(templatePath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+
+            using Bitmap overlay = new Bitmap(reference);
+            using Graphics graphics = Graphics.FromImage(overlay);
+            using System.Drawing.Pen templatePen = new System.Drawing.Pen(System.Drawing.Color.Yellow, 3F);
+            using System.Drawing.Pen allowedPen = new System.Drawing.Pen(System.Drawing.Color.Cyan, 2F);
+            using System.Drawing.Brush headerBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(190, 0, 0, 0));
+            using System.Drawing.Brush textBrush = new System.Drawing.SolidBrush(System.Drawing.Color.White);
+            using System.Drawing.Font font = new System.Drawing.Font(System.Drawing.FontFamily.GenericSansSerif, 11F, System.Drawing.FontStyle.Bold);
+            graphics.DrawRectangle(templatePen, templateRoi);
+            graphics.DrawRectangle(allowedPen, allowedCenterRegion.X, allowedCenterRegion.Y, allowedCenterRegion.Width, allowedCenterRegion.Height);
+            graphics.FillRectangle(headerBrush, 0F, 0F, overlay.Width, 34F);
+            graphics.DrawString("YELLOW template ROI | CYAN allowed detected-center region", font, textBrush, 6F, 6F);
+            overlay.Save(overlayPath, System.Drawing.Imaging.ImageFormat.Png);
+        }
+
+        private static void CreateMatchingDiePadZeroDegreeReference(
+            string sourcePath,
+            string correctedPath,
+            string evidencePath,
+            System.Drawing.Rectangle templateRoi,
+            out double angleBefore,
+            out double correctionApplied,
+            out double angleAfter)
+        {
+            using OpenCvSharp.Mat source = OpenCvSharp.Cv2.ImRead(sourcePath, OpenCvSharp.ImreadModes.Grayscale);
+            if (source.Empty())
+            {
+                throw new InvalidOperationException("Matching Die Pad zero-degree reference could not be loaded.");
+            }
+
+            OpenCvSharp.LineSegmentPoint beforeLine = DetectMatchingDiePadBaseline(source, out angleBefore);
+            correctionApplied = angleBefore;
+            OpenCvSharp.Point2f center = new OpenCvSharp.Point2f(
+                templateRoi.X + (templateRoi.Width / 2F),
+                templateRoi.Y + (templateRoi.Height / 2F));
+            using OpenCvSharp.Mat matrix = OpenCvSharp.Cv2.GetRotationMatrix2D(center, correctionApplied, 1D);
+            using OpenCvSharp.Mat corrected = new OpenCvSharp.Mat();
+            OpenCvSharp.Cv2.WarpAffine(
+                source,
+                corrected,
+                matrix,
+                source.Size(),
+                OpenCvSharp.InterpolationFlags.Cubic,
+                OpenCvSharp.BorderTypes.Reflect101);
+            OpenCvSharp.LineSegmentPoint afterLine = DetectMatchingDiePadBaseline(corrected, out angleAfter);
+            if (Math.Abs(angleBefore) < 0.5D || Math.Abs(angleAfter) > 0.2D)
+            {
+                throw new InvalidOperationException(
+                    "Matching Die Pad zero-degree reference gate failed. Before="
+                    + angleBefore.ToString("0.###", CultureInfo.InvariantCulture)
+                    + ", After="
+                    + angleAfter.ToString("0.###", CultureInfo.InvariantCulture));
+            }
+
+            OpenCvSharp.Cv2.ImWrite(correctedPath, corrected);
+            SaveMatchingDiePadZeroDegreeEvidence(
+                source,
+                corrected,
+                beforeLine,
+                afterLine,
+                angleBefore,
+                correctionApplied,
+                angleAfter,
+                evidencePath);
+        }
+
+        private static OpenCvSharp.LineSegmentPoint DetectMatchingDiePadBaseline(
+            OpenCvSharp.Mat source,
+            out double angle)
+        {
+            OpenCvSharp.Rect searchRoi = new OpenCvSharp.Rect(170, 320, 210, 60);
+            using OpenCvSharp.Mat crop = new OpenCvSharp.Mat(source, searchRoi);
+            using OpenCvSharp.Mat edges = new OpenCvSharp.Mat();
+            OpenCvSharp.Cv2.Canny(crop, edges, 35D, 100D);
+            OpenCvSharp.LineSegmentPoint[] lines = OpenCvSharp.Cv2.HoughLinesP(
+                edges,
+                1D,
+                Math.PI / 1800D,
+                45,
+                120D,
+                15D);
+            OpenCvSharp.LineSegmentPoint? selected = lines
+                .Select(line => new
+                {
+                    Line = line,
+                    Angle = Math.Atan2(line.P2.Y - line.P1.Y, line.P2.X - line.P1.X) * 180D / Math.PI,
+                    Length = Math.Sqrt(
+                        Math.Pow(line.P2.X - line.P1.X, 2D)
+                        + Math.Pow(line.P2.Y - line.P1.Y, 2D))
+                })
+                .Where(candidate => Math.Abs(candidate.Angle) <= 10D)
+                .OrderByDescending(candidate => candidate.Length)
+                .Select(candidate => (OpenCvSharp.LineSegmentPoint?)candidate.Line)
+                .FirstOrDefault();
+            if (!selected.HasValue)
+            {
+                throw new InvalidOperationException("Matching Die Pad reference baseline was not found.");
+            }
+
+            OpenCvSharp.LineSegmentPoint local = selected.Value;
+            OpenCvSharp.LineSegmentPoint result = new OpenCvSharp.LineSegmentPoint(
+                new OpenCvSharp.Point(local.P1.X + searchRoi.X, local.P1.Y + searchRoi.Y),
+                new OpenCvSharp.Point(local.P2.X + searchRoi.X, local.P2.Y + searchRoi.Y));
+            angle = Math.Atan2(result.P2.Y - result.P1.Y, result.P2.X - result.P1.X) * 180D / Math.PI;
+            return result;
+        }
+
+        private static void SaveMatchingDiePadZeroDegreeEvidence(
+            OpenCvSharp.Mat source,
+            OpenCvSharp.Mat corrected,
+            OpenCvSharp.LineSegmentPoint beforeLine,
+            OpenCvSharp.LineSegmentPoint afterLine,
+            double angleBefore,
+            double correctionApplied,
+            double angleAfter,
+            string outputPath)
+        {
+            using OpenCvSharp.Mat beforeColor = new OpenCvSharp.Mat();
+            using OpenCvSharp.Mat afterColor = new OpenCvSharp.Mat();
+            OpenCvSharp.Cv2.CvtColor(source, beforeColor, OpenCvSharp.ColorConversionCodes.GRAY2BGR);
+            OpenCvSharp.Cv2.CvtColor(corrected, afterColor, OpenCvSharp.ColorConversionCodes.GRAY2BGR);
+            OpenCvSharp.Cv2.Line(beforeColor, beforeLine.P1, beforeLine.P2, OpenCvSharp.Scalar.Red, 3);
+            OpenCvSharp.Cv2.Line(afterColor, afterLine.P1, afterLine.P2, OpenCvSharp.Scalar.Lime, 3);
+            OpenCvSharp.Cv2.PutText(
+                beforeColor,
+                "BEFORE baseline " + angleBefore.ToString("0.000", CultureInfo.InvariantCulture) + " deg",
+                new OpenCvSharp.Point(12, 28),
+                OpenCvSharp.HersheyFonts.HersheySimplex,
+                0.65D,
+                OpenCvSharp.Scalar.Red,
+                2);
+            OpenCvSharp.Cv2.PutText(
+                afterColor,
+                "AFTER correction " + correctionApplied.ToString("0.000", CultureInfo.InvariantCulture)
+                    + " deg / residual " + angleAfter.ToString("0.000", CultureInfo.InvariantCulture) + " deg",
+                new OpenCvSharp.Point(12, 28),
+                OpenCvSharp.HersheyFonts.HersheySimplex,
+                0.55D,
+                OpenCvSharp.Scalar.Lime,
+                2);
+            using OpenCvSharp.Mat comparison = new OpenCvSharp.Mat();
+            OpenCvSharp.Cv2.HConcat(new[] { beforeColor, afterColor }, comparison);
+            OpenCvSharp.Cv2.ImWrite(outputPath, comparison);
+        }
+
+        private static void ConfigureMatchingDiePadProperty(MatchingProperty property, bool zeroReferenceProfile)
+        {
+            property.AUTO_PREVIEW = false;
+            property.MATCH_MODE = OpenCvSharp.TemplateMatchModes.CCoeffNormed;
+            property.SCORE_MIN = 0D;
+            property.NUM_MATCH = 1;
+            property.MAGNIFIATION = 1D;
+            property.USE_FIND_ANGLE = true;
+            property.FIND_ANGLE_MIN = zeroReferenceProfile ? -5 : -3;
+            property.FIND_ANGLE_MAX = zeroReferenceProfile ? 5 : 3;
+            property.FIND_ANGLE = 0.5D;
+            property.USE_COARSE_TO_FINE_ANGLE_SEARCH = false;
+            property.USE_FIND_SCALE = true;
+            property.FIND_SCALE_MIN = 0.75D;
+            property.FIND_SCALE_MAX = 1.35D;
+            property.FIND_SCALE_STEP = 0.05D;
+            property.USE_PYRAMID_POSITION_PROPOSAL = false;
+            property.USE_CANNY = false;
+            property.USE_THRESHOLD = false;
+            property.USE_ADAPTIVE_THRESHOLD = false;
+            property.USE_ROI = false;
+            property.USE_MULTI_ROI = false;
+            property.USE_PADDING_COLOR_WHITE = false;
+        }
+
+        private static void ValidateMatchingDiePadProperty(MatchingProperty property, bool zeroReferenceProfile)
+        {
+            int expectedAngleMinimum = zeroReferenceProfile ? -5 : -3;
+            int expectedAngleMaximum = zeroReferenceProfile ? 5 : 3;
+            if (property == null
+                || property.AUTO_PREVIEW
+                || property.MATCH_MODE != OpenCvSharp.TemplateMatchModes.CCoeffNormed
+                || Math.Abs(property.SCORE_MIN) > 0.000001D
+                || property.NUM_MATCH != 1
+                || Math.Abs(property.MAGNIFIATION - 1D) > 0.000001D
+                || !property.USE_FIND_ANGLE
+                || property.FIND_ANGLE_MIN != expectedAngleMinimum
+                || property.FIND_ANGLE_MAX != expectedAngleMaximum
+                || Math.Abs(property.FIND_ANGLE - 0.5D) > 0.000001D
+                || property.USE_COARSE_TO_FINE_ANGLE_SEARCH
+                || !property.USE_FIND_SCALE
+                || Math.Abs(property.FIND_SCALE_MIN - 0.75D) > 0.000001D
+                || Math.Abs(property.FIND_SCALE_MAX - 1.35D) > 0.000001D
+                || Math.Abs(property.FIND_SCALE_STEP - 0.05D) > 0.000001D
+                || property.USE_PYRAMID_POSITION_PROPOSAL
+                || property.USE_CANNY
+                || property.USE_THRESHOLD
+                || property.USE_ADAPTIVE_THRESHOLD
+                || property.USE_ROI
+                || property.USE_MULTI_ROI
+                || property.USE_PADDING_COLOR_WHITE)
+            {
+                throw new InvalidOperationException("Matching Die Pad settings did not survive native property XML save/load.");
+            }
+        }
+
+        private static string ComputeMatchingDiePadMd5(string path)
+        {
+            using FileStream stream = File.OpenRead(path);
+            using System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create();
+            return Convert.ToHexString(md5.ComputeHash(stream)).ToLowerInvariant();
+        }
+
+        private static void DrawMatchingDiePadEvidenceOverlay(MatchingDiePadEvidenceRow row)
+        {
+            if (!File.Exists(row.Capture.NativePreviewPath))
+            {
+                return;
+            }
+
+            string evidencePath = Path.Combine(row.RowDirectory, "native_evidence_overlay.png");
+            using Bitmap evidence = new Bitmap(row.Capture.NativePreviewPath);
+            using Graphics graphics = Graphics.FromImage(evidence);
+            graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            using System.Drawing.Pen allowedPen = new System.Drawing.Pen(System.Drawing.Color.Cyan, 2F);
+            using System.Drawing.Pen detectedPen = new System.Drawing.Pen(row.Pass ? System.Drawing.Color.Lime : System.Drawing.Color.Red, 3F);
+            using System.Drawing.Pen framePen = new System.Drawing.Pen(row.Pass ? System.Drawing.Color.Lime : System.Drawing.Color.Red, 4F);
+            using System.Drawing.Brush headerBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(205, 0, 0, 0));
+            using System.Drawing.Brush textBrush = new System.Drawing.SolidBrush(System.Drawing.Color.White);
+            using System.Drawing.Font font = new System.Drawing.Font(System.Drawing.FontFamily.GenericSansSerif, 10F, System.Drawing.FontStyle.Bold);
+            graphics.DrawRectangle(
+                allowedPen,
+                row.AllowedCenterRegion.X,
+                row.AllowedCenterRegion.Y,
+                row.AllowedCenterRegion.Width,
+                row.AllowedCenterRegion.Height);
+            if (row.Capture.Parsed)
+            {
+                DrawMatchingC9Cross(graphics, detectedPen, (float)row.Capture.CenterX, (float)row.Capture.CenterY, 9F);
+            }
+
+            graphics.DrawRectangle(framePen, 2F, 2F, evidence.Width - 5F, evidence.Height - 5F);
+            graphics.FillRectangle(headerBrush, 0F, 0F, evidence.Width, 52F);
+            string label = string.Format(
+                CultureInfo.InvariantCulture,
+                "{0} | {1} | score {2:0.###} | center {3:0.0},{4:0.0} | angle {5:0.###} | scale {6:0.###} | CYAN allowed / cross detected",
+                row.Pass ? "PASS" : "FAIL",
+                row.RowId,
+                row.Capture.Score,
+                row.Capture.CenterX,
+                row.Capture.CenterY,
+                row.Capture.Angle,
+                row.Capture.Scale);
+            graphics.DrawString(label, font, textBrush, new RectangleF(8F, 4F, evidence.Width - 16F, 44F));
+            evidence.Save(evidencePath, System.Drawing.Imaging.ImageFormat.Png);
+            row.EvidenceOverlayPath = evidencePath;
+        }
+
+        private static void SaveMatchingDiePadContactSheet(IEnumerable<MatchingDiePadEvidenceRow> rows, string outputPath)
+        {
+            MatchingDiePadEvidenceRow[] items = rows.ToArray();
+            if (items.Length == 0)
+            {
+                return;
+            }
+
+            const int columns = 4;
+            const int cellWidth = 320;
+            const int cellHeight = 320;
+            int rowCount = (int)Math.Ceiling(items.Length / (double)columns);
+            using Bitmap sheet = new Bitmap(columns * cellWidth, rowCount * cellHeight);
+            using Graphics graphics = Graphics.FromImage(sheet);
+            graphics.Clear(System.Drawing.Color.Black);
+            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            for (int index = 0; index < items.Length; index++)
+            {
+                if (string.IsNullOrWhiteSpace(items[index].EvidenceOverlayPath)
+                    || !File.Exists(items[index].EvidenceOverlayPath))
+                {
+                    continue;
+                }
+
+                using Bitmap image = new Bitmap(items[index].EvidenceOverlayPath);
+                int x = (index % columns) * cellWidth;
+                int y = (index / columns) * cellHeight;
+                graphics.DrawImage(image, new System.Drawing.Rectangle(x, y, cellWidth, cellHeight));
+            }
+
+            sheet.Save(outputPath, System.Drawing.Imaging.ImageFormat.Png);
+        }
+
+        private static IEnumerable<MatchingDiePadEvidenceRow> SelectMatchingDiePadReviewRows(
+            IReadOnlyList<MatchingDiePadEvidenceRow> rows)
+        {
+            return rows.Where(row => !row.Pass)
+                .Concat(rows.GroupBy(row => row.Split).Select(group => group.OrderBy(row => row.Capture.Score).First()))
+                .Concat(rows.GroupBy(row => row.Split).Select(group => group.OrderByDescending(row => row.Capture.Score).First()))
+                .Distinct()
+                .OrderBy(row => MatchingDiePadSplitOrder(row.Split))
+                .ThenBy(row => row.Capture.Score)
+                .Take(24);
+        }
+
+        private static void WriteMatchingDiePadOutputs(
+            string outputDirectory,
+            string sourceFile,
+            string profile,
+            System.Drawing.Rectangle templateRoi,
+            System.Drawing.RectangleF allowedCenterRegion,
+            string templateSha256,
+            double angleMinimum,
+            double angleMaximum,
+            double referenceAngleBefore,
+            double referenceCorrectionApplied,
+            double referenceAngleAfter,
+            IReadOnlyList<MatchingDiePadEvidenceRow> rows)
+        {
+            string header = "RowId,Split,RoleLabelOnly,Filename,SourceFile,DefectCount,DefectTypes,ExpectedMd5,ActualMd5,SourceSha256,Parsed,ResultCount,Score,CenterX,CenterY,BoxWidth,BoxHeight,Angle,Scale,CenterInsideAllowed,ScorePass,GeometryPass,LoadRunDelta,ExplicitPreviewRunDelta,HasNativePreviewResult,NativePreviewCaptured,Pass,TactMs,WallElapsedMs,Status,Review,SourcePath,NativePreviewPath,EvidenceOverlayPath";
+            File.WriteAllLines(
+                Path.Combine(outputDirectory, "native_rows.csv"),
+                new[] { header }.Concat(rows.Select(row => row.ToCsv())),
+                Encoding.UTF8);
+
+            string executablePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName ?? string.Empty;
+            string entryAssemblyPath = typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location;
+            string nativeAssemblyPath = typeof(Lib.OpenCV.Tool.MatchingTool).Assembly.Location;
+            var summary = new
+            {
+                scenario = "matching-die-pad-batch",
+                profile,
+                source_file = sourceFile,
+                boundary = "Current EXE Matching Tool View locator evidence only; OK/NG are corpus role labels, not Matching pass/fail truth.",
+                rows = rows.Count,
+                passed = rows.Count(row => row.Pass),
+                failed = rows.Count(row => !row.Pass),
+                by_split = rows.GroupBy(row => row.Split).ToDictionary(
+                    group => group.Key,
+                    group => new { rows = group.Count(), passed = group.Count(row => row.Pass), failed = group.Count(row => !row.Pass) }),
+                by_role = rows.GroupBy(row => row.RoleLabelOnly).ToDictionary(
+                    group => group.Key,
+                    group => new { rows = group.Count(), passed = group.Count(row => row.Pass), failed = group.Count(row => !row.Pass) }),
+                score = new
+                {
+                    minimum = rows.Min(row => row.Capture.Score),
+                    average = rows.Average(row => row.Capture.Score),
+                    maximum = rows.Max(row => row.Capture.Score),
+                    gate_minimum = 60D
+                },
+                explicit_run_contract = new
+                {
+                    loads_without_preview = rows.Count(row => row.Capture.LoadRunDelta == 0),
+                    explicit_preview_increment_one = rows.Count(row => row.Capture.ExplicitPreviewRunDelta == 1),
+                    native_results = rows.Count(row => row.Capture.HasNativePreviewResult),
+                    native_preview_files = rows.Count(row => row.Capture.NativePreviewCaptured),
+                    all_pass = rows.All(row => row.Capture.ExplicitRunContractPassed)
+                },
+                template = new
+                {
+                    roi = new { templateRoi.X, templateRoi.Y, templateRoi.Width, templateRoi.Height },
+                    sha256 = templateSha256,
+                    reference_angle_before_deg = referenceAngleBefore,
+                    reference_correction_applied_deg = referenceCorrectionApplied,
+                    reference_angle_after_deg = referenceAngleAfter
+                },
+                allowed_center_region = new
+                {
+                    x = allowedCenterRegion.X,
+                    y = allowedCenterRegion.Y,
+                    width = allowedCenterRegion.Width,
+                    height = allowedCenterRegion.Height
+                },
+                settings = new
+                {
+                    mode = "CCoeffNormed",
+                    runtime_score_min = 0D,
+                    report_score_gate = 60D,
+                    result_count = 1,
+                    angle_min = angleMinimum,
+                    angle_max = angleMaximum,
+                    angle_step = 0.5D,
+                    scale_min = 0.75D,
+                    scale_max = 1.35D,
+                    scale_step = 0.05D,
+                    auto_preview = false
+                },
+                runtime = new
+                {
+                    executable = executablePath,
+                    executable_sha256 = File.Exists(executablePath) ? ComputeC9FileSha256(executablePath) : string.Empty,
+                    entry_assembly = entryAssemblyPath,
+                    entry_assembly_sha256 = ComputeC9FileSha256(entryAssemblyPath),
+                    native_matching_assembly = nativeAssemblyPath,
+                    native_matching_assembly_sha256 = ComputeC9FileSha256(nativeAssemblyPath)
+                }
+            };
+            File.WriteAllText(
+                Path.Combine(outputDirectory, "summary.json"),
+                System.Text.Json.JsonSerializer.Serialize(summary, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+                Encoding.UTF8);
+            File.WriteAllText(
+                Path.Combine(outputDirectory, "report.txt"),
+                string.Join(Environment.NewLine, new[]
+                {
+                    "Result: " + (rows.All(row => row.Pass) ? "PASS" : "FAIL"),
+                    "Scenario: matching-die-pad-batch",
+                    "Profile: " + profile,
+                    "SourceFile: " + sourceFile,
+                    "Dataset: " + rows.Count(row => row.Pass) + "/" + rows.Count,
+                    "Train/Val/Test: " + string.Join(" / ", rows.GroupBy(row => row.Split).OrderBy(group => MatchingDiePadSplitOrder(group.Key)).Select(group => group.Key + " " + group.Count(row => row.Pass) + "/" + group.Count())),
+                    "OK/NG role labels: " + string.Join(" / ", rows.GroupBy(row => row.RoleLabelOnly).OrderBy(group => group.Key).Select(group => group.Key + " " + group.Count(row => row.Pass) + "/" + group.Count())),
+                    "Score min/avg/max: " + rows.Min(row => row.Capture.Score).ToString("0.###", CultureInfo.InvariantCulture) + " / " + rows.Average(row => row.Capture.Score).ToString("0.###", CultureInfo.InvariantCulture) + " / " + rows.Max(row => row.Capture.Score).ToString("0.###", CultureInfo.InvariantCulture),
+                    "ExplicitRunContract: " + rows.Count(row => row.Capture.ExplicitRunContractPassed) + "/" + rows.Count,
+                    "Reference angle before/correction/after: "
+                        + referenceAngleBefore.ToString("0.###", CultureInfo.InvariantCulture)
+                        + " / "
+                        + referenceCorrectionApplied.ToString("0.###", CultureInfo.InvariantCulture)
+                        + " / "
+                        + referenceAngleAfter.ToString("0.###", CultureInfo.InvariantCulture),
+                    "TemplateSha256: " + templateSha256,
+                    "Boundary: current EXE Matching Tool View locator evidence only; no defect classification or exact pose-error truth"
+                }),
+                Encoding.UTF8);
+        }
+
+        private static void ConfigureMatchingC9Property(MatchingProperty property)
+        {
+            property.AUTO_PREVIEW = false;
+            property.MATCH_MODE = OpenCvSharp.TemplateMatchModes.CCoeffNormed;
+            property.SCORE_MIN = 0D;
+            property.NUM_MATCH = 1;
+            property.MAGNIFIATION = 1D;
+            property.USE_FIND_ANGLE = true;
+            property.FIND_ANGLE_MIN = -5;
+            property.FIND_ANGLE_MAX = 5;
+            property.FIND_ANGLE = 1D;
+            property.USE_COARSE_TO_FINE_ANGLE_SEARCH = false;
+            property.USE_FIND_SCALE = true;
+            property.FIND_SCALE_MIN = 0.8D;
+            property.FIND_SCALE_MAX = 1.9D;
+            property.FIND_SCALE_STEP = 0.1D;
+            property.USE_PYRAMID_POSITION_PROPOSAL = false;
+            property.USE_CANNY = false;
+            property.USE_THRESHOLD = false;
+            property.USE_ADAPTIVE_THRESHOLD = false;
+            property.USE_ROI = false;
+            property.USE_MULTI_ROI = false;
+            property.USE_PADDING_COLOR_WHITE = true;
+        }
+
+        private static void ValidateMatchingC9Property(MatchingProperty property)
+        {
+            if (property == null
+                || property.AUTO_PREVIEW
+                || property.MATCH_MODE != OpenCvSharp.TemplateMatchModes.CCoeffNormed
+                || Math.Abs(property.SCORE_MIN) > 0.000001D
+                || property.NUM_MATCH != 1
+                || Math.Abs(property.MAGNIFIATION - 1D) > 0.000001D
+                || !property.USE_FIND_ANGLE
+                || property.FIND_ANGLE_MIN != -5
+                || property.FIND_ANGLE_MAX != 5
+                || Math.Abs(property.FIND_ANGLE - 1D) > 0.000001D
+                || property.USE_COARSE_TO_FINE_ANGLE_SEARCH
+                || !property.USE_FIND_SCALE
+                || Math.Abs(property.FIND_SCALE_MIN - 0.8D) > 0.000001D
+                || Math.Abs(property.FIND_SCALE_MAX - 1.9D) > 0.000001D
+                || Math.Abs(property.FIND_SCALE_STEP - 0.1D) > 0.000001D
+                || property.USE_PYRAMID_POSITION_PROPOSAL
+                || property.USE_CANNY
+                || property.USE_THRESHOLD
+                || property.USE_ADAPTIVE_THRESHOLD
+                || property.USE_ROI
+                || property.USE_MULTI_ROI
+                || !property.USE_PADDING_COLOR_WHITE)
+            {
+                throw new InvalidOperationException("Matching C9 settings did not survive native property XML save/load.");
+            }
+        }
+
+        private static MatchingC9PreviewCapture CaptureMatchingC9Preview(
+            OpenVisionShellHostView shellHost,
+            string sourcePath,
+            string outputDirectory,
+            string rowId,
+            double expectedCenterX,
+            double expectedCenterY,
+            IReadOnlyList<System.Drawing.PointF> expectedPolygon)
+        {
+            int previewRunCountBeforeLoad = shellHost.NativePreviewRunCount;
+            using (Bitmap source = new Bitmap(sourcePath))
+            {
+                shellHost.SetMainLayerImageForTest(source);
+            }
+
+            Pump(8);
+            int previewRunCountAfterLoad = shellHost.NativePreviewRunCount;
+            string nativePreviewPath = Path.Combine(outputDirectory, "native_preview.png");
+            if (File.Exists(nativePreviewPath))
+            {
+                File.Delete(nativePreviewPath);
+            }
+
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            shellHost.RunActiveNativePreviewForTest();
+            Pump(16);
+            stopwatch.Stop();
+            int previewRunCountAfterPreview = shellHost.NativePreviewRunCount;
+            bool hasNativePreviewResult = shellHost.HasNativePreviewResult;
+
+            string status = shellHost.ActiveNativeStatusText ?? string.Empty;
+            string review = shellHost.ActiveNativeResultReviewText ?? string.Empty;
+            bool parsed = TryParseMatchingC9Review(
+                review,
+                out int resultCount,
+                out double score,
+                out double centerX,
+                out double centerY,
+                out double boxWidth,
+                out double boxHeight,
+                out double angle,
+                out double scale,
+                out double tactMs);
+            using (Bitmap preview = shellHost.GetLayerImageCloneForTest("Matching_Preview"))
+            {
+                if (preview != null)
+                {
+                    preview.Save(nativePreviewPath, System.Drawing.Imaging.ImageFormat.Png);
+                }
+            }
+            bool nativePreviewCaptured = File.Exists(nativePreviewPath)
+                && new FileInfo(nativePreviewPath).Length > 0L;
+
+            double dx = centerX - expectedCenterX;
+            double dy = centerY - expectedCenterY;
+            double centerError = parsed ? Math.Sqrt((dx * dx) + (dy * dy)) : double.PositiveInfinity;
+            return new MatchingC9PreviewCapture(
+                rowId,
+                sourcePath,
+                nativePreviewPath,
+                status,
+                review,
+                parsed,
+                resultCount,
+                score,
+                centerX,
+                centerY,
+                boxWidth,
+                boxHeight,
+                angle,
+                scale,
+                tactMs,
+                stopwatch.Elapsed.TotalMilliseconds,
+                centerError,
+                previewRunCountBeforeLoad,
+                previewRunCountAfterLoad,
+                previewRunCountAfterPreview,
+                hasNativePreviewResult,
+                nativePreviewCaptured,
+                expectedPolygon);
+        }
+
+        private static bool TryParseMatchingC9Review(
+            string review,
+            out int resultCount,
+            out double score,
+            out double centerX,
+            out double centerY,
+            out double boxWidth,
+            out double boxHeight,
+            out double angle,
+            out double scale,
+            out double tactMs)
+        {
+            resultCount = 0;
+            score = centerX = centerY = boxWidth = boxHeight = angle = tactMs = double.NaN;
+            scale = 1D;
+            Match countMatch = Regex.Match(review ?? string.Empty, @"(?:Count\s+(?<v>[0-9]+)|검출\s+(?<v>[0-9]+)개)", RegexOptions.IgnoreCase);
+            Match scoreMatch = Regex.Match(review ?? string.Empty, @"(?:Score|점수)\s+(?<v>-?[0-9]+(?:\.[0-9]+)?)", RegexOptions.IgnoreCase);
+            Match centerMatch = Regex.Match(review ?? string.Empty, @"(?:Center|중심)\s+(?<x>-?[0-9]+(?:\.[0-9]+)?),\s*(?<y>-?[0-9]+(?:\.[0-9]+)?)", RegexOptions.IgnoreCase);
+            Match boxMatch = Regex.Match(review ?? string.Empty, @"(?:Box|박스)\s+(?<w>[0-9]+(?:\.[0-9]+)?)\s*x\s*(?<h>[0-9]+(?:\.[0-9]+)?)", RegexOptions.IgnoreCase);
+            Match angleMatch = Regex.Match(review ?? string.Empty, @"(?:Angle|각도)\s+(?<v>-?[0-9]+(?:\.[0-9]+)?)", RegexOptions.IgnoreCase);
+            Match scaleMatch = Regex.Match(review ?? string.Empty, @"(?:Scale|배율)\s+(?<v>[0-9]+(?:\.[0-9]+)?)", RegexOptions.IgnoreCase);
+            Match tactMatch = Regex.Match(review ?? string.Empty, @"(?:Tact|처리)\s+(?<v>[0-9]+(?:\.[0-9]+)?)", RegexOptions.IgnoreCase);
+            if (!countMatch.Success
+                || !scoreMatch.Success
+                || !centerMatch.Success
+                || !boxMatch.Success
+                || !angleMatch.Success
+                || !int.TryParse(countMatch.Groups["v"].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out resultCount)
+                || !double.TryParse(scoreMatch.Groups["v"].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out score)
+                || !double.TryParse(centerMatch.Groups["x"].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out centerX)
+                || !double.TryParse(centerMatch.Groups["y"].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out centerY)
+                || !double.TryParse(boxMatch.Groups["w"].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out boxWidth)
+                || !double.TryParse(boxMatch.Groups["h"].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out boxHeight)
+                || !double.TryParse(angleMatch.Groups["v"].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out angle))
+            {
+                return false;
+            }
+
+            if (scaleMatch.Success
+                && !double.TryParse(scaleMatch.Groups["v"].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out scale))
+            {
+                return false;
+            }
+
+            if (tactMatch.Success)
+            {
+                double.TryParse(tactMatch.Groups["v"].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out tactMs);
+            }
+
+            return true;
+        }
+
+        private static void CreateMatchingC9SyntheticSource(
+            string templatePath,
+            string outputPath,
+            double scale,
+            double angle,
+            double centerX,
+            double centerY)
+        {
+            using OpenCvSharp.Mat template = OpenCvSharp.Cv2.ImRead(templatePath, OpenCvSharp.ImreadModes.Color);
+            if (template.Empty())
+            {
+                throw new InvalidOperationException("C9 template could not be loaded for native calibration.");
+            }
+
+            using OpenCvSharp.Mat matrix = OpenCvSharp.Cv2.GetRotationMatrix2D(
+                new OpenCvSharp.Point2f(template.Width / 2F, template.Height / 2F),
+                angle,
+                scale);
+            matrix.Set(0, 2, matrix.At<double>(0, 2) + centerX - (template.Width / 2D));
+            matrix.Set(1, 2, matrix.At<double>(1, 2) + centerY - (template.Height / 2D));
+            using OpenCvSharp.Mat canvas = new OpenCvSharp.Mat(
+                new OpenCvSharp.Size(640, 480),
+                OpenCvSharp.MatType.CV_8UC3,
+                OpenCvSharp.Scalar.White);
+            OpenCvSharp.Cv2.WarpAffine(
+                template,
+                canvas,
+                matrix,
+                canvas.Size(),
+                OpenCvSharp.InterpolationFlags.Linear,
+                OpenCvSharp.BorderTypes.Constant,
+                OpenCvSharp.Scalar.White);
+            OpenCvSharp.Cv2.ImWrite(outputPath, canvas);
+        }
+
+        private static System.Drawing.PointF[] CreateMatchingC9ExpectedPolygon(double scale, double angle, double tx, double ty)
+        {
+            double radians = angle * Math.PI / 180D;
+            double cos = Math.Cos(radians) * scale;
+            double sin = Math.Sin(radians) * scale;
+            System.Drawing.PointF Transform(double x, double y)
+            {
+                return new System.Drawing.PointF(
+                    (float)(cos * x - sin * y + tx),
+                    (float)(sin * x + cos * y + ty));
+            }
+
+            return new[]
+            {
+                Transform(240D, 270D),
+                Transform(305D, 270D),
+                Transform(305D, 330D),
+                Transform(240D, 330D)
+            };
+        }
+
+        private static System.Drawing.PointF[] CreateMatchingC9NativePolygon(MatchingC9PreviewCapture capture)
+        {
+            double radians = capture.Angle * Math.PI / 180D;
+            double cos = Math.Cos(radians);
+            double sin = Math.Sin(radians);
+            double halfWidth = capture.BoxWidth / 2D;
+            double halfHeight = capture.BoxHeight / 2D;
+            System.Drawing.PointF Transform(double x, double y)
+            {
+                return new System.Drawing.PointF(
+                    (float)(capture.CenterX + x * cos + y * sin),
+                    (float)(capture.CenterY - x * sin + y * cos));
+            }
+
+            return new[]
+            {
+                Transform(-halfWidth, -halfHeight),
+                Transform(halfWidth, -halfHeight),
+                Transform(halfWidth, halfHeight),
+                Transform(-halfWidth, halfHeight)
+            };
+        }
+
+        private static double CalculateMatchingC9PolygonIou(
+            IReadOnlyList<System.Drawing.PointF> expected,
+            IReadOnlyList<System.Drawing.PointF> actual,
+            int width,
+            int height)
+        {
+            if (expected == null || expected.Count != 4 || actual == null || actual.Count != 4)
+            {
+                return 0D;
+            }
+
+            OpenCvSharp.Point[] expectedPoints = expected.Select(point => new OpenCvSharp.Point((int)Math.Round(point.X), (int)Math.Round(point.Y))).ToArray();
+            OpenCvSharp.Point[] actualPoints = actual.Select(point => new OpenCvSharp.Point((int)Math.Round(point.X), (int)Math.Round(point.Y))).ToArray();
+            using OpenCvSharp.Mat expectedMask = OpenCvSharp.Mat.Zeros(height, width, OpenCvSharp.MatType.CV_8UC1);
+            using OpenCvSharp.Mat actualMask = OpenCvSharp.Mat.Zeros(height, width, OpenCvSharp.MatType.CV_8UC1);
+            using OpenCvSharp.Mat intersection = new OpenCvSharp.Mat();
+            using OpenCvSharp.Mat union = new OpenCvSharp.Mat();
+            OpenCvSharp.Cv2.FillConvexPoly(expectedMask, expectedPoints, OpenCvSharp.Scalar.White);
+            OpenCvSharp.Cv2.FillConvexPoly(actualMask, actualPoints, OpenCvSharp.Scalar.White);
+            OpenCvSharp.Cv2.BitwiseAnd(expectedMask, actualMask, intersection);
+            OpenCvSharp.Cv2.BitwiseOr(expectedMask, actualMask, union);
+            int unionPixels = OpenCvSharp.Cv2.CountNonZero(union);
+            return unionPixels <= 0 ? 0D : (double)OpenCvSharp.Cv2.CountNonZero(intersection) / unionPixels;
+        }
+
+        private static bool IsMatchingC9CenterInside(
+            IReadOnlyList<System.Drawing.PointF> polygon,
+            double x,
+            double y)
+        {
+            if (polygon == null || polygon.Count != 4)
+            {
+                return false;
+            }
+
+            OpenCvSharp.Point2f[] points = polygon.Select(point => new OpenCvSharp.Point2f(point.X, point.Y)).ToArray();
+            return OpenCvSharp.Cv2.PointPolygonTest(points, new OpenCvSharp.Point2f((float)x, (float)y), false) >= 0D;
+        }
+
+        private static void DrawMatchingC9EvidenceOverlay(MatchingC9EvidenceRow row)
+        {
+            if (!File.Exists(row.Capture.NativePreviewPath))
+            {
+                return;
+            }
+
+            string evidencePath = Path.Combine(row.RowDirectory, "native_evidence_overlay.png");
+            using Bitmap evidence = new Bitmap(row.Capture.NativePreviewPath);
+            using Graphics graphics = Graphics.FromImage(evidence);
+            graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            using System.Drawing.Pen expectedPen = new System.Drawing.Pen(System.Drawing.Color.Cyan, 2F);
+            using System.Drawing.Pen relationPen = new System.Drawing.Pen(row.Pass ? System.Drawing.Color.Lime : System.Drawing.Color.Red, 2F);
+            using System.Drawing.Pen framePen = new System.Drawing.Pen(row.Pass ? System.Drawing.Color.Lime : System.Drawing.Color.Red, 4F);
+            using System.Drawing.Brush headerBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(190, 0, 0, 0));
+            using System.Drawing.Brush textBrush = new System.Drawing.SolidBrush(System.Drawing.Color.White);
+            using System.Drawing.Font font = new System.Drawing.Font(
+                System.Drawing.FontFamily.GenericSansSerif,
+                10F,
+                System.Drawing.FontStyle.Bold);
+            graphics.DrawPolygon(expectedPen, row.ExpectedPolygon);
+            DrawMatchingC9Cross(graphics, expectedPen, (float)row.ExpectedCenterX, (float)row.ExpectedCenterY, 8F);
+            if (row.Capture.Parsed)
+            {
+                graphics.DrawLine(
+                    relationPen,
+                    (float)row.ExpectedCenterX,
+                    (float)row.ExpectedCenterY,
+                    (float)row.Capture.CenterX,
+                    (float)row.Capture.CenterY);
+            }
+
+            graphics.DrawRectangle(framePen, 2F, 2F, evidence.Width - 5F, evidence.Height - 5F);
+            graphics.FillRectangle(headerBrush, 0F, 0F, evidence.Width, 42F);
+            string label = string.Format(
+                CultureInfo.InvariantCulture,
+                "{0} | {1} | score {2:0.###} | center err {3:0.###}px | scale {4:0.###}/{5:0.###} | angle {6:0.###}/{7:0.###} | IoU {8:0.###}",
+                row.Pass ? "PASS" : "FAIL",
+                row.RowId,
+                row.Capture.Score,
+                row.Capture.CenterErrorPx,
+                row.Capture.Scale,
+                row.OracleScale,
+                row.Capture.Angle,
+                -row.StripAngle,
+                row.PolygonIou);
+            graphics.DrawString(label, font, textBrush, new RectangleF(8F, 4F, evidence.Width - 16F, 34F));
+            evidence.Save(evidencePath, System.Drawing.Imaging.ImageFormat.Png);
+            row.EvidenceOverlayPath = evidencePath;
+        }
+
+        private static void DrawMatchingC9Cross(Graphics graphics, System.Drawing.Pen pen, float x, float y, float radius)
+        {
+            graphics.DrawLine(pen, x - radius, y, x + radius, y);
+            graphics.DrawLine(pen, x, y - radius, x, y + radius);
+        }
+
+        private static void SaveMatchingC9ContactSheet(IEnumerable<MatchingC9EvidenceRow> rows, string outputPath)
+        {
+            MatchingC9EvidenceRow[] items = rows.ToArray();
+            if (items.Length == 0)
+            {
+                return;
+            }
+
+            const int columns = 4;
+            const int cellWidth = 320;
+            const int cellHeight = 240;
+            int rowCount = (int)Math.Ceiling(items.Length / (double)columns);
+            using Bitmap sheet = new Bitmap(columns * cellWidth, rowCount * cellHeight);
+            using Graphics graphics = Graphics.FromImage(sheet);
+            graphics.Clear(System.Drawing.Color.Black);
+            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            for (int index = 0; index < items.Length; index++)
+            {
+                if (string.IsNullOrWhiteSpace(items[index].EvidenceOverlayPath)
+                    || !File.Exists(items[index].EvidenceOverlayPath))
+                {
+                    continue;
+                }
+
+                using Bitmap image = new Bitmap(items[index].EvidenceOverlayPath);
+                int x = (index % columns) * cellWidth;
+                int y = (index / columns) * cellHeight;
+                graphics.DrawImage(image, new Rectangle(x, y, cellWidth, cellHeight));
+            }
+
+            sheet.Save(outputPath, System.Drawing.Imaging.ImageFormat.Png);
+        }
+
+        private static void WriteMatchingC9Outputs(
+            string outputDirectory,
+            string templateSha256,
+            IReadOnlyList<MatchingC9CalibrationRow> calibrationRows,
+            bool calibrationPassed,
+            IReadOnlyList<MatchingC9EvidenceRow> evidenceRows)
+        {
+            List<string> calibrationCsv = new List<string>
+            {
+                "Name,ExpectedScale,NativeScale,ScaleError,ExpectedAngleDeg,NativeAngleDeg,AngleErrorDeg,ExpectedCenterX,ExpectedCenterY,NativeCenterX,NativeCenterY,CenterErrorPx,Score,ResultCount,PreviewRunCountBeforeLoad,PreviewRunCountAfterLoad,PreviewRunCountAfterPreview,LoadRunDelta,ExplicitPreviewRunDelta,HasNativePreviewResult,NativePreviewCaptured,Parsed,Pass,Review,SourcePath,NativePreviewPath"
+            };
+            calibrationCsv.AddRange(calibrationRows.Select(row => row.ToCsv()));
+            File.WriteAllLines(Path.Combine(outputDirectory, "calibration.csv"), calibrationCsv, Encoding.UTF8);
+
+            List<string> nativeCsv = new List<string>
+            {
+                "RowId,Split,RoleLabelOnly,Image,SourceSha256,TemplateSha256,ResultCount,Score,NormalizedScore,CenterX,CenterY,ExpectedCenterX,ExpectedCenterY,CenterErrorPx,BoxWidth,BoxHeight,Scale,OracleScale,ScaleError,AngleDeg,StripAngleDeg,ExpectedNativeStripAngleDeg,AngleErrorDeg,OrbGlobalAngleDeg,ExpectedNativeOrbAngleDeg,OrbGlobalAngleErrorDeg,CenterInsideOraclePolygon,PolygonIou,TactMs,WallElapsedMs,PreviewRunCountBeforeLoad,PreviewRunCountAfterLoad,PreviewRunCountAfterPreview,LoadRunDelta,ExplicitPreviewRunDelta,HasNativePreviewResult,NativePreviewCaptured,Parsed,Pass,Review,SourceCopyPath,NativePreviewPath,EvidenceOverlayPath"
+            };
+            nativeCsv.AddRange(evidenceRows.Select(row => row.ToCsv(templateSha256, outputDirectory)));
+            File.WriteAllLines(Path.Combine(outputDirectory, "native_rows.csv"), nativeCsv, Encoding.UTF8);
+
+            string entryAssemblyPath = Assembly.GetEntryAssembly()?.Location ?? Assembly.GetExecutingAssembly().Location;
+            string siblingExecutablePath = Path.ChangeExtension(entryAssemblyPath, ".exe");
+            string executablePath = File.Exists(siblingExecutablePath)
+                ? siblingExecutablePath
+                : Environment.ProcessPath ?? entryAssemblyPath;
+            string nativeAssemblyPath = typeof(Lib.OpenCV.Tool.MatchingTool).Assembly.Location;
+            bool datasetPassed = evidenceRows.Count == 24 && evidenceRows.All(row => row.Pass);
+            MatchingC9PreviewCapture[] captures = calibrationRows.Select(row => row.Capture)
+                .Concat(evidenceRows.Select(row => row.Capture))
+                .ToArray();
+            object summary = new
+            {
+                status = calibrationPassed && datasetPassed ? "PASS" : "FAIL",
+                scenario = "matching-c9-batch",
+                boundary = "Current EXE Matching Tool View qualification only; not Pipeline XML, similarity normalization, gap measurement, or OK/NG evidence",
+                template_sha256 = templateSha256,
+                current_exe = new { path = executablePath, sha256 = ComputeC9FileSha256(executablePath) },
+                entry_assembly = new { path = entryAssemblyPath, sha256 = ComputeC9FileSha256(entryAssemblyPath) },
+                native_matching_assembly = new { path = nativeAssemblyPath, sha256 = ComputeC9FileSha256(nativeAssemblyPath) },
+                config = new
+                {
+                    match_mode = "CCoeffNormed",
+                    score_min = 0D,
+                    num_match = 1,
+                    magnification = 1D,
+                    angle_min = -5,
+                    angle_max = 5,
+                    angle_step = 1D,
+                    scale_min = 0.8D,
+                    scale_max = 1.9D,
+                    scale_step = 0.1D,
+                    white_padding = true,
+                    auto_preview = false,
+                    coarse_angle = false,
+                    pyramid_proposal = false,
+                    canny = false,
+                    roi = false
+                },
+                calibration = new
+                {
+                    rows = calibrationRows.Count,
+                    passed = calibrationRows.Count(row => row.Pass),
+                    all_pass = calibrationPassed
+                },
+                explicit_run_contract = new
+                {
+                    rows = captures.Length,
+                    loads_without_preview_run = captures.Count(capture => capture.LoadRunDelta == 0),
+                    explicit_preview_increment_one = captures.Count(capture => capture.ExplicitPreviewRunDelta == 1),
+                    native_preview_results = captures.Count(capture => capture.HasNativePreviewResult),
+                    native_preview_files = captures.Count(capture => capture.NativePreviewCaptured),
+                    all_pass = captures.All(capture => capture.ExplicitRunContractPassed)
+                },
+                dataset = new
+                {
+                    rows = evidenceRows.Count,
+                    passed = evidenceRows.Count(row => row.Pass),
+                    failed = evidenceRows.Count(row => !row.Pass),
+                    min_score = evidenceRows.Where(row => row.Capture.Parsed).Select(row => row.Capture.Score).DefaultIfEmpty().Min(),
+                    max_center_error_px = evidenceRows.Select(row => row.Capture.CenterErrorPx).DefaultIfEmpty().Max(),
+                    min_polygon_iou = evidenceRows.Select(row => row.PolygonIou).DefaultIfEmpty().Min(),
+                    max_scale_error = evidenceRows.Select(row => row.ScaleError).DefaultIfEmpty().Max(),
+                    max_local_strip_angle_error_deg = evidenceRows.Select(row => row.AngleError).DefaultIfEmpty().Max(),
+                    max_global_orb_angle_error_deg_diagnostic = evidenceRows.Select(row => row.OrbGlobalAngleError).DefaultIfEmpty().Max()
+                }
+            };
+            File.WriteAllText(
+                Path.Combine(outputDirectory, "summary.json"),
+                System.Text.Json.JsonSerializer.Serialize(
+                    summary,
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        WriteIndented = true,
+                        NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals
+                    }),
+                Encoding.UTF8);
+
+            string report = string.Join(Environment.NewLine, new[]
+            {
+                "Result: " + (calibrationPassed && datasetPassed ? "PASS" : "FAIL"),
+                "Scenario: matching-c9-batch",
+                "Calibration: " + calibrationRows.Count(row => row.Pass) + "/" + calibrationRows.Count,
+                "Dataset: " + evidenceRows.Count(row => row.Pass) + "/" + evidenceRows.Count,
+                "TemplateSha256: " + templateSha256,
+                "CurrentExe: " + executablePath,
+                "CurrentExeSha256: " + ComputeC9FileSha256(executablePath),
+                "EntryAssembly: " + entryAssemblyPath,
+                "EntryAssemblySha256: " + ComputeC9FileSha256(entryAssemblyPath),
+                "NativeMatchingAssembly: " + nativeAssemblyPath,
+                "NativeMatchingAssemblySha256: " + ComputeC9FileSha256(nativeAssemblyPath),
+                "ExplicitRunContract: " + captures.Count(capture => capture.ExplicitRunContractPassed) + "/" + captures.Length,
+                "Boundary: current EXE Matching Tool View qualification only; not Pipeline XML, similarity normalization, gap measurement, or OK/NG evidence"
+            });
+            File.WriteAllText(Path.Combine(outputDirectory, "report.txt"), report, Encoding.UTF8);
+        }
+
+        private static List<Dictionary<string, string>> ReadC9Csv(string path)
+        {
+            List<Dictionary<string, string>> rows = new List<Dictionary<string, string>>();
+            using Microsoft.VisualBasic.FileIO.TextFieldParser parser = new Microsoft.VisualBasic.FileIO.TextFieldParser(path, Encoding.UTF8);
+            parser.TextFieldType = Microsoft.VisualBasic.FileIO.FieldType.Delimited;
+            parser.SetDelimiters(",");
+            parser.HasFieldsEnclosedInQuotes = true;
+            string[] headers = parser.ReadFields() ?? Array.Empty<string>();
+            while (!parser.EndOfData)
+            {
+                string[] fields = parser.ReadFields() ?? Array.Empty<string>();
+                Dictionary<string, string> row = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                for (int index = 0; index < headers.Length; index++)
+                {
+                    row[headers[index]] = index < fields.Length ? fields[index] : string.Empty;
+                }
+
+                rows.Add(row);
+            }
+
+            return rows;
+        }
+
+        private static string ComputeC9FileSha256(string path)
+        {
+            using FileStream stream = File.OpenRead(path);
+            return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream));
+        }
+
+        private static double ParseC9Double(string value)
+        {
+            return double.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture);
+        }
+
+        private static string C9Csv(string value)
+        {
+            value ??= string.Empty;
+            return value.IndexOfAny(new[] { ',', '"', '\r', '\n' }) < 0
+                ? value
+                : "\"" + value.Replace("\"", "\"\"") + "\"";
+        }
+
+        private sealed class MatchingC9SyntheticCase
+        {
+            public MatchingC9SyntheticCase(string name, double scale, double angle)
+            {
+                Name = name;
+                Scale = scale;
+                Angle = angle;
+            }
+
+            public string Name { get; }
+            public double Scale { get; }
+            public double Angle { get; }
+        }
+
+        private sealed class MatchingC9PreviewCapture
+        {
+            public MatchingC9PreviewCapture(
+                string rowId,
+                string sourcePath,
+                string nativePreviewPath,
+                string status,
+                string review,
+                bool parsed,
+                int resultCount,
+                double score,
+                double centerX,
+                double centerY,
+                double boxWidth,
+                double boxHeight,
+                double angle,
+                double scale,
+                double tactMs,
+                double wallElapsedMs,
+                double centerErrorPx,
+                int previewRunCountBeforeLoad,
+                int previewRunCountAfterLoad,
+                int previewRunCountAfterPreview,
+                bool hasNativePreviewResult,
+                bool nativePreviewCaptured,
+                IReadOnlyList<System.Drawing.PointF> expectedPolygon)
+            {
+                RowId = rowId;
+                SourcePath = sourcePath;
+                NativePreviewPath = nativePreviewPath;
+                Status = status;
+                Review = review;
+                Parsed = parsed;
+                ResultCount = resultCount;
+                Score = score;
+                CenterX = centerX;
+                CenterY = centerY;
+                BoxWidth = boxWidth;
+                BoxHeight = boxHeight;
+                Angle = angle;
+                Scale = scale;
+                TactMs = tactMs;
+                WallElapsedMs = wallElapsedMs;
+                CenterErrorPx = centerErrorPx;
+                PreviewRunCountBeforeLoad = previewRunCountBeforeLoad;
+                PreviewRunCountAfterLoad = previewRunCountAfterLoad;
+                PreviewRunCountAfterPreview = previewRunCountAfterPreview;
+                HasNativePreviewResult = hasNativePreviewResult;
+                NativePreviewCaptured = nativePreviewCaptured;
+                ExpectedPolygon = expectedPolygon;
+            }
+
+            public string RowId { get; }
+            public string SourcePath { get; }
+            public string NativePreviewPath { get; }
+            public string Status { get; }
+            public string Review { get; }
+            public bool Parsed { get; }
+            public int ResultCount { get; }
+            public double Score { get; }
+            public double CenterX { get; }
+            public double CenterY { get; }
+            public double BoxWidth { get; }
+            public double BoxHeight { get; }
+            public double Angle { get; }
+            public double Scale { get; }
+            public double TactMs { get; }
+            public double WallElapsedMs { get; }
+            public double CenterErrorPx { get; }
+            public int PreviewRunCountBeforeLoad { get; }
+            public int PreviewRunCountAfterLoad { get; }
+            public int PreviewRunCountAfterPreview { get; }
+            public int LoadRunDelta => PreviewRunCountAfterLoad - PreviewRunCountBeforeLoad;
+            public int ExplicitPreviewRunDelta => PreviewRunCountAfterPreview - PreviewRunCountAfterLoad;
+            public bool HasNativePreviewResult { get; }
+            public bool NativePreviewCaptured { get; }
+            public bool ExplicitRunContractPassed => LoadRunDelta == 0
+                && ExplicitPreviewRunDelta == 1
+                && HasNativePreviewResult
+                && NativePreviewCaptured;
+            public IReadOnlyList<System.Drawing.PointF> ExpectedPolygon { get; }
+        }
+
+        private sealed class MatchingDiePadEvidenceRow
+        {
+            public MatchingDiePadEvidenceRow(
+                IReadOnlyDictionary<string, string> sourceRow,
+                MatchingC9PreviewCapture capture,
+                string actualMd5,
+                string sourceSha256,
+                string rowDirectory,
+                System.Drawing.RectangleF allowedCenterRegion,
+                System.Drawing.Rectangle templateRoi,
+                double angleMinimum,
+                double angleMaximum,
+                double scaleMinimum,
+                double scaleMaximum)
+            {
+                RowId = capture.RowId;
+                Split = sourceRow["detection_segmentation_split"];
+                RoleLabelOnly = sourceRow["status"];
+                Filename = sourceRow["filename"];
+                SourceFile = sourceRow["source_file"];
+                DefectCount = sourceRow["defect_count"];
+                DefectTypes = sourceRow["defect_types"];
+                ExpectedMd5 = sourceRow["md5"];
+                ActualMd5 = actualMd5;
+                SourceSha256 = sourceSha256;
+                Capture = capture;
+                RowDirectory = rowDirectory;
+                AllowedCenterRegion = allowedCenterRegion;
+                MinimumBoxWidth = (templateRoi.Width * scaleMinimum) - 5D;
+                MaximumBoxWidth = (templateRoi.Width * scaleMaximum) + 5D;
+                MinimumBoxHeight = (templateRoi.Height * scaleMinimum) - 5D;
+                MaximumBoxHeight = (templateRoi.Height * scaleMaximum) + 5D;
+                AngleMinimum = angleMinimum;
+                AngleMaximum = angleMaximum;
+                ScaleMinimum = scaleMinimum;
+                ScaleMaximum = scaleMaximum;
+            }
+
+            public string RowId { get; }
+            public string Split { get; }
+            public string RoleLabelOnly { get; }
+            public string Filename { get; }
+            public string SourceFile { get; }
+            public string DefectCount { get; }
+            public string DefectTypes { get; }
+            public string ExpectedMd5 { get; }
+            public string ActualMd5 { get; }
+            public string SourceSha256 { get; }
+            public MatchingC9PreviewCapture Capture { get; }
+            public string RowDirectory { get; }
+            public System.Drawing.RectangleF AllowedCenterRegion { get; }
+            public double MinimumBoxWidth { get; }
+            public double MaximumBoxWidth { get; }
+            public double MinimumBoxHeight { get; }
+            public double MaximumBoxHeight { get; }
+            public double AngleMinimum { get; }
+            public double AngleMaximum { get; }
+            public double ScaleMinimum { get; }
+            public double ScaleMaximum { get; }
+            public string EvidenceOverlayPath { get; set; }
+            public bool CenterInsideAllowed => Capture.Parsed
+                && AllowedCenterRegion.Contains((float)Capture.CenterX, (float)Capture.CenterY);
+            public bool ScorePass => Capture.Parsed && Capture.Score >= 60D;
+            public bool GeometryPass => Capture.Parsed
+                && Capture.ResultCount == 1
+                && CenterInsideAllowed
+                && Capture.BoxWidth >= MinimumBoxWidth
+                && Capture.BoxWidth <= MaximumBoxWidth
+                && Capture.BoxHeight >= MinimumBoxHeight
+                && Capture.BoxHeight <= MaximumBoxHeight
+                && Capture.Angle >= AngleMinimum - 0.001D
+                && Capture.Angle <= AngleMaximum + 0.001D
+                && Capture.Scale >= ScaleMinimum - 0.001D
+                && Capture.Scale <= ScaleMaximum + 0.001D;
+            public bool Pass => Capture.ExplicitRunContractPassed && ScorePass && GeometryPass;
+
+            public string ToCsv()
+            {
+                return string.Join(",", new[]
+                {
+                    C9Csv(RowId),
+                    C9Csv(Split),
+                    C9Csv(RoleLabelOnly),
+                    C9Csv(Filename),
+                    C9Csv(SourceFile),
+                    C9Csv(DefectCount),
+                    C9Csv(DefectTypes),
+                    ExpectedMd5,
+                    ActualMd5,
+                    SourceSha256,
+                    Capture.Parsed.ToString(),
+                    Capture.ResultCount.ToString(CultureInfo.InvariantCulture),
+                    Capture.Score.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.CenterX.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.CenterY.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.BoxWidth.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.BoxHeight.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.Angle.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.Scale.ToString("0.###", CultureInfo.InvariantCulture),
+                    CenterInsideAllowed.ToString(),
+                    ScorePass.ToString(),
+                    GeometryPass.ToString(),
+                    Capture.LoadRunDelta.ToString(CultureInfo.InvariantCulture),
+                    Capture.ExplicitPreviewRunDelta.ToString(CultureInfo.InvariantCulture),
+                    Capture.HasNativePreviewResult.ToString(),
+                    Capture.NativePreviewCaptured.ToString(),
+                    Pass.ToString(),
+                    Capture.TactMs.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.WallElapsedMs.ToString("0.###", CultureInfo.InvariantCulture),
+                    C9Csv(Capture.Status),
+                    C9Csv(Capture.Review),
+                    C9Csv(Capture.SourcePath),
+                    C9Csv(Capture.NativePreviewPath),
+                    C9Csv(EvidenceOverlayPath)
+                });
+            }
+        }
+
+        private sealed class MatchingC9CalibrationRow
+        {
+            public MatchingC9CalibrationRow(MatchingC9SyntheticCase expected, MatchingC9PreviewCapture capture)
+            {
+                Expected = expected;
+                Capture = capture;
+            }
+
+            public MatchingC9SyntheticCase Expected { get; }
+            public MatchingC9PreviewCapture Capture { get; }
+            public double CenterErrorPx => Capture.CenterErrorPx;
+            public double ScaleError => Math.Abs(Capture.Scale - Expected.Scale);
+            public double AngleError => Math.Abs(Capture.Angle - Expected.Angle);
+            public bool Pass => Capture.Parsed
+                && Capture.ResultCount == 1
+                && Capture.ExplicitRunContractPassed
+                && CenterErrorPx <= 2D
+                && ScaleError <= 0.051D
+                && AngleError <= 0.51D;
+
+            public string ToCsv()
+            {
+                return string.Join(",", new[]
+                {
+                    C9Csv(Expected.Name),
+                    Expected.Scale.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.Scale.ToString("0.###", CultureInfo.InvariantCulture),
+                    ScaleError.ToString("0.###", CultureInfo.InvariantCulture),
+                    Expected.Angle.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.Angle.ToString("0.###", CultureInfo.InvariantCulture),
+                    AngleError.ToString("0.###", CultureInfo.InvariantCulture),
+                    "320",
+                    "240",
+                    Capture.CenterX.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.CenterY.ToString("0.###", CultureInfo.InvariantCulture),
+                    CenterErrorPx.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.Score.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.ResultCount.ToString(CultureInfo.InvariantCulture),
+                    Capture.PreviewRunCountBeforeLoad.ToString(CultureInfo.InvariantCulture),
+                    Capture.PreviewRunCountAfterLoad.ToString(CultureInfo.InvariantCulture),
+                    Capture.PreviewRunCountAfterPreview.ToString(CultureInfo.InvariantCulture),
+                    Capture.LoadRunDelta.ToString(CultureInfo.InvariantCulture),
+                    Capture.ExplicitPreviewRunDelta.ToString(CultureInfo.InvariantCulture),
+                    Capture.HasNativePreviewResult.ToString(),
+                    Capture.NativePreviewCaptured.ToString(),
+                    Capture.Parsed.ToString(),
+                    Pass.ToString(),
+                    C9Csv(Capture.Review),
+                    C9Csv(Capture.SourcePath),
+                    C9Csv(Capture.NativePreviewPath)
+                });
+            }
+        }
+
+        private sealed class MatchingC9EvidenceRow
+        {
+            public MatchingC9EvidenceRow(
+                IReadOnlyDictionary<string, string> sourceRow,
+                IReadOnlyDictionary<string, string> transform,
+                MatchingC9PreviewCapture capture,
+                double expectedCenterX,
+                double expectedCenterY,
+                double oracleScale,
+                double oracleAngle,
+                double stripAngle,
+                System.Drawing.PointF[] expectedPolygon,
+                string sourceSha256,
+                string rowDirectory)
+            {
+                RowId = sourceRow["RowId"];
+                Split = sourceRow["Split"];
+                RoleLabelOnly = sourceRow["RoleLabelOnly"];
+                Image = sourceRow["Image"];
+                SourceSha256 = sourceSha256;
+                Capture = capture;
+                ExpectedCenterX = expectedCenterX;
+                ExpectedCenterY = expectedCenterY;
+                OracleScale = oracleScale;
+                OracleAngle = oracleAngle;
+                StripAngle = stripAngle;
+                ExpectedPolygon = expectedPolygon;
+                RowDirectory = rowDirectory;
+                System.Drawing.PointF[] nativePolygon = capture.Parsed
+                    ? CreateMatchingC9NativePolygon(capture)
+                    : Array.Empty<System.Drawing.PointF>();
+                PolygonIou = capture.Parsed
+                    ? CalculateMatchingC9PolygonIou(expectedPolygon, nativePolygon, 640, 480)
+                    : 0D;
+                CenterInsideOraclePolygon = capture.Parsed
+                    && IsMatchingC9CenterInside(expectedPolygon, capture.CenterX, capture.CenterY);
+            }
+
+            public string RowId { get; }
+            public string Split { get; }
+            public string RoleLabelOnly { get; }
+            public string Image { get; }
+            public string SourceSha256 { get; }
+            public MatchingC9PreviewCapture Capture { get; }
+            public double ExpectedCenterX { get; }
+            public double ExpectedCenterY { get; }
+            public double OracleScale { get; }
+            public double OracleAngle { get; }
+            public double StripAngle { get; }
+            public System.Drawing.PointF[] ExpectedPolygon { get; }
+            public string RowDirectory { get; }
+            public string EvidenceOverlayPath { get; set; } = string.Empty;
+            public double ScaleError => Math.Abs(Capture.Scale - OracleScale);
+            public double AngleError => Math.Abs(Capture.Angle + StripAngle);
+            public double OrbGlobalAngleError => Math.Abs(Capture.Angle + OracleAngle);
+            public double PolygonIou { get; }
+            public bool CenterInsideOraclePolygon { get; }
+            public bool Pass => Capture.Parsed
+                && Capture.ResultCount == 1
+                && Capture.ExplicitRunContractPassed
+                && Capture.CenterErrorPx <= 12D
+                && CenterInsideOraclePolygon
+                && PolygonIou >= 0.55D
+                && ScaleError <= 0.08D
+                && AngleError <= 1.5D;
+
+            public string ToCsv(string templateSha256, string outputDirectory)
+            {
+                string sourceCopyPath = Path.GetRelativePath(outputDirectory, Path.Combine(RowDirectory, "source.jpg")).Replace('\\', '/');
+                string nativePreviewPath = Path.GetRelativePath(outputDirectory, Capture.NativePreviewPath).Replace('\\', '/');
+                string evidenceOverlayPath = string.IsNullOrWhiteSpace(EvidenceOverlayPath)
+                    ? string.Empty
+                    : Path.GetRelativePath(outputDirectory, EvidenceOverlayPath).Replace('\\', '/');
+                return string.Join(",", new[]
+                {
+                    C9Csv(RowId),
+                    C9Csv(Split),
+                    C9Csv(RoleLabelOnly),
+                    C9Csv(Image),
+                    SourceSha256,
+                    templateSha256,
+                    Capture.ResultCount.ToString(CultureInfo.InvariantCulture),
+                    Capture.Score.ToString("0.###", CultureInfo.InvariantCulture),
+                    (Capture.Score / 100D).ToString("0.######", CultureInfo.InvariantCulture),
+                    Capture.CenterX.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.CenterY.ToString("0.###", CultureInfo.InvariantCulture),
+                    ExpectedCenterX.ToString("0.###", CultureInfo.InvariantCulture),
+                    ExpectedCenterY.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.CenterErrorPx.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.BoxWidth.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.BoxHeight.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.Scale.ToString("0.###", CultureInfo.InvariantCulture),
+                    OracleScale.ToString("0.######", CultureInfo.InvariantCulture),
+                    ScaleError.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.Angle.ToString("0.###", CultureInfo.InvariantCulture),
+                    StripAngle.ToString("0.######", CultureInfo.InvariantCulture),
+                    (-StripAngle).ToString("0.######", CultureInfo.InvariantCulture),
+                    AngleError.ToString("0.###", CultureInfo.InvariantCulture),
+                    OracleAngle.ToString("0.######", CultureInfo.InvariantCulture),
+                    (-OracleAngle).ToString("0.######", CultureInfo.InvariantCulture),
+                    OrbGlobalAngleError.ToString("0.###", CultureInfo.InvariantCulture),
+                    CenterInsideOraclePolygon.ToString(),
+                    PolygonIou.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.TactMs.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.WallElapsedMs.ToString("0.###", CultureInfo.InvariantCulture),
+                    Capture.PreviewRunCountBeforeLoad.ToString(CultureInfo.InvariantCulture),
+                    Capture.PreviewRunCountAfterLoad.ToString(CultureInfo.InvariantCulture),
+                    Capture.PreviewRunCountAfterPreview.ToString(CultureInfo.InvariantCulture),
+                    Capture.LoadRunDelta.ToString(CultureInfo.InvariantCulture),
+                    Capture.ExplicitPreviewRunDelta.ToString(CultureInfo.InvariantCulture),
+                    Capture.HasNativePreviewResult.ToString(),
+                    Capture.NativePreviewCaptured.ToString(),
+                    Capture.Parsed.ToString(),
+                    Pass.ToString(),
+                    C9Csv(Capture.Review),
+                    C9Csv(sourceCopyPath),
+                    C9Csv(nativePreviewPath),
+                    C9Csv(evidenceOverlayPath)
+                });
             }
         }
 

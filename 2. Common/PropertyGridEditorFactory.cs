@@ -51,6 +51,11 @@ namespace OpenVisionLab
             runtime.SetImageEditorService(service);
         }
 
+        internal static string SaveTemplateImageForTeaching(Mat sourceImage, OpenCvSharp.Rect selectedRegion)
+        {
+            return runtime.ImageEditorService.SaveTemplateImage(sourceImage, selectedRegion);
+        }
+
         private static void LogEditorException(string editorName, Exception exception)
         {
             try

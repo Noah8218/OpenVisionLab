@@ -4,6 +4,7 @@
     <OpenVisionLabDllRoot>$(OpenVisionLabRepoRoot)dll\</OpenVisionLabDllRoot>
     <OpenVisionLabLibraryNoahDllRoot>$(OpenVisionLabDllRoot)Library-Noah\</OpenVisionLabLibraryNoahDllRoot>
     <OpenVisionLabOpenCvSharpDllRoot>$(OpenVisionLabDllRoot)OpenCVSharp\</OpenVisionLabOpenCvSharpDllRoot>
+    <AssemblySearchPaths>{HintPathFromItem};{CandidateAssemblyFiles};{TargetFrameworkDirectory};{RawFileName}</AssemblySearchPaths>
     <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;obj\**;artifacts\**</DefaultItemExcludes>
     <Authors>최노아(Noah-Choi)</Authors>
     <Company>최노아(Noah-Choi)</Company>

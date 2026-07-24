@@ -1,4 +1,56 @@
 Key	Korean	English
+PropertyGrid.Type.EdgeBasedMatchingProperty.USE_UNIQUE_MATCH_VALIDATION.DisplayName	고유 매칭 요구	Require unique match
+PropertyGrid.Type.EdgeBasedMatchingProperty.USE_UNIQUE_MATCH_VALIDATION.Description	공간적으로 분리된 후보가 정확히 하나일 때만 통과합니다. 내부 후보 Top-K를 유지하며 점수 여유 기준을 통과하지 못하면 결과 없이 Ambiguous로 종료합니다.	Require exactly one spatially distinct candidate. This opt-in mode keeps internal Top-K candidates and returns Ambiguous with no match when the score-margin gate fails.
+PropertyGrid.Type.EdgeBasedMatchingProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN.DisplayName	최소 고유 점수 여유	Min unique margin
+PropertyGrid.Type.EdgeBasedMatchingProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN.Description	선택 후보와 가장 강한 공간 분리 후보 사이에 요구하는 정규화 0..1 점수 차이입니다. 고유 매칭 요구를 켰을 때만 사용합니다.	Minimum normalized 0..1 score difference between the selected candidate and the strongest spatially distinct candidate. Used only when Require unique match is enabled.
+PropertyGrid.Category.Auto_MPoint	자동 MPoint	Auto MPoint
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_USE_ANALYSIS_ROI.DisplayName	분석 ROI 사용	Use analysis ROI
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_USE_ANALYSIS_ROI.Description	검토한 분석 ROI 안에서만 자동 패턴 후보를 찾습니다. 이 학습 설정을 바꿔도 매칭 미리보기는 자동 실행되지 않습니다.	Restrict automatic pattern candidate analysis to the reviewed analysis ROI. This teaching option never runs matching Preview by itself.
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_ANALYSIS_ROI.DisplayName	분석 ROI	Analysis ROI
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_ANALYSIS_ROI.Description	Auto MPoint가 식별력 있는 패턴 후보를 찾을 원본 이미지 영역입니다.	Optional source-image region in which Auto MPoint searches for distinctive pattern candidates.
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_PATTERN_WIDTH.DisplayName	패턴 너비	Pattern width
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_PATTERN_WIDTH.Description	각 후보 패턴 창의 픽셀 너비입니다.	Width in pixels of each candidate pattern window.
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_PATTERN_HEIGHT.DisplayName	패턴 높이	Pattern height
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_PATTERN_HEIGHT.Description	각 후보 패턴 창의 픽셀 높이입니다.	Height in pixels of each candidate pattern window.
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_STRIDE.DisplayName	후보 간격	Candidate stride
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_STRIDE.Description	후보 창 사이의 픽셀 간격입니다. 작을수록 더 많은 위치를 검사하고 시간이 오래 걸립니다.	Grid interval in pixels between candidate windows. Smaller values inspect more positions and take longer.
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MAX_RESULTS.DisplayName	최대 제안 수	Max suggestions
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MAX_RESULTS.Description	작업자가 검토할 수 있도록 표시하는 최대 통과 후보 수입니다.	Maximum number of accepted suggestions shown for operator review.
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_FEATURE_QUALITY.DisplayName	최소 특징 품질	Min feature quality
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_FEATURE_QUALITY.Description	정확 매칭 검증 전에 요구하는 대비·엣지 분포·방향 균형의 정규화 품질 하한입니다.	Minimum normalized contrast, edge coverage, and directional-balance quality required before exact matching checks.
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_UNIQUENESS.DisplayName	최소 고유성	Min uniqueness
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_UNIQUENESS.Description	학습 위치 점수와 가장 강한 경쟁 위치 점수의 최소 차이입니다. 반복 패턴이 많은 이미지에서는 높이십시오.	Minimum score margin between the taught location and the strongest competing location. Raise this for repetitive images.
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MAX_POSITION_ERROR.DisplayName	최대 위치 오차	Max position error
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MAX_POSITION_ERROR.Description	제안 패턴이 합성 재배치 검증에서 허용할 최대 픽셀 위치 오차입니다.	Maximum synthetic relocation error in pixels allowed for a suggested pattern.
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_REPRESENTATIVE_IMAGES.DisplayName	최소 대표 이미지 수	Min representative images
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_REPRESENTATIVE_IMAGES.Description	실제 이미지 매칭률로 후보를 자동 선정할 때 필요한 추가 대표 이미지의 최소 개수입니다.	Minimum number of additional representative images required when Auto MPoint ranks candidates by actual cross-image matching performance.
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_REPRESENTATIVE_SUCCESS_RATE.DisplayName	최소 대표 성공률	Min representative success
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_REPRESENTATIVE_SUCCESS_RATE.Description	선택한 대표 이미지에서 요구하는 0..1 매칭 성공률입니다. 이 값보다 낮은 후보는 탈락합니다.	Minimum 0..1 matching success rate across the selected representative images. Candidates below this rate are rejected.
+VisionTool.AutoMPoint.Title	Auto MPoint 최적 패턴	Auto MPoint best pattern
+VisionTool.AutoMPoint.Suggested	자동 1순위	Automatic best
+VisionTool.AutoMPoint.Analyze	최적 패턴 찾기	Find best pattern
+VisionTool.AutoMPoint.AnalyzeToolTip	현재 기준 이미지에서 후보를 만들고 선택한 대표 이미지의 실제 매칭 성공률로 최적 패턴을 선정합니다. Preview/Run 또는 레이어 변경은 실행하지 않습니다.	Generate candidates from the current reference image and select the best pattern by actual matching success across the representative images. This does not run Preview/Run or change layers.
+VisionTool.AutoMPoint.RepresentativeImages	대표 이미지 선택	Select representative images
+VisionTool.AutoMPoint.RepresentativeImagesToolTip	같은 제품·촬영 조건의 대표 이미지 여러 장을 선택합니다. Auto MPoint는 이 이미지들의 실제 매칭 성공률, 최소 고유성, 평균 점수 순으로 후보를 정렬합니다.	Select multiple representative images of the same product and imaging condition. Auto MPoint ranks candidates by actual success rate, minimum uniqueness, then mean score.
+VisionTool.AutoMPoint.RepresentativeCountFormat	대표 이미지 {0}장	{0} representative images
+VisionTool.AutoMPoint.RepresentativeLoadedFormat	대표 이미지 {0}장을 선택했습니다. 최적 패턴 찾기를 실행하십시오.	Selected {0} representative images. Run Find best pattern.
+VisionTool.AutoMPoint.UsePattern	이 패턴 사용	Use this pattern
+VisionTool.AutoMPoint.UsePatternToolTip	선택한 제안 ROI를 템플릿으로 저장합니다. 적용 후 매칭 미리보기는 작업자가 명시적으로 실행해야 합니다.	Save the selected suggested ROI as the template. The operator must run matching Preview explicitly afterward.
+VisionTool.AutoMPoint.CandidateList	Auto MPoint 제안 후보 목록	Auto MPoint suggestion list
+VisionTool.AutoMPoint.Ready	대표 이미지 3장 이상을 선택하면 실제 매칭률로 최적 패턴 하나를 자동 선정합니다.	Select at least three representative images to automatically choose one best pattern by actual matching performance.
+VisionTool.AutoMPoint.NoImage	먼저 입력 이미지를 불러오십시오.	Load an input image first.
+VisionTool.AutoMPoint.NoSelection	적용할 제안 후보를 선택하십시오.	Select a suggestion to apply.
+VisionTool.AutoMPoint.Analyzing	후보를 만들고 대표 이미지의 실제 매칭 성공률·고유성·속도를 비교하는 중입니다.	Generating candidates and comparing actual matching success, uniqueness, and runtime across the representative images.
+VisionTool.AutoMPoint.SuccessFormat	제안 후보 {0}개입니다. 대표 이미지가 없으면 단일 이미지 추천이며, Preview는 별도로 실행해야 합니다.	{0} suggestions found. Without representative images this is a single-image suggestion; Preview must still be run separately.
+VisionTool.AutoMPoint.RepresentativeSuccessFormat	대표 이미지 {0}장 중 {1}장 매칭 성공({2:0.0}%). 최적 후보 #{3}을 자동 선택했습니다. 드로잉을 확인한 뒤 적용하십시오.	Matched {1} of {0} representative images ({2:0.0}%). Automatically selected best candidate #{3}. Review the drawing before applying it.
+VisionTool.AutoMPoint.FailedFormat	후보 분석 실패: {0} - {1}	Candidate analysis failed: {0} - {1}
+VisionTool.AutoMPoint.Changed	입력 이미지 또는 분석 조건이 바뀌었습니다. 후보를 다시 분석하십시오.	The input image or analysis settings changed. Analyze candidates again.
+VisionTool.AutoMPoint.AppliedFormat	제안 #{0}을 템플릿으로 저장했습니다: {1}. 매칭 Preview는 자동 실행하지 않았습니다.	Saved suggestion #{0} as the template: {1}. Matching Preview was not run automatically.
+VisionTool.AutoMPoint.SaveFailed	선택한 후보 템플릿을 저장하지 못했습니다.	Failed to save the selected candidate template.
+VisionTool.AutoMPoint.ExportReport	N-이미지 보고서 저장	Save N-image report
+VisionTool.AutoMPoint.ExportReportToolTip	이미 계산한 선택 후보의 전체 대표 이미지 결과표와 결정적 검토 드로잉을 자체 포함 HTML로 저장합니다. 매칭, Preview/Run, 패턴 적용 또는 레이어 변경을 다시 실행하지 않습니다.	Save the already-computed selected candidate results and deterministic review drawings as a self-contained HTML file. This does not rerun matching, Preview/Run, pattern apply, or layer changes.
+VisionTool.AutoMPoint.ReportExportedFormat	N-이미지 증빙 보고서를 저장했습니다: {0}	Saved N-image evidence report: {0}
+VisionTool.AutoMPoint.ReportExportFailedFormat	N-이미지 보고서 저장 실패: {0}	Failed to save N-image report: {0}
 Shell.MainAction.ReadyBadge	준비	Ready
 Shell.MainAction.ImageReadyTitle	이미지 준비됨	Image ready
 Shell.MainAction.ImageReadyDetail	다음: 도구 선택 -> 미리보기 실행/확인 -> 파이프라인 추가	Next: select a tool -> run/check preview -> add to pipeline
@@ -341,6 +393,14 @@ Morphology.Shape.Ellipse	타원	Ellipse
 Morphology.Shape.Cross	십자	Cross
 VisionTool.Status.PreviewOk	미리보기 OK	Preview OK
 VisionTool.Status.PreviewNg	미리보기 NG	Preview NG
+VisionTool.Affine.ResultSummaryFormat	Affine 2x3 / {0} / 유효 픽셀 {1:0.0}%	Affine 2x3 / {0} / valid pixels {1:0.0}%
+VisionTool.Affine.MatrixLabel	행렬	Matrix
+VisionTool.Affine.ValidPixelLabel	유효 픽셀	Valid pixels
+VisionTool.Affine.DeterminantLabel	행렬식	Determinant
+VisionTool.Affine.SourceAreaLabel	Source 삼각형	Source triangle
+VisionTool.Affine.DestinationAreaLabel	Destination 삼각형	Destination triangle
+VisionTool.Affine.SuccessGuidance	Destination 삼각형, 변환된 Source 프레임, 행렬, 유효 픽셀 비율을 확인한 뒤 Step을 추가하세요.	Review the destination triangle, transformed source frame, matrix, and valid-pixel coverage before adding the Step.
+VisionTool.Affine.FailureGuidanceFormat	대응점 3쌍, 출력 크기 또는 검증 게이트를 조정한 뒤 다시 미리보기 하세요. {0}	Adjust the three corresponding points, output size, or validation gates, then Preview again. {0}
 VisionTool.Status.OffsetOk	오프셋 OK	Offset OK
 VisionTool.Status.PipelineAdded	파이프라인 추가됨	Pipeline added
 VisionTool.Status.OutputLayerReady	출력 레이어 준비됨	Output layer ready
@@ -523,6 +583,8 @@ VisionTest.Error.ToolReturnedNoResult	Vision Tool이 결과 객체를 반환하�
 VisionTest.Error.ResultImageEmpty	Vision Tool 결과 이미지가 비어 있습니다.	Vision tool result image is empty.
 VisionTest.Error.ToolExecutionFailed	Tool 실행에 실패했습니다.	Tool execution failed.
 ToolView.AddPipeline	파이프라인 추가	Add Pipeline
+ToolView.NImageVerification	N장 검증	N-image verification
+ToolView.NImageVerification.ToolTip	현재 Tool View 설정을 한 Step으로 고정해 여러 이미지를 순차 실행하고 저장된 드로잉·측정값·HTML 보고서를 검토합니다. 레이어와 Preview/Run 상태는 바꾸지 않습니다.	Freeze the current Tool View settings as one Step, run multiple images sequentially, and review retained drawings, metrics, and an HTML report. Layers and Preview/Run state remain unchanged.
 LineForm.Text	라인 / 거리 측정	Line
 LineForm.btnResult.Text	상세	Details
 LineForm.btnRun.Text	피팅 라인	Fit Line
@@ -1020,11 +1082,37 @@ PipelineReview.OpenSelectedToolLearnToolTip	선택한 도구의 Learn 항목 열
 PipelineReview.FixtureTeach.Button	참조 자세 저장	Save as reference
 PipelineReview.FixtureTeach.ButtonToolTip	검토한 Matching 자세를 Pipeline 실행 없이 Fixture 참조값으로 저장합니다.	Save the reviewed Matching pose as the fixture reference without running the pipeline
 PipelineReview.FixtureTeach.Waiting	리뷰 실행 후 Matching 결과 1개를 확인하십시오.	Run Review and verify one Matching result.
-PipelineReview.FixtureTeach.ReadyFormat	X {0} / Y {1} / {2}도 · 기준 이미지 확인	X {0} / Y {1} / {2} deg. Confirm the reference image.
-PipelineReview.FixtureTeach.SavedFormat	X {0} / Y {1} / {2}도 저장 · ROI 유지 · 리뷰 재실행	Saved X {0} / Y {1} / {2} deg. ROI kept; run review again.
+PipelineReview.FixtureTeach.ReadyFormat	X {0} / Y {1} / {2}도 / 배율 {3} · 기준 이미지 확인	X {0} / Y {1} / {2} deg / scale {3}. Confirm the reference image.
+PipelineReview.FixtureTeach.SavedFormat	X {0} / Y {1} / {2}도 / 배율 {3} 저장 · ROI 유지 · 리뷰 재실행	Saved X {0} / Y {1} / {2} deg / scale {3}. ROI kept; run review again.
+PipelineReview.FixtureTeach.ReadyWithDimensionsFormat	X {0} / Y {1} / {2}도 / {3}배 / 기준 {4} x {5} · 기준 이미지 확인	X {0} / Y {1} / {2} deg / scale {3} / reference {4} x {5}. Confirm the reference image.
+PipelineReview.FixtureTeach.SavedWithDimensionsFormat	X {0} / Y {1} / {2}도 / {3}배 / 기준 {4} x {5} 저장 · ROI 유지 · 리뷰 재실행	Saved X {0} / Y {1} / {2} deg / scale {3} / reference {4} x {5}. ROI kept; run review again.
 PipelineReview.FixtureTeach.SaveFailedFormat	참조를 저장하지 못했습니다: {0}	Could not save reference: {0}
 PipelineReview.FixtureTeach.RunRequired	참조 저장됨	Reference saved
 PipelineReview.FixtureTeach.RunRequiredDetail	참조가 변경되었습니다. 소비 Step ROI와 입출력 경로는 유지했습니다. 리뷰 실행을 눌러 모든 결과를 갱신하십시오.	The reference changed. Consumer ROI and routing were preserved; click Run Review to refresh every result.
+PipelineReview.FixtureDesigner.Title	Fixture / 상대 ROI	Fixture / Relative ROI
+PipelineReview.FixtureDesigner.Relationship	Fixture 관계	Fixture relationship
+PipelineReview.FixtureDesigner.Source	원본 + 변환 ROI	Source + transformed ROI
+PipelineReview.FixtureDesigner.Normalized	정규화 + 기준 ROI	Normalized + reference ROI
+PipelineReview.FixtureDesigner.State	기준 및 현재 상태	Reference and current state
+PipelineReview.FixtureDesigner.EditProducer	템플릿 / 검색 ROI 편집	Edit template / search ROI
+PipelineReview.FixtureDesigner.EditMeasurement	측정 ROI 편집	Edit measurement ROI
+PipelineReview.FixtureDesigner.EditProducerToolTip	Fixture Matching Step을 Recipe Manager PropertyGrid에서 엽니다.	Open the fixture Matching Step in the authoritative Recipe Manager PropertyGrid
+PipelineReview.FixtureDesigner.EditMeasurementToolTip	후속 기준좌표 ROI Step을 Recipe Manager PropertyGrid에서 엽니다.	Open the downstream reference-coordinate ROI Step in the authoritative Recipe Manager PropertyGrid
+PipelineReview.FixtureDesigner.RunToolTip	파이프라인을 명시적으로 실행하고 Fixture 증거를 갱신합니다.	Run the pipeline explicitly and refresh fixture evidence
+PipelineReview.FixtureDesigner.FullImage	전체 이미지	full image
+PipelineReview.FixtureDesigner.RelationshipFormat	{0}: {1:00} {2} → {3:00} {4} → {5:00} {6} / ROI {7}	{0}: {1:00} {2} -> {3:00} {4} -> {5:00} {6} / ROI {7}
+PipelineReview.FixtureDesigner.TemplateFormat	템플릿: {0} / 검색 ROI: {1}	Template: {0} / search ROI: {1}
+PipelineReview.FixtureDesigner.ReferenceFormat	기준 ({0},{1}) / {2}도 / {3}배 / {4}x{5}	Ref ({0},{1}) / {2} deg / {3}x / {4}x{5}
+PipelineReview.FixtureDesigner.ReferenceCompactFormat	기준 ({0},{1}) / {2}도 / {3}배 / {4}x{5}	Ref ({0},{1}) / {2} deg / {3}x / {4}x{5}
+PipelineReview.FixtureDesigner.ReferenceMissing	기준 자세 또는 이미지 크기가 완전하지 않습니다.	Reference pose or image size is incomplete.
+PipelineReview.FixtureDesigner.CurrentFormat	현재 ({0},{1}) / {2}도 / {3}배	Now ({0},{1}) / {2} deg / {3}x
+PipelineReview.FixtureDesigner.CurrentCompactFormat	현재 ({0},{1}) / {2}도 / {3}배	Now ({0},{1}) / {2} deg / {3}x
+PipelineReview.FixtureDesigner.CurrentWaiting	현재 자세: 리뷰 실행 필요	Current pose: Run Review required
+PipelineReview.FixtureDesigner.QualityFormat	점수 {0} / 마진 {1} / 유효 {2}	Score {0} / margin {1} / valid {2}
+PipelineReview.FixtureDesigner.QualityCompactFormat	점수 {0} / 마진 {1} / 유효 {2}	Score {0} / margin {1} / valid {2}
+PipelineReview.FixtureDesigner.SourceLayerFormat	{0} / 기준 ROI {1} 변환	{0} / transformed from ROI {1}
+PipelineReview.FixtureDesigner.SourceWaitingFormat	{0} / 변환 ROI는 리뷰 실행 필요	{0} / Run Review for transformed ROI
+PipelineReview.FixtureDesigner.NormalizedLayerFormat	{0} / ROI {1}	{0} / ROI {1}
 PipelineReview.Ready	파이프라인 리뷰 준비됨	Pipeline review ready
 PipelineReview.SelectedFormat	선택: {0}	Selected: {0}
 PipelineReview.RunningButton	실행 중...	Running...
@@ -1067,6 +1155,10 @@ PipelineReview.Flow.BranchInputFormat	분기 입력: {0} / 이전 출력: {1}	Br
 PipelineReview.Flow.PreviousOutputFormat	이전 출력: {0}	Previous output: {0}
 PipelineReview.Flow.MissingInputFormat	입력 없음: {0}	Missing input: {0}
 PipelineReview.RouteFormat	{0} -> {1}	{0} -> {1}
+PipelineReview.StepDetails.Title	Step 상세	Step Details
+PipelineReview.ObjectInspector.Title	객체 결과	Object Results
+PipelineReview.ObjectInspector.CountFormat	객체 {0} / 통과 {1} / 제외 {2}	Objects {0} / accepted {1} / rejected {2}
+PipelineReview.ObjectInspector.Highlight	선택 객체 강조	Selected object highlight
 SimplePreprocess.HistogramType	히스토그램 타입	Histogram type
 SimplePreprocess.ClipLimit	Clip 제한	Clip limit
 SimplePreprocess.TileGrid	타일 그리드	Tile grid
@@ -1146,6 +1238,7 @@ VisionMenu.Threshold	스레시홀드	Threshold
 VisionMenu.Arithmetic	산술 연산	Arithmetic
 VisionMenu.EdgeDetection	엣지 검출	Edge Detection
 VisionMenu.RotateAndScale	회전 / 스케일	Rotate / Scale
+VisionMenu.AffineTransform	어파인 변환	Affine Transform
 VisionMenu.Histogram	히스토그램	Histogram
 VisionMenu.HSV	HSV	HSV
 VisionMenu.Blob	블랍	Blob
@@ -1508,9 +1601,9 @@ PropertyGrid.Property.RequiredMessageText.DisplayName	필수 메시지	Required 
 PropertyGrid.Property.AcceptanceMetricName.DisplayName	판정 지표	Acceptance Metric
 PropertyGrid.Property.AcceptanceMetricMinimum.DisplayName	지표 범위	Metric range
 PropertyGrid.Property.USE_AS_FIXTURE_FRAME.DisplayName	기준 좌표로 사용	Publish fixture frame
-PropertyGrid.Property.USE_AS_FIXTURE_FRAME.Description	단일 매칭 결과를 후속 Step이 사용할 이동 보정 기준으로 등록합니다. 매칭 개수는 1이어야 합니다.	Publish this single Matching result as a translation-only fixture frame. NUM_MATCH must be 1.
+PropertyGrid.Property.USE_AS_FIXTURE_FRAME.Description	단일 매칭 결과를 후속 Step이 사용할 위치·각도·균일 배율 기준으로 등록합니다. 매칭 개수는 1이어야 합니다.	Publish this single Matching result as a center, angle, and uniform-scale fixture frame. NUM_MATCH must be 1.
 PropertyGrid.Property.USE_FIXTURE_FRAME.DisplayName	기준 좌표 보정 사용	Use fixture frame
-PropertyGrid.Property.USE_FIXTURE_FRAME.Description	앞선 Matching Step이 등록한 기준 좌표만큼 이 Step의 단일 ROI를 이동합니다. Preview와 Run은 자동 실행되지 않습니다.	Move this step's single ROI by a previously published Matching fixture frame. Preview and Run remain explicit.
+PropertyGrid.Property.USE_FIXTURE_FRAME.Description	앞선 Matching Step의 기준을 사용합니다. 기본 모드는 단일 ROI의 X/Y 이동이며, RotateScale의 NormalizeImage 모드는 기준 좌표 영상으로 보정합니다. Preview와 Run은 명시적으로 실행해야 합니다.	Use a previously published Matching fixture. The default mode translates one ROI in X/Y; RotateScale NormalizeImage maps the image into reference coordinates. Preview and Run remain explicit.
 PropertyGrid.Property.FIXTURE_FRAME_NAME.DisplayName	기준 좌표 이름	Fixture frame name
 PropertyGrid.Property.FIXTURE_FRAME_NAME.Description	기준을 등록하는 Matching Step과 사용하는 검사 Step에서 같은 이름을 지정합니다.	Use the same name on the Matching producer and each fixture consumer.
 PropertyGrid.Property.FIXTURE_REFERENCE_X.DisplayName	기준 중심 X	Reference center X
@@ -1519,6 +1612,8 @@ PropertyGrid.Property.FIXTURE_REFERENCE_Y.DisplayName	기준 중심 Y	Reference 
 PropertyGrid.Property.FIXTURE_REFERENCE_Y.Description	기준 이미지에서 매칭된 중심의 Y 픽셀 좌표입니다.	Matching center Y in the taught reference image, in pixels.
 PropertyGrid.Property.FIXTURE_REFERENCE_ANGLE.DisplayName	기준 각도	Reference angle
 PropertyGrid.Property.FIXTURE_REFERENCE_ANGLE.Description	기준 이미지에서 측정된 매칭 각도입니다.	Matching angle in the taught reference image, in degrees.
+PropertyGrid.Property.FIXTURE_REFERENCE_SCALE.DisplayName	기준 배율	Reference scale
+PropertyGrid.Property.FIXTURE_REFERENCE_SCALE.Description	기준 이미지에서 측정된 매칭 배율입니다. 원본 템플릿 크기는 1.0입니다.	Matching scale in the taught reference image. Use 1.0 for the original template size.
 PropertyGrid.Property.FIXTURE_MAX_ANGLE_DELTA.DisplayName	허용 각도 변화	Maximum angle delta
 PropertyGrid.Property.FIXTURE_MAX_ANGLE_DELTA.Description	현재 각도 변화가 이 값을 넘으면 ROI를 이동하지 않고 실패 처리합니다.	Fail instead of translating the ROI when the angle change exceeds this degree limit.
 PropertyGrid.Property.ALLOW_BRANCH_INPUT.DisplayName	원본 레이어 분기 허용	Allow branch input
@@ -1576,8 +1671,30 @@ PropertyGrid.Property.Angle.DisplayName	회전 각도	Angle
 PropertyGrid.Property.ScaleXPercent.DisplayName	X 스케일(%)	Scale X (%)
 PropertyGrid.Property.ScaleYPercent.DisplayName	Y 스케일(%)	Scale Y (%)
 PropertyGrid.Property.Interpolation.DisplayName	보간	Interpolation
+PropertyGrid.Property.SourcePoint1X.DisplayName	소스 점 1 X	Source point 1 X
+PropertyGrid.Property.SourcePoint1Y.DisplayName	소스 점 1 Y	Source point 1 Y
+PropertyGrid.Property.SourcePoint2X.DisplayName	소스 점 2 X	Source point 2 X
+PropertyGrid.Property.SourcePoint2Y.DisplayName	소스 점 2 Y	Source point 2 Y
+PropertyGrid.Property.SourcePoint3X.DisplayName	소스 점 3 X	Source point 3 X
+PropertyGrid.Property.SourcePoint3Y.DisplayName	소스 점 3 Y	Source point 3 Y
+PropertyGrid.Property.DestinationPoint1X.DisplayName	목표 점 1 X	Destination point 1 X
+PropertyGrid.Property.DestinationPoint1Y.DisplayName	목표 점 1 Y	Destination point 1 Y
+PropertyGrid.Property.DestinationPoint2X.DisplayName	목표 점 2 X	Destination point 2 X
+PropertyGrid.Property.DestinationPoint2Y.DisplayName	목표 점 2 Y	Destination point 2 Y
+PropertyGrid.Property.DestinationPoint3X.DisplayName	목표 점 3 X	Destination point 3 X
+PropertyGrid.Property.DestinationPoint3Y.DisplayName	목표 점 3 Y	Destination point 3 Y
+PropertyGrid.Property.OutputWidth.DisplayName	출력 폭	Output width
+PropertyGrid.Property.OutputHeight.DisplayName	출력 높이	Output height
+PropertyGrid.Property.BorderValue.DisplayName	테두리 값	Border value
+PropertyGrid.Property.MinimumSourceTriangleArea.DisplayName	최소 소스 삼각형 면적	Minimum source triangle area
+PropertyGrid.Property.MinimumDestinationTriangleArea.DisplayName	최소 목표 삼각형 면적	Minimum destination triangle area
+PropertyGrid.Property.MinimumValidPixelRatio.DisplayName	최소 유효 픽셀 비율	Minimum valid pixel ratio
 PropertyGrid.Property.MIN_AREA.DisplayName	최소 면적	Min area
 PropertyGrid.Property.MAX_AREA.DisplayName	최대 면적	Max area
+PropertyGrid.Property.MIN_WIDTH.DisplayName	최소 바운딩 폭	Min bounding width
+PropertyGrid.Property.MAX_WIDTH.DisplayName	최대 바운딩 폭	Max bounding width
+PropertyGrid.Property.MIN_HEIGHT.DisplayName	최소 바운딩 높이	Min bounding height
+PropertyGrid.Property.MAX_HEIGHT.DisplayName	최대 바운딩 높이	Max bounding height
 PropertyGrid.Property.USE_APPROXPOLYDP.DisplayName	Approx poly 사용	Use approx poly
 PropertyGrid.Property.USE_DRAW_IMAGE.DisplayName	결과 그리기	Draw result
 PropertyGrid.Property.ApproximationModes.DisplayName	근사 방식	Approximation
@@ -1720,6 +1837,10 @@ Shell.ToolSearch.AllFormat	전체 {0}개 도구	All {0} tools
 Shell.ToolSearch.ResultFormat	{0}개 도구 찾음	{0} tools found
 PropertyGrid.Type.BlobProperty.MIN_AREA.DisplayName	면적 범위	Area range
 PropertyGrid.Type.ContourProperty.MIN_AREA.DisplayName	면적 범위	Area range
+PropertyGrid.Type.BlobProperty.MIN_WIDTH.DisplayName	바운딩 폭 범위	Bounding width range
+PropertyGrid.Type.ContourProperty.MIN_WIDTH.DisplayName	바운딩 폭 범위	Bounding width range
+PropertyGrid.Type.BlobProperty.MIN_HEIGHT.DisplayName	바운딩 높이 범위	Bounding height range
+PropertyGrid.Type.ContourProperty.MIN_HEIGHT.DisplayName	바운딩 높이 범위	Bounding height range
 PropertyGrid.Type.MatchingProperty.FIND_ANGLE_MIN.DisplayName	각도 범위	Angle range
 PropertyGrid.Type.MatchingProperty.FIND_ANGLE_MIN.Description	패턴 매칭에서 탐색할 회전 각도 범위입니다.	Rotation angle range searched by pattern matching.
 PropertyGrid.Type.MatchingProperty.CANNY_LOW.DisplayName	Canny 범위	Canny range

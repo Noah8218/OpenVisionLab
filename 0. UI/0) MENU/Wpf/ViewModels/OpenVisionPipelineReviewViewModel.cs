@@ -63,6 +63,22 @@ namespace OpenVisionLab
         private bool fixturePoseAvailable;
         private bool canUseSelectedMatchingPose;
         private string fixtureTeachStatusText = string.Empty;
+        private bool isFixtureDesignerVisible;
+        private string fixtureRelationshipText = string.Empty;
+        private string fixtureTemplateText = string.Empty;
+        private string fixtureReferenceText = string.Empty;
+        private string fixtureCurrentText = string.Empty;
+        private string fixtureQualityText = string.Empty;
+        private string fixtureSourceText = string.Empty;
+        private string fixtureNormalizedText = string.Empty;
+        private BitmapImage fixtureTemplatePreviewImage;
+        private BitmapImage fixtureSourcePreviewImage;
+        private BitmapImage fixtureNormalizedPreviewImage;
+        private bool canEditFixtureProducer;
+        private bool canEditFixtureMeasurement;
+        private bool fixtureProducerEditAvailable;
+        private bool fixtureMeasurementEditAvailable;
+        private BitmapImage scaleCalibrationPreviewImage;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -115,8 +131,23 @@ namespace OpenVisionLab
         public bool CanSelectFirstIssueStep { get => canSelectFirstIssueStep; private set => SetField(ref canSelectFirstIssueStep, value); }
         public bool CanOpenSelectedToolLearn { get => canOpenSelectedToolLearn; private set => SetField(ref canOpenSelectedToolLearn, value); }
         public bool IsFixtureTeachVisible { get => isFixtureTeachVisible; private set => SetField(ref isFixtureTeachVisible, value); }
+        public bool IsLegacyFixtureTeachVisible => IsFixtureTeachVisible && !IsFixtureDesignerVisible;
         public bool CanUseSelectedMatchingPose { get => canUseSelectedMatchingPose; private set => SetField(ref canUseSelectedMatchingPose, value); }
         public string FixtureTeachStatusText { get => fixtureTeachStatusText; private set => SetField(ref fixtureTeachStatusText, value); }
+        public bool IsFixtureDesignerVisible { get => isFixtureDesignerVisible; private set => SetField(ref isFixtureDesignerVisible, value); }
+        public string FixtureRelationshipText { get => fixtureRelationshipText; private set => SetField(ref fixtureRelationshipText, value); }
+        public string FixtureTemplateText { get => fixtureTemplateText; private set => SetField(ref fixtureTemplateText, value); }
+        public string FixtureReferenceText { get => fixtureReferenceText; private set => SetField(ref fixtureReferenceText, value); }
+        public string FixtureCurrentText { get => fixtureCurrentText; private set => SetField(ref fixtureCurrentText, value); }
+        public string FixtureQualityText { get => fixtureQualityText; private set => SetField(ref fixtureQualityText, value); }
+        public string FixtureSourceText { get => fixtureSourceText; private set => SetField(ref fixtureSourceText, value); }
+        public string FixtureNormalizedText { get => fixtureNormalizedText; private set => SetField(ref fixtureNormalizedText, value); }
+        public BitmapImage FixtureTemplatePreviewImage { get => fixtureTemplatePreviewImage; private set => SetField(ref fixtureTemplatePreviewImage, value); }
+        public BitmapImage FixtureSourcePreviewImage { get => fixtureSourcePreviewImage; private set => SetField(ref fixtureSourcePreviewImage, value); }
+        public BitmapImage FixtureNormalizedPreviewImage { get => fixtureNormalizedPreviewImage; private set => SetField(ref fixtureNormalizedPreviewImage, value); }
+        public bool CanEditFixtureProducer { get => canEditFixtureProducer; private set => SetField(ref canEditFixtureProducer, value); }
+        public bool CanEditFixtureMeasurement { get => canEditFixtureMeasurement; private set => SetField(ref canEditFixtureMeasurement, value); }
+        public BitmapImage ScaleCalibrationPreviewImage { get => scaleCalibrationPreviewImage; private set => SetField(ref scaleCalibrationPreviewImage, value); }
         public bool HasInputPreview => InputPreviewImage != null;
         public bool HasOutputPreview => OutputPreviewImage != null;
 
@@ -172,10 +203,23 @@ namespace OpenVisionLab
             ResultDetailText = SafeText(details);
         }
 
+        public void SetHighlightedOutputPreview(Bitmap bitmap)
+        {
+            OutputPreviewImage = CreateBitmapImage(bitmap);
+            OnPropertyChanged(nameof(HasOutputPreview));
+        }
+
+        public void SetScaleCalibrationPreview(Bitmap bitmap)
+        {
+            ScaleCalibrationPreviewImage = CreateBitmapImage(bitmap);
+        }
+
         public void SetRunReviewBusy(bool isBusy)
         {
             CanRunReview = !isBusy;
             CanUseSelectedMatchingPose = fixturePoseAvailable && !isBusy;
+            CanEditFixtureProducer = fixtureProducerEditAvailable && !isBusy;
+            CanEditFixtureMeasurement = fixtureMeasurementEditAvailable && !isBusy;
             RunReviewButtonText = isBusy ? T("PipelineReview.RunningButton", "Running...") : T("PipelineReview.RunReview", "Run Review");
             StatusText = isBusy ? T("PipelineReview.Running", "Pipeline review is running.") : StatusText;
         }
@@ -188,6 +232,46 @@ namespace OpenVisionLab
             FixtureTeachStatusText = isVisible && !string.IsNullOrWhiteSpace(statusText)
                 ? statusText.Trim()
                 : string.Empty;
+            OnPropertyChanged(nameof(IsLegacyFixtureTeachVisible));
+        }
+
+        public void SetFixtureDesignerState(
+            bool isVisible,
+            string relationshipText,
+            string templateText,
+            string referenceText,
+            string currentText,
+            string qualityText,
+            string sourceText,
+            Bitmap sourcePreview,
+            string normalizedText,
+            Bitmap normalizedPreview,
+            Bitmap templatePreview,
+            bool canTeachReference,
+            bool canEditProducer,
+            bool canEditMeasurement)
+        {
+            IsFixtureDesignerVisible = isVisible;
+            OnPropertyChanged(nameof(IsLegacyFixtureTeachVisible));
+            FixtureRelationshipText = isVisible ? SafeText(relationshipText) : string.Empty;
+            FixtureTemplateText = isVisible ? SafeText(templateText) : string.Empty;
+            FixtureReferenceText = isVisible ? SafeText(referenceText) : string.Empty;
+            FixtureCurrentText = isVisible ? SafeText(currentText) : string.Empty;
+            FixtureQualityText = isVisible ? SafeText(qualityText) : string.Empty;
+            FixtureSourceText = isVisible ? SafeText(sourceText) : string.Empty;
+            FixtureNormalizedText = isVisible ? SafeText(normalizedText) : string.Empty;
+            FixtureSourcePreviewImage = isVisible ? CreateBitmapImage(sourcePreview) : null;
+            FixtureNormalizedPreviewImage = isVisible ? CreateBitmapImage(normalizedPreview) : null;
+            FixtureTemplatePreviewImage = isVisible ? CreateBitmapImage(templatePreview) : null;
+            if (isVisible)
+            {
+                fixturePoseAvailable = canTeachReference;
+                CanUseSelectedMatchingPose = fixturePoseAvailable && CanRunReview;
+            }
+            fixtureProducerEditAvailable = isVisible && canEditProducer;
+            fixtureMeasurementEditAvailable = isVisible && canEditMeasurement;
+            CanEditFixtureProducer = fixtureProducerEditAvailable && CanRunReview;
+            CanEditFixtureMeasurement = fixtureMeasurementEditAvailable && CanRunReview;
         }
 
         public void SetValidation(string status, string details)
@@ -273,6 +357,21 @@ namespace OpenVisionLab
             SetNavigationState(-1, 0);
             SetIssueNavigationState(false);
             SetFixtureTeachState(false, false, string.Empty);
+            SetFixtureDesignerState(
+                false,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                null,
+                string.Empty,
+                null,
+                null,
+                false,
+                false,
+                false);
             SetResultSummary(T("PipelineReview.NoRunResult", "No run result"), "-");
             SetReviewProgress(T("PipelineReview.Progress.NoSteps", "No steps"));
             StatusText = T("PipelineReview.NoStepsStatus", "Pipeline has no steps.");

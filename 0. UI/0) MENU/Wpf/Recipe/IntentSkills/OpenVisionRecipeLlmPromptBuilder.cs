@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace OpenVisionLab
 {
@@ -34,6 +35,46 @@ namespace OpenVisionLab
         public string PinGapUnitText { get; set; }
 
         public string PinGapScaleText { get; set; }
+
+        public string PinArrayGapRoiText { get; set; }
+
+        public string PinArrayGapPolarityText { get; set; }
+
+        public string PinArrayGapMeasurementText { get; set; }
+
+        public string PinArrayGapRangeMaxText { get; set; }
+
+        public string PinArrayGapDarkThresholdText { get; set; }
+
+        public string PinArrayGapMinDarkCoverageRatioText { get; set; }
+
+        public string PinArrayGapMinPinWidthText { get; set; }
+
+        public string PinArrayGapMaxPinBreakWidthText { get; set; }
+
+        public string PinArrayGapMinGapWidthText { get; set; }
+
+        public string DarkBandGapRoiText { get; set; }
+
+        public string HybridReferencePoseText { get; set; }
+
+        public string HybridRelativeRoiText { get; set; }
+
+        public string HybridSearchRoiText { get; set; }
+
+        public string HybridScoreMinimumText { get; set; }
+
+        public string HybridScoreMarginText { get; set; }
+
+        public string HybridAngleMinimumText { get; set; }
+
+        public string HybridAngleMaximumText { get; set; }
+
+        public string HybridScaleRatioMinimumText { get; set; }
+
+        public string HybridScaleRatioMaximumText { get; set; }
+
+        public string HybridMinimumValidPixelRatioText { get; set; }
     }
 
     internal static class OpenVisionRecipeLlmPromptBuilder
@@ -102,6 +143,70 @@ namespace OpenVisionLab
             OpenVisionRecipeLlmPromptRequest request,
             string template)
         {
+            if (OpenVisionRecipeLlmIntent.IsPinArrayGapTemplate(template))
+            {
+                string roiText = FirstNonEmpty(request.PinArrayGapRoiText, request.PinGapRoiText, "MISSING; do not invent coordinates");
+                string rangeMaximum = (request.PinArrayGapRangeMaxText ?? string.Empty).Trim();
+                string judgementContract = string.IsNullOrWhiteSpace(rangeMaximum)
+                    ? "Mode: MEASURE ONLY / NOT JUDGED. Omit UseAcceptance, AcceptanceMetricName, and all acceptance bounds."
+                    : "Mode: JUDGED. Every row Step must set UseAcceptance=true, ExpectedSuccess=true, AcceptanceMetricName=DistancePxRange, UseAcceptanceMetricMaximum=true, and AcceptanceMetricMaximum=" + rangeMaximum + ".";
+
+                return string.Join(Environment.NewLine, new[]
+                {
+                    "This is a self-contained GPT task packet for OpenVisionLab pin-row adjacent edge-gap consistency XML.",
+                    "Use only ToolType=PinArrayGap. Do not substitute LineDistance, Contour, Blob, matching, or bounding-box measurements.",
+                    "Supported measurement: " + FirstNonEmpty(request.PinArrayGapMeasurementText, OpenVisionRecipePinArrayGapIntentSkill.SupportedMeasurementDefinition) + ". Do not claim center-to-center pitch.",
+                    "Supported polarity: " + FirstNonEmpty(request.PinArrayGapPolarityText, OpenVisionRecipePinArrayGapIntentSkill.SupportedPinPolarity) + ". Do not generate a bright-pin recipe.",
+                    "Unit mode: " + OpenVisionRecipePinArrayGapIntentSkill.SupportedUnitMode + "-only. Do not add PIXELPERMM or claim physical units.",
+                    "Create one PinArrayGap Step per reviewed row ROI. Every ROI must contain exactly one row of roughly vertical dark pins.",
+                    "Every Step reads InputLayer=Main and writes a unique OutputLayer. Add ALLOW_BRANCH_INPUT=true after the first Step.",
+                    "Row ROIs x,y,w,h separated by semicolons: " + roiText,
+                    "DarkThreshold=" + FirstNonEmpty(request.PinArrayGapDarkThresholdText, OpenVisionRecipePinArrayGapIntentSkill.DefaultDarkThreshold.ToString(CultureInfo.InvariantCulture)),
+                    "MinDarkCoverageRatio=" + FirstNonEmpty(request.PinArrayGapMinDarkCoverageRatioText, OpenVisionRecipePinArrayGapIntentSkill.DefaultMinimumDarkCoverageRatio.ToString(CultureInfo.InvariantCulture)),
+                    "MinPinWidth=" + FirstNonEmpty(request.PinArrayGapMinPinWidthText, OpenVisionRecipePinArrayGapIntentSkill.DefaultMinimumPinWidth.ToString(CultureInfo.InvariantCulture)),
+                    "MaxPinBreakWidth=" + FirstNonEmpty(request.PinArrayGapMaxPinBreakWidthText, OpenVisionRecipePinArrayGapIntentSkill.DefaultMaximumPinBreakWidth.ToString(CultureInfo.InvariantCulture)),
+                    "MinGapWidth=" + FirstNonEmpty(request.PinArrayGapMinGapWidthText, OpenVisionRecipePinArrayGapIntentSkill.DefaultMinimumGapWidth.ToString(CultureInfo.InvariantCulture)),
+                    judgementContract,
+                    "Response format: return XML only. No markdown fence, no prose, no explanation before or after the XML."
+                });
+            }
+
+            if (OpenVisionRecipeLlmIntent.IsHybridRelativeRoiGapTemplate(template))
+            {
+                return string.Join(Environment.NewLine, new[]
+                {
+                    "This is a self-contained GPT task packet for an OpenVisionLab locator-aligned dark-band Gap measurement XML.",
+                    "Use exactly four enabled Steps in this order: Matching NUM_MATCH=2 ambiguity gate; Matching NUM_MATCH=1 fixture publisher; RotateScale FIXTURE_APPLY_MODE=NormalizeImage; LineDistance USE_GAP_EDGE_PAIR=true.",
+                    "Do not substitute Blob, Contour, a raw-image fixed ROI, per-image coordinates, or a model detector.",
+                    "Cropped locator template path: " + FirstNonEmpty(request.ReferenceImagePath, "MISSING; do not invent a path"),
+                    "Matching search ROI in reference-image coordinates: " + FirstNonEmpty(request.HybridSearchRoiText, "MISSING; do not invent coordinates"),
+                    "Reviewed reference pose x,y,angle,scale,imageWidth,imageHeight: " + FirstNonEmpty(request.HybridReferencePoseText, "MISSING; do not invent pose values"),
+                    "Reference-coordinate measurement ROI: " + FirstNonEmpty(request.HybridRelativeRoiText, "MISSING; do not invent coordinates"),
+                    "Locator gates: SCORE_MIN=" + request.HybridScoreMinimumText + ", ScoreMargin minimum=" + request.HybridScoreMarginText + " percentage points, angle=" + request.HybridAngleMinimumText + ".." + request.HybridAngleMaximumText + " degrees, scale ratio=" + request.HybridScaleRatioMinimumText + ".." + request.HybridScaleRatioMaximumText + ".",
+                    "NormalizeImage minimum valid-pixel ratio: " + request.HybridMinimumValidPixelRatioText + ".",
+                    "The LineDistance Step is measurement-only and px-only. Use the frozen direct dark-band parameters and do not add Gap OK/NG acceptance or PIXELPERMM calibration.",
+                    "Missing, weak, ambiguous, out-of-angle, out-of-scale, or low-coverage location evidence must fail before measurement. Do not weaken a gate to force coverage.",
+                    "Required review drawings: both locator candidates or the selected pose, normalized valid bounds/reference axes, reference ROI, candidate edges, selected upper/lower edges, and Gap samples.",
+                    "Response format: return XML only. No markdown fence, no prose, no explanation before or after the XML."
+                });
+            }
+
+            if (OpenVisionRecipeLlmIntent.IsDarkBandGapTemplate(template))
+            {
+                return string.Join(Environment.NewLine, new[]
+                {
+                    "This is a self-contained GPT task packet for OpenVisionLab direct dark-band Gap measurement XML.",
+                    "Use exactly one enabled ToolType=LineDistance Step. Do not add Matching, a locator, template teaching, NormalizeImage, Blob, or Contour.",
+                    "The operator supplies one coarse ROI containing the intended long dark band: " + FirstNonEmpty(request.DarkBandGapRoiText, OpenVisionRecipeDarkBandGapIntentSkill.DefaultRoiText),
+                    "Set USE_ROI=true, USE_GAP_EDGE_PAIR=true, and PIXELPERMM=0. Keep the measurement px-only.",
+                    "Use the frozen direct-Gap starter values: CANNY_LOW=10, CANNY_HIGH=45, GAP_MIN_PX=12, GAP_MAX_PX=60, GAP_MAX_ANGLE_DEG=8, GAP_MAX_PARALLEL_DELTA_DEG=4, GAP_MIN_SUPPORT_RATIO=0.26, GAP_MIN_DARK_CONTRAST=8, GAP_MIN_DARK_COVERAGE_RATIO=0.25, GAP_MIN_SCORE_MARGIN=0.05.",
+                    "Semantic review rule: the magenta lower edge must follow the nearest sustained bright transition after the dark core immediately below the blue upper edge. Reject a farther Hough line even when the wider region is dark on average.",
+                    "Do not add an acceptance gate or claim OK/NG. Operator tolerance and calibration are not supplied.",
+                    "Required runtime review: green ROI, yellow candidates, blue upper edge, magenta lower edge, five red Gap samples, PASS/REJECT text, DistancePxAvg/Range, stage counts, support, dark coverage, and score margin.",
+                    "Response format: return XML only. No markdown fence, no prose, no explanation before or after the XML."
+                });
+            }
+
             if (!OpenVisionRecipeLlmIntent.IsLineDistanceTemplate(template))
             {
                 return string.Empty;
@@ -124,6 +229,19 @@ namespace OpenVisionLab
                 "Response format: return XML only. No markdown fence, no prose, no explanation before or after the XML."
             });
         }
+
+        private static string FirstNonEmpty(params string[] values)
+        {
+            foreach (string value in values ?? Array.Empty<string>())
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value.Trim();
+                }
+            }
+
+            return string.Empty;
+        }
     }
 
     internal static class OpenVisionRecipeLlmIntent
@@ -142,6 +260,21 @@ namespace OpenVisionLab
 
         internal static string BuildLlmIntentContractText(string template)
         {
+            if (IsHybridRelativeRoiGapTemplate(template))
+            {
+                return "Use exactly Matching(2 candidates) -> Matching(1 fixture pose) -> RotateScale NormalizeImage -> LineDistance Gap edge pair. The locator establishes deterministic pose; the LLM does not detect production images. Keep one reviewed search ROI, one reviewed reference pose, and one fixed reference-coordinate measurement ROI. Fail closed before measurement on weak, ambiguous, out-of-angle, out-of-scale, or low-coverage location evidence. Keep the Gap result px-only and measurement-only until operator tolerance and calibration evidence exist.";
+            }
+
+            if (IsPinArrayGapTemplate(template))
+            {
+                return "Use ToolType=PinArrayGap only for all adjacent edge-to-edge clearances in each reviewed single-row ROI of roughly vertical dark pins. Keep units px-only and do not claim center-to-center pitch, bright-pin support, automatic ROI discovery, or calibration. A measurement-only draft has no acceptance fields and must be labelled MEASURE ONLY / NOT JUDGED. A judged draft requires a positive DistancePxRange maximum acceptance gate on every row Step.";
+            }
+
+            if (IsDarkBandGapTemplate(template))
+            {
+                return "Use exactly one ToolType=LineDistance Step with USE_GAP_EDGE_PAIR=true inside one operator-reviewed coarse ROI. Measure in px from a supported upper edge to the nearest sustained lower bright transition of the same dark core; a farther Hough line is not eligible. Do not add Matching, a locator, normalization, calibration, or OK/NG acceptance without operator evidence. Runtime review must retain candidate lines, selected upper/lower edges, Gap samples, stage metrics, support, dark coverage, and ambiguity margin.";
+            }
+
             if (IsLineDistanceTemplate(template))
             {
                 return "Use ToolType=LineDistance only for edge-to-edge or pin-to-pin distance. If no specific pair/region is marked, treat pin gap/pitch as a whole-array consistency check and use multiple narrow ROI sample windows across the visible array. Use a single ROI only when the user explicitly marks one pair. Primary value metrics: DistancePxAvg or DistanceMmAvg when PIXELPERMM is known. Quality metrics: DistancePxRange/DistanceMmRange and DistancePxMax/DistanceMmMax must be checked so one long outlier line cannot pass through the average. If both nominal distance and consistency must be judged, duplicate the same LineDistance parameters into a second validation Step with a separate OutputLayer, then add a final OverlayMerge review Step. Do not use Blob or Contour to measure distance.";
@@ -182,6 +315,21 @@ namespace OpenVisionLab
 
         internal static string ResolveIntentSummary(string template)
         {
+            if (IsHybridRelativeRoiGapTemplate(template))
+            {
+                return "Matching fixture + NormalizeImage + relative-ROI LineDistance Gap";
+            }
+
+            if (IsPinArrayGapTemplate(template))
+            {
+                return "PinArrayGap / adjacent edge gaps + DistancePxRange";
+            }
+
+            if (IsDarkBandGapTemplate(template))
+            {
+                return "LineDistance Gap edge pair / px measurement + candidate/selected-edge evidence";
+            }
+
             if (IsLineDistanceTemplate(template))
             {
                 return "LineDistance / DistancePx or DistanceMm Avg + Range";
@@ -223,10 +371,39 @@ namespace OpenVisionLab
         internal static bool IsLineDistanceTemplate(string template)
         {
             string value = template ?? string.Empty;
+            if (IsPinArrayGapTemplate(value) || IsDarkBandGapTemplate(value) || IsHybridRelativeRoiGapTemplate(value))
+            {
+                return false;
+            }
+
             return value.IndexOf("LineDistance", StringComparison.OrdinalIgnoreCase) >= 0
                 || value.IndexOf("gap", StringComparison.OrdinalIgnoreCase) >= 0
                 || value.IndexOf("distance", StringComparison.OrdinalIgnoreCase) >= 0
                 || string.Equals(value, "Line Measurement", StringComparison.OrdinalIgnoreCase);
+        }
+
+        internal static bool IsPinArrayGapTemplate(string template)
+        {
+            return string.Equals(
+                (template ?? string.Empty).Trim(),
+                OpenVisionGuidedSetupCatalog.PinArrayGapTemplate,
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        internal static bool IsDarkBandGapTemplate(string template)
+        {
+            return string.Equals(
+                (template ?? string.Empty).Trim(),
+                OpenVisionGuidedSetupCatalog.DarkBandGapTemplate,
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        internal static bool IsHybridRelativeRoiGapTemplate(string template)
+        {
+            return string.Equals(
+                (template ?? string.Empty).Trim(),
+                OpenVisionGuidedSetupCatalog.HybridRelativeRoiGapTemplate,
+                StringComparison.OrdinalIgnoreCase);
         }
 
         internal static bool IsContourTemplate(string template)
@@ -282,6 +459,21 @@ namespace OpenVisionLab
 
         internal static string ResolveTemplateGuidance(string template)
         {
+            if (IsHybridRelativeRoiGapTemplate(template))
+            {
+                return "Use the reviewed locator to publish center/angle/scale, normalize the complete source into reference coordinates, and run the unchanged dark-band Gap ROI on DeviceAligned. Keep ambiguity, pose, scale, and valid-coverage gates fail-closed. Do not move coordinates per image or add Gap acceptance without operator truth.";
+            }
+
+            if (IsPinArrayGapTemplate(template))
+            {
+                return "Use PinArrayGap for every adjacent edge-to-edge clearance in one or more reviewed single-row ROIs of dark, roughly vertical pins. Keep the tool parameters fixed across samples, judge consistency with DistancePxRange maximum on every row, and keep a no-gate draft explicitly measurement-only.";
+            }
+
+            if (IsDarkBandGapTemplate(template))
+            {
+                return "Use one LineDistance Step with USE_GAP_EDGE_PAIR=true inside one reviewed coarse ROI. Keep the starter parameters and px-only measurement. The selected lower edge must be the nearest sustained bright transition after the same dark core, not a farther Hough line. Review candidate lines, selected edges, five Gap samples, stage counts, support, dark coverage, and score margin before any tolerance is added.";
+            }
+
             if (IsLineDistanceTemplate(template))
             {
                 return "Use LineDistance for pin-to-pin, edge-to-edge, gap, pitch, width, or clearance measurement. If no pair is marked, sample multiple narrow ROI windows across the whole visible pin array and finish with OverlayMerge review. Do not judge DistancePxAvg/DistanceMmAvg alone; also constrain DistancePxRange/DistanceMmRange or DistancePxMax/DistanceMmMax to reject outlier distance lines.";

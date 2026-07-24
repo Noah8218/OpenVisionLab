@@ -1,0 +1,71 @@
+<UserControl x:Class="OpenVisionLab.OpenVisionRecipeRunEvidenceViewerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:OpenVisionLab"
+             MinWidth="920"
+             MinHeight="440"
+             Background="#071114"
+             AutomationProperties.AutomationId="OpenVisionRecipeRunEvidenceViewer">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../../../../Wpf/OpenVisionLabWpfTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Padding="10,7"
+                Background="#101D22"
+                BorderBrush="#2A4D55"
+                BorderThickness="1">
+            <TextBlock x:Name="txtEvidenceStatus"
+                       Foreground="#C8DEE3"
+                       FontSize="11"
+                       TextWrapping="Wrap" />
+        </Border>
+
+        <Border Grid.Row="1"
+                Margin="0,8,0,0"
+                Padding="10,7"
+                Background="#0C171B"
+                BorderBrush="#24434A"
+                BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="txtDrawingSelectorLabel"
+                           Margin="0,0,10,0"
+                           VerticalAlignment="Center"
+                           Foreground="#9FC6CE"
+                           FontWeight="SemiBold" />
+                <ComboBox x:Name="cmbStoredDrawing"
+                          Grid.Column="1"
+                          MinWidth="320"
+                          MaxWidth="720"
+                          HorizontalAlignment="Left"
+                          DisplayMemberPath="DisplayText"
+                          SelectionChanged="StoredDrawing_SelectionChanged"
+                          AutomationProperties.AutomationId="StoredRunEvidenceDrawingSelector" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="0,8,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <local:OpenVisionLayerViewerView x:Name="sourceViewer" Grid.Column="0" />
+            <local:OpenVisionLayerViewerView x:Name="drawingViewer" Grid.Column="2" />
+        </Grid>
+    </Grid>
+</UserControl>

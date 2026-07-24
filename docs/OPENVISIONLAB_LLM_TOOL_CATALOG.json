@@ -1,5 +1,5 @@
 {
-  "version": "2026-07-19",
+  "version": "2026-07-23",
   "purpose": "Machine-readable guide for external LLMs that draft OpenVisionLab VisionPipeline XML.",
   "productIdentity": {
     "name": "OpenVisionLab",
@@ -13,6 +13,51 @@
       "deployment runtime"
     ]
   },
+  "inspectionIntentSkills": [
+    {
+      "name": "Dark band thickness / Gap (LineDistance)",
+      "status": "Phase 1 contract frozen; P189-corrected small-split evidence complete; all-500 replay pending",
+      "requiredOperatorInputs": [
+        "exactly one reviewed coarse ROI containing the intended long dark band"
+      ],
+      "lockedToolFamily": [
+        "LineDistance"
+      ],
+      "forbiddenTools": [
+        "Matching",
+        "NormalizeImage",
+        "Blob",
+        "Contour"
+      ],
+      "unitBoundary": "px-only; PIXELPERMM=0",
+      "judgementBoundary": "measurement-only until operator tolerance and calibration evidence exist",
+      "requiredParameters": [
+        "USE_ROI=true",
+        "CvROI=<operator-reviewed x,y,w,h>",
+        "USE_GAP_EDGE_PAIR=true",
+        "CANNY_LOW=10",
+        "CANNY_HIGH=45",
+        "GAP_MIN_PX=12",
+        "GAP_MAX_PX=60",
+        "GAP_MAX_ANGLE_DEG=8",
+        "GAP_MAX_PARALLEL_DELTA_DEG=4",
+        "GAP_MIN_SUPPORT_RATIO=0.26",
+        "GAP_MIN_DARK_CONTRAST=8",
+        "GAP_MIN_DARK_COVERAGE_RATIO=0.25",
+        "GAP_MIN_SCORE_MARGIN=0.05"
+      ],
+      "requiredDrawings": [
+        "green coarse ROI",
+        "yellow candidate lines",
+        "blue selected upper edge",
+        "magenta selected lower edge",
+        "five red Gap samples",
+        "PASS or named REJECT text"
+      ],
+      "semanticSelectionRule": "The magenta lower edge must be the nearest sustained bright transition after the dark core immediately below the selected upper edge; a farther Hough edge is not the same-band boundary.",
+      "contractDocument": "docs/OPENVISIONLAB_DARK_BAND_GAP_INTENT_SKILL.md"
+    }
+  ],
   "xmlContract": {
     "root": "VisionPipeline",
     "pipelineNameElement": "Name",
@@ -52,9 +97,11 @@
     "HSV HueMin and HueMax use OpenCV's 0..179 scale. HueMin may exceed HueMax to wrap through the 179/0 boundary; Saturation and Value values are 0..255 and their minimum must not exceed maximum.",
     "Kernel sizes and counts must be positive; odd-only kernels must be odd.",
     "FIND_ANGLE_MIN must be less than or equal to FIND_ANGLE_MAX.",
-    "Translation-only fixture v1 requires an earlier Matching step with NUM_MATCH=1 and USE_AS_FIXTURE_FRAME=true.",
-    "A fixture consumer must use the same source layer, one enabled CvROI, USE_FIXTURE_FRAME=true, the same FIXTURE_FRAME_NAME, and ALLOW_BRANCH_INPUT=true.",
-    "Fixture application never rewrites the saved CvROI and must not be used for rotation, scale, multi-ROI, or masks.",
+    "Every fixture workflow requires an earlier Matching step with NUM_MATCH=1 and USE_AS_FIXTURE_FRAME=true.",
+    "TranslationRoi fixture v1 requires the same source layer, one enabled CvROI, USE_FIXTURE_FRAME=true, the same FIXTURE_FRAME_NAME, and ALLOW_BRANCH_INPUT=true; it never rotates or scales the ROI.",
+    "NormalizeImage fixture v2 requires reviewed reference image dimensions, a same-source RotateScale branch, FIXTURE_APPLY_MODE=NormalizeImage, no ROI/masks, and a positive valid-pixel gate no greater than one.",
+    "Optional fixture scale limits must be supplied together as FIXTURE_MIN_SCALE_RATIO and FIXTURE_MAX_SCALE_RATIO with 0 < minimum <= maximum.",
+    "Fixture application never rewrites saved ROIs and never silently falls back after a fixture failure.",
     "OverlayMerge should usually be the final enabled Step when it is the operator review result."
   ],
   "fixtureTranslationV1": {
@@ -68,6 +115,7 @@
       "FIXTURE_REFERENCE_X",
       "FIXTURE_REFERENCE_Y",
       "FIXTURE_REFERENCE_ANGLE",
+      "FIXTURE_REFERENCE_SCALE",
       "FIXTURE_MAX_ANGLE_DELTA"
     ],
     "consumerParameters": [
@@ -84,6 +132,52 @@
       "translation only",
       "no multi-ROI",
       "no masks"
+    ]
+  },
+  "fixtureSimilarityNormalizeImageV2": {
+    "status": "Supported for Matching pose -> full-image inverse uniform-similarity normalization. P182 qualifies one bounded C9 NormalizeImage -> LineDistance coordinate/drawing path, and P183 qualifies a C9-bounded pre-measurement score/ambiguity/pose/coverage gate on the exact observed 24-row set plus deliberate gate exercises. Broader and unseen robustness remains separate.",
+    "producerToolTypes": [
+      "Matching",
+      "TemplateMatching"
+    ],
+    "producerRequiredParameters": [
+      "USE_AS_FIXTURE_FRAME",
+      "FIXTURE_FRAME_NAME",
+      "FIXTURE_REFERENCE_X",
+      "FIXTURE_REFERENCE_Y",
+      "FIXTURE_REFERENCE_ANGLE",
+      "FIXTURE_REFERENCE_SCALE",
+      "FIXTURE_REFERENCE_IMAGE_WIDTH",
+      "FIXTURE_REFERENCE_IMAGE_HEIGHT",
+      "FIXTURE_MAX_ANGLE_DELTA"
+    ],
+    "producerOptionalPairedParameters": [
+      "FIXTURE_MIN_SCALE_RATIO",
+      "FIXTURE_MAX_SCALE_RATIO"
+    ],
+    "consumerToolTypes": [
+      "RotateScale",
+      "RotateAndScale"
+    ],
+    "consumerRequiredParameters": [
+      "USE_FIXTURE_FRAME",
+      "FIXTURE_FRAME_NAME",
+      "FIXTURE_APPLY_MODE",
+      "FIXTURE_MIN_VALID_PIXEL_RATIO",
+      "ALLOW_BRANCH_INPUT"
+    ],
+    "requiredValues": {
+      "FIXTURE_APPLY_MODE": "NormalizeImage",
+      "InputLayer": "same unannotated source layer used by the Matching producer"
+    },
+    "limitations": [
+      "one Matching result",
+      "uniform similarity only",
+      "source image dimensions must equal the taught reference dimensions",
+      "complete source image only",
+      "no ROI, multi-ROI, or masks on the NormalizeImage Step",
+      "pixel-coordinate normalization only; no calibration or perspective claim",
+      "do not claim a downstream measurement until its drawing is verified on DeviceAligned"
     ]
   },
   "resultChannels": {
@@ -115,8 +209,17 @@
     "LineGauge",
     "LineDistance",
     "LineDistanceGauge",
+    "PinArrayGap",
+    "AdjacentPinGap",
+    "CurveBandProfile",
+    "DarkBandCurve",
+    "OuterCornerIntersection",
+    "BrightObjectCorner",
     "LineIntersection",
     "LineIntersectionGauge",
+    "CircleGauge",
+    "GeometryMeasure",
+    "GeometricMeasurement",
     "Matching",
     "TemplateMatching",
     "EdgeBasedMatching",
@@ -129,6 +232,9 @@
     "ColorMask",
     "RotateScale",
     "RotateAndScale",
+    "AffineTransform",
+    "Affine",
+    "AffineMatrix",
     "Feature",
     "FeatureMatching",
     "Sift",
@@ -160,7 +266,8 @@
       "SCORE_MIN",
       "GREEDINESS",
       "HYBRID_VERIFY_IMAGE_WEIGHT",
-      "MatchRatio"
+      "MatchRatio",
+      "FIXTURE_MIN_VALID_PIXEL_RATIO"
     ],
     "grayValueKeys": [
       "Threshold",
@@ -212,7 +319,9 @@
       "MaximumDefectArea",
       "MorphologyKernel",
       "OrbFeatures",
-      "MinimumInliers"
+      "MinimumInliers",
+      "FIXTURE_REFERENCE_IMAGE_WIDTH",
+      "FIXTURE_REFERENCE_IMAGE_HEIGHT"
     ]
   },
   "knownMetrics": {
@@ -281,6 +390,24 @@
       "DistanceMmAvg",
       "DistanceMmRange"
     ],
+    "gapEdgePair": [
+      "GapCandidateLineCount",
+      "GapCandidatePairCount",
+      "GapOverlapPairCount",
+      "GapSeparationPairCount",
+      "GapParallelPairCount",
+      "GapContrastPairCount",
+      "GapBestDarkContrast",
+      "GapBestDarkCoverageRatio",
+      "GapSelectedAngleDeltaDeg",
+      "GapSelectedSupportRatio",
+      "GapDarkContrast",
+      "GapDarkCoverageRatio",
+      "GapBandMeanGray",
+      "GapScoreMargin",
+      "GapUpperSupportPointCount",
+      "GapLowerSupportPointCount"
+    ],
     "merge": [
       "MergeOverlayCount",
       "MergeSourceCount"
@@ -298,6 +425,41 @@
       "BoundsHeightMmMin",
       "BoundsHeightMmMax",
       "BoundsHeightMmAvg"
+    ],
+    "fixtureNormalization": [
+      "FixtureCenterX",
+      "FixtureCenterY",
+      "FixtureAngle",
+      "FixtureScale",
+      "FixtureAngleDelta",
+      "FixtureScaleRatio",
+      "FixtureReferenceImageWidth",
+      "FixtureReferenceImageHeight",
+      "FixtureNormalizedImageWidth",
+      "FixtureNormalizedImageHeight",
+      "FixtureValidPixelRatio",
+      "FixtureAppliedCenterX",
+      "FixtureAppliedCenterY",
+      "FixtureAppliedAngle",
+      "FixtureAppliedScaleRatio"
+    ],
+    "affineTransform": [
+      "AffineM11",
+      "AffineM12",
+      "AffineM13",
+      "AffineM21",
+      "AffineM22",
+      "AffineM23",
+      "AffineDeterminant",
+      "AffineScaleX",
+      "AffineScaleY",
+      "AffineRotationDeg",
+      "AffineShearCosine",
+      "AffineTranslationX",
+      "AffineTranslationY",
+      "AffineSourceTriangleArea",
+      "AffineDestinationTriangleArea",
+      "AffineValidPixelRatio"
     ],
     "image": [
       "SourceImageWidth",
@@ -414,11 +576,16 @@
         "USE_MULTI_ROI",
         "MIN_AREA",
         "MAX_AREA",
+        "MIN_WIDTH",
+        "MAX_WIDTH",
+        "MIN_HEIGHT",
+        "MAX_HEIGHT",
         "PIXELPERMM",
         "Name"
       ],
       "validationHints": [
         "MIN_AREA must be less than or equal to MAX_AREA.",
+        "MIN_WIDTH/MAX_WIDTH and MIN_HEIGHT/MAX_HEIGHT filter each object's axis-aligned bounding box in pixels; omitted keys preserve the legacy unbounded behavior.",
         "Disable internal threshold options when InputLayer is already a processed binary layer."
       ],
       "recommendedMetrics": [
@@ -444,6 +611,10 @@
         "CvROIS",
         "MIN_AREA",
         "MAX_AREA",
+        "MIN_WIDTH",
+        "MAX_WIDTH",
+        "MIN_HEIGHT",
+        "MAX_HEIGHT",
         "ApproximationModes",
         "DetectMode",
         "USE_DRAW_IMAGE",
@@ -455,6 +626,7 @@
       "validationHints": [
         "Use CvROI as x,y,width,height.",
         "MIN_AREA must be less than or equal to MAX_AREA.",
+        "MIN_WIDTH/MAX_WIDTH and MIN_HEIGHT/MAX_HEIGHT filter each object's axis-aligned bounding box in pixels; omitted keys preserve the legacy unbounded behavior.",
         "Use ALLOW_BRANCH_INPUT=true for intentional parallel contour checks from the same prepared layer."
       ],
       "recommendedMetrics": [
@@ -484,12 +656,21 @@
         "FIND_ANGLE",
         "FIND_ANGLE_MIN",
         "FIND_ANGLE_MAX",
+        "USE_FIND_SCALE",
+        "FIND_SCALE_MIN",
+        "FIND_SCALE_MAX",
+        "FIND_SCALE_STEP",
         "USE_AS_FIXTURE_FRAME",
         "FIXTURE_FRAME_NAME",
         "FIXTURE_REFERENCE_X",
         "FIXTURE_REFERENCE_Y",
         "FIXTURE_REFERENCE_ANGLE",
+        "FIXTURE_REFERENCE_SCALE",
         "FIXTURE_MAX_ANGLE_DELTA",
+        "FIXTURE_MIN_SCALE_RATIO",
+        "FIXTURE_MAX_SCALE_RATIO",
+        "FIXTURE_REFERENCE_IMAGE_WIDTH",
+        "FIXTURE_REFERENCE_IMAGE_HEIGHT",
         "USE_CANNY",
         "USE_THRESHOLD",
         "USE_ADAPTIVE_THRESHOLD",
@@ -498,25 +679,34 @@
       ],
       "validationHints": [
         "TemplatePath and PATTERN_PATH must point to existing files before import.",
-                                              "SCORE_MIN is a 0..1 decimal.",
-                                              "MAGNIFIATION must be positive.",
+        "SCORE_MIN is a 0..1 decimal.",
+        "MAGNIFIATION must be positive.",
         "FIND_ANGLE_MIN must be less than or equal to FIND_ANGLE_MAX.",
-        "Fixture producers require NUM_MATCH=1, a unique FIXTURE_FRAME_NAME, and a reviewed numeric reference pose."
+        "FIND_SCALE_MIN, FIND_SCALE_MAX, and FIND_SCALE_STEP must be positive, and minimum must not exceed maximum.",
+        "Fixture producers require NUM_MATCH=1, a unique FIXTURE_FRAME_NAME, reviewed numeric center/angle values, and FIXTURE_REFERENCE_SCALE greater than zero.",
+        "Add positive FIXTURE_REFERENCE_IMAGE_WIDTH and FIXTURE_REFERENCE_IMAGE_HEIGHT before a NormalizeImage consumer is allowed.",
+        "When fixture scale limits are used, add both FIXTURE_MIN_SCALE_RATIO and FIXTURE_MAX_SCALE_RATIO with 0 < minimum <= maximum.",
+        "ScoreMargin is available only when NUM_MATCH=2 and means best minus second-best score in percentage points; use a separate two-candidate preflight before a NUM_MATCH=1 fixture publisher."
       ],
       "recommendedMetrics": [
         "ResultCount",
         "ScoreMin",
         "ScoreMax",
         "ScoreAvg",
+        "ScoreMargin",
         "AngleMin",
         "AngleMax",
         "AngleAvg",
         "FixtureCenterX",
         "FixtureCenterY",
         "FixtureAngle",
+        "FixtureScale",
         "FixtureOffsetX",
         "FixtureOffsetY",
-        "FixtureAngleDelta"
+        "FixtureAngleDelta",
+        "FixtureScaleRatio",
+        "FixtureReferenceImageWidth",
+        "FixtureReferenceImageHeight"
       ]
     },
     {
@@ -532,6 +722,8 @@
         "PATTERN_PATH",
         "SCORE_MIN",
         "NUM_MATCH",
+        "USE_UNIQUE_MATCH_VALIDATION",
+        "UNIQUE_MATCH_MIN_SCORE_MARGIN",
         "GREEDINESS",
         "CANNY_LOW",
         "CANNY_HIGH",
@@ -552,6 +744,9 @@
       "validationHints": [
         "TemplatePath and PATTERN_PATH must point to existing files before import.",
         "SCORE_MIN, GREEDINESS, and HYBRID_VERIFY_IMAGE_WEIGHT are 0..1 decimals.",
+        "UNIQUE_MATCH_MIN_SCORE_MARGIN is a normalized 0..1 decimal.",
+        "When USE_UNIQUE_MATCH_VALIDATION=true, NUM_MATCH must be 1 and USE_MULTI_ROI must be false.",
+        "Unique matching returns no MatchingResult for NoMatch or Ambiguous; review UniqueMatch.State, UniqueMatch.PlausibleAlternativeCount, UniqueMatch.ScoreMargin, and the exact runtime reason.",
         "CANNY_LOW and CANNY_HIGH are 0..255 and low must be less than or equal to high.",
         "CANNY_APERTURE_SIZE must be odd and in the supported Canny range."
       ],
@@ -560,6 +755,9 @@
         "ScoreMin",
         "ScoreMax",
         "ScoreAvg",
+        "UniqueMatch.State",
+        "UniqueMatch.PlausibleAlternativeCount",
+        "UniqueMatch.ScoreMargin",
         "AngleMin",
         "AngleMax",
         "AngleAvg"
@@ -709,13 +907,31 @@
         "SHOW_VERTICAL_LINE",
         "USE_MANUAL_ANGLE",
         "MANUAL_ANGLE_VALUE",
+        "USE_EXTEND_FIT_LINE",
+        "EXTEND_FIT_LINE_VALUE",
+        "USE_GAP_EDGE_PAIR",
+        "CANNY_LOW",
+        "CANNY_HIGH",
+        "GAP_MIN_PX",
+        "GAP_MAX_PX",
+        "GAP_MAX_ANGLE_DEG",
+        "GAP_MAX_PARALLEL_DELTA_DEG",
+        "GAP_MIN_SUPPORT_RATIO",
+        "GAP_MIN_DARK_CONTRAST",
+        "GAP_MIN_DARK_COVERAGE_RATIO",
+        "GAP_MIN_SCORE_MARGIN",
         "PIXELPERMM",
         "Name"
       ],
       "validationHints": [
         "POINT_RANGE is an integer.",
         "PIXELPERMM must be positive when mm metrics are used.",
-        "Do not accept pin-to-pin or edge-to-edge distance using DistancePxAvg/DistanceMmAvg alone. Add a DistancePxRange/DistanceMmRange or DistancePxMax/DistanceMmMax gate so one long outlier distance line fails."
+        "Raw edge-point intersections remain the default. Set USE_EXTEND_FIT_LINE=true only when the operator intends pairwise fitted-edge distance; both fitted intersections must remain inside the reviewed ROI, and the runtime drawing must show the ROI, both fitted edges, and final distance lines.",
+        "EXTEND_FIT_LINE_VALUE controls fit-line drawing extent. It is not a distance tolerance, calibration value, or acceptance threshold.",
+        "Do not accept pin-to-pin or edge-to-edge distance using DistancePxAvg/DistanceMmAvg alone. Add a DistancePxRange/DistanceMmRange or DistancePxMax/DistanceMmMax gate so one long outlier distance line fails.",
+        "USE_GAP_EDGE_PAIR=true is an opt-in dark-band thickness mode. It requires USE_ROI=true and one reviewed coarse CvROI; it does not use Matching or move the ROI.",
+        "Gap edge-pair drawings must show the coarse ROI, all candidate edges, selected upper/lower edges, and final distance samples. The selected lower edge must be the nearest sustained bright transition after the dark core below the selected upper edge; a farther Hough line is not an eligible substitute. Missing, weak, nonparallel, low-coverage, or ambiguous boundaries fail closed.",
+        "The P189-corrected runtime with the unchanged starter values is bounded evidence for one device_top_right small split only. Do not invent an OK/NG tolerance, millimetre calibration, or other-direction claim from it."
       ],
       "recommendedMetrics": [
         "ResultCount",
@@ -724,7 +940,123 @@
         "DistanceMmAvg",
         "DistanceMmRange",
         "DistanceMmMax",
+        "EdgeCount",
+        "GapCandidateLineCount",
+        "GapCandidatePairCount",
+        "GapSelectedAngleDeltaDeg",
+        "GapSelectedSupportRatio",
+        "GapDarkCoverageRatio",
+        "GapBandMeanGray",
+        "GapScoreMargin"
+      ]
+    },
+    {
+      "toolType": "PinArrayGap",
+      "aliases": [
+        "AdjacentPinGap"
+      ],
+      "role": "Measure either adjacent edge-to-edge clearance or adjacent center-to-center pitch in one dark-pin row ROI without fixed per-pair X positions.",
+      "category": "measurement",
+      "commonParameters": [
+        "MeasurementMode",
+        "USE_ROI",
+        "CvROI",
+        "DarkThreshold",
+        "MinDarkCoverageRatio",
+        "MinPinWidth",
+        "MaxPinBreakWidth",
+        "MinGapWidth",
+        "PIXELPERMM",
+        "Name"
+      ],
+      "validationHints": [
+        "CvROI must cover one pin row; PinArrayGap is not a whole-image pin detector.",
+        "MeasurementMode defaults to EdgeGap for legacy XML. EdgeGap publishes DistancePx/DistanceMm metrics; CenterPitch publishes pixel-only PitchPx metrics from adjacent detected pin centers.",
+        "Do not relabel edge clearance as pitch, publish calibrated center pitch, or enable CenterPitch through the frozen Pin Guided Setup v1.",
+        "Use DistancePxRange/DistancePxMax for EdgeGap or PitchPxRange/PitchPxMax for CenterPitch with the nominal metric; do not judge using an average alone.",
+        "Use ResultCount only after representative Good samples prove that the visible pin count is stable.",
+        "PIXELPERMM is required only when mm metrics are used."
+      ],
+      "recommendedMetrics": [
+        "ResultCount",
+        "DistanceCount",
+        "DistancePxMin",
+        "DistancePxMax",
+        "DistancePxAvg",
+        "DistancePxRange",
+        "DistanceMmMin",
+        "DistanceMmMax",
+        "DistanceMmAvg",
+        "DistanceMmRange",
+        "PitchCount",
+        "PitchPxMin",
+        "PitchPxMax",
+        "PitchPxAvg",
+        "PitchPxRange",
         "EdgeCount"
+      ]
+    },
+    {
+      "toolType": "CurveBandProfile",
+      "aliases": [
+        "DarkBandCurve"
+      ],
+      "role": "Measure one curved dark band by its row-wise width and outer, inner, and center arc lengths without fixed X positions.",
+      "category": "measurement",
+      "commonParameters": [
+        "USE_ROI",
+        "CvROI",
+        "DarkThreshold",
+        "MinComponentArea",
+        "MinComponentHeight",
+        "MinComponentHeightRatio",
+        "IgnoreLeftBorderTouching",
+        "PIXELPERMM",
+        "Name"
+      ],
+      "validationHints": [
+        "CvROI must contain the full intended curved dark band and enough background to keep the band separable from the left image border.",
+        "It selects the leftmost eligible dark connected component; confirm the drawn outer/inner curves before adding an acceptance gate.",
+        "CurveCenterArcLengthPx is an image-space center-path length, not a calibrated physical length until PIXELPERMM is supplied.",
+        "Use width range and center-arc metrics only after representative Good samples establish their distributions."
+      ],
+      "recommendedMetrics": [
+        "ResultCount",
+        "CurveCenterArcLengthPx",
+        "CurveOuterArcLengthPx",
+        "CurveInnerArcLengthPx",
+        "DistancePxAvg",
+        "DistancePxRange",
+        "CurveProfileRowCount"
+      ]
+    },
+    {
+      "toolType": "OuterCornerIntersection",
+      "aliases": [
+        "BrightObjectCorner"
+      ],
+      "role": "Locate the visible virtual lower-right corner of one large bright object from its bottom and right outer edges, without fixed image coordinates.",
+      "category": "measurement",
+      "commonParameters": [
+        "ForegroundThreshold",
+        "MinComponentArea",
+        "EdgeFitEndPercent",
+        "SampleStep",
+        "Name"
+      ],
+      "validationHints": [
+        "Experimental: do not select this family as a default LLM inspection-intent skill or continue image-by-image tuning.",
+        "CornerOuterContourVerified=1 proves support from the runtime-selected threshold contour only; current evidence does not prove that the fitted lower line belongs to the operator-intended physical card-bottom edge.",
+        "A hough/projection fallback is review-only. Require independent same-image ground truth for both physical edge segments and the intended intersection before any coordinate, angle, or CornerOuterContourVerified gate.",
+        "Do not use it for a general defect decision or physical-unit measurement."
+      ],
+      "recommendedMetrics": [
+        "ResultCount",
+        "CornerOuterContourVerified",
+        "IntersectionX",
+        "IntersectionY",
+        "LineLengthMax",
+        "LineAngleAvg"
       ]
     },
     {
@@ -753,6 +1085,80 @@
       ]
     },
     {
+      "toolType": "CircleGauge",
+      "role": "Fit one pixel-only circle or bounded arc from operator-taught radial calipers inside one reviewed annular sector.",
+      "category": "measurement",
+      "commonParameters": [
+        "USE_ROI",
+        "CvROI",
+        "CENTER_X",
+        "CENTER_Y",
+        "RADIUS_MIN",
+        "RADIUS_MAX",
+        "START_ANGLE_DEG",
+        "SWEEP_ANGLE_DEG",
+        "SCAN_COUNT",
+        "EDGE_POLARITY",
+        "MIN_CONTRAST",
+        "MIN_SUPPORT_RATIO",
+        "MAX_FIT_RESIDUAL_PX"
+      ],
+      "validationHints": [
+        "This is an operator-taught deterministic tool, not automatic circle selection from an arbitrary image.",
+        "EDGE_POLARITY is LightToDark, DarkToLight, or Either; radius values and fit gates are pixels only.",
+        "Require current-run annulus, radial support, fitted arc, center, support ratio, coverage, and residual drawings before judgement."
+      ],
+      "recommendedMetrics": [
+        "ResultCount",
+        "CircleCenterX",
+        "CircleCenterY",
+        "CircleRadiusPx",
+        "CircleDiameterPx",
+        "CircleSupportCount",
+        "CircleSupportRatio",
+        "CircleCoverageDeg",
+        "CircleFitResidualPx"
+      ]
+    },
+    {
+      "toolType": "GeometryMeasure",
+      "aliases": [
+        "GeometricMeasurement"
+      ],
+      "role": "Measure one explicit relationship between two named typed features produced by earlier successful Steps in the same run.",
+      "category": "measurement",
+      "commonParameters": [
+        "MeasurementMode",
+        "SourceStepA",
+        "SourceFeatureA",
+        "SourceStepB",
+        "SourceFeatureB",
+        "MAX_PARALLEL_ANGLE_DELTA_DEG",
+        "MAX_EXTENSION_A_PX",
+        "MAX_EXTENSION_B_PX",
+        "REQUIRE_RESULT_IN_IMAGE",
+        "USE_ROI",
+        "CvROI",
+        "ALLOW_BRANCH_INPUT"
+      ],
+      "validationHints": [
+        "MeasurementMode is exactly PointPointDistance, PointLineDistance, SegmentSegmentDistance, LineLineDistance, LineLineAngle, LineLineIntersection, or CircleSegmentClearance.",
+        "Both sources must be unique earlier enabled Steps, must have passed, and must publish the required feature kind in the exact same coordinate layer and image size as this Step.",
+        "This Step never detects image edges, guesses coordinate transforms, moves an ROI, or converts pixels to physical units."
+      ],
+      "recommendedMetrics": [
+        "ResultCount",
+        "GeometryDistancePx",
+        "GeometryAngleDeg",
+        "GeometrySignedClearancePx",
+        "GeometryParallelDeltaDeg",
+        "GeometryExtensionAPx",
+        "GeometryExtensionBPx",
+        "IntersectionX",
+        "IntersectionY"
+      ]
+    },
+    {
       "toolType": "RotateScale",
       "aliases": [
         "RotateAndScale"
@@ -764,12 +1170,89 @@
         "ScaleXPercent",
         "ScaleYPercent",
         "Interpolation",
-        "BorderType"
+        "BorderType",
+        "USE_FIXTURE_FRAME",
+        "FIXTURE_FRAME_NAME",
+        "FIXTURE_APPLY_MODE",
+        "FIXTURE_MIN_VALID_PIXEL_RATIO",
+        "ALLOW_BRANCH_INPUT"
       ],
       "validationHints": [
-        "ScaleXPercent and ScaleYPercent must be positive."
+        "ScaleXPercent and ScaleYPercent must be positive for fixed RotateScale mode.",
+        "When USE_FIXTURE_FRAME=true and FIXTURE_APPLY_MODE=NormalizeImage, the runtime ignores fixed Angle/Scale values and uses the inverse pose from the named earlier Matching fixture.",
+        "NormalizeImage must branch from the same full source layer as Matching, requires ALLOW_BRANCH_INPUT=true, and rejects ROI/masks, missing dimensions, invalid pose/scale, source-size mismatch, and insufficient valid pixels."
       ],
       "recommendedMetrics": [
+        "ResultImageWidth",
+        "ResultImageHeight",
+        "ResultImageChannels",
+        "FixtureNormalizedImageWidth",
+        "FixtureNormalizedImageHeight",
+        "FixtureValidPixelRatio",
+        "FixtureAppliedCenterX",
+        "FixtureAppliedCenterY",
+        "FixtureAppliedAngle",
+        "FixtureAppliedScaleRatio"
+      ]
+    },
+    {
+      "toolType": "AffineTransform",
+      "aliases": [
+        "Affine",
+        "AffineMatrix"
+      ],
+      "role": "Apply a deterministic three-point 2D affine image mapping in pixel coordinates.",
+      "category": "preprocess",
+      "commonParameters": [
+        "USE_DETECTED_SOURCE_POINTS",
+        "SOURCE_POINT_1_FEATURE",
+        "SOURCE_POINT_2_FEATURE",
+        "SOURCE_POINT_3_FEATURE",
+        "SourcePoint1X",
+        "SourcePoint1Y",
+        "SourcePoint2X",
+        "SourcePoint2Y",
+        "SourcePoint3X",
+        "SourcePoint3Y",
+        "DestinationPoint1X",
+        "DestinationPoint1Y",
+        "DestinationPoint2X",
+        "DestinationPoint2Y",
+        "DestinationPoint3X",
+        "DestinationPoint3Y",
+        "OutputWidth",
+        "OutputHeight",
+        "Interpolation",
+        "BorderType",
+        "BorderValue",
+        "MinimumSourceTriangleArea",
+        "MinimumDestinationTriangleArea",
+        "MinimumValidPixelRatio"
+      ],
+      "validationHints": [
+        "Missing USE_DETECTED_SOURCE_POINTS preserves fixed numeric source points. When it is true, all three SOURCE_POINT_n_FEATURE values must name distinct accepted typed Point results from earlier enabled Steps on the same input layer and image frame.",
+        "Matching publishes Center only when exactly one usable match exists; ambiguous, missing, failed, wrong-kind, cross-frame, non-finite, and out-of-image Point sources fail closed without using stale numeric coordinates.",
+        "Source and destination points must be finite, ordered correspondences, and non-collinear even when a configured minimum triangle area is zero.",
+        "OutputWidth and OutputHeight use 0 to keep the corresponding input dimension; positive values are limited to 32768.",
+        "Review the destination triangle, transformed source frame, six matrix coefficients, and AffineValidPixelRatio after explicit Preview or Run.",
+        "This is a pixel-only affine mapping, not perspective correction, lens calibration, automatic correspondence, or calibrated metrology."
+      ],
+      "recommendedMetrics": [
+        "AffineM11",
+        "AffineM12",
+        "AffineM13",
+        "AffineM21",
+        "AffineM22",
+        "AffineM23",
+        "AffineDeterminant",
+        "AffineValidPixelRatio",
+        "AffineDetectedSourcePointCount",
+        "AffineSourcePoint1X",
+        "AffineSourcePoint1Y",
+        "AffineSourcePoint2X",
+        "AffineSourcePoint2Y",
+        "AffineSourcePoint3X",
+        "AffineSourcePoint3Y",
         "ResultImageWidth",
         "ResultImageHeight",
         "ResultImageChannels"

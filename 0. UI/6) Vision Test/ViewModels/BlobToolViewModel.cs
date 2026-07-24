@@ -15,7 +15,7 @@ namespace OpenVisionLab.ViewModels
 
         public BlobProperty CreateProperty()
         {
-            NormalizeAreaRange();
+            NormalizeRanges();
             property.NAME = string.IsNullOrWhiteSpace(property.NAME) ? "Blob" : property.NAME;
             return property.DeepCopy();
         }
@@ -24,7 +24,7 @@ namespace OpenVisionLab.ViewModels
         {
             get
             {
-                NormalizeAreaRange();
+                NormalizeRanges();
                 string threshold = property.USE_THRESHOLD
                     ? string.Format(CultureInfo.CurrentCulture, "T {0:0.#}", property.THRESHOLD)
                     : property.USE_ADAPTIVE_THRESHOLD
@@ -36,9 +36,13 @@ namespace OpenVisionLab.ViewModels
 
                 return string.Format(
                     CultureInfo.CurrentCulture,
-                    "Area {0}-{1} / {2} / {3}",
+                    "Area {0}-{1} / W {2}-{3} / H {4}-{5} / {6} / {7}",
                     property.MIN_AREA,
                     property.MAX_AREA,
+                    property.MIN_WIDTH,
+                    FormatMaximum(property.MAX_WIDTH),
+                    property.MIN_HEIGHT,
+                    FormatMaximum(property.MAX_HEIGHT),
                     threshold,
                     roi);
             }
@@ -46,13 +50,35 @@ namespace OpenVisionLab.ViewModels
 
         public void NormalizeAreaRange()
         {
-            // The Blob property grid still edits the legacy property object; keep the min/max pair ordered before execution.
-            if (property.MIN_AREA > property.MAX_AREA)
-            {
-                int min = property.MAX_AREA;
-                property.MAX_AREA = property.MIN_AREA;
-                property.MIN_AREA = min;
-            }
+            NormalizeRanges();
+        }
+
+        private void NormalizeRanges()
+        {
+            NormalizeRange(property.MIN_AREA, property.MAX_AREA, out int minArea, out int maxArea);
+            NormalizeRange(property.MIN_WIDTH, property.MAX_WIDTH, out int minWidth, out int maxWidth);
+            NormalizeRange(property.MIN_HEIGHT, property.MAX_HEIGHT, out int minHeight, out int maxHeight);
+            property.MIN_AREA = minArea;
+            property.MAX_AREA = maxArea;
+            property.MIN_WIDTH = minWidth;
+            property.MAX_WIDTH = maxWidth;
+            property.MIN_HEIGHT = minHeight;
+            property.MAX_HEIGHT = maxHeight;
+        }
+
+        private static void NormalizeRange(int minimum, int maximum, out int normalizedMinimum, out int normalizedMaximum)
+        {
+            minimum = System.Math.Max(0, minimum);
+            maximum = System.Math.Max(0, maximum);
+            normalizedMinimum = System.Math.Min(minimum, maximum);
+            normalizedMaximum = System.Math.Max(minimum, maximum);
+        }
+
+        private static string FormatMaximum(int value)
+        {
+            return value >= 1000000
+                ? "*"
+                : value.ToString(CultureInfo.CurrentCulture);
         }
     }
 }
