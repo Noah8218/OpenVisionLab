@@ -1,6 +1,6 @@
-﻿using OpenVisionLab.ImageSpace.Core;
+using OpenVisionLab.ImageSpace.Core;
 
-namespace OpenVisionLab._1._Core
+namespace OpenVisionLab.Core
 {
     public interface IDisplayManager : IVisionRuntimeContext, IDisplayLayerManager
     {

@@ -26,7 +26,7 @@ GPT should return one `VisionPipeline` XML document only. Keep its response unch
 
 If OpenVisionLab validation is NG:
 
-1. Open `02_PASTE_VALIDATION_NG_BACK_TO_GPT.md`.
+1. Open `SEND_VALIDATION_NG_TO_GPT.md`.
 2. Paste the OpenVisionLab validation report into the placeholder.
 3. Ask GPT to return corrected XML only.
 
@@ -39,7 +39,7 @@ The paste prompt already contains the essential rules. Do not upload these on th
 
 ## Advanced Files
 
-- `01_PASTE_TO_GPT_PIN_GAP.md`: expanded authoring reference; not needed for the first GPT message.
-- `00_FINAL_USER_MESSAGE_XML_ONLY.md`: final XML-only command, useful if GPT starts explaining instead of returning XML.
-- `02_PASTE_VALIDATION_NG_BACK_TO_GPT.md`: correction prompt after OpenVisionLab validation fails.
-- `03_CAPTURE_TRANSCRIPT.md`: transcript capture notes.
+- `COPY_THIS_TO_GPT.md`: expanded authoring reference; not needed for the first GPT message.
+- `FINAL_USER_MESSAGE_XML_ONLY.md`: final XML-only command, useful if GPT starts explaining instead of returning XML.
+- `SEND_VALIDATION_NG_TO_GPT.md`: correction prompt after OpenVisionLab validation fails.
+- `CAPTURE_GPT_TRANSCRIPT.md`: transcript capture notes.

@@ -1,0 +1,298 @@
+﻿<Window x:Class="OpenVisionLab.VisionToolNImageVerificationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        xmlns:local="clr-namespace:OpenVisionLab"
+        Title="{Binding WindowTitle}"
+        Width="1380"
+        Height="840"
+        MinWidth="1100"
+        MinHeight="680"
+        WindowStartupLocation="CenterOwner"
+        AutomationProperties.AutomationId="VisionToolNImageVerificationWindow">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <local:SharedResourceDictionary Source="../../../../VisionTest/Wpf/Tooling/Presentation/VisionToolWpfTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="16"
+          Background="{StaticResource VisionTool.SurfaceBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="10" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="10" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="10" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Background="{StaticResource VisionTool.HeaderBrush}"
+                BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="7"
+                Padding="14,11">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="6" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="{Binding WindowTitle}"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource VisionTool.PrimaryTextBrush}" />
+                    <TextBlock Text="{Binding ScopeText}"
+                               Margin="0,4,0,0"
+                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <Border Background="{StaticResource VisionTool.PanelBrush}"
+                            BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="5"
+                            Padding="10,6"
+                            Margin="0,0,8,0">
+                        <TextBlock Text="{Binding SelectedCountText}"
+                                   Foreground="{StaticResource VisionTool.PrimaryTextBrush}"
+                                   FontWeight="SemiBold" />
+                    </Border>
+                    <Border Background="{StaticResource VisionTool.PanelBrush}"
+                            BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="5"
+                            Padding="10,6">
+                        <TextBlock Text="{Binding ResultCountText}"
+                                   Foreground="{StaticResource VisionTool.PrimaryTextBrush}"
+                                   FontWeight="SemiBold" />
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2"
+                Background="{StaticResource VisionTool.PanelBrush}"
+                BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="6"
+                Padding="8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="6" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="6" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="6" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="6" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="6" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0"
+                        Command="{Binding AddFilesCommand}"
+                        CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                        IsEnabled="{Binding CanEditImages}"
+                        Padding="12,6"
+                        AutomationProperties.Name="?대?吏 ?뚯씪 異붽?">
+                    <StackPanel Orientation="Horizontal">
+                        <iconPacks:PackIconMaterial Kind="FileImagePlusOutline" Width="16" Height="16" Margin="0,0,6,0" />
+                        <TextBlock Text="?뚯씪 異붽?" />
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="2"
+                        Command="{Binding AddFolderCommand}"
+                        CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                        IsEnabled="{Binding CanEditImages}"
+                        Padding="12,6"
+                        AutomationProperties.Name="?대?吏 ?대뜑 異붽?">
+                    <StackPanel Orientation="Horizontal">
+                        <iconPacks:PackIconMaterial Kind="FolderImage" Width="16" Height="16" Margin="0,0,6,0" />
+                        <TextBlock Text="?대뜑 異붽?" />
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="4"
+                        Command="{Binding ClearImagesCommand}"
+                        CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                        IsEnabled="{Binding CanEditImages}"
+                        Padding="12,6"
+                        AutomationProperties.Name="Clear image list">
+                    <StackPanel Orientation="Horizontal">
+                        <iconPacks:PackIconMaterial Kind="DeleteSweepOutline" Width="16" Height="16" Margin="0,0,6,0" />
+                        <TextBlock Text="Clear" />
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="6"
+                        Command="{Binding RunCommand}"
+                        IsEnabled="{Binding CanRun}"
+                        Style="{StaticResource VisionTool.PrimaryActionButtonStyle}"
+                        Padding="14,6"
+                        AutomationProperties.Name="N??寃利??ㅽ뻾">
+                    <StackPanel Orientation="Horizontal">
+                        <iconPacks:PackIconMaterial Kind="Play" Width="16" Height="16" Margin="0,0,6,0" />
+                        <TextBlock Text="?쒖감 ?ㅽ뻾" FontWeight="SemiBold" />
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="8"
+                        Command="{Binding StopCommand}"
+                        IsEnabled="{Binding CanStop}"
+                        Padding="12,6"
+                        AutomationProperties.Name="Stop verification">
+                    <StackPanel Orientation="Horizontal">
+                        <iconPacks:PackIconMaterial Kind="Stop" Width="16" Height="16" Margin="0,0,6,0" />
+                        <TextBlock Text="Stop" />
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="10"
+                        Command="{Binding ExportHtmlCommand}"
+                        CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                        IsEnabled="{Binding CanExport}"
+                        Padding="12,6"
+                        AutomationProperties.Name="Export verification HTML report">
+                    <StackPanel Orientation="Horizontal">
+                        <iconPacks:PackIconMaterial Kind="FileExportOutline" Width="16" Height="16" Margin="0,0,6,0" />
+                        <TextBlock Text="Export HTML" />
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="12"
+                        Command="{Binding PromoteLocatorValidationCommand}"
+                        CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                        IsEnabled="{Binding CanPromoteLocatorValidation}"
+                        Visibility="{Binding IsLocatorPromotionSupported, Converter={StaticResource BoolToVisibilityConverter}}"
+                        ToolTip="{Binding PromoteLocatorValidationToolTipText}"
+                        Padding="12,6"
+                        AutomationProperties.AutomationId="VisionToolNImagePromoteLocatorValidationButton"
+                        AutomationProperties.Name="{Binding PromoteLocatorValidationText}">
+                    <StackPanel Orientation="Horizontal">
+                        <iconPacks:PackIconMaterial Kind="DatabaseExportOutline" Width="16" Height="16" Margin="0,0,6,0" />
+                        <TextBlock Text="{Binding PromoteLocatorValidationText}" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.05*" />
+                <ColumnDefinition Width="10" />
+                <ColumnDefinition Width="0.95*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0"
+                    Background="{StaticResource VisionTool.PanelBrush}"
+                    BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="6" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Verification results selected from the image list"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource VisionTool.PrimaryTextBrush}" />
+                    <DataGrid x:Name="resultGrid"
+                              Grid.Row="2"
+                              ItemsSource="{Binding Rows}"
+                              SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              SelectionUnit="FullRow"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              AutomationProperties.AutomationId="VisionToolNImageVerificationResults">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="#" Binding="{Binding Index}" Width="48" />
+                            <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="1.4*" />
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="62" />
+                            <DataGridTextColumn Header="Metric" Binding="{Binding MetricText}" Width="1.5*" />
+                            <DataGridTextColumn Header="ms" Binding="{Binding TotalMilliseconds, StringFormat=0.###}" Width="72" />
+                            <DataGridTextColumn Header="Review reason" Binding="{Binding ReviewReasonText}" Width="1.1*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="8" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="8" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <GroupBox Header="Verified source image"
+                          Padding="6">
+                    <Border Background="#090D13"
+                            BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
+                            BorderThickness="1">
+                        <Image Source="{Binding SelectedSourceImage}"
+                               Stretch="Uniform"
+                               SnapsToDevicePixels="True" />
+                    </Border>
+                </GroupBox>
+                <GroupBox Grid.Row="2"
+                          Header="Verification result image"
+                          Padding="6">
+                    <Border Background="#090D13"
+                            BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
+                            BorderThickness="1">
+                        <Image Source="{Binding SelectedDrawingImage}"
+                               Stretch="Uniform"
+                               SnapsToDevicePixels="True" />
+                    </Border>
+                </GroupBox>
+                <Border Grid.Row="4"
+                        Background="{StaticResource VisionTool.HeaderBrush}"
+                        BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
+                        BorderThickness="1"
+                        Padding="9,7">
+                    <TextBlock Text="{Binding SelectedEvidenceText}"
+                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
+                               TextWrapping="Wrap"
+                               MaxHeight="100" />
+                </Border>
+            </Grid>
+        </Grid>
+
+        <Border Grid.Row="6"
+                Background="{StaticResource VisionTool.HeaderBrush}"
+                BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="5"
+                Padding="10,7">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding StatusText}"
+                           Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
+                           TextWrapping="Wrap" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding ProgressText}"
+                           Margin="12,0,0,0"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource VisionTool.PrimaryTextBrush}" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

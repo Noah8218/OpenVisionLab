@@ -4,7 +4,7 @@ using Lib.OpenCV.Result;
 using Lib.OpenCV.Tool;
 using Lib.OpenCV;
 using OpenVisionLab;
-using OpenVisionLab._1._Core;
+using OpenVisionLab.Core;
 using OpenVisionLab.Logging.Controls.View;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using System;
@@ -18603,9 +18603,9 @@ internal static class Program
         pipeline.Steps.Add(new VisionPipelineStep { Name = "LineA", ToolType = "Line", InputLayer = "Reference", OutputLayer = "A" });
         pipeline.Steps.Add(new VisionPipelineStep { Name = "LineB", ToolType = "Line", InputLayer = "Reference", OutputLayer = "B" });
         pipeline.Steps.Add(geometry);
-        VisionPipelineStepPropertyMapper.SetGeometryFeatureContext((mode, sourceA) =>
-            VisionPipelineStepPropertyMapper.GetCompatibleGeometryFeatureReferences(pipeline, 2, mode, sourceA));
-        object property = VisionPipelineStepPropertyMapper.CreateProperty(geometry)
+        object property = VisionPipelineStepPropertyMapper.CreateProperty(
+            geometry,
+            new VisionPipelinePropertyContext(pipeline, 2))
             ?? throw new InvalidOperationException("P213 GeometryMeasure PropertyGrid mapping returned null.");
         PropertyDescriptor sourceAProperty = TypeDescriptor.GetProperties(property)["SourceA"]
             ?? throw new InvalidOperationException("P213 feature picker SourceA property is missing.");

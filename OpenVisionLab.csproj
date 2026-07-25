@@ -54,6 +54,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Side_2|x64'">
     <OutputPath>bin\x64\Side_2\</OutputPath>
   </PropertyGroup>
+  <PropertyGroup>
+    <OpenVisionLabEnableEmbeddedSmokeRunner Condition="'$(OpenVisionLabEnableEmbeddedSmokeRunner)' == ''">false</OpenVisionLabEnableEmbeddedSmokeRunner>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(OpenVisionLabEnableEmbeddedSmokeRunner)' == 'true' ">
+    <DefineConstants>$(DefineConstants);OPENVISIONLAB_EMBEDDED_SMOKE</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="FontAwesome.Sharp">
       <HintPath>dll\FontAwesome.Sharp.dll</HintPath>
@@ -115,6 +121,7 @@
     <ProjectReference Include="Library\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Remove="tools\OpenVisionLab.DirectSmokeRunner\OpenVisionLabDirectSmokeRunner.cs" Condition=" '$(OpenVisionLabEnableEmbeddedSmokeRunner)' != 'true' " />
     <Compile Remove="Library\OpenVisionLab.Docking.Controls\**\*.cs" />
     <Compile Remove="Library\OpenVisionLab.Logging\**\*.cs" />
     <Compile Remove="Library\OpenVisionLab.Logging.Controls\**\*.cs" />
@@ -132,6 +139,7 @@
     <Compile Remove="Library\PropertyGrid.Abstractions\**\*.cs" />
     <Compile Remove="Library\WpfPropertyGridBridge\**\*.cs" />
     <Compile Remove="tools\**\*.cs" />
+    <Compile Include="tools\OpenVisionLab.DirectSmokeRunner\OpenVisionLabDirectSmokeRunner.cs" Condition=" '$(OpenVisionLabEnableEmbeddedSmokeRunner)' == 'true' " />
     <EmbeddedResource Remove="Library\OpenVisionLab.Docking.Controls\**\*.resx" />
     <EmbeddedResource Remove="Library\OpenVisionLab.ImageSpace.Core\**\*.resx" />
     <EmbeddedResource Remove="Library\OpenVisionLab.ImageCanvas\**\*.resx" />

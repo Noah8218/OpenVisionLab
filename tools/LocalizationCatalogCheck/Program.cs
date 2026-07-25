@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 internal static class Program
 {
@@ -110,8 +110,8 @@ internal static class Program
     {
         string[] roots =
         {
-            Path.Combine(repoRoot, "0. UI"),
-            Path.Combine(repoRoot, "1. Core"),
+            Path.Combine(repoRoot, "UI"),
+            Path.Combine(repoRoot, "Core"),
             Path.Combine(repoRoot, "Library")
         };
 

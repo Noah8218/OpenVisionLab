@@ -20,16 +20,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Page Include="..\..\0. UI\2) POPUP\Wpf\ImageCompareWindow.xaml">
+    <Page Include="..\..\UI\Popup\Wpf\ImageCompareWindow.xaml">
       <Link>ImageCompareWindow.xaml</Link>
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Compile Include="..\..\0. UI\2) POPUP\Wpf\ImageCompareWindow.xaml.cs">
+    <Compile Include="..\..\UI\Popup\Wpf\ImageCompareWindow.xaml.cs">
       <Link>ImageCompareWindow.xaml.cs</Link>
       <DependentUpon>ImageCompareWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="..\..\0. UI\2) POPUP\Wpf\ViewModels\ImageCompareViewModel.cs">
+    <Compile Include="..\..\UI\Popup\Wpf\ViewModels\ImageCompareViewModel.cs">
       <Link>ViewModels\ImageCompareViewModel.cs</Link>
     </Compile>
   </ItemGroup>
