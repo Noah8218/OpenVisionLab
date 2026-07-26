@@ -425,3 +425,27 @@
   selected-Step apply round-trip baseline으로 확장한 뒤 standalone owner
   추출 가치가 있는지 판단하는 것입니다. Recommended model:
   gpt-5.6-terra | Reasoning effort: medium.
+
+### Edge Based Matching Property Adapter Update (2026-07-26)
+
+- production 이동 전에 기존 Edge Based Matching Tool smoke를 별칭,
+  canonical apply, XML/Step 이름, input/output layer, acceptance metadata,
+  pattern/score/unique-match/threshold/Canny 설정 round-trip으로 확장하고
+  기존 partial 상태에서 먼저 통과시켰습니다.
+- `VisionPipelineEdgeBasedMatchingPropertyAdapter`가
+  EdgeBasedMatching/EdgeBasedTemplateMatching/EdgeTemplateMatching alias,
+  parameter/default projection, PropertyGrid 모델, Step 재생성, metric
+  판정의 실제 owner가 되었습니다.
+- root mapper에서는 직접 ToolType/metric case와 private 모델을 제거하고
+  adapter create/apply/metric dispatch만 유지합니다. 기존 partial은
+  제거됐으며 새 adapter는 partial이 아닙니다.
+- 검증: pre/post-move selected-Step round-trip, current-source Edge Based
+  Matching Tool UI, Debug build(0 warning/0 error), visual inspection,
+  readiness, `git diff --check` PASS.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_EDGE_BASED_MATCHING_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`.
+- 다음 구조 우선순위는 FeatureMatching의 selected-Step create/apply
+  baseline을 먼저 정의하고 통과시킨 뒤에만 standalone owner 후보로
+  평가하는 것입니다. single LineGauge와 Mean은 focused gate가 생기기
+  전까지 분리하지 않습니다. Recommended model: gpt-5.6-terra |
+  Reasoning effort: medium.

@@ -1971,6 +1971,27 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
   standalone adapter. Recommended model: gpt-5.6-terra | Reasoning effort:
   medium.
 
+### Maintenance: Edge Based Matching Property Adapter Boundary (2026-07-26)
+
+- A pre-move baseline first proved EdgeBasedMatchingTool selected-Step
+  create/apply behavior, including legacy alias canonicalization, XML/Step
+  name precedence, layers, acceptance metadata, pattern/score, unique-match,
+  threshold, and Canny settings.
+- `VisionPipelineEdgeBasedMatchingPropertyAdapter` now owns recognition,
+  parameter/default projection, the editable PropertyGrid model, Step
+  reconstruction, and metric identification.
+- `VisionPipelineStepPropertyMapper` retains only adapter dispatch plus shared
+  metadata/final Step copying. The old EdgeBasedMatching partial was removed.
+- Pre/post-move round-trip, current-source Edge Based Matching Tool UI, Debug
+  build, visual inspection, readiness, and patch hygiene passed.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_EDGE_BASED_MATCHING_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`
+  and `artifacts\refactor_edge_based_adapter_20260726`.
+- Remaining structural priority: define and pass a FeatureMatching
+  selected-Step create/apply baseline before considering a standalone adapter.
+  Keep single LineGauge and Mean in the root until a focused maintenance gate
+  exists. Recommended model: gpt-5.6-terra | Reasoning effort: medium.
+
 ## Handoff Rules For The Next Chat
 
 - Do not claim a feature is complete because the historical handoff says so. Re-run the smallest meaningful current command when work touches it.

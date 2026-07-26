@@ -23048,6 +23048,71 @@ internal static class Program
                         "EdgeBasedMatching unique-match settings did not survive Pipeline PropertyGrid round trip.");
                 }
 
+                VisionPipelineStep applyStep = CloneStep(step);
+                applyStep.Name = "Edge Based Matching Reviewed";
+                applyStep.Parameters["Name"] = applyStep.Name;
+                applyStep.ToolType = "EdgeBasedTemplateMatchingTool";
+                applyStep.InputLayer = "ReviewedInput";
+                applyStep.OutputLayer = "ReviewedEdgeOutput";
+                applyStep.Enabled = false;
+                applyStep.UseAcceptance = true;
+                applyStep.ExpectedSuccess = false;
+                applyStep.MaxElapsedMilliseconds = 87;
+                applyStep.RequiredMessageText = "edge-reviewed";
+                applyStep.AcceptanceMetricName = "ScoreMax";
+                applyStep.UseAcceptanceMetricMinimum = true;
+                applyStep.AcceptanceMetricMinimum = 0.8;
+                applyStep.UseAcceptanceMetricMaximum = true;
+                applyStep.AcceptanceMetricMaximum = 1;
+                object applyProperty = VisionPipelineStepPropertyMapper.CreateProperty(applyStep);
+                applyStep.Name = "Changed";
+                applyStep.Parameters["Name"] = applyStep.Name;
+                applyStep.InputLayer = "ChangedInput";
+                applyStep.OutputLayer = "ChangedOutput";
+                applyStep.Enabled = true;
+                applyStep.UseAcceptance = false;
+                applyStep.ExpectedSuccess = true;
+                applyStep.MaxElapsedMilliseconds = 0;
+                applyStep.RequiredMessageText = string.Empty;
+                applyStep.AcceptanceMetricName = string.Empty;
+                applyStep.UseAcceptanceMetricMinimum = false;
+                applyStep.AcceptanceMetricMinimum = 0;
+                applyStep.UseAcceptanceMetricMaximum = false;
+                applyStep.AcceptanceMetricMaximum = 0;
+                if (!VisionPipelineStepPropertyMapper.ApplyProperty(applyStep, applyProperty)
+                    || !string.Equals(applyStep.Name, "Edge Based Matching Reviewed", StringComparison.Ordinal)
+                    || !string.Equals(applyStep.ToolType, "EdgeBasedMatching", StringComparison.Ordinal)
+                    || !string.Equals(applyStep.InputLayer, "ReviewedInput", StringComparison.Ordinal)
+                    || !string.Equals(applyStep.OutputLayer, "ReviewedEdgeOutput", StringComparison.Ordinal)
+                    || applyStep.Enabled
+                    || !applyStep.UseAcceptance
+                    || applyStep.ExpectedSuccess
+                    || Math.Abs(applyStep.MaxElapsedMilliseconds - 87D) > 0.000001D
+                    || !string.Equals(applyStep.RequiredMessageText, "edge-reviewed", StringComparison.Ordinal)
+                    || !string.Equals(applyStep.AcceptanceMetricName, "ScoreMax", StringComparison.Ordinal)
+                    || !applyStep.UseAcceptanceMetricMinimum
+                    || Math.Abs(applyStep.AcceptanceMetricMinimum - 0.8D) > 0.000001D
+                    || !applyStep.UseAcceptanceMetricMaximum
+                    || Math.Abs(applyStep.AcceptanceMetricMaximum - 1D) > 0.000001D
+                    || !string.Equals(applyStep.Parameters["PATTERN_PATH"], step.Parameters["PATTERN_PATH"], StringComparison.Ordinal)
+                    || !string.Equals(applyStep.Parameters["SCORE_MIN"], step.Parameters["SCORE_MIN"], StringComparison.Ordinal)
+                    || !string.Equals(applyStep.Parameters["USE_UNIQUE_MATCH_VALIDATION"], "true", StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(applyStep.Parameters["UNIQUE_MATCH_MIN_SCORE_MARGIN"], "0.07", StringComparison.Ordinal)
+                    || !string.Equals(applyStep.Parameters["USE_THRESHOLD"], "false", StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(applyStep.Parameters["USE_ADAPTIVE_THRESHOLD"], "false", StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(applyStep.Parameters["CANNY_LOW"], step.Parameters["CANNY_LOW"], StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "EdgeBasedMatching alias/apply metadata and layer round trip changed. "
+                        + $"Name={applyStep.Name}; ToolType={applyStep.ToolType}; "
+                        + $"Layers={applyStep.InputLayer}->{applyStep.OutputLayer}; Enabled={applyStep.Enabled}; "
+                        + $"Acceptance={applyStep.UseAcceptance}/{applyStep.ExpectedSuccess}; "
+                        + $"Elapsed={applyStep.MaxElapsedMilliseconds}; Message={applyStep.RequiredMessageText}; "
+                        + $"Metric={applyStep.AcceptanceMetricName}; "
+                        + $"Min={applyStep.UseAcceptanceMetricMinimum}/{applyStep.AcceptanceMetricMinimum}; "
+                        + $"Max={applyStep.UseAcceptanceMetricMaximum}/{applyStep.AcceptanceMetricMaximum}.");
+                }
+
                 VisionPipelineStep explicitThresholdStep = CloneStep(step);
                 explicitThresholdStep.Parameters["USE_THRESHOLD"] = "true";
                 EdgeBasedMatchingProperty? explicitThresholdProperty =

@@ -1921,6 +1921,50 @@ internal static class Program
             matchingPropertyAdapter,
             "ApplyFixtureParameters",
             "The Matching adapter owns fixture-publish reconstruction.");
+        string edgeBasedMatchingPropertyAdapter = Read(
+            repoRoot,
+            @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineEdgeBasedMatchingPropertyAdapter.cs");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelineEdgeBasedMatchingPropertyAdapter.TryCreateProperty",
+            "Pipeline Step PropertyGrid dispatches EdgeBasedMatching mapping through its adapter.");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelineEdgeBasedMatchingPropertyAdapter.TryCreateStep",
+            "Pipeline Step PropertyGrid reconstructs EdgeBasedMatching through its adapter.");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelineEdgeBasedMatchingPropertyAdapter.IsProperty",
+            "Pipeline Step PropertyGrid resolves EdgeBasedMatching metrics through its adapter.");
+        foreach (string oldEdgeBasedMatchingToken in new[]
+        {
+            "case \"edgebasedmatching\"",
+            "case \"edgebasedtemplatematching\"",
+            "case \"edgetemplatematching\"",
+            "private sealed class PipelineEdgeBasedMatchingProperty"
+        })
+        {
+            RequireNotContains(
+                stepPropertyMapper,
+                oldEdgeBasedMatchingToken,
+                "The root mapper no longer owns EdgeBasedMatching ToolType cases or its PropertyGrid model.");
+        }
+        RequireContains(
+            edgeBasedMatchingPropertyAdapter,
+            "internal static class VisionPipelineEdgeBasedMatchingPropertyAdapter",
+            "EdgeBasedMatching mapping has a standalone non-partial owner.");
+        RequireContains(
+            edgeBasedMatchingPropertyAdapter,
+            "\"edgebasedtemplatematching\"",
+            "The EdgeBasedMatching adapter preserves the EdgeBasedTemplateMatching alias.");
+        RequireContains(
+            edgeBasedMatchingPropertyAdapter,
+            "\"edgetemplatematching\"",
+            "The EdgeBasedMatching adapter preserves the EdgeTemplateMatching alias.");
+        RequireContains(
+            edgeBasedMatchingPropertyAdapter,
+            "private sealed class PipelineEdgeBasedMatchingProperty",
+            "The EdgeBasedMatching adapter owns its PropertyGrid model.");
         string objectInspectionPropertyAdapter = Read(
             repoRoot,
             @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineObjectInspectionPropertyAdapter.cs");
@@ -2033,6 +2077,10 @@ internal static class Program
             learnScreenshotSmoke,
             "TemplateMatchingTool",
             "Screenshot smoke covers the TemplateMatchingTool alias round trip.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "EdgeBasedMatching alias/apply metadata and layer round trip changed.",
+            "Screenshot smoke covers EdgeBasedMatching alias, apply, metadata, and layer round trips.");
         RequireContains(
             learnScreenshotSmoke,
             "AssertP216ObjectInspectionPropertyMapperRoundTrip",
