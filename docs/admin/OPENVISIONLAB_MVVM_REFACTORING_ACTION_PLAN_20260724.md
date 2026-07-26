@@ -620,3 +620,25 @@
   종료하고 generic grab-bag model이나 event/timer/rendering partial을
   만들지 않습니다. Recommended model: gpt-5.6-terra | Reasoning effort:
   medium.
+
+### Learn Model Extraction Closure (2026-07-26)
+
+- 마감 감사 결과 Threshold는 별도 모델이 아니라 기존 basic grayscale
+  sample/clamp/pixel transform 책임과 동일했습니다.
+  `OpenVisionLearnBasicGrayscaleSimulationModel.EvaluateThreshold`로
+  통합했고 View의 `sampleValues`를 제거했습니다.
+- Metrics Acceptance는 한 animation용 5-value 통계, Layer Recipe는
+  교육용 routing row/셀 강조, Geometry는 WPF Transform 상태,
+  Color/HSV는 WPF Color/brush/channel painting과 결합돼 있어 별도
+  비-WPF owner가 되지 않습니다.
+- Threshold current-source UI, Debug build(0 warning/0 error), readiness,
+  구조 검색, visual inspection, `git diff --check`가 통과했습니다.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_LEARN_MODEL_EXTRACTION_CLOSURE_20260726.md`
+  및 `artifacts/refactor_learn_threshold_model_closure_20260726`.
+- proactive Learn calculation extraction은 종료합니다. 구체적 유지보수
+  변경, 재현된 regression, 두 번째 비-WPF consumer가 생기기 전에는
+  Metrics/Layer Recipe/Geometry/Color/HSV/event/timer/rendering을 더
+  분리하지 않습니다. Prerequisite: concrete evidence | Recommended
+  model: none until evidence exists | Reasoning effort: none until evidence
+  exists.

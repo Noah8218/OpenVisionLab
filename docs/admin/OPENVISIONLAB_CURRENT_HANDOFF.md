@@ -2173,6 +2173,30 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
   event handlers, timers, and rendering for file size. Recommended model:
   gpt-5.6-terra | Reasoning effort: medium.
 
+### Maintenance: Learn Model Extraction Closure (2026-07-26)
+
+- The final audit moved Threshold samples and Binary/BinaryInv evaluation into
+  the existing `OpenVisionLearnBasicGrayscaleSimulationModel`; Threshold is
+  the same grayscale sample/clamp/pixel-transform responsibility, not a new
+  model family.
+- Metrics Acceptance remains one animation-local five-value statistic; Layer
+  Recipe remains educational routing presentation state; Geometry remains WPF
+  transform state with two trivial display multiplications; Color/HSV remains
+  coupled to WPF Color/brush/channel painting. Combining them would create a
+  generic grab-bag rather than a cohesive owner.
+- Current-source Threshold UI, Debug build, readiness, structural search,
+  visual inspection, and patch hygiene passed. Before/after screenshots
+  differed only in the accordion disclosure glyph rendering while their
+  semantic smoke passed.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_LEARN_MODEL_EXTRACTION_CLOSURE_20260726.md`
+  and `artifacts\refactor_learn_threshold_model_closure_20260726`.
+- Proactive Learn calculation extraction is closed. Reopen only for a concrete
+  maintenance change, verified regression, second non-WPF consumer, or newly
+  demonstrated calculation boundary. Prerequisite: concrete evidence |
+  Recommended model: none until evidence exists | Reasoning effort: none
+  until evidence exists.
+
 ## Handoff Rules For The Next Chat
 
 - Do not claim a feature is complete because the historical handoff says so. Re-run the smallest meaningful current command when work touches it.

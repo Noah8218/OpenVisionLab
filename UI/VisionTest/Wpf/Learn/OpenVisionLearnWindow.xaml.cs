@@ -48,7 +48,6 @@ namespace OpenVisionLab
         private readonly Brush animationCandidateBrush;
         private readonly Brush animationPassBrush;
         private readonly Brush animationWarningBrush;
-        private readonly int[] sampleValues = { 24, 60, 96, 119, 128, 151, 190, 230 };
         private readonly int[] morphologySampleValues =
         {
             0, 0, 0, 0, 0,
@@ -966,7 +965,7 @@ namespace OpenVisionLab
             resultCells.Clear();
             resultTexts.Clear();
 
-            foreach (int value in sampleValues)
+            foreach (int value in OpenVisionLearnBasicGrayscaleSimulationModel.ThresholdSamples)
             {
                 sampleGrid.Children.Add(CreateCell(value.ToString(CultureInfo.InvariantCulture), value));
                 Border resultCell = CreateCell(string.Empty, 0);
@@ -1453,20 +1452,22 @@ namespace OpenVisionLab
 
         private void UpdateGuide()
         {
-            int threshold = ClampToByte(thresholdSlider.Value);
             bool invert = chkInvert.IsChecked == true;
-            txtThresholdValue.Text = "Threshold = " + threshold.ToString(CultureInfo.InvariantCulture);
+            OpenVisionLearnBasicGrayscaleSimulationModel.ThresholdEvaluation evaluation =
+                OpenVisionLearnBasicGrayscaleSimulationModel.EvaluateThreshold(
+                    thresholdSlider.Value,
+                    invert,
+                    maxValue);
+            txtThresholdValue.Text = "Threshold = "
+                + evaluation.Threshold.ToString(CultureInfo.InvariantCulture);
             txtFormula.Text = invert
                 ? "BinaryInv: GV >= threshold -> 0, GV < threshold -> MaxValue"
                 : "Binary: GV >= threshold -> MaxValue, GV < threshold -> 0";
 
-            for (int i = 0; i < sampleValues.Length; i++)
+            for (int i = 0; i < OpenVisionLearnBasicGrayscaleSimulationModel.ThresholdSamples.Count; i++)
             {
-                int source = sampleValues[i];
-                bool high = source >= threshold;
-                int result = invert
-                    ? high ? 0 : maxValue
-                    : high ? maxValue : 0;
+                int source = OpenVisionLearnBasicGrayscaleSimulationModel.ThresholdSamples[i];
+                int result = evaluation.Results[i];
                 resultCells[i].Background = CreateGrayBrush(result);
                 resultTexts[i].Foreground = result > 128 ? Brushes.Black : Brushes.White;
                 resultTexts[i].Text = source.ToString(CultureInfo.InvariantCulture)

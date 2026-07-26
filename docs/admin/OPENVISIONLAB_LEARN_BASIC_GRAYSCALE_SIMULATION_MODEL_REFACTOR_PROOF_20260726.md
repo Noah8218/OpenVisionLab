@@ -108,3 +108,13 @@ topic-specific Threshold, Metrics Acceptance, Layer Recipe, Geometry
 Transform, and Color/HSV logic. Perform one closure audit before another move;
 do not create a generic grab-bag model or split event handlers, timers, and
 rendering merely to reduce file size.
+
+## Threshold Closure Addendum
+
+The final closure audit found that Threshold is not a separate model boundary:
+it is the same fixed grayscale sample/clamp/pixel-transform responsibility.
+`OpenVisionLearnBasicGrayscaleSimulationModel` now also owns Threshold samples
+and Binary/BinaryInv evaluation. The current Threshold UI smoke, Debug build,
+readiness, structural search, and visual comparison passed. Detailed closure
+and the retained-topic decisions are recorded in
+`OPENVISIONLAB_LEARN_MODEL_EXTRACTION_CLOSURE_20260726.md`.

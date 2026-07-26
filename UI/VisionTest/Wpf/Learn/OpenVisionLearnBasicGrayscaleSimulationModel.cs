@@ -6,6 +6,18 @@ namespace OpenVisionLab
 {
     internal static class OpenVisionLearnBasicGrayscaleSimulationModel
     {
+        private static readonly int[] thresholdSamples =
+        {
+            24,
+            60,
+            96,
+            119,
+            128,
+            151,
+            190,
+            230
+        };
+
         private static readonly int[] brightnessSamples =
         {
             22,
@@ -55,6 +67,8 @@ namespace OpenVisionLab
             59
         };
 
+        public static IReadOnlyList<int> ThresholdSamples => thresholdSamples;
+
         public static IReadOnlyList<int> BrightnessSamples => brightnessSamples;
 
         public static IReadOnlyList<int> ArithmeticInputA => arithmeticInputA;
@@ -62,6 +76,25 @@ namespace OpenVisionLab
         public static IReadOnlyList<int> ArithmeticInputB => arithmeticInputB;
 
         public static IReadOnlyList<int> FilterSamples => filterSamples;
+
+        public static ThresholdEvaluation EvaluateThreshold(
+            double thresholdValue,
+            bool invert,
+            int maximumValue)
+        {
+            int threshold = ClampToByte(thresholdValue);
+            int maximum = ClampToByte(maximumValue);
+            int[] results = thresholdSamples
+                .Select(source =>
+                {
+                    bool high = source >= threshold;
+                    return invert
+                        ? high ? 0 : maximum
+                        : high ? maximum : 0;
+                })
+                .ToArray();
+            return new ThresholdEvaluation(threshold, results);
+        }
 
         public static BrightnessEvaluation EvaluateBrightness(double offsetValue)
         {
@@ -138,6 +171,10 @@ namespace OpenVisionLab
 
             return Math.Max(0, Math.Min(255, (int)Math.Round(value)));
         }
+
+        internal readonly record struct ThresholdEvaluation(
+            int Threshold,
+            int[] Results);
 
         internal readonly record struct BrightnessEvaluation(
             int Offset,
