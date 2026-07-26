@@ -84,6 +84,8 @@ namespace OpenVisionLab
         private OpenVisionRecipePipelineStepPreview selectedPipelinePreviewStep;
         private readonly OpenVisionRecipeStepEditSessionViewModel selectedStepEditSession =
             new OpenVisionRecipeStepEditSessionViewModel();
+        private readonly OpenVisionRecipeValidationRunSessionViewModel validationRunSession =
+            new OpenVisionRecipeValidationRunSessionViewModel();
         private string selectedRecipeName = string.Empty;
         private string recipeFilterText = string.Empty;
         private string pipelineFilterText = string.Empty;
@@ -173,7 +175,6 @@ namespace OpenVisionLab
         private string llmXmlDraftPasteStatusText = string.Empty;
         private string operatorHandoffReportStatusText = string.Empty;
         private string selectedRecentBatchRunReviewCopyStatusText = string.Empty;
-        private string validationSuiteStatusText = string.Empty;
         private string pinArrayGapValidationStatusText = string.Empty;
         private bool isPinArrayGapValidationIdentityFrozen;
         private string newValidationSetName = "Local_Validation_Set";
@@ -192,9 +193,6 @@ namespace OpenVisionLab
         private bool isSampleCheckRunning;
         private bool isPairCheckRunning;
         private bool isCatalogBenchmarkRunning;
-        private bool isValidationSuiteRunning;
-        private bool isLocalValidationSetRunning;
-        private bool validationSuiteStopRequested;
         private OpenVisionRecipePipelineOption selectedPipelineOption;
         private OpenVisionRecipeSampleOption selectedSampleOption;
         private OpenVisionRecipeSampleRunSummary latestSampleRunSummary = OpenVisionRecipeSampleRunSummary.Empty;
@@ -248,10 +246,11 @@ namespace OpenVisionLab
             this.selectStepTool = selectStepTool;
             this.commitSelectedStepEdit = commitSelectedStepEdit ?? (() => true);
             selectedStepEditSession.PropertyChanged += OnSelectedStepEditSessionPropertyChanged;
+            validationRunSession.PropertyChanged += OnValidationRunSessionPropertyChanged;
             selectedValidationSuiteScopeOption = validationSuiteScopeOptions.FirstOrDefault();
-            validationSuiteStatusText = OpenVisionRecipeText.Local(
+            validationRunSession.SetStatus(OpenVisionRecipeText.Local(
                 "Suite 범위를 선택한 뒤 명시적으로 Run suite를 실행하세요.",
-                "Select a suite scope, then run the explicit suite.");
+                "Select a suite scope, then run the explicit suite."));
             SetLlmXmlDraftDependencyPlaceholder(LocalText(
                 "XML 초안을 붙여넣거나 로드한 뒤 검증을 실행하세요.",
                 "Paste or load an XML draft, then run validation."));
@@ -2127,17 +2126,17 @@ namespace OpenVisionLab
         public string ValidationSuiteScopeLabelText => LocalText("범위", "Scope");
 
         public string RunValidationSuiteText =>
-            isValidationSuiteRunning
+            validationRunSession.IsRunning
                 ? LocalText("실행 중...", "Running...")
                 : IsLocalValidationSetSelected
                     ? LocalText("목록 검증 실행", "Run image list")
                     : LocalText("Suite 실행", "Run suite");
 
-        public string StopValidationSuiteText => validationSuiteStopRequested
+        public string StopValidationSuiteText => validationRunSession.StopRequested
             ? LocalText("중지 대기", "Stopping")
             : LocalText("실행 중지", "Stop");
 
-        public bool IsLocalValidationSetRunning => isLocalValidationSetRunning;
+        public bool IsLocalValidationSetRunning => validationRunSession.IsLocalValidationSetRunning;
 
         public string ValidationSuiteSummaryText =>
             OpenVisionRecipeValidationSetPresenter.BuildValidationSuiteSummaryText(
@@ -2212,7 +2211,7 @@ namespace OpenVisionLab
 
         public string ValidationSetNextActionText =>
             OpenVisionRecipeValidationSetPresenter.BuildNextActionText(
-                isValidationSuiteRunning,
+                validationRunSession.IsRunning,
                 validationSetStorageReady,
                 SelectedValidationSetOption,
                 SelectedPipelineOption != null);
@@ -2225,15 +2224,8 @@ namespace OpenVisionLab
 
         public string ValidationSuiteStatusText
         {
-            get => validationSuiteStatusText;
-            private set
-            {
-                if (SetProperty(ref validationSuiteStatusText, value ?? string.Empty))
-                {
-                    OnPropertyChanged(nameof(ValidationSuiteSummaryText));
-                    OnPropertyChanged(nameof(ValidationSetNextActionText));
-                }
-            }
+            get => validationRunSession.StatusText;
+            private set => validationRunSession.SetStatus(value);
         }
 
         public string RunSelectedSampleCheckText => isSampleCheckRunning ? LocalText("실행 중...", "Running...") : LocalText("검사 실행", "Run check");

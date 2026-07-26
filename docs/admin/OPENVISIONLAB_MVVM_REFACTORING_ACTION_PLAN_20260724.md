@@ -237,3 +237,21 @@
   선택하도록 테스트 전제를 수정했습니다.
 - Evidence:
   `docs/admin/OPENVISIONLAB_STEP_EDIT_SESSION_VIEWMODEL_REFACTOR_PROOF_20260726.md`.
+
+### Validation Run Session ViewModel Update (2026-07-26)
+
+- `OpenVisionRecipeValidationRunSessionViewModel`이 Validation Suite 실행 중,
+  Local Validation Set 실행 중, 중지 요청, 상태 문구와
+  Start/RequestStop/Complete/SetStatus 전이의 실제 owner가 되었습니다.
+- Shell은 명시적 실행 명령, 이미지 순회, frozen identity 검사, 판정,
+  report 저장, Run History 갱신과 기존 XAML 알림 adapter만 유지합니다.
+  새 ViewModel은 partial이 아니며 Shell/저장소/실행 서비스/View에
+  의존하지 않습니다.
+- 검증: 기존 Shell 필드 부재, current-source Local Validation Set 전체
+  실행 및 stop/partial-save, Preview/Run·레이어·workspace·route 불변,
+  Debug build, focused smoke build, readiness PASS.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_VALIDATION_RUN_SESSION_VIEWMODEL_REFACTOR_PROOF_20260726.md`.
+- 다음 구조 우선순위는 또 다른 partial 추가가 아니라 남은 Shell mutable
+  state 또는 business-rule owner를 증거 기반으로 다시 감사하는 것입니다.
+  Recommended model: gpt-5.6-terra | Reasoning effort: medium.

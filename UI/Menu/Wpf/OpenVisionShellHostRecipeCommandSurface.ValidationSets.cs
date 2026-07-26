@@ -31,7 +31,7 @@ namespace OpenVisionLab
         {
             string name = NewValidationSetName?.Trim() ?? string.Empty;
             return validationSetStorageReady
-                && !isValidationSuiteRunning
+                && !validationRunSession.IsRunning
                 && OpenVisionRecipeValidationSetStorage.IsValidSetName(name)
                 && !validationSetDocument.Sets.Any(set =>
                     string.Equals(set?.Name, name, StringComparison.OrdinalIgnoreCase));
@@ -59,7 +59,7 @@ namespace OpenVisionLab
         private bool CanDeleteValidationSet()
         {
             return validationSetStorageReady
-                && !isValidationSuiteRunning
+                && !validationRunSession.IsRunning
                 && SelectedValidationSetOption != null;
         }
 
@@ -185,7 +185,7 @@ namespace OpenVisionLab
         private bool CanAddValidationSetImages()
         {
             return validationSetStorageReady
-                && !isValidationSuiteRunning
+                && !validationRunSession.IsRunning
                 && SelectedValidationSetOption?.Set != null
                 && !SelectedValidationSetOption.Set.IsIdentityLocked;
         }
@@ -257,7 +257,7 @@ namespace OpenVisionLab
         private bool CanRepairValidationSetImagePath()
         {
             return validationSetStorageReady
-                && !isValidationSuiteRunning
+                && !validationRunSession.IsRunning
                 && SelectedValidationSetOption?.Set != null
                 && !SelectedValidationSetOption.Set.IsIdentityLocked
                 && SelectedValidationSetImageRow?.Image != null
@@ -288,7 +288,7 @@ namespace OpenVisionLab
         private bool CanRemoveValidationSetImage()
         {
             return validationSetStorageReady
-                && !isValidationSuiteRunning
+                && !validationRunSession.IsRunning
                 && SelectedValidationSetOption?.Set != null
                 && !SelectedValidationSetOption.Set.IsIdentityLocked
                 && SelectedValidationSetImageRow?.Image != null;

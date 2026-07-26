@@ -1750,6 +1750,27 @@ Large-corpus skill validation now follows `docs\OPENVISIONLAB_SCALABLE_SKILL_VAL
 - Evidence:
   `docs\admin\OPENVISIONLAB_STEP_EDIT_SESSION_VIEWMODEL_REFACTOR_PROOF_20260726.md`.
 
+### Maintenance: Validation Run Session ViewModel Boundary (2026-07-26)
+
+- `OpenVisionRecipeValidationRunSessionViewModel` now owns Validation Suite
+  running, Local Validation Set running, stop-requested, and status-text state
+  plus their Start/RequestStop/Complete/SetStatus transitions.
+- The Shell retains explicit execution, image iteration, frozen-identity
+  validation, judgment, report persistence, Run History refresh, and an
+  existing-binding notification adapter. The four old mutable Shell fields
+  were removed.
+- Verification passed: old-field absence, current-source Local Validation Set
+  complete run and stop/partial-save path, unchanged Preview/Run/layers/
+  workspace/routes, Debug build, focused smoke build, and readiness.
+  Artifact:
+  `artifacts\mvvm_validation_run_session_viewmodel_20260726\wpf_shell_host_recipe_local_validation_set.png`.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_VALIDATION_RUN_SESSION_VIEWMODEL_REFACTOR_PROOF_20260726.md`.
+- Remaining structural priority: audit one more concrete mutable-state or
+  business-rule owner before selecting another bounded refactor; do not add a
+  partial merely to reduce file length. Recommended model: gpt-5.6-terra |
+  Reasoning effort: medium.
+
 1. **No active implementation priority after P235.**
    - The explicitly requested exact locator-session promotion passed without a product blocker. Wait for a concrete operator workflow blocker or verified current-build regression. Until then, do not spend model tokens or start another semantic image campaign. Recommended model: none until evidence exists | Reasoning effort: none until evidence exists.
 
