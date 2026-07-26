@@ -3540,8 +3540,7 @@ namespace OpenVisionLab
             UpdateSelectedRecipeSummary();
             SelectedPipelinePreviewStep = SelectedRecipeSummary?.PipelinePreviewSteps?
                 .FirstOrDefault(stepPreview => stepPreview.Index == selectedIndex);
-            selectedStepEditDirty = false;
-            OnPropertyChanged(nameof(IsSelectedStepEditDirty));
+            selectedStepEditSession.MarkClean();
             LoadSelectedStepParametersForEdit(updateStatus: false);
             SetSelectedStepEditStatus(
                 OpenVisionRecipeText.Local("XML 반영 완료: ", "Applied to XML: ")
@@ -3568,15 +3567,10 @@ namespace OpenVisionLab
 
         public void MarkSelectedStepEditDirty()
         {
-            if (SelectedStepEditObject == null)
-            {
-                return;
-            }
-
-            selectedStepEditDirty = true;
-            OnPropertyChanged(nameof(IsSelectedStepEditDirty));
-            SetSelectedStepEditStatus(OpenVisionRecipeText.Local("편집됨: XML 반영 전입니다.", "Edited: not yet applied to XML."));
-            SetCorrectedOutputReview(string.Empty);
+            selectedStepEditSession.MarkDirty(
+                OpenVisionRecipeText.Local(
+                    "편집됨: XML 반영 전입니다.",
+                    "Edited: not yet applied to XML."));
         }
 
         private bool LoadSelectedStepParametersForEdit(bool updateStatus)
@@ -3607,17 +3601,13 @@ namespace OpenVisionLab
                 return false;
             }
 
-            selectedStepEditDirty = false;
-            OnPropertyChanged(nameof(IsSelectedStepEditDirty));
-            SelectedStepEditObject = property;
-            if (updateStatus)
-            {
-                SetSelectedStepEditStatus(
-                    OpenVisionRecipeText.Local("불러옴: ", "Loaded: ")
-                    + pipelineName
-                    + " / Step "
-                    + (SelectedPipelinePreviewStep?.Index ?? 0).ToString(CultureInfo.InvariantCulture));
-            }
+            selectedStepEditSession.Load(
+                property,
+                OpenVisionRecipeText.Local("불러옴: ", "Loaded: ")
+                + pipelineName
+                + " / Step "
+                + (SelectedPipelinePreviewStep?.Index ?? 0).ToString(CultureInfo.InvariantCulture),
+                updateStatus);
 
             return true;
         }
@@ -3704,29 +3694,41 @@ namespace OpenVisionLab
 
         private void SetSelectedStepEditStatus(string value)
         {
-            selectedStepEditStatusText = value ?? string.Empty;
-            OnPropertyChanged(nameof(SelectedStepEditStatusText));
-            RefreshCommandState();
+            selectedStepEditSession.SetStatus(value);
         }
 
         private void SetCorrectedOutputReview(string value)
         {
-            correctedOutputReviewText = value ?? string.Empty;
-            OnPropertyChanged(nameof(CorrectedOutputReviewText));
+            selectedStepEditSession.SetCorrectedOutputReview(value);
         }
 
         private void ClearSelectedStepEdit()
         {
-            selectedStepEditObject = null;
-            selectedStepEditDirty = false;
-            selectedStepEditStatusText = string.Empty;
-            correctedOutputReviewText = string.Empty;
-            OnPropertyChanged(nameof(SelectedStepEditObject));
-            OnPropertyChanged(nameof(HasSelectedStepEditObject));
-            OnPropertyChanged(nameof(IsSelectedStepEditDirty));
-            OnPropertyChanged(nameof(SelectedStepEditStatusText));
-            OnPropertyChanged(nameof(CorrectedOutputReviewText));
-            RefreshCommandState();
+            selectedStepEditSession.Clear();
+        }
+
+        private void OnSelectedStepEditSessionPropertyChanged(
+            object sender,
+            System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            switch (e?.PropertyName)
+            {
+                case nameof(OpenVisionRecipeStepEditSessionViewModel.EditObject):
+                    OnPropertyChanged(nameof(SelectedStepEditObject));
+                    OnPropertyChanged(nameof(HasSelectedStepEditObject));
+                    RefreshCommandState();
+                    break;
+                case nameof(OpenVisionRecipeStepEditSessionViewModel.IsDirty):
+                    OnPropertyChanged(nameof(IsSelectedStepEditDirty));
+                    break;
+                case nameof(OpenVisionRecipeStepEditSessionViewModel.StatusText):
+                    OnPropertyChanged(nameof(SelectedStepEditStatusText));
+                    RefreshCommandState();
+                    break;
+                case nameof(OpenVisionRecipeStepEditSessionViewModel.CorrectedOutputReviewText):
+                    OnPropertyChanged(nameof(CorrectedOutputReviewText));
+                    break;
+            }
         }
 
         private bool TryResolveSelectedStepMenu(out VISION_MENU menu)

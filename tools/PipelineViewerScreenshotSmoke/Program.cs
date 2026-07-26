@@ -10023,6 +10023,64 @@ internal static class Program
                     + $"'{routeInputBefore}->{routeOutputBefore}'");
             }
 
+            string loadedStatus = shellHost.RecipeCommands.SelectedStepEditStatusText;
+            string loadedReview = shellHost.RecipeCommands.CorrectedOutputReviewText;
+            shellHost.RecipeCommands.MarkSelectedStepEditDirty();
+            Pump(40);
+            string dirtyStatus = shellHost.RecipeCommands.SelectedStepEditStatusText;
+            string dirtyReview = shellHost.RecipeCommands.CorrectedOutputReviewText;
+            if (!shellHost.RecipeCommands.IsSelectedStepEditDirty
+                || string.Equals(dirtyStatus, loadedStatus, StringComparison.Ordinal)
+                || shellHost.NativePreviewRunCount != previewRunsBefore
+                || shellHost.LayerDocumentCount != layerCountBefore)
+            {
+                throw new InvalidOperationException(
+                    "Pipeline Review selected Step edit session did not enter the explicit dirty state. "
+                    + $"Dirty={shellHost.RecipeCommands.IsSelectedStepEditDirty}, "
+                    + $"Status='{loadedStatus}'/'{dirtyStatus}', "
+                    + $"ReviewChanged={!string.Equals(loadedReview, dirtyReview, StringComparison.Ordinal)}, "
+                    + $"Runs={shellHost.NativePreviewRunCount}/{previewRunsBefore}, "
+                    + $"Layers={shellHost.LayerDocumentCount}/{layerCountBefore}");
+            }
+
+            if (!shellHost.RecipeCommands.ApplySelectedStepParametersCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException(
+                    "Pipeline Review selected Step XML apply command was disabled for the loaded edit session.");
+            }
+
+            shellHost.RecipeCommands.ApplySelectedStepParametersCommand.Execute(null);
+            Pump(180);
+            if (shellHost.RecipeCommands.IsSelectedStepEditDirty
+                || shellHost.RecipeCommands.SelectedStepEditObject is not BlobProperty
+                || string.Equals(
+                    shellHost.RecipeCommands.SelectedStepEditStatusText,
+                    dirtyStatus,
+                    StringComparison.Ordinal)
+                || string.Equals(
+                    shellHost.RecipeCommands.CorrectedOutputReviewText,
+                    dirtyReview,
+                    StringComparison.Ordinal)
+                || shellHost.NativePreviewRunCount != previewRunsBefore
+                || shellHost.HasNativePreviewResult
+                || shellHost.LayerDocumentCount != layerCountBefore
+                || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, routeInputBefore, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, routeOutputBefore, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Pipeline Review selected Step edit session did not apply, clean, and reload without side effects. "
+                    + $"Dirty={shellHost.RecipeCommands.IsSelectedStepEditDirty}, "
+                    + $"Property='{shellHost.RecipeCommands.SelectedStepEditObject?.GetType().Name}', "
+                    + $"Status='{dirtyStatus}'/'{shellHost.RecipeCommands.SelectedStepEditStatusText}', "
+                    + $"ReviewChanged={!string.Equals(dirtyReview, shellHost.RecipeCommands.CorrectedOutputReviewText, StringComparison.Ordinal)}, "
+                    + $"Runs={shellHost.NativePreviewRunCount}/{previewRunsBefore}, "
+                    + $"Layers={shellHost.LayerDocumentCount}/{layerCountBefore}, "
+                    + $"Active='{shellHost.ActiveHostLayerTitle}/{activeLayerBefore}', "
+                    + $"Route='{shellHost.ActiveNativeRouteInputLayerNameForTest}->{shellHost.ActiveNativeRouteOutputLayerNameForTest}'/"
+                    + $"'{routeInputBefore}->{routeOutputBefore}'");
+            }
+
             AssertVisibleAutomationIds(
                 shellHost,
                 "Pipeline Review selected Step edit handoff destination",
@@ -10068,6 +10126,11 @@ internal static class Program
             }
 
             Window reviewWindow = GetActiveFloatingToolWindow("Fixture selected Step edit/apply/rerun");
+            TabItem stepDetailsTab = FindNamedVisualChild<TabItem>(reviewWindow, "stepDetailsTab")
+                ?? throw new InvalidOperationException(
+                    "Fixture selected Step edit/apply/rerun Step Details tab was not available.");
+            stepDetailsTab.IsSelected = true;
+            Pump(40);
             string recipeName = shellHost.PipelineReviewRecipeContextNameForTest;
             string pipelinePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, pipelineName);
             VisionPipeline beforePipeline = VisionPipelineStorage.Load(recipeName, pipelineName);

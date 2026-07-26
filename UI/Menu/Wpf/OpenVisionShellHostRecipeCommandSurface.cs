@@ -82,10 +82,8 @@ namespace OpenVisionLab
         private OpenVisionRecipeValidationSetOption pinArrayGapTestValidationSetOption;
         private OpenVisionRecipeValidationSetImageRow selectedValidationSetImageRow;
         private OpenVisionRecipePipelineStepPreview selectedPipelinePreviewStep;
-        private object selectedStepEditObject;
-        private string selectedStepEditStatusText = string.Empty;
-        private string correctedOutputReviewText = string.Empty;
-        private bool selectedStepEditDirty;
+        private readonly OpenVisionRecipeStepEditSessionViewModel selectedStepEditSession =
+            new OpenVisionRecipeStepEditSessionViewModel();
         private string selectedRecipeName = string.Empty;
         private string recipeFilterText = string.Empty;
         private string pipelineFilterText = string.Empty;
@@ -249,6 +247,7 @@ namespace OpenVisionLab
             this.openPinArrayGapValidationRuns = openPinArrayGapValidationRuns ?? (() => { });
             this.selectStepTool = selectStepTool;
             this.commitSelectedStepEdit = commitSelectedStepEdit ?? (() => true);
+            selectedStepEditSession.PropertyChanged += OnSelectedStepEditSessionPropertyChanged;
             selectedValidationSuiteScopeOption = validationSuiteScopeOptions.FirstOrDefault();
             validationSuiteStatusText = OpenVisionRecipeText.Local(
                 "Suite 범위를 선택한 뒤 명시적으로 Run suite를 실행하세요.",
@@ -752,25 +751,17 @@ namespace OpenVisionLab
 
         public object SelectedStepEditObject
         {
-            get => selectedStepEditObject;
-            private set
-            {
-                if (SetProperty(ref selectedStepEditObject, value))
-                {
-                    OnPropertyChanged(nameof(HasSelectedStepEditObject));
-                    RefreshCommandState();
-                }
-            }
+            get => selectedStepEditSession.EditObject;
         }
 
         public bool HasSelectedStepEditObject => SelectedStepEditObject != null;
 
         public string SelectedStepEditStatusText =>
-            string.IsNullOrWhiteSpace(selectedStepEditStatusText)
+            string.IsNullOrWhiteSpace(selectedStepEditSession.StatusText)
                 ? LocalText("Step 파라미터를 불러온 뒤 PropertyGrid에서 검토하고 XML 반영을 누르세요.", "Load step parameters, review them in the PropertyGrid, then apply to XML.")
-                : selectedStepEditStatusText;
+                : selectedStepEditSession.StatusText;
 
-        public bool IsSelectedStepEditDirty => selectedStepEditDirty;
+        public bool IsSelectedStepEditDirty => selectedStepEditSession.IsDirty;
 
         public IReadOnlyList<string> LlmToolTemplateOptions => llmToolTemplateOptions;
 
@@ -2396,12 +2387,12 @@ namespace OpenVisionLab
         public string CorrectedOutputReviewLabelText => LocalText("수정 출력 확인", "Corrected output review");
 
         public string CorrectedOutputReviewText =>
-            string.IsNullOrWhiteSpace(correctedOutputReviewText)
+            string.IsNullOrWhiteSpace(selectedStepEditSession.CorrectedOutputReviewText)
                 ? OpenVisionRecipePipelineStepReviewPresenter.BuildCorrectedOutputReviewText(
                     SelectedPipelinePreviewStep,
-                    selectedStepEditDirty,
+                    selectedStepEditSession.IsDirty,
                     SelectedStepEditObject)
-                : correctedOutputReviewText;
+                : selectedStepEditSession.CorrectedOutputReviewText;
 
         public string OpenSelectedStepToolText =>
             SelectedPipelinePreviewStep?.EditorActionText

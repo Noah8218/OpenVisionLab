@@ -1733,6 +1733,23 @@ Large-corpus skill validation now follows `docs\OPENVISIONLAB_SCALABLE_SKILL_VAL
 - Evidence:
   `docs\admin\OPENVISIONLAB_PIPELINE_REVIEW_FLOW_PRESENTER_REFACTOR_PROOF_20260726.md`.
 
+### Maintenance: Step Edit Session ViewModel Boundary (2026-07-26)
+
+- `OpenVisionRecipeStepEditSessionViewModel` now owns the selected Step edit
+  object, dirty flag, status text, corrected-output review text, and their
+  Load/Dirty/Clean/Clear transitions.
+- The Shell retains XML lookup/save, tool-session seeding, and a property
+  notification adapter for existing XAML bindings. The four old mutable Shell
+  fields were removed.
+- Verification passed: extended current-source selected-Step handoff,
+  Fixture edit/apply/rerun, old-field absence, Debug build, and readiness.
+  Artifacts: `artifacts\mvvm_step_edit_session_viewmodel_20260726_r3` and
+  `artifacts\mvvm_step_edit_session_viewmodel_20260726_r4`.
+- The Fixture smoke's pre-existing hidden-button failure was fixed by selecting
+  its Step Details tab before clicking the edit action.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_STEP_EDIT_SESSION_VIEWMODEL_REFACTOR_PROOF_20260726.md`.
+
 1. **No active implementation priority after P235.**
    - The explicitly requested exact locator-session promotion passed without a product blocker. Wait for a concrete operator workflow blocker or verified current-build regression. Until then, do not spend model tokens or start another semantic image campaign. Recommended model: none until evidence exists | Reasoning effort: none until evidence exists.
 

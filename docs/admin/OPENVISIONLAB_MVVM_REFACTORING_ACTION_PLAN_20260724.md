@@ -223,3 +223,17 @@
   Pipeline Review UI smokes PASS.
 - Evidence:
   `docs/admin/OPENVISIONLAB_PIPELINE_REVIEW_FLOW_PRESENTER_REFACTOR_PROOF_20260726.md`.
+
+### Step Edit Session ViewModel Update (2026-07-26)
+
+- `OpenVisionRecipeStepEditSessionViewModel`이 selected Step의 edit object,
+  dirty, status, corrected-output review 상태와 Load/Dirty/Clean/Clear 전이의
+  실제 owner가 되었습니다.
+- Shell은 XML lookup/save, Tool session 주입, 기존 XAML 알림 adapter만
+  유지합니다. 새 ViewModel은 partial이 아닙니다.
+- 검증: source old-field absence, extended selected-Step handoff,
+  Fixture edit/apply/rerun, Debug build, readiness PASS.
+- Fixture smoke의 기존 hidden-button 실패는 Step Details tab을 먼저
+  선택하도록 테스트 전제를 수정했습니다.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_STEP_EDIT_SESSION_VIEWMODEL_REFACTOR_PROOF_20260726.md`.
