@@ -853,6 +853,7 @@ internal static class Program
             "ThresholdToolWpfView.xaml.cs");
         RequireToolViewOwnerFiles(repoRoot, @"UI\VisionTest\Wpf\Learn",
             "OpenVisionLearnBinarySimulationModel.cs",
+            "OpenVisionLearnMatchingSimulationModel.cs",
             "OpenVisionLearnTopics.cs",
             "OpenVisionLearnWindow.xaml",
             "OpenVisionLearnWindow.xaml.cs",
@@ -1512,6 +1513,9 @@ internal static class Program
         string learnBinarySimulationModel = Read(
             repoRoot,
             @"UI\VisionTest\Wpf\Learn\OpenVisionLearnBinarySimulationModel.cs");
+        string learnMatchingSimulationModel = Read(
+            repoRoot,
+            @"UI\VisionTest\Wpf\Learn\OpenVisionLearnMatchingSimulationModel.cs");
         string learnTopicsCatalog = Read(repoRoot, @"UI\VisionTest\Wpf\Learn\OpenVisionLearnTopics.cs");
         Dictionary<int, string> learnTopicIndexToEnum = BuildLearnTopicIndexToEnumMap(learnTopicsCatalog);
         string toolShell = Read(repoRoot, @"UI\VisionTest\Wpf\Tooling\SingleInput\VisionToolSingleInputPropertyToolShell.xaml.cs");
@@ -1540,6 +1544,13 @@ internal static class Program
         RequireNotContains(learnWindow, "private static int FloodFillBlob", "Learn view no longer owns connected-component flood fill.");
         RequireNotContains(learnWindow, "private static bool[] Erode", "Learn view no longer owns morphology erosion.");
         RequireNotContains(learnWindow, "private static bool[] FindContourPixels", "Learn view no longer owns contour extraction.");
+        RequireContains(learnWindow, "OpenVisionLearnMatchingSimulationModel.EvaluateTemplate", "Learn view delegates template score evaluation to the matching simulation model.");
+        RequireContains(learnWindow, "OpenVisionLearnMatchingSimulationModel.EvaluateFeatures", "Learn view delegates feature match evaluation to the matching simulation model.");
+        RequireContains(learnMatchingSimulationModel, "public static TemplateEvaluation EvaluateTemplate", "Learn matching simulation model owns template score evaluation.");
+        RequireContains(learnMatchingSimulationModel, "public static FeatureEvaluation EvaluateFeatures", "Learn matching simulation model owns feature match evaluation.");
+        RequireNotContains(learnWindow, "private double CalculateTemplateScore", "Learn view no longer owns template score calculation.");
+        RequireNotContains(learnWindow, "private readonly int[] matchingSearchValues", "Learn view no longer owns matching sample data.");
+        RequireNotContains(learnWindow, "private readonly double[] featureMatchScores", "Learn view no longer owns feature score data.");
         RequireContains(learnWindowXaml, "기초 용어", "OpenVision Learn labels the foundations button for learners.");
         RequireContains(learnWindow, "OpenFoundationDocsButton_Click", "OpenVision Learn handles the Foundation Docs button.");
         RequireContains(learnWindow, "LEARN_OPENCVSHARP_FOUNDATIONS.md", "OpenVision Learn Foundation Docs button opens the foundations guide.");

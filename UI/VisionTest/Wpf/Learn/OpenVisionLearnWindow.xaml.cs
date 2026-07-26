@@ -87,46 +87,6 @@ namespace OpenVisionLab
         };
         private readonly int[] lineDistanceLeftEdges = { 2, 2, 2, 2, 2 };
         private readonly int[] lineDistanceRightEdges = { 6, 6, 7, 6, 6 };
-        private readonly int[] matchingSearchValues =
-        {
-            0, 0, 0, 0, 0,
-            0, 1, 1, 0, 0,
-            0, 1, 0, 0, 1,
-            1, 1, 1, 0, 1,
-            1, 0, 0, 0, 0
-        };
-        private readonly int[] matchingTemplateValues =
-        {
-            1, 1,
-            1, 0
-        };
-        private readonly (int X, int Y)[] matchingCandidatePositions =
-        {
-            (0, 0),
-            (1, 1),
-            (3, 1),
-            (2, 2),
-            (3, 3)
-        };
-        private readonly (int X, int Y)[] featureReferencePoints =
-        {
-            (1, 1),
-            (3, 1),
-            (2, 2),
-            (1, 3),
-            (3, 3),
-            (0, 4)
-        };
-        private readonly (int X, int Y)[] featureScenePoints =
-        {
-            (1, 1),
-            (3, 1),
-            (2, 2),
-            (1, 3),
-            (3, 3),
-            (4, 4)
-        };
-        private readonly double[] featureMatchScores = { 0.92D, 0.88D, 0.81D, 0.74D, 0.67D, 0.42D };
         private readonly double[] metricsAcceptanceSamples = { 0.50D, 0.51D, 0.49D, 0.82D, 0.50D };
         private readonly string[] layerRecipeLayers = { "Main", "Pin_Binary", "Pin_Gap", "Pin_Review" };
         private readonly (string Input, string Tool, string Output)[] layerRecipeSteps =
@@ -1305,16 +1265,17 @@ namespace OpenVisionLab
             matchingScoreCells.Clear();
             matchingScoreTexts.Clear();
 
-            for (int i = 0; i < matchingSearchValues.Length; i++)
+            for (int i = 0; i < OpenVisionLearnMatchingSimulationModel.SearchValues.Count; i++)
             {
-                Border cell = CreateSmallValueCell(matchingSearchValues[i] > 0 ? "1" : "0", matchingSearchValues[i] > 0 ? 230 : 20);
+                int value = OpenVisionLearnMatchingSimulationModel.SearchValues[i];
+                Border cell = CreateSmallValueCell(value > 0 ? "1" : "0", value > 0 ? 230 : 20);
                 TextBlock text = (TextBlock)cell.Child;
                 matchingSearchGrid.Children.Add(cell);
                 matchingSearchCells.Add(cell);
                 matchingSearchTexts.Add(text);
             }
 
-            foreach (int value in matchingTemplateValues)
+            foreach (int value in OpenVisionLearnMatchingSimulationModel.TemplateValues)
             {
                 Border cell = CreateSmallValueCell(value > 0 ? "T" : "0", value > 0 ? 230 : 20);
                 TextBlock text = (TextBlock)cell.Child;
@@ -1327,7 +1288,7 @@ namespace OpenVisionLab
                 matchingTemplateGrid.Children.Add(cell);
             }
 
-            for (int i = 0; i < matchingCandidatePositions.Length; i++)
+            for (int i = 0; i < OpenVisionLearnMatchingSimulationModel.CandidatePositions.Count; i++)
             {
                 Border outputCell = CreateSmallValueCell(string.Empty, 0);
                 TextBlock outputText = (TextBlock)outputCell.Child;
@@ -1364,7 +1325,7 @@ namespace OpenVisionLab
                 featureSceneTexts.Add(sceneText);
             }
 
-            for (int i = 0; i < featureMatchScores.Length; i++)
+            for (int i = 0; i < OpenVisionLearnMatchingSimulationModel.FeatureScores.Count; i++)
             {
                 Border outputCell = CreateSmallValueCell(string.Empty, 0);
                 TextBlock outputText = (TextBlock)outputCell.Child;
@@ -2719,12 +2680,8 @@ namespace OpenVisionLab
         {
             bool isEdgeBasedMatching = topicList.SelectedIndex == 12;
             double threshold = matchingThresholdSlider.Value;
-            double[] scores = matchingCandidatePositions
-                .Select(position => CalculateTemplateScore(position.X, position.Y))
-                .ToArray();
-            double bestScore = scores.Max();
-            int bestIndex = Array.IndexOf(scores, bestScore);
-            bool pass = bestScore >= threshold;
+            OpenVisionLearnMatchingSimulationModel.TemplateEvaluation evaluation =
+                OpenVisionLearnMatchingSimulationModel.EvaluateTemplate(threshold);
 
             txtMatchingThreshold.Text = threshold.ToString("0.00", CultureInfo.InvariantCulture);
             txtMatchingConceptTitle.Text = isEdgeBasedMatching
@@ -2747,32 +2704,38 @@ namespace OpenVisionLab
             UpdateMatchingTemplateLabels(isEdgeBasedMatching);
 
             txtMatchingFormula.Text = (isEdgeBasedMatching ? "EdgeScoreMax=" : "BestScore=")
-                + bestScore.ToString("0.00", CultureInfo.InvariantCulture)
+                + evaluation.BestScore.ToString("0.00", CultureInfo.InvariantCulture)
                 + ", Threshold="
                 + threshold.ToString("0.00", CultureInfo.InvariantCulture)
                 + ", Result="
-                + (pass ? "OK" : "NG");
+                + (evaluation.Pass ? "OK" : "NG");
             txtMatchingMeaning.Text = isEdgeBasedMatching
-                ? pass
+                ? evaluation.Pass
                     ? "EdgeScoreMax가 기준 이상입니다. 실제 Run Review에서는 ResultCount와 overlay 위치가 대상 형상에 맞는지도 확인합니다."
                     : "Edge score가 부족합니다. Canny 기준, edge Template, ROI, ScoreThreshold 순서로 확인합니다."
-                : pass
+                : evaluation.Pass
                     ? "최고 점수가 기준 이상이면 Template 위치 후보로 볼 수 있습니다. 회전/스케일 변화가 크면 EdgeBasedMatching이나 FeatureMatching을 검토합니다."
                     : "최고 점수가 기준보다 낮으면 NG입니다. Template, ROI, 조명, ScoreThreshold를 순서대로 확인합니다.";
 
-            PaintMatchingAnimationFrame(scores, threshold, bestIndex, bestScore, pass);
+            PaintMatchingAnimationFrame(
+                evaluation.Scores,
+                threshold,
+                evaluation.BestIndex,
+                evaluation.BestScore,
+                evaluation.Pass);
         }
 
         private void PaintMatchingAnimationFrame()
         {
             double threshold = matchingThresholdSlider.Value;
-            double[] scores = matchingCandidatePositions
-                .Select(position => CalculateTemplateScore(position.X, position.Y))
-                .ToArray();
-            double bestScore = scores.Max();
-            int bestIndex = Array.IndexOf(scores, bestScore);
-            bool pass = bestScore >= threshold;
-            PaintMatchingAnimationFrame(scores, threshold, bestIndex, bestScore, pass);
+            OpenVisionLearnMatchingSimulationModel.TemplateEvaluation evaluation =
+                OpenVisionLearnMatchingSimulationModel.EvaluateTemplate(threshold);
+            PaintMatchingAnimationFrame(
+                evaluation.Scores,
+                threshold,
+                evaluation.BestIndex,
+                evaluation.BestScore,
+                evaluation.Pass);
         }
 
         private void PaintMatchingAnimationFrame(
@@ -2852,9 +2815,10 @@ namespace OpenVisionLab
             int index = 0;
             foreach (Border cell in matchingTemplateGrid.Children.OfType<Border>())
             {
-                if (cell.Child is TextBlock text && index < matchingTemplateValues.Length)
+                if (cell.Child is TextBlock text
+                    && index < OpenVisionLearnMatchingSimulationModel.TemplateValues.Count)
                 {
-                    text.Text = matchingTemplateValues[index] > 0
+                    text.Text = OpenVisionLearnMatchingSimulationModel.TemplateValues[index] > 0
                         ? isEdgeBasedMatching ? "E" : "T"
                         : "0";
                 }
@@ -2889,33 +2853,35 @@ namespace OpenVisionLab
 
         private void UpdateFeatureMatchingGuide()
         {
-            int required = Math.Max(1, (int)Math.Round(featureGoodMatchMinSlider.Value));
-            const double goodScoreThreshold = 0.65D;
-            bool[] goodMatches = featureMatchScores
-                .Select(score => score >= goodScoreThreshold)
-                .ToArray();
-            int goodCount = goodMatches.Count(item => item);
-            bool pass = goodCount >= required;
+            OpenVisionLearnMatchingSimulationModel.FeatureEvaluation evaluation =
+                OpenVisionLearnMatchingSimulationModel.EvaluateFeatures(featureGoodMatchMinSlider.Value);
 
-            txtFeatureGoodMatchMin.Text = required.ToString(CultureInfo.InvariantCulture);
+            txtFeatureGoodMatchMin.Text = evaluation.Required.ToString(CultureInfo.InvariantCulture);
             txtFeatureMatchingFormula.Text = "GoodMatches="
-                + goodCount.ToString(CultureInfo.InvariantCulture)
+                + evaluation.GoodCount.ToString(CultureInfo.InvariantCulture)
                 + ", Required="
-                + required.ToString(CultureInfo.InvariantCulture)
+                + evaluation.Required.ToString(CultureInfo.InvariantCulture)
                 + ", DescriptorScore>=0.65";
-            txtFeatureMatchingMeaning.Text = pass
+            txtFeatureMatchingMeaning.Text = evaluation.Pass
                 ? "Good match가 충분하면 대상 후보로 볼 수 있습니다. 실제 검사는 match 위치 일관성과 결과 overlay를 같이 확인합니다."
                 : "Good match 수가 부족하면 NG입니다. 특징점이 적거나 조명/초점/ROI가 흔들린 상태인지 먼저 확인합니다.";
 
-            PaintFeatureMatchingAnimationFrame(goodMatches, goodCount, required, pass);
+            PaintFeatureMatchingAnimationFrame(
+                evaluation.GoodMatches,
+                evaluation.GoodCount,
+                evaluation.Required,
+                evaluation.Pass);
         }
 
         private void PaintFeatureMatchingAnimationFrame()
         {
-            int required = Math.Max(1, (int)Math.Round(featureGoodMatchMinSlider.Value));
-            bool[] goodMatches = featureMatchScores.Select(score => score >= 0.65D).ToArray();
-            int goodCount = goodMatches.Count(item => item);
-            PaintFeatureMatchingAnimationFrame(goodMatches, goodCount, required, goodCount >= required);
+            OpenVisionLearnMatchingSimulationModel.FeatureEvaluation evaluation =
+                OpenVisionLearnMatchingSimulationModel.EvaluateFeatures(featureGoodMatchMinSlider.Value);
+            PaintFeatureMatchingAnimationFrame(
+                evaluation.GoodMatches,
+                evaluation.GoodCount,
+                evaluation.Required,
+                evaluation.Pass);
         }
 
         private void PaintFeatureMatchingAnimationFrame(
@@ -2925,14 +2891,27 @@ namespace OpenVisionLab
             bool pass)
         {
             int visibleStep = Math.Max(0, Math.Min(featureMatchingAnimationStep, FeatureMatchingAnimationStepCount));
-            bool[] detectedPoints = featureMatchScores.Select(_ => true).ToArray();
-            bool[] ransacInliers = { true, true, true, true, false, false };
+            bool[] detectedPoints = OpenVisionLearnMatchingSimulationModel.FeatureScores
+                .Select(_ => true)
+                .ToArray();
+            IReadOnlyList<bool> ransacInliers =
+                OpenVisionLearnMatchingSimulationModel.FeatureRansacInliers;
 
             if (visibleStep == 0)
             {
-                PaintFeaturePointGrid(featureReferenceCells, featureReferenceTexts, featureReferencePoints, Array.Empty<bool>(), "K");
-                PaintFeaturePointGrid(featureSceneCells, featureSceneTexts, featureScenePoints, Array.Empty<bool>(), "M");
-                for (int i = 0; i < featureMatchScores.Length; i++)
+                PaintFeaturePointGrid(
+                    featureReferenceCells,
+                    featureReferenceTexts,
+                    OpenVisionLearnMatchingSimulationModel.FeatureReferencePoints,
+                    Array.Empty<bool>(),
+                    "K");
+                PaintFeaturePointGrid(
+                    featureSceneCells,
+                    featureSceneTexts,
+                    OpenVisionLearnMatchingSimulationModel.FeatureScenePoints,
+                    Array.Empty<bool>(),
+                    "M");
+                for (int i = 0; i < OpenVisionLearnMatchingSimulationModel.FeatureScores.Count; i++)
                 {
                     PaintFeatureScoreCell(i, animationNeutralBrush, Brushes.White, "-");
                 }
@@ -2944,17 +2923,17 @@ namespace OpenVisionLab
             PaintFeaturePointGrid(
                 featureReferenceCells,
                 featureReferenceTexts,
-                featureReferencePoints,
+                OpenVisionLearnMatchingSimulationModel.FeatureReferencePoints,
                 visibleStep == 1 ? detectedPoints : visibleStep == 2 ? goodMatches : ransacInliers,
                 "K");
             PaintFeaturePointGrid(
                 featureSceneCells,
                 featureSceneTexts,
-                featureScenePoints,
+                OpenVisionLearnMatchingSimulationModel.FeatureScenePoints,
                 visibleStep == 1 ? detectedPoints : visibleStep == 2 ? goodMatches : ransacInliers,
                 "M");
 
-            for (int i = 0; i < featureMatchScores.Length; i++)
+            for (int i = 0; i < OpenVisionLearnMatchingSimulationModel.FeatureScores.Count; i++)
             {
                 Brush background = visibleStep == 1
                     ? animationCandidateBrush
@@ -2967,7 +2946,12 @@ namespace OpenVisionLab
                             : goodMatches[i]
                                 ? animationWarningBrush
                                 : animationNeutralBrush;
-                PaintFeatureScoreCell(i, background, Brushes.White, featureMatchScores[i].ToString("0.00", CultureInfo.InvariantCulture));
+                PaintFeatureScoreCell(
+                    i,
+                    background,
+                    Brushes.White,
+                    OpenVisionLearnMatchingSimulationModel.FeatureScores[i]
+                        .ToString("0.00", CultureInfo.InvariantCulture));
             }
 
             txtFeatureMatchingAnimationStatus.Text = visibleStep switch
@@ -3434,34 +3418,17 @@ namespace OpenVisionLab
             featureMatchScoreTexts[index].Text = text;
         }
 
-        private double CalculateTemplateScore(int startX, int startY)
-        {
-            int matches = 0;
-            for (int y = 0; y < 2; y++)
-            {
-                for (int x = 0; x < 2; x++)
-                {
-                    int search = matchingSearchValues[(startY + y) * 5 + startX + x];
-                    int template = matchingTemplateValues[y * 2 + x];
-                    if (search == template)
-                    {
-                        matches++;
-                    }
-                }
-            }
-
-            return matches / 4D;
-        }
-
         private void PaintMatchingSearchGrid(int bestIndex)
         {
-            (int X, int Y) best = bestIndex >= 0 ? matchingCandidatePositions[bestIndex] : (-1, -1);
-            for (int i = 0; i < matchingSearchValues.Length; i++)
+            (int X, int Y) best = bestIndex >= 0
+                ? OpenVisionLearnMatchingSimulationModel.CandidatePositions[bestIndex]
+                : (-1, -1);
+            for (int i = 0; i < OpenVisionLearnMatchingSimulationModel.SearchValues.Count; i++)
             {
                 int x = i % 5;
                 int y = i / 5;
                 bool inBest = bestIndex >= 0 && x >= best.X && x < best.X + 2 && y >= best.Y && y < best.Y + 2;
-                int value = matchingSearchValues[i];
+                int value = OpenVisionLearnMatchingSimulationModel.SearchValues[i];
 
                 matchingSearchCells[i].BorderBrush = new SolidColorBrush(Color.FromRgb(209, 213, 219));
                 matchingSearchCells[i].BorderThickness = new Thickness(1);
@@ -3486,7 +3453,7 @@ namespace OpenVisionLab
         {
             PaintMatchingSearchGrid(-1);
             Brush candidateBrush = animationCandidateBrush;
-            foreach ((int X, int Y) candidate in matchingCandidatePositions)
+            foreach ((int X, int Y) candidate in OpenVisionLearnMatchingSimulationModel.CandidatePositions)
             {
                 int index = candidate.Y * 5 + candidate.X;
                 if (index < 0 || index >= matchingSearchCells.Count)

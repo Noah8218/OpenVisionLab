@@ -2095,6 +2095,31 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
   timers into partial files for line-count reduction. Recommended model:
   gpt-5.6-terra | Reasoning effort: medium.
 
+### Maintenance: Learn Matching Simulation Model Boundary (2026-07-26)
+
+- The Matching and Feature Matching lessons still mixed fixed scenario data,
+  template/descriptor score evaluation, best-result selection, Good Match
+  classification, and pass/fail decisions into the WPF view.
+- `OpenVisionLearnMatchingSimulationModel` now owns both lesson scenarios and
+  returns typed template/feature evaluation results without WPF dependencies.
+  The view passes slider values and retains controls, timers, localized text,
+  and rendering.
+- The view no longer contains the moved sample fields or
+  `CalculateTemplateScore` and fell from 4,834 to 4,801 lines.
+- Three stale pre-existing UI smoke assertions were aligned with the current
+  Korean animation status and actual initial Feature Matching `GoodMatches`
+  detail before the production move.
+- Before/after current-source Matching and Feature Matching UI smokes, Debug
+  build, readiness, visual inspection, and patch hygiene passed. Both
+  before/after PNG pairs were byte-identical.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_LEARN_MATCHING_SIMULATION_MODEL_REFACTOR_PROOF_20260726.md`
+  and `artifacts\refactor_learn_matching_simulation_model_20260726`.
+- Next structural audit: assess whether Learn Line/LineDistance calculations
+  form one cohesive non-WPF simulation owner. Do not split Learn event
+  handlers, timers, or rendering into partial files for line-count reduction.
+  Recommended model: gpt-5.6-terra | Reasoning effort: medium.
+
 ## Handoff Rules For The Next Chat
 
 - Do not claim a feature is complete because the historical handoff says so. Re-run the smallest meaningful current command when work touches it.

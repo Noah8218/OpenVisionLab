@@ -16158,7 +16158,7 @@ internal static class Program
             }
 
             if (window.MatchingAnimationStepForTest != 3
-                || !window.MatchingAnimationStatusTextForTest.Contains("Threshold gate", StringComparison.OrdinalIgnoreCase)
+                || !window.MatchingAnimationStatusTextForTest.Contains("Threshold 판정", StringComparison.OrdinalIgnoreCase)
                 || !window.MatchingAnimationStatusTextForTest.Contains("OK", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException("Matching guide did not expose the animated threshold-gate step.");
@@ -16264,8 +16264,8 @@ internal static class Program
             }
 
             if (window.FeatureMatchingAnimationStepForTest != 3
-                || !window.FeatureMatchingAnimationStatusTextForTest.Contains("GoodMatches gate", StringComparison.OrdinalIgnoreCase)
-                || !window.FeatureMatchingAnimationStatusTextForTest.Contains("RANSAC/overlay", StringComparison.OrdinalIgnoreCase)
+                || !window.FeatureMatchingAnimationStatusTextForTest.Contains("GoodMatches 판정", StringComparison.OrdinalIgnoreCase)
+                || !window.FeatureMatchingAnimationStatusTextForTest.Contains("RANSAC과 overlay", StringComparison.OrdinalIgnoreCase)
                 || !window.FeatureMatchingAnimationStatusTextForTest.Contains("OK", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException("Feature Matching guide did not expose the animated geometric-review step.");
@@ -16278,11 +16278,16 @@ internal static class Program
 
             if (!window.FeatureMatchingToolLocationTitleForTest.Contains("Feature template path", StringComparison.Ordinal)
                 || !window.FeatureMatchingToolLocationTitleForTest.Contains("Ratio threshold / RANSAC tolerance", StringComparison.Ordinal)
-                || !window.FeatureMatchingToolLocationDetailForTest.Contains("작을수록 엄격", StringComparison.Ordinal)
+                || !window.FeatureMatchingToolLocationDetailForTest.Contains("특징점이 충분한", StringComparison.Ordinal)
                 || !window.FeatureMatchingToolLocationDetailForTest.Contains("ScoreMax", StringComparison.Ordinal)
-                || !window.FeatureMatchingToolLocationDetailForTest.Contains("ResultCount", StringComparison.Ordinal))
+                || !window.FeatureMatchingToolLocationDetailForTest.Contains("GoodMatches", StringComparison.Ordinal))
             {
-                throw new InvalidOperationException("FeatureMatching Learn did not expose the initial Tool View parameter and result guide.");
+                throw new InvalidOperationException(
+                    "FeatureMatching Learn did not expose the initial Tool View parameter and result guide. Title='"
+                    + window.FeatureMatchingToolLocationTitleForTest
+                    + "', Detail='"
+                    + window.FeatureMatchingToolLocationDetailForTest
+                    + "'.");
             }
 
             window.SetOpenRelatedToolAction(_ => { });
@@ -16448,7 +16453,7 @@ internal static class Program
 
             if (!window.MatchingFormulaTextForTest.Contains("EdgeScoreMax", StringComparison.OrdinalIgnoreCase)
                 || window.MatchingAnimationStepForTest != 3
-                || !window.MatchingAnimationStatusTextForTest.Contains("Edge score gate", StringComparison.OrdinalIgnoreCase)
+                || !window.MatchingAnimationStatusTextForTest.Contains("Edge score 판정", StringComparison.OrdinalIgnoreCase)
                 || !window.MatchingAnimationStatusTextForTest.Contains("OK", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException("EdgeBasedMatching topic did not expose the animated edge-score gate.");

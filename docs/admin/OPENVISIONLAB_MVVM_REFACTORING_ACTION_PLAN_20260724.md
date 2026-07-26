@@ -550,3 +550,26 @@
   응집된 비-WPF simulation owner로 옮길 가치가 있는지 감사하는
   것입니다. 이벤트/타이머 partial 분리는 하지 않습니다. Recommended
   model: gpt-5.6-terra | Reasoning effort: medium.
+
+### Learn Matching Simulation Model Update (2026-07-26)
+
+- Matching/FeatureMatching의 고정 샘플, 후보 위치, 점수 계산, 최고 후보
+  선택, descriptor Good Match 분류, required-count 판정이 WPF View에
+  함께 있음을 확인했습니다.
+- 새 비-WPF `OpenVisionLearnMatchingSimulationModel`이 두 lesson의
+  scenario data와 typed evaluation result를 소유합니다. View는 slider
+  값 전달, timer/control state, 설명 문구, painting만 유지합니다.
+- production 이동 전에 오래된 영어 animation 문구와 실제 초기
+  FeatureMatching panel에 없는 `ResultCount`를 요구하던 UI smoke
+  assertion을 현재 한국어/`GoodMatches` 계약으로 정정했습니다.
+- 전후 Matching/FeatureMatching current-source UI는 모두 통과했고 두
+  PNG가 각각 byte-identical이었습니다. Debug build(0 warning/0 error),
+  readiness, visual inspection, `git diff --check`도 통과했습니다.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_LEARN_MATCHING_SIMULATION_MODEL_REFACTOR_PROOF_20260726.md`
+  및
+  `artifacts/refactor_learn_matching_simulation_model_20260726`.
+- 다음 구조 감사 후보는 Learn의 Line/LineDistance 계산이 하나의 응집된
+  비-WPF simulation owner인지 확인하는 것입니다. 숫자 축소용
+  event/timer/rendering partial은 만들지 않습니다. Recommended model:
+  gpt-5.6-terra | Reasoning effort: medium.
