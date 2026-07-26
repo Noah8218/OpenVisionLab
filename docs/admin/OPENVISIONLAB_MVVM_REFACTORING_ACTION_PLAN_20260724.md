@@ -665,3 +665,25 @@
   빌드 회귀가 새 owner 필요성을 보일 때만 재감사합니다.
   Prerequisite: concrete evidence | Recommended model: none until evidence
   exists | Reasoning effort: none until evidence exists.
+### Pipeline Review Fixture Presenter Update (2026-07-26)
+
+- `OpenVisionPipelineReviewDocument`의 남은 큰 영역을 줄 수가 아니라 실제
+  소유 책임으로 재감사했습니다. Fixture chain 탐색, 기준/현재 pose 해석,
+  상대 ROI 변환, template/ROI preview와 표시 문구가 하나의 Fixture
+  Designer presentation 경계를 형성했습니다.
+- 새 `OpenVisionPipelineReviewFixturePresenter`와 disposable presentation
+  state가 그 계산과 bitmap 수명을 소유합니다. Document는 선택 상태 반영,
+  reference 저장/재검증과 명령 오케스트레이션을 유지합니다.
+- Document는 1,362줄에서 942줄로 줄었고 새 partial, interface, factory,
+  알고리즘 또는 자동 Preview/Run 경로를 추가하지 않았습니다.
+- readiness에 Document 위임, Presenter owner, 계산 위치와 금지 의존성
+  검사를 추가했습니다. Debug build(0 warning/0 error), 두 current-source
+  Fixture UI smoke, readiness, 구조 검색과 `git diff --check`가
+  통과했습니다.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_PIPELINE_FIXTURE_PRESENTER_REFACTOR_PROOF_20260726.md`
+  및 `artifacts/refactor_pipeline_fixture_presenter_20260726`.
+- 다음 구조 우선순위는 다시 비어 있습니다. 구체적인 유지보수 변경이나
+  현재 빌드 회귀가 독립 owner 필요성을 보일 때만 재감사합니다.
+  Prerequisite: concrete evidence | Recommended model: none until evidence
+  exists | Reasoning effort: none until evidence exists.

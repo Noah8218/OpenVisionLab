@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -299,6 +299,17 @@ internal static class Program
         RequireNotContains(pipelineReviewDocument, "reviewLayerImages", "Pipeline Review document does not own review output-image caches.");
         RequireNotContains(pipelineReviewDocument, "stepResultSummaries", "Pipeline Review document does not own Step result caches.");
         RequireNotContains(pipelineReviewDocument, "CreateReviewContextFromDisplayLayers", "Pipeline Review document does not build the execution context directly.");
+        RequireContains(pipelineReviewDocument, "OpenVisionPipelineReviewFixturePresenter.Create", "Pipeline Review document delegates Fixture Designer presentation.");
+        RequireNotContains(pipelineReviewDocument, "private static bool TryResolveFixtureChain", "Pipeline Review document does not resolve Fixture chains.");
+        RequireNotContains(pipelineReviewDocument, "private static PointF[] TransformReferenceRoi", "Pipeline Review document does not transform Fixture ROIs.");
+
+        string pipelineReviewFixturePresenter = Read(repoRoot, @"UI\Menu\Wpf\PipelineReview\Presenters\OpenVisionPipelineReviewFixturePresenter.cs");
+        RequireContains(pipelineReviewFixturePresenter, "internal static class OpenVisionPipelineReviewFixturePresenter", "Fixture Designer presentation has an explicit owner.");
+        RequireContains(pipelineReviewFixturePresenter, "TryResolveFixtureChain", "Fixture presenter owns Fixture chain resolution.");
+        RequireContains(pipelineReviewFixturePresenter, "TransformReferenceRoi", "Fixture presenter owns reference ROI transformation.");
+        RequireContains(pipelineReviewFixturePresenter, "DrawRoiOverlay", "Fixture presenter owns Fixture ROI preview composition.");
+        RequireNotContains(pipelineReviewFixturePresenter, "VisionPipelineExecutionService.RunAsync", "Fixture presenter does not execute the pipeline.");
+        RequireNotContains(pipelineReviewFixturePresenter, "VisionPipelineStorage.", "Fixture presenter does not load or save pipeline storage.");
 
         string pipelineReviewExecutionController = Read(repoRoot, @"UI\Menu\Wpf\PipelineReview\Execution\OpenVisionPipelineReviewExecutionController.cs");
         RequireContains(pipelineReviewExecutionController, "internal sealed class OpenVisionPipelineReviewExecutionController", "Pipeline Review execution has an explicit controller owner.");

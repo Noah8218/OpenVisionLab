@@ -29,7 +29,6 @@ namespace OpenVisionLab
         private PipelineFlowPreviewMode selectedMode = PipelineFlowPreviewMode.Overlay;
         private string reviewExecutionState = T("PipelineReview.Execution.NotRun", "Not run");
         private int fixtureProducerIndex = -1;
-        private int fixtureNormalizeIndex = -1;
         private int fixtureMeasurementIndex = -1;
         private bool disposed;
 
@@ -511,7 +510,7 @@ namespace OpenVisionLab
                 return;
             }
 
-            if (TryGetReviewedFixturePose(step, summary, out double x, out double y, out double angle, out double scale)
+            if (OpenVisionPipelineReviewFixturePresenter.TryGetReviewedFixturePose(step, summary, out double x, out double y, out double angle, out double scale)
                 && TryGetReferenceImageSize(step, out int referenceWidth, out int referenceHeight))
             {
                 view.SetFixtureTeachState(
@@ -520,10 +519,10 @@ namespace OpenVisionLab
                     TF(
                         "PipelineReview.FixtureTeach.ReadyWithDimensionsFormat",
                         "X {0} / Y {1} / {2} deg / scale {3} / reference {4} x {5}. Confirm the reference image.",
-                        FormatPoseValue(x),
-                        FormatPoseValue(y),
-                        FormatPoseValue(angle),
-                        FormatPoseValue(scale),
+                        OpenVisionPipelineReviewFixturePresenter.FormatPoseValue(x),
+                        OpenVisionPipelineReviewFixturePresenter.FormatPoseValue(y),
+                        OpenVisionPipelineReviewFixturePresenter.FormatPoseValue(angle),
+                        OpenVisionPipelineReviewFixturePresenter.FormatPoseValue(scale),
                         referenceWidth,
                         referenceHeight));
                 return;
@@ -539,449 +538,35 @@ namespace OpenVisionLab
 
         private void UpdateFixtureDesignerState()
         {
-            fixtureProducerIndex = -1;
-            fixtureNormalizeIndex = -1;
-            fixtureMeasurementIndex = -1;
-
-            if (!TryResolveFixtureChain(
-                    out fixtureProducerIndex,
-                    out fixtureNormalizeIndex,
-                    out fixtureMeasurementIndex,
-                    out string frameName))
-            {
-                view.SetFixtureDesignerState(
-                    false,
-                    string.Empty,
-                    string.Empty,
-                    string.Empty,
-                    string.Empty,
-                    string.Empty,
-                    string.Empty,
-                    null,
-                    string.Empty,
-                    null,
-                    null,
-                    false,
-                    false,
-                    false);
-                return;
-            }
-
-            VisionPipelineStep producer = pipeline.Steps[fixtureProducerIndex];
-            VisionPipelineStep normalize = pipeline.Steps[fixtureNormalizeIndex];
-            VisionPipelineStep measurement = pipeline.Steps[fixtureMeasurementIndex];
-            executionController.TryGetSummary(producer, out VisionPipelineStepResultSummary producerSummary);
-            executionController.TryGetSummary(normalize, out VisionPipelineStepResultSummary normalizeSummary);
-
-            bool hasPose = TryGetReviewedFixturePose(
-                producer,
-                producerSummary,
-                out double currentX,
-                out double currentY,
-                out double currentAngle,
-                out double currentScale);
-            double referenceX = 0d;
-            double referenceY = 0d;
-            double referenceAngle = 0d;
-            double referenceScale = 0d;
-            bool hasReference = TryGetParameterDouble(producer, VisionPipelineFixtureFrameService.ReferenceXParameter, out referenceX)
-                && TryGetParameterDouble(producer, VisionPipelineFixtureFrameService.ReferenceYParameter, out referenceY)
-                && TryGetParameterDouble(producer, VisionPipelineFixtureFrameService.ReferenceAngleParameter, out referenceAngle)
-                && TryGetParameterDouble(producer, VisionPipelineFixtureFrameService.ReferenceScaleParameter, out referenceScale)
-                && referenceScale > 0d;
-            int referenceWidth = GetParameterInt(producer, VisionPipelineFixtureFrameService.ReferenceImageWidthParameter);
-            int referenceHeight = GetParameterInt(producer, VisionPipelineFixtureFrameService.ReferenceImageHeightParameter);
-            bool hasRoi = TryGetStepRoi(measurement, out System.Drawing.RectangleF referenceRoi);
-
-            string templateValue = GetTemplateValue(producer);
-
-            string searchRoi = GetParameterBool(producer, "USE_ROI")
-                ? GetParameter(producer, "CvROI")
-                : T("PipelineReview.FixtureDesigner.FullImage", "full image");
-            string relationshipText = TF(
-                "PipelineReview.FixtureDesigner.RelationshipFormat",
-                "{0}: {1:00} {2} -> {3:00} {4} -> {5:00} {6} / ROI {7}",
-                frameName,
-                fixtureProducerIndex + 1,
-                SafeText(producer.ToolType, "Matching"),
-                fixtureNormalizeIndex + 1,
-                "NormalizeImage",
-                fixtureMeasurementIndex + 1,
-                SafeText(measurement.ToolType, "Tool"),
-                hasRoi ? FormatRoi(referenceRoi) : "-");
-            string templateText = TF(
-                "PipelineReview.FixtureDesigner.TemplateFormat",
-                "Template: {0} / search ROI: {1}",
-                string.IsNullOrWhiteSpace(templateValue) ? "-" : Path.GetFileName(templateValue),
-                string.IsNullOrWhiteSpace(searchRoi) ? "-" : searchRoi);
-            string referenceText = hasReference
-                ? TF(
-                    "PipelineReview.FixtureDesigner.ReferenceCompactFormat",
-                    "Ref ({0},{1}) / {2} deg / {3}x / {4}x{5}",
-                    FormatPoseValue(referenceX),
-                    FormatPoseValue(referenceY),
-                    FormatPoseValue(referenceAngle),
-                    FormatPoseValue(referenceScale),
-                    referenceWidth,
-                    referenceHeight)
-                : T("PipelineReview.FixtureDesigner.ReferenceMissing", "Reference pose or image size is incomplete.");
-            string currentText = hasPose
-                ? TF(
-                    "PipelineReview.FixtureDesigner.CurrentCompactFormat",
-                    "Now ({0},{1}) / {2} deg / {3}x",
-                    FormatPoseValue(currentX),
-                    FormatPoseValue(currentY),
-                    FormatPoseValue(currentAngle),
-                    FormatPoseValue(currentScale))
-                : T("PipelineReview.FixtureDesigner.CurrentWaiting", "Current pose: Run Review required");
-            string qualityText = FormatFixtureQuality(producerSummary, normalizeSummary);
-
-            Bitmap templatePreview = TryLoadTemplatePreview(templateValue);
-            Bitmap sourcePreview = null;
-            Bitmap normalizedPreview = null;
-            string sourceText = SafeText(producer.InputLayer, "-");
-            string normalizedText = SafeText(normalize.OutputLayer, "-");
-            try
-            {
-                Bitmap source = ResolveLayerPreviewImage(producer.InputLayer);
-                Bitmap normalized = normalizeSummary?.Success == true
-                    ? ResolveLayerPreviewImage(normalize.OutputLayer)
-                    : null;
-                if (source != null && hasPose && hasReference && hasRoi)
-                {
-                    System.Drawing.PointF[] sourcePolygon = TransformReferenceRoi(
-                        referenceRoi,
-                        referenceX,
-                        referenceY,
-                        currentX,
-                        currentY,
-                        VisionPipelineFixtureFrameService.NormalizeAngle(currentAngle - referenceAngle),
-                        currentScale / referenceScale);
-                    sourcePreview = DrawRoiOverlay(source, sourcePolygon, "Relative ROI on source", System.Drawing.Color.Magenta);
-                    sourceText = TF(
-                        "PipelineReview.FixtureDesigner.SourceLayerFormat",
-                        "{0} / transformed from ROI {1}",
-                        SafeText(producer.InputLayer, "-"),
-                        FormatRoi(referenceRoi));
-                }
-                else if (source != null)
-                {
-                    sourcePreview = new Bitmap(source);
-                    sourceText = TF(
-                        "PipelineReview.FixtureDesigner.SourceWaitingFormat",
-                        "{0} / Run Review for transformed ROI",
-                        SafeText(producer.InputLayer, "-"));
-                }
-
-                if (normalized != null && hasRoi)
-                {
-                    normalizedPreview = DrawRoiOverlay(
-                        normalized,
-                        RectanglePoints(referenceRoi),
-                        "Reference ROI",
-                        System.Drawing.Color.LimeGreen);
-                    normalizedText = TF(
-                        "PipelineReview.FixtureDesigner.NormalizedLayerFormat",
-                        "{0} / ROI {1}",
-                        SafeText(normalize.OutputLayer, "-"),
-                        FormatRoi(referenceRoi));
-                }
-
-                view.SetFixtureDesignerState(
-                    true,
-                    relationshipText,
-                    templateText,
-                    referenceText,
-                    currentText,
-                    qualityText,
-                    sourceText,
-                    sourcePreview,
-                    normalizedText,
-                    normalizedPreview,
-                    templatePreview,
-                    hasPose && referenceWidth > 0 && referenceHeight > 0,
-                    true,
-                    true);
-            }
-            finally
-            {
-                sourcePreview?.Dispose();
-                normalizedPreview?.Dispose();
-                templatePreview?.Dispose();
-            }
-        }
-
-        private bool TryResolveFixtureChain(
-            out int producerIndex,
-            out int normalizeIndex,
-            out int measurementIndex,
-            out string frameName)
-        {
-            producerIndex = -1;
-            normalizeIndex = -1;
-            measurementIndex = -1;
-            frameName = string.Empty;
-            IReadOnlyList<VisionPipelineStep> steps = pipeline?.Steps;
-            if (steps == null)
-            {
-                return false;
-            }
-
-            for (int index = 0; index < steps.Count; index++)
-            {
-                VisionPipelineStep producer = steps[index];
-                if (producer?.Enabled != true || !VisionPipelineFixtureFrameService.IsProducer(producer))
-                {
-                    continue;
-                }
-
-                string candidateFrame = GetParameter(producer, VisionPipelineFixtureFrameService.FrameNameParameter);
-                int candidateNormalize = Enumerable.Range(index + 1, steps.Count - index - 1)
-                    .FirstOrDefault(candidate =>
-                        steps[candidate]?.Enabled == true
-                        && VisionPipelineFixtureFrameService.IsNormalizeImageConsumer(steps[candidate])
-                        && string.Equals(
-                            GetParameter(steps[candidate], VisionPipelineFixtureFrameService.FrameNameParameter),
-                            candidateFrame,
-                            StringComparison.OrdinalIgnoreCase));
-                if (candidateNormalize <= index)
-                {
-                    continue;
-                }
-
-                HashSet<string> reachableLayers = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    SafeText(steps[candidateNormalize].OutputLayer, string.Empty)
-                };
-                for (int candidate = candidateNormalize + 1; candidate < steps.Count; candidate++)
-                {
-                    VisionPipelineStep downstream = steps[candidate];
-                    if (downstream?.Enabled != true || !reachableLayers.Contains(SafeText(downstream.InputLayer, string.Empty)))
+            using OpenVisionPipelineReviewFixtureState state =
+                OpenVisionPipelineReviewFixturePresenter.Create(
+                    pipeline,
+                    step =>
                     {
-                        continue;
-                    }
+                        executionController.TryGetSummary(
+                            step,
+                            out VisionPipelineStepResultSummary summary);
+                        return summary;
+                    },
+                    ResolveLayerPreviewImage);
 
-                    if (GetParameterBool(downstream, "USE_ROI") && TryGetStepRoi(downstream, out _))
-                    {
-                        producerIndex = index;
-                        normalizeIndex = candidateNormalize;
-                        measurementIndex = candidate;
-                        frameName = string.IsNullOrWhiteSpace(candidateFrame) ? "Fixture" : candidateFrame;
-                        return true;
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(downstream.OutputLayer))
-                    {
-                        reachableLayers.Add(downstream.OutputLayer.Trim());
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        private string FormatFixtureQuality(
-            VisionPipelineStepResultSummary producerSummary,
-            VisionPipelineStepResultSummary normalizeSummary)
-        {
-            VisionPipelineStepResultSummary scoreSummary = producerSummary;
-            if (!TryGetMetric(scoreSummary, VisionPipelineKnownMetrics.ScoreMargin, out _))
-            {
-                VisionPipelineStep producer = pipeline?.Steps?.ElementAtOrDefault(fixtureProducerIndex);
-                string producerTemplate = GetTemplateValue(producer);
-                for (int index = fixtureProducerIndex - 1; index >= 0; index--)
-                {
-                    VisionPipelineStep candidate = pipeline.Steps[index];
-                    string toolType = VisionPipelineNormalizer.NormalizeToolType(candidate?.ToolType);
-                    if ((toolType != "matching" && toolType != "templatematching")
-                        || !string.Equals(candidate.InputLayer, producer?.InputLayer, StringComparison.OrdinalIgnoreCase)
-                        || !string.Equals(GetTemplateValue(candidate), producerTemplate, StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-
-                    executionController.TryGetSummary(candidate, out VisionPipelineStepResultSummary candidateSummary);
-                    if (TryGetMetric(candidateSummary, VisionPipelineKnownMetrics.ScoreMargin, out _))
-                    {
-                        scoreSummary = candidateSummary;
-                        break;
-                    }
-                }
-            }
-
-            string score = TryGetMetric(producerSummary, VisionPipelineKnownMetrics.ScoreMax, out double scoreValue)
-                ? FormatPoseValue(scoreValue)
-                : "-";
-            string margin = TryGetMetric(scoreSummary, VisionPipelineKnownMetrics.ScoreMargin, out double marginValue)
-                ? FormatPoseValue(marginValue)
-                : "-";
-            string valid = TryGetMetric(normalizeSummary, VisionPipelineKnownMetrics.FixtureValidPixelRatio, out double validValue)
-                ? validValue.ToString("P1", CultureInfo.CurrentCulture)
-                : "-";
-            return TF(
-                "PipelineReview.FixtureDesigner.QualityCompactFormat",
-                "Score {0} / margin {1} / valid {2}",
-                score,
-                margin,
-                valid);
-        }
-
-        private static bool TryGetMetric(VisionPipelineStepResultSummary summary, string name, out double value)
-        {
-            value = 0d;
-            return summary?.Metrics != null
-                && summary.Metrics.TryGetValue(name, out value)
-                && IsFinite(value);
-        }
-
-        private static Bitmap TryLoadTemplatePreview(string templateValue)
-        {
-            if (string.IsNullOrWhiteSpace(templateValue))
-            {
-                return null;
-            }
-
-            try
-            {
-                string path = VisionPipelineAppToolFactory.ResolveTemplatePath(templateValue);
-                return File.Exists(path) ? new Bitmap(path) : null;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        private static Bitmap DrawRoiOverlay(
-            Bitmap source,
-            System.Drawing.PointF[] points,
-            string label,
-            System.Drawing.Color color)
-        {
-            if (source == null || points == null || points.Length < 4)
-            {
-                return null;
-            }
-
-            Bitmap result = new Bitmap(source);
-            using System.Drawing.Graphics graphics = System.Drawing.Graphics.FromImage(result);
-            graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            using System.Drawing.Pen shadow = new System.Drawing.Pen(System.Drawing.Color.Black, 6f);
-            using System.Drawing.Pen pen = new System.Drawing.Pen(color, 3f);
-            graphics.DrawPolygon(shadow, points);
-            graphics.DrawPolygon(pen, points);
-            using System.Drawing.Font font = new System.Drawing.Font("Segoe UI", 11f, System.Drawing.FontStyle.Bold);
-            System.Drawing.SizeF size = graphics.MeasureString(label, font);
-            float labelX = Math.Max(0f, Math.Min(points.Min(point => point.X), result.Width - size.Width - 8f));
-            float labelY = Math.Max(0f, Math.Min(points.Min(point => point.Y) - size.Height - 4f, result.Height - size.Height - 4f));
-            using System.Drawing.SolidBrush background = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(210, 16, 32, 39));
-            using System.Drawing.SolidBrush foreground = new System.Drawing.SolidBrush(System.Drawing.Color.White);
-            graphics.FillRectangle(background, labelX, labelY, size.Width + 6f, size.Height + 2f);
-            graphics.DrawString(label, font, foreground, labelX + 3f, labelY + 1f);
-            return result;
-        }
-
-        private static System.Drawing.PointF[] RectanglePoints(System.Drawing.RectangleF roi)
-        {
-            return new[]
-            {
-                new System.Drawing.PointF(roi.Left, roi.Top),
-                new System.Drawing.PointF(roi.Right, roi.Top),
-                new System.Drawing.PointF(roi.Right, roi.Bottom),
-                new System.Drawing.PointF(roi.Left, roi.Bottom)
-            };
-        }
-
-        private static System.Drawing.PointF[] TransformReferenceRoi(
-            System.Drawing.RectangleF roi,
-            double referenceX,
-            double referenceY,
-            double currentX,
-            double currentY,
-            double angleDelta,
-            double scaleRatio)
-        {
-            double radians = angleDelta * Math.PI / 180d;
-            double cosine = Math.Cos(radians);
-            double sine = Math.Sin(radians);
-            return RectanglePoints(roi)
-                .Select(point =>
-                {
-                    double x = point.X - referenceX;
-                    double y = point.Y - referenceY;
-                    return new System.Drawing.PointF(
-                        (float)(currentX + scaleRatio * ((cosine * x) + (sine * y))),
-                        (float)(currentY + scaleRatio * ((-sine * x) + (cosine * y))));
-                })
-                .ToArray();
-        }
-
-        private static bool TryGetStepRoi(VisionPipelineStep step, out System.Drawing.RectangleF roi)
-        {
-            roi = default;
-            string[] parts = GetParameter(step, "CvROI").Split(',');
-            if (parts.Length != 4
-                || !float.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float x)
-                || !float.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float y)
-                || !float.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float width)
-                || !float.TryParse(parts[3], NumberStyles.Float, CultureInfo.InvariantCulture, out float height)
-                || width <= 0f
-                || height <= 0f)
-            {
-                return false;
-            }
-
-            roi = new System.Drawing.RectangleF(x, y, width, height);
-            return true;
-        }
-
-        private static string FormatRoi(System.Drawing.RectangleF roi)
-        {
-            return string.Join(",", new[]
-            {
-                roi.X.ToString("0.###", CultureInfo.InvariantCulture),
-                roi.Y.ToString("0.###", CultureInfo.InvariantCulture),
-                roi.Width.ToString("0.###", CultureInfo.InvariantCulture),
-                roi.Height.ToString("0.###", CultureInfo.InvariantCulture)
-            });
-        }
-
-        private static string GetParameter(VisionPipelineStep step, string key)
-        {
-            if (step?.Parameters == null || string.IsNullOrWhiteSpace(key))
-            {
-                return string.Empty;
-            }
-
-            return step.Parameters
-                .FirstOrDefault(parameter => string.Equals(parameter.Key, key, StringComparison.OrdinalIgnoreCase))
-                .Value
-                ?.Trim()
-                ?? string.Empty;
-        }
-
-        private static string GetTemplateValue(VisionPipelineStep step)
-        {
-            string value = GetParameter(step, "TemplatePath");
-            return string.IsNullOrWhiteSpace(value) ? GetParameter(step, "PATTERN_PATH") : value;
-        }
-
-        private static bool GetParameterBool(VisionPipelineStep step, string key)
-        {
-            return bool.TryParse(GetParameter(step, key), out bool value) && value;
-        }
-
-        private static bool TryGetParameterDouble(VisionPipelineStep step, string key, out double value)
-        {
-            return double.TryParse(GetParameter(step, key), NumberStyles.Float, CultureInfo.InvariantCulture, out value)
-                && IsFinite(value);
-        }
-
-        private static int GetParameterInt(VisionPipelineStep step, string key)
-        {
-            return int.TryParse(GetParameter(step, key), NumberStyles.Integer, CultureInfo.InvariantCulture, out int value)
-                ? value
-                : 0;
+            fixtureProducerIndex = state.ProducerIndex;
+            fixtureMeasurementIndex = state.MeasurementIndex;
+            view.SetFixtureDesignerState(
+                state.IsVisible,
+                state.RelationshipText,
+                state.TemplateText,
+                state.ReferenceText,
+                state.CurrentText,
+                state.QualityText,
+                state.SourceText,
+                state.SourcePreview,
+                state.NormalizedText,
+                state.NormalizedPreview,
+                state.TemplatePreview,
+                state.CanTeachReference,
+                state.CanEditProducer,
+                state.CanEditMeasurement);
         }
 
         private void SaveSelectedMatchingPoseAsReference()
@@ -995,7 +580,7 @@ namespace OpenVisionLab
             }
 
             executionController.TryGetSummary(step, out VisionPipelineStepResultSummary summary);
-            if (!TryGetReviewedFixturePose(step, summary, out double x, out double y, out double angle, out double scale)
+            if (!OpenVisionPipelineReviewFixturePresenter.TryGetReviewedFixturePose(step, summary, out double x, out double y, out double angle, out double scale)
                 || !TryGetReferenceImageSize(step, out int referenceWidth, out int referenceHeight))
             {
                 UpdateFixtureTeachState(step, summary);
@@ -1016,10 +601,10 @@ namespace OpenVisionLab
                 .Where(parameters.ContainsKey)
                 .ToDictionary(key => key, key => parameters[key], StringComparer.OrdinalIgnoreCase);
 
-            parameters[VisionPipelineFixtureFrameService.ReferenceXParameter] = FormatPoseValue(x);
-            parameters[VisionPipelineFixtureFrameService.ReferenceYParameter] = FormatPoseValue(y);
-            parameters[VisionPipelineFixtureFrameService.ReferenceAngleParameter] = FormatPoseValue(angle);
-            parameters[VisionPipelineFixtureFrameService.ReferenceScaleParameter] = FormatPoseValue(scale);
+            parameters[VisionPipelineFixtureFrameService.ReferenceXParameter] = OpenVisionPipelineReviewFixturePresenter.FormatPoseValue(x);
+            parameters[VisionPipelineFixtureFrameService.ReferenceYParameter] = OpenVisionPipelineReviewFixturePresenter.FormatPoseValue(y);
+            parameters[VisionPipelineFixtureFrameService.ReferenceAngleParameter] = OpenVisionPipelineReviewFixturePresenter.FormatPoseValue(angle);
+            parameters[VisionPipelineFixtureFrameService.ReferenceScaleParameter] = OpenVisionPipelineReviewFixturePresenter.FormatPoseValue(scale);
             parameters[VisionPipelineFixtureFrameService.ReferenceImageWidthParameter] = referenceWidth.ToString(CultureInfo.InvariantCulture);
             parameters[VisionPipelineFixtureFrameService.ReferenceImageHeightParameter] = referenceHeight.ToString(CultureInfo.InvariantCulture);
 
@@ -1072,10 +657,10 @@ namespace OpenVisionLab
                 TF(
                     "PipelineReview.FixtureTeach.SavedWithDimensionsFormat",
                     "Saved X {0} / Y {1} / {2} deg / scale {3} / reference {4} x {5}. ROI kept; run review again.",
-                    FormatPoseValue(x),
-                    FormatPoseValue(y),
-                    FormatPoseValue(angle),
-                    FormatPoseValue(scale),
+                    OpenVisionPipelineReviewFixturePresenter.FormatPoseValue(x),
+                    OpenVisionPipelineReviewFixturePresenter.FormatPoseValue(y),
+                    OpenVisionPipelineReviewFixturePresenter.FormatPoseValue(angle),
+                    OpenVisionPipelineReviewFixturePresenter.FormatPoseValue(scale),
                     referenceWidth,
                     referenceHeight));
         }
@@ -1086,48 +671,6 @@ namespace OpenVisionLab
             width = image?.Width ?? 0;
             height = image?.Height ?? 0;
             return width > 0 && height > 0;
-        }
-
-        private static bool TryGetReviewedFixturePose(
-            VisionPipelineStep step,
-            VisionPipelineStepResultSummary summary,
-            out double x,
-            out double y,
-            out double angle,
-            out double scale)
-        {
-            x = 0d;
-            y = 0d;
-            angle = 0d;
-            scale = 0d;
-            if (!VisionPipelineFixtureFrameService.IsProducer(step)
-                || summary?.Success != true
-                || summary.Metrics == null)
-            {
-                return false;
-            }
-
-            string toolType = VisionPipelineNormalizer.NormalizeToolType(step.ToolType);
-            return (toolType == "matching" || toolType == "templatematching")
-                && summary.Metrics.TryGetValue(VisionPipelineKnownMetrics.FixtureCenterX, out x)
-                && summary.Metrics.TryGetValue(VisionPipelineKnownMetrics.FixtureCenterY, out y)
-                && summary.Metrics.TryGetValue(VisionPipelineKnownMetrics.FixtureAngle, out angle)
-                && summary.Metrics.TryGetValue(VisionPipelineKnownMetrics.FixtureScale, out scale)
-                && IsFinite(x)
-                && IsFinite(y)
-                && IsFinite(angle)
-                && IsFinite(scale)
-                && scale > 0d;
-        }
-
-        private static bool IsFinite(double value)
-        {
-            return !double.IsNaN(value) && !double.IsInfinity(value);
-        }
-
-        private static string FormatPoseValue(double value)
-        {
-            return value.ToString("0.###", CultureInfo.InvariantCulture);
         }
 
         private IReadOnlyList<PipelineFlowStepItem> CreateFlowItems(

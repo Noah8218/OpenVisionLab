@@ -2224,6 +2224,29 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
   model: none until evidence exists | Reasoning effort: none until evidence
   exists.
 
+### Maintenance: Pipeline Review Fixture Presenter Boundary (2026-07-26)
+
+- `OpenVisionPipelineReviewDocument`가 소유하던 Fixture chain/pose/ROI/template
+  해석과 preview 구성을 `OpenVisionPipelineReviewFixturePresenter`로
+  이동했습니다. Document는 selection 반영, reference 저장/재검증과 명령
+  오케스트레이션을 유지합니다.
+- 새 disposable presentation state가 생성된 source/normalized/template
+  bitmap 수명을 소유합니다. 새 partial, interface, factory, 알고리즘 또는
+  자동 Preview/Run 경로는 없습니다.
+- Document는 1,362줄에서 942줄로 줄었습니다. readiness는 Document 위임,
+  Presenter owner, 계산 위치와 pipeline 실행/저장 금지 의존성을 지속
+  검사합니다.
+- Debug solution과 screenshot smoke build는 0 warning/0 error였습니다.
+  current-source Fixture Designer와 Reference Teach smoke, readiness, 구조
+  검색과 patch hygiene가 통과했습니다.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_PIPELINE_FIXTURE_PRESENTER_REFACTOR_PROOF_20260726.md`
+  및 `artifacts\refactor_pipeline_fixture_presenter_20260726`.
+- 다음 proactive 구조 우선순위는 없습니다. 구체적인 유지보수 변경 또는
+  검증된 현재 빌드 회귀가 새 owner를 요구할 때만 재감사합니다.
+  Prerequisite: concrete evidence | Recommended model: none until evidence
+  exists | Reasoning effort: none until evidence exists.
+
 ## Handoff Rules For The Next Chat
 
 - Do not claim a feature is complete because the historical handoff says so. Re-run the smallest meaningful current command when work touches it.
