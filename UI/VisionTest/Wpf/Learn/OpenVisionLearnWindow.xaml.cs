@@ -1969,21 +1969,13 @@ namespace OpenVisionLab
             PaintMorphologyAnimationFrame();
         }
 
-        private bool[] CalculateMorphologyResult()
-        {
-            bool[] source = morphologySampleValues.Select(value => value > 0).ToArray();
-            return GetSelectedMorphologyMode() switch
-            {
-                "Dilation" => Dilate(source),
-                "Opening" => Dilate(Erode(source)),
-                "Closing" => Erode(Dilate(source)),
-                _ => Erode(source)
-            };
-        }
-
         private void PaintMorphologyAnimationFrame()
         {
-            bool[] result = CalculateMorphologyResult();
+            bool[] result = OpenVisionLearnBinarySimulationModel.CalculateMorphology(
+                morphologySampleValues,
+                5,
+                5,
+                GetSelectedMorphologyMode());
             SolidColorBrush defaultBorder = new(Color.FromRgb(209, 213, 219));
             SolidColorBrush kernelBorder = new(Color.FromRgb(21, 124, 134));
             SolidColorBrush centerBorder = new(Color.FromRgb(217, 119, 6));
@@ -2065,7 +2057,11 @@ namespace OpenVisionLab
         private void UpdateBlobGuide()
         {
             int minArea = Math.Max(1, (int)Math.Round(blobMinAreaSlider.Value));
-            (int[] labels, int[] areas) = LabelConnectedBlobs(blobSampleValues, 6, 5);
+            (int[] labels, int[] areas) =
+                OpenVisionLearnBinarySimulationModel.LabelConnectedBlobs(
+                    blobSampleValues,
+                    6,
+                    5);
             int acceptedCount = areas.Count(area => area >= minArea);
             string areaText = string.Join(
                 ", ",
@@ -2085,7 +2081,11 @@ namespace OpenVisionLab
         private void PaintBlobAnimationFrame()
         {
             int minArea = Math.Max(1, (int)Math.Round(blobMinAreaSlider.Value));
-            (int[] labels, int[] areas) = LabelConnectedBlobs(blobSampleValues, 6, 5);
+            (int[] labels, int[] areas) =
+                OpenVisionLearnBinarySimulationModel.LabelConnectedBlobs(
+                    blobSampleValues,
+                    6,
+                    5);
             PaintBlobAnimationFrame(labels, areas, minArea);
         }
 
@@ -2165,7 +2165,10 @@ namespace OpenVisionLab
 
         private int GetBlobCandidateCount()
         {
-            return LabelConnectedBlobs(blobSampleValues, 6, 5).Areas.Length;
+            return OpenVisionLearnBinarySimulationModel
+                .LabelConnectedBlobs(blobSampleValues, 6, 5)
+                .Areas
+                .Length;
         }
 
         private Brush CreateBlobDecisionBrush(int label, bool accepted)
@@ -2215,10 +2218,16 @@ namespace OpenVisionLab
         private void UpdateContourGuide()
         {
             string mode = GetSelectedContourDrawMode();
-            (int[] labels, int[] areas) = LabelConnectedBlobs(contourSampleValues, 7, 5);
+            (int[] labels, int[] areas) =
+                OpenVisionLearnBinarySimulationModel.LabelConnectedBlobs(
+                    contourSampleValues,
+                    7,
+                    5);
             bool[] accepted = labels.Select(label => label > 0 && areas[label - 1] >= 4).ToArray();
-            bool[] contour = FindContourPixels(accepted, 7, 5);
-            (int MinX, int MinY, int MaxX, int MaxY)? bounds = FindBounds(accepted, 7, 5);
+            bool[] contour =
+                OpenVisionLearnBinarySimulationModel.FindContourPixels(accepted, 7, 5);
+            (int MinX, int MinY, int MaxX, int MaxY)? bounds =
+                OpenVisionLearnBinarySimulationModel.FindBounds(accepted, 7, 5);
             int contourPixels = contour.Count(item => item);
 
             txtContourFormula.Text = mode switch
@@ -2249,10 +2258,16 @@ namespace OpenVisionLab
         private void PaintContourAnimationFrame()
         {
             string mode = GetSelectedContourDrawMode();
-            (int[] labels, int[] areas) = LabelConnectedBlobs(contourSampleValues, 7, 5);
+            (int[] labels, int[] areas) =
+                OpenVisionLearnBinarySimulationModel.LabelConnectedBlobs(
+                    contourSampleValues,
+                    7,
+                    5);
             bool[] accepted = labels.Select(label => label > 0 && areas[label - 1] >= 4).ToArray();
-            bool[] contour = FindContourPixels(accepted, 7, 5);
-            (int MinX, int MinY, int MaxX, int MaxY)? bounds = FindBounds(accepted, 7, 5);
+            bool[] contour =
+                OpenVisionLearnBinarySimulationModel.FindContourPixels(accepted, 7, 5);
+            (int MinX, int MinY, int MaxX, int MaxY)? bounds =
+                OpenVisionLearnBinarySimulationModel.FindBounds(accepted, 7, 5);
             PaintContourAnimationFrame(labels, accepted, contour, bounds, mode);
         }
 
@@ -2280,7 +2295,11 @@ namespace OpenVisionLab
                 int label = labels[i];
                 bool isRejected = label > 0 && !accepted[i];
                 bool isContour = contour[i];
-                bool isBox = bounds.HasValue && IsOnBounds(i, 7, bounds.Value);
+                bool isBox = bounds.HasValue
+                    && OpenVisionLearnBinarySimulationModel.IsOnBounds(
+                        i,
+                        7,
+                        bounds.Value);
 
                 if (label > 0 && visibleStep > 0 && i < contourInputCells.Count)
                 {
@@ -3515,201 +3534,6 @@ namespace OpenVisionLab
             blobOutputCells[index].Background = background;
             blobOutputTexts[index].Foreground = foreground;
             blobOutputTexts[index].Text = text;
-        }
-
-        private static bool[] FindContourPixels(bool[] source, int width, int height)
-        {
-            bool[] result = new bool[source.Length];
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    int index = y * width + x;
-                    if (!source[index])
-                    {
-                        continue;
-                    }
-
-                    result[index] = !GetBinary(source, width, height, x - 1, y)
-                        || !GetBinary(source, width, height, x + 1, y)
-                        || !GetBinary(source, width, height, x, y - 1)
-                        || !GetBinary(source, width, height, x, y + 1);
-                }
-            }
-
-            return result;
-        }
-
-        private static (int MinX, int MinY, int MaxX, int MaxY)? FindBounds(bool[] source, int width, int height)
-        {
-            int minX = width;
-            int minY = height;
-            int maxX = -1;
-            int maxY = -1;
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    if (!source[y * width + x])
-                    {
-                        continue;
-                    }
-
-                    minX = Math.Min(minX, x);
-                    minY = Math.Min(minY, y);
-                    maxX = Math.Max(maxX, x);
-                    maxY = Math.Max(maxY, y);
-                }
-            }
-
-            return maxX < 0 ? null : (minX, minY, maxX, maxY);
-        }
-
-        private static bool IsOnBounds(int index, int width, (int MinX, int MinY, int MaxX, int MaxY) bounds)
-        {
-            int x = index % width;
-            int y = index / width;
-            return x >= bounds.MinX
-                && x <= bounds.MaxX
-                && y >= bounds.MinY
-                && y <= bounds.MaxY
-                && (x == bounds.MinX || x == bounds.MaxX || y == bounds.MinY || y == bounds.MaxY);
-        }
-
-        private static (int[] Labels, int[] Areas) LabelConnectedBlobs(int[] values, int width, int height)
-        {
-            int[] labels = new int[values.Length];
-            List<int> areas = new();
-            int nextLabel = 1;
-
-            for (int i = 0; i < values.Length; i++)
-            {
-                if (values[i] == 0 || labels[i] != 0)
-                {
-                    continue;
-                }
-
-                int area = FloodFillBlob(values, labels, width, height, i, nextLabel);
-                areas.Add(area);
-                nextLabel++;
-            }
-
-            return (labels, areas.ToArray());
-        }
-
-        private static int FloodFillBlob(int[] values, int[] labels, int width, int height, int start, int label)
-        {
-            Queue<int> queue = new();
-            queue.Enqueue(start);
-            labels[start] = label;
-            int area = 0;
-
-            while (queue.Count > 0)
-            {
-                int index = queue.Dequeue();
-                area++;
-                int x = index % width;
-                int y = index / width;
-
-                for (int dy = -1; dy <= 1; dy++)
-                {
-                    for (int dx = -1; dx <= 1; dx++)
-                    {
-                        if (dx == 0 && dy == 0)
-                        {
-                            continue;
-                        }
-
-                        int nx = x + dx;
-                        int ny = y + dy;
-                        if (nx < 0 || nx >= width || ny < 0 || ny >= height)
-                        {
-                            continue;
-                        }
-
-                        int next = ny * width + nx;
-                        if (values[next] == 0 || labels[next] != 0)
-                        {
-                            continue;
-                        }
-
-                        labels[next] = label;
-                        queue.Enqueue(next);
-                    }
-                }
-            }
-
-            return area;
-        }
-
-        private static bool[] Erode(bool[] source)
-        {
-            bool[] result = new bool[source.Length];
-            for (int y = 0; y < 5; y++)
-            {
-                for (int x = 0; x < 5; x++)
-                {
-                    result[y * 5 + x] = AllNeighbors(source, x, y);
-                }
-            }
-
-            return result;
-        }
-
-        private static bool[] Dilate(bool[] source)
-        {
-            bool[] result = new bool[source.Length];
-            for (int y = 0; y < 5; y++)
-            {
-                for (int x = 0; x < 5; x++)
-                {
-                    result[y * 5 + x] = AnyNeighbor(source, x, y);
-                }
-            }
-
-            return result;
-        }
-
-        private static bool AllNeighbors(bool[] source, int x, int y)
-        {
-            for (int dy = -1; dy <= 1; dy++)
-            {
-                for (int dx = -1; dx <= 1; dx++)
-                {
-                    if (!GetBinary(source, x + dx, y + dy))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        private static bool AnyNeighbor(bool[] source, int x, int y)
-        {
-            for (int dy = -1; dy <= 1; dy++)
-            {
-                for (int dx = -1; dx <= 1; dx++)
-                {
-                    if (GetBinary(source, x + dx, y + dy))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        private static bool GetBinary(bool[] source, int x, int y)
-        {
-            return x >= 0 && x < 5 && y >= 0 && y < 5 && source[y * 5 + x];
-        }
-
-        private static bool GetBinary(bool[] source, int width, int height, int x, int y)
-        {
-            return x >= 0 && x < width && y >= 0 && y < height && source[y * width + x];
         }
 
         private void TopicList_SelectionChanged(object sender, SelectionChangedEventArgs e)

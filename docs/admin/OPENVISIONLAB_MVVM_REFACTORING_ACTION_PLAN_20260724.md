@@ -527,3 +527,26 @@
   maintenance need and focused selected-Step round-trip gate | Recommended
   model: none until evidence exists | Reasoning effort: none until evidence
   exists.
+
+### Learn Binary Simulation Model Update (2026-07-26)
+
+- 오래된 후보 목록을 현재 소유권과 재대조했습니다. CommandSurface는
+  여전히 크지만 Recipe/Pipeline CRUD, exchange, run-history projection,
+  validation/storage의 기존 UseCase/Presenter가 확인됐고, 줄 수만으로
+  추가 partial을 만들 응집 경계는 선택하지 않았습니다. Pipeline Review
+  역시 execution controller와 presenter가 이미 존재합니다.
+- 반면 `OpenVisionLearnWindow.xaml.cs`는 Morphology/Blob/Contour의 순수
+  이진영상 계산을 WPF view가 직접 소유해 명확한 MVVM 경계가
+  남아 있었습니다.
+- 새 비-WPF `OpenVisionLearnBinarySimulationModel`이 erosion/dilation,
+  connected-component flood fill, contour, bounds, bound-edge 계산을
+  소유합니다. View는 sample/mode 전달, timer/control state, rendering만
+  유지합니다.
+- 전후 current-source Morphology/Blob/Contour UI, Debug build, readiness,
+  visual inspection, `git diff --check`를 완료 gate로 사용했습니다.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_LEARN_BINARY_SIMULATION_MODEL_REFACTOR_PROOF_20260726.md`.
+- 다음 구조 후보는 Learn의 Matching/FeatureMatching 점수 계산을 하나의
+  응집된 비-WPF simulation owner로 옮길 가치가 있는지 감사하는
+  것입니다. 이벤트/타이머 partial 분리는 하지 않습니다. Recommended
+  model: gpt-5.6-terra | Reasoning effort: medium.

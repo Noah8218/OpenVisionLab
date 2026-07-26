@@ -852,6 +852,7 @@ internal static class Program
             "ThresholdToolWpfView.xaml",
             "ThresholdToolWpfView.xaml.cs");
         RequireToolViewOwnerFiles(repoRoot, @"UI\VisionTest\Wpf\Learn",
+            "OpenVisionLearnBinarySimulationModel.cs",
             "OpenVisionLearnTopics.cs",
             "OpenVisionLearnWindow.xaml",
             "OpenVisionLearnWindow.xaml.cs",
@@ -1508,6 +1509,9 @@ internal static class Program
 
         string learnWindowXaml = Read(repoRoot, @"UI\VisionTest\Wpf\Learn\OpenVisionLearnWindow.xaml");
         string learnWindow = Read(repoRoot, @"UI\VisionTest\Wpf\Learn\OpenVisionLearnWindow.xaml.cs");
+        string learnBinarySimulationModel = Read(
+            repoRoot,
+            @"UI\VisionTest\Wpf\Learn\OpenVisionLearnBinarySimulationModel.cs");
         string learnTopicsCatalog = Read(repoRoot, @"UI\VisionTest\Wpf\Learn\OpenVisionLearnTopics.cs");
         Dictionary<int, string> learnTopicIndexToEnum = BuildLearnTopicIndexToEnumMap(learnTopicsCatalog);
         string toolShell = Read(repoRoot, @"UI\VisionTest\Wpf\Tooling\SingleInput\VisionToolSingleInputPropertyToolShell.xaml.cs");
@@ -1528,6 +1532,14 @@ internal static class Program
         RequireContains(foundationGuide, "Use the provided Good/Bad samples", "OpenCvSharp foundations guide starts practice from provided sample evidence.");
         RequireContains(foundationGuide, "Good/Bad samples", "OpenCvSharp foundations guide connects concepts to Good/Bad validation.");
         RequireContains(learnWindowXaml, "OpenVisionLearnOpenFoundationDocsButton", "OpenVision Learn exposes a Foundation Docs button.");
+        RequireContains(learnWindow, "OpenVisionLearnBinarySimulationModel.CalculateMorphology", "Learn view delegates morphology calculation to the binary simulation model.");
+        RequireContains(learnWindow, "OpenVisionLearnBinarySimulationModel.LabelConnectedBlobs", "Learn view delegates connected-component calculation to the binary simulation model.");
+        RequireContains(learnBinarySimulationModel, "public static bool[] CalculateMorphology", "Learn binary simulation model owns morphology calculation.");
+        RequireContains(learnBinarySimulationModel, "public static (int[] Labels, int[] Areas) LabelConnectedBlobs", "Learn binary simulation model owns connected-component labeling.");
+        RequireContains(learnBinarySimulationModel, "public static bool[] FindContourPixels", "Learn binary simulation model owns contour extraction.");
+        RequireNotContains(learnWindow, "private static int FloodFillBlob", "Learn view no longer owns connected-component flood fill.");
+        RequireNotContains(learnWindow, "private static bool[] Erode", "Learn view no longer owns morphology erosion.");
+        RequireNotContains(learnWindow, "private static bool[] FindContourPixels", "Learn view no longer owns contour extraction.");
         RequireContains(learnWindowXaml, "기초 용어", "OpenVision Learn labels the foundations button for learners.");
         RequireContains(learnWindow, "OpenFoundationDocsButton_Click", "OpenVision Learn handles the Foundation Docs button.");
         RequireContains(learnWindow, "LEARN_OPENCVSHARP_FOUNDATIONS.md", "OpenVision Learn Foundation Docs button opens the foundations guide.");

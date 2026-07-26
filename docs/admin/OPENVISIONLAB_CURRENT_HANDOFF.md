@@ -2069,6 +2069,32 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
   model: none until evidence exists | Reasoning effort: none until evidence
   exists.
 
+### Maintenance: Learn Binary Simulation Model Boundary (2026-07-26)
+
+- A current ownership audit rejected another CommandSurface partial split:
+  Recipe/Pipeline CRUD, exchange, run-history projection, validation/storage,
+  and Pipeline Review already have named UseCase/Presenter/Controller owners,
+  while no new cohesive unowned command boundary was demonstrated.
+- The same audit found a concrete Learn MVVM boundary:
+  `OpenVisionLearnWindow.xaml.cs` directly implemented Morphology, Blob, and
+  Contour binary calculations.
+- `OpenVisionLearnBinarySimulationModel` now owns erosion/dilation,
+  connected-component flood fill, contour extraction, bounds, and bound-edge
+  calculations without WPF dependencies. The view retains controls, timers,
+  animation state, text, and painting.
+- Before/after current-source Morphology/Blob/Contour UI smokes, Debug build,
+  readiness, visual inspection, and patch hygiene passed. Morphology/Blob
+  screenshots were byte-identical. Contour accordion rendering is
+  capture-to-capture variable, but both semantic checks passed and no visual
+  regression was found.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_LEARN_BINARY_SIMULATION_MODEL_REFACTOR_PROOF_20260726.md`
+  and `artifacts\refactor_learn_binary_simulation_model_20260726`.
+- Next structural audit: assess Matching/FeatureMatching score calculations as
+  one possible non-WPF simulation owner. Do not split Learn event handlers or
+  timers into partial files for line-count reduction. Recommended model:
+  gpt-5.6-terra | Reasoning effort: medium.
+
 ## Handoff Rules For The Next Chat
 
 - Do not claim a feature is complete because the historical handoff says so. Re-run the smallest meaningful current command when work touches it.
