@@ -1859,10 +1859,37 @@ internal static class Program
             linePairPropertyAdapter,
             "PipelineGeometryPropertyBase",
             "The Line Pair adapter no longer owns the Geometry property base.");
+        string geometryPropertyAdapter = Read(
+            repoRoot,
+            @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineGeometryPropertyAdapter.cs");
         RequireContains(
             stepPropertyMapper,
+            "VisionPipelineGeometryPropertyAdapter.TryCreateProperty",
+            "Pipeline Step PropertyGrid dispatches Geometry mapping through its adapter.");
+        RequireNotContains(
+            stepPropertyMapper,
             "private abstract class PipelineGeometryPropertyBase",
-            "The Geometry property base is colocated with its derived mapper models.");
+            "The root mapper no longer owns the Geometry property base.");
+        RequireNotContains(
+            stepPropertyMapper,
+            "case \"geometrymeasure\"",
+            "The root mapper no longer owns the GeometryMeasure ToolType case.");
+        RequireContains(
+            geometryPropertyAdapter,
+            "internal static class VisionPipelineGeometryPropertyAdapter",
+            "Geometry mapping has a standalone non-partial owner.");
+        RequireContains(
+            geometryPropertyAdapter,
+            "private abstract class GeometryPropertyBase",
+            "The Geometry adapter owns the shared Geometry property base.");
+        RequireContains(
+            geometryPropertyAdapter,
+            "GeometryFeatureConverter",
+            "The Geometry adapter owns typed feature selection.");
+        RequireContains(
+            geometryPropertyAdapter,
+            "CircleGaugeProperty",
+            "The Geometry adapter owns CircleGauge PropertyGrid mapping.");
         RequireContains(
             learnScreenshotSmoke,
             "wpf_shell_host_recipe_line_pair_properties",
@@ -1870,7 +1897,11 @@ internal static class Program
         RequireContains(
             learnScreenshotSmoke,
             "p213_geometry_property_grid",
-            "Screenshot smoke covers the relocated Geometry PropertyGrid base.");
+            "Screenshot smoke covers Geometry PropertyGrid mapping.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "p213_geometry_review",
+            "Screenshot smoke covers GeometryMeasure and CircleGauge core behavior.");
         RequireContains(pipelineValidator, "ValidateReferenceDifferenceParameters", "Pipeline validator checks ReferenceDifference parameters.");
         RequireContains(pipelineKnownMetrics, "DifferencePixelRatio", "Known metrics include ReferenceDifference coverage.");
         RequireContains(pipelineKnownMetrics, "RegistrationInlierRatio", "Known metrics include ReferenceDifference registration quality.");

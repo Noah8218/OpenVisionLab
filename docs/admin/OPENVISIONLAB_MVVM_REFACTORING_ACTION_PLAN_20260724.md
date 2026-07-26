@@ -332,3 +332,24 @@
 - 다음 구조 우선순위는 GeometryMeasure/CircleGauge를 하나의 응집된
   adapter 후보로 감사하되, P213 두 회귀를 완료 gate로 유지하는
   것입니다. Recommended model: gpt-5.6-terra | Reasoning effort: medium.
+
+### Geometry Property Adapter Update (2026-07-26)
+
+- `VisionPipelineGeometryPropertyAdapter`가 GeometryMeasure/
+  GeometricMeasurement/CircleGauge alias, 공통 baseline/acceptance state,
+  두 PropertyGrid 모델, typed feature converter, reference parsing, ROI
+  formatting, Step 재생성의 실제 owner가 되었습니다.
+- root mapper에서는 직접 ToolType/apply/metric case와 Geometry
+  base/model/converter/helper를 제거하고 adapter dispatch 및 기존 공통
+  codec/metadata/final copy만 유지합니다. 새 adapter는 partial이
+  아닙니다.
+- 새 interface/factory/codec 복제 없이 기존 공통 mapper helper를
+  재사용합니다.
+- 검증: Debug build(0 warning/0 error), current-source P213 Geometry
+  PropertyGrid/Review, 모든 geometry mode와 CircleGauge gate, alias
+  round-trip, visual inspection, readiness PASS.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_GEOMETRY_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`.
+- 다음 구조 우선순위는 남은 direct/partial mapper family를 다시
+  감사하되 전용 current round-trip 회귀가 없는 family는 분리하지 않는
+  것입니다. Recommended model: gpt-5.6-terra | Reasoning effort: medium.

@@ -18721,6 +18721,37 @@ internal static class Program
         {
             throw new InvalidOperationException("P213 GeometryMeasure PropertyGrid round trip failed.");
         }
+
+        VisionPipelineStep geometryAlias = CloneStep(geometry);
+        geometryAlias.ToolType = "GeometricMeasurementTool";
+        object geometryAliasProperty = VisionPipelineStepPropertyMapper.CreateProperty(
+            geometryAlias,
+            new VisionPipelinePropertyContext(pipeline, 2))
+            ?? throw new InvalidOperationException("P213 GeometricMeasurementTool alias returned no property object.");
+        VisionPipelineStep geometryAliasRoundTrip = new();
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(
+                geometryAliasRoundTrip,
+                geometryAliasProperty)
+            || geometryAliasRoundTrip.ToolType != "GeometryMeasure"
+            || geometryAliasRoundTrip.Parameters.GetValueOrDefault(
+                VisionPipelineGeometryMeasureService.SourceFeatureAParameter) != "Segment")
+        {
+            throw new InvalidOperationException("P213 GeometricMeasurementTool alias round trip changed.");
+        }
+
+        VisionPipelineStep circleAlias = CloneStep(circleStep);
+        circleAlias.ToolType = "CircleGaugeTool";
+        object circleAliasProperty = VisionPipelineStepPropertyMapper.CreateProperty(circleAlias)
+            ?? throw new InvalidOperationException("P213 CircleGaugeTool alias returned no property object.");
+        VisionPipelineStep circleAliasRoundTrip = new();
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(
+                circleAliasRoundTrip,
+                circleAliasProperty)
+            || circleAliasRoundTrip.ToolType != "CircleGauge"
+            || circleAliasRoundTrip.Parameters.GetValueOrDefault("SCAN_COUNT") != "180")
+        {
+            throw new InvalidOperationException("P213 CircleGaugeTool alias round trip changed.");
+        }
     }
 
     private static VisionPipelineStep CreateGeometryMeasureStep(GeometryMeasurementMode mode, VisionPipelineGeometryFeatureResult a, VisionPipelineGeometryFeatureResult b)

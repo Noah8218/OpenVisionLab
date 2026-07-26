@@ -1858,6 +1858,27 @@ Large-corpus skill validation now follows `docs\OPENVISIONLAB_SCALABLE_SKILL_VAL
   completion evidence. Recommended model: gpt-5.6-terra | Reasoning effort:
   medium.
 
+### Maintenance: Geometry Property Adapter Boundary (2026-07-26)
+
+- `VisionPipelineGeometryPropertyAdapter` now owns GeometryMeasure/
+  GeometricMeasurement/CircleGauge recognition, shared baseline/acceptance
+  state, both PropertyGrid models, typed feature selection, reference parsing,
+  ROI formatting, Step reconstruction, and metric identification.
+- The root mapper no longer owns direct geometry ToolType/apply/metric cases or
+  the geometry base/models/converter/helpers. It retains adapter dispatch and
+  existing shared parameter/metadata/final-copy infrastructure.
+- No new interface, factory, or duplicate parameter codec was added.
+- Verification passed: Debug build (0 warnings/0 errors), current-source P213
+  Geometry PropertyGrid and Geometry Review/core, all seven GeometryMeasure
+  modes, CircleGauge gates, GeometricMeasurementTool/CircleGaugeTool alias
+  round trips, visual inspection, and readiness. Artifact:
+  `artifacts\refactor_geometry_adapter_20260726`.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_GEOMETRY_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`.
+- Remaining structural priority: re-audit direct and partial mapper families
+  and select none unless a dedicated current round-trip regression can prove
+  the boundary. Recommended model: gpt-5.6-terra | Reasoning effort: medium.
+
 1. **No active implementation priority after P235.**
    - The explicitly requested exact locator-session promotion passed without a product blocker. Wait for a concrete operator workflow blocker or verified current-build regression. Until then, do not spend model tokens or start another semantic image campaign. Recommended model: none until evidence exists | Reasoning effort: none until evidence exists.
 
