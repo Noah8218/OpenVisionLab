@@ -475,3 +475,30 @@
   때만 다시 평가합니다. Prerequisite: concrete mapper maintenance need
   and focused selected-Step round-trip gate | Recommended model: none until
   evidence exists | Reasoning effort: none until evidence exists.
+
+### Line Property Adapter Consolidation Update (2026-07-26)
+
+- 사용자의 명시적 계속 요청에 따라 남은 두 direct family를
+  재감사했습니다. `LineGauge + Mean` 묶음은 domain 응집도가 없어
+  폐기하고, single `LineGauge`를 이미 `LineDistance`/
+  `LineIntersection`을 소유한 Line adapter에 합쳤습니다.
+- production 이동 전에 실제 Tool View-generated `LineGauge` Step으로
+  `LineTool`/`LineGaugeTool`, canonical apply, 모든 single-Line
+  파라미터, metadata/layer round-trip을 통과했고 기존 Line Pair
+  PropertyGrid도 다시 통과했습니다.
+- `VisionPipelineLinePairPropertyAdapter`는
+  `VisionPipelineLinePropertyAdapter`로 명명·확장되어 single/pair Line
+  mapping과 기존 `TryCreateLineGaugePair` handoff를 모두 소유합니다.
+- root mapper는 1,263줄에서 1,150줄로 감소했고 Line direct case/model/
+  metric을 더 이상 소유하지 않습니다. `Mean`은 의도적으로 root에
+  남겼으며 새 interface/factory/adapter를 만들지 않았습니다.
+- 검증: pre/post single Line, Line Pair, P213 Geometry PropertyGrid/Review,
+  Debug build(0 warning/0 error), current-source visual inspection,
+  readiness, `git diff --check` PASS.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_LINE_PROPERTY_ADAPTER_CONSOLIDATION_REFACTOR_PROOF_20260726.md`.
+- 남은 direct OpenCV family는 `Mean` 하나뿐입니다. “switch case를 0개로
+  만들기” 위한 one-case adapter는 만들지 않습니다. Prerequisite:
+  concrete Mean mapper maintenance need and focused selected-Step round-trip
+  gate | Recommended model: none until evidence exists | Reasoning effort:
+  none until evidence exists.

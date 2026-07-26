@@ -13,7 +13,7 @@ using static OpenVisionLab.VisionPipelineStepPropertyMapper;
 
 namespace OpenVisionLab
 {
-    internal static class VisionPipelineLinePairPropertyAdapter
+    internal static class VisionPipelineLinePropertyAdapter
     {
         public static bool TryCreateProperty(
             VisionPipelineStep step,
@@ -22,6 +22,16 @@ namespace OpenVisionLab
         {
             property = null;
             string toolType = NormalizeToolType(step?.ToolType);
+            if (toolType == "line" || toolType == "linegauge")
+            {
+                property = AttachStepMetadata(
+                    CreateSingleLineGaugeProperty(step, name),
+                    name,
+                    step.InputLayer,
+                    step.OutputLayer);
+                return true;
+            }
+
             if (toolType != "linedistance" && toolType != "lineintersection")
             {
                 return false;
@@ -41,6 +51,15 @@ namespace OpenVisionLab
             string outputLayer,
             out VisionPipelineStep step)
         {
+            if (property is PipelineLineGaugeProperty lineGauge)
+            {
+                step = VisionPipelineStepBuilder.FromProperty(
+                    lineGauge,
+                    inputLayer,
+                    outputLayer);
+                return true;
+            }
+
             if (property is PipelineLinePairProperty pair)
             {
                 step = pair.ToStep(inputLayer, outputLayer);
@@ -53,7 +72,8 @@ namespace OpenVisionLab
 
         public static bool IsProperty(object property)
         {
-            return property is PipelineLinePairProperty;
+            return property is PipelineLineGaugeProperty
+                || property is PipelineLinePairProperty;
         }
 
         public static bool TryCreateLineGaugePair(
@@ -71,6 +91,33 @@ namespace OpenVisionLab
             left = null;
             right = null;
             return false;
+        }
+
+        private static PipelineLineGaugeProperty CreateSingleLineGaugeProperty(
+            VisionPipelineStep step,
+            string name)
+        {
+            return ApplyCommonOpenCvProperty(new PipelineLineGaugeProperty(name)
+            {
+                PRJ_PORALITY = GetEnum(step.Parameters, nameof(LineGaugeProperty.PRJ_PORALITY), PROJECTION_POLARITY.BTOW),
+                PRJ_DIR = GetEnum(step.Parameters, nameof(LineGaugeProperty.PRJ_DIR), PROJECTION_DIR.X_LTOR),
+                CONTRAST = GetDouble(step.Parameters, nameof(LineGaugeProperty.CONTRAST), 30),
+                THICKNESS = GetDouble(step.Parameters, nameof(LineGaugeProperty.THICKNESS), 5),
+                SAMPLING_STEP = GetDouble(step.Parameters, nameof(LineGaugeProperty.SAMPLING_STEP), 10),
+                VER_PRJ_DIR = GetEnum(step.Parameters, nameof(LineGaugeProperty.VER_PRJ_DIR), PROJECTION_DIR.X_LTOR),
+                POINT_RANGE = GetInt(step.Parameters, nameof(LineGaugeProperty.POINT_RANGE), 10),
+                USE_MANUAL_ANGLE = GetBool(step.Parameters, nameof(LineGaugeProperty.USE_MANUAL_ANGLE), false),
+                MANUAL_ANGLE_VALUE = GetDouble(step.Parameters, nameof(LineGaugeProperty.MANUAL_ANGLE_VALUE), 0),
+                USE_EXTEND_FIT_LINE = GetBool(step.Parameters, nameof(LineGaugeProperty.USE_EXTEND_FIT_LINE), false),
+                EXTEND_FIT_LINE_VALUE = GetInt(step.Parameters, nameof(LineGaugeProperty.EXTEND_FIT_LINE_VALUE), 100),
+                AVERAGE_Diff = GetDouble(step.Parameters, nameof(LineGaugeProperty.AVERAGE_Diff), 100),
+                USE_AVERAGE_FILTER = GetBool(step.Parameters, nameof(LineGaugeProperty.USE_AVERAGE_FILTER), false),
+                AVERAGE_FILTER_TYPE = GetEnum(step.Parameters, nameof(LineGaugeProperty.AVERAGE_FILTER_TYPE), LineGaugeProperty.AVERAGE_FILTER_TYPES.Y),
+                SHOW_VERTICAL_LINE = GetBool(step.Parameters, nameof(LineGaugeProperty.SHOW_VERTICAL_LINE), true),
+                SHOW_EDGE = GetBool(step.Parameters, nameof(LineGaugeProperty.SHOW_EDGE), true),
+                SHOW_CONTOUR = GetBool(step.Parameters, nameof(LineGaugeProperty.SHOW_CONTOUR), true),
+                SHOW_FITLINE = GetBool(step.Parameters, nameof(LineGaugeProperty.SHOW_FITLINE), true)
+            }, step.Parameters);
         }
 
         private static PipelineLinePairProperty CreatePropertyCore(
@@ -168,6 +215,92 @@ namespace OpenVisionLab
             ApplyPrefixedOpenCvProperty(property, parameters, prefix);
             return property;
         }
+
+        [CategoryOrder("Step", -1)]
+        [CategoryOrder("Acceptance", 20)]
+        private sealed class PipelineLineGaugeProperty : LineGaugeProperty, IPipelineStepMetadata
+        {
+            public PipelineLineGaugeProperty(string name)
+                : base(name)
+            {
+            }
+
+            [Browsable(false)]
+            public string PipelineStepName
+            {
+                get => NAME;
+                set => NAME = value;
+            }
+
+            [PropertyOrder(-2)]
+            [Category("Step")]
+            [DisplayName("Input Layer")]
+            [TypeConverter(typeof(PipelineLayerNameConverter))]
+            public string InputLayer { get; set; } = "Main";
+
+            [PropertyOrder(-1)]
+            [Category("Step")]
+            [DisplayName("Output Layer")]
+            [TypeConverter(typeof(PipelineLayerNameConverter))]
+            public string OutputLayer { get; set; } = "Pipeline_Output";
+
+            [PropertyOrder(0)]
+            [Category("Step")]
+            [DisplayName("Enabled")]
+            public bool Enabled { get; set; } = true;
+
+            [PropertyOrder(1)]
+            [Category("Acceptance")]
+            [DisplayName("Use Acceptance")]
+            public bool UseAcceptance { get; set; }
+
+            [PropertyOrder(2)]
+            [Category("Acceptance")]
+            [DisplayName("Expected Success")]
+            public bool ExpectedSuccess { get; set; } = true;
+
+            [PropertyOrder(3)]
+            [Category("Acceptance")]
+            [DisplayName("Max Elapsed (ms)")]
+            public double MaxElapsedMilliseconds { get; set; }
+
+            [PropertyOrder(4)]
+            [Category("Acceptance")]
+            [DisplayName("Required Message")]
+            public string RequiredMessageText { get; set; } = string.Empty;
+
+            [PropertyOrder(5)]
+            [Category("Acceptance")]
+            [DisplayName("Acceptance Metric")]
+            [TypeConverter(typeof(PipelineMetricNameConverter))]
+            public string AcceptanceMetricName { get; set; } = string.Empty;
+
+            [PropertyOrder(6)]
+            [Browsable(false)]
+            [Category("Acceptance")]
+            [DisplayName("Use Metric Min")]
+            public bool UseAcceptanceMetricMinimum { get; set; }
+
+            [PropertyOrder(7)]
+            [PropertyEditor(typeof(WpgMetricRangeEditor))]
+            [MetricRangeEditor(3, nameof(UseAcceptanceMetricMinimum), nameof(AcceptanceMetricMinimum), nameof(UseAcceptanceMetricMaximum), nameof(AcceptanceMetricMaximum))]
+            [Category("Acceptance")]
+            [DisplayName("Metric range")]
+            public double AcceptanceMetricMinimum { get; set; }
+
+            [PropertyOrder(8)]
+            [Browsable(false)]
+            [Category("Acceptance")]
+            [DisplayName("Use Metric Max")]
+            public bool UseAcceptanceMetricMaximum { get; set; }
+
+            [PropertyOrder(9)]
+            [Browsable(false)]
+            [Category("Acceptance")]
+            [DisplayName("Metric Max")]
+            public double AcceptanceMetricMaximum { get; set; }
+        }
+
         [CategoryOrder("Step", -1)]
         [CategoryOrder("Line Pair", 0)]
         [CategoryOrder("Gap Edge Pair", 5)]

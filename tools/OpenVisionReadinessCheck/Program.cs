@@ -1836,29 +1836,63 @@ internal static class Program
             pinArrayGapPropertyAdapter,
             "MinimumDarkCoverageRatio",
             "The PinArrayGap adapter exposes its reviewed detection fields.");
-        string linePairPropertyAdapter = Read(
+        string linePropertyAdapter = Read(
             repoRoot,
-            @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineLinePairPropertyAdapter.cs");
+            @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineLinePropertyAdapter.cs");
         RequireContains(
             stepPropertyMapper,
-            "VisionPipelineLinePairPropertyAdapter.TryCreateProperty",
-            "Pipeline Step PropertyGrid dispatches Line Pair mapping through its adapter.");
-        RequireNotContains(
+            "VisionPipelineLinePropertyAdapter.TryCreateProperty",
+            "Pipeline Step PropertyGrid dispatches the complete Line family through its adapter.");
+        RequireContains(
             stepPropertyMapper,
+            "VisionPipelineLinePropertyAdapter.TryCreateStep",
+            "Pipeline Step PropertyGrid reconstructs the complete Line family through its adapter.");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelineLinePropertyAdapter.IsProperty",
+            "Pipeline Step PropertyGrid resolves Line-family metrics through its adapter.");
+        foreach (string oldRootLineToken in new[]
+        {
+            "case \"line\"",
+            "case \"linegauge\"",
             "case \"linedistance\"",
-            "The root mapper no longer owns the LineDistance ToolType case.");
+            "private sealed class PipelineLineGaugeProperty",
+            "VisionPipelineLinePairPropertyAdapter"
+        })
+        {
+            RequireNotContains(
+                stepPropertyMapper,
+                oldRootLineToken,
+                "The root mapper no longer owns direct Line-family cases, models, or old adapter dispatch.");
+        }
         RequireContains(
-            linePairPropertyAdapter,
-            "internal static class VisionPipelineLinePairPropertyAdapter",
-            "Line Pair mapping has a standalone non-partial owner.");
+            linePropertyAdapter,
+            "internal static class VisionPipelineLinePropertyAdapter",
+            "The complete Line family has one standalone non-partial owner.");
         RequireContains(
-            linePairPropertyAdapter,
+            linePropertyAdapter,
             "TryCreateLineGaugePair",
-            "The Line Pair adapter preserves the Tool View edit handoff.");
+            "The Line adapter preserves the pair Tool View edit handoff.");
         RequireNotContains(
-            linePairPropertyAdapter,
+            linePropertyAdapter,
             "PipelineGeometryPropertyBase",
-            "The Line Pair adapter no longer owns the Geometry property base.");
+            "The Line adapter does not own the Geometry property base.");
+        RequireContains(
+            linePropertyAdapter,
+            "toolType == \"line\"",
+            "The Line adapter owns the single Line alias.");
+        RequireContains(
+            linePropertyAdapter,
+            "toolType == \"linegauge\"",
+            "The Line adapter owns the single LineGauge alias.");
+        RequireContains(
+            linePropertyAdapter,
+            "private sealed class PipelineLineGaugeProperty",
+            "The Line adapter owns the single-Line PropertyGrid model.");
+        RequireContains(
+            linePropertyAdapter,
+            "private sealed class PipelineLinePairProperty",
+            "The Line adapter retains the paired-Line PropertyGrid model.");
         string geometryPropertyAdapter = Read(
             repoRoot,
             @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineGeometryPropertyAdapter.cs");
@@ -2105,6 +2139,10 @@ internal static class Program
                 basicImageModel,
                 "The BasicImage adapter owns all four PropertyGrid models.");
         }
+        RequireContains(
+            learnScreenshotSmoke,
+            "Single LineGauge alias/apply metadata and layer round trip changed.",
+            "Screenshot smoke covers single LineGauge aliases, apply, metadata, layers, and parameters.");
         RequireContains(
             learnScreenshotSmoke,
             "wpf_shell_host_recipe_line_pair_properties",

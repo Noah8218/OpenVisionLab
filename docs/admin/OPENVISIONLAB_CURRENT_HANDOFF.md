@@ -2015,6 +2015,34 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
   round-trip gate | Recommended model: none until evidence exists | Reasoning
   effort: none until evidence exists.
 
+### Maintenance: Line Property Adapter Consolidation (2026-07-26)
+
+- The remaining single `LineGauge` and `Mean` mappings were re-audited. A
+  combined adapter was rejected because “remaining root cases” is not a
+  cohesive responsibility.
+- A pre-move real Tool View-generated `LineGauge` Step proved
+  `LineTool`/`LineGaugeTool`, canonical apply, every current single-Line
+  parameter, layer, and acceptance-metadata round trip. The existing paired
+  Line PropertyGrid baseline also passed.
+- The existing `VisionPipelineLinePairPropertyAdapter` was renamed and
+  expanded to `VisionPipelineLinePropertyAdapter`. It now owns single
+  `LineGauge`, `LineDistance`, `LineIntersection`, both editable model shapes,
+  reconstruction, metric identification, and the existing
+  `TryCreateLineGaugePair` compatibility handoff.
+- The root mapper no longer owns direct Line cases/model/metric knowledge and
+  fell from 1,263 to 1,150 lines. `Mean` intentionally remains in the root;
+  no one-case adapter or generic measurement abstraction was added.
+- Pre/post single Line, Line Pair, P213 Geometry PropertyGrid/Review, current
+  Debug build, visual inspection, readiness, and patch hygiene passed.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_LINE_PROPERTY_ADAPTER_CONSOLIDATION_REFACTOR_PROOF_20260726.md`
+  and `artifacts\refactor_line_family_adapter_20260726`.
+- Remaining structural priority: none without a concrete Mean mapper
+  maintenance need. Do not extract Mean merely to remove the final direct
+  switch case. Prerequisite: concrete Mean mapper maintenance need and focused
+  selected-Step round-trip gate | Recommended model: none until evidence
+  exists | Reasoning effort: none until evidence exists.
+
 ## Handoff Rules For The Next Chat
 
 - Do not claim a feature is complete because the historical handoff says so. Re-run the smallest meaningful current command when work touches it.

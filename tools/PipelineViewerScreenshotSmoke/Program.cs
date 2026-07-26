@@ -19031,6 +19031,135 @@ internal static class Program
         return clone;
     }
 
+    private static void AssertSingleLineGaugePropertyMapperRoundTrip(VisionPipelineStep source)
+    {
+        if (source == null
+            || !string.Equals(source.ToolType, "LineGauge", StringComparison.Ordinal)
+            || source.Parameters == null)
+        {
+            throw new InvalidOperationException("Line Edge Tool View did not create a canonical LineGauge Step.");
+        }
+
+        foreach (string alias in new[] { "LineTool", "LineGaugeTool" })
+        {
+            VisionPipelineStep aliasStep = CloneStep(source);
+            aliasStep.ToolType = alias;
+            if (VisionPipelineStepPropertyMapper.CreateProperty(aliasStep) is not LineGaugeProperty)
+            {
+                throw new InvalidOperationException(
+                    $"Single LineGauge alias '{alias}' did not create the PropertyGrid model.");
+            }
+        }
+
+        VisionPipelineStep applyStep = CloneStep(source);
+        applyStep.Name = "Single Line Reviewed";
+        applyStep.Parameters["Name"] = applyStep.Name;
+        applyStep.ToolType = "LineTool";
+        applyStep.InputLayer = "ReviewedInput";
+        applyStep.OutputLayer = "ReviewedLineOutput";
+        applyStep.Enabled = false;
+        applyStep.UseAcceptance = true;
+        applyStep.ExpectedSuccess = false;
+        applyStep.MaxElapsedMilliseconds = 76;
+        applyStep.RequiredMessageText = "line-reviewed";
+        applyStep.AcceptanceMetricName = "LineLengthMax";
+        applyStep.UseAcceptanceMetricMinimum = true;
+        applyStep.AcceptanceMetricMinimum = 20;
+        applyStep.UseAcceptanceMetricMaximum = true;
+        applyStep.AcceptanceMetricMaximum = 240;
+        AddParameters(
+            applyStep,
+            ("PIXELPERMM", "0.025"),
+            ("USE_ROI", "true"),
+            ("CvROI", "12,18,160,120"),
+            ("USE_THRESHOLD", "false"),
+            ("USE_ADAPTIVE_THRESHOLD", "false"),
+            ("PRJ_PORALITY", "WTOB"),
+            ("PRJ_DIR", "Y_TTOB"),
+            ("CONTRAST", "42"),
+            ("THICKNESS", "7"),
+            ("SAMPLING_STEP", "11"),
+            ("VER_PRJ_DIR", "Y_BTOT"),
+            ("POINT_RANGE", "14"),
+            ("USE_MANUAL_ANGLE", "true"),
+            ("MANUAL_ANGLE_VALUE", "12.5"),
+            ("USE_EXTEND_FIT_LINE", "true"),
+            ("EXTEND_FIT_LINE_VALUE", "120"),
+            ("AVERAGE_Diff", "88"),
+            ("USE_AVERAGE_FILTER", "true"),
+            ("AVERAGE_FILTER_TYPE", "X"),
+            ("SHOW_VERTICAL_LINE", "false"),
+            ("SHOW_EDGE", "true"),
+            ("SHOW_CONTOUR", "false"),
+            ("SHOW_FITLINE", "true"));
+        object applyProperty = VisionPipelineStepPropertyMapper.CreateProperty(applyStep);
+        applyStep.Name = "Changed";
+        applyStep.ToolType = "Mean";
+        applyStep.InputLayer = "ChangedInput";
+        applyStep.OutputLayer = "ChangedOutput";
+        applyStep.Enabled = true;
+        applyStep.UseAcceptance = false;
+        applyStep.ExpectedSuccess = true;
+        applyStep.MaxElapsedMilliseconds = 0;
+        applyStep.RequiredMessageText = string.Empty;
+        applyStep.AcceptanceMetricName = string.Empty;
+        applyStep.UseAcceptanceMetricMinimum = false;
+        applyStep.AcceptanceMetricMinimum = 0;
+        applyStep.UseAcceptanceMetricMaximum = false;
+        applyStep.AcceptanceMetricMaximum = 0;
+        applyStep.Parameters.Clear();
+        applyStep.Parameters["Name"] = "Changed";
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(applyStep, applyProperty)
+            || !string.Equals(applyStep.Name, "Single Line Reviewed", StringComparison.Ordinal)
+            || !string.Equals(applyStep.ToolType, "LineGauge", StringComparison.Ordinal)
+            || !string.Equals(applyStep.InputLayer, "ReviewedInput", StringComparison.Ordinal)
+            || !string.Equals(applyStep.OutputLayer, "ReviewedLineOutput", StringComparison.Ordinal)
+            || applyStep.Enabled
+            || !applyStep.UseAcceptance
+            || applyStep.ExpectedSuccess
+            || Math.Abs(applyStep.MaxElapsedMilliseconds - 76D) > 0.000001D
+            || !string.Equals(applyStep.RequiredMessageText, "line-reviewed", StringComparison.Ordinal)
+            || !string.Equals(applyStep.AcceptanceMetricName, "LineLengthMax", StringComparison.Ordinal)
+            || !applyStep.UseAcceptanceMetricMinimum
+            || Math.Abs(applyStep.AcceptanceMetricMinimum - 20D) > 0.000001D
+            || !applyStep.UseAcceptanceMetricMaximum
+            || Math.Abs(applyStep.AcceptanceMetricMaximum - 240D) > 0.000001D)
+        {
+            throw new InvalidOperationException(
+                "Single LineGauge alias/apply metadata and layer round trip changed.");
+        }
+
+        foreach ((string key, object expected) in new (string, object)[]
+        {
+            ("PIXELPERMM", 0.025D),
+            ("USE_ROI", true),
+            ("CvROI", "12,18,160,120"),
+            ("USE_THRESHOLD", false),
+            ("USE_ADAPTIVE_THRESHOLD", false),
+            ("PRJ_PORALITY", "WTOB"),
+            ("PRJ_DIR", "Y_TTOB"),
+            ("CONTRAST", 42D),
+            ("THICKNESS", 7D),
+            ("SAMPLING_STEP", 11D),
+            ("VER_PRJ_DIR", "Y_BTOT"),
+            ("POINT_RANGE", 14D),
+            ("USE_MANUAL_ANGLE", true),
+            ("MANUAL_ANGLE_VALUE", 12.5D),
+            ("USE_EXTEND_FIT_LINE", true),
+            ("EXTEND_FIT_LINE_VALUE", 120D),
+            ("AVERAGE_Diff", 88D),
+            ("USE_AVERAGE_FILTER", true),
+            ("AVERAGE_FILTER_TYPE", "X"),
+            ("SHOW_VERTICAL_LINE", false),
+            ("SHOW_EDGE", true),
+            ("SHOW_CONTOUR", false),
+            ("SHOW_FITLINE", true)
+        })
+        {
+            AssertParameterValue(applyStep, key, expected);
+        }
+    }
+
     private sealed class PropertyContext : ITypeDescriptorContext
     {
         public PropertyContext(object instance, PropertyDescriptor descriptor) { Instance = instance; PropertyDescriptor = descriptor; }
@@ -23916,6 +24045,8 @@ internal static class Program
             AssertResultReviewVisible("Line Edge result guidance", "미리보기 OK", "합격 기준:", "엣지점", "피팅 길이", "다음:");
             AssertResultReviewVisible("Line Edge", "엣지 /", "라인", "엣지", "길이");
             AssertActiveToolTextsVisible("Line verification guide edge", "Line 검증", "미리보기 OK", "대비", "다음:");
+            VisionPipelineStep singleLineStep = shellHost.AddActiveNativePipelineStepForTest();
+            AssertSingleLineGaugePropertyMapperRoundTrip(singleLineStep);
             shellHost.SetActiveLinePurposeForTest("Measure");
             Pump(8);
             shellHost.RunActiveNativePreviewForTest();
