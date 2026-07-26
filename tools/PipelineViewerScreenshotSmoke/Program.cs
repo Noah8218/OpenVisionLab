@@ -15928,7 +15928,8 @@ internal static class Program
             }
 
             if (!window.EdgeLineFormulaTextForTest.Contains("Edge", StringComparison.OrdinalIgnoreCase)
-                || !window.EdgeLineFormulaTextForTest.Contains("LineRun", StringComparison.OrdinalIgnoreCase))
+                || !window.EdgeLineFormulaTextForTest.Contains(">= 85", StringComparison.Ordinal)
+                || !window.EdgeLineFormulaTextForTest.Contains("LineRun = 5 px", StringComparison.Ordinal))
             {
                 throw new InvalidOperationException("Edge / Line guide did not explain edge strength and line run.");
             }
@@ -16029,9 +16030,11 @@ internal static class Program
             }
 
             if (!window.LineDistanceFormulaTextForTest.Contains("DistancePxAvg", StringComparison.OrdinalIgnoreCase)
-                || !window.LineDistanceFormulaTextForTest.Contains("DistancePxRange", StringComparison.OrdinalIgnoreCase)
-                || !window.LineDistanceFormulaTextForTest.Contains("DistanceMmRange", StringComparison.OrdinalIgnoreCase)
-                || !window.LineDistanceFormulaTextForTest.Contains("DistanceMmMax", StringComparison.OrdinalIgnoreCase))
+                || !window.LineDistanceFormulaTextForTest.Contains("DistancePxAvg=4.2", StringComparison.Ordinal)
+                || !window.LineDistanceFormulaTextForTest.Contains("DistancePxRange=1", StringComparison.Ordinal)
+                || !window.LineDistanceFormulaTextForTest.Contains("DistanceMmAvg=0.025", StringComparison.Ordinal)
+                || !window.LineDistanceFormulaTextForTest.Contains("DistanceMmRange=0.006", StringComparison.Ordinal)
+                || !window.LineDistanceFormulaTextForTest.Contains("DistanceMmMax=0.030", StringComparison.Ordinal))
             {
                 throw new InvalidOperationException("LineDistance guide did not explain average, range, and max metrics.");
             }

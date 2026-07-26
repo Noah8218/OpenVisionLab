@@ -573,3 +573,26 @@
   비-WPF simulation owner인지 확인하는 것입니다. 숫자 축소용
   event/timer/rendering partial은 만들지 않습니다. Recommended model:
   gpt-5.6-terra | Reasoning effort: medium.
+
+### Learn Line Simulation Model Update (2026-07-26)
+
+- Edge/Line의 5x5 GV gradient/edge/run 계산과 LineDistance의 edge-pair
+  거리/평균/range/mm/gate 계산이 같은 선 기반 측정 lesson 책임이며,
+  View에서 각각 중복 계산되고 있음을 확인했습니다.
+- 새 비-WPF `OpenVisionLearnLineSimulationModel`이 두 scenario data와
+  typed evaluation result를 소유합니다. View는 slider 값 전달,
+  timer/control state, 설명 문구, painting만 유지합니다.
+- UI smoke를 정확한 `threshold 85`, `LineRun 5 px`, `4.2 px`, range `1`,
+  mm `0.025/0.006/0.030` 계약까지 강화했습니다.
+- 첫 post-move build는 이전 `strengths` 변수 참조 한 곳을 찾아
+  실패했고 수정 후 0 warning/0 error로 통과했습니다. 전후/current
+  source UI, readiness, 구조 검색, visual inspection,
+  `git diff --check`도 통과했습니다.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_LEARN_LINE_SIMULATION_MODEL_REFACTOR_PROOF_20260726.md`
+  및 `artifacts/refactor_learn_line_simulation_model_20260726`.
+- 다음 구조 감사 후보는 Brightness/Arithmetic/Filtering이 하나의
+  basic grayscale simulation owner로 응집되는지 확인하는 것입니다.
+  Metrics Acceptance, Color/HSV, event/timer/rendering은 숫자나 대칭을
+  위해 분리하지 않습니다. Recommended model: gpt-5.6-terra |
+  Reasoning effort: medium.

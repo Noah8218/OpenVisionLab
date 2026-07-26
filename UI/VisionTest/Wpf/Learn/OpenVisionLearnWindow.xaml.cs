@@ -77,16 +77,6 @@ namespace OpenVisionLab
             0, 255, 255, 255, 255, 0, 0,
             0, 0, 0, 0, 0, 0, 255
         };
-        private readonly int[] edgeLineSampleValues =
-        {
-            42, 48, 54, 186, 193,
-            45, 50, 57, 190, 198,
-            43, 49, 55, 188, 196,
-            47, 53, 60, 194, 201,
-            44, 51, 58, 191, 199
-        };
-        private readonly int[] lineDistanceLeftEdges = { 2, 2, 2, 2, 2 };
-        private readonly int[] lineDistanceRightEdges = { 6, 6, 7, 6, 6 };
         private readonly double[] metricsAcceptanceSamples = { 0.50D, 0.51D, 0.49D, 0.82D, 0.50D };
         private readonly string[] layerRecipeLayers = { "Main", "Pin_Binary", "Pin_Gap", "Pin_Review" };
         private readonly (string Input, string Tool, string Output)[] layerRecipeSteps =
@@ -1190,7 +1180,7 @@ namespace OpenVisionLab
             edgeLineOutputCells.Clear();
             edgeLineOutputTexts.Clear();
 
-            foreach (int value in edgeLineSampleValues)
+            foreach (int value in OpenVisionLearnLineSimulationModel.EdgeSampleValues)
             {
                 Border inputCell = CreateSmallValueCell(value.ToString(CultureInfo.InvariantCulture), value);
                 edgeLineInputGrid.Children.Add(inputCell);
@@ -1211,25 +1201,26 @@ namespace OpenVisionLab
             lineDistanceOutputCells.Clear();
             lineDistanceOutputTexts.Clear();
 
-            for (int y = 0; y < lineDistanceLeftEdges.Length; y++)
+            for (int y = 0; y < OpenVisionLearnLineSimulationModel.DistanceLeftEdges.Count; y++)
             {
                 for (int x = 0; x < 9; x++)
                 {
                     Border cell = CreateSmallValueCell(string.Empty, 0);
                     TextBlock text = (TextBlock)cell.Child;
-                    if (x == lineDistanceLeftEdges[y])
+                    if (x == OpenVisionLearnLineSimulationModel.DistanceLeftEdges[y])
                     {
                         cell.Background = animationCandidateBrush;
                         text.Foreground = Brushes.White;
                         text.Text = "L";
                     }
-                    else if (x == lineDistanceRightEdges[y])
+                    else if (x == OpenVisionLearnLineSimulationModel.DistanceRightEdges[y])
                     {
                         cell.Background = animationPassBrush;
                         text.Foreground = Brushes.White;
                         text.Text = "R";
                     }
-                    else if (x > lineDistanceLeftEdges[y] && x < lineDistanceRightEdges[y])
+                    else if (x > OpenVisionLearnLineSimulationModel.DistanceLeftEdges[y]
+                        && x < OpenVisionLearnLineSimulationModel.DistanceRightEdges[y])
                     {
                         cell.Background = new SolidColorBrush(Color.FromRgb(229, 244, 247));
                         text.Foreground = Brushes.Black;
@@ -1245,7 +1236,7 @@ namespace OpenVisionLab
                 }
             }
 
-            for (int i = 0; i < lineDistanceLeftEdges.Length; i++)
+            for (int i = 0; i < OpenVisionLearnLineSimulationModel.DistanceLeftEdges.Count; i++)
             {
                 Border outputCell = CreateSmallValueCell(string.Empty, 0);
                 TextBlock outputText = (TextBlock)outputCell.Child;
@@ -2366,98 +2357,30 @@ namespace OpenVisionLab
 
         private void UpdateEdgeLineGuide()
         {
-            int threshold = Math.Max(10, (int)Math.Round(edgeThresholdSlider.Value));
-            bool[] edges = new bool[edgeLineSampleValues.Length];
-            int[] strengths = new int[edgeLineSampleValues.Length];
-            int bestColumn = 0;
-            int bestRun = 0;
+            OpenVisionLearnLineSimulationModel.EdgeLineEvaluation evaluation =
+                OpenVisionLearnLineSimulationModel.EvaluateEdgeLine(edgeThresholdSlider.Value);
 
-            for (int y = 0; y < 5; y++)
-            {
-                for (int x = 0; x < 5; x++)
-                {
-                    int index = y * 5 + x;
-                    int strength = x < 4
-                        ? Math.Abs(edgeLineSampleValues[index + 1] - edgeLineSampleValues[index])
-                        : 0;
-                    strengths[index] = strength;
-                    edges[index] = strength >= threshold;
-                }
-            }
-
-            for (int x = 0; x < 5; x++)
-            {
-                int run = 0;
-                for (int y = 0; y < 5; y++)
-                {
-                    int index = y * 5 + x;
-                    run = edges[index] ? run + 1 : 0;
-                    if (run > bestRun)
-                    {
-                        bestRun = run;
-                        bestColumn = x;
-                    }
-                }
-            }
-
-            txtEdgeThreshold.Text = threshold.ToString(CultureInfo.InvariantCulture) + " GV";
+            txtEdgeThreshold.Text = evaluation.Threshold.ToString(CultureInfo.InvariantCulture) + " GV";
             txtEdgeLineFormula.Text = "Edge = abs(right GV - left GV) >= "
-                + threshold.ToString(CultureInfo.InvariantCulture)
+                + evaluation.Threshold.ToString(CultureInfo.InvariantCulture)
                 + ", LineRun = "
-                + bestRun.ToString(CultureInfo.InvariantCulture)
+                + evaluation.BestRun.ToString(CultureInfo.InvariantCulture)
                 + " px";
-            txtEdgeLineMeaning.Text = bestRun >= 3
+            txtEdgeLineMeaning.Text = evaluation.BestRun >= 3
                 ? "같은 X 위치에서 Edge 후보가 3 px 이상 이어져 Line 후보로 볼 수 있습니다. 실제 검사는 ROI, 방향, 길이 조건을 같이 둡니다."
                 : "Edge 기준이 너무 높으면 후보가 끊겨 Line으로 보기 어렵습니다. 기준값, ROI, 전처리 상태를 순서대로 확인합니다.";
 
-            PaintEdgeLineAnimationFrame(threshold, strengths, edges, bestColumn, bestRun);
+            PaintEdgeLineAnimationFrame(evaluation);
         }
 
         private void PaintEdgeLineAnimationFrame()
         {
-            int threshold = Math.Max(10, (int)Math.Round(edgeThresholdSlider.Value));
-            bool[] edges = new bool[edgeLineSampleValues.Length];
-            int[] strengths = new int[edgeLineSampleValues.Length];
-            int bestColumn = 0;
-            int bestRun = 0;
-
-            for (int y = 0; y < 5; y++)
-            {
-                for (int x = 0; x < 5; x++)
-                {
-                    int index = y * 5 + x;
-                    int strength = x < 4
-                        ? Math.Abs(edgeLineSampleValues[index + 1] - edgeLineSampleValues[index])
-                        : 0;
-                    strengths[index] = strength;
-                    edges[index] = strength >= threshold;
-                }
-            }
-
-            for (int x = 0; x < 5; x++)
-            {
-                int run = 0;
-                for (int y = 0; y < 5; y++)
-                {
-                    int index = y * 5 + x;
-                    run = edges[index] ? run + 1 : 0;
-                    if (run > bestRun)
-                    {
-                        bestRun = run;
-                        bestColumn = x;
-                    }
-                }
-            }
-
-            PaintEdgeLineAnimationFrame(threshold, strengths, edges, bestColumn, bestRun);
+            PaintEdgeLineAnimationFrame(
+                OpenVisionLearnLineSimulationModel.EvaluateEdgeLine(edgeThresholdSlider.Value));
         }
 
         private void PaintEdgeLineAnimationFrame(
-            int threshold,
-            int[] strengths,
-            bool[] edges,
-            int bestColumn,
-            int bestRun)
+            OpenVisionLearnLineSimulationModel.EdgeLineEvaluation evaluation)
         {
             int visibleStep = Math.Max(0, Math.Min(edgeLineAnimationStep, EdgeLineAnimationStepCount));
             Brush edgeBrush = animationCandidateBrush;
@@ -2469,7 +2392,7 @@ namespace OpenVisionLab
                 edgeLineInputCells[i].BorderThickness = new Thickness(1);
             }
 
-            for (int i = 0; i < edgeLineSampleValues.Length; i++)
+            for (int i = 0; i < OpenVisionLearnLineSimulationModel.EdgeSampleValues.Count; i++)
             {
                 int x = i % 5;
                 if (visibleStep == 0)
@@ -2478,30 +2401,37 @@ namespace OpenVisionLab
                     continue;
                 }
 
-                int shade = Math.Min(220, strengths[i] + 35);
+                int shade = Math.Min(220, evaluation.Strengths[i] + 35);
                 if (visibleStep == 1)
                 {
-                    PaintEdgeLineCell(i, CreateGrayBrush(shade), shade > 128 ? Brushes.Black : Brushes.White, strengths[i].ToString(CultureInfo.InvariantCulture));
+                    PaintEdgeLineCell(i, CreateGrayBrush(shade), shade > 128 ? Brushes.Black : Brushes.White, evaluation.Strengths[i].ToString(CultureInfo.InvariantCulture));
                     continue;
                 }
 
-                if (edges[i] && i < edgeLineInputCells.Count)
+                if (evaluation.Edges[i] && i < edgeLineInputCells.Count)
                 {
-                    edgeLineInputCells[i].BorderBrush = visibleStep >= 3 && x == bestColumn && bestRun >= 3 ? lineBrush : edgeBrush;
+                    edgeLineInputCells[i].BorderBrush = visibleStep >= 3
+                        && x == evaluation.BestColumn
+                        && evaluation.BestRun >= 3
+                            ? lineBrush
+                            : edgeBrush;
                     edgeLineInputCells[i].BorderThickness = new Thickness(2);
                 }
 
-                if (visibleStep >= 3 && edges[i] && x == bestColumn && bestRun >= 3)
+                if (visibleStep >= 3
+                    && evaluation.Edges[i]
+                    && x == evaluation.BestColumn
+                    && evaluation.BestRun >= 3)
                 {
                     PaintEdgeLineCell(i, lineBrush, Brushes.White, "L");
                 }
-                else if (edges[i])
+                else if (evaluation.Edges[i])
                 {
                     PaintEdgeLineCell(i, edgeBrush, Brushes.White, "E");
                 }
                 else
                 {
-                    PaintEdgeLineCell(i, CreateGrayBrush(shade), shade > 128 ? Brushes.Black : Brushes.White, strengths[i].ToString(CultureInfo.InvariantCulture));
+                    PaintEdgeLineCell(i, CreateGrayBrush(shade), shade > 128 ? Brushes.Black : Brushes.White, evaluation.Strengths[i].ToString(CultureInfo.InvariantCulture));
                 }
             }
 
@@ -2509,8 +2439,8 @@ namespace OpenVisionLab
             {
                 0 => "0 / 3 - GV 샘플에서 밝기 변화를 확인합니다.",
                 1 => "1 / 3 - Gradient: abs(오른쪽 GV - 왼쪽 GV)",
-                2 => "2 / 3 - Edge: strength >= " + threshold.ToString(CultureInfo.InvariantCulture),
-                _ => "3 / 3 - LineRun: best vertical chain = " + bestRun.ToString(CultureInfo.InvariantCulture) + " px"
+                2 => "2 / 3 - Edge: strength >= " + evaluation.Threshold.ToString(CultureInfo.InvariantCulture),
+                _ => "3 / 3 - LineRun: best vertical chain = " + evaluation.BestRun.ToString(CultureInfo.InvariantCulture) + " px"
             };
         }
 
@@ -2541,58 +2471,40 @@ namespace OpenVisionLab
         private void UpdateLineDistanceGuide()
         {
             double rangeMax = lineDistanceRangeMaxSlider.Value;
-            int[] distances = lineDistanceRightEdges
-                .Select((right, index) => right - lineDistanceLeftEdges[index])
-                .ToArray();
-            double avg = distances.Average();
-            int min = distances.Min();
-            int max = distances.Max();
-            int range = max - min;
-            double pixelPerMm = 0.006D;
-            double avgMm = avg * pixelPerMm;
-            double rangeMm = range * pixelPerMm;
-            double maxMm = max * pixelPerMm;
-            bool rangeOk = range <= rangeMax;
+            OpenVisionLearnLineSimulationModel.LineDistanceEvaluation evaluation =
+                OpenVisionLearnLineSimulationModel.EvaluateLineDistance(rangeMax);
 
             txtLineDistanceRangeMax.Text = rangeMax.ToString("0.00", CultureInfo.InvariantCulture) + " px";
             txtLineDistanceFormula.Text = "DistancePxAvg="
-                + avg.ToString("0.0", CultureInfo.InvariantCulture)
+                + evaluation.Average.ToString("0.0", CultureInfo.InvariantCulture)
                 + ", DistancePxRange="
-                + range.ToString(CultureInfo.InvariantCulture)
+                + evaluation.Range.ToString(CultureInfo.InvariantCulture)
                 + ", DistanceMmAvg="
-                + avgMm.ToString("0.000", CultureInfo.InvariantCulture)
+                + evaluation.AverageMillimeters.ToString("0.000", CultureInfo.InvariantCulture)
                 + ", DistanceMmRange="
-                + rangeMm.ToString("0.000", CultureInfo.InvariantCulture)
+                + evaluation.RangeMillimeters.ToString("0.000", CultureInfo.InvariantCulture)
                 + ", DistanceMmMax="
-                + maxMm.ToString("0.000", CultureInfo.InvariantCulture);
-            txtLineDistanceMeaning.Text = rangeOk
+                + evaluation.MaximumMillimeters.ToString("0.000", CultureInfo.InvariantCulture);
+            txtLineDistanceMeaning.Text = evaluation.RangePass
                 ? "평균과 줄별 흔들림이 모두 기준 안입니다. 실제 레시피도 DistanceAvg와 DistanceRange를 함께 판정합니다."
                 : "평균값만 보면 지나칠 수 있지만 줄별 거리 차이가 큽니다. Range/Max 게이트로 긴 측정선을 NG 처리해야 합니다.";
 
-            PaintLineDistanceAnimationFrame(distances, avg, range, rangeMax, rangeOk);
+            PaintLineDistanceAnimationFrame(evaluation, rangeMax);
         }
 
         private void PaintLineDistanceAnimationFrame()
         {
             double rangeMax = lineDistanceRangeMaxSlider.Value;
-            int[] distances = lineDistanceRightEdges
-                .Select((right, index) => right - lineDistanceLeftEdges[index])
-                .ToArray();
-            double avg = distances.Average();
-            int range = distances.Max() - distances.Min();
-            bool rangeOk = range <= rangeMax;
-            PaintLineDistanceAnimationFrame(distances, avg, range, rangeMax, rangeOk);
+            PaintLineDistanceAnimationFrame(
+                OpenVisionLearnLineSimulationModel.EvaluateLineDistance(rangeMax),
+                rangeMax);
         }
 
         private void PaintLineDistanceAnimationFrame(
-            int[] distances,
-            double avg,
-            int range,
-            double rangeMax,
-            bool rangeOk)
+            OpenVisionLearnLineSimulationModel.LineDistanceEvaluation evaluation,
+            double rangeMax)
         {
             int visibleStep = Math.Max(0, Math.Min(lineDistanceAnimationStep, LineDistanceAnimationStepCount));
-            int max = distances.Max();
             Brush normalBrush = animationPassBrush;
             Brush sampleBrush = animationCandidateBrush;
             Brush outlierBrush = new SolidColorBrush(Color.FromRgb(185, 91, 36));
@@ -2603,11 +2515,15 @@ namespace OpenVisionLab
                 lineDistanceInputCells[i].BorderThickness = new Thickness(1);
             }
 
-            for (int i = 0; i < distances.Length; i++)
+            for (int i = 0; i < evaluation.Distances.Length; i++)
             {
                 if (visibleStep >= 1)
                 {
-                    Brush rowBrush = !rangeOk && distances[i] == max && visibleStep >= 3 ? outlierBrush : sampleBrush;
+                    Brush rowBrush = !evaluation.RangePass
+                        && evaluation.Distances[i] == evaluation.Maximum
+                        && visibleStep >= 3
+                            ? outlierBrush
+                            : sampleBrush;
                     HighlightLineDistanceInputRow(i, rowBrush);
                 }
 
@@ -2617,16 +2533,17 @@ namespace OpenVisionLab
                 }
                 else if (visibleStep == 1)
                 {
-                    PaintLineDistanceCell(i, sampleBrush, Brushes.White, distances[i].ToString(CultureInfo.InvariantCulture) + " px");
+                    PaintLineDistanceCell(i, sampleBrush, Brushes.White, evaluation.Distances[i].ToString(CultureInfo.InvariantCulture) + " px");
                 }
                 else if (visibleStep == 2)
                 {
-                    PaintLineDistanceCell(i, sampleBrush, Brushes.White, "avg " + avg.ToString("0.0", CultureInfo.InvariantCulture));
+                    PaintLineDistanceCell(i, sampleBrush, Brushes.White, "avg " + evaluation.Average.ToString("0.0", CultureInfo.InvariantCulture));
                 }
                 else
                 {
-                    bool outlier = !rangeOk && distances[i] == max;
-                    PaintLineDistanceCell(i, outlier ? outlierBrush : normalBrush, Brushes.White, distances[i].ToString(CultureInfo.InvariantCulture) + " px");
+                    bool outlier = !evaluation.RangePass
+                        && evaluation.Distances[i] == evaluation.Maximum;
+                    PaintLineDistanceCell(i, outlier ? outlierBrush : normalBrush, Brushes.White, evaluation.Distances[i].ToString(CultureInfo.InvariantCulture) + " px");
                 }
             }
 
@@ -2634,10 +2551,10 @@ namespace OpenVisionLab
             {
                 0 => "0 / 3 - 각 스캔선의 왼쪽/오른쪽 edge 쌍을 확인합니다.",
                 1 => "1 / 3 - 각 스캔선에서 Gap/Pitch를 측정합니다.",
-                2 => "2 / 3 - Average: DistancePxAvg = " + avg.ToString("0.0", CultureInfo.InvariantCulture),
-                _ => "3 / 3 - Range 판정: " + (rangeOk ? "OK" : "NG") + ", DistancePxRange = "
-                    + range.ToString(CultureInfo.InvariantCulture)
-                    + (rangeOk ? " <= " : " > ")
+                2 => "2 / 3 - Average: DistancePxAvg = " + evaluation.Average.ToString("0.0", CultureInfo.InvariantCulture),
+                _ => "3 / 3 - Range 판정: " + (evaluation.RangePass ? "OK" : "NG") + ", DistancePxRange = "
+                    + evaluation.Range.ToString(CultureInfo.InvariantCulture)
+                    + (evaluation.RangePass ? " <= " : " > ")
                     + rangeMax.ToString("0.00", CultureInfo.InvariantCulture)
             };
         }

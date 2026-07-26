@@ -2120,6 +2120,33 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
   handlers, timers, or rendering into partial files for line-count reduction.
   Recommended model: gpt-5.6-terra | Reasoning effort: medium.
 
+### Maintenance: Learn Line Simulation Model Boundary (2026-07-26)
+
+- The Edge/Line and LineDistance lessons formed one cohesive line-measurement
+  simulation responsibility: gray-value gradients, edge/run selection,
+  edge-pair distances, pixel statistics, lesson mm conversion, and range gate.
+  The WPF view previously owned and duplicated those calculations.
+- `OpenVisionLearnLineSimulationModel` now owns both lesson scenarios and
+  returns typed evaluations without WPF dependencies. The view passes slider
+  values and retains controls, timers, localized text, and rendering.
+- The view no longer contains the three moved sample arrays or duplicated
+  calculations and fell from 4,801 to 4,718 lines.
+- Focused UI smoke now fixes exact Edge/Line and LineDistance numeric outputs.
+  The first post-move build exposed one stale local variable reference; after
+  correction, final Debug build, both UI targets, readiness, structural
+  search, visual inspection, and patch hygiene passed.
+- Before/after screenshot hashes varied, including one unchanged repeated
+  Edge/Line capture. Direct review showed the same layout, text, values,
+  controls, and state, while exact numeric/semantic smoke assertions passed.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_LEARN_LINE_SIMULATION_MODEL_REFACTOR_PROOF_20260726.md`
+  and `artifacts\refactor_learn_line_simulation_model_20260726`.
+- Next structural audit: assess whether Brightness, Arithmetic, and Filtering
+  form one cohesive basic grayscale simulation owner. Do not split Metrics
+  Acceptance, Color/HSV, event handlers, timers, or rendering for file-size
+  reduction or symmetry. Recommended model: gpt-5.6-terra | Reasoning effort:
+  medium.
+
 ## Handoff Rules For The Next Chat
 
 - Do not claim a feature is complete because the historical handoff says so. Re-run the smallest meaningful current command when work touches it.

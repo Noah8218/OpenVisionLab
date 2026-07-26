@@ -853,6 +853,7 @@ internal static class Program
             "ThresholdToolWpfView.xaml.cs");
         RequireToolViewOwnerFiles(repoRoot, @"UI\VisionTest\Wpf\Learn",
             "OpenVisionLearnBinarySimulationModel.cs",
+            "OpenVisionLearnLineSimulationModel.cs",
             "OpenVisionLearnMatchingSimulationModel.cs",
             "OpenVisionLearnTopics.cs",
             "OpenVisionLearnWindow.xaml",
@@ -1516,6 +1517,9 @@ internal static class Program
         string learnMatchingSimulationModel = Read(
             repoRoot,
             @"UI\VisionTest\Wpf\Learn\OpenVisionLearnMatchingSimulationModel.cs");
+        string learnLineSimulationModel = Read(
+            repoRoot,
+            @"UI\VisionTest\Wpf\Learn\OpenVisionLearnLineSimulationModel.cs");
         string learnTopicsCatalog = Read(repoRoot, @"UI\VisionTest\Wpf\Learn\OpenVisionLearnTopics.cs");
         Dictionary<int, string> learnTopicIndexToEnum = BuildLearnTopicIndexToEnumMap(learnTopicsCatalog);
         string toolShell = Read(repoRoot, @"UI\VisionTest\Wpf\Tooling\SingleInput\VisionToolSingleInputPropertyToolShell.xaml.cs");
@@ -1551,6 +1555,13 @@ internal static class Program
         RequireNotContains(learnWindow, "private double CalculateTemplateScore", "Learn view no longer owns template score calculation.");
         RequireNotContains(learnWindow, "private readonly int[] matchingSearchValues", "Learn view no longer owns matching sample data.");
         RequireNotContains(learnWindow, "private readonly double[] featureMatchScores", "Learn view no longer owns feature score data.");
+        RequireContains(learnWindow, "OpenVisionLearnLineSimulationModel.EvaluateEdgeLine", "Learn view delegates edge/line evaluation to the line simulation model.");
+        RequireContains(learnWindow, "OpenVisionLearnLineSimulationModel.EvaluateLineDistance", "Learn view delegates line-distance evaluation to the line simulation model.");
+        RequireContains(learnLineSimulationModel, "public static EdgeLineEvaluation EvaluateEdgeLine", "Learn line simulation model owns edge/line evaluation.");
+        RequireContains(learnLineSimulationModel, "public static LineDistanceEvaluation EvaluateLineDistance", "Learn line simulation model owns line-distance evaluation.");
+        RequireNotContains(learnWindow, "private readonly int[] edgeLineSampleValues", "Learn view no longer owns edge/line sample data.");
+        RequireNotContains(learnWindow, "private readonly int[] lineDistanceLeftEdges", "Learn view no longer owns line-distance left-edge data.");
+        RequireNotContains(learnWindow, "private readonly int[] lineDistanceRightEdges", "Learn view no longer owns line-distance right-edge data.");
         RequireContains(learnWindowXaml, "기초 용어", "OpenVision Learn labels the foundations button for learners.");
         RequireContains(learnWindow, "OpenFoundationDocsButton_Click", "OpenVision Learn handles the Foundation Docs button.");
         RequireContains(learnWindow, "LEARN_OPENCVSHARP_FOUNDATIONS.md", "OpenVision Learn Foundation Docs button opens the foundations guide.");
