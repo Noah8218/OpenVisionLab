@@ -8,55 +8,119 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Windows.Controls.WpfPropertyGrid;
 using static OpenVisionLab.PropertyGridEditorFactory;
+using static OpenVisionLab.VisionPipelineStepPropertyMapper;
 
 namespace OpenVisionLab
 {
-    internal static partial class VisionPipelineStepPropertyMapper
+    internal static class VisionPipelineMatchingPropertyAdapter
     {
-        private static object CreateMatchingProperty(VisionPipelineStep step, string name)
+        public static bool TryCreateProperty(
+            VisionPipelineStep step,
+            string name,
+            out object property)
         {
-            return AttachStepMetadata(ApplyCommonOpenCvProperty(new PipelineMatchingProperty(name)
+            property = null;
+            switch (NormalizeToolType(step?.ToolType))
             {
-                MATCH_MODE = GetEnum(step.Parameters, nameof(MatchingProperty.MATCH_MODE), TemplateMatchModes.CCoeffNormed),
-                SCORE_MIN = GetDouble(step.Parameters, nameof(MatchingProperty.SCORE_MIN), 0.6),
-                MAGNIFIATION = GetDouble(step.Parameters, nameof(MatchingProperty.MAGNIFIATION), 1),
-                NUM_MATCH = GetInt(step.Parameters, nameof(MatchingProperty.NUM_MATCH), 3),
-                USE_FIND_ANGLE = GetBool(step.Parameters, nameof(MatchingProperty.USE_FIND_ANGLE), true),
-                FIND_ANGLE = GetDouble(step.Parameters, nameof(MatchingProperty.FIND_ANGLE), 0.1),
-                FIND_ANGLE_MAX = GetInt(step.Parameters, nameof(MatchingProperty.FIND_ANGLE_MAX), 10),
-                FIND_ANGLE_MIN = GetInt(step.Parameters, nameof(MatchingProperty.FIND_ANGLE_MIN), -10),
-                USE_COARSE_TO_FINE_ANGLE_SEARCH = GetBool(step.Parameters, nameof(MatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH), false),
-                COARSE_ANGLE_STEP = GetDouble(step.Parameters, nameof(MatchingProperty.COARSE_ANGLE_STEP), 5.0),
-                COARSE_ANGLE_TOP_K = GetInt(step.Parameters, nameof(MatchingProperty.COARSE_ANGLE_TOP_K), 3),
-                USE_FIND_SCALE = GetBool(step.Parameters, nameof(MatchingProperty.USE_FIND_SCALE), false),
-                FIND_SCALE_MIN = GetDouble(step.Parameters, nameof(MatchingProperty.FIND_SCALE_MIN), 0.9),
-                FIND_SCALE_MAX = GetDouble(step.Parameters, nameof(MatchingProperty.FIND_SCALE_MAX), 1.1),
-                FIND_SCALE_STEP = GetDouble(step.Parameters, nameof(MatchingProperty.FIND_SCALE_STEP), 0.05),
-                PATTERN_PATH = GetString(step.Parameters, nameof(MatchingProperty.PATTERN_PATH), GetString(step.Parameters, "TemplatePath", string.Empty)),
-                USE_CANNY = GetBool(step.Parameters, nameof(MatchingProperty.USE_CANNY), false),
-                CANNY_HIGH = GetInt(step.Parameters, nameof(MatchingProperty.CANNY_HIGH), 60),
-                CANNY_LOW = GetInt(step.Parameters, nameof(MatchingProperty.CANNY_LOW), 30),
-                USE_PADDING_COLOR_WHITE = GetBool(step.Parameters, nameof(MatchingProperty.USE_PADDING_COLOR_WHITE), false),
-                USE_AS_FIXTURE_FRAME = GetBool(step.Parameters, VisionPipelineFixtureFrameService.PublishParameter, false),
-                FIXTURE_FRAME_NAME = GetString(step.Parameters, VisionPipelineFixtureFrameService.FrameNameParameter, string.Empty),
-                FIXTURE_REFERENCE_X = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.ReferenceXParameter, 0D),
-                FIXTURE_REFERENCE_Y = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.ReferenceYParameter, 0D),
-                FIXTURE_REFERENCE_ANGLE = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.ReferenceAngleParameter, 0D),
-                FIXTURE_REFERENCE_SCALE = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.ReferenceScaleParameter, 1D),
-                FIXTURE_MAX_ANGLE_DELTA = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.MaximumAngleDeltaParameter, 2D),
-                FIXTURE_MIN_SCALE_RATIO = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.MinimumScaleRatioParameter, 0D),
-                FIXTURE_MAX_SCALE_RATIO = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.MaximumScaleRatioParameter, 0D),
-                FIXTURE_REFERENCE_IMAGE_WIDTH = GetInt(step.Parameters, VisionPipelineFixtureFrameService.ReferenceImageWidthParameter, 0),
-                FIXTURE_REFERENCE_IMAGE_HEIGHT = GetInt(step.Parameters, VisionPipelineFixtureFrameService.ReferenceImageHeightParameter, 0)
-            }, step.Parameters), name, step.InputLayer, step.OutputLayer);
+                case "matching":
+                case "templatematching":
+                    property = AttachStepMetadata(
+                        ApplyCommonOpenCvProperty(new PipelineMatchingProperty(name)
+                        {
+                            MATCH_MODE = GetEnum(step.Parameters, nameof(MatchingProperty.MATCH_MODE), TemplateMatchModes.CCoeffNormed),
+                            SCORE_MIN = GetDouble(step.Parameters, nameof(MatchingProperty.SCORE_MIN), 0.6),
+                            MAGNIFIATION = GetDouble(step.Parameters, nameof(MatchingProperty.MAGNIFIATION), 1),
+                            NUM_MATCH = GetInt(step.Parameters, nameof(MatchingProperty.NUM_MATCH), 3),
+                            USE_FIND_ANGLE = GetBool(step.Parameters, nameof(MatchingProperty.USE_FIND_ANGLE), true),
+                            FIND_ANGLE = GetDouble(step.Parameters, nameof(MatchingProperty.FIND_ANGLE), 0.1),
+                            FIND_ANGLE_MAX = GetInt(step.Parameters, nameof(MatchingProperty.FIND_ANGLE_MAX), 10),
+                            FIND_ANGLE_MIN = GetInt(step.Parameters, nameof(MatchingProperty.FIND_ANGLE_MIN), -10),
+                            USE_COARSE_TO_FINE_ANGLE_SEARCH = GetBool(step.Parameters, nameof(MatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH), false),
+                            COARSE_ANGLE_STEP = GetDouble(step.Parameters, nameof(MatchingProperty.COARSE_ANGLE_STEP), 5.0),
+                            COARSE_ANGLE_TOP_K = GetInt(step.Parameters, nameof(MatchingProperty.COARSE_ANGLE_TOP_K), 3),
+                            USE_FIND_SCALE = GetBool(step.Parameters, nameof(MatchingProperty.USE_FIND_SCALE), false),
+                            FIND_SCALE_MIN = GetDouble(step.Parameters, nameof(MatchingProperty.FIND_SCALE_MIN), 0.9),
+                            FIND_SCALE_MAX = GetDouble(step.Parameters, nameof(MatchingProperty.FIND_SCALE_MAX), 1.1),
+                            FIND_SCALE_STEP = GetDouble(step.Parameters, nameof(MatchingProperty.FIND_SCALE_STEP), 0.05),
+                            PATTERN_PATH = GetString(step.Parameters, nameof(MatchingProperty.PATTERN_PATH), GetString(step.Parameters, "TemplatePath", string.Empty)),
+                            USE_CANNY = GetBool(step.Parameters, nameof(MatchingProperty.USE_CANNY), false),
+                            CANNY_HIGH = GetInt(step.Parameters, nameof(MatchingProperty.CANNY_HIGH), 60),
+                            CANNY_LOW = GetInt(step.Parameters, nameof(MatchingProperty.CANNY_LOW), 30),
+                            USE_PADDING_COLOR_WHITE = GetBool(step.Parameters, nameof(MatchingProperty.USE_PADDING_COLOR_WHITE), false),
+                            USE_AS_FIXTURE_FRAME = GetBool(step.Parameters, VisionPipelineFixtureFrameService.PublishParameter, false),
+                            FIXTURE_FRAME_NAME = GetString(step.Parameters, VisionPipelineFixtureFrameService.FrameNameParameter, string.Empty),
+                            FIXTURE_REFERENCE_X = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.ReferenceXParameter, 0D),
+                            FIXTURE_REFERENCE_Y = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.ReferenceYParameter, 0D),
+                            FIXTURE_REFERENCE_ANGLE = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.ReferenceAngleParameter, 0D),
+                            FIXTURE_REFERENCE_SCALE = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.ReferenceScaleParameter, 1D),
+                            FIXTURE_MAX_ANGLE_DELTA = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.MaximumAngleDeltaParameter, 2D),
+                            FIXTURE_MIN_SCALE_RATIO = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.MinimumScaleRatioParameter, 0D),
+                            FIXTURE_MAX_SCALE_RATIO = GetDouble(step.Parameters, VisionPipelineFixtureFrameService.MaximumScaleRatioParameter, 0D),
+                            FIXTURE_REFERENCE_IMAGE_WIDTH = GetInt(step.Parameters, VisionPipelineFixtureFrameService.ReferenceImageWidthParameter, 0),
+                            FIXTURE_REFERENCE_IMAGE_HEIGHT = GetInt(step.Parameters, VisionPipelineFixtureFrameService.ReferenceImageHeightParameter, 0)
+                        }, step.Parameters),
+                        name,
+                        step.InputLayer,
+                        step.OutputLayer);
+                    return true;
+                default:
+                    return false;
+            }
         }
 
-        private static void ApplyMatchingParameters(object property, IDictionary<string, string> parameters)
+        public static bool TryCreateStep(
+            object property,
+            string inputLayer,
+            string outputLayer,
+            out VisionPipelineStep step)
         {
-            if (property is PipelineMatchingProperty matchingFixture)
+            if (property is not PipelineMatchingProperty matching)
             {
-                matchingFixture.ApplyFixtureParameters(parameters);
+                step = null;
+                return false;
             }
+
+            step = VisionPipelineStepBuilder.FromProperty(
+                matching,
+                inputLayer,
+                outputLayer);
+            matching.ApplyFixtureParameters(step.Parameters);
+            return true;
+        }
+
+        public static bool IsProperty(object property)
+        {
+            return property is PipelineMatchingProperty;
+        }
+
+        private static T AttachStepMetadata<T>(
+            T property,
+            string name,
+            string inputLayer,
+            string outputLayer)
+            where T : VisionPipelineStepPropertyMapper.IPipelineStepMetadata
+        {
+            property.PipelineStepName = string.IsNullOrWhiteSpace(name)
+                ? property.PipelineStepName
+                : name;
+            property.InputLayer = string.IsNullOrWhiteSpace(inputLayer) ? "Main" : inputLayer;
+            property.OutputLayer = string.IsNullOrWhiteSpace(outputLayer)
+                ? "Pipeline_Output"
+                : outputLayer;
+            return property;
+        }
+
+        private static string NormalizeToolType(string toolType)
+        {
+            string value = (toolType ?? string.Empty).Trim();
+            if (value.EndsWith("Tool", StringComparison.OrdinalIgnoreCase))
+            {
+                value = value.Substring(0, value.Length - 4);
+            }
+
+            return value.Replace(" ", string.Empty)
+                .Replace("_", string.Empty)
+                .ToLowerInvariant();
         }
 
         [CategoryOrder("Step", -1)]

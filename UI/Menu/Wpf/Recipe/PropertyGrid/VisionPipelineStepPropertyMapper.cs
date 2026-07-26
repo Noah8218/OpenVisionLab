@@ -139,6 +139,14 @@ namespace OpenVisionLab
                 return geometryProperty;
             }
 
+            if (VisionPipelineMatchingPropertyAdapter.TryCreateProperty(
+                step,
+                name,
+                out object matchingProperty))
+            {
+                return matchingProperty;
+            }
+
             switch (toolType)
             {
                 case "threshold":
@@ -173,9 +181,6 @@ namespace OpenVisionLab
                         SHOW_CONTOUR = GetBool(step.Parameters, nameof(LineGaugeProperty.SHOW_CONTOUR), true),
                         SHOW_FITLINE = GetBool(step.Parameters, nameof(LineGaugeProperty.SHOW_FITLINE), true)
                     }, step.Parameters), name, step.InputLayer, step.OutputLayer);
-                case "matching":
-                case "templatematching":
-                    return CreateMatchingProperty(step, name);
                 case "edgebasedmatching":
                 case "edgebasedtemplatematching":
                 case "edgetemplatematching":
@@ -264,6 +269,14 @@ namespace OpenVisionLab
             {
                 mapped = geometryStep;
             }
+            else if (VisionPipelineMatchingPropertyAdapter.TryCreateStep(
+                property,
+                inputLayer,
+                outputLayer,
+                out VisionPipelineStep matchingStep))
+            {
+                mapped = matchingStep;
+            }
             else if (property is OpenCvPropertyBase openCvProperty)
             {
                 mapped = VisionPipelineStepBuilder.FromProperty(openCvProperty, inputLayer, outputLayer);
@@ -287,7 +300,6 @@ namespace OpenVisionLab
                 return false;
             }
 
-            ApplyMatchingParameters(property, mapped.Parameters);
             ApplyObjectInspectionParameters(property, mapped.Parameters);
             CopyStep(target, mapped);
             target.Enabled = enabled;
@@ -684,6 +696,11 @@ namespace OpenVisionLab
                 return geometryToolType;
             }
 
+            if (VisionPipelineMatchingPropertyAdapter.IsProperty(instance))
+            {
+                return "Matching";
+            }
+
             switch (instance)
             {
                 case PipelineBlobProperty _:
@@ -692,8 +709,6 @@ namespace OpenVisionLab
                     return "Contour";
                 case PipelineLineGaugeProperty _:
                     return "LineGauge";
-                case PipelineMatchingProperty _:
-                    return "Matching";
                 case PipelineEdgeBasedMatchingProperty _:
                     return "EdgeBasedMatching";
                 case PipelineMeanProperty _:

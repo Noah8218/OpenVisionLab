@@ -353,3 +353,30 @@
 - 다음 구조 우선순위는 남은 direct/partial mapper family를 다시
   감사하되 전용 current round-trip 회귀가 없는 family는 분리하지 않는
   것입니다. Recommended model: gpt-5.6-terra | Reasoning effort: medium.
+
+### Matching Property Adapter Update (2026-07-26)
+
+- 남은 mapper family를 재감사한 결과, 기존 Recipe Fixture PropertyGrid
+  create/apply/XML reload 회귀를 가진 Matching만 다음 경계로
+  선택했습니다.
+- `VisionPipelineMatchingPropertyAdapter`가 Matching/TemplateMatching
+  alias, parameter/default projection, Fixture publish 상태, PropertyGrid
+  모델, Step 재생성, Fixture parameter 보강, metric 판정의 실제 owner가
+  되었습니다.
+- root mapper에서는 직접 Matching case, private 모델, post-apply helper,
+  metric case를 제거하고 adapter create/apply/metric dispatch만
+  유지합니다. 기존 partial은 제거됐으며 새 adapter는 partial이
+  아닙니다.
+- 검증: Debug build(0 warning/0 error), canonical Matching Fixture/scale/
+  layer XML round-trip, `TemplateMatchingTool` alias canonical round-trip,
+  current-source Recipe Fixture PropertyGrid, visual inspection, readiness
+  PASS.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_MATCHING_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`.
+- ObjectInspection, BasicImage, EdgeBasedMatching, FeatureMatching, single
+  LineGauge, Mean은 focused selected-Step create/apply 회귀가 부족하므로
+  추가 분리를 보류합니다. 다음 구조 우선순위는 새 partial 추출이
+  아니라 해당 gate가 실제 유지보수 필요로 생길 때만 재평가하는
+  것입니다. Prerequisite: concrete mapper maintenance need and focused
+  selected-Step round-trip gate | Recommended model: none until evidence
+  exists | Reasoning effort: none until evidence exists.

@@ -1901,6 +1901,30 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
 4. **Test an installer/update path only when installation behavior becomes an explicit product requirement.**
    - Prerequisite: a concrete installer, update, or signed-package acceptance requirement. P137 already covers a copied clean package at a different root; no additional relocation work is warranted without that requirement. No model recommendation until that condition exists.
 
+### Maintenance: Matching Property Adapter Boundary (2026-07-26)
+
+- `VisionPipelineMatchingPropertyAdapter` now owns Matching/TemplateMatching
+  recognition, parameter/default projection, Fixture publish state, editable
+  PropertyGrid model, Step reconstruction, Fixture parameter application, and
+  metric identification.
+- `VisionPipelineStepPropertyMapper` retains only adapter dispatch plus shared
+  metadata/final Step copying. The old Matching partial was removed; this is a
+  real responsibility transfer rather than another partial split.
+- Existing canonical Matching Fixture/scale/layer XML round-trip,
+  `TemplateMatchingTool` alias canonicalization, zero automatic Preview/Run,
+  Debug build, current-source Recipe Fixture PropertyGrid, visual inspection,
+  and readiness passed.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_MATCHING_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`
+  and `artifacts\refactor_matching_adapter_20260726`.
+- The remaining ObjectInspection, BasicImage, EdgeBasedMatching,
+  FeatureMatching, single LineGauge, and Mean families do not currently have
+  enough focused selected-Step create/apply evidence to justify another
+  extraction. Reassess only when such a gate is required by a concrete
+  maintenance change. Prerequisite: concrete mapper maintenance need and
+  focused selected-Step round-trip gate | Recommended model: none until
+  evidence exists | Reasoning effort: none until evidence exists.
+
 ## Handoff Rules For The Next Chat
 
 - Do not claim a feature is complete because the historical handoff says so. Re-run the smallest meaningful current command when work touches it.

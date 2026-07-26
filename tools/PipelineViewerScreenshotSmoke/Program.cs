@@ -3888,6 +3888,31 @@ internal static class Program
         AssertParameterValue(matching, "FIND_SCALE_MAX", 1.35D);
         AssertParameterValue(matching, "FIND_SCALE_STEP", 0.05D);
 
+        VisionPipelineStep matchingAlias = ClonePipelineStep(pipeline.Steps[0]);
+        matchingAlias.ToolType = "TemplateMatchingTool";
+        object matchingAliasProperty = VisionPipelineStepPropertyMapper.CreateProperty(matchingAlias)
+            ?? throw new InvalidOperationException(
+                "TemplateMatchingTool alias property object was not created.");
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(
+                matchingAlias,
+                matchingAliasProperty))
+        {
+            throw new InvalidOperationException(
+                "TemplateMatchingTool alias property object did not apply back.");
+        }
+
+        if (!string.Equals(matchingAlias.ToolType, "Matching", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "TemplateMatchingTool alias did not reconstruct canonical Matching. "
+                + $"ToolType={matchingAlias.ToolType}");
+        }
+
+        AssertParameterValue(matchingAlias, "USE_AS_FIXTURE_FRAME", true);
+        AssertParameterValue(matchingAlias, "FIXTURE_FRAME_NAME", "PartFrame");
+        AssertParameterValue(matchingAlias, "FIXTURE_REFERENCE_X", 60D);
+        AssertParameterValue(matchingAlias, "FIXTURE_REFERENCE_Y", 70D);
+
         VisionPipelineStep normalize = ClonePipelineStep(pipeline.Steps[1]);
         object normalizeProperty = VisionPipelineStepPropertyMapper.CreateProperty(normalize)
             ?? throw new InvalidOperationException("NormalizeImage Fixture property object was not created.");

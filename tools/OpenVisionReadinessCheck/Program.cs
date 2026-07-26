@@ -1890,6 +1890,37 @@ internal static class Program
             geometryPropertyAdapter,
             "CircleGaugeProperty",
             "The Geometry adapter owns CircleGauge PropertyGrid mapping.");
+        string matchingPropertyAdapter = Read(
+            repoRoot,
+            @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineMatchingPropertyAdapter.cs");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelineMatchingPropertyAdapter.TryCreateProperty",
+            "Pipeline Step PropertyGrid dispatches Matching mapping through its adapter.");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelineMatchingPropertyAdapter.TryCreateStep",
+            "Pipeline Step PropertyGrid reconstructs Matching through its adapter.");
+        RequireNotContains(
+            stepPropertyMapper,
+            "case \"matching\"",
+            "The root mapper no longer owns the Matching ToolType case.");
+        RequireNotContains(
+            stepPropertyMapper,
+            "private sealed class PipelineMatchingProperty",
+            "The root mapper no longer owns the Matching PropertyGrid model.");
+        RequireContains(
+            matchingPropertyAdapter,
+            "internal static class VisionPipelineMatchingPropertyAdapter",
+            "Matching mapping has a standalone non-partial owner.");
+        RequireContains(
+            matchingPropertyAdapter,
+            "\"templatematching\"",
+            "The Matching adapter preserves the TemplateMatching alias.");
+        RequireContains(
+            matchingPropertyAdapter,
+            "ApplyFixtureParameters",
+            "The Matching adapter owns fixture-publish reconstruction.");
         RequireContains(
             learnScreenshotSmoke,
             "wpf_shell_host_recipe_line_pair_properties",
@@ -1902,6 +1933,10 @@ internal static class Program
             learnScreenshotSmoke,
             "p213_geometry_review",
             "Screenshot smoke covers GeometryMeasure and CircleGauge core behavior.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "TemplateMatchingTool",
+            "Screenshot smoke covers the TemplateMatchingTool alias round trip.");
         RequireContains(pipelineValidator, "ValidateReferenceDifferenceParameters", "Pipeline validator checks ReferenceDifference parameters.");
         RequireContains(pipelineKnownMetrics, "DifferencePixelRatio", "Known metrics include ReferenceDifference coverage.");
         RequireContains(pipelineKnownMetrics, "RegistrationInlierRatio", "Known metrics include ReferenceDifference registration quality.");
