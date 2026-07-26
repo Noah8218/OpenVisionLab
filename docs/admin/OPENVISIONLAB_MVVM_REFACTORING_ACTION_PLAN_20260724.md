@@ -449,3 +449,29 @@
   평가하는 것입니다. single LineGauge와 Mean은 focused gate가 생기기
   전까지 분리하지 않습니다. Recommended model: gpt-5.6-terra |
   Reasoning effort: medium.
+
+### Feature Matching Property Adapter Update (2026-07-26)
+
+- production 이동 전에 기존 Feature Matching Tool smoke를
+  `FeatureTool`/`SiftTool` alias, canonical apply, XML/Step 이름,
+  input/output layer, acceptance metadata, Lowe ratio, RANSAC, template
+  path, threshold, ROI round-trip으로 확장하고 기존 partial 상태에서
+  먼저 통과시켰습니다.
+- `VisionPipelineFeatureMatchingPropertyAdapter`가
+  FeatureMatching/Feature/Sift alias, parameter/default projection,
+  PropertyGrid 모델, Step 재생성, metric 판정의 실제 owner가
+  되었습니다.
+- root mapper에서는 직접 ToolType/metric case와 private 모델을
+  제거하고 adapter create/apply/metric dispatch만 유지합니다. 기존
+  partial은 제거됐으며 새 adapter는 partial이 아닙니다.
+- 검증: pre/post-move selected-Step round-trip, current-source Feature
+  Matching Tool UI, Debug build(0 warning/0 error), visual inspection,
+  readiness, `git diff --check` PASS.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_FEATURE_MATCHING_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`.
+- 남은 direct family는 single LineGauge와 Mean뿐이지만, 둘 다 현재
+  focused selected-Step 유지보수 필요와 baseline이 없습니다. 숫자나
+  파일 크기를 줄이기 위한 추출은 중단하고 실제 변경 필요가 생길
+  때만 다시 평가합니다. Prerequisite: concrete mapper maintenance need
+  and focused selected-Step round-trip gate | Recommended model: none until
+  evidence exists | Reasoning effort: none until evidence exists.

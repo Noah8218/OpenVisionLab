@@ -23278,6 +23278,89 @@ internal static class Program
                     throw new InvalidOperationException("FeatureMatching WPF tool did not create a valid pipeline step.");
                 }
 
+                foreach (string alias in new[] { "FeatureTool", "SiftTool" })
+                {
+                    VisionPipelineStep aliasStep = CloneStep(step);
+                    aliasStep.ToolType = alias;
+                    if (VisionPipelineStepPropertyMapper.CreateProperty(aliasStep) is not FeatureMatchingProperty)
+                    {
+                        throw new InvalidOperationException(
+                            $"FeatureMatching alias '{alias}' did not create the PropertyGrid model.");
+                    }
+                }
+
+                VisionPipelineStep applyStep = CloneStep(step);
+                applyStep.Name = "Feature Matching Reviewed";
+                applyStep.Parameters["Name"] = applyStep.Name;
+                applyStep.ToolType = "SiftTool";
+                applyStep.InputLayer = "ReviewedInput";
+                applyStep.OutputLayer = "ReviewedFeatureOutput";
+                applyStep.Enabled = false;
+                applyStep.UseAcceptance = true;
+                applyStep.ExpectedSuccess = false;
+                applyStep.MaxElapsedMilliseconds = 93;
+                applyStep.RequiredMessageText = "feature-reviewed";
+                applyStep.AcceptanceMetricName = "ScoreMax";
+                applyStep.UseAcceptanceMetricMinimum = true;
+                applyStep.AcceptanceMetricMinimum = 70;
+                applyStep.UseAcceptanceMetricMaximum = true;
+                applyStep.AcceptanceMetricMaximum = 100;
+                applyStep.Parameters["SCORE_MIN"] = "0.71";
+                applyStep.Parameters["RANSAC_REPROJ_THRESHOLD"] = "4.5";
+                applyStep.Parameters["PATTERN_PATH"] = templatePath;
+                applyStep.Parameters["TemplatePath"] = templatePath;
+                applyStep.Parameters["USE_THRESHOLD"] = "false";
+                applyStep.Parameters["USE_ADAPTIVE_THRESHOLD"] = "false";
+                applyStep.Parameters["USE_ROI"] = "true";
+                applyStep.Parameters["CvROI"] = "12,18,160,120";
+                object applyProperty = VisionPipelineStepPropertyMapper.CreateProperty(applyStep);
+                applyStep.Name = "Changed";
+                applyStep.Parameters["Name"] = applyStep.Name;
+                applyStep.InputLayer = "ChangedInput";
+                applyStep.OutputLayer = "ChangedOutput";
+                applyStep.Enabled = true;
+                applyStep.UseAcceptance = false;
+                applyStep.ExpectedSuccess = true;
+                applyStep.MaxElapsedMilliseconds = 0;
+                applyStep.RequiredMessageText = string.Empty;
+                applyStep.AcceptanceMetricName = string.Empty;
+                applyStep.UseAcceptanceMetricMinimum = false;
+                applyStep.AcceptanceMetricMinimum = 0;
+                applyStep.UseAcceptanceMetricMaximum = false;
+                applyStep.AcceptanceMetricMaximum = 0;
+                applyStep.Parameters["SCORE_MIN"] = "0.9";
+                applyStep.Parameters["RANSAC_REPROJ_THRESHOLD"] = "1";
+                applyStep.Parameters["PATTERN_PATH"] = "changed";
+                applyStep.Parameters["TemplatePath"] = "changed";
+                applyStep.Parameters["USE_ROI"] = "false";
+                if (!VisionPipelineStepPropertyMapper.ApplyProperty(applyStep, applyProperty)
+                    || !string.Equals(applyStep.Name, "Feature Matching Reviewed", StringComparison.Ordinal)
+                    || !string.Equals(applyStep.ToolType, "FeatureMatching", StringComparison.Ordinal)
+                    || !string.Equals(applyStep.InputLayer, "ReviewedInput", StringComparison.Ordinal)
+                    || !string.Equals(applyStep.OutputLayer, "ReviewedFeatureOutput", StringComparison.Ordinal)
+                    || applyStep.Enabled
+                    || !applyStep.UseAcceptance
+                    || applyStep.ExpectedSuccess
+                    || Math.Abs(applyStep.MaxElapsedMilliseconds - 93D) > 0.000001D
+                    || !string.Equals(applyStep.RequiredMessageText, "feature-reviewed", StringComparison.Ordinal)
+                    || !string.Equals(applyStep.AcceptanceMetricName, "ScoreMax", StringComparison.Ordinal)
+                    || !applyStep.UseAcceptanceMetricMinimum
+                    || Math.Abs(applyStep.AcceptanceMetricMinimum - 70D) > 0.000001D
+                    || !applyStep.UseAcceptanceMetricMaximum
+                    || Math.Abs(applyStep.AcceptanceMetricMaximum - 100D) > 0.000001D
+                    || !string.Equals(applyStep.Parameters["SCORE_MIN"], "0.71", StringComparison.Ordinal)
+                    || !string.Equals(applyStep.Parameters["RANSAC_REPROJ_THRESHOLD"], "4.5", StringComparison.Ordinal)
+                    || !string.Equals(applyStep.Parameters["PATTERN_PATH"], templatePath, StringComparison.Ordinal)
+                    || !string.Equals(applyStep.Parameters["TemplatePath"], templatePath, StringComparison.Ordinal)
+                    || !string.Equals(applyStep.Parameters["USE_THRESHOLD"], "false", StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(applyStep.Parameters["USE_ADAPTIVE_THRESHOLD"], "false", StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(applyStep.Parameters["USE_ROI"], "true", StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(applyStep.Parameters["CvROI"], "12,18,160,120", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "FeatureMatching alias/apply metadata, layer, and parameter round trip changed.");
+                }
+
                 AssertDockActiveNativeTool(shellHost, "FeatureMatchingToolWpfView", "Docked FeatureMatching tool layout");
                 AssertFloatingPropertyGridMinimumSize("Docked FeatureMatching property grid", 600D, 380D);
                 AssertResultReviewVisible("Docked FeatureMatching", "Feature Match /", "검출", "점수");

@@ -5,19 +5,87 @@ using System;
 using System.ComponentModel;
 using System.Windows.Controls.WpfPropertyGrid;
 using static OpenVisionLab.PropertyGridEditorFactory;
+using static OpenVisionLab.VisionPipelineStepPropertyMapper;
 
 namespace OpenVisionLab
 {
-    internal static partial class VisionPipelineStepPropertyMapper
+    internal static class VisionPipelineFeatureMatchingPropertyAdapter
     {
-        private static object CreateFeatureMatchingProperty(VisionPipelineStep step, string name)
+        public static bool TryCreateProperty(
+            VisionPipelineStep step,
+            string name,
+            out object property)
         {
-            return AttachStepMetadata(ApplyCommonOpenCvProperty(new PipelineFeatureMatchingProperty(name)
+            property = null;
+            switch (NormalizeToolType(step?.ToolType))
             {
-                SCORE_MIN = GetDouble(step.Parameters, nameof(FeatureMatchingProperty.SCORE_MIN), 0.6),
-                RANSAC_REPROJ_THRESHOLD = GetDouble(step.Parameters, nameof(FeatureMatchingProperty.RANSAC_REPROJ_THRESHOLD), 3),
-                PATTERN_PATH = GetString(step.Parameters, nameof(FeatureMatchingProperty.PATTERN_PATH), GetString(step.Parameters, "TemplatePath", string.Empty))
-            }, step.Parameters), name, step.InputLayer, step.OutputLayer);
+                case "feature":
+                case "featurematching":
+                case "sift":
+                    property = AttachStepMetadata(ApplyCommonOpenCvProperty(new PipelineFeatureMatchingProperty(name)
+                    {
+                        SCORE_MIN = GetDouble(step.Parameters, nameof(FeatureMatchingProperty.SCORE_MIN), 0.6),
+                        RANSAC_REPROJ_THRESHOLD = GetDouble(step.Parameters, nameof(FeatureMatchingProperty.RANSAC_REPROJ_THRESHOLD), 3),
+                        PATTERN_PATH = GetString(step.Parameters, nameof(FeatureMatchingProperty.PATTERN_PATH), GetString(step.Parameters, "TemplatePath", string.Empty))
+                    }, step.Parameters), name, step.InputLayer, step.OutputLayer);
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        public static bool TryCreateStep(
+            object property,
+            string inputLayer,
+            string outputLayer,
+            out VisionPipelineStep step)
+        {
+            if (property is not PipelineFeatureMatchingProperty featureMatching)
+            {
+                step = null;
+                return false;
+            }
+
+            step = VisionPipelineStepBuilder.FromProperty(
+                featureMatching,
+                inputLayer,
+                outputLayer);
+            return true;
+        }
+
+        public static bool IsProperty(object property)
+        {
+            return property is PipelineFeatureMatchingProperty;
+        }
+
+        private static T AttachStepMetadata<T>(
+            T property,
+            string name,
+            string inputLayer,
+            string outputLayer)
+            where T : VisionPipelineStepPropertyMapper.IPipelineStepMetadata
+        {
+            property.PipelineStepName = string.IsNullOrWhiteSpace(name)
+                ? property.PipelineStepName
+                : name;
+            property.InputLayer = string.IsNullOrWhiteSpace(inputLayer) ? "Main" : inputLayer;
+            property.OutputLayer = string.IsNullOrWhiteSpace(outputLayer)
+                ? "Pipeline_Output"
+                : outputLayer;
+            return property;
+        }
+
+        private static string NormalizeToolType(string toolType)
+        {
+            string value = (toolType ?? string.Empty).Trim();
+            if (value.EndsWith("Tool", StringComparison.OrdinalIgnoreCase))
+            {
+                value = value.Substring(0, value.Length - 4);
+            }
+
+            return value.Replace(" ", string.Empty)
+                .Replace("_", string.Empty)
+                .ToLowerInvariant();
         }
 
         [CategoryOrder("Step", -1)]

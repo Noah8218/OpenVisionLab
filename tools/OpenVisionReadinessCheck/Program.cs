@@ -1965,6 +1965,50 @@ internal static class Program
             edgeBasedMatchingPropertyAdapter,
             "private sealed class PipelineEdgeBasedMatchingProperty",
             "The EdgeBasedMatching adapter owns its PropertyGrid model.");
+        string featureMatchingPropertyAdapter = Read(
+            repoRoot,
+            @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineFeatureMatchingPropertyAdapter.cs");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelineFeatureMatchingPropertyAdapter.TryCreateProperty",
+            "Pipeline Step PropertyGrid dispatches FeatureMatching mapping through its adapter.");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelineFeatureMatchingPropertyAdapter.TryCreateStep",
+            "Pipeline Step PropertyGrid reconstructs FeatureMatching through its adapter.");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelineFeatureMatchingPropertyAdapter.IsProperty",
+            "Pipeline Step PropertyGrid resolves FeatureMatching metrics through its adapter.");
+        foreach (string oldFeatureMatchingToken in new[]
+        {
+            "case \"feature\"",
+            "case \"featurematching\"",
+            "case \"sift\"",
+            "private sealed class PipelineFeatureMatchingProperty"
+        })
+        {
+            RequireNotContains(
+                stepPropertyMapper,
+                oldFeatureMatchingToken,
+                "The root mapper no longer owns FeatureMatching ToolType cases or its PropertyGrid model.");
+        }
+        RequireContains(
+            featureMatchingPropertyAdapter,
+            "internal static class VisionPipelineFeatureMatchingPropertyAdapter",
+            "FeatureMatching mapping has a standalone non-partial owner.");
+        RequireContains(
+            featureMatchingPropertyAdapter,
+            "\"feature\"",
+            "The FeatureMatching adapter preserves the Feature alias.");
+        RequireContains(
+            featureMatchingPropertyAdapter,
+            "\"sift\"",
+            "The FeatureMatching adapter preserves the Sift alias.");
+        RequireContains(
+            featureMatchingPropertyAdapter,
+            "private sealed class PipelineFeatureMatchingProperty",
+            "The FeatureMatching adapter owns its PropertyGrid model.");
         string objectInspectionPropertyAdapter = Read(
             repoRoot,
             @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineObjectInspectionPropertyAdapter.cs");
@@ -2081,6 +2125,10 @@ internal static class Program
             learnScreenshotSmoke,
             "EdgeBasedMatching alias/apply metadata and layer round trip changed.",
             "Screenshot smoke covers EdgeBasedMatching alias, apply, metadata, and layer round trips.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "FeatureMatching alias/apply metadata, layer, and parameter round trip changed.",
+            "Screenshot smoke covers FeatureMatching aliases, apply, metadata, layers, and parameters.");
         RequireContains(
             learnScreenshotSmoke,
             "AssertP216ObjectInspectionPropertyMapperRoundTrip",

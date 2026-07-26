@@ -1992,6 +1992,29 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
   Keep single LineGauge and Mean in the root until a focused maintenance gate
   exists. Recommended model: gpt-5.6-terra | Reasoning effort: medium.
 
+### Maintenance: Feature Matching Property Adapter Boundary (2026-07-26)
+
+- A pre-move baseline first proved `FeatureTool`/`SiftTool` selected-Step
+  creation and canonical apply, including XML/Step name, layers, acceptance
+  metadata, Lowe ratio, RANSAC threshold, template paths, threshold flags, and
+  ROI.
+- `VisionPipelineFeatureMatchingPropertyAdapter` now owns recognition,
+  parameter/default projection, the editable PropertyGrid model, Step
+  reconstruction, and metric identification.
+- `VisionPipelineStepPropertyMapper` retains only adapter dispatch plus shared
+  metadata/final Step copying. The old FeatureMatching partial was removed.
+- Pre/post-move round-trip, current-source Feature Matching Tool UI, Debug
+  build, visual inspection, readiness, and patch hygiene passed.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_FEATURE_MATCHING_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`
+  and `artifacts\refactor_feature_matching_adapter_20260726`.
+- The only remaining direct root families are single LineGauge and Mean. Do
+  not extract either for file-size or symmetry reasons. Reassess only after a
+  concrete maintenance change requires a focused selected-Step baseline.
+  Prerequisite: concrete mapper maintenance need and focused selected-Step
+  round-trip gate | Recommended model: none until evidence exists | Reasoning
+  effort: none until evidence exists.
+
 ## Handoff Rules For The Next Chat
 
 - Do not claim a feature is complete because the historical handoff says so. Re-run the smallest meaningful current command when work touches it.

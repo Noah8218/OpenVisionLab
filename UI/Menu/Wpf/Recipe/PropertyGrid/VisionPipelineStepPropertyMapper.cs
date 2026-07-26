@@ -155,6 +155,14 @@ namespace OpenVisionLab
                 return edgeBasedMatchingProperty;
             }
 
+            if (VisionPipelineFeatureMatchingPropertyAdapter.TryCreateProperty(
+                step,
+                name,
+                out object featureMatchingProperty))
+            {
+                return featureMatchingProperty;
+            }
+
             if (VisionPipelineObjectInspectionPropertyAdapter.TryCreateProperty(
                 step,
                 name,
@@ -203,10 +211,6 @@ namespace OpenVisionLab
                         MEAN_MIN = GetInt(step.Parameters, nameof(MeanProperty.MEAN_MIN), 100),
                         MEAN_TYPES = GetEnum(step.Parameters, nameof(MeanProperty.MEAN_TYPES), MeanType.Mean)
                     }, step.Parameters), name, step.InputLayer, step.OutputLayer);
-                case "feature":
-                case "featurematching":
-                case "sift":
-                    return CreateFeatureMatchingProperty(step, name);
                 default:
                     return null;
             }
@@ -295,6 +299,14 @@ namespace OpenVisionLab
                 out VisionPipelineStep edgeBasedMatchingStep))
             {
                 mapped = edgeBasedMatchingStep;
+            }
+            else if (VisionPipelineFeatureMatchingPropertyAdapter.TryCreateStep(
+                property,
+                inputLayer,
+                outputLayer,
+                out VisionPipelineStep featureMatchingStep))
+            {
+                mapped = featureMatchingStep;
             }
             else if (VisionPipelineObjectInspectionPropertyAdapter.TryCreateStep(
                 property,
@@ -737,6 +749,11 @@ namespace OpenVisionLab
                 return "EdgeBasedMatching";
             }
 
+            if (VisionPipelineFeatureMatchingPropertyAdapter.IsProperty(instance))
+            {
+                return "FeatureMatching";
+            }
+
             string objectInspectionToolType =
                 VisionPipelineObjectInspectionPropertyAdapter.ResolveMetricToolType(instance);
             if (!string.IsNullOrWhiteSpace(objectInspectionToolType))
@@ -757,8 +774,6 @@ namespace OpenVisionLab
                     return "LineGauge";
                 case PipelineMeanProperty _:
                     return "Mean";
-                case PipelineFeatureMatchingProperty _:
-                    return "FeatureMatching";
                 case PipelineRotateScaleToolProperty _:
                     return "RotateScale";
                 case PipelineAffineTransformToolProperty _:
