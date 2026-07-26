@@ -4,6 +4,12 @@
 
 Complete.
 
+Current-source note: the bounded owner introduced here was consolidated into
+`OpenVisionRecipeExecutionSessionViewModel` by the subsequent Recipe execution
+session refactor. The validation behavior and acceptance evidence remain
+current; see
+`OPENVISIONLAB_RECIPE_EXECUTION_SESSION_VIEWMODEL_REFACTOR_PROOF_20260726.md`.
+
 ## Scope
 
 - Move Validation Suite and Local Validation Set run-session state out of
@@ -23,7 +29,7 @@ Complete.
 
 - Previous owner: Shell fields directly held Validation Suite running, Local
   Validation Set running, stop-requested, and status-text state.
-- Current owner: `OpenVisionRecipeValidationRunSessionViewModel` owns those
+- Current owner: `OpenVisionRecipeExecutionSessionViewModel` owns those
   four mutable values and the `Start`, `RequestStop`, `Complete`, and
   `SetStatus` transitions.
 - Current call path:
@@ -38,7 +44,7 @@ Complete.
 ## Acceptance Criteria
 
 1. The four old mutable Shell fields are absent.
-2. One non-partial ViewModel owns run-session state and transitions.
+2. One non-partial execution-session ViewModel owns run state and transitions.
 3. Local Validation Set complete-run and stop/partial-save paths pass from
    current source.
 4. The suite continues to avoid native Preview/Run, layer, workspace, and

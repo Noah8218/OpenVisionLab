@@ -977,7 +977,7 @@ namespace OpenVisionLab
             string pipelineName = SelectedPipelineOption?.PipelineName ?? string.Empty;
             string pipelinePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, pipelineName);
 
-            validationRunSession.Start(
+            executionSession.StartValidationSuite(
                 true,
                 LocalText("로컬 세트 실행 중: ", "Running local set: ") + setName);
             StatusText = ValidationSuiteStatusText;
@@ -999,7 +999,7 @@ namespace OpenVisionLab
 
                 for (int index = 0; index < images.Count; index++)
                 {
-                    if (validationRunSession.StopRequested)
+                    if (executionSession.StopRequested)
                     {
                         break;
                     }
@@ -1028,7 +1028,7 @@ namespace OpenVisionLab
                         images.Count);
                 }
 
-                bool isPartial = validationRunSession.StopRequested && storageResults.Count < images.Count;
+                bool isPartial = executionSession.StopRequested && storageResults.Count < images.Count;
                 string savedNotes = isPartial
                     ? AppendPartialValidationSetNote(setNotes, storageResults.Count, images.Count)
                     : setNotes;
@@ -1060,14 +1060,14 @@ namespace OpenVisionLab
             }
             finally
             {
-                validationRunSession.Complete();
+                executionSession.CompleteValidationSuite();
                 RefreshCommandState();
             }
         }
 
         private bool CanStopValidationSuite()
         {
-            return validationRunSession.CanStop;
+            return executionSession.CanStop;
         }
 
         private void RequestValidationSuiteStop()
@@ -1077,7 +1077,7 @@ namespace OpenVisionLab
                 return;
             }
 
-            validationRunSession.RequestStop(LocalText(
+            executionSession.RequestStop(LocalText(
                 "현재 이미지 완료 후 중지하고 부분 결과를 저장합니다.",
                 "Stopping after the current image and saving a partial result."));
             StatusText = ValidationSuiteStatusText;
@@ -1127,11 +1127,10 @@ namespace OpenVisionLab
             string pipelineName = SelectedPipelineOption?.PipelineName ?? string.Empty;
             string pipelinePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, pipelineName);
 
-            validationRunSession.Start(
+            executionSession.StartValidationSuite(
                 false,
                 LocalText("Selected sample suite 실행 중: ", "Running selected-sample suite: ") + sampleOption.SampleName);
-            isSampleCheckRunning = true;
-            OnPropertyChanged(nameof(RunSelectedSampleCheckText));
+            executionSession.StartSampleCheck();
             LatestSampleRunSummary = OpenVisionRecipeSampleRunSummary.CreateRunning(sampleOption, recipeName, pipelineName);
             StatusText = ValidationSuiteStatusText;
             RefreshCommandState();
@@ -1166,9 +1165,8 @@ namespace OpenVisionLab
             }
             finally
             {
-                isSampleCheckRunning = false;
-                validationRunSession.Complete();
-                OnPropertyChanged(nameof(RunSelectedSampleCheckText));
+                executionSession.CompleteSampleCheck();
+                executionSession.CompleteValidationSuite();
                 RefreshCommandState();
             }
         }
@@ -1187,8 +1185,7 @@ namespace OpenVisionLab
                 recipeName,
                 pipelineName);
 
-            isSampleCheckRunning = true;
-            OnPropertyChanged(nameof(RunSelectedSampleCheckText));
+            executionSession.StartSampleCheck();
             LatestSampleRunSummary = OpenVisionRecipeSampleRunSummary.CreateRunning(sampleOption, recipeName, pipelineName);
             StatusText = LocalText("샘플 검사 실행 중: ", "Running sample check: ") + sampleOption.SampleName;
             RefreshCommandState();
@@ -1210,8 +1207,7 @@ namespace OpenVisionLab
             }
             finally
             {
-                isSampleCheckRunning = false;
-                OnPropertyChanged(nameof(RunSelectedSampleCheckText));
+                executionSession.CompleteSampleCheck();
                 RefreshCommandState();
             }
         }
@@ -1229,8 +1225,7 @@ namespace OpenVisionLab
             string pipelinePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, pipelineName);
             List<VisionPipelineSampleCatalogItem> pairSamples = VisionPipelineSampleCheckService.GetPairSamples(sampleOption.Sample);
 
-            isPairCheckRunning = true;
-            OnPropertyChanged(nameof(RunSelectedSamplePairCheckText));
+            executionSession.StartPairCheck();
             LatestPairRunSummary = OpenVisionRecipePairRunSummary.CreateRunning(sampleOption, pipelineName, pairSamples.Count);
             StatusText = LocalText("Good/Bad 쌍 검사 실행 중: ", "Running Good/Bad pair check: ") + sampleOption.Sample.PairGroup;
             RefreshCommandState();
@@ -1278,8 +1273,7 @@ namespace OpenVisionLab
             }
             finally
             {
-                isPairCheckRunning = false;
-                OnPropertyChanged(nameof(RunSelectedSamplePairCheckText));
+                executionSession.CompletePairCheck();
                 RefreshCommandState();
             }
         }
@@ -1296,9 +1290,7 @@ namespace OpenVisionLab
             string pipelinePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, pipelineName);
             List<VisionPipelineSampleCatalogItem> samples = BuildCatalogBenchmarkSamples();
 
-            isCatalogBenchmarkRunning = true;
-            OnPropertyChanged(nameof(RunCatalogBenchmarkText));
-            OnPropertyChanged(nameof(RunCatalogBenchmarkShortText));
+            executionSession.StartCatalogBenchmark();
             LatestCatalogBenchmarkSummary = OpenVisionRecipeCatalogBenchmarkSummary.CreateRunning(pipelineName, samples.Count);
             StatusText = LocalText("카탈로그 벤치마크 실행 중: ", "Running catalog benchmark: ") + pipelineName;
             RefreshCommandState();
@@ -1352,9 +1344,7 @@ namespace OpenVisionLab
             }
             finally
             {
-                isCatalogBenchmarkRunning = false;
-                OnPropertyChanged(nameof(RunCatalogBenchmarkText));
-                OnPropertyChanged(nameof(RunCatalogBenchmarkShortText));
+                executionSession.CompleteCatalogBenchmark();
                 RefreshCommandState();
             }
         }
@@ -1564,7 +1554,7 @@ namespace OpenVisionLab
         private bool CanFreezePinArrayGapValidationIdentity()
         {
             return OpenVisionRecipeLlmIntent.IsPinArrayGapTemplate(SelectedLlmToolTemplate)
-                && !validationRunSession.IsRunning
+                && !executionSession.IsValidationSuiteRunning
                 && validationSetStorageReady
                 && CanUseSelectedPipeline()
                 && PinArrayGapTrainValidationSetOption != null
@@ -2783,7 +2773,11 @@ namespace OpenVisionLab
 
         private bool CanRunSelectedSampleCheck()
         {
-            if (validationRunSession.IsRunning || isCatalogBenchmarkRunning || isSampleCheckRunning || !CanUseSelectedPipeline() || SelectedSampleOption?.Sample == null)
+            if (executionSession.IsValidationSuiteRunning
+                || executionSession.IsCatalogBenchmarkRunning
+                || executionSession.IsSampleCheckRunning
+                || !CanUseSelectedPipeline()
+                || SelectedSampleOption?.Sample == null)
             {
                 return false;
             }
@@ -2799,7 +2793,12 @@ namespace OpenVisionLab
 
         private bool CanRunSelectedSamplePairCheck()
         {
-            if (validationRunSession.IsRunning || isCatalogBenchmarkRunning || isPairCheckRunning || isSampleCheckRunning || !CanUseSelectedPipeline() || SelectedSampleOption?.Sample == null)
+            if (executionSession.IsValidationSuiteRunning
+                || executionSession.IsCatalogBenchmarkRunning
+                || executionSession.IsPairCheckRunning
+                || executionSession.IsSampleCheckRunning
+                || !CanUseSelectedPipeline()
+                || SelectedSampleOption?.Sample == null)
             {
                 return false;
             }
@@ -2822,7 +2821,11 @@ namespace OpenVisionLab
 
         private bool CanRunCatalogBenchmark()
         {
-            if (validationRunSession.IsRunning || isCatalogBenchmarkRunning || isPairCheckRunning || isSampleCheckRunning || !CanUseSelectedPipeline())
+            if (executionSession.IsValidationSuiteRunning
+                || executionSession.IsCatalogBenchmarkRunning
+                || executionSession.IsPairCheckRunning
+                || executionSession.IsSampleCheckRunning
+                || !CanUseSelectedPipeline())
             {
                 return false;
             }
@@ -2840,7 +2843,7 @@ namespace OpenVisionLab
 
         private bool CanRunValidationSuite()
         {
-            if (validationRunSession.IsRunning)
+            if (executionSession.IsValidationSuiteRunning)
             {
                 return false;
             }
@@ -2868,10 +2871,10 @@ namespace OpenVisionLab
         {
             OpenVisionRecipeValidationSetOption option = SelectedValidationSetOption;
             if (!validationSetStorageReady
-                || validationRunSession.IsRunning
-                || isCatalogBenchmarkRunning
-                || isPairCheckRunning
-                || isSampleCheckRunning
+                || executionSession.IsValidationSuiteRunning
+                || executionSession.IsCatalogBenchmarkRunning
+                || executionSession.IsPairCheckRunning
+                || executionSession.IsSampleCheckRunning
                 || !CanUseSelectedPipeline()
                 || option?.Set?.Images == null
                 || option.Set.Images.Count == 0
@@ -3717,24 +3720,34 @@ namespace OpenVisionLab
             }
         }
 
-        private void OnValidationRunSessionPropertyChanged(
+        private void OnExecutionSessionPropertyChanged(
             object sender,
             System.ComponentModel.PropertyChangedEventArgs e)
         {
             switch (e?.PropertyName)
             {
-                case nameof(OpenVisionRecipeValidationRunSessionViewModel.IsRunning):
+                case nameof(OpenVisionRecipeExecutionSessionViewModel.IsValidationSuiteRunning):
                     OnPropertyChanged(nameof(RunValidationSuiteText));
                     OnPropertyChanged(nameof(ValidationSuiteSummaryText));
                     OnPropertyChanged(nameof(ValidationSetNextActionText));
                     break;
-                case nameof(OpenVisionRecipeValidationRunSessionViewModel.IsLocalValidationSetRunning):
+                case nameof(OpenVisionRecipeExecutionSessionViewModel.IsLocalValidationSetRunning):
                     OnPropertyChanged(nameof(IsLocalValidationSetRunning));
                     break;
-                case nameof(OpenVisionRecipeValidationRunSessionViewModel.StopRequested):
+                case nameof(OpenVisionRecipeExecutionSessionViewModel.IsSampleCheckRunning):
+                    OnPropertyChanged(nameof(RunSelectedSampleCheckText));
+                    break;
+                case nameof(OpenVisionRecipeExecutionSessionViewModel.IsPairCheckRunning):
+                    OnPropertyChanged(nameof(RunSelectedSamplePairCheckText));
+                    break;
+                case nameof(OpenVisionRecipeExecutionSessionViewModel.IsCatalogBenchmarkRunning):
+                    OnPropertyChanged(nameof(RunCatalogBenchmarkText));
+                    OnPropertyChanged(nameof(RunCatalogBenchmarkShortText));
+                    break;
+                case nameof(OpenVisionRecipeExecutionSessionViewModel.StopRequested):
                     OnPropertyChanged(nameof(StopValidationSuiteText));
                     break;
-                case nameof(OpenVisionRecipeValidationRunSessionViewModel.StatusText):
+                case nameof(OpenVisionRecipeExecutionSessionViewModel.StatusText):
                     OnPropertyChanged(nameof(ValidationSuiteStatusText));
                     OnPropertyChanged(nameof(ValidationSuiteSummaryText));
                     OnPropertyChanged(nameof(ValidationSetNextActionText));

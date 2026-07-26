@@ -238,9 +238,9 @@
 - Evidence:
   `docs/admin/OPENVISIONLAB_STEP_EDIT_SESSION_VIEWMODEL_REFACTOR_PROOF_20260726.md`.
 
-### Validation Run Session ViewModel Update (2026-07-26)
+### Validation Run Session ViewModel Update (2026-07-26, consolidated)
 
-- `OpenVisionRecipeValidationRunSessionViewModel`이 Validation Suite 실행 중,
+- 현재 `OpenVisionRecipeExecutionSessionViewModel`이 Validation Suite 실행 중,
   Local Validation Set 실행 중, 중지 요청, 상태 문구와
   Start/RequestStop/Complete/SetStatus 전이의 실제 owner가 되었습니다.
 - Shell은 명시적 실행 명령, 이미지 순회, frozen identity 검사, 판정,
@@ -252,6 +252,23 @@
   Debug build, focused smoke build, readiness PASS.
 - Evidence:
   `docs/admin/OPENVISIONLAB_VALIDATION_RUN_SESSION_VIEWMODEL_REFACTOR_PROOF_20260726.md`.
-- 다음 구조 우선순위는 또 다른 partial 추가가 아니라 남은 Shell mutable
-  state 또는 business-rule owner를 증거 기반으로 다시 감사하는 것입니다.
-  Recommended model: gpt-5.6-terra | Reasoning effort: medium.
+
+### Recipe Execution Session ViewModel Update (2026-07-26)
+
+- 기존 Validation 실행 세션을 새 클래스로 늘리지 않고
+  `OpenVisionRecipeExecutionSessionViewModel`로 통합했습니다.
+- Validation Suite, Local Validation Set, selected sample, Good/Bad pair,
+  Catalog의 여섯 running 상태와 validation stop/status 전이를 한 owner가
+  보유합니다. Shell의 sample/pair/catalog running 필드 세 개는
+  제거했습니다.
+- 각 command guard의 기존 조합은 그대로 유지했으며 새로운 동시실행
+  차단, 병렬화, 결과 Summary 이동은 하지 않았습니다.
+- 검증: old-field absence, current-source Local Validation complete/stop/
+  partial-save, real Good/Bad pair rerun, Preview/Run·레이어·workspace·route
+  불변, Debug build, readiness PASS.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_RECIPE_EXECUTION_SESSION_VIEWMODEL_REFACTOR_PROOF_20260726.md`.
+- 다음 구조 우선순위는 root `VisionPipelineStepPropertyMapper`에 남은 직접
+  Create/Apply family를 다시 감사해 한 family만 비-partial adapter로
+  옮길 가치가 있는지 판단하는 것입니다. Recommended model:
+  gpt-5.6-terra | Reasoning effort: medium.

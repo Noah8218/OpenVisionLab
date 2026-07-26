@@ -4,25 +4,46 @@ using System.Runtime.CompilerServices;
 
 namespace OpenVisionLab
 {
-    internal sealed class OpenVisionRecipeValidationRunSessionViewModel : INotifyPropertyChanged
+    internal sealed class OpenVisionRecipeExecutionSessionViewModel : INotifyPropertyChanged
     {
-        private bool isRunning;
+        private bool isValidationSuiteRunning;
         private bool isLocalValidationSetRunning;
+        private bool isSampleCheckRunning;
+        private bool isPairCheckRunning;
+        private bool isCatalogBenchmarkRunning;
         private bool stopRequested;
         private string statusText = string.Empty;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public bool IsRunning
+        public bool IsValidationSuiteRunning
         {
-            get => isRunning;
-            private set => SetField(ref isRunning, value);
+            get => isValidationSuiteRunning;
+            private set => SetField(ref isValidationSuiteRunning, value);
         }
 
         public bool IsLocalValidationSetRunning
         {
             get => isLocalValidationSetRunning;
             private set => SetField(ref isLocalValidationSetRunning, value);
+        }
+
+        public bool IsSampleCheckRunning
+        {
+            get => isSampleCheckRunning;
+            private set => SetField(ref isSampleCheckRunning, value);
+        }
+
+        public bool IsPairCheckRunning
+        {
+            get => isPairCheckRunning;
+            private set => SetField(ref isPairCheckRunning, value);
+        }
+
+        public bool IsCatalogBenchmarkRunning
+        {
+            get => isCatalogBenchmarkRunning;
+            private set => SetField(ref isCatalogBenchmarkRunning, value);
         }
 
         public bool StopRequested
@@ -39,9 +60,9 @@ namespace OpenVisionLab
 
         public bool CanStop => IsLocalValidationSetRunning && !StopRequested;
 
-        public void Start(bool isLocalValidationSet, string status)
+        public void StartValidationSuite(bool isLocalValidationSet, string status)
         {
-            IsRunning = true;
+            IsValidationSuiteRunning = true;
             IsLocalValidationSetRunning = isLocalValidationSet;
             StopRequested = false;
             StatusText = status;
@@ -59,11 +80,41 @@ namespace OpenVisionLab
             return true;
         }
 
-        public void Complete()
+        public void CompleteValidationSuite()
         {
-            IsRunning = false;
+            IsValidationSuiteRunning = false;
             IsLocalValidationSetRunning = false;
             StopRequested = false;
+        }
+
+        public void StartSampleCheck()
+        {
+            IsSampleCheckRunning = true;
+        }
+
+        public void CompleteSampleCheck()
+        {
+            IsSampleCheckRunning = false;
+        }
+
+        public void StartPairCheck()
+        {
+            IsPairCheckRunning = true;
+        }
+
+        public void CompletePairCheck()
+        {
+            IsPairCheckRunning = false;
+        }
+
+        public void StartCatalogBenchmark()
+        {
+            IsCatalogBenchmarkRunning = true;
+        }
+
+        public void CompleteCatalogBenchmark()
+        {
+            IsCatalogBenchmarkRunning = false;
         }
 
         public void SetStatus(string value)

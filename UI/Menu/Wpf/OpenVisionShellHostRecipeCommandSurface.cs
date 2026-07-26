@@ -84,8 +84,8 @@ namespace OpenVisionLab
         private OpenVisionRecipePipelineStepPreview selectedPipelinePreviewStep;
         private readonly OpenVisionRecipeStepEditSessionViewModel selectedStepEditSession =
             new OpenVisionRecipeStepEditSessionViewModel();
-        private readonly OpenVisionRecipeValidationRunSessionViewModel validationRunSession =
-            new OpenVisionRecipeValidationRunSessionViewModel();
+        private readonly OpenVisionRecipeExecutionSessionViewModel executionSession =
+            new OpenVisionRecipeExecutionSessionViewModel();
         private string selectedRecipeName = string.Empty;
         private string recipeFilterText = string.Empty;
         private string pipelineFilterText = string.Empty;
@@ -190,9 +190,6 @@ namespace OpenVisionLab
         private bool isGuidedSetupDraftStale;
         private bool isRefreshingOptions;
         private bool isSelectingRecipe;
-        private bool isSampleCheckRunning;
-        private bool isPairCheckRunning;
-        private bool isCatalogBenchmarkRunning;
         private OpenVisionRecipePipelineOption selectedPipelineOption;
         private OpenVisionRecipeSampleOption selectedSampleOption;
         private OpenVisionRecipeSampleRunSummary latestSampleRunSummary = OpenVisionRecipeSampleRunSummary.Empty;
@@ -246,9 +243,9 @@ namespace OpenVisionLab
             this.selectStepTool = selectStepTool;
             this.commitSelectedStepEdit = commitSelectedStepEdit ?? (() => true);
             selectedStepEditSession.PropertyChanged += OnSelectedStepEditSessionPropertyChanged;
-            validationRunSession.PropertyChanged += OnValidationRunSessionPropertyChanged;
+            executionSession.PropertyChanged += OnExecutionSessionPropertyChanged;
             selectedValidationSuiteScopeOption = validationSuiteScopeOptions.FirstOrDefault();
-            validationRunSession.SetStatus(OpenVisionRecipeText.Local(
+            executionSession.SetStatus(OpenVisionRecipeText.Local(
                 "Suite 범위를 선택한 뒤 명시적으로 Run suite를 실행하세요.",
                 "Select a suite scope, then run the explicit suite."));
             SetLlmXmlDraftDependencyPlaceholder(LocalText(
@@ -2108,10 +2105,10 @@ namespace OpenVisionLab
         public string CatalogBenchmarkText => LocalText("카탈로그 벤치마크", "Catalog benchmark");
 
         public string RunCatalogBenchmarkText =>
-            isCatalogBenchmarkRunning ? LocalText("실행 중...", "Running...") : LocalText("전체 샘플 검사", "Run catalog");
+            executionSession.IsCatalogBenchmarkRunning ? LocalText("실행 중...", "Running...") : LocalText("전체 샘플 검사", "Run catalog");
 
         public string RunCatalogBenchmarkShortText =>
-            isCatalogBenchmarkRunning ? LocalText("실행 중", "Running") : LocalText("카탈로그", "Catalog");
+            executionSession.IsCatalogBenchmarkRunning ? LocalText("실행 중", "Running") : LocalText("카탈로그", "Catalog");
 
         public string CatalogBenchmarkSummaryText =>
             LatestCatalogBenchmarkSummary?.CompactText
@@ -2126,17 +2123,17 @@ namespace OpenVisionLab
         public string ValidationSuiteScopeLabelText => LocalText("범위", "Scope");
 
         public string RunValidationSuiteText =>
-            validationRunSession.IsRunning
+            executionSession.IsValidationSuiteRunning
                 ? LocalText("실행 중...", "Running...")
                 : IsLocalValidationSetSelected
                     ? LocalText("목록 검증 실행", "Run image list")
                     : LocalText("Suite 실행", "Run suite");
 
-        public string StopValidationSuiteText => validationRunSession.StopRequested
+        public string StopValidationSuiteText => executionSession.StopRequested
             ? LocalText("중지 대기", "Stopping")
             : LocalText("실행 중지", "Stop");
 
-        public bool IsLocalValidationSetRunning => validationRunSession.IsLocalValidationSetRunning;
+        public bool IsLocalValidationSetRunning => executionSession.IsLocalValidationSetRunning;
 
         public string ValidationSuiteSummaryText =>
             OpenVisionRecipeValidationSetPresenter.BuildValidationSuiteSummaryText(
@@ -2211,7 +2208,7 @@ namespace OpenVisionLab
 
         public string ValidationSetNextActionText =>
             OpenVisionRecipeValidationSetPresenter.BuildNextActionText(
-                validationRunSession.IsRunning,
+                executionSession.IsValidationSuiteRunning,
                 validationSetStorageReady,
                 SelectedValidationSetOption,
                 SelectedPipelineOption != null);
@@ -2224,13 +2221,13 @@ namespace OpenVisionLab
 
         public string ValidationSuiteStatusText
         {
-            get => validationRunSession.StatusText;
-            private set => validationRunSession.SetStatus(value);
+            get => executionSession.StatusText;
+            private set => executionSession.SetStatus(value);
         }
 
-        public string RunSelectedSampleCheckText => isSampleCheckRunning ? LocalText("실행 중...", "Running...") : LocalText("검사 실행", "Run check");
+        public string RunSelectedSampleCheckText => executionSession.IsSampleCheckRunning ? LocalText("실행 중...", "Running...") : LocalText("검사 실행", "Run check");
 
-        public string RunSelectedSamplePairCheckText => isPairCheckRunning ? LocalText("실행 중...", "Running...") : LocalText("쌍 검사", "Run pair");
+        public string RunSelectedSamplePairCheckText => executionSession.IsPairCheckRunning ? LocalText("실행 중...", "Running...") : LocalText("쌍 검사", "Run pair");
 
         public string SelectedSampleAcceptanceSummaryText =>
             SelectedSampleOption?.AcceptanceSummaryText ?? LocalText("기대 지표 기준을 확인할 샘플을 선택하세요.", "Select a sample to review expected metric gates.");

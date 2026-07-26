@@ -1750,9 +1750,9 @@ Large-corpus skill validation now follows `docs\OPENVISIONLAB_SCALABLE_SKILL_VAL
 - Evidence:
   `docs\admin\OPENVISIONLAB_STEP_EDIT_SESSION_VIEWMODEL_REFACTOR_PROOF_20260726.md`.
 
-### Maintenance: Validation Run Session ViewModel Boundary (2026-07-26)
+### Maintenance: Validation Run Session ViewModel Boundary (2026-07-26, consolidated)
 
-- `OpenVisionRecipeValidationRunSessionViewModel` now owns Validation Suite
+- `OpenVisionRecipeExecutionSessionViewModel` now owns Validation Suite
   running, Local Validation Set running, stop-requested, and status-text state
   plus their Start/RequestStop/Complete/SetStatus transitions.
 - The Shell retains explicit execution, image iteration, frozen-identity
@@ -1766,10 +1766,28 @@ Large-corpus skill validation now follows `docs\OPENVISIONLAB_SCALABLE_SKILL_VAL
   `artifacts\mvvm_validation_run_session_viewmodel_20260726\wpf_shell_host_recipe_local_validation_set.png`.
 - Evidence:
   `docs\admin\OPENVISIONLAB_VALIDATION_RUN_SESSION_VIEWMODEL_REFACTOR_PROOF_20260726.md`.
-- Remaining structural priority: audit one more concrete mutable-state or
-  business-rule owner before selecting another bounded refactor; do not add a
-  partial merely to reduce file length. Recommended model: gpt-5.6-terra |
-  Reasoning effort: medium.
+
+### Maintenance: Recipe Execution Session ViewModel Boundary (2026-07-26)
+
+- The existing validation-session owner was consolidated rather than followed
+  by another small ViewModel. `OpenVisionRecipeExecutionSessionViewModel` now
+  owns Validation Suite, Local Validation Set, selected-sample, Good/Bad pair,
+  and Catalog running state plus validation stop/status transitions.
+- The Shell no longer owns the sample/pair/catalog running fields. It retains
+  exact command guards, explicit execution, result summaries, iteration,
+  judgment, storage, Run History, and the existing-binding notification
+  adapter.
+- Verification passed: six old running-field absence, current-source Local
+  Validation complete/stop/partial-save, real Good/Bad pair rerun, unchanged
+  Preview/Run/layers/workspace/routes, Debug build, and readiness.
+  Artifacts:
+  `artifacts\mvvm_recipe_execution_session_viewmodel_20260726`.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_RECIPE_EXECUTION_SESSION_VIEWMODEL_REFACTOR_PROOF_20260726.md`.
+- Remaining structural priority: audit the root
+  `VisionPipelineStepPropertyMapper` direct Create/Apply families and select at
+  most one real non-partial adapter boundary. Recommended model:
+  gpt-5.6-terra | Reasoning effort: medium.
 
 1. **No active implementation priority after P235.**
    - The explicitly requested exact locator-session promotion passed without a product blocker. Wait for a concrete operator workflow blocker or verified current-build regression. Until then, do not spend model tokens or start another semantic image campaign. Recommended model: none until evidence exists | Reasoning effort: none until evidence exists.
