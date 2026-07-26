@@ -1950,6 +1950,27 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
   EdgeDetection selected-Step create/apply baseline gate. Recommended model:
   gpt-5.6-terra | Reasoning effort: medium.
 
+### Maintenance: Basic Image Property Adapter Boundary (2026-07-26)
+
+- A pre-move baseline first proved ThresholdTool, MorphologyTool, FilterTool,
+  and EdgeTool selected-Step create/apply behavior, including every
+  tool-specific parameter, canonical ToolType, layers, and acceptance metadata.
+- `VisionPipelineBasicImagePropertyAdapter` now owns recognition, parameter
+  projection, four editable PropertyGrid models, Step reconstruction, and
+  metric identification.
+- `VisionPipelineStepPropertyMapper` retains only adapter dispatch and shared
+  metadata/final Step copying. The old BasicImage partial and four root models
+  were removed; root size fell from 1,958 to 1,233 lines.
+- Pre/post-move round-trip, current-source Filter/Morphology layout, Threshold
+  Tool, Edge Learn, Debug build, visual inspection, and readiness passed.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_BASIC_IMAGE_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`
+  and `artifacts\refactor_basic_image_adapter_20260726`.
+- Remaining structural priority: extend the existing EdgeBasedMatching create
+  checks to a focused selected-Step apply baseline before considering a
+  standalone adapter. Recommended model: gpt-5.6-terra | Reasoning effort:
+  medium.
+
 ## Handoff Rules For The Next Chat
 
 - Do not claim a feature is complete because the historical handoff says so. Re-run the smallest meaningful current command when work touches it.

@@ -404,3 +404,24 @@
   감사하되, 먼저 Threshold/Morphology/Filter/EdgeDetection focused
   selected-Step create/apply baseline gate를 정의하고 통과시키는
   것입니다. Recommended model: gpt-5.6-terra | Reasoning effort: medium.
+
+### Basic Image Property Adapter Update (2026-07-26)
+
+- production 이동 전에 기존 Filter/Morphology layout smoke에 Threshold,
+  Morphology, Filter, EdgeDetection 네 selected-Step create/apply baseline을
+  추가하고 기존 root/partial 상태에서 먼저 통과시켰습니다.
+- `VisionPipelineBasicImagePropertyAdapter`가 네 Tool alias, parameter/default
+  projection, 네 PropertyGrid 모델, Step 재생성, metric 판정의 실제
+  owner가 되었습니다.
+- root mapper에서는 직접 ToolType/metric case와 네 private 모델을
+  제거하고 adapter create/apply/metric dispatch만 유지합니다. root는
+  1,958줄에서 1,233줄로 감소했습니다.
+- 검증: pre/post-move 네 도구 round-trip, current-source Filter/Morphology
+  layout, Threshold Tool, Edge Learn, Debug build(0 warning/0 error), visual
+  inspection, readiness PASS.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_BASIC_IMAGE_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`.
+- 다음 구조 우선순위는 EdgeBasedMatching의 기존 create 검사를
+  selected-Step apply round-trip baseline으로 확장한 뒤 standalone owner
+  추출 가치가 있는지 판단하는 것입니다. Recommended model:
+  gpt-5.6-terra | Reasoning effort: medium.

@@ -17513,6 +17513,7 @@ internal static class Program
 
     private static CaptureResult CaptureFilterMorphologyLayoutGuard(string outputPath)
     {
+        AssertBasicImagePropertyMapperRoundTrip();
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
         OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfFilterMorphologyLayoutGuard");
         return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
@@ -17596,6 +17597,170 @@ internal static class Program
                 throw new InvalidOperationException("Docked Morphology exposed localization keys instead of operator-facing labels.");
             }
         });
+    }
+
+    private static void AssertBasicImagePropertyMapperRoundTrip()
+    {
+        VisionPipelineStep threshold = CreateBasicImageRoundTripStep(
+            "ThresholdTool",
+            "ThresholdInput",
+            "ThresholdOutput");
+        threshold.Enabled = false;
+        threshold.UseAcceptance = true;
+        threshold.ExpectedSuccess = false;
+        threshold.MaxElapsedMilliseconds = 91D;
+        threshold.RequiredMessageText = "threshold-reviewed";
+        threshold.AcceptanceMetricName = "ThresholdValue";
+        threshold.UseAcceptanceMetricMinimum = true;
+        threshold.AcceptanceMetricMinimum = 33D;
+        threshold.UseAcceptanceMetricMaximum = true;
+        threshold.AcceptanceMetricMaximum = 144D;
+        SetParameters(
+            threshold,
+            (nameof(ThresholdToolProperty.Mode), ThresholdToolMode.Range),
+            (nameof(ThresholdToolProperty.Threshold), 101D),
+            (nameof(ThresholdToolProperty.MaxValue), 240D),
+            (nameof(ThresholdToolProperty.ThresholdType), OpenCvSharp.ThresholdTypes.BinaryInv),
+            (nameof(ThresholdToolProperty.RangeMin), 33),
+            (nameof(ThresholdToolProperty.RangeMax), 144),
+            (nameof(ThresholdToolProperty.Invert), true),
+            (nameof(ThresholdToolProperty.AdaptiveType), OpenCvSharp.AdaptiveThresholdTypes.GaussianC),
+            (nameof(ThresholdToolProperty.AdaptiveThresholdType), OpenCvSharp.ThresholdTypes.BinaryInv),
+            (nameof(ThresholdToolProperty.BlockSize), 31),
+            (nameof(ThresholdToolProperty.Weight), 7));
+        AssertBasicImageRoundTrip(threshold, "Threshold");
+
+        VisionPipelineStep morphology = CreateBasicImageRoundTripStep(
+            "MorphologyTool",
+            "MorphologyInput",
+            "MorphologyOutput");
+        SetParameters(
+            morphology,
+            (nameof(MorphologyToolProperty.Shape), OpenCvSharp.MorphShapes.Ellipse),
+            (nameof(MorphologyToolProperty.Operator), OpenCvSharp.MorphTypes.Close),
+            (nameof(MorphologyToolProperty.KernelWidth), 5),
+            (nameof(MorphologyToolProperty.KernelHeight), 7),
+            (nameof(MorphologyToolProperty.Iterations), 2));
+        AssertBasicImageRoundTrip(morphology, "Morphology");
+
+        VisionPipelineStep filter = CreateBasicImageRoundTripStep(
+            "FilterTool",
+            "FilterInput",
+            "FilterOutput");
+        SetParameters(
+            filter,
+            (nameof(FilterToolProperty.FilterType), FilterToolType.BilateralFilter),
+            (nameof(FilterToolProperty.KernelWidth), 5),
+            (nameof(FilterToolProperty.KernelHeight), 7),
+            (nameof(FilterToolProperty.MedianKernelSize), 9),
+            (nameof(FilterToolProperty.Diameter), 11),
+            (nameof(FilterToolProperty.SigmaColor), 13),
+            (nameof(FilterToolProperty.SigmaSpace), 17),
+            (nameof(FilterToolProperty.BorderType), OpenCvSharp.BorderTypes.Reflect));
+        AssertBasicImageRoundTrip(filter, "Filter");
+
+        VisionPipelineStep edge = CreateBasicImageRoundTripStep(
+            "EdgeTool",
+            "EdgeInput",
+            "EdgeOutput");
+        SetParameters(
+            edge,
+            (nameof(EdgeDetectionToolProperty.EdgeType), EdgeDetectionToolType.Scharr),
+            (nameof(EdgeDetectionToolProperty.CannyThresholdLow), 44),
+            (nameof(EdgeDetectionToolProperty.CannyThresholdHigh), 188),
+            (nameof(EdgeDetectionToolProperty.CannyApertureSize), 5),
+            (nameof(EdgeDetectionToolProperty.UseL2Gradient), false),
+            (nameof(EdgeDetectionToolProperty.SobelDegreeX), 1),
+            (nameof(EdgeDetectionToolProperty.SobelDegreeY), 0),
+            (nameof(EdgeDetectionToolProperty.SobelKernelSize), 3),
+            (nameof(EdgeDetectionToolProperty.ScharrDegreeX), 0),
+            (nameof(EdgeDetectionToolProperty.ScharrDegreeY), 1),
+            (nameof(EdgeDetectionToolProperty.LaplacianKernelSize), 3));
+        AssertBasicImageRoundTrip(edge, "EdgeDetection");
+    }
+
+    private static VisionPipelineStep CreateBasicImageRoundTripStep(
+        string toolType,
+        string inputLayer,
+        string outputLayer)
+    {
+        return new VisionPipelineStep
+        {
+            Name = toolType + " Round Trip",
+            ToolType = toolType,
+            InputLayer = inputLayer,
+            OutputLayer = outputLayer
+        };
+    }
+
+    private static void SetParameters(
+        VisionPipelineStep step,
+        params (string Key, object Value)[] values)
+    {
+        foreach ((string key, object value) in values)
+        {
+            step.Parameters[key] = Convert.ToString(
+                value,
+                CultureInfo.InvariantCulture) ?? string.Empty;
+        }
+    }
+
+    private static void AssertBasicImageRoundTrip(
+        VisionPipelineStep step,
+        string expectedToolType)
+    {
+        string inputLayer = step.InputLayer;
+        string outputLayer = step.OutputLayer;
+        bool enabled = step.Enabled;
+        bool useAcceptance = step.UseAcceptance;
+        bool expectedSuccess = step.ExpectedSuccess;
+        double maxElapsedMilliseconds = step.MaxElapsedMilliseconds;
+        string requiredMessageText = step.RequiredMessageText;
+        string acceptanceMetricName = step.AcceptanceMetricName;
+        bool useMinimum = step.UseAcceptanceMetricMinimum;
+        double minimum = step.AcceptanceMetricMinimum;
+        bool useMaximum = step.UseAcceptanceMetricMaximum;
+        double maximum = step.AcceptanceMetricMaximum;
+        Dictionary<string, string> expectedParameters = new(
+            step.Parameters,
+            StringComparer.OrdinalIgnoreCase);
+
+        object property = VisionPipelineStepPropertyMapper.CreateProperty(step)
+            ?? throw new InvalidOperationException(
+                step.ToolType + " selected-Step property object was not created.");
+        foreach ((string key, string value) in expectedParameters)
+        {
+            AssertPropertyValue(property, key, value);
+        }
+
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(step, property))
+        {
+            throw new InvalidOperationException(
+                step.ToolType + " selected-Step property object did not apply back.");
+        }
+
+        if (!string.Equals(step.ToolType, expectedToolType, StringComparison.Ordinal)
+            || !string.Equals(step.InputLayer, inputLayer, StringComparison.Ordinal)
+            || !string.Equals(step.OutputLayer, outputLayer, StringComparison.Ordinal)
+            || step.Enabled != enabled
+            || step.UseAcceptance != useAcceptance
+            || step.ExpectedSuccess != expectedSuccess
+            || Math.Abs(step.MaxElapsedMilliseconds - maxElapsedMilliseconds) > 0.0001D
+            || !string.Equals(step.RequiredMessageText, requiredMessageText, StringComparison.Ordinal)
+            || !string.Equals(step.AcceptanceMetricName, acceptanceMetricName, StringComparison.Ordinal)
+            || step.UseAcceptanceMetricMinimum != useMinimum
+            || Math.Abs(step.AcceptanceMetricMinimum - minimum) > 0.0001D
+            || step.UseAcceptanceMetricMaximum != useMaximum
+            || Math.Abs(step.AcceptanceMetricMaximum - maximum) > 0.0001D)
+        {
+            throw new InvalidOperationException(
+                expectedToolType + " selected-Step metadata or routing did not round-trip.");
+        }
+
+        foreach ((string key, string value) in expectedParameters)
+        {
+            AssertParameterValue(step, key, value);
+        }
     }
 
     private static CaptureResult CaptureShellHostPipelineReviewInputState(string outputPath)

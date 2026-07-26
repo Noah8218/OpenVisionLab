@@ -1968,6 +1968,55 @@ internal static class Program
             objectInspectionPropertyAdapter,
             "blob.ApplyFixtureParameters",
             "The ObjectInspection adapter owns Blob fixture reconstruction.");
+        string basicImagePropertyAdapter = Read(
+            repoRoot,
+            @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineBasicImagePropertyAdapter.cs");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelineBasicImagePropertyAdapter.TryCreateProperty",
+            "Pipeline Step PropertyGrid dispatches BasicImage mapping through its adapter.");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelineBasicImagePropertyAdapter.TryCreateStep",
+            "Pipeline Step PropertyGrid reconstructs BasicImage steps through its adapter.");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelineBasicImagePropertyAdapter.ResolveMetricToolType",
+            "Pipeline Step PropertyGrid resolves BasicImage metrics through its adapter.");
+        foreach (string oldBasicImageToken in new[]
+        {
+            "case \"threshold\"",
+            "case \"morphology\"",
+            "case \"filter\"",
+            "case \"edgedetection\"",
+            "private sealed class PipelineThresholdToolProperty",
+            "private sealed class PipelineMorphologyToolProperty",
+            "private sealed class PipelineFilterToolProperty",
+            "private sealed class PipelineEdgeDetectionToolProperty"
+        })
+        {
+            RequireNotContains(
+                stepPropertyMapper,
+                oldBasicImageToken,
+                "The root mapper no longer owns BasicImage ToolType cases or PropertyGrid models.");
+        }
+        RequireContains(
+            basicImagePropertyAdapter,
+            "internal static class VisionPipelineBasicImagePropertyAdapter",
+            "BasicImage mapping has a standalone non-partial owner.");
+        foreach (string basicImageModel in new[]
+        {
+            "private sealed class PipelineThresholdToolProperty",
+            "private sealed class PipelineMorphologyToolProperty",
+            "private sealed class PipelineFilterToolProperty",
+            "private sealed class PipelineEdgeDetectionToolProperty"
+        })
+        {
+            RequireContains(
+                basicImagePropertyAdapter,
+                basicImageModel,
+                "The BasicImage adapter owns all four PropertyGrid models.");
+        }
         RequireContains(
             learnScreenshotSmoke,
             "wpf_shell_host_recipe_line_pair_properties",
@@ -1988,6 +2037,10 @@ internal static class Program
             learnScreenshotSmoke,
             "AssertP216ObjectInspectionPropertyMapperRoundTrip",
             "Screenshot smoke covers BlobTool and ContourTool selected-Step round trips.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "AssertBasicImagePropertyMapperRoundTrip",
+            "Screenshot smoke covers all four BasicImage selected-Step round trips.");
         RequireContains(pipelineValidator, "ValidateReferenceDifferenceParameters", "Pipeline validator checks ReferenceDifference parameters.");
         RequireContains(pipelineKnownMetrics, "DifferencePixelRatio", "Known metrics include ReferenceDifference coverage.");
         RequireContains(pipelineKnownMetrics, "RegistrationInlierRatio", "Known metrics include ReferenceDifference registration quality.");
