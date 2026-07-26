@@ -6,16 +6,36 @@ using OpenVisionLab.Vision._1._Tools.OpenCV;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Globalization;
 using System.Windows.Controls.WpfPropertyGrid;
 using static Lib.Common.FormulaUtil;
 using static OpenVisionLab.PropertyGridEditorFactory;
+using static OpenVisionLab.VisionPipelineStepPropertyMapper;
 
 namespace OpenVisionLab
 {
-    internal static partial class VisionPipelineStepPropertyMapper
+    internal static class VisionPipelineLinePairPropertyAdapter
     {
-        private static bool TryCreateLinePairStep(
+        public static bool TryCreateProperty(
+            VisionPipelineStep step,
+            string name,
+            out object property)
+        {
+            property = null;
+            string toolType = NormalizeToolType(step?.ToolType);
+            if (toolType != "linedistance" && toolType != "lineintersection")
+            {
+                return false;
+            }
+
+            property = AttachStepMetadata(
+                CreatePropertyCore(step, name),
+                name,
+                step.InputLayer,
+                step.OutputLayer);
+            return true;
+        }
+
+        public static bool TryCreateStep(
             object property,
             string inputLayer,
             string outputLayer,
@@ -29,6 +49,11 @@ namespace OpenVisionLab
 
             step = null;
             return false;
+        }
+
+        public static bool IsProperty(object property)
+        {
+            return property is PipelineLinePairProperty;
         }
 
         public static bool TryCreateLineGaugePair(
@@ -48,7 +73,9 @@ namespace OpenVisionLab
             return false;
         }
 
-        private static PipelineLinePairProperty CreatePipelineLinePairProperty(VisionPipelineStep step, string name)
+        private static PipelineLinePairProperty CreatePropertyCore(
+            VisionPipelineStep step,
+            string name)
         {
             string toolType = string.IsNullOrWhiteSpace(step?.ToolType) ? "LineDistance" : step.ToolType.Trim();
             LineGaugeProperty left = CreatePrefixedLineGaugeProperty(
@@ -77,6 +104,36 @@ namespace OpenVisionLab
                 GapMinimumDarkCoverageRatio = GetDouble(step?.Parameters, VisionPipelineGapEdgePairTool.MinimumDarkCoverageParameter, 0.25D),
                 GapMinimumScoreMargin = GetDouble(step?.Parameters, VisionPipelineGapEdgePairTool.MinimumScoreMarginParameter, 0.05D)
             };
+        }
+
+        private static T AttachStepMetadata<T>(
+            T property,
+            string name,
+            string inputLayer,
+            string outputLayer)
+            where T : VisionPipelineStepPropertyMapper.IPipelineStepMetadata
+        {
+            property.PipelineStepName = string.IsNullOrWhiteSpace(name)
+                ? property.PipelineStepName
+                : name;
+            property.InputLayer = string.IsNullOrWhiteSpace(inputLayer) ? "Main" : inputLayer;
+            property.OutputLayer = string.IsNullOrWhiteSpace(outputLayer)
+                ? "Pipeline_Output"
+                : outputLayer;
+            return property;
+        }
+
+        private static string NormalizeToolType(string toolType)
+        {
+            string value = (toolType ?? string.Empty).Trim();
+            if (value.EndsWith("Tool", StringComparison.OrdinalIgnoreCase))
+            {
+                value = value.Substring(0, value.Length - 4);
+            }
+
+            return value.Replace(" ", string.Empty)
+                .Replace("_", string.Empty)
+                .ToLowerInvariant();
         }
 
         private static LineGaugeProperty CreatePrefixedLineGaugeProperty(
@@ -118,7 +175,8 @@ namespace OpenVisionLab
         [CategoryOrder("Right Line", 11)]
         [CategoryOrder("Threshold", 20)]
         [CategoryOrder("Acceptance", 40)]
-        private sealed class PipelineLinePairProperty : IPipelineStepMetadata
+        private sealed class PipelineLinePairProperty :
+            VisionPipelineStepPropertyMapper.IPipelineStepMetadata
         {
             private readonly LineGaugeProperty leftBaseline;
             private readonly LineGaugeProperty rightBaseline;
@@ -178,13 +236,13 @@ namespace OpenVisionLab
             [PropertyOrder(-2)]
             [Category("Step")]
             [DisplayName("Input Layer")]
-            [TypeConverter(typeof(PipelineLayerNameConverter))]
+            [TypeConverter(typeof(VisionPipelineStepPropertyMapper.PipelineLayerNameConverter))]
             public string InputLayer { get; set; } = "Main";
 
             [PropertyOrder(-1)]
             [Category("Step")]
             [DisplayName("Output Layer")]
-            [TypeConverter(typeof(PipelineLayerNameConverter))]
+            [TypeConverter(typeof(VisionPipelineStepPropertyMapper.PipelineLayerNameConverter))]
             public string OutputLayer { get; set; } = "Pipeline_Output";
 
             [PropertyOrder(0)]
@@ -461,7 +519,7 @@ namespace OpenVisionLab
             [PropertyOrder(5)]
             [Category("Acceptance")]
             [DisplayName("Acceptance Metric")]
-            [TypeConverter(typeof(PipelineMetricNameConverter))]
+            [TypeConverter(typeof(VisionPipelineStepPropertyMapper.PipelineMetricNameConverter))]
             public string AcceptanceMetricName { get; set; } = string.Empty;
 
             [PropertyOrder(6)]
@@ -566,48 +624,5 @@ namespace OpenVisionLab
             }
         }
 
-        private static void AddParameter(IDictionary<string, string> parameters, string key, object value)
-        {
-            parameters[key] = Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
-        }
-
-        private abstract class PipelineGeometryPropertyBase : IPipelineStepMetadata
-        {
-            protected PipelineGeometryPropertyBase(VisionPipelineStep step, string name)
-            {
-                BaselineParameters = step?.Parameters == null
-                    ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                    : new Dictionary<string, string>(step.Parameters, StringComparer.OrdinalIgnoreCase);
-                PipelineStepName = name;
-            }
-
-            protected Dictionary<string, string> BaselineParameters { get; }
-            [Category("Step"), DisplayName("Step Name"), PropertyOrder(-3)] public string PipelineStepName { get; set; }
-            [Category("Step"), DisplayName("Input Layer"), TypeConverter(typeof(PipelineLayerNameConverter)), PropertyOrder(-2)] public string InputLayer { get; set; } = "Main";
-            [Category("Step"), DisplayName("Output Layer"), TypeConverter(typeof(PipelineLayerNameConverter)), PropertyOrder(-1)] public string OutputLayer { get; set; } = "Geometry_Output";
-            [Category("Step"), DisplayName("Enabled"), PropertyOrder(0)] public bool Enabled { get; set; } = true;
-            [Category("Acceptance"), DisplayName("Use Acceptance"), PropertyOrder(1)] public bool UseAcceptance { get; set; }
-            [Category("Acceptance"), DisplayName("Expected Success"), PropertyOrder(2)] public bool ExpectedSuccess { get; set; } = true;
-            [Category("Acceptance"), DisplayName("Max Elapsed (ms)"), PropertyOrder(3)] public double MaxElapsedMilliseconds { get; set; }
-            [Category("Acceptance"), DisplayName("Required Message"), PropertyOrder(4)] public string RequiredMessageText { get; set; } = string.Empty;
-            [Category("Acceptance"), DisplayName("Acceptance Metric"), TypeConverter(typeof(PipelineMetricNameConverter)), PropertyOrder(5)] public string AcceptanceMetricName { get; set; } = string.Empty;
-            [Browsable(false)] public bool UseAcceptanceMetricMinimum { get; set; }
-            [Category("Acceptance"), DisplayName("Metric range"), PropertyEditor(typeof(WpgMetricRangeEditor)), MetricRangeEditor(3, nameof(UseAcceptanceMetricMinimum), nameof(AcceptanceMetricMinimum), nameof(UseAcceptanceMetricMaximum), nameof(AcceptanceMetricMaximum)), PropertyOrder(7)] public double AcceptanceMetricMinimum { get; set; }
-            [Browsable(false)] public bool UseAcceptanceMetricMaximum { get; set; }
-            [Browsable(false)] public double AcceptanceMetricMaximum { get; set; }
-
-            protected VisionPipelineStep CreateStep(string toolType, string inputLayer, string outputLayer)
-            {
-                VisionPipelineStep mapped = new VisionPipelineStep
-                {
-                    Name = string.IsNullOrWhiteSpace(PipelineStepName) ? toolType : PipelineStepName,
-                    ToolType = toolType,
-                    InputLayer = string.IsNullOrWhiteSpace(inputLayer) ? "Main" : inputLayer,
-                    OutputLayer = string.IsNullOrWhiteSpace(outputLayer) ? toolType + "_Output" : outputLayer
-                };
-                foreach (KeyValuePair<string, string> item in BaselineParameters) mapped.Parameters[item.Key] = item.Value;
-                return mapped;
-            }
-        }
     }
 }

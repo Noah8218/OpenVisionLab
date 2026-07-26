@@ -122,6 +122,14 @@ namespace OpenVisionLab
                 return pinArrayGapProperty;
             }
 
+            if (VisionPipelineLinePairPropertyAdapter.TryCreateProperty(
+                step,
+                name,
+                out object linePairProperty))
+            {
+                return linePairProperty;
+            }
+
             switch (toolType)
             {
                 case "threshold":
@@ -156,9 +164,6 @@ namespace OpenVisionLab
                         SHOW_CONTOUR = GetBool(step.Parameters, nameof(LineGaugeProperty.SHOW_CONTOUR), true),
                         SHOW_FITLINE = GetBool(step.Parameters, nameof(LineGaugeProperty.SHOW_FITLINE), true)
                     }, step.Parameters), name, step.InputLayer, step.OutputLayer);
-                case "linedistance":
-                case "lineintersection":
-                    return AttachStepMetadata(CreatePipelineLinePairProperty(step, name), name, step.InputLayer, step.OutputLayer);
                 case "geometrymeasure":
                 case "geometricmeasurement":
                     return AttachStepMetadata(new PipelineGeometryMeasureProperty(step, name, context), name, step.InputLayer, step.OutputLayer);
@@ -239,7 +244,11 @@ namespace OpenVisionLab
             {
                 mapped = pinArrayGapStep;
             }
-            else if (TryCreateLinePairStep(property, inputLayer, outputLayer, out VisionPipelineStep linePairStep))
+            else if (VisionPipelineLinePairPropertyAdapter.TryCreateStep(
+                property,
+                inputLayer,
+                outputLayer,
+                out VisionPipelineStep linePairStep))
             {
                 mapped = linePairStep;
             }
@@ -290,6 +299,17 @@ namespace OpenVisionLab
             return true;
         }
 
+        public static bool TryCreateLineGaugePair(
+            object property,
+            out LineGaugeProperty left,
+            out LineGaugeProperty right)
+        {
+            return VisionPipelineLinePairPropertyAdapter.TryCreateLineGaugePair(
+                property,
+                out left,
+                out right);
+        }
+
 
         private static T AttachStepMetadata<T>(T property, string name, string inputLayer, string outputLayer)
             where T : IPipelineStepMetadata
@@ -300,7 +320,7 @@ namespace OpenVisionLab
             return property;
         }
 
-        private static T ApplyCommonOpenCvProperty<T>(T property, IDictionary<string, string> parameters)
+        internal static T ApplyCommonOpenCvProperty<T>(T property, IDictionary<string, string> parameters)
             where T : OpenCvPropertyBase
         {
             property.PIXELPERMM = GetDouble(parameters, nameof(property.PIXELPERMM), property.PIXELPERMM);
@@ -382,13 +402,13 @@ namespace OpenVisionLab
             return null;
         }
 
-        private static string GetString(IDictionary<string, string> parameters, string key, string defaultValue)
+        internal static string GetString(IDictionary<string, string> parameters, string key, string defaultValue)
         {
             string value = GetValue(parameters, key);
             return string.IsNullOrWhiteSpace(value) ? defaultValue : value;
         }
 
-        private static int GetInt(IDictionary<string, string> parameters, string key, int defaultValue)
+        internal static int GetInt(IDictionary<string, string> parameters, string key, int defaultValue)
         {
             string value = GetValue(parameters, key);
             return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int result)
@@ -396,7 +416,7 @@ namespace OpenVisionLab
                 : defaultValue;
         }
 
-        private static double GetDouble(IDictionary<string, string> parameters, string key, double defaultValue)
+        internal static double GetDouble(IDictionary<string, string> parameters, string key, double defaultValue)
         {
             string value = GetValue(parameters, key);
             return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double result)
@@ -404,20 +424,20 @@ namespace OpenVisionLab
                 : defaultValue;
         }
 
-        private static bool GetBool(IDictionary<string, string> parameters, string key, bool defaultValue)
+        internal static bool GetBool(IDictionary<string, string> parameters, string key, bool defaultValue)
         {
             string value = GetValue(parameters, key);
             return bool.TryParse(value, out bool result) ? result : defaultValue;
         }
 
-        private static TEnum GetEnum<TEnum>(IDictionary<string, string> parameters, string key, TEnum defaultValue)
+        internal static TEnum GetEnum<TEnum>(IDictionary<string, string> parameters, string key, TEnum defaultValue)
             where TEnum : struct
         {
             string value = GetValue(parameters, key);
             return Enum.TryParse(value, true, out TEnum result) ? result : defaultValue;
         }
 
-        private static int GetPrefixedInt(IDictionary<string, string> parameters, string prefix, string key, int defaultValue)
+        internal static int GetPrefixedInt(IDictionary<string, string> parameters, string prefix, string key, int defaultValue)
         {
             string value = GetPrefixedValue(parameters, prefix, key);
             return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int result)
@@ -425,7 +445,7 @@ namespace OpenVisionLab
                 : GetInt(parameters, key, defaultValue);
         }
 
-        private static double GetPrefixedDouble(IDictionary<string, string> parameters, string prefix, string key, double defaultValue)
+        internal static double GetPrefixedDouble(IDictionary<string, string> parameters, string prefix, string key, double defaultValue)
         {
             string value = GetPrefixedValue(parameters, prefix, key);
             return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double result)
@@ -433,7 +453,7 @@ namespace OpenVisionLab
                 : GetDouble(parameters, key, defaultValue);
         }
 
-        private static bool GetPrefixedBool(IDictionary<string, string> parameters, string prefix, string key, bool defaultValue)
+        internal static bool GetPrefixedBool(IDictionary<string, string> parameters, string prefix, string key, bool defaultValue)
         {
             string value = GetPrefixedValue(parameters, prefix, key);
             return bool.TryParse(value, out bool result)
@@ -441,7 +461,7 @@ namespace OpenVisionLab
                 : GetBool(parameters, key, defaultValue);
         }
 
-        private static TEnum GetPrefixedEnum<TEnum>(IDictionary<string, string> parameters, string prefix, string key, TEnum defaultValue)
+        internal static TEnum GetPrefixedEnum<TEnum>(IDictionary<string, string> parameters, string prefix, string key, TEnum defaultValue)
             where TEnum : struct
         {
             string value = GetPrefixedValue(parameters, prefix, key);
@@ -476,7 +496,7 @@ namespace OpenVisionLab
             return null;
         }
 
-        private static void ApplyPrefixedOpenCvProperty(
+        internal static void ApplyPrefixedOpenCvProperty(
             OpenCvPropertyBase property,
             IDictionary<string, string> parameters,
             string prefix)
@@ -499,6 +519,15 @@ namespace OpenVisionLab
             property.CvROIS = GetRectList(parameters, prefix + nameof(property.CvROIS), property.CvROIS);
             property.CvMASKS = GetRectList(parameters, prefix + nameof(property.CvMASKS), property.CvMASKS);
             property.USE_MASKING |= property.CvMASKS?.Count > 0;
+        }
+
+        internal static void AddParameter(
+            IDictionary<string, string> parameters,
+            string key,
+            object value)
+        {
+            parameters[key] =
+                Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
         }
 
         private static Rect GetRect(IDictionary<string, string> parameters, string key, Rect defaultValue)
@@ -664,6 +693,11 @@ namespace OpenVisionLab
                 return "PinArrayGap";
             }
 
+            if (VisionPipelineLinePairPropertyAdapter.IsProperty(instance))
+            {
+                return "LineGauge";
+            }
+
             switch (instance)
             {
                 case PipelineBlobProperty _:
@@ -671,7 +705,6 @@ namespace OpenVisionLab
                 case PipelineContourProperty _:
                     return "Contour";
                 case PipelineLineGaugeProperty _:
-                case PipelineLinePairProperty _:
                     return "LineGauge";
                 case PipelineGeometryMeasureProperty _:
                     return "GeometryMeasure";
@@ -703,6 +736,111 @@ namespace OpenVisionLab
         }
 
 
+
+        private abstract class PipelineGeometryPropertyBase : IPipelineStepMetadata
+        {
+            protected PipelineGeometryPropertyBase(VisionPipelineStep step, string name)
+            {
+                BaselineParameters = step?.Parameters == null
+                    ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    : new Dictionary<string, string>(
+                        step.Parameters,
+                        StringComparer.OrdinalIgnoreCase);
+                PipelineStepName = name;
+            }
+
+            protected Dictionary<string, string> BaselineParameters { get; }
+
+            [Category("Step")]
+            [DisplayName("Step Name")]
+            [PropertyOrder(-3)]
+            public string PipelineStepName { get; set; }
+
+            [Category("Step")]
+            [DisplayName("Input Layer")]
+            [TypeConverter(typeof(PipelineLayerNameConverter))]
+            [PropertyOrder(-2)]
+            public string InputLayer { get; set; } = "Main";
+
+            [Category("Step")]
+            [DisplayName("Output Layer")]
+            [TypeConverter(typeof(PipelineLayerNameConverter))]
+            [PropertyOrder(-1)]
+            public string OutputLayer { get; set; } = "Geometry_Output";
+
+            [Category("Step")]
+            [DisplayName("Enabled")]
+            [PropertyOrder(0)]
+            public bool Enabled { get; set; } = true;
+
+            [Category("Acceptance")]
+            [DisplayName("Use Acceptance")]
+            [PropertyOrder(1)]
+            public bool UseAcceptance { get; set; }
+
+            [Category("Acceptance")]
+            [DisplayName("Expected Success")]
+            [PropertyOrder(2)]
+            public bool ExpectedSuccess { get; set; } = true;
+
+            [Category("Acceptance")]
+            [DisplayName("Max Elapsed (ms)")]
+            [PropertyOrder(3)]
+            public double MaxElapsedMilliseconds { get; set; }
+
+            [Category("Acceptance")]
+            [DisplayName("Required Message")]
+            [PropertyOrder(4)]
+            public string RequiredMessageText { get; set; } = string.Empty;
+
+            [Category("Acceptance")]
+            [DisplayName("Acceptance Metric")]
+            [TypeConverter(typeof(PipelineMetricNameConverter))]
+            [PropertyOrder(5)]
+            public string AcceptanceMetricName { get; set; } = string.Empty;
+
+            [Browsable(false)]
+            public bool UseAcceptanceMetricMinimum { get; set; }
+
+            [Category("Acceptance")]
+            [DisplayName("Metric range")]
+            [PropertyEditor(typeof(WpgMetricRangeEditor))]
+            [MetricRangeEditor(3, nameof(UseAcceptanceMetricMinimum), nameof(AcceptanceMetricMinimum), nameof(UseAcceptanceMetricMaximum), nameof(AcceptanceMetricMaximum))]
+            [PropertyOrder(7)]
+            public double AcceptanceMetricMinimum { get; set; }
+
+            [Browsable(false)]
+            public bool UseAcceptanceMetricMaximum { get; set; }
+
+            [Browsable(false)]
+            public double AcceptanceMetricMaximum { get; set; }
+
+            protected VisionPipelineStep CreateStep(
+                string toolType,
+                string inputLayer,
+                string outputLayer)
+            {
+                VisionPipelineStep mapped = new VisionPipelineStep
+                {
+                    Name = string.IsNullOrWhiteSpace(PipelineStepName)
+                        ? toolType
+                        : PipelineStepName,
+                    ToolType = toolType,
+                    InputLayer = string.IsNullOrWhiteSpace(inputLayer)
+                        ? "Main"
+                        : inputLayer,
+                    OutputLayer = string.IsNullOrWhiteSpace(outputLayer)
+                        ? toolType + "_Output"
+                        : outputLayer
+                };
+                foreach (KeyValuePair<string, string> item in BaselineParameters)
+                {
+                    mapped.Parameters[item.Key] = item.Value;
+                }
+
+                return mapped;
+            }
+        }
 
         [CategoryOrder("Step", -1)]
         [CategoryOrder("Sources", 0)]

@@ -1836,6 +1836,41 @@ internal static class Program
             pinArrayGapPropertyAdapter,
             "MinimumDarkCoverageRatio",
             "The PinArrayGap adapter exposes its reviewed detection fields.");
+        string linePairPropertyAdapter = Read(
+            repoRoot,
+            @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineLinePairPropertyAdapter.cs");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelineLinePairPropertyAdapter.TryCreateProperty",
+            "Pipeline Step PropertyGrid dispatches Line Pair mapping through its adapter.");
+        RequireNotContains(
+            stepPropertyMapper,
+            "case \"linedistance\"",
+            "The root mapper no longer owns the LineDistance ToolType case.");
+        RequireContains(
+            linePairPropertyAdapter,
+            "internal static class VisionPipelineLinePairPropertyAdapter",
+            "Line Pair mapping has a standalone non-partial owner.");
+        RequireContains(
+            linePairPropertyAdapter,
+            "TryCreateLineGaugePair",
+            "The Line Pair adapter preserves the Tool View edit handoff.");
+        RequireNotContains(
+            linePairPropertyAdapter,
+            "PipelineGeometryPropertyBase",
+            "The Line Pair adapter no longer owns the Geometry property base.");
+        RequireContains(
+            stepPropertyMapper,
+            "private abstract class PipelineGeometryPropertyBase",
+            "The Geometry property base is colocated with its derived mapper models.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "wpf_shell_host_recipe_line_pair_properties",
+            "Screenshot smoke covers Line Pair PropertyGrid round trip.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "p213_geometry_property_grid",
+            "Screenshot smoke covers the relocated Geometry PropertyGrid base.");
         RequireContains(pipelineValidator, "ValidateReferenceDifferenceParameters", "Pipeline validator checks ReferenceDifference parameters.");
         RequireContains(pipelineKnownMetrics, "DifferencePixelRatio", "Known metrics include ReferenceDifference coverage.");
         RequireContains(pipelineKnownMetrics, "RegistrationInlierRatio", "Known metrics include ReferenceDifference registration quality.");

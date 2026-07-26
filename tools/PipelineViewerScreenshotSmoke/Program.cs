@@ -3555,6 +3555,24 @@ internal static class Program
                 + string.Join("; ", lostParameters));
         }
 
+        VisionPipelineStep aliasStep = new()
+        {
+            Name = "Line intersection alias",
+            ToolType = "LineIntersectionTool",
+            InputLayer = "Main",
+            OutputLayer = "Intersection_Result"
+        };
+        object aliasProperty = VisionPipelineStepPropertyMapper.CreateProperty(aliasStep)
+            ?? throw new InvalidOperationException("LineIntersectionTool alias returned no property object.");
+        VisionPipelineStep aliasRoundTrip = new();
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(aliasRoundTrip, aliasProperty)
+            || !string.Equals(aliasRoundTrip.ToolType, "LineIntersectionTool", StringComparison.Ordinal)
+            || !string.Equals(aliasRoundTrip.Parameters.GetValueOrDefault("LeftPRJ_DIR"), "X_LTOR", StringComparison.Ordinal)
+            || !string.Equals(aliasRoundTrip.Parameters.GetValueOrDefault("RightPRJ_DIR"), "X_RTOL", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("LineIntersectionTool alias/default direction round trip changed.");
+        }
+
         PropertyDescriptorCollection editDescriptors = TypeDescriptor.GetProperties(mappedProperty);
         editDescriptors["RightRoi"]?.SetValue(mappedProperty, new OpenCvSharp.Rect(500, 175, 72, 140));
         editDescriptors["RightManualAngleValue"]?.SetValue(mappedProperty, -11D);

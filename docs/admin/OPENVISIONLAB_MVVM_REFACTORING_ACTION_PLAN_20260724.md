@@ -312,3 +312,23 @@
   이번 한-family 범위에서 제외했습니다. 다음 우선순위는 두 회귀 범위를
   모두 확보한 뒤 최소 독립 경계를 설계하는 것입니다. Recommended
   model: gpt-5.6-terra | Reasoning effort: medium.
+
+### Line Pair Property Adapter Update (2026-07-26)
+
+- 기존 `VisionPipelineStepPropertyMapper.LinePair.cs` partial을 제거하고
+  `VisionPipelineLinePairPropertyAdapter`가 LineDistance/LineIntersection
+  alias, Line A/B projection, PropertyGrid 모델, Step 재생성, Tool View
+  LineGauge pair handoff의 실제 owner가 되었습니다.
+- root mapper는 create/apply/metric dispatch와 기존 public
+  `TryCreateLineGaugePair` compatibility forwarder만 유지합니다.
+- Line Pair 파일에 잘못 포함됐던 `PipelineGeometryPropertyBase`는 유일한
+  파생 모델인 GeometryMeasure/CircleGauge 옆으로 이동했습니다.
+- 새 interface/factory/codec 복제는 추가하지 않았고 기존 공통 mapper
+  helper를 그대로 사용합니다.
+- 검증: Debug build(0 warning/0 error), current-source Line Pair PropertyGrid,
+  P213 Geometry PropertyGrid/Review, visual inspection, readiness PASS.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_LINE_PAIR_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`.
+- 다음 구조 우선순위는 GeometryMeasure/CircleGauge를 하나의 응집된
+  adapter 후보로 감사하되, P213 두 회귀를 완료 gate로 유지하는
+  것입니다. Recommended model: gpt-5.6-terra | Reasoning effort: medium.

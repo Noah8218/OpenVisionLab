@@ -1833,6 +1833,31 @@ Large-corpus skill validation now follows `docs\OPENVISIONLAB_SCALABLE_SKILL_VAL
   implementation. Recommended model: gpt-5.6-terra | Reasoning effort:
   medium.
 
+### Maintenance: Line Pair Property Adapter Boundary (2026-07-26)
+
+- The old `VisionPipelineStepPropertyMapper.LinePair.cs` partial was removed.
+  `VisionPipelineLinePairPropertyAdapter` now owns LineDistance/
+  LineIntersection recognition, prefixed Line A/B projection, the PropertyGrid
+  model, Step reconstruction, Tool View LineGauge pair handoff, and metric
+  identification.
+- The root mapper retains create/apply/metric dispatch, shared parameter
+  helpers, and a thin public `TryCreateLineGaugePair` compatibility forwarder.
+- The misplaced `PipelineGeometryPropertyBase` moved beside its only derived
+  root models, GeometryMeasure and CircleGauge. It is no longer owned by the
+  Line Pair adapter.
+- Verification passed: Debug build (0 warnings/0 errors), current-source Line
+  Pair PropertyGrid including `LineIntersectionTool` alias/default round trip,
+  P213 Geometry PropertyGrid, P213 Geometry Review/core, visual inspection, and
+  readiness. Artifacts:
+  `artifacts\refactor_line_pair_adapter_20260726_r2` and
+  `artifacts\refactor_line_pair_adapter_20260726`.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_LINE_PAIR_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`.
+- Remaining structural priority: audit GeometryMeasure/CircleGauge as one
+  cohesive adapter candidate while keeping both P213 regressions as mandatory
+  completion evidence. Recommended model: gpt-5.6-terra | Reasoning effort:
+  medium.
+
 1. **No active implementation priority after P235.**
    - The explicitly requested exact locator-session promotion passed without a product blocker. Wait for a concrete operator workflow blocker or verified current-build regression. Until then, do not spend model tokens or start another semantic image campaign. Recommended model: none until evidence exists | Reasoning effort: none until evidence exists.
 
