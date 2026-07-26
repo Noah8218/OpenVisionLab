@@ -779,6 +779,7 @@ internal static class Program
         RequireToolViewOwnerFiles(repoRoot, @"UI\VisionTest\Wpf\Tooling\Review",
             "AffineTransformResultReviewPresenter.cs",
             "AutoMPointHtmlReportExporter.cs",
+            "AutoMPointTeachingController.cs",
             "LineToolResultExplanation.cs",
             "LineToolResultReviewPresenter.cs",
             "LineToolReviewController.cs",

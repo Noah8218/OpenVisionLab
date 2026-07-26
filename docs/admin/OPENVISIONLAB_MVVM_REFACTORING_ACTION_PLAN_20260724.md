@@ -642,3 +642,26 @@
   분리하지 않습니다. Prerequisite: concrete evidence | Recommended
   model: none until evidence exists | Reasoning effort: none until evidence
   exists.
+
+### Auto MPoint Teaching Controller Update (2026-07-26)
+
+- 저장소 전체의 큰 WPF code-behind를 현재 owner와 다시 대조했습니다.
+  ROI Editor, OpenGL Template Editor, Pipeline Review, Learn은 각각
+  기존 ViewModel/service/controller 또는 WPF-local 책임이 확인되어
+  줄 수 기준 분해를 중단했습니다.
+- `EdgeBasedMatchingToolWpfView`만 source/대표 이미지 수명, Auto MPoint
+  실행, 후보 상태, 분석 identity, HTML report, template 적용을 직접
+  소유하고 있었습니다.
+- 새 `AutoMPointTeachingController`가 이 교육 워크플로와 상태의 실제
+  owner가 됐고 View는 구성, verification guide 표시, 기존 facade 위임만
+  유지합니다. 새 interface/factory/partial은 추가하지 않았습니다.
+- Auto MPoint 전용 및 일반 Edge Based Tool current-source smoke, Debug
+  build, readiness, 구조 검색, visual inspection, `git diff --check`가
+  통과했습니다.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_AUTO_MPOINT_TEACHING_CONTROLLER_REFACTOR_PROOF_20260726.md`
+  및 `artifacts/refactor_auto_mpoint_teaching_controller_20260726`.
+- 다음 구조 우선순위는 없습니다. 구체적인 유지보수 변경 또는 현재
+  빌드 회귀가 새 owner 필요성을 보일 때만 재감사합니다.
+  Prerequisite: concrete evidence | Recommended model: none until evidence
+  exists | Reasoning effort: none until evidence exists.

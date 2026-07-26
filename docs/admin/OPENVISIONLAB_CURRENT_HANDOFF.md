@@ -2197,6 +2197,33 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
   Recommended model: none until evidence exists | Reasoning effort: none
   until evidence exists.
 
+### Maintenance: Auto MPoint Teaching Controller Boundary (2026-07-26)
+
+- A repository-wide WPF ownership audit did not reopen Learn, ROI Editor,
+  OpenGL Template Editor, or Pipeline Review: their remaining large blocks
+  already belong to existing ViewModels/services/controllers or to WPF-local
+  input, coordinate, and rendering behavior.
+- `EdgeBasedMatchingToolWpfView` still directly owned the cohesive Auto MPoint
+  teaching workflow: source/representative image lifetime, analysis execution,
+  candidate/definition state, report validation/export, and template apply.
+- `AutoMPointTeachingController` now owns that workflow and state under
+  `UI\VisionTest\Wpf\Tooling\Review`. The View retains composition,
+  verification-guide visibility, existing facade delegation, input-preview
+  forwarding, and disposal wiring.
+- No interface, factory, partial, algorithm, setting, or automatic Preview/Run
+  path was added. The readiness owner list names the new exact file instead of
+  using a search fallback.
+- Current-source Auto MPoint and general Edge Based Tool smokes, Debug build,
+  readiness, structural search, visual inspection, and patch hygiene passed.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_AUTO_MPOINT_TEACHING_CONTROLLER_REFACTOR_PROOF_20260726.md`
+  and `artifacts\refactor_auto_mpoint_teaching_controller_20260726`.
+- No further proactive structural priority is selected. Reopen only when a
+  concrete maintenance change or verified current-build regression exposes a
+  new ownership boundary. Prerequisite: concrete evidence | Recommended
+  model: none until evidence exists | Reasoning effort: none until evidence
+  exists.
+
 ## Handoff Rules For The Next Chat
 
 - Do not claim a feature is complete because the historical handoff says so. Re-run the smallest meaningful current command when work touches it.
