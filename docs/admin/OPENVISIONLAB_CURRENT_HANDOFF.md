@@ -1809,6 +1809,30 @@ Large-corpus skill validation now follows `docs\OPENVISIONLAB_SCALABLE_SKILL_VAL
   select one only when a dedicated round-trip regression can prove its
   behavior. Recommended model: gpt-5.6-terra | Reasoning effort: medium.
 
+### Maintenance: PinArrayGap Property Adapter Boundary (2026-07-26)
+
+- `VisionPipelinePinArrayGapPropertyAdapter` now owns PinArrayGap/
+  AdjacentPinGap alias recognition, parameter/default projection, the
+  PropertyGrid model, baseline parameter preservation, Step reconstruction,
+  and metric-owner identification.
+- The root mapper no longer owns the direct aliases, private property model, or
+  `ToStep`. It retains adapter dispatch and shared metadata/parameter copying.
+- The focused smoke now also proves `AdjacentPinGapTool` alias/default/baseline
+  round trip while retaining the existing `ALLOW_BRANCH_INPUT`, PropertyGrid,
+  saved-recipe, and zero-Preview/Run checks.
+- Verification passed: Debug build (0 warnings/0 errors), current-source
+  `wpf_shell_host_recipe_pinarraygap_properties`, visual inspection, and
+  readiness. Artifact:
+  `artifacts\refactor_pinarraygap_adapter_20260726_r2\wpf_shell_host_recipe_pinarraygap_properties.png`.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_PIN_ARRAY_GAP_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`.
+- The Line Pair partial remains coupled to the GeometryMeasure/CircleGauge base
+  in the same file and was deliberately not changed in this one-family slice.
+  Remaining structural priority: design its smallest clean independent
+  boundary and require both Line Pair and geometry regressions before
+  implementation. Recommended model: gpt-5.6-terra | Reasoning effort:
+  medium.
+
 1. **No active implementation priority after P235.**
    - The explicitly requested exact locator-session promotion passed without a product blocker. Wait for a concrete operator workflow blocker or verified current-build regression. Until then, do not spend model tokens or start another semantic image campaign. Recommended model: none until evidence exists | Reasoning effort: none until evidence exists.
 

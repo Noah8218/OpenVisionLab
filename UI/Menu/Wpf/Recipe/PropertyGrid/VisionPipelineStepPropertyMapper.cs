@@ -114,6 +114,14 @@ namespace OpenVisionLab
                 return referenceDifferenceProperty;
             }
 
+            if (VisionPipelinePinArrayGapPropertyAdapter.TryCreateProperty(
+                step,
+                name,
+                out object pinArrayGapProperty))
+            {
+                return pinArrayGapProperty;
+            }
+
             switch (toolType)
             {
                 case "threshold":
@@ -151,9 +159,6 @@ namespace OpenVisionLab
                 case "linedistance":
                 case "lineintersection":
                     return AttachStepMetadata(CreatePipelineLinePairProperty(step, name), name, step.InputLayer, step.OutputLayer);
-                case "pinarraygap":
-                case "adjacentpingap":
-                    return AttachStepMetadata(new PipelinePinArrayGapProperty(step, name), name, step.InputLayer, step.OutputLayer);
                 case "geometrymeasure":
                 case "geometricmeasurement":
                     return AttachStepMetadata(new PipelineGeometryMeasureProperty(step, name, context), name, step.InputLayer, step.OutputLayer);
@@ -226,9 +231,13 @@ namespace OpenVisionLab
             {
                 mapped = referenceDifferenceStep;
             }
-            else if (property is PipelinePinArrayGapProperty pinArrayGap)
+            else if (VisionPipelinePinArrayGapPropertyAdapter.TryCreateStep(
+                property,
+                inputLayer,
+                outputLayer,
+                out VisionPipelineStep pinArrayGapStep))
             {
-                mapped = pinArrayGap.ToStep(inputLayer, outputLayer);
+                mapped = pinArrayGapStep;
             }
             else if (TryCreateLinePairStep(property, inputLayer, outputLayer, out VisionPipelineStep linePairStep))
             {
@@ -650,6 +659,11 @@ namespace OpenVisionLab
                 return "ReferenceDifference";
             }
 
+            if (VisionPipelinePinArrayGapPropertyAdapter.IsProperty(instance))
+            {
+                return "PinArrayGap";
+            }
+
             switch (instance)
             {
                 case PipelineBlobProperty _:
@@ -659,8 +673,6 @@ namespace OpenVisionLab
                 case PipelineLineGaugeProperty _:
                 case PipelineLinePairProperty _:
                     return "LineGauge";
-                case PipelinePinArrayGapProperty _:
-                    return "PinArrayGap";
                 case PipelineGeometryMeasureProperty _:
                     return "GeometryMeasure";
                 case PipelineCircleGaugeProperty _:
@@ -806,181 +818,6 @@ namespace OpenVisionLab
         private static string FormatGeometryRect(Rect roi)
         {
             return string.Format(CultureInfo.InvariantCulture, "{0},{1},{2},{3}", roi.X, roi.Y, roi.Width, roi.Height);
-        }
-
-        [CategoryOrder("Step", -1)]
-        [CategoryOrder("Measurement", 0)]
-        [CategoryOrder("ROI", 1)]
-        [CategoryOrder("Pin Detection", 2)]
-        [CategoryOrder("Acceptance", 20)]
-        private sealed class PipelinePinArrayGapProperty : IPipelineStepMetadata
-        {
-            private readonly Dictionary<string, string> baselineParameters;
-            private readonly string toolType;
-
-            public PipelinePinArrayGapProperty(VisionPipelineStep step, string name)
-            {
-                baselineParameters = step?.Parameters == null
-                    ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                    : new Dictionary<string, string>(step.Parameters, StringComparer.OrdinalIgnoreCase);
-                toolType = string.IsNullOrWhiteSpace(step?.ToolType) ? "PinArrayGap" : step.ToolType.Trim();
-                NAME = string.IsNullOrWhiteSpace(name) ? "PinArrayGap" : name;
-                MeasurementMode = GetEnum(step?.Parameters, "MeasurementMode", PinArrayGapMeasurementMode.EdgeGap);
-                UseRoi = GetBool(step?.Parameters, "USE_ROI", false);
-                Roi = GetRect(step?.Parameters, "CvROI", default);
-                DarkThreshold = GetInt(step?.Parameters, "DarkThreshold", 128);
-                MinimumDarkCoverageRatio = GetDouble(step?.Parameters, "MinDarkCoverageRatio", 0.55D);
-                MinimumPinWidth = GetInt(step?.Parameters, "MinPinWidth", 5);
-                MaximumPinBreakWidth = GetInt(step?.Parameters, "MaxPinBreakWidth", 2);
-                MinimumGapWidth = GetInt(step?.Parameters, "MinGapWidth", 3);
-            }
-
-            [PropertyOrder(-3)]
-            [Category("Step")]
-            [DisplayName("Step Name")]
-            public string NAME { get; set; }
-
-            [Browsable(false)]
-            public string PipelineStepName
-            {
-                get => NAME;
-                set => NAME = value;
-            }
-
-            [PropertyOrder(-2)]
-            [Category("Step")]
-            [DisplayName("Input Layer")]
-            [TypeConverter(typeof(PipelineLayerNameConverter))]
-            public string InputLayer { get; set; } = "Main";
-
-            [PropertyOrder(-1)]
-            [Category("Step")]
-            [DisplayName("Output Layer")]
-            [TypeConverter(typeof(PipelineLayerNameConverter))]
-            public string OutputLayer { get; set; } = "PinArrayGap_Output";
-
-            [PropertyOrder(0)]
-            [Category("Step")]
-            [DisplayName("Enabled")]
-            public bool Enabled { get; set; } = true;
-
-            [PropertyOrder(0)]
-            [Category("Measurement")]
-            [DisplayName("Measurement mode")]
-            [Description("EdgeGap measures adjacent empty clearance. CenterPitch measures adjacent detected pin centers. Both modes are pixel-based in this editor.")]
-            public PinArrayGapMeasurementMode MeasurementMode { get; set; } = PinArrayGapMeasurementMode.EdgeGap;
-
-            [PropertyOrder(0)]
-            [Category("ROI")]
-            [DisplayName("Use row ROI")]
-            [Description("PinArrayGap requires one reviewed ROI containing exactly one dark pin row.")]
-            public bool UseRoi { get; set; }
-
-            [PropertyOrder(1)]
-            [Category("ROI")]
-            [DisplayName("Row ROI")]
-            public Rect Roi { get; set; }
-
-            [PropertyOrder(0)]
-            [Category("Pin Detection")]
-            [DisplayName("Dark threshold")]
-            public int DarkThreshold { get; set; } = 128;
-
-            [PropertyOrder(1)]
-            [Category("Pin Detection")]
-            [DisplayName("Minimum dark coverage ratio")]
-            [Description("Minimum vertical dark-pixel coverage required for a column to belong to a pin.")]
-            public double MinimumDarkCoverageRatio { get; set; } = 0.55D;
-
-            [PropertyOrder(2)]
-            [Category("Pin Detection")]
-            [DisplayName("Minimum pin width")]
-            public int MinimumPinWidth { get; set; } = 5;
-
-            [PropertyOrder(3)]
-            [Category("Pin Detection")]
-            [DisplayName("Maximum pin break width")]
-            [Description("Merge dark column runs separated by no more than this many pixels.")]
-            public int MaximumPinBreakWidth { get; set; } = 2;
-
-            [PropertyOrder(4)]
-            [Category("Pin Detection")]
-            [DisplayName("Minimum edge gap width")]
-            [Description("Minimum empty clearance used by EdgeGap mode. CenterPitch does not use this filter.")]
-            public int MinimumGapWidth { get; set; } = 3;
-
-            [PropertyOrder(1)]
-            [Category("Acceptance")]
-            [DisplayName("Use Acceptance")]
-            public bool UseAcceptance { get; set; }
-
-            [PropertyOrder(2)]
-            [Category("Acceptance")]
-            [DisplayName("Expected Success")]
-            public bool ExpectedSuccess { get; set; } = true;
-
-            [PropertyOrder(3)]
-            [Category("Acceptance")]
-            [DisplayName("Max Elapsed (ms)")]
-            public double MaxElapsedMilliseconds { get; set; }
-
-            [PropertyOrder(4)]
-            [Category("Acceptance")]
-            [DisplayName("Required Message")]
-            public string RequiredMessageText { get; set; } = string.Empty;
-
-            [PropertyOrder(5)]
-            [Category("Acceptance")]
-            [DisplayName("Acceptance Metric")]
-            [TypeConverter(typeof(PipelineMetricNameConverter))]
-            public string AcceptanceMetricName { get; set; } = string.Empty;
-
-            [Browsable(false)]
-            public bool UseAcceptanceMetricMinimum { get; set; }
-
-            [PropertyOrder(7)]
-            [Category("Acceptance")]
-            [DisplayName("Metric range")]
-            [PropertyEditor(typeof(WpgMetricRangeEditor))]
-            [MetricRangeEditor(3, nameof(UseAcceptanceMetricMinimum), nameof(AcceptanceMetricMinimum), nameof(UseAcceptanceMetricMaximum), nameof(AcceptanceMetricMaximum))]
-            public double AcceptanceMetricMinimum { get; set; }
-
-            [Browsable(false)]
-            public bool UseAcceptanceMetricMaximum { get; set; }
-
-            [Browsable(false)]
-            public double AcceptanceMetricMaximum { get; set; }
-
-            public VisionPipelineStep ToStep(string inputLayer, string outputLayer)
-            {
-                VisionPipelineStep step = new VisionPipelineStep
-                {
-                    Name = string.IsNullOrWhiteSpace(NAME) ? "PinArrayGap" : NAME,
-                    ToolType = toolType,
-                    InputLayer = string.IsNullOrWhiteSpace(inputLayer) ? "Main" : inputLayer,
-                    OutputLayer = string.IsNullOrWhiteSpace(outputLayer) ? "PinArrayGap_Output" : outputLayer
-                };
-                foreach (KeyValuePair<string, string> parameter in baselineParameters)
-                {
-                    step.Parameters[parameter.Key] = parameter.Value;
-                }
-
-                AddParameter(step.Parameters, "MeasurementMode", MeasurementMode);
-                AddParameter(step.Parameters, "USE_ROI", UseRoi);
-                AddParameter(step.Parameters, "CvROI", string.Format(
-                    CultureInfo.InvariantCulture,
-                    "{0},{1},{2},{3}",
-                    Roi.X,
-                    Roi.Y,
-                    Roi.Width,
-                    Roi.Height));
-                AddParameter(step.Parameters, "DarkThreshold", DarkThreshold);
-                AddParameter(step.Parameters, "MinDarkCoverageRatio", MinimumDarkCoverageRatio);
-                AddParameter(step.Parameters, "MinPinWidth", MinimumPinWidth);
-                AddParameter(step.Parameters, "MaxPinBreakWidth", MaximumPinBreakWidth);
-                AddParameter(step.Parameters, "MinGapWidth", MinimumGapWidth);
-                return step;
-            }
         }
 
         [CategoryOrder("Step", -1)]

@@ -1813,6 +1813,29 @@ internal static class Program
             referenceDifferencePropertyAdapter,
             "ReferencePath4",
             "ReferenceDifference PropertyGrid exposes up to four approved Good references.");
+        string pinArrayGapPropertyAdapter = Read(
+            repoRoot,
+            @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelinePinArrayGapPropertyAdapter.cs");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelinePinArrayGapPropertyAdapter.TryCreateProperty",
+            "Pipeline Step PropertyGrid dispatches PinArrayGap through its adapter.");
+        RequireNotContains(
+            stepPropertyMapper,
+            "private sealed class PipelinePinArrayGapProperty",
+            "The root mapper no longer owns the PinArrayGap PropertyGrid model.");
+        RequireContains(
+            pinArrayGapPropertyAdapter,
+            "\"adjacentpingap\"",
+            "The PinArrayGap adapter preserves the AdjacentPinGap alias.");
+        RequireContains(
+            pinArrayGapPropertyAdapter,
+            "baselineParameters",
+            "The PinArrayGap adapter preserves unrepresented Step parameters.");
+        RequireContains(
+            pinArrayGapPropertyAdapter,
+            "MinimumDarkCoverageRatio",
+            "The PinArrayGap adapter exposes its reviewed detection fields.");
         RequireContains(pipelineValidator, "ValidateReferenceDifferenceParameters", "Pipeline validator checks ReferenceDifference parameters.");
         RequireContains(pipelineKnownMetrics, "DifferencePixelRatio", "Known metrics include ReferenceDifference coverage.");
         RequireContains(pipelineKnownMetrics, "RegistrationInlierRatio", "Known metrics include ReferenceDifference registration quality.");

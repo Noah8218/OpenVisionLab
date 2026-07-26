@@ -292,3 +292,23 @@
 - 다음 구조 우선순위는 남은 root mapper family를 다시 감사하고 전용
   round-trip 회귀 근거가 있는 한 family만 선택하는 것입니다.
   Recommended model: gpt-5.6-terra | Reasoning effort: medium.
+
+### PinArrayGap Property Adapter Update (2026-07-26)
+
+- `VisionPipelinePinArrayGapPropertyAdapter`가 `PinArrayGap`/
+  `AdjacentPinGap` alias, parameter/default projection, PropertyGrid 모델,
+  미표현 baseline parameter 보존, Step 재생성의 실제 owner가 되었습니다.
+- root `VisionPipelineStepPropertyMapper`에서는 직접 alias case, private
+  PropertyGrid 모델, `ToStep`를 제거하고 adapter dispatch 및 공통
+  metadata/parameter copy만 유지합니다. 새 adapter는 partial이 아닙니다.
+- 전용 smoke는 `ALLOW_BRANCH_INPUT` 보존과 함께
+  `AdjacentPinGapTool` alias/default/baseline round trip도 검사합니다.
+- 검증: Debug build(0 warning/0 error), current-source
+  `wpf_shell_host_recipe_pinarraygap_properties`, visual inspection,
+  readiness PASS.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_PIN_ARRAY_GAP_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`.
+- Line Pair partial은 같은 파일에 GeometryMeasure/CircleGauge base가 있어
+  이번 한-family 범위에서 제외했습니다. 다음 우선순위는 두 회귀 범위를
+  모두 확보한 뒤 최소 독립 경계를 설계하는 것입니다. Recommended
+  model: gpt-5.6-terra | Reasoning effort: medium.

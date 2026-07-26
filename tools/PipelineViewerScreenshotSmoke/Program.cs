@@ -3372,6 +3372,26 @@ internal static class Program
             throw new InvalidOperationException("PinArrayGap PropertyGrid direct round trip lost mode, ROI, or an unrepresented parameter.");
         }
 
+        VisionPipelineStep aliasStep = new()
+        {
+            Name = "Adjacent alias",
+            ToolType = "AdjacentPinGapTool",
+            InputLayer = "Main",
+            OutputLayer = "Alias_Result"
+        };
+        aliasStep.Parameters["UnrepresentedParameter"] = "preserved";
+        object aliasProperty = VisionPipelineStepPropertyMapper.CreateProperty(aliasStep)
+            ?? throw new InvalidOperationException("AdjacentPinGapTool alias returned no property object.");
+        VisionPipelineStep aliasRoundTrip = new();
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(aliasRoundTrip, aliasProperty)
+            || !string.Equals(aliasRoundTrip.ToolType, "AdjacentPinGapTool", StringComparison.Ordinal)
+            || !string.Equals(aliasRoundTrip.Parameters.GetValueOrDefault("MeasurementMode"), "EdgeGap", StringComparison.Ordinal)
+            || !string.Equals(aliasRoundTrip.Parameters.GetValueOrDefault("DarkThreshold"), "128", StringComparison.Ordinal)
+            || !string.Equals(aliasRoundTrip.Parameters.GetValueOrDefault("UnrepresentedParameter"), "preserved", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("AdjacentPinGapTool alias/default/baseline round trip changed.");
+        }
+
         VisionPipelineStorage.Save(recipeName, pipeline);
         VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
         OpenVisionShellHostView shellHost = CreateShellHost(recipeName, seedMainLayer: false);
