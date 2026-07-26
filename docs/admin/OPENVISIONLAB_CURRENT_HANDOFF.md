@@ -2147,6 +2147,32 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
   reduction or symmetry. Recommended model: gpt-5.6-terra | Reasoning effort:
   medium.
 
+### Maintenance: Learn Basic Grayscale Simulation Model Boundary (2026-07-26)
+
+- Brightness, Arithmetic, and Filtering formed one cohesive basic grayscale
+  lesson responsibility: pixel offset/clamp, histogram/average, pairwise
+  arithmetic, and 3x3 kernel sample calculation.
+- `OpenVisionLearnBasicGrayscaleSimulationModel` now owns all three fixed
+  sample sets and returns typed evaluations without WPF dependencies. The view
+  passes selected values/modes and retains controls, timers, localized text,
+  and rendering.
+- The view no longer contains the four moved sample arrays or arithmetic
+  calculation and fell from 4,718 to 4,706 lines.
+- Stale pre-change Brightness/Arithmetic assertions were aligned to the
+  current parameter titles, practice copy, and OutputLayer animation step.
+  Exact numeric smoke, all three current-source UI targets, Debug build,
+  readiness, structural search, visual inspection, and patch hygiene passed.
+- All three before/after screenshot pairs were byte-identical.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_LEARN_BASIC_GRAYSCALE_SIMULATION_MODEL_REFACTOR_PROOF_20260726.md`
+  and `artifacts\refactor_learn_basic_grayscale_model_20260726`.
+- Next structural step is a closure audit of the remaining small,
+  topic-specific Threshold, Metrics Acceptance, Layer Recipe, Geometry
+  Transform, and Color/HSV calculations. If no cohesive boundary exists, stop
+  proactive Learn extraction; do not create a generic grab-bag model or split
+  event handlers, timers, and rendering for file size. Recommended model:
+  gpt-5.6-terra | Reasoning effort: medium.
+
 ## Handoff Rules For The Next Chat
 
 - Do not claim a feature is complete because the historical handoff says so. Re-run the smallest meaningful current command when work touches it.

@@ -852,6 +852,7 @@ internal static class Program
             "ThresholdToolWpfView.xaml",
             "ThresholdToolWpfView.xaml.cs");
         RequireToolViewOwnerFiles(repoRoot, @"UI\VisionTest\Wpf\Learn",
+            "OpenVisionLearnBasicGrayscaleSimulationModel.cs",
             "OpenVisionLearnBinarySimulationModel.cs",
             "OpenVisionLearnLineSimulationModel.cs",
             "OpenVisionLearnMatchingSimulationModel.cs",
@@ -1511,6 +1512,9 @@ internal static class Program
 
         string learnWindowXaml = Read(repoRoot, @"UI\VisionTest\Wpf\Learn\OpenVisionLearnWindow.xaml");
         string learnWindow = Read(repoRoot, @"UI\VisionTest\Wpf\Learn\OpenVisionLearnWindow.xaml.cs");
+        string learnBasicGrayscaleSimulationModel = Read(
+            repoRoot,
+            @"UI\VisionTest\Wpf\Learn\OpenVisionLearnBasicGrayscaleSimulationModel.cs");
         string learnBinarySimulationModel = Read(
             repoRoot,
             @"UI\VisionTest\Wpf\Learn\OpenVisionLearnBinarySimulationModel.cs");
@@ -1562,6 +1566,17 @@ internal static class Program
         RequireNotContains(learnWindow, "private readonly int[] edgeLineSampleValues", "Learn view no longer owns edge/line sample data.");
         RequireNotContains(learnWindow, "private readonly int[] lineDistanceLeftEdges", "Learn view no longer owns line-distance left-edge data.");
         RequireNotContains(learnWindow, "private readonly int[] lineDistanceRightEdges", "Learn view no longer owns line-distance right-edge data.");
+        RequireContains(learnWindow, "OpenVisionLearnBasicGrayscaleSimulationModel.EvaluateBrightness", "Learn view delegates brightness evaluation to the basic grayscale simulation model.");
+        RequireContains(learnWindow, "OpenVisionLearnBasicGrayscaleSimulationModel.EvaluateArithmetic", "Learn view delegates arithmetic evaluation to the basic grayscale simulation model.");
+        RequireContains(learnWindow, "OpenVisionLearnBasicGrayscaleSimulationModel.EvaluateFilter", "Learn view delegates filter evaluation to the basic grayscale simulation model.");
+        RequireContains(learnBasicGrayscaleSimulationModel, "public static BrightnessEvaluation EvaluateBrightness", "Learn basic grayscale model owns brightness evaluation.");
+        RequireContains(learnBasicGrayscaleSimulationModel, "public static ArithmeticEvaluation EvaluateArithmetic", "Learn basic grayscale model owns arithmetic evaluation.");
+        RequireContains(learnBasicGrayscaleSimulationModel, "public static FilterEvaluation EvaluateFilter", "Learn basic grayscale model owns filter evaluation.");
+        RequireNotContains(learnWindow, "private readonly int[] brightnessSampleValues", "Learn view no longer owns brightness sample data.");
+        RequireNotContains(learnWindow, "private readonly int[] arithmeticInputAValues", "Learn view no longer owns arithmetic input A data.");
+        RequireNotContains(learnWindow, "private readonly int[] arithmeticInputBValues", "Learn view no longer owns arithmetic input B data.");
+        RequireNotContains(learnWindow, "private readonly int[] filterSampleValues", "Learn view no longer owns filter sample data.");
+        RequireNotContains(learnWindow, "private static int CalculateArithmeticResult", "Learn view no longer owns arithmetic calculation.");
         RequireContains(learnWindowXaml, "기초 용어", "OpenVision Learn labels the foundations button for learners.");
         RequireContains(learnWindow, "OpenFoundationDocsButton_Click", "OpenVision Learn handles the Foundation Docs button.");
         RequireContains(learnWindow, "LEARN_OPENCVSHARP_FOUNDATIONS.md", "OpenVision Learn Foundation Docs button opens the foundations guide.");

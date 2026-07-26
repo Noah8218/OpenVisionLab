@@ -49,10 +49,6 @@ namespace OpenVisionLab
         private readonly Brush animationPassBrush;
         private readonly Brush animationWarningBrush;
         private readonly int[] sampleValues = { 24, 60, 96, 119, 128, 151, 190, 230 };
-        private readonly int[] brightnessSampleValues = { 22, 48, 75, 103, 126, 152, 184, 218 };
-        private readonly int[] arithmeticInputAValues = { 20, 45, 90, 120, 150, 180, 210, 240 };
-        private readonly int[] arithmeticInputBValues = { 10, 60, 40, 140, 110, 200, 30, 220 };
-        private readonly int[] filterSampleValues = { 42, 58, 54, 60, 220, 65, 57, 62, 59 };
         private readonly int[] morphologySampleValues =
         {
             0, 0, 0, 0, 0,
@@ -992,7 +988,7 @@ namespace OpenVisionLab
             histogramBars.Clear();
             histogramLabels.Clear();
 
-            foreach (int value in brightnessSampleValues)
+            foreach (int value in OpenVisionLearnBasicGrayscaleSimulationModel.BrightnessSamples)
             {
                 Border inputCell = CreateCell(value.ToString(CultureInfo.InvariantCulture), value);
                 brightnessInputGrid.Children.Add(inputCell);
@@ -1049,7 +1045,7 @@ namespace OpenVisionLab
             filterOutputCells.Clear();
             filterOutputTexts.Clear();
 
-            foreach (int value in filterSampleValues)
+            foreach (int value in OpenVisionLearnBasicGrayscaleSimulationModel.FilterSamples)
             {
                 Border inputCell = CreateCell(value.ToString(CultureInfo.InvariantCulture), value);
                 filterInputGrid.Children.Add(inputCell);
@@ -1090,10 +1086,10 @@ namespace OpenVisionLab
             arithmeticResultCells.Clear();
             arithmeticResultTexts.Clear();
 
-            for (int i = 0; i < arithmeticInputAValues.Length; i++)
+            for (int i = 0; i < OpenVisionLearnBasicGrayscaleSimulationModel.ArithmeticInputA.Count; i++)
             {
-                int inputA = arithmeticInputAValues[i];
-                int inputB = arithmeticInputBValues[i];
+                int inputA = OpenVisionLearnBasicGrayscaleSimulationModel.ArithmeticInputA[i];
+                int inputB = OpenVisionLearnBasicGrayscaleSimulationModel.ArithmeticInputB[i];
                 Border inputACell = CreateCell(inputA.ToString(CultureInfo.InvariantCulture), inputA);
                 Border inputBCell = CreateCell(inputB.ToString(CultureInfo.InvariantCulture), inputB);
                 arithmeticInputAGrid.Children.Add(inputACell);
@@ -1483,29 +1479,26 @@ namespace OpenVisionLab
 
         private void UpdateBrightnessGuide()
         {
-            int offset = (int)Math.Round(brightnessOffsetSlider.Value);
-            txtBrightnessOffset.Text = "Offset = " + FormatSigned(offset) + " GV";
-            txtBrightnessFormula.Text = "Result GV = clamp(Source GV " + FormatSigned(offset) + ", 0, 255)";
+            OpenVisionLearnBasicGrayscaleSimulationModel.BrightnessEvaluation evaluation =
+                OpenVisionLearnBasicGrayscaleSimulationModel.EvaluateBrightness(
+                    brightnessOffsetSlider.Value);
+            txtBrightnessOffset.Text = "Offset = " + FormatSigned(evaluation.Offset) + " GV";
+            txtBrightnessFormula.Text = "Result GV = clamp(Source GV "
+                + FormatSigned(evaluation.Offset)
+                + ", 0, 255)";
 
-            int[] bins = new int[8];
-            for (int i = 0; i < brightnessSampleValues.Length; i++)
-            {
-                int result = ClampToByte(brightnessSampleValues[i] + offset);
-                int bin = Math.Min(7, result / 32);
-                bins[bin]++;
-            }
-
-            PaintBrightnessAnimationFrame(offset, bins);
+            PaintBrightnessAnimationFrame(evaluation);
         }
 
-        private void PaintBrightnessAnimationFrame(int offset, int[] bins)
+        private void PaintBrightnessAnimationFrame(
+            OpenVisionLearnBasicGrayscaleSimulationModel.BrightnessEvaluation evaluation)
         {
             int visibleStep = Math.Max(0, Math.Min(brightnessAnimationStep, BrightnessAnimationStepCount));
             Brush defaultBorderBrush = new SolidColorBrush(Color.FromRgb(209, 213, 219));
-            for (int i = 0; i < brightnessSampleValues.Length; i++)
+            for (int i = 0; i < OpenVisionLearnBasicGrayscaleSimulationModel.BrightnessSamples.Count; i++)
             {
-                int source = brightnessSampleValues[i];
-                int result = ClampToByte(source + offset);
+                int source = OpenVisionLearnBasicGrayscaleSimulationModel.BrightnessSamples[i];
+                int result = evaluation.Results[i];
                 brightnessInputCells[i].BorderBrush = visibleStep == 1 ? animationCandidateBrush : defaultBorderBrush;
                 brightnessInputCells[i].BorderThickness = visibleStep == 1 ? new Thickness(2) : new Thickness(1);
                 brightnessOutputCells[i].BorderBrush = visibleStep >= 2
@@ -1519,34 +1512,40 @@ namespace OpenVisionLab
                     : "-";
             }
 
-            int maxCount = Math.Max(1, bins.Max());
+            int maxCount = Math.Max(1, evaluation.HistogramBins.Max());
             for (int i = 0; i < histogramBars.Count; i++)
             {
                 int low = i * 32;
                 int high = i == 7 ? 255 : low + 31;
                 histogramBars[i].Height = visibleStep >= 3
-                    ? bins[i] == 0 ? 4D : 120D * bins[i] / maxCount
+                    ? evaluation.HistogramBins[i] == 0
+                        ? 4D
+                        : 120D * evaluation.HistogramBins[i] / maxCount
                     : 4D;
                 histogramBars[i].Background = visibleStep >= 3 ? animationPassBrush : animationNeutralBrush;
                 histogramLabels[i].Text = low.ToString(CultureInfo.InvariantCulture)
                     + "-"
                     + high.ToString(CultureInfo.InvariantCulture)
                     + Environment.NewLine
-                    + (visibleStep >= 3 ? bins[i].ToString(CultureInfo.InvariantCulture) : "-");
+                    + (visibleStep >= 3
+                        ? evaluation.HistogramBins[i].ToString(CultureInfo.InvariantCulture)
+                        : "-");
             }
 
-            int sourceAverage = (int)Math.Round(brightnessSampleValues.Average());
-            int resultAverage = (int)Math.Round(brightnessSampleValues.Average(value => ClampToByte(value + offset)));
-            string direction = resultAverage > sourceAverage ? "오른쪽" : resultAverage < sourceAverage ? "왼쪽" : "같은 위치";
+            string direction = evaluation.ResultAverage > evaluation.SourceAverage
+                ? "오른쪽"
+                : evaluation.ResultAverage < evaluation.SourceAverage
+                    ? "왼쪽"
+                    : "같은 위치";
             txtBrightnessAnimationStatus.Text = visibleStep switch
             {
                 0 => "0 / 3 - Reset: 원본 GV부터 확인합니다.",
                 1 => "1 / 3 - Input GV: 각 픽셀의 밝기 값을 읽습니다.",
-                2 => "2 / 3 - Brightness: GV " + FormatSigned(offset) + " 후 0~255로 제한합니다.",
+                2 => "2 / 3 - Brightness: GV " + FormatSigned(evaluation.Offset) + " 후 0~255로 제한합니다.",
                 _ => "3 / 3 - Histogram shift: 평균 GV "
-                    + sourceAverage.ToString(CultureInfo.InvariantCulture)
+                    + evaluation.SourceAverage.ToString(CultureInfo.InvariantCulture)
                     + " -> "
-                    + resultAverage.ToString(CultureInfo.InvariantCulture)
+                    + evaluation.ResultAverage.ToString(CultureInfo.InvariantCulture)
                     + ", 분포가 "
                     + direction
                     + "으로 이동합니다."
@@ -1590,19 +1589,21 @@ namespace OpenVisionLab
                 _ => "AbsDiff는 A와 B의 절대 차이를 계산해 달라진 픽셀을 강조합니다."
             };
 
-            PaintArithmeticAnimationFrame(mode);
+            PaintArithmeticAnimationFrame(
+                mode,
+                OpenVisionLearnBasicGrayscaleSimulationModel.EvaluateArithmetic(mode));
         }
 
-        private void PaintArithmeticAnimationFrame(string mode)
+        private void PaintArithmeticAnimationFrame(
+            string mode,
+            OpenVisionLearnBasicGrayscaleSimulationModel.ArithmeticEvaluation evaluation)
         {
             int visibleStep = Math.Max(0, Math.Min(arithmeticAnimationStep, ArithmeticAnimationStepCount));
             Brush defaultBorderBrush = new SolidColorBrush(Color.FromRgb(209, 213, 219));
 
             for (int i = 0; i < arithmeticResultCells.Count; i++)
             {
-                int inputA = arithmeticInputAValues[i];
-                int inputB = arithmeticInputBValues[i];
-                int result = CalculateArithmeticResult(mode, inputA, inputB);
+                int result = evaluation.Results[i];
                 bool showInputs = visibleStep == 1 || visibleStep == 2;
                 arithmeticInputACells[i].BorderBrush = showInputs ? animationCandidateBrush : defaultBorderBrush;
                 arithmeticInputBCells[i].BorderBrush = showInputs ? animationCandidateBrush : defaultBorderBrush;
@@ -1620,7 +1621,7 @@ namespace OpenVisionLab
                     : "-";
             }
 
-            int firstResult = CalculateArithmeticResult(mode, arithmeticInputAValues[0], arithmeticInputBValues[0]);
+            int firstResult = evaluation.Results[0];
             string firstExpression = mode switch
             {
                 "Add" => "clamp(20 + 10) = " + firstResult.ToString(CultureInfo.InvariantCulture),
@@ -1635,18 +1636,6 @@ namespace OpenVisionLab
                 1 => "1 / 3 - Inputs: 8개 A/B 픽셀 쌍을 읽습니다.",
                 2 => "2 / 3 - " + mode + " 적용: " + firstExpression,
                 _ => "3 / 3 - OutputLayer: 8개 연산 결과를 비교할 준비가 됐습니다."
-            };
-        }
-
-        private static int CalculateArithmeticResult(string mode, int inputA, int inputB)
-        {
-            return mode switch
-            {
-                "Add" => ClampToByte(inputA + inputB),
-                "Subtract" => ClampToByte(inputA - inputB),
-                "Bitwise AND" => inputA & inputB,
-                "Bitwise OR" => inputA | inputB,
-                _ => Math.Abs(inputA - inputB)
             };
         }
 
@@ -1677,19 +1666,14 @@ namespace OpenVisionLab
         private void UpdateFilterGuide()
         {
             string mode = GetSelectedFilterMode();
-            int center = filterSampleValues[4];
-            int result = mode switch
-            {
-                "Median" => filterSampleValues.OrderBy(value => value).ElementAt(4),
-                "Sharpen" => ClampToByte(center * 5 - filterSampleValues[1] - filterSampleValues[3] - filterSampleValues[5] - filterSampleValues[7]),
-                _ => ClampToByte(filterSampleValues.Average())
-            };
+            OpenVisionLearnBasicGrayscaleSimulationModel.FilterEvaluation evaluation =
+                OpenVisionLearnBasicGrayscaleSimulationModel.EvaluateFilter(mode);
 
             txtFilterFormula.Text = mode switch
             {
-                "Median" => "Center = median(3x3 values) = " + result.ToString(CultureInfo.InvariantCulture),
-                "Sharpen" => "Center = clamp(center x 5 - up - left - right - down) = " + result.ToString(CultureInfo.InvariantCulture),
-                _ => "Center = average(3x3 values) = " + result.ToString(CultureInfo.InvariantCulture)
+                "Median" => "Center = median(3x3 values) = " + evaluation.Result.ToString(CultureInfo.InvariantCulture),
+                "Sharpen" => "Center = clamp(center x 5 - up - left - right - down) = " + evaluation.Result.ToString(CultureInfo.InvariantCulture),
+                _ => "Center = average(3x3 values) = " + evaluation.Result.ToString(CultureInfo.InvariantCulture)
             };
             txtFilterMeaning.Text = mode switch
             {
@@ -1698,20 +1682,24 @@ namespace OpenVisionLab
                 _ => "평균 블러는 주변 값을 평균내서 부드럽게 만듭니다. 랜덤 노이즈는 줄지만 경계도 함께 흐려질 수 있습니다."
             };
 
-            PaintFilterAnimationFrame(mode, result);
+            PaintFilterAnimationFrame(mode, evaluation);
         }
 
-        private void PaintFilterAnimationFrame(string mode, int result)
+        private void PaintFilterAnimationFrame(
+            string mode,
+            OpenVisionLearnBasicGrayscaleSimulationModel.FilterEvaluation evaluation)
         {
             int visibleStep = Math.Max(0, Math.Min(filterAnimationStep, FilterAnimationStepCount));
             Brush defaultBorderBrush = new SolidColorBrush(Color.FromRgb(209, 213, 219));
 
-            for (int i = 0; i < filterSampleValues.Length; i++)
+            for (int i = 0; i < OpenVisionLearnBasicGrayscaleSimulationModel.FilterSamples.Count; i++)
             {
                 bool isCenter = i == 4;
                 bool isKernelStep = visibleStep == 1;
                 bool isCalculationStep = visibleStep == 2;
-                int outputValue = isCenter ? result : filterSampleValues[i];
+                int outputValue = isCenter
+                    ? evaluation.Result
+                    : OpenVisionLearnBasicGrayscaleSimulationModel.FilterSamples[i];
 
                 filterInputCells[i].BorderBrush = isCalculationStep && isCenter
                     ? animationWarningBrush
@@ -1737,15 +1725,15 @@ namespace OpenVisionLab
 
             string calculation = mode switch
             {
-                "Median" => "Sort: " + string.Join(", ", filterSampleValues.OrderBy(value => value)),
+                "Median" => "Sort: " + string.Join(", ", evaluation.SortedValues),
                 "Sharpen" => "220 x 5 - 58 - 60 - 65 - 62",
-                _ => "Mean: " + filterSampleValues.Sum().ToString(CultureInfo.InvariantCulture) + " / 9"
+                _ => "Mean: " + evaluation.Sum.ToString(CultureInfo.InvariantCulture) + " / 9"
             };
             string outputMeaning = mode switch
             {
-                "Median" => "220 노이즈를 중앙값 " + result.ToString(CultureInfo.InvariantCulture) + "로 바꿉니다.",
-                "Sharpen" => "중심 GV가 " + result.ToString(CultureInfo.InvariantCulture) + "로 커져 경계와 노이즈가 함께 강조됩니다.",
-                _ => "중심 220을 평균 " + result.ToString(CultureInfo.InvariantCulture) + "로 낮춰 밝은 노이즈를 완화합니다."
+                "Median" => "220 노이즈를 중앙값 " + evaluation.Result.ToString(CultureInfo.InvariantCulture) + "로 바꿉니다.",
+                "Sharpen" => "중심 GV가 " + evaluation.Result.ToString(CultureInfo.InvariantCulture) + "로 커져 경계와 노이즈가 함께 강조됩니다.",
+                _ => "중심 220을 평균 " + evaluation.Result.ToString(CultureInfo.InvariantCulture) + "로 낮춰 밝은 노이즈를 완화합니다."
             };
             txtFilterAnimationStatus.Text = visibleStep switch
             {

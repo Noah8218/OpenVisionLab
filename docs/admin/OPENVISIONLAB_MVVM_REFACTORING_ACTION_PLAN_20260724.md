@@ -596,3 +596,27 @@
   Metrics Acceptance, Color/HSV, event/timer/rendering은 숫자나 대칭을
   위해 분리하지 않습니다. Recommended model: gpt-5.6-terra |
   Reasoning effort: medium.
+
+### Learn Basic Grayscale Simulation Model Update (2026-07-26)
+
+- Brightness, Arithmetic, Filtering은 모두 고정 grayscale sample에 대한
+  pixel/kernel 변환과 통계 계산으로 하나의 응집된 lesson 책임임을
+  확인했습니다.
+- 새 비-WPF `OpenVisionLearnBasicGrayscaleSimulationModel`이 brightness
+  result/histogram/average, 다섯 arithmetic 결과, Mean/Median/Sharpen
+  결과와 정렬/합계를 소유합니다. View는 selection/timer/control state,
+  설명 문구, painting만 유지합니다.
+- production 이동 전에 손상되거나 폐기된 초기 문구와 이전
+  `Preview/Run` animation status를 찾던 Brightness/Arithmetic smoke를
+  현재 안정 계약으로 정정했습니다.
+- 정확 수치 smoke, 세 current-source UI, Debug build(0 warning/0 error),
+  readiness, 구조 검색, visual inspection, `git diff --check`가
+  통과했습니다. 세 before/after PNG가 각각 byte-identical입니다.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_LEARN_BASIC_GRAYSCALE_SIMULATION_MODEL_REFACTOR_PROOF_20260726.md`
+  및 `artifacts/refactor_learn_basic_grayscale_model_20260726`.
+- 다음 단계는 남은 Threshold/Metrics/Layer Recipe/Transform/Color 계산의
+  마감 감사입니다. 응집 경계가 없다면 proactive Learn extraction을
+  종료하고 generic grab-bag model이나 event/timer/rendering partial을
+  만들지 않습니다. Recommended model: gpt-5.6-terra | Reasoning effort:
+  medium.

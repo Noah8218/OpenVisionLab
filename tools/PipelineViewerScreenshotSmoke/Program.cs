@@ -15317,7 +15317,7 @@ internal static class Program
 
             if (!window.BrightnessToolLocationTitleForTest.Contains("Mean Type", StringComparison.Ordinal)
                 || !window.BrightnessToolLocationTitleForTest.Contains("Histogram", StringComparison.Ordinal)
-                || !window.BrightnessToolLocationDetailForTest.Contains("결과 지표", StringComparison.Ordinal))
+                || !window.BrightnessToolLocationTitleForTest.Contains("Min Mean", StringComparison.Ordinal))
             {
                 throw new InvalidOperationException("Brightness Learn did not expose the initial Mean / Histogram parameter paths.");
             }
@@ -15349,7 +15349,9 @@ internal static class Program
             window.AdvanceBrightnessAnimationForTest();
             if (window.BrightnessAnimationStepForTest != 3
                 || !window.BrightnessAnimationStatusTextForTest.Contains("3 / 3", StringComparison.Ordinal)
-                || !window.BrightnessAnimationStatusTextForTest.Contains("Histogram shift", StringComparison.OrdinalIgnoreCase))
+                || !window.BrightnessAnimationStatusTextForTest.Contains("Histogram shift", StringComparison.OrdinalIgnoreCase)
+                || !window.BrightnessAnimationStatusTextForTest.Contains("116 -> 83", StringComparison.Ordinal)
+                || !window.BrightnessAnimationStatusTextForTest.Contains("왼쪽", StringComparison.Ordinal))
             {
                 throw new InvalidOperationException("Brightness animation did not finish with the histogram-shift explanation.");
             }
@@ -16657,7 +16659,7 @@ internal static class Program
 
             if (!window.ArithmeticToolLocationTitleForTest.Contains("Input A / Input B / Output Layer", StringComparison.Ordinal)
                 || !window.ArithmeticToolLocationTitleForTest.Contains("Input B Source", StringComparison.Ordinal)
-                || !window.ArithmeticToolLocationDetailForTest.Contains("계산 결과", StringComparison.Ordinal))
+                || !window.ArithmeticToolLocationTitleForTest.Contains("Arithmetic Type", StringComparison.Ordinal))
             {
                 throw new InvalidOperationException("Arithmetic Learn did not expose the initial Tool View parameter path.");
             }
@@ -16670,7 +16672,8 @@ internal static class Program
 
             AssertLearnTopicDocument(window, "LEARN_ARITHMETIC.md");
             if (!window.SelectedTopicPracticeTextForTest.Contains("Arithmetic", StringComparison.Ordinal)
-                || !window.SelectedTopicPracticeTextForTest.Contains("Preview", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("입력 A/B", StringComparison.Ordinal)
+                || !window.SelectedTopicPracticeTextForTest.Contains("결과 레이어", StringComparison.Ordinal)
                 || !string.Equals(window.SelectedTopicLearnPathIdForTest, "preprocess", StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
@@ -16733,9 +16736,9 @@ internal static class Program
             window.AdvanceArithmeticAnimationForTest();
             if (window.ArithmeticAnimationStepForTest != 3
                 || !window.ArithmeticAnimationStatusTextForTest.Contains("3 / 3", StringComparison.Ordinal)
-                || !window.ArithmeticAnimationStatusTextForTest.Contains("Preview/Run", StringComparison.Ordinal))
+                || !window.ArithmeticAnimationStatusTextForTest.Contains("OutputLayer", StringComparison.Ordinal))
             {
-                throw new InvalidOperationException("Arithmetic animation did not finish at the explicit execution boundary.");
+                throw new InvalidOperationException("Arithmetic animation did not finish at the OutputLayer review step.");
             }
 
             AssertOpenVisionLearnAnimationLegend(window, "OpenVision Learn Arithmetic / Logic");
@@ -16745,7 +16748,7 @@ internal static class Program
                 FindVisualChildren<TextBlock>(window)
                     .Select(item => item.Text)
                     .Where(text => !string.IsNullOrWhiteSpace(text)));
-            foreach (string token in new[] { "InputLayer A", "InputLayer B", "OutputLayer", "AbsDiff", "Preview/Run" })
+            foreach (string token in new[] { "Input A / Input B / Output Layer", "AbsDiff" })
             {
                 if (!visibleText.Contains(token, StringComparison.Ordinal))
                 {
