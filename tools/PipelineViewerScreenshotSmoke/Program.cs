@@ -19787,8 +19787,12 @@ internal static class Program
 
     private static CaptureResult CaptureP216ObjectDimensionFiltersPropertyGrid(string outputPath)
     {
+        CleanupTransientRecipeWorkspaces();
+        AssertP216ObjectInspectionPropertyMapperRoundTrip();
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
-        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_P216ObjectDimensionFilters");
+        string recipeName = "Smoke_P216ObjectDimensionFilters_"
+            + Guid.NewGuid().ToString("N").Substring(0, 12);
+        OpenVisionShellHostView shellHost = CreateShellHost(recipeName);
         return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
         {
             shellHost.SelectToolForTest(VISION_MENU.Blob);
@@ -19847,6 +19851,177 @@ internal static class Program
                 throw new InvalidOperationException("P216 PropertyGrid docking changed Preview/Run count.");
             }
         });
+    }
+
+    private static void AssertP216ObjectInspectionPropertyMapperRoundTrip()
+    {
+        VisionPipelineStep blob = new()
+        {
+            Name = "Blob Object Inspection",
+            ToolType = "BlobTool",
+            InputLayer = "DeviceAligned",
+            OutputLayer = "BlobResult",
+            Enabled = false,
+            UseAcceptance = true,
+            ExpectedSuccess = false,
+            MaxElapsedMilliseconds = 123D,
+            RequiredMessageText = "blob-reviewed",
+            AcceptanceMetricName = "BoundsWidthMax",
+            UseAcceptanceMetricMinimum = true,
+            AcceptanceMetricMinimum = 12D,
+            UseAcceptanceMetricMaximum = true,
+            AcceptanceMetricMaximum = 123D
+        };
+        blob.Parameters["USE_ROI"] = "true";
+        blob.Parameters["CvROI"] = "10,20,300,200";
+        blob.Parameters["USE_THRESHOLD"] = "true";
+        blob.Parameters["THRESHOLD"] = "111";
+        blob.Parameters["MIN_AREA"] = "321";
+        blob.Parameters["MAX_AREA"] = "6543";
+        blob.Parameters["MIN_WIDTH"] = "12";
+        blob.Parameters["MAX_WIDTH"] = "123";
+        blob.Parameters["MIN_HEIGHT"] = "14";
+        blob.Parameters["MAX_HEIGHT"] = "140";
+        blob.Parameters["USE_FIXTURE_FRAME"] = "true";
+        blob.Parameters["FIXTURE_FRAME_NAME"] = "PartFrame";
+        blob.Parameters["ALLOW_BRANCH_INPUT"] = "true";
+
+        object blobProperty = VisionPipelineStepPropertyMapper.CreateProperty(blob)
+            ?? throw new InvalidOperationException(
+                "P216 BlobTool selected-Step property object was not created.");
+        AssertPropertyValue(blobProperty, "MIN_AREA", 321);
+        AssertPropertyValue(blobProperty, "MAX_AREA", 6543);
+        AssertPropertyValue(blobProperty, "MIN_WIDTH", 12);
+        AssertPropertyValue(blobProperty, "MAX_WIDTH", 123);
+        AssertPropertyValue(blobProperty, "MIN_HEIGHT", 14);
+        AssertPropertyValue(blobProperty, "MAX_HEIGHT", 140);
+        AssertPropertyValue(blobProperty, "USE_FIXTURE_FRAME", true);
+        AssertPropertyValue(blobProperty, "FIXTURE_FRAME_NAME", "PartFrame");
+        AssertPropertyValue(blobProperty, "ALLOW_BRANCH_INPUT", true);
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(blob, blobProperty))
+        {
+            throw new InvalidOperationException(
+                "P216 BlobTool selected-Step property object did not apply back.");
+        }
+
+        if (!string.Equals(blob.ToolType, "Blob", StringComparison.Ordinal)
+            || !string.Equals(blob.InputLayer, "DeviceAligned", StringComparison.Ordinal)
+            || !string.Equals(blob.OutputLayer, "BlobResult", StringComparison.Ordinal)
+            || blob.Enabled
+            || !blob.UseAcceptance
+            || blob.ExpectedSuccess
+            || Math.Abs(blob.MaxElapsedMilliseconds - 123D) > 0.0001D
+            || !string.Equals(blob.RequiredMessageText, "blob-reviewed", StringComparison.Ordinal)
+            || !string.Equals(blob.AcceptanceMetricName, "BoundsWidthMax", StringComparison.Ordinal)
+            || !blob.UseAcceptanceMetricMinimum
+            || Math.Abs(blob.AcceptanceMetricMinimum - 12D) > 0.0001D
+            || !blob.UseAcceptanceMetricMaximum
+            || Math.Abs(blob.AcceptanceMetricMaximum - 123D) > 0.0001D)
+        {
+            throw new InvalidOperationException(
+                "P216 BlobTool selected-Step metadata or routing did not round-trip.");
+        }
+
+        foreach ((string Key, object Value) expected in new[]
+        {
+            ("USE_ROI", (object)true),
+            ("CvROI", "10,20,300,200"),
+            ("USE_THRESHOLD", true),
+            ("THRESHOLD", 111D),
+            ("MIN_AREA", 321),
+            ("MAX_AREA", 6543),
+            ("MIN_WIDTH", 12),
+            ("MAX_WIDTH", 123),
+            ("MIN_HEIGHT", 14),
+            ("MAX_HEIGHT", 140),
+            ("USE_FIXTURE_FRAME", true),
+            ("FIXTURE_FRAME_NAME", "PartFrame"),
+            ("ALLOW_BRANCH_INPUT", true)
+        })
+        {
+            AssertParameterValue(blob, expected.Key, expected.Value);
+        }
+
+        VisionPipelineStep contour = new()
+        {
+            Name = "Contour Object Inspection",
+            ToolType = "ContourTool",
+            InputLayer = "ThresholdResult",
+            OutputLayer = "ContourResult"
+        };
+        contour.Parameters["USE_ROI"] = "true";
+        contour.Parameters["CvROI"] = "5,6,320,210";
+        contour.Parameters["USE_APPROXPOLYDP"] = "true";
+        contour.Parameters["USE_DRAW_IMAGE"] = "true";
+        contour.Parameters["DrawMode"] = "BoundingBox";
+        contour.Parameters["ApproximationModes"] = "ApproxNone";
+        contour.Parameters["DetectMode"] = "List";
+        contour.Parameters["EPSILON"] = "0.025";
+        contour.Parameters["MIN_AREA"] = "222";
+        contour.Parameters["MAX_AREA"] = "7777";
+        contour.Parameters["MIN_WIDTH"] = "9";
+        contour.Parameters["MAX_WIDTH"] = "90";
+        contour.Parameters["MIN_HEIGHT"] = "11";
+        contour.Parameters["MAX_HEIGHT"] = "110";
+        contour.Parameters["DrawThickness"] = "4";
+        contour.Parameters["ClrGridHtml"] = "#123456";
+
+        object contourProperty = VisionPipelineStepPropertyMapper.CreateProperty(contour)
+            ?? throw new InvalidOperationException(
+                "P216 ContourTool selected-Step property object was not created.");
+        AssertPropertyValue(contourProperty, "USE_APPROXPOLYDP", true);
+        AssertPropertyValue(contourProperty, "USE_DRAW_IMAGE", true);
+        AssertPropertyValue(contourProperty, "DrawMode", ContourDrawMode.BoundingBox);
+        AssertPropertyValue(
+            contourProperty,
+            "ApproximationModes",
+            OpenCvSharp.ContourApproximationModes.ApproxNone);
+        AssertPropertyValue(
+            contourProperty,
+            "DetectMode",
+            OpenCvSharp.RetrievalModes.List);
+        AssertPropertyValue(contourProperty, "EPSILON", 0.025D);
+        AssertPropertyValue(contourProperty, "MIN_WIDTH", 9);
+        AssertPropertyValue(contourProperty, "MAX_WIDTH", 90);
+        AssertPropertyValue(contourProperty, "MIN_HEIGHT", 11);
+        AssertPropertyValue(contourProperty, "MAX_HEIGHT", 110);
+        AssertPropertyValue(contourProperty, "DrawThickness", 4);
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(contour, contourProperty))
+        {
+            throw new InvalidOperationException(
+                "P216 ContourTool selected-Step property object did not apply back.");
+        }
+
+        if (!string.Equals(contour.ToolType, "Contour", StringComparison.Ordinal)
+            || !string.Equals(contour.InputLayer, "ThresholdResult", StringComparison.Ordinal)
+            || !string.Equals(contour.OutputLayer, "ContourResult", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "P216 ContourTool selected-Step metadata or routing did not round-trip.");
+        }
+
+        foreach ((string Key, object Value) expected in new[]
+        {
+            ("USE_ROI", (object)true),
+            ("CvROI", "5,6,320,210"),
+            ("USE_APPROXPOLYDP", true),
+            ("USE_DRAW_IMAGE", true),
+            ("DrawMode", "BoundingBox"),
+            ("ApproximationModes", "ApproxNone"),
+            ("DetectMode", "List"),
+            ("EPSILON", 0.025D),
+            ("MIN_AREA", 222),
+            ("MAX_AREA", 7777),
+            ("MIN_WIDTH", 9),
+            ("MAX_WIDTH", 90),
+            ("MIN_HEIGHT", 11),
+            ("MAX_HEIGHT", 110),
+            ("DrawThickness", 4),
+            ("ClrGridHtml", "#123456")
+        })
+        {
+            AssertParameterValue(contour, expected.Key, expected.Value);
+        }
     }
 
     private static CaptureResult CaptureShellHostContourTool(string outputPath)

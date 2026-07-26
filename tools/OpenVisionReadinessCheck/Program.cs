@@ -1921,6 +1921,53 @@ internal static class Program
             matchingPropertyAdapter,
             "ApplyFixtureParameters",
             "The Matching adapter owns fixture-publish reconstruction.");
+        string objectInspectionPropertyAdapter = Read(
+            repoRoot,
+            @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineObjectInspectionPropertyAdapter.cs");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelineObjectInspectionPropertyAdapter.TryCreateProperty",
+            "Pipeline Step PropertyGrid dispatches ObjectInspection mapping through its adapter.");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelineObjectInspectionPropertyAdapter.TryCreateStep",
+            "Pipeline Step PropertyGrid reconstructs ObjectInspection through its adapter.");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelineObjectInspectionPropertyAdapter.ResolveMetricToolType",
+            "Pipeline Step PropertyGrid resolves ObjectInspection metrics through its adapter.");
+        RequireNotContains(
+            stepPropertyMapper,
+            "case \"blob\"",
+            "The root mapper no longer owns the Blob ToolType case.");
+        RequireNotContains(
+            stepPropertyMapper,
+            "case \"contour\"",
+            "The root mapper no longer owns the Contour ToolType case.");
+        RequireNotContains(
+            stepPropertyMapper,
+            "private sealed class PipelineBlobProperty",
+            "The root mapper no longer owns the Blob PropertyGrid model.");
+        RequireNotContains(
+            stepPropertyMapper,
+            "private sealed class PipelineContourProperty",
+            "The root mapper no longer owns the Contour PropertyGrid model.");
+        RequireContains(
+            objectInspectionPropertyAdapter,
+            "internal static class VisionPipelineObjectInspectionPropertyAdapter",
+            "ObjectInspection mapping has a standalone non-partial owner.");
+        RequireContains(
+            objectInspectionPropertyAdapter,
+            "private sealed class PipelineBlobProperty",
+            "The ObjectInspection adapter owns Blob PropertyGrid mapping.");
+        RequireContains(
+            objectInspectionPropertyAdapter,
+            "private sealed class PipelineContourProperty",
+            "The ObjectInspection adapter owns Contour PropertyGrid mapping.");
+        RequireContains(
+            objectInspectionPropertyAdapter,
+            "blob.ApplyFixtureParameters",
+            "The ObjectInspection adapter owns Blob fixture reconstruction.");
         RequireContains(
             learnScreenshotSmoke,
             "wpf_shell_host_recipe_line_pair_properties",
@@ -1937,6 +1984,10 @@ internal static class Program
             learnScreenshotSmoke,
             "TemplateMatchingTool",
             "Screenshot smoke covers the TemplateMatchingTool alias round trip.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "AssertP216ObjectInspectionPropertyMapperRoundTrip",
+            "Screenshot smoke covers BlobTool and ContourTool selected-Step round trips.");
         RequireContains(pipelineValidator, "ValidateReferenceDifferenceParameters", "Pipeline validator checks ReferenceDifference parameters.");
         RequireContains(pipelineKnownMetrics, "DifferencePixelRatio", "Known metrics include ReferenceDifference coverage.");
         RequireContains(pipelineKnownMetrics, "RegistrationInlierRatio", "Known metrics include ReferenceDifference registration quality.");

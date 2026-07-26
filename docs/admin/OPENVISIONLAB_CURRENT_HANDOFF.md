@@ -1925,6 +1925,31 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
   focused selected-Step round-trip gate | Recommended model: none until
   evidence exists | Reasoning effort: none until evidence exists.
 
+### Maintenance: Object Inspection Property Adapter Boundary (2026-07-26)
+
+- A focused P216 baseline first proved the existing partial's BlobTool and
+  ContourTool selected-Step create/apply behavior, including canonical aliases,
+  object parameters, ROI/threshold state, Blob fixture/branch parameters,
+  layers, and acceptance metadata.
+- `VisionPipelineObjectInspectionPropertyAdapter` now owns Blob/Contour
+  recognition, parameter/default projection, editable PropertyGrid models,
+  Step reconstruction, Blob fixture parameter application, and metric
+  identification.
+- `VisionPipelineStepPropertyMapper` retains only adapter dispatch plus shared
+  metadata/final Step copying. The old ObjectInspection partial was removed.
+- The P216 target now cleans transient smoke workspaces and uses a unique
+  recipe name so repeated runs do not inherit prior dimension edits.
+- Pre-move baseline, post-move P216 selected-Step assertions/current-source UI,
+  related Recipe Fixture PropertyGrid, Debug build, visual inspection, and
+  readiness passed.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_OBJECT_INSPECTION_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`
+  and `artifacts\refactor_object_inspection_adapter_20260726_r2`.
+- Remaining structural priority: audit BasicImage as one cohesive adapter only
+  after defining and passing a focused Threshold/Morphology/Filter/
+  EdgeDetection selected-Step create/apply baseline gate. Recommended model:
+  gpt-5.6-terra | Reasoning effort: medium.
+
 ## Handoff Rules For The Next Chat
 
 - Do not claim a feature is complete because the historical handoff says so. Re-run the smallest meaningful current command when work touches it.

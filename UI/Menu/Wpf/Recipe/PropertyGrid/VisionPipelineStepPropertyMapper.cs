@@ -147,6 +147,14 @@ namespace OpenVisionLab
                 return matchingProperty;
             }
 
+            if (VisionPipelineObjectInspectionPropertyAdapter.TryCreateProperty(
+                step,
+                name,
+                out object objectInspectionProperty))
+            {
+                return objectInspectionProperty;
+            }
+
             switch (toolType)
             {
                 case "threshold":
@@ -155,9 +163,6 @@ namespace OpenVisionLab
                 case "edgedetection":
                 case "edge":
                     return CreateBasicImageProperty(step, name, toolType);
-                case "blob":
-                case "contour":
-                    return CreateObjectInspectionProperty(step, name, toolType);
                 case "line":
                 case "linegauge":
                     return AttachStepMetadata(ApplyCommonOpenCvProperty(new PipelineLineGaugeProperty(name)
@@ -277,6 +282,14 @@ namespace OpenVisionLab
             {
                 mapped = matchingStep;
             }
+            else if (VisionPipelineObjectInspectionPropertyAdapter.TryCreateStep(
+                property,
+                inputLayer,
+                outputLayer,
+                out VisionPipelineStep objectInspectionStep))
+            {
+                mapped = objectInspectionStep;
+            }
             else if (property is OpenCvPropertyBase openCvProperty)
             {
                 mapped = VisionPipelineStepBuilder.FromProperty(openCvProperty, inputLayer, outputLayer);
@@ -300,7 +313,6 @@ namespace OpenVisionLab
                 return false;
             }
 
-            ApplyObjectInspectionParameters(property, mapped.Parameters);
             CopyStep(target, mapped);
             target.Enabled = enabled;
             target.UseAcceptance = useAcceptance;
@@ -701,12 +713,15 @@ namespace OpenVisionLab
                 return "Matching";
             }
 
+            string objectInspectionToolType =
+                VisionPipelineObjectInspectionPropertyAdapter.ResolveMetricToolType(instance);
+            if (!string.IsNullOrWhiteSpace(objectInspectionToolType))
+            {
+                return objectInspectionToolType;
+            }
+
             switch (instance)
             {
-                case PipelineBlobProperty _:
-                    return "Blob";
-                case PipelineContourProperty _:
-                    return "Contour";
                 case PipelineLineGaugeProperty _:
                     return "LineGauge";
                 case PipelineEdgeBasedMatchingProperty _:

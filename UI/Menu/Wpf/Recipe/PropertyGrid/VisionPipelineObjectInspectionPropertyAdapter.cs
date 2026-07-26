@@ -8,62 +8,133 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Windows.Controls.WpfPropertyGrid;
 using static OpenVisionLab.PropertyGridEditorFactory;
+using static OpenVisionLab.VisionPipelineStepPropertyMapper;
 
 namespace OpenVisionLab
 {
-    internal static partial class VisionPipelineStepPropertyMapper
+    internal static class VisionPipelineObjectInspectionPropertyAdapter
     {
-        private static object CreateObjectInspectionProperty(
+        public static bool TryCreateProperty(
             VisionPipelineStep step,
             string name,
-            string toolType)
+            out object property)
         {
-            switch (toolType)
+            property = null;
+            switch (NormalizeToolType(step?.ToolType))
             {
                 case "blob":
-                    return AttachStepMetadata(ApplyCommonOpenCvProperty(new PipelineBlobProperty(name)
-                    {
-                        MIN_AREA = GetInt(step.Parameters, nameof(BlobProperty.MIN_AREA), 200),
-                        MAX_AREA = GetInt(step.Parameters, nameof(BlobProperty.MAX_AREA), 1000000),
-                        MIN_WIDTH = GetInt(step.Parameters, nameof(BlobProperty.MIN_WIDTH), 0),
-                        MAX_WIDTH = GetInt(step.Parameters, nameof(BlobProperty.MAX_WIDTH), 1000000),
-                        MIN_HEIGHT = GetInt(step.Parameters, nameof(BlobProperty.MIN_HEIGHT), 0),
-                        MAX_HEIGHT = GetInt(step.Parameters, nameof(BlobProperty.MAX_HEIGHT), 1000000),
-                        USE_FIXTURE_FRAME = GetBool(step.Parameters, VisionPipelineFixtureFrameService.ConsumeParameter, false),
-                        FIXTURE_FRAME_NAME = GetString(step.Parameters, VisionPipelineFixtureFrameService.FrameNameParameter, string.Empty),
-                        ALLOW_BRANCH_INPUT = GetBool(step.Parameters, VisionPipelineNormalizer.AllowBranchInputParameter, false)
-                    }, step.Parameters), name, step.InputLayer, step.OutputLayer);
+                    property = AttachStepMetadata(
+                        ApplyCommonOpenCvProperty(new PipelineBlobProperty(name)
+                        {
+                            MIN_AREA = GetInt(step.Parameters, nameof(BlobProperty.MIN_AREA), 200),
+                            MAX_AREA = GetInt(step.Parameters, nameof(BlobProperty.MAX_AREA), 1000000),
+                            MIN_WIDTH = GetInt(step.Parameters, nameof(BlobProperty.MIN_WIDTH), 0),
+                            MAX_WIDTH = GetInt(step.Parameters, nameof(BlobProperty.MAX_WIDTH), 1000000),
+                            MIN_HEIGHT = GetInt(step.Parameters, nameof(BlobProperty.MIN_HEIGHT), 0),
+                            MAX_HEIGHT = GetInt(step.Parameters, nameof(BlobProperty.MAX_HEIGHT), 1000000),
+                            USE_FIXTURE_FRAME = GetBool(step.Parameters, VisionPipelineFixtureFrameService.ConsumeParameter, false),
+                            FIXTURE_FRAME_NAME = GetString(step.Parameters, VisionPipelineFixtureFrameService.FrameNameParameter, string.Empty),
+                            ALLOW_BRANCH_INPUT = GetBool(step.Parameters, VisionPipelineNormalizer.AllowBranchInputParameter, false)
+                        }, step.Parameters),
+                        name,
+                        step.InputLayer,
+                        step.OutputLayer);
+                    return true;
                 case "contour":
-                    return AttachStepMetadata(ApplyCommonOpenCvProperty(new PipelineContourProperty(name)
-                    {
-                        USE_APPROXPOLYDP = GetBool(step.Parameters, nameof(ContourProperty.USE_APPROXPOLYDP), false),
-                        USE_DRAW_IMAGE = GetBool(step.Parameters, nameof(ContourProperty.USE_DRAW_IMAGE), false),
-                        DrawMode = GetEnum(step.Parameters, nameof(ContourProperty.DrawMode), ContourDrawMode.Outline),
-                        ApproximationModes = GetEnum(step.Parameters, nameof(ContourProperty.ApproximationModes), ContourApproximationModes.ApproxSimple),
-                        DetectMode = GetEnum(step.Parameters, nameof(ContourProperty.DetectMode), RetrievalModes.External),
-                        EPSILON = GetDouble(step.Parameters, nameof(ContourProperty.EPSILON), 0.01),
-                        MIN_AREA = GetInt(step.Parameters, nameof(ContourProperty.MIN_AREA), 200),
-                        MAX_AREA = GetInt(step.Parameters, nameof(ContourProperty.MAX_AREA), 1000000),
-                        MIN_WIDTH = GetInt(step.Parameters, nameof(ContourProperty.MIN_WIDTH), 0),
-                        MAX_WIDTH = GetInt(step.Parameters, nameof(ContourProperty.MAX_WIDTH), 1000000),
-                        MIN_HEIGHT = GetInt(step.Parameters, nameof(ContourProperty.MIN_HEIGHT), 0),
-                        MAX_HEIGHT = GetInt(step.Parameters, nameof(ContourProperty.MAX_HEIGHT), 1000000),
-                        DrawThickness = GetInt(step.Parameters, nameof(ContourProperty.DrawThickness), 2),
-                        ClrGridHtml = GetString(step.Parameters, nameof(ContourProperty.ClrGridHtml), "#ff0000")
-                    }, step.Parameters), name, step.InputLayer, step.OutputLayer);
+                    property = AttachStepMetadata(
+                        ApplyCommonOpenCvProperty(new PipelineContourProperty(name)
+                        {
+                            USE_APPROXPOLYDP = GetBool(step.Parameters, nameof(ContourProperty.USE_APPROXPOLYDP), false),
+                            USE_DRAW_IMAGE = GetBool(step.Parameters, nameof(ContourProperty.USE_DRAW_IMAGE), false),
+                            DrawMode = GetEnum(step.Parameters, nameof(ContourProperty.DrawMode), ContourDrawMode.Outline),
+                            ApproximationModes = GetEnum(step.Parameters, nameof(ContourProperty.ApproximationModes), ContourApproximationModes.ApproxSimple),
+                            DetectMode = GetEnum(step.Parameters, nameof(ContourProperty.DetectMode), RetrievalModes.External),
+                            EPSILON = GetDouble(step.Parameters, nameof(ContourProperty.EPSILON), 0.01),
+                            MIN_AREA = GetInt(step.Parameters, nameof(ContourProperty.MIN_AREA), 200),
+                            MAX_AREA = GetInt(step.Parameters, nameof(ContourProperty.MAX_AREA), 1000000),
+                            MIN_WIDTH = GetInt(step.Parameters, nameof(ContourProperty.MIN_WIDTH), 0),
+                            MAX_WIDTH = GetInt(step.Parameters, nameof(ContourProperty.MAX_WIDTH), 1000000),
+                            MIN_HEIGHT = GetInt(step.Parameters, nameof(ContourProperty.MIN_HEIGHT), 0),
+                            MAX_HEIGHT = GetInt(step.Parameters, nameof(ContourProperty.MAX_HEIGHT), 1000000),
+                            DrawThickness = GetInt(step.Parameters, nameof(ContourProperty.DrawThickness), 2),
+                            ClrGridHtml = GetString(step.Parameters, nameof(ContourProperty.ClrGridHtml), "#ff0000")
+                        }, step.Parameters),
+                        name,
+                        step.InputLayer,
+                        step.OutputLayer);
+                    return true;
                 default:
-                    return null;
+                    return false;
             }
         }
 
-        private static void ApplyObjectInspectionParameters(
+        public static bool TryCreateStep(
             object property,
-            IDictionary<string, string> parameters)
+            string inputLayer,
+            string outputLayer,
+            out VisionPipelineStep step)
         {
-            if (property is PipelineBlobProperty blobFixture)
+            if (property is PipelineBlobProperty blob)
             {
-                blobFixture.ApplyFixtureParameters(parameters);
+                step = VisionPipelineStepBuilder.FromProperty(
+                    blob,
+                    inputLayer,
+                    outputLayer);
+                blob.ApplyFixtureParameters(step.Parameters);
+                return true;
             }
+
+            if (property is PipelineContourProperty contour)
+            {
+                step = VisionPipelineStepBuilder.FromProperty(
+                    contour,
+                    inputLayer,
+                    outputLayer);
+                return true;
+            }
+
+            step = null;
+            return false;
+        }
+
+        public static string ResolveMetricToolType(object property)
+        {
+            if (property is PipelineBlobProperty)
+            {
+                return "Blob";
+            }
+
+            return property is PipelineContourProperty ? "Contour" : string.Empty;
+        }
+
+        private static T AttachStepMetadata<T>(
+            T property,
+            string name,
+            string inputLayer,
+            string outputLayer)
+            where T : VisionPipelineStepPropertyMapper.IPipelineStepMetadata
+        {
+            property.PipelineStepName = string.IsNullOrWhiteSpace(name)
+                ? property.PipelineStepName
+                : name;
+            property.InputLayer = string.IsNullOrWhiteSpace(inputLayer) ? "Main" : inputLayer;
+            property.OutputLayer = string.IsNullOrWhiteSpace(outputLayer)
+                ? "Pipeline_Output"
+                : outputLayer;
+            return property;
+        }
+
+        private static string NormalizeToolType(string toolType)
+        {
+            string value = (toolType ?? string.Empty).Trim();
+            if (value.EndsWith("Tool", StringComparison.OrdinalIgnoreCase))
+            {
+                value = value.Substring(0, value.Length - 4);
+            }
+
+            return value.Replace(" ", string.Empty)
+                .Replace("_", string.Empty)
+                .ToLowerInvariant();
         }
 
         [CategoryOrder("Step", -1)]

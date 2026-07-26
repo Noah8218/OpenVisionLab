@@ -380,3 +380,27 @@
   것입니다. Prerequisite: concrete mapper maintenance need and focused
   selected-Step round-trip gate | Recommended model: none until evidence
   exists | Reasoning effort: none until evidence exists.
+
+### Object Inspection Property Adapter Update (2026-07-26)
+
+- 사용자의 명시적 구조 리팩토링 계속 요청에 따라, production 이동 전에
+  P216 smoke에 BlobTool/ContourTool selected-Step create/apply baseline
+  gate를 추가하고 기존 partial 상태에서 먼저 통과시켰습니다.
+- `VisionPipelineObjectInspectionPropertyAdapter`가 Blob/Contour alias,
+  parameter/default projection, PropertyGrid 모델, Step 재생성, Blob
+  Fixture parameter 보강, metric 판정의 실제 owner가 되었습니다.
+- root mapper에서는 직접 Blob/Contour case, private 모델, post-apply
+  helper, metric case를 제거하고 adapter create/apply/metric dispatch만
+  유지합니다. 기존 partial은 제거됐으며 새 adapter는 partial이
+  아닙니다.
+- P216 target은 반복 실행 시 이전 smoke recipe 설정이 남지 않도록
+  transient workspace 정리와 고유 recipe 이름을 사용합니다.
+- 검증: pre-move baseline, post-move Blob/Contour alias/parameter/metadata/
+  layer round-trip, current-source P216 UI, 관련 Recipe Fixture PropertyGrid,
+  Debug build(0 warning/0 error), visual inspection, readiness PASS.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_OBJECT_INSPECTION_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`.
+- 다음 구조 우선순위는 BasicImage 네 도구를 하나의 adapter 후보로
+  감사하되, 먼저 Threshold/Morphology/Filter/EdgeDetection focused
+  selected-Step create/apply baseline gate를 정의하고 통과시키는
+  것입니다. Recommended model: gpt-5.6-terra | Reasoning effort: medium.
