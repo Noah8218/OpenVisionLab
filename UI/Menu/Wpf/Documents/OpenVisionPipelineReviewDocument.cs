@@ -368,23 +368,32 @@ namespace OpenVisionLab
             Bitmap inputImage = ResolveLayerPreviewImage(step.InputLayer);
             Bitmap outputImage = ResolveLayerPreviewImage(step.OutputLayer);
             executionController.TryGetSummary(step, out VisionPipelineStepResultSummary summary);
-            string expectedInput = ResolveExpectedInputLayer(index);
-            bool isBranch = IsBranch(step, expectedInput);
-            bool inputWillBeProduced = HasEnabledProducerBefore(pipeline.Steps, index, step.InputLayer);
-            bool isInputMissing = IsInputMissing(step, inputImage, inputWillBeProduced);
-            string statusText = ResolveStatusText(step, outputImage, summary, isInputMissing);
+            OpenVisionPipelineReviewFlowProjection flow =
+                OpenVisionPipelineReviewFlowPresenter.CreateStepProjection(
+                    pipeline.Steps,
+                    index,
+                    inputImage != null,
+                    outputImage != null,
+                    summary);
 
             view.SetSelectedStep(
                 FormatStepName(index, step),
                 SafeText(step.ToolType, "Tool"),
-                statusText,
+                flow.StatusText,
                 step.InputLayer,
                 inputImage,
                 step.OutputLayer,
                 outputImage,
-                ResolveFlowSummary(step, isBranch, expectedInput, isInputMissing),
+                flow.FlowSummaryText,
                 FormatParameters(step),
-                OpenVisionPipelineReviewResultPresenter.FormatRunLog(step, inputImage, outputImage, mode, statusText, FormatValidationStatus(validationResult), summary));
+                OpenVisionPipelineReviewResultPresenter.FormatRunLog(
+                    step,
+                    inputImage,
+                    outputImage,
+                    mode,
+                    flow.StatusText,
+                    FormatValidationStatus(validationResult),
+                    summary));
             view.SetResultSummary(
                 OpenVisionPipelineReviewResultPresenter.FormatResultSummary(summary),
                 OpenVisionPipelineReviewResultPresenter.FormatResultDetails(step, summary));
@@ -394,14 +403,14 @@ namespace OpenVisionLab
                 index + 1,
                 pipeline.Steps.Count,
                 step,
-                statusText,
+                flow.StatusText,
                 inputImage != null,
                 outputImage != null,
                 summary,
                 validationResult,
-                expectedInput,
-                isBranch,
-                inputWillBeProduced,
+                flow.ExpectedInputLayer,
+                flow.IsBranch,
+                flow.InputWillBeProduced,
                 activeSamplePairGuide));
             view.SetReviewGuidePairAction(
                 OpenVisionPipelineReviewResultPresenter.ResolvePairActionText(activePairCounterpartSample),
@@ -1121,154 +1130,17 @@ namespace OpenVisionLab
             return value.ToString("0.###", CultureInfo.InvariantCulture);
         }
 
-        private List<PipelineFlowStepItem> CreateFlowItems(IReadOnlyList<VisionPipelineStep> steps)
+        private IReadOnlyList<PipelineFlowStepItem> CreateFlowItems(
+            IReadOnlyList<VisionPipelineStep> steps)
         {
-            List<PipelineFlowStepItem> items = new List<PipelineFlowStepItem>();
-            string previousEnabledOutput = null;
-            for (int i = 0; i < (steps?.Count ?? 0); i++)
-            {
-                VisionPipelineStep step = steps[i];
-                if (step == null)
-                {
-                    continue;
-                }
-
-                Bitmap inputImage = ResolveLayerPreviewImage(step.InputLayer);
-                Bitmap outputImage = ResolveLayerPreviewImage(step.OutputLayer);
-                executionController.TryGetSummary(step, out VisionPipelineStepResultSummary summary);
-                bool isBranch = IsBranch(step, previousEnabledOutput);
-                bool inputWillBeProduced = HasEnabledProducerBefore(steps, i, step.InputLayer);
-                bool isInputMissing = IsInputMissing(step, inputImage, inputWillBeProduced);
-                string statusText = ResolveStatusText(step, outputImage, summary, isInputMissing);
-                items.Add(new PipelineFlowStepItem
-                {
-                    Index = i,
-                    Name = step.Name,
-                    ToolType = step.ToolType,
-                    InputLayer = step.InputLayer,
-                    OutputLayer = step.OutputLayer,
-                    ExpectedInputLayer = previousEnabledOutput,
-                    FlowStateText = ResolveFlowSummary(step, isBranch, previousEnabledOutput, isInputMissing),
-                    IsBranch = isBranch,
-                    IsEnabled = step.Enabled,
-                    HasInputImage = inputImage != null,
-                    IsInputMissing = isInputMissing,
-                    HasOutputImage = outputImage != null,
-                    Status = ResolveFlowStatus(step, outputImage, summary, isInputMissing),
-                    StatusText = statusText
-                });
-
-                if (step.Enabled && !string.IsNullOrWhiteSpace(step.OutputLayer))
-                {
-                    previousEnabledOutput = step.OutputLayer.Trim();
-                }
-            }
-
-            return items;
-        }
-
-        private string ResolveExpectedInputLayer(int index)
-        {
-            string previousEnabledOutput = null;
-            for (int i = 0; i < index && i < (pipeline?.Steps?.Count ?? 0); i++)
-            {
-                VisionPipelineStep previous = pipeline.Steps[i];
-                if (previous?.Enabled == true && !string.IsNullOrWhiteSpace(previous.OutputLayer))
-                {
-                    previousEnabledOutput = previous.OutputLayer.Trim();
-                }
-            }
-
-            return previousEnabledOutput;
-        }
-
-        private static bool IsBranch(VisionPipelineStep step, string expectedInputLayer)
-        {
-            if (step == null || !step.Enabled || string.IsNullOrWhiteSpace(expectedInputLayer))
-            {
-                return false;
-            }
-
-            return !string.Equals(SafeText(step.InputLayer, string.Empty), expectedInputLayer, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static PipelineFlowStepStatus ResolveFlowStatus(
-            VisionPipelineStep step,
-            Bitmap outputImage,
-            VisionPipelineStepResultSummary summary,
-            bool isInputMissing)
-        {
-            if (step != null && !step.Enabled)
-            {
-                return PipelineFlowStepStatus.Skipped;
-            }
-
-            if (summary != null)
-            {
-                return summary.Success && !summary.IsAcceptanceNg
-                    ? PipelineFlowStepStatus.Passed
-                    : PipelineFlowStepStatus.Failed;
-            }
-
-            if (isInputMissing)
-            {
-                return PipelineFlowStepStatus.MissingInput;
-            }
-
-            return outputImage == null ? PipelineFlowStepStatus.Waiting : PipelineFlowStepStatus.Loaded;
-        }
-
-        private static string ResolveStatusText(
-            VisionPipelineStep step,
-            Bitmap outputImage,
-            VisionPipelineStepResultSummary summary,
-            bool isInputMissing)
-        {
-            if (step != null && !step.Enabled)
-            {
-                return "OFF";
-            }
-
-            if (summary != null)
-            {
-                return SafeText(summary.Status, "DONE");
-            }
-
-            if (isInputMissing)
-            {
-                return T("PipelineReview.Status.InputMissing", "Input missing");
-            }
-
-            return outputImage == null ? "WAIT" : "READY";
-        }
-
-        private static bool HasEnabledProducerBefore(
-            IReadOnlyList<VisionPipelineStep> steps,
-            int stepIndex,
-            string inputLayer)
-        {
-            if (steps == null || stepIndex <= 0 || string.IsNullOrWhiteSpace(inputLayer))
-            {
-                return false;
-            }
-
-            string normalizedInput = inputLayer.Trim();
-            for (int index = 0; index < stepIndex && index < steps.Count; index++)
-            {
-                VisionPipelineStep candidate = steps[index];
-                if (candidate?.Enabled == true
-                    && string.Equals(candidate.OutputLayer?.Trim(), normalizedInput, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static bool IsInputMissing(VisionPipelineStep step, Bitmap inputImage, bool inputWillBeProduced)
-        {
-            return step?.Enabled == true && inputImage == null && !inputWillBeProduced;
+            return OpenVisionPipelineReviewFlowPresenter.CreateItems(
+                steps,
+                layerName => ResolveLayerPreviewImage(layerName) != null,
+                step => executionController.TryGetSummary(
+                    step,
+                    out VisionPipelineStepResultSummary summary)
+                        ? summary
+                        : null);
         }
 
         private async Task RunReviewAsync()
@@ -1480,41 +1352,6 @@ namespace OpenVisionLab
         private VisionPipelineStep GetSelectedStepOrDefault()
         {
             return pipeline?.Steps?.ElementAtOrDefault(selectedIndex);
-        }
-
-        private static string ResolveFlowSummary(
-            VisionPipelineStep step,
-            bool isBranch,
-            string expectedInputLayer,
-            bool isInputMissing)
-        {
-            if (step == null)
-            {
-                return "-";
-            }
-
-            if (!step.Enabled)
-            {
-                return T("PipelineReview.Flow.DisabledStep", "Disabled step");
-            }
-
-            string inputLayer = SafeText(step.InputLayer, T("PipelineReview.Flow.UnknownInput", "Input?"));
-            if (isInputMissing)
-            {
-                return TF("PipelineReview.Flow.MissingInputFormat", "Missing input: {0}", inputLayer);
-            }
-
-            if (string.IsNullOrWhiteSpace(expectedInputLayer))
-            {
-                return TF("PipelineReview.Flow.SourceImageFormat", "Source image: {0}", inputLayer);
-            }
-
-            if (isBranch)
-            {
-                return TF("PipelineReview.Flow.BranchInputFormat", "Branch input: {0} instead of previous output {1}", inputLayer, expectedInputLayer);
-            }
-
-            return TF("PipelineReview.Flow.PreviousOutputFormat", "Previous output: {0}", expectedInputLayer);
         }
 
         private static string FormatParameters(VisionPipelineStep step)

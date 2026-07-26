@@ -1719,6 +1719,20 @@ Large-corpus skill validation now follows `docs\OPENVISIONLAB_SCALABLE_SKILL_VAL
 - Evidence:
   `docs\admin\OPENVISIONLAB_TRANSFORM_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`.
 
+### Maintenance: Pipeline Review Flow Presenter Boundary (2026-07-26)
+
+- `OpenVisionPipelineReviewFlowPresenter` now owns previous-output, branch,
+  upstream-producer, missing-input, status/text, full-list, and selected-Step
+  flow projection.
+- `OpenVisionPipelineReviewDocument` now supplies layer-image and execution
+  summary state and applies the returned projection. The Presenter does not
+  depend on the Document, View, display manager, or execution controller.
+- Verification passed: Debug build (0 warnings/0 errors) and current-source
+  normal/input-state/NG Pipeline Review UI smokes. Artifact:
+  `artifacts\mvvm_pipeline_review_flow_presenter_20260726`.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_PIPELINE_REVIEW_FLOW_PRESENTER_REFACTOR_PROOF_20260726.md`.
+
 1. **No active implementation priority after P235.**
    - The explicitly requested exact locator-session promotion passed without a product blocker. Wait for a concrete operator workflow blocker or verified current-build regression. Until then, do not spend model tokens or start another semantic image campaign. Recommended model: none until evidence exists | Reasoning effort: none until evidence exists.
 

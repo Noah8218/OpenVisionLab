@@ -209,3 +209,17 @@
   RotateScale/Affine/P219 PropertyGrid UI smokes PASS.
 - Evidence:
   `docs/admin/OPENVISIONLAB_TRANSFORM_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`.
+
+### Pipeline Review Flow Presenter Update (2026-07-26)
+
+- `OpenVisionPipelineReviewFlowPresenter`가 이전 enabled Step output,
+  branch input, upstream producer, missing input, waiting/loaded/execution
+  status와 `PipelineFlowStepItem` projection의 실제 owner가 되었습니다.
+- `OpenVisionPipelineReviewDocument`는 layer image와 execution summary를
+  조회해 Presenter에 전달하고 결과를 기존 View에 적용합니다.
+- 새 Presenter는 partial이 아니며 Document/View/display manager/execution
+  controller에 의존하지 않습니다.
+- 검증: Debug build(0 warning/0 error), current-source normal/input-state/NG
+  Pipeline Review UI smokes PASS.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_PIPELINE_REVIEW_FLOW_PRESENTER_REFACTOR_PROOF_20260726.md`.
