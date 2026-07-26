@@ -1798,6 +1798,9 @@ internal static class Program
         RequireContains(appToolFactory, "CreateReferenceDifferenceTool", "Pipeline factory creates ReferenceDifference with resolved dependencies.");
         RequireContains(appToolFactory, "ReferencePath\" + index", "ReferenceDifference resolves each imported reference path independently.");
         string stepPropertyMapper = Read(repoRoot, @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineStepPropertyMapper.cs");
+        string transformPropertyAdapter = Read(
+            repoRoot,
+            @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineTransformPropertyAdapter.cs");
         string referenceDifferencePropertyAdapter = Read(
             repoRoot,
             @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineReferenceDifferencePropertyAdapter.cs");
@@ -2194,9 +2197,14 @@ internal static class Program
         RequireContains(pipelineKnownMetrics, "public const string AffineValidPixelRatio", "Known metrics include Affine retained-source coverage.");
         RequireContains(pipelineKnownMetrics, "public const string AffineDetectedSourcePointCount", "Known metrics include dynamic Affine source-point resolution.");
         RequireContains(pipelineValidator, "ValidateAffineParameters", "Pipeline validator checks Affine point geometry and gates.");
-        RequireContains(stepPropertyMapper, "PipelineAffineTransformToolProperty", "Pipeline selected-Step PropertyGrid supports AffineTransform.");
-        RequireContains(stepPropertyMapper, "UseDetectedSourcePoints", "AffineTransform PropertyGrid supports explicit typed Point source binding.");
-        RequireContains(stepPropertyMapper, "SourcePoint3Feature", "AffineTransform PropertyGrid exposes all three ordered typed Point references.");
+        RequireContains(transformPropertyAdapter, "PipelineAffineTransformToolProperty", "Transform adapter owns the AffineTransform selected-Step PropertyGrid model.");
+        RequireContains(transformPropertyAdapter, "UseDetectedSourcePoints", "AffineTransform PropertyGrid supports explicit typed Point source binding.");
+        RequireContains(transformPropertyAdapter, "SourcePoint3Feature", "AffineTransform PropertyGrid exposes all three ordered typed Point references.");
+        RequireContains(transformPropertyAdapter, "PipelineRotateScaleToolProperty", "Transform adapter owns the RotateScale selected-Step PropertyGrid model.");
+        RequireContains(transformPropertyAdapter, "PipelinePointFeatureConverter", "Transform adapter owns the detected Point feature picker.");
+        RequireNotContains(stepPropertyMapper, "PipelineAffineTransformToolProperty", "Root PropertyGrid mapper no longer owns the AffineTransform presentation model.");
+        RequireNotContains(stepPropertyMapper, "PipelineRotateScaleToolProperty", "Root PropertyGrid mapper no longer owns the RotateScale presentation model.");
+        RequireNotContains(stepPropertyMapper, "PipelinePointFeatureConverter", "Root PropertyGrid mapper no longer owns the transform-specific Point picker.");
         RequireContains(llmToolCatalog, "\"toolType\": \"AffineTransform\"", "Tool catalog exposes AffineTransform and its aliases.");
         RequireContains(llmToolCatalog, "\"USE_DETECTED_SOURCE_POINTS\"", "Tool catalog exposes detected-source Point binding without changing fixed numeric defaults.");
         RequireContains(llmToolCatalog, "\"AffineDetectedSourcePointCount\"", "Tool catalog exposes dynamic Affine source-point evidence metrics.");

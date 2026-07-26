@@ -2043,6 +2043,32 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
   selected-Step round-trip gate | Recommended model: none until evidence
   exists | Reasoning effort: none until evidence exists.
 
+### Maintenance: Transform Property Model Ownership Closure (2026-07-26)
+
+- A closure audit found that the existing Transform adapter owned create/apply
+  mapping but still instantiated two PropertyGrid models nested in the root
+  mapper. The root also retained the detected Point picker and direct
+  transform metric classification.
+- `VisionPipelineTransformPropertyAdapter` now owns the RotateScale/Affine
+  PropertyGrid models, `PipelinePointFeatureConverter`, create/apply mapping,
+  fixture/detected Point serialization, and transform metric identification.
+- `VisionPipelineStepPropertyMapper` retains common metadata, common
+  converters/codecs, feature-reference queries, family dispatch, final Step
+  copy, and the deliberately retained small `Mean` mapping. It fell from
+  1,150 to 824 lines and is no longer declared `partial`.
+- Affine contract, current-source RotateScale/Affine/P219 UI captures, Debug
+  build, visual inspection, readiness, and patch hygiene passed after recovery
+  from one intermediate truncated-edit build failure.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_TRANSFORM_PROPERTY_MODEL_OWNERSHIP_REFACTOR_PROOF_20260726.md`
+  and `artifacts\refactor_transform_model_ownership_20260726`.
+- Mapper decomposition is structurally closed. Reopen only for a concrete
+  `Mean` maintenance need or a verified selected-Step regression; do not add a
+  one-case adapter for symmetry. Prerequisite: concrete Mean mapper
+  maintenance need and focused selected-Step round-trip gate | Recommended
+  model: none until evidence exists | Reasoning effort: none until evidence
+  exists.
+
 ## Handoff Rules For The Next Chat
 
 - Do not claim a feature is complete because the historical handoff says so. Re-run the smallest meaningful current command when work touches it.

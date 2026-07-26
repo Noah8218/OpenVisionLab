@@ -60,7 +60,10 @@ Complete.
 ## Boundary
 
 This proves a real mapping call-path and responsibility change. The existing
-PropertyGrid presentation models remain nested in the root mapper for
-compatibility; their parameter projection and Step construction are no longer
-owned there. This does not qualify transform metrology or unseen-image
+PropertyGrid presentation models remained nested in the root mapper at this
+checkpoint. The follow-up
+`OPENVISIONLAB_TRANSFORM_PROPERTY_MODEL_OWNERSHIP_REFACTOR_PROOF_20260726.md`
+subsequently moved those models and their detected-Point converter/metric
+classification into the same adapter, closing that explicit ownership
+boundary. Neither change qualifies transform metrology or unseen-image
 robustness.

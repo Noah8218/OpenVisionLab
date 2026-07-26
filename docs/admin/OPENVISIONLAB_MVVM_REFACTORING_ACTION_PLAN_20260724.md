@@ -502,3 +502,28 @@
   concrete Mean mapper maintenance need and focused selected-Step round-trip
   gate | Recommended model: none until evidence exists | Reasoning effort:
   none until evidence exists.
+
+### Transform Property Model Ownership Closure (2026-07-26)
+
+- 마감 감사에서 기존 Transform adapter가 create/apply를 소유하면서도
+  `PipelineRotateScaleToolProperty`,
+  `PipelineAffineTransformToolProperty`, detected-Point converter, metric
+  판정을 root mapper의 nested type으로 역참조하는 남은 결합을
+  확인했습니다.
+- 두 Transform PropertyGrid 모델, `PipelinePointFeatureConverter`,
+  Transform metric 판정을 기존
+  `VisionPipelineTransformPropertyAdapter`로 이동했습니다. 새 파일,
+  interface, factory, registry는 추가하지 않았습니다.
+- root mapper는 1,150줄에서 824줄로 감소했고 더 이상 Transform 전용
+  모델/converter/type 판정을 소유하지 않습니다. partial 구현도
+  존재하지 않으므로 class 선언의 `partial`을 제거했습니다.
+- Affine contract, RotateScale/Affine/P219 current-source UI, Debug build,
+  visual inspection, readiness, `git diff --check`를 완료 gate로
+  유지합니다.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_TRANSFORM_PROPERTY_MODEL_OWNERSHIP_REFACTOR_PROOF_20260726.md`.
+- mapper 분해 캠페인의 남은 direct family는 작은 `Mean` 한 건뿐이며
+  추가 추출 우선순위는 없습니다. Prerequisite: concrete Mean mapper
+  maintenance need and focused selected-Step round-trip gate | Recommended
+  model: none until evidence exists | Reasoning effort: none until evidence
+  exists.
