@@ -272,3 +272,23 @@
   Create/Apply family를 다시 감사해 한 family만 비-partial adapter로
   옮길 가치가 있는지 판단하는 것입니다. Recommended model:
   gpt-5.6-terra | Reasoning effort: medium.
+
+### ReferenceDifference Property Adapter Update (2026-07-26)
+
+- `VisionPipelineReferenceDifferencePropertyAdapter`가 ToolType 인식,
+  parameter/default projection, 레거시 `ReferencePaths` fallback,
+  PropertyGrid 모델, canonical Step 재생성의 실제 owner가 되었습니다.
+- root `VisionPipelineStepPropertyMapper`에서는 직접 ToolType case, private
+  PropertyGrid 모델, `ToStep`, reference-path helper를 제거하고 adapter
+  dispatch 및 공통 metadata/parameter copy만 유지합니다. 새 adapter는
+  partial이 아닙니다.
+- readiness도 예전 root 내부 구현을 요구하지 않고 새 owner와 root
+  dispatch 경계를 각각 검사합니다.
+- 검증: Debug build(0 warning/0 error), current-source
+  `wpf_shell_host_recipe_reference_difference_properties`, visual inspection,
+  readiness PASS.
+- Evidence:
+  `docs/admin/OPENVISIONLAB_REFERENCE_DIFFERENCE_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`.
+- 다음 구조 우선순위는 남은 root mapper family를 다시 감사하고 전용
+  round-trip 회귀 근거가 있는 한 family만 선택하는 것입니다.
+  Recommended model: gpt-5.6-terra | Reasoning effort: medium.

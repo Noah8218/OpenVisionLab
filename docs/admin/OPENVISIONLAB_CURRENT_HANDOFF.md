@@ -1789,6 +1789,26 @@ Large-corpus skill validation now follows `docs\OPENVISIONLAB_SCALABLE_SKILL_VAL
   most one real non-partial adapter boundary. Recommended model:
   gpt-5.6-terra | Reasoning effort: medium.
 
+### Maintenance: ReferenceDifference Property Adapter Boundary (2026-07-26)
+
+- `VisionPipelineReferenceDifferencePropertyAdapter` now owns ToolType
+  recognition, current parameter/default projection, legacy `ReferencePaths`
+  fallback, the PropertyGrid model, canonical Step reconstruction, and metric
+  owner identification for `ReferenceDifference`.
+- The root mapper no longer owns a direct `referencedifference` switch case,
+  private property model, `ToStep`, or reference-path helper. It retains adapter
+  dispatch and shared metadata/parameter copying.
+- The readiness contract now checks the new owner and root dispatch separately.
+- Verification passed: Debug build (0 warnings/0 errors), current-source
+  `wpf_shell_host_recipe_reference_difference_properties`, visual inspection,
+  and readiness. Artifact:
+  `artifacts\refactor_reference_difference_adapter_20260726\wpf_shell_host_recipe_reference_difference_properties.png`.
+- Evidence:
+  `docs\admin\OPENVISIONLAB_REFERENCE_DIFFERENCE_PROPERTY_ADAPTER_REFACTOR_PROOF_20260726.md`.
+- Remaining structural priority: re-audit remaining root mapper families and
+  select one only when a dedicated round-trip regression can prove its
+  behavior. Recommended model: gpt-5.6-terra | Reasoning effort: medium.
+
 1. **No active implementation priority after P235.**
    - The explicitly requested exact locator-session promotion passed without a product blocker. Wait for a concrete operator workflow blocker or verified current-build regression. Until then, do not spend model tokens or start another semantic image campaign. Recommended model: none until evidence exists | Reasoning effort: none until evidence exists.
 

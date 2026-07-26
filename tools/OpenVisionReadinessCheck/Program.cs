@@ -1798,8 +1798,21 @@ internal static class Program
         RequireContains(appToolFactory, "CreateReferenceDifferenceTool", "Pipeline factory creates ReferenceDifference with resolved dependencies.");
         RequireContains(appToolFactory, "ReferencePath\" + index", "ReferenceDifference resolves each imported reference path independently.");
         string stepPropertyMapper = Read(repoRoot, @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineStepPropertyMapper.cs");
-        RequireContains(stepPropertyMapper, "PipelineReferenceDifferenceProperty", "Pipeline Step PropertyGrid supports ReferenceDifference.");
-        RequireContains(stepPropertyMapper, "ReferencePath4", "ReferenceDifference PropertyGrid exposes up to four approved Good references.");
+        string referenceDifferencePropertyAdapter = Read(
+            repoRoot,
+            @"UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineReferenceDifferencePropertyAdapter.cs");
+        RequireContains(
+            stepPropertyMapper,
+            "VisionPipelineReferenceDifferencePropertyAdapter.TryCreateProperty",
+            "Pipeline Step PropertyGrid dispatches ReferenceDifference through its adapter.");
+        RequireContains(
+            referenceDifferencePropertyAdapter,
+            "ReferenceDifferenceProperty",
+            "Pipeline Step PropertyGrid supports ReferenceDifference.");
+        RequireContains(
+            referenceDifferencePropertyAdapter,
+            "ReferencePath4",
+            "ReferenceDifference PropertyGrid exposes up to four approved Good references.");
         RequireContains(pipelineValidator, "ValidateReferenceDifferenceParameters", "Pipeline validator checks ReferenceDifference parameters.");
         RequireContains(pipelineKnownMetrics, "DifferencePixelRatio", "Known metrics include ReferenceDifference coverage.");
         RequireContains(pipelineKnownMetrics, "RegistrationInlierRatio", "Known metrics include ReferenceDifference registration quality.");
