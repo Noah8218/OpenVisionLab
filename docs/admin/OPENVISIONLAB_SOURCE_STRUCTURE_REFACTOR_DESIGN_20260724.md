@@ -1,22 +1,23 @@
 ﻿# OpenVisionLab Source Structure Refactor Design
 
 Date: 2026-07-24
+Updated: 2026-07-26 KST
 Repository: `C:\Git\OpenVisionLab_Dev`
-Status: Design in-progress; working-tree migration is done, validation slice updated
+Status: Complete; this historical design is superseded by
+`OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md`
 
-Current execution snapshot (2026-07-24):
+Final execution snapshot (2026-07-26):
 
 - Root directory migration from numbered folders (`0. UI`, `1. Core`, `2. Common`, `4. Vision`, `5. Property`) to semantic names is complete in working tree; legacy numeric roots are no longer active references in source files.
-- P1 (dependency direction cleanup) has started with targeted Core decoupling:
+- P1 dependency-direction cleanup completed its targeted Core decoupling:
   - `Core/Recipe/VisionToolRepository` no longer uses `VisionMessageBox` (UI dependency removed).
   - `Core/Pipeline/Definition/VisionPipelineAppendService` no longer reads recipe name from `PropertyGridEditorFactory`.
 - `Core/Pipeline/Definition/VisionPipelineStepPropertyMapper` WPF/PropertyGrid migration is complete (`UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs`).
-
-Immediate next checks before broad refactor:
-
-1. Stage and review the directory rename + P1 decoupling changes.
-2. Verify build/readiness with the new structure.
-3. Add a focused follow-up slice for `VisionPipelineStepPropertyMapper` (split by family adapters) only after the compile/runtime baseline remains stable.
+- The reviewed mapper families, Recipe application state/policies, Pipeline
+  Review presentation, Learn calculations, and Auto MPoint teaching workflow
+  now have the explicit owners listed in the canonical completion record.
+- There is no active broad-refactor follow-up. Reopen only under the evidence
+  prerequisites in the canonical completion record.
 
 ## 1. Purpose
 

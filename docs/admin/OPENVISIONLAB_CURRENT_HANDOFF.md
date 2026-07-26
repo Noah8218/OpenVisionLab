@@ -1620,7 +1620,12 @@ Large-corpus skill validation now follows `docs\OPENVISIONLAB_SCALABLE_SKILL_VAL
 41. **P234 closes first real-folder integration, not locator semantics.** The 24/24 result proves that one frozen P230 locator survives P233 folder registration, execution, evidence retention, and HTML export. The OK/NG labels were used only for balanced sampling; no classification gate was applied. Do not rerun or tune this corpus, transfer the template to Die Pad 2-4, or call it parallel/field qualification.
 42. **P235 preserves locator identity, not defect truth.** Its 24 Expected OK rows mean the frozen locator is expected to execute successfully on every registered image. They do not mean the original OK/NG defect labels were reclassified, and they do not upgrade the P230/P234 semantic or field-robustness boundary.
 
-## Current Next Priority Order
+## Historical Maintenance Slice Ledger
+
+The completed maintenance entries below are chronology, not an active priority
+queue. The current structural decision is recorded in
+`OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md`: proactive
+refactoring is closed until concrete evidence reopens one bounded owner.
 
 ### Maintenance: EdgeBasedMatching Property Mapper Boundary (2026-07-25)
 
@@ -2247,6 +2252,30 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
   Prerequisite: concrete evidence | Recommended model: none until evidence
   exists | Reasoning effort: none until evidence exists.
 
+### Maintenance: Structural Refactoring Campaign Closure (2026-07-26)
+
+- Status: Complete for the agreed documentation/folder and structural MVVM
+  refactoring plan.
+- The final canonical record consolidates the Recipe UseCase/Presenter/session
+  owners, Pipeline Review presenters, PropertyGrid family adapters, Learn
+  simulation models, Auto MPoint teaching controller, preserved contracts,
+  proof index, stop decision, and reopen checklist.
+- Large remaining composition/View files are not automatic debt. WPF-local
+  coordinates, drag/hit test, timer/animation, control wiring, and rendering
+  remain with their views. The small direct `Mean` mapper remains in the root
+  mapper instead of creating a one-case adapter.
+- The source baseline before this documentation-only closure is Dev `6523bc1`
+  and original `49858eb`, with equal Git tree
+  `6e6289eb324c3be3363c52f8acb5ef763f3afd97`. Both passed Debug build with
+  zero warnings/errors and the complete readiness contract.
+- Canonical evidence:
+  `docs\admin\OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md`.
+- No proactive structural priority remains. Reopen only for a concrete
+  maintenance change, verified current-build regression, independently
+  testable responsibility, or second real consumer. Prerequisite: concrete
+  evidence | Recommended model: none until evidence exists | Reasoning effort:
+  none until evidence exists.
+
 ## Handoff Rules For The Next Chat
 
 - Do not claim a feature is complete because the historical handoff says so. Re-run the smallest meaningful current command when work touches it.
@@ -2260,6 +2289,7 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
 - Current product shape and main view responsibility: `docs/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md`
 - Stable non-regression contract: `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`
 - Source ownership proof for P95-P104: `docs/OPENVISIONLAB_SOURCE_OWNERSHIP_REFACTOR_PROOF_20260717.md`
+- Structural refactoring closure and reopen rules: `docs/admin/OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md`
 - Full chronological engineering evidence: `docs/OPENVISIONLAB_NEXT_SESSION_HANDOFF.md`
 - Existing handoff prompt/template: `docs/OPENVISIONLAB_NEXT_CHAT_HANDOFF_PROMPT_20260706.md`
 - LLM XML contract and tool catalog: `docs/OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md`, `docs/OPENVISIONLAB_LLM_TOOL_CATALOG.json`

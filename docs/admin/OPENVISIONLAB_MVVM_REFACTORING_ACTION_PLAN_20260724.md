@@ -1,5 +1,25 @@
 ﻿# OpenVisionLab MVVM Refactoring Action Plan (2026-07-24)
 
+Updated: 2026-07-26 KST
+
+## Current Closure State
+
+Status: Complete
+
+이 문서는 2026-07-24에 시작한 구조 리팩토링의 계획과 상세 진행
+이력입니다. 아래 초기 후보·우선순위·모델 권장은 역사 기록이며 현재
+backlog가 아닙니다.
+
+최종 상태, 실제 owner 목록, 검증 근거, 보존 계약과 재개 조건의 canonical
+문서는 다음과 같습니다.
+
+- `OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md`
+
+현재 proactive 구조 우선순위는 없습니다. 구체적인 유지보수 변경,
+재현된 current-build regression, 독립 테스트가 필요한 책임 또는 두 번째
+실제 consumer가 생길 때만 해당 경계를 다시 감사합니다. 파일 길이,
+switch case 수, partial 대칭을 이유로 이 계획을 재개하지 않습니다.
+
 ## 1) 현재 작업 상태 요약
 
 - 문서/폴더 재편은 `docs/` 기준 카테고리 이동이 완료되었습니다.
@@ -13,7 +33,7 @@
   - `CAPTURE_GPT_TRANSCRIPT.md`
 - 기존 노트에서 오래된 `02_PASTE_VALIDATION_NG_BACK_TO_GPT.md` 참조는 해당 최신 문서로 교체했습니다.
 
-## 2) 지금 즉시 리팩터 후보(우선순위)
+## 2) 역사적 초기 리팩터 후보(완료 또는 의도적 종료)
 
 `obj/`/`bin/`의 생성 코드와 산출물을 제외한 후보만 반영합니다.
 
@@ -34,7 +54,7 @@
 5) **`UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs`** (3,750줄)
    - 도구별 매핑/어댑터 분해가 다음 단계에서 명확한 리스크 절감 효과
 
-## 3) 다음 적용 Slice (1회차)
+## 3) 역사적 1회차 적용 계획
 
 ### Slice A: Recipe Command Surface 분해 (P1)
 
@@ -151,7 +171,7 @@
 - 변경 범위가 한 번에 한 Slice로 제한
 - 문서 링크(필요 시 current handoff / map) 업데이트
 
-## 5) 권장 실행 모델
+## 5) 역사적 실행 모델 권장(종료)
 
 - Slice A (Recipe Command Surface): **GPT-5.3-Codex / high**
 - Slice B (PipelineReviewDocument): **GPT-5.3-Codex / medium**
@@ -665,6 +685,7 @@
   빌드 회귀가 새 owner 필요성을 보일 때만 재감사합니다.
   Prerequisite: concrete evidence | Recommended model: none until evidence
   exists | Reasoning effort: none until evidence exists.
+
 ### Pipeline Review Fixture Presenter Update (2026-07-26)
 
 - `OpenVisionPipelineReviewDocument`의 남은 큰 영역을 줄 수가 아니라 실제
@@ -687,3 +708,20 @@
   현재 빌드 회귀가 독립 owner 필요성을 보일 때만 재감사합니다.
   Prerequisite: concrete evidence | Recommended model: none until evidence
   exists | Reasoning effort: none until evidence exists.
+
+### Structural Refactoring Campaign Closure (2026-07-26)
+
+- 문서/폴더, Recipe application flow, Pipeline Review, PropertyGrid mapper,
+  Learn simulation과 Auto MPoint teaching의 실제 owner 추출을
+  완료했습니다.
+- 남은 큰 파일과 작은 direct mapping을 다시 감사했으며, View-local
+  WPF interaction/rendering 또는 one-off mapping을 줄 수 때문에 더
+  분리하지 않기로 결정했습니다.
+- 현재 계획의 상태는 `Complete`이며 더 이상 활성 우선순위 목록으로
+  사용하지 않습니다.
+- Canonical completion:
+  `docs/admin/OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md`.
+- Reopen prerequisite: concrete maintenance change, verified regression,
+  independently testable responsibility, or second real consumer |
+  Recommended model: none until prerequisite exists | Reasoning effort:
+  none until prerequisite exists.

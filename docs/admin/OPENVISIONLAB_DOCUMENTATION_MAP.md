@@ -1,6 +1,6 @@
 # OpenVisionLab Documentation Map
 
-Updated: 2026-07-24 KST
+Updated: 2026-07-26 KST
 
 This map prevents a new chat from treating large historical records or old readiness estimates as the current plan.
 
@@ -38,7 +38,8 @@ If documents conflict, do not smooth over the conflict. Follow the higher-ranked
 
 | Document | Use it for | Freshness note |
 | --- | --- | --- |
-| `OPENVISIONLAB_CURRENT_HANDOFF.md` | First continuation brief. | P236 current-state ledger: identity, completed slices, rejected/incomplete/deferred/out-of-scope boundaries, publication prerequisite, and current priority. |
+| `OPENVISIONLAB_CURRENT_HANDOFF.md` | First continuation brief. | P236 current-state ledger plus the 2026-07-26 structural-refactoring closure; no proactive structure priority is active. |
+| `OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md` | Canonical closure for the 2026-07-24..26 documentation, folder, MVVM, and responsibility-ownership refactoring campaign. | Current structural status is `Complete`; reopen only for a concrete maintenance change, verified regression, independently testable responsibility, or second real consumer. |
 | `OPENVISIONLAB_RULE_BASED_UI_GAP_AUDIT_20260723.md` | Static algorithm/UI inventory, official commercial comparison, selected UI/tool gaps, and repeated-validation stop rule. | Current priority rationale; no image or LLM validation evidence is claimed. |
 | `OPENVISIONLAB_AFFINE_TRANSFORM_V1_CONTRACT.md` | Library-Noah ownership, three-point pixel Affine parameters, fail-closed gates, metrics/drawings, PropertyGrid/XML/Learn behavior, and completion limits. | P218 completed on 2026-07-23 with known-matrix synthetic runtime, DLL provenance, UI, and regression evidence. |
 | `OPENVISIONLAB_AFFINE_DETECTED_POINT_FIXTURE_CONTRACT.md` | Ordered earlier typed-Point x3 binding into Affine, Matching Center export, fail-closed rules, operator workflow, fixed downstream ROI, and evidence limits. | P219 completed on 2026-07-23 with actual Matching x3 -> Affine -> fixed-ROI synthetic runtime and current-source PropertyGrid evidence. |
@@ -78,7 +79,11 @@ After every bounded work slice:
 
 1. Update `OPENVISIONLAB_CURRENT_HANDOFF.md` with the changed responsibility, completed/blocked state, command evidence, UI artifact path if applicable, and re-ranked next priority.
 2. Append detailed chronology, raw command context, and artifact-specific notes to `OPENVISIONLAB_NEXT_SESSION_HANDOFF.md` only when that detail will help a future investigation.
-3. Update `OPENVISIONLAB_SOURCE_OWNERSHIP_REFACTOR_PROOF_20260717.md` for physical moves, new ownership boundaries, or source-check changes.
+3. Read `OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md` before
+   reopening structural work. Update the specific proof/current handoff for a
+   new bounded boundary; update
+   `OPENVISIONLAB_SOURCE_OWNERSHIP_REFACTOR_PROOF_20260717.md` only for
+   physical moves, new ownership boundaries, or source-check changes.
 4. Update the LLM guide/catalog only when the validated XML contract changes. Do not change it merely because one model response was weak.
 5. Update policy documents only for actual policy decisions. Do not mix policy edits with unrelated UI work.
 
@@ -88,4 +93,5 @@ For UI changes, the current handoff entry must name a freshly generated before/a
 
 ```text
 Work in C:\Git\OpenVisionLab_Dev. Read AGENTS.md, docs/OPENVISIONLAB_CURRENT_HANDOFF.md, docs/OPENVISIONLAB_DOCUMENTATION_MAP.md, docs/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md, and docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md. Run git status -sb and git log --oneline -5 in both repositories when publication/synchronization is in scope. State the product identity, current evidence-based maturity, immediate priority, remaining priority, commercial lessons to emulate, and out-of-scope platform areas before changing anything. Treat P236's current-state ledger as the compact truth and the chronological handoff only as detailed evidence. Preserve PropertyGrid tools and explicit Preview/Run/no-auto-route contracts. Do not invent an implementation priority when the current handoff says none.
+For structural work, also read docs/admin/OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md and reopen only when its evidence prerequisite is satisfied.
 ```
