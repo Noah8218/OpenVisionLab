@@ -114,8 +114,14 @@ namespace OpenVisionLab
         private readonly OpenVisionShellHostSessionState sessionState = new OpenVisionShellHostSessionState();
         private readonly OpenVisionShellHostSessionController sessionController;
         private readonly OpenVisionRecipeLlmBrowserAssistController llmBrowserAssistController = new OpenVisionRecipeLlmBrowserAssistController();
+        private readonly Queue<OpenVisionRecipePendingEditDecision> pendingRecipeEditDecisionsForTest =
+            new Queue<OpenVisionRecipePendingEditDecision>();
         private VisionToolPropertyGridHost recipeStepPropertyGridHostController;
         private bool isRecipeManagerPanelDragging;
+        private bool isRestoringRecipeManagerAfterCanceledClose;
+        private bool failNextRecipeStepEditCommitForTest;
+        private bool failNextRecipeStepSaveForTest;
+        private bool failNextRecipeStepRoundTripValidationForTest;
         private Point recipeManagerPanelDragStartPoint;
         private double recipeManagerPanelDragStartX;
         private double recipeManagerPanelDragStartY;
@@ -411,7 +417,7 @@ namespace OpenVisionLab
                 layerTitle => layerActivationController?.Activate(layerTitle) == true,
                 (layerTitle, imagePath) => layerManagementController?.LoadImageIntoLayer(layerTitle, imagePath) == true,
                 SelectToolMenu,
-                () => recipeStepPropertyGridHostController?.CommitPendingEdit() ?? true,
+                CommitPendingRecipeStepEdit,
                 OpenRecipeLlmXmlReview,
                 SelectValidationSetImagePaths,
                 SelectValidationSetFolderPath,
@@ -419,7 +425,14 @@ namespace OpenVisionLab
                 ConfirmDeleteValidationSet,
                 OpenRecipePipelineReview,
                 evidence => runEvidenceViewerController.Open(evidence),
-                OpenRecipeImageListValidation);
+                OpenRecipeImageListValidation,
+                DecidePendingRecipeEdit,
+                ValidateRecipeStepRoundTrip,
+                SaveRecipeStepPipeline,
+                confirmQualifiedSnapshotLifecycle:
+                    ConfirmQualifiedSnapshotLifecycle,
+                openQualifiedSnapshotEvidence:
+                    OpenQualifiedSnapshotEvidence);
             AttachRecipeStepPropertyGridHost();
             ChromeCommands = new OpenVisionShellHostChromeCommandSurface(
                 () => IsToolRailCompact = !IsToolRailCompact,

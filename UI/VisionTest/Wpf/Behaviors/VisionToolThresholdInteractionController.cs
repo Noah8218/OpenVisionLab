@@ -229,6 +229,50 @@ namespace OpenVisionLab
             parameterChangeController.RefreshProgrammatic(RefreshModePanels);
         }
 
+        public void ApplySignalMarkerValue(string markerId, double value)
+        {
+            int normalizedValue = Math.Clamp((int)Math.Round(value), 0, 255);
+            RunSuppressed(() =>
+            {
+                if (string.Equals(
+                        markerId,
+                        OpenVisionNativeThresholdSignalEvidenceFactory.LowerMarkerId,
+                        StringComparison.Ordinal))
+                {
+                    presenter.Mode = ThresholdToolMode.Range;
+                    presenter.RangeMin = Math.Min(normalizedValue, presenter.RangeMax);
+                    rbRange.IsChecked = true;
+                    sliderRangeMin.Value = presenter.RangeMin;
+                }
+                else if (string.Equals(
+                             markerId,
+                             OpenVisionNativeThresholdSignalEvidenceFactory.UpperMarkerId,
+                             StringComparison.Ordinal))
+                {
+                    presenter.Mode = ThresholdToolMode.Range;
+                    presenter.RangeMax = Math.Max(normalizedValue, presenter.RangeMin);
+                    rbRange.IsChecked = true;
+                    sliderRangeMax.Value = presenter.RangeMax;
+                }
+                else if (string.Equals(
+                             markerId,
+                             OpenVisionNativeThresholdSignalEvidenceFactory.ThresholdMarkerId,
+                             StringComparison.Ordinal))
+                {
+                    presenter.Mode = ThresholdToolMode.Threshold;
+                    presenter.Threshold = normalizedValue;
+                    rbBasic.IsChecked = true;
+                    sliderThreshold.Value = normalizedValue;
+                }
+                else
+                {
+                    throw new InvalidOperationException("Unsupported Threshold signal marker: " + markerId);
+                }
+            });
+
+            parameterChangeController.RefreshProgrammatic(RefreshModePanels, schedulePreview: true);
+        }
+
         private void AttachControlBehaviors()
         {
             // Toggle events must handle both user clicks and test/programmatic IsChecked changes while keeping the View free of handlers.

@@ -10,6 +10,7 @@ namespace OpenVisionLab
 {
     public sealed class VisionPipelineBatchRunSummary
     {
+        public int SchemaVersion { get; set; }
         public string RecipeName { get; set; } = string.Empty;
         public string PipelineName { get; set; } = string.Empty;
         public string SuiteName { get; set; } = string.Empty;
@@ -22,6 +23,12 @@ namespace OpenVisionLab
         public int TotalCount { get; set; }
         public int PassCount { get; set; }
         public int FailCount { get; set; }
+        public int JudgmentCount { get; set; }
+        public int JudgmentCorrectCount { get; set; }
+        public int FalseAcceptCount { get; set; }
+        public int FalseRejectCount { get; set; }
+        public int ExecutionErrorCount { get; set; }
+        public int LegacyAmbiguousCount { get; set; }
         public List<VisionPipelineBatchSampleRunResult> Results { get; set; } = new List<VisionPipelineBatchSampleRunResult>();
         public string ReviewQueuePolicy { get; set; } = string.Empty;
         public string ReviewQueueSha256 { get; set; } = string.Empty;
@@ -42,6 +49,14 @@ namespace OpenVisionLab
     {
         public string SampleName { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
+        public int OutcomeSchemaVersion { get; set; }
+        public string ExecutionState { get; set; } = string.Empty;
+        public bool HasJudgment { get; set; }
+        public string ExpectedOutcome { get; set; } = string.Empty;
+        public string ActualOutcome { get; set; } = string.Empty;
+        public bool JudgmentCorrect { get; set; }
+        // Legacy aggregate pass/fail. New judgment consumers must use the explicit
+        // outcome fields above instead of inferring their meaning from Success.
         public bool Success { get; set; }
         public double TotalMilliseconds { get; set; }
         public string FailedStep { get; set; } = string.Empty;
@@ -61,12 +76,13 @@ namespace OpenVisionLab
 
     internal static class VisionPipelineBatchRunSummaryStorage
     {
-        internal const string ReviewQueuePolicyV1 =
-            "v1|all-runtime-failures|all-misclassifications|all-evidence-gaps|metric-min-max|hash-audit-3-per-stratum";
+        internal const int CurrentSchemaVersion = 2;
+        internal const string ReviewQueuePolicyV2 =
+            "v2|all-execution-errors|all-misclassifications|all-evidence-gaps|metric-min-max|hash-audit-3-per-stratum";
 
         internal sealed class BatchReviewQueue
         {
-            public string Policy { get; set; } = ReviewQueuePolicyV1;
+            public string Policy { get; set; } = ReviewQueuePolicyV2;
             public string Sha256 { get; set; } = string.Empty;
             public List<VisionPipelineBatchReviewQueueEntry> Entries { get; set; } = new List<VisionPipelineBatchReviewQueueEntry>();
         }
@@ -153,6 +169,7 @@ namespace OpenVisionLab
 
             VisionPipelineBatchRunSummary summary = new VisionPipelineBatchRunSummary
             {
+                SchemaVersion = CurrentSchemaVersion,
                 RecipeName = recipeName ?? string.Empty,
                 PipelineName = pipelineName ?? string.Empty,
                 SuiteName = string.IsNullOrWhiteSpace(suiteName) ? "Validation Suite" : suiteName.Trim(),
@@ -165,6 +182,26 @@ namespace OpenVisionLab
                 TotalCount = resultList.Count,
                 PassCount = resultList.Count(result => result.Success),
                 FailCount = resultList.Count(result => !result.Success),
+                JudgmentCount = resultList.Count(result =>
+                    VisionPipelineBatchOutcomeContract.TryResolveExpectedSuccess(result, out _)),
+                JudgmentCorrectCount = resultList.Count(result =>
+                    VisionPipelineBatchOutcomeContract.TryResolveExpectedSuccess(result, out _)
+                    && VisionPipelineBatchOutcomeContract.ResolveJudgmentCorrect(result)),
+                FalseAcceptCount = resultList.Count(result =>
+                    string.Equals(
+                        VisionPipelineBatchOutcomeContract.ResolveMisclassificationReason(result),
+                        "false-accept",
+                        StringComparison.Ordinal)),
+                FalseRejectCount = resultList.Count(result =>
+                    string.Equals(
+                        VisionPipelineBatchOutcomeContract.ResolveMisclassificationReason(result),
+                        "false-reject",
+                        StringComparison.Ordinal)),
+                ExecutionErrorCount = resultList.Count(result =>
+                    result?.OutcomeSchemaVersion > 0
+                    && !VisionPipelineBatchOutcomeContract.IsExecutionCompleted(result)),
+                LegacyAmbiguousCount = resultList.Count(result =>
+                    !VisionPipelineBatchOutcomeContract.HasExplicitOutcome(result)),
                 Results = resultList
             };
             BatchReviewQueue reviewQueue = BuildReviewQueue(resultList);
@@ -197,12 +234,20 @@ namespace OpenVisionLab
 
             foreach (ReviewEvidence evidence in evidenceByIndex.Values)
             {
-                if (!evidence.Result.Success)
+                if (evidence.Result?.OutcomeSchemaVersion > 0)
+                {
+                    if (!VisionPipelineBatchOutcomeContract.IsExecutionCompleted(evidence.Result))
+                    {
+                        AddReviewReason(reasonsByIndex, evidence.ResultIndex, "execution-error");
+                    }
+                }
+                else if (!evidence.Result.Success)
                 {
                     AddReviewReason(reasonsByIndex, evidence.ResultIndex, "runtime-failure");
                 }
 
-                string misclassification = ResolveMisclassificationReason(evidence.Result);
+                string misclassification =
+                    VisionPipelineBatchOutcomeContract.ResolveMisclassificationReason(evidence.Result);
                 if (!string.IsNullOrWhiteSpace(misclassification))
                 {
                     AddReviewReason(reasonsByIndex, evidence.ResultIndex, misclassification);
@@ -354,26 +399,6 @@ namespace OpenVisionLab
             }
 
             reasons.Add(reason);
-        }
-
-        private static string ResolveMisclassificationReason(VisionPipelineBatchSampleRunResult result)
-        {
-            if (!(result?.ExpectedText?.Trim().StartsWith("ExpectedActual:", StringComparison.OrdinalIgnoreCase) == true))
-            {
-                return string.Empty;
-            }
-
-            if (string.Equals(result.PairRole?.Trim(), "OK", StringComparison.OrdinalIgnoreCase))
-            {
-                return result.Success ? string.Empty : "false-reject";
-            }
-
-            if (string.Equals(result.PairRole?.Trim(), "NG", StringComparison.OrdinalIgnoreCase))
-            {
-                return result.Success ? "false-accept" : string.Empty;
-            }
-
-            return string.Empty;
         }
 
         private static string ResolveReviewStratum(VisionPipelineBatchSampleRunResult result)
@@ -684,7 +709,7 @@ namespace OpenVisionLab
 
         private static IEnumerable<string> CreateTsvLines(VisionPipelineBatchRunSummary summary)
         {
-            yield return "SampleName\tStatus\tSuccess\tTotalMilliseconds\tFailedStep\tMessage\tReportPath\tSampleImagePath\tPairGroup\tPairRole\tExpectedText\tMetricText\tMetricReviewText\tFinalLayer\tOverlayCount\tActionSummary\tRunReportPath\tReviewReasons";
+            yield return "SampleName\tStatus\tSuccess\tOutcomeSchemaVersion\tExecutionState\tHasJudgment\tExpectedOutcome\tActualOutcome\tJudgmentCorrect\tTotalMilliseconds\tFailedStep\tMessage\tReportPath\tSampleImagePath\tPairGroup\tPairRole\tExpectedText\tMetricText\tMetricReviewText\tFinalLayer\tOverlayCount\tActionSummary\tRunReportPath\tReviewReasons";
             Dictionary<int, VisionPipelineBatchReviewQueueEntry> queueByIndex = (summary.ReviewQueue
                     ?? new List<VisionPipelineBatchReviewQueueEntry>())
                 .Where(entry => entry != null)
@@ -699,6 +724,12 @@ namespace OpenVisionLab
                     Escape(result.SampleName),
                     Escape(result.Status),
                     result.Success,
+                    result.OutcomeSchemaVersion,
+                    Escape(result.ExecutionState),
+                    result.HasJudgment,
+                    Escape(result.ExpectedOutcome),
+                    Escape(result.ActualOutcome),
+                    result.JudgmentCorrect,
                     result.TotalMilliseconds.ToString("0.0"),
                     Escape(result.FailedStep),
                     Escape(result.Message),

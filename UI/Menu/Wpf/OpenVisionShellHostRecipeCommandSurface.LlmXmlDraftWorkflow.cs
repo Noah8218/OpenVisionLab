@@ -126,6 +126,13 @@ namespace OpenVisionLab
                 ? "LLM_Draft_" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)
                 : pipeline.Name.Trim();
             pipeline.Name = CreateUniquePipelineName(recipeName, basePipelineName);
+            if (!TryLeaveSelectedStepEdit(
+                OpenVisionRecipePendingEditTransitionKind.Pipeline,
+                pipeline.Name))
+            {
+                return;
+            }
+
             if (OpenVisionRecipeDependencyReviewService.TryCopyReferenceImageToRecipe(
                 recipeName,
                 pipeline.Name,

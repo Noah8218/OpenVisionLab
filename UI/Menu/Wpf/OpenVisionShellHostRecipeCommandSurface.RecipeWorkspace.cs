@@ -9,12 +9,26 @@ namespace OpenVisionLab
     {
         private void CreateRecipe()
         {
+            if (!TryLeaveSelectedStepEdit(
+                OpenVisionRecipePendingEditTransitionKind.Recipe,
+                LocalText("새 Recipe", "New Recipe")))
+            {
+                return;
+            }
+
             CreateAndSwitchRecipe(recipeWorkspaceUseCase.Create());
         }
 
         private void CreateNamedRecipe()
         {
             string requestedName = EditRecipeName?.Trim();
+            if (!TryLeaveSelectedStepEdit(
+                OpenVisionRecipePendingEditTransitionKind.Recipe,
+                requestedName))
+            {
+                return;
+            }
+
             CreateAndSwitchRecipe(recipeWorkspaceUseCase.Create(requestedName));
         }
 
@@ -29,6 +43,13 @@ namespace OpenVisionLab
         {
             string sourceName = NormalizeRecipeName(selectedRecipeName);
             string requestedName = NormalizeRecipeName(EditRecipeName);
+            if (!TryLeaveSelectedStepEdit(
+                OpenVisionRecipePendingEditTransitionKind.Recipe,
+                requestedName))
+            {
+                return;
+            }
+
             OpenVisionRecipeWorkspaceResult result = recipeWorkspaceUseCase.Duplicate(sourceName, requestedName);
             if (!result.Succeeded)
             {
@@ -62,6 +83,13 @@ namespace OpenVisionLab
             if (!CanRenameSelectedRecipe())
             {
                 StatusText = LocalText("이름을 변경할 수 없습니다.", "Cannot rename this recipe.");
+                return;
+            }
+
+            if (!TryLeaveSelectedStepEdit(
+                OpenVisionRecipePendingEditTransitionKind.Recipe,
+                newName))
+            {
                 return;
             }
 
@@ -103,6 +131,13 @@ namespace OpenVisionLab
             if (!confirmDeleteRecipe(deletedName))
             {
                 StatusText = LocalText("삭제가 취소되었습니다.", "Delete canceled.");
+                return;
+            }
+
+            if (!TryLeaveSelectedStepEdit(
+                OpenVisionRecipePendingEditTransitionKind.Recipe,
+                LocalText("Recipe 삭제: ", "Delete Recipe: ") + deletedName))
+            {
                 return;
             }
 

@@ -15,6 +15,10 @@ namespace OpenVisionLab
     internal sealed class VisionPipelineSampleCheckResult
     {
         public string Status { get; set; } = string.Empty;
+        public bool ExecutionCompleted { get; set; }
+        // Raw Pipeline acceptance before sample-role and expected-metric checks.
+        public bool ActualSuccess { get; set; }
+        // Legacy sample-validation result after expected-failure and metric checks.
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
         public string MetricText { get; set; } = string.Empty;
@@ -99,6 +103,8 @@ namespace OpenVisionLab
             return new VisionPipelineSampleCheckResult
             {
                 Status = "ERROR",
+                ExecutionCompleted = false,
+                ActualSuccess = false,
                 Success = false,
                 Message = message ?? string.Empty,
                 MetricText = "-",
@@ -258,6 +264,8 @@ namespace OpenVisionLab
                 return new VisionPipelineSampleCheckResult
                 {
                     Status = success ? "OK" : "NG",
+                    ExecutionCompleted = true,
+                    ActualSuccess = result.Success,
                     Success = success,
                     Message = message,
                     MetricText = metricText,

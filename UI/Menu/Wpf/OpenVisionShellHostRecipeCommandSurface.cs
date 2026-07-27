@@ -42,6 +42,9 @@ namespace OpenVisionLab
         private readonly Action openPinArrayGapValidationRuns;
         private readonly Action<VISION_MENU> selectStepTool;
         private readonly Func<bool> commitSelectedStepEdit;
+        private readonly Action<string, VisionPipeline> saveStepEditPipeline;
+        private readonly Func<string, VisionPipeline, OpenVisionRecipeRoundTripValidationResult> validateStepEditRoundTrip;
+        private readonly OpenVisionRecipePendingEditTransitionController pendingEditTransitionController;
         private readonly IReadOnlyList<string> llmToolTemplateOptions = new[]
         {
             OpenVisionGuidedSetupCatalog.PinGapTemplate,
@@ -184,6 +187,9 @@ namespace OpenVisionLab
         private readonly OpenVisionRecipePipelineExchangeUseCase pipelineExchangeUseCase = new OpenVisionRecipePipelineExchangeUseCase();
         private readonly OpenVisionRecipePipelineLifecycleUseCase pipelineLifecycleUseCase = new OpenVisionRecipePipelineLifecycleUseCase();
         private readonly OpenVisionRecipeWorkspaceUseCase recipeWorkspaceUseCase = new OpenVisionRecipeWorkspaceUseCase();
+        private readonly OpenVisionRecipeQualifiedSnapshotController qualifiedSnapshotController;
+        private readonly Func<string, string, string, bool> confirmQualifiedSnapshotLifecycle;
+        private readonly Func<string, bool> openQualifiedSnapshotEvidence;
         private bool validationSetStorageReady = true;
         private OpenVisionRecipeReviewBundleInspection loadedReviewBundleInspection;
         private bool llmXmlDraftImportReady;
@@ -219,7 +225,13 @@ namespace OpenVisionLab
             Func<string, bool> confirmDeleteValidationSet = null,
             Action openPipelineReview = null,
             Func<OpenVisionRecipeRunEvidence, bool> openSelectedBatchRunEvidence = null,
-            Action openPinArrayGapValidationRuns = null)
+            Action openPinArrayGapValidationRuns = null,
+            Func<OpenVisionRecipePendingEditRequest, OpenVisionRecipePendingEditDecision> decidePendingEdit = null,
+            Func<string, VisionPipeline, OpenVisionRecipeRoundTripValidationResult> validateStepEditRoundTrip = null,
+            Action<string, VisionPipeline> saveStepEditPipeline = null,
+            OpenVisionRecipeQualifiedSnapshotController qualifiedSnapshotController = null,
+            Func<string, string, string, bool> confirmQualifiedSnapshotLifecycle = null,
+            Func<string, bool> openQualifiedSnapshotEvidence = null)
         {
             this.currentRecipeProvider = currentRecipeProvider ?? throw new ArgumentNullException(nameof(currentRecipeProvider));
             this.switchRecipe = switchRecipe ?? throw new ArgumentNullException(nameof(switchRecipe));
@@ -240,8 +252,33 @@ namespace OpenVisionLab
             this.loadImageIntoLayer = loadImageIntoLayer ?? ((_, _) => false);
             this.openSelectedBatchRunEvidence = openSelectedBatchRunEvidence ?? (_ => false);
             this.openPinArrayGapValidationRuns = openPinArrayGapValidationRuns ?? (() => { });
+            this.qualifiedSnapshotController =
+                qualifiedSnapshotController
+                ?? new OpenVisionRecipeQualifiedSnapshotController();
+            this.confirmQualifiedSnapshotLifecycle =
+                confirmQualifiedSnapshotLifecycle ?? ((_, _, _) => false);
+            this.openQualifiedSnapshotEvidence =
+                openQualifiedSnapshotEvidence ?? (_ => false);
             this.selectStepTool = selectStepTool;
             this.commitSelectedStepEdit = commitSelectedStepEdit ?? (() => true);
+            this.saveStepEditPipeline = saveStepEditPipeline ?? VisionPipelineStorage.Save;
+            this.validateStepEditRoundTrip = validateStepEditRoundTrip
+                ?? ((recipeName, pipeline) =>
+                {
+                    bool succeeded = VisionPipelineStorage.TryValidateRoundTrip(
+                        recipeName,
+                        pipeline,
+                        out string message);
+                    return new OpenVisionRecipeRoundTripValidationResult
+                    {
+                        Succeeded = succeeded,
+                        Message = message
+                    };
+                });
+            pendingEditTransitionController = new OpenVisionRecipePendingEditTransitionController(
+                decidePendingEdit ?? (_ => OpenVisionRecipePendingEditDecision.Cancel),
+                TryApplySelectedStepParameters,
+                ClearSelectedStepEdit);
             selectedStepEditSession.PropertyChanged += OnSelectedStepEditSessionPropertyChanged;
             executionSession.PropertyChanged += OnExecutionSessionPropertyChanged;
             selectedValidationSuiteScopeOption = validationSuiteScopeOptions.FirstOrDefault();
@@ -327,8 +364,10 @@ namespace OpenVisionLab
             CopySelectedRecentBatchRunReviewCommand = new RelayCommand(CopySelectedRecentBatchRunReview, CanCopySelectedRecentBatchRunReview);
             RunRecipeGuidedNextActionCommand = new RelayCommand(RunRecipeGuidedNextAction, CanRunRecipeGuidedNextAction);
             OpenPipelineReviewCommand = new RelayCommand(this.openPipelineReview, CanUseSelectedRecipe);
+            InitializeQualifiedSnapshotCommands();
             RefreshSampleOptions();
             RefreshOptions();
+            RefreshQualifiedSnapshotOptions();
         }
 
         public IReadOnlyList<string> RecipeOptions
@@ -398,6 +437,7 @@ namespace OpenVisionLab
                     OnPropertyChanged(nameof(IsLocalValidationSetSelected));
                     OnPropertyChanged(nameof(ValidationSuiteSummaryText));
                     NotifyValidationSetEvidenceChanged();
+                    NotifyQualifiedSnapshotContextChanged();
                     RefreshCommandState();
                 }
             }
@@ -663,6 +703,7 @@ namespace OpenVisionLab
                     OnPropertyChanged(nameof(OperatorDecisionEvidenceText));
                     OnPropertyChanged(nameof(FailureReviewText));
                     OnPropertyChanged(nameof(PipelineSelectedStepOperatorContextText));
+                    NotifyQualifiedSnapshotContextChanged();
                     CommandManager.InvalidateRequerySuggested();
                 }
             }
@@ -732,6 +773,29 @@ namespace OpenVisionLab
             get => selectedPipelinePreviewStep;
             set
             {
+                if (IsSamePipelinePreviewStep(selectedPipelinePreviewStep, value))
+                {
+                    if (SetProperty(ref selectedPipelinePreviewStep, value))
+                    {
+                        RefreshSelectedPipelineStepFlow();
+                        OnPropertyChanged(nameof(OpenSelectedStepToolText));
+                        OnPropertyChanged(nameof(FailureReviewText));
+                        OnPropertyChanged(nameof(PipelineSelectedStepOperatorContextText));
+                        OnPropertyChanged(nameof(CorrectedOutputReviewText));
+                        CommandManager.InvalidateRequerySuggested();
+                    }
+
+                    return;
+                }
+
+                if (!TryLeaveSelectedStepEdit(
+                    OpenVisionRecipePendingEditTransitionKind.Step,
+                    value?.DisplayText))
+                {
+                    OnPropertyChanged(nameof(SelectedPipelinePreviewStep));
+                    return;
+                }
+
                 if (SetProperty(ref selectedPipelinePreviewStep, value))
                 {
                     ClearSelectedStepEdit();
@@ -1678,6 +1742,7 @@ namespace OpenVisionLab
             get => selectedRecipeSummary;
             private set
             {
+                OpenVisionRecipePipelineStepPreview previousStep = selectedPipelinePreviewStep;
                 if (SetProperty(ref selectedRecipeSummary, value ?? OpenVisionRecipeManagerSummary.Empty))
                 {
                     OnPropertyChanged(nameof(HasCurrentRecipeSampleExecution));
@@ -1686,7 +1751,14 @@ namespace OpenVisionLab
                     NotifyOperatorReviewChanged();
                     OnPropertyChanged(nameof(RecipeGuidedSetupText));
                     RefreshSelectedPipelineStepFlow();
-                    SelectedPipelinePreviewStep = FindPipelinePreviewStep(SelectedRecentBatchSampleResultOption?.FailedStep);
+                    OpenVisionRecipePipelineStepPreview targetStep =
+                        FindPipelinePreviewStep(SelectedRecentBatchSampleResultOption?.FailedStep)
+                        ?? selectedRecipeSummary.PipelinePreviewSteps?.FirstOrDefault(step =>
+                            previousStep != null
+                            && step.Index == previousStep.Index
+                            && string.Equals(step.Name, previousStep.Name, StringComparison.Ordinal)
+                            && string.Equals(step.ToolType, previousStep.ToolType, StringComparison.OrdinalIgnoreCase));
+                    SelectedPipelinePreviewStep = targetStep;
                 }
             }
         }

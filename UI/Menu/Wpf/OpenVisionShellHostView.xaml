@@ -853,6 +853,7 @@
                               Background="{StaticResource ShellHost.FieldBrush}"
                               Foreground="{StaticResource ShellHost.FieldTextBrush}"
                               Checked="HandleRecipeManagerOpenChecked"
+                              Unchecked="HandleRecipeManagerOpenUnchecked"
                               Tag="{Binding RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
                               ToolTip="{Binding RecipeCommands.ManagerButtonText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -5427,6 +5428,233 @@
                                                            Foreground="#EAFBFC"
                                                            FontSize="10"
                                                            TextWrapping="Wrap" />
+                                            </Grid>
+                                        </Border>
+                                        <TextBlock Text="{Binding RecipeCommands.QualifiedRecipeSnapshotText}"
+                                                   Foreground="#A8CBD1"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold" />
+                                        <Border Margin="0,4,0,10"
+                                                Padding="8,7"
+                                                AutomationProperties.AutomationId="HostRecipeQualifiedSnapshotPanel"
+                                                Background="#102A2E"
+                                                BorderBrush="#4C8790"
+                                                BorderThickness="1">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="190" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding RecipeCommands.QualificationScopeText}"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="#89E0E5"
+                                                           FontSize="10"
+                                                           FontWeight="SemiBold" />
+                                                <ComboBox Grid.Column="1"
+                                                          Height="24"
+                                                          Margin="8,0,0,0"
+                                                          AutomationProperties.AutomationId="HostRecipeQualificationScopeCombo"
+                                                          AutomationProperties.Name="{Binding RecipeCommands.QualificationScopeText}"
+                                                          DisplayMemberPath="DisplayText"
+                                                          ItemsSource="{Binding RecipeCommands.QualificationScopeOptions}"
+                                                          SelectedItem="{Binding RecipeCommands.SelectedQualificationScopeOption, Mode=TwoWay}" />
+                                                <TextBlock Grid.Column="2"
+                                                           Margin="10,0,0,0"
+                                                           Text="{Binding RecipeCommands.QualificationNoteText}"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="#89E0E5"
+                                                           FontSize="10"
+                                                           FontWeight="SemiBold" />
+                                                <Grid Grid.Column="3"
+                                                      Margin="8,0,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox Height="24"
+                                                             Padding="5,2"
+                                                             AutomationProperties.AutomationId="HostRecipeQualificationNoteTextBox"
+                                                             AutomationProperties.Name="{Binding RecipeCommands.QualificationNoteText}"
+                                                             Text="{Binding RecipeCommands.QualificationNote, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <Button Grid.Column="1"
+                                                            MinWidth="112"
+                                                            Height="24"
+                                                            Margin="6,0,0,0"
+                                                            AutomationProperties.AutomationId="HostRecipeCreateQualifiedSnapshotButton"
+                                                            Command="{Binding RecipeCommands.CreateQualifiedSnapshotCommand}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <iconPacks:PackIconMaterial Kind="ContentSave" Width="12" Height="12" Margin="0,1,4,0" />
+                                                            <TextBlock Text="{Binding RecipeCommands.CreateQualifiedSnapshotText}" FontSize="10" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                </Grid>
+                                                <TextBlock Grid.Row="1"
+                                                           Grid.ColumnSpan="4"
+                                                           Margin="0,6,0,0"
+                                                           AutomationProperties.AutomationId="HostRecipeQualifiedSnapshotScopeClaim"
+                                                           Text="{Binding RecipeCommands.QualificationScopeClaimText, Mode=OneWay}"
+                                                           Foreground="#D7FFF4"
+                                                           FontSize="10"
+                                                           TextWrapping="Wrap" />
+                                                <TextBlock Grid.Row="2"
+                                                           Grid.ColumnSpan="4"
+                                                           Margin="0,4,0,0"
+                                                           AutomationProperties.AutomationId="HostRecipeQualifiedSnapshotPreflight"
+                                                           Text="{Binding RecipeCommands.QualifiedSnapshotPreflightText, Mode=OneWay}"
+                                                           Foreground="#FFF1AF"
+                                                           FontSize="10"
+                                                           FontWeight="SemiBold"
+                                                           TextWrapping="Wrap" />
+                                                <ComboBox Grid.Row="3"
+                                                          Grid.ColumnSpan="2"
+                                                          Height="24"
+                                                          Margin="0,7,0,0"
+                                                          AutomationProperties.AutomationId="HostRecipeQualifiedSnapshotCombo"
+                                                          AutomationProperties.Name="{Binding RecipeCommands.QualifiedRecipeSnapshotText}"
+                                                          DisplayMemberPath="DisplayText"
+                                                          ItemsSource="{Binding RecipeCommands.QualifiedSnapshotOptions}"
+                                                          SelectedItem="{Binding RecipeCommands.SelectedQualifiedSnapshotOption, Mode=TwoWay}" />
+                                                <StackPanel Grid.Row="3"
+                                                            Grid.Column="2"
+                                                            Grid.ColumnSpan="2"
+                                                            Margin="8,7,0,0"
+                                                            Orientation="Horizontal">
+                                                    <Button MinWidth="88"
+                                                            Height="24"
+                                                            AutomationProperties.AutomationId="HostRecipeVerifyQualifiedSnapshotButton"
+                                                            Command="{Binding RecipeCommands.VerifyQualifiedSnapshotCommand}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <iconPacks:PackIconMaterial Kind="Check" Width="12" Height="12" Margin="0,1,4,0" />
+                                                            <TextBlock Text="{Binding RecipeCommands.VerifyQualifiedSnapshotText}" FontSize="10" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button MinWidth="92"
+                                                            Height="24"
+                                                            Margin="6,0,0,0"
+                                                            AutomationProperties.AutomationId="HostRecipeOpenQualifiedSnapshotEvidenceButton"
+                                                            Command="{Binding RecipeCommands.OpenQualifiedSnapshotEvidenceCommand}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <iconPacks:PackIconMaterial Kind="FolderOpenOutline" Width="12" Height="12" Margin="0,1,4,0" />
+                                                            <TextBlock Text="{Binding RecipeCommands.OpenQualifiedSnapshotEvidenceText}" FontSize="10" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button MinWidth="72"
+                                                            Height="24"
+                                                            Margin="6,0,0,0"
+                                                            AutomationProperties.AutomationId="HostRecipeRefreshQualifiedSnapshotsButton"
+                                                            Command="{Binding RecipeCommands.RefreshQualifiedSnapshotsCommand}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <iconPacks:PackIconMaterial Kind="Refresh" Width="12" Height="12" Margin="0,1,4,0" />
+                                                            <TextBlock Text="{Binding RecipeCommands.RefreshQualifiedSnapshotsText}" FontSize="10" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                </StackPanel>
+                                                <TextBlock Grid.Row="4"
+                                                           Grid.ColumnSpan="4"
+                                                           Margin="0,5,0,0"
+                                                           AutomationProperties.AutomationId="HostRecipeQualifiedSnapshotDetail"
+                                                           Text="{Binding RecipeCommands.SelectedQualifiedSnapshotDetailText, Mode=OneWay}"
+                                                           Foreground="#EAFBFC"
+                                                           FontSize="10"
+                                                           TextWrapping="Wrap" />
+                                                <Grid Grid.Row="5"
+                                                      Grid.ColumnSpan="4"
+                                                      Margin="0,7,0,0">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="180" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding RecipeCommands.QualifiedSnapshotWorkingCopyNameText}"
+                                                               VerticalAlignment="Center"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10" />
+                                                    <TextBox Grid.Column="1"
+                                                             Height="24"
+                                                             Margin="8,0,0,0"
+                                                             Padding="5,2"
+                                                             AutomationProperties.AutomationId="HostRecipeQualifiedSnapshotWorkingCopyNameTextBox"
+                                                             AutomationProperties.Name="{Binding RecipeCommands.QualifiedSnapshotWorkingCopyNameText}"
+                                                             Text="{Binding RecipeCommands.QualifiedSnapshotWorkingCopyName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <Button Grid.Column="2"
+                                                            MinWidth="100"
+                                                            Height="24"
+                                                            Margin="6,0,0,0"
+                                                            AutomationProperties.AutomationId="HostRecipeCreateQualifiedSnapshotWorkingCopyButton"
+                                                            Command="{Binding RecipeCommands.CreateQualifiedSnapshotWorkingCopyCommand}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <iconPacks:PackIconMaterial Kind="ContentCopy" Width="12" Height="12" Margin="0,1,4,0" />
+                                                            <TextBlock Text="{Binding RecipeCommands.CreateQualifiedSnapshotWorkingCopyText}" FontSize="10" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <TextBlock Grid.Row="1"
+                                                               Margin="0,6,0,0"
+                                                               Text="{Binding RecipeCommands.QualifiedSnapshotLifecycleReasonText}"
+                                                               VerticalAlignment="Center"
+                                                               Foreground="#A8CBD1"
+                                                               FontSize="10" />
+                                                    <TextBox Grid.Row="1"
+                                                             Grid.Column="1"
+                                                             Grid.ColumnSpan="3"
+                                                             Height="24"
+                                                             Margin="8,6,0,0"
+                                                             Padding="5,2"
+                                                             AutomationProperties.AutomationId="HostRecipeQualifiedSnapshotLifecycleReasonTextBox"
+                                                             AutomationProperties.Name="{Binding RecipeCommands.QualifiedSnapshotLifecycleReasonText}"
+                                                             Text="{Binding RecipeCommands.QualifiedSnapshotLifecycleReason, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <Button Grid.Row="1"
+                                                            Grid.Column="4"
+                                                            MinWidth="88"
+                                                            Height="24"
+                                                            Margin="6,6,0,0"
+                                                            ToolTip="Create a new immutable Snapshot, then record the selected one as superseded."
+                                                            AutomationProperties.AutomationId="HostRecipeSupersedeQualifiedSnapshotButton"
+                                                            Command="{Binding RecipeCommands.SupersedeQualifiedSnapshotCommand}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <iconPacks:PackIconMaterial Kind="SourceBranch" Width="12" Height="12" Margin="0,1,4,0" />
+                                                            <TextBlock Text="{Binding RecipeCommands.SupersedeQualifiedSnapshotText}" FontSize="10" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button Grid.Row="1"
+                                                            Grid.Column="5"
+                                                            MinWidth="82"
+                                                            Height="24"
+                                                            Margin="6,6,0,0"
+                                                            ToolTip="Append a revoke record. The immutable evidence payload remains."
+                                                            AutomationProperties.AutomationId="HostRecipeRevokeQualifiedSnapshotButton"
+                                                            Command="{Binding RecipeCommands.RevokeQualifiedSnapshotCommand}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <iconPacks:PackIconMaterial Kind="Close" Width="12" Height="12" Margin="0,1,4,0" />
+                                                            <TextBlock Text="{Binding RecipeCommands.RevokeQualifiedSnapshotText}" FontSize="10" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <TextBlock Grid.Row="2"
+                                                               Grid.ColumnSpan="6"
+                                                               Margin="0,5,0,0"
+                                                               AutomationProperties.AutomationId="HostRecipeQualifiedSnapshotStatus"
+                                                               Text="{Binding RecipeCommands.QualifiedSnapshotStatusText, Mode=OneWay}"
+                                                               Foreground="#95D6B8"
+                                                               FontSize="10"
+                                                               TextWrapping="Wrap" />
+                                                </Grid>
                                             </Grid>
                                         </Border>
                                         <TextBlock Text="{Binding RecipeCommands.RecentBatchRunComparisonText}"

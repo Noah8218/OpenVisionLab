@@ -1,6 +1,6 @@
 # OpenVisionLab Documentation Map
 
-Updated: 2026-07-26 KST
+Updated: 2026-07-27 KST
 
 This map prevents a new chat from treating large historical records or old readiness estimates as the current plan.
 
@@ -10,13 +10,15 @@ This map prevents a new chat from treating large historical records or old readi
    - Operating rules, repository boundary, product scope, stable constraints, source organization, verification rules, and priority discipline.
 2. `docs/OPENVISIONLAB_CURRENT_HANDOFF.md`
    - Current project state, completed evidence, known gaps, exact next-priority order, latest repository baseline, and restart checklist.
-3. `docs/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md`
+3. `docs/OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md`
+   - Durable `CVR-00` through `CVR-20` commercial-video candidate inventory, activation gates, ordered implementation queue, model recommendations, and exclusion register. Only the current handoff decides which row is active.
+4. `docs/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md`
    - Product identity, intended operator workflow, and responsibility split between Learn, Tool Views, Pipeline, Pipeline Review, and Recipe Manager.
-4. `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`
+5. `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`
    - Behavioral contracts that must not regress.
-5. `docs/OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md` and `docs/OPENVISIONLAB_LLM_TOOL_CATALOG.json`
+6. `docs/OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md` and `docs/OPENVISIONLAB_LLM_TOOL_CATALOG.json`
    - Read when LLM XML, prompt packets, validation, import, tool parameters, or acceptance metrics are involved.
-6. `docs/OPENVISIONLAB_PUBLIC_SAMPLE_ASSET_POLICY.md`, `docs/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md`, and `docs/OPENVISIONLAB_RELEASE_VERSION_POLICY.md`
+7. `docs/OPENVISIONLAB_PUBLIC_SAMPLE_ASSET_POLICY.md`, `docs/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md`, and `docs/OPENVISIONLAB_RELEASE_VERSION_POLICY.md`
    - Read when samples, DLLs, external references, release artifacts, or repository publication are involved.
 
 After this reading, run `git status --short` and `git log --oneline -5` in Dev before choosing work. If the user asks for a product/maturity/commercial comparison, also read the historical assessment documents listed below, but do not treat their old percentages as current truth.
@@ -38,7 +40,17 @@ If documents conflict, do not smooth over the conflict. Follow the higher-ranked
 
 | Document | Use it for | Freshness note |
 | --- | --- | --- |
-| `OPENVISIONLAB_CURRENT_HANDOFF.md` | First continuation brief. | P236 current-state ledger plus the 2026-07-26 structural-refactoring closure; no proactive structure priority is active. |
+| `OPENVISIONLAB_CURRENT_HANDOFF.md` | First continuation brief. | Includes completed Recipe change-safety, explicit validation outcomes, Qualified Recipe Snapshot, and completed `CVR-01`/`CVR-02`; `CVR-00` independent novice evidence is the active prerequisite. |
+| `OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md` | Full priority-ordered development inventory derived from all 16 reviewed Cognex/HALCON/MERLIC videos. | Canonical `CVR-00` through `CVR-20` queue with activation triggers, detailed minimum contracts, current model/reasoning recommendations, source-video traceability, excluded scope, and durable `CVR-01`/`CVR-02` completion evidence. It preserves candidates across chats but does not auto-activate later rows. |
+| `OPENVISIONLAB_TOOL_SIGNAL_INSPECTOR_FOUNDATION_20260727.md` | `CVR-01` shared evidence/plot/export implementation, representative Histogram integration, verification, UI comparison, and limits. | Current completion authority for the common Tool Signal Inspector foundation; it does not complete `CVR-02` through `CVR-06`. |
+| `OPENVISIONLAB_THRESHOLD_HISTOGRAM_TEACHING_20260727.md` | `CVR-02` Threshold Basic/Range marker teaching integration, full-image provenance, Good/Bad replay, UI evidence, verification, and limits. | Current completion authority for the bounded Threshold signal integration; it does not claim ROI histograms, Adaptive global cutoffs, automatic threshold choice, or `CVR-03` and later rows. |
+| `OPENVISIONLAB_FIRST_TIME_OPERATOR_JOURNEY_AUDIT_20260727.md` | Current-source Sample -> Learn/teach -> Recipe -> Run Review -> Validation Set -> Qualified Snapshot audit and independent participant protocol. | Five current-source WPF smokes passed and no operator blocker was reproduced; an actual independent novice study remains the external evidence prerequisite. |
+| `OPENVISIONLAB_RECIPE_CHANGE_SAFETY_AUDIT_20260727.md` | Baseline Recipe Manager dirty-edit, transition, persistence, recovery, and workspace-side-effect audit. | Preserves the before-state silent-loss reproduction and points to the completed fix. |
+| `OPENVISIONLAB_RECIPE_CHANGE_SAFETY_IMPLEMENTATION_20260727.md` | Central Apply/Discard/Cancel contract, rollback behavior, 4-by-3 transition matrix, verification, and evidence boundary. | Current implementation authority for Recipe selected-Step pending-edit transition safety. |
+| `OPENVISIONLAB_QUALIFIED_RECIPE_SNAPSHOT_AUDIT_20260727.md` | Qualified Recipe capability/gap matrix, validation-result semantics, immutable identity/storage/lifecycle contract, commercial comparison, implementation order, and acceptance gates. | Current design authority; its initial Local-handler causal statement is corrected in-place, and the explicit validation-outcome prerequisite is now complete. |
+| `OPENVISIONLAB_VALIDATION_OUTCOME_CONTRACT_IMPLEMENTATION_20260727.md` | Explicit execution/expected/actual/judgment schema, legacy fallback, review-queue v2, four-outcome matrix, focused UI evidence, and corrected audit reasoning. | Current implementation authority for qualification-ready Validation Set result semantics. |
+| `OPENVISIONLAB_QUALIFIED_RECIPE_SNAPSHOT_CORE_IMPLEMENTATION_20260727.md` | Snapshot preflight, immutable manifest/inventory, atomic archive, full verifier, runtime fingerprint, idempotency, terminal lifecycle, focused smoke, and implementation boundary. | Current implementation authority for the non-WPF qualification storage core; use the UI implementation report for the completed Recipe Manager workflow. |
+| `OPENVISIONLAB_QUALIFIED_RECIPE_SNAPSHOT_UI_IMPLEMENTATION_20260727.md` | Run History qualification panel, exact adapter gates, working-copy behavior, lifecycle confirmation, accessibility, side-effect proof, and fresh UI evidence. | Current product-workflow authority for local Qualified Recipe Snapshot operation; it does not claim production or field qualification. |
 | `OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md` | Canonical closure for the 2026-07-24..26 documentation, folder, MVVM, and responsibility-ownership refactoring campaign. | Current structural status is `Complete`; reopen only for a concrete maintenance change, verified regression, independently testable responsibility, or second real consumer. |
 | `OPENVISIONLAB_RULE_BASED_UI_GAP_AUDIT_20260723.md` | Static algorithm/UI inventory, official commercial comparison, selected UI/tool gaps, and repeated-validation stop rule. | Current priority rationale; no image or LLM validation evidence is claimed. |
 | `OPENVISIONLAB_AFFINE_TRANSFORM_V1_CONTRACT.md` | Library-Noah ownership, three-point pixel Affine parameters, fail-closed gates, metrics/drawings, PropertyGrid/XML/Learn behavior, and completion limits. | P218 completed on 2026-07-23 with known-matrix synthetic runtime, DLL provenance, UI, and regression evidence. |
@@ -78,20 +90,21 @@ If documents conflict, do not smooth over the conflict. Follow the higher-ranked
 After every bounded work slice:
 
 1. Update `OPENVISIONLAB_CURRENT_HANDOFF.md` with the changed responsibility, completed/blocked state, command evidence, UI artifact path if applicable, and re-ranked next priority.
-2. Append detailed chronology, raw command context, and artifact-specific notes to `OPENVISIONLAB_NEXT_SESSION_HANDOFF.md` only when that detail will help a future investigation.
-3. Read `OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md` before
+2. When a `CVR-*` trigger, order, status, contract, completion, or exclusion changes, update `OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md`; do not let a chat-local priority list replace the canonical queue.
+3. Append detailed chronology, raw command context, and artifact-specific notes to `OPENVISIONLAB_NEXT_SESSION_HANDOFF.md` only when that detail will help a future investigation.
+4. Read `OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md` before
    reopening structural work. Update the specific proof/current handoff for a
    new bounded boundary; update
    `OPENVISIONLAB_SOURCE_OWNERSHIP_REFACTOR_PROOF_20260717.md` only for
    physical moves, new ownership boundaries, or source-check changes.
-4. Update the LLM guide/catalog only when the validated XML contract changes. Do not change it merely because one model response was weak.
-5. Update policy documents only for actual policy decisions. Do not mix policy edits with unrelated UI work.
+5. Update the LLM guide/catalog only when the validated XML contract changes. Do not change it merely because one model response was weak.
+6. Update policy documents only for actual policy decisions. Do not mix policy edits with unrelated UI work.
 
 For UI changes, the current handoff entry must name a freshly generated before/after artifact directory and state whether it is EXE evidence or a current-source view capture. For non-UI code, name the smallest relevant build/smoke/check command and outcome.
 
 ## Minimal Restart Prompt
 
 ```text
-Work in C:\Git\OpenVisionLab_Dev. Read AGENTS.md, docs/OPENVISIONLAB_CURRENT_HANDOFF.md, docs/OPENVISIONLAB_DOCUMENTATION_MAP.md, docs/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md, and docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md. Run git status -sb and git log --oneline -5 in both repositories when publication/synchronization is in scope. State the product identity, current evidence-based maturity, immediate priority, remaining priority, commercial lessons to emulate, and out-of-scope platform areas before changing anything. Treat P236's current-state ledger as the compact truth and the chronological handoff only as detailed evidence. Preserve PropertyGrid tools and explicit Preview/Run/no-auto-route contracts. Do not invent an implementation priority when the current handoff says none.
+Work in C:\Git\OpenVisionLab_Dev. Read AGENTS.md, docs/OPENVISIONLAB_CURRENT_HANDOFF.md, docs/OPENVISIONLAB_DOCUMENTATION_MAP.md, docs/OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md, docs/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md, and docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md. Run git status -sb and git log --oneline -5 in both repositories when publication/synchronization is in scope. State the product identity, current evidence-based maturity, immediate priority, remaining priority, commercial lessons to emulate, and out-of-scope platform areas before changing anything. Treat the current handoff as the active-priority truth and the `CVR-00` through `CVR-20` document as the durable commercial-video candidate queue; do not auto-activate later rows. Preserve PropertyGrid tools and explicit Preview/Run/no-auto-route contracts. Do not invent an implementation priority when the current handoff says none.
 For structural work, also read docs/admin/OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md and reopen only when its evidence prerequisite is satisfied.
 ```

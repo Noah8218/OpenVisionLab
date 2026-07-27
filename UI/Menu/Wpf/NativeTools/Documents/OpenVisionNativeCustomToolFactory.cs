@@ -59,23 +59,19 @@ namespace OpenVisionLab
         public static OpenVisionNativeToolDocument CreateThreshold(IDisplayManager displayManager)
         {
             ThresholdToolPresenter presenter = new ThresholdToolPresenter(VisionToolCompositionService.CreateThresholdToolViewModel());
-            return CreateSinglePropertyToolDocument<ThresholdToolWpfView, ThresholdToolPresenter, ThresholdToolProperty>(
+            return OpenVisionNativeCustomToolDocumentBuilder.Create(
                 displayManager,
-                "Threshold",
-                "Threshold_Preview",
-                presenter,
-                viewPresenter => new ThresholdToolWpfView(viewPresenter),
-                property =>
-                {
-                    ThresholdTool tool = new ThresholdTool();
-                    tool.SetProperty(property);
-                    return tool;
-                },
-                (property, inputLayer, outputLayer) => VisionPipelineStepBuilder.FromThresholdProperty(
-                    property,
+                new OpenVisionNativeCustomToolDescriptor<ThresholdToolWpfView, ThresholdToolPresenter, ThresholdToolProperty>(
                     "Threshold",
-                    inputLayer,
-                    outputLayer));
+                    "Threshold_Preview",
+                    presenter,
+                    viewPresenter => new ThresholdToolWpfView(viewPresenter),
+                    OpenVisionNativeThresholdPreviewExecutor.Execute,
+                    (view, inputLayer, outputLayer) => VisionPipelineStepBuilder.FromThresholdProperty(
+                        view.CreateProperty(),
+                        "Threshold",
+                        inputLayer,
+                        outputLayer)));
         }
 
         public static OpenVisionNativeToolDocument CreateMorphology(IDisplayManager displayManager)

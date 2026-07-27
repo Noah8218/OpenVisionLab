@@ -23,7 +23,10 @@ namespace OpenVisionLab
             this.presenter = presenter ?? throw new ArgumentNullException(nameof(presenter));
             InitializeComponent();
             previewScheduler = new VisionToolDebouncedPreviewScheduler(this, RequestRunPreview);
-            parameterChangeController = new VisionToolParameterChangeController(() => suppressEvents, UpdateSummary, schedulePreview: previewScheduler.Schedule);
+            parameterChangeController = new VisionToolParameterChangeController(
+                () => suppressEvents,
+                RefreshSummaryAndClearSignalEvidence,
+                schedulePreview: previewScheduler.Schedule);
             thresholdInteractionController = new VisionToolThresholdInteractionController(
                 presenter,
                 parameterChangeController,
@@ -53,6 +56,7 @@ namespace OpenVisionLab
                 panelBasic,
                 panelRange,
                 panelAdaptive);
+            signalInspector.MarkerValueChangeRequested += SignalInspector_MarkerValueChangeRequested;
             learnWindowController = new ThresholdToolLearnWindowController(
                 presenter,
                 thresholdInteractionController,
@@ -88,7 +92,7 @@ namespace OpenVisionLab
                 "VisionMenu.Threshold",
                 parameterContentHost,
                 refreshViewState: UpdateSummary,
-                clearResultReview: null,
+                clearResultReview: ClearSignalEvidence,
                 applyToolLocalization: ApplyLocalization);
             ToolController.BindSummary(new Binding("Summary"));
 
@@ -100,6 +104,7 @@ namespace OpenVisionLab
         protected override void DisposeToolResources()
         {
             learnWindowController.Dispose();
+            signalInspector.MarkerValueChangeRequested -= SignalInspector_MarkerValueChangeRequested;
             thresholdInteractionController.Detach();
             previewScheduler.Dispose();
         }
@@ -108,6 +113,15 @@ namespace OpenVisionLab
         {
             ToolController.ApplyLocalization();
             textPresenter.ApplyLocalization();
+            signalInspector.ApplyLocalization();
+            btnCloseSignalInspector.Content =
+                OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean
+                    ? "매개변수로 돌아가기"
+                    : "Back to parameters";
+            btnOpenSignalInspector.Content =
+                OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean
+                    ? "분포 다시 보기"
+                    : "Review distribution";
         }
 
         public ThresholdToolProperty CreateProperty()
@@ -126,9 +140,87 @@ namespace OpenVisionLab
             learnWindowController.Open();
         }
 
+        internal bool SignalInspectorHasEvidenceForTest => signalInspector.HasEvidence;
+
+        internal string SignalInspectorEvidenceIdForTest => signalInspector.EvidenceId;
+
+        internal string SignalInspectorSourceSha256ForTest => signalInspector.SourceSha256;
+
+        internal int SignalInspectorSeriesCountForTest => signalInspector.SeriesCount;
+
+        internal int SignalInspectorMarkerCountForTest => signalInspector.MarkerCount;
+
+        internal bool IsSignalInspectorOverlayVisibleForTest =>
+            signalInspectorOverlay.Visibility == Visibility.Visible;
+
+        internal double GetSignalInspectorMarkerValueForTest(string markerId)
+        {
+            return signalInspector.GetMarkerValue(markerId);
+        }
+
+        internal void CommitSignalInspectorMarkerForTest(string markerId, double value)
+        {
+            signalInspector.CommitMarkerForTest(markerId, value);
+        }
+
+        internal void ExportSignalEvidenceForTest(string path)
+        {
+            signalInspector.ExportForTest(path);
+        }
+
+        internal void ShowSignalEvidence(VisionToolSignalEvidence evidence)
+        {
+            signalInspector.ShowEvidence(evidence);
+            btnOpenSignalInspector.Visibility = Visibility.Visible;
+            signalInspectorOverlay.Visibility = Visibility.Visible;
+        }
+
+        internal void ClearSignalEvidence()
+        {
+            signalInspector.ClearEvidence();
+            btnOpenSignalInspector.Visibility = Visibility.Collapsed;
+            signalInspectorOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        internal void CloseSignalInspectorForTest()
+        {
+            signalInspectorOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        internal void OpenSignalInspectorForTest()
+        {
+            if (signalInspector.HasEvidence)
+            {
+                signalInspectorOverlay.Visibility = Visibility.Visible;
+            }
+        }
+
         private void OpenThresholdGuide_Click(object sender, RoutedEventArgs e)
         {
             learnWindowController.Open();
+        }
+
+        private void CloseSignalInspector_Click(object sender, RoutedEventArgs e)
+        {
+            signalInspectorOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void OpenSignalInspector_Click(object sender, RoutedEventArgs e)
+        {
+            OpenSignalInspectorForTest();
+        }
+
+        private void SignalInspector_MarkerValueChangeRequested(
+            object sender,
+            VisionToolSignalMarkerValueChangedEventArgs e)
+        {
+            thresholdInteractionController.ApplySignalMarkerValue(e.MarkerId, e.Value);
+        }
+
+        private void RefreshSummaryAndClearSignalEvidence()
+        {
+            UpdateSummary();
+            ClearSignalEvidence();
         }
 
         private void UpdateSummary()

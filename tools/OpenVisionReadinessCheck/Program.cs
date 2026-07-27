@@ -617,6 +617,7 @@ internal static class Program
             "OpenVisionShellHostRecipeCommandSurface.LlmXmlDraftWorkflow.cs",
             "OpenVisionShellHostRecipeCommandSurface.PipelineExchange.cs",
             "OpenVisionShellHostRecipeCommandSurface.PipelineLifecycle.cs",
+            "OpenVisionShellHostRecipeCommandSurface.QualifiedSnapshots.cs",
             "OpenVisionShellHostRecipeCommandSurface.RecipeWorkspace.cs",
             "OpenVisionShellHostRecipeCommandSurface.RunHistory.cs",
             "OpenVisionShellHostRecipeCommandSurface.ValidationSets.cs",

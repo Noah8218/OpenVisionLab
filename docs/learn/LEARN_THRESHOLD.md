@@ -48,6 +48,25 @@ Threshold가 분리한 밝은 pad 4개가 후속 count에서 정상 영역으로
 - Preview 결과에서 binary mask와 후속 `ResultCount`가 함께 안정되는지 확인합니다.
 After changing Threshold parameters, run Preview and compare object/background separation on the result layer.
 
+## Current Threshold signal teaching surface
+
+- Run the existing explicit Preview first. A successful Basic or Range Preview
+  opens a grayscale-population review overlay for the current input.
+- Basic shows one `T` marker. Range shows `Lower` and `Upper` markers.
+- Dragging a marker is temporary until release. Release updates the existing
+  Threshold teaching value and uses the existing debounced Preview; it does not
+  create a different threshold algorithm or acceptance rule.
+- Use `Back to parameters` to return to the editor and `Review distribution` to
+  reopen the retained current-Preview evidence. These actions, plot
+  navigation/reset, and TSV export do not run Preview/Run.
+- The current Threshold Tool has no ROI teaching contract, so the chart is
+  explicitly labelled `Full image`.
+- Adaptive Threshold uses local cutoffs and therefore intentionally has no
+  single global cutoff chart or editable global marker.
+- The public Good/Bad practice pair keeps the same frozen Basic value
+  `T=130` (`Binary`, `Max=255`): Good returns `ResultCount=4`; the expected-NG
+  missing-pad reference returns `ResultCount=1`.
+
 ## Beginner path handoff
 
 - Previous topic: Mean / Brightness. Confirm the object and background GV ranges before choosing a threshold value.

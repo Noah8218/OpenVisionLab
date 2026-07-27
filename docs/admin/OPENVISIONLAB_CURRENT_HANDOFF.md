@@ -1,6 +1,6 @@
 ﻿# OpenVisionLab Current Project Handoff
 
-Updated: 2026-07-24 KST
+Updated: 2026-07-27 KST
 
 This is the current continuation brief for a new OpenVisionLab chat. Read it after `AGENTS.md` and before choosing implementation work. It is a status and priority document; it does not override stable behavioral contracts in `AGENTS.md` or `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`.
 
@@ -14,6 +14,7 @@ git status --short
 git log --oneline -5
 
 Get-Content docs\OPENVISIONLAB_CURRENT_HANDOFF.md -Raw
+Get-Content docs\OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md -Raw
 Get-Content docs\OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md -Raw
 Get-Content docs\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md -Raw
 ```
@@ -61,6 +62,160 @@ treat the hashes below as a substitute for current Git state.
 
 - OpenVisionShellHostRecipeCommandSurface additionally received a second refactor slice: StepNavigation methods were extracted to OpenVisionShellHostRecipeCommandSurface.StepNavigation.cs (preview step matching/selection, run-evidence resolve, run/sampling helpers, unique name helpers, and command-state refresh).
 - Verification: dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU" passed (0 warnings, 0 errors).
+
+## Incremental Work Update (2026-07-27)
+
+- The Recipe change-safety audit first reproduced silent selected-Step edit
+  loss on Step/Pipeline/Recipe switch and Recipe Manager close/reopen.
+- The bounded fix is now complete. All four transitions use one explicit
+  `Apply and continue / Discard changes / Cancel` contract. Apply commits the
+  visible PropertyGrid editor, saves and round-trip validates XML before
+  transition. Failed commit or save keeps the dirty editor and blocks the
+  transition; failed post-save round-trip restores the previous XML and blocks
+  transition.
+- The permanent current-source integration smoke passed the complete 4-by-3
+  transition/choice matrix plus failed-commit, failed-save, and
+  failed-round-trip paths.
+  Preview/Run count, layers, active layer, and routes remained unchanged.
+- Debug solution and screenshot-runner builds passed with zero
+  warnings/errors; seven focused/related UI targets and the full readiness
+  contract passed.
+- Evidence:
+  `docs\reports\OPENVISIONLAB_RECIPE_CHANGE_SAFETY_IMPLEMENTATION_20260727.md`
+  and `artifacts\recipe_change_safety_20260727\final`.
+- The `Qualified Recipe Snapshot` contract/design audit is complete. Existing
+  hash-locked Validation Sets, per-image Pipeline/source/drawing evidence, and
+  deterministic batch review queues are reusable, but there is no general
+  immutable record binding one exact Pipeline, runtime, Validation Set, and
+  complete batch evidence.
+- Deeper implementation tracing corrected one initial audit statement:
+  `VisionPipelineSampleCheckService.Success` was already expected-outcome
+  normalized, and the Local handler inversion recovered the raw Pipeline
+  result. The Local persisted result was not proven wrong by that line alone.
+  The real gap was that the same Boolean name changed meaning across layers and
+  execution errors had no distinct state.
+- The prerequisite outcome-contract slice is now complete. Batch summary schema
+  v2 and row outcome schema v1 persist `ExecutionState`, `ExpectedOutcome`,
+  `ActualOutcome`, `HasJudgment`, and `JudgmentCorrect`; legacy `Success`
+  remains the aggregate validation result. Run History and review queue use
+  explicit fields, keep legacy read fallback, and separate `execution-error`
+  from false accept/reject.
+- The current Local Validation Set evidence retained four rows as 3 correct
+  judgments plus one false accept, with zero false rejects, execution errors,
+  or legacy ambiguous rows. The expected-NG row persisted
+  `ExpectedOutcome=NG`, `ActualOutcome=OK`, and `JudgmentCorrect=false`.
+- Debug solution and screenshot-runner builds, two focused current-source UI
+  smokes, and the full readiness contract passed. Evidence:
+  `docs\reports\OPENVISIONLAB_VALIDATION_OUTCOME_CONTRACT_IMPLEMENTATION_20260727.md`
+  and `artifacts\qualified_recipe_outcome_contract_20260727\final`.
+- The approved v1 design uses a self-contained, hash-inventoried
+  `QUALIFIED_RECIPE\<SnapshotId>` archive outside mutable Recipe workspaces,
+  explicit `InspectionJudgment` versus `LocatorStability` scope, append-only
+  supersede/revoke events, and an explicit working-copy action. It does not
+  claim production or field qualification.
+- Contract:
+  `docs\reports\OPENVISIONLAB_QUALIFIED_RECIPE_SNAPSHOT_AUDIT_20260727.md`.
+- The Qualified Recipe Snapshot non-WPF core is now complete under
+  `Core\Recipe\Qualification`. It validates exact Pipeline/Validation
+  Set/batch/report/source/drawing/review-queue/runtime identities, writes a
+  self-contained `.creating-*` payload, verifies it, atomically renames it to a
+  SHA-256 Snapshot ID, and reuses the same verified ID for the same immutable
+  identity.
+- The verifier separates payload integrity from current-runtime fingerprint
+  match while failing the combined qualification check closed. Create-once
+  terminal lifecycle records support reasoned `Superseded` and `Revoked`
+  states outside the hashed payload.
+- The focused core smoke passed atomic creation, same-ID reuse, two exact
+  outcome rows, dependency/report/source/drawing copy, payload tamper
+  rejection/restoration, interrupted temporary exclusion, source Recipe
+  deletion survival, successor relation, revoke, and duplicate-terminal-event
+  rejection. Evidence:
+  `docs\reports\OPENVISIONLAB_QUALIFIED_RECIPE_SNAPSHOT_CORE_IMPLEMENTATION_20260727.md`
+  and `artifacts\qualified_recipe_snapshot_core_20260727\final`.
+- The bounded Recipe Manager Run History qualification panel and adapter are
+  now complete. One selected completed `LocalValidationSet` run, matching
+  Validation Set/Pipeline, explicit scope, and operator note feed the exact
+  core preflight. Pending Step edits fail closed.
+- The panel lists/verifies Snapshots, opens evidence, creates an editable
+  working Recipe without inherited qualification, creates a verified successor
+  before appending `Superseded`, and appends confirmed reasoned `Revoked`
+  records without changing the payload.
+- The current-build UI smoke passed create/verify/evidence/working-copy,
+  cancelled supersede, actual supersede, revoke, accessibility, and unchanged
+  Preview/Run count, layers, workspace layer, and input/output routes.
+  Evidence:
+  `docs\reports\OPENVISIONLAB_QUALIFIED_RECIPE_SNAPSHOT_UI_IMPLEMENTATION_20260727.md`
+  and `artifacts\qualified_recipe_snapshot_ui_20260727`.
+- The bounded first-time operator journey audit is complete without a product
+  source change. A fresh Debug build passed with zero warnings/errors, and five
+  current-source WPF smokes passed Sample Catalog, Recipe Summary, Pipeline
+  Review metrics/object evidence, local Validation Set, and Qualified Snapshot
+  views with zero layout/text/internal failures.
+- Visual/source review reproduced no crash, inaccessible primary action, data
+  loss, unintended execution, route/layer mutation, or broken evidence
+  transition. The dense Validation/Qualification surface remains an intentional
+  Advanced Review workflow rather than a novice entry screen.
+- The remaining evidence prerequisite is an independent first-time participant,
+  not another speculative UI feature. The reusable core/advanced task,
+  facilitator rules, observation sheet, and implementation trigger are in
+  `docs\reports\OPENVISIONLAB_FIRST_TIME_OPERATOR_JOURNEY_AUDIT_20260727.md`;
+  current captures are under
+  `artifacts\first_time_operator_journey_audit_20260727\current`.
+- Next priority: no proactive feature implementation is selected. Reassess
+  only a reproduced current-source operator blocker or verified regression.
+  Prerequisite: collect independent first-time participant observations with
+  the recorded protocol. Recommended model: none until evidence exists |
+  Reasoning effort: none until evidence exists.
+- The user requested that every development candidate derived from the 16
+  Cognex/HALCON/MERLIC videos remain available across future chats. The full
+  ordered queue is now canonical in
+  `docs\OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md`.
+  It preserves `CVR-00` through `CVR-20`, exact activation triggers, acceptance
+  boundaries, model/reasoning recommendations, source-video traceability, and
+  an explicit exclusion register.
+- This queue does not make all rows active. `CVR-00` independent first-time
+  operator evidence remains the only active prerequisite. After evidence or an
+  explicit user selection, use the earliest triggered incomplete row; do not
+  lose, silently reorder, or speculatively implement later rows in a new chat.
+- The user explicitly selected `CVR-01`, and the Shared Tool Signal Inspector
+  foundation is now complete. The shared evidence model records tool, input,
+  region, parameters, source/result SHA-256, axes, and series; its read-only WPF
+  plot supports X zoom/pan, cursor values, reset, legend, and TSV export.
+  Histogram is the representative integration and shows `Source`/`Result`
+  256-bin grayscale populations only for a successful current Preview.
+- Parameter/input changes clear stale signal evidence before the existing
+  debounced Preview replaces it. Focused smoke proves reset, navigation, and
+  export do not change Preview count, layers, active layer, or routes.
+  Fresh current-source before/after evidence and commands are in
+  `artifacts\cvr01_tool_signal_inspector_20260727`; implementation report:
+  `docs\reports\OPENVISIONLAB_TOOL_SIGNAL_INSPECTOR_FOUNDATION_20260727.md`.
+- `CVR-02` through `CVR-06` remain conditional tool-specific integrations and
+  are not implied by the common foundation.
+- Autosave, crash recovery, Recipe history, new algorithms, LLM expansion, and
+  equipment integration remain out of this completed slice.
+- The user then explicitly continued with `CVR-02`. The bounded Threshold
+  gray-histogram teaching slice is now complete for Basic and Range modes.
+  Successful Preview retains a full-image 256-bin grayscale population with
+  source/result SHA-256. Basic shows one `T` marker; Range shows `Lower` and
+  `Upper`. Marker release updates only the existing teaching model and reuses
+  the existing debounced Preview after synchronously clearing stale evidence.
+- The signal view uses a full parameter-panel overlay with an explicit back
+  action so docked Threshold controls remain usable. Opening/closing the
+  overlay, navigation, reset, and TSV export do not run or change layers,
+  active layer, or routes. Adaptive remains unchanged and intentionally has no
+  misleading global cutoff chart.
+- The Good distribution marker was taught from `T=127` to the unchanged public
+  BandPads Pipeline value, then the same Basic `T=130`, Binary, Max 255
+  Pipeline replayed: Good returned `ResultCount=4`; the expected-NG
+  missing-pad reference returned `ResultCount=1`. Before-teach and frozen
+  Good/Bad TSVs retain the exact source and result hashes. Evidence:
+  `docs\reports\OPENVISIONLAB_THRESHOLD_HISTOGRAM_TEACHING_20260727.md` and
+  `artifacts\cvr02_threshold_histogram_teaching_20260727`.
+- `CVR-00` independent novice observations remain the only active prerequisite.
+  `CVR-03` is the earliest conditional implementation candidate and must not
+  start without its exact current-source Line blocker or an explicit user
+  decision.
+
 ## Product Identity
 
 OpenVisionLab is an OpenCvSharp4 rule-based vision recipe workbench. Direct deterministic teaching and repeatable validation are the product core; the existing LLM XML assistant is optional and frozen in maintenance mode by P196.
@@ -85,12 +240,13 @@ truth; a completed engineering slice does not imply field qualification.
 
 | Track | Current state | Durable result | Remaining boundary |
 | --- | --- | --- | --- |
-| Workbench, Learn, Tool Views, Pipeline, Pipeline Review, Recipe Manager, public samples | Complete for the intended local learning/verification scope. | PropertyGrid teaching, explicit Preview/Run, layers/routes, drawings, result review, saved recipes, validation sets, run history, public samples, and clean-runtime evidence are connected. | No independent novice study, installer/support lifecycle, or production-equipment qualification. |
+| Workbench, Learn, Tool Views, Pipeline, Pipeline Review, Recipe Manager, public samples | Broadly connected; Recipe pending-edit safety, explicit validation outcomes, and the full local Qualified Recipe Snapshot workflow are closed. | PropertyGrid teaching, explicit Preview/Run, layers/routes, drawings, result review, saved recipes, validation sets, run history, public samples, clean-runtime evidence, centralized Apply/Discard/Cancel safety, explicit execution/expected/actual/judgment batch evidence, content-addressed qualified archives, working copies, and append-only lifecycle review are connected at their owning layers. | No independent novice study, installer/support lifecycle, remote audit/approval system, or production-equipment qualification. |
 | LLM XML authoring and inspection-intent skills | Preserved; planned expansion frozen by P196. | Guide/catalog, strict validation/import, prompt/evidence packages, Pin Phase 1/2, and hybrid relative-ROI Phase 1 remain compatible. | Natural Pin Phase 3 failure/correction and broad GPT/Gemini/Claude reliability are incomplete and intentionally not active backlog. |
 | Deterministic fixture, measurement, object review, and calibration UI (P197-P217) | Completed bounded product slices. | Relative-ROI workflow, LineDistance drawing/persistence, CenterPitch, Object Results, Fixture Review, GeometryMeasure/CircleGauge, two-point scale, and Blob/Contour dimension filters have focused runtime/UI evidence. | Pixel/synthetic or selected-corpus evidence is not certified metrology, unseen robustness, or industrial truth. Missing-pin candidates P205/P207/P209 were correctly rejected rather than tuned indefinitely. |
 | Three-point affine and detected-point fixture (P218-P221) | Core and product wiring complete; one strict pilot remains incomplete. | Library-Noah Affine, PropertyGrid/Pipeline/XML/Learn, typed Point x3 binding, and a 12/12 coarse fixed-ROI linkage exist. | P220 remains 10/12 at its frozen `<=3 px` residual gate; the separate accepted `<=5 px` coarse ROI does not retroactively pass it. No homography, lens calibration, or field proof. |
 | Auto MPoint and unique edge matching (P222-P231) | Training UI/reporting complete; qualification is intentionally selective. | Deterministic candidate ranking, explicit apply, ambiguity states, representative-image evaluation, HTML export, and one frozen Die Pad 1 full-stratum qualification exist. | The card `R` anchor was rejected; other corpus strata are not qualified. Score alone cannot prove durable physical-feature identity or authorize automatic template selection. |
 | Shared Tool View N-image verification and Recipe promotion (P232-P235) | Complete for sequential quick verification and locator handoff. | Thirteen eligible single-input Tool Views share frozen-Step N-image execution/reporting; P234 proves one real 24-image folder path; P235 promotes an exact hash-locked locator expected-success set into Recipe Manager. | Execution is sequential, sample roles are not inferred, promoted `Expected OK` is locator success rather than defect truth, and no field robustness is claimed. |
+| Commercial-video signal evidence (`CVR-01` and `CVR-02`) | Shared foundation and bounded Threshold Basic/Range integration are complete. | Current Preview provenance, Histogram source/result distributions, Threshold full-image population with editable `T` or `Lower`/`Upper` markers, read-only navigation/export, and frozen public Good/Bad replay are retained without layer/route side effects. | Line profiles, Circle residuals, object distributions, and matcher diagnostics remain conditional; Adaptive has no global chart; no ROI histogram, automatic parameter/gate selection, or field qualification exists. |
 | Release/runtime evidence | Complete for the approved bounded contract. | Timestamped clean Dev runtimes and `dist\OpenVisionLab` Release output avoid stale `bin\Debug` evidence. | This is not an installer, deployment platform, equipment runtime, or production support contract. |
 
 ### Explicitly Incomplete, Rejected, Deferred, Or Out Of Scope
@@ -238,7 +394,23 @@ Read the full stable-contract document before touching these areas. At minimum p
 
 ## Latest Verification Baseline
 
-The latest code baseline was verified after the P105 current-EXE novice workflow audit and its bounded Blob Learn layout correction.
+The current source baseline was most recently rebuilt and visually rechecked by
+the 2026-07-27 first-time operator journey audit. The P105 actual-EXE evidence
+below remains a historical end-to-end reference, not the latest UI image.
+
+Results recorded on 2026-07-27:
+
+- Dev Debug solution build: PASS, 0 warnings, 0 errors.
+- Current-source WPF captures: Sample Catalog, Recipe Manager Summary, Pipeline
+  Review metrics/object evidence, local Validation Set, and Qualified Recipe
+  Snapshot all PASS with `check=OK`, `layout=0`, `text=0`, and `internal=0`.
+- Qualified Snapshot current-source evidence retained payload/runtime
+  verification, non-qualified working-copy behavior, cancelled-supersede
+  stability, and unchanged Preview/Run count, layers, workspace layer, and
+  routes.
+- Evidence:
+  `docs\reports\OPENVISIONLAB_FIRST_TIME_OPERATOR_JOURNEY_AUDIT_20260727.md`
+  and `artifacts\first_time_operator_journey_audit_20260727\current`.
 
 ```powershell
 dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
@@ -247,7 +419,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestExternalReferences
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestPublicSampleAssets.ps1
 ```
 
-Results recorded on 2026-07-17:
+Earlier results recorded on 2026-07-17:
 
 - Dev final code build: 0 warnings, 0 errors.
 - Latest Debug EXE path: `C:\Git\OpenVisionLab_Dev\bin\Debug\OpenVisionLab.exe`.
@@ -1884,11 +2056,14 @@ refactoring is closed until concrete evidence reopens one bounded owner.
   and select none unless a dedicated current round-trip regression can prove
   the boundary. Recommended model: gpt-5.6-terra | Reasoning effort: medium.
 
-1. **No active implementation priority after P235.**
-   - The explicitly requested exact locator-session promotion passed without a product blocker. Wait for a concrete operator workflow blocker or verified current-build regression. Until then, do not spend model tokens or start another semantic image campaign. Recommended model: none until evidence exists | Reasoning effort: none until evidence exists.
+1. **Collect `CVR-00` independent first-time operator evidence.**
+   - Use the existing protocol with at least three independent novice participants. Do not simulate observations or spend model tokens before raw observations exist. Prerequisite: participants and recorded observations | Recommended model: none before observations; gpt-5.6-terra for synthesis afterward | Reasoning effort: none before observations; low afterward.
 
-2. **Audit isolated-worker equivalence only after a measured bottleneck and explicit request.**
-   - Prove per-image Pipeline/tool/template/Mat isolation and identical sequential versus `1/2/4` worker status, metrics, drawings, hashes, order, cancellation, and partial reports. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+2. **Keep `CVR-03` as the earliest conditional implementation candidate.**
+   - CVR-02 is complete. Start CVR-03 only when a named Line/LineDistance task cannot justify polarity, contrast, or the selected edge from current drawings, or the user explicitly selects it. Prerequisite: exact current-source Line blocker or explicit user selection | Recommended model: gpt-5.6-sol | Reasoning effort: high.
+
+3. **Audit isolated-worker equivalence only after a measured bottleneck and explicit request.**
+   - Prove per-image Pipeline/tool/template/Mat isolation and identical sequential versus `1/2/4` worker status, metrics, drawings, hashes, order, cancellation, and partial reports. Prerequisite: measured sequential bottleneck and explicit request | Recommended model: gpt-5.6-sol | Reasoning effort: high.
 
 Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM validation are not active priorities and require a new explicit user request.
 
@@ -2290,6 +2465,15 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
 - Stable non-regression contract: `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`
 - Source ownership proof for P95-P104: `docs/OPENVISIONLAB_SOURCE_OWNERSHIP_REFACTOR_PROOF_20260717.md`
 - Structural refactoring closure and reopen rules: `docs/admin/OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md`
+- Recipe pending-edit before-state audit and completed implementation:
+  `docs/reports/OPENVISIONLAB_RECIPE_CHANGE_SAFETY_AUDIT_20260727.md`,
+  `docs/reports/OPENVISIONLAB_RECIPE_CHANGE_SAFETY_IMPLEMENTATION_20260727.md`
+- Qualified Recipe Snapshot capability/gap audit and v1 contract:
+  `docs/reports/OPENVISIONLAB_QUALIFIED_RECIPE_SNAPSHOT_AUDIT_20260727.md`
+- Threshold gray-histogram teaching completion:
+  `docs/reports/OPENVISIONLAB_THRESHOLD_HISTOGRAM_TEACHING_20260727.md`
+- Explicit validation outcome contract implementation:
+  `docs/reports/OPENVISIONLAB_VALIDATION_OUTCOME_CONTRACT_IMPLEMENTATION_20260727.md`
 - Full chronological engineering evidence: `docs/OPENVISIONLAB_NEXT_SESSION_HANDOFF.md`
 - Existing handoff prompt/template: `docs/OPENVISIONLAB_NEXT_CHAT_HANDOFF_PROMPT_20260706.md`
 - LLM XML contract and tool catalog: `docs/OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md`, `docs/OPENVISIONLAB_LLM_TOOL_CATALOG.json`

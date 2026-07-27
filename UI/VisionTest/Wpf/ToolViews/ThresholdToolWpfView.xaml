@@ -52,6 +52,15 @@
             </Grid.RowDefinitions>
             <Grid Grid.Row="0"
                   AutomationProperties.AutomationId="ThresholdToolLearnEntry">
+                <Button x:Name="btnOpenSignalInspector"
+                        HorizontalAlignment="Left"
+                        MinWidth="132"
+                        Height="30"
+                        Padding="10,0"
+                        Click="OpenSignalInspector_Click"
+                        Content="Review distribution"
+                        Visibility="Collapsed"
+                        AutomationProperties.AutomationId="ThresholdSignalInspectorOpenButton" />
                 <Button HorizontalAlignment="Right"
                         MinWidth="120"
                         Height="30"
@@ -426,6 +435,31 @@
                                     </Grid>
                                 </ScrollViewer>
                             </GroupBox>
+
+            <Grid x:Name="signalInspectorOverlay"
+                  Grid.Row="0"
+                  Grid.RowSpan="5"
+                  Panel.ZIndex="10"
+                  Background="#EEF2F6"
+                  Visibility="Collapsed"
+                  AutomationProperties.AutomationId="ThresholdSignalInspectorOverlay">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="6" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Button x:Name="btnCloseSignalInspector"
+                        MinWidth="116"
+                        Height="30"
+                        Padding="10,0"
+                        HorizontalAlignment="Left"
+                        Click="CloseSignalInspector_Click"
+                        Content="Back to parameters"
+                        AutomationProperties.AutomationId="ThresholdSignalInspectorBackButton" />
+                <local:VisionToolSignalInspectorView x:Name="signalInspector"
+                                                     Grid.Row="2"
+                                                     VerticalAlignment="Top" />
+            </Grid>
         </Grid>
     </Grid>
 </local:VisionToolSingleInputCustomToolViewBase>

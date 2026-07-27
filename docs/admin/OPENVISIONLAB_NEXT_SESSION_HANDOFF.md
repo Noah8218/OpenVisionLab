@@ -4218,3 +4218,33 @@ git log --oneline -5
   Git patch/commit, not a bulk directory copy.
 - Status: documentation complete after structure/link/diff verification.
   External push remains dependent on successful GitHub authentication.
+
+## 2026-07-27 Qualified Recipe Snapshot Product Workflow Closure
+
+- Completed the bounded Recipe Manager `Pipeline Review > History` panel and
+  adapter on top of the existing immutable qualification core.
+- Creation requires one selected saved complete `LocalValidationSet` run,
+  matching selected set/Pipeline identity, explicit qualification scope,
+  operator note, and no pending selected-Step edit. The exact core preflight
+  then revalidates Pipeline, images, dependencies, batch rows, reports,
+  retained sources/drawings, review queue, and runtime fingerprints.
+- Manual unlocked Validation Sets are frozen into the Snapshot request using
+  current ordered hashes without mutating the source set. Existing hash-locked
+  sets retain their exact Pipeline-identity gate.
+- The UI now supports list, verify, evidence-folder open, editable working
+  Recipe creation without inherited qualification, confirmed supersede, and
+  confirmed revoke. Supersede creates the verified successor first; terminal
+  lifecycle records do not mutate the payload.
+- The current-build smoke passed pending-edit rejection, create/reload/verify,
+  evidence open, working copy, cancelled supersede with no change, actual
+  supersede, revoke, accessibility, and unchanged Preview/Run, layers,
+  workspace layer, and routes.
+- Evidence:
+  `artifacts\qualified_recipe_snapshot_ui_20260727` and
+  `docs\reports\OPENVISIONLAB_QUALIFIED_RECIPE_SNAPSHOT_UI_IMPLEMENTATION_20260727.md`.
+- Status: Complete for the local v1 workflow. This does not prove production
+  fitness, field robustness, certified metrology, electronic approval, remote
+  audit storage, deployment, camera/lighting, PLC, or I/O integration.
+- Next priority: none until a concrete current-source operator blocker or
+  verified regression is reproduced. Recommended model: none until evidence
+  exists | Reasoning effort: none until evidence exists.

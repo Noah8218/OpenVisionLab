@@ -22,7 +22,10 @@
         <ScrollViewer x:Name="parameterContentHost"
                       Visibility="Collapsed"
                       VerticalScrollBarVisibility="Auto">
-            <StackPanel x:Name="parameterPanel" Margin="0,0,10,0" />
+            <StackPanel x:Name="parameterPanel" Margin="0,0,10,0">
+                <local:VisionToolSignalInspectorView x:Name="signalInspector"
+                                                     Margin="0,0,0,8" />
+            </StackPanel>
         </ScrollViewer>
     </Grid>
 </local:VisionToolSingleInputCustomToolViewBase>

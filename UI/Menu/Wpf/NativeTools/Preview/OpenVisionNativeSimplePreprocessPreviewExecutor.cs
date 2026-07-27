@@ -116,6 +116,7 @@ namespace OpenVisionLab
 
         public static VisionToolResult ExecuteHistogramPreview(Mat source, SimplePreprocessToolWpfView view)
         {
+            view.ClearSignalEvidence();
             Mat result = source.Clone();
             HistogramPreviewType histogramType = view.Parameters.GetEnum("HistogramType", HistogramPreviewType.clahe);
             switch (histogramType)
@@ -139,11 +140,18 @@ namespace OpenVisionLab
                     break;
             }
 
+            string criteria = CreateHistogramCriteria(view, histogramType);
             view.ShowResultReview(SimplePreprocessResultExplanation.CreateHistogram(
                 source,
                 result,
                 histogramType,
-                CreateHistogramCriteria(view, histogramType)));
+                criteria));
+            view.ShowSignalEvidence(OpenVisionNativeHistogramSignalEvidenceFactory.Create(
+                source,
+                result,
+                "Histogram/" + histogramType,
+                view.SelectedInputLayer,
+                criteria));
             return VisionToolResult.Passed(result, TimeSpan.Zero);
         }
 

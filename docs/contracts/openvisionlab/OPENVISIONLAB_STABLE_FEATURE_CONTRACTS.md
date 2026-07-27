@@ -1,6 +1,6 @@
 # OpenVisionLab Stable Feature Contracts
 
-Last updated: 2026-07-23
+Last updated: 2026-07-27
 
 This document protects restored and verified behavior. Future LLM or developer work must read this before changing WPF shell, tool view, layer routing, viewer, or PropertyGrid code.
 
@@ -95,6 +95,7 @@ Stable behavior:
 - Matching-family template status, criteria summaries, FeatureMatching Ratio/RANSAC guide text, and Line purpose/setting labels are display-only learning aids. They may be localized or reformatted for readability, but they must not change the selected property object, route input/output layers, Preview/Run execution, Add Pipeline metadata, or internal compatibility identifiers such as `Line A`, `Line B`, `Edge`, `Measure`, and `Intersection`.
 - Result-review summary/chip labels may be localized for beginner readability, but the underlying result metrics, pipeline metadata, property model values, and Preview/Add Pipeline semantics must remain unchanged.
 - SimplePreprocess Mean/HSV/Histogram may show beginner-facing result explanations in the shared result-review area. Mean can explain average/range/count, HSV can explain selected mask pixel ratio, and Histogram can explain input/output mean/contrast changes. This is display-only preview interpretation; it must not change preprocessing output pixels, Preview/Run scheduling, Add Pipeline availability, layer routing, output layer creation, or any downstream pass/fail metric semantics.
+- The shared Tool Signal Inspector is retained current-Preview evidence and does not execute a tool by itself. Histogram publishes read-only source/result 256-bin grayscale population series with tool/input/region/parameter identity and source/result SHA-256. Threshold Basic may publish one editable `T` marker and Threshold Range may publish editable `Lower`/`Upper` markers; marker release edits only the existing Threshold teaching model, clears stale evidence synchronously, and schedules the existing debounced Preview. Threshold Adaptive must not present a misleading single global cutoff marker or chart. Until Threshold gains an explicit ROI contract, its signal region is exactly `Full image`. Plot selection, cursor inspection, X zoom/pan, reset, overlay open/back, and TSV export must not run Preview/Run, create/select a layer, change the active layer, or mutate input/output routes. A later tool integration must use the shared evidence/plot/export contract and prove its own drawing/coordinate identity; it must not copy a one-off chart implementation.
 - PropertyGrid-heavy tools must open with enough initial space for comfortable parameter review. Line/Blob/Contour/Matching-style tool windows use the large hosted size, and the common parameter group keeps a minimum grid height.
 - Saved floating tool-window bounds must not reopen PropertyGrid-heavy tools below their usable editor size. Preserving an operator's previous placement is allowed only after the large-tool minimum width/height needed for readable PropertyGrid editing is respected.
 - Docked single-input PropertyGrid tools must keep a usable editor viewport for long parameter lists. Line and Contour style tools may use the PropertyGrid's internal scroll, but the visible editor area must not collapse and Add Pipeline / Run Preview must remain inside the docked inspector viewport.
@@ -129,7 +130,15 @@ Relevant smoke:
 - Direct EXE: `bin\x64\Debug\OpenVisionLab.exe --smoke line-pins-measure --output .\.codex\smoke-output\actual-exe-line-pins-measure`
 - `wpf_shell_host_line_intersection_tool`
 - `wpf_preprocess_output_preview_flow`
-  - Covers SimplePreprocess output routing, parameter-triggered preview behavior, and Mean/HSV/Histogram result-review explanations.
+  - Covers SimplePreprocess output routing, parameter-triggered preview behavior, Mean/HSV/Histogram result-review explanations, Histogram signal-evidence replacement, plot navigation, provenance-preserving TSV export, and no reset/export layer/route/run side effects.
+- `wpf_simple_preprocess_result_review`
+  - Covers the current-build Histogram Signal Inspector presentation, source/result series and SHA-256 provenance, stale-evidence blocking, and read-only plot/export behavior.
+- `wpf_shell_host_threshold_basic_tool`
+  - Covers Basic `T` marker presentation, release-to-existing-model synchronization, stale-evidence clear/replacement through the existing debounced Preview, full-image provenance, overlay navigation, TSV export, and unchanged layers/active layer/routes.
+- `wpf_shell_host_threshold_tool`
+  - Covers Range `Lower`/`Upper` marker synchronization, `Lower <= Upper`, Adaptive no-global-chart behavior, and preservation of the docked Threshold parameter controls.
+- `wpf_threshold_signal_good_bad_replay`
+  - Covers the unchanged public `T=130` Binary Pipeline identity, current Good `ResultCount=4`, expected-NG Bad `ResultCount=1`, full-image signal provenance, and separate 256-bin TSV evidence for both source images.
 - `wpf_shell_host_matching_tool`
   - Covers Matching `FIND_ANGLE_MAX` RangeEditor endpoint adjustment and transient clear/retype behavior for angle TextBoxes.
 - `wpf_shell_host_matching_presets`
@@ -924,6 +933,9 @@ Stable behavior:
 - Registration, selection, deletion, and missing-file review do not run Preview/Run, create/delete/load layers, open a Tool View, or change workspace/input/output routing. Deleting a set removes metadata only, never the source images.
 - Missing images remain visible and disable the explicit suite command. They must not be silently skipped.
 - The explicit Local set suite reuses the current selected pipeline, `VisionPipelineSampleCheckService`, batch result rows, run-history storage, NG filtering, failed-step actions, and baseline comparison surfaces. Expected `NG` means the pipeline is expected to reject/fail that image.
+- New Local set rows persist outcome schema v1 with execution state, expected `OK`/`NG`, raw Pipeline actual `OK`/`NG`, and judgment correctness as separate fields. The legacy `Success` field remains aggregate validation pass/fail and must not be reinterpreted as the authoritative actual outcome for explicit rows.
+- A completed correct reject is actual `NG` with `JudgmentCorrect=true`; it is not an execution error. An execution error publishes no actual outcome and must not be classified as a false accept or false reject.
+- Legacy rows without the explicit outcome schema remain readable through their saved `ExpectedActual:` role/text fallback, but must remain distinguishable from explicit rows and are not equivalent qualification evidence.
 - An unreadable or unsupported validation-set XML is preserved and blocks mutation; the UI must not overwrite it with an empty document.
 
 Relevant smoke:
@@ -947,7 +959,7 @@ Stable behavior:
 - Missing paths/files, unreadable reports, identity mismatch, or Step-definition mismatch must show an unavailable reason. Do not mix partial reports into apparently complete Step statistics.
 - Enabled Step rows are ordered by descending p95 and expose timing coverage plus average, nearest-rank p95, and maximum. Non-positive, NaN, and infinite Step timings are excluded and remain visible through reduced coverage.
 - New saved batch summaries persist their deterministic review-queue policy, canonical SHA-256, selected result indices, and per-row reasons. Selection is derived once at save time so reopening Run History cannot silently change the reviewed population.
-- The v1 generic queue contains every runtime failure, every false accept/false reject when expected roles exist, every missing or unreadable source/report/drawing evidence row, minimum and maximum rows for each varying finite Step metric, and three content-hash-ordered audit rows per declared role stratum (or `ALL`). An invariant metric must not generate fake minimum/maximum rows.
+- The v2 generic queue contains every explicit execution error, every false accept/false reject when expected roles exist, every missing or unreadable source/report/drawing evidence row, minimum and maximum rows for each varying finite Step metric, and three content-hash-ordered audit rows per declared role stratum (or `ALL`). An invariant metric must not generate fake minimum/maximum rows. Legacy rows retain the previous runtime-failure fallback.
 - Older saved summaries without this data must display the queue as unavailable and require a new explicit suite run. They must not recompute a different historical queue or claim equivalent evidence.
 - `검토 큐만` is a read-only filter, mutually exclusive with the existing NG/misclassification filter. Selecting a queued row and opening its retained drawing must reuse the current sample-result viewer and must not trigger Preview/Run, create layers, or change routing.
 
@@ -1059,6 +1071,57 @@ Relevant smoke:
 - `--tool-n-image-real-folder-acceptance` in `VisionRecipeRunnerSmoke`, with
   the frozen P230 dataset/template/baseline arguments recorded in
   `artifacts\p234_tool_n_image_real_folder_acceptance_20260724`
+
+## Qualified Recipe Snapshot Core And Run History UI
+
+Stable behavior:
+
+- A qualified object is a content-addressed archive under
+  `QUALIFIED_RECIPE\<SnapshotId>`, never the mutable Recipe folder itself.
+- Qualification requires one completed schema-v2 `LocalValidationSet` batch
+  whose ordered rows, explicit outcomes, source hashes, per-row Pipeline/source
+  snapshots, drawings, review queue, and frozen Validation Set identity all
+  match.
+- `InspectionJudgment` requires both expected OK and NG evidence.
+  `LocatorStability` accepts expected-OK locator evidence only. Neither scope
+  may be shortened to production or field qualification.
+- Creation writes and fully verifies a `.creating-*` sibling before atomic
+  rename. A temporary or interrupted directory must never appear in the
+  qualified list.
+- The same immutable identity is idempotent and reuses the same verified
+  Snapshot ID. Creation UTC alone must not produce a duplicate.
+- `inventory.sha256` covers all copied payload files. The manifest binds its
+  hash, and the canonical manifest identity binds the payload to the Snapshot
+  directory name.
+- Verification distinguishes intact payload from current-runtime fingerprint
+  match, but the combined qualification verification fails closed for either
+  mismatch and reports the exact reason.
+- Product APIs never edit or delete a qualified payload. Supersede/revoke are
+  create-once external lifecycle event files with a required reason; supersede
+  also requires a different verified successor.
+- Recipe rename/delete cannot remove or invalidate the self-contained archive.
+- This core contract has no Preview/Run, layer, active-layer, or route mutation.
+  The Run History UI adapter preserves those invariants.
+- The panel consumes one selected completed `LocalValidationSet` history item.
+  A pending selected-Step edit, mismatched set/Pipeline, incomplete evidence,
+  missing operator note, or exact preflight error disables or blocks creation.
+- An unlocked manual set is frozen into the Snapshot request using its current
+  ordered file hashes and selected Pipeline definition; this does not mutate or
+  relabel the source set. An already hash-locked set must match its locked
+  Pipeline identity.
+- `Open evidence` is read-only. `Working copy` creates a new Recipe, restores
+  the Pipeline and archived dependencies, and never inherits qualification,
+  lifecycle, Run History, or Validation Set status.
+- Supersede/revoke require a non-empty reason and explicit confirmation.
+  Cancellation changes nothing.
+
+Relevant smoke:
+
+- `tools\QualifiedRecipeSnapshotSmoke`
+- `wpf_shell_host_recipe_qualified_snapshot`
+- retained evidence:
+  `artifacts\qualified_recipe_snapshot_core_20260727\final` and
+  `artifacts\qualified_recipe_snapshot_ui_20260727`
 
 ## Before Touching Stable Paths
 

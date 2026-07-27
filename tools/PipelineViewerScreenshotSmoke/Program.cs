@@ -90,6 +90,7 @@ internal static class Program
         ["wpf_shell_host_workspace_sample_pair_picker"] = CaptureShellHostWorkspaceSamplePairPicker,
         ["wpf_shell_host_workspace_sample_fixture_picker"] = CaptureShellHostWorkspaceSampleFixturePicker,
         ["wpf_shell_host_workspace_sample_pair_coverage"] = CaptureShellHostWorkspaceSamplePairCoverage,
+        ["wpf_threshold_signal_good_bad_replay"] = CaptureThresholdSignalGoodBadReplay,
         ["wpf_shell_host_workspace_sample_bad_reference_audit"] = CaptureShellHostWorkspaceSampleBadReferenceAudit,
         ["wpf_shell_host_workspace_sample_open"] = CaptureShellHostWorkspaceSampleOpen,
         ["wpf_shell_host_workspace_sample_pipeline_review_metrics"] = CaptureShellHostWorkspaceSamplePipelineReviewMetrics,
@@ -112,6 +113,8 @@ internal static class Program
         ["p219_affine_point_binding_property_grid"] = CaptureP219AffinePointBindingPropertyGrid,
         ["p214_two_point_scale"] = CaptureP214TwoPointScale,
         ["wpf_shell_host_recipe_context_switch"] = CaptureShellHostRecipeContextSwitch,
+        ["wpf_shell_host_recipe_change_safety"] = CaptureShellHostRecipeChangeSafety,
+        ["wpf_recipe_pending_edit_dialog"] = CaptureRecipePendingEditDialog,
         ["wpf_shell_host_llm_dependency_placeholder"] = CaptureShellHostLlmDependencyPlaceholder,
         ["wpf_shell_host_outer_corner_llm_review"] = CaptureShellHostOuterCornerLlmReview,
         ["wpf_shell_host_recipe_output_route_isolation"] = CaptureShellHostRecipeOutputRouteIsolation,
@@ -122,6 +125,8 @@ internal static class Program
             CaptureShellHostRecipeLocalValidationSet(outputPath, captureReviewQueue: false),
         ["wpf_shell_host_recipe_run_history_review_queue"] = outputPath =>
             CaptureShellHostRecipeLocalValidationSet(outputPath, captureReviewQueue: true),
+        ["wpf_shell_host_recipe_qualified_snapshot"] =
+            CaptureShellHostRecipeQualifiedSnapshot,
         ["wpf_shell_host_recipe_local_validation_dataset"] = outputPath =>
             CaptureShellHostRecipeLocalValidationDataset(outputPath, openDrawingEvidence: false),
         ["wpf_shell_host_recipe_local_validation_dataset_review_queue"] = outputPath =>
@@ -355,6 +360,7 @@ internal static class Program
             {
                 Console.WriteLine($"{target}=NG|check=NG|layout=0|text=0|internal=0|size=0x0|{outputPath}");
                 Console.Error.WriteLine($"{target}: {ex.GetBaseException().Message}");
+                File.WriteAllText(outputPath + ".error.txt", ex.ToString());
                 exitCode = 1;
             }
         }
@@ -5822,16 +5828,48 @@ internal static class Program
                     ? null
                     : VisionPipelineBatchRunSummaryStorage.Load(savedRun.SummaryPath);
                 if (savedSummary == null
+                    || savedSummary.SchemaVersion != VisionPipelineBatchRunSummaryStorage.CurrentSchemaVersion
                     || !string.Equals(savedSummary.SuiteName, "Fixture OK-NG", StringComparison.Ordinal)
                     || !string.Equals(savedSummary.SuiteKind, "LocalValidationSet", StringComparison.Ordinal)
                     || savedSummary.Results.Count != 4
-                    || savedSummary.Results.Count(result => result.Success) != 4
-                    || savedSummary.Results.Count(result => !result.Success) != 0
+                    || savedSummary.PassCount != 3
+                    || savedSummary.FailCount != 1
+                    || savedSummary.JudgmentCount != 4
+                    || savedSummary.JudgmentCorrectCount != 3
+                    || savedSummary.FalseAcceptCount != 1
+                    || savedSummary.FalseRejectCount != 0
+                    || savedSummary.ExecutionErrorCount != 0
+                    || savedSummary.LegacyAmbiguousCount != 0
+                    || savedSummary.Results.Count(result => result.Success) != 3
+                    || savedSummary.Results.Count(result => !result.Success) != 1
+                    || savedSummary.Results.Any(result =>
+                        result.OutcomeSchemaVersion != VisionPipelineBatchOutcomeContract.CurrentVersion
+                        || !string.Equals(
+                            result.ExecutionState,
+                            VisionPipelineBatchOutcomeContract.CompletedState,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            result.ActualOutcome,
+                            VisionPipelineBatchOutcomeContract.OkOutcome,
+                            StringComparison.Ordinal))
+                    || savedSummary.Results.Count(result => result.HasJudgment && result.JudgmentCorrect) != 3
+                    || savedSummary.Results.Count(result =>
+                        result.HasJudgment
+                        && !result.JudgmentCorrect
+                        && string.Equals(
+                            result.ExpectedOutcome,
+                            VisionPipelineBatchOutcomeContract.NgOutcome,
+                            StringComparison.Ordinal)
+                        && string.Equals(
+                            result.ActualOutcome,
+                            VisionPipelineBatchOutcomeContract.OkOutcome,
+                            StringComparison.Ordinal)) != 1
                     || !savedSummary.Results.Any(result => result.ExpectedText.Contains("Expected NG", StringComparison.OrdinalIgnoreCase))
                     || savedRun?.JudgmentCorrectCount != 3
                     || savedRun.MisclassificationCount != 1
                     || savedRun.FalseAcceptCount != 1
                     || savedRun.FalseRejectCount != 0
+                    || savedRun.ExecutionErrorCount != 0
                     || !savedRun.AnalyticsText.Contains("25.0%", StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException(
@@ -5844,10 +5882,12 @@ internal static class Program
                     VisionPipelineBatchRunSummaryStorage.BuildReviewQueue(savedSummary.Results);
                 VisionPipelineBatchReviewQueueEntry? falseAcceptReview = savedSummary.ReviewQueue
                     .FirstOrDefault(entry => entry?.Reasons?.Contains("false-accept", StringComparer.Ordinal) == true);
-                if (!string.Equals(savedSummary.ReviewQueuePolicy, VisionPipelineBatchRunSummaryStorage.ReviewQueuePolicyV1, StringComparison.Ordinal)
+                if (!string.Equals(savedSummary.ReviewQueuePolicy, VisionPipelineBatchRunSummaryStorage.ReviewQueuePolicyV2, StringComparison.Ordinal)
                     || savedSummary.ReviewQueueSha256.Length != 64
                     || savedSummary.ReviewQueue.Count != 4
                     || falseAcceptReview == null
+                    || falseAcceptReview.Reasons.Contains("runtime-failure", StringComparer.Ordinal)
+                    || falseAcceptReview.Reasons.Contains("execution-error", StringComparer.Ordinal)
                     || !string.Equals(savedSummary.ReviewQueueSha256, rebuiltReviewQueue.Sha256, StringComparison.Ordinal)
                     || rebuiltReviewQueue.Entries.Count != savedSummary.ReviewQueue.Count)
                 {
@@ -5860,10 +5900,10 @@ internal static class Program
 
                 VisionPipelineBatchSampleRunResult[] judgmentCases =
                 {
-                    new VisionPipelineBatchSampleRunResult { PairRole = "OK", ExpectedText = "ExpectedActual: Expected OK", Success = true, SampleName = "correct-accept" },
-                    new VisionPipelineBatchSampleRunResult { PairRole = "OK", ExpectedText = "ExpectedActual: Expected OK", Success = false, SampleName = "false-reject" },
-                    new VisionPipelineBatchSampleRunResult { PairRole = "NG", ExpectedText = "ExpectedActual: Expected NG", Success = true, SampleName = "false-accept" },
-                    new VisionPipelineBatchSampleRunResult { PairRole = "NG", ExpectedText = "ExpectedActual: Expected NG", Success = false, SampleName = "correct-reject" }
+                    CreateExplicitJudgmentProbe("correct-accept", expectedSuccess: true, actualSuccess: true),
+                    CreateExplicitJudgmentProbe("false-reject", expectedSuccess: true, actualSuccess: false),
+                    CreateExplicitJudgmentProbe("false-accept", expectedSuccess: false, actualSuccess: true),
+                    CreateExplicitJudgmentProbe("correct-reject", expectedSuccess: false, actualSuccess: false)
                 };
                 OpenVisionRecipeBatchSampleResultOption[] judgmentOptions = judgmentCases
                     .Select(result => OpenVisionRecipeBatchSampleResultOption.Create(result))
@@ -5874,10 +5914,94 @@ internal static class Program
                     || !judgmentOptions[1].IsFalseReject
                     || !judgmentOptions[2].IsFalseAccept
                     || !judgmentOptions[3].JudgmentCorrect
+                    || !judgmentOptions[0].Success
+                    || judgmentOptions[1].Success
+                    || !judgmentOptions[2].Success
+                    || judgmentOptions[3].Success
                     || judgmentOptions[3].IsFalseAccept
                     || judgmentOptions[3].IsFalseReject)
                 {
                     throw new InvalidOperationException("Expected/actual judgment classification did not cover all four outcomes.");
+                }
+
+                VisionPipelineBatchSampleRunResult legacyCorrectReject =
+                    new VisionPipelineBatchSampleRunResult
+                    {
+                        SampleName = "legacy-correct-reject",
+                        PairRole = "NG",
+                        ExpectedText = "ExpectedActual: Expected NG",
+                        Success = false
+                    };
+                OpenVisionRecipeBatchSampleResultOption legacyOption =
+                    OpenVisionRecipeBatchSampleResultOption.Create(legacyCorrectReject);
+                if (!legacyOption.ExecutionCompleted
+                    || !legacyOption.HasExpectedOutcome
+                    || !legacyOption.JudgmentCorrect
+                    || legacyOption.Success
+                    || legacyOption.IsFalseAccept
+                    || legacyOption.IsFalseReject)
+                {
+                    throw new InvalidOperationException(
+                        "Legacy expected/actual rows did not retain their read-only fallback interpretation.");
+                }
+
+                VisionPipelineBatchSampleRunResult unsupportedOutcome =
+                    CreateExplicitJudgmentProbe("unsupported-outcome", expectedSuccess: true, actualSuccess: true);
+                unsupportedOutcome.OutcomeSchemaVersion =
+                    VisionPipelineBatchOutcomeContract.CurrentVersion + 1;
+                OpenVisionRecipeBatchSampleResultOption unsupportedOption =
+                    OpenVisionRecipeBatchSampleResultOption.Create(unsupportedOutcome);
+                if (unsupportedOption.ExecutionCompleted
+                    || unsupportedOption.HasExpectedOutcome
+                    || VisionPipelineBatchOutcomeContract.TryResolveActualSuccess(
+                        unsupportedOutcome,
+                        out _))
+                {
+                    throw new InvalidOperationException(
+                        "Unsupported outcome schema did not fail closed.");
+                }
+
+                VisionPipelineBatchSampleRunResult executionError =
+                    CreateExplicitJudgmentProbe("execution-error", expectedSuccess: true, actualSuccess: false);
+                VisionPipelineBatchOutcomeContract.Apply(
+                    executionError,
+                    executionCompleted: false,
+                    actualSuccess: false,
+                    hasJudgment: true,
+                    expectedSuccess: true,
+                    judgmentCorrect: false);
+                VisionPipelineBatchRunSummaryStorage.BatchReviewQueue executionErrorQueue =
+                    VisionPipelineBatchRunSummaryStorage.BuildReviewQueue(new[] { executionError });
+                VisionPipelineBatchReviewQueueEntry executionErrorEntry =
+                    executionErrorQueue.Entries.Single(entry => entry.ResultIndex == 0);
+                OpenVisionRecipeBatchSampleResultOption executionErrorOption =
+                    OpenVisionRecipeBatchSampleResultOption.Create(
+                        executionError,
+                        executionErrorEntry.Reasons);
+                if (executionErrorOption.ExecutionCompleted
+                    || executionErrorOption.JudgmentCorrect
+                    || executionErrorOption.IsFalseAccept
+                    || executionErrorOption.IsFalseReject
+                    || !executionErrorEntry.Reasons.Contains("execution-error", StringComparer.Ordinal)
+                    || executionErrorEntry.Reasons.Contains("false-reject", StringComparer.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Execution error was not kept separate from expected/actual misclassification.");
+                }
+
+                string outcomeSummaryTsvPath = Path.Combine(
+                    Path.GetDirectoryName(savedRun.SummaryPath) ?? string.Empty,
+                    "summary.tsv");
+                string summaryTsvHeader = File.Exists(outcomeSummaryTsvPath)
+                    ? File.ReadLines(outcomeSummaryTsvPath).FirstOrDefault() ?? string.Empty
+                    : string.Empty;
+                if (!summaryTsvHeader.Contains("ExecutionState", StringComparison.Ordinal)
+                    || !summaryTsvHeader.Contains("ExpectedOutcome", StringComparison.Ordinal)
+                    || !summaryTsvHeader.Contains("ActualOutcome", StringComparison.Ordinal)
+                    || !summaryTsvHeader.Contains("JudgmentCorrect", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Saved summary.tsv did not expose the explicit outcome contract.");
                 }
 
                 VisionPipelineBatchRunSummaryStorage.BatchRunStatistics savedStatistics =
@@ -5885,8 +6009,8 @@ internal static class Program
                 string analyticsText = shellHost.RecipeCommands.RecentBatchRunComparisonSummaryText ?? string.Empty;
                 if (savedStatistics.ResultCount != 4
                     || savedStatistics.TimingCount != 4
-                    || savedStatistics.FailureCount != 0
-                    || Math.Abs(savedStatistics.FailureRatePercent) > 0.001D
+                    || savedStatistics.FailureCount != 1
+                    || Math.Abs(savedStatistics.FailureRatePercent - 25D) > 0.001D
                     || savedStatistics.P95Milliseconds > savedStatistics.MaximumMilliseconds
                     || !analyticsText.Contains("p95", StringComparison.OrdinalIgnoreCase)
                     || !analyticsText.Contains("ms", StringComparison.OrdinalIgnoreCase)
@@ -6254,6 +6378,13 @@ internal static class Program
                             "Sha256=" + savedSummary.ReviewQueueSha256,
                             "Rows=" + savedSummary.ReviewQueue.Count.ToString(CultureInfo.InvariantCulture),
                             "Total=" + savedSummary.Results.Count.ToString(CultureInfo.InvariantCulture),
+                            "SummarySchemaVersion=" + savedSummary.SchemaVersion.ToString(CultureInfo.InvariantCulture),
+                            "OutcomeSchemaVersion=" + VisionPipelineBatchOutcomeContract.CurrentVersion.ToString(CultureInfo.InvariantCulture),
+                            "JudgmentCorrect=" + savedSummary.JudgmentCorrectCount.ToString(CultureInfo.InvariantCulture),
+                            "FalseAccept=" + savedSummary.FalseAcceptCount.ToString(CultureInfo.InvariantCulture),
+                            "FalseReject=" + savedSummary.FalseRejectCount.ToString(CultureInfo.InvariantCulture),
+                            "ExecutionError=" + savedSummary.ExecutionErrorCount.ToString(CultureInfo.InvariantCulture),
+                            "LegacyAmbiguous=" + savedSummary.LegacyAmbiguousCount.ToString(CultureInfo.InvariantCulture),
                             "FalseAcceptIncluded=" + (falseAcceptReview != null),
                             "DrawingResolved=true",
                             "PreviewRunCountUnchanged=" + (shellHost.NativePreviewRunCount == reviewQueuePreviewRunsBefore),
@@ -6273,6 +6404,480 @@ internal static class Program
         finally
         {
             RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static VisionPipelineBatchSampleRunResult CreateExplicitJudgmentProbe(
+        string sampleName,
+        bool expectedSuccess,
+        bool actualSuccess)
+    {
+        VisionPipelineBatchSampleRunResult result = new VisionPipelineBatchSampleRunResult
+        {
+            SampleName = sampleName ?? string.Empty,
+            PairRole = expectedSuccess
+                ? VisionPipelineBatchOutcomeContract.OkOutcome
+                : VisionPipelineBatchOutcomeContract.NgOutcome,
+            ExpectedText = "ExpectedActual: Expected "
+                + VisionPipelineBatchOutcomeContract.ToOutcome(expectedSuccess),
+            Success = expectedSuccess == actualSuccess,
+            Status = expectedSuccess == actualSuccess ? "OK" : "NG"
+        };
+        VisionPipelineBatchOutcomeContract.Apply(
+            result,
+            executionCompleted: true,
+            actualSuccess,
+            hasJudgment: true,
+            expectedSuccess,
+            judgmentCorrect: expectedSuccess == actualSuccess);
+        return result;
+    }
+
+    private static CaptureResult CaptureShellHostRecipeQualifiedSnapshot(
+        string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        string suffix = Guid.NewGuid().ToString("N");
+        string recipeName = "Smoke_Qualified_" + suffix;
+        string workingRecipeName = "Smoke_Qualified_Work_" + suffix;
+        const string pipelineName = "Qualified_Locator_Pipeline";
+        const string validationSetName = "Qualified Locator Evidence";
+        VisionPipelineSampleCatalogItem sample =
+            VisionPipelineSampleCatalogItem.LoadRunnable()
+                .FirstOrDefault(item => item != null && item.CanOpen)
+            ?? throw new InvalidOperationException(
+                "No runnable image was available for qualified Snapshot smoke.");
+        VisionPipelineStorage.Save(
+            recipeName,
+            CreateRecipeContextSmokePipeline(pipelineName, 1));
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipelineName);
+
+        List<string> createdSnapshotIds = new();
+        string openedEvidenceDirectory = string.Empty;
+        bool allowLifecycle = false;
+        OpenVisionShellHostView shellHost =
+            CreateShellHost(recipeName, seedMainLayer: false);
+        shellHost.QualifiedSnapshotLifecycleConfirmationForTest =
+            (_, _, _) => allowLifecycle;
+        shellHost.QualifiedSnapshotEvidenceOpenerForTest = directory =>
+        {
+            openedEvidenceDirectory = directory;
+            return Directory.Exists(directory);
+        };
+
+        try
+        {
+            return CaptureWindowWithContent(
+                shellHost,
+                outputPath,
+                1600,
+                900,
+                () =>
+                {
+                    int previewRunsBefore = shellHost.NativePreviewRunCount;
+                    int layerCountBefore = shellHost.LayerDocumentCount;
+                    string workspaceLayerBefore = shellHost.WorkspaceLayerTitle;
+                    string inputRouteBefore =
+                        shellHost.ActiveNativeRouteInputLayerNameForTest;
+                    string outputRouteBefore =
+                        shellHost.ActiveNativeRouteOutputLayerNameForTest;
+
+                    OpenVisionRecipeValidationSuiteScopeOption localScope =
+                        shellHost.RecipeCommands.ValidationSuiteScopeOptions
+                            .First(option => string.Equals(
+                                option.Key,
+                                OpenVisionRecipeValidationSuiteScopeOption
+                                    .LocalValidationSetKey,
+                                StringComparison.OrdinalIgnoreCase));
+                    shellHost.RecipeCommands.SelectedValidationSuiteScopeOption =
+                        localScope;
+                    shellHost.RecipeCommands.NewValidationSetName =
+                        validationSetName;
+                    shellHost.RecipeCommands.CreateValidationSetCommand
+                        .Execute(null);
+                    if (!shellHost.RecipeCommands.AddValidationSetImagesForTest(
+                            OpenVisionRecipeValidationSetImage.ExpectedOk,
+                            new[] { sample.ImageFullPath },
+                            "Frozen locator replay"))
+                    {
+                        throw new InvalidOperationException(
+                            "Qualified Snapshot validation image registration failed.");
+                    }
+
+                    if (!shellHost.RecipeCommands.RunValidationSuiteCommand
+                        .CanExecute(null))
+                    {
+                        throw new InvalidOperationException(
+                            "Qualified Snapshot Local Validation Set run was disabled: "
+                            + shellHost.RecipeCommands.ValidationSuiteSummaryText);
+                    }
+
+                    shellHost.RecipeCommands.RunValidationSuiteCommand
+                        .Execute(null);
+                    DateTime deadline = DateTime.UtcNow.AddSeconds(30);
+                    while (DateTime.UtcNow < deadline)
+                    {
+                        Pump(10);
+                        if (shellHost.RecipeCommands.RunValidationSuiteCommand
+                                .CanExecute(null)
+                            && shellHost.RecipeCommands.RecentBatchRunOptions
+                                .Any(option =>
+                                    !string.IsNullOrWhiteSpace(
+                                        option?.SummaryPath)))
+                        {
+                            break;
+                        }
+                    }
+
+                    OpenVisionRecipeBatchRunOption savedRun =
+                        shellHost.RecipeCommands.RecentBatchRunOptions
+                            .FirstOrDefault(option =>
+                                !string.IsNullOrWhiteSpace(option?.SummaryPath))
+                        ?? throw new InvalidOperationException(
+                            "Qualified Snapshot Local Validation Set did not finish.");
+                    VisionPipelineBatchRunSummary savedSummary =
+                        VisionPipelineBatchRunSummaryStorage.Load(
+                            savedRun.SummaryPath)
+                        ?? throw new InvalidOperationException(
+                            "Qualified Snapshot summary could not be reloaded.");
+                    if (!string.Equals(
+                            savedSummary.SuiteKind,
+                            "LocalValidationSet",
+                            StringComparison.Ordinal)
+                        || savedSummary.TotalCount != 1
+                        || savedSummary.JudgmentCorrectCount != 1
+                        || savedSummary.FalseAcceptCount != 0
+                        || savedSummary.FalseRejectCount != 0
+                        || savedSummary.ExecutionErrorCount != 0)
+                    {
+                        throw new InvalidOperationException(
+                            "Locator qualification fixture did not produce one "
+                            + "completed correct judgment.");
+                    }
+
+                    shellHost.RecipeCommands.SelectedRecentBatchRunOption =
+                        savedRun;
+                    shellHost.RecipeCommands
+                        .SelectedQualificationScopeOption =
+                        shellHost.RecipeCommands.QualificationScopeOptions
+                            .Last();
+                    shellHost.RecipeCommands.QualificationNote =
+                        "One frozen Expected-OK locator replay; no unseen-data claim.";
+
+                    shellHost.RecipeCommands.SelectedPipelinePreviewStep =
+                        shellHost.RecipeCommands.SelectedRecipeSummary
+                            .PipelinePreviewSteps.Single();
+                    shellHost.RecipeCommands.LoadSelectedStepParametersCommand
+                        .Execute(null);
+                    if (shellHost.RecipeCommands.SelectedStepEditObject == null)
+                    {
+                        throw new InvalidOperationException(
+                            "Qualified Snapshot dirty-edit probe did not load.");
+                    }
+
+                    shellHost.RecipeCommands
+                        .MarkSelectedStepEditDirtyForQualificationTest();
+                    Pump(40);
+                    if (!shellHost.RecipeCommands.IsSelectedStepEditDirty
+                        || shellHost.RecipeCommands.CreateQualifiedSnapshotCommand
+                            .CanExecute(null)
+                        || !shellHost.RecipeCommands
+                            .QualifiedSnapshotPreflightText.Contains(
+                                "pending Step edit",
+                                StringComparison.OrdinalIgnoreCase)
+                            && !shellHost.RecipeCommands
+                                .QualifiedSnapshotPreflightText.Contains(
+                                    "저장하지 않은 Step 편집",
+                                    StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "Pending Step edit did not fail-close Snapshot creation. "
+                            + $"Dirty={shellHost.RecipeCommands.IsSelectedStepEditDirty}, "
+                            + $"CanCreate={shellHost.RecipeCommands.CreateQualifiedSnapshotCommand.CanExecute(null)}, "
+                            + $"Preflight='{shellHost.RecipeCommands.QualifiedSnapshotPreflightText}'.");
+                    }
+
+                    shellHost.RecipeCommands
+                        .DiscardSelectedStepEditForQualificationTest();
+                    if (!shellHost.RecipeCommands.CreateQualifiedSnapshotCommand
+                        .CanExecute(null))
+                    {
+                        throw new InvalidOperationException(
+                            "Exact qualified Snapshot preconditions remained disabled: "
+                            + shellHost.RecipeCommands
+                                .QualifiedSnapshotPreflightText
+                            + $" | Set='{shellHost.RecipeCommands.SelectedValidationSetOption?.Name}', "
+                            + $"SetPipeline='{shellHost.RecipeCommands.SelectedValidationSetOption?.Set?.PipelineName}', "
+                            + $"RunSuite='{shellHost.RecipeCommands.SelectedRecentBatchRunOption?.RunSummary?.SuiteName}', "
+                            + $"Pipeline='{shellHost.RecipeCommands.SelectedPipelineOption?.PipelineName}'.");
+                    }
+
+                    shellHost.RecipeCommands.CreateQualifiedSnapshotCommand
+                        .Execute(null);
+                    OpenVisionRecipeQualifiedSnapshotOption first =
+                        shellHost.RecipeCommands.SelectedQualifiedSnapshotOption
+                        ?? throw new InvalidOperationException(
+                            "Created qualified Snapshot was not selected. Status='"
+                            + shellHost.RecipeCommands
+                                .QualifiedSnapshotStatusText
+                            + "'.");
+                    createdSnapshotIds.Add(first.SnapshotId);
+                    if (!first.PayloadIntegrityValid
+                        || !first.RuntimeFingerprintMatches
+                        || !string.Equals(
+                            first.LifecycleState,
+                            "Qualified",
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "Created qualified Snapshot did not reload valid.");
+                    }
+
+                    shellHost.RecipeCommands.VerifyQualifiedSnapshotCommand
+                        .Execute(null);
+                    shellHost.RecipeCommands
+                        .OpenQualifiedSnapshotEvidenceCommand.Execute(null);
+                    if (string.IsNullOrWhiteSpace(openedEvidenceDirectory)
+                        || !Directory.Exists(openedEvidenceDirectory))
+                    {
+                        throw new InvalidOperationException(
+                            "Qualified Snapshot evidence folder was not resolved.");
+                    }
+
+                    shellHost.RecipeCommands
+                        .QualifiedSnapshotWorkingCopyName = workingRecipeName;
+                    shellHost.RecipeCommands
+                        .CreateQualifiedSnapshotWorkingCopyCommand.Execute(null);
+                    if (!File.Exists(
+                            RecipeWorkspaceService.GetVisionPipelinePath(
+                                workingRecipeName,
+                                pipelineName))
+                        || File.Exists(
+                            OpenVisionRecipeValidationSetStorage.GetPath(
+                                workingRecipeName))
+                        || Directory.Exists(Path.Combine(
+                            RecipeWorkspaceService.GetRecipeWorkspaceDirectory(
+                                workingRecipeName),
+                            "QUALIFIED_RECIPE")))
+                    {
+                        throw new InvalidOperationException(
+                            "Working copy did not preserve the editable-only boundary.");
+                    }
+
+                    shellHost.RecipeCommands.QualificationNote =
+                        "Successor replay with an explicit operator note change.";
+                    shellHost.RecipeCommands
+                        .QualifiedSnapshotLifecycleReason =
+                        "Reviewed successor evidence.";
+                    allowLifecycle = false;
+                    int snapshotCountBeforeCancel =
+                        shellHost.RecipeCommands.QualifiedSnapshotOptions.Count;
+                    shellHost.RecipeCommands.SupersedeQualifiedSnapshotCommand
+                        .Execute(null);
+                    if (shellHost.RecipeCommands.QualifiedSnapshotOptions.Count
+                            != snapshotCountBeforeCancel
+                        || !string.Equals(
+                            shellHost.RecipeCommands
+                                .SelectedQualifiedSnapshotOption?.SnapshotId,
+                            first.SnapshotId,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "Cancelled supersede changed Snapshot state.");
+                    }
+
+                    allowLifecycle = true;
+                    shellHost.RecipeCommands.SupersedeQualifiedSnapshotCommand
+                        .Execute(null);
+                    OpenVisionRecipeQualifiedSnapshotOption successor =
+                        shellHost.RecipeCommands.SelectedQualifiedSnapshotOption
+                        ?? throw new InvalidOperationException(
+                            "Successor Snapshot was not selected.");
+                    if (string.Equals(
+                            successor.SnapshotId,
+                            first.SnapshotId,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "Supersede reused the predecessor identity.");
+                    }
+
+                    createdSnapshotIds.Add(successor.SnapshotId);
+                    OpenVisionRecipeQualifiedSnapshotOption predecessor =
+                        shellHost.RecipeCommands.QualifiedSnapshotOptions
+                            .Single(option => string.Equals(
+                                option.SnapshotId,
+                                first.SnapshotId,
+                                StringComparison.Ordinal));
+                    if (!string.Equals(
+                            predecessor.LifecycleState,
+                            "Superseded",
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            successor.LifecycleState,
+                            "Qualified",
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "Supersede lifecycle did not reload exactly.");
+                    }
+
+                    shellHost.RecipeCommands
+                        .QualifiedSnapshotLifecycleReason =
+                        "Operator revoked successor after review.";
+                    shellHost.RecipeCommands.RevokeQualifiedSnapshotCommand
+                        .Execute(null);
+                    if (!string.Equals(
+                            shellHost.RecipeCommands
+                                .SelectedQualifiedSnapshotOption
+                                ?.LifecycleState,
+                            "Revoked",
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "Revoke lifecycle did not reload exactly.");
+                    }
+
+                    if (shellHost.NativePreviewRunCount != previewRunsBefore
+                        || shellHost.LayerDocumentCount != layerCountBefore
+                        || !string.Equals(
+                            shellHost.WorkspaceLayerTitle,
+                            workspaceLayerBefore,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            shellHost.ActiveNativeRouteInputLayerNameForTest,
+                            inputRouteBefore,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            shellHost.ActiveNativeRouteOutputLayerNameForTest,
+                            outputRouteBefore,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "Qualified Snapshot actions changed Preview/Run, "
+                            + "layers, workspace, or routing.");
+                    }
+
+                    ToggleButton recipeManagerButton =
+                        FindNamedVisualChild<ToggleButton>(
+                            shellHost,
+                            "btnHostRecipeManager")
+                        ?? throw new InvalidOperationException(
+                            "Recipe Manager button was not found.");
+                    recipeManagerButton.IsChecked = true;
+                    Pump(80);
+                    FindNamedVisualChild<ToggleButton>(
+                        shellHost,
+                        "recipeAdvancedReviewToggle")!.IsChecked = true;
+                    Pump(60);
+                    FindNamedVisualChild<TabItem>(
+                        shellHost,
+                        "tabRecipePipeline")!.IsSelected = true;
+                    Pump(60);
+                    FindNamedVisualChild<TabItem>(
+                        shellHost,
+                        "tabRecipePipelineRunHistory")!.IsSelected = true;
+                    Pump(100);
+
+                    AssertVisibleAutomationIds(
+                        shellHost,
+                        "WPF qualified Recipe Snapshot",
+                        "HostRecipeQualifiedSnapshotPanel",
+                        "HostRecipeQualificationScopeCombo",
+                        "HostRecipeQualificationNoteTextBox",
+                        "HostRecipeCreateQualifiedSnapshotButton",
+                        "HostRecipeQualifiedSnapshotPreflight",
+                        "HostRecipeQualifiedSnapshotCombo",
+                        "HostRecipeVerifyQualifiedSnapshotButton",
+                        "HostRecipeOpenQualifiedSnapshotEvidenceButton",
+                        "HostRecipeQualifiedSnapshotWorkingCopyNameTextBox",
+                        "HostRecipeCreateQualifiedSnapshotWorkingCopyButton",
+                        "HostRecipeQualifiedSnapshotLifecycleReasonTextBox",
+                        "HostRecipeSupersedeQualifiedSnapshotButton",
+                        "HostRecipeRevokeQualifiedSnapshotButton",
+                        "HostRecipeQualifiedSnapshotStatus");
+                    FrameworkElement panel =
+                        FindVisualChildren<FrameworkElement>(shellHost)
+                            .First(element => string.Equals(
+                                AutomationProperties.GetAutomationId(element),
+                                "HostRecipeQualifiedSnapshotPanel",
+                                StringComparison.Ordinal));
+                    panel.BringIntoView();
+                    shellHost.UpdateLayout();
+                    Pump(100);
+
+                    string evidenceDirectory = Path.Combine(
+                        Path.GetDirectoryName(outputPath) ?? ".",
+                        Path.GetFileNameWithoutExtension(outputPath)
+                            + ".evidence");
+                    Directory.CreateDirectory(evidenceDirectory);
+                    File.Copy(
+                        Path.Combine(
+                            openedEvidenceDirectory,
+                            QualifiedRecipeSnapshotStore
+                                .SnapshotManifestFileName),
+                        Path.Combine(evidenceDirectory, "snapshot.xml"),
+                        overwrite: true);
+                    File.Copy(
+                        Path.Combine(
+                            openedEvidenceDirectory,
+                            QualifiedRecipeSnapshotStore.InventoryFileName),
+                        Path.Combine(evidenceDirectory, "inventory.sha256"),
+                        overwrite: true);
+                    File.WriteAllLines(
+                        Path.Combine(
+                            evidenceDirectory,
+                            "qualified-snapshot-ui-contract.txt"),
+                        new[]
+                        {
+                            "Predecessor=" + first.SnapshotId,
+                            "PredecessorState=Superseded",
+                            "Successor=" + successor.SnapshotId,
+                            "SuccessorState=Revoked",
+                            "PayloadIntegrityValid="
+                                + successor.PayloadIntegrityValid,
+                            "RuntimeFingerprintMatches="
+                                + successor.RuntimeFingerprintMatches,
+                            "WorkingRecipe=" + workingRecipeName,
+                            "WorkingCopyHasQualification=false",
+                            "CancelledSupersedeNoChange=true",
+                            "EvidenceFolderResolved=true",
+                            "PreviewRunCountUnchanged=true",
+                            "LayerCountUnchanged=true",
+                            "WorkspaceLayerUnchanged=true",
+                            "RoutesUnchanged=true"
+                        });
+                },
+                captureFloatingToolWindow: false,
+                captureScreen: true);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+            RecipeWorkspaceService.DeleteVisionWorkspace(workingRecipeName);
+            string qualifiedRoot = Path.Combine(
+                AppPathService.StartupPath,
+                "QUALIFIED_RECIPE");
+            foreach (string snapshotId in createdSnapshotIds
+                .Where(QualifiedRecipeSnapshotPreflight.IsSha256)
+                .Distinct(StringComparer.Ordinal))
+            {
+                string snapshotDirectory =
+                    Path.Combine(qualifiedRoot, snapshotId);
+                if (Directory.Exists(snapshotDirectory))
+                {
+                    Directory.Delete(snapshotDirectory, recursive: true);
+                }
+
+                string lifecycleDirectory = Path.Combine(
+                    qualifiedRoot,
+                    "lifecycle",
+                    snapshotId + ".events");
+                if (Directory.Exists(lifecycleDirectory))
+                {
+                    Directory.Delete(lifecycleDirectory, recursive: true);
+                }
+            }
         }
     }
 
@@ -12550,6 +13155,262 @@ internal static class Program
         return new CaptureResult(capture.Width, capture.Height, (DateTime.UtcNow - started).TotalMilliseconds);
     }
 
+    private static CaptureResult CaptureThresholdSignalGoodBadReplay(string outputPath)
+    {
+        const string goodSampleName = "Public_Threshold_BandPads_Good";
+        const string badSampleName = "Public_Threshold_BandPads_Missing_Bad";
+        const string expectedPairGroup = "Public_Threshold_BandPads";
+        const double frozenThreshold = 130D;
+
+        DateTime started = DateTime.UtcNow;
+        VisionPipelineSampleCatalogItem goodSample = FindRunnableCatalogSample(goodSampleName);
+        VisionPipelineSampleCatalogItem badSample = FindRunnableCatalogSample(badSampleName);
+        AssertSampleSourceKind(goodSample, goodSampleName, VisionPipelineSampleCatalogSourceKind.Public);
+        AssertSampleSourceKind(badSample, badSampleName, VisionPipelineSampleCatalogSourceKind.Public);
+        if (!string.Equals(goodSample.PairGroup, expectedPairGroup, StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(badSample.PairGroup, expectedPairGroup, StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(
+                Path.GetFullPath(goodSample.PipelineFullPath),
+                Path.GetFullPath(badSample.PipelineFullPath),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "Threshold signal Good/Bad replay must use one public pair and the same frozen Pipeline. "
+                + $"GoodGroup={goodSample.PairGroup}, BadGroup={badSample.PairGroup}, "
+                + $"GoodPipeline={goodSample.PipelineFullPath}, BadPipeline={badSample.PipelineFullPath}");
+        }
+
+        if (!VisionPipelineStorage.TryLoadFromFile(
+                goodSample.PipelineFullPath,
+                out VisionPipeline pipeline,
+                out string pipelineLoadMessage)
+            || pipeline == null)
+        {
+            throw new InvalidOperationException(
+                "Threshold signal Good/Bad replay could not load the frozen Pipeline: " + pipelineLoadMessage);
+        }
+
+        VisionPipelineStep thresholdStep = pipeline.Steps.SingleOrDefault(step =>
+            string.Equals(step.ToolType, "Threshold", StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException("Threshold signal Good/Bad replay Pipeline has no Threshold Step.");
+        string mode = thresholdStep.Parameters.TryGetValue("Mode", out string? modeValue)
+            ? modeValue ?? string.Empty
+            : string.Empty;
+        string thresholdText = thresholdStep.Parameters.TryGetValue("Threshold", out string? thresholdValue)
+            ? thresholdValue ?? string.Empty
+            : string.Empty;
+        string maxValueText = thresholdStep.Parameters.TryGetValue("MaxValue", out string? maxValue)
+            ? maxValue ?? string.Empty
+            : string.Empty;
+        string thresholdType = thresholdStep.Parameters.TryGetValue("ThresholdType", out string? thresholdTypeValue)
+            ? thresholdTypeValue ?? string.Empty
+            : string.Empty;
+        if (!string.Equals(mode, "Threshold", StringComparison.OrdinalIgnoreCase)
+            || !double.TryParse(thresholdText, NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedThreshold)
+            || Math.Abs(parsedThreshold - frozenThreshold) > 0.000001D
+            || !double.TryParse(maxValueText, NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedMaxValue)
+            || Math.Abs(parsedMaxValue - 255D) > 0.000001D
+            || !string.Equals(thresholdType, "Binary", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "Threshold signal Good/Bad replay frozen parameter contract changed. "
+                + $"Mode={mode}, Threshold={thresholdText}, MaxValue={maxValueText}, Type={thresholdType}");
+        }
+
+        ThresholdToolProperty initialProperty = new()
+        {
+            Mode = ThresholdToolMode.Threshold,
+            Threshold = 127D,
+            MaxValue = 255D,
+            ThresholdType = OpenCvSharp.ThresholdTypes.Binary
+        };
+        VisionToolSignalEvidence initialGoodEvidence =
+            CreateThresholdReplaySignalEvidence(goodSample, initialProperty);
+        VisionToolSignalInspectorView teachingInspector = new();
+        double requestedThreshold = double.NaN;
+        teachingInspector.MarkerValueChangeRequested += (_, args) =>
+        {
+            if (string.Equals(
+                    args.MarkerId,
+                    OpenVisionNativeThresholdSignalEvidenceFactory.ThresholdMarkerId,
+                    StringComparison.Ordinal))
+            {
+                requestedThreshold = args.Value;
+            }
+        };
+        teachingInspector.ShowEvidence(initialGoodEvidence);
+        teachingInspector.CommitMarkerForTest(
+            OpenVisionNativeThresholdSignalEvidenceFactory.ThresholdMarkerId,
+            frozenThreshold);
+        if (!double.IsFinite(requestedThreshold)
+            || Math.Abs(requestedThreshold - frozenThreshold) > 0.000001D)
+        {
+            throw new InvalidOperationException(
+                "Threshold signal chart did not commit the evidence-backed T=127 -> T=130 teaching change. "
+                + $"Requested={requestedThreshold}");
+        }
+
+        ThresholdToolProperty property = new()
+        {
+            Mode = ThresholdToolMode.Threshold,
+            Threshold = requestedThreshold,
+            MaxValue = 255D,
+            ThresholdType = OpenCvSharp.ThresholdTypes.Binary
+        };
+        VisionToolSignalEvidence goodEvidence = CreateThresholdReplaySignalEvidence(goodSample, property);
+        VisionToolSignalEvidence badEvidence = CreateThresholdReplaySignalEvidence(badSample, property);
+        if (initialGoodEvidence.Markers.Count != 1
+            || Math.Abs(initialGoodEvidence.Markers[0].X - 127D) > 0.000001D
+            || goodEvidence.Markers.Count != 1
+            || badEvidence.Markers.Count != 1
+            || Math.Abs(goodEvidence.Markers[0].X - frozenThreshold) > 0.000001D
+            || Math.Abs(badEvidence.Markers[0].X - frozenThreshold) > 0.000001D
+            || !string.Equals(
+                initialGoodEvidence.SourceSha256,
+                goodEvidence.SourceSha256,
+                StringComparison.Ordinal)
+            || string.Equals(
+                initialGoodEvidence.EvidenceId,
+                goodEvidence.EvidenceId,
+                StringComparison.Ordinal)
+            || !string.Equals(goodEvidence.RegionDescription, "Full image", StringComparison.Ordinal)
+            || !string.Equals(badEvidence.RegionDescription, "Full image", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Threshold signal evidence did not retain the full-image T=127 -> T=130 teaching identity. "
+                + $"BeforeMarker={initialGoodEvidence.Markers.FirstOrDefault()?.X}, "
+                + $"GoodMarker={goodEvidence.Markers.FirstOrDefault()?.X}, BadMarker={badEvidence.Markers.FirstOrDefault()?.X}, "
+                + $"GoodRegion={goodEvidence.RegionDescription}, BadRegion={badEvidence.RegionDescription}");
+        }
+
+        VisionPipelineSampleCheckResult goodCheck = VisionPipelineSampleCheckService.RunSampleCheckSafe(goodSample);
+        VisionPipelineSampleCheckResult badCheck = VisionPipelineSampleCheckService.RunSampleCheckSafe(badSample);
+        if (!goodCheck.Success
+            || !goodCheck.ActualSuccess
+            || !goodCheck.MetricText.Contains("ResultCount=4", StringComparison.OrdinalIgnoreCase)
+            || !badCheck.Success
+            || badCheck.ActualSuccess
+            || !badSample.ExpectsFailure
+            || !badCheck.MetricText.Contains("ResultCount=1", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "Threshold signal Good/Bad replay did not preserve the frozen T=130 decision. "
+                + $"GoodStatus={goodCheck.Status}, GoodActual={goodCheck.ActualSuccess}, GoodMetrics='{goodCheck.MetricText}', "
+                + $"BadStatus={badCheck.Status}, BadActual={badCheck.ActualSuccess}, BadExpectedFailure={badSample.ExpectsFailure}, "
+                + $"BadMetrics='{badCheck.MetricText}'");
+        }
+
+        string artifactDirectory = Path.GetDirectoryName(Path.GetFullPath(outputPath))
+            ?? throw new InvalidOperationException("Threshold replay output directory could not be resolved.");
+        Directory.CreateDirectory(artifactDirectory);
+        string beforeGoodTsvPath = Path.Combine(artifactDirectory, "ThresholdSignal_Good_Before_T127.tsv");
+        string goodTsvPath = Path.Combine(artifactDirectory, "ThresholdSignal_Good_T130.tsv");
+        string badTsvPath = Path.Combine(artifactDirectory, "ThresholdSignal_Bad_T130.tsv");
+        string diagnosticsPath = Path.Combine(artifactDirectory, "Threshold_GoodBad_Replay_T130.txt");
+        VisionToolSignalEvidenceExporter.ExportTsv(initialGoodEvidence, beforeGoodTsvPath);
+        VisionToolSignalEvidenceExporter.ExportTsv(goodEvidence, goodTsvPath);
+        VisionToolSignalEvidenceExporter.ExportTsv(badEvidence, badTsvPath);
+
+        double goodSelectedPercent = SumSignalAboveThreshold(goodEvidence, frozenThreshold);
+        double badSelectedPercent = SumSignalAboveThreshold(badEvidence, frozenThreshold);
+        string[] reportLines =
+        {
+            "Threshold Signal Good/Bad Replay: PASS",
+            "",
+            $"Pipeline: {pipeline.Name}",
+            $"Pair: {expectedPairGroup}",
+            "Chart teaching change: Basic T=127 -> T=130 (marker commit request)",
+            "Frozen decision: Basic / T=130 / Binary / Max=255",
+            "Reviewed region: Full image (Threshold Tool has no ROI contract)",
+            "",
+            $"Good: {goodSample.SampleName}",
+            $"  Runtime decision: {goodCheck.Status} / ActualSuccess={goodCheck.ActualSuccess}",
+            $"  Metrics: {goodCheck.MetricText}",
+            $"  Population above T: {goodSelectedPercent:0.###}%",
+            $"  Source SHA-256: {goodEvidence.SourceSha256}",
+            "",
+            $"Bad: {badSample.SampleName}",
+            $"  Runtime decision: {badCheck.Status} / ActualSuccess={badCheck.ActualSuccess}",
+            $"  Metrics: {badCheck.MetricText}",
+            $"  Population above T: {badSelectedPercent:0.###}%",
+            $"  Source SHA-256: {badEvidence.SourceSha256}",
+            "",
+            "Evidence boundary: the chart explains the frozen cutoff and this public pair replay.",
+            "It does not prove automatic threshold optimization, ROI teaching, unseen-data robustness, or field qualification.",
+            "",
+            $"Before TSV: {Path.GetFileName(beforeGoodTsvPath)}",
+            $"Good TSV: {Path.GetFileName(goodTsvPath)}",
+            $"Bad TSV: {Path.GetFileName(badTsvPath)}"
+        };
+        File.WriteAllLines(diagnosticsPath, reportLines);
+
+        Border report = new()
+        {
+            Background = Brushes.White,
+            Padding = new Thickness(24),
+            Child = new TextBlock
+            {
+                Text = string.Join(Environment.NewLine, reportLines),
+                FontSize = 14,
+                FontFamily = new FontFamily("Consolas"),
+                Foreground = Brushes.DarkSlateGray,
+                TextWrapping = TextWrapping.Wrap
+            }
+        };
+        CaptureResult capture = CaptureElement(report, outputPath, 1180, 760);
+        return new CaptureResult(capture.Width, capture.Height, (DateTime.UtcNow - started).TotalMilliseconds);
+    }
+
+    private static VisionToolSignalEvidence CreateThresholdReplaySignalEvidence(
+        VisionPipelineSampleCatalogItem sample,
+        ThresholdToolProperty property)
+    {
+        using CvMat source = Cv.ImRead(sample.ImageFullPath, CvImreadModes.Unchanged);
+        if (source.Empty())
+        {
+            throw new InvalidOperationException("Threshold signal replay could not load image: " + sample.ImageFullPath);
+        }
+
+        ThresholdTool tool = new();
+        tool.SetProperty(property);
+        VisionToolResult result = tool.Execute(source);
+        try
+        {
+            if (result?.Success != true || result.ResultImage == null || result.ResultImage.Empty())
+            {
+                throw new InvalidOperationException(
+                    "Threshold signal replay execution failed. "
+                    + $"Sample={sample.SampleName}, Error={result?.ErrorName}, Message={result?.Message}");
+            }
+
+            return OpenVisionNativeThresholdSignalEvidenceFactory.Create(
+                source,
+                result.ResultImage,
+                property,
+                "Main");
+        }
+        finally
+        {
+            result?.ResultImage?.Dispose();
+        }
+    }
+
+    private static double SumSignalAboveThreshold(VisionToolSignalEvidence evidence, double threshold)
+    {
+        VisionToolSignalSeries series = evidence.Series.Single();
+        double sum = 0D;
+        for (int index = 0; index < series.Values.Count; index++)
+        {
+            double x = series.XStart + (index * series.XStep);
+            if (x > threshold)
+            {
+                sum += series.Values[index];
+            }
+        }
+
+        return sum;
+    }
+
     private static CaptureResult CaptureShellHostWorkspaceSampleBadReferenceAudit(string outputPath)
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
@@ -12959,6 +13820,7 @@ internal static class Program
                 "Histogram result guidance",
                 OpenVisionLanguageService.T("VisionTool.Status.PreviewOk"),
                 OpenVisionLanguageService.T("VisionTool.Review.Label.Contrast"));
+            AssertHistogramSignalInspector(shellHost);
         }
         else
         {
@@ -12968,6 +13830,107 @@ internal static class Program
         if (string.IsNullOrWhiteSpace(shellHost.ActiveNativeResultReviewText))
         {
             throw new InvalidOperationException(menu + " active document result review text was empty.");
+        }
+    }
+
+    private static void AssertHistogramSignalInspector(OpenVisionShellHostView shellHost)
+    {
+        SimplePreprocessToolWpfView? histogramView = FindActiveToolVisualRoots()
+            .SelectMany(root => FindVisualChildren<SimplePreprocessToolWpfView>(root))
+            .LastOrDefault();
+        if (histogramView == null)
+        {
+            throw new InvalidOperationException("Histogram signal inspector could not find the active SimplePreprocess view.");
+        }
+
+        if (!histogramView.SignalInspectorHasEvidenceForTest
+            || histogramView.SignalInspectorSeriesCountForTest != 2
+            || histogramView.SignalInspectorEvidenceIdForTest.Length != 64
+            || histogramView.SignalInspectorSourceSha256ForTest.Length != 64)
+        {
+            throw new InvalidOperationException(
+                "Histogram signal inspector did not retain two current Preview series with stable SHA-256 provenance. "
+                + $"HasEvidence={histogramView.SignalInspectorHasEvidenceForTest}, "
+                + $"Series={histogramView.SignalInspectorSeriesCountForTest}, "
+                + $"EvidenceIdLength={histogramView.SignalInspectorEvidenceIdForTest.Length}, "
+                + $"SourceHashLength={histogramView.SignalInspectorSourceSha256ForTest.Length}");
+        }
+
+        AssertVisibleTextContains(histogramView, "Histogram signal inspector", "신호 검사기", "현재 미리보기 근거", "SHA-256", "Source", "Result");
+
+        TextBox? clipLimit = FindActiveToolVisualRoots()
+            .SelectMany(root => FindVisualChildren<TextBox>(root))
+            .LastOrDefault(item => string.Equals(item.Name, "txtClipLimit", StringComparison.Ordinal));
+        if (clipLimit == null)
+        {
+            throw new InvalidOperationException("Histogram signal inspector could not find the Clip Limit editor.");
+        }
+
+        int runsBeforeParameterChange = shellHost.NativePreviewRunCount;
+        clipLimit.Text = string.Equals(clipLimit.Text, "4", StringComparison.Ordinal) ? "3" : "4";
+        if (histogramView.SignalInspectorHasEvidenceForTest)
+        {
+            throw new InvalidOperationException("Histogram parameter change left stale signal evidence visible before the replacement Preview.");
+        }
+
+        Thread.Sleep(180);
+        Pump(36);
+        if (shellHost.NativePreviewRunCount <= runsBeforeParameterChange
+            || !histogramView.SignalInspectorHasEvidenceForTest
+            || histogramView.SignalInspectorSeriesCountForTest != 2)
+        {
+            throw new InvalidOperationException(
+                "Histogram parameter change did not replace stale evidence through the existing preview policy. "
+                + $"Runs={runsBeforeParameterChange}->{shellHost.NativePreviewRunCount}, "
+                + $"HasEvidence={histogramView.SignalInspectorHasEvidenceForTest}, "
+                + $"Series={histogramView.SignalInspectorSeriesCountForTest}");
+        }
+
+        int runsBeforeReadOnlyActions = shellHost.NativePreviewRunCount;
+        int layersBeforeReadOnlyActions = shellHost.LayerDocumentCount;
+        string activeLayerBeforeReadOnlyActions = shellHost.ActiveRecipeContextLayerNameForTest;
+        string inputRouteBeforeReadOnlyActions = shellHost.ActiveNativeRouteInputLayerNameForTest;
+        string outputRouteBeforeReadOnlyActions = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+        string exportPath = Path.Combine(Path.GetTempPath(), "openvisionlab_signal_" + Guid.NewGuid().ToString("N") + ".tsv");
+        try
+        {
+            if (!histogramView.ExerciseSignalInspectorNavigationForTest())
+            {
+                throw new InvalidOperationException("Histogram signal inspector zoom/pan navigation did not change the visible X domain.");
+            }
+
+            histogramView.ResetSignalInspectorViewForTest();
+            histogramView.ExportSignalEvidenceForTest(exportPath);
+            string exported = File.ReadAllText(exportPath);
+            if (!exported.Contains("#\tEvidenceId\t", StringComparison.Ordinal)
+                || !exported.Contains("#\tSourceSha256\t", StringComparison.Ordinal)
+                || !exported.Contains("Gray level\tSource\tResult", StringComparison.Ordinal)
+                || File.ReadLines(exportPath).Count() < 260)
+            {
+                throw new InvalidOperationException("Histogram signal TSV export did not retain provenance and all 256 bins.");
+            }
+        }
+        finally
+        {
+            if (File.Exists(exportPath))
+            {
+                File.Delete(exportPath);
+            }
+        }
+
+        if (shellHost.NativePreviewRunCount != runsBeforeReadOnlyActions
+            || shellHost.LayerDocumentCount != layersBeforeReadOnlyActions
+            || !string.Equals(shellHost.ActiveRecipeContextLayerNameForTest, activeLayerBeforeReadOnlyActions, StringComparison.Ordinal)
+            || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBeforeReadOnlyActions, StringComparison.Ordinal)
+            || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBeforeReadOnlyActions, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Histogram signal reset/export mutated Preview, layers, active layer, or routes. "
+                + $"Runs={runsBeforeReadOnlyActions}->{shellHost.NativePreviewRunCount}, "
+                + $"Layers={layersBeforeReadOnlyActions}->{shellHost.LayerDocumentCount}, "
+                + $"Active={activeLayerBeforeReadOnlyActions}->{shellHost.ActiveRecipeContextLayerNameForTest}, "
+                + $"Route={inputRouteBeforeReadOnlyActions}/{outputRouteBeforeReadOnlyActions}"
+                + $"->{shellHost.ActiveNativeRouteInputLayerNameForTest}/{shellHost.ActiveNativeRouteOutputLayerNameForTest}");
         }
     }
 
@@ -17372,6 +18335,9 @@ internal static class Program
                 "sliderRangeMin",
                 "txtRangeMax",
                 "sliderRangeMax");
+            Thread.Sleep(180);
+            Pump(24);
+            AssertThresholdRangeSignalInspector(shellHost, thresholdView);
 
             int beforeRuns = shellHost.NativePreviewRunCount;
             adaptiveMode.IsChecked = true;
@@ -17389,6 +18355,12 @@ internal static class Program
                 || shellHost.NativePreviewRunCount <= beforeRuns)
             {
                 throw new InvalidOperationException("Native WPF Threshold tool did not auto-preview from adaptive control changes: " + shellHost.ActiveNativeStatusText);
+            }
+
+            if (thresholdView.SignalInspectorHasEvidenceForTest)
+            {
+                throw new InvalidOperationException(
+                    "Adaptive Threshold should not present a global cutoff-teaching chart.");
             }
 
             if (!shellHost.ActiveNativeDocumentTypeName.Contains("ThresholdToolWpfView", StringComparison.Ordinal))
@@ -17473,7 +18445,213 @@ internal static class Program
             {
                 throw new InvalidOperationException("Threshold basic summary was not visible.");
             }
+
+            AssertThresholdBasicSignalInspector(shellHost);
         });
+    }
+
+    private static void AssertThresholdBasicSignalInspector(OpenVisionShellHostView shellHost)
+    {
+        ThresholdToolWpfView? thresholdView = FindActiveToolVisualRoots()
+            .SelectMany(root => FindVisualChildren<ThresholdToolWpfView>(root))
+            .LastOrDefault();
+        if (thresholdView == null)
+        {
+            throw new InvalidOperationException("Threshold signal inspector could not find the active Threshold view.");
+        }
+
+        ThresholdToolProperty initialProperty = thresholdView.CreateProperty();
+        if (!thresholdView.SignalInspectorHasEvidenceForTest
+            || thresholdView.SignalInspectorSeriesCountForTest != 1
+            || thresholdView.SignalInspectorMarkerCountForTest != 1
+            || thresholdView.SignalInspectorEvidenceIdForTest.Length != 64
+            || thresholdView.SignalInspectorSourceSha256ForTest.Length != 64
+            || Math.Abs(
+                thresholdView.GetSignalInspectorMarkerValueForTest(
+                    OpenVisionNativeThresholdSignalEvidenceFactory.ThresholdMarkerId)
+                - initialProperty.Threshold) > 0.001)
+        {
+            throw new InvalidOperationException(
+                "Basic Threshold signal inspector did not retain one current gray population and matching T marker. "
+                + $"Evidence={thresholdView.SignalInspectorHasEvidenceForTest}, "
+                + $"Series={thresholdView.SignalInspectorSeriesCountForTest}, "
+                + $"Markers={thresholdView.SignalInspectorMarkerCountForTest}, "
+                + $"EvidenceIdLength={thresholdView.SignalInspectorEvidenceIdForTest.Length}, "
+                + $"SourceHashLength={thresholdView.SignalInspectorSourceSha256ForTest.Length}");
+        }
+
+        AssertVisibleTextContains(
+            thresholdView,
+            "Basic Threshold signal inspector",
+            "신호 검사기",
+            "현재 미리보기 근거",
+            "Threshold/Threshold",
+            "Full image",
+            "Gray population",
+            "SHA-256",
+            "T ");
+
+        int runsBeforeOverlayNavigation = shellHost.NativePreviewRunCount;
+        int layersBeforeOverlayNavigation = shellHost.LayerDocumentCount;
+        string inputBeforeOverlayNavigation = shellHost.ActiveNativeRouteInputLayerNameForTest;
+        string outputBeforeOverlayNavigation = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+        thresholdView.CloseSignalInspectorForTest();
+        if (thresholdView.IsSignalInspectorOverlayVisibleForTest
+            || !thresholdView.SignalInspectorHasEvidenceForTest)
+        {
+            throw new InvalidOperationException(
+                "Closing the Threshold distribution overlay discarded evidence or left the overlay visible.");
+        }
+
+        thresholdView.OpenSignalInspectorForTest();
+        if (!thresholdView.IsSignalInspectorOverlayVisibleForTest
+            || shellHost.NativePreviewRunCount != runsBeforeOverlayNavigation
+            || shellHost.LayerDocumentCount != layersBeforeOverlayNavigation
+            || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputBeforeOverlayNavigation, StringComparison.Ordinal)
+            || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputBeforeOverlayNavigation, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Threshold distribution overlay navigation ran Preview or changed layers/routes.");
+        }
+
+        string sourceHashBefore = thresholdView.SignalInspectorSourceSha256ForTest;
+        string evidenceIdBefore = thresholdView.SignalInspectorEvidenceIdForTest;
+        int replacementThreshold = Math.Clamp((int)Math.Round(initialProperty.Threshold) + 17, 16, 239);
+        if (Math.Abs(replacementThreshold - initialProperty.Threshold) < 0.001)
+        {
+            replacementThreshold = Math.Max(0, replacementThreshold - 11);
+        }
+
+        int runsBeforeMarkerCommit = shellHost.NativePreviewRunCount;
+        int layersBeforeMarkerCommit = shellHost.LayerDocumentCount;
+        string activeLayerBeforeMarkerCommit = shellHost.ActiveRecipeContextLayerNameForTest;
+        string inputRouteBeforeMarkerCommit = shellHost.ActiveNativeRouteInputLayerNameForTest;
+        string outputRouteBeforeMarkerCommit = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+        thresholdView.CommitSignalInspectorMarkerForTest(
+            OpenVisionNativeThresholdSignalEvidenceFactory.ThresholdMarkerId,
+            replacementThreshold);
+        if (thresholdView.SignalInspectorHasEvidenceForTest
+            || Math.Abs(thresholdView.CreateProperty().Threshold - replacementThreshold) > 0.001)
+        {
+            throw new InvalidOperationException(
+                "Threshold marker release did not commit the existing teaching model and clear stale evidence synchronously.");
+        }
+
+        Thread.Sleep(180);
+        Pump(30);
+        if (shellHost.NativePreviewRunCount <= runsBeforeMarkerCommit
+            || !thresholdView.SignalInspectorHasEvidenceForTest
+            || thresholdView.SignalInspectorMarkerCountForTest != 1
+            || Math.Abs(
+                thresholdView.GetSignalInspectorMarkerValueForTest(
+                    OpenVisionNativeThresholdSignalEvidenceFactory.ThresholdMarkerId)
+                - replacementThreshold) > 0.001
+            || !string.Equals(
+                thresholdView.SignalInspectorSourceSha256ForTest,
+                sourceHashBefore,
+                StringComparison.Ordinal)
+            || string.Equals(
+                thresholdView.SignalInspectorEvidenceIdForTest,
+                evidenceIdBefore,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Threshold marker teaching did not replace evidence through the existing Preview policy.");
+        }
+
+        if (shellHost.LayerDocumentCount != layersBeforeMarkerCommit
+            || !string.Equals(shellHost.ActiveRecipeContextLayerNameForTest, activeLayerBeforeMarkerCommit, StringComparison.Ordinal)
+            || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBeforeMarkerCommit, StringComparison.Ordinal)
+            || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBeforeMarkerCommit, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Threshold marker teaching mutated layers, active layer, or input/output routes.");
+        }
+
+        int runsBeforeExport = shellHost.NativePreviewRunCount;
+        string exportPath = Path.Combine(
+            Path.GetTempPath(),
+            "openvisionlab_threshold_signal_" + Guid.NewGuid().ToString("N") + ".tsv");
+        try
+        {
+            thresholdView.ExportSignalEvidenceForTest(exportPath);
+            string exported = File.ReadAllText(exportPath);
+            if (!exported.Contains("#\tMarker.Threshold\tT|", StringComparison.Ordinal)
+                || !exported.Contains("Gray level\tGray population", StringComparison.Ordinal)
+                || File.ReadLines(exportPath).Count() < 260)
+            {
+                throw new InvalidOperationException(
+                    "Threshold signal TSV did not retain its teaching marker, provenance, and all 256 bins.");
+            }
+        }
+        finally
+        {
+            if (File.Exists(exportPath))
+            {
+                File.Delete(exportPath);
+            }
+        }
+
+        if (shellHost.NativePreviewRunCount != runsBeforeExport)
+        {
+            throw new InvalidOperationException("Threshold signal export triggered Preview/Run.");
+        }
+    }
+
+    private static void AssertThresholdRangeSignalInspector(
+        OpenVisionShellHostView shellHost,
+        ThresholdToolWpfView thresholdView)
+    {
+        ThresholdToolProperty rangeProperty = thresholdView.CreateProperty();
+        if (rangeProperty.Mode != ThresholdToolMode.Range
+            || !thresholdView.SignalInspectorHasEvidenceForTest
+            || thresholdView.SignalInspectorSeriesCountForTest != 1
+            || thresholdView.SignalInspectorMarkerCountForTest != 2
+            || Math.Abs(
+                thresholdView.GetSignalInspectorMarkerValueForTest(
+                    OpenVisionNativeThresholdSignalEvidenceFactory.LowerMarkerId)
+                - rangeProperty.RangeMin) > 0.001
+            || Math.Abs(
+                thresholdView.GetSignalInspectorMarkerValueForTest(
+                    OpenVisionNativeThresholdSignalEvidenceFactory.UpperMarkerId)
+                - rangeProperty.RangeMax) > 0.001)
+        {
+            throw new InvalidOperationException(
+                "Range Threshold signal inspector did not retain matching Lower/Upper markers.");
+        }
+
+        AssertVisibleTextContains(
+            thresholdView,
+            "Range Threshold signal inspector",
+            "Lower ",
+            "Upper ",
+            "Drag Lower/Upper");
+
+        int replacementLower = Math.Min(64, rangeProperty.RangeMax);
+        int runsBeforeMarkerCommit = shellHost.NativePreviewRunCount;
+        thresholdView.CommitSignalInspectorMarkerForTest(
+            OpenVisionNativeThresholdSignalEvidenceFactory.LowerMarkerId,
+            replacementLower);
+        if (thresholdView.SignalInspectorHasEvidenceForTest
+            || thresholdView.CreateProperty().RangeMin != replacementLower)
+        {
+            throw new InvalidOperationException(
+                "Range Lower marker did not update the existing RangeMin teaching value and clear stale evidence.");
+        }
+
+        Thread.Sleep(180);
+        Pump(30);
+        if (shellHost.NativePreviewRunCount <= runsBeforeMarkerCommit
+            || !thresholdView.SignalInspectorHasEvidenceForTest
+            || thresholdView.SignalInspectorMarkerCountForTest != 2
+            || Math.Abs(
+                thresholdView.GetSignalInspectorMarkerValueForTest(
+                    OpenVisionNativeThresholdSignalEvidenceFactory.LowerMarkerId)
+                - replacementLower) > 0.001)
+        {
+            throw new InvalidOperationException(
+                "Range Lower marker did not produce replacement current-Preview evidence.");
+        }
     }
 
     private static CaptureResult CaptureShellHostRotateScaleTool(string outputPath)
@@ -17608,6 +18786,586 @@ internal static class Program
                 throw new InvalidOperationException("Docked Morphology exposed localization keys instead of operator-facing labels.");
             }
         });
+    }
+
+    private static CaptureResult CaptureRecipePendingEditDialog(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionRecipePendingEditDialog dialog = new(
+            new OpenVisionRecipePendingEditRequest
+            {
+                Kind = OpenVisionRecipePendingEditTransitionKind.Pipeline,
+                RecipeName = "Connector_Pin_Inspection",
+                PipelineName = "Pin_Gap_Review",
+                StepName = "02 Pin row Blob / Blob",
+                TargetName = "Pin_Pitch_Alternative"
+            });
+        return CaptureStandaloneWindow(dialog, outputPath, 560, 330, () =>
+        {
+            AssertVisibleAutomationIds(
+                dialog,
+                "Recipe pending-edit decision",
+                "RecipePendingEditDialog",
+                "RecipePendingEditCloseButton",
+                "RecipePendingEditCancelButton",
+                "RecipePendingEditDiscardButton",
+                "RecipePendingEditApplyButton");
+            AssertVisibleTextContains(
+                dialog,
+                "Recipe pending-edit decision copy",
+                "Step",
+                "Connector_Pin_Inspection",
+                "Pin_Gap_Review",
+                "Pin_Pitch_Alternative");
+            AssertButtonTextContrast(dialog, "RecipePendingEditCancelButton", "Recipe pending-edit cancel");
+            AssertButtonTextContrast(dialog, "RecipePendingEditDiscardButton", "Recipe pending-edit discard");
+            AssertButtonTextContrast(dialog, "RecipePendingEditApplyButton", "Recipe pending-edit apply");
+        });
+    }
+
+    private static CaptureResult CaptureShellHostRecipeChangeSafety(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        CleanupTransientRecipeWorkspaces();
+
+        string recipeA = "Smoke_RecipeSafety_A_" + Guid.NewGuid().ToString("N").Substring(0, 10);
+        string recipeB = "Smoke_RecipeSafety_B_" + Guid.NewGuid().ToString("N").Substring(0, 10);
+        const string pipelineA = "Inspection_A";
+        const string pipelineAAlternative = "Inspection_A_Alternative";
+        const string pipelineB = "Inspection_B";
+        const int originalMinArea = 321;
+        const int editedMinArea = 987;
+
+        VisionPipeline CreateBlobPipeline(string name, int stepCount)
+        {
+            VisionPipeline pipeline = new() { Name = name };
+            for (int index = 0; index < stepCount; index++)
+            {
+                VisionPipelineStep step = new()
+                {
+                    Name = $"{name}_Blob_{index + 1}",
+                    ToolType = "Blob",
+                    InputLayer = index == 0 ? "Main" : $"{name}_Preview_{index}",
+                    OutputLayer = $"{name}_Preview_{index + 1}"
+                };
+                step.Parameters["MIN_AREA"] = (originalMinArea + index).ToString(CultureInfo.InvariantCulture);
+                step.Parameters["MAX_AREA"] = "1000000";
+                pipeline.Steps.Add(step);
+            }
+
+            return pipeline;
+        }
+
+        VisionPipelineStorage.Save(recipeA, CreateBlobPipeline(pipelineA, 2));
+        VisionPipelineStorage.Save(recipeA, CreateBlobPipeline(pipelineAAlternative, 1));
+        VisionPipelineStorage.SaveActivePipelineName(recipeA, pipelineA);
+        VisionPipelineStorage.Save(recipeB, CreateBlobPipeline(pipelineB, 1));
+        VisionPipelineStorage.SaveActivePipelineName(recipeB, pipelineB);
+
+        OpenVisionShellHostView shellHost = CreateShellHost(recipeA, seedMainLayer: true);
+        try
+        {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                int previewRunsBefore = shellHost.NativePreviewRunCount;
+                int layerCountBefore = shellHost.LayerDocumentCount;
+                string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+                string routeInputBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string routeOutputBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+
+                void AssertNoWorkspaceSideEffects(string scenario)
+                {
+                    if (shellHost.NativePreviewRunCount != previewRunsBefore
+                        || shellHost.HasNativePreviewResult
+                        || shellHost.LayerDocumentCount != layerCountBefore
+                        || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal)
+                        || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, routeInputBefore, StringComparison.Ordinal)
+                        || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, routeOutputBefore, StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            scenario + " changed Preview/Run, layers, active layer, or routing. "
+                            + $"Runs={previewRunsBefore}->{shellHost.NativePreviewRunCount}, "
+                            + $"Layers={layerCountBefore}->{shellHost.LayerDocumentCount}, "
+                            + $"Active='{activeLayerBefore}'->'{shellHost.ActiveHostLayerTitle}', "
+                            + $"Route='{routeInputBefore}->{routeOutputBefore}'->"
+                            + $"'{shellHost.ActiveNativeRouteInputLayerNameForTest}->{shellHost.ActiveNativeRouteOutputLayerNameForTest}'.");
+                    }
+                }
+
+                void SelectPipeline(string name)
+                {
+                    OpenVisionRecipePipelineOption option = shellHost.RecipeCommands.PipelineOptions
+                        .FirstOrDefault(item => string.Equals(item.PipelineName, name, StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException("Recipe change-safety pipeline was not found: " + name);
+                    shellHost.RecipeCommands.SelectedPipelineOption = option;
+                    Pump(80);
+                }
+
+                BlobProperty LoadBlobStep(int zeroBasedIndex)
+                {
+                    IReadOnlyList<OpenVisionRecipePipelineStepPreview> steps =
+                        shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps;
+                    if (zeroBasedIndex < 0 || zeroBasedIndex >= steps.Count)
+                    {
+                        throw new InvalidOperationException(
+                            $"Recipe change-safety Step index was invalid: {zeroBasedIndex}/{steps.Count}.");
+                    }
+
+                    shellHost.RecipeCommands.SelectedPipelinePreviewStep = steps[zeroBasedIndex];
+                    shellHost.RecipeCommands.LoadSelectedStepParametersCommand.Execute(null);
+                    Pump(80);
+                    return shellHost.RecipeCommands.SelectedStepEditObject as BlobProperty
+                        ?? throw new InvalidOperationException("Recipe change-safety Blob editor did not load.");
+                }
+
+                void MakeDirty(BlobProperty property, int value = editedMinArea)
+                {
+                    property.MIN_AREA = value;
+                    shellHost.RecipeCommands.MarkSelectedStepEditDirty();
+                    Pump(40);
+                    if (!shellHost.RecipeCommands.IsSelectedStepEditDirty
+                        || property.MIN_AREA != value)
+                    {
+                        throw new InvalidOperationException(
+                            "Recipe change-safety could not establish a dirty edit session.");
+                    }
+                }
+
+                shellHost.SetRecipeManagerOpenForTest(true);
+                Pump(100);
+                ToggleButton advancedToggle = FindNamedVisualChild<ToggleButton>(
+                    shellHost,
+                    "recipeAdvancedReviewToggle")
+                    ?? throw new InvalidOperationException("Recipe change-safety advanced review toggle was not found.");
+                advancedToggle.IsChecked = true;
+                Pump(80);
+                TabItem pipelineTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline")
+                    ?? throw new InvalidOperationException("Recipe change-safety Pipeline tab was not found.");
+                TabItem xmlStepsTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineXmlSteps")
+                    ?? throw new InvalidOperationException("Recipe change-safety XML/Step tab was not found.");
+                ScrollViewer pipelineScrollViewer = FindNamedVisualChild<ScrollViewer>(
+                    shellHost,
+                    "recipePipelineTabScrollViewer")
+                    ?? throw new InvalidOperationException("Recipe change-safety Pipeline scroll viewer was not found.");
+                pipelineTab.IsSelected = true;
+                xmlStepsTab.IsSelected = true;
+                Pump(80);
+
+                void MakeDirtyThroughPropertyGrid(BlobProperty property, int value)
+                {
+                    TextBox editor = FindVisualChildren<TextBox>(shellHost)
+                        .Single(item => item.IsVisible
+                            && item.IsEnabled
+                            && string.Equals(
+                                item.Text,
+                                property.MIN_AREA.ToString(CultureInfo.InvariantCulture),
+                                StringComparison.Ordinal));
+                    editor.Focus();
+                    editor.Text = value.ToString(CultureInfo.InvariantCulture);
+                    Pump(40);
+                    advancedToggle.Focus();
+                    Pump(80);
+                    shellHost.RecipeCommands.MarkSelectedStepEditDirty();
+                    if (!shellHost.RecipeCommands.IsSelectedStepEditDirty
+                        || property.MIN_AREA != value)
+                    {
+                        throw new InvalidOperationException(
+                            "Recipe change-safety could not commit the visible PropertyGrid edit. "
+                            + $"Model={property.MIN_AREA}, Editor='{editor.Text}', Expected={value}.");
+                    }
+                }
+
+                SelectPipeline(pipelineA);
+                BlobProperty stepEdit = LoadBlobStep(0);
+                MakeDirty(stepEdit);
+                OpenVisionRecipePipelineStepPreview originalStep =
+                    shellHost.RecipeCommands.SelectedPipelinePreviewStep;
+                object originalEditObject = shellHost.RecipeCommands.SelectedStepEditObject;
+                OpenVisionRecipePipelineStepPreview nextStep =
+                    shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps[1];
+
+                shellHost.QueuePendingRecipeEditDecisionForTest(
+                    OpenVisionRecipePendingEditDecision.Cancel);
+                shellHost.RecipeCommands.SelectedPipelinePreviewStep = nextStep;
+                Pump(80);
+                if (shellHost.RecipeCommands.SelectedPipelinePreviewStep?.Index != originalStep.Index
+                    || !ReferenceEquals(shellHost.RecipeCommands.SelectedStepEditObject, originalEditObject)
+                    || !shellHost.RecipeCommands.IsSelectedStepEditDirty
+                    || stepEdit.MIN_AREA != editedMinArea)
+                {
+                    throw new InvalidOperationException(
+                        "Cancel did not preserve the selected Step and dirty editor.");
+                }
+                pipelineScrollViewer.ScrollToBottom();
+                Pump(80);
+                SaveVisibleAutomationElementPng(
+                    shellHost,
+                    "HostRecipeManagerPanel",
+                    outputPath,
+                    "01-step-cancel-preserves-dirty.png");
+
+                shellHost.QueuePendingRecipeEditDecisionForTest(
+                    OpenVisionRecipePendingEditDecision.Discard);
+                shellHost.RecipeCommands.SelectedPipelinePreviewStep = nextStep;
+                Pump(80);
+                if (shellHost.RecipeCommands.SelectedPipelinePreviewStep?.Index != nextStep.Index
+                    || shellHost.RecipeCommands.IsSelectedStepEditDirty
+                    || shellHost.RecipeCommands.SelectedStepEditObject != null
+                    || VisionPipelineStorage.Load(recipeA, pipelineA).Steps[0].Parameters["MIN_AREA"]
+                        != originalMinArea.ToString(CultureInfo.InvariantCulture))
+                {
+                    throw new InvalidOperationException(
+                        "Discard did not move to the requested Step while preserving stored XML.");
+                }
+
+                const int stepAppliedMinArea = 401;
+                BlobProperty stepApplyEdit = LoadBlobStep(0);
+                MakeDirtyThroughPropertyGrid(stepApplyEdit, stepAppliedMinArea);
+                nextStep = shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps[1];
+                shellHost.QueuePendingRecipeEditDecisionForTest(
+                    OpenVisionRecipePendingEditDecision.ApplyAndContinue);
+                shellHost.RecipeCommands.SelectedPipelinePreviewStep = nextStep;
+                Pump(100);
+                if (shellHost.RecipeCommands.SelectedPipelinePreviewStep?.Index != nextStep.Index
+                    || shellHost.RecipeCommands.IsSelectedStepEditDirty
+                    || VisionPipelineStorage.Load(recipeA, pipelineA).Steps[0].Parameters["MIN_AREA"]
+                        != stepAppliedMinArea.ToString(CultureInfo.InvariantCulture))
+                {
+                    throw new InvalidOperationException(
+                        "Apply and continue did not persist XML before the Step transition.");
+                }
+
+                SelectPipeline(pipelineA);
+                BlobProperty pipelineEdit = LoadBlobStep(0);
+                MakeDirty(pipelineEdit);
+                OpenVisionRecipePipelineOption alternativeOption = shellHost.RecipeCommands.PipelineOptions
+                    .First(item => string.Equals(
+                        item.PipelineName,
+                        pipelineAAlternative,
+                        StringComparison.Ordinal));
+                shellHost.QueuePendingRecipeEditDecisionForTest(
+                    OpenVisionRecipePendingEditDecision.Cancel);
+                shellHost.RecipeCommands.SelectedPipelineOption = alternativeOption;
+                Pump(80);
+                if (!string.Equals(
+                        shellHost.RecipeCommands.SelectedPipelineOption?.PipelineName,
+                        pipelineA,
+                        StringComparison.Ordinal)
+                    || !shellHost.RecipeCommands.IsSelectedStepEditDirty
+                    || !ReferenceEquals(shellHost.RecipeCommands.SelectedStepEditObject, pipelineEdit))
+                {
+                    throw new InvalidOperationException(
+                        "Cancel did not preserve the Pipeline and dirty editor.");
+                }
+
+                shellHost.QueuePendingRecipeEditDecisionForTest(
+                    OpenVisionRecipePendingEditDecision.Discard);
+                shellHost.RecipeCommands.SelectedPipelineOption = alternativeOption;
+                Pump(80);
+                if (!string.Equals(
+                        shellHost.RecipeCommands.SelectedPipelineOption?.PipelineName,
+                        pipelineAAlternative,
+                        StringComparison.Ordinal)
+                    || shellHost.RecipeCommands.IsSelectedStepEditDirty
+                    || shellHost.RecipeCommands.SelectedStepEditObject != null)
+                {
+                    throw new InvalidOperationException(
+                        "Discard did not move to the requested Pipeline.");
+                }
+
+                const int pipelineAppliedMinArea = 402;
+                SelectPipeline(pipelineA);
+                BlobProperty pipelineApplyEdit = LoadBlobStep(0);
+                MakeDirtyThroughPropertyGrid(pipelineApplyEdit, pipelineAppliedMinArea);
+                shellHost.QueuePendingRecipeEditDecisionForTest(
+                    OpenVisionRecipePendingEditDecision.ApplyAndContinue);
+                shellHost.RecipeCommands.SelectedPipelineOption = alternativeOption;
+                Pump(100);
+                if (!string.Equals(
+                        shellHost.RecipeCommands.SelectedPipelineOption?.PipelineName,
+                        pipelineAAlternative,
+                        StringComparison.Ordinal)
+                    || shellHost.RecipeCommands.IsSelectedStepEditDirty
+                    || VisionPipelineStorage.Load(recipeA, pipelineA).Steps[0].Parameters["MIN_AREA"]
+                        != pipelineAppliedMinArea.ToString(CultureInfo.InvariantCulture))
+                {
+                    throw new InvalidOperationException(
+                        "Apply and continue did not persist XML before the Pipeline transition.");
+                }
+
+                SelectPipeline(pipelineA);
+                BlobProperty recipeApplyEdit = LoadBlobStep(0);
+                pipelineScrollViewer.ScrollToBottom();
+                Pump(80);
+                MakeDirtyThroughPropertyGrid(recipeApplyEdit, editedMinArea);
+                shellHost.QueuePendingRecipeEditDecisionForTest(
+                    OpenVisionRecipePendingEditDecision.ApplyAndContinue);
+                shellHost.RecipeCommands.SelectedRecipeName = recipeB;
+                Pump(140);
+                string savedRecipeAValue = VisionPipelineStorage.Load(recipeA, pipelineA)
+                    .Steps[0]
+                    .Parameters["MIN_AREA"];
+                if (!string.Equals(shellHost.SelectedRecipeNameForTest, recipeB, StringComparison.Ordinal)
+                    || shellHost.RecipeCommands.IsSelectedStepEditDirty
+                    || savedRecipeAValue != editedMinArea.ToString(CultureInfo.InvariantCulture))
+                {
+                    throw new InvalidOperationException(
+                        "Apply and continue did not persist XML before the Recipe transition. "
+                        + $"Selected='{shellHost.SelectedRecipeNameForTest}/{recipeB}', "
+                        + $"Dirty={shellHost.RecipeCommands.IsSelectedStepEditDirty}, "
+                        + $"Stored={savedRecipeAValue}/{editedMinArea}, "
+                        + $"Status='{shellHost.RecipeCommands.SelectedStepEditStatusText}'.");
+                }
+
+                SelectPipeline(pipelineB);
+                BlobProperty recipeCancelEdit = LoadBlobStep(0);
+                MakeDirty(recipeCancelEdit, editedMinArea + 10);
+                object? recipeCancelEditObject = shellHost.RecipeCommands.SelectedStepEditObject;
+                shellHost.QueuePendingRecipeEditDecisionForTest(
+                    OpenVisionRecipePendingEditDecision.Cancel);
+                shellHost.RecipeCommands.SelectedRecipeName = recipeA;
+                Pump(100);
+                if (!string.Equals(shellHost.SelectedRecipeNameForTest, recipeB, StringComparison.Ordinal)
+                    || !shellHost.RecipeCommands.IsSelectedStepEditDirty
+                    || !ReferenceEquals(shellHost.RecipeCommands.SelectedStepEditObject, recipeCancelEditObject)
+                    || recipeCancelEdit.MIN_AREA != editedMinArea + 10)
+                {
+                    throw new InvalidOperationException(
+                        "Cancel did not preserve the Recipe and dirty editor.");
+                }
+
+                shellHost.QueuePendingRecipeEditDecisionForTest(
+                    OpenVisionRecipePendingEditDecision.Discard);
+                shellHost.RecipeCommands.SelectedRecipeName = recipeA;
+                Pump(100);
+                if (!string.Equals(shellHost.SelectedRecipeNameForTest, recipeA, StringComparison.Ordinal)
+                    || shellHost.RecipeCommands.IsSelectedStepEditDirty
+                    || VisionPipelineStorage.Load(recipeB, pipelineB).Steps[0].Parameters["MIN_AREA"]
+                        != originalMinArea.ToString(CultureInfo.InvariantCulture))
+                {
+                    throw new InvalidOperationException(
+                        "Discard did not move to the requested Recipe while preserving stored XML.");
+                }
+
+                shellHost.RecipeCommands.SelectedRecipeName = recipeB;
+                Pump(100);
+                SelectPipeline(pipelineB);
+                BlobProperty managerEdit = LoadBlobStep(0);
+                MakeDirty(managerEdit, editedMinArea + 1);
+                object? managerEditObject = shellHost.RecipeCommands.SelectedStepEditObject;
+                shellHost.QueuePendingRecipeEditDecisionForTest(
+                    OpenVisionRecipePendingEditDecision.Cancel);
+                shellHost.SetRecipeManagerOpenForTest(false);
+                Pump(100);
+                if (!shellHost.IsRecipeManagerOpenForTest
+                    || !shellHost.RecipeCommands.IsSelectedStepEditDirty
+                    || !ReferenceEquals(shellHost.RecipeCommands.SelectedStepEditObject, managerEditObject)
+                    || managerEdit.MIN_AREA != editedMinArea + 1)
+                {
+                    throw new InvalidOperationException(
+                        "Cancel did not keep Recipe Manager and its dirty editor open.");
+                }
+
+                shellHost.QueuePendingRecipeEditDecisionForTest(
+                    OpenVisionRecipePendingEditDecision.Discard);
+                shellHost.SetRecipeManagerOpenForTest(false);
+                Pump(100);
+                if (shellHost.IsRecipeManagerOpenForTest
+                    || shellHost.RecipeCommands.IsSelectedStepEditDirty
+                    || shellHost.RecipeCommands.SelectedStepEditObject != null
+                    || VisionPipelineStorage.Load(recipeB, pipelineB).Steps[0].Parameters["MIN_AREA"]
+                        != originalMinArea.ToString(CultureInfo.InvariantCulture))
+                {
+                    throw new InvalidOperationException(
+                        "Discard did not close Recipe Manager while preserving stored XML.");
+                }
+
+                shellHost.SetRecipeManagerOpenForTest(true);
+                Pump(100);
+                advancedToggle.IsChecked = true;
+                pipelineTab.IsSelected = true;
+                xmlStepsTab.IsSelected = true;
+                SelectPipeline(pipelineB);
+                const int managerAppliedMinArea = 403;
+                BlobProperty managerApplyEdit = LoadBlobStep(0);
+                MakeDirtyThroughPropertyGrid(managerApplyEdit, managerAppliedMinArea);
+                shellHost.QueuePendingRecipeEditDecisionForTest(
+                    OpenVisionRecipePendingEditDecision.ApplyAndContinue);
+                shellHost.SetRecipeManagerOpenForTest(false);
+                Pump(120);
+                if (shellHost.IsRecipeManagerOpenForTest
+                    || shellHost.RecipeCommands.IsSelectedStepEditDirty
+                    || VisionPipelineStorage.Load(recipeB, pipelineB).Steps[0].Parameters["MIN_AREA"]
+                        != managerAppliedMinArea.ToString(CultureInfo.InvariantCulture))
+                {
+                    throw new InvalidOperationException(
+                        "Apply and continue did not persist XML before closing Recipe Manager.");
+                }
+
+                VisionPipelineStorage.Save(recipeB, CreateBlobPipeline(pipelineB, 1));
+                shellHost.SetRecipeManagerOpenForTest(true);
+                Pump(100);
+                advancedToggle.IsChecked = true;
+                pipelineTab.IsSelected = true;
+                xmlStepsTab.IsSelected = true;
+                SelectPipeline(pipelineB);
+                BlobProperty failedApplyEdit = LoadBlobStep(0);
+                MakeDirty(failedApplyEdit, editedMinArea + 2);
+                object? failedEditObject = shellHost.RecipeCommands.SelectedStepEditObject;
+                shellHost.FailNextRecipeStepEditCommitForTest();
+                shellHost.QueuePendingRecipeEditDecisionForTest(
+                    OpenVisionRecipePendingEditDecision.ApplyAndContinue);
+                shellHost.RecipeCommands.SelectedRecipeName = recipeA;
+                Pump(120);
+                if (!string.Equals(shellHost.SelectedRecipeNameForTest, recipeB, StringComparison.Ordinal)
+                    || !shellHost.RecipeCommands.IsSelectedStepEditDirty
+                    || !ReferenceEquals(shellHost.RecipeCommands.SelectedStepEditObject, failedEditObject)
+                    || failedApplyEdit.MIN_AREA != editedMinArea + 2
+                    || VisionPipelineStorage.Load(recipeB, pipelineB).Steps[0].Parameters["MIN_AREA"]
+                        != originalMinArea.ToString(CultureInfo.InvariantCulture))
+                {
+                    throw new InvalidOperationException(
+                        "A failed apply did not keep the current Recipe and dirty editor unchanged.");
+                }
+                pipelineScrollViewer.ScrollToBottom();
+                Pump(80);
+                SaveVisibleAutomationElementPng(
+                    shellHost,
+                    "HostRecipeManagerPanel",
+                    outputPath,
+                    "02-failed-apply-keeps-dirty.png");
+
+                shellHost.QueuePendingRecipeEditDecisionForTest(
+                    OpenVisionRecipePendingEditDecision.Discard);
+                shellHost.RecipeCommands.SelectedRecipeName = recipeA;
+                Pump(120);
+                shellHost.RecipeCommands.SelectedRecipeName = recipeB;
+                Pump(120);
+                SelectPipeline(pipelineB);
+                BlobProperty failedSaveEdit = LoadBlobStep(0);
+                pipelineScrollViewer.ScrollToBottom();
+                Pump(80);
+                int failedRoundTripMinArea = editedMinArea + 3;
+                MakeDirtyThroughPropertyGrid(failedSaveEdit, failedRoundTripMinArea);
+                object? failedSaveEditObject = shellHost.RecipeCommands.SelectedStepEditObject;
+
+                shellHost.FailNextRecipeStepSaveForTest();
+                shellHost.QueuePendingRecipeEditDecisionForTest(
+                    OpenVisionRecipePendingEditDecision.ApplyAndContinue);
+                shellHost.RecipeCommands.SelectedRecipeName = recipeA;
+                Pump(140);
+                string storedAfterFailedSave = VisionPipelineStorage.Load(recipeB, pipelineB)
+                    .Steps[0]
+                    .Parameters["MIN_AREA"];
+                if (!string.Equals(shellHost.SelectedRecipeNameForTest, recipeB, StringComparison.Ordinal)
+                    || !shellHost.RecipeCommands.IsSelectedStepEditDirty
+                    || !ReferenceEquals(shellHost.RecipeCommands.SelectedStepEditObject, failedSaveEditObject)
+                    || failedSaveEdit.MIN_AREA != failedRoundTripMinArea
+                    || storedAfterFailedSave != originalMinArea.ToString(CultureInfo.InvariantCulture)
+                    || shellHost.RecipeCommands.SelectedStepEditStatusText.IndexOf(
+                        "Forced XML save failure",
+                        StringComparison.Ordinal) < 0)
+                {
+                    throw new InvalidOperationException(
+                        "A failed XML save did not block the transition, retain the dirty editor, "
+                        + "and preserve the previous stored XML. "
+                        + $"Selected='{shellHost.SelectedRecipeNameForTest}/{recipeB}', "
+                        + $"Dirty={shellHost.RecipeCommands.IsSelectedStepEditDirty}, "
+                        + $"Model={failedSaveEdit.MIN_AREA}/{failedRoundTripMinArea}, "
+                        + $"Stored={storedAfterFailedSave}/{originalMinArea}, "
+                        + $"Status='{shellHost.RecipeCommands.SelectedStepEditStatusText}'.");
+                }
+                pipelineScrollViewer.ScrollToBottom();
+                Pump(80);
+                SaveVisibleAutomationElementPng(
+                    shellHost,
+                    "HostRecipeManagerPanel",
+                    outputPath,
+                    "03-failed-save-keeps-dirty.png");
+
+                shellHost.QueuePendingRecipeEditDecisionForTest(
+                    OpenVisionRecipePendingEditDecision.Discard);
+                shellHost.RecipeCommands.SelectedRecipeName = recipeA;
+                Pump(120);
+                shellHost.RecipeCommands.SelectedRecipeName = recipeB;
+                Pump(120);
+                SelectPipeline(pipelineB);
+                BlobProperty failedRoundTripEdit = LoadBlobStep(0);
+                pipelineScrollViewer.ScrollToBottom();
+                Pump(80);
+                int failedValidationMinArea = editedMinArea + 4;
+                MakeDirtyThroughPropertyGrid(failedRoundTripEdit, failedValidationMinArea);
+                object? failedRoundTripEditObject = shellHost.RecipeCommands.SelectedStepEditObject;
+
+                shellHost.FailNextRecipeStepRoundTripValidationForTest();
+                shellHost.QueuePendingRecipeEditDecisionForTest(
+                    OpenVisionRecipePendingEditDecision.ApplyAndContinue);
+                shellHost.RecipeCommands.SelectedRecipeName = recipeA;
+                Pump(140);
+                string restoredRecipeBValue = VisionPipelineStorage.Load(recipeB, pipelineB)
+                    .Steps[0]
+                    .Parameters["MIN_AREA"];
+                if (!string.Equals(shellHost.SelectedRecipeNameForTest, recipeB, StringComparison.Ordinal)
+                    || !shellHost.RecipeCommands.IsSelectedStepEditDirty
+                    || !ReferenceEquals(shellHost.RecipeCommands.SelectedStepEditObject, failedRoundTripEditObject)
+                    || failedRoundTripEdit.MIN_AREA != failedValidationMinArea
+                    || restoredRecipeBValue != originalMinArea.ToString(CultureInfo.InvariantCulture)
+                    || shellHost.RecipeCommands.SelectedStepEditStatusText.IndexOf(
+                        "복원",
+                        StringComparison.Ordinal) < 0)
+                {
+                    throw new InvalidOperationException(
+                        "A failed XML round-trip did not block the transition, retain the dirty editor, "
+                        + "and restore the previous stored XML. "
+                        + $"Selected='{shellHost.SelectedRecipeNameForTest}/{recipeB}', "
+                        + $"Dirty={shellHost.RecipeCommands.IsSelectedStepEditDirty}, "
+                        + $"Model={failedRoundTripEdit.MIN_AREA}/{failedValidationMinArea}, "
+                        + $"Stored={restoredRecipeBValue}/{originalMinArea}, "
+                        + $"Status='{shellHost.RecipeCommands.SelectedStepEditStatusText}'.");
+                }
+                pipelineScrollViewer.ScrollToBottom();
+                Pump(80);
+                SaveVisibleAutomationElementPng(
+                    shellHost,
+                    "HostRecipeManagerPanel",
+                    outputPath,
+                    "04-failed-roundtrip-restores-xml.png");
+
+                AssertNoWorkspaceSideEffects("Recipe change-safety decisions");
+                string diagnosticsDirectory = Path.Combine(
+                    Path.GetDirectoryName(outputPath) ?? ".",
+                    Path.GetFileNameWithoutExtension(outputPath) + ".diagnostics");
+                Directory.CreateDirectory(diagnosticsDirectory);
+                File.WriteAllLines(
+                    Path.Combine(diagnosticsDirectory, "recipe_change_safety_results.txt"),
+                    new[]
+                    {
+                        "StepCancel=Preserved",
+                        "StepDiscard=TransitionedWithoutSave",
+                        "StepApplyAndContinue=SavedThenTransitioned",
+                        "PipelineCancel=Preserved",
+                        "PipelineDiscard=TransitionedWithoutSave",
+                        "PipelineApplyAndContinue=SavedThenTransitioned",
+                        "RecipeCancel=Preserved",
+                        "RecipeDiscard=TransitionedWithoutSave",
+                        "RecipeApplyAndContinue=SavedThenTransitioned",
+                        "ManagerCloseCancel=StayedOpen",
+                        "ManagerCloseDiscard=ClosedWithoutSave",
+                        "ManagerCloseApplyAndContinue=SavedThenClosed",
+                        "FailedApply=TransitionBlockedAndDirtyPreserved",
+                        "FailedSave=TransitionBlockedAndStoredXmlPreserved",
+                        "FailedRoundTrip=TransitionBlockedAndStoredXmlRestored",
+                        "PreviewRunSideEffects=None",
+                        "LayerSideEffects=None",
+                        "RouteSideEffects=None"
+                    });
+            }, captureFloatingToolWindow: false, captureScreen: true);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeA);
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeB);
+        }
     }
 
     private static void AssertBasicImagePropertyMapperRoundTrip()

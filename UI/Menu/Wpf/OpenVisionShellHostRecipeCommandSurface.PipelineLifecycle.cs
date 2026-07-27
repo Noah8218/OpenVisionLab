@@ -15,6 +15,13 @@ namespace OpenVisionLab
                 return;
             }
 
+            if (!TryLeaveSelectedStepEdit(
+                OpenVisionRecipePendingEditTransitionKind.Pipeline,
+                option.PipelineName))
+            {
+                return;
+            }
+
             string recipeName = NormalizeRecipeName(selectedRecipeName);
             OpenVisionRecipePipelineLifecycleResult result = pipelineLifecycleUseCase.Activate(recipeName, option.PipelineName);
             StatusText = string.Format(CultureInfo.CurrentCulture, LocalText("활성 파이프라인: {0}", "Active pipeline: {0}"), option.PipelineName);
@@ -33,6 +40,13 @@ namespace OpenVisionLab
 
             string recipeName = NormalizeRecipeName(selectedRecipeName);
             string requestedName = NormalizePipelineName(PipelineEditName);
+            if (!TryLeaveSelectedStepEdit(
+                OpenVisionRecipePendingEditTransitionKind.Pipeline,
+                requestedName))
+            {
+                return;
+            }
+
             OpenVisionRecipePipelineLifecycleResult result = pipelineLifecycleUseCase.Duplicate(
                 recipeName,
                 option.PipelineName,
@@ -60,6 +74,13 @@ namespace OpenVisionLab
 
             string recipeName = NormalizeRecipeName(selectedRecipeName);
             string targetName = NormalizePipelineName(PipelineEditName);
+            if (!TryLeaveSelectedStepEdit(
+                OpenVisionRecipePendingEditTransitionKind.Pipeline,
+                targetName))
+            {
+                return;
+            }
+
             bool wasActive = option.IsActive;
             OpenVisionRecipePipelineLifecycleResult result = pipelineLifecycleUseCase.Rename(
                 recipeName,
@@ -93,6 +114,13 @@ namespace OpenVisionLab
             if (!confirmDeletePipeline(recipeName, option.PipelineName))
             {
                 StatusText = LocalText("파이프라인 삭제가 취소되었습니다.", "Pipeline delete canceled.");
+                return;
+            }
+
+            if (!TryLeaveSelectedStepEdit(
+                OpenVisionRecipePendingEditTransitionKind.Pipeline,
+                LocalText("Pipeline 삭제: ", "Delete Pipeline: ") + option.PipelineName))
+            {
                 return;
             }
 
@@ -136,6 +164,13 @@ namespace OpenVisionLab
             if (sampleOption == null || string.IsNullOrWhiteSpace(sampleOption.PipelinePath))
             {
                 StatusText = LocalText("샘플 파이프라인을 사용할 수 없습니다.", "Sample pipeline is not available.");
+                return false;
+            }
+
+            if (!TryLeaveSelectedStepEdit(
+                OpenVisionRecipePendingEditTransitionKind.Pipeline,
+                sampleOption.SampleName))
+            {
                 return false;
             }
 

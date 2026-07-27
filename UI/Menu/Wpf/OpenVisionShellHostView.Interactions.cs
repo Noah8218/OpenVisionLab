@@ -3,6 +3,7 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -47,6 +48,56 @@ namespace OpenVisionLab
             {
                 recipeStepPropertyGridHostController?.SelectObject(RecipeCommands?.SelectedStepEditObject);
             }
+        }
+
+        private bool CommitPendingRecipeStepEdit()
+        {
+            if (failNextRecipeStepEditCommitForTest)
+            {
+                failNextRecipeStepEditCommitForTest = false;
+                return false;
+            }
+
+            return recipeStepPropertyGridHostController?.CommitPendingEdit() ?? true;
+        }
+
+        private OpenVisionRecipeRoundTripValidationResult ValidateRecipeStepRoundTrip(
+            string recipeName,
+            Lib.OpenCV.Pipeline.VisionPipeline pipeline)
+        {
+            if (failNextRecipeStepRoundTripValidationForTest)
+            {
+                failNextRecipeStepRoundTripValidationForTest = false;
+                return new OpenVisionRecipeRoundTripValidationResult
+                {
+                    Succeeded = false,
+                    Message = "Forced round-trip validation failure for current-build smoke."
+                };
+            }
+
+            bool succeeded = VisionPipelineStorage.TryValidateRoundTrip(
+                recipeName,
+                pipeline,
+                out string message);
+            return new OpenVisionRecipeRoundTripValidationResult
+            {
+                Succeeded = succeeded,
+                Message = message
+            };
+        }
+
+        private void SaveRecipeStepPipeline(
+            string recipeName,
+            Lib.OpenCV.Pipeline.VisionPipeline pipeline)
+        {
+            if (failNextRecipeStepSaveForTest)
+            {
+                failNextRecipeStepSaveForTest = false;
+                throw new InvalidOperationException(
+                    "Forced XML save failure for current-build smoke.");
+            }
+
+            VisionPipelineStorage.Save(recipeName, pipeline);
         }
 
         private void HandleRecipeManagerTitleBarMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -95,8 +146,33 @@ namespace OpenVisionLab
             e.Handled = true;
         }
 
+        private void HandleRecipeManagerOpenUnchecked(object sender, RoutedEventArgs e)
+        {
+            if (RecipeCommands?.TryCloseRecipeManager() != false)
+            {
+                return;
+            }
+
+            isRestoringRecipeManagerAfterCanceledClose = true;
+            try
+            {
+                btnHostRecipeManager.IsChecked = true;
+            }
+            finally
+            {
+                isRestoringRecipeManagerAfterCanceledClose = false;
+            }
+
+            e.Handled = true;
+        }
+
         private void HandleRecipeManagerOpenChecked(object sender, RoutedEventArgs e)
         {
+            if (isRestoringRecipeManagerAfterCanceledClose)
+            {
+                return;
+            }
+
             RecipeCommands?.RefreshOptions();
 
             if (recipeAdvancedReviewToggle != null)
@@ -207,8 +283,30 @@ namespace OpenVisionLab
 
         private void OpenRecipePipelineReview()
         {
+            if (btnHostRecipeManager.IsChecked == true
+                && RecipeCommands?.TryCloseRecipeManager() == false)
+            {
+                return;
+            }
+
             btnHostRecipeManager.IsChecked = false;
             SelectToolMenu(VISION_MENU.Pipeline);
+        }
+
+        private OpenVisionRecipePendingEditDecision DecidePendingRecipeEdit(
+            OpenVisionRecipePendingEditRequest request)
+        {
+            if (pendingRecipeEditDecisionsForTest.Count > 0)
+            {
+                return pendingRecipeEditDecisionsForTest.Dequeue();
+            }
+
+            OpenVisionRecipePendingEditDialog dialog = new OpenVisionRecipePendingEditDialog(request)
+            {
+                Owner = Window.GetWindow(this)
+            };
+            dialog.ShowDialog();
+            return dialog.Decision;
         }
 
         private void ReturnToRecipeManagerFromPipelineReview()
@@ -305,6 +403,74 @@ namespace OpenVisionLab
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
             return result == MessageBoxResult.Yes;
+        }
+
+        private bool ConfirmQualifiedSnapshotLifecycle(
+            string snapshotId,
+            string action,
+            string reason)
+        {
+            if (QualifiedSnapshotLifecycleConfirmationForTest != null)
+            {
+                return QualifiedSnapshotLifecycleConfirmationForTest(
+                    snapshotId,
+                    action,
+                    reason);
+            }
+
+            string normalizedAction = string.Equals(
+                action,
+                "Revoked",
+                StringComparison.Ordinal)
+                ? "Revoke"
+                : "Supersede";
+            string message = string.Format(
+                System.Globalization.CultureInfo.CurrentCulture,
+                OpenVisionLanguageService.CurrentLanguage
+                    == OpenVisionLanguage.Korean
+                    ? "불변 적격 Snapshot에 '{0}' 생명주기 기록을 추가합니다.\n\nSnapshot: {1}\n사유: {2}\n\n증거 payload는 보존되며 이 기록은 삭제하지 않습니다. 계속하시겠습니까?"
+                    : "Append the '{0}' lifecycle record to this immutable qualified Snapshot.\n\nSnapshot: {1}\nReason: {2}\n\nThe evidence payload remains and this record is not deleted. Continue?",
+                normalizedAction,
+                snapshotId,
+                reason);
+            MessageBoxResult result = MessageBox.Show(
+                Window.GetWindow(this),
+                message,
+                OpenVisionLanguageService.CurrentLanguage
+                    == OpenVisionLanguage.Korean
+                    ? "Qualified Snapshot 생명주기 확인"
+                    : "Confirm qualified Snapshot lifecycle",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            return result == MessageBoxResult.Yes;
+        }
+
+        private bool OpenQualifiedSnapshotEvidence(string directory)
+        {
+            if (QualifiedSnapshotEvidenceOpenerForTest != null)
+            {
+                return QualifiedSnapshotEvidenceOpenerForTest(directory);
+            }
+
+            if (string.IsNullOrWhiteSpace(directory)
+                || !Directory.Exists(directory))
+            {
+                return false;
+            }
+
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = directory,
+                    UseShellExecute = true
+                });
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private bool ConfirmDeletePipeline(string recipeName, string pipelineName)

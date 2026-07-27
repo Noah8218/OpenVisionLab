@@ -81,6 +81,10 @@ namespace OpenVisionLab
             if (!string.Equals(selectedRecipeName, requestedRecipe, StringComparison.OrdinalIgnoreCase))
             {
                 SelectRecipe(requestedRecipe);
+                if (!string.Equals(selectedRecipeName, requestedRecipe, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
             }
 
             RefreshPipelineOptions(requestedPipeline);
@@ -93,6 +97,14 @@ namespace OpenVisionLab
             }
 
             SelectedPipelineOption = option;
+            if (!string.Equals(
+                selectedPipelineOption?.PipelineName,
+                requestedPipeline,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
             OpenVisionRecipeSampleOption matchingSample = SampleOptions.FirstOrDefault(candidate =>
                 string.Equals(
                     "Sample_" + SanitizePathSegment(candidate.SampleName),
@@ -433,6 +445,14 @@ namespace OpenVisionLab
                 return;
             }
 
+            if (!TryLeaveSelectedStepEdit(
+                OpenVisionRecipePendingEditTransitionKind.Recipe,
+                normalized))
+            {
+                OnPropertyChanged(nameof(SelectedRecipeName));
+                return;
+            }
+
             if (isSelectingRecipe)
             {
                 SetSelectedRecipeName(normalized);
@@ -464,18 +484,32 @@ namespace OpenVisionLab
                 return;
             }
 
+            if (!string.Equals(
+                    selectedPipelineOption?.PipelineName,
+                    option.PipelineName,
+                    StringComparison.OrdinalIgnoreCase)
+                && !TryLeaveSelectedStepEdit(
+                    OpenVisionRecipePendingEditTransitionKind.Pipeline,
+                    option.PipelineName))
+            {
+                OnPropertyChanged(nameof(SelectedPipelineOption));
+                return;
+            }
+
             if (!SetProperty(ref selectedPipelineOption, option, nameof(SelectedPipelineOption)))
             {
                 PipelineEditName = option.PipelineName;
                 return;
             }
 
+            SelectedPipelinePreviewStep = null;
             PipelineEditName = option.PipelineName;
             LatestCatalogBenchmarkSummary = OpenVisionRecipeCatalogBenchmarkSummary.Empty;
             UpdateSelectedRecipeSummary();
             RefreshRecentBatchRunOptions();
             RefreshPinArrayGapValidationIdentityState();
             NotifyValidationSetEvidenceChanged();
+            NotifyQualifiedSnapshotContextChanged();
             RefreshCommandState();
         }
 
@@ -1009,9 +1043,14 @@ namespace OpenVisionLab
                     VisionPipelineSampleCheckResult result =
                         await VisionPipelineSampleCheckService.RunSampleCheckWithReportSafeAsync(sample, pipelineXmlText, recipeName);
                     VisionPipelineBatchSampleRunResult storageResult = CreateBatchSampleRunResult(sample, result);
-                    storageResult.Success = image.IsExpectedNg ? !result.Success : result.Success;
-                    storageResult.Status = storageResult.Success ? "OK" : "NG";
                     storageResult.ExpectedText = "ExpectedActual: Expected " + image.Expected;
+                    VisionPipelineBatchOutcomeContract.Apply(
+                        storageResult,
+                        result?.ExecutionCompleted == true,
+                        result?.ActualSuccess == true,
+                        hasJudgment: true,
+                        expectedSuccess: !image.IsExpectedNg,
+                        judgmentCorrect: result?.Success == true);
                     if (!string.IsNullOrWhiteSpace(image.Notes))
                     {
                         storageResult.Message = string.IsNullOrWhiteSpace(storageResult.Message)
@@ -1086,8 +1125,7 @@ namespace OpenVisionLab
 
         private static bool IsExpectedOutcomeCorrect(VisionPipelineBatchSampleRunResult result)
         {
-            return OpenVisionRecipeBatchSampleResultOption.TryResolveExpectedSuccess(result, out bool expectedSuccess)
-                && expectedSuccess == result.Success;
+            return VisionPipelineBatchOutcomeContract.ResolveJudgmentCorrect(result);
         }
 
         private static string AppendPartialValidationSetNote(string notes, int completed, int total)
@@ -2965,7 +3003,7 @@ namespace OpenVisionLab
             string messageOverride = null)
         {
             string sampleImagePath = sample?.ImageFullPath ?? string.Empty;
-            return new VisionPipelineBatchSampleRunResult
+            VisionPipelineBatchSampleRunResult storageResult = new VisionPipelineBatchSampleRunResult
             {
                 SampleName = sample?.SampleName ?? string.Empty,
                 Status = result?.Status ?? string.Empty,
@@ -2985,6 +3023,14 @@ namespace OpenVisionLab
                 ActionSummary = result?.ActionSummaryText ?? string.Empty,
                 RunReportPath = result?.RunReportPath ?? string.Empty
             };
+            VisionPipelineBatchOutcomeContract.Apply(
+                storageResult,
+                result?.ExecutionCompleted == true,
+                result?.ActualSuccess == true,
+                hasJudgment: false,
+                expectedSuccess: true,
+                judgmentCorrect: false);
+            return storageResult;
         }
 
 
@@ -3489,47 +3535,100 @@ namespace OpenVisionLab
 
         private void ApplySelectedStepParameters()
         {
+            TryApplySelectedStepParameters();
+        }
+
+        private bool TryApplySelectedStepParameters()
+        {
             if (SelectedStepEditObject == null && !LoadSelectedStepParametersForEdit(updateStatus: true))
             {
-                return;
+                return false;
             }
 
             if (!commitSelectedStepEdit())
             {
                 SetSelectedStepEditStatus(OpenVisionRecipeText.Local("보류 중인 PropertyGrid 편집을 확정하지 못했습니다.", "Could not commit the pending PropertyGrid edit."));
-                return;
+                return false;
             }
 
             if (!TryLoadSelectedPipelineStep(out string recipeName, out string pipelineName, out VisionPipeline pipeline, out VisionPipelineStep step, out string message))
             {
                 SetSelectedStepEditStatus(message);
-                return;
+                return false;
             }
 
             int selectedIndex = SelectedPipelinePreviewStep?.Index ?? 0;
+            string pipelinePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, pipelineName);
+            if (!VisionPipelineStorage.TryLoadFromFile(
+                pipelinePath,
+                out VisionPipeline originalPipeline,
+                out string originalLoadMessage))
+            {
+                SetSelectedStepEditStatus(
+                    OpenVisionRecipeText.Local(
+                        "기존 XML 백업을 읽지 못해 적용을 중단했습니다: ",
+                        "Apply was stopped because the existing XML backup could not be read: ")
+                    + originalLoadMessage);
+                return false;
+            }
+
             if (!VisionPipelineStepPropertyMapper.ApplyProperty(step, SelectedStepEditObject))
             {
                 SetSelectedStepEditStatus(OpenVisionRecipeText.Local("이 Step 파라미터는 XML로 반영할 수 없습니다.", "This step property set cannot be applied to XML."));
-                return;
+                return false;
             }
 
             try
             {
                 pipeline.Name = pipelineName;
-                VisionPipelineStorage.Save(recipeName, pipeline);
+                saveStepEditPipeline(recipeName, pipeline);
             }
             catch (Exception ex)
             {
-                SetSelectedStepEditStatus(OpenVisionRecipeText.Local("XML 저장 실패: ", "XML save failed: ") + ex.GetBaseException().Message);
-                return;
+                string saveFailure = OpenVisionRecipeText.Local("XML 저장 실패: ", "XML save failed: ")
+                    + ex.GetBaseException().Message;
+                TryRestorePipelineAfterFailedApply(recipeName, originalPipeline, out string restoreMessage);
+                SetSelectedStepEditStatus(saveFailure + Environment.NewLine + restoreMessage);
+                return false;
             }
 
-            string validationMessage;
-            bool roundTripOk = VisionPipelineStorage.TryValidateRoundTrip(recipeName, pipeline, out validationMessage);
+            OpenVisionRecipeRoundTripValidationResult validation =
+                validateStepEditRoundTrip(recipeName, pipeline)
+                ?? new OpenVisionRecipeRoundTripValidationResult
+                {
+                    Succeeded = false,
+                    Message = OpenVisionRecipeText.Local(
+                        "왕복 검증 결과가 없습니다.",
+                        "No round-trip validation result was returned.")
+                };
+            string validationMessage = validation.Message ?? string.Empty;
+            if (!validation.Succeeded)
+            {
+                bool restored = TryRestorePipelineAfterFailedApply(
+                    recipeName,
+                    originalPipeline,
+                    out string restoreMessage);
+                SetSelectedStepEditStatus(
+                    OpenVisionRecipeText.Local(
+                        "XML 왕복 검증에 실패하여 전환을 중단했습니다: ",
+                        "Transition was stopped because XML round-trip validation failed: ")
+                    + validationMessage
+                    + Environment.NewLine
+                    + restoreMessage);
+                StatusText = restored
+                    ? OpenVisionRecipeText.Local(
+                        "Step XML 적용 실패 — 기존 저장 상태 복원",
+                        "Step XML apply failed — previous saved state restored")
+                    : OpenVisionRecipeText.Local(
+                        "Step XML 적용 실패 — 복원 오류 확인 필요",
+                        "Step XML apply failed — review the restore error");
+                return false;
+            }
+
+            selectedStepEditSession.MarkClean();
             UpdateSelectedRecipeSummary();
             SelectedPipelinePreviewStep = SelectedRecipeSummary?.PipelinePreviewSteps?
                 .FirstOrDefault(stepPreview => stepPreview.Index == selectedIndex);
-            selectedStepEditSession.MarkClean();
             LoadSelectedStepParametersForEdit(updateStatus: false);
             SetSelectedStepEditStatus(
                 OpenVisionRecipeText.Local("XML 반영 완료: ", "Applied to XML: ")
@@ -3544,9 +3643,8 @@ namespace OpenVisionLab
                     pipelineName,
                     selectedIndex,
                     validationMessage));
-            StatusText = roundTripOk
-                ? OpenVisionRecipeText.Local("Step XML 반영 완료", "Step XML apply complete")
-                : OpenVisionRecipeText.Local("Step XML 반영 완료, 검증 경고 확인 필요", "Step XML applied; review validation warning");
+            StatusText = OpenVisionRecipeText.Local("Step XML 반영 완료", "Step XML apply complete");
+            return true;
         }
 
         private bool CanApplySelectedStepParameters()
@@ -3696,6 +3794,83 @@ namespace OpenVisionLab
             selectedStepEditSession.Clear();
         }
 
+        internal bool TryCloseRecipeManager()
+        {
+            return TryLeaveSelectedStepEdit(
+                OpenVisionRecipePendingEditTransitionKind.RecipeManagerClose,
+                OpenVisionRecipeText.Local("Recipe Manager 닫기", "Close Recipe Manager"));
+        }
+
+        private bool TryLeaveSelectedStepEdit(
+            OpenVisionRecipePendingEditTransitionKind kind,
+            string targetName)
+        {
+            return pendingEditTransitionController.TryLeave(
+                selectedStepEditSession.IsDirty,
+                new OpenVisionRecipePendingEditRequest
+                {
+                    Kind = kind,
+                    RecipeName = NormalizeRecipeName(selectedRecipeName),
+                    PipelineName = selectedPipelineOption?.PipelineName ?? string.Empty,
+                    StepName = selectedPipelinePreviewStep?.DisplayText ?? string.Empty,
+                    TargetName = targetName ?? string.Empty
+                });
+        }
+
+        private static bool IsSamePipelinePreviewStep(
+            OpenVisionRecipePipelineStepPreview left,
+            OpenVisionRecipePipelineStepPreview right)
+        {
+            if (ReferenceEquals(left, right))
+            {
+                return true;
+            }
+
+            return left != null
+                && right != null
+                && left.Index == right.Index
+                && string.Equals(left.Name, right.Name, StringComparison.Ordinal)
+                && string.Equals(left.ToolType, right.ToolType, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(left.InputLayer, right.InputLayer, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(left.OutputLayer, right.OutputLayer, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool TryRestorePipelineAfterFailedApply(
+            string recipeName,
+            VisionPipeline originalPipeline,
+            out string message)
+        {
+            try
+            {
+                VisionPipelineStorage.Save(recipeName, originalPipeline);
+                if (VisionPipelineStorage.TryValidateRoundTrip(
+                    recipeName,
+                    originalPipeline,
+                    out string validationMessage))
+                {
+                    message = OpenVisionRecipeText.Local(
+                        "기존 저장 상태를 복원했습니다. ",
+                        "The previous saved state was restored. ")
+                        + validationMessage;
+                    return true;
+                }
+
+                message = OpenVisionRecipeText.Local(
+                    "기존 XML을 다시 저장했지만 복원 검증에 실패했습니다: ",
+                    "The previous XML was saved again, but restore validation failed: ")
+                    + validationMessage;
+                return false;
+            }
+            catch (Exception ex)
+            {
+                message = OpenVisionRecipeText.Local(
+                    "기존 저장 상태 복원 실패: ",
+                    "Failed to restore the previous saved state: ")
+                    + ex.GetBaseException().Message;
+                return false;
+            }
+        }
+
         private void OnSelectedStepEditSessionPropertyChanged(
             object sender,
             System.ComponentModel.PropertyChangedEventArgs e)
@@ -3709,6 +3884,8 @@ namespace OpenVisionLab
                     break;
                 case nameof(OpenVisionRecipeStepEditSessionViewModel.IsDirty):
                     OnPropertyChanged(nameof(IsSelectedStepEditDirty));
+                    NotifyQualifiedSnapshotContextChanged();
+                    RefreshCommandState();
                     break;
                 case nameof(OpenVisionRecipeStepEditSessionViewModel.StatusText):
                     OnPropertyChanged(nameof(SelectedStepEditStatusText));
@@ -3869,6 +4046,7 @@ namespace OpenVisionLab
             selectedRecipeName = normalized;
             if (changed)
             {
+                SelectedPipelinePreviewStep = null;
                 llmXmlDraftImportReady = false;
                 pinArrayGapTrainValidationSetOption = null;
                 pinArrayGapValidationValidationSetOption = null;
@@ -3903,6 +4081,7 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(StopValidationSuiteText));
             OnPropertyChanged(nameof(IsLocalValidationSetRunning));
             OnPropertyChanged(nameof(ValidationSuiteSummaryText));
+            OnPropertyChanged(nameof(QualifiedSnapshotPreflightText));
             CommandManager.InvalidateRequerySuggested();
         }
 

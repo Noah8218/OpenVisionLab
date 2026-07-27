@@ -12,6 +12,12 @@ namespace OpenVisionLab
 {
     public sealed partial class OpenVisionShellHostView
     {
+        internal Func<string, string, string, bool>
+            QualifiedSnapshotLifecycleConfirmationForTest { get; set; }
+
+        internal Func<string, bool>
+            QualifiedSnapshotEvidenceOpenerForTest { get; set; }
+
         public string ActiveToolFormTypeName => toolTestFacade.ActiveToolFormTypeName;
         public string ActiveWpfToolWindowTypeName => toolTestFacade.ActiveWpfToolWindowTypeName;
         public string ActiveWpfToolWindowTitle => toolTestFacade.ActiveWpfToolWindowTitle;
@@ -347,6 +353,37 @@ namespace OpenVisionLab
         public string SelectedRecipeNameForTest => RecipeCommands?.SelectedRecipeName ?? string.Empty;
 
         public IReadOnlyList<string> RecipeOptionsForTest => RecipeCommands?.RecipeOptions ?? Array.Empty<string>();
+
+        public bool IsRecipeManagerOpenForTest => btnHostRecipeManager?.IsChecked == true;
+
+        public void QueuePendingRecipeEditDecisionForTest(
+            OpenVisionRecipePendingEditDecision decision)
+        {
+            pendingRecipeEditDecisionsForTest.Enqueue(decision);
+        }
+
+        public void FailNextRecipeStepEditCommitForTest()
+        {
+            failNextRecipeStepEditCommitForTest = true;
+        }
+
+        public void FailNextRecipeStepSaveForTest()
+        {
+            failNextRecipeStepSaveForTest = true;
+        }
+
+        public void FailNextRecipeStepRoundTripValidationForTest()
+        {
+            failNextRecipeStepRoundTripValidationForTest = true;
+        }
+
+        public void SetRecipeManagerOpenForTest(bool isOpen)
+        {
+            if (btnHostRecipeManager != null)
+            {
+                btnHostRecipeManager.IsChecked = isOpen;
+            }
+        }
 
         public void CreateRecipeForTest() => RecipeCommands?.CreateRecipeCommand.Execute(null);
 

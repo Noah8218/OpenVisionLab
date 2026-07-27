@@ -69,11 +69,13 @@ namespace OpenVisionLab
 
             if (ngOnly)
             {
-                return results.FirstOrDefault(result => result != null && !result.Success);
+                return results.FirstOrDefault(result => result != null && IsFilteredFailure(option, result));
             }
 
             return results
-                .FirstOrDefault(result => result != null && !result.Success && !string.IsNullOrWhiteSpace(result.FailedStep))
+                .FirstOrDefault(result => result != null
+                    && IsFilteredFailure(option, result)
+                    && !string.IsNullOrWhiteSpace(result.FailedStep))
                 ?? results.FirstOrDefault();
         }
 
@@ -183,7 +185,10 @@ namespace OpenVisionLab
                     + failures.Count(result => result.IsFalseAccept).ToString(CultureInfo.InvariantCulture)
                     + " · "
                     + OpenVisionRecipeText.Local("과검 ", "false reject ")
-                    + failures.Count(result => result.IsFalseReject).ToString(CultureInfo.InvariantCulture);
+                    + failures.Count(result => result.IsFalseReject).ToString(CultureInfo.InvariantCulture)
+                    + " · "
+                    + OpenVisionRecipeText.Local("실행 오류 ", "execution error ")
+                    + failures.Count(result => !result.ExecutionCompleted).ToString(CultureInfo.InvariantCulture);
             }
 
             string causes = string.Join(

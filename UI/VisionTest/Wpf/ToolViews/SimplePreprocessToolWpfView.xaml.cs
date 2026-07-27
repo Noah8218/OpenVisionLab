@@ -19,7 +19,7 @@ namespace OpenVisionLab
                 string.Empty,
                 parameterContentHost,
                 refreshViewState: null,
-                clearResultReview: ClearResultReview,
+                clearResultReview: ClearResultReviewAndSignalEvidence,
                 applyToolLocalization: ApplyLocalization);
             previewScheduler = new VisionToolDebouncedPreviewScheduler(this, RequestRunPreview);
             textPresenter = new SimplePreprocessTextPresenter(
@@ -38,12 +38,20 @@ namespace OpenVisionLab
                 () => suppressEvents,
                 value => suppressEvents = value);
             ApplyLocalization();
-            ClearResultReview();
+            ClearResultReviewAndSignalEvidence();
         }
 
         public event EventHandler ParameterChanged = delegate { };
 
         internal SimplePreprocessParameterController Parameters => parameterController;
+
+        internal bool SignalInspectorHasEvidenceForTest => signalInspector.HasEvidence;
+
+        internal string SignalInspectorEvidenceIdForTest => signalInspector.EvidenceId;
+
+        internal string SignalInspectorSourceSha256ForTest => signalInspector.SourceSha256;
+
+        internal int SignalInspectorSeriesCountForTest => signalInspector.SeriesCount;
 
         protected override void DisposeToolResources()
         {
@@ -55,6 +63,7 @@ namespace OpenVisionLab
             ToolController.ApplyLocalization();
             textPresenter.ApplyLocalization();
             parameterController.RefreshLabels();
+            signalInspector.ApplyLocalization();
         }
 
         public void SetHeader(string title, PackIconMaterialKind iconKind)
@@ -90,10 +99,41 @@ namespace OpenVisionLab
             ShowToolResultReview(review.Summary, review.IsSuccess, review.Items, review.Guidance);
         }
 
+        internal void ShowSignalEvidence(VisionToolSignalEvidence evidence)
+        {
+            signalInspector.ShowEvidence(evidence);
+        }
+
+        internal void ClearSignalEvidence()
+        {
+            signalInspector.ClearEvidence();
+        }
+
+        internal void ResetSignalInspectorViewForTest()
+        {
+            signalInspector.ResetViewForTest();
+        }
+
+        internal bool ExerciseSignalInspectorNavigationForTest()
+        {
+            return signalInspector.ExerciseNavigationForTest();
+        }
+
+        internal void ExportSignalEvidenceForTest(string path)
+        {
+            signalInspector.ExportForTest(path);
+        }
+
         private void RefreshSummaryAndClearResultReview()
         {
             textPresenter.RefreshSummary();
+            ClearResultReviewAndSignalEvidence();
+        }
+
+        private void ClearResultReviewAndSignalEvidence()
+        {
             ClearResultReview();
+            ClearSignalEvidence();
         }
     }
 }

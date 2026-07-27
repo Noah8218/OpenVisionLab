@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\OpenVisionLab.csproj" />
+    <Reference Include="Lib.OpenCV">
+      <HintPath>..\..\dll\Library-Noah\Lib.OpenCV.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="OpenCvSharp">
+      <HintPath>..\..\dll\Library-Noah\OpenCvSharp.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\dll\OpenCVSharp\OpenCvSharpExtern.dll">
+      <Link>OpenCvSharpExtern.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+</Project>

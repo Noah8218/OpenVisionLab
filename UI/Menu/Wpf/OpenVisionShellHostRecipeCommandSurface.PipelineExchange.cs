@@ -35,6 +35,13 @@ namespace OpenVisionLab
                 return LoadReviewBundleForDryRun(path);
             }
 
+            if (!TryLeaveSelectedStepEdit(
+                OpenVisionRecipePendingEditTransitionKind.Pipeline,
+                Path.GetFileNameWithoutExtension(path)))
+            {
+                return false;
+            }
+
             OpenVisionRecipePipelineExchangeResult result = pipelineExchangeUseCase.Import(recipeName, path);
             if (!result.Succeeded)
             {
