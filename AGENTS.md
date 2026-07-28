@@ -321,3 +321,12 @@ Before editing:
 - Use low reasoning effort for simple formatting, documentation-only edits, and narrow bug fixes.
 - Use higher reasoning effort for architecture, MVVM refactors, docking behavior, sample catalog design, performance issues, and cross-module changes.
 - Increase verification rigor as the blast radius grows.
+
+## Public README Editorial Contract
+
+- Keep the GitHub README focused on user-visible capabilities, workflows, setup, examples, and validation.
+- Do not add camera, lighting, PLC, industrial I/O, account, or deployment non-goal boilerplate to the public README. Those boundaries are an internal product-development agreement, not required introductory material for users.
+- Keep scope boundaries in internal project contracts, handoffs, and planning documents.
+- Do not reintroduce this exclusion language unless the user explicitly reverses this decision.
+- After changing the README, search the full file for equivalent exclusion wording rather than checking only one sentence.
+- Canonical decision record: `docs/admin/OPENVISIONLAB_PUBLIC_README_EDITORIAL_POLICY.md`.

@@ -8,8 +8,7 @@ the images and measurements behind each OK/NG decision.
 ## Quick Overview
 
 OpenVisionLab is a Windows desktop application for building and validating
-rule-based inspection recipes from image samples. It is not a camera, PLC, or
-equipment-control platform.
+rule-based inspection recipes from image samples.
 
 - Workflow: load an image -> select a Layer -> configure a Tool -> run Preview
   or Run -> save the Pipeline/Recipe -> validate with Good and Bad samples
@@ -85,7 +84,7 @@ The numbered areas in the main workspace are:
 ## Product Scope
 
 OpenVisionLab is designed for teaching, tuning, and validating image inspection
-rules. It does not directly control cameras, lighting, PLCs, or industrial I/O.
+rules.
 
 Common problems when building a rule-based inspection include:
 
@@ -271,7 +270,6 @@ conditional backlog items.
 
 ## Scope and Limitations
 
-- OpenVisionLab does not directly control cameras, lighting, PLCs, or I/O.
 - LLM/XML assistance is optional and is not part of inspection execution.
 - Publicly distributed samples are defined by `docs/samples/public` and the
   catalog CSV files. Local or third-party files under `Sample/` are not public
