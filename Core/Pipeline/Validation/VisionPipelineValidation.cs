@@ -50,6 +50,8 @@ namespace OpenVisionLab
             "circlegauge",
             "geometrymeasure",
             "geometricmeasurement",
+            "linefixture",
+            "dualedgefixture",
             "matching",
             "templatematching",
             "edgebasedmatching",
@@ -140,6 +142,7 @@ namespace OpenVisionLab
                 ValidateAcceptance(result, label, step);
                 ValidateParameters(result, label, step);
                 ValidateGeometryMeasureSources(result, label, step, enabledSteps.Take(enabledSteps.Count - 1).ToList());
+                ValidateLineFixtureSources(result, label, step, enabledSteps.Take(enabledSteps.Count - 1).ToList());
 
                 bool isMergeStep = VisionPipelineOverlayMergeService.IsMergeTool(step.ToolType);
                 if (isMergeStep)
@@ -415,6 +418,28 @@ namespace OpenVisionLab
                 ValidateNonNegativeDouble(result, label, step, VisionPipelineGeometryMeasureService.MaximumExtensionBParameter);
             }
 
+            if (toolType == "linefixture" || toolType == "dualedgefixture")
+            {
+                ValidatePositiveInt(result, label, step, VisionPipelineLineFixtureService.MinimumSupportAParameter, oddOnly: false);
+                ValidatePositiveInt(result, label, step, VisionPipelineLineFixtureService.MinimumSupportBParameter, oddOnly: false);
+                ValidateNonNegativeDouble(result, label, step, VisionPipelineLineFixtureService.MaximumFitResidualAParameter);
+                ValidateNonNegativeDouble(result, label, step, VisionPipelineLineFixtureService.MaximumFitResidualBParameter);
+                ValidatePositiveDouble(result, label, step, VisionPipelineLineFixtureService.MinimumIncludedAngleParameter);
+                ValidatePositiveDouble(result, label, step, VisionPipelineLineFixtureService.MaximumIncludedAngleParameter);
+                ValidateMinMax(result, label, step, VisionPipelineLineFixtureService.MinimumIncludedAngleParameter, VisionPipelineLineFixtureService.MaximumIncludedAngleParameter);
+                ValidateNonNegativeDouble(result, label, step, VisionPipelineLineFixtureService.MaximumExtensionAParameter);
+                ValidateNonNegativeDouble(result, label, step, VisionPipelineLineFixtureService.MaximumExtensionBParameter);
+
+                double maximumIncludedAngle = GetDoubleOrDefault(
+                    step,
+                    VisionPipelineLineFixtureService.MaximumIncludedAngleParameter,
+                    90d);
+                if (maximumIncludedAngle > 90d)
+                {
+                    result.Errors.Add($"{label} '{step.Name}': {VisionPipelineLineFixtureService.MaximumIncludedAngleParameter} must be 90 or less.");
+                }
+            }
+
             if (toolType == "circlegauge")
             {
                 if (!bool.TryParse(ReadParameter(step, "USE_ROI"), out bool useRoi) || !useRoi)
@@ -455,6 +480,90 @@ namespace OpenVisionLab
 
             ValidateGeometrySource(result, label, step, earlierEnabledSteps, "A", mode);
             ValidateGeometrySource(result, label, step, earlierEnabledSteps, "B", mode);
+        }
+
+        private static void ValidateLineFixtureSources(
+            VisionPipelineValidationResult result,
+            string label,
+            VisionPipelineStep step,
+            IReadOnlyList<VisionPipelineStep> earlierEnabledSteps)
+        {
+            if (!VisionPipelineLineFixtureService.IsLineFixture(step?.ToolType))
+            {
+                return;
+            }
+
+            string sourceStepA = ReadParameter(step, VisionPipelineLineFixtureService.SourceStepAParameter);
+            string sourceFeatureA = ReadParameter(step, VisionPipelineLineFixtureService.SourceFeatureAParameter);
+            string sourceStepB = ReadParameter(step, VisionPipelineLineFixtureService.SourceStepBParameter);
+            string sourceFeatureB = ReadParameter(step, VisionPipelineLineFixtureService.SourceFeatureBParameter);
+            if (!string.IsNullOrWhiteSpace(sourceStepA)
+                && !string.IsNullOrWhiteSpace(sourceFeatureA)
+                && string.Equals(sourceStepA, sourceStepB, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(sourceFeatureA, sourceFeatureB, StringComparison.OrdinalIgnoreCase))
+            {
+                result.Errors.Add($"{label} '{step.Name}': datum A and datum B must reference distinct Segment results.");
+            }
+
+            ValidateGeometrySource(
+                result,
+                label,
+                step,
+                earlierEnabledSteps,
+                "A",
+                GeometryMeasurementMode.LineLineIntersection);
+            ValidateGeometrySource(
+                result,
+                label,
+                step,
+                earlierEnabledSteps,
+                "B",
+                GeometryMeasurementMode.LineLineIntersection);
+            ValidateLineFixtureSourceTool(
+                result,
+                label,
+                step,
+                earlierEnabledSteps,
+                sourceStepA);
+            ValidateLineFixtureSourceTool(
+                result,
+                label,
+                step,
+                earlierEnabledSteps,
+                sourceStepB);
+        }
+
+        private static void ValidateLineFixtureSourceTool(
+            VisionPipelineValidationResult result,
+            string label,
+            VisionPipelineStep consumer,
+            IReadOnlyList<VisionPipelineStep> earlierEnabledSteps,
+            string sourceStepName)
+        {
+            if (string.IsNullOrWhiteSpace(sourceStepName))
+            {
+                return;
+            }
+
+            List<VisionPipelineStep> matches = (earlierEnabledSteps
+                    ?? Array.Empty<VisionPipelineStep>())
+                .Where(item => string.Equals(
+                    item?.Name,
+                    sourceStepName,
+                    StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (matches.Count != 1)
+            {
+                return;
+            }
+
+            string sourceToolType = VisionPipelineNormalizer.NormalizeToolType(
+                matches[0].ToolType);
+            if (sourceToolType != "line" && sourceToolType != "linegauge")
+            {
+                result.Errors.Add(
+                    $"{label} '{consumer.Name}': LineFixture source '{sourceStepName}' must use Line or LineGauge.");
+            }
         }
 
         private static void ValidateGeometrySource(
@@ -531,6 +640,12 @@ namespace OpenVisionLab
                 if (string.Equals(featureName, "Circle", StringComparison.OrdinalIgnoreCase)) { kind = VisionPipelineGeometryKind.Circle; return true; }
                 if (string.Equals(featureName, "Center", StringComparison.OrdinalIgnoreCase)) { kind = VisionPipelineGeometryKind.Point; return true; }
                 return false;
+            }
+            if ((type == "linefixture" || type == "dualedgefixture")
+                && string.Equals(featureName, "Origin", StringComparison.OrdinalIgnoreCase))
+            {
+                kind = VisionPipelineGeometryKind.Point;
+                return true;
             }
             if (type == "geometrymeasure" || type == "geometricmeasurement")
             {

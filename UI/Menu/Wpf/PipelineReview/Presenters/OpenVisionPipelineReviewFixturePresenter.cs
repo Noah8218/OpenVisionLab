@@ -116,6 +116,7 @@ namespace OpenVisionLab
                 VisionPipelineFixtureFrameService.ReferenceImageHeightParameter);
             bool hasRoi = TryGetStepRoi(measurement, out RectangleF referenceRoi);
             string templateValue = GetTemplateValue(producer);
+            bool lineFixtureProducer = VisionPipelineLineFixtureService.IsLineFixture(producer.ToolType);
             string searchRoi = GetParameterBool(producer, "USE_ROI")
                 ? GetParameter(producer, "CvROI")
                 : T("PipelineReview.FixtureDesigner.FullImage", "full image");
@@ -132,11 +133,19 @@ namespace OpenVisionLab
                 measurementIndex + 1,
                 SafeText(measurement.ToolType, "Tool"),
                 hasRoi ? FormatRoi(referenceRoi) : "-");
-            string templateText = TF(
-                "PipelineReview.FixtureDesigner.TemplateFormat",
-                "Template: {0} / search ROI: {1}",
-                string.IsNullOrWhiteSpace(templateValue) ? "-" : Path.GetFileName(templateValue),
-                string.IsNullOrWhiteSpace(searchRoi) ? "-" : searchRoi);
+            string templateText = lineFixtureProducer
+                ? string.Format(
+                    CultureInfo.CurrentCulture,
+                    "Datums: {0}/{1} + {2}/{3}",
+                    GetParameter(producer, VisionPipelineLineFixtureService.SourceStepAParameter),
+                    GetParameter(producer, VisionPipelineLineFixtureService.SourceFeatureAParameter),
+                    GetParameter(producer, VisionPipelineLineFixtureService.SourceStepBParameter),
+                    GetParameter(producer, VisionPipelineLineFixtureService.SourceFeatureBParameter))
+                : TF(
+                    "PipelineReview.FixtureDesigner.TemplateFormat",
+                    "Template: {0} / search ROI: {1}",
+                    string.IsNullOrWhiteSpace(templateValue) ? "-" : Path.GetFileName(templateValue),
+                    string.IsNullOrWhiteSpace(searchRoi) ? "-" : searchRoi);
             string referenceText = hasReference
                 ? TF(
                     "PipelineReview.FixtureDesigner.ReferenceCompactFormat",
@@ -173,7 +182,9 @@ namespace OpenVisionLab
             Bitmap templatePreview = null;
             try
             {
-                templatePreview = TryLoadTemplatePreview(templateValue);
+                templatePreview = lineFixtureProducer
+                    ? null
+                    : TryLoadTemplatePreview(templateValue);
                 Bitmap source = resolveLayerPreview?.Invoke(producer.InputLayer);
                 Bitmap normalized = normalizeSummary?.Success == true
                     ? resolveLayerPreview?.Invoke(normalize.OutputLayer)
@@ -288,7 +299,9 @@ namespace OpenVisionLab
             }
 
             string toolType = VisionPipelineNormalizer.NormalizeToolType(step.ToolType);
-            return (toolType == "matching" || toolType == "templatematching")
+            return (toolType == "matching"
+                    || toolType == "templatematching"
+                    || VisionPipelineLineFixtureService.IsLineFixture(toolType))
                 && summary.Metrics.TryGetValue(VisionPipelineKnownMetrics.FixtureCenterX, out x)
                 && summary.Metrics.TryGetValue(VisionPipelineKnownMetrics.FixtureCenterY, out y)
                 && summary.Metrics.TryGetValue(VisionPipelineKnownMetrics.FixtureAngle, out angle)
@@ -392,10 +405,59 @@ namespace OpenVisionLab
             VisionPipelineStepResultSummary normalizeSummary,
             Func<VisionPipelineStep, VisionPipelineStepResultSummary> resolveSummary)
         {
+            VisionPipelineStep producer = steps?.ElementAtOrDefault(producerIndex);
+            if (VisionPipelineLineFixtureService.IsLineFixture(producer?.ToolType))
+            {
+                string supportA = TryGetMetric(
+                    producerSummary,
+                    VisionPipelineKnownMetrics.FixtureLineASupportCount,
+                    out double supportAValue)
+                        ? FormatPoseValue(supportAValue)
+                        : "-";
+                string supportB = TryGetMetric(
+                    producerSummary,
+                    VisionPipelineKnownMetrics.FixtureLineBSupportCount,
+                    out double supportBValue)
+                        ? FormatPoseValue(supportBValue)
+                        : "-";
+                string residualA = TryGetMetric(
+                    producerSummary,
+                    VisionPipelineKnownMetrics.FixtureLineAFitResidualPx,
+                    out double residualAValue)
+                        ? FormatPoseValue(residualAValue)
+                        : "-";
+                string residualB = TryGetMetric(
+                    producerSummary,
+                    VisionPipelineKnownMetrics.FixtureLineBFitResidualPx,
+                    out double residualBValue)
+                        ? FormatPoseValue(residualBValue)
+                        : "-";
+                string included = TryGetMetric(
+                    producerSummary,
+                    VisionPipelineKnownMetrics.FixtureIncludedAngleDeg,
+                    out double includedValue)
+                        ? FormatPoseValue(includedValue)
+                        : "-";
+                string validRatio = TryGetMetric(
+                    normalizeSummary,
+                    VisionPipelineKnownMetrics.FixtureValidPixelRatio,
+                    out double validRatioValue)
+                        ? validRatioValue.ToString("P1", CultureInfo.CurrentCulture)
+                        : "-";
+                return string.Format(
+                    CultureInfo.CurrentCulture,
+                    "Support A/B {0}/{1} / residual {2}/{3}px / angle {4}° / valid {5}",
+                    supportA,
+                    supportB,
+                    residualA,
+                    residualB,
+                    included,
+                    validRatio);
+            }
+
             VisionPipelineStepResultSummary scoreSummary = producerSummary;
             if (!TryGetMetric(scoreSummary, VisionPipelineKnownMetrics.ScoreMargin, out _))
             {
-                VisionPipelineStep producer = steps?.ElementAtOrDefault(producerIndex);
                 string producerTemplate = GetTemplateValue(producer);
                 for (int index = producerIndex - 1; index >= 0; index--)
                 {

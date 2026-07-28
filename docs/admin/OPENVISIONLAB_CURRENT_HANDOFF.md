@@ -417,10 +417,10 @@ the table as the current branch head.
   at 0 warnings/0 errors; focused multi-ROI and legacy Fixture WPF smokes at
   `check=OK`, `layout=0`, `text=0`, `internal=0`, `1500x880`; readiness passed
   every reported contract group.
-- `CVR-00` remains the only active external prerequisite. `CVR-09` is now the
-  earliest incomplete conditional row, but no named part with two independently
-  verified physical datum edges activates it. Do not synthesize such a task or
-  add another fixture producer without that evidence.
+- `CVR-00` remains the only active external prerequisite. The user's subsequent
+  explicit 2026-07-28 development continuation activated the bounded CVR-09
+  synthetic implementation recorded below. That implementation does not
+  satisfy the separate named physical-part qualification gate.
 
 ## Incremental Work Update — Actual EXE Operator Walkthrough (2026-07-28)
 
@@ -457,9 +457,52 @@ the table as the current branch head.
   `docs\reports\OPENVISIONLAB_TOOL_VIEW_AND_CHAIN_WALKTHROUGH_20260728.md`;
   evidence: `artifacts\operator_walkthrough_20260728` and
   `docs\assets\demo`.
-- Remaining project priority is `CVR-00` independent novice use, which requires
-  actual participants. Recommended model: `gpt-5.6-terra` | Reasoning effort:
-  `low`. `CVR-09` remains conditional and inactive.
+- Remaining external project priority is `CVR-00` independent novice use,
+  which requires actual participants. Recommended model: `gpt-5.6-terra` |
+  Reasoning effort: `low`. CVR-09 bounded v1 was subsequently implemented,
+  while its physical-task qualification remains blocked.
+
+## 2026-07-28 CVR-09 LineFixture v1
+
+- The user explicitly continued development after reviewing the canonical
+  commercial-video queue. This superseded the earlier instruction to leave
+  CVR-09 wholly inactive and authorized one bounded synthetic v1; it did not
+  waive real-part qualification.
+- Added `LineFixture` (`DualEdgeFixture` alias), which consumes two distinct
+  exact typed `Segment` results from earlier successful and accepted
+  `Line`/`LineGauge` Steps. It reuses the existing Line detector and publishes
+  an origin/axis Fixture frame compatible with the existing
+  `NormalizeImage`/relative-ROI path.
+- Fail-closed gates cover source identity/acceptance/frame, support, fit
+  residual, included angle, intersection extension, finite/in-image geometry,
+  taught reference pose, and Fixture publication conflicts.
+- Recipe Manager selected-Step PropertyGrid exposes the two typed Segment
+  pickers, taught frame, and datum gates. Apply/save/reload preserves the
+  contract with zero Preview/Run, layer, or route mutation.
+- The first rotation replay exposed an image-coordinate versus OpenCV Fixture
+  angle-sign defect. The LineFixture owner now performs the explicit
+  conversion; fixed reference-coordinate ROI replay then passed at `+/-3 deg`.
+- Frozen current-source runtime: 8/8 reference/translation/rotation/repeated-
+  rail cases passed through
+  `LineGauge x2 -> LineFixture -> NormalizeImage -> fixed-ROI Mean`.
+  Included angle was `89.594..90 deg`, residuals `0..1.344 px`, normalized
+  coverage `0.923..0.995`, and the fixed pad ROI mean `185.4..192.2`.
+  Duplicate source identity and incompatible included-angle policy failed
+  closed.
+- Verification: solution, focused fixture, and screenshot projects built with
+  zero warnings/errors; focused runtime, XML/PropertyGrid round trips, and
+  fail-closed checks passed; `cvr09_line_fixture_property_grid` returned
+  `check=OK`, `layout=0`, `text=0`, `internal=0`, `1600x900`.
+- Evidence: `artifacts\cvr09_line_fixture_20260728_r11`; report:
+  `docs\reports\OPENVISIONLAB_CVR09_LINE_FIXTURE_20260728.md`; contract:
+  `docs\contracts\openvisionlab\OPENVISIONLAB_LINE_FIXTURE_V1_CONTRACT.md`.
+- Status: Complete for bounded reusable implementation and synthetic
+  integration. It is not scale, perspective, calibration, certified
+  metrology, unseen-data, production, or field-qualification evidence.
+- Physical-task qualification remains blocked on a named part, representative
+  images, operator-certified Datum A/B identities, pose/polarity limits,
+  downstream intent, and reviewed N-sample evidence. Do not tune the synthetic
+  matrix further as product progress.
 
 ## Product Identity
 
@@ -2304,10 +2347,13 @@ refactoring is closed until concrete evidence reopens one bounded owner.
 1. **Collect `CVR-00` independent first-time operator evidence.**
    - Use the existing protocol with at least three independent novice participants. Do not simulate observations or spend model tokens before raw observations exist. Prerequisite: participants and recorded observations | Recommended model: none before observations; gpt-5.6-terra for synthesis afterward | Reasoning effort: none before observations; low afterward.
 
-2. **Keep `CVR-09` conditional until a real straight-edge fixture task exists.**
-   - CVR-08 is complete through the existing P212 NormalizeImage review path. CVR-09 requires a named part with no durable template feature and two independently verified physical datum edges. No such current task exists; do not synthesize one from the public fixture sample. Prerequisite: named part, representative images, certified datum-edge identities, allowed pose range, downstream ROI/measurement intent, and evidence that current Matching/Affine fixture paths are unsuitable | Recommended model: none before the packet; `gpt-5.6-sol` afterward | Reasoning effort: none before the packet; high afterward.
+2. **Qualify CVR-09 on a physical task only after its real packet exists.**
+   - The bounded LineFixture v1 implementation and synthetic integration are complete. Do not continue tuning or call it physically qualified. Prerequisite: named part, representative images, certified Datum A/B identities, allowed pose and polarity/contrast range, downstream ROI/measurement intent, evidence that current Matching/Affine paths are unsuitable, and reviewed N-sample rail/reflection evidence | Recommended model: none before the packet; `gpt-5.6-sol` afterward | Reasoning effort: none before the packet; high afterward.
 
-3. **Audit isolated-worker equivalence only after a measured bottleneck and explicit request.**
+3. **Keep `CVR-10` and later commercial-video rows conditional.**
+   - The earliest remaining implementation candidate is CVR-10 multi-instance fixture/sub-recipe fan-out, but it is inactive without a real multi-instance task that defines stable identity, overlap, output naming, partial failure, aggregate acceptance, review, and evidence-size limits | Recommended model: none before the packet; `gpt-5.6-sol` afterward | Reasoning effort: none before the packet; high afterward.
+
+4. **Audit isolated-worker equivalence only after a measured bottleneck and explicit request.**
    - Prove per-image Pipeline/tool/template/Mat isolation and identical sequential versus `1/2/4` worker status, metrics, drawings, hashes, order, cancellation, and partial reports. Prerequisite: measured sequential bottleneck and explicit request | Recommended model: gpt-5.6-sol | Reasoning effort: high.
 
 Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM validation are not active priorities and require a new explicit user request.

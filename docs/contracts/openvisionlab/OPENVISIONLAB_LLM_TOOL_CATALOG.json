@@ -1,5 +1,5 @@
 {
-  "version": "2026-07-23",
+  "version": "2026-07-28",
   "purpose": "Machine-readable guide for external LLMs that draft OpenVisionLab VisionPipeline XML.",
   "productIdentity": {
     "name": "OpenVisionLab",
@@ -97,7 +97,7 @@
     "HSV HueMin and HueMax use OpenCV's 0..179 scale. HueMin may exceed HueMax to wrap through the 179/0 boundary; Saturation and Value values are 0..255 and their minimum must not exceed maximum.",
     "Kernel sizes and counts must be positive; odd-only kernels must be odd.",
     "FIND_ANGLE_MIN must be less than or equal to FIND_ANGLE_MAX.",
-    "Every fixture workflow requires an earlier Matching step with NUM_MATCH=1 and USE_AS_FIXTURE_FRAME=true.",
+    "Every fixture workflow requires one earlier reviewed producer: Matching with NUM_MATCH=1, or LineFixture with two exact earlier accepted Line Segment references. The LLM must not invent either physical identity.",
     "TranslationRoi fixture v1 requires the same source layer, one enabled CvROI, USE_FIXTURE_FRAME=true, the same FIXTURE_FRAME_NAME, and ALLOW_BRANCH_INPUT=true; it never rotates or scales the ROI.",
     "NormalizeImage fixture v2 requires reviewed reference image dimensions, a same-source RotateScale branch, FIXTURE_APPLY_MODE=NormalizeImage, no ROI/masks, and a positive valid-pixel gate no greater than one.",
     "Optional fixture scale limits must be supplied together as FIXTURE_MIN_SCALE_RATIO and FIXTURE_MAX_SCALE_RATIO with 0 < minimum <= maximum.",
@@ -107,7 +107,9 @@
   "fixtureTranslationV1": {
     "producerToolTypes": [
       "Matching",
-      "TemplateMatching"
+      "TemplateMatching",
+      "LineFixture",
+      "DualEdgeFixture"
     ],
     "producerParameters": [
       "USE_AS_FIXTURE_FRAME",
@@ -126,7 +128,7 @@
       "ALLOW_BRANCH_INPUT"
     ],
     "limitations": [
-      "one Matching result",
+      "one unambiguous Matching result or one gated dual-Line origin",
       "one axis-aligned CvROI",
       "same source layer",
       "translation only",
@@ -138,7 +140,9 @@
     "status": "Supported for Matching pose -> full-image inverse uniform-similarity normalization. P182 qualifies one bounded C9 NormalizeImage -> LineDistance coordinate/drawing path, and P183 qualifies a C9-bounded pre-measurement score/ambiguity/pose/coverage gate on the exact observed 24-row set plus deliberate gate exercises. Broader and unseen robustness remains separate.",
     "producerToolTypes": [
       "Matching",
-      "TemplateMatching"
+      "TemplateMatching",
+      "LineFixture",
+      "DualEdgeFixture"
     ],
     "producerRequiredParameters": [
       "USE_AS_FIXTURE_FRAME",
@@ -171,7 +175,7 @@
       "InputLayer": "same unannotated source layer used by the Matching producer"
     },
     "limitations": [
-      "one Matching result",
+      "one unambiguous Matching result or one gated dual-Line origin",
       "uniform similarity only",
       "source image dimensions must equal the taught reference dimensions",
       "complete source image only",
@@ -220,6 +224,8 @@
     "CircleGauge",
     "GeometryMeasure",
     "GeometricMeasurement",
+    "LineFixture",
+    "DualEdgeFixture",
     "Matching",
     "TemplateMatching",
     "EdgeBasedMatching",
@@ -1156,6 +1162,62 @@
         "GeometryExtensionBPx",
         "IntersectionX",
         "IntersectionY"
+      ]
+    },
+    {
+      "toolType": "LineFixture",
+      "aliases": [
+        "DualEdgeFixture"
+      ],
+      "role": "Publish one pixel-space fixture origin and X axis from two exact earlier accepted Line Segment results.",
+      "category": "fixture",
+      "commonParameters": [
+        "SourceStepA",
+        "SourceFeatureA",
+        "SourceStepB",
+        "SourceFeatureB",
+        "MIN_SUPPORT_A",
+        "MIN_SUPPORT_B",
+        "MAX_FIT_RESIDUAL_A_PX",
+        "MAX_FIT_RESIDUAL_B_PX",
+        "MIN_INCLUDED_ANGLE_DEG",
+        "MAX_INCLUDED_ANGLE_DEG",
+        "MAX_EXTENSION_A_PX",
+        "MAX_EXTENSION_B_PX",
+        "USE_AS_FIXTURE_FRAME",
+        "FIXTURE_FRAME_NAME",
+        "FIXTURE_REFERENCE_X",
+        "FIXTURE_REFERENCE_Y",
+        "FIXTURE_REFERENCE_ANGLE",
+        "FIXTURE_REFERENCE_SCALE",
+        "FIXTURE_MAX_ANGLE_DELTA",
+        "FIXTURE_MIN_SCALE_RATIO",
+        "FIXTURE_MAX_SCALE_RATIO",
+        "FIXTURE_REFERENCE_IMAGE_WIDTH",
+        "FIXTURE_REFERENCE_IMAGE_HEIGHT",
+        "ALLOW_BRANCH_INPUT"
+      ],
+      "validationHints": [
+        "Use only after the operator identifies two distinct durable physical datum edges and explicitly selects their earlier Line/Segment identities.",
+        "Datum A defines the fixture X axis; both sources must be earlier accepted Segment results in the same coordinate layer and image size.",
+        "v1 scale is exactly one. Do not claim scale, perspective, calibration, homography, automatic physical identity, or field qualification.",
+        "Review exact Datum A/B, intersection, fixture axes, support, residual, included angle, and extension drawings after explicit Run."
+      ],
+      "recommendedMetrics": [
+        "ResultCount",
+        "FixtureCenterX",
+        "FixtureCenterY",
+        "FixtureAngle",
+        "FixtureOffsetX",
+        "FixtureOffsetY",
+        "FixtureAngleDelta",
+        "FixtureLineASupportCount",
+        "FixtureLineBSupportCount",
+        "FixtureLineAFitResidualPx",
+        "FixtureLineBFitResidualPx",
+        "FixtureIncludedAngleDeg",
+        "GeometryExtensionAPx",
+        "GeometryExtensionBPx"
       ]
     },
     {

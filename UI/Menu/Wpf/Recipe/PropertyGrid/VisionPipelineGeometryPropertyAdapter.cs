@@ -31,6 +31,14 @@ namespace OpenVisionLab
                         step.InputLayer,
                         step.OutputLayer);
                     return true;
+                case "linefixture":
+                case "dualedgefixture":
+                    property = AttachStepMetadata(
+                        new LineFixtureProperty(step, name, context),
+                        name,
+                        step.InputLayer,
+                        step.OutputLayer);
+                    return true;
                 case "circlegauge":
                     property = AttachStepMetadata(
                         new CircleGaugeProperty(step, name),
@@ -61,6 +69,12 @@ namespace OpenVisionLab
                 return true;
             }
 
+            if (property is LineFixtureProperty lineFixture)
+            {
+                step = lineFixture.ToStep(inputLayer, outputLayer);
+                return true;
+            }
+
             step = null;
             return false;
         }
@@ -70,6 +84,11 @@ namespace OpenVisionLab
             if (property is GeometryMeasureProperty)
             {
                 return "GeometryMeasure";
+            }
+
+            if (property is LineFixtureProperty)
+            {
+                return "LineFixture";
             }
 
             return property is CircleGaugeProperty ? "CircleGauge" : string.Empty;
@@ -133,6 +152,38 @@ namespace OpenVisionLab
                     .GetCompatibleGeometryFeatureReferences(
                         property.MeasurementMode,
                         sourceA)
+                    .Where(item => !string.IsNullOrWhiteSpace(item))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+                return new StandardValuesCollection(values);
+            }
+        }
+
+        public sealed class LineFixtureFeatureConverter : StringConverter
+        {
+            public override bool GetStandardValuesSupported(ITypeDescriptorContext context)
+            {
+                return true;
+            }
+
+            public override bool GetStandardValuesExclusive(ITypeDescriptorContext context)
+            {
+                return true;
+            }
+
+            public override StandardValuesCollection GetStandardValues(
+                ITypeDescriptorContext context)
+            {
+                if (!(context?.Instance is LineFixtureProperty property))
+                {
+                    return new StandardValuesCollection(Array.Empty<string>());
+                }
+
+                string[] values = property.Context
+                    .GetCompatibleGeometryFeatureReferences(
+                        GeometryMeasurementMode.LineLineIntersection,
+                        true)
                     .Where(item => !string.IsNullOrWhiteSpace(item))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
@@ -407,6 +458,216 @@ namespace OpenVisionLab
                     mapped.Parameters,
                     VisionPipelineNormalizer.AllowBranchInputParameter,
                     true);
+                return mapped;
+            }
+        }
+
+        [CategoryOrder("Step", -1)]
+        [CategoryOrder("Datum Sources", 0)]
+        [CategoryOrder("Fixture Reference", 1)]
+        [CategoryOrder("Datum Gates", 2)]
+        [CategoryOrder("Acceptance", 20)]
+        private sealed class LineFixtureProperty : GeometryPropertyBase
+        {
+            public LineFixtureProperty(
+                VisionPipelineStep step,
+                string name,
+                VisionPipelinePropertyContext context)
+                : base(step, name)
+            {
+                Context = context ?? VisionPipelinePropertyContext.Empty;
+                OutputLayer = string.IsNullOrWhiteSpace(step?.OutputLayer)
+                    ? "LineFixture_Output"
+                    : step.OutputLayer;
+                SourceA = JoinGeometryReference(
+                    GetString(step?.Parameters, VisionPipelineLineFixtureService.SourceStepAParameter, string.Empty),
+                    GetString(step?.Parameters, VisionPipelineLineFixtureService.SourceFeatureAParameter, string.Empty));
+                SourceB = JoinGeometryReference(
+                    GetString(step?.Parameters, VisionPipelineLineFixtureService.SourceStepBParameter, string.Empty),
+                    GetString(step?.Parameters, VisionPipelineLineFixtureService.SourceFeatureBParameter, string.Empty));
+                FrameName = GetString(
+                    step?.Parameters,
+                    VisionPipelineFixtureFrameService.FrameNameParameter,
+                    "DatumFrame");
+                ReferenceX = GetDouble(
+                    step?.Parameters,
+                    VisionPipelineFixtureFrameService.ReferenceXParameter,
+                    0D);
+                ReferenceY = GetDouble(
+                    step?.Parameters,
+                    VisionPipelineFixtureFrameService.ReferenceYParameter,
+                    0D);
+                ReferenceAngleDeg = GetDouble(
+                    step?.Parameters,
+                    VisionPipelineFixtureFrameService.ReferenceAngleParameter,
+                    0D);
+                ReferenceImageWidth = GetInt(
+                    step?.Parameters,
+                    VisionPipelineFixtureFrameService.ReferenceImageWidthParameter,
+                    0);
+                ReferenceImageHeight = GetInt(
+                    step?.Parameters,
+                    VisionPipelineFixtureFrameService.ReferenceImageHeightParameter,
+                    0);
+                MaximumAngleDeltaDeg = GetDouble(
+                    step?.Parameters,
+                    VisionPipelineFixtureFrameService.MaximumAngleDeltaParameter,
+                    10D);
+                MinimumSupportA = GetInt(
+                    step?.Parameters,
+                    VisionPipelineLineFixtureService.MinimumSupportAParameter,
+                    3);
+                MinimumSupportB = GetInt(
+                    step?.Parameters,
+                    VisionPipelineLineFixtureService.MinimumSupportBParameter,
+                    3);
+                MaximumFitResidualAPx = GetDouble(
+                    step?.Parameters,
+                    VisionPipelineLineFixtureService.MaximumFitResidualAParameter,
+                    2D);
+                MaximumFitResidualBPx = GetDouble(
+                    step?.Parameters,
+                    VisionPipelineLineFixtureService.MaximumFitResidualBParameter,
+                    2D);
+                MinimumIncludedAngleDeg = GetDouble(
+                    step?.Parameters,
+                    VisionPipelineLineFixtureService.MinimumIncludedAngleParameter,
+                    60D);
+                MaximumIncludedAngleDeg = GetDouble(
+                    step?.Parameters,
+                    VisionPipelineLineFixtureService.MaximumIncludedAngleParameter,
+                    90D);
+                MaximumExtensionAPx = GetDouble(
+                    step?.Parameters,
+                    VisionPipelineLineFixtureService.MaximumExtensionAParameter,
+                    100D);
+                MaximumExtensionBPx = GetDouble(
+                    step?.Parameters,
+                    VisionPipelineLineFixtureService.MaximumExtensionBParameter,
+                    100D);
+            }
+
+            [Browsable(false)]
+            public VisionPipelinePropertyContext Context { get; }
+
+            [Category("Datum Sources")]
+            [DisplayName("Datum A segment")]
+            [Description("Typed Segment from an earlier accepted Line Step. Datum A defines the fixture X axis.")]
+            [TypeConverter(typeof(LineFixtureFeatureConverter))]
+            [PropertyOrder(0)]
+            public string SourceA { get; set; } = string.Empty;
+
+            [Category("Datum Sources")]
+            [DisplayName("Datum B segment")]
+            [Description("Distinct typed Segment from an earlier accepted Line Step.")]
+            [TypeConverter(typeof(LineFixtureFeatureConverter))]
+            [PropertyOrder(1)]
+            public string SourceB { get; set; } = string.Empty;
+
+            [Category("Fixture Reference")]
+            [DisplayName("Frame name")]
+            [PropertyOrder(0)]
+            public string FrameName { get; set; } = "DatumFrame";
+
+            [Category("Fixture Reference")]
+            [DisplayName("Reference origin X")]
+            [PropertyOrder(1)]
+            public double ReferenceX { get; set; }
+
+            [Category("Fixture Reference")]
+            [DisplayName("Reference origin Y")]
+            [PropertyOrder(2)]
+            public double ReferenceY { get; set; }
+
+            [Category("Fixture Reference")]
+            [DisplayName("Reference X-axis angle (deg)")]
+            [PropertyOrder(3)]
+            public double ReferenceAngleDeg { get; set; }
+
+            [Category("Fixture Reference")]
+            [DisplayName("Reference image width")]
+            [PropertyOrder(4)]
+            public int ReferenceImageWidth { get; set; }
+
+            [Category("Fixture Reference")]
+            [DisplayName("Reference image height")]
+            [PropertyOrder(5)]
+            public int ReferenceImageHeight { get; set; }
+
+            [Category("Fixture Reference")]
+            [DisplayName("Maximum angle delta (deg)")]
+            [PropertyOrder(6)]
+            public double MaximumAngleDeltaDeg { get; set; } = 10D;
+
+            [Category("Datum Gates")]
+            [DisplayName("Minimum support A")]
+            [PropertyOrder(0)]
+            public int MinimumSupportA { get; set; } = 3;
+
+            [Category("Datum Gates")]
+            [DisplayName("Minimum support B")]
+            [PropertyOrder(1)]
+            public int MinimumSupportB { get; set; } = 3;
+
+            [Category("Datum Gates")]
+            [DisplayName("Maximum residual A (px)")]
+            [PropertyOrder(2)]
+            public double MaximumFitResidualAPx { get; set; } = 2D;
+
+            [Category("Datum Gates")]
+            [DisplayName("Maximum residual B (px)")]
+            [PropertyOrder(3)]
+            public double MaximumFitResidualBPx { get; set; } = 2D;
+
+            [Category("Datum Gates")]
+            [DisplayName("Minimum included angle (deg)")]
+            [PropertyOrder(4)]
+            public double MinimumIncludedAngleDeg { get; set; } = 60D;
+
+            [Category("Datum Gates")]
+            [DisplayName("Maximum included angle (deg)")]
+            [PropertyOrder(5)]
+            public double MaximumIncludedAngleDeg { get; set; } = 90D;
+
+            [Category("Datum Gates")]
+            [DisplayName("Maximum extension A (px)")]
+            [PropertyOrder(6)]
+            public double MaximumExtensionAPx { get; set; } = 100D;
+
+            [Category("Datum Gates")]
+            [DisplayName("Maximum extension B (px)")]
+            [PropertyOrder(7)]
+            public double MaximumExtensionBPx { get; set; } = 100D;
+
+            public VisionPipelineStep ToStep(string inputLayer, string outputLayer)
+            {
+                SplitGeometryReference(SourceA, out string stepA, out string featureA);
+                SplitGeometryReference(SourceB, out string stepB, out string featureB);
+                VisionPipelineStep mapped = CreateStep("LineFixture", inputLayer, outputLayer);
+                AddParameter(mapped.Parameters, VisionPipelineLineFixtureService.SourceStepAParameter, stepA);
+                AddParameter(mapped.Parameters, VisionPipelineLineFixtureService.SourceFeatureAParameter, featureA);
+                AddParameter(mapped.Parameters, VisionPipelineLineFixtureService.SourceStepBParameter, stepB);
+                AddParameter(mapped.Parameters, VisionPipelineLineFixtureService.SourceFeatureBParameter, featureB);
+                AddParameter(mapped.Parameters, VisionPipelineLineFixtureService.MinimumSupportAParameter, MinimumSupportA);
+                AddParameter(mapped.Parameters, VisionPipelineLineFixtureService.MinimumSupportBParameter, MinimumSupportB);
+                AddParameter(mapped.Parameters, VisionPipelineLineFixtureService.MaximumFitResidualAParameter, MaximumFitResidualAPx);
+                AddParameter(mapped.Parameters, VisionPipelineLineFixtureService.MaximumFitResidualBParameter, MaximumFitResidualBPx);
+                AddParameter(mapped.Parameters, VisionPipelineLineFixtureService.MinimumIncludedAngleParameter, MinimumIncludedAngleDeg);
+                AddParameter(mapped.Parameters, VisionPipelineLineFixtureService.MaximumIncludedAngleParameter, MaximumIncludedAngleDeg);
+                AddParameter(mapped.Parameters, VisionPipelineLineFixtureService.MaximumExtensionAParameter, MaximumExtensionAPx);
+                AddParameter(mapped.Parameters, VisionPipelineLineFixtureService.MaximumExtensionBParameter, MaximumExtensionBPx);
+                AddParameter(mapped.Parameters, VisionPipelineFixtureFrameService.PublishParameter, true);
+                AddParameter(mapped.Parameters, VisionPipelineFixtureFrameService.FrameNameParameter, FrameName);
+                AddParameter(mapped.Parameters, VisionPipelineFixtureFrameService.ReferenceXParameter, ReferenceX);
+                AddParameter(mapped.Parameters, VisionPipelineFixtureFrameService.ReferenceYParameter, ReferenceY);
+                AddParameter(mapped.Parameters, VisionPipelineFixtureFrameService.ReferenceAngleParameter, ReferenceAngleDeg);
+                AddParameter(mapped.Parameters, VisionPipelineFixtureFrameService.ReferenceScaleParameter, 1D);
+                AddParameter(mapped.Parameters, VisionPipelineFixtureFrameService.MaximumAngleDeltaParameter, MaximumAngleDeltaDeg);
+                AddParameter(mapped.Parameters, VisionPipelineFixtureFrameService.MinimumScaleRatioParameter, 1D);
+                AddParameter(mapped.Parameters, VisionPipelineFixtureFrameService.MaximumScaleRatioParameter, 1D);
+                AddParameter(mapped.Parameters, VisionPipelineFixtureFrameService.ReferenceImageWidthParameter, ReferenceImageWidth);
+                AddParameter(mapped.Parameters, VisionPipelineFixtureFrameService.ReferenceImageHeightParameter, ReferenceImageHeight);
+                AddParameter(mapped.Parameters, VisionPipelineNormalizer.AllowBranchInputParameter, true);
                 return mapped;
             }
         }

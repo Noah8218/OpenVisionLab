@@ -125,6 +125,8 @@ namespace OpenVisionLab
             "SCAN_COUNT",
             VisionPipelineFixtureFrameService.ReferenceImageWidthParameter,
             VisionPipelineFixtureFrameService.ReferenceImageHeightParameter,
+            VisionPipelineLineFixtureService.MinimumSupportAParameter,
+            VisionPipelineLineFixtureService.MinimumSupportBParameter,
             nameof(AffineTransformToolProperty.OutputWidth),
             nameof(AffineTransformToolProperty.OutputHeight)
         };
@@ -206,6 +208,10 @@ namespace OpenVisionLab
             VisionPipelineGeometryMeasureService.MaximumParallelAngleDeltaParameter,
             VisionPipelineGeometryMeasureService.MaximumExtensionAParameter,
             VisionPipelineGeometryMeasureService.MaximumExtensionBParameter,
+            VisionPipelineLineFixtureService.MaximumFitResidualAParameter,
+            VisionPipelineLineFixtureService.MaximumFitResidualBParameter,
+            VisionPipelineLineFixtureService.MinimumIncludedAngleParameter,
+            VisionPipelineLineFixtureService.MaximumIncludedAngleParameter,
             nameof(AffineTransformToolProperty.SourcePoint1X),
             nameof(AffineTransformToolProperty.SourcePoint1Y),
             nameof(AffineTransformToolProperty.SourcePoint2X),

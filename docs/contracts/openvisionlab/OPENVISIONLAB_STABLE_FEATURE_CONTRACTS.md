@@ -1218,6 +1218,55 @@ Relevant smoke and evidence:
 - completion report:
   `docs\reports\OPENVISIONLAB_THRESHOLD_TEACHING_SUGGESTION_20260728.md`
 
+## LineFixture Typed Dual-Datum Producer
+
+Stable behavior:
+
+- `LineFixture` and alias `DualEdgeFixture` consume two distinct exact typed
+  `Segment` results from earlier enabled, successful, accepted
+  `Line`/`LineGauge` Steps. They must not run a duplicate edge detector or
+  resolve geometry by display label alone.
+- Polarity and contrast remain owned and judged by each earlier Line Step;
+  LineFixture can consume the Segment only after that execution and acceptance
+  passes.
+- Both sources must share the consumer's coordinate layer and image size.
+  Missing, failed, rejected, ambiguous, wrong-kind, cross-frame, non-finite,
+  degenerate, or out-of-image sources fail closed.
+- The infinite-line intersection is the fixture origin. Datum A defines the
+  undirected X axis nearest the taught reference direction. The image-Y-down
+  Line angle must be converted into the existing OpenCV positive
+  counter-clockwise Fixture/`NormalizeImage` convention.
+- v1 scale remains exactly one. The producer must not infer scale, perspective,
+  calibration, or homography from two lines.
+- Support, per-line fit residual, included angle, per-line intersection
+  extension, reference pose, and in-image gates fail closed with exact reasons.
+  Runtime datum/geometry-gate rejects retain available datum drawings and
+  metrics but publish no usable Fixture frame. Definition failures do not
+  execute and therefore create no current-run drawing.
+- Successful current-run evidence retains Datum A/B segments, intersection,
+  Fixture X/Y axes, source quality metrics, and typed `Origin/Point`.
+- The existing Fixture frame owner remains responsible for publication,
+  duplicate-name rejection, angle/scale policy, `NormalizeImage`, and relative
+  ROI consumption.
+- Selected-Step PropertyGrid load/edit/apply/save must preserve typed source
+  identities and datum gates without Preview/Run, layer creation/selection, or
+  route mutation.
+- The frozen eight-case synthetic matrix must remain replayable. It is
+  integration evidence only; physical-task qualification still requires the
+  named operator/data packet and reviewed N-sample rail/reflection evidence in
+  the dedicated contract.
+
+Relevant smoke and evidence:
+
+- `OpenVisionFixtureSmoke --cvr09-line-fixture`;
+- `cvr09_line_fixture_property_grid`;
+- retained evidence:
+  `artifacts\cvr09_line_fixture_20260728_r11`;
+- contract:
+  `docs\contracts\openvisionlab\OPENVISIONLAB_LINE_FIXTURE_V1_CONTRACT.md`;
+- completion report:
+  `docs\reports\OPENVISIONLAB_CVR09_LINE_FIXTURE_20260728.md`.
+
 ## Before Touching Stable Paths
 
 1. Identify which contract above is affected.

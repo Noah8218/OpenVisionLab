@@ -22,6 +22,13 @@ internal static class Program
 
     private static async Task<int> Main(string[] args)
     {
+        if (args.Length > 0 && string.Equals(args[0], "--cvr09-line-fixture", StringComparison.OrdinalIgnoreCase))
+        {
+            Assert(args.Length == 2, "Usage: --cvr09-line-fixture <new-output-directory>");
+            return await RunCvr09LineFixture(
+                Path.GetFullPath(args[1]));
+        }
+
         if (args.Length > 0 && string.Equals(args[0], "--c9-gap-corpus", StringComparison.OrdinalIgnoreCase))
         {
             Assert(args.Length == 4, "Usage: --c9-gap-corpus <p175-evidence-root> <device-top-left-images-root> <new-output-directory>");
@@ -2007,6 +2014,345 @@ internal static class Program
         Add(normalize, "ALLOW_BRANCH_INPUT", "true");
         pipeline.Steps.Add(normalize);
         return pipeline;
+    }
+
+    private static async Task<int> RunCvr09LineFixture(string outputDirectory)
+    {
+        Assert(
+            !Directory.Exists(outputDirectory) || !Directory.EnumerateFileSystemEntries(outputDirectory).Any(),
+            "CVR-09 output must be new or empty: " + outputDirectory);
+        Directory.CreateDirectory(outputDirectory);
+        string casesDirectory = Path.Combine(outputDirectory, "cases");
+        Directory.CreateDirectory(casesDirectory);
+
+        VisionPipeline pipeline = CreateCvr09LineFixturePipeline();
+        VisionPipelineValidationResult validation = VisionPipelineValidator.Validate(
+            pipeline,
+            new[] { "Main" });
+        Assert(validation.Success, "CVR-09 pipeline must validate: " + validation.FormatErrors());
+
+        string pipelinePath = Path.Combine(outputDirectory, "cvr09_line_fixture.pipeline.xml");
+        Assert(SerializeHelper.SaveXmlFile(pipelinePath, pipeline), "CVR-09 pipeline XML save must succeed.");
+        Assert(
+            SerializeHelper.TryLoadFromXmlFile(pipelinePath, out VisionPipeline reloaded)
+                && reloaded != null
+                && reloaded.Steps.Count == pipeline.Steps.Count,
+            "CVR-09 pipeline XML must round-trip.");
+
+        object property = VisionPipelineStepPropertyMapper.CreateProperty(
+            reloaded.Steps[2],
+            new VisionPipelinePropertyContext(reloaded, 2));
+        Assert(property != null, "LineFixture PropertyGrid mapping must exist.");
+        VisionPipelineStep mapped = new VisionPipelineStep
+        {
+            Name = reloaded.Steps[2].Name,
+            ToolType = reloaded.Steps[2].ToolType,
+            InputLayer = reloaded.Steps[2].InputLayer,
+            OutputLayer = reloaded.Steps[2].OutputLayer
+        };
+        Assert(
+            VisionPipelineStepPropertyMapper.ApplyProperty(mapped, property)
+                && string.Equals(mapped.ToolType, "LineFixture", StringComparison.Ordinal)
+                && string.Equals(mapped.Parameters.GetValueOrDefault("SourceStepA"), "01 Top Datum", StringComparison.Ordinal)
+                && string.Equals(mapped.Parameters.GetValueOrDefault("SourceStepB"), "02 Left Datum", StringComparison.Ordinal)
+                && string.Equals(mapped.Parameters.GetValueOrDefault("USE_AS_FIXTURE_FRAME"), "True", StringComparison.OrdinalIgnoreCase),
+            "LineFixture PropertyGrid must preserve typed sources and fixture publication.");
+
+        (string Name, double Dx, double Dy, double Angle)[] cases =
+        {
+            ("reference", 0D, 0D, 0D),
+            ("shift_right_down", 24D, 12D, 0D),
+            ("shift_left_down", -18D, 15D, 0D),
+            ("shift_right_up", 12D, -14D, 0D),
+            ("rotate_positive", 8D, 8D, 3D),
+            ("rotate_negative", -6D, 10D, -3D),
+            ("rail_distractors_positive", 18D, -5D, 2D),
+            ("rail_distractors_negative", -14D, -8D, -2D)
+        };
+
+        VisionRecipeRunner runner = new VisionRecipeRunner();
+        List<string> rows = new List<string>
+        {
+            "Case\tSuccess\tOriginX\tOriginY\tAngleDeg\tIncludedDeg\tSupportA\tSupportB\tResidualA\tResidualB\tValidPixelRatio\tPadMean"
+        };
+        foreach ((string name, double dx, double dy, double angle) in cases)
+        {
+            using Mat image = CreateCvr09FixtureImage(dx, dy, angle, includeMarker: true);
+            string sourcePath = Path.Combine(casesDirectory, name + "_source.png");
+            Cv2.ImWrite(sourcePath, image);
+            using VisionRecipeRunResult result = await runner.RunAsync(reloaded, image);
+            string resultPath = Path.Combine(casesDirectory, name + "_result.png");
+            if (result.ResultImage != null && !result.ResultImage.Empty())
+            {
+                Cv2.ImWrite(resultPath, result.ResultImage);
+            }
+            string diagnostic = result.Steps.Count >= 5
+                ? string.Format(
+                    CultureInfo.InvariantCulture,
+                    " | origin=({0:0.###},{1:0.###}) angle={2:0.###} mean={3:0.###}",
+                    GetMetric(result.Steps[2], "FixtureCenterX"),
+                    GetMetric(result.Steps[2], "FixtureCenterY"),
+                    GetMetric(result.Steps[2], "FixtureAngleDelta"),
+                    GetMetric(result.Steps[4], "MeanValueAvg"))
+                : string.Empty;
+            Assert(result.Success, "CVR-09 run must pass: " + name + " | " + result.SummaryText + diagnostic);
+            Assert(result.Steps.Count == 5, "CVR-09 run must retain all five Steps.");
+            RenderEvidence(
+                sourcePath,
+                result.Steps[0],
+                reloaded.Steps[0],
+                Path.Combine(casesDirectory, name + "_datum_a_overlay.png"));
+            RenderEvidence(
+                sourcePath,
+                result.Steps[1],
+                reloaded.Steps[1],
+                Path.Combine(casesDirectory, name + "_datum_b_overlay.png"));
+            RenderEvidence(
+                sourcePath,
+                result.Steps[2],
+                reloaded.Steps[2],
+                Path.Combine(casesDirectory, name + "_fixture_overlay.png"));
+
+            VisionRecipeStepRunSummary fixture = result.Steps[2];
+            VisionRecipeStepRunSummary normalize = result.Steps[3];
+            VisionRecipeStepRunSummary padMean = result.Steps[4];
+            AssertMetric(fixture, "FixtureCenterX", 90D + dx, 5D);
+            AssertMetric(fixture, "FixtureCenterY", 70D + dy, 5D);
+            AssertMetric(fixture, "FixtureAngleDelta", angle, 1.2D);
+            Assert(GetMetric(fixture, "FixtureIncludedAngleDeg") >= 86D, "CVR-09 included angle must remain physical: " + name);
+            Assert(GetMetric(fixture, "FixtureLineASupportCount") >= 20D, "CVR-09 datum A support must be retained: " + name);
+            Assert(GetMetric(fixture, "FixtureLineBSupportCount") >= 20D, "CVR-09 datum B support must be retained: " + name);
+            Assert(GetMetric(normalize, "FixtureValidPixelRatio") >= 0.70D, "CVR-09 normalization coverage must pass: " + name);
+            Assert(GetMetric(padMean, "MeanValueAvg") >= 170D, "CVR-09 fixed relative pad ROI must remain on the bright marker: " + name);
+
+            rows.Add(string.Join(
+                "\t",
+                name,
+                result.Success,
+                GetMetric(fixture, "FixtureCenterX").ToString("0.###", CultureInfo.InvariantCulture),
+                GetMetric(fixture, "FixtureCenterY").ToString("0.###", CultureInfo.InvariantCulture),
+                GetMetric(fixture, "FixtureAngleDelta").ToString("0.###", CultureInfo.InvariantCulture),
+                GetMetric(fixture, "FixtureIncludedAngleDeg").ToString("0.###", CultureInfo.InvariantCulture),
+                GetMetric(fixture, "FixtureLineASupportCount").ToString("0", CultureInfo.InvariantCulture),
+                GetMetric(fixture, "FixtureLineBSupportCount").ToString("0", CultureInfo.InvariantCulture),
+                GetMetric(fixture, "FixtureLineAFitResidualPx").ToString("0.###", CultureInfo.InvariantCulture),
+                GetMetric(fixture, "FixtureLineBFitResidualPx").ToString("0.###", CultureInfo.InvariantCulture),
+                GetMetric(normalize, "FixtureValidPixelRatio").ToString("0.###", CultureInfo.InvariantCulture),
+                GetMetric(padMean, "MeanValueAvg").ToString("0.###", CultureInfo.InvariantCulture)));
+        }
+
+        VisionPipeline angleRejectPipeline = CreateCvr09LineFixturePipeline();
+        angleRejectPipeline.Steps[2].Parameters["MIN_INCLUDED_ANGLE_DEG"] = "60";
+        angleRejectPipeline.Steps[2].Parameters["MAX_INCLUDED_ANGLE_DEG"] = "80";
+        using Mat rejectImage = CreateCvr09FixtureImage(0D, 0D, 0D, includeMarker: true);
+        using VisionRecipeRunResult angleReject = await runner.RunAsync(angleRejectPipeline, rejectImage);
+        Assert(!angleReject.Success, "CVR-09 impossible included-angle gate must fail closed.");
+        Assert(
+            angleReject.Steps.Count >= 3
+                && (angleReject.Steps[2].Message?.Contains("included angle", StringComparison.OrdinalIgnoreCase) ?? false),
+            "CVR-09 included-angle failure must preserve the exact reason.");
+
+        VisionPipeline duplicateSourcePipeline = CreateCvr09LineFixturePipeline();
+        duplicateSourcePipeline.Steps[2].Parameters["SourceStepB"] = "01 Top Datum";
+        VisionPipelineValidationResult duplicateValidation = VisionPipelineValidator.Validate(
+            duplicateSourcePipeline,
+            new[] { "Main" });
+        Assert(
+            !duplicateValidation.Success
+                && duplicateValidation.Errors.Any(error => error.Contains("distinct Segment", StringComparison.OrdinalIgnoreCase)),
+            "CVR-09 duplicate typed source must fail definition validation.");
+
+        File.WriteAllLines(Path.Combine(outputDirectory, "runtime_matrix.tsv"), rows, Encoding.UTF8);
+        string report = string.Join(Environment.NewLine, new[]
+        {
+            "Status: Complete",
+            "Scope: CVR-09 bounded synthetic Line -> LineFixture -> NormalizeImage -> fixed-ROI Mean workflow",
+            "Cases: " + cases.Length,
+            "RuntimePass: " + cases.Length + "/" + cases.Length,
+            "FailClosedIncludedAngle: PASS",
+            "FailClosedDuplicateSource: PASS",
+            "PropertyGridRoundTrip: PASS",
+            "PipelineXmlRoundTrip: PASS",
+            "Boundary: synthetic two-datum pixel-space evidence; no scale, perspective, calibration, unseen-data, or field-qualification claim"
+        });
+        File.WriteAllText(Path.Combine(outputDirectory, "report.txt"), report, Encoding.UTF8);
+        Console.WriteLine(report);
+        return 0;
+    }
+
+    private static VisionPipeline CreateCvr09LineFixturePipeline()
+    {
+        VisionPipeline pipeline = new VisionPipeline { Name = "CVR09_LineFixture_Normalize_RelativeRoi" };
+        pipeline.Steps.Add(CreateCvr09LineStep(
+            "01 Top Datum",
+            "TopDatumDrawing",
+            "40,25,400,105",
+            "Y_TTOB",
+            "X_LTOR"));
+        pipeline.Steps.Add(CreateCvr09LineStep(
+            "02 Left Datum",
+            "LeftDatumDrawing",
+            "30,30,125,300",
+            "X_LTOR",
+            "Y_TTOB"));
+
+        VisionPipelineStep fixture = new VisionPipelineStep
+        {
+            Name = "03 Publish Dual-Edge Fixture",
+            ToolType = "LineFixture",
+            InputLayer = "Main",
+            OutputLayer = "FixtureReview"
+        };
+        Add(fixture, "SourceStepA", "01 Top Datum");
+        Add(fixture, "SourceFeatureA", "Segment");
+        Add(fixture, "SourceStepB", "02 Left Datum");
+        Add(fixture, "SourceFeatureB", "Segment");
+        Add(fixture, "MIN_SUPPORT_A", "20");
+        Add(fixture, "MIN_SUPPORT_B", "20");
+        Add(fixture, "MAX_FIT_RESIDUAL_A_PX", "2");
+        Add(fixture, "MAX_FIT_RESIDUAL_B_PX", "2");
+        Add(fixture, "MIN_INCLUDED_ANGLE_DEG", "85");
+        Add(fixture, "MAX_INCLUDED_ANGLE_DEG", "90");
+        Add(fixture, "MAX_EXTENSION_A_PX", "80");
+        Add(fixture, "MAX_EXTENSION_B_PX", "80");
+        Add(fixture, "USE_AS_FIXTURE_FRAME", "true");
+        Add(fixture, "FIXTURE_FRAME_NAME", "OuterDatumFrame");
+        Add(fixture, "FIXTURE_REFERENCE_X", "90");
+        Add(fixture, "FIXTURE_REFERENCE_Y", "70");
+        Add(fixture, "FIXTURE_REFERENCE_ANGLE", "0");
+        Add(fixture, "FIXTURE_REFERENCE_SCALE", "1");
+        Add(fixture, "FIXTURE_MAX_ANGLE_DELTA", "5");
+        Add(fixture, "FIXTURE_MIN_SCALE_RATIO", "1");
+        Add(fixture, "FIXTURE_MAX_SCALE_RATIO", "1");
+        Add(fixture, "FIXTURE_REFERENCE_IMAGE_WIDTH", "480");
+        Add(fixture, "FIXTURE_REFERENCE_IMAGE_HEIGHT", "360");
+        Add(fixture, "ALLOW_BRANCH_INPUT", "true");
+        fixture.UseAcceptance = true;
+        fixture.AcceptanceMetricName = "ResultCount";
+        fixture.UseAcceptanceMetricMinimum = true;
+        fixture.AcceptanceMetricMinimum = 1D;
+        fixture.UseAcceptanceMetricMaximum = true;
+        fixture.AcceptanceMetricMaximum = 1D;
+        pipeline.Steps.Add(fixture);
+
+        VisionPipelineStep normalize = new VisionPipelineStep
+        {
+            Name = "04 Normalize From Dual-Edge Fixture",
+            ToolType = "RotateScale",
+            InputLayer = "Main",
+            OutputLayer = "DatumAligned"
+        };
+        Add(normalize, "Angle", "0");
+        Add(normalize, "ScaleXPercent", "100");
+        Add(normalize, "ScaleYPercent", "100");
+        Add(normalize, "Interpolation", "Linear");
+        Add(normalize, "BorderType", "Constant");
+        Add(normalize, "USE_FIXTURE_FRAME", "true");
+        Add(normalize, "FIXTURE_FRAME_NAME", "OuterDatumFrame");
+        Add(normalize, "FIXTURE_APPLY_MODE", "NormalizeImage");
+        Add(normalize, "FIXTURE_MIN_VALID_PIXEL_RATIO", "0.70");
+        Add(normalize, "ALLOW_BRANCH_INPUT", "true");
+        pipeline.Steps.Add(normalize);
+
+        VisionPipelineStep blob = new VisionPipelineStep
+        {
+            Name = "05 Inspect Fixed Relative Pad ROI",
+            ToolType = "Mean",
+            InputLayer = "DatumAligned",
+            OutputLayer = "PadMean"
+        };
+        Add(blob, "MEAN_TYPES", "Mean");
+        Add(blob, "MEAN_MIN", "170");
+        Add(blob, "MEAN_MAX", "255");
+        Add(blob, "USE_ROI", "true");
+        Add(blob, "USE_MULTI_ROI", "false");
+        Add(blob, "USE_MASKING", "false");
+        Add(blob, "CvROI", "258,188,34,29");
+        blob.UseAcceptance = true;
+        blob.AcceptanceMetricName = "MeanValueAvg";
+        blob.UseAcceptanceMetricMinimum = true;
+        blob.AcceptanceMetricMinimum = 170D;
+        blob.UseAcceptanceMetricMaximum = true;
+        blob.AcceptanceMetricMaximum = 255D;
+        pipeline.Steps.Add(blob);
+        return pipeline;
+    }
+
+    private static VisionPipelineStep CreateCvr09LineStep(
+        string name,
+        string outputLayer,
+        string roi,
+        string projectionDirection,
+        string verificationDirection)
+    {
+        VisionPipelineStep step = new VisionPipelineStep
+        {
+            Name = name,
+            ToolType = "LineGauge",
+            InputLayer = "Main",
+            OutputLayer = outputLayer
+        };
+        Add(step, "USE_THRESHOLD", "false");
+        Add(step, "USE_ADAPTIVE_THRESHOLD", "false");
+        Add(step, "USE_BITWISENOT", "false");
+        Add(step, "USE_ROI", "true");
+        Add(step, "CvROI", roi);
+        Add(step, "PRJ_PORALITY", "WTOB");
+        Add(step, "PRJ_DIR", projectionDirection);
+        Add(step, "VER_PRJ_DIR", verificationDirection);
+        Add(step, "CONTRAST", "30");
+        Add(step, "THICKNESS", "2");
+        Add(step, "SAMPLING_STEP", "6");
+        Add(step, "POINT_RANGE", "12");
+        Add(step, "USE_MANUAL_ANGLE", "false");
+        Add(step, "USE_EXTEND_FIT_LINE", "true");
+        Add(step, "EXTEND_FIT_LINE_VALUE", "30");
+        Add(step, "SHOW_VERTICAL_LINE", "true");
+        Add(step, "SHOW_EDGE", "true");
+        Add(step, "SHOW_CONTOUR", "true");
+        Add(step, "SHOW_FITLINE", "true");
+        Add(step, "ALLOW_BRANCH_INPUT", "true");
+        step.UseAcceptance = true;
+        step.AcceptanceMetricName = "ResultCount";
+        step.UseAcceptanceMetricMinimum = true;
+        step.AcceptanceMetricMinimum = 1D;
+        step.UseAcceptanceMetricMaximum = true;
+        step.AcceptanceMetricMaximum = 1D;
+        return step;
+    }
+
+    private static Mat CreateCvr09FixtureImage(
+        double dx,
+        double dy,
+        double angle,
+        bool includeMarker)
+    {
+        const int width = 480;
+        const int height = 360;
+        using Mat reference = new Mat(height, width, MatType.CV_8UC3, new Scalar(238, 238, 238));
+        Cv2.Rectangle(reference, new Rect(90, 70, 300, 220), new Scalar(72, 72, 72), -1);
+        Cv2.Line(reference, new Point(125, 130), new Point(365, 130), new Scalar(150, 150, 150), 4);
+        Cv2.Line(reference, new Point(110, 172), new Point(370, 172), new Scalar(185, 185, 185), 3);
+        Cv2.Line(reference, new Point(170, 92), new Point(170, 265), new Scalar(145, 145, 145), 4);
+        Cv2.Line(reference, new Point(215, 88), new Point(215, 270), new Scalar(115, 115, 115), 2);
+        if (includeMarker)
+        {
+            Cv2.Rectangle(reference, new Rect(260, 190, 30, 25), new Scalar(230, 230, 230), -1);
+        }
+
+        using Mat transform = Cv2.GetRotationMatrix2D(new Point2f(90F, 70F), angle, 1D);
+        transform.Set(0, 2, transform.At<double>(0, 2) + dx);
+        transform.Set(1, 2, transform.At<double>(1, 2) + dy);
+        Mat current = new Mat();
+        Cv2.WarpAffine(
+            reference,
+            current,
+            transform,
+            reference.Size(),
+            InterpolationFlags.Linear,
+            BorderTypes.Constant,
+            new Scalar(238, 238, 238));
+        return current;
     }
 
     private static double CalculateMeanAbsoluteDifference(Mat expected, Mat actual, Rect reviewedRegion)

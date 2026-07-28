@@ -64,6 +64,10 @@ gh auth status
 - P232-P235 complete sequential shared Tool View N-image verification, one
   24-image real-folder acceptance, and hash-locked locator expected-success
   promotion into Recipe Manager.
+- CVR-01 through CVR-08 are complete. The user also explicitly activated and
+  completed bounded CVR-09 `LineFixture` v1 implementation/synthetic
+  integration on 2026-07-28. Physical-part qualification remains blocked on
+  the named operator/data packet in the LineFixture contract.
 - Concurrent N-image workers are not implemented. Promoted `Expected OK` means
   locator success, not inherited defect truth.
 - Broad industrial variation, certified metrology, calibration, unseen-data
@@ -74,8 +78,10 @@ gh auth status
 
 ## Current Priority
 
-There is no active implementation priority after P235/P236. Wait for a concrete
-operator workflow blocker or a verified current-build regression.
+There is no active implementation priority after bounded CVR-09 v1. `CVR-00`
+independent novice use remains the active external prerequisite. Physical-task
+CVR-09 qualification and CVR-10 implementation both require their named
+operator/data packets; do not auto-activate either.
 
 Do not start another dataset run, recipe tuning cycle, algorithm family,
 parallelization project, or LLM campaign merely to keep work moving.

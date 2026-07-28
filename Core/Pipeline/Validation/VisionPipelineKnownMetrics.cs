@@ -135,6 +135,11 @@ namespace OpenVisionLab
         public const string FixtureAppliedScaleRatio = "FixtureAppliedScaleRatio";
         public const string FixtureEffectiveRoiX = "FixtureEffectiveRoiX";
         public const string FixtureEffectiveRoiY = "FixtureEffectiveRoiY";
+        public const string FixtureLineASupportCount = "FixtureLineASupportCount";
+        public const string FixtureLineBSupportCount = "FixtureLineBSupportCount";
+        public const string FixtureLineAFitResidualPx = "FixtureLineAFitResidualPx";
+        public const string FixtureLineBFitResidualPx = "FixtureLineBFitResidualPx";
+        public const string FixtureIncludedAngleDeg = "FixtureIncludedAngleDeg";
         public const string AffineM11 = "AffineM11";
         public const string AffineM12 = "AffineM12";
         public const string AffineM13 = "AffineM13";
@@ -242,10 +247,10 @@ namespace OpenVisionLab
             new VisionPipelineMetricDefinition { Name = AngleMin, DisplayName = "Angle Min", Description = "Minimum result angle." },
             new VisionPipelineMetricDefinition { Name = AngleMax, DisplayName = "Angle Max", Description = "Maximum result angle." },
             new VisionPipelineMetricDefinition { Name = AngleAvg, DisplayName = "Angle Avg", Description = "Average result angle." },
-            new VisionPipelineMetricDefinition { Name = FixtureCenterX, DisplayName = "Fixture Center X", Description = "Current X coordinate published by the fixture Matching step." },
-            new VisionPipelineMetricDefinition { Name = FixtureCenterY, DisplayName = "Fixture Center Y", Description = "Current Y coordinate published by the fixture Matching step." },
-            new VisionPipelineMetricDefinition { Name = FixtureAngle, DisplayName = "Fixture Angle", Description = "Current angle published by the fixture Matching step." },
-            new VisionPipelineMetricDefinition { Name = FixtureScale, DisplayName = "Fixture Scale", Description = "Current uniform Matching scale published by the fixture Matching step." },
+            new VisionPipelineMetricDefinition { Name = FixtureCenterX, DisplayName = "Fixture Center X", Description = "Current X coordinate published by the fixture producer." },
+            new VisionPipelineMetricDefinition { Name = FixtureCenterY, DisplayName = "Fixture Center Y", Description = "Current Y coordinate published by the fixture producer." },
+            new VisionPipelineMetricDefinition { Name = FixtureAngle, DisplayName = "Fixture Angle", Description = "Current OpenCV-convention angle published by the fixture producer." },
+            new VisionPipelineMetricDefinition { Name = FixtureScale, DisplayName = "Fixture Scale", Description = "Current uniform scale published by the fixture producer." },
             new VisionPipelineMetricDefinition { Name = FixtureOffsetX, DisplayName = "Fixture Offset X", Description = "Current fixture X minus its taught reference X." },
             new VisionPipelineMetricDefinition { Name = FixtureOffsetY, DisplayName = "Fixture Offset Y", Description = "Current fixture Y minus its taught reference Y." },
             new VisionPipelineMetricDefinition { Name = FixtureAngleDelta, DisplayName = "Fixture Angle Delta", Description = "Normalized current fixture angle minus its taught reference angle." },
@@ -261,6 +266,11 @@ namespace OpenVisionLab
             new VisionPipelineMetricDefinition { Name = FixtureAppliedScaleRatio, DisplayName = "Applied Correction Scale", Description = "Inverse uniform scale applied to produce the normalized image." },
             new VisionPipelineMetricDefinition { Name = FixtureEffectiveRoiX, DisplayName = "Effective ROI X", Description = "Runtime ROI X after fixture translation. The saved CvROI is unchanged." },
             new VisionPipelineMetricDefinition { Name = FixtureEffectiveRoiY, DisplayName = "Effective ROI Y", Description = "Runtime ROI Y after fixture translation. The saved CvROI is unchanged." },
+            new VisionPipelineMetricDefinition { Name = FixtureLineASupportCount, DisplayName = "Fixture Datum A Support", Description = "Support count retained by the earlier Line A result used to publish a line fixture." },
+            new VisionPipelineMetricDefinition { Name = FixtureLineBSupportCount, DisplayName = "Fixture Datum B Support", Description = "Support count retained by the earlier Line B result used to publish a line fixture." },
+            new VisionPipelineMetricDefinition { Name = FixtureLineAFitResidualPx, DisplayName = "Fixture Datum A Residual", Description = "Fit residual in pixels retained by the earlier Line A result used to publish a line fixture." },
+            new VisionPipelineMetricDefinition { Name = FixtureLineBFitResidualPx, DisplayName = "Fixture Datum B Residual", Description = "Fit residual in pixels retained by the earlier Line B result used to publish a line fixture." },
+            new VisionPipelineMetricDefinition { Name = FixtureIncludedAngleDeg, DisplayName = "Fixture Included Angle", Description = "Undirected included angle in degrees between the two datum segments." },
             new VisionPipelineMetricDefinition { Name = DifferencePixelCount, DisplayName = "Difference Pixel Count", Description = "Pixels above the reference-difference threshold inside the valid registered region." },
             new VisionPipelineMetricDefinition { Name = DifferencePixelRatio, DisplayName = "Difference Pixel Ratio", Description = "Difference pixels divided by the valid registered comparison pixels." },
             new VisionPipelineMetricDefinition { Name = DifferenceMean, DisplayName = "Difference Mean", Description = "Mean absolute grayscale difference after registration and brightness normalization." },
@@ -471,6 +481,8 @@ namespace OpenVisionLab
             ["lineintersectiongauge"] = WithImageAndLineMetrics(new[] { ResultCount, EdgeCount, EdgePointCount, IntersectionX, IntersectionY }.Concat(LineOverlayMetricNames).ToArray()),
             ["geometrymeasure"] = WithImageAndLineMetrics(ResultCount, GeometryDistancePx, GeometryDistanceMm, GeometryAngleDeg, GeometrySignedClearancePx, GeometrySignedClearanceMm, GeometryParallelDeltaDeg, GeometryExtensionAPx, GeometryExtensionBPx, IntersectionX, IntersectionY),
             ["geometricmeasurement"] = WithImageAndLineMetrics(ResultCount, GeometryDistancePx, GeometryDistanceMm, GeometryAngleDeg, GeometrySignedClearancePx, GeometrySignedClearanceMm, GeometryParallelDeltaDeg, GeometryExtensionAPx, GeometryExtensionBPx, IntersectionX, IntersectionY),
+            ["linefixture"] = WithImageAndLineMetrics(ResultCount, FixtureCenterX, FixtureCenterY, FixtureAngle, FixtureScale, FixtureOffsetX, FixtureOffsetY, FixtureAngleDelta, FixtureScaleRatio, FixtureReferenceImageWidth, FixtureReferenceImageHeight, FixtureLineASupportCount, FixtureLineBSupportCount, FixtureLineAFitResidualPx, FixtureLineBFitResidualPx, FixtureIncludedAngleDeg, GeometryExtensionAPx, GeometryExtensionBPx),
+            ["dualedgefixture"] = WithImageAndLineMetrics(ResultCount, FixtureCenterX, FixtureCenterY, FixtureAngle, FixtureScale, FixtureOffsetX, FixtureOffsetY, FixtureAngleDelta, FixtureScaleRatio, FixtureReferenceImageWidth, FixtureReferenceImageHeight, FixtureLineASupportCount, FixtureLineBSupportCount, FixtureLineAFitResidualPx, FixtureLineBFitResidualPx, FixtureIncludedAngleDeg, GeometryExtensionAPx, GeometryExtensionBPx),
             ["circlegauge"] = WithImageMetrics(ResultCount, CircleCenterX, CircleCenterY, CircleRadiusPx, CircleDiameterPx, CircleRadiusMm, CircleDiameterMm, CircleSupportCount, CircleSupportRatio, CircleCoverageDeg, CircleFitResidualPx),
             ["threshold"] = ImageMetricNames,
             ["morphology"] = ImageMetricNames,

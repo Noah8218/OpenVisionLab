@@ -34,6 +34,10 @@ The current decision is:
 - `CVR-08` is complete after the user explicitly delegated the bounded task
   choice on 2026-07-28; the selected public synthetic task verifies one circular
   datum ROI and one pad-presence ROI behind the same existing fixture;
+- `CVR-09` LineFixture v1 implementation and synthetic integration are complete
+  after the user's explicit 2026-07-28 development continuation; named
+  physical-part qualification remains blocked on the original operator/data
+  trigger;
 - no new product feature is automatically active;
 - the earliest incomplete row whose trigger has actual current-source evidence
   becomes the next implementation candidate;
@@ -78,6 +82,7 @@ automation remain outside the current platform scope.
 | `First implementation candidate` | The first feature to implement after its trigger is reproduced and the user approves development. |
 | `Conditional` | Preserved candidate; do not start until its exact trigger exists. |
 | `Deferred` | Known idea with no current task or evidence. |
+| `Implemented — qualification pending` | The reusable bounded product contract is implemented and verified, but the row's named physical-task/data gate remains unsatisfied. |
 | `Out of scope` | Deliberately excluded from the current product identity. |
 | `Complete` | Acceptance and verification passed; retain evidence and do not repeat. |
 
@@ -115,7 +120,7 @@ must use the closest currently available equivalent if a label changes.
 | 6 | `CVR-06` | Matcher model/pyramid/candidate diagnostic surface | Complete | Explicit user continuation on 2026-07-28 activated the bounded retained-run EdgeBasedMatching diagnostic; public Good/Wrong and a repeated-pattern matrix freeze Success/NoMatch/Ambiguous evidence. | `gpt-5.6-sol` | high |
 | 7 | `CVR-07` | Bounded task-specific teaching suggestions | Complete — Threshold Basic v1 | Explicit user continuation on 2026-07-28 activated one bounded full-image Threshold Basic bright/dark significant-mode suggestion with explicit Use/Undo and public Good/Bad replay. | `gpt-5.6-sol` | high |
 | 8 | `CVR-08` | Generic typed fixture-transform consumer for multiple downstream ROIs | Complete — bounded P212 multi-ROI review extension | User delegation selected the public synthetic fixture task: circular datum verification plus pad-presence inspection, with one locator/NormalizeImage chain and controlled Good/Bad replay. | `gpt-5.6-sol` | high |
-| 9 | `CVR-09` | Straight-edge/dual-edge fixture producer | Conditional after `CVR-08` contract review | A named part has no durable template feature but has two independently verified physical datum edges that must define a fixture. | `gpt-5.6-sol` | high |
+| 9 | `CVR-09` | Straight-edge/dual-edge fixture producer | Implemented — qualification pending | User explicitly activated a bounded synthetic v1 on 2026-07-28. Physical-task qualification still requires a named part with no durable template feature and two independently verified datum edges. | `gpt-5.6-sol` | high |
 | 10 | `CVR-10` | Multi-instance fixture and bounded sub-recipe fan-out | Conditional after `CVR-08` | A real task requires the same inspection on multiple accepted matches and defines stable instance identity, output naming, review, and acceptance semantics. | `gpt-5.6-sol` | high |
 | 11 | `CVR-11` | Edge matcher polarity modes | Conditional | A labelled N-sample set proves that the same physical feature reverses polarity and current threshold/Canny/search settings cannot preserve the match. | `gpt-5.6-sol` | high |
 | 12 | `CVR-12` | Bounded matcher deformation/elasticity | Conditional after `CVR-11` review | A labelled task proves bounded physical deformation, not pose/scale/blur/ROI error, and requires a documented deformation limit. | `gpt-5.6-sol` | high |
@@ -629,6 +634,20 @@ per-image recipe mutation.
 
 ### CVR-09 — Straight-edge/dual-edge fixture producer
 
+Implementation status:
+
+- bounded v1 is implemented as `LineFixture` with compatibility alias
+  `DualEdgeFixture`;
+- it consumes two distinct exact typed `Segment` results from earlier accepted
+  `Line`/`LineGauge` Steps and does not duplicate the Line detector;
+- the intersection publishes the origin, Datum A publishes the fixture X axis,
+  and the existing Fixture/`NormalizeImage` consumer owns application;
+- PropertyGrid, XML, validation, known metrics, typed `Origin/Point`, exact
+  drawings, and Pipeline Review quality text are connected;
+- eight actual translation/rotation/repeated-rail synthetic pipelines passed,
+  and duplicate source plus incompatible included angle failed closed;
+- this completes reusable implementation and synthetic integration only.
+
 Minimum slice:
 
 - operator-reviewed physical horizontal/vertical or two non-parallel datum
@@ -638,6 +657,22 @@ Minimum slice:
 - one typed fixture output compatible with `CVR-08`;
 - N-sample proof that reflections or repeated rails do not replace the intended
   physical datum.
+
+Qualification prerequisite:
+
+- named part and downstream inspection intent;
+- representative images and allowed pose range;
+- operator-certified Datum A/B physical identities and polarity/contrast
+  expectations;
+- evidence that a durable Matching/Affine locator is unsuitable;
+- reviewed N-sample evidence that nearby rails/reflections do not replace
+  either datum.
+
+Evidence:
+
+- `docs/contracts/openvisionlab/OPENVISIONLAB_LINE_FIXTURE_V1_CONTRACT.md`;
+- `docs/reports/OPENVISIONLAB_CVR09_LINE_FIXTURE_20260728.md`;
+- `artifacts/cvr09_line_fixture_20260728_r11`.
 
 ### CVR-10 — Multi-instance fixture and sub-recipe fan-out
 
@@ -814,5 +849,5 @@ Scope: Durable full commercial-video development candidate inventory, ordered pr
 Acceptance criteria: All 16 reviewed videos map to retained candidates or explicit exclusions; every ordered row has a trigger and model/reasoning recommendation; future chats are instructed not to lose or auto-activate the queue.
 Verification: Cross-checked against the 2026-07-27 commercial-video report, current handoff, first-time operator audit, P217 feature-admission decision, AGENTS.md, and the canonical documentation map.
 Evidence: docs/roadmap/OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md and docs/reports/OPENVISIONLAB_COMMERCIAL_RULEBASE_VIDEO_REVIEW_20260727.md
-Boundary / next dependency: CVR-01 through CVR-08 are complete. CVR-00 remains the only active prerequisite; CVR-09 and later rows still require their exact current-source trigger or an explicit user decision and must not be auto-activated.
+Boundary / next dependency: CVR-01 through CVR-08 are complete. CVR-09 bounded implementation/synthetic integration is complete but physical-task qualification remains blocked on its named operator/data packet. CVR-00 remains the only active external prerequisite; CVR-10 and later rows still require their exact current-source trigger or an explicit user decision and must not be auto-activated.
 ```

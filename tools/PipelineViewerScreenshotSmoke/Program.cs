@@ -115,6 +115,7 @@ internal static class Program
         ["cvr05_object_metric_distribution"] = CaptureCvr05ObjectMetricDistribution,
         ["cvr04_circle_residual_review"] = CaptureCvr04CircleResidualReview,
         ["p213_geometry_property_grid"] = CaptureP213GeometryPropertyGrid,
+        ["cvr09_line_fixture_property_grid"] = CaptureCvr09LineFixturePropertyGrid,
         ["p219_affine_point_binding_property_grid"] = CaptureP219AffinePointBindingPropertyGrid,
         ["p214_two_point_scale"] = CaptureP214TwoPointScale,
         ["wpf_shell_host_recipe_context_switch"] = CaptureShellHostRecipeContextSwitch,
@@ -21418,6 +21419,191 @@ internal static class Program
                 if (grid.IsSearchEmptyMessageVisibleForTest || shellHost.NativePreviewRunCount != 0)
                 {
                     throw new InvalidOperationException("P213 source-picker search failed or changed Preview/Run state.");
+                }
+            }, captureFloatingToolWindow: false, captureScreen: true);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static CaptureResult CaptureCvr09LineFixturePropertyGrid(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        CleanupTransientRecipeWorkspaces();
+
+        string recipeName = "Smoke_CVR09LineFixture_" + Guid.NewGuid().ToString("N").Substring(0, 10);
+        VisionPipeline pipeline = new() { Name = "CVR09_LineFixture_PropertyGrid" };
+        pipeline.Steps.Add(new VisionPipelineStep
+        {
+            Name = "01 Top Datum",
+            ToolType = "LineGauge",
+            Enabled = true,
+            InputLayer = "Main",
+            OutputLayer = "TopDatumDrawing"
+        });
+        pipeline.Steps.Add(new VisionPipelineStep
+        {
+            Name = "02 Left Datum",
+            ToolType = "LineGauge",
+            Enabled = true,
+            InputLayer = "Main",
+            OutputLayer = "LeftDatumDrawing"
+        });
+        VisionPipelineStep fixture = new()
+        {
+            Name = "03 Publish Dual-Edge Fixture",
+            ToolType = "LineFixture",
+            Enabled = true,
+            InputLayer = "Main",
+            OutputLayer = "FixtureReview"
+        };
+        foreach ((string key, string value) in new[]
+        {
+            ("SourceStepA", "01 Top Datum"),
+            ("SourceFeatureA", "Segment"),
+            ("SourceStepB", "02 Left Datum"),
+            ("SourceFeatureB", "Segment"),
+            ("MIN_SUPPORT_A", "20"),
+            ("MIN_SUPPORT_B", "20"),
+            ("MAX_FIT_RESIDUAL_A_PX", "2"),
+            ("MAX_FIT_RESIDUAL_B_PX", "2"),
+            ("MIN_INCLUDED_ANGLE_DEG", "85"),
+            ("MAX_INCLUDED_ANGLE_DEG", "90"),
+            ("MAX_EXTENSION_A_PX", "80"),
+            ("MAX_EXTENSION_B_PX", "80"),
+            ("USE_AS_FIXTURE_FRAME", "true"),
+            ("FIXTURE_FRAME_NAME", "OuterDatumFrame"),
+            ("FIXTURE_REFERENCE_X", "90"),
+            ("FIXTURE_REFERENCE_Y", "70"),
+            ("FIXTURE_REFERENCE_ANGLE", "0"),
+            ("FIXTURE_REFERENCE_SCALE", "1"),
+            ("FIXTURE_MAX_ANGLE_DELTA", "5"),
+            ("FIXTURE_MIN_SCALE_RATIO", "1"),
+            ("FIXTURE_MAX_SCALE_RATIO", "1"),
+            ("FIXTURE_REFERENCE_IMAGE_WIDTH", "480"),
+            ("FIXTURE_REFERENCE_IMAGE_HEIGHT", "360"),
+            ("ALLOW_BRANCH_INPUT", "true")
+        })
+        {
+            fixture.Parameters[key] = value;
+        }
+        pipeline.Steps.Add(fixture);
+
+        VisionPipelineStorage.Save(recipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
+        OpenVisionShellHostView shellHost = CreateShellHost(recipeName, seedMainLayer: false);
+        try
+        {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                ToggleButton recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager")
+                    ?? throw new InvalidOperationException("CVR-09 PropertyGrid smoke could not find Recipe Manager.");
+                recipeManagerButton.IsChecked = true;
+                Pump(100);
+                FindNamedVisualChild<ToggleButton>(shellHost, "recipeAdvancedReviewToggle")!.IsChecked = true;
+                Pump(60);
+                FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline")!.IsSelected = true;
+                Pump(40);
+                FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineXmlSteps")!.IsSelected = true;
+                Pump(40);
+
+                shellHost.RecipeCommands.SelectedPipelinePreviewStep =
+                    shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps.Single(
+                        item => item.Name == "03 Publish Dual-Edge Fixture");
+                shellHost.RecipeCommands.LoadSelectedStepParametersCommand.Execute(null);
+                Pump(180);
+
+                FrameworkElement propertyGridHost = FindVisualChildren<FrameworkElement>(shellHost)
+                    .FirstOrDefault(item => item.IsVisible && string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "HostRecipeSelectedStepPropertyGridHost",
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("CVR-09 LineFixture PropertyGrid host was not visible.");
+                System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid =
+                    FindVisualChildren<System.Windows.Controls.WpfPropertyGrid.PropertyGrid>(propertyGridHost)
+                        .FirstOrDefault(item => item.IsVisible && item.SelectedObject != null)
+                    ?? throw new InvalidOperationException("CVR-09 LineFixture PropertyGrid did not load.");
+                PropertyDescriptorCollection descriptors = TypeDescriptor.GetProperties(grid.SelectedObject);
+                foreach (string required in new[]
+                {
+                    "SourceA",
+                    "SourceB",
+                    "FrameName",
+                    "ReferenceX",
+                    "ReferenceY",
+                    "ReferenceAngleDeg",
+                    "MinimumSupportA",
+                    "MinimumSupportB",
+                    "MaximumFitResidualAPx",
+                    "MaximumFitResidualBPx",
+                    "MinimumIncludedAngleDeg",
+                    "MaximumIncludedAngleDeg",
+                    "MaximumExtensionAPx",
+                    "MaximumExtensionBPx"
+                })
+                {
+                    if (descriptors.Find(required, true) == null)
+                    {
+                        throw new InvalidOperationException("CVR-09 LineFixture PropertyGrid missed " + required + ".");
+                    }
+                }
+
+                PropertyDescriptor sourceA = descriptors.Find("SourceA", true)!;
+                TypeConverter.StandardValuesCollection? choices =
+                    sourceA.Converter.GetStandardValues(new PropertyContext(grid.SelectedObject, sourceA));
+                string[] references = choices?.Cast<object>()
+                    .Select(item => Convert.ToString(item) ?? string.Empty)
+                    .Where(value => !string.IsNullOrWhiteSpace(value))
+                    .ToArray()
+                    ?? Array.Empty<string>();
+                if (!references.Contains("01 Top Datum/Segment", StringComparer.OrdinalIgnoreCase)
+                    || !references.Contains("02 Left Datum/Segment", StringComparer.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "CVR-09 typed Segment pickers did not expose both earlier Line results.");
+                }
+
+                int runsBefore = shellHost.NativePreviewRunCount;
+                shellHost.RecipeCommands.ApplySelectedStepParametersCommand.Execute(null);
+                Pump(180);
+                VisionPipeline saved = VisionPipelineStorage.Load(recipeName, pipeline.Name);
+                VisionPipelineStep savedFixture = saved.Steps.Single(
+                    item => item.Name == "03 Publish Dual-Edge Fixture");
+                if (savedFixture.Parameters.GetValueOrDefault("SourceStepA") != "01 Top Datum"
+                    || savedFixture.Parameters.GetValueOrDefault("SourceFeatureA") != "Segment"
+                    || savedFixture.Parameters.GetValueOrDefault("SourceStepB") != "02 Left Datum"
+                    || savedFixture.Parameters.GetValueOrDefault("SourceFeatureB") != "Segment"
+                    || savedFixture.Parameters.GetValueOrDefault("FIXTURE_FRAME_NAME") != "OuterDatumFrame"
+                    || shellHost.NativePreviewRunCount != runsBefore)
+                {
+                    throw new InvalidOperationException(
+                        "CVR-09 LineFixture apply/save/reload lost its contract or triggered Preview/Run.");
+                }
+
+                TextBox search = GetActivePropertyGridSearchTextBox(grid, "CVR-09 LineFixture recipe step");
+                search.Text = "Datum";
+                search.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+                grid.UpdateLayout();
+                Pump(60);
+                ScrollViewer pipelineScroll = FindNamedVisualChild<ScrollViewer>(
+                    shellHost,
+                    "recipePipelineTabScrollViewer")
+                    ?? throw new InvalidOperationException("CVR-09 Pipeline scroll viewer was not found.");
+                pipelineScroll.ScrollToBottom();
+                pipelineScroll.UpdateLayout();
+                Pump(80);
+                BringPropertyGridPropertyIntoView(
+                    grid,
+                    "SourceA",
+                    "CVR-09 LineFixture recipe step",
+                    0D);
+                if (grid.IsSearchEmptyMessageVisibleForTest
+                    || shellHost.NativePreviewRunCount != runsBefore)
+                {
+                    throw new InvalidOperationException(
+                        "CVR-09 LineFixture PropertyGrid search failed or changed Preview/Run state.");
                 }
             }, captureFloatingToolWindow: false, captureScreen: true);
         }

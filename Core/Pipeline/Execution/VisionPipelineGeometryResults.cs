@@ -77,6 +77,10 @@ namespace OpenVisionLab
                 yield return ("Circle", VisionPipelineGeometryKind.Circle);
                 yield return ("Center", VisionPipelineGeometryKind.Point);
             }
+            else if (type == "linefixture" || type == "dualedgefixture")
+            {
+                yield return ("Origin", VisionPipelineGeometryKind.Point);
+            }
             else if ((type == "geometrymeasure" || type == "geometricmeasurement")
                 && Enum.TryParse(
                     GetString(step?.Parameters, VisionPipelineGeometryMeasureService.ModeParameter),

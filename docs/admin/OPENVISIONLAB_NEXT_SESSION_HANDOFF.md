@@ -4282,3 +4282,36 @@ git log --oneline -5
 - Remaining priority: run `CVR-00` with real novice participants. Prerequisite:
   participants must be available | Recommended model: `gpt-5.6-terra` |
   Reasoning effort: `low`.
+
+## 2026-07-28 CVR-09 LineFixture v1
+
+- The user explicitly continued development after the commercial-video queue
+  review, activating one bounded synthetic CVR-09 implementation slice.
+- Added `LineFixture`/`DualEdgeFixture`, consuming two distinct accepted typed
+  Line Segments and publishing their gated intersection/orientation through
+  the existing Fixture/NormalizeImage contract.
+- Added source/frame, support, residual, included-angle, extension, reference,
+  and in-image fail-closed rules; exact Datum A/B/origin/axis drawings; Fixture
+  metrics; typed `Origin/Point`; validator/schema/normalizer support; XML and
+  selected-Step PropertyGrid round trip; and Line-specific Fixture Review
+  quality text.
+- The first rotation replay exposed and corrected image-coordinate versus
+  OpenCV Fixture angle sign. The final eight-case
+  `LineGauge x2 -> LineFixture -> NormalizeImage -> fixed-ROI Mean` matrix
+  passed 8/8, including translations, `+/-3 deg` rotations, and repeated-rail
+  distractors. Duplicate source and included-angle rejection passed.
+- Current-source UI target `cvr09_line_fixture_property_grid` passed at
+  `check=OK`, `layout=0`, `text=0`, `internal=0`, `1600x900`, with no
+  Preview/Run side effect.
+- Evidence: `artifacts\cvr09_line_fixture_20260728_r11`; report:
+  `docs\reports\OPENVISIONLAB_CVR09_LINE_FIXTURE_20260728.md`; contract:
+  `docs\contracts\openvisionlab\OPENVISIONLAB_LINE_FIXTURE_V1_CONTRACT.md`.
+- Status: Complete for reusable v1 and synthetic integration only. Physical
+  qualification remains blocked on a named part, certified Datum A/B
+  identities, representative images, pose/polarity limits, downstream intent,
+  and reviewed N-sample evidence. Do not tune the synthetic matrix further.
+- Next priority: `CVR-00` requires actual novice participants. `CVR-10` is the
+  earliest remaining conditional implementation row, but no multi-instance
+  task packet activates it | Recommended model: none before prerequisites;
+  `gpt-5.6-sol` after an admitted packet | Reasoning effort: none before
+  prerequisites; high afterward.

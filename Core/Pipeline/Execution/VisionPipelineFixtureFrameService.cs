@@ -289,13 +289,15 @@ namespace OpenVisionLab
             }
 
             string toolType = VisionPipelineNormalizer.NormalizeToolType(step.ToolType);
-            if (toolType != "matching" && toolType != "templatematching")
+            bool matchingProducer = toolType == "matching" || toolType == "templatematching";
+            bool lineFixtureProducer = VisionPipelineLineFixtureService.IsLineFixture(toolType);
+            if (!matchingProducer && !lineFixtureProducer)
             {
-                message = $"Fixture producer '{step.Name}' must use Matching in the translation-only workflow.";
+                message = $"Fixture producer '{step.Name}' must use Matching or LineFixture.";
                 return false;
             }
 
-            if (GetInt(step.Parameters, "NUM_MATCH", 0) != 1)
+            if (matchingProducer && GetInt(step.Parameters, "NUM_MATCH", 0) != 1)
             {
                 message = $"Fixture producer '{step.Name}' requires NUM_MATCH=1 so the reference pose is unambiguous.";
                 return false;
@@ -343,38 +345,64 @@ namespace OpenVisionLab
                 return false;
             }
 
-            VisionToolOverlay overlay = (result?.Overlays ?? new List<VisionToolOverlay>())
-                .FirstOrDefault(item => item != null
-                    && item.Kind == VisionToolOverlayKind.Rectangle
-                    && item.Bounds.Width > 0
-                    && item.Bounds.Height > 0)
-                ?? (result?.Overlays ?? new List<VisionToolOverlay>())
-                    .FirstOrDefault(item => item != null && item.Bounds.Width > 0 && item.Bounds.Height > 0);
-            if (overlay == null)
+            double currentX;
+            double currentY;
+            double currentAngle;
+            double currentScale;
+            if (lineFixtureProducer)
             {
-                message = $"Fixture producer '{step.Name}' returned no rectangle pose overlay.";
-                return false;
+                if (!TryGetMetric(result, VisionPipelineKnownMetrics.FixtureCenterX, out currentX)
+                    || !TryGetMetric(result, VisionPipelineKnownMetrics.FixtureCenterY, out currentY)
+                    || !TryGetMetric(result, VisionPipelineKnownMetrics.FixtureAngle, out currentAngle))
+                {
+                    message = $"Fixture producer '{step.Name}' returned no valid line-intersection pose metrics.";
+                    return false;
+                }
+
+                currentScale = TryGetMetric(result, VisionPipelineKnownMetrics.FixtureScale, out double metricScale)
+                    ? metricScale
+                    : 1d;
+            }
+            else
+            {
+                VisionToolOverlay overlay = (result?.Overlays ?? new List<VisionToolOverlay>())
+                    .FirstOrDefault(item => item != null
+                        && item.Kind == VisionToolOverlayKind.Rectangle
+                        && item.Bounds.Width > 0
+                        && item.Bounds.Height > 0)
+                    ?? (result?.Overlays ?? new List<VisionToolOverlay>())
+                        .FirstOrDefault(item => item != null && item.Bounds.Width > 0 && item.Bounds.Height > 0);
+                if (overlay == null)
+                {
+                    message = $"Fixture producer '{step.Name}' returned no rectangle pose overlay.";
+                    return false;
+                }
+
+                currentX = overlay.Center.X;
+                currentY = overlay.Center.Y;
+                if ((!IsFinite(currentX) || !IsFinite(currentY))
+                    || (Math.Abs(currentX) < double.Epsilon
+                        && Math.Abs(currentY) < double.Epsilon
+                        && (Math.Abs(overlay.Bounds.X) > double.Epsilon || Math.Abs(overlay.Bounds.Y) > double.Epsilon)))
+                {
+                    currentX = overlay.Bounds.X + overlay.Bounds.Width / 2d;
+                    currentY = overlay.Bounds.Y + overlay.Bounds.Height / 2d;
+                }
+
+                currentAngle = overlay.Angle;
+                if (!TryResolveMatchingScale(step, overlay, out currentScale, out message))
+                {
+                    return false;
+                }
             }
 
-            double currentX = overlay.Center.X;
-            double currentY = overlay.Center.Y;
-            if ((!IsFinite(currentX) || !IsFinite(currentY))
-                || (Math.Abs(currentX) < double.Epsilon
-                    && Math.Abs(currentY) < double.Epsilon
-                    && (Math.Abs(overlay.Bounds.X) > double.Epsilon || Math.Abs(overlay.Bounds.Y) > double.Epsilon)))
-            {
-                currentX = overlay.Bounds.X + overlay.Bounds.Width / 2d;
-                currentY = overlay.Bounds.Y + overlay.Bounds.Height / 2d;
-            }
-
-            if (!IsFinite(currentX) || !IsFinite(currentY) || !IsFinite(overlay.Angle))
+            if (!IsFinite(currentX)
+                || !IsFinite(currentY)
+                || !IsFinite(currentAngle)
+                || !IsFinite(currentScale)
+                || currentScale <= 0d)
             {
                 message = $"Fixture producer '{step.Name}' returned an invalid pose.";
-                return false;
-            }
-
-            if (!TryResolveMatchingScale(step, overlay, out double currentScale, out message))
-            {
                 return false;
             }
 
@@ -388,7 +416,7 @@ namespace OpenVisionLab
                 ReferenceScale = referenceScale,
                 CurrentX = currentX,
                 CurrentY = currentY,
-                CurrentAngle = overlay.Angle,
+                CurrentAngle = currentAngle,
                 CurrentScale = currentScale,
                 MaximumAngleDelta = maximumAngleDelta,
                 MinimumScaleRatio = minimumScaleRatio,
@@ -465,9 +493,11 @@ namespace OpenVisionLab
                 if (producer)
                 {
                     string toolType = VisionPipelineNormalizer.NormalizeToolType(step.ToolType);
-                    if (toolType != "matching" && toolType != "templatematching")
+                    bool matchingProducer = toolType == "matching" || toolType == "templatematching";
+                    bool lineFixtureProducer = VisionPipelineLineFixtureService.IsLineFixture(toolType);
+                    if (!matchingProducer && !lineFixtureProducer)
                     {
-                        errors?.Add($"{label}: {PublishParameter} currently supports Matching only.");
+                        errors?.Add($"{label}: {PublishParameter} supports Matching or LineFixture.");
                     }
 
                     if (string.IsNullOrWhiteSpace(frameName))
@@ -483,7 +513,7 @@ namespace OpenVisionLab
                         producers[frameName] = step;
                     }
 
-                    if (GetInt(step.Parameters, "NUM_MATCH", 0) != 1)
+                    if (matchingProducer && GetInt(step.Parameters, "NUM_MATCH", 0) != 1)
                     {
                         errors?.Add($"{label}: fixture producers require NUM_MATCH=1.");
                     }
@@ -528,7 +558,7 @@ namespace OpenVisionLab
 
                 if (string.IsNullOrWhiteSpace(frameName) || !producers.TryGetValue(frameName, out VisionPipelineStep fixtureStep))
                 {
-                    errors?.Add($"{label}: fixture frame '{frameName}' must be published by an earlier enabled Matching step.");
+                    errors?.Add($"{label}: fixture frame '{frameName}' must be published by an earlier enabled fixture producer.");
                     continue;
                 }
 
@@ -633,6 +663,19 @@ namespace OpenVisionLab
         private static void SetDouble(IDictionary<string, string> parameters, string key, double value)
         {
             parameters[key] = value.ToString("R", CultureInfo.InvariantCulture);
+        }
+
+        private static bool TryGetMetric(VisionToolResult result, string name, out double value)
+        {
+            value = 0d;
+            if (result?.Metrics == null
+                || string.IsNullOrWhiteSpace(name)
+                || !result.Metrics.TryGetValue(name, out value))
+            {
+                return false;
+            }
+
+            return IsFinite(value);
         }
 
         private static bool TryResolveMatchingScale(

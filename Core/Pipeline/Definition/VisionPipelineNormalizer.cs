@@ -261,6 +261,8 @@ namespace OpenVisionLab
                 case "circlegauge":
                 case "geometrymeasure":
                 case "geometricmeasurement":
+                case "linefixture":
+                case "dualedgefixture":
                 case "edgebasedmatching":
                 case "edgebasedtemplatematching":
                 case "edgetemplatematching":
