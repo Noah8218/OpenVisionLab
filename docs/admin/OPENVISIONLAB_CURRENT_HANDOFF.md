@@ -30,28 +30,31 @@ Before any command, code change, or documentation change, state:
 
 ## Repository Snapshot At This Handoff
 
-This is the observed pre-publication state for the 2026-07-24 handoff
-consolidation. Always rerun `git status -sb` and `git log --oneline -5`; do not
-treat the hashes below as a substitute for current Git state.
+This records the audited feature/import commits from the 2026-07-28
+publication. Documentation-only closure commits can follow these commits, so
+always rerun `git status -sb` and `git log --oneline -5` rather than treating
+the table as the current branch head.
 
-| Repository | Branch | Observed head | Observed worktree | Meaning |
-| --- | --- | --- | --- | --- |
-| `C:\Git\OpenVisionLab_Dev` | `codex/public-sample-ux-docs` | `6f5c076` | Prior qualification/signal-review publication is pushed; the current working tree contains the bounded `CVR-03` through `CVR-08` implementations and evidence until separately committed. | Authoritative source for current development. |
-| `C:\Git\OpenVisionLab` | `main` | `2a2972a` | Prior reviewed Dev publication is imported, clean, and pushed. It was not touched by the current `CVR-03` through `CVR-08` Dev slices. | Reviewed target; import Dev only after a separate explicit request. |
+| Repository | Branch | Feature/import commit | Publication evidence |
+| --- | --- | --- | --- |
+| `C:\Git\Library-Noah` | `main` | `584f233` | Release build passed with zero warnings/errors; `Lib.Inspection.Smoke` passed 66/66; pushed to `origin/main`. |
+| `C:\Git\OpenVisionLab_Dev` | `codex/public-sample-ux-docs` | `f666b47` | Debug solution build passed with zero warnings/errors; 26/26 current-build UI targets, object-dimension contract, Fixture smoke, and readiness passed; pushed to the Dev origin. |
+| `C:\Git\OpenVisionLab` | `main` | `217e8c0` | Reviewed import of `f666b47`; Debug build, object-dimension contract, Fixture smoke, and readiness passed in the original repository. |
 
-- The user explicitly requested that the consolidated Dev state be committed
-  and pushed, then imported into the original repository and committed/pushed
-  there as well.
-- The requested prior Dev/original publication completed before these slices.
-  The current `CVR-03` through `CVR-08` changes are Dev-only and have not been committed,
-  imported into the original repository, or pushed.
-- `.codex-remote-attachments/` is user-supplied input and must not be staged,
-  deleted, or copied to the original repository.
-- `.proofline/` contains the project-local resolved issue ledger and dashboard
-  used by the accumulated work. It is project evidence, unlike the attachment
-  folder.
-- Exact publication commits belong in Git history and the close-out report.
-  Do not embed a guessed final commit hash in this document.
+- Dev `f666b47` and original `217e8c0` have the same Git tree:
+  `557527215d11086bd18cd80138849d9f410510cc`.
+- Library-Noah Release, Dev vendored, and original vendored `Lib.OpenCV.dll`
+  are identical at SHA-256
+  `AA30B922C925A7AE7A169F89DA1C132205B1C130BF9C6863C44BE04099980DC3`.
+- `.codex-temp/` and the unreferenced legacy
+  `docs/assets/demo/openvisionlab_rule_based_workflow.gif` /
+  `openvisionlab_rule_based_workflow.mp4` were deliberately excluded from the
+  publication. They are not current README assets or product evidence.
+- The publication closes the bounded `CVR-03` through `CVR-08` Tool View,
+  diagnostic, threshold-teaching, Fixture-review, actual-EXE recording, and
+  crash-repair work. It does not activate another proactive feature.
+- Exact current heads and push state remain Git-history facts; do not replace
+  them with guessed hashes in future handoffs.
 
 ## Incremental Work Update (2026-07-25)
 
