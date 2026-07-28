@@ -105,6 +105,21 @@ namespace OpenVisionLab
             RequestStepEdit(fixtureMeasurementIndex);
         }
 
+        private void OnFixtureConsumerSelected(
+            object sender,
+            OpenVisionPipelineReviewFixtureConsumerSelectedEventArgs e)
+        {
+            if (e == null
+                || e.StepIndex == fixtureMeasurementIndex
+                || pipeline?.Steps?.ElementAtOrDefault(e.StepIndex) == null)
+            {
+                return;
+            }
+
+            fixtureMeasurementIndex = e.StepIndex;
+            UpdateFixtureDesignerState();
+        }
+
         private void OnScaleCalibrationRequested(object sender, VisionScaleCalibrationRequestedEventArgs e)
         {
             IReadOnlyList<VisionPipelineGeometryFeatureResult> points = executionController

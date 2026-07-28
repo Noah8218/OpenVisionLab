@@ -56,7 +56,9 @@ namespace OpenVisionLab
                 displayManager.CreateLayerDisplay(ImageSpaceFrame.FromBitmap(CloneBitmapForLayer(image)), "Main", false);
                 displayManager.SelectedItem = "Main";
                 displayManager.ActivateLayer("Main");
-                documentController.ActiveNativeDocument?.RefreshLayerState();
+                OpenVisionNativeToolDocument activeDocument = documentController.ActiveNativeDocument;
+                activeDocument?.InvalidatePreviewResultForInputChange();
+                activeDocument?.RefreshLayerState();
                 setDirectRunPending();
                 refreshSelectedLayerDetail("Main");
                 refreshRows();

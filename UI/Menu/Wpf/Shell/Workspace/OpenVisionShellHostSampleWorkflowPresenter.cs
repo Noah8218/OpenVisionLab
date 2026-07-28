@@ -20,6 +20,7 @@ namespace OpenVisionLab
         private readonly TextBlock counterpartButtonText;
         private readonly Func<OpenVisionRecipeContext> recipeContextProvider;
         private VISION_MENU? firstStepMenu;
+        private VisionPipelineStep firstStep;
         private string counterpartSampleName = string.Empty;
 
         public OpenVisionShellHostSampleWorkflowPresenter(
@@ -50,6 +51,8 @@ namespace OpenVisionLab
 
         public VISION_MENU? FirstStepMenu => firstStepMenu;
 
+        public VisionPipelineStep FirstStep => firstStep;
+
         public string CounterpartSampleName => counterpartSampleName;
 
         public bool CanOpenFirstStepTool => IsVisible && firstStepMenu.HasValue;
@@ -66,6 +69,7 @@ namespace OpenVisionLab
             }
 
             firstStepMenu = ResolveToolMenu(state.FirstTool);
+            firstStep = state.FirstStep;
             counterpartSampleName = state.CounterpartSampleName;
             SetText(titleText, "샘플 파이프라인 준비됨");
             SetCounterpartButton(state.CounterpartActionText);
@@ -116,6 +120,7 @@ namespace OpenVisionLab
         public void Hide()
         {
             firstStepMenu = null;
+            firstStep = null;
             counterpartSampleName = string.Empty;
             SetCounterpartButton(string.Empty);
             if (overlay != null)
@@ -145,9 +150,9 @@ namespace OpenVisionLab
                 return null;
             }
 
+            VisionPipelineStep firstEnabledStep = steps.FirstOrDefault(step => step.Enabled) ?? steps[0];
             string firstTool = SafeText(
-                steps.FirstOrDefault(step => step.Enabled)?.ToolType
-                ?? steps[0].ToolType,
+                firstEnabledStep.ToolType,
                 "Tool");
             string toolFlow = string.Join(
                 " -> ",
@@ -171,6 +176,7 @@ namespace OpenVisionLab
                 CounterpartSampleName = counterpartSample?.SampleName ?? string.Empty,
                 CounterpartActionText = ResolveCounterpartActionText(counterpartSample),
                 StepCount = steps.Length,
+                FirstStep = firstEnabledStep,
                 FirstTool = firstTool,
                 ToolFlow = toolFlow
             };
@@ -422,6 +428,8 @@ namespace OpenVisionLab
             public string CounterpartActionText { get; set; } = string.Empty;
 
             public int StepCount { get; set; }
+
+            public VisionPipelineStep FirstStep { get; set; }
 
             public string FirstTool { get; set; } = string.Empty;
 

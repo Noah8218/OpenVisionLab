@@ -32,6 +32,22 @@ namespace OpenVisionLab
 
         internal int MarkerCount => evidence?.Markers.Count ?? 0;
 
+        internal int AdvisoryMarkerCount => plotSurface.AdvisoryMarkerCount;
+
+        internal VisionToolSignalEvidence CurrentEvidence => evidence;
+
+        internal string GetAttribute(string name)
+        {
+            if (evidence?.Attributes == null || string.IsNullOrWhiteSpace(name))
+            {
+                return string.Empty;
+            }
+
+            return evidence.Attributes.TryGetValue(name, out string value)
+                ? value
+                : string.Empty;
+        }
+
         internal double GetMarkerValue(string markerId)
         {
             VisionToolSignalMarker marker = evidence?.Markers
@@ -55,6 +71,11 @@ namespace OpenVisionLab
             legendPanel.Children.Clear();
             provenanceText.Text = string.Empty;
             Visibility = Visibility.Collapsed;
+        }
+
+        internal void SetAdvisoryMarkers(params VisionToolSignalMarker[] markers)
+        {
+            plotSurface.SetAdvisoryMarkers(markers);
         }
 
         internal void ApplyLocalization()

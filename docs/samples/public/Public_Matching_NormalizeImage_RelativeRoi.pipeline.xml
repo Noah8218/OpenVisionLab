@@ -68,7 +68,7 @@
       <ToolType>Threshold</ToolType>
       <Enabled>true</Enabled>
       <InputLayer>DeviceAligned</InputLayer>
-      <OutputLayer>AlignedPadBinary</OutputLayer>
+      <OutputLayer>AlignedInspectionBinary</OutputLayer>
       <Parameters>
         <Parameter><Key>Mode</Key><Value>Threshold</Value></Parameter>
         <Parameter><Key>Threshold</Key><Value>170</Value></Parameter>
@@ -80,10 +80,39 @@
       <MaxElapsedMilliseconds>1000</MaxElapsedMilliseconds>
     </Step>
     <Step>
-      <Name>04 Inspect Pad In Reference ROI</Name>
+      <Name>04 Verify Circular Datum In Reference ROI</Name>
       <ToolType>Blob</ToolType>
       <Enabled>true</Enabled>
-      <InputLayer>AlignedPadBinary</InputLayer>
+      <InputLayer>AlignedInspectionBinary</InputLayer>
+      <OutputLayer>AlignedDatumBlob</OutputLayer>
+      <Parameters>
+        <Parameter><Key>Name</Key><Value>Public_Aligned_Circular_Datum</Value></Parameter>
+        <Parameter><Key>MIN_AREA</Key><Value>350</Value></Parameter>
+        <Parameter><Key>MAX_AREA</Key><Value>600</Value></Parameter>
+        <Parameter><Key>USE_THRESHOLD</Key><Value>false</Value></Parameter>
+        <Parameter><Key>THRESHOLD_TYPES</Key><Value>Binary</Value></Parameter>
+        <Parameter><Key>THRESHOLD</Key><Value>170</Value></Parameter>
+        <Parameter><Key>USE_ADAPTIVE_THRESHOLD</Key><Value>false</Value></Parameter>
+        <Parameter><Key>USE_BITWISENOT</Key><Value>false</Value></Parameter>
+        <Parameter><Key>USE_ROI</Key><Value>true</Value></Parameter>
+        <Parameter><Key>USE_MULTI_ROI</Key><Value>false</Value></Parameter>
+        <Parameter><Key>USE_MASKING</Key><Value>false</Value></Parameter>
+        <Parameter><Key>CvROI</Key><Value>210,240,55,55</Value></Parameter>
+      </Parameters>
+      <UseAcceptance>true</UseAcceptance>
+      <ExpectedSuccess>true</ExpectedSuccess>
+      <MaxElapsedMilliseconds>1000</MaxElapsedMilliseconds>
+      <AcceptanceMetricName>ResultCount</AcceptanceMetricName>
+      <UseAcceptanceMetricMinimum>true</UseAcceptanceMetricMinimum>
+      <AcceptanceMetricMinimum>1</AcceptanceMetricMinimum>
+      <UseAcceptanceMetricMaximum>true</UseAcceptanceMetricMaximum>
+      <AcceptanceMetricMaximum>1</AcceptanceMetricMaximum>
+    </Step>
+    <Step>
+      <Name>05 Inspect Pad In Reference ROI</Name>
+      <ToolType>Blob</ToolType>
+      <Enabled>true</Enabled>
+      <InputLayer>AlignedInspectionBinary</InputLayer>
       <OutputLayer>AlignedPadBlob</OutputLayer>
       <Parameters>
         <Parameter><Key>Name</Key><Value>Public_Aligned_Fixture_Pad</Value></Parameter>
@@ -98,6 +127,7 @@
         <Parameter><Key>USE_MULTI_ROI</Key><Value>false</Value></Parameter>
         <Parameter><Key>USE_MASKING</Key><Value>false</Value></Parameter>
         <Parameter><Key>CvROI</Key><Value>320,180,60,50</Value></Parameter>
+        <Parameter><Key>ALLOW_BRANCH_INPUT</Key><Value>true</Value></Parameter>
       </Parameters>
       <UseAcceptance>true</UseAcceptance>
       <ExpectedSuccess>true</ExpectedSuccess>

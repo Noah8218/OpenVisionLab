@@ -107,6 +107,13 @@ namespace OpenVisionLab
         public int InputPreviewTextureTileCount => toolController.InputPreview?.TextureTileCount ?? 0;
         public int InputPreviewRoiOverlayCount => toolController.InputPreview?.RoiOverlayCount ?? 0;
         public string ResultReviewTextForTest => toolController.ResultReviewText?.Text ?? string.Empty;
+        internal bool SignalInspectorHasEvidenceForTest => signalInspector.HasEvidence;
+        internal string SignalInspectorEvidenceIdForTest => signalInspector.EvidenceId;
+        internal string SignalInspectorSourceSha256ForTest => signalInspector.SourceSha256;
+        internal int SignalInspectorSeriesCountForTest => signalInspector.SeriesCount;
+        internal int SignalInspectorMarkerCountForTest => signalInspector.MarkerCount;
+        internal bool IsSignalInspectorOverlayVisibleForTest =>
+            lineSignalInspectorOverlay.Visibility == Visibility.Visible;
 
         public LineGaugeProperty CreateProperty()
         {
@@ -139,6 +146,26 @@ namespace OpenVisionLab
         public void SetPurposeForTest(string purpose)
         {
             interactionController.SetPurposeForTest(purpose);
+        }
+
+        internal void ApplySampleLinePair(
+            LineGaugeProperty lineA,
+            LineGaugeProperty lineB,
+            string purpose)
+        {
+            if (lineA == null || lineB == null)
+            {
+                return;
+            }
+
+            CopyLineProperty(lineA, presenter.LineAProperty);
+            CopyLineProperty(lineB, presenter.LineBProperty);
+            interactionController.SetPurposeForTest(purpose);
+            PersistLineProperties();
+            propertyGridController.RefreshAndApplyVisibilityRules();
+            previewController.UpdateInputRoiOverlay();
+            UpdateSummary();
+            ClearResultReview();
         }
 
         public void SetLineSettingForTest(string setting)
@@ -224,6 +251,48 @@ namespace OpenVisionLab
             reviewController.ShowIntersectionResult(result);
         }
 
+        internal string GetSignalInspectorAttributeForTest(string name)
+        {
+            return signalInspector.GetAttribute(name);
+        }
+
+        internal bool ExerciseSignalInspectorNavigationForTest()
+        {
+            return signalInspector.ExerciseNavigationForTest();
+        }
+
+        internal void ExportSignalEvidenceForTest(string path)
+        {
+            signalInspector.ExportForTest(path);
+        }
+
+        internal void ShowSignalEvidence(VisionToolSignalEvidence evidence)
+        {
+            signalInspector.ShowEvidence(evidence);
+            btnOpenSignalInspector.Visibility = Visibility.Visible;
+            lineSignalInspectorOverlay.Visibility = Visibility.Visible;
+        }
+
+        internal void ClearSignalEvidence()
+        {
+            signalInspector.ClearEvidence();
+            btnOpenSignalInspector.Visibility = Visibility.Collapsed;
+            lineSignalInspectorOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        internal void CloseSignalInspectorForTest()
+        {
+            lineSignalInspectorOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        internal void OpenSignalInspectorForTest()
+        {
+            if (signalInspector.HasEvidence)
+            {
+                lineSignalInspectorOverlay.Visibility = Visibility.Visible;
+            }
+        }
+
         private void RefreshLocalization()
         {
             ApplyLocalization();
@@ -244,6 +313,15 @@ namespace OpenVisionLab
             toolController.ApplyLocalization();
             textPresenter.ApplyLocalization(interactionController.SelectedPurpose);
             presetPresenter?.ApplyLocalization();
+            signalInspector.ApplyLocalization();
+            bool korean = OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean;
+            btnOpenSignalInspector.Content = korean ? "\uC2E0\uD638 \uAC80\uD1A0" : "Review signal";
+            btnOpenSignalInspector.ToolTip = korean
+                ? "\uB300\uD45C \uC2A4\uCE94\uC758 \uBC1D\uAE30\uC640 \uC5E3\uC9C0 \uC751\uB2F5\uC744 \uAC80\uD1A0\uD569\uB2C8\uB2E4."
+                : "Review the representative scan intensity and edge response";
+            btnCloseSignalInspector.Content = korean
+                ? "\uB9E4\uAC1C\uBCC0\uC218\uB85C \uB3CC\uC544\uAC00\uAE30"
+                : "Back to parameters";
         }
 
         private void UpdateSummary()
@@ -288,9 +366,63 @@ namespace OpenVisionLab
             OpenVisionNativeToolPropertySessionStore.Save("Line(R)_1", presenter.LineBProperty);
         }
 
+        private static void CopyLineProperty(LineGaugeProperty source, LineGaugeProperty target)
+        {
+            target.PIXELPERMM = source.PIXELPERMM;
+            target.USE_THRESHOLD = source.USE_THRESHOLD;
+            target.USE_BITWISENOT = source.USE_BITWISENOT;
+            target.THRESHOLD_TYPES = source.THRESHOLD_TYPES;
+            target.THRESHOLD = source.THRESHOLD;
+            target.USE_ADAPTIVE_THRESHOLD = source.USE_ADAPTIVE_THRESHOLD;
+            target.ADAPTIVE_THRESHOLD = source.ADAPTIVE_THRESHOLD;
+            target.ADAPTIVE_THRESHOLD_TYPES = source.ADAPTIVE_THRESHOLD_TYPES;
+            target.ADAPTIVE_THRESHOLD_ALGORITHM = source.ADAPTIVE_THRESHOLD_ALGORITHM;
+            target.BlockSize = source.BlockSize;
+            target.Weight = source.Weight;
+            target.USE_ROI = source.USE_ROI;
+            target.CvROI = source.CvROI;
+            target.USE_MULTI_ROI = source.USE_MULTI_ROI;
+            target.CvROIS = source.CvROIS == null
+                ? new List<OpenCvSharp.Rect>()
+                : new List<OpenCvSharp.Rect>(source.CvROIS);
+            target.USE_MASKING = source.USE_MASKING;
+            target.CvMASKS = source.CvMASKS == null
+                ? new List<OpenCvSharp.Rect>()
+                : new List<OpenCvSharp.Rect>(source.CvMASKS);
+            target.PRJ_PORALITY = source.PRJ_PORALITY;
+            target.PRJ_DIR = source.PRJ_DIR;
+            target.CONTRAST = source.CONTRAST;
+            target.THICKNESS = source.THICKNESS;
+            target.SAMPLING_STEP = source.SAMPLING_STEP;
+            target.VER_PRJ_DIR = source.VER_PRJ_DIR;
+            target.POINT_RANGE = source.POINT_RANGE;
+            target.USE_MANUAL_ANGLE = source.USE_MANUAL_ANGLE;
+            target.MANUAL_ANGLE_VALUE = source.MANUAL_ANGLE_VALUE;
+            target.USE_EXTEND_FIT_LINE = source.USE_EXTEND_FIT_LINE;
+            target.EXTEND_FIT_LINE_VALUE = source.EXTEND_FIT_LINE_VALUE;
+            target.AVERAGE_Diff = source.AVERAGE_Diff;
+            target.USE_AVERAGE_FILTER = source.USE_AVERAGE_FILTER;
+            target.AVERAGE_FILTER_TYPE = source.AVERAGE_FILTER_TYPE;
+            target.SHOW_VERTICAL_LINE = source.SHOW_VERTICAL_LINE;
+            target.SHOW_EDGE = source.SHOW_EDGE;
+            target.SHOW_CONTOUR = source.SHOW_CONTOUR;
+            target.SHOW_FITLINE = source.SHOW_FITLINE;
+        }
+
         private void ClearResultReview()
         {
             reviewController?.ClearResultReview();
+            ClearSignalEvidence();
+        }
+
+        private void OpenSignalInspector_Click(object sender, RoutedEventArgs e)
+        {
+            OpenSignalInspectorForTest();
+        }
+
+        private void CloseSignalInspector_Click(object sender, RoutedEventArgs e)
+        {
+            CloseSignalInspectorForTest();
         }
 
     }

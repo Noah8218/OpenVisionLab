@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
@@ -11,6 +12,8 @@ namespace OpenVisionLab
     {
         private static readonly Thickness PlotMargin = new Thickness(46, 12, 14, 30);
         private VisionToolSignalEvidence evidence;
+        private IReadOnlyList<VisionToolSignalMarker> advisoryMarkers =
+            Array.Empty<VisionToolSignalMarker>();
         private double domainMin;
         private double domainMax = 1;
         private double viewMin;
@@ -20,6 +23,8 @@ namespace OpenVisionLab
         private double panStartMin;
         private double panStartMax;
         private bool isPanning;
+        private bool panMoved;
+        private double? selectionX;
         private VisionToolSignalMarker draggedMarker;
         private double draggedMarkerX;
 
@@ -34,10 +39,25 @@ namespace OpenVisionLab
 
         public event EventHandler<VisionToolSignalMarkerValueChangedEventArgs> MarkerValueChangeRequested = delegate { };
 
+        public event EventHandler<VisionToolSignalSampleSelectedEventArgs> SampleSelectionRequested = delegate { };
+
+        internal int SeriesCount => evidence?.Series.Count ?? 0;
+
+        internal int AdvisoryMarkerCount => advisoryMarkers.Count;
+
+        internal double? SelectionX => selectionX;
+
+        internal void SelectSampleForTest(double x)
+        {
+            SampleSelectionRequested(this, new VisionToolSignalSampleSelectedEventArgs(x));
+        }
+
         public void SetEvidence(VisionToolSignalEvidence value)
         {
             evidence = value;
+            advisoryMarkers = Array.Empty<VisionToolSignalMarker>();
             draggedMarker = null;
+            selectionX = null;
             if (evidence == null)
             {
                 domainMin = 0;
@@ -54,6 +74,22 @@ namespace OpenVisionLab
             }
 
             ResetView();
+        }
+
+        public void SetAdvisoryMarkers(IEnumerable<VisionToolSignalMarker> markers)
+        {
+            advisoryMarkers = (markers ?? Array.Empty<VisionToolSignalMarker>())
+                .Where(marker => marker != null)
+                .ToArray();
+            InvalidateVisual();
+        }
+
+        public void SetSelectionX(double? value)
+        {
+            selectionX = value.HasValue && double.IsFinite(value.Value)
+                ? Math.Clamp(value.Value, domainMin, domainMax)
+                : null;
+            InvalidateVisual();
         }
 
         public void ResetView()
@@ -108,15 +144,16 @@ namespace OpenVisionLab
                 return;
             }
 
-            double yMax = GetVisibleYMaximum();
-            DrawGridAndAxes(drawingContext, plot, yMax);
+            GetVisibleYRange(out double yMin, out double yMax);
+            DrawGridAndAxes(drawingContext, plot, yMin, yMax);
             drawingContext.PushClip(new RectangleGeometry(plot));
             foreach (VisionToolSignalSeries series in evidence.Series)
             {
-                DrawSeries(drawingContext, plot, yMax, series);
+                DrawSeries(drawingContext, plot, yMin, yMax, series);
             }
 
             DrawMarkers(drawingContext, plot);
+            DrawSelection(drawingContext, plot);
             DrawCursor(drawingContext, plot);
             drawingContext.Pop();
         }
@@ -166,6 +203,7 @@ namespace OpenVisionLab
             }
 
             isPanning = true;
+            panMoved = false;
             panStart = e.GetPosition(this);
             panStartMin = viewMin;
             panStartMax = viewMax;
@@ -196,6 +234,12 @@ namespace OpenVisionLab
 
             if (isPanning && e.LeftButton == MouseButtonState.Pressed)
             {
+                if (Math.Abs(position.X - panStart.X) >= 4D
+                    || Math.Abs(position.Y - panStart.Y) >= 4D)
+                {
+                    panMoved = true;
+                }
+
                 double delta = -(position.X - panStart.X) * (panStartMax - panStartMin) / Math.Max(1d, plot.Width);
                 SetView(panStartMin + delta, panStartMax + delta);
                 e.Handled = true;
@@ -229,8 +273,19 @@ namespace OpenVisionLab
                 return;
             }
 
+            bool shouldSelect = !panMoved;
+            double selectedX = PixelToX(
+                Math.Clamp(e.GetPosition(this).X, GetPlotRect().Left, GetPlotRect().Right),
+                GetPlotRect());
             isPanning = false;
+            panMoved = false;
             ReleaseMouseCapture();
+            if (shouldSelect)
+            {
+                SampleSelectionRequested(
+                    this,
+                    new VisionToolSignalSampleSelectedEventArgs(selectedX));
+            }
             e.Handled = true;
         }
 
@@ -276,9 +331,10 @@ namespace OpenVisionLab
             InvalidateVisual();
         }
 
-        private double GetVisibleYMaximum()
+        private void GetVisibleYRange(out double minimum, out double maximum)
         {
-            double maximum = 0;
+            minimum = double.PositiveInfinity;
+            maximum = double.NegativeInfinity;
             foreach (VisionToolSignalSeries series in evidence.Series)
             {
                 for (int index = 0; index < series.Values.Count; index++)
@@ -286,15 +342,40 @@ namespace OpenVisionLab
                     double x = series.XStart + (index * series.XStep);
                     if (x >= viewMin && x <= viewMax)
                     {
+                        minimum = Math.Min(minimum, series.Values[index]);
                         maximum = Math.Max(maximum, series.Values[index]);
                     }
                 }
             }
 
-            return maximum <= 0 ? 1 : maximum * 1.08d;
+            if (!double.IsFinite(minimum) || !double.IsFinite(maximum))
+            {
+                minimum = 0;
+                maximum = 1;
+                return;
+            }
+
+            minimum = Math.Min(minimum, 0);
+            maximum = Math.Max(maximum, 0);
+            double span = maximum - minimum;
+            if (span <= 0)
+            {
+                maximum = minimum + 1;
+                return;
+            }
+
+            if (minimum < 0)
+            {
+                minimum -= span * 0.08d;
+            }
+
+            if (maximum > 0)
+            {
+                maximum += span * 0.08d;
+            }
         }
 
-        private void DrawGridAndAxes(DrawingContext drawingContext, Rect plot, double yMax)
+        private void DrawGridAndAxes(DrawingContext drawingContext, Rect plot, double yMin, double yMax)
         {
             Pen gridPen = new Pen(new SolidColorBrush(Color.FromRgb(226, 232, 238)), 1);
             Pen axisPen = new Pen(new SolidColorBrush(Color.FromRgb(101, 116, 135)), 1);
@@ -317,7 +398,7 @@ namespace OpenVisionLab
                 drawingContext.DrawText(xLabel, new Point(x - (xLabel.Width / 2), plot.Bottom + 4));
 
                 FormattedText yLabel = CreateText(
-                    (yMax * ratio).ToString("0.##", CultureInfo.CurrentCulture),
+                    (yMin + ((yMax - yMin) * ratio)).ToString("0.##", CultureInfo.CurrentCulture),
                     labelBrush,
                     10,
                     pixelsPerDip);
@@ -326,9 +407,20 @@ namespace OpenVisionLab
 
             drawingContext.DrawLine(axisPen, plot.BottomLeft, plot.BottomRight);
             drawingContext.DrawLine(axisPen, plot.TopLeft, plot.BottomLeft);
+            if (yMin < 0 && yMax > 0)
+            {
+                double zeroRatio = (0 - yMin) / (yMax - yMin);
+                double zeroY = plot.Bottom - (zeroRatio * plot.Height);
+                drawingContext.DrawLine(axisPen, new Point(plot.Left, zeroY), new Point(plot.Right, zeroY));
+            }
         }
 
-        private void DrawSeries(DrawingContext drawingContext, Rect plot, double yMax, VisionToolSignalSeries series)
+        private void DrawSeries(
+            DrawingContext drawingContext,
+            Rect plot,
+            double yMin,
+            double yMax,
+            VisionToolSignalSeries series)
         {
             StreamGeometry geometry = new StreamGeometry();
             bool hasPoint = false;
@@ -344,7 +436,7 @@ namespace OpenVisionLab
 
                     Point point = new Point(
                         XToPixel(xValue, plot),
-                        plot.Bottom - (Math.Clamp(series.Values[index] / yMax, 0, 1) * plot.Height));
+                        plot.Bottom - (Math.Clamp((series.Values[index] - yMin) / (yMax - yMin), 0, 1) * plot.Height));
                     if (!hasPoint)
                     {
                         context.BeginFigure(point, false, false);
@@ -372,7 +464,7 @@ namespace OpenVisionLab
         private void DrawMarkers(DrawingContext drawingContext, Rect plot)
         {
             double pixelsPerDip = VisualTreeHelper.GetDpi(this).PixelsPerDip;
-            foreach (VisionToolSignalMarker marker in evidence.Markers)
+            foreach (VisionToolSignalMarker marker in evidence.Markers.Concat(advisoryMarkers))
             {
                 double markerX = ReferenceEquals(marker, draggedMarker) ? draggedMarkerX : marker.X;
                 if (markerX < viewMin || markerX > viewMax)
@@ -419,6 +511,22 @@ namespace OpenVisionLab
             };
             double x = cursorPosition.Value.X;
             drawingContext.DrawLine(cursorPen, new Point(x, plot.Top), new Point(x, plot.Bottom));
+        }
+
+        private void DrawSelection(DrawingContext drawingContext, Rect plot)
+        {
+            if (!selectionX.HasValue
+                || selectionX.Value < viewMin
+                || selectionX.Value > viewMax)
+            {
+                return;
+            }
+
+            Pen selectionPen = new Pen(
+                new SolidColorBrush(Color.FromRgb(192, 57, 43)),
+                2);
+            double x = XToPixel(selectionX.Value, plot);
+            drawingContext.DrawLine(selectionPen, new Point(x, plot.Top), new Point(x, plot.Bottom));
         }
 
         private void PublishCursorValue(Rect plot)

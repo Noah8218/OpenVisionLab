@@ -1,5 +1,6 @@
 using Lib.Common;
 using Lib.OpenCV.Pipeline;
+using Lib.OpenCV.Tool;
 using Microsoft.VisualBasic.FileIO;
 using OpenCvSharp;
 using OpenVisionLab;
@@ -1800,6 +1801,18 @@ internal static class Program
             AssertMetric(result.Steps[1], "FixtureNormalizedImageWidth", width, 0.1);
             AssertMetric(result.Steps[1], "FixtureNormalizedImageHeight", height, 0.1);
             Assert(GetMetric(result.Steps[1], "FixtureValidPixelRatio") >= 0.25d, "NormalizeImage valid-pixel ratio must pass: " + testCase.Name);
+            VisionRecipeOverlaySummary validPixelBounds = result.Steps[1].Overlays.FirstOrDefault(overlay =>
+                string.Equals(overlay.Kind, VisionToolOverlayKind.Rectangle.ToString(), StringComparison.Ordinal)
+                && (overlay.Label?.StartsWith("Valid normalized pixels", StringComparison.Ordinal) ?? false));
+            Assert(
+                validPixelBounds != null
+                    && validPixelBounds.BoundsWidth > 0d
+                    && validPixelBounds.BoundsHeight > 0d
+                    && validPixelBounds.BoundsX >= 0d
+                    && validPixelBounds.BoundsY >= 0d
+                    && validPixelBounds.BoundsX + validPixelBounds.BoundsWidth <= width
+                    && validPixelBounds.BoundsY + validPixelBounds.BoundsHeight <= height,
+                "NormalizeImage must publish a bounded valid-pixel rectangle without contour extraction: " + testCase.Name);
 
             string normalizedPath = Path.Combine(similarityDirectory, testCase.Name + "_normalized.png");
             Cv2.ImWrite(normalizedPath, result.ResultImage);

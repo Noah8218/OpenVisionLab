@@ -1,3 +1,4 @@
+using Lib.OpenCV;
 using Lib.OpenCV.Property;
 using System;
 using System.Windows;
@@ -16,6 +17,8 @@ namespace OpenVisionLab
         private readonly VisionToolThresholdInteractionController thresholdInteractionController;
         private readonly ThresholdToolLearnWindowController learnWindowController;
         private readonly ThresholdToolTextPresenter textPresenter;
+        private VisionToolThresholdSuggestion thresholdSuggestion;
+        private ThresholdSuggestionUndoState thresholdSuggestionUndo;
         private bool suppressEvents = true;
 
         internal ThresholdToolWpfView(ThresholdToolPresenter presenter)
@@ -122,6 +125,13 @@ namespace OpenVisionLab
                 OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean
                     ? "분포 다시 보기"
                     : "Review distribution";
+            bool korean = OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean;
+            thresholdSuggestionTitle.Text = korean
+                ? "Threshold 티칭 제안"
+                : "Threshold teaching suggestion";
+            btnAnalyzeThresholdSuggestion.Content = korean ? "제안 분석" : "Analyze suggestion";
+            btnUseThresholdSuggestion.Content = korean ? "T 사용" : "Use T";
+            btnUndoThresholdSuggestion.Content = korean ? "이전 T 복원" : "Undo";
         }
 
         public ThresholdToolProperty CreateProperty()
@@ -150,6 +160,23 @@ namespace OpenVisionLab
 
         internal int SignalInspectorMarkerCountForTest => signalInspector.MarkerCount;
 
+        internal int SignalInspectorAdvisoryMarkerCountForTest => signalInspector.AdvisoryMarkerCount;
+
+        internal bool IsThresholdSuggestionPanelVisibleForTest =>
+            thresholdSuggestionPanel.Visibility == Visibility.Visible;
+
+        internal bool HasThresholdSuggestionForTest => thresholdSuggestion?.Accepted == true;
+
+        internal int ThresholdSuggestionValueForTest => thresholdSuggestion?.Threshold ?? -1;
+
+        internal string ThresholdSuggestionStatusForTest => thresholdSuggestionStatus.Text ?? string.Empty;
+
+        internal string ThresholdSuggestionEvidenceIdForTest => thresholdSuggestion?.EvidenceId ?? string.Empty;
+
+        internal bool CanUseThresholdSuggestionForTest => btnUseThresholdSuggestion.IsEnabled;
+
+        internal bool CanUndoThresholdSuggestionForTest => btnUndoThresholdSuggestion.IsEnabled;
+
         internal bool IsSignalInspectorOverlayVisibleForTest =>
             signalInspectorOverlay.Visibility == Visibility.Visible;
 
@@ -168,16 +195,35 @@ namespace OpenVisionLab
             signalInspector.ExportForTest(path);
         }
 
+        internal void AnalyzeThresholdSuggestionForTest()
+        {
+            AnalyzeThresholdSuggestion();
+        }
+
+        internal void UseThresholdSuggestionForTest()
+        {
+            UseThresholdSuggestion();
+        }
+
+        internal void UndoThresholdSuggestionForTest()
+        {
+            UndoThresholdSuggestion();
+        }
+
         internal void ShowSignalEvidence(VisionToolSignalEvidence evidence)
         {
             signalInspector.ShowEvidence(evidence);
             btnOpenSignalInspector.Visibility = Visibility.Visible;
             signalInspectorOverlay.Visibility = Visibility.Visible;
+            UpdateThresholdSuggestionAvailability(evidence);
         }
 
         internal void ClearSignalEvidence()
         {
             signalInspector.ClearEvidence();
+            thresholdSuggestion = null;
+            thresholdSuggestionPanel.Visibility = Visibility.Collapsed;
+            btnUseThresholdSuggestion.IsEnabled = false;
             btnOpenSignalInspector.Visibility = Visibility.Collapsed;
             signalInspectorOverlay.Visibility = Visibility.Collapsed;
         }
@@ -210,11 +256,168 @@ namespace OpenVisionLab
             OpenSignalInspectorForTest();
         }
 
+        private void AnalyzeThresholdSuggestion_Click(object sender, RoutedEventArgs e)
+        {
+            AnalyzeThresholdSuggestion();
+        }
+
+        private void UseThresholdSuggestion_Click(object sender, RoutedEventArgs e)
+        {
+            UseThresholdSuggestion();
+        }
+
+        private void UndoThresholdSuggestion_Click(object sender, RoutedEventArgs e)
+        {
+            UndoThresholdSuggestion();
+        }
+
         private void SignalInspector_MarkerValueChangeRequested(
             object sender,
             VisionToolSignalMarkerValueChangedEventArgs e)
         {
             thresholdInteractionController.ApplySignalMarkerValue(e.MarkerId, e.Value);
+        }
+
+        private void AnalyzeThresholdSuggestion()
+        {
+            VisionToolSignalEvidence evidence = signalInspector.CurrentEvidence;
+            ThresholdToolProperty property = CreateProperty();
+            if (evidence == null || property.Mode != ThresholdToolMode.Threshold)
+            {
+                thresholdSuggestion = null;
+                signalInspector.SetAdvisoryMarkers();
+                btnUseThresholdSuggestion.IsEnabled = false;
+                thresholdSuggestionStatus.Text =
+                    "Rejected: Threshold Basic and one current Preview histogram are required.";
+                return;
+            }
+
+            thresholdSuggestion = VisionToolThresholdSuggestionAnalyzer.Analyze(
+                evidence,
+                property.ThresholdType != OpenCvSharp.ThresholdTypes.BinaryInv);
+            thresholdSuggestionStatus.Text = thresholdSuggestion.Reason
+                + Environment.NewLine
+                + "Suggestion evidence "
+                + ShortId(thresholdSuggestion.EvidenceId)
+                + " / source "
+                + ShortId(evidence.SourceSha256)
+                + " / region "
+                + evidence.RegionDescription;
+            btnUseThresholdSuggestion.IsEnabled = thresholdSuggestion.Accepted;
+            signalInspector.SetAdvisoryMarkers(
+                thresholdSuggestion.Accepted
+                    ? new VisionToolSignalMarker(
+                        "ThresholdSuggestion",
+                        property.ThresholdType == OpenCvSharp.ThresholdTypes.BinaryInv
+                            ? "Dark candidate"
+                            : "Bright candidate",
+                        thresholdSuggestion.Threshold,
+                        "#E67E22",
+                        false)
+                    : null);
+        }
+
+        private void UseThresholdSuggestion()
+        {
+            VisionToolSignalEvidence evidence = signalInspector.CurrentEvidence;
+            ThresholdToolProperty property = CreateProperty();
+            VisionToolThresholdSuggestion currentAnalysis =
+                VisionToolThresholdSuggestionAnalyzer.Analyze(
+                    evidence,
+                    property.ThresholdType != OpenCvSharp.ThresholdTypes.BinaryInv);
+            if (thresholdSuggestion?.Accepted != true
+                || evidence == null
+                || !string.Equals(
+                    thresholdSuggestion.EvidenceId,
+                    currentAnalysis.EvidenceId,
+                    StringComparison.Ordinal)
+                || property.Mode != ThresholdToolMode.Threshold)
+            {
+                throw new InvalidOperationException(
+                    "The Threshold suggestion is stale or no longer matches the current Preview evidence.");
+            }
+
+            int previousThreshold = Math.Clamp((int)Math.Round(property.Threshold), 0, 255);
+            if (previousThreshold == thresholdSuggestion.Threshold)
+            {
+                thresholdSuggestionStatus.Text =
+                    $"T={thresholdSuggestion.Threshold} is already the current teaching value; no Preview was scheduled.";
+                btnUseThresholdSuggestion.IsEnabled = false;
+                return;
+            }
+
+            thresholdSuggestionUndo = new ThresholdSuggestionUndoState
+            {
+                SourceSha256 = evidence.SourceSha256,
+                PreviousThreshold = previousThreshold,
+                AppliedThreshold = thresholdSuggestion.Threshold
+            };
+            thresholdInteractionController.ApplySignalMarkerValue(
+                OpenVisionNativeThresholdSignalEvidenceFactory.ThresholdMarkerId,
+                thresholdSuggestion.Threshold);
+        }
+
+        private void UndoThresholdSuggestion()
+        {
+            ThresholdSuggestionUndoState undo = thresholdSuggestionUndo;
+            ThresholdToolProperty property = CreateProperty();
+            VisionToolSignalEvidence evidence = signalInspector.CurrentEvidence;
+            if (undo == null
+                || evidence == null
+                || property.Mode != ThresholdToolMode.Threshold
+                || Math.Abs(property.Threshold - undo.AppliedThreshold) > 0.001D
+                || !string.Equals(evidence.SourceSha256, undo.SourceSha256, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "The previous Threshold teaching value is stale and cannot be restored.");
+            }
+
+            thresholdSuggestionUndo = null;
+            thresholdInteractionController.ApplySignalMarkerValue(
+                OpenVisionNativeThresholdSignalEvidenceFactory.ThresholdMarkerId,
+                undo.PreviousThreshold);
+        }
+
+        private void UpdateThresholdSuggestionAvailability(VisionToolSignalEvidence evidence)
+        {
+            bool isBasic = evidence != null
+                && string.Equals(
+                    evidence.ToolIdentity,
+                    "Threshold/" + ThresholdToolMode.Threshold,
+                    StringComparison.Ordinal);
+            thresholdSuggestionPanel.Visibility = isBasic ? Visibility.Visible : Visibility.Collapsed;
+            thresholdSuggestion = null;
+            signalInspector.SetAdvisoryMarkers();
+            btnUseThresholdSuggestion.IsEnabled = false;
+            if (!isBasic)
+            {
+                btnUndoThresholdSuggestion.IsEnabled = false;
+                return;
+            }
+
+            ThresholdToolProperty property = CreateProperty();
+            bool canUndo = thresholdSuggestionUndo != null
+                && string.Equals(
+                    evidence.SourceSha256,
+                    thresholdSuggestionUndo.SourceSha256,
+                    StringComparison.Ordinal)
+                && Math.Abs(property.Threshold - thresholdSuggestionUndo.AppliedThreshold) <= 0.001D;
+            if (!canUndo)
+            {
+                thresholdSuggestionUndo = null;
+            }
+
+            btnUndoThresholdSuggestion.IsEnabled = canUndo;
+            thresholdSuggestionStatus.Text = canUndo
+                ? $"Applied suggested T={thresholdSuggestionUndo.AppliedThreshold}. Previous T={thresholdSuggestionUndo.PreviousThreshold} remains recoverable with Undo."
+                : "Analyze the current Preview full-image histogram. No teaching value changes until Use.";
+        }
+
+        private static string ShortId(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? "-"
+                : value.Substring(0, Math.Min(12, value.Length));
         }
 
         private void RefreshSummaryAndClearSignalEvidence()
@@ -232,6 +435,13 @@ namespace OpenVisionLab
 
             thresholdInteractionController?.FlushParameterBindings();
             ToolController.RefreshSummaryBinding();
+        }
+
+        private sealed class ThresholdSuggestionUndoState
+        {
+            public string SourceSha256 { get; init; } = string.Empty;
+            public int PreviousThreshold { get; init; }
+            public int AppliedThreshold { get; init; }
         }
 
     }

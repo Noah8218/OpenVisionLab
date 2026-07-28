@@ -4248,3 +4248,37 @@ git log --oneline -5
 - Next priority: none until a concrete current-source operator blocker or
   verified regression is reproduced. Recommended model: none until evidence
   exists | Reasoning effort: none until evidence exists.
+
+## 2026-07-28 Actual EXE Tool View And Chained Processing Closure
+
+- Operated and recorded the current Debug EXE through visible Tool Views for
+  Matching, Line Edge/Measure/Intersection, Blob, Contour, Filter, and
+  Morphology. Cursor movement uses stepped cubic Bézier paths with
+  acceleration/deceleration and no target teleportation.
+- Recorded and reviewed two explicit Pipeline Review chains:
+  `Filter -> Threshold -> Contour` and
+  `Threshold -> Morphology -> Contour`, including each intermediate Step output
+  and the final object table/drawing.
+- Corrected sample first-Step parameter handoff, NormalizeImage valid-mask
+  bounds, WPF shutdown restoration, and the actual-EXE Contour access violation.
+  Library-Noah Contour now consumes Blob contour chains; source, vendored, and
+  current Debug DLL SHA-256 is
+  `AA30B922C925A7AE7A169F89DA1C132205B1C130BF9C6863C44BE04099980DC3`.
+- Final actual results: Matching 3 at score 93.074; Line distance 37 px and
+  intersection 500,573; Blob 12; Contour 5. All eight final run records are
+  `Status=Complete`.
+- Added reviewed Tool View and preprocessing-chain GIF/MP4 pairs to
+  `docs\assets\demo` and embedded them in README. Earlier crash/incorrect-result
+  trials remain diagnostic-only and are not README media.
+- Verification: Debug solution 0 warnings/errors; Blob/Contour dimension
+  contract pass; full Fixture/NormalizeImage smoke pass; Library-Noah Release
+  build and 66/66 inspection smoke pass; five Tool View screenshot smoke
+  targets pass; final DLL hashes equal; zero matching post-capture Application
+  error events.
+- Status: Complete for public-synthetic actual-EXE Tool View/chaining evidence,
+  not novice usability, unseen robustness, or production qualification.
+  Canonical report:
+  `docs\reports\OPENVISIONLAB_TOOL_VIEW_AND_CHAIN_WALKTHROUGH_20260728.md`.
+- Remaining priority: run `CVR-00` with real novice participants. Prerequisite:
+  participants must be available | Recommended model: `gpt-5.6-terra` |
+  Reasoning effort: `low`.

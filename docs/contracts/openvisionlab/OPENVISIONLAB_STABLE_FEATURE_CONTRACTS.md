@@ -1,6 +1,6 @@
 # OpenVisionLab Stable Feature Contracts
 
-Last updated: 2026-07-27
+Last updated: 2026-07-28
 
 This document protects restored and verified behavior. Future LLM or developer work must read this before changing WPF shell, tool view, layer routing, viewer, or PropertyGrid code.
 
@@ -95,7 +95,8 @@ Stable behavior:
 - Matching-family template status, criteria summaries, FeatureMatching Ratio/RANSAC guide text, and Line purpose/setting labels are display-only learning aids. They may be localized or reformatted for readability, but they must not change the selected property object, route input/output layers, Preview/Run execution, Add Pipeline metadata, or internal compatibility identifiers such as `Line A`, `Line B`, `Edge`, `Measure`, and `Intersection`.
 - Result-review summary/chip labels may be localized for beginner readability, but the underlying result metrics, pipeline metadata, property model values, and Preview/Add Pipeline semantics must remain unchanged.
 - SimplePreprocess Mean/HSV/Histogram may show beginner-facing result explanations in the shared result-review area. Mean can explain average/range/count, HSV can explain selected mask pixel ratio, and Histogram can explain input/output mean/contrast changes. This is display-only preview interpretation; it must not change preprocessing output pixels, Preview/Run scheduling, Add Pipeline availability, layer routing, output layer creation, or any downstream pass/fail metric semantics.
-- The shared Tool Signal Inspector is retained current-Preview evidence and does not execute a tool by itself. Histogram publishes read-only source/result 256-bin grayscale population series with tool/input/region/parameter identity and source/result SHA-256. Threshold Basic may publish one editable `T` marker and Threshold Range may publish editable `Lower`/`Upper` markers; marker release edits only the existing Threshold teaching model, clears stale evidence synchronously, and schedules the existing debounced Preview. Threshold Adaptive must not present a misleading single global cutoff marker or chart. Until Threshold gains an explicit ROI contract, its signal region is exactly `Full image`. Plot selection, cursor inspection, X zoom/pan, reset, overlay open/back, and TSV export must not run Preview/Run, create/select a layer, change the active layer, or mutate input/output routes. A later tool integration must use the shared evidence/plot/export contract and prove its own drawing/coordinate identity; it must not copy a one-off chart implementation.
+- The shared Tool Signal Inspector is retained current-Preview evidence and does not execute a tool by itself. Histogram publishes read-only source/result 256-bin grayscale population series with tool/input/region/parameter identity and source/result SHA-256. Threshold Basic may publish one editable `T` marker and Threshold Range may publish editable `Lower`/`Upper` markers; marker release edits only the existing Threshold teaching model, clears stale evidence synchronously, and schedules the existing debounced Preview. Threshold Adaptive must not present a misleading single global cutoff marker or chart. Until Threshold gains an explicit ROI contract, its signal region is exactly `Full image`. A successful Line Edge or Measure Preview may publish one deterministic representative scan with prepared intensity, signed scan-direction response, polarity/contrast/thickness, exact source-image scan/selected-point coordinates, and spatially distinct alternatives only when an independent replay matches the retained runtime first-stable edge. The result drawing must use those same coordinates. Parameter edits, active Tool input-image load, and replacement of the active `Main` workspace image must clear retained Line evidence/result state without running Preview. This Line diagnostic must not change `LineGauge`/`LineDistance` detection, fitting, measurement, XML, calibration, or acceptance semantics. A current `CircleGauge` Pipeline Run may retain its actual runtime radial scans with prepared intensity, signed response, selected edge, contrast acceptance, robust-fit inlier/outlier state, signed radius residual, and exact reject reason. Circle sample table, residual plot, selected radial profile, and compact result drawing must share one stable scan identity, and review selection must not request another Run or mutate layers/routes. Circle evidence must reuse the existing edge selection, initial/refined fit, robust rejection, support/radius/residual gates, and pixel coordinates; it must not introduce a second fitting implementation, new XML settings, calibration semantics, or automatic gate selection. Plot selection, cursor inspection, X zoom/pan, reset, overlay open/back, and TSV export must not run Preview/Run, create/select a layer, change the active layer, or mutate input/output routes. A later tool integration must use the shared evidence/plot/export contract and prove its own drawing/coordinate identity; it must not copy a one-off chart implementation.
+- Blob and Contour Pipeline Review may publish a current-Run object-metric distribution only from the retained `VisionPipelineObjectResult` rows. The selectable metrics are the existing axis-aligned pixel `Area`, `BoundsWidth`, and `BoundsHeight`; each reads its existing `MIN/MAX_AREA`, `MIN/MAX_WIDTH`, or `MIN/MAX_HEIGHT` Pipeline/PropertyGrid range. Accepted/rejected bin series, range markers, source/result identity, table row, selected-object drawing, and plot selection must refer to the same current run and stable object number. Metric/range review and row/plot/image selection must not rerun segmentation, request Preview/Run, change a gate, create/select a layer, or mutate routes. The legacy `1000000` maximum sentinel remains unbounded compatibility behavior and must not be presented as a newly certified finite gate. This distribution must not add a descriptor, change Blob/Contour filtering, `ResultCount`, aggregate metrics, XML, report persistence, or acceptance semantics.
 - PropertyGrid-heavy tools must open with enough initial space for comfortable parameter review. Line/Blob/Contour/Matching-style tool windows use the large hosted size, and the common parameter group keeps a minimum grid height.
 - Saved floating tool-window bounds must not reopen PropertyGrid-heavy tools below their usable editor size. Preserving an operator's previous placement is allowed only after the large-tool minimum width/height needed for readable PropertyGrid editing is respected.
 - Docked single-input PropertyGrid tools must keep a usable editor viewport for long parameter lists. Line and Contour style tools may use the PropertyGrid's internal scroll, but the visible editor area must not collapse and Add Pipeline / Run Preview must remain inside the docked inspector viewport.
@@ -129,6 +130,18 @@ Relevant smoke:
 - `wpf_shell_host_line_pins_measure_tool`
 - Direct EXE: `bin\x64\Debug\OpenVisionLab.exe --smoke line-pins-measure --output .\.codex\smoke-output\actual-exe-line-pins-measure`
 - `wpf_shell_host_line_intersection_tool`
+- `wpf_line_signal_profile`
+  - Covers four projection directions, current public Good/Bad same-parameter replay, intensity/signed response, first-stable runtime correspondence, exact source-image coordinates, distinct alternative, result drawing, provenance TSV, stale input clear, and no review-control Preview/layer/route side effects.
+- `cvr04_circle_residual_review`
+  - Covers unchanged frozen CircleGauge Good/Bad execution, all radial sample states and exact reject reasons, residual and selected intensity/signed-response series, source/result identity, row/plot/drawing two-way selection, and zero Run Review/layer/route side effects.
+- `cvr05_object_metric_distribution`
+  - Covers Blob Area/Width/Height and Contour Area distributions, exact existing range markers, accepted/rejected series, shared TSV provenance, row/plot/drawing selection, legacy unbounded maximum behavior, and zero Run Review requests.
+- `wpf_shell_host_workspace_sample_pipeline_review_metrics`
+  - Covers the actual public Blob Good current-Run Area distribution.
+- `wpf_shell_host_workspace_sample_pipeline_review_blob_ng_metrics`
+  - Covers the actual public Blob Bad object rows, Area distribution, table/image selection, report persistence, and no Preview/layer/route side effects.
+- `wpf_shell_host_workspace_sample_pipeline_review_bentpin_ng_metrics`
+  - Covers the actual public Contour Bad object rows, Area distribution, table/image selection, report persistence, and no Preview/layer/route side effects.
 - `wpf_preprocess_output_preview_flow`
   - Covers SimplePreprocess output routing, parameter-triggered preview behavior, Mean/HSV/Histogram result-review explanations, Histogram signal-evidence replacement, plot navigation, provenance-preserving TSV export, and no reset/export layer/route/run side effects.
 - `wpf_simple_preprocess_result_review`
@@ -473,7 +486,7 @@ Relevant smoke:
 - `wpf_shell_host_workspace_sample_fixture_review`
   - Covers the real three-Step `Public_Matching_FixturePad` flow with Step 2 selected and verifies one non-duplicated Step identity, Blob tool, branch route, both previews, Fixture ROI/frame parameters, result metrics, elapsed time, and no first-issue state.
 - `wpf_shell_host_workspace_sample_normalize_fixture_review`
-  - Covers the public non-LLM four-Step `Matching -> RotateScale NormalizeImage -> Threshold -> Blob` flow. It verifies the Good and controlled missing-pad catalog contracts, explicit Review execution, reference-sized `DeviceAligned` output, unchanged fixed `CvROI=320,180,60,50`, final Blob result, both previews, and no first-issue state. This is one synthetic-pair workflow contract, not a general fixture-robustness claim.
+  - Covers the public non-LLM five-Step `Matching -> RotateScale NormalizeImage -> Threshold -> Blob datum + Blob pad` flow. It verifies the Good and controlled missing-pad catalog contracts, explicit Review execution, reference-sized `DeviceAligned` output, immutable datum `CvROI=210,240,55,55` and pad `CvROI=320,180,60,50`, distinct per-consumer status/evidence, both previews, and no first-issue state. This is one synthetic-pair workflow contract, not a general fixture-robustness claim.
 - `wpf_shell_host_workspace_sample_pipeline_review_ng_metrics`
   - Covers a real catalog Bad sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, controlled metric NG, beginner next action, metric detail, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_workspace_sample_pipeline_review_feature_ng_metrics`
@@ -502,11 +515,12 @@ Relevant smoke:
 ### 3C. Fixture And Relative-ROI Designer
 
 Stable behavior:
-- Pipeline Review shows the designer only when one enabled named Matching fixture producer reaches one enabled `NormalizeImage` consumer and a later enabled single-`CvROI` Step through declared layer routing.
-- The designer is read-only evidence plus explicit workflow entry points. It shows the named relationship, template/search ROI, reference pose/image size, current pose, score, same-template preflight margin when present, normalized valid-pixel ratio, and the saved downstream ROI.
-- The saved reference-coordinate ROI is drawn as a transformed polygon on the current source only when a current reviewed pose exists, and as the unchanged rectangle on the current normalized image only when NormalizeImage succeeded.
+- Pipeline Review shows the designer only when one enabled named Matching fixture producer reaches one enabled `NormalizeImage` consumer and one or more later enabled single-`CvROI` Steps through declared layer routing.
+- The designer is read-only evidence plus explicit workflow entry points. It shows the named relationship, template/search ROI, reference pose/image size, current pose, score, same-template preflight margin when present, normalized valid-pixel ratio, and every reachable downstream ROI consumer.
+- Every consumer row retains stable Step evidence identity, Step/tool name, immutable reference ROI, declared route, and current-run status. Selecting a row changes only the reviewed/highlighted consumer and the target of the existing measurement-ROI edit handoff.
+- All saved reference-coordinate ROIs are drawn as transformed polygons on the current source only when a current reviewed pose exists, and as unchanged rectangles on the current normalized image only when NormalizeImage succeeded. The selected consumer is visually distinguished from the other consumers.
 - `참조 자세 저장`, producer edit, measurement-ROI edit, and `리뷰 실행` reuse the existing reference-teach, Recipe Manager PropertyGrid, and explicit Run Review paths.
-- Selecting the tab or either drawing must not execute Preview/Run, create/select a layer, change the active layer, alter input/output routing, or modify the saved recipe.
+- Selecting the tab, a consumer row, or either drawing must not execute Preview/Run, create/select a layer, change the active layer, alter input/output routing, or modify the saved recipe.
 - Translation-only legacy Fixture reference teach remains available for pipelines without a NormalizeImage/downstream-ROI chain.
 
 Do not:
@@ -515,7 +529,7 @@ Do not:
 
 Relevant smoke:
 - `wpf_shell_host_workspace_sample_normalize_fixture_review`
-  - Covers relationship resolution, source and normalized ROI drawings, template/reference/current/quality state, explicit action availability, and zero tab-selection execution/layer/routing side effects.
+  - Covers two-consumer relationship resolution, stable consumer identities, source and normalized ROI drawings, selected-row highlight/edit target, template/reference/current/quality state, explicit action availability, controlled Good/Bad replay, and zero tab/row-selection execution/layer/routing side effects.
 - `wpf_shell_host_workspace_sample_fixture_teach`
   - Preserves legacy translation-Fixture reference teach and its zero-auto-run contract.
 - `wpf_shell_host_pipeline_step_edit_handoff`
@@ -1122,6 +1136,87 @@ Relevant smoke:
 - retained evidence:
   `artifacts\qualified_recipe_snapshot_core_20260727\final` and
   `artifacts\qualified_recipe_snapshot_ui_20260727`
+
+## EdgeBased Matcher Retained-Run Diagnostics
+
+Stable behavior:
+
+- A completed EdgeBasedMatching Step may expose one read-only
+  `Matcher Diagnostics` tab from the already retained explicit Run.
+- Opening the tab, selecting its rows, or reviewing its images must not execute
+  Preview/Run, create or select a layer, change the active layer, or mutate
+  input/output routes.
+- Library-Noah owns the runtime evidence: exact trained model points/model
+  center, search ROI, retained primary hypothesis, strongest spatially
+  distinct alternative when one exists, candidate score/pose/bounds,
+  model/pyramid/candidate/uniqueness metrics, and exact decision state/reason.
+- OpenVisionLab owns presentation and a stable evidence ID. It must clone
+  retained evidence rather than query or rerun the matcher.
+- `Success` labels an accepted result as `Selected`. `NoMatch` labels any
+  retained below-gate primary as `Best observed (below gate)`. `Ambiguous`
+  labels the rejected primary as `Rejected primary hypothesis`.
+- A spatial alternative may legitimately be absent. The UI reports
+  `None retained` and never synthesizes an alternative.
+- Model-pyramid usability estimates remain distinct from the actual existing
+  runtime coarse proposal scale and proposal/verification/acceptance/fallback
+  counters.
+- Diagnostics never lower a score or margin gate, change defaults or candidate
+  ordering, auto-select a template/pattern, change XML/PropertyGrid/report
+  contracts, or turn risk metrics into acceptance.
+- Exact `MatchingNoResult` and `MatchingAmbiguous` errors and reasons remain
+  visible even though the Step failed.
+
+Relevant smoke:
+
+- `cvr06_matcher_diagnostic`
+- `wpf_shell_host_workspace_sample_pipeline_review_edge_ng_metrics`
+- `wpf_shell_host_edge_based_matching_tool`
+- retained evidence:
+  `artifacts\cvr06_matcher_diagnostic_20260728`
+- completion report:
+  `docs\reports\OPENVISIONLAB_MATCHER_DIAGNOSTIC_SURFACE_20260728.md`
+
+## Threshold Basic Retained-Preview Teaching Suggestion
+
+Stable behavior:
+
+- A Threshold Tool View may analyze only the retained full-image 256-bin Gray
+  histogram from the current explicit Basic Preview. Analysis must not execute
+  Preview/Run, create or select a layer, change the active layer, or mutate
+  input/output routes.
+- The v1 contract applies only to Basic `Binary` and `BinaryInv`. `Binary`
+  proposes a bright-object cutoff between the selected high-gray significant
+  mode and its lower neighbor; `BinaryInv` mirrors that policy for a dark
+  object. Range, Adaptive, ROI, Line, and Circle suggestions are not implied.
+- An accepted proposal shows the exact candidate marker, selected mode pair,
+  separation, class populations, source/region provenance, and a stable
+  evidence ID. A single-mode histogram, invalid evidence, or an undersized
+  class rejects the proposal and leaves manual teaching unchanged.
+- Analysis and candidate selection are advisory. Only explicit `Use T` may
+  write the Threshold teaching value. It follows the existing debounced Preview
+  policy; it must not silently change a gate, Pipeline, layer, or route.
+- The immediately replaced same-source teaching value remains recoverable
+  through explicit `Undo`. Source/evidence drift, a later unrelated teaching
+  edit, or a different applied value invalidates that recovery instead of
+  restoring stale state.
+- The known public regression remains Good `ResultCount=4` and Bad
+  `ResultCount=1` with the retained corrected candidate `T=138`. The rejected
+  first global Otsu candidate `T=73` returning `0/0` remains genuine failure
+  evidence and must not be rewritten as success.
+- This contract does not authorize automatic apply, automatic acceptance-gate
+  changes, generic easyTouch behavior, a new inspection algorithm, or
+  additional suggestion families without their own trigger and verification.
+
+Relevant smoke and evidence:
+
+- `cvr07_threshold_suggestion`
+- `wpf_shell_host_threshold_basic_tool`
+- `wpf_shell_host_threshold_tool`
+- `wpf_threshold_signal_good_bad_replay`
+- retained evidence:
+  `artifacts\cvr07_threshold_suggestion_20260728`
+- completion report:
+  `docs\reports\OPENVISIONLAB_THRESHOLD_TEACHING_SUGGESTION_20260728.md`
 
 ## Before Touching Stable Paths
 

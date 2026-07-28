@@ -395,7 +395,8 @@ namespace OpenVisionLab
                 workspacePreviewController,
                 SelectToolMenu,
                 () => sampleWorkflowPresenter.FirstStepMenu,
-                () => sampleWorkflowPresenter.CounterpartSampleName);
+                () => sampleWorkflowPresenter.CounterpartSampleName,
+                ApplyActiveSampleFirstStepParameters);
             OpenVisionRecipeRunEvidenceViewerController runEvidenceViewerController =
                 new OpenVisionRecipeRunEvidenceViewerController(
                     () => Window.GetWindow(this),

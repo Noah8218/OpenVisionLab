@@ -38,6 +38,11 @@ namespace OpenVisionLab
             WriteMetadata(writer, "XAxis", evidence.XAxisLabel);
             WriteMetadata(writer, "YAxis", evidence.YAxisLabel);
             WriteMetadata(writer, "Guidance", evidence.Guidance);
+            foreach (System.Collections.Generic.KeyValuePair<string, string> attribute in evidence.Attributes)
+            {
+                WriteMetadata(writer, "Attribute." + attribute.Key, attribute.Value);
+            }
+
             foreach (VisionToolSignalMarker marker in evidence.Markers)
             {
                 WriteMetadata(

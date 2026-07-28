@@ -229,6 +229,18 @@ namespace OpenVisionLab
             }
         }
         public int LineInputRoiOverlayCount => view is LineToolWpfView lineView ? lineView.InputPreviewRoiOverlayCount : 0;
+        public bool LineSignalInspectorHasEvidence =>
+            view is LineToolWpfView lineView && lineView.SignalInspectorHasEvidenceForTest;
+        public bool LineSignalInspectorOverlayVisible =>
+            view is LineToolWpfView lineView && lineView.IsSignalInspectorOverlayVisibleForTest;
+        public string LineSignalInspectorEvidenceId =>
+            view is LineToolWpfView lineView ? lineView.SignalInspectorEvidenceIdForTest : string.Empty;
+        public string LineSignalInspectorSourceSha256 =>
+            view is LineToolWpfView lineView ? lineView.SignalInspectorSourceSha256ForTest : string.Empty;
+        public int LineSignalInspectorSeriesCount =>
+            view is LineToolWpfView lineView ? lineView.SignalInspectorSeriesCountForTest : 0;
+        public int LineSignalInspectorMarkerCount =>
+            view is LineToolWpfView lineView ? lineView.SignalInspectorMarkerCountForTest : 0;
         public event EventHandler LayerStateChanged = delegate { };
         private bool showOutputWorkspacePreviewOnNextLayerStateChanged;
 
@@ -262,6 +274,11 @@ namespace OpenVisionLab
             {
                 routeInteractionController.RefreshSingleLayerState(view);
             }
+        }
+
+        public void InvalidatePreviewResultForInputChange()
+        {
+            ClearPreviewResult();
         }
 
         public void RunPreview()
@@ -380,12 +397,80 @@ namespace OpenVisionLab
             }
         }
 
+        public string GetLineSignalInspectorAttributeForTest(string name)
+        {
+            return view is LineToolWpfView lineView
+                ? lineView.GetSignalInspectorAttributeForTest(name)
+                : string.Empty;
+        }
+
+        public bool ExerciseLineSignalInspectorNavigationForTest()
+        {
+            return view is LineToolWpfView lineView
+                && lineView.ExerciseSignalInspectorNavigationForTest();
+        }
+
+        public void ExportLineSignalEvidenceForTest(string path)
+        {
+            if (view is LineToolWpfView lineView)
+            {
+                lineView.ExportSignalEvidenceForTest(path);
+            }
+        }
+
+        public void CloseLineSignalInspectorForTest()
+        {
+            if (view is LineToolWpfView lineView)
+            {
+                lineView.CloseSignalInspectorForTest();
+            }
+        }
+
+        public void OpenLineSignalInspectorForTest()
+        {
+            if (view is LineToolWpfView lineView)
+            {
+                lineView.OpenSignalInspectorForTest();
+            }
+        }
+
         public void ConfigureMatchingForTest(Action<MatchingProperty> configure)
         {
             if (view is MatchingToolWpfView matchingView)
             {
                 matchingView.ConfigurePropertyForTest(configure);
             }
+        }
+
+        internal bool ApplySampleStepParameters(VisionPipelineStep step)
+        {
+            if (step == null)
+            {
+                return false;
+            }
+
+            object sampleProperty = VisionPipelineStepPropertyMapper.CreateProperty(step);
+            if (view is MatchingToolWpfView matchingView
+                && sampleProperty is MatchingProperty matching)
+            {
+                matchingView.ApplySampleProperty(matching);
+                return true;
+            }
+
+            if (view is LineToolWpfView lineView
+                && VisionPipelineLinePropertyAdapter.TryCreateLineGaugePair(
+                    sampleProperty,
+                    out LineGaugeProperty lineA,
+                    out LineGaugeProperty lineB))
+            {
+                string purpose = string.Equals(step.ToolType, "LineIntersection", StringComparison.OrdinalIgnoreCase)
+                    ? "Intersection"
+                    : "Measure";
+                lineView.ApplySampleLinePair(lineA, lineB, purpose);
+                return true;
+            }
+
+            return false;
         }
 
         public void ConfigureAffineTransformForTest(Action<AffineTransformProperty> configure)
@@ -702,6 +787,10 @@ namespace OpenVisionLab
         private void ClearPreviewResult()
         {
             HasPreviewResult = false;
+            if (view is LineToolWpfView lineView)
+            {
+                lineView.ClearSignalEvidence();
+            }
         }
 
         private void ApplyPreviewExecutionResult(OpenVisionNativePreviewExecutionResult result, Action refreshPreviews)

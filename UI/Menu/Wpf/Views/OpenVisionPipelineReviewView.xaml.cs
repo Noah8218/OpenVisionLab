@@ -1,4 +1,6 @@
 ﻿using OpenVisionLab.Pipeline.Controls;
+using Lib.OpenCV.Pipeline;
+using Lib.OpenCV.Result;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -12,12 +14,25 @@ namespace OpenVisionLab
     {
         private IReadOnlyList<VisionPipelineObjectResult> objectResults = Array.Empty<VisionPipelineObjectResult>();
         private Bitmap objectResultBaseImage;
+        private Bitmap objectMetricSourceImage;
+        private VisionPipelineStep objectMetricStep;
+        private VisionPipelineObjectMetricKind objectMetricKind = VisionPipelineObjectMetricKind.Area;
+        private VisionPipelineObjectMetricDistribution objectMetricDistribution;
         private bool suppressObjectSelection;
         private IReadOnlyList<VisionPipelineGeometryFeatureResult> geometryResults = Array.Empty<VisionPipelineGeometryFeatureResult>();
         private bool suppressGeometrySelection;
+        private VisionPipelineCircleEvidence circleEvidence;
+        private IReadOnlyList<VisionPipelineCircleSampleEvidence> circleSamples =
+            Array.Empty<VisionPipelineCircleSampleEvidence>();
+        private Bitmap circleSourceImage;
+        private VisionToolSignalEvidence circleResidualSignal;
+        private bool suppressCircleSelection;
+        private bool showCircleProfile;
+        private OpenVisionPipelineReviewMatcherDiagnosticState matcherDiagnosticState;
         private IReadOnlyList<VisionPipelineGeometryFeatureResult> scaleCalibrationPoints = Array.Empty<VisionPipelineGeometryFeatureResult>();
         private Bitmap scaleCalibrationBaseImage;
         private bool suppressScaleCalibrationSelection;
+        private bool suppressFixtureConsumerSelection;
         private bool hasScaleCalibrationRecord;
 
         public OpenVisionPipelineReviewView()
@@ -26,6 +41,8 @@ namespace OpenVisionLab
             ViewModel = new OpenVisionPipelineReviewViewModel();
             DataContext = ViewModel;
             pipelineFlowView.StepSelected += OnPipelineFlowStepSelected;
+            objectMetricPlot.SampleSelectionRequested += ObjectMetricPlot_SampleSelectionRequested;
+            circleEvidencePlot.SampleSelectionRequested += CircleEvidencePlot_SampleSelectionRequested;
             cmbScaleUnit.ItemsSource = new[]
             {
                 new VisionScaleCalibrationUnitOption(VisionScaleCalibrationUnit.Millimeter, "mm"),
@@ -51,6 +68,7 @@ namespace OpenVisionLab
         public event EventHandler EditSelectedStepRequested = delegate { };
         public event EventHandler EditFixtureProducerRequested = delegate { };
         public event EventHandler EditFixtureMeasurementRequested = delegate { };
+        public event EventHandler<OpenVisionPipelineReviewFixtureConsumerSelectedEventArgs> FixtureConsumerSelected = delegate { };
         public event EventHandler<VisionScaleCalibrationRequestedEventArgs> ScaleCalibrationRequested = delegate { };
         public event EventHandler<VisionScaleCalibrationApplyRequestedEventArgs> ScaleCalibrationApplyRequested = delegate { };
 
@@ -107,6 +125,12 @@ namespace OpenVisionLab
             Unloaded -= OnUnloaded;
             objectResultBaseImage?.Dispose();
             objectResultBaseImage = null;
+            objectMetricSourceImage?.Dispose();
+            objectMetricSourceImage = null;
+            circleSourceImage?.Dispose();
+            circleSourceImage = null;
+            matcherDiagnosticState?.Dispose();
+            matcherDiagnosticState = null;
             scaleCalibrationBaseImage?.Dispose();
             scaleCalibrationBaseImage = null;
         }
@@ -127,6 +151,10 @@ namespace OpenVisionLab
             lblRunLog.Text = T("PipelineReview.RunLog", "Run Log");
             objectInspectorTab.Header = T("PipelineReview.ObjectInspector.Title", "Object Results");
             geometryReviewTab.Header = T("PipelineReview.GeometryReview.Title", "Geometry Review");
+            circleEvidenceTab.Header = T("PipelineReview.CircleEvidence.Title", "Circle Evidence");
+            matcherDiagnosticTab.Header = T("PipelineReview.MatcherDiagnostics.Title", "Matcher Diagnostics");
+            btnCircleResidualPlot.Content = T("PipelineReview.CircleEvidence.Residuals", "Residuals");
+            btnCircleProfilePlot.Content = T("PipelineReview.CircleEvidence.Profile", "Selected scan profile");
             scaleCalibrationTab.Header = T("PipelineReview.ScaleCalibration.Title", "Scale Calibration");
             stepDetailsTab.Header = T("PipelineReview.StepDetails.Title", "Step Details");
             fixtureDesignerTab.Header = T("PipelineReview.FixtureDesigner.Title", "Fixture / Relative ROI");
@@ -177,6 +205,15 @@ namespace OpenVisionLab
             lblFixtureSource.Text = T("PipelineReview.FixtureDesigner.Source", "Source + transformed ROI");
             lblFixtureNormalized.Text = T("PipelineReview.FixtureDesigner.Normalized", "Normalized + reference ROI");
             lblFixtureState.Text = T("PipelineReview.FixtureDesigner.State", "Reference and current state");
+            if (fixtureConsumerGrid.Columns.Count >= 7)
+            {
+                fixtureConsumerGrid.Columns[1].Header = T("PipelineReview.FixtureDesigner.Consumer", "ROI consumer");
+                fixtureConsumerGrid.Columns[2].Header = T("PipelineReview.FixtureDesigner.Tool", "Tool");
+                fixtureConsumerGrid.Columns[3].Header = T("PipelineReview.FixtureDesigner.ReferenceRoi", "Reference ROI");
+                fixtureConsumerGrid.Columns[4].Header = T("PipelineReview.FixtureDesigner.Route", "Route");
+                fixtureConsumerGrid.Columns[5].Header = T("PipelineReview.FixtureDesigner.ConsumerState", "State");
+                fixtureConsumerGrid.Columns[6].Header = T("PipelineReview.FixtureDesigner.Evidence", "Evidence");
+            }
             txtFixtureProducerEditButton.Text = T("PipelineReview.FixtureDesigner.EditProducer", "Edit template / search ROI");
             txtFixtureMeasurementEditButton.Text = T("PipelineReview.FixtureDesigner.EditMeasurement", "Edit measurement ROI");
             txtFixtureRunButton.Text = T("PipelineReview.RunReview", "Run Review");
@@ -254,8 +291,22 @@ namespace OpenVisionLab
 
         public void SetObjectResults(bool isSupportedTool, IEnumerable<VisionPipelineObjectResult> results)
         {
+            SetObjectResults(isSupportedTool, null, results, null, null);
+        }
+
+        internal void SetObjectResults(
+            bool isSupportedTool,
+            VisionPipelineStep step,
+            IEnumerable<VisionPipelineObjectResult> results,
+            Bitmap sourceImage,
+            Bitmap resultImage)
+        {
             suppressObjectSelection = true;
             objectResults = (results ?? Enumerable.Empty<VisionPipelineObjectResult>()).ToList();
+            objectMetricStep = step;
+            objectMetricKind = VisionPipelineObjectMetricKind.Area;
+            objectMetricSourceImage?.Dispose();
+            objectMetricSourceImage = sourceImage == null ? null : new Bitmap(sourceImage);
             objectResultsGrid.ItemsSource = objectResults;
             objectInspectorTab.Visibility = isSupportedTool
                 ? System.Windows.Visibility.Visible
@@ -269,6 +320,8 @@ namespace OpenVisionLab
             objectResultsGrid.SelectedItem = null;
             suppressObjectSelection = false;
             HasObjectHighlight = false;
+            RefreshObjectMetricDistribution(resultImage);
+            UpdateReviewDetailRowHeight();
 
             if (isSupportedTool)
             {
@@ -321,6 +374,283 @@ namespace OpenVisionLab
                     RestoreObjectResultPreview();
                 }
             }
+        }
+
+        internal void SetCircleEvidence(
+            bool isCircleGauge,
+            VisionPipelineCircleEvidence evidence,
+            Bitmap sourceImage,
+            Bitmap resultImage)
+        {
+            suppressCircleSelection = true;
+            circleEvidence = evidence?.Clone();
+            circleSamples = circleEvidence?.Samples?.ToList()
+                ?? (IReadOnlyList<VisionPipelineCircleSampleEvidence>)Array.Empty<VisionPipelineCircleSampleEvidence>();
+            circleSamplesGrid.ItemsSource = circleSamples;
+            circleEvidenceTab.Visibility = isCircleGauge
+                ? System.Windows.Visibility.Visible
+                : System.Windows.Visibility.Collapsed;
+            UpdateReviewDetailRowHeight();
+            circleSourceImage?.Dispose();
+            circleSourceImage = sourceImage == null ? null : new Bitmap(sourceImage);
+            circleResidualSignal = circleEvidence == null
+                ? null
+                : OpenVisionPipelineReviewCircleEvidencePresenter.CreateResidualEvidence(
+                    circleEvidence,
+                    circleSourceImage,
+                    resultImage);
+            showCircleProfile = false;
+            circleEvidenceSummaryText.Text = circleEvidence?.SummaryText
+                ?? T(
+                    "PipelineReview.CircleEvidence.NoEvidence",
+                    "Run Review explicitly to retain radial sample evidence.");
+            circleEvidenceSummaryText.ToolTip = circleEvidenceSummaryText.Text;
+            circleSamplesGrid.SelectedItem = null;
+            suppressCircleSelection = false;
+
+            if (!isCircleGauge)
+            {
+                circleEvidencePlot.SetEvidence(null);
+                return;
+            }
+
+            reviewDetailTabs.SelectedItem = circleEvidenceTab;
+            VisionPipelineCircleSampleEvidence first =
+                circleSamples.FirstOrDefault(item => item.FitInlier)
+                ?? circleSamples.FirstOrDefault(item => item.ContrastAccepted)
+                ?? circleSamples.FirstOrDefault();
+            if (first != null)
+            {
+                SelectCircleSampleInternal(first);
+            }
+            else
+            {
+                RefreshCircleEvidencePlot();
+                RestoreObjectResultPreview();
+            }
+        }
+
+        internal void SetMatcherDiagnostics(
+            bool isEdgeBasedMatching,
+            EdgeBasedMatchingDiagnosticEvidence evidence,
+            IReadOnlyDictionary<string, double> metrics,
+            Bitmap sourceImage)
+        {
+            matcherDiagnosticState?.Dispose();
+            matcherDiagnosticState = OpenVisionPipelineReviewMatcherDiagnosticPresenter.Create(
+                evidence,
+                metrics,
+                sourceImage);
+            matcherDiagnosticTab.Visibility = isEdgeBasedMatching
+                ? System.Windows.Visibility.Visible
+                : System.Windows.Visibility.Collapsed;
+            matcherDiagnosticGrid.ItemsSource =
+                matcherDiagnosticState?.Rows
+                ?? (IReadOnlyList<OpenVisionPipelineReviewMatcherDiagnosticRow>)
+                    Array.Empty<OpenVisionPipelineReviewMatcherDiagnosticRow>();
+            ViewModel.SetMatcherDiagnosticPreviews(
+                matcherDiagnosticState?.ModelPreview,
+                matcherDiagnosticState?.CandidatePreview);
+            matcherDiagnosticSummaryText.Text = matcherDiagnosticState?.SummaryText
+                ?? T(
+                    "PipelineReview.MatcherDiagnostics.NoEvidence",
+                    "Run Review explicitly to retain model, pyramid, candidate, and decision diagnostics.");
+            matcherDiagnosticSummaryText.ToolTip = matcherDiagnosticSummaryText.Text;
+            UpdateReviewDetailRowHeight();
+
+            if (isEdgeBasedMatching)
+            {
+                reviewDetailTabs.SelectedItem = matcherDiagnosticTab;
+            }
+        }
+
+        private void RefreshObjectMetricDistribution(Bitmap resultImage = null)
+        {
+            objectMetricDistribution = OpenVisionPipelineReviewObjectDistributionPresenter.Create(
+                objectMetricStep,
+                objectResults,
+                objectMetricKind,
+                objectMetricSourceImage,
+                resultImage ?? objectResultBaseImage);
+            objectMetricPlot.SetEvidence(objectMetricDistribution?.Evidence);
+            objectMetricSummaryText.Text = objectMetricDistribution?.SummaryText
+                ?? T(
+                    "PipelineReview.ObjectInspector.NoDistribution",
+                    "Run Review explicitly to retain object metric distribution evidence.");
+            objectMetricSummaryText.ToolTip = objectMetricSummaryText.Text;
+            btnObjectMetricArea.FontWeight = objectMetricKind == VisionPipelineObjectMetricKind.Area
+                ? System.Windows.FontWeights.SemiBold
+                : System.Windows.FontWeights.Normal;
+            btnObjectMetricWidth.FontWeight = objectMetricKind == VisionPipelineObjectMetricKind.BoundsWidth
+                ? System.Windows.FontWeights.SemiBold
+                : System.Windows.FontWeights.Normal;
+            btnObjectMetricHeight.FontWeight = objectMetricKind == VisionPipelineObjectMetricKind.BoundsHeight
+                ? System.Windows.FontWeights.SemiBold
+                : System.Windows.FontWeights.Normal;
+            UpdateObjectMetricSelection();
+        }
+
+        private void SelectObjectMetricKindInternal(VisionPipelineObjectMetricKind kind)
+        {
+            objectMetricKind = kind;
+            RefreshObjectMetricDistribution();
+        }
+
+        private void UpdateObjectMetricSelection()
+        {
+            VisionPipelineObjectResult selected =
+                objectResultsGrid?.SelectedItem as VisionPipelineObjectResult;
+            objectMetricPlot.SetSelectionX(
+                selected == null || objectMetricDistribution == null
+                    ? (double?)null
+                    : objectMetricDistribution.GetValue(selected));
+            if (objectMetricDistribution != null)
+            {
+                string maximumText = objectMetricDistribution.MaximumIsUnbounded
+                    ? "unbounded"
+                    : objectMetricDistribution.MaximumValue.ToString("0.###", System.Globalization.CultureInfo.CurrentCulture);
+                string selectionText = selected == null
+                    ? "No object selected"
+                    : selected.Accepted
+                        ? $"Selected #{selected.Number} OK — accepted by current object gates"
+                        : $"Selected #{selected.Number} REJECT — {selected.RejectReason}";
+                objectMetricSummaryText.Text =
+                    $"{objectMetricDistribution.MetricName} | "
+                    + $"{objectMetricDistribution.MinimumKey} {objectMetricDistribution.MinimumValue:0.###} .. "
+                    + $"{objectMetricDistribution.MaximumKey} {maximumText} | {selectionText}";
+                objectMetricSummaryText.ToolTip = objectMetricSummaryText.Text;
+            }
+        }
+
+        private void UpdateReviewDetailRowHeight()
+        {
+            double height = matcherDiagnosticTab.Visibility == System.Windows.Visibility.Visible
+                ? 300D
+                : objectInspectorTab.Visibility == System.Windows.Visibility.Visible
+                    ? 220D
+                : circleEvidenceTab.Visibility == System.Windows.Visibility.Visible
+                    ? 280D
+                    : 160D;
+            reviewDetailRow.Height = new System.Windows.GridLength(height);
+        }
+
+        internal bool MatcherDiagnosticTabVisibleForTest =>
+            matcherDiagnosticTab.Visibility == System.Windows.Visibility.Visible;
+
+        internal string MatcherDiagnosticStateForTest =>
+            matcherDiagnosticState?.State ?? string.Empty;
+
+        internal string MatcherDiagnosticEvidenceIdForTest =>
+            matcherDiagnosticState?.EvidenceId ?? string.Empty;
+
+        internal int MatcherDiagnosticRowCountForTest =>
+            matcherDiagnosticState?.Rows?.Count ?? 0;
+
+        internal int MatcherDiagnosticModelPointCountForTest =>
+            matcherDiagnosticState?.ModelPointCount ?? 0;
+
+        internal bool MatcherDiagnosticHasSelectedCandidateForTest =>
+            matcherDiagnosticState?.HasSelectedCandidate == true;
+
+        internal bool MatcherDiagnosticHasAlternativeForTest =>
+            matcherDiagnosticState?.HasStrongestSpatialAlternative == true;
+
+        internal int CircleEvidenceSampleCountForTest => circleSamples.Count;
+
+        internal int SelectedCircleSampleNumberForTest =>
+            (circleSamplesGrid.SelectedItem as VisionPipelineCircleSampleEvidence)?.Number ?? 0;
+
+        internal int CircleEvidencePlotSeriesCountForTest => circleEvidencePlot.SeriesCount;
+
+        internal bool CircleEvidenceTabVisibleForTest =>
+            circleEvidenceTab.Visibility == System.Windows.Visibility.Visible;
+
+        internal bool CircleEvidenceShowsProfileForTest => showCircleProfile;
+
+        internal void ShowCircleResidualPlotForTest()
+        {
+            showCircleProfile = false;
+            RefreshCircleEvidencePlot();
+        }
+
+        internal void ShowCircleProfilePlotForTest()
+        {
+            showCircleProfile = true;
+            RefreshCircleEvidencePlot();
+        }
+
+        internal void SelectCircleSampleFromPlotForTest(double scanNumber)
+        {
+            circleEvidencePlot.SelectSampleForTest(scanNumber);
+        }
+
+        internal bool SelectCircleSampleAtImagePointForTest(double x, double y)
+        {
+            VisionPipelineCircleSampleEvidence selected = circleSamples
+                .Where(item => item?.HasEdgePoint == true)
+                .Select(item =>
+                {
+                    double dx = item.EdgeX - x;
+                    double dy = item.EdgeY - y;
+                    return (item, distance: Math.Sqrt(dx * dx + dy * dy));
+                })
+                .OrderBy(entry => entry.distance)
+                .FirstOrDefault()
+                .item;
+            if (selected == null)
+            {
+                return false;
+            }
+
+            SelectCircleSampleInternal(selected);
+            return true;
+        }
+
+        private void SelectCircleSampleInternal(VisionPipelineCircleSampleEvidence sample)
+        {
+            if (sample == null || circleSamplesGrid == null)
+            {
+                return;
+            }
+
+            suppressCircleSelection = true;
+            circleSamplesGrid.SelectedItem = sample;
+            circleSamplesGrid.ScrollIntoView(sample);
+            circleSamplesGrid.UpdateLayout();
+            circleSamplesGrid.ScrollIntoView(sample);
+            ShowCircleSampleHighlight(sample);
+            suppressCircleSelection = false;
+            RefreshCircleEvidencePlot();
+        }
+
+        private void RefreshCircleEvidencePlot()
+        {
+            VisionPipelineCircleSampleEvidence selected =
+                circleSamplesGrid.SelectedItem as VisionPipelineCircleSampleEvidence;
+            VisionToolSignalEvidence signal = showCircleProfile
+                ? OpenVisionPipelineReviewCircleEvidencePresenter.CreateProfileEvidence(
+                    circleEvidence,
+                    selected,
+                    circleSourceImage,
+                    objectResultBaseImage,
+                    circleResidualSignal?.SourceSha256,
+                    circleResidualSignal?.ResultSha256)
+                : circleResidualSignal;
+            circleEvidencePlot.SetEvidence(signal);
+            circleEvidencePlot.SetSelectionX(
+                !showCircleProfile && selected != null ? selected.Number : null);
+            circlePlotCaptionText.Text = showCircleProfile
+                ? selected == null
+                    ? "Select one radial scan."
+                    : $"Scan {selected.Number} / {selected.AngleDeg:0.###} deg / intensity + signed response"
+                : selected == null
+                    ? "Absolute fitted-radius residual by scan. Click to select."
+                    : $"Scan {selected.Number} / {selected.StateText} / {selected.ResidualText} px"
+                        + (string.IsNullOrWhiteSpace(selected.RejectReason)
+                            ? string.Empty
+                            : " / " + selected.RejectReason);
+            circlePlotCaptionText.ToolTip = circlePlotCaptionText.Text;
+            btnCircleProfilePlot.IsEnabled = selected != null;
         }
 
         internal void SetScaleCalibrationState(
@@ -460,6 +790,35 @@ namespace OpenVisionLab
             SelectObjectAt(item.CenterX, item.CenterY);
         }
 
+        internal int ObjectMetricDistributionSeriesCountForTest => objectMetricPlot.SeriesCount;
+
+        internal int ObjectMetricDistributionMarkerCountForTest =>
+            objectMetricDistribution?.Evidence?.Markers?.Count ?? 0;
+
+        internal string ObjectMetricDistributionEvidenceIdForTest =>
+            objectMetricDistribution?.Evidence?.EvidenceId ?? string.Empty;
+
+        internal string ObjectMetricDistributionSummaryForTest =>
+            objectMetricDistribution?.SummaryText ?? string.Empty;
+
+        internal string ObjectMetricDistributionMetricForTest =>
+            objectMetricDistribution?.MetricName ?? string.Empty;
+
+        internal double? ObjectMetricDistributionSelectionForTest => objectMetricPlot.SelectionX;
+
+        internal VisionToolSignalEvidence ObjectMetricDistributionEvidenceForTest =>
+            objectMetricDistribution?.Evidence;
+
+        internal void SelectObjectMetricForTest(VisionPipelineObjectMetricKind kind)
+        {
+            SelectObjectMetricKindInternal(kind);
+        }
+
+        internal void SelectObjectMetricFromPlotForTest(double value)
+        {
+            objectMetricPlot.SelectSampleForTest(value);
+        }
+
         public void SetValidation(string status, string details)
         {
             ViewModel.SetValidation(status, details);
@@ -529,7 +888,9 @@ namespace OpenVisionLab
             Bitmap templatePreview,
             bool canTeachReference,
             bool canEditProducer,
-            bool canEditMeasurement)
+            bool canEditMeasurement,
+            IReadOnlyList<OpenVisionPipelineReviewFixtureConsumerRow> consumers,
+            int selectedMeasurementIndex)
         {
             ViewModel.SetFixtureDesignerState(
                 isVisible,
@@ -545,7 +906,18 @@ namespace OpenVisionLab
                 templatePreview,
                 canTeachReference,
                 canEditProducer,
-                canEditMeasurement);
+                canEditMeasurement,
+                consumers);
+            suppressFixtureConsumerSelection = true;
+            try
+            {
+                fixtureConsumerGrid.SelectedItem = ViewModel.FixtureConsumers
+                    .FirstOrDefault(item => item.StepIndex == selectedMeasurementIndex);
+            }
+            finally
+            {
+                suppressFixtureConsumerSelection = false;
+            }
         }
 
         public void SetEmptyState(string pipelineName)
@@ -573,6 +945,16 @@ namespace OpenVisionLab
 
         public VisionScaleCalibrationUnit Unit { get; }
         public string DisplayText { get; }
+    }
+
+    public sealed class OpenVisionPipelineReviewFixtureConsumerSelectedEventArgs : EventArgs
+    {
+        public OpenVisionPipelineReviewFixtureConsumerSelectedEventArgs(int stepIndex)
+        {
+            StepIndex = stepIndex;
+        }
+
+        public int StepIndex { get; }
     }
 
     public sealed class VisionScaleCalibrationRequestedEventArgs : EventArgs

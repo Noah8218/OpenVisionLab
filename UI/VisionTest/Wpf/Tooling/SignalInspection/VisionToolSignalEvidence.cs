@@ -50,6 +50,16 @@ namespace OpenVisionLab
         public double Value { get; }
     }
 
+    internal sealed class VisionToolSignalSampleSelectedEventArgs : EventArgs
+    {
+        public VisionToolSignalSampleSelectedEventArgs(double x)
+        {
+            X = x;
+        }
+
+        public double X { get; }
+    }
+
     internal sealed class VisionToolSignalSeries
     {
         public VisionToolSignalSeries(
@@ -99,7 +109,8 @@ namespace OpenVisionLab
             string yAxisLabel,
             IEnumerable<VisionToolSignalSeries> series,
             IEnumerable<VisionToolSignalMarker> markers = null,
-            string guidance = null)
+            string guidance = null,
+            IEnumerable<KeyValuePair<string, string>> attributes = null)
         {
             EvidenceId = Require(evidenceId, nameof(evidenceId));
             SourceSha256 = Require(sourceSha256, nameof(sourceSha256));
@@ -118,6 +129,14 @@ namespace OpenVisionLab
 
             Markers = Array.AsReadOnly((markers ?? Array.Empty<VisionToolSignalMarker>()).ToArray());
             Guidance = guidance?.Trim() ?? string.Empty;
+            Attributes = new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(
+                (attributes ?? Array.Empty<KeyValuePair<string, string>>())
+                    .Where(item => !string.IsNullOrWhiteSpace(item.Key))
+                    .GroupBy(item => item.Key.Trim(), StringComparer.Ordinal)
+                    .ToDictionary(
+                        group => group.Key,
+                        group => group.Last().Value?.Trim() ?? string.Empty,
+                        StringComparer.Ordinal));
         }
 
         public string EvidenceId { get; }
@@ -143,6 +162,8 @@ namespace OpenVisionLab
         public IReadOnlyList<VisionToolSignalMarker> Markers { get; }
 
         public string Guidance { get; }
+
+        public IReadOnlyDictionary<string, string> Attributes { get; }
 
         private static string Require(string value, string parameterName)
         {

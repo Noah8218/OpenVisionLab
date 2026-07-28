@@ -46,6 +46,12 @@ namespace OpenVisionLab
         public bool HasNativePreviewResult => toolTestFacade.HasNativePreviewResult;
         public VisionToolRepository VisionToolRepositoryForTest => runtimeContext.Global?.VisionTools;
         public int ActiveLineInputRoiOverlayCount => toolTestFacade.ActiveLineInputRoiOverlayCount;
+        public bool ActiveLineSignalInspectorHasEvidenceForTest => toolTestFacade.ActiveLineSignalInspectorHasEvidence;
+        public bool ActiveLineSignalInspectorOverlayVisibleForTest => toolTestFacade.ActiveLineSignalInspectorOverlayVisible;
+        public string ActiveLineSignalInspectorEvidenceIdForTest => toolTestFacade.ActiveLineSignalInspectorEvidenceId;
+        public string ActiveLineSignalInspectorSourceSha256ForTest => toolTestFacade.ActiveLineSignalInspectorSourceSha256;
+        public int ActiveLineSignalInspectorSeriesCountForTest => toolTestFacade.ActiveLineSignalInspectorSeriesCount;
+        public int ActiveLineSignalInspectorMarkerCountForTest => toolTestFacade.ActiveLineSignalInspectorMarkerCount;
         public int LayerDocumentCount => layerTestFacade.LayerDocumentCount;
         public bool HasMainLayer => layerTestFacade.HasMainLayer;
         public int HostLayerRowCount => layerTestFacade.HostLayerRowCount;
@@ -142,6 +148,17 @@ namespace OpenVisionLab
         public bool HasPipelineReviewInputPreview => toolTestFacade.HasPipelineReviewInputPreview;
         public bool HasPipelineReviewOutputPreview => toolTestFacade.HasPipelineReviewOutputPreview;
         public int PipelineReviewObjectResultCountForTest => toolTestFacade.PipelineReviewObjectResultCount;
+        public int PipelineReviewObjectMetricDistributionSeriesCountForTest => toolTestFacade.PipelineReviewObjectMetricDistributionSeriesCount;
+        public int PipelineReviewObjectMetricDistributionMarkerCountForTest => toolTestFacade.PipelineReviewObjectMetricDistributionMarkerCount;
+        public string PipelineReviewObjectMetricDistributionMetricForTest => toolTestFacade.PipelineReviewObjectMetricDistributionMetric;
+        public string PipelineReviewObjectMetricDistributionEvidenceIdForTest => toolTestFacade.PipelineReviewObjectMetricDistributionEvidenceId;
+        public bool PipelineReviewMatcherDiagnosticTabVisibleForTest => toolTestFacade.PipelineReviewMatcherDiagnosticTabVisible;
+        public string PipelineReviewMatcherDiagnosticStateForTest => toolTestFacade.PipelineReviewMatcherDiagnosticState;
+        public string PipelineReviewMatcherDiagnosticEvidenceIdForTest => toolTestFacade.PipelineReviewMatcherDiagnosticEvidenceId;
+        public int PipelineReviewMatcherDiagnosticRowCountForTest => toolTestFacade.PipelineReviewMatcherDiagnosticRowCount;
+        public int PipelineReviewMatcherDiagnosticModelPointCountForTest => toolTestFacade.PipelineReviewMatcherDiagnosticModelPointCount;
+        public bool PipelineReviewMatcherDiagnosticHasSelectedCandidateForTest => toolTestFacade.PipelineReviewMatcherDiagnosticHasSelectedCandidate;
+        public bool PipelineReviewMatcherDiagnosticHasAlternativeForTest => toolTestFacade.PipelineReviewMatcherDiagnosticHasAlternative;
         public bool IsPipelineReviewFixtureDesignerVisibleForTest => toolTestFacade.IsPipelineReviewFixtureDesignerVisible;
         public string PipelineReviewFixtureRelationshipTextForTest => toolTestFacade.PipelineReviewFixtureRelationshipText;
         public int PipelineReviewFixtureProducerStepNumberForTest => toolTestFacade.PipelineReviewFixtureProducerStepNumber;
@@ -464,6 +481,21 @@ namespace OpenVisionLab
                 manualAngleValue);
 
         public void SetActiveLinePurposeForTest(string purpose) => toolTestFacade.SetActiveLinePurpose(purpose);
+
+        public string GetActiveLineSignalInspectorAttributeForTest(string name) =>
+            toolTestFacade.GetActiveLineSignalInspectorAttribute(name);
+
+        public bool ExerciseActiveLineSignalInspectorNavigationForTest() =>
+            toolTestFacade.ExerciseActiveLineSignalInspectorNavigation();
+
+        public void ExportActiveLineSignalEvidenceForTest(string path) =>
+            toolTestFacade.ExportActiveLineSignalEvidence(path);
+
+        public void CloseActiveLineSignalInspectorForTest() =>
+            toolTestFacade.CloseActiveLineSignalInspector();
+
+        public void OpenActiveLineSignalInspectorForTest() =>
+            toolTestFacade.OpenActiveLineSignalInspector();
 
         public void SetActiveMatchingTemplatePathForTest(string path) => toolTestFacade.SetActiveMatchingTemplatePath(path);
 

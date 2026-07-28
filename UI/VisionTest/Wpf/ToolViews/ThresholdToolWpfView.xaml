@@ -446,6 +446,8 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="6" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="6" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <Button x:Name="btnCloseSignalInspector"
@@ -456,8 +458,64 @@
                         Click="CloseSignalInspector_Click"
                         Content="Back to parameters"
                         AutomationProperties.AutomationId="ThresholdSignalInspectorBackButton" />
+                <Border x:Name="thresholdSuggestionPanel"
+                        Grid.Row="2"
+                        Padding="10,8"
+                        Background="#FFF9EE"
+                        BorderBrush="#D89A2B"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Visibility="Collapsed"
+                        AutomationProperties.AutomationId="ThresholdSuggestionPanel">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock x:Name="thresholdSuggestionTitle"
+                                       FontWeight="SemiBold"
+                                       Foreground="#62420A"
+                                       Text="Threshold teaching suggestion" />
+                            <TextBlock x:Name="thresholdSuggestionStatus"
+                                       Margin="0,3,12,0"
+                                       Foreground="#62420A"
+                                       TextWrapping="Wrap"
+                                       Text="Analyze the current Preview histogram. No value changes until Use." />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <Button x:Name="btnAnalyzeThresholdSuggestion"
+                                    MinWidth="128"
+                                    Height="30"
+                                    Padding="10,0"
+                                    Click="AnalyzeThresholdSuggestion_Click"
+                                    Content="Analyze suggestion"
+                                    AutomationProperties.AutomationId="ThresholdSuggestionAnalyzeButton" />
+                            <Button x:Name="btnUseThresholdSuggestion"
+                                    MinWidth="86"
+                                    Height="30"
+                                    Margin="6,0,0,0"
+                                    Padding="10,0"
+                                    Click="UseThresholdSuggestion_Click"
+                                    Content="Use T"
+                                    IsEnabled="False"
+                                    AutomationProperties.AutomationId="ThresholdSuggestionUseButton" />
+                            <Button x:Name="btnUndoThresholdSuggestion"
+                                    MinWidth="96"
+                                    Height="30"
+                                    Margin="6,0,0,0"
+                                    Padding="10,0"
+                                    Click="UndoThresholdSuggestion_Click"
+                                    Content="Undo"
+                                    IsEnabled="False"
+                                    AutomationProperties.AutomationId="ThresholdSuggestionUndoButton" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
                 <local:VisionToolSignalInspectorView x:Name="signalInspector"
-                                                     Grid.Row="2"
+                                                     Grid.Row="4"
                                                      VerticalAlignment="Top" />
             </Grid>
         </Grid>

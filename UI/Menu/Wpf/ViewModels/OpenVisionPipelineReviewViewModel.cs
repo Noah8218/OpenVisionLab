@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -9,6 +10,19 @@ using System.Windows.Media.Imaging;
 
 namespace OpenVisionLab
 {
+    public sealed class OpenVisionPipelineReviewFixtureConsumerRow
+    {
+        public int StepIndex { get; init; }
+        public int StepNumber { get; init; }
+        public string StepName { get; init; } = string.Empty;
+        public string ToolType { get; init; } = string.Empty;
+        public string RoiText { get; init; } = string.Empty;
+        public string RouteText { get; init; } = string.Empty;
+        public string StatusText { get; init; } = string.Empty;
+        public string EvidenceId { get; init; } = string.Empty;
+        public string EvidenceShortId { get; init; } = string.Empty;
+    }
+
     public sealed class OpenVisionPipelineReviewViewModel : INotifyPropertyChanged
     {
         private string pipelineTitle = T("PipelineReview.Title", "Pipeline Review");
@@ -79,6 +93,8 @@ namespace OpenVisionLab
         private bool fixtureProducerEditAvailable;
         private bool fixtureMeasurementEditAvailable;
         private BitmapImage scaleCalibrationPreviewImage;
+        private BitmapImage matcherModelPreviewImage;
+        private BitmapImage matcherCandidatePreviewImage;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -147,7 +163,11 @@ namespace OpenVisionLab
         public BitmapImage FixtureNormalizedPreviewImage { get => fixtureNormalizedPreviewImage; private set => SetField(ref fixtureNormalizedPreviewImage, value); }
         public bool CanEditFixtureProducer { get => canEditFixtureProducer; private set => SetField(ref canEditFixtureProducer, value); }
         public bool CanEditFixtureMeasurement { get => canEditFixtureMeasurement; private set => SetField(ref canEditFixtureMeasurement, value); }
+        public ObservableCollection<OpenVisionPipelineReviewFixtureConsumerRow> FixtureConsumers { get; } =
+            new ObservableCollection<OpenVisionPipelineReviewFixtureConsumerRow>();
         public BitmapImage ScaleCalibrationPreviewImage { get => scaleCalibrationPreviewImage; private set => SetField(ref scaleCalibrationPreviewImage, value); }
+        public BitmapImage MatcherModelPreviewImage { get => matcherModelPreviewImage; private set => SetField(ref matcherModelPreviewImage, value); }
+        public BitmapImage MatcherCandidatePreviewImage { get => matcherCandidatePreviewImage; private set => SetField(ref matcherCandidatePreviewImage, value); }
         public bool HasInputPreview => InputPreviewImage != null;
         public bool HasOutputPreview => OutputPreviewImage != null;
 
@@ -214,6 +234,12 @@ namespace OpenVisionLab
             ScaleCalibrationPreviewImage = CreateBitmapImage(bitmap);
         }
 
+        public void SetMatcherDiagnosticPreviews(Bitmap modelPreview, Bitmap candidatePreview)
+        {
+            MatcherModelPreviewImage = CreateBitmapImage(modelPreview);
+            MatcherCandidatePreviewImage = CreateBitmapImage(candidatePreview);
+        }
+
         public void SetRunReviewBusy(bool isBusy)
         {
             CanRunReview = !isBusy;
@@ -249,7 +275,8 @@ namespace OpenVisionLab
             Bitmap templatePreview,
             bool canTeachReference,
             bool canEditProducer,
-            bool canEditMeasurement)
+            bool canEditMeasurement,
+            IReadOnlyList<OpenVisionPipelineReviewFixtureConsumerRow> consumers)
         {
             IsFixtureDesignerVisible = isVisible;
             OnPropertyChanged(nameof(IsLegacyFixtureTeachVisible));
@@ -263,6 +290,14 @@ namespace OpenVisionLab
             FixtureSourcePreviewImage = isVisible ? CreateBitmapImage(sourcePreview) : null;
             FixtureNormalizedPreviewImage = isVisible ? CreateBitmapImage(normalizedPreview) : null;
             FixtureTemplatePreviewImage = isVisible ? CreateBitmapImage(templatePreview) : null;
+            FixtureConsumers.Clear();
+            if (isVisible && consumers != null)
+            {
+                foreach (OpenVisionPipelineReviewFixtureConsumerRow consumer in consumers)
+                {
+                    FixtureConsumers.Add(consumer);
+                }
+            }
             if (isVisible)
             {
                 fixturePoseAvailable = canTeachReference;
@@ -371,7 +406,8 @@ namespace OpenVisionLab
                 null,
                 false,
                 false,
-                false);
+                false,
+                Array.Empty<OpenVisionPipelineReviewFixtureConsumerRow>());
             SetResultSummary(T("PipelineReview.NoRunResult", "No run result"), "-");
             SetReviewProgress(T("PipelineReview.Progress.NoSteps", "No steps"));
             StatusText = T("PipelineReview.NoStepsStatus", "Pipeline has no steps.");

@@ -72,19 +72,37 @@ namespace OpenVisionLab
             metrics[VisionPipelineKnownMetrics.CircleCoverageDeg] = coverage;
             if (points.Count < 3 || supportRatio < config.MinimumSupportRatio)
             {
-                return Fail(
+                VisionToolResult failed = Fail(
                     resultImage,
                     stopwatch,
                     $"CircleGauge support ratio {supportRatio:0.###} is below {config.MinimumSupportRatio:0.###} ({points.Count}/{config.ScanCount}).",
                     metrics,
                     overlays);
+                VisionPipelineCircleEvidenceStore.Set(
+                    failed,
+                    CreateEvidence(source, config, samples, null, null, 0D));
+                return failed;
             }
 
-            if (!TryRobustFit(points, out CircleFit fit, out List<Point2d> inliers))
+            if (!TryRobustFit(
+                    points,
+                    out CircleFit fit,
+                    out List<Point2d> inliers,
+                    out double robustRejection))
             {
-                return Fail(resultImage, stopwatch, "CircleGauge could not fit a finite circle from the radial support points.", metrics, overlays);
+                VisionToolResult failed = Fail(
+                    resultImage,
+                    stopwatch,
+                    "CircleGauge could not fit a finite circle from the radial support points.",
+                    metrics,
+                    overlays);
+                VisionPipelineCircleEvidenceStore.Set(
+                    failed,
+                    CreateEvidence(source, config, samples, null, null, 0D));
+                return failed;
             }
 
+            ApplyFitEvidence(samples, fit, inliers);
             DrawFitOutliers(resultImage, points, inliers);
 
             supportRatio = inliers.Count / (double)config.ScanCount;
@@ -108,18 +126,26 @@ namespace OpenVisionLab
                 Label = "Circle center",
                 Center = new PointF((float)fit.Center.X, (float)fit.Center.Y)
             });
+            VisionPipelineCircleEvidence circleEvidence =
+                CreateEvidence(source, config, samples, fit, inliers, robustRejection);
 
             if (fit.Radius < config.MinimumRadius || fit.Radius > config.MaximumRadius)
             {
-                return Fail(resultImage, stopwatch, $"CircleGauge fitted radius {fit.Radius:0.###}px is outside {config.MinimumRadius:0.###}..{config.MaximumRadius:0.###}px.", metrics, overlays);
+                VisionToolResult failed = Fail(resultImage, stopwatch, $"CircleGauge fitted radius {fit.Radius:0.###}px is outside {config.MinimumRadius:0.###}..{config.MaximumRadius:0.###}px.", metrics, overlays);
+                VisionPipelineCircleEvidenceStore.Set(failed, circleEvidence);
+                return failed;
             }
             if (supportRatio < config.MinimumSupportRatio)
             {
-                return Fail(resultImage, stopwatch, $"CircleGauge robust-fit support ratio {supportRatio:0.###} is below {config.MinimumSupportRatio:0.###}.", metrics, overlays);
+                VisionToolResult failed = Fail(resultImage, stopwatch, $"CircleGauge robust-fit support ratio {supportRatio:0.###} is below {config.MinimumSupportRatio:0.###}.", metrics, overlays);
+                VisionPipelineCircleEvidenceStore.Set(failed, circleEvidence);
+                return failed;
             }
             if (fit.Residual > config.MaximumFitResidual)
             {
-                return Fail(resultImage, stopwatch, $"CircleGauge fit residual {fit.Residual:0.###}px exceeds {config.MaximumFitResidual:0.###}px.", metrics, overlays);
+                VisionToolResult failed = Fail(resultImage, stopwatch, $"CircleGauge fit residual {fit.Residual:0.###}px exceeds {config.MaximumFitResidual:0.###}px.", metrics, overlays);
+                VisionPipelineCircleEvidenceStore.Set(failed, circleEvidence);
+                return failed;
             }
 
             metrics[VisionPipelineKnownMetrics.ResultCount] = 1D;
@@ -166,6 +192,7 @@ namespace OpenVisionLab
                     FitResidualPx = fit.Residual
                 }
             });
+            VisionPipelineCircleEvidenceStore.Set(result, circleEvidence);
             return result;
         }
 
@@ -231,14 +258,20 @@ namespace OpenVisionLab
                 double angleDeg = config.StartAngleDeg + config.SweepAngleDeg * fraction;
                 double angle = angleDeg * Math.PI / 180D;
                 Point2d bestPoint = default;
+                double bestRadius = 0D;
                 double bestStrength = double.MinValue;
+                double bestSignedResponse = 0D;
                 bool found = false;
+                List<double> intensityValues = new List<double>();
+                List<double> signedResponseValues = new List<double>();
                 for (double radius = config.MinimumRadius; radius < config.MaximumRadius; radius += 1D)
                 {
                     Point2d p1 = Polar(config.Center, radius, angle);
                     Point2d p2 = Polar(config.Center, radius + 1D, angle);
                     if (!TrySample(gray, config.Roi, p1, out byte before) || !TrySample(gray, config.Roi, p2, out byte after)) continue;
                     double delta = after - before;
+                    intensityValues.Add(before);
+                    signedResponseValues.Add(delta);
                     double strength = config.Polarity == CircleGaugeEdgePolarity.DarkToLight
                         ? delta
                         : config.Polarity == CircleGaugeEdgePolarity.LightToDark
@@ -248,32 +281,67 @@ namespace OpenVisionLab
                     {
                         bestStrength = strength;
                         bestPoint = new Point2d((p1.X + p2.X) / 2D, (p1.Y + p2.Y) / 2D);
+                        bestRadius = radius + 0.5D;
+                        bestSignedResponse = delta;
                         found = true;
                     }
                 }
                 samples.Add(new RadialSample
                 {
+                    Index = index,
+                    AngleDeg = angleDeg,
                     Point = bestPoint,
+                    Radius = bestRadius,
                     Strength = found ? bestStrength : 0D,
-                    Accepted = found && bestStrength >= config.MinimumContrast
+                    SignedResponse = found ? bestSignedResponse : 0D,
+                    HasPoint = found,
+                    Accepted = found && bestStrength >= config.MinimumContrast,
+                    ProfileRadiusStart = config.MinimumRadius,
+                    IntensityValues = intensityValues,
+                    SignedResponseValues = signedResponseValues
                 });
             }
             return samples;
         }
 
-        private static bool TryRobustFit(List<Point2d> points, out CircleFit fit, out List<Point2d> inliers)
+        private static bool TryRobustFit(
+            List<Point2d> points,
+            out CircleFit fit,
+            out List<Point2d> inliers,
+            out double rejection)
         {
             inliers = points?.ToList() ?? new List<Point2d>();
+            rejection = 0D;
             if (!TryFit(inliers, out fit)) return false;
-            double rejection = Math.Max(1.5D, fit.Residual * 2.5D);
+            rejection = Math.Max(1.5D, fit.Residual * 2.5D);
+            double rejectionThreshold = rejection;
             CircleFit initialFit = fit;
-            List<Point2d> filtered = inliers.Where(point => Math.Abs(Distance(point, initialFit.Center) - initialFit.Radius) <= rejection).ToList();
+            List<Point2d> filtered = inliers.Where(point => Math.Abs(Distance(point, initialFit.Center) - initialFit.Radius) <= rejectionThreshold).ToList();
             if (filtered.Count >= 3 && filtered.Count < inliers.Count && TryFit(filtered, out CircleFit refined))
             {
                 inliers = filtered;
                 fit = refined;
             }
             return true;
+        }
+
+        private static void ApplyFitEvidence(
+            IEnumerable<RadialSample> samples,
+            CircleFit fit,
+            IReadOnlyList<Point2d> inliers)
+        {
+            foreach (RadialSample sample in samples ?? Enumerable.Empty<RadialSample>())
+            {
+                if (!sample.Accepted || !sample.HasPoint)
+                {
+                    continue;
+                }
+
+                sample.HasFitResidual = true;
+                sample.FitResidual = Distance(sample.Point, fit.Center) - fit.Radius;
+                sample.FitInlier = (inliers ?? Array.Empty<Point2d>())
+                    .Any(inlier => Distance(sample.Point, inlier) <= 0.01D);
+            }
         }
 
         private static bool TryFit(IReadOnlyList<Point2d> points, out CircleFit fit)
@@ -330,6 +398,94 @@ namespace OpenVisionLab
             return true;
         }
 
+        private VisionPipelineCircleEvidence CreateEvidence(
+            Mat source,
+            Configuration config,
+            IReadOnlyList<RadialSample> samples,
+            CircleFit? fit,
+            IReadOnlyList<Point2d> inliers,
+            double robustRejection)
+        {
+            IReadOnlyList<RadialSample> retainedSamples = samples ?? Array.Empty<RadialSample>();
+            int edgeCandidateCount = retainedSamples.Count(item => item.Accepted);
+            int inlierCount = inliers?.Count ?? 0;
+            double supportRatio = inlierCount > 0
+                ? inlierCount / (double)config.ScanCount
+                : edgeCandidateCount / (double)config.ScanCount;
+            CircleFit resolvedFit = fit.GetValueOrDefault();
+            return new VisionPipelineCircleEvidence
+            {
+                StepName = step.Name ?? Name,
+                InputLayer = step.InputLayer ?? string.Empty,
+                ImageWidth = source?.Width ?? 0,
+                ImageHeight = source?.Height ?? 0,
+                TaughtCenterX = config.Center.X,
+                TaughtCenterY = config.Center.Y,
+                RadiusMinPx = config.MinimumRadius,
+                RadiusMaxPx = config.MaximumRadius,
+                StartAngleDeg = config.StartAngleDeg,
+                SweepAngleDeg = config.SweepAngleDeg,
+                ScanCount = config.ScanCount,
+                EdgePolarity = config.Polarity.ToString(),
+                MinimumContrastGv = config.MinimumContrast,
+                MinimumSupportRatio = config.MinimumSupportRatio,
+                MaximumFitResidualPx = config.MaximumFitResidual,
+                HasFit = fit.HasValue,
+                FitCenterX = fit.HasValue ? resolvedFit.Center.X : 0D,
+                FitCenterY = fit.HasValue ? resolvedFit.Center.Y : 0D,
+                FitRadiusPx = fit.HasValue ? resolvedFit.Radius : 0D,
+                FitResidualPx = fit.HasValue ? resolvedFit.Residual : 0D,
+                RobustRejectionPx = robustRejection,
+                EdgeCandidateCount = edgeCandidateCount,
+                InlierCount = inlierCount,
+                SupportRatio = supportRatio,
+                CoverageDeg = config.SweepAngleDeg * supportRatio,
+                Samples = Array.AsReadOnly(
+                    retainedSamples.Select(sample =>
+                    {
+                        Point2d scanStart = Polar(
+                            config.Center,
+                            config.MinimumRadius,
+                            sample.AngleDeg * Math.PI / 180D);
+                        Point2d scanEnd = Polar(
+                            config.Center,
+                            config.MaximumRadius,
+                            sample.AngleDeg * Math.PI / 180D);
+                        string rejectReason = !sample.HasPoint
+                            ? "No radial samples remained inside the reviewed ROI."
+                                : !sample.Accepted
+                                ? $"Edge strength {sample.Strength:0.###} GV is below {config.MinimumContrast:0.###} GV."
+                                : sample.HasFitResidual && !sample.FitInlier
+                                    ? $"Final radial residual {Math.Abs(sample.FitResidual):0.###} px was outside the initial robust support gate {robustRejection:0.###} px."
+                                    : string.Empty;
+                        return new VisionPipelineCircleSampleEvidence
+                        {
+                            Number = sample.Index + 1,
+                            AngleDeg = sample.AngleDeg,
+                            ScanStartX = scanStart.X,
+                            ScanStartY = scanStart.Y,
+                            ScanEndX = scanEnd.X,
+                            ScanEndY = scanEnd.Y,
+                            HasEdgePoint = sample.HasPoint,
+                            EdgeX = sample.HasPoint ? sample.Point.X : 0D,
+                            EdgeY = sample.HasPoint ? sample.Point.Y : 0D,
+                            EdgeRadiusPx = sample.Radius,
+                            EdgeStrengthGv = sample.Strength,
+                            EdgeSignedResponseGv = sample.SignedResponse,
+                            ContrastAccepted = sample.Accepted,
+                            FitInlier = sample.FitInlier,
+                            HasFitResidual = sample.HasFitResidual,
+                            FitResidualPx = sample.FitResidual,
+                            ProfileRadiusStartPx = sample.ProfileRadiusStart,
+                            ProfileRadiusStepPx = 1D,
+                            IntensityValues = Array.AsReadOnly(sample.IntensityValues.ToArray()),
+                            SignedResponseValues = Array.AsReadOnly(sample.SignedResponseValues.ToArray()),
+                            RejectReason = rejectReason
+                        };
+                    }).ToArray())
+            };
+        }
+
         private static void DrawAnnulus(Mat image, Configuration config, Scalar color)
         {
             OpenCvSharp.Point center = ToPoint(config.Center);
@@ -342,7 +498,7 @@ namespace OpenVisionLab
         {
             foreach (RadialSample sample in samples ?? Enumerable.Empty<RadialSample>())
             {
-                if (!IsFinite(sample.Point.X) || !IsFinite(sample.Point.Y)) continue;
+                if (!sample.HasPoint || !IsFinite(sample.Point.X) || !IsFinite(sample.Point.Y)) continue;
                 Cv2.Circle(image, ToPoint(sample.Point), sample.Accepted ? 2 : 1, sample.Accepted ? new Scalar(255, 255, 0) : new Scalar(0, 128, 255), -1, LineTypes.AntiAlias);
             }
         }
@@ -460,9 +616,20 @@ namespace OpenVisionLab
         }
         private sealed class RadialSample
         {
+            public int Index { get; set; }
+            public double AngleDeg { get; set; }
             public Point2d Point { get; set; }
+            public double Radius { get; set; }
             public double Strength { get; set; }
+            public double SignedResponse { get; set; }
+            public bool HasPoint { get; set; }
             public bool Accepted { get; set; }
+            public bool FitInlier { get; set; }
+            public bool HasFitResidual { get; set; }
+            public double FitResidual { get; set; }
+            public double ProfileRadiusStart { get; set; }
+            public List<double> IntensityValues { get; set; } = new List<double>();
+            public List<double> SignedResponseValues { get; set; } = new List<double>();
         }
         private struct CircleFit
         {

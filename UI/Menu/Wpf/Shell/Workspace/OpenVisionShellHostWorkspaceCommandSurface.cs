@@ -12,19 +12,22 @@ namespace OpenVisionLab
         private readonly Action<VISION_MENU> selectTool;
         private readonly Func<VISION_MENU?> sampleFirstStepMenuProvider;
         private readonly Func<string> sampleCounterpartNameProvider;
+        private readonly Action applySampleFirstStepParameters;
 
         internal OpenVisionShellHostWorkspaceCommandSurface(
             OpenVisionShellHostCommandController commandController,
             OpenVisionShellHostWorkspacePreviewController workspacePreviewController,
             Action<VISION_MENU> selectTool = null,
             Func<VISION_MENU?> sampleFirstStepMenuProvider = null,
-            Func<string> sampleCounterpartNameProvider = null)
+            Func<string> sampleCounterpartNameProvider = null,
+            Action applySampleFirstStepParameters = null)
         {
             this.commandController = commandController ?? throw new ArgumentNullException(nameof(commandController));
             this.workspacePreviewController = workspacePreviewController ?? throw new ArgumentNullException(nameof(workspacePreviewController));
             this.selectTool = selectTool;
             this.sampleFirstStepMenuProvider = sampleFirstStepMenuProvider;
             this.sampleCounterpartNameProvider = sampleCounterpartNameProvider;
+            this.applySampleFirstStepParameters = applySampleFirstStepParameters;
 
             LoadImageCommand = new RelayCommand(commandController.PromptAndLoadWorkspaceImage);
             OpenSampleCommand = new RelayCommand(commandController.PromptAndOpenRunnableSample, commandController.HasRunnableSample);
@@ -104,6 +107,7 @@ namespace OpenVisionLab
             if (menu.HasValue)
             {
                 selectTool?.Invoke(menu.Value);
+                applySampleFirstStepParameters?.Invoke();
             }
         }
 

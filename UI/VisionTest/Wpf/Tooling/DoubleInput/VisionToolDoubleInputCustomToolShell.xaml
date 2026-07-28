@@ -313,6 +313,7 @@
                     </StackPanel>
                 </Button>
                 <Button x:Name="btnRunPreview"
+                        AutomationProperties.AutomationId="VisionToolRunPreviewButton"
                         Grid.Row="2"
                         Style="{StaticResource VisionTool.PrimaryActionButtonStyle}">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">

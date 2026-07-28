@@ -92,6 +92,7 @@ namespace OpenVisionLab
 
         public static VisionToolResult ExecuteLineGaugePreview(Mat source, LineToolWpfView view)
         {
+            view.ClearSignalEvidence();
             view.EnsureDefaultRoi(source.Width, source.Height);
             LineGaugeProperty selectedProperty = view.CreateSelectedLineProperty();
             if (view.ConsumeThresholdTeachingPreviewRequest() && HasInternalThreshold(selectedProperty))
@@ -102,7 +103,7 @@ namespace OpenVisionLab
 
             if (string.Equals(view.SelectedPurpose, nameof(LineToolPurpose.Measure), StringComparison.Ordinal))
             {
-                return ExecuteLineDistancePreview(source, view);
+                return ExecuteLineDistancePreview(source, view, selectedProperty);
             }
 
             if (string.Equals(view.SelectedPurpose, nameof(LineToolPurpose.Intersection), StringComparison.Ordinal))
@@ -120,6 +121,7 @@ namespace OpenVisionLab
                 Mat drawn = OpenVisionNativeToolPreviewOverlayRenderer.CreateLineGaugePreviewImage(source, tool);
                 result.ResultImage?.Dispose();
                 result.ResultImage = drawn;
+                TryPublishLineSignalEvidence(source, result, selectedProperty, tool.resultList, view);
             }
 
             return result;
@@ -209,7 +211,10 @@ namespace OpenVisionLab
             return result;
         }
 
-        private static VisionToolResult ExecuteLineDistancePreview(Mat source, LineToolWpfView view)
+        private static VisionToolResult ExecuteLineDistancePreview(
+            Mat source,
+            LineToolWpfView view,
+            LineGaugeProperty selectedProperty)
         {
             VisionPipelineLineDistanceTool tool = new VisionPipelineLineDistanceTool(
                 "LineDistance_Preview",
@@ -217,7 +222,55 @@ namespace OpenVisionLab
                 view.CreateLineBProperty());
             VisionToolResult result = tool.Execute(source);
             view.SetDistanceResultReview(result);
+            if (result?.Success == true)
+            {
+                LineGaugeTool diagnosticTool = new LineGaugeTool();
+                diagnosticTool.SetProperty(selectedProperty);
+                VisionToolResult diagnosticResult = diagnosticTool.Execute(source);
+                if (diagnosticResult?.Success == true)
+                {
+                    TryPublishLineSignalEvidence(
+                        source,
+                        result,
+                        selectedProperty,
+                        diagnosticTool.resultList,
+                        view);
+                }
+
+                diagnosticResult?.ResultImage?.Dispose();
+            }
+
             return result;
+        }
+
+        private static void TryPublishLineSignalEvidence(
+            Mat source,
+            VisionToolResult result,
+            LineGaugeProperty property,
+            IEnumerable<LineGaugeResult> results,
+            LineToolWpfView view)
+        {
+            if (result?.ResultImage == null || result.ResultImage.Empty())
+            {
+                return;
+            }
+
+            if (!OpenVisionNativeLineSignalEvidenceFactory.TryCreate(
+                source,
+                property,
+                results,
+                view.SelectedLineName,
+                out OpenVisionNativeLineSignalProfile profile,
+                out _))
+            {
+                return;
+            }
+
+            OpenVisionNativeToolPreviewOverlayRenderer.DrawLineSignalDiagnostic(result.ResultImage, profile);
+            view.ShowSignalEvidence(profile.CreateEvidence(
+                source,
+                result.ResultImage,
+                view.SelectedInputLayer));
         }
 
         private static VisionToolResult ExecuteLineIntersectionPreview(Mat source, LineToolWpfView view)

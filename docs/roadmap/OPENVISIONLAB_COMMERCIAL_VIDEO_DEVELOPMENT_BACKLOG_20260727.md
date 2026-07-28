@@ -1,6 +1,6 @@
 # OpenVisionLab Commercial-Video Development Backlog
 
-Updated: 2026-07-27 KST
+Updated: 2026-07-28 KST
 
 ## Decision And Authority
 
@@ -25,6 +25,15 @@ The current decision is:
 - only `CVR-00` is an active prerequisite;
 - `CVR-01` is complete after the user's explicit 2026-07-27 activation;
 - `CVR-02` is complete after the user's explicit 2026-07-27 continuation;
+- `CVR-03` is complete after the user's explicit 2026-07-28 continuation;
+- `CVR-04` is complete after the user's explicit 2026-07-28 continuation;
+- `CVR-05` is complete after the user's explicit 2026-07-28 continuation;
+- `CVR-06` is complete after the user's explicit 2026-07-28 continuation;
+- `CVR-07` Threshold Basic v1 is complete after the user's explicit 2026-07-28
+  continuation;
+- `CVR-08` is complete after the user explicitly delegated the bounded task
+  choice on 2026-07-28; the selected public synthetic task verifies one circular
+  datum ROI and one pad-presence ROI behind the same existing fixture;
 - no new product feature is automatically active;
 - the earliest incomplete row whose trigger has actual current-source evidence
   becomes the next implementation candidate;
@@ -100,12 +109,12 @@ must use the closest currently available equivalent if a label changes.
 | 0 | `CVR-00` | Independent first-time operator study | Active prerequisite | At least three independent novice participants use the existing protocol. | None before observations; `gpt-5.6-terra` for evidence synthesis afterward | None before observations; low afterward |
 | 1 | `CVR-01` | Shared Tool Signal Inspector foundation | Complete | Explicit user selection on 2026-07-27 activated the bounded shared foundation; the Histogram Tool is the representative integration. | `gpt-5.6-sol` | high |
 | 2 | `CVR-02` | Threshold gray-histogram teaching view | Complete | Explicit user continuation on 2026-07-27 activated the bounded Basic/Range full-image integration; the public BandPads pair is the frozen replay. | `gpt-5.6-sol` | medium |
-| 3 | `CVR-03` | Line intensity and edge-response profile | Conditional on `CVR-01` | A named Line/LineDistance task cannot justify polarity, contrast, or selected edge from current overlays. | `gpt-5.6-sol` | high |
-| 4 | `CVR-04` | Circle radial-sample, inlier/outlier, and residual review | Conditional on `CVR-01` | A CircleGauge task cannot explain fit support or a wrong circle from current drawings and aggregate residual. | `gpt-5.6-sol` | high |
-| 5 | `CVR-05` | Blob/Contour object-metric distribution chart | Conditional on `CVR-01` | A labelled object population needs distribution evidence for existing area/width/height gates. | `gpt-5.6-sol` | medium |
-| 6 | `CVR-06` | Matcher model/pyramid/candidate diagnostic surface | Conditional on `CVR-01` | A frozen matcher run cannot be diagnosed as wrong feature, lost pyramid candidate, no match, or ambiguity from existing result review. | `gpt-5.6-sol` | high |
-| 7 | `CVR-07` | Bounded task-specific teaching suggestions | Conditional | Repeated operator evidence shows that one specific Threshold, Line, or Circle teaching action is slow or error-prone after `CVR-01` through `CVR-06`. | `gpt-5.6-sol` | high |
-| 8 | `CVR-08` | Generic typed fixture-transform consumer for multiple downstream ROIs | Conditional | One qualified locator must drive at least two downstream ROI/measurement Steps and current P212 NormalizeImage/P219 Affine cannot express the task safely. | `gpt-5.6-sol` | high |
+| 3 | `CVR-03` | Line intensity and edge-response profile | Complete | Explicit user continuation on 2026-07-28 activated the bounded current-Preview Line/LineDistance diagnostic; the public Line Pins Good/Bad pair is the frozen replay. | `gpt-5.6-sol` | high |
+| 4 | `CVR-04` | Circle radial-sample, inlier/outlier, and residual review | Complete | Explicit user continuation on 2026-07-28 activated the bounded current-Run CircleGauge diagnostic; one frozen Good circle and Bad ellipse use identical settings. | `gpt-5.6-sol` | high |
+| 5 | `CVR-05` | Blob/Contour object-metric distribution chart | Complete | Explicit user continuation on 2026-07-28 activated the bounded current-Run Object Results distribution; public Blob Good/Bad and Contour Bad exercise the product path. | `gpt-5.6-sol` | medium |
+| 6 | `CVR-06` | Matcher model/pyramid/candidate diagnostic surface | Complete | Explicit user continuation on 2026-07-28 activated the bounded retained-run EdgeBasedMatching diagnostic; public Good/Wrong and a repeated-pattern matrix freeze Success/NoMatch/Ambiguous evidence. | `gpt-5.6-sol` | high |
+| 7 | `CVR-07` | Bounded task-specific teaching suggestions | Complete — Threshold Basic v1 | Explicit user continuation on 2026-07-28 activated one bounded full-image Threshold Basic bright/dark significant-mode suggestion with explicit Use/Undo and public Good/Bad replay. | `gpt-5.6-sol` | high |
+| 8 | `CVR-08` | Generic typed fixture-transform consumer for multiple downstream ROIs | Complete — bounded P212 multi-ROI review extension | User delegation selected the public synthetic fixture task: circular datum verification plus pad-presence inspection, with one locator/NormalizeImage chain and controlled Good/Bad replay. | `gpt-5.6-sol` | high |
 | 9 | `CVR-09` | Straight-edge/dual-edge fixture producer | Conditional after `CVR-08` contract review | A named part has no durable template feature but has two independently verified physical datum edges that must define a fixture. | `gpt-5.6-sol` | high |
 | 10 | `CVR-10` | Multi-instance fixture and bounded sub-recipe fan-out | Conditional after `CVR-08` | A real task requires the same inspection on multiple accepted matches and defines stable instance identity, output naming, review, and acceptance semantics. | `gpt-5.6-sol` | high |
 | 11 | `CVR-11` | Edge matcher polarity modes | Conditional | A labelled N-sample set proves that the same physical feature reverses polarity and current threshold/Canny/search settings cannot preserve the match. | `gpt-5.6-sol` | high |
@@ -189,8 +198,8 @@ Completion:
   existing debounced Preview policy creates the replacement evidence;
 - reset, zoom/pan, and export do not run Preview/Run, create or select a layer,
   or mutate active layer or input/output routes;
-- `CVR-02` through `CVR-06` remain separate tool-specific integrations. CVR-02
-  was completed later; CVR-03 through CVR-06 remain conditional. This
+- `CVR-02` through `CVR-06` remain separate tool-specific integrations. All
+  five were completed later. This
   foundation completion does not itself claim Threshold markers, Line edge
   profiles, Circle residuals, object distributions, or matcher diagnostics.
 
@@ -269,6 +278,64 @@ Minimum slice:
 Do not change the existing `LineGauge`/`LineDistance` runtime merely to make the
 chart look clean. A runtime change requires its own defect evidence.
 
+Completion:
+
+- a successful explicit Line Edge or Measure Preview selects the median
+  successful scan row/column of the currently selected Line A/B result and
+  publishes its prepared grayscale intensity plus signed scan-direction
+  response through the shared Signal Inspector;
+- the diagnostic independently replays the existing first contrast crossing
+  plus thickness-continuity rule and publishes evidence only when that
+  first-stable point exactly matches the retained `LineGauge` result;
+- polarity, minimum contrast, thickness, sampling interval, ROI, scan
+  endpoints, selected source-image point, signed response, spatially distinct
+  unselected alternative, source/result SHA-256, and deterministic evidence ID
+  are retained in the view and TSV;
+- the result image draws the exact representative scan, selected point, and
+  bounded alternatives. The chart keeps the selected and spatially distinct
+  later stable edge separate instead of treating adjacent response samples as
+  separate physical alternatives;
+- the shared plot now supports negative signed values and a visible zero axis
+  without changing positive-only Histogram/Threshold behavior;
+- parameter/input changes, active Tool input-image load, and active `Main`
+  workspace image replacement clear stale Line evidence/result state without
+  Preview. Open/back, cursor, zoom/pan/reset, and TSV export preserve Preview
+  count, layers, active layer, and routes;
+- the frozen `Public_Line_Pins_Good` and
+  `Public_Line_Pins_WidePin_Bad` pair replayed the same `LineDistance`
+  parameters. Good measured `37 px / 0.222 mm / 24 edge points` and selected
+  `(462,242)`; WidePin Bad measured `17.7 px / 0.106 mm / 24 edge points` and
+  selected `(478,242)`. Both retained a spatially distinct later stable edge;
+- an independent synthetic matrix passed `X_LTOR`, `X_RTOL`, `Y_TTOB`, and
+  `Y_BTOT` first-stable replay, and the existing Line/Threshold signal
+  regressions passed.
+
+Evidence:
+
+- `docs/reports/OPENVISIONLAB_LINE_SIGNAL_PROFILE_20260728.md`;
+- `artifacts/cvr03_line_signal_profile_20260728`;
+- focused smoke `wpf_line_signal_profile`;
+- related smokes `wpf_shell_host_line_tool`,
+  `wpf_shell_host_line_pins_measure_tool`,
+  `wpf_shell_host_line_measure_tool`,
+  `wpf_shell_host_line_intersection_tool`,
+  `wpf_shell_host_line_presets`,
+  `wpf_threshold_signal_good_bad_replay`,
+  `wpf_shell_host_threshold_tool`, and
+  `wpf_simple_preprocess_result_review`.
+
+Boundary:
+
+- this is one representative scan from the current selected Line result, not
+  every scan row overlaid at once;
+- distinct later stable transitions are diagnostic alternatives, not new
+  acceptance rules;
+- no `LineGauge`/`LineDistance` detection, fit, measurement, XML, calibration,
+  or acceptance semantics changed;
+- this does not qualify unseen data, field robustness, certified metrology, or
+  any later candidate. `CVR-04` was completed separately from actual
+  CircleGauge runtime evidence.
+
 ### CVR-04 — Circle sampling and residual review
 
 Minimum slice:
@@ -281,6 +348,61 @@ Minimum slice:
 
 It remains pixel geometry unless an existing positive, verified uniform scale is
 applied. It does not add camera calibration.
+
+Completion:
+
+- the existing `CircleGauge` runtime now retains every reviewed radial scan
+  used by the current Run: scan angle/endpoints, prepared intensity, signed
+  response, selected edge position/radius/strength, contrast acceptance,
+  robust-fit inlier state, signed radius residual, and exact reject reason;
+- the evidence is captured inside the existing execution loop. It does not
+  recompute an approximate circle from the final drawing or change edge
+  selection, the initial/refined least-squares fits, the existing robust
+  rejection threshold, support gate, radius gate, or residual gate;
+- Pipeline Review exposes a Circle Evidence tab only for `CircleGauge`. It
+  shows taught/fitted circle values, candidate/inlier/support/coverage and RMS
+  gates, the complete sample table, the residual distribution, and the
+  selected radial intensity/signed-response profile through the shared Tool
+  Signal Inspector;
+- selecting a sample row, residual plot position, or the compact reviewed
+  drawing selects the same stable scan identity. The drawing shows the actual
+  radial scan, fitted circle, selected edge point, inlier/outlier/reject state,
+  and residual without another Preview/Run or layer/route change;
+- frozen settings (`ROI=100,50,200,200`, center `200,150`, radius `50..80`,
+  `180` scans, LightToDark, contrast `>=40`, support `>=0.8`, RMS `<=1 px`)
+  accepted the Good circle at radius `67.831 px`, support `0.917`,
+  coverage `330 deg`, and RMS `0.517 px`. Its 180 scans retained 171 edge
+  candidates, 165 final inliers, 9 contrast rejects, and 6 robust-fit
+  outliers;
+- the identical settings rejected the Bad ellipse at RMS `3.427 px > 1 px`.
+  Row/plot/drawing selection and the two-series selected profile were verified
+  with zero Run Review requests.
+
+Evidence:
+
+- `docs/reports/OPENVISIONLAB_CIRCLE_RESIDUAL_REVIEW_20260728.md`;
+- `artifacts/cvr04_circle_residual_review_20260728`;
+- focused smoke `cvr04_circle_residual_review`;
+- related geometry smokes `p213_geometry_review`,
+  `p213_geometry_property_grid`, and `p214_two_point_scale`;
+- shared signal regressions `wpf_line_signal_profile`,
+  `wpf_threshold_signal_good_bad_replay`, and
+  `wpf_shell_host_threshold_tool`.
+
+Boundary:
+
+- the evidence belongs to the current in-memory Pipeline Run and is not added
+  to saved Run Report/history persistence in this slice;
+- values remain pixel geometry. Existing positive uniform scale behavior is
+  unchanged, and no camera calibration, distortion correction, or certified
+  metrology is added;
+- the synthetic Good/Bad pair proves the named diagnostic and unchanged
+  frozen gate replay only. It does not prove unseen-data robustness,
+  production accuracy, or field qualification;
+- no new algorithm family, XML parameter, CircleGauge detection/fit/gate
+  semantic, automatic parameter choice, or acceptance rule was introduced.
+- `CVR-05` was completed separately from the existing Blob/Contour Object
+  Results contract.
 
 ### CVR-05 — Object-metric distribution
 
@@ -295,6 +417,63 @@ Minimum slice:
 Add circularity, aspect ratio, angle, holes, or gray features only through
 `CVR-16` after a separate named task proves the need.
 
+Completion:
+
+- Pipeline Review reuses the current `VisionPipelineObjectResult` rows retained
+  by the existing Blob/Contour execution path; it does not rerun segmentation
+  or create a second candidate population;
+- the Object Results tab now presents the selected-object drawing, existing
+  object table, and a shared two-series binned distribution together. Operators
+  explicitly select `Area`, `Bounds width`, or `Bounds height`;
+- accepted and rejected candidates are separate green/red series. The exact
+  selected row and reject reason remain visible, and table, image, and plot
+  selection resolve to the same stable object number without another
+  Preview/Run;
+- the selected metric reads exactly one existing range:
+  `MIN_AREA/MAX_AREA`, `MIN_WIDTH/MAX_WIDTH`, or
+  `MIN_HEIGHT/MAX_HEIGHT`. Markers are read-only current Pipeline/PropertyGrid
+  values; the view does not recommend or apply a gate;
+- a missing legacy maximum preserves the existing `1000000` unbounded
+  compatibility sentinel. It is stated as unbounded and omitted from plot
+  scaling so a useful distribution is not compressed by a fake finite
+  operating limit;
+- source/result SHA-256, stable evidence ID, tool/input/region/parameter
+  identity, counts, range values, and accepted/rejected bin counts use the
+  shared Tool Signal evidence/TSV contract;
+- a frozen five-row UI matrix retained two accepted and three rejected rows,
+  including area-low, area-high, and width-high exact reasons. Blob
+  Area/Width/Height and Contour Area identities/ranges passed;
+- the actual public product path passed for
+  `Public_Blob_Particles_Good` (`ResultCount=12`, 245 retained audit rows),
+  `Public_Blob_Particles_Sparse_Bad` (`ResultCount=3`, 253 retained audit
+  rows), and `Public_Contour_Shapes_Missing_Bad` (`ResultCount=2`, 2 retained
+  rows) with two distribution series, two finite Area markers, a 64-character
+  evidence ID, object row/drawing selection, and unchanged
+  layer/route/Preview state.
+
+Evidence:
+
+- `docs/reports/OPENVISIONLAB_OBJECT_METRIC_DISTRIBUTION_20260728.md`;
+- `artifacts/cvr05_object_metric_distribution_20260728`;
+- focused smoke `cvr05_object_metric_distribution`;
+- actual public-product smokes
+  `wpf_shell_host_workspace_sample_pipeline_review_metrics`,
+  `wpf_shell_host_workspace_sample_pipeline_review_blob_ng_metrics`, and
+  `wpf_shell_host_workspace_sample_pipeline_review_bentpin_ng_metrics`;
+- runtime regression `--object-dimension-filter-contract`.
+
+Boundary:
+
+- the distribution uses only existing axis-aligned pixel `Area`,
+  `BoundsWidth`, and `BoundsHeight`. It does not add circularity, aspect ratio,
+  rotated size, angle gates, holes, grayscale descriptors, or semantic
+  classification;
+- markers are review evidence, not an editing or automatic suggestion surface;
+- the bounded synthetic/public samples do not prove unseen-data robustness,
+  production accuracy, or field qualification;
+- no Blob/Contour detector, filter order, ResultCount, aggregate metric,
+  XML/property, report-persistence, or acceptance semantics changed.
+
 ### CVR-06 — Matcher diagnostic surface
 
 Minimum slice:
@@ -307,6 +486,41 @@ Minimum slice:
 
 The surface is diagnostic only. It must not lower gates, change defaults,
 auto-select a pattern, or turn diagnostic risk metrics into acceptance rules.
+
+Completion:
+
+- Library-Noah retains the exact trained edge-model points, model center,
+  search ROI, primary hypothesis, strongest spatially distinct alternative
+  when present, decision state/reason, and existing model/candidate/unique
+  metrics;
+- Pipeline Review renders the trained model and exact source-coordinate
+  candidates, and distinguishes accepted `Selected`, `Best observed (below
+  gate)`, and `Rejected primary hypothesis`;
+- model-pyramid usability levels are shown separately from the actual existing
+  coarse proposal scale and proposal/verification/acceptance/fallback
+  counters;
+- one public Good run retained `Success`, one public Wrong run retained the
+  exact `MatchingNoResult`, and a deterministic repeated-pattern matrix
+  retained two equal-score spatially distinct hypotheses with the exact
+  `MatchingAmbiguous` reason;
+- diagnostic inspection does not rerun Preview/Run or change layers, active
+  layer, routes, matcher defaults, XML, PropertyGrid, gates, or acceptance.
+
+Evidence:
+
+- `docs/reports/OPENVISIONLAB_MATCHER_DIAGNOSTIC_SURFACE_20260728.md`;
+- `artifacts/cvr06_matcher_diagnostic_20260728`;
+- Library-Noah Release build and `66/66` inspection smoke;
+- focused current-source UI smokes `cvr06_matcher_diagnostic`,
+  `wpf_shell_host_workspace_sample_pipeline_review_edge_ng_metrics`, and
+  `wpf_shell_host_edge_based_matching_tool`.
+
+Boundary:
+
+- this does not qualify a physical feature or template, choose a pattern,
+  change matching semantics, or complete any of `CVR-11` through `CVR-15`;
+- `CVR-07` was subsequently activated by explicit user selection and completed
+  as the bounded Threshold Basic v1 contract below.
 
 ### CVR-07 — Bounded teaching suggestions
 
@@ -321,7 +535,85 @@ Implement one task-specific suggestion contract at a time:
 Do not create a generic MERLIC easyTouch clone. Existing Auto MPoint remains the
 reference for suggestion/explicit-accept separation.
 
+Completion — Threshold Basic v1:
+
+- one retained explicit Preview provides the full-image 256-bin source
+  histogram; analysis does not run the tool again;
+- Binary selects a bright-object candidate between the two highest retained
+  significant gray modes, while BinaryInv mirrors the direction for a
+  dark-object candidate;
+- the UI shows one exact orange candidate marker, mode pair, separation, lower
+  and upper populations, source hash, region, and stable evidence ID;
+- a one-mode or undersized-class histogram rejects the candidate and leaves
+  manual teaching unchanged;
+- only explicit `Use T` changes the teaching value and follows the existing
+  debounced Preview policy; the previous same-source value remains recoverable
+  with `Undo`;
+- the first global Otsu attempt was genuinely rejected at `T=73` because the
+  public Good and Bad both returned `ResultCount=0`;
+- one bounded bright-mode correction produced `T=138` from modes `97/178` and
+  preserved public Good `ResultCount=4` / Bad `ResultCount=1`;
+- Analyze, candidate review, and unrelated navigation do not change Preview/
+  Run count, layers, active layer, or routes.
+
+Evidence:
+
+- `docs/reports/OPENVISIONLAB_THRESHOLD_TEACHING_SUGGESTION_20260728.md`;
+- `artifacts/cvr07_threshold_suggestion_20260728`;
+- focused `cvr07_threshold_suggestion`, Threshold Basic/full, frozen CVR-02
+  Good/Bad, CVR-06, and readiness regressions.
+
+Boundary:
+
+- this completes one task-specific Threshold Basic v1 contract only;
+- Range, Adaptive, ROI suggestions, Line, Circle, generic easyTouch,
+  automatic apply, automatic gate changes, and additional suggestion families
+  remain excluded until a separate exact trigger or explicit user selection.
+
 ### CVR-08 — Generic typed fixture consumer
+
+2026-07-28 activation audit (historical):
+
+- the current NormalizeImage runtime already produces a reusable
+  reference-coordinate layer and normal Pipeline routing can reach multiple
+  downstream Steps;
+- P212 review returns the first reachable valid `CvROI`, so its current
+  presentation is single-ROI;
+- the only tracked public NormalizeImage Pipeline contains one downstream ROI;
+- P235 preserves a 24-row qualified-with-limits locator set, but its exact
+  promoted Pipeline is one EdgeBasedMatching Step without a published fixture
+  frame, taught reference pose/image size, NormalizeImage, downstream ROI, or
+  inspection gate;
+- no named operator task currently supplies two physical ROIs, their existing
+  tools/metrics/gates, Good/Bad evidence, and a demonstrated P212/P219 blocker.
+
+Decision at audit time: `Blocked`. The audit remains the evidence for why a new
+transform runtime was not justified. Audit and source evidence:
+`docs/reports/OPENVISIONLAB_CVR08_TRIGGER_AUDIT_20260728.md`.
+
+Subsequent explicit decision and completion:
+
+- the user delegated the bounded task choice with `알아서 해주세요`;
+- the selected public synthetic task uses the already reviewed fixture locator
+  and `NormalizeImage` output;
+- ROI A `210,240,55,55` verifies the circular datum with existing `Blob`,
+  `Area=350..600`, and `ResultCount=1`;
+- ROI B `320,180,60,50` verifies pad presence with existing `Blob`,
+  `Area=700..1300`, and `ResultCount=1`;
+- the Good sample passes both consumers; the controlled missing-pad Bad sample
+  keeps the datum consumer OK and fails only the pad consumer;
+- Pipeline Review now retains every reachable single-`CvROI` consumer with
+  stable evidence identity, route/status/ROI columns, all source/reference
+  polygons, selected highlighting, and selected Recipe Manager edit handoff;
+- row selection does not execute Preview/Run or mutate layers, active layer,
+  routes, or the saved recipe.
+
+Evidence:
+
+- `docs/reports/OPENVISIONLAB_CVR08_MULTI_ROI_FIXTURE_20260728.md`;
+- `artifacts/cvr08_multi_roi_fixture_20260728`;
+- focused `wpf_shell_host_workspace_sample_normalize_fixture_review` and legacy
+  fixture-review regressions.
 
 Minimum slice:
 
@@ -522,5 +814,5 @@ Scope: Durable full commercial-video development candidate inventory, ordered pr
 Acceptance criteria: All 16 reviewed videos map to retained candidates or explicit exclusions; every ordered row has a trigger and model/reasoning recommendation; future chats are instructed not to lose or auto-activate the queue.
 Verification: Cross-checked against the 2026-07-27 commercial-video report, current handoff, first-time operator audit, P217 feature-admission decision, AGENTS.md, and the canonical documentation map.
 Evidence: docs/roadmap/OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md and docs/reports/OPENVISIONLAB_COMMERCIAL_RULEBASE_VIDEO_REVIEW_20260727.md
-Boundary / next dependency: CVR-01 and CVR-02 are complete. CVR-00 remains the only active prerequisite; CVR-03 and later rows still require their exact current-source trigger or an explicit user decision and must not be auto-activated.
+Boundary / next dependency: CVR-01 through CVR-08 are complete. CVR-00 remains the only active prerequisite; CVR-09 and later rows still require their exact current-source trigger or an explicit user decision and must not be auto-activated.
 ```

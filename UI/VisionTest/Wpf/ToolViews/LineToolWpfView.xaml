@@ -41,16 +41,29 @@
                         <RadioButton x:Name="rdoPurposeEdge"
                                      Content="Edge"
                                      GroupName="LinePurpose"
+                                     AutomationProperties.AutomationId="LineToolPurposeEdge"
                                      Style="{StaticResource VisionTool.SegmentedRadioButtonStyle}"
                                      IsChecked="True" />
                         <RadioButton x:Name="rdoPurposeMeasure"
                                      Content="Measure"
                                      GroupName="LinePurpose"
+                                     AutomationProperties.AutomationId="LineToolPurposeMeasure"
                                      Style="{StaticResource VisionTool.SegmentedRadioButtonStyle}" />
                         <RadioButton x:Name="rdoPurposeIntersection"
                                      Content="Intersection"
                                      GroupName="LinePurpose"
+                                     AutomationProperties.AutomationId="LineToolPurposeIntersection"
                                      Style="{StaticResource VisionTool.SegmentedRadioButtonStyle}" />
+                        <Button x:Name="btnOpenSignalInspector"
+                                Height="28"
+                                MinWidth="112"
+                                Margin="8,0,0,0"
+                                Padding="8,0"
+                                Click="OpenSignalInspector_Click"
+                                Content="Review signal"
+                                Visibility="Collapsed"
+                                ToolTip="Review the representative scan intensity and edge response"
+                                AutomationProperties.AutomationId="LineSignalInspectorOpenButton" />
                     </StackPanel>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4,0,0">
                         <TextBlock x:Name="txtLineSelectorLabel"
@@ -62,11 +75,13 @@
                         <RadioButton x:Name="rdoLineA"
                                      Content="Line A"
                                      GroupName="LineSetting"
+                                     AutomationProperties.AutomationId="LineToolSettingA"
                                      Style="{StaticResource VisionTool.SegmentedRadioButtonStyle}"
                                      IsChecked="True" />
                         <RadioButton x:Name="rdoLineB"
                                      Content="Line B"
                                      GroupName="LineSetting"
+                                     AutomationProperties.AutomationId="LineToolSettingB"
                                      Style="{StaticResource VisionTool.SegmentedRadioButtonStyle}" />
                         <Button x:Name="btnEditSelectedRoi"
                                 Width="30"
@@ -91,5 +106,42 @@
                 </Grid>
             </Border>
         </StackPanel>
+
+        <Grid x:Name="lineSignalInspectorOverlay"
+              Margin="14"
+              Panel.ZIndex="20"
+              Visibility="Collapsed"
+              IsHitTestVisible="True"
+              AutomationProperties.AutomationId="LineSignalInspectorOverlay">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="390" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="2"
+                    Padding="10"
+                    Background="{StaticResource VisionTool.SurfaceBrush}"
+                    BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
+                    BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="6" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Button x:Name="btnCloseSignalInspector"
+                            HorizontalAlignment="Left"
+                            MinWidth="132"
+                            Height="30"
+                            Padding="10,0"
+                            Click="CloseSignalInspector_Click"
+                            Content="Back to parameters"
+                            AutomationProperties.AutomationId="LineSignalInspectorBackButton" />
+                    <local:VisionToolSignalInspectorView x:Name="signalInspector"
+                                                         Grid.Row="2"
+                                                         VerticalAlignment="Top" />
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </local:VisionToolSingleInputPropertyToolViewBase>

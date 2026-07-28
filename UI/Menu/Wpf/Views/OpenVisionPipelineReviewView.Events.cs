@@ -69,6 +69,19 @@ namespace OpenVisionLab
             EditFixtureMeasurementRequested?.Invoke(this, EventArgs.Empty);
         }
 
+        private void FixtureConsumerGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (suppressFixtureConsumerSelection
+                || fixtureConsumerGrid.SelectedItem is not OpenVisionPipelineReviewFixtureConsumerRow row)
+            {
+                return;
+            }
+
+            FixtureConsumerSelected?.Invoke(
+                this,
+                new OpenVisionPipelineReviewFixtureConsumerSelectedEventArgs(row.StepIndex));
+        }
+
         private void BtnOpenPairSample_Click(object sender, RoutedEventArgs e)
         {
             OpenPairSampleRequested?.Invoke(this, EventArgs.Empty);
@@ -173,6 +186,23 @@ namespace OpenVisionLab
             e.Handled = true;
         }
 
+        private void ImgCircleEvidencePreview_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is not Image image
+                || !TryTranslateImageClickToImagePoint(
+                    image,
+                    objectResultBaseImage,
+                    e.GetPosition(image),
+                    out double x,
+                    out double y))
+            {
+                return;
+            }
+
+            SelectCircleSampleAtImagePointForTest(x, y);
+            e.Handled = true;
+        }
+
         private void ObjectResultsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (suppressObjectSelection)
@@ -183,6 +213,7 @@ namespace OpenVisionLab
             VisionPipelineObjectResult selected = objectResultsGrid?.SelectedItem as VisionPipelineObjectResult;
             suppressObjectSelection = true;
             ShowObjectHighlight(selected);
+            UpdateObjectMetricSelection();
             suppressObjectSelection = false;
         }
 
@@ -197,6 +228,90 @@ namespace OpenVisionLab
             suppressGeometrySelection = true;
             ShowGeometryHighlight(selected);
             suppressGeometrySelection = false;
+        }
+
+        private void CircleSamplesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (suppressCircleSelection)
+            {
+                return;
+            }
+
+            VisionPipelineCircleSampleEvidence selected =
+                circleSamplesGrid?.SelectedItem as VisionPipelineCircleSampleEvidence;
+            if (selected == null)
+            {
+                RestoreObjectResultPreview();
+                RefreshCircleEvidencePlot();
+                return;
+            }
+
+            ShowCircleSampleHighlight(selected);
+            RefreshCircleEvidencePlot();
+        }
+
+        private void CircleEvidencePlot_SampleSelectionRequested(
+            object sender,
+            VisionToolSignalSampleSelectedEventArgs e)
+        {
+            if (showCircleProfile || circleSamples == null || circleSamples.Count == 0)
+            {
+                return;
+            }
+
+            int number = (int)Math.Round(e.X);
+            VisionPipelineCircleSampleEvidence selected =
+                circleSamples.OrderBy(item => Math.Abs(item.Number - number)).FirstOrDefault();
+            if (selected != null)
+            {
+                SelectCircleSampleInternal(selected);
+            }
+        }
+
+        private void ObjectMetricPlot_SampleSelectionRequested(
+            object sender,
+            VisionToolSignalSampleSelectedEventArgs e)
+        {
+            if (objectMetricDistribution == null || objectResults == null || objectResults.Count == 0)
+            {
+                return;
+            }
+
+            VisionPipelineObjectResult selected = objectResults
+                .OrderBy(item => Math.Abs(objectMetricDistribution.GetValue(item) - e.X))
+                .ThenBy(item => item.Number)
+                .FirstOrDefault();
+            if (selected != null)
+            {
+                SelectObjectAtInternal(selected);
+            }
+        }
+
+        private void BtnObjectMetricArea_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            SelectObjectMetricKindInternal(VisionPipelineObjectMetricKind.Area);
+        }
+
+        private void BtnObjectMetricWidth_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            SelectObjectMetricKindInternal(VisionPipelineObjectMetricKind.BoundsWidth);
+        }
+
+        private void BtnObjectMetricHeight_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            SelectObjectMetricKindInternal(VisionPipelineObjectMetricKind.BoundsHeight);
+        }
+
+        private void BtnCircleResidualPlot_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            showCircleProfile = false;
+            RefreshCircleEvidencePlot();
+        }
+
+        private void BtnCircleProfilePlot_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            showCircleProfile = true;
+            RefreshCircleEvidencePlot();
         }
 
         private void SelectObjectAt(double x, double y)
@@ -241,6 +356,7 @@ namespace OpenVisionLab
             objectResultsGrid.SelectedItem = item;
             objectResultsGrid.ScrollIntoView(item);
             ShowObjectHighlight(item);
+            UpdateObjectMetricSelection();
             suppressObjectSelection = false;
         }
 
@@ -351,6 +467,30 @@ namespace OpenVisionLab
             }
 
             DrawingBitmap preview = OpenVisionPipelineReviewViewRenderService.CreateGeometryHighlight(objectResultBaseImage, item);
+            if (preview == null)
+            {
+                RestoreObjectResultPreview();
+                return;
+            }
+
+            ViewModel.SetHighlightedOutputPreview(preview);
+            preview.Dispose();
+            HasObjectHighlight = true;
+        }
+
+        private void ShowCircleSampleHighlight(VisionPipelineCircleSampleEvidence item)
+        {
+            if (item == null || objectResultBaseImage == null || circleEvidence == null)
+            {
+                RestoreObjectResultPreview();
+                return;
+            }
+
+            DrawingBitmap preview =
+                OpenVisionPipelineReviewCircleEvidenceRenderService.CreateSampleHighlight(
+                    objectResultBaseImage,
+                    circleEvidence,
+                    item);
             if (preview == null)
             {
                 RestoreObjectResultPreview();

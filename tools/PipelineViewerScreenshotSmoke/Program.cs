@@ -104,11 +104,16 @@ internal static class Program
         ["wpf_shell_host_workspace_product_sample_pair_open"] = CaptureShellHostWorkspaceProductSamplePairOpen,
         ["wpf_shell_host_workspace_sample_pipeline_review_ng_metrics"] = CaptureShellHostWorkspaceSamplePipelineReviewNgMetrics,
         ["wpf_shell_host_workspace_sample_pipeline_review_feature_ng_metrics"] = CaptureShellHostWorkspaceSamplePipelineReviewFeatureNgMetrics,
+        ["wpf_shell_host_workspace_sample_pipeline_review_edge_ng_metrics"] = CaptureShellHostWorkspaceSamplePipelineReviewEdgeNgMetrics,
         ["wpf_shell_host_workspace_sample_pipeline_review_line_ng_metrics"] = CaptureShellHostWorkspaceSamplePipelineReviewLineNgMetrics,
         ["wpf_shell_host_workspace_sample_pipeline_review_blob_ng_metrics"] = CaptureShellHostWorkspaceSamplePipelineReviewBlobNgMetrics,
         ["wpf_shell_host_workspace_sample_pipeline_review_bentpin_ng_metrics"] = CaptureShellHostWorkspaceSamplePipelineReviewBentPinNgMetrics,
         ["wpf_shell_host_workspace_sample_pipeline_review_film_ng_metrics"] = CaptureShellHostWorkspaceSamplePipelineReviewFilmNgMetrics,
         ["p213_geometry_review"] = CaptureP213GeometryReview,
+        ["cvr06_matcher_diagnostic"] = CaptureCvr06MatcherDiagnostic,
+        ["cvr07_threshold_suggestion"] = CaptureCvr07ThresholdSuggestion,
+        ["cvr05_object_metric_distribution"] = CaptureCvr05ObjectMetricDistribution,
+        ["cvr04_circle_residual_review"] = CaptureCvr04CircleResidualReview,
         ["p213_geometry_property_grid"] = CaptureP213GeometryPropertyGrid,
         ["p219_affine_point_binding_property_grid"] = CaptureP219AffinePointBindingPropertyGrid,
         ["p214_two_point_scale"] = CaptureP214TwoPointScale,
@@ -216,6 +221,7 @@ internal static class Program
         ["wpf_shell_host_line_presets"] = CaptureShellHostLinePresets,
         ["wpf_shell_host_line_measure_tool"] = CaptureShellHostLineMeasureTool,
         ["wpf_shell_host_line_pins_measure_tool"] = CaptureShellHostLinePinsMeasureTool,
+        ["wpf_line_signal_profile"] = CaptureLineSignalProfile,
         ["wpf_shell_host_line_intersection_tool"] = CaptureShellHostLineIntersectionTool,
         ["wpf_shell_host_matching_tool"] = CaptureShellHostMatchingTool,
         ["wpf_shell_host_matching_tool_docked_verification"] = CaptureShellHostMatchingTool,
@@ -10236,13 +10242,249 @@ internal static class Program
                 || string.IsNullOrWhiteSpace(shellHost.PipelineReviewRunLogText)
                 || !shellHost.PipelineReviewGuideResultDecisionText.Contains("OK", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewResultDetailText.Contains("Result", StringComparison.OrdinalIgnoreCase)
-                || !shellHost.HasPipelineReviewOutputPreview)
+                || !shellHost.HasPipelineReviewOutputPreview
+                || shellHost.PipelineReviewObjectMetricDistributionSeriesCountForTest != 2
+                || shellHost.PipelineReviewObjectMetricDistributionMarkerCountForTest != 2
+                || !string.Equals(shellHost.PipelineReviewObjectMetricDistributionMetricForTest, "Area", StringComparison.Ordinal)
+                || shellHost.PipelineReviewObjectMetricDistributionEvidenceIdForTest.Length != 64)
             {
                 throw new InvalidOperationException(
-                    "WPF workspace sample Pipeline Review did not expose OK decision, primary result metric, run log, and output preview. "
-                    + $"ReviewText='{reviewText}', OutputPreview={shellHost.HasPipelineReviewOutputPreview}");
+                    "WPF workspace sample Pipeline Review did not expose OK decision, primary result metric, run log, output preview, and current Area distribution. "
+                    + $"ReviewText='{reviewText}', OutputPreview={shellHost.HasPipelineReviewOutputPreview}, "
+                    + $"Distribution={shellHost.PipelineReviewObjectMetricDistributionSeriesCountForTest}/"
+                    + $"{shellHost.PipelineReviewObjectMetricDistributionMarkerCountForTest}/"
+                    + $"{shellHost.PipelineReviewObjectMetricDistributionMetricForTest}");
             }
+
+            WriteObjectMetricRuntimeEvidence(
+                outputPath,
+                sampleName,
+                shellHost,
+                shellHost.PipelineReviewObjectResultCountForTest);
         }, captureFloatingToolWindow: true);
+    }
+
+    private static CaptureResult CaptureCvr06MatcherDiagnostic(string outputPath)
+    {
+        const string sampleName = "Public_Edge_Fiducial_Good";
+
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        VisionPipelineSampleCatalogItem sample = FindRunnableCatalogSample(sampleName);
+        AssertSampleSourceKind(sample, sampleName, VisionPipelineSampleCatalogSourceKind.Public);
+        VisionPipelineSampleCheckResult sampleCheck = VisionPipelineSampleCheckService.RunSampleCheckSafe(sample);
+        if (!sampleCheck.Success
+            || !sampleCheck.MetricText.Contains("ScoreMax", StringComparison.OrdinalIgnoreCase)
+            || !sampleCheck.MetricText.Contains("ResultCount", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "CVR-06 public EdgeBasedMatching baseline did not pass with retained score/count metrics. "
+                + $"Sample={sampleName}, Status={sampleCheck.Status}, Message={sampleCheck.Message}, Metrics={sampleCheck.MetricText}");
+        }
+
+        OpenVisionShellHostView shellHost = CreateShellHost(
+            "Smoke_Cvr06MatcherDiagnostic",
+            seedMainLayer: false);
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            (_, int activePipelineStepCount, _) = OpenWorkspaceSamplePipelineReviewForSmoke(
+                shellHost,
+                sampleName,
+                "CVR-06 Matcher diagnostic",
+                minStepCount: 1);
+
+            WaitForTaskWithPump(
+                shellHost.RunPipelineReviewForTestAsync(),
+                30000,
+                "CVR-06 public EdgeBasedMatching Pipeline Review execution");
+            Pump(120);
+            shellHost.SelectPipelineReviewStepForTest(
+                activePipelineStepCount - 1,
+                OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
+            Pump(80);
+
+            if (!shellHost.PipelineReviewResultSummaryText.Contains("OK", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.HasPipelineReviewOutputPreview
+                || !shellHost.PipelineReviewMatcherDiagnosticTabVisibleForTest
+                || !string.Equals(
+                    shellHost.PipelineReviewMatcherDiagnosticStateForTest,
+                    "Success",
+                    StringComparison.Ordinal)
+                || shellHost.PipelineReviewMatcherDiagnosticEvidenceIdForTest.Length != 64
+                || shellHost.PipelineReviewMatcherDiagnosticRowCountForTest < 20
+                || shellHost.PipelineReviewMatcherDiagnosticModelPointCountForTest <= 0
+                || !shellHost.PipelineReviewMatcherDiagnosticHasSelectedCandidateForTest)
+            {
+                throw new InvalidOperationException(
+                    "CVR-06 baseline did not retain the current EdgeBasedMatching result review. "
+                    + $"Summary='{shellHost.PipelineReviewResultSummaryText}', "
+                    + $"Detail='{shellHost.PipelineReviewResultDetailText}', "
+                    + $"Output={shellHost.HasPipelineReviewOutputPreview}, "
+                    + $"Matcher={shellHost.PipelineReviewMatcherDiagnosticStateForTest}/"
+                    + $"{shellHost.PipelineReviewMatcherDiagnosticRowCountForTest}/"
+                    + $"{shellHost.PipelineReviewMatcherDiagnosticModelPointCountForTest}");
+            }
+
+            WriteCvr06MatcherDiagnosticMatrix(outputPath);
+            Window reviewWindow = GetActiveFloatingToolWindow("CVR-06 Matcher diagnostic");
+            reviewWindow.Width = 1500D;
+            reviewWindow.Height = 880D;
+            reviewWindow.Left = 20D;
+            reviewWindow.Top = 20D;
+            Pump(60);
+        }, captureFloatingToolWindow: true);
+    }
+
+    private static void WriteCvr06MatcherDiagnosticMatrix(string outputPath)
+    {
+        string templatePath = Path.GetFullPath(Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "docs",
+            "samples",
+            "public",
+            "templates",
+            "Edge_Fiducial_Synthetic_Template.png"));
+        using CvMat template = Cv.ImRead(templatePath, CvImreadModes.Grayscale);
+        if (template.Empty())
+        {
+            throw new InvalidOperationException("CVR-06 matrix template could not be loaded: " + templatePath);
+        }
+
+        int sourceWidth = Math.Max(520, (template.Width * 3) + 100);
+        int sourceHeight = Math.Max(320, template.Height + 120);
+        using CvMat successSource = new(sourceHeight, sourceWidth, OpenCvSharp.MatType.CV_8UC1, OpenCvSharp.Scalar.All(24));
+        using CvMat ambiguousSource = successSource.Clone();
+        using CvMat noMatchSource = new(sourceHeight, sourceWidth, OpenCvSharp.MatType.CV_8UC1, OpenCvSharp.Scalar.All(24));
+        int firstX = 50;
+        int secondX = sourceWidth - template.Width - 50;
+        int y = Math.Max(20, (sourceHeight - template.Height) / 2);
+        using (CvMat firstTarget = new(successSource, new OpenCvSharp.Rect(firstX, y, template.Width, template.Height)))
+        {
+            template.CopyTo(firstTarget);
+        }
+        using (CvMat firstAmbiguous = new(ambiguousSource, new OpenCvSharp.Rect(firstX, y, template.Width, template.Height)))
+        using (CvMat secondAmbiguous = new(ambiguousSource, new OpenCvSharp.Rect(secondX, y, template.Width, template.Height)))
+        {
+            template.CopyTo(firstAmbiguous);
+            template.CopyTo(secondAmbiguous);
+        }
+
+        List<string> lines = new()
+        {
+            "Case\tSuccess\tState\tError\tModelPoints\tSelected\tAlternative\tEvidenceId\tReason"
+        };
+        RunCvr06MatcherDiagnosticCase(
+            "success",
+            successSource,
+            template,
+            outputPath,
+            lines,
+            expectedState: "Success",
+            expectSelected: true,
+            expectAlternative: false);
+        RunCvr06MatcherDiagnosticCase(
+            "no_match",
+            noMatchSource,
+            template,
+            outputPath,
+            lines,
+            expectedState: "NoMatch",
+            expectSelected: true,
+            expectAlternative: null);
+        RunCvr06MatcherDiagnosticCase(
+            "ambiguous",
+            ambiguousSource,
+            template,
+            outputPath,
+            lines,
+            expectedState: "Ambiguous",
+            expectSelected: true,
+            expectAlternative: true);
+
+        string directory = Path.GetDirectoryName(outputPath) ?? Directory.GetCurrentDirectory();
+        Directory.CreateDirectory(directory);
+        File.WriteAllLines(Path.Combine(directory, "matcher-diagnostic-matrix.tsv"), lines);
+    }
+
+    private static void RunCvr06MatcherDiagnosticCase(
+        string caseName,
+        CvMat source,
+        CvMat template,
+        string outputPath,
+        ICollection<string> lines,
+        string expectedState,
+        bool expectSelected,
+        bool? expectAlternative)
+    {
+        EdgeBasedMatchingProperty property = new("CVR06_" + caseName)
+        {
+            SCORE_MIN = 0.70D,
+            NUM_MATCH = 1,
+            CANNY_LOW = 30,
+            CANNY_HIGH = 90,
+            MAX_TEMPLATE_POINTS = 500,
+            SEARCH_STEP = 1,
+            USE_POSITION_REFINE = true,
+            USE_UNIQUE_MATCH_VALIDATION = true,
+            UNIQUE_MATCH_MIN_SCORE_MARGIN = 0.05D,
+            USE_DRAW_IMAGE = true,
+            USE_THRESHOLD = false,
+            USE_ADAPTIVE_THRESHOLD = false
+        };
+        EdgeBasedTemplateMatchingTool tool = new();
+        tool.SetProperty(property);
+        tool.SetTemplateImage(template);
+        VisionToolResult result = tool.Execute(source);
+        try
+        {
+            using Bitmap sourceBitmap = Lib.Common.BitmapImageConverter.ToBitmap(source);
+            using OpenVisionPipelineReviewMatcherDiagnosticState state =
+                OpenVisionPipelineReviewMatcherDiagnosticPresenter.Create(
+                    result.EdgeBasedMatchingDiagnostics,
+                    result.Metrics,
+                    sourceBitmap);
+            if (state == null
+                || !string.Equals(state.State, expectedState, StringComparison.Ordinal)
+                || state.ModelPointCount <= 0
+                || state.HasSelectedCandidate != expectSelected
+                || (expectAlternative.HasValue
+                    && state.HasStrongestSpatialAlternative != expectAlternative.Value)
+                || state.EvidenceId.Length != 64
+                || state.Rows.Count < 20)
+            {
+                throw new InvalidOperationException(
+                    "CVR-06 matcher diagnostic matrix case failed. "
+                    + $"Case={caseName}, Expected={expectedState}/{expectSelected}/{expectAlternative}, "
+                    + $"Actual={state?.State}/{state?.HasSelectedCandidate}/{state?.HasStrongestSpatialAlternative}, "
+                    + $"Error={result.ErrorName}, Message={result.Message}");
+            }
+
+            string directory = Path.GetDirectoryName(outputPath) ?? Directory.GetCurrentDirectory();
+            Directory.CreateDirectory(directory);
+            state.ModelPreview.Save(
+                Path.Combine(directory, caseName + "-model.png"),
+                ImageFormat.Png);
+            state.CandidatePreview.Save(
+                Path.Combine(directory, caseName + "-candidates.png"),
+                ImageFormat.Png);
+            lines.Add(string.Join(
+                "\t",
+                caseName,
+                result.Success,
+                state.State,
+                result.ErrorName,
+                state.ModelPointCount,
+                state.HasSelectedCandidate,
+                state.HasStrongestSpatialAlternative,
+                state.EvidenceId,
+                (result.EdgeBasedMatchingDiagnostics?.Reason ?? string.Empty)
+                    .Replace("\t", " ")
+                    .Replace("\r", " ")
+                    .Replace("\n", " ")));
+        }
+        finally
+        {
+            result.ResultImage?.Dispose();
+        }
     }
 
     private static CaptureResult CaptureShellHostWorkspaceSampleFixtureReview(string outputPath)
@@ -10295,6 +10537,10 @@ internal static class Program
                 shellHost.PipelineReviewGuideResultDecisionText,
                 shellHost.PipelineReviewGuidePairMetricText);
             Window reviewWindow = GetActiveFloatingToolWindow("Workspace Fixture sample Pipeline Review coherence");
+            TabItem stepDetailsTab = FindNamedVisualChild<TabItem>(reviewWindow, "stepDetailsTab")
+                ?? throw new InvalidOperationException("Workspace Fixture Step Details tab was not available.");
+            stepDetailsTab.IsSelected = true;
+            Pump(40);
             AssertVisibleAutomationIds(
                 reviewWindow,
                 "Workspace Fixture selected-tool Learn entry",
@@ -10439,18 +10685,34 @@ internal static class Program
         };
         string? missingGoodMetric = requiredGoodMetrics.FirstOrDefault(metric =>
             !goodCheck.MetricText.Contains(metric, StringComparison.OrdinalIgnoreCase));
-        if (!goodCheck.Success
-            || !badCheck.Success
-            || !badSample.ExpectsFailure
-            || !string.IsNullOrWhiteSpace(missingGoodMetric)
-            || !badCheck.MetricText.Contains("ResultCount=0", StringComparison.OrdinalIgnoreCase)
-            || !badCheck.MetricText.Contains("FixtureValidPixelRatio", StringComparison.OrdinalIgnoreCase))
+            if (!goodCheck.Success
+                || !badCheck.Success
+                || !badSample.ExpectsFailure
+                || !string.IsNullOrWhiteSpace(missingGoodMetric)
+                || !goodCheck.StepSummaryText.Contains("04 OK 04 Verify Circular Datum In Reference ROI", StringComparison.OrdinalIgnoreCase)
+                || !goodCheck.StepSummaryText.Contains("05 OK 05 Inspect Pad In Reference ROI", StringComparison.OrdinalIgnoreCase)
+                || !badCheck.StepSummaryText.Contains("04 OK 04 Verify Circular Datum In Reference ROI", StringComparison.OrdinalIgnoreCase)
+                || !badCheck.StepSummaryText.Contains("05 ERROR 05 Inspect Pad In Reference ROI", StringComparison.OrdinalIgnoreCase)
+                || !badCheck.MetricText.Contains("ResultCount=0", StringComparison.OrdinalIgnoreCase)
+                || !badCheck.MetricText.Contains("FixtureValidPixelRatio", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException(
-                "NormalizeImage reference-ROI public sample contract failed. "
-                + $"Good={goodCheck.Status}, GoodMissing={missingGoodMetric ?? "-"}, GoodMetrics='{goodCheck.MetricText}', "
-                + $"Bad={badCheck.Status}, BadExpectedFailure={badSample.ExpectsFailure}, BadMetrics='{badCheck.MetricText}'");
+                    "NormalizeImage reference-ROI public sample contract failed. "
+                    + $"Good={goodCheck.Status}, GoodMissing={missingGoodMetric ?? "-"}, GoodMetrics='{goodCheck.MetricText}', "
+                    + $"GoodSteps='{goodCheck.StepSummaryText}', Bad={badCheck.Status}, BadExpectedFailure={badSample.ExpectsFailure}, "
+                    + $"BadMetrics='{badCheck.MetricText}', BadSteps='{badCheck.StepSummaryText}'");
         }
+
+        string evidenceDirectory = Path.GetDirectoryName(outputPath) ?? Environment.CurrentDirectory;
+        Directory.CreateDirectory(evidenceDirectory);
+        File.WriteAllLines(
+            Path.Combine(evidenceDirectory, "fixture_multi_roi_sample_check.tsv"),
+            new[]
+            {
+                "Sample\tExpected\tStatus\tStep summary\tMetrics",
+                $"{goodSampleName}\tPass\t{goodCheck.Status}\t{goodCheck.StepSummaryText.Replace('\t', ' ')}\t{goodCheck.MetricText.Replace('\t', ' ')}",
+                $"{badSampleName}\tExpected failure\t{badCheck.Status}\t{badCheck.StepSummaryText.Replace('\t', ' ')}\t{badCheck.MetricText.Replace('\t', ' ')}"
+            });
 
         OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostWorkspaceNormalizeFixtureReview", seedMainLayer: false);
         return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
@@ -10459,7 +10721,7 @@ internal static class Program
                 shellHost,
                 goodSampleName,
                 "WPF workspace NormalizeImage reference-ROI sample review",
-                minStepCount: 4);
+                minStepCount: 5);
 
             WaitForTaskWithPump(
                 shellHost.RunPipelineReviewForTestAsync(),
@@ -10499,10 +10761,10 @@ internal static class Program
                 shellHost.PipelineReviewResultSummaryText,
                 shellHost.PipelineReviewResultDetailText,
                 shellHost.PipelineReviewRunLogText);
-            if (activePipelineStepCount != 4
-                || !blobText.Contains("Inspect Pad In Reference ROI", StringComparison.OrdinalIgnoreCase)
-                || !blobText.Contains("AlignedPadBinary", StringComparison.OrdinalIgnoreCase)
-                || !blobText.Contains("CvROI: 320,180,60,50", StringComparison.OrdinalIgnoreCase)
+            if (activePipelineStepCount != 5
+                || !blobText.Contains("Verify Circular Datum In Reference ROI", StringComparison.OrdinalIgnoreCase)
+                || !blobText.Contains("AlignedInspectionBinary", StringComparison.OrdinalIgnoreCase)
+                || !blobText.Contains("CvROI: 210,240,55,55", StringComparison.OrdinalIgnoreCase)
                 || !blobText.Contains("Result", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewResultSummaryText.Contains("OK", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.HasPipelineReviewInputPreview
@@ -10510,7 +10772,7 @@ internal static class Program
                 || shellHost.CanSelectFirstIssuePipelineReviewStepForTest)
             {
                 throw new InvalidOperationException(
-                    "Pipeline Review did not prove the fixed reference-coordinate ROI inspection. "
+                    "Pipeline Review did not prove the first fixed reference-coordinate ROI inspection. "
                     + $"Steps={activePipelineStepCount}, Input={shellHost.HasPipelineReviewInputPreview}, "
                     + $"Output={shellHost.HasPipelineReviewOutputPreview}, FirstIssue={shellHost.CanSelectFirstIssuePipelineReviewStepForTest}, "
                     + $"Text='{blobText}'");
@@ -10546,6 +10808,57 @@ internal static class Program
                 ?? throw new InvalidOperationException("Fixture designer measurement ROI edit action was not created.");
             Button runButton = FindNamedVisualChild<Button>(reviewWindow, "btnFixtureRun")
                 ?? throw new InvalidOperationException("Fixture designer explicit Run Review action was not created.");
+            DataGrid consumerGrid = FindNamedVisualChild<DataGrid>(reviewWindow, "fixtureConsumerGrid")
+                ?? throw new InvalidOperationException("Fixture designer ROI-consumer table was not created.");
+            OpenVisionPipelineReviewFixtureConsumerRow? datumConsumer =
+                consumerGrid.Items.Count > 0
+                    ? consumerGrid.Items[0] as OpenVisionPipelineReviewFixtureConsumerRow
+                    : null;
+            OpenVisionPipelineReviewFixtureConsumerRow? padConsumer =
+                consumerGrid.Items.Count > 1
+                    ? consumerGrid.Items[1] as OpenVisionPipelineReviewFixtureConsumerRow
+                    : null;
+            if (consumerGrid.Items.Count != 2
+                || datumConsumer == null
+                || padConsumer == null
+                || datumConsumer.StepNumber != 4
+                || !datumConsumer.StepName.Contains("Circular Datum", StringComparison.OrdinalIgnoreCase)
+                || datumConsumer.RoiText != "210,240,55,55"
+                || datumConsumer.StatusText != "OK"
+                || padConsumer.StepNumber != 5
+                || !padConsumer.StepName.Contains("Inspect Pad", StringComparison.OrdinalIgnoreCase)
+                || padConsumer.RoiText != "320,180,60,50"
+                || padConsumer.StatusText != "OK"
+                || datumConsumer.EvidenceId.Length != 64
+                || padConsumer.EvidenceId.Length != 64
+                || string.Equals(datumConsumer.EvidenceId, padConsumer.EvidenceId, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Fixture designer did not retain two distinct current-run ROI consumers with stable identities. "
+                    + $"Count={consumerGrid.Items.Count}, Datum={datumConsumer?.StepNumber}/{datumConsumer?.RoiText}/{datumConsumer?.StatusText}/{datumConsumer?.EvidenceId}, "
+                    + $"Pad={padConsumer?.StepNumber}/{padConsumer?.RoiText}/{padConsumer?.StatusText}/{padConsumer?.EvidenceId}");
+            }
+
+            consumerGrid.SelectedIndex = 1;
+            Pump(120);
+            OpenVisionPipelineReviewFixtureConsumerRow? selectedDatumAfterRefresh =
+                consumerGrid.Items.Count > 0
+                    ? consumerGrid.Items[0] as OpenVisionPipelineReviewFixtureConsumerRow
+                    : null;
+            OpenVisionPipelineReviewFixtureConsumerRow? selectedPadAfterRefresh =
+                consumerGrid.Items.Count > 1
+                    ? consumerGrid.Items[1] as OpenVisionPipelineReviewFixtureConsumerRow
+                    : null;
+            if (consumerGrid.SelectedIndex != 1
+                || selectedDatumAfterRefresh?.EvidenceId != datumConsumer.EvidenceId
+                || selectedPadAfterRefresh?.EvidenceId != padConsumer.EvidenceId)
+            {
+                throw new InvalidOperationException(
+                    "Fixture consumer selection did not preserve the selected row and stable evidence identities. "
+                    + $"Selected={consumerGrid.SelectedIndex}, "
+                    + $"Datum={datumConsumer.EvidenceId}/{selectedDatumAfterRefresh?.EvidenceId}, "
+                    + $"Pad={padConsumer.EvidenceId}/{selectedPadAfterRefresh?.EvidenceId}");
+            }
 
             AssertVisibleTextContains(
                 reviewWindow,
@@ -10553,14 +10866,19 @@ internal static class Program
                 "PartFrame",
                 "Locate And Publish Reference Pose",
                 "Normalize To Reference Coordinates",
+                "Verify Circular Datum In Reference ROI",
                 "Inspect Pad In Reference ROI",
+                "210,240,55,55",
                 "320,180,60,50",
                 "572x420",
                 "유효 74.8%");
             if (!shellHost.IsPipelineReviewFixtureDesignerVisibleForTest
                 || shellHost.PipelineReviewFixtureProducerStepNumberForTest != 1
-                || shellHost.PipelineReviewFixtureMeasurementStepNumberForTest != 4
+                || shellHost.PipelineReviewFixtureMeasurementStepNumberForTest != 5
                 || !shellHost.PipelineReviewFixtureRelationshipTextForTest.Contains("PartFrame", StringComparison.Ordinal)
+                || (!shellHost.PipelineReviewFixtureRelationshipTextForTest.Contains("consumers 2", StringComparison.OrdinalIgnoreCase)
+                    && !shellHost.PipelineReviewFixtureRelationshipTextForTest.Contains("소비자 2개", StringComparison.Ordinal))
+                || !shellHost.PipelineReviewFixtureRelationshipTextForTest.Contains("320,180,60,50", StringComparison.Ordinal)
                 || sourcePreview.Source == null
                 || normalizedPreview.Source == null
                 || templatePreview.Source == null
@@ -10582,6 +10900,7 @@ internal static class Program
                     + $"Actions={teachButton.IsEnabled}/{producerEditButton.IsEnabled}/{measurementEditButton.IsEnabled}/{runButton.IsEnabled}, "
                     + $"Runs={shellHost.NativePreviewRunCount}/{previewRunsBefore}, Layers={shellHost.LayerDocumentCount}/{layerCountBeforeDesigner}, "
                     + $"Active='{shellHost.ActiveHostLayerTitle}/{activeLayerBeforeDesigner}', "
+                    + $"Relationship='{shellHost.PipelineReviewFixtureRelationshipTextForTest}', "
                     + $"Route='{shellHost.ActiveNativeRouteInputLayerNameForTest}->{shellHost.ActiveNativeRouteOutputLayerNameForTest}'/"
                     + $"'{routeInputBeforeDesigner}->{routeOutputBeforeDesigner}'");
             }
@@ -11372,6 +11691,87 @@ internal static class Program
             minStepCount: 1);
     }
 
+    private static CaptureResult CaptureShellHostWorkspaceSamplePipelineReviewEdgeNgMetrics(string outputPath)
+    {
+        const string sampleName = "Public_Edge_Fiducial_Wrong_Bad";
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        VisionPipelineSampleCatalogItem sample = FindRunnableCatalogSample(sampleName);
+        AssertSampleSourceKind(sample, sampleName, VisionPipelineSampleCatalogSourceKind.Public);
+        VisionPipelineSampleCheckResult sampleCheck = VisionPipelineSampleCheckService.RunSampleCheckSafe(sample);
+        if (!sample.ExpectsFailure
+            || !sampleCheck.Success
+            || !sampleCheck.MetricText.Contains("ResultCount", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "EdgeBasedMatching NoMatch sample did not retain its public expected-failure baseline. "
+                + $"Status={sampleCheck.Status}, Message={sampleCheck.Message}, Metrics={sampleCheck.MetricText}");
+        }
+
+        OpenVisionShellHostView shellHost = CreateShellHost(
+            "Smoke_WpfShellHostWorkspaceSampleReviewEdgeNgMetrics",
+            seedMainLayer: false);
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            (_, int activePipelineStepCount, _) = OpenWorkspaceSamplePipelineReviewForSmoke(
+                shellHost,
+                sampleName,
+                "WPF workspace sample review EdgeBasedMatching NoMatch diagnostics",
+                minStepCount: 1);
+
+            WaitForTaskWithPump(
+                shellHost.RunPipelineReviewForTestAsync(),
+                30000,
+                "Workspace sample EdgeBasedMatching NoMatch execution");
+            Pump(120);
+            shellHost.SelectPipelineReviewStepForTest(
+                activePipelineStepCount - 1,
+                OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
+            Pump(80);
+
+            int runsBeforeDiagnosticRead = shellHost.NativePreviewRunCount;
+            int layersBeforeDiagnosticRead = shellHost.LayerDocumentCount;
+            string activeLayerBeforeDiagnosticRead = shellHost.ActiveHostLayerTitle;
+            if (!shellHost.PipelineReviewMatcherDiagnosticTabVisibleForTest
+                || !string.Equals(shellHost.PipelineReviewMatcherDiagnosticStateForTest, "NoMatch", StringComparison.Ordinal)
+                || shellHost.PipelineReviewMatcherDiagnosticEvidenceIdForTest.Length != 64
+                || shellHost.PipelineReviewMatcherDiagnosticRowCountForTest < 20
+                || shellHost.PipelineReviewMatcherDiagnosticModelPointCountForTest <= 0
+                || !shellHost.PipelineReviewMatcherDiagnosticHasSelectedCandidateForTest
+                || !shellHost.HasPipelineReviewOutputPreview
+                || !shellHost.PipelineReviewResultSummaryText.Contains("ERROR", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.PipelineReviewRunLogText.Contains("MatchingNoResult", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Public EdgeBasedMatching NG did not expose exact same-run NoMatch diagnostics and retained runtime reason. "
+                    + $"Visible={shellHost.PipelineReviewMatcherDiagnosticTabVisibleForTest}, "
+                    + $"State={shellHost.PipelineReviewMatcherDiagnosticStateForTest}, "
+                    + $"Evidence={shellHost.PipelineReviewMatcherDiagnosticEvidenceIdForTest}, "
+                    + $"Rows={shellHost.PipelineReviewMatcherDiagnosticRowCountForTest}, "
+                    + $"ModelPoints={shellHost.PipelineReviewMatcherDiagnosticModelPointCountForTest}, "
+                    + $"Primary={shellHost.PipelineReviewMatcherDiagnosticHasSelectedCandidateForTest}, "
+                    + $"Alternative={shellHost.PipelineReviewMatcherDiagnosticHasAlternativeForTest}, "
+                    + $"Result={shellHost.PipelineReviewResultSummaryText}");
+            }
+
+            if (shellHost.NativePreviewRunCount != runsBeforeDiagnosticRead
+                || shellHost.LayerDocumentCount != layersBeforeDiagnosticRead
+                || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBeforeDiagnosticRead, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Reading matcher diagnostics changed Preview/Run count or layer state.");
+            }
+
+            AssertVisibleAutomationIds(
+                GetActiveFloatingToolWindow("EdgeBasedMatching NoMatch diagnostics"),
+                "EdgeBasedMatching NoMatch diagnostics",
+                "PipelineReviewMatcherDiagnosticTab",
+                "PipelineReviewMatcherDiagnosticSummary",
+                "PipelineReviewMatcherModelPreview",
+                "PipelineReviewMatcherCandidatePreview",
+                "PipelineReviewMatcherDiagnosticTable");
+        }, captureFloatingToolWindow: true);
+    }
+
     private static CaptureResult CaptureShellHostWorkspaceSamplePipelineReviewLineNgMetrics(string outputPath)
     {
         return CaptureShellHostWorkspaceSamplePipelineReviewControlledNgMetrics(
@@ -11494,17 +11894,34 @@ internal static class Program
             {
                 int objectCount = shellHost.PipelineReviewObjectResultCountForTest;
                 int initiallySelectedObjectNumber = shellHost.PipelineReviewSelectedObjectResultNumberForTest;
+                int distributionSeriesCount = shellHost.PipelineReviewObjectMetricDistributionSeriesCountForTest;
+                int distributionMarkerCount = shellHost.PipelineReviewObjectMetricDistributionMarkerCountForTest;
+                string distributionMetric = shellHost.PipelineReviewObjectMetricDistributionMetricForTest;
+                string distributionEvidenceId = shellHost.PipelineReviewObjectMetricDistributionEvidenceIdForTest;
                 int runsBeforeObjectSelection = shellHost.NativePreviewRunCount;
                 int layersBeforeObjectSelection = shellHost.LayerDocumentCount;
                 string activeLayerBeforeObjectSelection = shellHost.ActiveHostLayerTitle;
                 string inputRouteBeforeObjectSelection = shellHost.ActiveNativeRouteInputLayerNameForTest;
                 string outputRouteBeforeObjectSelection = shellHost.ActiveNativeRouteOutputLayerNameForTest;
-                if (objectCount <= 0 || !shellHost.HasPipelineReviewObjectHighlightForTest)
+                if (objectCount <= 0
+                    || !shellHost.HasPipelineReviewObjectHighlightForTest
+                    || distributionSeriesCount != 2
+                    || distributionMarkerCount != 2
+                    || !string.Equals(distributionMetric, "Area", StringComparison.Ordinal)
+                    || distributionEvidenceId.Length != 64)
                 {
                     throw new InvalidOperationException(
-                        $"Workspace sample Pipeline Review {scenarioLabel} did not expose object rows and the selected-object drawing. "
-                        + $"Count={objectCount}, Highlight={shellHost.HasPipelineReviewObjectHighlightForTest}");
+                        $"Workspace sample Pipeline Review {scenarioLabel} did not expose object rows, current Area distribution/range, and the selected-object drawing. "
+                        + $"Count={objectCount}, Highlight={shellHost.HasPipelineReviewObjectHighlightForTest}, "
+                        + $"Series={distributionSeriesCount}, Markers={distributionMarkerCount}, "
+                        + $"Metric={distributionMetric}, Evidence={distributionEvidenceId}");
                 }
+
+                WriteObjectMetricRuntimeEvidence(
+                    outputPath,
+                    sampleName,
+                    shellHost,
+                    objectCount);
 
                 shellHost.SelectPipelineReviewObjectResultForTest(0);
                 Pump(40);
@@ -11748,6 +12165,31 @@ internal static class Program
         {
             RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
         }
+    }
+
+    private static void WriteObjectMetricRuntimeEvidence(
+        string screenshotOutputPath,
+        string sampleName,
+        OpenVisionShellHostView shellHost,
+        int objectCount)
+    {
+        string directory = Path.GetDirectoryName(screenshotOutputPath)
+            ?? throw new InvalidOperationException("Object metric runtime evidence directory is missing.");
+        Directory.CreateDirectory(directory);
+        File.WriteAllLines(
+            Path.Combine(directory, "object-metric-distribution-runtime.txt"),
+            new[]
+            {
+                "Status=OK",
+                "Sample=" + sampleName,
+                "ObjectRows=" + objectCount.ToString(CultureInfo.InvariantCulture),
+                "Series=" + shellHost.PipelineReviewObjectMetricDistributionSeriesCountForTest.ToString(CultureInfo.InvariantCulture),
+                "Markers=" + shellHost.PipelineReviewObjectMetricDistributionMarkerCountForTest.ToString(CultureInfo.InvariantCulture),
+                "Metric=" + shellHost.PipelineReviewObjectMetricDistributionMetricForTest,
+                "EvidenceId=" + shellHost.PipelineReviewObjectMetricDistributionEvidenceIdForTest,
+                "ResultSummary=" + shellHost.PipelineReviewResultSummaryText,
+                "ResultDetail=" + shellHost.PipelineReviewResultDetailText
+            });
     }
 
     private static void AssertPersistedObjectRows(VisionPipelineRunReport report, string context)
@@ -18420,6 +18862,357 @@ internal static class Program
         });
     }
 
+    private static CaptureResult CaptureCvr07ThresholdSuggestion(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_Cvr07ThresholdSuggestion");
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            AssertCvr07ThresholdSuggestionAnalyzerMatrix();
+            shellHost.SelectToolForTest(VISION_MENU.Threshold);
+            Pump(16);
+            shellHost.RunActiveNativePreviewForTest();
+            Pump(24);
+            ThresholdToolWpfView thresholdView = FindActiveToolVisualRoots()
+                .SelectMany(root => FindVisualChildren<ThresholdToolWpfView>(root))
+                .LastOrDefault()
+                ?? throw new InvalidOperationException(
+                    "CVR-07 Threshold suggestion could not find the active Threshold view.");
+            if (!thresholdView.SignalInspectorHasEvidenceForTest
+                || !thresholdView.IsThresholdSuggestionPanelVisibleForTest
+                || thresholdView.HasThresholdSuggestionForTest
+                || thresholdView.CanUseThresholdSuggestionForTest)
+            {
+                throw new InvalidOperationException(
+                    "CVR-07 Threshold suggestion did not start from current Basic Preview evidence without a preselected candidate.");
+            }
+
+            ThresholdToolProperty initialProperty = thresholdView.CreateProperty();
+            int initialThreshold = Math.Clamp((int)Math.Round(initialProperty.Threshold), 0, 255);
+            int runsBeforeAnalyze = shellHost.NativePreviewRunCount;
+            int layersBeforeAnalyze = shellHost.LayerDocumentCount;
+            string activeLayerBeforeAnalyze = shellHost.ActiveRecipeContextLayerNameForTest;
+            string inputBeforeAnalyze = shellHost.ActiveNativeRouteInputLayerNameForTest;
+            string outputBeforeAnalyze = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+            thresholdView.AnalyzeThresholdSuggestionForTest();
+            int suggestedThreshold = thresholdView.ThresholdSuggestionValueForTest;
+            if (shellHost.NativePreviewRunCount != runsBeforeAnalyze
+                || shellHost.LayerDocumentCount != layersBeforeAnalyze
+                || !string.Equals(shellHost.ActiveRecipeContextLayerNameForTest, activeLayerBeforeAnalyze, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputBeforeAnalyze, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputBeforeAnalyze, StringComparison.Ordinal)
+                || !thresholdView.HasThresholdSuggestionForTest
+                || !thresholdView.CanUseThresholdSuggestionForTest
+                || thresholdView.SignalInspectorAdvisoryMarkerCountForTest != 1
+                || thresholdView.ThresholdSuggestionEvidenceIdForTest.Length != 64
+                || suggestedThreshold < 0
+                || suggestedThreshold > 255
+                || !thresholdView.ThresholdSuggestionStatusForTest.Contains("significant gray modes", StringComparison.Ordinal)
+                || !thresholdView.ThresholdSuggestionStatusForTest.Contains("Full image", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Analyzing the Threshold suggestion did not retain one explained full-image candidate without execution or workspace mutation. "
+                    + $"Runs={runsBeforeAnalyze}->{shellHost.NativePreviewRunCount}, "
+                    + $"Candidate={suggestedThreshold}, Evidence={thresholdView.ThresholdSuggestionEvidenceIdForTest}, "
+                    + $"AdvisoryMarkers={thresholdView.SignalInspectorAdvisoryMarkerCountForTest}, "
+                    + $"Status='{thresholdView.ThresholdSuggestionStatusForTest}'");
+            }
+
+            if (suggestedThreshold == initialThreshold)
+            {
+                int setupThreshold = suggestedThreshold >= 224
+                    ? suggestedThreshold - 31
+                    : suggestedThreshold + 31;
+                thresholdView.CommitSignalInspectorMarkerForTest(
+                    OpenVisionNativeThresholdSignalEvidenceFactory.ThresholdMarkerId,
+                    setupThreshold);
+                Thread.Sleep(180);
+                Pump(30);
+                initialThreshold = setupThreshold;
+                runsBeforeAnalyze = shellHost.NativePreviewRunCount;
+                thresholdView.AnalyzeThresholdSuggestionForTest();
+                suggestedThreshold = thresholdView.ThresholdSuggestionValueForTest;
+                if (suggestedThreshold == initialThreshold
+                    || shellHost.NativePreviewRunCount != runsBeforeAnalyze)
+                {
+                    throw new InvalidOperationException(
+                        "CVR-07 setup could not preserve a distinct deterministic suggestion without executing.");
+                }
+            }
+
+            int runsBeforeUse = shellHost.NativePreviewRunCount;
+            thresholdView.UseThresholdSuggestionForTest();
+            if (thresholdView.SignalInspectorHasEvidenceForTest
+                || Math.Abs(thresholdView.CreateProperty().Threshold - suggestedThreshold) > 0.001D)
+            {
+                throw new InvalidOperationException(
+                    "Use T did not synchronously apply the explicit suggestion and clear stale evidence.");
+            }
+
+            Thread.Sleep(180);
+            Pump(30);
+            if (shellHost.NativePreviewRunCount <= runsBeforeUse
+                || !thresholdView.SignalInspectorHasEvidenceForTest
+                || !thresholdView.CanUndoThresholdSuggestionForTest
+                || !thresholdView.ThresholdSuggestionStatusForTest.Contains(
+                    "Previous T=" + initialThreshold.ToString(CultureInfo.InvariantCulture),
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Use T did not follow the existing debounced Preview policy and preserve the prior teaching value. "
+                    + $"Runs={runsBeforeUse}->{shellHost.NativePreviewRunCount}, "
+                    + $"Undo={thresholdView.CanUndoThresholdSuggestionForTest}, "
+                    + $"Status='{thresholdView.ThresholdSuggestionStatusForTest}'");
+            }
+
+            string artifactDirectory = Path.GetDirectoryName(Path.GetFullPath(outputPath))
+                ?? throw new InvalidOperationException("CVR-07 UI artifact directory is missing.");
+            Directory.CreateDirectory(artifactDirectory);
+            WriteElementPng(
+                GetActiveFloatingToolWindow("CVR-07 applied Threshold suggestion"),
+                Path.Combine(artifactDirectory, "threshold_suggestion_applied.png"),
+                1500,
+                880);
+
+            int runsBeforeUndo = shellHost.NativePreviewRunCount;
+            thresholdView.UndoThresholdSuggestionForTest();
+            if (thresholdView.SignalInspectorHasEvidenceForTest
+                || Math.Abs(thresholdView.CreateProperty().Threshold - initialThreshold) > 0.001D)
+            {
+                throw new InvalidOperationException(
+                    "Undo did not synchronously restore the previous Threshold teaching value.");
+            }
+
+            Thread.Sleep(180);
+            Pump(30);
+            if (shellHost.NativePreviewRunCount <= runsBeforeUndo
+                || !thresholdView.SignalInspectorHasEvidenceForTest
+                || thresholdView.CanUndoThresholdSuggestionForTest
+                || shellHost.LayerDocumentCount != layersBeforeAnalyze
+                || !string.Equals(shellHost.ActiveRecipeContextLayerNameForTest, activeLayerBeforeAnalyze, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputBeforeAnalyze, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputBeforeAnalyze, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Undo did not restore current Preview evidence or changed workspace layers/routes.");
+            }
+
+            int runsBeforeFinalAnalyze = shellHost.NativePreviewRunCount;
+            thresholdView.AnalyzeThresholdSuggestionForTest();
+            if (shellHost.NativePreviewRunCount != runsBeforeFinalAnalyze
+                || !thresholdView.HasThresholdSuggestionForTest
+                || thresholdView.SignalInspectorAdvisoryMarkerCountForTest != 1)
+            {
+                throw new InvalidOperationException(
+                    "Final Threshold suggestion review did not remain selection-only.");
+            }
+
+            WriteCvr07ThresholdSuggestionPublicReplay(outputPath);
+            AssertVisibleAutomationIds(
+                GetActiveFloatingToolWindow("CVR-07 Threshold suggestion"),
+                "CVR-07 Threshold suggestion",
+                "ThresholdSuggestionPanel",
+                "ThresholdSuggestionAnalyzeButton",
+                "ThresholdSuggestionUseButton",
+                "ThresholdSuggestionUndoButton",
+                "VisionToolSignalPlot");
+        });
+    }
+
+    private static void WriteCvr07ThresholdSuggestionPublicReplay(string outputPath)
+    {
+        const string goodSampleName = "Public_Threshold_BandPads_Good";
+        const string badSampleName = "Public_Threshold_BandPads_Missing_Bad";
+        VisionPipelineSampleCatalogItem goodSample = FindRunnableCatalogSample(goodSampleName);
+        VisionPipelineSampleCatalogItem badSample = FindRunnableCatalogSample(badSampleName);
+        if (!VisionPipelineStorage.TryLoadFromFile(
+                goodSample.PipelineFullPath,
+                out VisionPipeline pipeline,
+                out string loadMessage)
+            || pipeline == null)
+        {
+            throw new InvalidOperationException(
+                "CVR-07 public Threshold replay could not load the shared Pipeline: " + loadMessage);
+        }
+
+        VisionPipelineStep thresholdStep = pipeline.Steps.SingleOrDefault(step =>
+            string.Equals(step.ToolType, "Threshold", StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException(
+                "CVR-07 public Threshold replay Pipeline has no Threshold Step.");
+        ThresholdToolProperty baselineProperty = new()
+        {
+            Mode = ThresholdToolMode.Threshold,
+            Threshold = thresholdStep.Parameters.TryGetValue("Threshold", out string? baselineText)
+                && double.TryParse(baselineText, NumberStyles.Float, CultureInfo.InvariantCulture, out double baseline)
+                    ? baseline
+                    : 130D,
+            MaxValue = 255D,
+            ThresholdType = OpenCvSharp.ThresholdTypes.Binary
+        };
+        VisionToolSignalEvidence goodEvidence =
+            CreateThresholdReplaySignalEvidence(goodSample, baselineProperty);
+        VisionToolThresholdSuggestion suggestion =
+            VisionToolThresholdSuggestionAnalyzer.Analyze(
+                goodEvidence,
+                baselineProperty.ThresholdType != OpenCvSharp.ThresholdTypes.BinaryInv);
+        if (!suggestion.Accepted)
+        {
+            throw new InvalidOperationException(
+                "CVR-07 public Threshold Good histogram rejected the bounded suggestion: "
+                + suggestion.Reason);
+        }
+
+        thresholdStep.Parameters["Mode"] = "Threshold";
+        thresholdStep.Parameters["Threshold"] =
+            suggestion.Threshold.ToString(CultureInfo.InvariantCulture);
+        thresholdStep.Parameters["MaxValue"] = "255";
+        thresholdStep.Parameters["ThresholdType"] = "Binary";
+
+        string directory = Path.GetDirectoryName(Path.GetFullPath(outputPath))
+            ?? throw new InvalidOperationException("CVR-07 artifact directory is missing.");
+        Directory.CreateDirectory(directory);
+        string pipelinePath = Path.Combine(directory, "Public_Threshold_BandPads_BrightMode.pipeline.xml");
+        if (!VisionPipelineStorage.TrySaveToFile(pipelinePath, pipeline, out string saveMessage))
+        {
+            throw new InvalidOperationException(
+                "CVR-07 could not retain the exact suggested Pipeline: " + saveMessage);
+        }
+
+        using CvMat goodSource = Cv.ImRead(goodSample.ImageFullPath, CvImreadModes.Color);
+        using CvMat badSource = Cv.ImRead(badSample.ImageFullPath, CvImreadModes.Color);
+        VisionRecipeRunner runner = new();
+        Task<VisionRecipeRunResult> goodTask = runner.RunAsync(pipeline, goodSource);
+        WaitForTaskWithPump(goodTask, 30000, "CVR-07 public Good suggested Pipeline");
+        using VisionRecipeRunResult goodResult = goodTask.GetAwaiter().GetResult();
+        Task<VisionRecipeRunResult> badTask = runner.RunAsync(pipeline, badSource);
+        WaitForTaskWithPump(badTask, 30000, "CVR-07 public Bad suggested Pipeline");
+        using VisionRecipeRunResult badResult = badTask.GetAwaiter().GetResult();
+        double goodCount = goodResult.FinalStepSummary?.Metrics?.GetValueOrDefault(
+            VisionPipelineKnownMetrics.ResultCount) ?? double.NaN;
+        double badCount = badResult.FinalStepSummary?.Metrics?.GetValueOrDefault(
+            VisionPipelineKnownMetrics.ResultCount) ?? double.NaN;
+        if (!goodResult.Success
+            || goodCount != 4D
+            || badResult.Success
+            || badCount != 1D)
+        {
+            throw new InvalidOperationException(
+                "CVR-07 suggested Threshold did not preserve the public Good/Bad semantic split. "
+                + $"T={suggestion.Threshold}, Good={goodResult.Success}/{goodCount}, "
+                + $"Bad={badResult.Success}/{badCount}");
+        }
+
+        Cv.ImWrite(Path.Combine(directory, "Public_Threshold_BandPads_Good_source.png"), goodSource);
+        Cv.ImWrite(Path.Combine(directory, "Public_Threshold_BandPads_Bad_source.png"), badSource);
+        if (goodResult.ResultImage == null
+            || goodResult.ResultImage.Empty()
+            || badResult.ResultImage == null
+            || badResult.ResultImage.Empty())
+        {
+            throw new InvalidOperationException(
+                "CVR-07 public suggested Pipeline did not retain final result drawings.");
+        }
+
+        Cv.ImWrite(
+            Path.Combine(directory, "Public_Threshold_BandPads_Good_result.png"),
+            goodResult.ResultImage);
+        Cv.ImWrite(
+            Path.Combine(directory, "Public_Threshold_BandPads_Bad_result.png"),
+            badResult.ResultImage);
+        File.WriteAllLines(
+            Path.Combine(directory, "threshold-suggestion.tsv"),
+            new[]
+            {
+                "Status\tSuggestedThreshold\tSeparationRatio\tLowerPopulationRatio\tUpperPopulationRatio\tSuggestionEvidenceId\tSourceEvidenceId\tGoodResultCount\tBadResultCount\tReason",
+                string.Join(
+                    "\t",
+                    "PASS",
+                    suggestion.Threshold.ToString(CultureInfo.InvariantCulture),
+                    suggestion.SeparationRatio.ToString("0.###############", CultureInfo.InvariantCulture),
+                    suggestion.LowerPopulationRatio.ToString("0.###############", CultureInfo.InvariantCulture),
+                    suggestion.UpperPopulationRatio.ToString("0.###############", CultureInfo.InvariantCulture),
+                    suggestion.EvidenceId,
+                    goodEvidence.EvidenceId,
+                    goodCount.ToString(CultureInfo.InvariantCulture),
+                    badCount.ToString(CultureInfo.InvariantCulture),
+                    suggestion.Reason.Replace("\t", " ").Replace("\r", " ").Replace("\n", " "))
+            });
+    }
+
+    private static void AssertCvr07ThresholdSuggestionAnalyzerMatrix()
+    {
+        double[] threeModeValues = new double[256];
+        threeModeValues[40] = 20D;
+        threeModeValues[110] = 10D;
+        threeModeValues[190] = 5D;
+        VisionToolSignalEvidence evidence = new(
+            new string('A', 64),
+            new string('B', 64),
+            new string('C', 64),
+            "Threshold/Threshold",
+            "Main",
+            "Full image",
+            "Basic",
+            "Gray level",
+            "Pixel %",
+            new[]
+            {
+                new VisionToolSignalSeries(
+                    "Gray population",
+                    "#1F77B4",
+                    0D,
+                    1D,
+                    threeModeValues)
+            });
+        VisionToolThresholdSuggestion bright =
+            VisionToolThresholdSuggestionAnalyzer.Analyze(evidence, selectBright: true);
+        VisionToolThresholdSuggestion dark =
+            VisionToolThresholdSuggestionAnalyzer.Analyze(evidence, selectBright: false);
+        VisionToolThresholdSuggestion repeated =
+            VisionToolThresholdSuggestionAnalyzer.Analyze(evidence, selectBright: true);
+        if (!bright.Accepted
+            || bright.Threshold != 150
+            || !dark.Accepted
+            || dark.Threshold != 75
+            || !string.Equals(bright.EvidenceId, repeated.EvidenceId, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "CVR-07 Threshold suggestion bright/dark significant-mode matrix changed. "
+                + $"Bright={bright.Accepted}/{bright.Threshold}, Dark={dark.Accepted}/{dark.Threshold}, "
+                + $"Repeat={bright.EvidenceId == repeated.EvidenceId}");
+        }
+
+        double[] flatValues = new double[256];
+        flatValues[128] = 100D;
+        VisionToolSignalEvidence flatEvidence = new(
+            new string('D', 64),
+            new string('E', 64),
+            new string('F', 64),
+            "Threshold/Threshold",
+            "Main",
+            "Full image",
+            "Basic",
+            "Gray level",
+            "Pixel %",
+            new[]
+            {
+                new VisionToolSignalSeries(
+                    "Gray population",
+                    "#1F77B4",
+                    0D,
+                    1D,
+                    flatValues)
+            });
+        VisionToolThresholdSuggestion flat =
+            VisionToolThresholdSuggestionAnalyzer.Analyze(flatEvidence, selectBright: true);
+        if (flat.Accepted
+            || !flat.Reason.Contains("Fewer than two", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "CVR-07 Threshold suggestion did not reject a single-mode histogram.");
+        }
+    }
+
     private static CaptureResult CaptureShellHostThresholdBasicTool(string outputPath)
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
@@ -19716,6 +20509,449 @@ internal static class Program
         view.UpdateLayout();
         Pump(4);
         return CaptureElement(view, outputPath, 1180, 890);
+    }
+
+    private static CaptureResult CaptureCvr05ObjectMetricDistribution(string outputPath)
+    {
+        using Bitmap preview = new(640, 420);
+        using (Graphics graphics = Graphics.FromImage(preview))
+        {
+            graphics.Clear(DrawingColor.FromArgb(36, 43, 47));
+            using System.Drawing.Pen acceptedPen = new(DrawingColor.MediumSeaGreen, 3f);
+            using System.Drawing.Pen rejectedPen = new(DrawingColor.IndianRed, 3f);
+            graphics.DrawRectangle(acceptedPen, 80, 80, 24, 28);
+            graphics.DrawRectangle(rejectedPen, 150, 82, 6, 6);
+            graphics.DrawRectangle(acceptedPen, 230, 78, 30, 32);
+            graphics.DrawRectangle(rejectedPen, 330, 58, 52, 60);
+            graphics.DrawRectangle(rejectedPen, 470, 70, 44, 55);
+        }
+
+        VisionPipelineObjectResult[] rows =
+        {
+            new() { Number = 1, Accepted = true, Area = 640, CenterX = 92, CenterY = 94, BoundsX = 80, BoundsY = 80, BoundsWidth = 24, BoundsHeight = 28 },
+            new() { Number = 2, Accepted = false, Area = 12, CenterX = 153, CenterY = 85, BoundsX = 150, BoundsY = 82, BoundsWidth = 6, BoundsHeight = 6, RejectReason = "Area 12 < MIN_AREA 200" },
+            new() { Number = 3, Accepted = true, Area = 880, CenterX = 245, CenterY = 94, BoundsX = 230, BoundsY = 78, BoundsWidth = 30, BoundsHeight = 32 },
+            new() { Number = 4, Accepted = false, Area = 2400, CenterX = 356, CenterY = 88, BoundsX = 330, BoundsY = 58, BoundsWidth = 52, BoundsHeight = 60, RejectReason = "Area 2400 > MAX_AREA 2000" },
+            new() { Number = 5, Accepted = false, Area = 720, CenterX = 492, CenterY = 97.5, BoundsX = 470, BoundsY = 70, BoundsWidth = 44, BoundsHeight = 55, RejectReason = "Width 44 > MAX_WIDTH 40" }
+        };
+
+        VisionPipelineStep step = new()
+        {
+            Name = "02 Synthetic Particle Count",
+            ToolType = "Blob",
+            Enabled = true,
+            InputLayer = "Blob_Binary",
+            OutputLayer = "Blob_Result"
+        };
+        AddParameters(
+            step,
+            ("MIN_AREA", "200"),
+            ("MAX_AREA", "2000"),
+            ("MIN_WIDTH", "10"),
+            ("MAX_WIDTH", "40"),
+            ("MIN_HEIGHT", "10"),
+            ("MAX_HEIGHT", "50"));
+
+        OpenVisionPipelineReviewView view = new();
+        int reviewRequests = 0;
+        view.RunReviewRequested += (_, _) => reviewRequests++;
+        view.SetSelectedStep(
+            "02 Synthetic Particle Count",
+            "Blob",
+            "OK",
+            "Blob_Binary",
+            preview,
+            "Blob_Result",
+            preview,
+            "Five retained candidates / current Run",
+            "MIN_AREA=200 / MAX_AREA=2000 / MIN_WIDTH=10 / MAX_WIDTH=40",
+            "Explicit Run / ResultCount=2");
+        view.SetObjectResults(true, step, rows, preview, preview);
+        if (view.ObjectResultCount != 5
+            || view.SelectedObjectResultNumber != 1
+            || view.ObjectMetricDistributionSeriesCountForTest != 2
+            || view.ObjectMetricDistributionMarkerCountForTest != 2
+            || view.ObjectMetricDistributionMetricForTest != "Area"
+            || !view.ObjectMetricDistributionSummaryForTest.Contains("MIN_AREA 200", StringComparison.Ordinal)
+            || string.IsNullOrWhiteSpace(view.ObjectMetricDistributionEvidenceIdForTest))
+        {
+            throw new InvalidOperationException(
+                "CVR-05 Object Results did not retain the expected rows, Area distribution, and current range markers.");
+        }
+
+        string directory = Path.GetDirectoryName(outputPath)
+            ?? throw new InvalidOperationException("CVR-05 artifact directory is missing.");
+        Directory.CreateDirectory(directory);
+        VisionToolSignalEvidenceExporter.ExportTsv(
+            view.ObjectMetricDistributionEvidenceForTest,
+            Path.Combine(directory, "blob-area-distribution.tsv"));
+        view.SelectObjectMetricForTest(VisionPipelineObjectMetricKind.BoundsWidth);
+        if (view.ObjectMetricDistributionMetricForTest != "Bounds width"
+            || view.ObjectMetricDistributionMarkerCountForTest != 2)
+        {
+            throw new InvalidOperationException("CVR-05 Bounds width distribution did not use MIN_WIDTH/MAX_WIDTH.");
+        }
+
+        VisionToolSignalEvidenceExporter.ExportTsv(
+            view.ObjectMetricDistributionEvidenceForTest,
+            Path.Combine(directory, "blob-width-distribution.tsv"));
+        view.SelectObjectMetricForTest(VisionPipelineObjectMetricKind.BoundsHeight);
+        if (view.ObjectMetricDistributionMetricForTest != "Bounds height"
+            || view.ObjectMetricDistributionMarkerCountForTest != 2)
+        {
+            throw new InvalidOperationException("CVR-05 Bounds height distribution did not use MIN_HEIGHT/MAX_HEIGHT.");
+        }
+
+        VisionToolSignalEvidenceExporter.ExportTsv(
+            view.ObjectMetricDistributionEvidenceForTest,
+            Path.Combine(directory, "blob-height-distribution.tsv"));
+        view.SelectObjectMetricForTest(VisionPipelineObjectMetricKind.Area);
+        view.SelectObjectMetricFromPlotForTest(720);
+        if (view.SelectedObjectResultNumber != 5
+            || view.ObjectMetricDistributionSelectionForTest != 720)
+        {
+            throw new InvalidOperationException("CVR-05 distribution click did not select the nearest object row and drawing.");
+        }
+
+        view.SelectObjectResultForTest(3);
+        if (view.SelectedObjectResultNumber != 4
+            || view.ObjectMetricDistributionSelectionForTest != 2400)
+        {
+            throw new InvalidOperationException("CVR-05 row selection did not select the same metric value in the distribution.");
+        }
+
+        VisionPipelineStep contourStep = new()
+        {
+            Name = "02 Synthetic Shape Count",
+            ToolType = "Contour",
+            Enabled = true,
+            InputLayer = "Contour_Binary",
+            OutputLayer = "Contour_Result"
+        };
+        foreach ((string key, string value) in step.Parameters)
+        {
+            contourStep.Parameters[key] = value;
+        }
+
+        VisionPipelineObjectMetricDistribution contourDistribution =
+            OpenVisionPipelineReviewObjectDistributionPresenter.Create(
+                contourStep,
+                rows,
+                VisionPipelineObjectMetricKind.Area,
+                preview,
+                preview);
+        if (contourDistribution?.Evidence?.Series.Count != 2
+            || contourDistribution.Evidence.Markers.Count != 2
+            || !contourDistribution.Evidence.ToolIdentity.StartsWith("Contour/", StringComparison.Ordinal)
+            || contourDistribution.Evidence.EvidenceId == view.ObjectMetricDistributionEvidenceIdForTest)
+        {
+            throw new InvalidOperationException("CVR-05 Contour distribution did not preserve its own tool identity and Area gates.");
+        }
+
+        VisionToolSignalEvidenceExporter.ExportTsv(
+            contourDistribution.Evidence,
+            Path.Combine(directory, "contour-area-distribution.tsv"));
+        VisionPipelineStep legacyWidthStep = new()
+        {
+            Name = "Legacy Width",
+            ToolType = "Blob",
+            Enabled = true,
+            InputLayer = "Blob_Binary",
+            OutputLayer = "Blob_Result"
+        };
+        legacyWidthStep.Parameters["MIN_WIDTH"] = "0";
+        VisionPipelineObjectMetricDistribution legacyWidthDistribution =
+            OpenVisionPipelineReviewObjectDistributionPresenter.Create(
+                legacyWidthStep,
+                rows,
+                VisionPipelineObjectMetricKind.BoundsWidth,
+                preview,
+                preview);
+        if (legacyWidthDistribution?.MaximumIsUnbounded != true
+            || legacyWidthDistribution.Evidence.Markers.Count != 1
+            || !legacyWidthDistribution.SummaryText.Contains("unbounded", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "CVR-05 legacy missing MAX_WIDTH did not preserve the existing unbounded sentinel without compressing the chart.");
+        }
+
+        if (reviewRequests != 0)
+        {
+            throw new InvalidOperationException("CVR-05 review controls requested another Run Review.");
+        }
+
+        view.Measure(new System.Windows.Size(1180, 890));
+        view.Arrange(new System.Windows.Rect(0, 0, 1180, 890));
+        view.UpdateLayout();
+        Pump(4);
+        return CaptureElement(view, outputPath, 1180, 890);
+    }
+
+    private static CaptureResult CaptureCvr04CircleResidualReview(string outputPath)
+    {
+        string directory = Path.GetDirectoryName(outputPath)
+            ?? throw new InvalidOperationException("CVR-04 artifact directory is missing.");
+        Directory.CreateDirectory(directory);
+        using CvMat goodImage = CreateCvr04CircleImage(ellipse: false);
+        using CvMat badImage = CreateCvr04CircleImage(ellipse: true);
+        VisionPipelineStep step = new()
+        {
+            Name = "CircleFeature",
+            ToolType = "CircleGauge",
+            Enabled = true,
+            InputLayer = "Reference",
+            OutputLayer = "Circle_Result"
+        };
+        AddParameters(
+            step,
+            ("USE_ROI", "true"),
+            ("CvROI", "100,50,200,200"),
+            ("CENTER_X", "200"),
+            ("CENTER_Y", "150"),
+            ("RADIUS_MIN", "50"),
+            ("RADIUS_MAX", "80"),
+            ("START_ANGLE_DEG", "0"),
+            ("SWEEP_ANGLE_DEG", "360"),
+            ("SCAN_COUNT", "180"),
+            ("EDGE_POLARITY", "LightToDark"),
+            ("MIN_CONTRAST", "40"),
+            ("MIN_SUPPORT_RATIO", "0.8"),
+            ("MAX_FIT_RESIDUAL_PX", "1"));
+
+        VisionToolResult goodResult = VisionPipelineAppToolFactory.Create(step).Execute(goodImage);
+        VisionToolResult badResult = VisionPipelineAppToolFactory.Create(step).Execute(badImage);
+        try
+        {
+            VisionPipelineCircleEvidence goodEvidence =
+                VisionPipelineCircleEvidenceStore.Get(goodResult);
+            VisionPipelineCircleEvidence badEvidence =
+                VisionPipelineCircleEvidenceStore.Get(badResult);
+            if (goodResult?.Success != true
+                || goodEvidence == null
+                || goodEvidence.Samples.Count != 180
+                || goodEvidence.InlierCount < 140
+                || !goodEvidence.Samples.Any(item => !item.ContrastAccepted)
+                || !goodEvidence.Samples.Any(item => item.ContrastAccepted && !item.FitInlier)
+                || goodEvidence.FitResidualPx > goodEvidence.MaximumFitResidualPx)
+            {
+                throw new InvalidOperationException(
+                    "CVR-04 Good circle did not retain the expected inlier, contrast-reject, fit-outlier, and residual evidence. "
+                    + goodResult?.Message);
+            }
+
+            if (badResult == null
+                || badResult.Success
+                || badEvidence == null
+                || !badEvidence.HasFit
+                || badEvidence.FitResidualPx <= badEvidence.MaximumFitResidualPx
+                || !badResult.Message.Contains("residual", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "CVR-04 ellipse did not fail the unchanged fitted-residual gate with retained evidence. "
+                    + badResult?.Message);
+            }
+
+            Cv.ImWrite(Path.Combine(directory, "circle-good-source.png"), goodImage);
+            Cv.ImWrite(Path.Combine(directory, "circle-good-result.png"), goodResult.ResultImage);
+            Cv.ImWrite(Path.Combine(directory, "circle-bad-source.png"), badImage);
+            Cv.ImWrite(Path.Combine(directory, "circle-bad-result.png"), badResult.ResultImage);
+            using Bitmap goodSourceBitmap = Lib.Common.BitmapImageConverter.ToBitmap(goodImage);
+            using Bitmap goodResultBitmap = Lib.Common.BitmapImageConverter.ToBitmap(goodResult.ResultImage);
+            using Bitmap badSourceBitmap = Lib.Common.BitmapImageConverter.ToBitmap(badImage);
+            using Bitmap badResultBitmap = Lib.Common.BitmapImageConverter.ToBitmap(badResult.ResultImage);
+
+            VisionToolSignalEvidence residualSignal =
+                OpenVisionPipelineReviewCircleEvidencePresenter.CreateResidualEvidence(
+                    goodEvidence,
+                    goodSourceBitmap,
+                    goodResultBitmap);
+            VisionPipelineCircleSampleEvidence profileSample =
+                goodEvidence.Samples.First(item => item.FitInlier);
+            VisionToolSignalEvidence profileSignal =
+                OpenVisionPipelineReviewCircleEvidencePresenter.CreateProfileEvidence(
+                    goodEvidence,
+                    profileSample,
+                    goodSourceBitmap,
+                    goodResultBitmap);
+            if (residualSignal?.Series.Count != 1
+                || profileSignal?.Series.Count != 2
+                || profileSignal.Markers.Count != 1
+                || residualSignal.SourceSha256.Length != 64
+                || residualSignal.ResultSha256.Length != 64)
+            {
+                throw new InvalidOperationException(
+                    "CVR-04 shared signal evidence did not retain residual/profile/provenance structure.");
+            }
+
+            VisionToolSignalEvidenceExporter.ExportTsv(
+                residualSignal,
+                Path.Combine(directory, "circle-good-residuals.tsv"));
+            VisionToolSignalEvidenceExporter.ExportTsv(
+                profileSignal,
+                Path.Combine(directory, "circle-good-selected-profile.tsv"));
+            VisionToolSignalEvidence badResidualSignal =
+                OpenVisionPipelineReviewCircleEvidencePresenter.CreateResidualEvidence(
+                    badEvidence,
+                    badSourceBitmap,
+                    badResultBitmap);
+            VisionToolSignalEvidenceExporter.ExportTsv(
+                badResidualSignal,
+                Path.Combine(directory, "circle-bad-residuals.tsv"));
+
+            OpenVisionPipelineReviewView view = new();
+            int implicitRunRequests = 0;
+            view.RunReviewRequested += (_, _) => implicitRunRequests++;
+            view.SetSelectedStep(
+                "01 Circle Feature",
+                "CircleGauge",
+                "OK",
+                "Reference",
+                goodSourceBitmap,
+                "Circle_Result",
+                goodResultBitmap,
+                "Explicit Run / retained radial evidence",
+                "Same frozen CircleGauge parameters",
+                goodResult.Message);
+            view.SetObjectResults(false, Array.Empty<VisionPipelineObjectResult>());
+            view.SetGeometryResults(
+                true,
+                VisionPipelineGeometryFeatureStore.Get(goodResult));
+            view.SetCircleEvidence(
+                true,
+                goodEvidence,
+                goodSourceBitmap,
+                goodResultBitmap);
+            if (!view.CircleEvidenceTabVisibleForTest
+                || view.CircleEvidenceSampleCountForTest != 180
+                || view.CircleEvidencePlotSeriesCountForTest != 1
+                || view.SelectedCircleSampleNumberForTest <= 0)
+            {
+                throw new InvalidOperationException(
+                    "CVR-04 Circle Evidence tab did not bind the current runtime evidence.");
+            }
+
+            VisionPipelineCircleSampleEvidence fitOutlier =
+                goodEvidence.Samples.First(item => item.ContrastAccepted && !item.FitInlier);
+            view.SelectCircleSampleFromPlotForTest(fitOutlier.Number);
+            if (view.SelectedCircleSampleNumberForTest != fitOutlier.Number)
+            {
+                throw new InvalidOperationException(
+                    "CVR-04 residual plot-to-row selection did not select the requested scan.");
+            }
+
+            VisionPipelineCircleSampleEvidence imageSample =
+                goodEvidence.Samples.Last(item => item.FitInlier);
+            if (!view.SelectCircleSampleAtImagePointForTest(imageSample.EdgeX, imageSample.EdgeY)
+                || view.SelectedCircleSampleNumberForTest != imageSample.Number)
+            {
+                throw new InvalidOperationException(
+                    "CVR-04 image drawing-to-row selection did not select the nearest radial sample.");
+            }
+
+            string diagnosticDirectory = Path.Combine(
+                directory,
+                Path.GetFileNameWithoutExtension(outputPath) + ".diagnostics");
+            Directory.CreateDirectory(diagnosticDirectory);
+            view.ShowCircleProfilePlotForTest();
+            if (!view.CircleEvidenceShowsProfileForTest
+                || view.CircleEvidencePlotSeriesCountForTest != 2)
+            {
+                throw new InvalidOperationException(
+                    "CVR-04 selected radial profile did not expose intensity and signed response.");
+            }
+
+            view.Measure(new System.Windows.Size(1180, 890));
+            view.Arrange(new System.Windows.Rect(0, 0, 1180, 890));
+            view.UpdateLayout();
+            Pump(4);
+            CaptureElement(
+                view,
+                Path.Combine(diagnosticDirectory, "circle-selected-profile.png"),
+                1180,
+                890);
+            view.ShowCircleResidualPlotForTest();
+            view.SelectCircleSampleFromPlotForTest(fitOutlier.Number);
+            if (implicitRunRequests != 0 || view.CircleEvidencePlotSeriesCountForTest != 1)
+            {
+                throw new InvalidOperationException(
+                    "CVR-04 review controls ran the pipeline implicitly or failed to restore residual review.");
+            }
+
+            File.WriteAllLines(
+                Path.Combine(directory, "circle-evidence-replay.txt"),
+                new[]
+                {
+                    "Status=OK",
+                    "FrozenParameters=unchanged",
+                    "Good=" + goodResult.Message,
+                    "GoodSamples=" + goodEvidence.Samples.Count,
+                    "GoodEdgeCandidates=" + goodEvidence.EdgeCandidateCount,
+                    "GoodInliers=" + goodEvidence.InlierCount,
+                    "GoodContrastRejects=" + goodEvidence.Samples.Count(item => !item.ContrastAccepted),
+                    "GoodFitOutliers=" + goodEvidence.Samples.Count(item => item.ContrastAccepted && !item.FitInlier),
+                    "GoodResidualPx=" + goodEvidence.FitResidualPx.ToString("0.###############", CultureInfo.InvariantCulture),
+                    "Bad=" + badResult.Message,
+                    "BadResidualPx=" + badEvidence.FitResidualPx.ToString("0.###############", CultureInfo.InvariantCulture),
+                    "ResidualGatePx=" + goodEvidence.MaximumFitResidualPx.ToString("0.###############", CultureInfo.InvariantCulture),
+                    "RowPlotDrawingSelection=OK",
+                    "ReviewSideEffects=zero Run Review requests"
+                });
+
+            view.Measure(new System.Windows.Size(1180, 890));
+            view.Arrange(new System.Windows.Rect(0, 0, 1180, 890));
+            view.UpdateLayout();
+            Pump(4);
+            return CaptureElement(view, outputPath, 1180, 890);
+        }
+        finally
+        {
+            goodResult?.ResultImage?.Dispose();
+            badResult?.ResultImage?.Dispose();
+        }
+    }
+
+    private static CvMat CreateCvr04CircleImage(bool ellipse)
+    {
+        CvMat image = new(300, 400, OpenCvSharp.MatType.CV_8UC1, new OpenCvSharp.Scalar(240));
+        for (int y = 0; y < image.Height; y++)
+        {
+            for (int x = 0; x < image.Width; x++)
+            {
+                double dx = x - 200D;
+                double dy = y - 150D;
+                double angle = Math.Atan2(dy, dx) * 180D / Math.PI;
+                if (angle < 0D)
+                {
+                    angle += 360D;
+                }
+
+                bool dark;
+                if (ellipse)
+                {
+                    double normalized = Math.Sqrt(
+                        (dx * dx) / (70D * 70D)
+                        + (dy * dy) / (60D * 60D));
+                    dark = Math.Abs(normalized - 1D) <= 0.028D;
+                }
+                else
+                {
+                    double radius = Math.Sqrt(dx * dx + dy * dy);
+                    bool occluded = angle >= 100D && angle < 120D;
+                    bool trueRing = !occluded && Math.Abs(radius - 70D) <= 2D;
+                    bool falseInnerRing = angle >= 8D
+                        && angle < 18D
+                        && Math.Abs(radius - 55D) <= 2D;
+                    dark = trueRing || falseInnerRing;
+                }
+
+                if (dark)
+                {
+                    image.Set(y, x, (byte)20);
+                }
+            }
+        }
+
+        return image;
     }
 
     private static CaptureResult CaptureP214TwoPointScale(string outputPath)
@@ -25346,6 +26582,415 @@ internal static class Program
                 throw new InvalidOperationException("Pins Line measure did not create the expected LineDistance pipeline step.");
             }
         });
+    }
+
+    private static CaptureResult CaptureLineSignalProfile(string outputPath)
+    {
+        AssertLineSignalDirectionMatrix();
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_LineSignalProfile", seedMainLayer: false);
+        string goodPath = Path.Combine(
+            Environment.CurrentDirectory,
+            "docs",
+            "samples",
+            "public",
+            "Line_Pins_Synthetic_OK.png");
+        string badPath = Path.Combine(
+            Environment.CurrentDirectory,
+            "docs",
+            "samples",
+            "public",
+            "Line_Pins_Synthetic_WidePin_NG.png");
+        if (!File.Exists(goodPath) || !File.Exists(badPath))
+        {
+            throw new FileNotFoundException("Public Line signal Good/Bad pair was not found.");
+        }
+
+        using (Bitmap goodBitmap = new(goodPath))
+        {
+            shellHost.SetMainLayerImageForTest(goodBitmap);
+        }
+
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            shellHost.SelectToolForTest(VISION_MENU.Line);
+            Pump(16);
+            ConfigurePinsVerticalDistanceLine(shellHost, "Line A", "X_LTOR");
+            ConfigurePinsVerticalDistanceLine(shellHost, "Line B", "X_RTOL");
+            shellHost.SetActiveLineSettingForTest("Line A");
+            shellHost.SetActiveLinePurposeForTest("Measure");
+            Pump(12);
+
+            shellHost.RunActiveNativePreviewForTest();
+            Pump(24);
+            AssertLineSignalMeasurementReview(shellHost, "Line signal Good", 0.20, 0.25);
+            string goodReview = shellHost.ActiveNativeResultReviewText;
+            string goodEvidenceId = AssertLineSignalEvidence(
+                shellHost,
+                outputPath,
+                "good",
+                expectedSourceHash: null);
+            string goodSourceHash = shellHost.ActiveLineSignalInspectorSourceSha256ForTest;
+            string goodSelectedPoint = shellHost.GetActiveLineSignalInspectorAttributeForTest("SelectedImagePoint");
+            DependencyObject goodSignalRoot = (DependencyObject?)Application.Current.Windows
+                .OfType<Window>()
+                .LastOrDefault(item => item.IsVisible && item.GetType().Name == "OpenVisionFloatingToolWindow")
+                ?? shellHost;
+            SaveVisibleAutomationElementPng(
+                goodSignalRoot,
+                "LineSignalInspectorOverlay",
+                outputPath,
+                "line-signal-good.png");
+            using (Bitmap goodOutput = shellHost.GetLayerImageCloneForTest("Line_Preview"))
+            {
+                AssertBitmapPresent(goodOutput, "Line signal Good output");
+                SaveDiagnosticBitmap(outputPath, "line-signal-good-preview.png", goodOutput);
+            }
+
+            VisionPipelineStep goodStep = shellHost.AddActiveNativePipelineStepForTest()
+                ?? throw new InvalidOperationException("Line signal Good did not create a LineDistance Step.");
+            int previewCountBeforeReview = shellHost.NativePreviewRunCount;
+            int layerCountBeforeReview = shellHost.LayerDocumentCount;
+            string activeLayerBeforeReview = shellHost.ActiveHostLayerTitle;
+            string inputRouteBeforeReview = shellHost.ActiveNativeRouteInputLayerNameForTest;
+            string outputRouteBeforeReview = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+            shellHost.CloseActiveLineSignalInspectorForTest();
+            Pump(4);
+            if (!shellHost.ActiveLineSignalInspectorHasEvidenceForTest
+                || shellHost.ActiveLineSignalInspectorOverlayVisibleForTest)
+            {
+                throw new InvalidOperationException("Closing Line Signal Inspector changed or failed to hide current evidence.");
+            }
+
+            if (!shellHost.ExerciseActiveLineSignalInspectorNavigationForTest())
+            {
+                throw new InvalidOperationException("Line Signal Inspector zoom/pan/reset navigation did not complete.");
+            }
+
+            shellHost.OpenActiveLineSignalInspectorForTest();
+            Pump(4);
+            AssertLineSignalReviewSideEffectsUnchanged(
+                shellHost,
+                previewCountBeforeReview,
+                layerCountBeforeReview,
+                activeLayerBeforeReview,
+                inputRouteBeforeReview,
+                outputRouteBeforeReview,
+                "Line signal Good review controls");
+
+            shellHost.CloseActiveLineSignalInspectorForTest();
+            int previewCountBeforeBadLoad = shellHost.NativePreviewRunCount;
+            using (Bitmap badBitmap = new(badPath))
+            {
+                shellHost.SetMainLayerImageForTest(badBitmap);
+            }
+
+            Pump(12);
+            if (shellHost.ActiveLineSignalInspectorHasEvidenceForTest
+                || shellHost.ActiveLineSignalInspectorOverlayVisibleForTest
+                || shellHost.HasNativePreviewResult
+                || shellHost.NativePreviewRunCount != previewCountBeforeBadLoad)
+            {
+                throw new InvalidOperationException(
+                    "Replacing the Main workspace image retained stale Line evidence/result state or ran Preview implicitly.");
+            }
+
+            shellHost.RunActiveNativePreviewForTest();
+            Pump(24);
+            AssertLineSignalMeasurementReview(shellHost, "Line signal Bad", 0.09, 0.13);
+            string badReview = shellHost.ActiveNativeResultReviewText;
+            string badEvidenceId = AssertLineSignalEvidence(
+                shellHost,
+                outputPath,
+                "bad",
+                expectedSourceHash: null);
+            string badSourceHash = shellHost.ActiveLineSignalInspectorSourceSha256ForTest;
+            string badSelectedPoint = shellHost.GetActiveLineSignalInspectorAttributeForTest("SelectedImagePoint");
+            if (string.Equals(goodEvidenceId, badEvidenceId, StringComparison.Ordinal)
+                || string.Equals(goodSourceHash, badSourceHash, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Line signal Good/Bad evidence did not retain distinct source identities.");
+            }
+
+            DependencyObject badSignalRoot = (DependencyObject?)Application.Current.Windows
+                .OfType<Window>()
+                .LastOrDefault(item => item.IsVisible && item.GetType().Name == "OpenVisionFloatingToolWindow")
+                ?? shellHost;
+            SaveVisibleAutomationElementPng(
+                badSignalRoot,
+                "LineSignalInspectorOverlay",
+                outputPath,
+                "line-signal-bad.png");
+            using (Bitmap badOutput = shellHost.GetLayerImageCloneForTest("Line_Preview"))
+            {
+                AssertBitmapPresent(badOutput, "Line signal Bad output");
+                SaveDiagnosticBitmap(outputPath, "line-signal-bad-preview.png", badOutput);
+            }
+
+            VisionPipelineStep badStep = shellHost.AddActiveNativePipelineStepForTest()
+                ?? throw new InvalidOperationException("Line signal Bad did not create a LineDistance Step.");
+            AssertLineSignalParametersUnchanged(goodStep, badStep);
+            string? reportDirectory = Path.GetDirectoryName(outputPath);
+            File.WriteAllLines(
+                Path.Combine(
+                    string.IsNullOrWhiteSpace(reportDirectory) ? "." : reportDirectory,
+                    "line-signal-replay.txt"),
+                new[]
+                {
+                    "Status=OK",
+                    "GoodReview=" + goodReview,
+                    "GoodEvidenceId=" + goodEvidenceId,
+                    "GoodSourceSha256=" + goodSourceHash,
+                    "GoodSelectedPoint=" + goodSelectedPoint,
+                    "BadReview=" + badReview,
+                    "BadEvidenceId=" + badEvidenceId,
+                    "BadSourceSha256=" + badSourceHash,
+                    "BadSelectedPoint=" + badSelectedPoint,
+                    "FrozenToolType=" + goodStep.ToolType,
+                    "FrozenParameters=unchanged",
+                    "DirectionMatrix=X_LTOR,X_RTOL,Y_TTOB,Y_BTOT",
+                    "WorkspaceInputReplacement=cleared stale evidence without Preview",
+                    "ReviewSideEffects=unchanged"
+                });
+        });
+    }
+
+    private static void AssertLineSignalDirectionMatrix()
+    {
+        using CvMat source = CvMat.Zeros(100, 120, OpenCvSharp.MatType.CV_8UC1);
+        Cv.Rectangle(
+            source,
+            new OpenCvSharp.Rect(30, 24, 50, 52),
+            new OpenCvSharp.Scalar(220),
+            -1);
+        foreach (Lib.Common.FormulaUtil.PROJECTION_DIR direction in new[]
+        {
+            Lib.Common.FormulaUtil.PROJECTION_DIR.X_LTOR,
+            Lib.Common.FormulaUtil.PROJECTION_DIR.X_RTOL,
+            Lib.Common.FormulaUtil.PROJECTION_DIR.Y_TTOB,
+            Lib.Common.FormulaUtil.PROJECTION_DIR.Y_BTOT
+        })
+        {
+            LineGaugeProperty property = new("LineSignal_" + direction)
+            {
+                USE_ROI = true,
+                CvROI = new OpenCvSharp.Rect(0, 0, source.Width, source.Height),
+                PRJ_DIR = direction,
+                PRJ_PORALITY = Lib.Common.FormulaUtil.PROJECTION_POLARITY.BTOW,
+                CONTRAST = 18,
+                THICKNESS = 2,
+                SAMPLING_STEP = 10
+            };
+            LineGaugeTool tool = new();
+            tool.SetProperty(property);
+            VisionToolResult result = tool.Execute(source);
+            try
+            {
+                string failureReason = result?.Success == true
+                    ? string.Empty
+                    : result?.Message ?? "LineGauge execution failed.";
+                OpenVisionNativeLineSignalProfile? profile = null;
+                bool created = result?.Success == true
+                    && OpenVisionNativeLineSignalEvidenceFactory.TryCreate(
+                        source,
+                        property,
+                        tool.resultList,
+                        direction.ToString(),
+                        out profile,
+                        out failureReason);
+                if (!created)
+                {
+                    throw new InvalidOperationException(
+                        "Line signal direction replay failed for "
+                        + direction
+                        + ". "
+                        + failureReason);
+                }
+
+                using CvMat evidenceImage = source.Clone();
+                OpenVisionNativeToolPreviewOverlayRenderer.DrawLineSignalDiagnostic(evidenceImage, profile!);
+                VisionToolSignalEvidence evidence = profile!.CreateEvidence(source, evidenceImage, "Matrix");
+                if (evidence.Series.Count != 2
+                    || !evidence.Attributes.TryGetValue("RuntimeCorrespondence", out string? correspondence)
+                    || !string.Equals(correspondence, "Matched LineGauge first-stable edge", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Line signal direction replay evidence was incomplete for " + direction + ".");
+                }
+            }
+            finally
+            {
+                result?.ResultImage?.Dispose();
+            }
+        }
+    }
+
+    private static string AssertLineSignalEvidence(
+        OpenVisionShellHostView shellHost,
+        string outputPath,
+        string role,
+        string? expectedSourceHash)
+    {
+        if (!shellHost.ActiveLineSignalInspectorHasEvidenceForTest
+            || !shellHost.ActiveLineSignalInspectorOverlayVisibleForTest
+            || shellHost.ActiveLineSignalInspectorSeriesCountForTest != 2
+            || shellHost.ActiveLineSignalInspectorMarkerCountForTest < 2)
+        {
+            throw new InvalidOperationException(
+                "Line signal " + role + " did not publish the required two series, selected edge, and alternative marker.");
+        }
+
+        string evidenceId = shellHost.ActiveLineSignalInspectorEvidenceIdForTest;
+        string sourceHash = shellHost.ActiveLineSignalInspectorSourceSha256ForTest;
+        if (evidenceId.Length != 64
+            || sourceHash.Length != 64
+            || (!string.IsNullOrWhiteSpace(expectedSourceHash)
+                && !string.Equals(sourceHash, expectedSourceHash, StringComparison.Ordinal)))
+        {
+            throw new InvalidOperationException("Line signal " + role + " did not retain stable SHA-256 evidence identity.");
+        }
+
+        string selectedPoint = shellHost.GetActiveLineSignalInspectorAttributeForTest("SelectedImagePoint");
+        string scanStart = shellHost.GetActiveLineSignalInspectorAttributeForTest("ScanStart");
+        string scanEnd = shellHost.GetActiveLineSignalInspectorAttributeForTest("ScanEnd");
+        string correspondence = shellHost.GetActiveLineSignalInspectorAttributeForTest("RuntimeCorrespondence");
+        if (!Regex.IsMatch(selectedPoint, @"^\(\d+,\d+\)$")
+            || !Regex.IsMatch(scanStart, @"^\(\d+,\d+\)$")
+            || !Regex.IsMatch(scanEnd, @"^\(\d+,\d+\)$")
+            || !string.Equals(correspondence, "Matched LineGauge first-stable edge", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Line signal " + role + " did not retain exact image coordinates and runtime correspondence.");
+        }
+
+        string? directory = Path.GetDirectoryName(outputPath);
+        string tsvPath = Path.Combine(
+            string.IsNullOrWhiteSpace(directory) ? "." : directory,
+            "line-signal-" + role + ".tsv");
+        shellHost.ExportActiveLineSignalEvidenceForTest(tsvPath);
+        string tsv = File.ReadAllText(tsvPath);
+        if (!tsv.Contains("Intensity (GV)", StringComparison.Ordinal)
+            || !tsv.Contains("Signed edge response (\u0394GV)", StringComparison.Ordinal)
+            || !tsv.Contains("#\tAttribute.SelectedImagePoint\t", StringComparison.Ordinal)
+            || !tsv.Contains("#\tAttribute.RuntimeCorrespondence\tMatched LineGauge first-stable edge", StringComparison.Ordinal)
+            || !TsvContainsPositiveAndNegativeResponse(tsv))
+        {
+            throw new InvalidOperationException("Line signal " + role + " TSV evidence is incomplete.");
+        }
+
+        return evidenceId;
+    }
+
+    private static void AssertLineSignalMeasurementReview(
+        OpenVisionShellHostView shellHost,
+        string name,
+        double minimumMm,
+        double maximumMm)
+    {
+        string review = shellHost.ActiveNativeResultReviewText ?? string.Empty;
+        Match match = Regex.Match(
+            review,
+            @"([-+]?\d+(?:\.\d+)?)\s*mm",
+            RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+        if (!match.Success
+            || !double.TryParse(match.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out double value)
+            || value < minimumMm
+            || value > maximumMm)
+        {
+            throw new InvalidOperationException(
+                name
+                + " did not retain a successful measurement in range "
+                + minimumMm.ToString(CultureInfo.InvariantCulture)
+                + ".."
+                + maximumMm.ToString(CultureInfo.InvariantCulture)
+                + " mm. Review='"
+                + review
+                + "'.");
+        }
+    }
+
+    private static bool TsvContainsPositiveAndNegativeResponse(string tsv)
+    {
+        bool hasPositive = false;
+        bool hasNegative = false;
+        foreach (string line in (tsv ?? string.Empty).Split(new[] { "\r\n", "\n" }, StringSplitOptions.None))
+        {
+            if (string.IsNullOrWhiteSpace(line) || line[0] == '#')
+            {
+                continue;
+            }
+
+            string[] cells = line.Split('\t');
+            if (cells.Length < 3
+                || !double.TryParse(cells[2], NumberStyles.Float, CultureInfo.InvariantCulture, out double response))
+            {
+                continue;
+            }
+
+            hasPositive |= response > 0;
+            hasNegative |= response < 0;
+        }
+
+        return hasPositive && hasNegative;
+    }
+
+    private static void AssertLineSignalReviewSideEffectsUnchanged(
+        OpenVisionShellHostView shellHost,
+        int previewCount,
+        int layerCount,
+        string activeLayer,
+        string inputRoute,
+        string outputRoute,
+        string name)
+    {
+        if (shellHost.NativePreviewRunCount != previewCount
+            || shellHost.LayerDocumentCount != layerCount
+            || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayer, StringComparison.Ordinal)
+            || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRoute, StringComparison.Ordinal)
+            || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRoute, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(name + " changed Preview count, layers, active layer, or routing.");
+        }
+    }
+
+    private static void AssertLineSignalParametersUnchanged(VisionPipelineStep good, VisionPipelineStep bad)
+    {
+        string[] requiredKeys =
+        {
+            "LeftCvROI",
+            "RightCvROI",
+            "LeftPRJ_DIR",
+            "RightPRJ_DIR",
+            "LeftPRJ_PORALITY",
+            "RightPRJ_PORALITY",
+            "LeftCONTRAST",
+            "RightCONTRAST",
+            "LeftTHICKNESS",
+            "RightTHICKNESS",
+            "LeftSAMPLING_STEP",
+            "RightSAMPLING_STEP",
+            "LeftPOINT_RANGE",
+            "RightPOINT_RANGE",
+            "LeftUSE_MANUAL_ANGLE",
+            "RightUSE_MANUAL_ANGLE",
+            "LeftMANUAL_ANGLE_VALUE",
+            "RightMANUAL_ANGLE_VALUE"
+        };
+        if (!string.Equals(good.ToolType, "LineDistance", StringComparison.Ordinal)
+            || !string.Equals(bad.ToolType, "LineDistance", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Line signal Good/Bad replay did not retain LineDistance.");
+        }
+
+        foreach (string key in requiredKeys)
+        {
+            if (!good.Parameters.TryGetValue(key, out string? goodValue)
+                || !bad.Parameters.TryGetValue(key, out string? badValue)
+                || !string.Equals(goodValue, badValue, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Line signal Good/Bad replay changed parameter '" + key + "'.");
+            }
+        }
     }
 
     private static void ConfigurePinsVerticalDistanceLine(OpenVisionShellHostView shellHost, string setting, string projectionDirection)

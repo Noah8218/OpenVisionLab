@@ -18,7 +18,7 @@ namespace OpenVisionLab
                 throw new ArgumentException("An image is required.", nameof(image));
             }
 
-            using Mat gray = ConvertToGray8(image);
+            using Mat gray = CreateGray8Copy(image);
             int[] counts = new int[BinCount];
             long pixelCount = checked((long)gray.Rows * gray.Cols);
             if (pixelCount <= 0)
@@ -62,7 +62,7 @@ namespace OpenVisionLab
             return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonicalIdentity)));
         }
 
-        private static Mat ConvertToGray8(Mat image)
+        internal static Mat CreateGray8Copy(Mat image)
         {
             Mat gray = new Mat();
             if (image.Channels() == 1)

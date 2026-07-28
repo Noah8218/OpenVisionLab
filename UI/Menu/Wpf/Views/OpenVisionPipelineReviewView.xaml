@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:pipeline="clr-namespace:OpenVisionLab.Pipeline.Controls;assembly=OpenVisionLab.Pipeline.Controls"
+             xmlns:local="clr-namespace:OpenVisionLab"
              MinWidth="860"
              MinHeight="560"
              Background="#EEF2F6">
@@ -672,7 +673,7 @@
                     <RowDefinition Height="12" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="12" />
-                    <RowDefinition Height="160" />
+                    <RowDefinition x:Name="reviewDetailRow" Height="160" />
                 </Grid.RowDefinitions>
 
                 <Grid Grid.Row="0">
@@ -1033,6 +1034,8 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="4" />
+                                <RowDefinition Height="94" />
+                                <RowDefinition Height="4" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
@@ -1042,7 +1045,7 @@
                                 <ColumnDefinition Width="8" />
                                 <ColumnDefinition Width="1.35*" />
                                 <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="190" />
+                                <ColumnDefinition Width="160" />
                             </Grid.ColumnDefinitions>
 
                             <Border Grid.Row="0"
@@ -1065,7 +1068,35 @@
                                 </DockPanel>
                             </Border>
 
-                            <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource PreviewWellStyle}">
+                            <DataGrid x:Name="fixtureConsumerGrid"
+                                      Grid.Row="2"
+                                      Grid.ColumnSpan="5"
+                                      AutomationProperties.AutomationId="PipelineReviewFixtureConsumerTable"
+                                      ItemsSource="{Binding FixtureConsumers}"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      CanUserReorderColumns="False"
+                                      CanUserResizeRows="False"
+                                      HeadersVisibility="Column"
+                                      IsReadOnly="True"
+                                      ColumnHeaderHeight="26"
+                                      RowHeight="24"
+                                      SelectionMode="Single"
+                                      SelectionUnit="FullRow"
+                                      SelectionChanged="FixtureConsumerGrid_SelectionChanged">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="#" Binding="{Binding StepNumber}" Width="36" />
+                                    <DataGridTextColumn Header="ROI consumer" Binding="{Binding StepName}" Width="1.35*" />
+                                    <DataGridTextColumn Header="Tool" Binding="{Binding ToolType}" Width="0.65*" />
+                                    <DataGridTextColumn Header="Reference ROI" Binding="{Binding RoiText}" Width="0.9*" />
+                                    <DataGridTextColumn Header="Route" Binding="{Binding RouteText}" Width="1.2*" />
+                                    <DataGridTextColumn Header="State" Binding="{Binding StatusText}" Width="55" />
+                                    <DataGridTextColumn Header="Evidence" Binding="{Binding EvidenceShortId}" Width="96" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <Border Grid.Row="4" Grid.Column="0" Style="{StaticResource PreviewWellStyle}">
                                 <Grid>
                                     <Image x:Name="fixtureSourcePreviewImage"
                                            AutomationProperties.AutomationId="PipelineReviewFixtureSourcePreview"
@@ -1084,7 +1115,7 @@
                                 </Grid>
                             </Border>
 
-                            <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource PreviewWellStyle}">
+                            <Border Grid.Row="4" Grid.Column="2" Style="{StaticResource PreviewWellStyle}">
                                 <Grid>
                                     <Image x:Name="fixtureNormalizedPreviewImage"
                                            AutomationProperties.AutomationId="PipelineReviewFixtureNormalizedPreview"
@@ -1103,7 +1134,7 @@
                                 </Grid>
                             </Border>
 
-                            <Border Grid.Row="2" Grid.Column="4" Style="{StaticResource ReviewPanelStyle}" Padding="6">
+                            <Border Grid.Row="4" Grid.Column="4" Style="{StaticResource ReviewPanelStyle}" Padding="6">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
@@ -1132,7 +1163,7 @@
                                 </Grid>
                             </Border>
 
-                            <StackPanel Grid.Row="0" Grid.RowSpan="3" Grid.Column="6" VerticalAlignment="Center">
+                            <StackPanel Grid.Row="0" Grid.RowSpan="5" Grid.Column="6" VerticalAlignment="Center">
                                 <Button x:Name="btnUseSelectedMatchingPose"
                                         AutomationProperties.AutomationId="PipelineReviewUseMatchingPoseButton"
                                         IsEnabled="{Binding CanUseSelectedMatchingPose}"
@@ -1187,15 +1218,64 @@
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="190" />
-                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="7" />
+                                <ColumnDefinition Width="330" />
+                                <ColumnDefinition Width="7" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="objectResultCountText"
-                                       Grid.ColumnSpan="3"
-                                       AutomationProperties.AutomationId="PipelineReviewObjectResultCount"
-                                       Foreground="{StaticResource PipelineReview.AccentBrush}"
-                                       FontWeight="SemiBold"
-                                       Text="Objects 0 / accepted 0 / rejected 0" />
+                            <Grid Grid.ColumnSpan="5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock x:Name="objectResultCountText"
+                                               AutomationProperties.AutomationId="PipelineReviewObjectResultCount"
+                                               Foreground="{StaticResource PipelineReview.AccentBrush}"
+                                               FontWeight="SemiBold"
+                                               Text="Objects 0 / accepted 0 / rejected 0" />
+                                    <TextBlock x:Name="objectMetricSummaryText"
+                                               AutomationProperties.AutomationId="PipelineReviewObjectMetricSummary"
+                                               Foreground="{StaticResource PipelineReview.MutedTextBrush}"
+                                               FontSize="10"
+                                               Text="Run Review explicitly to retain object metric distribution evidence."
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Horizontal"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Top">
+                                    <Button x:Name="btnObjectMetricArea"
+                                            Height="24"
+                                            MinWidth="54"
+                                            Margin="0,0,4,0"
+                                            Padding="7,0"
+                                            AutomationProperties.AutomationId="PipelineReviewObjectMetricAreaButton"
+                                            AutomationProperties.Name="Show area distribution"
+                                            ToolTip="Show retained object Area with current MIN_AREA and MAX_AREA."
+                                            Click="BtnObjectMetricArea_Click"
+                                            Content="Area" />
+                                    <Button x:Name="btnObjectMetricWidth"
+                                            Height="24"
+                                            MinWidth="82"
+                                            Margin="0,0,4,0"
+                                            Padding="7,0"
+                                            AutomationProperties.AutomationId="PipelineReviewObjectMetricWidthButton"
+                                            AutomationProperties.Name="Show bounding width distribution"
+                                            ToolTip="Show retained object Bounds width with current MIN_WIDTH and MAX_WIDTH."
+                                            Click="BtnObjectMetricWidth_Click"
+                                            Content="Bounds W" />
+                                    <Button x:Name="btnObjectMetricHeight"
+                                            Height="24"
+                                            MinWidth="82"
+                                            Padding="7,0"
+                                            AutomationProperties.AutomationId="PipelineReviewObjectMetricHeightButton"
+                                            AutomationProperties.Name="Show bounding height distribution"
+                                            ToolTip="Show retained object Bounds height with current MIN_HEIGHT and MAX_HEIGHT."
+                                            Click="BtnObjectMetricHeight_Click"
+                                            Content="Bounds H" />
+                                </StackPanel>
+                            </Grid>
                             <Border Grid.Row="2"
                                     Grid.Column="0"
                                     Style="{StaticResource PreviewWellStyle}">
@@ -1217,9 +1297,8 @@
                                     </Border>
                                 </Grid>
                             </Border>
-                            <DataGrid x:Name="objectResultsGrid"
-                                      Grid.Row="2"
-                                      Grid.Column="2"
+                            <Grid Grid.Row="2" Grid.Column="2">
+                                <DataGrid x:Name="objectResultsGrid"
                                       AutomationProperties.AutomationId="PipelineReviewObjectResultsTable"
                                       AutoGenerateColumns="False"
                                       CanUserAddRows="False"
@@ -1250,6 +1329,111 @@
                                     <DataGridTextColumn Header="H" Binding="{Binding BoundsHeight}" Width="44" />
                                     <DataGridTextColumn Header="각도" Binding="{Binding Angle, StringFormat={}{0:0.##}}" Width="58" />
                                     <DataGridTextColumn Header="제외 사유" Binding="{Binding RejectReason}" Width="*" />
+                                </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                            <Grid Grid.Row="2" Grid.Column="4">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Margin="2,0,0,2"
+                                           Foreground="{StaticResource PipelineReview.MutedTextBrush}"
+                                           FontSize="10"
+                                           Text="Accepted (green) / rejected (red). Current read-only PropertyGrid range markers." />
+                                <local:VisionToolSignalPlotSurface x:Name="objectMetricPlot"
+                                                                   Grid.Row="1"
+                                                                   MinWidth="250"
+                                                                   MinHeight="110"
+                                                                   ToolTip="Mouse wheel: zoom. Drag: pan. Click near one metric value to select the nearest retained object."
+                                                                   AutomationProperties.AutomationId="PipelineReviewObjectMetricPlot"
+                                                                   AutomationProperties.Name="Object metric distribution plot" />
+                            </Grid>
+                        </Grid>
+                    </TabItem>
+                    <TabItem x:Name="matcherDiagnosticTab"
+                             Header="Matcher Diagnostics"
+                             AutomationProperties.AutomationId="PipelineReviewMatcherDiagnosticTab"
+                             Visibility="Collapsed">
+                        <Grid Margin="6">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="6" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="220" />
+                                <ColumnDefinition Width="7" />
+                                <ColumnDefinition Width="270" />
+                                <ColumnDefinition Width="7" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock x:Name="matcherDiagnosticSummaryText"
+                                       Grid.ColumnSpan="5"
+                                       AutomationProperties.AutomationId="PipelineReviewMatcherDiagnosticSummary"
+                                       Foreground="{StaticResource PipelineReview.AccentBrush}"
+                                       FontWeight="SemiBold"
+                                       Text="No current matcher diagnostic evidence"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTipService.ShowDuration="30000" />
+
+                            <Border Grid.Row="2"
+                                    Grid.Column="0"
+                                    Style="{StaticResource PreviewWellStyle}">
+                                <Grid>
+                                    <Image x:Name="imgMatcherModelPreview"
+                                           AutomationProperties.AutomationId="PipelineReviewMatcherModelPreview"
+                                           AutomationProperties.Name="Trained edge model visualization"
+                                           Source="{Binding MatcherModelPreviewImage}"
+                                           Stretch="Uniform" />
+                                    <Border HorizontalAlignment="Left"
+                                            VerticalAlignment="Top"
+                                            Background="#CC102027"
+                                            Padding="5,2">
+                                        <TextBlock Text="Trained edge model"
+                                                   Foreground="White"
+                                                   FontSize="10" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Row="2"
+                                    Grid.Column="2"
+                                    Style="{StaticResource PreviewWellStyle}">
+                                <Grid>
+                                    <Image x:Name="imgMatcherCandidatePreview"
+                                           AutomationProperties.AutomationId="PipelineReviewMatcherCandidatePreview"
+                                           AutomationProperties.Name="Selected and alternative matcher candidates"
+                                           Source="{Binding MatcherCandidatePreviewImage}"
+                                           Stretch="Uniform" />
+                                    <Border HorizontalAlignment="Left"
+                                            VerticalAlignment="Top"
+                                            Background="#CC102027"
+                                            Padding="5,2">
+                                        <TextBlock Text="Search / candidates"
+                                                   Foreground="White"
+                                                   FontSize="10" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                            <DataGrid x:Name="matcherDiagnosticGrid"
+                                      Grid.Row="2"
+                                      Grid.Column="4"
+                                      AutomationProperties.AutomationId="PipelineReviewMatcherDiagnosticTable"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      IsReadOnly="True"
+                                      SelectionMode="Single"
+                                      SelectionUnit="FullRow"
+                                      HeadersVisibility="Column"
+                                      GridLinesVisibility="Horizontal">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Group" Binding="{Binding Section}" Width="82" />
+                                    <DataGridTextColumn Header="Diagnostic" Binding="{Binding Name}" Width="132" />
+                                    <DataGridTextColumn Header="Current run evidence" Binding="{Binding Value}" Width="*" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Grid>
@@ -1307,6 +1491,125 @@
                                     <DataGridTextColumn Header="Fit evidence" Binding="{Binding QualityText}" Width="*" />
                                 </DataGrid.Columns>
                             </DataGrid>
+                        </Grid>
+                    </TabItem>
+                    <TabItem x:Name="circleEvidenceTab"
+                             Header="Circle Evidence"
+                             AutomationProperties.AutomationId="PipelineReviewCircleEvidenceTab"
+                             Visibility="Collapsed">
+                        <Grid Margin="6">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="5" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="190" />
+                                <ColumnDefinition Width="7" />
+                                <ColumnDefinition Width="300" />
+                                <ColumnDefinition Width="7" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock x:Name="circleEvidenceSummaryText"
+                                       Grid.ColumnSpan="3"
+                                       AutomationProperties.AutomationId="PipelineReviewCircleEvidenceSummary"
+                                       Foreground="{StaticResource PipelineReview.AccentBrush}"
+                                       FontWeight="SemiBold"
+                                       Text="No current Circle evidence"
+                                       TextTrimming="CharacterEllipsis" />
+                            <StackPanel Grid.Column="4"
+                                        Orientation="Horizontal"
+                                        HorizontalAlignment="Right">
+                                <Button x:Name="btnCircleResidualPlot"
+                                        Height="24"
+                                        MinWidth="68"
+                                        Margin="0,0,4,0"
+                                        Padding="7,0"
+                                        AutomationProperties.AutomationId="PipelineReviewCircleResidualPlotButton"
+                                        Click="BtnCircleResidualPlot_Click"
+                                        Content="Residuals" />
+                                <Button x:Name="btnCircleProfilePlot"
+                                        Height="24"
+                                        MinWidth="108"
+                                        Padding="7,0"
+                                        AutomationProperties.AutomationId="PipelineReviewCircleProfilePlotButton"
+                                        Click="BtnCircleProfilePlot_Click"
+                                        Content="Selected scan profile" />
+                            </StackPanel>
+
+                            <Border Grid.Row="2"
+                                    Grid.Column="0"
+                                    Style="{StaticResource PreviewWellStyle}">
+                                <Grid>
+                                    <Image x:Name="imgCircleEvidencePreview"
+                                           AutomationProperties.AutomationId="PipelineReviewCircleEvidencePreview"
+                                           Source="{Binding OutputPreviewImage}"
+                                           Stretch="Uniform"
+                                           Cursor="Cross"
+                                           MouseLeftButtonDown="ImgCircleEvidencePreview_MouseLeftButtonDown" />
+                                    <Border HorizontalAlignment="Left"
+                                            VerticalAlignment="Top"
+                                            Background="#CC102027"
+                                            Padding="5,2">
+                                        <TextBlock Text="Selected radial scan"
+                                                   Foreground="White"
+                                                   FontSize="10" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                            <DataGrid x:Name="circleSamplesGrid"
+                                      Grid.Row="2"
+                                      Grid.Column="2"
+                                      AutomationProperties.AutomationId="PipelineReviewCircleSamplesTable"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      IsReadOnly="True"
+                                      SelectionMode="Single"
+                                      SelectionUnit="FullRow"
+                                      SelectionChanged="CircleSamplesGrid_SelectionChanged"
+                                      HeadersVisibility="Column"
+                                      GridLinesVisibility="Horizontal">
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Setter Property="Foreground" Value="#B5473A" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding FitInlier}" Value="True">
+                                                <Setter Property="Foreground" Value="{StaticResource PipelineReview.OkBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="#" Binding="{Binding Number}" Width="38" />
+                                    <DataGridTextColumn Header="Angle" Binding="{Binding AngleDeg, StringFormat={}{0:0.#}}" Width="54" />
+                                    <DataGridTextColumn Header="State" Binding="{Binding StateText}" Width="80" />
+                                    <DataGridTextColumn Header="Edge GV" Binding="{Binding EdgeStrengthGv, StringFormat={}{0:0.##}}" Width="62" />
+                                    <DataGridTextColumn Header="Residual" Binding="{Binding ResidualText}" Width="62" />
+                                    <DataGridTextColumn Header="Reason" Binding="{Binding RejectReason}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <Grid Grid.Row="2" Grid.Column="4">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <TextBlock x:Name="circlePlotCaptionText"
+                                           Margin="2,0,0,3"
+                                           Foreground="{StaticResource PipelineReview.MutedTextBrush}"
+                                           FontSize="10"
+                                           Text="Absolute fitted-radius residual by scan" />
+                                <local:VisionToolSignalPlotSurface x:Name="circleEvidencePlot"
+                                                                   Grid.Row="1"
+                                                                   MinWidth="220"
+                                                                   MinHeight="110"
+                                                                   ToolTip="Mouse wheel: zoom. Drag: pan. Click a residual scan to select its row."
+                                                                   AutomationProperties.AutomationId="PipelineReviewCircleEvidencePlot"
+                                                                   AutomationProperties.Name="Circle radial evidence plot" />
+                            </Grid>
                         </Grid>
                     </TabItem>
                     <TabItem x:Name="scaleCalibrationTab"

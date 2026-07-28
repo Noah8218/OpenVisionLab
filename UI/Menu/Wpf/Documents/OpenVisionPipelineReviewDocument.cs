@@ -72,6 +72,7 @@ namespace OpenVisionLab
             view.EditSelectedStepRequested += OnEditSelectedStepRequested;
             view.EditFixtureProducerRequested += OnEditFixtureProducerRequested;
             view.EditFixtureMeasurementRequested += OnEditFixtureMeasurementRequested;
+            view.FixtureConsumerSelected += OnFixtureConsumerSelected;
             view.ScaleCalibrationRequested += OnScaleCalibrationRequested;
             view.ScaleCalibrationApplyRequested += OnScaleCalibrationApplyRequested;
             OpenVisionLanguageService.LanguageChanged += OnLanguageChanged;
@@ -120,6 +121,17 @@ namespace OpenVisionLab
         public int ObjectResultCount => view.ObjectResultCount;
         public int SelectedObjectResultNumber => view.SelectedObjectResultNumber;
         public bool HasObjectHighlight => view.HasObjectHighlight;
+        public int ObjectMetricDistributionSeriesCount => view.ObjectMetricDistributionSeriesCountForTest;
+        public int ObjectMetricDistributionMarkerCount => view.ObjectMetricDistributionMarkerCountForTest;
+        public string ObjectMetricDistributionMetric => view.ObjectMetricDistributionMetricForTest;
+        public string ObjectMetricDistributionEvidenceId => view.ObjectMetricDistributionEvidenceIdForTest;
+        public bool MatcherDiagnosticTabVisible => view.MatcherDiagnosticTabVisibleForTest;
+        public string MatcherDiagnosticState => view.MatcherDiagnosticStateForTest;
+        public string MatcherDiagnosticEvidenceId => view.MatcherDiagnosticEvidenceIdForTest;
+        public int MatcherDiagnosticRowCount => view.MatcherDiagnosticRowCountForTest;
+        public int MatcherDiagnosticModelPointCount => view.MatcherDiagnosticModelPointCountForTest;
+        public bool MatcherDiagnosticHasSelectedCandidate => view.MatcherDiagnosticHasSelectedCandidateForTest;
+        public bool MatcherDiagnosticHasAlternative => view.MatcherDiagnosticHasAlternativeForTest;
         public bool IsFixtureDesignerVisible => view.IsFixtureDesignerVisible;
         public string FixtureRelationshipText => view.FixtureRelationshipText;
         public string ScaleCalibrationStatusText => view.ScaleCalibrationStatusText;
@@ -234,6 +246,7 @@ namespace OpenVisionLab
             view.EditSelectedStepRequested -= OnEditSelectedStepRequested;
             view.EditFixtureProducerRequested -= OnEditFixtureProducerRequested;
             view.EditFixtureMeasurementRequested -= OnEditFixtureMeasurementRequested;
+            view.FixtureConsumerSelected -= OnFixtureConsumerSelected;
             view.ScaleCalibrationRequested -= OnScaleCalibrationRequested;
             view.ScaleCalibrationApplyRequested -= OnScaleCalibrationApplyRequested;
             OpenVisionLanguageService.LanguageChanged -= OnLanguageChanged;
@@ -396,8 +409,23 @@ namespace OpenVisionLab
             view.SetResultSummary(
                 OpenVisionPipelineReviewResultPresenter.FormatResultSummary(summary),
                 OpenVisionPipelineReviewResultPresenter.FormatResultDetails(step, summary));
-            view.SetObjectResults(IsObjectResultTool(step), summary?.ObjectResults);
+            view.SetObjectResults(
+                IsObjectResultTool(step),
+                step,
+                summary?.ObjectResults,
+                inputImage,
+                outputImage);
             view.SetGeometryResults(IsGeometryResultTool(step), summary?.GeometryFeatures);
+            view.SetCircleEvidence(
+                IsCircleGaugeTool(step),
+                summary?.CircleEvidence,
+                inputImage,
+                outputImage);
+            view.SetMatcherDiagnostics(
+                IsEdgeBasedMatchingTool(step),
+                summary?.EdgeBasedMatchingDiagnostics,
+                summary?.Metrics,
+                inputImage);
             view.SetReviewGuide(OpenVisionPipelineReviewGuidePresenter.CreateSelected(
                 index + 1,
                 pipeline.Steps.Count,
@@ -502,6 +530,36 @@ namespace OpenVisionLab
                 || string.Equals(toolType, "GeometricMeasurement", StringComparison.OrdinalIgnoreCase);
         }
 
+        private static bool IsCircleGaugeTool(VisionPipelineStep step)
+        {
+            string toolType = (step?.ToolType ?? string.Empty)
+                .Replace(" ", string.Empty)
+                .Replace("_", string.Empty)
+                .Trim();
+            if (toolType.EndsWith("Tool", StringComparison.OrdinalIgnoreCase))
+            {
+                toolType = toolType.Substring(0, toolType.Length - 4);
+            }
+
+            return string.Equals(toolType, "CircleGauge", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsEdgeBasedMatchingTool(VisionPipelineStep step)
+        {
+            string toolType = (step?.ToolType ?? string.Empty)
+                .Replace(" ", string.Empty)
+                .Replace("_", string.Empty)
+                .Trim();
+            if (toolType.EndsWith("Tool", StringComparison.OrdinalIgnoreCase))
+            {
+                toolType = toolType.Substring(0, toolType.Length - 4);
+            }
+
+            return string.Equals(toolType, "EdgeBasedMatching", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(toolType, "EdgeBasedTemplateMatching", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(toolType, "EdgeTemplateMatching", StringComparison.OrdinalIgnoreCase);
+        }
+
         private void UpdateFixtureTeachState(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
         {
             if (!VisionPipelineFixtureFrameService.IsProducer(step))
@@ -548,7 +606,8 @@ namespace OpenVisionLab
                             out VisionPipelineStepResultSummary summary);
                         return summary;
                     },
-                    ResolveLayerPreviewImage);
+                    ResolveLayerPreviewImage,
+                    fixtureMeasurementIndex);
 
             fixtureProducerIndex = state.ProducerIndex;
             fixtureMeasurementIndex = state.MeasurementIndex;
@@ -566,7 +625,9 @@ namespace OpenVisionLab
                 state.TemplatePreview,
                 state.CanTeachReference,
                 state.CanEditProducer,
-                state.CanEditMeasurement);
+                state.CanEditMeasurement,
+                state.Consumers,
+                state.MeasurementIndex);
         }
 
         private void SaveSelectedMatchingPoseAsReference()

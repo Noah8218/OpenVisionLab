@@ -33,10 +33,11 @@ namespace OpenVisionLab
             }
 
             var application = Application.Current ?? new Application();
+            ShutdownMode previousShutdownMode = application.ShutdownMode;
 
             try
             {
-                application.ShutdownMode = System.Windows.ShutdownMode.OnMainWindowClose;
+                application.ShutdownMode = ShutdownMode.OnMainWindowClose;
                 using var exceptionPolicy = OpenVisionLabUnhandledExceptionPolicy.Attach(application);
 
                 var runtimeContext = ApplicationRuntimeContext.CreateDefault();
@@ -50,7 +51,11 @@ namespace OpenVisionLab
             }
             finally
             {
-                application.ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown;
+                if (!application.Dispatcher.HasShutdownStarted
+                    && !application.Dispatcher.HasShutdownFinished)
+                {
+                    application.ShutdownMode = previousShutdownMode;
+                }
             }
         }
 

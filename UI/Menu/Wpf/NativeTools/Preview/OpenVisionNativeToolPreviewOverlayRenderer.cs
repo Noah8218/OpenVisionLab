@@ -201,6 +201,51 @@ namespace OpenVisionLab
             return canvas;
         }
 
+        public static void DrawLineSignalDiagnostic(Mat target, OpenVisionNativeLineSignalProfile profile)
+        {
+            if (target == null || target.Empty() || profile == null)
+            {
+                return;
+            }
+
+            Scalar scanColor = new Scalar(255, 210, 0);
+            Scalar selectedColor = new Scalar(40, 40, 255);
+            Scalar alternativeColor = new Scalar(0, 150, 255);
+            Cv2.Line(target, profile.ScanStart, profile.ScanEnd, scanColor, 1, LineTypes.AntiAlias);
+            Cv2.DrawMarker(
+                target,
+                profile.SelectedPoint,
+                selectedColor,
+                MarkerTypes.Cross,
+                16,
+                2,
+                LineTypes.AntiAlias);
+            foreach (OpenVisionNativeLineSignalAlternative alternative in profile.Alternatives.Take(4))
+            {
+                Cv2.DrawMarker(
+                    target,
+                    alternative.ImagePoint,
+                    alternativeColor,
+                    MarkerTypes.TiltedCross,
+                    10,
+                    1,
+                    LineTypes.AntiAlias);
+            }
+
+            OpenCvSharp.Point labelPoint = new OpenCvSharp.Point(
+                Math.Clamp(profile.ScanStart.X + 4, 0, Math.Max(0, target.Width - 1)),
+                Math.Clamp(profile.ScanStart.Y - 5, 12, Math.Max(12, target.Height - 1)));
+            Cv2.PutText(
+                target,
+                "Profile " + profile.LineName,
+                labelPoint,
+                HersheyFonts.HersheySimplex,
+                0.38,
+                scanColor,
+                1,
+                LineTypes.AntiAlias);
+        }
+
         public static Mat CreateAffineTransformPreviewImage(Mat transformedImage, IEnumerable<VisionToolOverlay> overlays)
         {
             Mat canvas = CreateColorCanvas(transformedImage);

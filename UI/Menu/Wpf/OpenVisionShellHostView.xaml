@@ -580,6 +580,8 @@
                     </Grid.ColumnDefinitions>
                     <Button x:Name="navItemButton"
                             Style="{StaticResource NavToolButtonStyle}"
+                            AutomationProperties.AutomationId="{Binding CommandId, StringFormat=HostToolNav_{0}}"
+                            AutomationProperties.Name="{Binding Title}"
                             Command="{Binding DataContext.SelectToolCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                             CommandParameter="{Binding}"
                             ToolTip="{Binding ToolTip}">

@@ -1,4 +1,5 @@
 using Lib.OpenCV.Pipeline;
+using Lib.OpenCV.Result;
 using Lib.OpenCV.Tool;
 using System;
 using System.Collections.Generic;
@@ -38,6 +39,8 @@ namespace OpenVisionLab
         public int ObjectResultCount => ObjectResults?.Count ?? 0;
         public IReadOnlyList<VisionPipelineGeometryFeatureResult> GeometryFeatures { get; set; } = Array.Empty<VisionPipelineGeometryFeatureResult>();
         public int GeometryFeatureCount => GeometryFeatures?.Count ?? 0;
+        public VisionPipelineCircleEvidence CircleEvidence { get; set; }
+        public EdgeBasedMatchingDiagnosticEvidence EdgeBasedMatchingDiagnostics { get; set; }
         public string ResultImageSizeText => HasResultImage
             ? $"{ResultImageWidth} x {ResultImageHeight}"
             : string.Empty;
@@ -88,7 +91,9 @@ namespace OpenVisionLab
                 Metrics = VisionPipelineKnownMetrics.OrderMetrics(toolResult?.Metrics)
                     .ToDictionary(metric => metric.Key, metric => metric.Value, StringComparer.OrdinalIgnoreCase),
                 ObjectResults = VisionPipelineObjectResultStore.Get(toolResult).ToList(),
-                GeometryFeatures = VisionPipelineGeometryFeatureStore.Get(toolResult).Select(item => item.Clone()).ToList()
+                GeometryFeatures = VisionPipelineGeometryFeatureStore.Get(toolResult).Select(item => item.Clone()).ToList(),
+                CircleEvidence = VisionPipelineCircleEvidenceStore.Get(toolResult),
+                EdgeBasedMatchingDiagnostics = toolResult?.EdgeBasedMatchingDiagnostics?.Clone()
             };
         }
 

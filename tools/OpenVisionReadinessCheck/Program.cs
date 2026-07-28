@@ -435,6 +435,20 @@ internal static class Program
         RequireNotContains(sampleSmoke, "BentPin_BadShaft", "Generic sample smoke must not require the local legacy root Sample catalog.");
         RequireNotContains(sampleSmoke, "EasyObject_FilmBad_DarkSpot", "Generic sample smoke must not require the local legacy root Sample catalog.");
         RequireContains(sampleSmoke, "LEARN_PRODUCT_SAMPLES.md", "Product sample smoke verifies the Product Learn document route.");
+        RequireContains(sampleSmoke, "\"wpf_line_signal_profile\"", "Screenshot smoke retains the CVR-03 Line signal profile contract.");
+        RequireContains(sampleSmoke, "AssertLineSignalDirectionMatrix", "Line signal smoke covers all four projection directions.");
+        RequireContains(sampleSmoke, "Matched LineGauge first-stable edge", "Line signal smoke verifies exact runtime correspondence.");
+
+        string lineSignalFactory = Read(
+            repoRoot,
+            @"UI\Menu\Wpf\NativeTools\SignalInspection\OpenVisionNativeLineSignalEvidenceFactory.cs");
+        RequireContains(lineSignalFactory, "Signed edge response", "Line signal evidence publishes signed scan-direction response.");
+        RequireContains(lineSignalFactory, "SelectDistinctAlternatives", "Line signal evidence collapses adjacent responses into distinct alternatives.");
+        RequireContains(lineSignalFactory, "RuntimeCorrespondence", "Line signal evidence retains runtime/drawing correspondence metadata.");
+        RequirePathExists(
+            repoRoot,
+            @"docs\reports\OPENVISIONLAB_LINE_SIGNAL_PROFILE_20260728.md",
+            "CVR-03 Line signal completion report exists.");
 
         string localization = Read(repoRoot, @"Library\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv");
         RequireContains(localization, "PipelineSamples.FixGuide", "Sample selection details show recommended fix points.");
@@ -1782,6 +1796,42 @@ internal static class Program
         RequireNotContains(learnSmokeScript, "Start-Job", "Learn Mode UI smoke runner must not parallelize WPF smoke targets.");
 
         string learnScreenshotSmoke = Read(repoRoot, @"tools\PipelineViewerScreenshotSmoke\Program.cs");
+        string circleGaugeToolSource = Read(
+            repoRoot,
+            @"Core\Pipeline\Tools\VisionPipelineCircleGaugeTool.cs");
+        string circleEvidenceSource = Read(
+            repoRoot,
+            @"Core\Pipeline\Execution\VisionPipelineCircleEvidence.cs");
+        string objectDistributionSource = Read(
+            repoRoot,
+            @"UI\Menu\Wpf\PipelineReview\Presenters\OpenVisionPipelineReviewObjectDistributionPresenter.cs");
+        string matcherDiagnosticSource = Read(
+            repoRoot,
+            @"UI\Menu\Wpf\PipelineReview\Presenters\OpenVisionPipelineReviewMatcherDiagnosticPresenter.cs");
+        string pipelineResultSummarySource = Read(
+            repoRoot,
+            @"Core\Pipeline\Execution\VisionPipelineResultSummary.cs");
+        string pipelineReviewDocumentSource = Read(
+            repoRoot,
+            @"UI\Menu\Wpf\Documents\OpenVisionPipelineReviewDocument.cs");
+        string pipelineReviewFixturePresenterSource = Read(
+            repoRoot,
+            @"UI\Menu\Wpf\PipelineReview\Presenters\OpenVisionPipelineReviewFixturePresenter.cs");
+        string pipelineReviewViewXaml = Read(
+            repoRoot,
+            @"UI\Menu\Wpf\Views\OpenVisionPipelineReviewView.xaml");
+        string pipelineReviewViewSource = Read(
+            repoRoot,
+            @"UI\Menu\Wpf\Views\OpenVisionPipelineReviewView.xaml.cs");
+        string thresholdSuggestionSource = Read(
+            repoRoot,
+            @"UI\VisionTest\Wpf\Tooling\Threshold\VisionToolThresholdSuggestionAnalyzer.cs");
+        string thresholdToolViewXaml = Read(
+            repoRoot,
+            @"UI\VisionTest\Wpf\ToolViews\ThresholdToolWpfView.xaml");
+        string thresholdToolViewSource = Read(
+            repoRoot,
+            @"UI\VisionTest\Wpf\ToolViews\ThresholdToolWpfView.xaml.cs");
         RequireContains(learnScreenshotSmoke, "wpf_openvision_learn_edge_based_matching", "Learn screenshot smoke exposes the EdgeBasedMatching topic target.");
         RequireContains(learnScreenshotSmoke, "CaptureOpenVisionLearnEdgeBasedMatching", "Learn screenshot smoke verifies the EdgeBasedMatching topic.");
         RequireContains(learnWindowXaml, "EdgeDetection에서는 경계 픽셀", "OpenVision Learn Edge / Line topic distinguishes edge and line evidence.");
@@ -2223,6 +2273,214 @@ internal static class Program
             learnScreenshotSmoke,
             "p213_geometry_review",
             "Screenshot smoke covers GeometryMeasure and CircleGauge core behavior.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "cvr04_circle_residual_review",
+            "Screenshot smoke covers the current Circle radial evidence workflow.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "GoodContrastRejects=",
+            "Circle evidence smoke retains exact contrast-reject counts.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "RowPlotDrawingSelection=OK",
+            "Circle evidence smoke covers row, plot, and image drawing selection.");
+        RequireContains(
+            circleGaugeToolSource,
+            "VisionPipelineCircleEvidenceStore.Set",
+            "CircleGauge publishes evidence from the actual runtime result.");
+        RequireContains(
+            circleGaugeToolSource,
+            "ApplyFitEvidence(samples, fit, inliers)",
+            "CircleGauge labels evidence from the retained robust-fit inliers.");
+        RequireContains(
+            circleEvidenceSource,
+            "SignedResponseValues",
+            "Circle evidence retains selected radial intensity and signed response.");
+        RequireContains(
+            circleEvidenceSource,
+            "RobustRejectionPx",
+            "Circle evidence retains the robust-fit support threshold.");
+        RequireContains(
+            pipelineReviewViewXaml,
+            "PipelineReviewCircleEvidenceTab",
+            "Pipeline Review exposes a dedicated Circle evidence tab.");
+        RequireContains(
+            pipelineReviewViewXaml,
+            "PipelineReviewCircleEvidencePlot",
+            "Pipeline Review reuses the shared signal plot for Circle evidence.");
+        RequireContains(
+            pipelineReviewViewSource,
+            "SetCircleEvidence",
+            "Pipeline Review binds current-run Circle evidence without executing.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "cvr05_object_metric_distribution",
+            "Screenshot smoke covers the current Blob/Contour object metric distribution workflow.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "blob-area-distribution.tsv",
+            "Object metric distribution smoke retains shared provenance-preserving TSV evidence.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "legacy missing MAX_WIDTH",
+            "Object metric distribution smoke covers the legacy unbounded maximum sentinel.");
+        RequireContains(
+            objectDistributionSource,
+            "\"Accepted objects\"",
+            "Object metric distribution separates accepted and rejected retained candidates.");
+        RequireContains(
+            objectDistributionSource,
+            "\"MIN_WIDTH\"",
+            "Object metric distribution reads the existing width PropertyGrid range.");
+        RequireContains(
+            objectDistributionSource,
+            "\"MIN_HEIGHT\"",
+            "Object metric distribution reads the existing height PropertyGrid range.");
+        RequireContains(
+            pipelineReviewViewXaml,
+            "PipelineReviewObjectMetricPlot",
+            "Pipeline Review reuses the shared signal plot for object metric distributions.");
+        RequireContains(
+            pipelineReviewViewXaml,
+            "PipelineReviewObjectMetricAreaButton",
+            "Pipeline Review exposes explicit Area distribution selection.");
+        RequireContains(
+            pipelineReviewViewSource,
+            "SelectObjectMetricKindInternal",
+            "Object metric selection updates review evidence without executing.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "cvr06_matcher_diagnostic",
+            "Screenshot smoke covers the current EdgeBased matcher diagnostic workflow.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "matcher-diagnostic-matrix.tsv",
+            "Matcher diagnostic smoke retains Success/NoMatch/Ambiguous evidence.");
+        RequireContains(
+            matcherDiagnosticSource,
+            "Trained edge model",
+            "Matcher diagnostics render the exact retained trained edge-model points.");
+        RequireContains(
+            matcherDiagnosticSource,
+            "StrongestSpatialAlternative",
+            "Matcher diagnostics retain the strongest spatially distinct alternative.");
+        RequireContains(
+            matcherDiagnosticSource,
+            "Best observed (below gate)",
+            "NoMatch diagnostics distinguish below-gate observations from an accepted candidate.");
+        RequireContains(
+            matcherDiagnosticSource,
+            "Model.Pyramid.HighestUsableLevel",
+            "Matcher diagnostics expose the retained model pyramid level estimate.");
+        RequireContains(
+            matcherDiagnosticSource,
+            "Candidate.PyramidProposalAcceptedCount",
+            "Matcher diagnostics expose coarse-to-fine proposal acceptance.");
+        RequireContains(
+            matcherDiagnosticSource,
+            "Candidate.PyramidProposalScale",
+            "Matcher diagnostics expose the active runtime coarse proposal scale.");
+        RequireContains(
+            pipelineResultSummarySource,
+            "EdgeBasedMatchingDiagnostics",
+            "Pipeline result summaries retain matcher diagnostics without rerunning.");
+        RequireContains(
+            pipelineReviewDocumentSource,
+            "summary?.EdgeBasedMatchingDiagnostics",
+            "Pipeline Review consumes same-run matcher diagnostics.");
+        RequireContains(
+            pipelineReviewViewXaml,
+            "PipelineReviewMatcherDiagnosticTab",
+            "Pipeline Review exposes a dedicated matcher diagnostic tab.");
+        RequireContains(
+            pipelineReviewViewXaml,
+            "PipelineReviewMatcherModelPreview",
+            "Matcher diagnostics expose the trained model preview.");
+        RequireContains(
+            pipelineReviewViewXaml,
+            "PipelineReviewMatcherCandidatePreview",
+            "Matcher diagnostics expose selected and alternative candidate drawings.");
+        RequireContains(
+            pipelineReviewViewXaml,
+            "PipelineReviewMatcherDiagnosticTable",
+            "Matcher diagnostics expose the exact state, reason, pose, score, and search counters.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "cvr07_threshold_suggestion",
+            "Screenshot smoke covers the bounded Threshold Basic teaching suggestion workflow.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "AssertCvr07ThresholdSuggestionAnalyzerMatrix",
+            "Threshold suggestion smoke covers bright, dark, deterministic-repeat, and rejected single-mode analysis.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "Public_Threshold_BandPads_BrightMode.pipeline.xml",
+            "Threshold suggestion smoke retains the exact suggested public Good/Bad Pipeline.");
+        RequireContains(
+            thresholdSuggestionSource,
+            "FindSignificantModes",
+            "Threshold suggestions use a bounded deterministic significant-mode analysis.");
+        RequireContains(
+            thresholdSuggestionSource,
+            "MinimumClassPopulationRatio",
+            "Threshold suggestions reject a candidate with an undersized gray class.");
+        RequireContains(
+            thresholdSuggestionSource,
+            "selectBright ? \"BrightBinary\" : \"DarkBinaryInv\"",
+            "Threshold suggestion evidence IDs retain the selected Basic polarity intent.");
+        RequireContains(
+            thresholdToolViewXaml,
+            "ThresholdSuggestionAnalyzeButton",
+            "Threshold Tool exposes an explicit suggestion-analysis action.");
+        RequireContains(
+            thresholdToolViewXaml,
+            "ThresholdSuggestionUseButton",
+            "Threshold Tool requires an explicit Use action.");
+        RequireContains(
+            thresholdToolViewXaml,
+            "ThresholdSuggestionUndoButton",
+            "Threshold Tool keeps the previous teaching value recoverable.");
+        RequireContains(
+            thresholdToolViewSource,
+            "AnalyzeThresholdSuggestion",
+            "Threshold suggestion analysis is a separate non-executing action.");
+        RequireContains(
+            thresholdToolViewSource,
+            "UseThresholdSuggestion",
+            "Threshold suggestion apply reuses the existing teaching controller.");
+        RequireContains(
+            thresholdToolViewSource,
+            "UndoThresholdSuggestion",
+            "Threshold suggestion apply retains an explicit undo path.");
+        RequirePathExists(
+            repoRoot,
+            @"docs\reports\OPENVISIONLAB_THRESHOLD_TEACHING_SUGGESTION_20260728.md",
+            "CVR-07 Threshold teaching suggestion completion report exists.");
+        RequireContains(
+            pipelineReviewFixturePresenterSource,
+            "candidateMeasurements.Add(candidate);",
+            "Fixture review retains every reachable downstream single-ROI consumer.");
+        RequireContains(
+            pipelineReviewFixturePresenterSource,
+            "CreateConsumerEvidenceId",
+            "Fixture consumers retain deterministic evidence identities.");
+        RequireContains(
+            pipelineReviewViewXaml,
+            "PipelineReviewFixtureConsumerTable",
+            "Fixture review exposes the multi-consumer table.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "fixture_multi_roi_sample_check.tsv",
+            "Fixture smoke retains current Good/Bad multi-ROI replay evidence.");
+        RequireContains(
+            learnScreenshotSmoke,
+            "consumerGrid.SelectedIndex = 1",
+            "Fixture smoke selects the second ROI consumer without another Run.");
+        RequirePathExists(
+            repoRoot,
+            @"docs\reports\OPENVISIONLAB_CVR08_MULTI_ROI_FIXTURE_20260728.md",
+            "CVR-08 multi-ROI fixture completion report exists.");
         RequireContains(
             learnScreenshotSmoke,
             "TemplateMatchingTool",

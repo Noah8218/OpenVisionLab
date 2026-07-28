@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
-using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace OpenVisionLab
 {
@@ -238,31 +238,41 @@ namespace OpenVisionLab
 
         private static Rect ResolveValidBounds(Mat validMask, int width, int height)
         {
-            Cv2.FindContours(
-                validMask,
-                out OpenCvSharp.Point[][] contours,
-                out _,
-                RetrievalModes.External,
-                ContourApproximationModes.ApproxSimple);
-            if (contours.Length == 0)
+            if (validMask == null
+                || validMask.Empty()
+                || validMask.Type() != MatType.CV_8UC1
+                || validMask.Width != width
+                || validMask.Height != height)
             {
-                return new Rect(0, 0, width, height);
+                throw new InvalidOperationException(
+                    "NormalizeImage valid-pixel mask must be a non-empty 8-bit single-channel image with the taught reference size.");
             }
 
-            Rect first = Cv2.BoundingRect(contours[0]);
-            int left = first.X;
-            int top = first.Y;
-            int right = first.Right;
-            int bottom = first.Bottom;
-            foreach (Rect bounds in contours.Skip(1).Select(Cv2.BoundingRect))
+            int left = width;
+            int top = height;
+            int right = -1;
+            int bottom = -1;
+            byte[] rowPixels = new byte[width];
+            for (int y = 0; y < height; y++)
             {
-                left = Math.Min(left, bounds.X);
-                top = Math.Min(top, bounds.Y);
-                right = Math.Max(right, bounds.Right);
-                bottom = Math.Max(bottom, bounds.Bottom);
+                Marshal.Copy(validMask.Ptr(y), rowPixels, 0, width);
+                for (int x = 0; x < width; x++)
+                {
+                    if (rowPixels[x] == 0)
+                    {
+                        continue;
+                    }
+
+                    left = Math.Min(left, x);
+                    top = Math.Min(top, y);
+                    right = Math.Max(right, x);
+                    bottom = Math.Max(bottom, y);
+                }
             }
 
-            return new Rect(left, top, right - left, bottom - top);
+            return right < left || bottom < top
+                ? new Rect(0, 0, width, height)
+                : new Rect(left, top, right - left + 1, bottom - top + 1);
         }
 
         private bool TryGetRequiredDouble(string key, out double value)

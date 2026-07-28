@@ -413,6 +413,7 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <Button x:Name="btnAddPipeline"
+                            AutomationProperties.AutomationId="VisionToolAddPipelineButton"
                             Grid.Column="0">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <iconPacks:PackIconMaterial Kind="PlaylistPlus" Width="16" Height="16" Margin="0,0,7,0" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
@@ -430,6 +431,7 @@
                     </Button>
                 </Grid>
                 <Button x:Name="btnRunPreview"
+                        AutomationProperties.AutomationId="VisionToolRunPreviewButton"
                         Grid.Row="2"
                         Style="{StaticResource VisionTool.PrimaryActionButtonStyle}">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">

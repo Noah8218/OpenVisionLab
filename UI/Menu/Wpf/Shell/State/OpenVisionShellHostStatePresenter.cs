@@ -55,6 +55,18 @@ namespace OpenVisionLab
         public int NativePreviewRunCount => documentController.ActiveNativeDocument?.PreviewRunCount ?? 0;
         public bool HasNativePreviewResult => documentController.ActiveNativeDocument?.HasPreviewResult ?? false;
         public int ActiveLineInputRoiOverlayCount => documentController.ActiveNativeDocument?.LineInputRoiOverlayCount ?? 0;
+        public bool ActiveLineSignalInspectorHasEvidence =>
+            documentController.ActiveNativeDocument?.LineSignalInspectorHasEvidence == true;
+        public bool ActiveLineSignalInspectorOverlayVisible =>
+            documentController.ActiveNativeDocument?.LineSignalInspectorOverlayVisible == true;
+        public string ActiveLineSignalInspectorEvidenceId =>
+            documentController.ActiveNativeDocument?.LineSignalInspectorEvidenceId ?? string.Empty;
+        public string ActiveLineSignalInspectorSourceSha256 =>
+            documentController.ActiveNativeDocument?.LineSignalInspectorSourceSha256 ?? string.Empty;
+        public int ActiveLineSignalInspectorSeriesCount =>
+            documentController.ActiveNativeDocument?.LineSignalInspectorSeriesCount ?? 0;
+        public int ActiveLineSignalInspectorMarkerCount =>
+            documentController.ActiveNativeDocument?.LineSignalInspectorMarkerCount ?? 0;
         public int LayerDocumentCount => displayManager.LayerCount;
         public bool HasMainLayer => displayManager.FindIndex("Main") >= 0;
         public int HostLayerRowCount => layerListPresenter.RowCount;
@@ -97,6 +109,17 @@ namespace OpenVisionLab
         public bool HasPipelineReviewInputPreview => documentController.ActivePipelineReviewDocument?.HasInputPreview ?? false;
         public bool HasPipelineReviewOutputPreview => documentController.ActivePipelineReviewDocument?.HasOutputPreview ?? false;
         public int PipelineReviewObjectResultCount => documentController.ActivePipelineReviewDocument?.ObjectResultCount ?? 0;
+        public int PipelineReviewObjectMetricDistributionSeriesCount => documentController.ActivePipelineReviewDocument?.ObjectMetricDistributionSeriesCount ?? 0;
+        public int PipelineReviewObjectMetricDistributionMarkerCount => documentController.ActivePipelineReviewDocument?.ObjectMetricDistributionMarkerCount ?? 0;
+        public string PipelineReviewObjectMetricDistributionMetric => documentController.ActivePipelineReviewDocument?.ObjectMetricDistributionMetric ?? string.Empty;
+        public string PipelineReviewObjectMetricDistributionEvidenceId => documentController.ActivePipelineReviewDocument?.ObjectMetricDistributionEvidenceId ?? string.Empty;
+        public bool PipelineReviewMatcherDiagnosticTabVisible => documentController.ActivePipelineReviewDocument?.MatcherDiagnosticTabVisible == true;
+        public string PipelineReviewMatcherDiagnosticState => documentController.ActivePipelineReviewDocument?.MatcherDiagnosticState ?? string.Empty;
+        public string PipelineReviewMatcherDiagnosticEvidenceId => documentController.ActivePipelineReviewDocument?.MatcherDiagnosticEvidenceId ?? string.Empty;
+        public int PipelineReviewMatcherDiagnosticRowCount => documentController.ActivePipelineReviewDocument?.MatcherDiagnosticRowCount ?? 0;
+        public int PipelineReviewMatcherDiagnosticModelPointCount => documentController.ActivePipelineReviewDocument?.MatcherDiagnosticModelPointCount ?? 0;
+        public bool PipelineReviewMatcherDiagnosticHasSelectedCandidate => documentController.ActivePipelineReviewDocument?.MatcherDiagnosticHasSelectedCandidate == true;
+        public bool PipelineReviewMatcherDiagnosticHasAlternative => documentController.ActivePipelineReviewDocument?.MatcherDiagnosticHasAlternative == true;
 
         public bool IsPipelineReviewFixtureDesignerVisible => documentController.ActivePipelineReviewDocument?.IsFixtureDesignerVisible == true;
 

@@ -102,6 +102,12 @@ namespace OpenVisionLab
         public bool HasNativePreviewResult => statePresenter.HasNativePreviewResult;
 
         public int ActiveLineInputRoiOverlayCount => statePresenter.ActiveLineInputRoiOverlayCount;
+        public bool ActiveLineSignalInspectorHasEvidence => statePresenter.ActiveLineSignalInspectorHasEvidence;
+        public bool ActiveLineSignalInspectorOverlayVisible => statePresenter.ActiveLineSignalInspectorOverlayVisible;
+        public string ActiveLineSignalInspectorEvidenceId => statePresenter.ActiveLineSignalInspectorEvidenceId;
+        public string ActiveLineSignalInspectorSourceSha256 => statePresenter.ActiveLineSignalInspectorSourceSha256;
+        public int ActiveLineSignalInspectorSeriesCount => statePresenter.ActiveLineSignalInspectorSeriesCount;
+        public int ActiveLineSignalInspectorMarkerCount => statePresenter.ActiveLineSignalInspectorMarkerCount;
 
         public bool IsToolRailCompact => bindings.IsToolRailCompact();
 
@@ -144,6 +150,17 @@ namespace OpenVisionLab
         public string PipelineReviewRunLogText => statePresenter.PipelineReviewRunLogText;
 
         public int PipelineReviewObjectResultCount => statePresenter.PipelineReviewObjectResultCount;
+        public int PipelineReviewObjectMetricDistributionSeriesCount => statePresenter.PipelineReviewObjectMetricDistributionSeriesCount;
+        public int PipelineReviewObjectMetricDistributionMarkerCount => statePresenter.PipelineReviewObjectMetricDistributionMarkerCount;
+        public string PipelineReviewObjectMetricDistributionMetric => statePresenter.PipelineReviewObjectMetricDistributionMetric;
+        public string PipelineReviewObjectMetricDistributionEvidenceId => statePresenter.PipelineReviewObjectMetricDistributionEvidenceId;
+        public bool PipelineReviewMatcherDiagnosticTabVisible => statePresenter.PipelineReviewMatcherDiagnosticTabVisible;
+        public string PipelineReviewMatcherDiagnosticState => statePresenter.PipelineReviewMatcherDiagnosticState;
+        public string PipelineReviewMatcherDiagnosticEvidenceId => statePresenter.PipelineReviewMatcherDiagnosticEvidenceId;
+        public int PipelineReviewMatcherDiagnosticRowCount => statePresenter.PipelineReviewMatcherDiagnosticRowCount;
+        public int PipelineReviewMatcherDiagnosticModelPointCount => statePresenter.PipelineReviewMatcherDiagnosticModelPointCount;
+        public bool PipelineReviewMatcherDiagnosticHasSelectedCandidate => statePresenter.PipelineReviewMatcherDiagnosticHasSelectedCandidate;
+        public bool PipelineReviewMatcherDiagnosticHasAlternative => statePresenter.PipelineReviewMatcherDiagnosticHasAlternative;
 
         public bool IsPipelineReviewFixtureDesignerVisible => statePresenter.IsPipelineReviewFixtureDesignerVisible;
 
@@ -389,6 +406,31 @@ namespace OpenVisionLab
             documentController.ActiveNativeDocument?.SetLinePurposeForTest(purpose);
             chromeController.RefreshDirectRouteText();
             refreshCoordinator.RefreshHostLayerRows();
+        }
+
+        public string GetActiveLineSignalInspectorAttribute(string name)
+        {
+            return documentController.ActiveNativeDocument?.GetLineSignalInspectorAttributeForTest(name) ?? string.Empty;
+        }
+
+        public bool ExerciseActiveLineSignalInspectorNavigation()
+        {
+            return documentController.ActiveNativeDocument?.ExerciseLineSignalInspectorNavigationForTest() == true;
+        }
+
+        public void ExportActiveLineSignalEvidence(string path)
+        {
+            documentController.ActiveNativeDocument?.ExportLineSignalEvidenceForTest(path);
+        }
+
+        public void CloseActiveLineSignalInspector()
+        {
+            documentController.ActiveNativeDocument?.CloseLineSignalInspectorForTest();
+        }
+
+        public void OpenActiveLineSignalInspector()
+        {
+            documentController.ActiveNativeDocument?.OpenLineSignalInspectorForTest();
         }
 
         public void SetActiveMatchingTemplatePath(string path)

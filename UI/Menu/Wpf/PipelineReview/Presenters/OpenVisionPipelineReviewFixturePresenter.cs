@@ -6,6 +6,8 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace OpenVisionLab
 {
@@ -28,6 +30,8 @@ namespace OpenVisionLab
         public bool CanTeachReference { get; init; }
         public bool CanEditProducer { get; init; }
         public bool CanEditMeasurement { get; init; }
+        public IReadOnlyList<OpenVisionPipelineReviewFixtureConsumerRow> Consumers { get; init; } =
+            Array.Empty<OpenVisionPipelineReviewFixtureConsumerRow>();
 
         public void Dispose()
         {
@@ -42,24 +46,38 @@ namespace OpenVisionLab
         public static OpenVisionPipelineReviewFixtureState Create(
             VisionPipeline pipeline,
             Func<VisionPipelineStep, VisionPipelineStepResultSummary> resolveSummary,
-            Func<string, Bitmap> resolveLayerPreview)
+            Func<string, Bitmap> resolveLayerPreview,
+            int preferredMeasurementIndex = -1)
         {
             IReadOnlyList<VisionPipelineStep> steps = pipeline?.Steps;
             if (!TryResolveFixtureChain(
                     steps,
                     out int producerIndex,
                     out int normalizeIndex,
-                    out int measurementIndex,
+                    out IReadOnlyList<int> measurementIndices,
                     out string frameName))
             {
                 return new OpenVisionPipelineReviewFixtureState();
             }
 
+            int measurementIndex = measurementIndices.Contains(preferredMeasurementIndex)
+                ? preferredMeasurementIndex
+                : measurementIndices[0];
             VisionPipelineStep producer = steps[producerIndex];
             VisionPipelineStep normalize = steps[normalizeIndex];
             VisionPipelineStep measurement = steps[measurementIndex];
             VisionPipelineStepResultSummary producerSummary = resolveSummary?.Invoke(producer);
             VisionPipelineStepResultSummary normalizeSummary = resolveSummary?.Invoke(normalize);
+            IReadOnlyList<OpenVisionPipelineReviewFixtureConsumerRow> consumers =
+                measurementIndices
+                    .Select(index => CreateConsumerRow(
+                        steps,
+                        producerIndex,
+                        normalizeIndex,
+                        index,
+                        frameName,
+                        resolveSummary?.Invoke(steps[index])))
+                    .ToList();
 
             bool hasPose = TryGetReviewedFixturePose(
                 producer,
@@ -104,12 +122,13 @@ namespace OpenVisionLab
 
             string relationshipText = TF(
                 "PipelineReview.FixtureDesigner.RelationshipFormat",
-                "{0}: {1:00} {2} -> {3:00} {4} -> {5:00} {6} / ROI {7}",
+                "{0}: {1:00} {2} -> {3:00} {4} / consumers {5} / selected {6:00} {7} / ROI {8}",
                 frameName,
                 producerIndex + 1,
                 SafeText(producer.ToolType, "Matching"),
                 normalizeIndex + 1,
                 "NormalizeImage",
+                consumers.Count,
                 measurementIndex + 1,
                 SafeText(measurement.ToolType, "Tool"),
                 hasRoi ? FormatRoi(referenceRoi) : "-");
@@ -161,26 +180,32 @@ namespace OpenVisionLab
                     : null;
                 string sourceText = SafeText(producer.InputLayer, "-");
                 string normalizedText = SafeText(normalize.OutputLayer, "-");
-                if (source != null && hasPose && hasReference && hasRoi)
+                if (source != null && hasPose && hasReference)
                 {
-                    PointF[] sourcePolygon = TransformReferenceRoi(
-                        referenceRoi,
-                        referenceX,
-                        referenceY,
-                        currentX,
-                        currentY,
-                        VisionPipelineFixtureFrameService.NormalizeAngle(currentAngle - referenceAngle),
-                        currentScale / referenceScale);
-                    sourcePreview = DrawRoiOverlay(
+                    sourcePreview = DrawRoiOverlays(
                         source,
-                        sourcePolygon,
-                        "Relative ROI on source",
-                        Color.Magenta);
+                        measurementIndices
+                            .Select(index => new FixtureRoiOverlay(
+                                index,
+                                TransformReferenceRoi(
+                                    GetStepRoi(steps[index]),
+                                    referenceX,
+                                    referenceY,
+                                    currentX,
+                                    currentY,
+                                    VisionPipelineFixtureFrameService.NormalizeAngle(currentAngle - referenceAngle),
+                                    currentScale / referenceScale),
+                                $"{index + 1:00} {SafeText(steps[index].Name, steps[index].ToolType)}"))
+                            .ToList(),
+                        measurementIndex,
+                        Color.Magenta,
+                        Color.DeepSkyBlue);
                     sourceText = TF(
                         "PipelineReview.FixtureDesigner.SourceLayerFormat",
-                        "{0} / transformed from ROI {1}",
+                        "{0} / selected ROI {1} / {2} transformed consumers",
                         SafeText(producer.InputLayer, "-"),
-                        FormatRoi(referenceRoi));
+                        FormatRoi(referenceRoi),
+                        consumers.Count);
                 }
                 else if (source != null)
                 {
@@ -191,18 +216,25 @@ namespace OpenVisionLab
                         SafeText(producer.InputLayer, "-"));
                 }
 
-                if (normalized != null && hasRoi)
+                if (normalized != null)
                 {
-                    normalizedPreview = DrawRoiOverlay(
+                    normalizedPreview = DrawRoiOverlays(
                         normalized,
-                        RectanglePoints(referenceRoi),
-                        "Reference ROI",
-                        Color.LimeGreen);
+                        measurementIndices
+                            .Select(index => new FixtureRoiOverlay(
+                                index,
+                                RectanglePoints(GetStepRoi(steps[index])),
+                                $"{index + 1:00} {SafeText(steps[index].Name, steps[index].ToolType)}"))
+                            .ToList(),
+                        measurementIndex,
+                        Color.LimeGreen,
+                        Color.Gold);
                     normalizedText = TF(
                         "PipelineReview.FixtureDesigner.NormalizedLayerFormat",
-                        "{0} / ROI {1}",
+                        "{0} / selected ROI {1} / {2} consumers",
                         SafeText(normalize.OutputLayer, "-"),
-                        FormatRoi(referenceRoi));
+                        FormatRoi(referenceRoi),
+                        consumers.Count);
                 }
 
                 return new OpenVisionPipelineReviewFixtureState
@@ -223,7 +255,8 @@ namespace OpenVisionLab
                     TemplatePreview = templatePreview,
                     CanTeachReference = hasPose && referenceWidth > 0 && referenceHeight > 0,
                     CanEditProducer = true,
-                    CanEditMeasurement = true
+                    CanEditMeasurement = true,
+                    Consumers = consumers
                 };
             }
             catch
@@ -276,12 +309,12 @@ namespace OpenVisionLab
             IReadOnlyList<VisionPipelineStep> steps,
             out int producerIndex,
             out int normalizeIndex,
-            out int measurementIndex,
+            out IReadOnlyList<int> measurementIndices,
             out string frameName)
         {
             producerIndex = -1;
             normalizeIndex = -1;
-            measurementIndex = -1;
+            measurementIndices = Array.Empty<int>();
             frameName = string.Empty;
             if (steps == null)
             {
@@ -318,6 +351,7 @@ namespace OpenVisionLab
                 {
                     SafeText(steps[candidateNormalize].OutputLayer, string.Empty)
                 };
+                List<int> candidateMeasurements = new List<int>();
                 for (int candidate = candidateNormalize + 1; candidate < steps.Count; candidate++)
                 {
                     VisionPipelineStep downstream = steps[candidate];
@@ -329,17 +363,22 @@ namespace OpenVisionLab
 
                     if (GetParameterBool(downstream, "USE_ROI") && TryGetStepRoi(downstream, out _))
                     {
-                        producerIndex = index;
-                        normalizeIndex = candidateNormalize;
-                        measurementIndex = candidate;
-                        frameName = string.IsNullOrWhiteSpace(candidateFrame) ? "Fixture" : candidateFrame;
-                        return true;
+                        candidateMeasurements.Add(candidate);
                     }
 
                     if (!string.IsNullOrWhiteSpace(downstream.OutputLayer))
                     {
                         reachableLayers.Add(downstream.OutputLayer.Trim());
                     }
+                }
+
+                if (candidateMeasurements.Count > 0)
+                {
+                    producerIndex = index;
+                    normalizeIndex = candidateNormalize;
+                    measurementIndices = candidateMeasurements;
+                    frameName = string.IsNullOrWhiteSpace(candidateFrame) ? "Fixture" : candidateFrame;
+                    return true;
                 }
             }
 
@@ -439,13 +478,14 @@ namespace OpenVisionLab
             }
         }
 
-        private static Bitmap DrawRoiOverlay(
+        private static Bitmap DrawRoiOverlays(
             Bitmap source,
-            PointF[] points,
-            string label,
-            Color color)
+            IReadOnlyList<FixtureRoiOverlay> overlays,
+            int selectedIndex,
+            Color selectedColor,
+            Color otherColor)
         {
-            if (source == null || points == null || points.Length < 4)
+            if (source == null || overlays == null || overlays.Count == 0)
             {
                 return null;
             }
@@ -453,25 +493,117 @@ namespace OpenVisionLab
             Bitmap result = new Bitmap(source);
             using Graphics graphics = Graphics.FromImage(result);
             graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            using Pen shadow = new Pen(Color.Black, 6f);
-            using Pen pen = new Pen(color, 3f);
-            graphics.DrawPolygon(shadow, points);
-            graphics.DrawPolygon(pen, points);
             using Font font = new Font("Segoe UI", 11f, FontStyle.Bold);
-            SizeF size = graphics.MeasureString(label, font);
-            float labelX = Math.Max(
-                0f,
-                Math.Min(points.Min(point => point.X), result.Width - size.Width - 8f));
-            float labelY = Math.Max(
-                0f,
-                Math.Min(
-                    points.Min(point => point.Y) - size.Height - 4f,
-                    result.Height - size.Height - 4f));
             using SolidBrush background = new SolidBrush(Color.FromArgb(210, 16, 32, 39));
             using SolidBrush foreground = new SolidBrush(Color.White);
-            graphics.FillRectangle(background, labelX, labelY, size.Width + 6f, size.Height + 2f);
-            graphics.DrawString(label, font, foreground, labelX + 3f, labelY + 1f);
+            foreach (FixtureRoiOverlay overlay in overlays.OrderBy(item => item.StepIndex == selectedIndex ? 1 : 0))
+            {
+                if (overlay.Points == null || overlay.Points.Length < 4)
+                {
+                    continue;
+                }
+
+                bool selected = overlay.StepIndex == selectedIndex;
+                using Pen shadow = new Pen(Color.Black, selected ? 7f : 5f);
+                using Pen pen = new Pen(selected ? selectedColor : otherColor, selected ? 4f : 2f);
+                graphics.DrawPolygon(shadow, overlay.Points);
+                graphics.DrawPolygon(pen, overlay.Points);
+                SizeF size = graphics.MeasureString(overlay.Label, font);
+                float labelX = Math.Max(
+                    0f,
+                    Math.Min(overlay.Points.Min(point => point.X), result.Width - size.Width - 8f));
+                float labelY = Math.Max(
+                    0f,
+                    Math.Min(
+                        overlay.Points.Min(point => point.Y) - size.Height - 4f,
+                        result.Height - size.Height - 4f));
+                graphics.FillRectangle(background, labelX, labelY, size.Width + 6f, size.Height + 2f);
+                graphics.DrawString(overlay.Label, font, foreground, labelX + 3f, labelY + 1f);
+            }
+
             return result;
+        }
+
+        private static OpenVisionPipelineReviewFixtureConsumerRow CreateConsumerRow(
+            IReadOnlyList<VisionPipelineStep> steps,
+            int producerIndex,
+            int normalizeIndex,
+            int measurementIndex,
+            string frameName,
+            VisionPipelineStepResultSummary summary)
+        {
+            VisionPipelineStep step = steps[measurementIndex];
+            RectangleF roi = GetStepRoi(step);
+            string roiText = FormatRoi(roi);
+            string evidenceId = CreateConsumerEvidenceId(
+                steps[producerIndex],
+                producerIndex,
+                steps[normalizeIndex],
+                normalizeIndex,
+                step,
+                measurementIndex,
+                frameName,
+                roiText);
+            return new OpenVisionPipelineReviewFixtureConsumerRow
+            {
+                StepIndex = measurementIndex,
+                StepNumber = measurementIndex + 1,
+                StepName = SafeText(step.Name, step.ToolType),
+                ToolType = SafeText(step.ToolType, "Tool"),
+                RoiText = roiText,
+                RouteText = $"{SafeText(step.InputLayer, "-")} -> {SafeText(step.OutputLayer, "-")}",
+                StatusText = string.IsNullOrWhiteSpace(summary?.Status) ? "WAIT" : summary.Status,
+                EvidenceId = evidenceId,
+                EvidenceShortId = evidenceId.Substring(0, 12)
+            };
+        }
+
+        private static string CreateConsumerEvidenceId(
+            VisionPipelineStep producer,
+            int producerIndex,
+            VisionPipelineStep normalize,
+            int normalizeIndex,
+            VisionPipelineStep consumer,
+            int consumerIndex,
+            string frameName,
+            string roiText)
+        {
+            string canonical = string.Join(
+                "|",
+                "FixtureConsumer",
+                frameName ?? string.Empty,
+                producerIndex.ToString(CultureInfo.InvariantCulture),
+                producer?.Name ?? string.Empty,
+                producer?.InputLayer ?? string.Empty,
+                normalizeIndex.ToString(CultureInfo.InvariantCulture),
+                normalize?.Name ?? string.Empty,
+                normalize?.OutputLayer ?? string.Empty,
+                consumerIndex.ToString(CultureInfo.InvariantCulture),
+                consumer?.Name ?? string.Empty,
+                consumer?.ToolType ?? string.Empty,
+                consumer?.InputLayer ?? string.Empty,
+                consumer?.OutputLayer ?? string.Empty,
+                roiText ?? string.Empty);
+            return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
+        }
+
+        private static RectangleF GetStepRoi(VisionPipelineStep step)
+        {
+            return TryGetStepRoi(step, out RectangleF roi) ? roi : default;
+        }
+
+        private sealed class FixtureRoiOverlay
+        {
+            public FixtureRoiOverlay(int stepIndex, PointF[] points, string label)
+            {
+                StepIndex = stepIndex;
+                Points = points;
+                Label = label ?? string.Empty;
+            }
+
+            public int StepIndex { get; }
+            public PointF[] Points { get; }
+            public string Label { get; }
         }
 
         private static PointF[] RectanglePoints(RectangleF roi)

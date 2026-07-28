@@ -1,3 +1,4 @@
+using Lib.OpenCV.Pipeline;
 using OpenVisionLab.Core;
 using Microsoft.Win32;
 using System;
@@ -716,6 +717,17 @@ namespace OpenVisionLab
             {
                 viewModel.SelectToolCommand.Execute(item);
             }
+        }
+
+        private void ApplyActiveSampleFirstStepParameters()
+        {
+            VisionPipelineStep step = sampleWorkflowPresenter?.FirstStep;
+            if (step == null)
+            {
+                return;
+            }
+
+            documentController.ActiveNativeDocument?.ApplySampleStepParameters(step);
         }
 
         private bool OpenWorkspaceSampleByNameFromReview(string sampleName)

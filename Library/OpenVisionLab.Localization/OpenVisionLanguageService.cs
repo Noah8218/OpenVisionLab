@@ -24,6 +24,24 @@ namespace OpenVisionLab
         private static readonly Dictionary<string, DefaultCatalogMigration> DefaultCatalogMigrations = new Dictionary<string, DefaultCatalogMigration>(StringComparer.OrdinalIgnoreCase)
         {
             {
+                "PipelineReview.FixtureDesigner.RelationshipFormat",
+                new DefaultCatalogMigration(
+                    "{0}: {1:00} {2} → {3:00} {4} → {5:00} {6} / ROI {7}",
+                    "{0}: {1:00} {2} -> {3:00} {4} -> {5:00} {6} / ROI {7}")
+            },
+            {
+                "PipelineReview.FixtureDesigner.SourceLayerFormat",
+                new DefaultCatalogMigration(
+                    "{0} / 기준 ROI {1} 변환",
+                    "{0} / transformed from ROI {1}")
+            },
+            {
+                "PipelineReview.FixtureDesigner.NormalizedLayerFormat",
+                new DefaultCatalogMigration(
+                    "{0} / ROI {1}",
+                    "{0} / ROI {1}")
+            },
+            {
                 "VisionTest.OutputLayer",
                 new DefaultCatalogMigration(
                     "출력 레이어",
