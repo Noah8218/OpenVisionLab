@@ -11,7 +11,47 @@ OpenVisionLab은 카메라/PLC 장비 플랫폼이 아니라, 이미지 샘플�
 - 핵심 흐름: 이미지 로드 -> Layer 확인 -> Tool 파라미터 조정 -> 명시적 Preview/Run -> Pipeline/Recipe 저장 -> Good/Bad 샘플 검증
 - 주요 툴: Threshold, Blob, Contour, Matching, FeatureMatching, EdgeBasedMatching, Line/Length, Mean 등
 - LLM 방향: 이미지를 한 번에 이해해 자동 완성하는 기능이 아니라, operator intent와 샘플 evidence를 기반으로 XML recipe 초안/검증/수정 루프를 돕는 보조 기능입니다.
-- 현재 개발 초점: Recipe Manager, Pipeline Review, Sample Catalog, LLM XML authoring, layer/result 비교, 검증 smoke입니다.
+- 현재 개발 초점: PropertyGrid Tool View, Pipeline Review, 중간 Layer/결과 비교,
+  공개 샘플과 N-sample 검증입니다. LLM XML authoring은 선택적 유지보수 기능입니다.
+
+## 실제 EXE Tool View 데모
+
+아래 GIF는 최신 Debug EXE의 실제 Tool View를 조작한 화면입니다. 한 번의
+합성 시연이 아니라 Matching, Line, Blob, Contour의 개별 녹화를 같은
+시점에 비교할 수 있도록 배치했습니다.
+
+![OpenVisionLab actual EXE Tool Views](docs/assets/demo/openvisionlab_tool_views_actual_exe.gif)
+
+[Tool View MP4 보기](docs/assets/demo/openvisionlab_tool_views_actual_exe.mp4)
+
+- 왼쪽 위: Matching 템플릿과 검출 결과
+- 오른쪽 위: Line의 Edge, 길이 측정, 교차점 목적 전환
+- 왼쪽 아래: Blob 파라미터 변경과 명시적 Preview
+- 오른쪽 아래: Contour 파라미터 변경과 명시적 Preview
+
+마우스는 대상 사이를 곡선 경로로 가속·감속하며 이동하고, 파라미터 입력과
+클릭도 실제 Win32 입력으로 수행했습니다. 화면 전환을 위해 커서를 좌표로
+순간 이동시키지 않았습니다.
+
+## 전처리부터 검출까지 연속 실행
+
+Filter 또는 Morphology를 독립 Tool View에서 미리 확인한 뒤 Threshold와
+Contour로 연결하는 실제 Pipeline Review 흐름입니다. 각 Step을 선택하면
+중간 이미지가 바뀌고, 마지막 Step에서는 검출 객체 표와 도형을 함께
+검토할 수 있습니다.
+
+![OpenVisionLab actual EXE preprocessing chains](docs/assets/demo/openvisionlab_preprocess_chains_actual_exe.gif)
+
+[전처리 연속 파이프라인 MP4 보기](docs/assets/demo/openvisionlab_preprocess_chains_actual_exe.mp4)
+
+- 왼쪽 위: Filter Tool View
+- 오른쪽 위: Morphology Tool View
+- 왼쪽 아래: `Filter -> Threshold -> Contour`
+- 오른쪽 아래: `Threshold -> Morphology -> Contour`
+
+두 데모 모두 Preview/Run을 사용자가 명시적으로 실행합니다. 공개 synthetic
+샘플의 워크플로 증거이며 생산 검사, 현장 강건성 또는 상용 비전 플랫폼
+동등성을 의미하지 않습니다.
 
 ## 설치/실행 방법
 
