@@ -81,6 +81,12 @@ namespace OpenVisionLab
                 RepairValidationSetImagePath,
                 CanRepairValidationSetImagePath);
             RemoveValidationSetImageCommand = new RelayCommand(RemoveValidationSetImage, CanRemoveValidationSetImage);
+            ApplyValidationSetVariantContractCommand = new RelayCommand(
+                ApplyValidationSetVariantContract,
+                CanApplyValidationSetVariantContract);
+            ResetValidationSetVariantContractCommand = new RelayCommand(
+                ResetValidationSetVariantContract,
+                CanApplyValidationSetVariantContract);
         }
 
         private void InitializeReviewCommands()
@@ -120,6 +126,9 @@ namespace OpenVisionLab
         {
             OpenSelectedStepToolCommand = new RelayCommand(OpenSelectedStepTool, CanOpenSelectedStepTool);
             LoadSelectedStepParametersCommand = new RelayCommand(LoadSelectedStepParameters, CanLoadSelectedStepParameters);
+            ResetSelectedStepDisplayDefaultsCommand = new RelayCommand(
+                ResetSelectedStepDisplayDefaults,
+                CanResetSelectedStepDisplayDefaults);
             ApplySelectedStepParametersCommand = new RelayCommand(ApplySelectedStepParameters, CanApplySelectedStepParameters);
         }
 

@@ -16,7 +16,7 @@
   "inspectionIntentSkills": [
     {
       "name": "Dark band thickness / Gap (LineDistance)",
-      "status": "Phase 1 contract frozen; P189-corrected small-split evidence complete; all-500 replay pending",
+      "status": "Phase 1 contract frozen; P190 all-500 replay closed as Keep with documented limits",
       "requiredOperatorInputs": [
         "exactly one reviewed coarse ROI containing the intended long dark band"
       ],
@@ -730,6 +730,7 @@
         "NUM_MATCH",
         "USE_UNIQUE_MATCH_VALIDATION",
         "UNIQUE_MATCH_MIN_SCORE_MARGIN",
+        "ALLOW_GLOBAL_POLARITY_REVERSAL",
         "GREEDINESS",
         "CANNY_LOW",
         "CANNY_HIGH",
@@ -752,6 +753,7 @@
         "SCORE_MIN, GREEDINESS, and HYBRID_VERIFY_IMAGE_WEIGHT are 0..1 decimals.",
         "UNIQUE_MATCH_MIN_SCORE_MARGIN is a normalized 0..1 decimal.",
         "When USE_UNIQUE_MATCH_VALIDATION=true, NUM_MATCH must be 1 and USE_MULTI_ROI must be false.",
+        "ALLOW_GLOBAL_POLARITY_REVERSAL is opt-in; a missing key preserves Same-only scoring, and true permits only one whole-candidate global direction reversal.",
         "Unique matching returns no MatchingResult for NoMatch or Ambiguous; review UniqueMatch.State, UniqueMatch.PlausibleAlternativeCount, UniqueMatch.ScoreMargin, and the exact runtime reason.",
         "CANNY_LOW and CANNY_HIGH are 0..255 and low must be less than or equal to high.",
         "CANNY_APERTURE_SIZE must be odd and in the supported Canny range."
@@ -764,6 +766,10 @@
         "UniqueMatch.State",
         "UniqueMatch.PlausibleAlternativeCount",
         "UniqueMatch.ScoreMargin",
+        "GlobalPolarity.AllowReversal",
+        "GlobalPolarity.Reversed",
+        "GlobalPolarity.SameCount",
+        "GlobalPolarity.ReversedCount",
         "AngleMin",
         "AngleMax",
         "AngleAvg"

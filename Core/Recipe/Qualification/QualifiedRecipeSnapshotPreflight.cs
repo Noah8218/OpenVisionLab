@@ -12,7 +12,7 @@ namespace OpenVisionLab
 {
     internal static class QualifiedRecipeSnapshotPreflight
     {
-        internal const int CurrentSnapshotSchemaVersion = 1;
+        internal const int CurrentSnapshotSchemaVersion = 2;
         internal const int CurrentValidationSetSchemaVersion = 1;
 
         internal static QualifiedRecipeSnapshotPreflightResult Evaluate(
@@ -195,6 +195,11 @@ namespace OpenVisionLab
                 {
                     result.Errors.Add("Validation image path is duplicated: " + image.SourcePath);
                 }
+
+                if (!TryValidateVariantContract(image, out string contractError))
+                {
+                    result.Errors.Add("Validation image Variant contract is invalid: " + contractError);
+                }
             }
 
             string imageSetSha = ComputeImageSetSha256(images);
@@ -289,7 +294,9 @@ namespace OpenVisionLab
             }
 
             VisionPipelineBatchRunSummaryStorage.BatchReviewQueue queue =
-                VisionPipelineBatchRunSummaryStorage.BuildReviewQueue(rows);
+                VisionPipelineBatchRunSummaryStorage.BuildReviewQueue(
+                    rows,
+                    summary.ReviewQueuePolicy);
             result.ReviewQueueSha256 = queue.Sha256;
             if (!string.Equals(
                     summary.ReviewQueuePolicy,
@@ -373,6 +380,17 @@ namespace OpenVisionLab
             if (!string.Equals(row.ExpectedOutcome, expected, StringComparison.Ordinal))
             {
                 preflight.Errors.Add(prefix + "expected outcome/order does not match the Validation Set.");
+            }
+
+            if (!string.Equals(
+                    NormalizeVariantId(row.VariantId),
+                    NormalizeVariantId(image.VariantId),
+                    StringComparison.Ordinal)
+                || !string.Equals(row.ExpectedMetricName?.Trim(), image.ExpectedMetricName?.Trim(), StringComparison.Ordinal)
+                || !string.Equals(row.ExpectedMetricMinimum?.Trim(), image.ExpectedMetricMinimum?.Trim(), StringComparison.Ordinal)
+                || !string.Equals(row.ExpectedMetricMaximum?.Trim(), image.ExpectedMetricMaximum?.Trim(), StringComparison.Ordinal))
+            {
+                preflight.Errors.Add(prefix + "Variant or expected metric contract does not match the Validation Set.");
             }
 
             if (!SameFullPath(row.SampleImagePath, image.SourcePath)
@@ -559,6 +577,14 @@ namespace OpenVisionLab
                     .Append(Path.GetFullPath(image?.SourcePath ?? string.Empty))
                     .Append('|')
                     .Append(NormalizeSha(image?.Sha256))
+                    .Append('|')
+                    .Append(NormalizeVariantId(image?.VariantId))
+                    .Append('|')
+                    .Append((image?.ExpectedMetricName ?? string.Empty).Trim())
+                    .Append('|')
+                    .Append((image?.ExpectedMetricMinimum ?? string.Empty).Trim())
+                    .Append('|')
+                    .Append((image?.ExpectedMetricMaximum ?? string.Empty).Trim())
                     .AppendLine();
             }
 
@@ -599,6 +625,10 @@ namespace OpenVisionLab
                         NormalizeSha(leftEntry.SourceSha256),
                         NormalizeSha(rightEntry.SourceSha256),
                         StringComparison.Ordinal)
+                    || !string.Equals(
+                        NormalizeVariantId(leftEntry.VariantId),
+                        NormalizeVariantId(rightEntry.VariantId),
+                        StringComparison.Ordinal)
                     || !(leftEntry.Reasons ?? new List<string>())
                         .SequenceEqual(
                             rightEntry.Reasons ?? new List<string>(),
@@ -609,6 +639,74 @@ namespace OpenVisionLab
             }
 
             return true;
+        }
+
+        private static string NormalizeVariantId(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? "Default" : value.Trim();
+        }
+
+        private static bool TryValidateVariantContract(
+            QualifiedRecipeValidationImageSource image,
+            out string error)
+        {
+            string variantId = image?.VariantId?.Trim() ?? string.Empty;
+            string metricName = image?.ExpectedMetricName?.Trim() ?? string.Empty;
+            string minimum = image?.ExpectedMetricMinimum?.Trim() ?? string.Empty;
+            string maximum = image?.ExpectedMetricMaximum?.Trim() ?? string.Empty;
+            if (variantId.Length > 80 || variantId.Any(char.IsControl))
+            {
+                error = "Variant ID is invalid.";
+                return false;
+            }
+
+            if (metricName.Length > 100 || metricName.Any(char.IsControl))
+            {
+                error = "Expected metric name is invalid.";
+                return false;
+            }
+
+            bool hasMinimum = !string.IsNullOrWhiteSpace(minimum);
+            bool hasMaximum = !string.IsNullOrWhiteSpace(maximum);
+            if (string.IsNullOrWhiteSpace(metricName))
+            {
+                error = hasMinimum || hasMaximum
+                    ? "Expected metric name is required when a bound is entered."
+                    : string.Empty;
+                return string.IsNullOrEmpty(error);
+            }
+
+            if (!hasMinimum && !hasMaximum)
+            {
+                error = "At least one expected metric bound is required.";
+                return false;
+            }
+
+            double minimumValue = double.NaN;
+            double maximumValue = double.NaN;
+            bool minimumValid = !hasMinimum || TryParseFinite(minimum, out minimumValue);
+            bool maximumValid = !hasMaximum || TryParseFinite(maximum, out maximumValue);
+            if (!minimumValid || !maximumValid)
+            {
+                error = "Expected metric bounds must be finite numbers.";
+                return false;
+            }
+
+            if (hasMinimum && hasMaximum && minimumValue > maximumValue)
+            {
+                error = "Expected metric minimum cannot exceed maximum.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static bool TryParseFinite(string value, out double parsed)
+        {
+            return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out parsed)
+                && !double.IsNaN(parsed)
+                && !double.IsInfinity(parsed);
         }
 
         private static bool HaveEquivalentPipelineShape(

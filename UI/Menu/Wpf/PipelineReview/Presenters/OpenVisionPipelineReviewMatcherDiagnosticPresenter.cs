@@ -146,6 +146,10 @@ namespace OpenVisionLab
             AddMetric(rows, metrics, "Unique", "Strongest alternative", "UniqueMatch.StrongestAlternativeScore", "0.###");
             AddMetric(rows, metrics, "Unique", "Score margin", "UniqueMatch.ScoreMargin", "0.###");
             AddMetric(rows, metrics, "Unique", "Required margin", "UniqueMatch.MinimumScoreMargin", "0.###");
+            AddMetric(rows, metrics, "Polarity", "Allow global reversal", "GlobalPolarity.AllowReversal", "0");
+            AddMetric(rows, metrics, "Polarity", "Selected reversed", "GlobalPolarity.Reversed", "0");
+            AddMetric(rows, metrics, "Polarity", "Same result count", "GlobalPolarity.SameCount", "0");
+            AddMetric(rows, metrics, "Polarity", "Reversed result count", "GlobalPolarity.ReversedCount", "0");
             AddMetric(rows, metrics, "Unique", "Plausible alternatives", "UniqueMatch.PlausibleAlternativeCount", "0");
             return rows;
         }

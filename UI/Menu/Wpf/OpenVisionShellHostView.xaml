@@ -5216,6 +5216,7 @@
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto" />
@@ -5376,6 +5377,87 @@
                                                             <TextBlock Text="{Binding RecipeCommands.RepairValidationSetImagePathText}" FontSize="10" />
                                                         </StackPanel>
                                                     </Button>
+                                                    <Grid Grid.Row="3"
+                                                          Grid.ColumnSpan="7"
+                                                          Margin="0,5,0,0"
+                                                          ToolTip="{Binding RecipeCommands.ValidationSetVariantContractToolTipText}">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="150" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="150" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="72" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="72" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock VerticalAlignment="Center"
+                                                                   Text="{Binding RecipeCommands.ValidationSetVariantIdLabelText}"
+                                                                   Foreground="#A8CBD1"
+                                                                   FontSize="10"
+                                                                   FontWeight="SemiBold" />
+                                                        <TextBox Grid.Column="1"
+                                                                 Height="24"
+                                                                 Margin="8,0,0,0"
+                                                                 Padding="5,2"
+                                                                 AutomationProperties.AutomationId="HostRecipeValidationVariantIdTextBox"
+                                                                 Text="{Binding RecipeCommands.ValidationSetPendingVariantId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                        <TextBlock Grid.Column="2"
+                                                                   Margin="10,0,0,0"
+                                                                   VerticalAlignment="Center"
+                                                                   Text="{Binding RecipeCommands.ValidationSetMetricNameLabelText}"
+                                                                   Foreground="#A8CBD1"
+                                                                   FontSize="10"
+                                                                   FontWeight="SemiBold" />
+                                                        <TextBox Grid.Column="3"
+                                                                 Height="24"
+                                                                 Margin="8,0,0,0"
+                                                                 Padding="5,2"
+                                                                 AutomationProperties.AutomationId="HostRecipeValidationMetricNameTextBox"
+                                                                 Text="{Binding RecipeCommands.ValidationSetPendingMetricName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                        <TextBlock Grid.Column="4"
+                                                                   Margin="10,0,0,0"
+                                                                   VerticalAlignment="Center"
+                                                                   Text="{Binding RecipeCommands.ValidationSetMetricMinimumLabelText}"
+                                                                   Foreground="#A8CBD1"
+                                                                   FontSize="10" />
+                                                        <TextBox Grid.Column="5"
+                                                                 Height="24"
+                                                                 Margin="5,0,0,0"
+                                                                 Padding="5,2"
+                                                                 AutomationProperties.AutomationId="HostRecipeValidationMetricMinimumTextBox"
+                                                                 Text="{Binding RecipeCommands.ValidationSetPendingMetricMinimum, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                        <TextBlock Grid.Column="6"
+                                                                   Margin="8,0,0,0"
+                                                                   VerticalAlignment="Center"
+                                                                   Text="{Binding RecipeCommands.ValidationSetMetricMaximumLabelText}"
+                                                                   Foreground="#A8CBD1"
+                                                                   FontSize="10" />
+                                                        <TextBox Grid.Column="7"
+                                                                 Height="24"
+                                                                 Margin="5,0,0,0"
+                                                                 Padding="5,2"
+                                                                 AutomationProperties.AutomationId="HostRecipeValidationMetricMaximumTextBox"
+                                                                 Text="{Binding RecipeCommands.ValidationSetPendingMetricMaximum, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                        <Button Grid.Column="8"
+                                                                Height="24"
+                                                                MinWidth="88"
+                                                                Margin="8,0,0,0"
+                                                                AutomationProperties.AutomationId="HostRecipeApplyValidationVariantButton"
+                                                                Command="{Binding RecipeCommands.ApplyValidationSetVariantContractCommand}"
+                                                                Content="{Binding RecipeCommands.ApplyValidationSetVariantContractText}"
+                                                                FontSize="10" />
+                                                        <Button Grid.Column="9"
+                                                                Height="24"
+                                                                MinWidth="58"
+                                                                Margin="6,0,0,0"
+                                                                AutomationProperties.AutomationId="HostRecipeResetValidationVariantButton"
+                                                                Command="{Binding RecipeCommands.ResetValidationSetVariantContractCommand}"
+                                                                Content="{Binding RecipeCommands.ResetValidationSetVariantContractText}"
+                                                                FontSize="10" />
+                                                    </Grid>
                                                 </Grid>
                                                  <ListBox Grid.Row="3"
                                                           Grid.ColumnSpan="4"
@@ -5394,7 +5476,8 @@
                                                                 <Grid.ColumnDefinitions>
                                                                     <ColumnDefinition Width="42" />
                                                                     <ColumnDefinition Width="56" />
-                                                                    <ColumnDefinition Width="180" />
+                                                                    <ColumnDefinition Width="160" />
+                                                                    <ColumnDefinition Width="140" />
                                                                     <ColumnDefinition Width="*" />
                                                                 </Grid.ColumnDefinitions>
                                                                 <TextBlock Text="{Binding Expected}"
@@ -5412,6 +5495,12 @@
                                                                            FontSize="10"
                                                                            TextTrimming="CharacterEllipsis" />
                                                                 <TextBlock Grid.Column="3"
+                                                                           Text="{Binding VariantId}"
+                                                                           ToolTip="{Binding ExpectedMetricText}"
+                                                                           Foreground="#FFF1AF"
+                                                                           FontSize="10"
+                                                                           TextTrimming="CharacterEllipsis" />
+                                                                <TextBlock Grid.Column="4"
                                                                            Text="{Binding Notes}"
                                                                            ToolTip="{Binding Notes}"
                                                                            Foreground="#D7FFF4"
@@ -6723,6 +6812,8 @@
                                                         <ColumnDefinition Width="Auto" />
                                                         <ColumnDefinition Width="4" />
                                                         <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="4" />
+                                                        <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
                                                     <TextBlock Text="{Binding RecipeCommands.PipelineSelectedStepPropertyGridText}"
                                                                Foreground="#A8CBD1"
@@ -6746,6 +6837,23 @@
                                                         </StackPanel>
                                                     </Button>
                                                     <Button Grid.Column="3"
+                                                            MinWidth="100"
+                                                            Padding="7,4"
+                                                            AutomationProperties.AutomationId="HostRecipeResetOverlayDisplayDefaultsButton"
+                                                            Visibility="{Binding RecipeCommands.HasSelectedOverlayMergeEditObject, Converter={StaticResource ShellHost.BooleanToVisibilityConverter}}"
+                                                            Command="{Binding RecipeCommands.ResetSelectedStepDisplayDefaultsCommand}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <iconPacks:PackIconMaterial Kind="Restore"
+                                                                                        Width="13"
+                                                                                        Height="13"
+                                                                                        Margin="0,0,4,0"
+                                                                                        VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding RecipeCommands.ResetSelectedStepDisplayDefaultsText}"
+                                                                       FontSize="10"
+                                                                       TextTrimming="CharacterEllipsis" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button Grid.Column="5"
                                                             MinWidth="96"
                                                             Padding="7,4"
                                                             AutomationProperties.AutomationId="HostRecipeApplySelectedStepParametersButton"

@@ -35,7 +35,7 @@ If OpenVisionLab validation is NG:
 The paste prompt already contains the essential rules. Do not upload these on the first round unless GPT cannot repair a validation error from the supplied report:
 
 - `C:\Git\OpenVisionLab_Dev\docs\OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md`
-- `C:\Git\OpenVisionLab_Dev\docs\OPENVISIONLAB_LLM_TOOL_CATALOG.json`
+- `C:\Git\OpenVisionLab_Dev\docs\contracts\openvisionlab\OPENVISIONLAB_LLM_TOOL_CATALOG.json`
 
 ## Advanced Files
 

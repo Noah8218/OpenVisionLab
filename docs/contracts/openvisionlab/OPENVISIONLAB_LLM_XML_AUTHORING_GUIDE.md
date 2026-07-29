@@ -10,7 +10,7 @@ OpenVisionLab is an OpenCvSharp4 rule-based vision workbench plus an LLM-assiste
 
 Use this loop when collecting real LLM transcripts:
 
-1. Give the LLM this guide plus `docs/OPENVISIONLAB_LLM_TOOL_CATALOG.json`.
+1. Give the LLM this guide plus `docs/contracts/openvisionlab/OPENVISIONLAB_LLM_TOOL_CATALOG.json`.
 2. Provide the reference image context, inspection goal, detection points, expected OK/NG condition, and any existing template/image dependency paths. For a packaged runtime, the operator must supply a path the running application can access; an operator-selected absolute path is the clearest draft-time default.
 3. Ask for one `VisionPipeline` XML document only.
 4. Paste or load the XML into Recipe Manager.
@@ -574,6 +574,25 @@ metrics remain normalized. Missing keys keep legacy behavior:
 This is a deterministic acceptance gate, not automatic threshold selection,
 template qualification, pose-accuracy proof, or a replacement for a reviewed
 search ROI. Do not lower the gate merely to force a repeated pattern to pass.
+
+### EdgeBasedMatching Global Polarity
+
+Use this option only when reviewed evidence shows that the same complete
+physical feature can reverse contrast:
+
+```xml
+<Parameter><Key>ALLOW_GLOBAL_POLARITY_REVERSAL</Key><Value>true</Value></Parameter>
+```
+
+Missing keys preserve Same-only scoring. Enabled mode permits one globally
+consistent direction reversal for the complete candidate; it does not ignore
+polarity independently at each edge. Review
+`GlobalPolarity.Reversed` (`0=Same`, `1=Reversed`) with the result drawing and
+retain the existing score, uniqueness, ROI, angle, and scale gates.
+
+Do not enable it from one convenient image or treat the bounded synthetic
+contract as physical qualification. A qualified recipe needs a named feature,
+labelled representative captures, frozen settings, and held-out replay.
 
 ### Matching Fixture NormalizeImage
 

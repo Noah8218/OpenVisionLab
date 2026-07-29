@@ -415,6 +415,9 @@ namespace OpenVisionLab
                 summary?.ObjectResults,
                 inputImage,
                 outputImage);
+            view.SetInstanceResults(
+                IsMultiMatchMeanTool(step),
+                summary?.InstanceResults);
             view.SetGeometryResults(IsGeometryResultTool(step), summary?.GeometryFeatures);
             view.SetCircleEvidence(
                 IsCircleGaugeTool(step),
@@ -515,6 +518,12 @@ namespace OpenVisionLab
             toolType = toolType.Replace(" ", string.Empty).Replace("_", string.Empty);
             return string.Equals(toolType, "Blob", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(toolType, "Contour", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsMultiMatchMeanTool(VisionPipelineStep step)
+        {
+            return VisionPipelineMultiMatchMeanService.IsMultiMatchMean(
+                step?.ToolType);
         }
 
         private static bool IsGeometryResultTool(VisionPipelineStep step)

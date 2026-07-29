@@ -72,6 +72,7 @@ namespace OpenVisionLab
                 case nameof(EdgeBasedMatchingProperty.USE_HYBRID_VERIFY):
                 case nameof(EdgeBasedMatchingProperty.USE_UNIQUE_MATCH_VALIDATION):
                 case nameof(EdgeBasedMatchingProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN):
+                case nameof(EdgeBasedMatchingProperty.ALLOW_GLOBAL_POLARITY_REVERSAL):
                 case nameof(LineGaugeProperty.USE_MANUAL_ANGLE):
                 case nameof(LineGaugeProperty.USE_EXTEND_FIT_LINE):
                 case nameof(LineGaugeProperty.USE_AVERAGE_FILTER):

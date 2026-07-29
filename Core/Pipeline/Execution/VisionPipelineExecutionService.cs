@@ -184,6 +184,8 @@ namespace OpenVisionLab
                 Task<VisionToolResult> runTask = Task.Run(() =>
                     VisionPipelineOverlayMergeService.IsMergeTool(runtimeStep.ToolType)
                         ? VisionPipelineOverlayMergeService.Execute(runtimeStep, input, runResult)
+                        : VisionPipelineMultiMatchMeanService.IsMultiMatchMean(runtimeStep.ToolType)
+                            ? VisionPipelineMultiMatchMeanService.Execute(runtimeStep, input, runResult)
                         : VisionPipelineLineFixtureService.IsLineFixture(runtimeStep.ToolType)
                             ? VisionPipelineLineFixtureService.Execute(runtimeStep, input, runResult)
                         : VisionPipelineGeometryMeasureService.IsGeometryMeasure(runtimeStep.ToolType)
@@ -339,6 +341,7 @@ namespace OpenVisionLab
                 }
 
                 VisionPipelineObjectResultCaptureService.Capture(step, input, tool, result);
+                VisionPipelineMatchResultCaptureService.Capture(step, input, tool, result);
                 VisionPipelineGeometryFeatureCaptureService.Capture(step, input, tool, result);
 
                 return result;

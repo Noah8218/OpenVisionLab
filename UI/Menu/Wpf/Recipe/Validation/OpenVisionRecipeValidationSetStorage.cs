@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -69,6 +70,18 @@ namespace OpenVisionLab
         [XmlAttribute]
         public string Sha256 { get; set; } = string.Empty;
 
+        [XmlAttribute]
+        public string VariantId { get; set; } = string.Empty;
+
+        [XmlAttribute]
+        public string ExpectedMetricName { get; set; } = string.Empty;
+
+        [XmlAttribute]
+        public string ExpectedMetricMinimum { get; set; } = string.Empty;
+
+        [XmlAttribute]
+        public string ExpectedMetricMaximum { get; set; } = string.Empty;
+
         public string Notes { get; set; } = string.Empty;
 
         [XmlIgnore]
@@ -127,6 +140,16 @@ namespace OpenVisionLab
             }
 
             Normalize(document);
+            foreach (OpenVisionRecipeValidationSetImage image in document.Sets
+                .SelectMany(set => set.Images ?? new List<OpenVisionRecipeValidationSetImage>()))
+            {
+                if (!TryValidateVariantContract(image, out string contractError))
+                {
+                    error = contractError;
+                    return false;
+                }
+            }
+
             error = string.Empty;
             return true;
         }
@@ -143,6 +166,16 @@ namespace OpenVisionLab
             }
 
             Normalize(document);
+            foreach (OpenVisionRecipeValidationSetImage image in document.Sets
+                .SelectMany(set => set.Images ?? new List<OpenVisionRecipeValidationSetImage>()))
+            {
+                if (!TryValidateVariantContract(image, out string contractError))
+                {
+                    error = contractError;
+                    return false;
+                }
+            }
+
             if (document.Sets.Count > MaximumSetCount)
             {
                 error = "Validation set limit exceeded: " + MaximumSetCount;
@@ -185,6 +218,31 @@ namespace OpenVisionLab
             out int updatedCount,
             out int skippedCount)
         {
+            return AddOrUpdateImages(
+                set,
+                paths,
+                expected,
+                notes,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                out updatedCount,
+                out skippedCount);
+        }
+
+        public static int AddOrUpdateImages(
+            OpenVisionRecipeValidationSet set,
+            IEnumerable<string> paths,
+            string expected,
+            string notes,
+            string variantId,
+            string expectedMetricName,
+            string expectedMetricMinimum,
+            string expectedMetricMaximum,
+            out int updatedCount,
+            out int skippedCount)
+        {
             updatedCount = 0;
             skippedCount = 0;
             if (set == null || set.IsIdentityLocked)
@@ -195,6 +253,23 @@ namespace OpenVisionLab
             set.Images ??= new List<OpenVisionRecipeValidationSetImage>();
             string normalizedExpected = NormalizeExpected(expected);
             string normalizedNotes = notes?.Trim() ?? string.Empty;
+            string normalizedVariantId = NormalizeVariantId(variantId);
+            string normalizedMetricName = expectedMetricName?.Trim() ?? string.Empty;
+            string normalizedMetricMinimum = expectedMetricMinimum?.Trim() ?? string.Empty;
+            string normalizedMetricMaximum = expectedMetricMaximum?.Trim() ?? string.Empty;
+            OpenVisionRecipeValidationSetImage contractProbe = new OpenVisionRecipeValidationSetImage
+            {
+                VariantId = normalizedVariantId,
+                ExpectedMetricName = normalizedMetricName,
+                ExpectedMetricMinimum = normalizedMetricMinimum,
+                ExpectedMetricMaximum = normalizedMetricMaximum
+            };
+            if (!TryValidateVariantContract(contractProbe, out _))
+            {
+                skippedCount = (paths ?? Enumerable.Empty<string>()).Count();
+                return 0;
+            }
+
             int addedCount = 0;
 
             foreach (string sourcePath in paths ?? Enumerable.Empty<string>())
@@ -211,6 +286,7 @@ namespace OpenVisionLab
                 {
                     existing.Expected = normalizedExpected;
                     existing.Notes = normalizedNotes;
+                    CopyVariantContract(contractProbe, existing);
                     updatedCount++;
                     continue;
                 }
@@ -225,12 +301,146 @@ namespace OpenVisionLab
                 {
                     Expected = normalizedExpected,
                     Path = imagePath,
-                    Notes = normalizedNotes
+                    Notes = normalizedNotes,
+                    VariantId = normalizedVariantId,
+                    ExpectedMetricName = normalizedMetricName,
+                    ExpectedMetricMinimum = normalizedMetricMinimum,
+                    ExpectedMetricMaximum = normalizedMetricMaximum
                 });
                 addedCount++;
             }
 
             return addedCount;
+        }
+
+        public static bool TryApplyVariantContract(
+            OpenVisionRecipeValidationSet set,
+            OpenVisionRecipeValidationSetImage image,
+            string variantId,
+            string expectedMetricName,
+            string expectedMetricMinimum,
+            string expectedMetricMaximum,
+            out string error)
+        {
+            if (set?.IsIdentityLocked == true)
+            {
+                error = "Hash-locked validation images cannot be edited.";
+                return false;
+            }
+
+            if (set?.Images == null
+                || image == null
+                || !set.Images.Any(item => ReferenceEquals(item, image)))
+            {
+                error = "The selected validation image is no longer available.";
+                return false;
+            }
+
+            OpenVisionRecipeValidationSetImage normalized = new OpenVisionRecipeValidationSetImage
+            {
+                VariantId = NormalizeVariantId(variantId),
+                ExpectedMetricName = expectedMetricName?.Trim() ?? string.Empty,
+                ExpectedMetricMinimum = expectedMetricMinimum?.Trim() ?? string.Empty,
+                ExpectedMetricMaximum = expectedMetricMaximum?.Trim() ?? string.Empty
+            };
+            if (!TryValidateVariantContract(normalized, out error))
+            {
+                return false;
+            }
+
+            CopyVariantContract(normalized, image);
+            error = string.Empty;
+            return true;
+        }
+
+        public static bool TryValidateVariantContract(
+            OpenVisionRecipeValidationSetImage image,
+            out string error)
+        {
+            string variantId = NormalizeVariantId(image?.VariantId);
+            string metricName = image?.ExpectedMetricName?.Trim() ?? string.Empty;
+            string minimum = image?.ExpectedMetricMinimum?.Trim() ?? string.Empty;
+            string maximum = image?.ExpectedMetricMaximum?.Trim() ?? string.Empty;
+            if (variantId.Length > 80 || variantId.Any(char.IsControl))
+            {
+                error = "Variant ID must be 80 characters or fewer and contain no control characters.";
+                return false;
+            }
+
+            if (metricName.Length > 100 || metricName.Any(char.IsControl))
+            {
+                error = "Expected metric name must be 100 characters or fewer and contain no control characters.";
+                return false;
+            }
+
+            bool hasMinimum = !string.IsNullOrWhiteSpace(minimum);
+            bool hasMaximum = !string.IsNullOrWhiteSpace(maximum);
+            if (string.IsNullOrWhiteSpace(metricName))
+            {
+                if (hasMinimum || hasMaximum)
+                {
+                    error = "Expected metric name is required when a minimum or maximum is entered.";
+                    return false;
+                }
+
+                error = string.Empty;
+                return true;
+            }
+
+            if (!hasMinimum && !hasMaximum)
+            {
+                error = "At least one expected metric bound is required.";
+                return false;
+            }
+
+            double minimumValue = double.NaN;
+            double maximumValue = double.NaN;
+            if (hasMinimum && !TryParseFinite(minimum, out minimumValue))
+            {
+                error = "Expected metric minimum must be a finite number.";
+                return false;
+            }
+
+            if (hasMaximum && !TryParseFinite(maximum, out maximumValue))
+            {
+                error = "Expected metric maximum must be a finite number.";
+                return false;
+            }
+
+            if (hasMinimum && hasMaximum && minimumValue > maximumValue)
+            {
+                error = "Expected metric minimum cannot exceed the maximum.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        public static string NormalizeVariantId(string value)
+        {
+            return value?.Trim() ?? string.Empty;
+        }
+
+        public static string GetVariantDisplayId(OpenVisionRecipeValidationSetImage image)
+        {
+            string value = NormalizeVariantId(image?.VariantId);
+            return string.IsNullOrWhiteSpace(value) ? "Default" : value;
+        }
+
+        public static string BuildExpectedMetricText(OpenVisionRecipeValidationSetImage image)
+        {
+            if (string.IsNullOrWhiteSpace(image?.ExpectedMetricName))
+            {
+                return string.Empty;
+            }
+
+            return image.ExpectedMetricName.Trim()
+                + " ["
+                + (string.IsNullOrWhiteSpace(image.ExpectedMetricMinimum) ? "-∞" : image.ExpectedMetricMinimum.Trim())
+                + ".."
+                + (string.IsNullOrWhiteSpace(image.ExpectedMetricMaximum) ? "+∞" : image.ExpectedMetricMaximum.Trim())
+                + "]";
         }
 
         public static bool TryRepairMissingImagePath(
@@ -371,6 +581,14 @@ namespace OpenVisionLab
                     .Append(Path.GetFullPath(image?.Path ?? string.Empty))
                     .Append('|')
                     .Append((image?.Sha256 ?? string.Empty).Trim().ToUpperInvariant())
+                    .Append('|')
+                    .Append(GetVariantDisplayId(image))
+                    .Append('|')
+                    .Append((image?.ExpectedMetricName ?? string.Empty).Trim())
+                    .Append('|')
+                    .Append((image?.ExpectedMetricMinimum ?? string.Empty).Trim())
+                    .Append('|')
+                    .Append((image?.ExpectedMetricMaximum ?? string.Empty).Trim())
                     .AppendLine();
             }
 
@@ -489,6 +707,10 @@ namespace OpenVisionLab
                     image.Path = path;
                     image.Expected = NormalizeExpected(image.Expected);
                     image.Sha256 = NormalizeSha256(image.Sha256);
+                    image.VariantId = NormalizeVariantId(image.VariantId);
+                    image.ExpectedMetricName = image.ExpectedMetricName?.Trim() ?? string.Empty;
+                    image.ExpectedMetricMinimum = image.ExpectedMetricMinimum?.Trim() ?? string.Empty;
+                    image.ExpectedMetricMaximum = image.ExpectedMetricMaximum?.Trim() ?? string.Empty;
                     image.Notes = image.Notes?.Trim() ?? string.Empty;
                     images.Add(image);
                 }
@@ -544,6 +766,27 @@ namespace OpenVisionLab
         private static string NormalizeSha256(string value)
         {
             return (value ?? string.Empty).Trim().ToUpperInvariant();
+        }
+
+        private static void CopyVariantContract(
+            OpenVisionRecipeValidationSetImage source,
+            OpenVisionRecipeValidationSetImage target)
+        {
+            target.VariantId = source?.VariantId ?? string.Empty;
+            target.ExpectedMetricName = source?.ExpectedMetricName ?? string.Empty;
+            target.ExpectedMetricMinimum = source?.ExpectedMetricMinimum ?? string.Empty;
+            target.ExpectedMetricMaximum = source?.ExpectedMetricMaximum ?? string.Empty;
+        }
+
+        private static bool TryParseFinite(string value, out double parsed)
+        {
+            return double.TryParse(
+                    value,
+                    NumberStyles.Float,
+                    CultureInfo.InvariantCulture,
+                    out parsed)
+                && !double.IsNaN(parsed)
+                && !double.IsInfinity(parsed);
         }
 
         private static bool IsFileSha256Match(string path, string expected)
@@ -618,11 +861,18 @@ namespace OpenVisionLab
 
         public string Notes => Image.Notes ?? string.Empty;
 
+        public string VariantId => OpenVisionRecipeValidationSetStorage.GetVariantDisplayId(Image);
+
+        public string ExpectedMetricText => OpenVisionRecipeValidationSetStorage.BuildExpectedMetricText(Image);
+
         public string DisplayText => Expected
             + " | "
             + StateText
             + " | "
             + FileName
+            + " | "
+            + VariantId
+            + (string.IsNullOrWhiteSpace(ExpectedMetricText) ? string.Empty : " | " + ExpectedMetricText)
             + (string.IsNullOrWhiteSpace(Notes) ? string.Empty : " | " + Notes);
     }
 }

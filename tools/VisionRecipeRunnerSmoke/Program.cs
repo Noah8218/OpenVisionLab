@@ -79,6 +79,12 @@ if (args.Length == 4
     return await RunEdgeUniqueCardRMatrixAsync(args[1], args[2], args[3]);
 }
 
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--edge-global-polarity-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunEdgeGlobalPolarityContract(args.Length == 2 ? args[1] : null);
+}
+
 if (args.Length == 3
     && string.Equals(args[0], "--auto-mpoint-easymatch-candidates", StringComparison.OrdinalIgnoreCase))
 {
@@ -126,6 +132,7 @@ if (args.Length < 2)
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --affine-card-pilot <cardDatasetRoot> <evidenceDirectory>");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --affine-card-fixed-roi <cardDatasetRoot> <evidenceDirectory>");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --edge-unique-card-r-matrix <cardDatasetRoot> <p220ResultsCsv> <evidenceDirectory>");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --edge-global-polarity-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --auto-mpoint-easymatch-candidates <easyMatchSampleRoot> <evidenceDirectory>");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --auto-mpoint-six-corpus-pilot <labelTestRoot> <evidenceDirectory>");
     return 2;
@@ -152,6 +159,244 @@ static string? GetOptionValue(string[] args, string optionName)
     }
 
     return null;
+}
+
+static int RunEdgeGlobalPolarityContract(string? requestedEvidenceDirectory)
+{
+    string evidenceDirectory = Path.GetFullPath(requestedEvidenceDirectory
+        ?? Path.Combine("artifacts", "cvr11_global_polarity_contract"));
+    string sourceDirectory = Path.Combine(evidenceDirectory, "sources");
+    string drawingDirectory = Path.Combine(evidenceDirectory, "drawings");
+    Directory.CreateDirectory(sourceDirectory);
+    Directory.CreateDirectory(drawingDirectory);
+
+    string templatePath = Path.Combine(evidenceDirectory, "template.png");
+    using Mat template = CreateGlobalPolarityPattern();
+    Cv2.ImWrite(templatePath, template);
+
+    (string Split, string Name, bool HasTarget, bool Reversed, int X, int Y)[] cases =
+    {
+        ("Train", "train_same_01", true, false, 18, 18),
+        ("Train", "train_same_02", true, false, 52, 24),
+        ("Train", "train_same_03", true, false, 94, 16),
+        ("Train", "train_same_04", true, false, 42, 62),
+        ("Train", "train_reversed_01", true, true, 22, 20),
+        ("Train", "train_reversed_02", true, true, 58, 28),
+        ("Train", "train_reversed_03", true, true, 102, 18),
+        ("Train", "train_reversed_04", true, true, 48, 64),
+        ("Validation", "validation_same_01", true, false, 30, 38),
+        ("Validation", "validation_same_02", true, false, 84, 52),
+        ("Validation", "validation_reversed_01", true, true, 34, 42),
+        ("Validation", "validation_reversed_02", true, true, 88, 50),
+        ("Validation", "validation_no_target_01", false, false, 0, 0),
+        ("Validation", "validation_no_target_02", false, true, 0, 0),
+        ("HeldOut", "heldout_same_01", true, false, 16, 66),
+        ("HeldOut", "heldout_same_02", true, false, 108, 58),
+        ("HeldOut", "heldout_reversed_01", true, true, 20, 70),
+        ("HeldOut", "heldout_reversed_02", true, true, 106, 60),
+        ("HeldOut", "heldout_no_target_01", false, false, 0, 0),
+        ("HeldOut", "heldout_no_target_02", false, true, 0, 0)
+    };
+
+    VisionPipelineStep enabledStep = CreateGlobalPolarityStep(templatePath, true);
+    VisionPipelineStep legacyStep = CreateGlobalPolarityStep(templatePath, false);
+    List<string> rows = new List<string>
+    {
+        "Split,Case,Expected,Actual,Success,Polarity,Score,CenterX,CenterY,CenterErrorPx,ErrorCode,SourceSha256,DrawingSha256"
+    };
+    List<string> failures = new List<string>();
+
+    using (Mat reversedProbe = CreateGlobalPolaritySource(template, true, true, 52, 36))
+    {
+        EdgeBasedTemplateMatchingTool legacyTool =
+            (EdgeBasedTemplateMatchingTool)VisionPipelineAppToolFactory.Create(legacyStep);
+        VisionToolResult legacyResult = legacyTool.Execute(reversedProbe);
+        try
+        {
+            if (legacyResult.Success || legacyTool.results.Count != 0)
+            {
+                failures.Add("Legacy XML/default path accepted a globally reversed target.");
+            }
+        }
+        finally
+        {
+            legacyResult.ResultImage?.Dispose();
+        }
+    }
+
+    foreach ((string split, string name, bool hasTarget, bool reversed, int x, int y) in cases)
+    {
+        using Mat source = CreateGlobalPolaritySource(template, hasTarget, reversed, x, y);
+        string sourcePath = Path.Combine(sourceDirectory, name + ".png");
+        string drawingPath = Path.Combine(drawingDirectory, name + ".png");
+        Cv2.ImWrite(sourcePath, source);
+
+        EdgeBasedTemplateMatchingTool tool =
+            (EdgeBasedTemplateMatchingTool)VisionPipelineAppToolFactory.Create(enabledStep);
+        VisionToolResult result = tool.Execute(source);
+        Lib.OpenCV.Result.MatchingResult? match = tool.results.SingleOrDefault();
+        string actual = result.Success && match != null ? "Match" : "NoMatch";
+        string expected = hasTarget ? "Match" : "NoMatch";
+        double centerError = double.NaN;
+        string polarity = match == null ? "None" : match.PolarityReversed ? "Reversed" : "Same";
+        double score = match?.Score ?? double.NaN;
+
+        try
+        {
+            if (match != null && result.ResultImage != null && !result.ResultImage.Empty())
+            {
+                Cv2.ImWrite(drawingPath, result.ResultImage);
+            }
+            else
+            {
+                using Mat fallback = source.Clone();
+                Cv2.PutText(
+                    fallback,
+                    "NoMatch",
+                    new OpenCvSharp.Point(8, 22),
+                    HersheyFonts.HersheySimplex,
+                    0.6,
+                    Scalar.Red,
+                    2,
+                    LineTypes.AntiAlias);
+                Cv2.ImWrite(drawingPath, fallback);
+            }
+
+            if (!string.Equals(actual, expected, StringComparison.Ordinal))
+            {
+                failures.Add($"{split}/{name}: expected {expected}, actual {actual} ({result.ErrorName}: {result.Message}).");
+            }
+
+            if (hasTarget && match != null)
+            {
+                centerError = Math.Sqrt(
+                    Math.Pow(match.Center.X - (x + (template.Width / 2D)), 2D)
+                    + Math.Pow(match.Center.Y - (y + (template.Height / 2D)), 2D));
+                if (centerError > 2D)
+                {
+                    failures.Add($"{split}/{name}: center error {centerError:0.###} px exceeded 2 px.");
+                }
+
+                if (match.PolarityReversed != reversed)
+                {
+                    failures.Add($"{split}/{name}: expected polarity {(reversed ? "Reversed" : "Same")}, actual {polarity}.");
+                }
+            }
+
+            rows.Add(string.Join(",",
+                split,
+                name,
+                expected,
+                actual,
+                result.Success,
+                polarity,
+                double.IsNaN(score) ? string.Empty : score.ToString("0.###", CultureInfo.InvariantCulture),
+                match == null ? string.Empty : match.Center.X.ToString("0.###", CultureInfo.InvariantCulture),
+                match == null ? string.Empty : match.Center.Y.ToString("0.###", CultureInfo.InvariantCulture),
+                double.IsNaN(centerError) ? string.Empty : centerError.ToString("0.###", CultureInfo.InvariantCulture),
+                result.ErrorName,
+                ComputeSha256(sourcePath),
+                ComputeSha256(drawingPath)));
+        }
+        finally
+        {
+            result.ResultImage?.Dispose();
+        }
+    }
+
+    string matrixPath = Path.Combine(evidenceDirectory, "matrix.csv");
+    File.WriteAllLines(matrixPath, rows);
+    File.WriteAllText(
+        Path.Combine(evidenceDirectory, "pipeline.xml"),
+        "<VisionPipeline Name=\"CVR-11 Global Polarity\"><Step Name=\"Global polarity edge match\" ToolType=\"EdgeBasedMatching\" InputLayer=\"Main\" OutputLayer=\"Match\"><Parameter><Key>PATTERN_PATH</Key><Value>"
+        + System.Security.SecurityElement.Escape(templatePath)
+        + "</Value></Parameter><Parameter><Key>SCORE_MIN</Key><Value>0.8</Value></Parameter><Parameter><Key>NUM_MATCH</Key><Value>1</Value></Parameter><Parameter><Key>ALLOW_GLOBAL_POLARITY_REVERSAL</Key><Value>true</Value></Parameter><Parameter><Key>SEARCH_STEP</Key><Value>1</Value></Parameter><Parameter><Key>USE_POSITION_REFINE</Key><Value>true</Value></Parameter></Step></VisionPipeline>");
+    File.WriteAllLines(
+        Path.Combine(evidenceDirectory, "completion.txt"),
+        new[]
+        {
+            failures.Count == 0 ? "Status=Complete" : "Status=Incomplete",
+            "Scope=Project-authored synthetic global contrast reversal only",
+            "Train=8 target rows",
+            "Validation=4 target + 2 no-target rows",
+            "HeldOut=4 target + 2 no-target rows",
+            "LegacyReversedProbe=Rejected",
+            "MatrixSha256=" + ComputeSha256(matrixPath),
+            "Boundary=No local edge-direction ignore; no automatic mode selection; no physical or field qualification"
+        }.Concat(failures.Select(failure => "Failure=" + failure)));
+
+    if (failures.Count > 0)
+    {
+        Console.Error.WriteLine("CVR-11 global polarity contract failed.");
+        foreach (string failure in failures)
+        {
+            Console.Error.WriteLine("- " + failure);
+        }
+
+        return 1;
+    }
+
+    Console.WriteLine($"CVR-11 global polarity contract passed: {cases.Length}/{cases.Length} rows.");
+    Console.WriteLine("Evidence=" + evidenceDirectory);
+    return 0;
+}
+
+static VisionPipelineStep CreateGlobalPolarityStep(string templatePath, bool allowReversal)
+{
+    VisionPipelineStep step = new VisionPipelineStep
+    {
+        Name = "Global polarity edge match",
+        ToolType = "EdgeBasedMatching",
+        InputLayer = "Main",
+        OutputLayer = "Match"
+    };
+    step.Parameters["Name"] = step.Name;
+    step.Parameters["PATTERN_PATH"] = templatePath;
+    step.Parameters["SCORE_MIN"] = "0.8";
+    step.Parameters["NUM_MATCH"] = "1";
+    step.Parameters["ALLOW_GLOBAL_POLARITY_REVERSAL"] = allowReversal.ToString(CultureInfo.InvariantCulture);
+    step.Parameters["SEARCH_STEP"] = "1";
+    step.Parameters["USE_POSITION_REFINE"] = "true";
+    step.Parameters["USE_DRAW_IMAGE"] = "true";
+    step.Parameters["USE_THRESHOLD"] = "false";
+    step.Parameters["CANNY_LOW"] = "30";
+    step.Parameters["CANNY_HIGH"] = "90";
+    return step;
+}
+
+static Mat CreateGlobalPolarityPattern()
+{
+    Mat pattern = new Mat(new Size(64, 64), MatType.CV_8UC1, Scalar.All(230));
+    Cv2.Rectangle(pattern, new Rect(10, 9, 12, 42), Scalar.All(28), -1);
+    Cv2.Rectangle(pattern, new Rect(10, 39, 34, 12), Scalar.All(28), -1);
+    Cv2.Circle(pattern, new OpenCvSharp.Point(44, 18), 8, Scalar.All(28), -1);
+    Cv2.Line(pattern, new OpenCvSharp.Point(39, 32), new OpenCvSharp.Point(52, 47), Scalar.All(28), 5);
+    return pattern;
+}
+
+static Mat CreateGlobalPolaritySource(
+    Mat template,
+    bool hasTarget,
+    bool reversed,
+    int x,
+    int y)
+{
+    byte background = reversed ? (byte)25 : (byte)230;
+    Mat source = new Mat(new Size(192, 144), MatType.CV_8UC1, Scalar.All(background));
+    if (!hasTarget)
+    {
+        return source;
+    }
+
+    using Mat target = reversed ? new Mat() : template.Clone();
+    if (reversed)
+    {
+        Cv2.BitwiseNot(template, target);
+    }
+
+    using Mat roi = new Mat(source, new Rect(x, y, target.Width, target.Height));
+    target.CopyTo(roi);
+    return source;
 }
 
 static int RunPinArrayGapIntentContract()

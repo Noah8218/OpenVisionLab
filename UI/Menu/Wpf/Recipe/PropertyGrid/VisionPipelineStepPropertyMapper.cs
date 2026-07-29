@@ -97,6 +97,14 @@ namespace OpenVisionLab
 
             string name = GetStepName(step);
             string toolType = NormalizeToolType(step.ToolType);
+            if (VisionPipelineOverlayMergePropertyAdapter.TryCreateProperty(
+                step,
+                name,
+                out object overlayMergeProperty))
+            {
+                return overlayMergeProperty;
+            }
+
             if (VisionPipelineTransformPropertyAdapter.TryCreateProperty(
                 step,
                 name,
@@ -104,6 +112,15 @@ namespace OpenVisionLab
                 out object transformProperty))
             {
                 return transformProperty;
+            }
+
+            if (VisionPipelineMultiMatchMeanPropertyAdapter.TryCreateProperty(
+                step,
+                name,
+                context,
+                out object multiMatchMeanProperty))
+            {
+                return multiMatchMeanProperty;
             }
 
             if (VisionPipelineReferenceDifferencePropertyAdapter.TryCreateProperty(
@@ -229,7 +246,23 @@ namespace OpenVisionLab
             }
 
             VisionPipelineStep mapped = null;
-            if (VisionPipelineReferenceDifferencePropertyAdapter.TryCreateStep(
+            if (VisionPipelineOverlayMergePropertyAdapter.TryCreateStep(
+                property,
+                inputLayer,
+                outputLayer,
+                out VisionPipelineStep overlayMergeStep))
+            {
+                mapped = overlayMergeStep;
+            }
+            else if (VisionPipelineMultiMatchMeanPropertyAdapter.TryCreateStep(
+                property,
+                inputLayer,
+                outputLayer,
+                out VisionPipelineStep multiMatchMeanStep))
+            {
+                mapped = multiMatchMeanStep;
+            }
+            else if (VisionPipelineReferenceDifferencePropertyAdapter.TryCreateStep(
                 property,
                 inputLayer,
                 outputLayer,
@@ -673,6 +706,16 @@ namespace OpenVisionLab
 
         private static string ResolveMetricToolType(object instance)
         {
+            if (VisionPipelineOverlayMergePropertyAdapter.IsProperty(instance))
+            {
+                return "OverlayMerge";
+            }
+
+            if (VisionPipelineMultiMatchMeanPropertyAdapter.IsProperty(instance))
+            {
+                return "MultiMatchMean";
+            }
+
             if (VisionPipelineReferenceDifferencePropertyAdapter.IsProperty(instance))
             {
                 return "ReferenceDifference";

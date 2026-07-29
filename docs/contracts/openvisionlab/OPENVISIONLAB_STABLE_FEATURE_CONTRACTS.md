@@ -1,8 +1,28 @@
 # OpenVisionLab Stable Feature Contracts
 
-Last updated: 2026-07-28
+Last updated: 2026-07-29
 
 This document protects restored and verified behavior. Future LLM or developer work must read this before changing WPF shell, tool view, layer routing, viewer, or PropertyGrid code.
+
+## CVR-11 Edge Global Polarity v1
+
+- `ALLOW_GLOBAL_POLARITY_REVERSAL` is opt-in and defaults to `false` when
+  absent from Pipeline/XML.
+- Same-only mode retains the legacy signed gradient-direction score.
+- Enabled mode may choose only one whole-candidate global reversal. Do not
+  replace it with per-edge absolute direction or local polarity ignore.
+- Successful matches publish exact `Same`/`Reversed` state through
+  MatchingResult, `GlobalPolarity.*` metrics, and the drawing label.
+- Existing score, unique-match, search ROI, angle, scale, result-count, and
+  suppression behavior remains active.
+- Tool View/PropertyGrid edits must not automatically Preview/Run or mutate
+  layers/routing.
+- A present non-Boolean Pipeline value fails validation; missing values restore
+  `false`.
+- Synthetic completion does not authorize enabling reversal in a qualified
+  physical recipe. Follow
+  `OPENVISIONLAB_EDGE_GLOBAL_POLARITY_V1_CONTRACT.md` for the required physical
+  evidence boundary.
 
 ## Purpose
 
@@ -13,6 +33,21 @@ When a feature below is marked stable, do not refactor, simplify, replace, or re
 ## General Rules
 
 - Do not remove existing operator affordances while refactoring: layer selection, output layer creation, preview image load/save, zoom, pan, drag, result review, and PropertyGrid editing are product behavior, not incidental UI.
+- A reusable workflow must be designed from the operator goal and the shortest
+  safe normal path. Related settings must not be scattered across unrelated
+  views, dialogs, or buttons merely because the implementation has separate
+  components.
+- Related settings that form one durable task must use one coherent first-use
+  setup or option surface. After explicit operator confirmation, persist them
+  at the narrowest correct Tool, Recipe, project, workspace, or user scope.
+- Restored setup must remain visible and editable, provide an explicit
+  reset/default path, validate stale or incompatible values before reuse, and
+  explain why rejected state cannot be restored.
+- Restoring setup must not run Preview/Run, create/delete/select layers, change
+  the active layer, or mutate Pipeline routing. Reusable setup is stable only
+  after save/reload/reopen and zero-side-effect verification pass.
+- Task-specific ROI, tolerance, template, dependency, and coordinate-frame
+  state must not leak across unrelated Recipes, projects, workspaces, or users.
 - Do not auto-change an input layer just because an output layer was created or previewed.
 - Do not auto-split, auto-rearrange, or auto-create comparison panes just because an output layer was created or previewed. Live layers may be mirrored into the central AvalonDock same-pane tab workspace by default, but comparison placement remains an explicit operator action.
 - Layer management commands are explicit operator actions. Creating a layer, loading an image into a selected/current layer, renaming an operator layer, or deleting a non-Main layer must not run Preview/Run, auto-open a tool, or change the active native tool input route.
@@ -1266,6 +1301,99 @@ Relevant smoke and evidence:
   `docs\contracts\openvisionlab\OPENVISIONLAB_LINE_FIXTURE_V1_CONTRACT.md`;
 - completion report:
   `docs\reports\OPENVISIONLAB_CVR09_LINE_FIXTURE_20260728.md`.
+
+## MultiMatchMean Bounded Multi-Instance Consumer
+
+Stable behavior:
+
+- `MultiMatchMean` and alias `MultiFixtureMean` consume one exact earlier
+  successful and accepted multi-result Matching/EdgeBasedMatching Step in the
+  same coordinate layer and image size. The source must request
+  `NUM_MATCH >= 2`.
+- Runtime retains finite source score, center, bounds, angle, and positive
+  scale evidence. Missing, ambiguous, later, rejected, wrong-family,
+  cross-frame, empty, or invalid sources fail closed.
+- Stable same-run instance IDs use row-major ordering with
+  `ROW_TOLERANCE_PX`: rows top to bottom and instances left to right. IDs are
+  review identities, not cross-image physical serial numbers.
+- Count limits and pairwise source bounding-box IoU are checked before
+  fan-out. `MAX_INSTANCES` must not exceed 64.
+- Each retained instance reuses the existing `NormalizeImage` transform and
+  existing `Mean` Tool for one fixed reference-coordinate `RELATIVE_ROI`.
+  Individual angle, scale, valid-pixel, and Mean failures retain an exact
+  reason and do not prevent the remaining instances from being inspected.
+- Current-run drawings retain every transformed ROI with `Ixx`, OK/NG, and
+  finite Mean. Green means accepted and red means rejected.
+- `REQUIRE_ALL=true` requires zero individual failures.
+  `REQUIRE_ALL=false` requires `MIN_PASS_COUNT`. The Pipeline definition must
+  gate `InstanceAggregatePassed` with exact `1..1` so individual rows and
+  drawings survive an aggregate NG.
+- Selected-Step PropertyGrid and XML preserve the typed source, reference
+  pose/image size, fixed ROI, count/overlap, pose/Mean, and aggregate settings
+  without Preview/Run, layer, or route side effects.
+- Pipeline Review `Instance Results` row selection highlights the same
+  transformed ROI without another Run. Direct and recipe Run Reports preserve
+  the ordered rows and exact reject reasons.
+- The frozen synthetic matrix and current-source UI capture remain bounded
+  evidence for one fixed Mean sub-inspection. They do not authorize a generic
+  graph engine, arbitrary nested sub-recipe, calibrated measurement,
+  cross-image tracking, another fan-out tool family, or field qualification.
+
+Relevant smoke and evidence:
+
+- `OpenVisionFixtureSmoke --cvr10-multi-match-mean`;
+- `cvr10_multi_match_mean_review`;
+- retained evidence:
+  `artifacts\cvr10_multi_match_mean_20260728_r6`;
+- contract:
+  `docs\contracts\openvisionlab\OPENVISIONLAB_MULTI_MATCH_MEAN_V1_CONTRACT.md`;
+- completion report:
+  `docs\reports\OPENVISIONLAB_CVR10_MULTI_MATCH_MEAN_20260728.md`.
+
+## Validation Variant v1 Contract
+
+CVR-19 is stable at the bounded image-level Variant scope:
+
+- one unchanged recipe/Pipeline executes every row;
+- each validation image may own one named Variant and one expected metric range;
+- selection restores visible/editable values; Apply and Reset are explicit;
+- setup edits do not Preview/Run or mutate layers, workspace, or routes;
+- batch history, Variant+role review queue, comparison identity, and Qualified
+  Snapshot retain and reverify the contract;
+- missing fields remain legacy Default/no-gate behavior; invalid ranges fail
+  closed.
+
+Relevant smoke and evidence:
+
+- `wpf_shell_host_recipe_local_validation_set`;
+- `QualifiedRecipeSnapshotSmoke`;
+- `artifacts\cvr19_validation_variants_20260729`;
+- `docs\contracts\openvisionlab\OPENVISIONLAB_VALIDATION_VARIANT_V1_CONTRACT.md`.
+
+## Overlay Rendering v1 Contract
+
+CVR-20 is stable inside the existing `OverlayMerge` Step:
+
+- missing new keys preserve the legacy palette, marker sizes, and
+  `DrawLabels` behavior;
+- Recipe Manager keeps source/output and display-only settings in one
+  PropertyGrid and restores them from recipe XML;
+- `LegacyDefault`, `HighContrast`, and `ColorBlindSafe`, label mode, bounded
+  line/point size, label backing, and margin affect only burned-in pixels;
+- the explicit `Display defaults` action requires a separate `Apply to XML`;
+- edits, apply, reset, and reopen do not Preview/Run or mutate layers,
+  active layer, or routes;
+- metrics, returned overlays, acceptance, and Pipeline outcome remain
+  unchanged;
+- Run Reports and Pipeline snapshots retain the rendering parameters.
+
+Relevant smoke and evidence:
+
+- `cvr20_overlay_rendering`;
+- `wpf_shell_host_pipeline_review`;
+- `wpf_shell_host_recipe_manager_summary`;
+- `artifacts\cvr20_overlay_rendering_20260729`;
+- `docs\contracts\openvisionlab\OPENVISIONLAB_OVERLAY_RENDERING_V1_CONTRACT.md`.
 
 ## Before Touching Stable Paths
 

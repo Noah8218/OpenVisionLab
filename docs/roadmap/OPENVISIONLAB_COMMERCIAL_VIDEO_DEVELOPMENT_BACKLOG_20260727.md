@@ -1,6 +1,6 @@
 # OpenVisionLab Commercial-Video Development Backlog
 
-Updated: 2026-07-28 KST
+Updated: 2026-07-29 KST
 
 ## Decision And Authority
 
@@ -38,6 +38,21 @@ The current decision is:
   after the user's explicit 2026-07-28 development continuation; named
   physical-part qualification remains blocked on the original operator/data
   trigger;
+- `CVR-10` bounded `MultiMatchMean` v1 is complete after the user's explicit
+  2026-07-28 next-priority continuation; it covers stable multi-match identity,
+  one fixed reference-coordinate Mean sub-inspection, individual review, and
+  deterministic aggregate acceptance without adding a generic graph engine;
+- `CVR-11` bounded global-polarity v1 is complete after the user's explicit
+  2026-07-28 continuation; it preserves Same-only defaults and adds only one
+  operator-enabled whole-candidate reversal state with synthetic
+  Train/Validation/Held-out evidence;
+- `CVR-12`, `CVR-13`, and `CVR-14` activation audits are complete and did not
+  admit implementation. Their exact six-section evidence packets remain
+  prerequisites;
+- `CVR-15` is the next trigger audit only when the user explicitly continues
+  the commercial-video queue without supplying an earlier row's real packet;
+- the compact next-chat summary is
+  `docs/reports/OPENVISIONLAB_COMMERCIAL_VIDEO_QUEUE_HANDOFF_20260728.md`;
 - no new product feature is automatically active;
 - the earliest incomplete row whose trigger has actual current-source evidence
   becomes the next implementation candidate;
@@ -95,14 +110,22 @@ Every implementation row below must satisfy all of the following:
    cannot complete the task clearly and safely.
 3. Define the smallest input, output, metric, drawing, failure, persistence, and
    compatibility contract.
-4. Keep algorithm tools PropertyGrid-based.
-5. Preserve explicit Preview/Run, no automatic route/layer mutation, and no
+4. Define the shortest safe normal workflow. Consolidate related durable
+   settings into one coherent first-use setup instead of distributing them
+   across unrelated views, dialogs, and buttons.
+5. Persist explicitly confirmed setup at the narrowest correct scope. Keep
+   restored values visible/editable, provide reset/default, and fail closed on
+   stale or incompatible state.
+6. Keep algorithm tools PropertyGrid-based.
+7. Preserve explicit Preview/Run, no automatic route/layer mutation, and no
    stale evidence reuse.
-6. Capture fresh before/after current-build UI evidence for visible changes.
-7. Run the smallest focused smoke plus the relevant stable-contract regression.
-8. Record source/data identity, commands, results, artifact path, and the
+8. Capture fresh before/after current-build UI evidence for visible changes.
+9. Run save/reload/reopen restoration and zero unintended Preview/Run,
+   layer-selection, and routing checks when reusable setup changes.
+10. Run the smallest focused smoke plus the relevant stable-contract regression.
+11. Record source/data identity, commands, results, artifact path, and the
    boundary that prevents overclaiming.
-9. Update this backlog, the current handoff, and the documentation map.
+12. Update this backlog, the current handoff, and the documentation map.
 
 ## Ordered Development Queue
 
@@ -121,17 +144,17 @@ must use the closest currently available equivalent if a label changes.
 | 7 | `CVR-07` | Bounded task-specific teaching suggestions | Complete — Threshold Basic v1 | Explicit user continuation on 2026-07-28 activated one bounded full-image Threshold Basic bright/dark significant-mode suggestion with explicit Use/Undo and public Good/Bad replay. | `gpt-5.6-sol` | high |
 | 8 | `CVR-08` | Generic typed fixture-transform consumer for multiple downstream ROIs | Complete — bounded P212 multi-ROI review extension | User delegation selected the public synthetic fixture task: circular datum verification plus pad-presence inspection, with one locator/NormalizeImage chain and controlled Good/Bad replay. | `gpt-5.6-sol` | high |
 | 9 | `CVR-09` | Straight-edge/dual-edge fixture producer | Implemented — qualification pending | User explicitly activated a bounded synthetic v1 on 2026-07-28. Physical-task qualification still requires a named part with no durable template feature and two independently verified datum edges. | `gpt-5.6-sol` | high |
-| 10 | `CVR-10` | Multi-instance fixture and bounded sub-recipe fan-out | Conditional after `CVR-08` | A real task requires the same inspection on multiple accepted matches and defines stable instance identity, output naming, review, and acceptance semantics. | `gpt-5.6-sol` | high |
-| 11 | `CVR-11` | Edge matcher polarity modes | Conditional | A labelled N-sample set proves that the same physical feature reverses polarity and current threshold/Canny/search settings cannot preserve the match. | `gpt-5.6-sol` | high |
-| 12 | `CVR-12` | Bounded matcher deformation/elasticity | Conditional after `CVR-11` review | A labelled task proves bounded physical deformation, not pose/scale/blur/ROI error, and requires a documented deformation limit. | `gpt-5.6-sol` | high |
-| 13 | `CVR-13` | Anisotropic X/Y matcher scale search | Conditional | A named task has verified non-uniform target scale change that uniform scale and Affine normalization cannot handle. | `gpt-5.6-sol` | high |
-| 14 | `CVR-14` | Multi-result overlap and suppression semantics | Conditional | A multiple-instance matching task needs an operator-defined overlap rule and existing result spacing is insufficient. | `gpt-5.6-sol` | high |
-| 15 | `CVR-15` | Synthetic edge-model/geometry teaching | Deferred | A real target has no usable Good template image but has an operator-certified geometric model and a replay corpus. | `gpt-5.6-sol` | high |
-| 16 | `CVR-16` | Additional per-object shape descriptors | Conditional | A named Blob/Contour task proves existing area/width/height filters cannot separate OK/NG objects. Add only the one required descriptor first. | `gpt-5.6-sol` | high |
-| 17 | `CVR-17` | Region algebra operators | Conditional | A named inspection requires reviewed union/intersection/difference/complement semantics that current masks/layers cannot express. | `gpt-5.6-sol` | high |
-| 18 | `CVR-18` | Bounded derived-metric expression Step | Conditional | A real recipe needs a derived scalar judgment that cannot be expressed by one existing metric gate. | `gpt-5.6-sol` | high |
-| 19 | `CVR-19` | Validation variants for multiple approved part styles | Conditional | One recipe/job must validate multiple explicitly named product styles with different expected values while retaining one auditable identity. | `gpt-5.6-sol` | high |
-| 20 | `CVR-20` | Display-only overlay style and image-coordinate label controls | Deferred | Current-run evidence becomes unreadable in a named task and existing tool-owned colors/line widths cannot resolve it. | `gpt-5.6-terra` | medium |
+| 10 | `CVR-10` | Multi-instance fixture and bounded sub-recipe fan-out | Complete — bounded Mean v1 | User explicitly activated the next priority on 2026-07-28. `MultiMatchMean` now applies one fixed reference-coordinate Mean inspection to stable ordered multi-match results with individual and aggregate evidence. Another sub-inspection family requires its own task. | `gpt-5.6-sol` | high |
+| 11 | `CVR-11` | Edge matcher polarity modes | Complete — bounded global reversal v1; physical qualification pending | User continuation admitted one project-authored synthetic same-feature task. Same-only remains default; the option accepts exactly one globally reversed edge direction and records Same/Reversed. A physical recipe still requires its own labelled packet. | `gpt-5.6-sol` | high |
+| 12 | `CVR-12` | Bounded matcher deformation/elasticity | Conditional — trigger audit complete, packet absent | The 2026-07-28 audit found commercial narration but no labelled project task. Admit only a named packet proving bounded physical deformation rather than pose/scale/blur/polarity/ROI error and defining a numeric limit. | `gpt-5.6-sol` | high |
+| 13 | `CVR-13` | Anisotropic X/Y matcher scale search | Conditional — trigger audit complete, packet absent | The 2026-07-28 audit separated scalar matcher search, authored RotateScale, three-Point Affine normalization, deformation, and perspective/calibration. Admit only a named task proving independently varying target X/Y scale after applicable existing paths fail or are unsuitable. | `gpt-5.6-sol` | high |
+| 14 | `CVR-14` | Multi-result overlap and suppression semantics | Conditional — trigger audit complete, packet absent | The 2026-07-28 audit separated fixed matcher suppression, Auto MPoint candidate IoU, unique-result ambiguity, and CVR-10 post-match rejection. Admit only a labelled physical-instance task proving current false suppression or duplicate retention and defining one exact overlap rule. | `gpt-5.6-sol` | high |
+| 15 | `CVR-15` | Synthetic edge-model/geometry teaching | Conditional — trigger audit complete, packet absent | The 2026-07-28 audit found commercial narration but no real target with no usable Good template, operator-certified geometry, frozen current-path failure, nuisance matrix, and untouched replay split. | None before packet; `gpt-5.6-sol` afterward | None before packet; high afterward |
+| 16 | `CVR-16` | Additional per-object shape descriptors | Conditional — trigger audit complete, packet absent | The 2026-07-28 audit found current Area/Width/Height filtering and displayed/aggregate Angle evidence but no named object task proving one additional descriptor is causally required with frozen object identities and replay splits. | None before packet; `gpt-5.6-sol` afterward | None before packet; high afterward |
+| 17 | `CVR-17` | Region algebra operators | Conditional — trigger audit complete, packet absent | The 2026-07-28 audit found current binary image `AND/OR/XOR/NOT`, ROI/segmentation, and overlay responsibilities but no named workflow proving a causal gap or defining reviewed mask/object/frame semantics. | None before packet; `gpt-5.6-sol` afterward | None before packet; high afterward |
+| 18 | `CVR-18` | Bounded derived-metric expression Step | Conditional — trigger audit complete, packet absent | The 2026-07-28 audit found per-Step acceptance, conjunctive recipe requirements, and domain-owned derived metrics but no named judgment requiring a reviewed cross-Step formula with provenance, units, and replay evidence. | None before packet; `gpt-5.6-sol` afterward | None before packet; high afterward |
+| 19 | `CVR-19` | Validation variants for multiple approved part styles | Complete — bounded v1 | Two user-approved Product styles retain distinct `ResultCount` ranges under one unchanged Pipeline; image identity, history, review queue, comparison, and Snapshot contracts are preserved. | `gpt-5.6-terra` for regression | medium |
+| 20 | `CVR-20` | Display-only overlay style and image-coordinate label controls | Complete — bounded v1 | Existing `OverlayMerge` owns three bounded palettes, image-coordinate labels, line/point size, label backing/margin, explicit reset, recipe round trip, and evidence retention without metric/acceptance changes. | `gpt-5.6-terra` for regression | low |
 
 ## Detailed Contracts
 
@@ -141,6 +164,10 @@ Scope:
 
 - use the protocol in
   `docs/reports/OPENVISIONLAB_FIRST_TIME_OPERATOR_JOURNEY_AUDIT_20260727.md`;
+- give participants only
+  `docs/reports/OPENVISIONLAB_CVR00_PARTICIPANT_TASK_SHEET_20260729.md` and use
+  `docs/reports/OPENVISIONLAB_CVR00_FACILITATOR_PACKET_20260729.md` for
+  environment identity, facilitation, raw observation, and the 2-of-3 gate;
 - run the core Sample -> Recipe -> Run Review task for every participant;
 - run the Validation Set -> Qualified Snapshot advanced task after the core task;
 - preserve task completion, help request, hesitation, incorrect mental model,
@@ -676,16 +703,37 @@ Evidence:
 
 ### CVR-10 — Multi-instance fixture and sub-recipe fan-out
 
-Before implementation, define:
+Completed bounded v1:
 
-- deterministic instance ordering and stable identity;
-- maximum instance count and overlap rules;
-- output layer/report/drawing naming;
-- partial failure and aggregate acceptance semantics;
-- how each instance is selected in Pipeline Review and Run History;
-- evidence-size and performance limits.
+- `MultiMatchMean` consumes one exact earlier accepted multi-result Matching or
+  EdgeBasedMatching Step in the same coordinate frame;
+- row-major ordering assigns same-run stable IDs `I01..Ixx`;
+- instance count is bounded to 64 and pairwise source match overlap is checked
+  by a configured IoU ceiling;
+- every instance reuses existing `NormalizeImage`, then applies one fixed
+  reference-coordinate `Mean` ROI;
+- all-required and minimum-pass modes publish exact aggregate acceptance while
+  retaining every individual state, transformed ROI, Mean, valid-pixel ratio,
+  and reject reason;
+- Pipeline Review selection highlights the same ROI without another Run;
+- PropertyGrid, Pipeline XML, recipe execution, and saved Run Report rows round
+  trip;
+- the frozen four-instance matrix proves 4/4 pass, 3/4 all-required reject,
+  3/4 minimum-pass accept, count reject, and overlap reject.
 
-Do not implement a generic graph engine as a shortcut.
+Evidence:
+
+- `docs/contracts/openvisionlab/OPENVISIONLAB_MULTI_MATCH_MEAN_V1_CONTRACT.md`;
+- `docs/reports/OPENVISIONLAB_CVR10_MULTI_MATCH_MEAN_20260728.md`;
+- `artifacts/cvr10_multi_match_mean_20260728_r6`.
+
+Boundary:
+
+- v1 does not add a generic graph engine, arbitrary nested sub-recipe,
+  cross-image identity, calibrated measurement, another per-instance tool
+  family, or physical qualification;
+- `CVR-14` remains conditional because v1 rejects excessive source overlap but
+  does not change matcher suppression.
 
 ### CVR-11 Through CVR-15 — Matcher expansion
 
@@ -702,12 +750,65 @@ Common requirements:
 
 Specific boundaries:
 
-- `CVR-11`: polarity only;
+- `CVR-11`: completed bounded v1 uses one Boolean
+  `ALLOW_GLOBAL_POLARITY_REVERSAL`; missing keys preserve Same-only scoring,
+  successful results publish exact Same/Reversed state, and 20/20 synthetic
+  Train/Validation/Held-out rows passed. This is whole-candidate global
+  reversal only, not local polarity ignore or physical qualification.
 - `CVR-12`: a numeric bounded deformation contract only;
 - `CVR-13`: separately searched X/Y scale with finite bounds;
 - `CVR-14`: explicit overlap/suppression rule for multi-result inspection;
 - `CVR-15`: operator-certified synthetic geometry, not an automatically invented
   template.
+
+CVR-12 activation audit:
+
+- `docs/reports/OPENVISIONLAB_CVR12_TRIGGER_AUDIT_20260728.md` found no current
+  labelled physical-deformation task;
+- the HALCON paper-clip narration is a commercial reference, not project
+  evidence;
+- do not generate a convenient synthetic deformation set merely to activate
+  the row;
+- require the six-section named task, coordinate, numeric truth, nuisance
+  exclusion, frozen baseline, and split packet before selecting an algorithm.
+
+CVR-13 activation audit:
+
+- `docs/reports/OPENVISIONLAB_CVR13_TRIGGER_AUDIT_20260728.md` found no named
+  task whose unknown target must be found under independently varying X/Y
+  scale;
+- current scalar matcher search, known-value `RotateScale`, and three-Point
+  Affine normalization are separate existing paths and must be replayed when
+  applicable;
+- do not relabel local deformation, perspective, distortion, crop, or an
+  authored resize as matcher anisotropy;
+- require the six-section physical identity, coordinate, numeric truth, frozen
+  comparison, nuisance/search-budget, and split packet before implementation.
+
+CVR-14 activation audit:
+
+- `docs/reports/OPENVISIONLAB_CVR14_TRIGGER_AUDIT_20260728.md` found fixed
+  internal Matching/EdgeBased suppression, training-only Auto MPoint IoU, and
+  post-match CVR-10 overlap rejection, but no operator-owned runtime rule;
+- no current packet labels close valid physical neighbors versus multiple
+  responses to one physical instance;
+- do not add an overlap slider or use aggregate count alone as truth;
+- require the six-section named task, physical-instance truth, exact overlap
+  rule, frozen comparison, nuisance/ordering, and split packet first.
+
+CVR-15 activation audit:
+
+- `docs/reports/OPENVISIONLAB_CVR15_TRIGGER_AUDIT_20260728.md` found that
+  current Matching/EdgeBasedMatching and Auto MPoint all begin with a raster
+  image template, while Line/Circle/Geometry/Fixture/Affine paths consume
+  detected runtime evidence rather than nominal geometry;
+- the VisionPro synthetic-pattern narration is a commercial reference, not a
+  real no-template task or certified physical model;
+- do not create a convenient vector drawing or generated raster solely to make
+  a matcher demonstration pass;
+- require the six-section named task, certified geometry/coordinates,
+  image-edge mapping, frozen current comparison, nuisance/safety matrix, and
+  split/completion packet before implementation.
 
 ### CVR-16 — Additional object descriptors
 
@@ -728,9 +829,34 @@ Add only one descriptor needed by the first named task. It must have:
 - aggregate metrics only when their semantics are separately defined;
 - current-run drawing and labelled Good/NG evidence.
 
+CVR-16 activation audit:
+
+- `docs/reports/OPENVISIONLAB_CVR16_TRIGGER_AUDIT_20260728.md` found that
+  P211/P216 already retain per-object Area, center, axis-aligned bounds, Angle,
+  accepted/rejected state, and exact Area/Width/Height reasons;
+- displayed and aggregate Angle evidence is not an orientation acceptance
+  contract, and no aspect/circularity/rotated-size/hole/gray parameter exists;
+- P217 still supplies the current stop decision: no named task proves that one
+  of those descriptors is required after frozen segmentation and current gates;
+- require the six-section named task, causal current-path failure, one exact
+  mathematical descriptor, object/filter semantics, nuisance/stability matrix,
+  and split/completion packet before implementation.
+
 ### CVR-17 — Region algebra
 
 Possible bounded operations are union, intersection, difference, and complement.
+The 2026-07-28 activation audit did not admit implementation:
+
+- current Arithmetic already provides image-layer `Bitwise_AND`, `Bitwise_OR`,
+  `Bitwise_XOR`, and `Bitwise_NOT` with same-size validation;
+- Threshold/HSV outputs, tool-owned ROI, Blob/Contour objects, and OverlayMerge
+  each have adjacent but distinct responsibilities;
+- no named inspection demonstrates that those paths cannot express the required
+  result or supplies reviewed typed mask/object/frame evidence;
+- require the six-section operator-task, operand-identity, exact-operation,
+  coherent persisted-setup, nuisance/split, and completion packet in
+  `docs/reports/OPENVISIONLAB_CVR17_TRIGGER_AUDIT_20260728.md`.
+
 Before implementation, define:
 
 - whether input is a mask layer, object set, or ROI;
@@ -744,6 +870,18 @@ Do not introduce a general iconic-variable language.
 ### CVR-18 — Derived-metric expression
 
 If activated, prefer a small safe expression grammar over arbitrary code.
+The 2026-07-28 activation audit did not admit implementation:
+
+- each Step already supports expected success, message, elapsed, and one metric
+  range, while several accepted Steps can express independent conjunctions;
+- domain Tools already publish physically meaningful averages, ranges,
+  distances, angles, scores, clearances, and counts;
+- no named judgment proves that a cross-Step scalar formula is required rather
+  than separate gates or one new domain-owned metric;
+- require the six-section named-task, metric-provenance, exact-formula,
+  coherent persisted-setup, nuisance/split, and completion packet in
+  `docs/reports/OPENVISIONLAB_CVR18_TRIGGER_AUDIT_20260728.md`.
+
 Define:
 
 - exact allowed operators and functions;
@@ -758,6 +896,13 @@ method invocation is allowed.
 
 ### CVR-19 — Validation variants
 
+Status: Complete on 2026-07-29 at bounded v1. The user approved
+`Product_Field_FilmStripe_SurfaceReview` (`ResultCount 3..8`) and
+`Product_Field_TexturedRoller_SurfaceReview` (`ResultCount 1..4`) under their
+shared existing Pipeline. Contract and evidence:
+`docs\contracts\openvisionlab\OPENVISIONLAB_VALIDATION_VARIANT_V1_CONTRACT.md`
+and `docs\reports\OPENVISIONLAB_CVR19_VALIDATION_VARIANTS_20260729.md`.
+
 Minimum slice:
 
 - one immutable recipe/Pipeline identity;
@@ -771,6 +916,12 @@ Do not add user accounts, electronic signatures, or regulatory-compliance
 claims.
 
 ### CVR-20 — Display-only overlay controls
+
+Status: Complete at bounded v1 on 2026-07-29 after explicit user continuation.
+The implementation remains inside existing `OverlayMerge`; contract and
+evidence are
+`docs\contracts\openvisionlab\OPENVISIONLAB_OVERLAY_RENDERING_V1_CONTRACT.md`
+and `docs\reports\OPENVISIONLAB_CVR20_OVERLAY_RENDERING_20260729.md`.
 
 Minimum slice:
 
@@ -849,5 +1000,5 @@ Scope: Durable full commercial-video development candidate inventory, ordered pr
 Acceptance criteria: All 16 reviewed videos map to retained candidates or explicit exclusions; every ordered row has a trigger and model/reasoning recommendation; future chats are instructed not to lose or auto-activate the queue.
 Verification: Cross-checked against the 2026-07-27 commercial-video report, current handoff, first-time operator audit, P217 feature-admission decision, AGENTS.md, and the canonical documentation map.
 Evidence: docs/roadmap/OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md and docs/reports/OPENVISIONLAB_COMMERCIAL_RULEBASE_VIDEO_REVIEW_20260727.md
-Boundary / next dependency: CVR-01 through CVR-08 are complete. CVR-09 bounded implementation/synthetic integration is complete but physical-task qualification remains blocked on its named operator/data packet. CVR-00 remains the only active external prerequisite; CVR-10 and later rows still require their exact current-source trigger or an explicit user decision and must not be auto-activated.
+Boundary / next dependency: CVR-01 through bounded CVR-11 and bounded CVR-19/CVR-20 are complete at their recorded scopes. CVR-09 and CVR-11 physical-task qualification remain blocked on named operator/data packets, and additional CVR-10 per-instance inspection families require a separately named task. CVR-00 remains the only active external prerequisite. CVR-12 through CVR-18 were audited and require their complete six-section task packets. The ordered video queue has no remaining implementation row; do not invent one.
 ```

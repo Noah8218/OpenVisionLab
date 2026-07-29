@@ -1466,6 +1466,9 @@ namespace OpenVisionLab
             string display = judgment
                 + " | "
                 + expectedActual
+                + "["
+                + (string.IsNullOrWhiteSpace(result.VariantId) ? "Default" : result.VariantId.Trim())
+                + "] "
                 + (string.IsNullOrWhiteSpace(result.SampleName) ? "-" : result.SampleName.Trim())
                 + " | "
                 + result.TotalMilliseconds.ToString("0.0", CultureInfo.InvariantCulture)
@@ -1481,6 +1484,21 @@ namespace OpenVisionLab
             if (!string.IsNullOrWhiteSpace(result.MetricText))
             {
                 detail += " | " + result.MetricText.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.ExpectedMetricName))
+            {
+                detail += " | Expected "
+                    + result.ExpectedMetricName.Trim()
+                    + " ["
+                    + (string.IsNullOrWhiteSpace(result.ExpectedMetricMinimum)
+                        ? "-∞"
+                        : result.ExpectedMetricMinimum.Trim())
+                    + ".."
+                    + (string.IsNullOrWhiteSpace(result.ExpectedMetricMaximum)
+                        ? "+∞"
+                        : result.ExpectedMetricMaximum.Trim())
+                    + "]";
             }
 
             if (!string.IsNullOrWhiteSpace(result.FinalLayer))

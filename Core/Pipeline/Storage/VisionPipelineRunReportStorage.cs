@@ -58,6 +58,7 @@ namespace OpenVisionLab
         public List<VisionPipelineMetricRunReport> Metrics { get; set; } = new List<VisionPipelineMetricRunReport>();
         public List<VisionPipelineParameter> Parameters { get; set; } = new List<VisionPipelineParameter>();
         public List<VisionPipelineObjectRunReport> Objects { get; set; } = new List<VisionPipelineObjectRunReport>();
+        public List<VisionPipelineInstanceRunReport> Instances { get; set; } = new List<VisionPipelineInstanceRunReport>();
         public List<VisionPipelineGeometryFeatureResult> GeometryFeatures { get; set; } = new List<VisionPipelineGeometryFeatureResult>();
     }
 
@@ -80,6 +81,27 @@ namespace OpenVisionLab
     {
         public string Name { get; set; } = string.Empty;
         public double Value { get; set; }
+    }
+
+    public sealed class VisionPipelineInstanceRunReport
+    {
+        public int Number { get; set; }
+        public string InstanceId { get; set; } = string.Empty;
+        public string SourceStep { get; set; } = string.Empty;
+        public bool Accepted { get; set; }
+        public double Score { get; set; }
+        public double CenterX { get; set; }
+        public double CenterY { get; set; }
+        public double Angle { get; set; }
+        public double Scale { get; set; }
+        public double RoiCenterX { get; set; }
+        public double RoiCenterY { get; set; }
+        public double RoiWidth { get; set; }
+        public double RoiHeight { get; set; }
+        public double RoiAngle { get; set; }
+        public double MeanValue { get; set; }
+        public double ValidPixelRatio { get; set; }
+        public string RejectReason { get; set; } = string.Empty;
     }
 
     internal static class VisionPipelineRunReportStorage
@@ -317,6 +339,7 @@ namespace OpenVisionLab
                     .Select(parameter => new VisionPipelineParameter(parameter.Key, parameter.Value))
                     .ToList(),
                 Objects = CreateObjectReports(summary.ObjectResults),
+                Instances = CreateInstanceReports(summary.InstanceResults),
                 GeometryFeatures = CreateGeometryReports(summary.GeometryFeatures)
             };
         }
@@ -377,6 +400,7 @@ namespace OpenVisionLab
                     .Select(parameter => new VisionPipelineParameter(parameter.Key, parameter.Value))
                     .ToList(),
                 Objects = CreateObjectReports(summary.ObjectResults),
+                Instances = CreateInstanceReports(summary.InstanceResults),
                 GeometryFeatures = CreateGeometryReports(summary.GeometryFeatures)
             };
         }
@@ -408,6 +432,35 @@ namespace OpenVisionLab
             return (features ?? Enumerable.Empty<VisionPipelineGeometryFeatureResult>())
                 .Where(item => item != null)
                 .Select(item => item.Clone())
+                .ToList();
+        }
+
+        private static List<VisionPipelineInstanceRunReport> CreateInstanceReports(
+            IEnumerable<VisionPipelineInstanceResult> instances)
+        {
+            return (instances ?? Enumerable.Empty<VisionPipelineInstanceResult>())
+                .Where(item => item != null)
+                .OrderBy(item => item.Number)
+                .Select(item => new VisionPipelineInstanceRunReport
+                {
+                    Number = item.Number,
+                    InstanceId = item.InstanceId,
+                    SourceStep = item.SourceStep,
+                    Accepted = item.Accepted,
+                    Score = item.Score,
+                    CenterX = item.CenterX,
+                    CenterY = item.CenterY,
+                    Angle = item.Angle,
+                    Scale = item.Scale,
+                    RoiCenterX = item.RoiCenterX,
+                    RoiCenterY = item.RoiCenterY,
+                    RoiWidth = item.RoiWidth,
+                    RoiHeight = item.RoiHeight,
+                    RoiAngle = item.RoiAngle,
+                    MeanValue = item.MeanValue,
+                    ValidPixelRatio = item.ValidPixelRatio,
+                    RejectReason = item.RejectReason
+                })
                 .ToList();
         }
 

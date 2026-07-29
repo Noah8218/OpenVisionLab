@@ -22,6 +22,13 @@ internal static class Program
 
     private static async Task<int> Main(string[] args)
     {
+        if (args.Length > 0 && string.Equals(args[0], "--cvr10-multi-match-mean", StringComparison.OrdinalIgnoreCase))
+        {
+            Assert(args.Length == 2, "Usage: --cvr10-multi-match-mean <new-output-directory>");
+            return await RunCvr10MultiMatchMean(
+                Path.GetFullPath(args[1]));
+        }
+
         if (args.Length > 0 && string.Equals(args[0], "--cvr09-line-fixture", StringComparison.OrdinalIgnoreCase))
         {
             Assert(args.Length == 2, "Usage: --cvr09-line-fixture <new-output-directory>");
@@ -2014,6 +2021,458 @@ internal static class Program
         Add(normalize, "ALLOW_BRANCH_INPUT", "true");
         pipeline.Steps.Add(normalize);
         return pipeline;
+    }
+
+    private static async Task<int> RunCvr10MultiMatchMean(string outputDirectory)
+    {
+        Assert(
+            !Directory.Exists(outputDirectory) || !Directory.EnumerateFileSystemEntries(outputDirectory).Any(),
+            "CVR-10 output must be new or empty: " + outputDirectory);
+        Directory.CreateDirectory(outputDirectory);
+        string casesDirectory = Path.Combine(outputDirectory, "cases");
+        Directory.CreateDirectory(casesDirectory);
+
+        string templatePath = Path.Combine(outputDirectory, "instance_locator_template.png");
+        using (Mat templateSource = CreateCvr10MultiInstanceImage(-1))
+        using (Mat template = new Mat(templateSource, new Rect(110, 90, 40, 40)).Clone())
+        {
+            Cv2.ImWrite(templatePath, template);
+        }
+
+        VisionPipeline pipeline = CreateCvr10MultiMatchMeanPipeline(templatePath);
+        VisionPipelineValidationResult validation = VisionPipelineValidator.Validate(
+            pipeline,
+            new[] { "Main" });
+        Assert(validation.Success, "CVR-10 pipeline must validate: " + validation.FormatErrors());
+
+        string pipelinePath = Path.Combine(outputDirectory, "cvr10_multi_match_mean.pipeline.xml");
+        Assert(SerializeHelper.SaveXmlFile(pipelinePath, pipeline), "CVR-10 pipeline XML save must succeed.");
+        Assert(
+            SerializeHelper.TryLoadFromXmlFile(pipelinePath, out VisionPipeline reloaded)
+                && reloaded != null
+                && reloaded.Steps.Count == 2,
+            "CVR-10 pipeline XML must round-trip.");
+
+        object property = VisionPipelineStepPropertyMapper.CreateProperty(
+            reloaded.Steps[1],
+            new VisionPipelinePropertyContext(reloaded, 1));
+        Assert(property != null, "MultiMatchMean PropertyGrid mapping must exist.");
+        VisionPipelineStep mapped = new VisionPipelineStep
+        {
+            Name = reloaded.Steps[1].Name,
+            ToolType = reloaded.Steps[1].ToolType,
+            InputLayer = reloaded.Steps[1].InputLayer,
+            OutputLayer = reloaded.Steps[1].OutputLayer
+        };
+        Assert(
+            VisionPipelineStepPropertyMapper.ApplyProperty(mapped, property)
+                && string.Equals(mapped.ToolType, "MultiMatchMean", StringComparison.Ordinal)
+                && string.Equals(mapped.Parameters.GetValueOrDefault("SOURCE_STEP"), "01 Locate Four Instances", StringComparison.Ordinal)
+                && string.Equals(mapped.Parameters.GetValueOrDefault("RELATIVE_ROI"), "170,108,30,24", StringComparison.Ordinal)
+                && string.Equals(mapped.AcceptanceMetricName, "InstanceAggregatePassed", StringComparison.Ordinal)
+                && mapped.UseAcceptanceMetricMinimum
+                && mapped.UseAcceptanceMetricMaximum
+                && Math.Abs(mapped.AcceptanceMetricMinimum - 1D) < 0.001D
+                && Math.Abs(mapped.AcceptanceMetricMaximum - 1D) < 0.001D,
+            "MultiMatchMean PropertyGrid must preserve the typed source, fixed relative ROI, and aggregate acceptance.");
+
+        VisionRecipeRunner runner = new VisionRecipeRunner();
+        List<string> rows = new List<string>
+        {
+            "Case\tPipelineSuccess\tInstanceCount\tPassCount\tFailCount\tAggregatePassed\tIds\tMeans\tRejectReasons"
+        };
+        string persistedReportCopy = string.Empty;
+        (string Name, int BadIndex, bool RequireAll, int MinimumPass, bool ExpectedSuccess)[] cases =
+        {
+            ("all_good", -1, true, 4, true),
+            ("one_bad_require_all", 2, true, 4, false),
+            ("one_bad_allow_three", 2, false, 3, true)
+        };
+        foreach ((string name, int badIndex, bool requireAll, int minimumPass, bool expectedSuccess) in cases)
+        {
+            VisionPipeline casePipeline = CloneCvr10Pipeline(reloaded);
+            casePipeline.Steps[1].Parameters["REQUIRE_ALL"] = requireAll.ToString(CultureInfo.InvariantCulture);
+            casePipeline.Steps[1].Parameters["MIN_PASS_COUNT"] = minimumPass.ToString(CultureInfo.InvariantCulture);
+            using Mat image = CreateCvr10MultiInstanceImage(badIndex);
+            string sourcePath = Path.Combine(casesDirectory, name + "_source.png");
+            Cv2.ImWrite(sourcePath, image);
+            using VisionRecipeRunResult result = await runner.RunAsync(casePipeline, image);
+            Assert(
+                result.Success == expectedSuccess,
+                $"CVR-10 case '{name}' success expected {expectedSuccess}, actual {result.Success}. {result.SummaryText} | "
+                    + string.Join(
+                        " | ",
+                        result.Steps.LastOrDefault()?.InstanceResults?.Select(item =>
+                            $"{item.InstanceId} center=({item.CenterX:0.0},{item.CenterY:0.0}) roi=({item.RoiCenterX:0.0},{item.RoiCenterY:0.0}) mean={item.MeanValue:0.0} reason={item.RejectReason}")
+                        ?? Enumerable.Empty<string>()));
+            Assert(result.Steps.Count == 2, "CVR-10 must retain Matching and MultiMatchMean Steps: " + name);
+            VisionRecipeStepRunSummary consumer = result.Steps[1];
+            Assert(consumer.InstanceResults.Count == 4, "CVR-10 must retain four individual instance rows: " + name);
+            Assert(
+                string.Join(",", consumer.InstanceResults.Select(item => item.InstanceId)) == "I01,I02,I03,I04",
+                "CVR-10 instance IDs must remain stable and row-major: " + name);
+            AssertCvr10RowMajorCenters(consumer.InstanceResults, name);
+            int expectedPassCount = badIndex < 0 ? 4 : 3;
+            AssertMetric(consumer, "InstanceCount", 4D, 0.001D);
+            AssertMetric(consumer, "InstancePassCount", expectedPassCount, 0.001D);
+            AssertMetric(consumer, "InstanceFailCount", 4D - expectedPassCount, 0.001D);
+            AssertMetric(
+                consumer,
+                "InstanceAggregatePassed",
+                expectedSuccess ? 1D : 0D,
+                0.001D);
+            Assert(
+                consumer.InstanceResults.All(item =>
+                    item.RoiWidth >= 29D
+                    && item.RoiHeight >= 23D
+                    && item.RoiCenterX > 0D
+                    && item.RoiCenterY > 0D),
+                "CVR-10 individual transformed ROI evidence must be retained: " + name);
+            if (badIndex >= 0)
+            {
+                VisionPipelineInstanceResult rejected = consumer.InstanceResults.Single(item => !item.Accepted);
+                Assert(
+                    rejected.RejectReason.Contains("Mean", StringComparison.OrdinalIgnoreCase)
+                        && rejected.MeanValue < 150D,
+                    "CVR-10 bad instance must retain the exact Mean rejection: " + name);
+            }
+
+            string resultPath = Path.Combine(casesDirectory, name + "_result.png");
+            if (result.ResultImage != null && !result.ResultImage.Empty())
+            {
+                Cv2.ImWrite(resultPath, result.ResultImage);
+            }
+            using (Bitmap overlay = new Bitmap(sourcePath))
+            {
+                VisionPipelineRunReportImageRenderer.RenderInPlace(
+                    overlay,
+                    consumer,
+                    casePipeline.Steps[1]);
+                overlay.Save(
+                    Path.Combine(casesDirectory, name + "_overlay.png"),
+                    System.Drawing.Imaging.ImageFormat.Png);
+            }
+
+            rows.Add(string.Join(
+                "\t",
+                name,
+                result.Success,
+                GetMetric(consumer, "InstanceCount").ToString("0", CultureInfo.InvariantCulture),
+                GetMetric(consumer, "InstancePassCount").ToString("0", CultureInfo.InvariantCulture),
+                GetMetric(consumer, "InstanceFailCount").ToString("0", CultureInfo.InvariantCulture),
+                GetMetric(consumer, "InstanceAggregatePassed").ToString("0", CultureInfo.InvariantCulture),
+                string.Join(",", consumer.InstanceResults.Select(item => item.InstanceId)),
+                string.Join(",", consumer.InstanceResults.Select(item => item.MeanValue.ToString("0.0", CultureInfo.InvariantCulture))),
+                string.Join("|", consumer.InstanceResults.Select(item => item.RejectReason.Replace('\t', ' ')))));
+
+            if (string.Equals(name, "all_good", StringComparison.Ordinal))
+            {
+                DateTime startedAt = DateTime.UtcNow;
+                string reportPath = VisionPipelineRunReportStorage.Save(
+                    "CVR10_Smoke_" + Guid.NewGuid().ToString("N"),
+                    casePipeline,
+                    result,
+                    startedAt,
+                    startedAt.AddMilliseconds(result.TotalMilliseconds),
+                    "all_good",
+                    image);
+                VisionPipelineRunReport loadedReport = VisionPipelineRunReportStorage.Load(reportPath);
+                Assert(
+                    loadedReport?.Steps?.Count == 2
+                        && loadedReport.Steps[1].Instances.Count == 4
+                        && string.Join(",", loadedReport.Steps[1].Instances.Select(item => item.InstanceId)) == "I01,I02,I03,I04",
+                    "CVR-10 saved Run Report must round-trip all stable instance rows.");
+                persistedReportCopy = Path.Combine(outputDirectory, "saved_run_report.xml");
+                File.Copy(reportPath, persistedReportCopy, true);
+            }
+        }
+
+        VisionPipeline countGatePipeline = CloneCvr10Pipeline(reloaded);
+        countGatePipeline.Steps[1].Parameters["MIN_INSTANCES"] = "1";
+        countGatePipeline.Steps[1].Parameters["MAX_INSTANCES"] = "3";
+        countGatePipeline.Steps[1].Parameters["MIN_PASS_COUNT"] = "3";
+        using (Mat countImage = CreateCvr10MultiInstanceImage(-1))
+        using (VisionRecipeRunResult countReject = await runner.RunAsync(countGatePipeline, countImage))
+        {
+            Assert(!countReject.Success, "CVR-10 maximum-instance gate must fail closed.");
+            Assert(
+                countReject.Steps.Count == 2
+                    && countReject.Steps[1].Message.Contains("source count 4", StringComparison.OrdinalIgnoreCase),
+                "CVR-10 count failure must preserve the exact reason.");
+        }
+
+        AssertCvr10OverlapGate(reloaded.Steps[0], reloaded.Steps[1]);
+
+        File.WriteAllLines(Path.Combine(outputDirectory, "runtime_matrix.tsv"), rows, Encoding.UTF8);
+        Assert(File.Exists(persistedReportCopy), "CVR-10 persisted report evidence copy is required.");
+        string report = string.Join(Environment.NewLine, new[]
+        {
+            "Status: Complete",
+            "Scope: CVR-10 bounded Matching multi-result -> per-instance NormalizeImage -> fixed reference ROI Mean fan-out",
+            "StableOrderingAndIds: PASS (row-major I01..I04)",
+            "IndividualResultsAndDrawings: PASS (4 rows and transformed ROI overlays per executed case)",
+            "AllRequiredAggregate: PASS (4/4 OK accepts; 3/4 rejects)",
+            "PartialAggregate: PASS (3/4 accepts when explicitly configured)",
+            "CountGate: PASS (4 outside maximum 3 fails closed)",
+            "OverlapGate: PASS (fabricated same-frame overlapping source evidence fails closed)",
+            "PropertyGridRoundTrip: PASS",
+            "PipelineXmlRoundTrip: PASS",
+            "SavedRunReportRoundTrip: PASS (4 stable instance rows)",
+            "Boundary: fixed Mean sub-inspection only; synthetic translation evidence; no arbitrary nested graph, calibration, unseen-data, or field-qualification claim"
+        });
+        File.WriteAllText(Path.Combine(outputDirectory, "report.txt"), report, Encoding.UTF8);
+        Console.WriteLine(report);
+        return 0;
+    }
+
+    private static VisionPipeline CreateCvr10MultiMatchMeanPipeline(string templatePath)
+    {
+        VisionPipeline pipeline = new VisionPipeline { Name = "CVR10_MultiMatchMean_FanOut" };
+        VisionPipelineStep matching = new VisionPipelineStep
+        {
+            Name = "01 Locate Four Instances",
+            ToolType = "Matching",
+            InputLayer = "Main",
+            OutputLayer = "InstanceMatches",
+            UseAcceptance = true,
+            AcceptanceMetricName = "ResultCount",
+            UseAcceptanceMetricMinimum = true,
+            AcceptanceMetricMinimum = 4D,
+            UseAcceptanceMetricMaximum = true,
+            AcceptanceMetricMaximum = 4D
+        };
+        Add(matching, "Name", "FourInstanceMatching");
+        Add(matching, "TemplatePath", templatePath);
+        Add(matching, "PATTERN_PATH", templatePath);
+        Add(matching, "MATCH_MODE", "CCoeffNormed");
+        Add(matching, "SCORE_MIN", "0.92");
+        Add(matching, "MAGNIFIATION", "1");
+        Add(matching, "NUM_MATCH", "4");
+        Add(matching, "USE_FIND_ANGLE", "false");
+        Add(matching, "USE_THRESHOLD", "false");
+        Add(matching, "USE_ADAPTIVE_THRESHOLD", "false");
+        Add(matching, "USE_ROI", "false");
+        pipeline.Steps.Add(matching);
+
+        VisionPipelineStep inspect = new VisionPipelineStep
+        {
+            Name = "02 Inspect Every Instance Pad",
+            ToolType = "MultiMatchMean",
+            InputLayer = "Main",
+            OutputLayer = "InstanceInspection",
+            UseAcceptance = true,
+            AcceptanceMetricName = "InstanceAggregatePassed",
+            UseAcceptanceMetricMinimum = true,
+            AcceptanceMetricMinimum = 1D,
+            UseAcceptanceMetricMaximum = true,
+            AcceptanceMetricMaximum = 1D
+        };
+        Add(inspect, "SOURCE_STEP", matching.Name);
+        Add(inspect, "REFERENCE_X", "130");
+        Add(inspect, "REFERENCE_Y", "110");
+        Add(inspect, "REFERENCE_ANGLE", "0");
+        Add(inspect, "REFERENCE_SCALE", "1");
+        Add(inspect, "REFERENCE_IMAGE_WIDTH", "640");
+        Add(inspect, "REFERENCE_IMAGE_HEIGHT", "400");
+        Add(inspect, "RELATIVE_ROI", "170,108,30,24");
+        Add(inspect, "MIN_INSTANCES", "4");
+        Add(inspect, "MAX_INSTANCES", "4");
+        Add(inspect, "ROW_TOLERANCE_PX", "35");
+        Add(inspect, "MAX_OVERLAP_RATIO", "0.10");
+        Add(inspect, "MIN_MEAN", "170");
+        Add(inspect, "MAX_MEAN", "255");
+        Add(inspect, "REQUIRE_ALL", "true");
+        Add(inspect, "MIN_PASS_COUNT", "4");
+        Add(inspect, "MAX_ANGLE_DELTA", "2");
+        Add(inspect, "MIN_SCALE_RATIO", "0.98");
+        Add(inspect, "MAX_SCALE_RATIO", "1.02");
+        Add(inspect, "MIN_VALID_PIXEL_RATIO", "0.25");
+        Add(inspect, "ALLOW_BRANCH_INPUT", "true");
+        pipeline.Steps.Add(inspect);
+        return pipeline;
+    }
+
+    private static VisionPipeline CloneCvr10Pipeline(VisionPipeline pipeline)
+    {
+        VisionPipeline clone = new VisionPipeline { Name = pipeline.Name };
+        foreach (VisionPipelineStep source in pipeline.Steps)
+        {
+            VisionPipelineStep step = new VisionPipelineStep
+            {
+                Name = source.Name,
+                ToolType = source.ToolType,
+                Enabled = source.Enabled,
+                InputLayer = source.InputLayer,
+                OutputLayer = source.OutputLayer,
+                UseAcceptance = source.UseAcceptance,
+                ExpectedSuccess = source.ExpectedSuccess,
+                AcceptanceMetricName = source.AcceptanceMetricName,
+                UseAcceptanceMetricMinimum = source.UseAcceptanceMetricMinimum,
+                AcceptanceMetricMinimum = source.AcceptanceMetricMinimum,
+                UseAcceptanceMetricMaximum = source.UseAcceptanceMetricMaximum,
+                AcceptanceMetricMaximum = source.AcceptanceMetricMaximum,
+                MaxElapsedMilliseconds = source.MaxElapsedMilliseconds
+            };
+            foreach (KeyValuePair<string, string> parameter in source.Parameters)
+            {
+                step.Parameters[parameter.Key] = parameter.Value;
+            }
+            clone.Steps.Add(step);
+        }
+        return clone;
+    }
+
+    private static Mat CreateCvr10MultiInstanceImage(int badIndex)
+    {
+        Mat image = new Mat(400, 640, MatType.CV_8UC3, new Scalar(28, 28, 28));
+        Point[] centers =
+        {
+            new Point(130, 110),
+            new Point(390, 96),
+            new Point(150, 292),
+            new Point(410, 276)
+        };
+        for (int index = 0; index < centers.Length; index++)
+        {
+            DrawCvr10Locator(image, centers[index]);
+            Scalar pad = index == badIndex
+                ? new Scalar(65, 65, 65)
+                : new Scalar(225, 225, 225);
+            Cv2.Rectangle(
+                image,
+                new Rect(centers[index].X + 40, centers[index].Y - 2, 30, 24),
+                pad,
+                -1);
+        }
+
+        Cv2.PutText(
+            image,
+            "CVR-10 MULTI INSTANCE FIXTURE",
+            new Point(18, 385),
+            HersheyFonts.HersheySimplex,
+            0.64D,
+            new Scalar(170, 170, 170),
+            1,
+            LineTypes.AntiAlias);
+        return image;
+    }
+
+    private static void DrawCvr10Locator(Mat image, Point center)
+    {
+        Rect box = new Rect(center.X - 20, center.Y - 20, 40, 40);
+        Cv2.Rectangle(image, box, new Scalar(232, 232, 232), -1);
+        Cv2.Rectangle(image, new Rect(box.X + 4, box.Y + 4, 12, 12), new Scalar(35, 35, 35), -1);
+        Cv2.Rectangle(image, new Rect(box.X + 22, box.Y + 5, 13, 8), new Scalar(90, 90, 90), -1);
+        Cv2.Circle(image, new Point(box.X + 12, box.Y + 29), 6, new Scalar(112, 112, 112), -1);
+        Cv2.Line(image, new Point(box.X + 21, box.Y + 19), new Point(box.X + 35, box.Y + 34), new Scalar(24, 24, 24), 4);
+        Cv2.Circle(image, center, 2, new Scalar(10, 10, 10), -1);
+    }
+
+    private static void AssertCvr10RowMajorCenters(
+        IReadOnlyList<VisionPipelineInstanceResult> instances,
+        string caseName)
+    {
+        Assert(instances.Count == 4, "CVR-10 row-major assertion requires four instances.");
+        Assert(
+            instances[0].CenterX < instances[1].CenterX
+                && instances[2].CenterX < instances[3].CenterX
+                && instances[0].CenterY < instances[2].CenterY
+                && instances[1].CenterY < instances[3].CenterY,
+            "CVR-10 stable row-major center ordering failed: " + caseName);
+    }
+
+    private static void AssertCvr10OverlapGate(
+        VisionPipelineStep sourceStep,
+        VisionPipelineStep consumerTemplate)
+    {
+        using Mat input = new Mat(400, 640, MatType.CV_8UC3, Scalar.Black);
+        VisionToolResult sourceResult = VisionToolResult.Passed(
+            input.Clone(),
+            TimeSpan.Zero,
+            new Dictionary<string, double> { ["ResultCount"] = 2D },
+            Array.Empty<VisionToolOverlay>());
+        try
+        {
+            VisionPipelineMatchResultStore.Set(
+                sourceResult,
+                new[]
+                {
+                    new VisionPipelineMatchResultEvidence
+                    {
+                        NativeIndex = 0,
+                        SourceStep = sourceStep.Name,
+                        CoordinateLayer = "Main",
+                        ImageWidth = 640,
+                        ImageHeight = 400,
+                        Score = 0.99D,
+                        CenterX = 120D,
+                        CenterY = 100D,
+                        BoundsX = 90D,
+                        BoundsY = 70D,
+                        BoundsWidth = 60D,
+                        BoundsHeight = 60D,
+                        Angle = 0D,
+                        Scale = 1D
+                    },
+                    new VisionPipelineMatchResultEvidence
+                    {
+                        NativeIndex = 1,
+                        SourceStep = sourceStep.Name,
+                        CoordinateLayer = "Main",
+                        ImageWidth = 640,
+                        ImageHeight = 400,
+                        Score = 0.98D,
+                        CenterX = 140D,
+                        CenterY = 100D,
+                        BoundsX = 110D,
+                        BoundsY = 70D,
+                        BoundsWidth = 60D,
+                        BoundsHeight = 60D,
+                        Angle = 0D,
+                        Scale = 1D
+                    }
+                });
+            VisionPipelineRunResult run = new VisionPipelineRunResult();
+            run.StepResults.Add(new VisionPipelineStepResult
+            {
+                Step = sourceStep,
+                ToolResult = sourceResult,
+                AcceptancePassed = true
+            });
+            VisionPipelineStep consumer = new VisionPipelineStep
+            {
+                Name = consumerTemplate.Name,
+                ToolType = consumerTemplate.ToolType,
+                InputLayer = consumerTemplate.InputLayer,
+                OutputLayer = consumerTemplate.OutputLayer
+            };
+            foreach (KeyValuePair<string, string> parameter in consumerTemplate.Parameters)
+            {
+                consumer.Parameters[parameter.Key] = parameter.Value;
+            }
+            consumer.Parameters["MIN_INSTANCES"] = "2";
+            consumer.Parameters["MAX_INSTANCES"] = "4";
+            consumer.Parameters["MAX_OVERLAP_RATIO"] = "0.10";
+            VisionToolResult overlap = VisionPipelineMultiMatchMeanService.Execute(
+                consumer,
+                input,
+                run);
+            try
+            {
+                Assert(
+                    overlap?.Success == false
+                        && (overlap.Message?.Contains("overlap", StringComparison.OrdinalIgnoreCase) ?? false),
+                    "CVR-10 overlap gate must fail closed with an exact reason.");
+            }
+            finally
+            {
+                overlap?.ResultImage?.Dispose();
+            }
+        }
+        finally
+        {
+            sourceResult.ResultImage?.Dispose();
+        }
     }
 
     private static async Task<int> RunCvr09LineFixture(string outputDirectory)

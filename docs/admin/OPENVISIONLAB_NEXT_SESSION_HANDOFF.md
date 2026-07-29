@@ -4310,8 +4310,299 @@ git log --oneline -5
   qualification remains blocked on a named part, certified Datum A/B
   identities, representative images, pose/polarity limits, downstream intent,
   and reviewed N-sample evidence. Do not tune the synthetic matrix further.
-- Next priority: `CVR-00` requires actual novice participants. `CVR-10` is the
-  earliest remaining conditional implementation row, but no multi-instance
-  task packet activates it | Recommended model: none before prerequisites;
-  `gpt-5.6-sol` after an admitted packet | Reasoning effort: none before
+- Historical next-priority state after CVR-09: `CVR-00` required actual novice
+  participants and CVR-10 was then the earliest conditional implementation
+  row. This was superseded later on 2026-07-28 when the user explicitly
+  activated bounded CVR-10 below.
+
+## 2026-07-28 CVR-10 MultiMatchMean v1
+
+- The user explicitly instructed continuation of the next priority, activating
+  one bounded CVR-10 slice.
+- Added `MultiMatchMean`/`MultiFixtureMean`. It consumes one exact earlier
+  accepted multi-result Matching/EdgeBasedMatching Step and assigns row-major
+  same-run IDs `I01..Ixx`.
+- Reused existing `NormalizeImage` and `Mean` for one fixed reference-coordinate
+  ROI per instance. Count, source overlap, pose, valid-pixel, and Mean gates
+  fail closed; individual rejects do not stop later instance inspection.
+- Added exact all-required/minimum-pass aggregate semantics,
+  `InstanceAggregatePassed=1` Pipeline acceptance, ordered result/report rows,
+  transformed ROI drawings, selected-Step PropertyGrid/XML, and Pipeline Review
+  row highlight without another Run.
+- The frozen four-instance matrix passed 4/4 all-required OK, 3/4
+  all-required NG, 3/4 minimum-pass OK, maximum-count reject, pairwise-overlap
+  reject, XML/PropertyGrid round trip, and saved Run Report reload.
+- Debug solution build passed with zero warnings/errors. Current-source
+  `cvr10_multi_match_mean_review` passed at `check=OK`, `layout=0`, `text=0`,
+  `internal=0`, `1400x1150`.
+- Evidence: `artifacts\cvr10_multi_match_mean_20260728_r6`; report:
+  `docs\reports\OPENVISIONLAB_CVR10_MULTI_MATCH_MEAN_20260728.md`; contract:
+  `docs\contracts\openvisionlab\OPENVISIONLAB_MULTI_MATCH_MEAN_V1_CONTRACT.md`.
+- Status: Complete for fixed Mean fan-out and synthetic integration only. No
+  arbitrary nested graph, another per-instance family, cross-image identity,
+  calibration, unseen robustness, or field qualification is proven.
+- Next priority: collect CVR-00 novice evidence when participants exist.
+  CVR-09 physical qualification and another CVR-10 family require named
+  packets. CVR-11 remains conditional on labelled polarity reversal that
+  current settings cannot handle | Recommended model: none before prerequisites;
+  `gpt-5.6-sol` after a valid trigger | Reasoning effort: none before
   prerequisites; high afterward.
+
+## 2026-07-28 CVR-11 Edge Global Polarity v1
+
+- The user explicitly continued the commercial-video queue and admitted one
+  bounded project-authored synthetic polarity task.
+- Library-Noah now supports opt-in
+  `ALLOW_GLOBAL_POLARITY_REVERSAL`; missing keys retain Same-only signed
+  gradient scoring.
+- The mode uses one whole-candidate polarity sign and reports exact
+  `Same`/`Reversed`; it is not local edge-polarity ignore or automatic
+  selection.
+- OpenVisionLab PropertyGrid/XML/Pipeline and existing report metrics retain
+  the option/state without automatic Preview/Run, layers, or route changes.
+- The frozen matrix passed 8/8 Train, 6/6 Validation, and 6/6 Held-out rows.
+  Four no-target rows and one separate legacy reversed probe rejected.
+- Library-Noah Release build and 67/67 smoke, OpenVisionLab Debug build,
+  20/20 product-path contract rows, and the current-source EdgeBasedMatching
+  Tool View smoke passed.
+- Evidence: `artifacts\cvr11_global_polarity_20260728`;
+  `docs\reports\OPENVISIONLAB_CVR11_GLOBAL_POLARITY_20260728.md`;
+  `docs\contracts\openvisionlab\OPENVISIONLAB_EDGE_GLOBAL_POLARITY_V1_CONTRACT.md`.
+- Status: Complete for synthetic global reversal only. Physical qualification
+  remains blocked on a named feature and labelled representative/held-out
+  packet.
+- Historical next state at CVR-11 completion: CVR-12 required a bounded
+  physical-deformation task. This was superseded by the activation audit below,
+  which did not admit implementation.
+
+## 2026-07-28 CVR-12 Activation Audit
+
+- Read-only audit completed after the user continued to the next queue row.
+- The HALCON transcript is commercial narration only. Current OpenVisionLab
+  matching assets do not contain a labelled physical deformation task,
+  numeric displacement truth, nuisance exclusion, correlated frozen-baseline
+  failure, or untouched held-out split.
+- CVR-12 was not admitted and no algorithm/XML/UI/sample change was made.
+- The exact six-section admission packet and reopen command are frozen in
+  `docs\reports\OPENVISIONLAB_CVR12_TRIGGER_AUDIT_20260728.md`.
+- Do not create a convenient synthetic deformation matrix or choose an
+  algorithm before the packet exists.
+- Next priority: CVR-00 with three independent novice participants, or a named
+  CVR-09/CVR-11/CVR-12 operator/data packet | Recommended model: none before
+  evidence; `gpt-5.6-sol` after a CVR-12 packet is admitted | Reasoning effort:
+  none before evidence; high afterward.
+
+## 2026-07-28 CVR-13 Activation Audit
+
+- Read-only prerequisite audit completed after the user continued to the next
+  commercial-video queue row.
+- Existing responsibilities were separated: scalar Matching/EdgeBasedMatching
+  scale search, known-value independent X/Y `RotateScale`, and three-Point
+  whole-frame Affine normalization.
+- No named task proves unknown independent X/Y target scale as the causal
+  matcher failure after applicable current paths are replayed.
+- CVR-13 was not admitted and no algorithm/XML/UI/sample change was made.
+- The exact six-section admission packet and reopen command are frozen in
+  `docs\reports\OPENVISIONLAB_CVR13_TRIGGER_AUDIT_20260728.md`.
+- Do not use an authored resize sample, local deformation, perspective, or a
+  generated success set as substitute evidence.
+- Next priority: CVR-00 with three independent novice participants, or a named
+  CVR-09/CVR-11/CVR-12/CVR-13 operator/data packet. CVR-14 is the next
+  conditional trigger audit only if the user explicitly continues the queue |
+  Recommended model: none before evidence; `gpt-5.6-sol` for a CVR-14 audit or
+  admitted packet | Reasoning effort: none before evidence; high for the audit
+  or implementation.
+
+## 2026-07-28 CVR-14 Activation Audit
+
+- Read-only prerequisite audit completed after the user continued to the next
+  commercial-video queue row.
+- Current Matching and EdgeBasedMatching fixed suppression, Auto MPoint
+  training-candidate IoU, unique-result ambiguity, and CVR-10 post-match IoU
+  rejection were inspected as separate responsibilities.
+- No named task supplies physical-instance IDs, close valid neighbors,
+  duplicate responses, an exact operator overlap rule, frozen current failure,
+  and an untouched Held-out split.
+- CVR-14 was not admitted and no algorithm/XML/UI/sample change was made.
+- The exact six-section admission packet and reopen command are frozen in
+  `docs\reports\OPENVISIONLAB_CVR14_TRIGGER_AUDIT_20260728.md`.
+- Do not add a generic overlap slider or generated success set.
+- Next priority: CVR-00 with three independent novice participants, or a named
+  CVR-09/CVR-11/CVR-12/CVR-13/CVR-14 operator/data packet. CVR-15 is the next
+  deferred trigger audit only if the user explicitly continues the queue |
+  Recommended model: none before evidence; `gpt-5.6-sol` for a CVR-15 audit or
+  admitted packet | Reasoning effort: none before evidence; high for the audit
+  or implementation.
+
+## 2026-07-28 Full Commercial-Video Queue Handoff
+
+- Consolidated all current progress and `CVR-00` through `CVR-20` into
+  `docs\reports\OPENVISIONLAB_COMMERCIAL_VIDEO_QUEUE_HANDOFF_20260728.md`.
+- The report retains current status, exact trigger, model/reasoning
+  recommendation, all 16 video mappings, exclusions, observed dirty Dev and
+  Library-Noah state, and the next-chat selection rule.
+- The detailed canonical authority remains
+  `docs\roadmap\OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md`.
+- CVR-01 through bounded CVR-11 are complete at their recorded scopes.
+  CVR-12 through CVR-14 audits are complete but implementation is not admitted.
+  CVR-00 remains the only active external prerequisite.
+- If no real earlier packet exists and the user explicitly continues, audit
+  CVR-15's no-Good-template/operator-certified-geometry trigger next. Do not
+  implement before that trigger passes | Recommended model: `gpt-5.6-sol` |
+  Reasoning effort: high.
+- Status: Complete for documentation handoff only; no commit or push was
+  performed.
+
+## 2026-07-28 CVR-15 Activation Audit And Documentation Integrity
+
+- Read-only prerequisite audit completed after the user explicitly continued
+  the commercial-video queue.
+- Current raster template teaching, Auto MPoint, runtime geometry,
+  Fixture/Affine, and display responsibilities were separated. No real target
+  supplies the no-usable-Good-template reason, certified geometry/coordinates,
+  image-edge mapping, frozen causal current-path failure, nuisance matrix, and
+  untouched split.
+- CVR-15 was not admitted and no matcher, Library-Noah DLL, XML family,
+  PropertyGrid, sample, or UI implementation was added.
+- The exact six-section admission packet and reopen command are frozen in
+  `docs\reports\OPENVISIONLAB_CVR15_TRIGGER_AUDIT_20260728.md`.
+- Documentation maintenance repaired the moved Markdown tutorial's 18 relative
+  links, made the legacy root catalog path valid JSON, routed readiness and
+  active guidance to the canonical catalog, corrected the P190 catalog status,
+  and removed obsolete priority/count statements.
+- Next priority: CVR-00 with three independent novice participants, or a named
+  CVR-09/CVR-11/CVR-12/CVR-13/CVR-14/CVR-15 operator/data packet. CVR-16 is
+  the next conditional trigger audit only if the user explicitly continues
+  the queue | Recommended model: none before evidence; `gpt-5.6-sol` for a
+  CVR-16 audit or admitted packet | Reasoning effort: none before evidence;
+  high for the audit or implementation.
+
+## 2026-07-28 CVR-16 Activation Audit
+
+- Read-only prerequisite audit completed after the user explicitly continued
+  the commercial-video queue.
+- Current Blob/Contour Area/Width/Height filters, displayed/aggregate Angle,
+  selectable object rows, metric distributions, and saved reports were
+  inspected as separate responsibilities.
+- No named task proves that frozen segmentation and Area/Width/Height gates
+  retain a wrong object or reject a required object that one specific aspect,
+  circularity, orientation, rotated-size, hole, or gray descriptor resolves.
+- CVR-16 was not admitted and no Blob/Contour runtime, PropertyGrid, XML,
+  metric, report, sample, or UI implementation was added.
+- The exact six-section admission packet and reopen command are frozen in
+  `docs\reports\OPENVISIONLAB_CVR16_TRIGGER_AUDIT_20260728.md`.
+- Do not add several descriptors, a generic region evaluator, or a generated
+  success matrix before one named object-separation packet passes.
+- Next priority: CVR-00 with three independent novice participants, or a named
+  CVR-09/CVR-11/CVR-12/CVR-13/CVR-14/CVR-15/CVR-16 operator/data packet.
+  CVR-17 is the next conditional trigger audit only if the user explicitly
+  continues the queue | Recommended model: none before evidence;
+  `gpt-5.6-sol` for a CVR-17 audit or admitted packet | Reasoning effort: none
+  before evidence; high for the audit or implementation.
+
+## 2026-07-28 CVR-17 Activation Audit
+
+- Read-only prerequisite audit completed after the user explicitly continued
+  the commercial-video queue.
+- Current Threshold/HSV mask images, Arithmetic `AND/OR/XOR/NOT`, tool ROI,
+  Blob/Contour object rows, Pipeline layers, and OverlayMerge were inspected as
+  separate responsibilities.
+- No named task proves that those paths cannot express the inspection or
+  supplies typed mask/object/frame operands, one exact Region operation, frozen
+  causal failure, and untouched replay evidence.
+- CVR-17 was not admitted and no runtime, PropertyGrid, Pipeline/XML, sample,
+  DLL, or visible UI implementation was added.
+- The exact six-section admission packet, bounded first implementation, and
+  reopen command are frozen in
+  `docs\reports\OPENVISIONLAB_CVR17_TRIGGER_AUDIT_20260728.md`.
+- Global `C:\Users\user\.codex\AGENTS.md` now requires user-goal-first design,
+  coherent first-use setup for related settings, narrow-scope persistence and
+  restoration, visible reset, and reload/no-side-effect verification.
+- Verification passed: all 12 readiness contract categories,
+  CVR-17/global-agent/queue static checks, and `git diff --check` with
+  line-ending warnings only.
+- Next priority: CVR-00 with three independent novice participants, or a named
+  CVR-09/CVR-11/CVR-12/CVR-13/CVR-14/CVR-15/CVR-16/CVR-17 operator/data packet.
+  CVR-18 is the next conditional trigger audit only if the user explicitly
+  continues the queue | Recommended model: none before evidence;
+  `gpt-5.6-sol` for a CVR-18 audit or admitted packet | Reasoning effort: none
+  before evidence; high for the audit or implementation.
+
+## 2026-07-28 CVR-18 Activation Audit
+
+- Read-only prerequisite audit completed after the user explicitly continued
+  the commercial-video queue.
+- Current Step acceptance, recipe pass semantics, known metrics, domain-owned
+  derived values, persistence, diagnostics, and reports were inspected as
+  separate responsibilities.
+- No named task proves that separate Step gates or one domain-owned metric
+  cannot express the judgment, or supplies exact cross-Step metric references,
+  units, one safe formula, frozen failure, and untouched replay evidence.
+- CVR-18 was not admitted and no runtime, PropertyGrid, Pipeline/XML, sample,
+  DLL, or visible UI implementation was added.
+- The exact six-section admission packet, bounded first implementation, and
+  reopen command are frozen in
+  `docs\reports\OPENVISIONLAB_CVR18_TRIGGER_AUDIT_20260728.md`.
+- The future setup contract groups source metrics, units, formula, output, and
+  gate in one persisted editable surface with reset and zero automatic
+  Preview/Run or layer/routing side effects.
+- Verification passed: all 12 readiness contract categories,
+  CVR-18/global-agent/queue static checks, and `git diff --check` with
+  line-ending warnings only.
+- Next priority: CVR-00 with three independent novice participants, or a named
+  CVR-09/CVR-11/CVR-12/CVR-13/CVR-14/CVR-15/CVR-16/CVR-17/CVR-18 operator/data
+  packet. CVR-19 is the next conditional trigger audit only if the user
+  explicitly continues the queue | Recommended model: none before evidence;
+  `gpt-5.6-sol` for a CVR-19 audit or admitted packet | Reasoning effort: none
+  before evidence; high for the audit or implementation.
+## 2026-07-29 P247 / CVR-19 Validation Variant v1
+
+- Status: Complete.
+- User-approved variants:
+  `Product_Field_FilmStripe_SurfaceReview` (`ResultCount 3..8`) and
+  `Product_Field_TexturedRoller_SurfaceReview` (`ResultCount 1..4`) under the
+  unchanged `Product_Field_DarkFeature_Contour.pipeline.xml`.
+- Image-level Variant and one expected metric range now persist through Local
+  Validation Set, execution, batch XML/TSV, Run History, Variant+role review
+  queue, comparison identity, and Qualified Snapshot preflight/evidence.
+- One coherent setup row restores saved values and provides explicit Apply and
+  Reset without Preview/Run, layer, workspace, or route changes.
+- Verification: full solution build 0 warnings/errors; current-source WPF target
+  `wpf_shell_host_recipe_local_validation_set` passed; both approved catalog
+  replays passed; QualifiedRecipeSnapshotSmoke passed.
+- Evidence: `artifacts\cvr19_validation_variants_20260729`,
+  `docs\contracts\openvisionlab\OPENVISIONLAB_VALIDATION_VARIANT_V1_CONTRACT.md`,
+  and `docs\reports\OPENVISIONLAB_CVR19_VALIDATION_VARIANTS_20260729.md`.
+- Boundary: one metric per image and public Explore-sample evidence only; no
+  per-Variant Pipeline mutation, production qualification, or compliance
+  platform. CVR-00 remains incomplete pending three real independent novice
+  participants. CVR-20 is next only after explicit continuation or current
+  unreadable-overlay evidence. Recommended model: `gpt-5.6-terra` | Reasoning
+  effort: medium.
+
+## 2026-07-29 P248 / CVR-20 Overlay Rendering v1
+
+- Status: Complete.
+- Existing `OverlayMerge` now owns a coherent Recipe Manager PropertyGrid for
+  source/output plus display-only palette, label, line/point, background, and
+  margin settings.
+- Missing new XML keys reproduce the legacy output; `Display defaults`
+  restores the backward-compatible values and requires explicit XML apply.
+- Recipe save/reload/reopen, Run Report parameters, and Pipeline snapshots
+  retain the exact setup. Edits/reset/apply preserve Preview/Run, layers,
+  active layer, and routes.
+- Runtime evidence proved pixel-only visual changes with identical metrics,
+  returned overlays, and acceptance across all three presets. Invalid bounds
+  fail closed.
+- Verification: full solution build 0 warnings/errors; current-source
+  `cvr20_overlay_rendering`, Pipeline Review, Recipe Manager summary, readiness,
+  and source-recipe XML compatibility passed.
+- Evidence: `artifacts\cvr20_overlay_rendering_20260729`,
+  `docs\contracts\openvisionlab\OPENVISIONLAB_OVERLAY_RENDERING_V1_CONTRACT.md`,
+  and `docs\reports\OPENVISIONLAB_CVR20_OVERLAY_RENDERING_20260729.md`.
+- Boundary: presentation-only image-pixel evidence; no arbitrary visualization,
+  calibrated coordinates, inspection logic, production robustness, or field
+  qualification. CVR-00 remains incomplete pending three real independent
+  novice participants. The video queue has no remaining implementation row.
+  Recommended model: none until new evidence exists | Reasoning effort: none
+  until evidence exists.

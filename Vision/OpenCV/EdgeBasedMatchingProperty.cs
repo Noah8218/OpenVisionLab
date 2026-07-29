@@ -33,15 +33,19 @@ namespace OpenVisionLab
         [Category("Matching"), Description("Maximum number of accepted matches."), DisplayName("Match count")]
         public int NUM_MATCH { get; set; } = 1;
 
-        [PropertyOrder(3)]
+        [PropertyOrder(4)]
         [Category("Matching"), Description("Require exactly one spatially distinct candidate. This opt-in mode keeps internal Top-K candidates even though Match count must be 1, and returns Ambiguous with no match when the score-margin gate fails."), DisplayName("Require unique match")]
         public bool USE_UNIQUE_MATCH_VALIDATION { get; set; } = false;
 
-        [PropertyOrder(4)]
+        [PropertyOrder(5)]
         [Category("Matching"), Description("Minimum normalized 0..1 score difference between the selected candidate and the strongest spatially distinct candidate. Used only when Require unique match is enabled."), DisplayName("Min unique margin")]
         public double UNIQUE_MATCH_MIN_SCORE_MARGIN { get; set; } = 0.03D;
 
-        [PropertyOrder(5)]
+        [PropertyOrder(3)]
+        [Category("Matching"), Description("Opt-in global contrast-reversal support. When enabled, one candidate must match either every taught edge direction or the globally reversed direction; local edge directions are never ignored. Missing recipe/XML keys keep the legacy Same-only behavior."), DisplayName("Allow global polarity reversal")]
+        public bool ALLOW_GLOBAL_POLARITY_REVERSAL { get; set; } = false;
+
+        [PropertyOrder(6)]
         [Category("Matching"), Description("Draw the detected template outline and center point on the output image. Non-zero angle results must be drawn as rotated outlines."), DisplayName("Draw result")]
         public bool USE_DRAW_IMAGE { get; set; } = true;
 

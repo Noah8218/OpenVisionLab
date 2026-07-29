@@ -42,6 +42,7 @@ namespace OpenVisionLab
         public string SampleImagePath { get; set; } = string.Empty;
         public string RunReportPath { get; set; } = string.Empty;
         public string SourceSha256 { get; set; } = string.Empty;
+        public string VariantId { get; set; } = string.Empty;
         public List<string> Reasons { get; set; } = new List<string>();
     }
 
@@ -65,6 +66,10 @@ namespace OpenVisionLab
         public string SampleImagePath { get; set; } = string.Empty;
         public string PairGroup { get; set; } = string.Empty;
         public string PairRole { get; set; } = string.Empty;
+        public string VariantId { get; set; } = string.Empty;
+        public string ExpectedMetricName { get; set; } = string.Empty;
+        public string ExpectedMetricMinimum { get; set; } = string.Empty;
+        public string ExpectedMetricMaximum { get; set; } = string.Empty;
         public string ExpectedText { get; set; } = string.Empty;
         public string MetricText { get; set; } = string.Empty;
         public string MetricReviewText { get; set; } = string.Empty;
@@ -78,6 +83,8 @@ namespace OpenVisionLab
     {
         internal const int CurrentSchemaVersion = 2;
         internal const string ReviewQueuePolicyV2 =
+            "v3|all-execution-errors|all-misclassifications|all-evidence-gaps|metric-min-max|hash-audit-3-per-variant-role";
+        internal const string LegacyReviewQueuePolicyV2 =
             "v2|all-execution-errors|all-misclassifications|all-evidence-gaps|metric-min-max|hash-audit-3-per-stratum";
 
         internal sealed class BatchReviewQueue
@@ -223,6 +230,17 @@ namespace OpenVisionLab
         internal static BatchReviewQueue BuildReviewQueue(
             IEnumerable<VisionPipelineBatchSampleRunResult> results)
         {
+            return BuildReviewQueue(results, ReviewQueuePolicyV2);
+        }
+
+        internal static BatchReviewQueue BuildReviewQueue(
+            IEnumerable<VisionPipelineBatchSampleRunResult> results,
+            string persistedPolicy)
+        {
+            bool useLegacyStrata = string.Equals(
+                persistedPolicy,
+                LegacyReviewQueuePolicyV2,
+                StringComparison.Ordinal);
             List<VisionPipelineBatchSampleRunResult> resultList = (results
                     ?? Enumerable.Empty<VisionPipelineBatchSampleRunResult>())
                 .Where(result => result != null)
@@ -281,7 +299,9 @@ namespace OpenVisionLab
             }
 
             foreach (IGrouping<string, ReviewEvidence> stratum in evidenceByIndex.Values
-                .GroupBy(evidence => ResolveReviewStratum(evidence.Result), StringComparer.OrdinalIgnoreCase)
+                .GroupBy(
+                    evidence => ResolveReviewStratum(evidence.Result, useLegacyStrata),
+                    StringComparer.OrdinalIgnoreCase)
                 .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase))
             {
                 foreach (ReviewEvidence evidence in stratum
@@ -294,6 +314,7 @@ namespace OpenVisionLab
             }
 
             BatchReviewQueue queue = new BatchReviewQueue();
+            queue.Policy = useLegacyStrata ? LegacyReviewQueuePolicyV2 : ReviewQueuePolicyV2;
             foreach (KeyValuePair<int, HashSet<string>> pair in reasonsByIndex.OrderBy(pair => pair.Key))
             {
                 ReviewEvidence evidence = evidenceByIndex[pair.Key];
@@ -304,6 +325,7 @@ namespace OpenVisionLab
                     SampleImagePath = evidence.Result.SampleImagePath ?? string.Empty,
                     RunReportPath = evidence.Result.RunReportPath ?? string.Empty,
                     SourceSha256 = evidence.SourceSha256,
+                    VariantId = NormalizeVariantId(evidence.Result.VariantId),
                     Reasons = pair.Value.OrderBy(reason => reason, StringComparer.Ordinal).ToList()
                 });
             }
@@ -315,6 +337,7 @@ namespace OpenVisionLab
                     + "|" + entry.SampleName
                     + "|" + entry.SampleImagePath
                     + "|" + entry.SourceSha256
+                    + "|" + entry.VariantId
                     + "|" + string.Join(";", entry.Reasons)));
             queue.Sha256 = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
             return queue;
@@ -401,14 +424,24 @@ namespace OpenVisionLab
             reasons.Add(reason);
         }
 
-        private static string ResolveReviewStratum(VisionPipelineBatchSampleRunResult result)
+        private static string ResolveReviewStratum(
+            VisionPipelineBatchSampleRunResult result,
+            bool useLegacyStrata)
         {
-            if (!string.IsNullOrWhiteSpace(result?.PairRole))
+            string role = string.IsNullOrWhiteSpace(result?.PairRole)
+                ? "ALL"
+                : result.PairRole.Trim().ToUpperInvariant();
+            if (useLegacyStrata)
             {
-                return result.PairRole.Trim().ToUpperInvariant();
+                return role;
             }
 
-            return "ALL";
+            return "VARIANT:" + NormalizeVariantId(result?.VariantId) + "|ROLE:" + role;
+        }
+
+        private static string NormalizeVariantId(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? "Default" : value.Trim();
         }
 
         private static bool IsFinite(double value)
@@ -709,7 +742,7 @@ namespace OpenVisionLab
 
         private static IEnumerable<string> CreateTsvLines(VisionPipelineBatchRunSummary summary)
         {
-            yield return "SampleName\tStatus\tSuccess\tOutcomeSchemaVersion\tExecutionState\tHasJudgment\tExpectedOutcome\tActualOutcome\tJudgmentCorrect\tTotalMilliseconds\tFailedStep\tMessage\tReportPath\tSampleImagePath\tPairGroup\tPairRole\tExpectedText\tMetricText\tMetricReviewText\tFinalLayer\tOverlayCount\tActionSummary\tRunReportPath\tReviewReasons";
+            yield return "SampleName\tStatus\tSuccess\tOutcomeSchemaVersion\tExecutionState\tHasJudgment\tExpectedOutcome\tActualOutcome\tJudgmentCorrect\tTotalMilliseconds\tFailedStep\tMessage\tReportPath\tSampleImagePath\tPairGroup\tPairRole\tVariantId\tExpectedMetricName\tExpectedMetricMinimum\tExpectedMetricMaximum\tExpectedText\tMetricText\tMetricReviewText\tFinalLayer\tOverlayCount\tActionSummary\tRunReportPath\tReviewReasons";
             Dictionary<int, VisionPipelineBatchReviewQueueEntry> queueByIndex = (summary.ReviewQueue
                     ?? new List<VisionPipelineBatchReviewQueueEntry>())
                 .Where(entry => entry != null)
@@ -737,6 +770,10 @@ namespace OpenVisionLab
                     Escape(result.SampleImagePath),
                     Escape(result.PairGroup),
                     Escape(result.PairRole),
+                    Escape(result.VariantId),
+                    Escape(result.ExpectedMetricName),
+                    Escape(result.ExpectedMetricMinimum),
+                    Escape(result.ExpectedMetricMaximum),
                     Escape(result.ExpectedText),
                     Escape(result.MetricText),
                     Escape(result.MetricReviewText),

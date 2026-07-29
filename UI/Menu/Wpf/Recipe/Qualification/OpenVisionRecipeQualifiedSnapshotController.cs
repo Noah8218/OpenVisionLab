@@ -407,7 +407,11 @@ namespace OpenVisionLab
                                     ? OpenVisionRecipeValidationSetStorage
                                         .ComputeFileSha256(item.Path)
                                     : string.Empty,
-                            Notes = item.Notes ?? string.Empty
+                            Notes = item.Notes ?? string.Empty,
+                            VariantId = item.VariantId ?? string.Empty,
+                            ExpectedMetricName = item.ExpectedMetricName ?? string.Empty,
+                            ExpectedMetricMinimum = item.ExpectedMetricMinimum ?? string.Empty,
+                            ExpectedMetricMaximum = item.ExpectedMetricMaximum ?? string.Empty
                         })
                     .ToList();
             string imageSetSha256 =
@@ -416,7 +420,11 @@ namespace OpenVisionLab
                         new OpenVisionRecipeValidationSetImage
                         {
                             Path = item.SourcePath,
-                            Sha256 = item.Sha256
+                            Sha256 = item.Sha256,
+                            VariantId = item.VariantId,
+                            ExpectedMetricName = item.ExpectedMetricName,
+                            ExpectedMetricMinimum = item.ExpectedMetricMinimum,
+                            ExpectedMetricMaximum = item.ExpectedMetricMaximum
                         }));
             return new QualifiedRecipeValidationSetSnapshot
             {

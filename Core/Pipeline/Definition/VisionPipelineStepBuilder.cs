@@ -109,6 +109,7 @@ namespace OpenVisionLab
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.NUM_MATCH), edgeMatching.NUM_MATCH);
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_UNIQUE_MATCH_VALIDATION), edgeMatching.USE_UNIQUE_MATCH_VALIDATION);
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN), edgeMatching.UNIQUE_MATCH_MIN_SCORE_MARGIN);
+                Add(step.Parameters, nameof(EdgeBasedMatchingProperty.ALLOW_GLOBAL_POLARITY_REVERSAL), edgeMatching.ALLOW_GLOBAL_POLARITY_REVERSAL);
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.PATTERN_PATH), edgeMatching.PATTERN_PATH);
                 Add(step.Parameters, "TemplatePath", edgeMatching.PATTERN_PATH);
                 Add(step.Parameters, nameof(EdgeBasedMatchingProperty.USE_FIND_ANGLE), edgeMatching.USE_FIND_ANGLE);

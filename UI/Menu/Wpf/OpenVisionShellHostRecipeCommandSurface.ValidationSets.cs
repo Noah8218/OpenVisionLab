@@ -73,7 +73,14 @@ namespace OpenVisionLab
             try
             {
                 IReadOnlyList<string> paths = selectValidationSetImagePaths(expected) ?? Array.Empty<string>();
-                AddValidationSetImages(expected, paths, ValidationSetPendingNotes);
+                AddValidationSetImages(
+                    expected,
+                    paths,
+                    ValidationSetPendingNotes,
+                    ValidationSetPendingVariantId,
+                    ValidationSetPendingMetricName,
+                    ValidationSetPendingMetricMinimum,
+                    ValidationSetPendingMetricMaximum);
             }
             catch (Exception ex)
             {
@@ -93,7 +100,14 @@ namespace OpenVisionLab
                 string folderPath = selectValidationSetFolderPath(expected) ?? string.Empty;
                 if (!string.IsNullOrWhiteSpace(folderPath))
                 {
-                    AddValidationSetFolder(expected, folderPath, ValidationSetPendingNotes);
+                    AddValidationSetFolder(
+                        expected,
+                        folderPath,
+                        ValidationSetPendingNotes,
+                        ValidationSetPendingVariantId,
+                        ValidationSetPendingMetricName,
+                        ValidationSetPendingMetricMinimum,
+                        ValidationSetPendingMetricMaximum);
                 }
             }
             catch (Exception ex)
@@ -105,10 +119,36 @@ namespace OpenVisionLab
 
         internal bool AddValidationSetFolderForTest(string expected, string folderPath, string notes = "")
         {
-            return AddValidationSetFolder(expected, folderPath, notes);
+            return AddValidationSetFolder(expected, folderPath, notes, string.Empty, string.Empty, string.Empty, string.Empty);
         }
 
-        private bool AddValidationSetFolder(string expected, string folderPath, string notes)
+        internal bool AddValidationSetFolderForTest(
+            string expected,
+            string folderPath,
+            string notes,
+            string variantId,
+            string metricName,
+            string metricMinimum,
+            string metricMaximum)
+        {
+            return AddValidationSetFolder(
+                expected,
+                folderPath,
+                notes,
+                variantId,
+                metricName,
+                metricMinimum,
+                metricMaximum);
+        }
+
+        private bool AddValidationSetFolder(
+            string expected,
+            string folderPath,
+            string notes,
+            string variantId,
+            string metricName,
+            string metricMinimum,
+            string metricMaximum)
         {
             if (!CanAddValidationSetImages())
             {
@@ -132,19 +172,66 @@ namespace OpenVisionLab
                 return false;
             }
 
-            return AddValidationSetImages(expected, paths, notes);
+            return AddValidationSetImages(
+                expected,
+                paths,
+                notes,
+                variantId,
+                metricName,
+                metricMinimum,
+                metricMaximum);
         }
 
         internal bool AddValidationSetImagesForTest(string expected, IEnumerable<string> paths, string notes = "")
         {
-            return AddValidationSetImages(expected, paths, notes);
+            return AddValidationSetImages(expected, paths, notes, string.Empty, string.Empty, string.Empty, string.Empty);
         }
 
-        private bool AddValidationSetImages(string expected, IEnumerable<string> paths, string notes)
+        internal bool AddValidationSetImagesForTest(
+            string expected,
+            IEnumerable<string> paths,
+            string notes,
+            string variantId,
+            string metricName,
+            string metricMinimum,
+            string metricMaximum)
+        {
+            return AddValidationSetImages(
+                expected,
+                paths,
+                notes,
+                variantId,
+                metricName,
+                metricMinimum,
+                metricMaximum);
+        }
+
+        private bool AddValidationSetImages(
+            string expected,
+            IEnumerable<string> paths,
+            string notes,
+            string variantId,
+            string metricName,
+            string metricMinimum,
+            string metricMaximum)
         {
             OpenVisionRecipeValidationSetOption option = SelectedValidationSetOption;
             if (!CanAddValidationSetImages() || option?.Set == null)
             {
+                return false;
+            }
+
+            OpenVisionRecipeValidationSetImage contract = new OpenVisionRecipeValidationSetImage
+            {
+                VariantId = variantId,
+                ExpectedMetricName = metricName,
+                ExpectedMetricMinimum = metricMinimum,
+                ExpectedMetricMaximum = metricMaximum
+            };
+            if (!OpenVisionRecipeValidationSetStorage.TryValidateVariantContract(contract, out string contractError))
+            {
+                ValidationSuiteStatusText = LocalText("Variant 계약 ERROR: ", "Variant contract ERROR: ")
+                    + contractError;
                 return false;
             }
 
@@ -153,6 +240,10 @@ namespace OpenVisionLab
                 paths,
                 expected,
                 notes,
+                variantId,
+                metricName,
+                metricMinimum,
+                metricMaximum,
                 out int updated,
                 out int skipped);
             if (added == 0 && updated == 0)
@@ -180,6 +271,76 @@ namespace OpenVisionLab
                 updated,
                 skipped);
             return true;
+        }
+
+        private void LoadSelectedValidationVariantContract()
+        {
+            OpenVisionRecipeValidationSetImage image = SelectedValidationSetImageRow?.Image;
+            validationSetPendingVariantId = image?.VariantId ?? string.Empty;
+            validationSetPendingMetricName = image?.ExpectedMetricName ?? string.Empty;
+            validationSetPendingMetricMinimum = image?.ExpectedMetricMinimum ?? string.Empty;
+            validationSetPendingMetricMaximum = image?.ExpectedMetricMaximum ?? string.Empty;
+            OnPropertyChanged(nameof(ValidationSetPendingVariantId));
+            OnPropertyChanged(nameof(ValidationSetPendingMetricName));
+            OnPropertyChanged(nameof(ValidationSetPendingMetricMinimum));
+            OnPropertyChanged(nameof(ValidationSetPendingMetricMaximum));
+        }
+
+        private void ApplyValidationSetVariantContract()
+        {
+            OpenVisionRecipeValidationSetOption option = SelectedValidationSetOption;
+            OpenVisionRecipeValidationSetImageRow row = SelectedValidationSetImageRow;
+            if (!CanApplyValidationSetVariantContract()
+                || option?.Set == null
+                || row?.Image == null)
+            {
+                return;
+            }
+
+            if (!OpenVisionRecipeValidationSetStorage.TryApplyVariantContract(
+                    option.Set,
+                    row.Image,
+                    ValidationSetPendingVariantId,
+                    ValidationSetPendingMetricName,
+                    ValidationSetPendingMetricMinimum,
+                    ValidationSetPendingMetricMaximum,
+                    out string error))
+            {
+                ValidationSuiteStatusText = LocalText("Variant 계약 ERROR: ", "Variant contract ERROR: ") + error;
+                return;
+            }
+
+            string setName = option.Name;
+            string imagePath = row.Path;
+            if (!TrySaveValidationSetDocument(LocalText("Validation Variant 적용", "Apply validation Variant")))
+            {
+                return;
+            }
+
+            RefreshValidationSetOptions(setName);
+            SelectedValidationSetImageRow = ValidationSetImageRows.FirstOrDefault(item =>
+                string.Equals(item.Path, imagePath, StringComparison.OrdinalIgnoreCase));
+            ValidationSuiteStatusText = LocalText(
+                "선택 이미지의 Variant 계약을 저장했습니다. Preview/Run은 실행되지 않았습니다.",
+                "Saved the selected image Variant contract. Preview/Run was not executed.");
+        }
+
+        private void ResetValidationSetVariantContract()
+        {
+            ValidationSetPendingVariantId = string.Empty;
+            ValidationSetPendingMetricName = string.Empty;
+            ValidationSetPendingMetricMinimum = string.Empty;
+            ValidationSetPendingMetricMaximum = string.Empty;
+            ApplyValidationSetVariantContract();
+        }
+
+        private bool CanApplyValidationSetVariantContract()
+        {
+            return validationSetStorageReady
+                && !executionSession.IsValidationSuiteRunning
+                && SelectedValidationSetOption?.Set != null
+                && !SelectedValidationSetOption.Set.IsIdentityLocked
+                && SelectedValidationSetImageRow?.Image != null;
         }
 
         private bool CanAddValidationSetImages()

@@ -8,10 +8,10 @@
 2. `docs/OPENVISIONLAB_CURRENT_HANDOFF.md` (현재 상태/다음 우선순위)
 3. `docs/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md`
 4. `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`
-5. `docs/OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md` + `docs/OPENVISIONLAB_LLM_TOOL_CATALOG.json`
+5. `docs/contracts/openvisionlab/OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md` + `docs/contracts/openvisionlab/OPENVISIONLAB_LLM_TOOL_CATALOG.json`
 6. `docs/OPENVISIONLAB_PUBLIC_SAMPLE_ASSET_POLICY.md`, `docs/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md`, `docs/OPENVISIONLAB_RELEASE_VERSION_POLICY.md`
 
-현재 작업 우선순위는 문서 위치 정리와 규칙 기반 UI/파이프라인 이해를 방해하지 않는 범위에서의 MVVM 가독성 개선입니다.
+현재 활성 외부 우선순위는 `CVR-00` 독립 초보 사용자 3인의 실제 관찰 자료 확보이며 아직 미완료입니다. `CVR-19` Validation Variant v1과 `CVR-20` Overlay Rendering v1은 각각 승인된 제한 범위로 완료되었습니다. 상용 영상 큐에는 더 이상 자동 진행할 구현 항목이 없으며, 다음 개발은 실제 사용자 관찰·명시된 운영 작업·현재 빌드 회귀 증거가 생길 때만 선택합니다.
 
 ## docs 폴더 구조
 

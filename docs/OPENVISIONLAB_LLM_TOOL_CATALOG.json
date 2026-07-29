@@ -1,5 +1,5 @@
-﻿# 이동 안내
-
-이 문서는 새 경로로 이동했습니다.
-
-- New location: [docs/contracts/openvisionlab/OPENVISIONLAB_LLM_TOOL_CATALOG.json](docs/contracts/openvisionlab/OPENVISIONLAB_LLM_TOOL_CATALOG.json)
+{
+  "status": "moved",
+  "movedTo": "contracts/openvisionlab/OPENVISIONLAB_LLM_TOOL_CATALOG.json",
+  "note": "Legacy redirect record only. Load movedTo for the complete machine-readable tool catalog."
+}

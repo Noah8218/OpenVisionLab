@@ -10,14 +10,49 @@ using CvPoint = OpenCvSharp.Point;
 
 namespace OpenVisionLab
 {
+    internal enum VisionPipelineOverlayRenderPreset
+    {
+        LegacyDefault,
+        HighContrast,
+        ColorBlindSafe
+    }
+
+    internal enum VisionPipelineOverlayLabelMode
+    {
+        None,
+        Name,
+        NameWithCoordinates
+    }
+
     internal static class VisionPipelineOverlayMergeService
     {
+        public const string RenderPresetParameter = "RenderPreset";
+        public const string LabelModeParameter = "LabelMode";
+        public const string LineWidthParameter = "LineWidth";
+        public const string PointSizeParameter = "PointSize";
+        public const string LabelBackgroundParameter = "LabelBackground";
+        public const string LabelMarginParameter = "LabelMargin";
+        public const int DefaultLineWidth = 2;
+        public const int DefaultPointSize = 4;
+        public const int DefaultLabelMargin = 0;
+        public const int MinimumLineWidth = 1;
+        public const int MaximumLineWidth = 8;
+        public const int MinimumPointSize = 1;
+        public const int MaximumPointSize = 12;
+        public const int MinimumLabelMargin = 0;
+        public const int MaximumLabelMargin = 12;
+
         private sealed class MergeOptions
         {
             public HashSet<string> SourceLayers { get; set; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             public HashSet<string> SourceSteps { get; set; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             public bool BurnIn { get; set; } = true;
-            public bool DrawLabels { get; set; }
+            public VisionPipelineOverlayRenderPreset RenderPreset { get; set; }
+            public VisionPipelineOverlayLabelMode LabelMode { get; set; }
+            public int LineWidth { get; set; } = DefaultLineWidth;
+            public int PointSize { get; set; } = DefaultPointSize;
+            public bool LabelBackground { get; set; }
+            public int LabelMargin { get; set; } = DefaultLabelMargin;
             public bool AllowEmpty { get; set; }
             public int MaxPoints { get; set; } = 300;
         }
@@ -83,6 +118,7 @@ namespace OpenVisionLab
 
         private static MergeOptions ResolveOptions(IDictionary<string, string> parameters)
         {
+            bool legacyDrawLabels = GetBool(parameters, "DrawLabels", false);
             return new MergeOptions
             {
                 SourceLayers = SplitList(GetValue(parameters, "SourceLayers"))
@@ -90,7 +126,29 @@ namespace OpenVisionLab
                 SourceSteps = SplitList(GetValue(parameters, "SourceSteps"))
                     .ToHashSet(StringComparer.OrdinalIgnoreCase),
                 BurnIn = GetBool(parameters, "BurnIn", true),
-                DrawLabels = GetBool(parameters, "DrawLabels", false),
+                RenderPreset = GetEnum(
+                    parameters,
+                    RenderPresetParameter,
+                    VisionPipelineOverlayRenderPreset.LegacyDefault),
+                LabelMode = GetEnum(
+                    parameters,
+                    LabelModeParameter,
+                    legacyDrawLabels
+                        ? VisionPipelineOverlayLabelMode.Name
+                        : VisionPipelineOverlayLabelMode.None),
+                LineWidth = Clamp(
+                    GetInt(parameters, LineWidthParameter, DefaultLineWidth),
+                    MinimumLineWidth,
+                    MaximumLineWidth),
+                PointSize = Clamp(
+                    GetInt(parameters, PointSizeParameter, DefaultPointSize),
+                    MinimumPointSize,
+                    MaximumPointSize),
+                LabelBackground = GetBool(parameters, LabelBackgroundParameter, false),
+                LabelMargin = Clamp(
+                    GetInt(parameters, LabelMarginParameter, DefaultLabelMargin),
+                    MinimumLabelMargin,
+                    MaximumLabelMargin),
                 AllowEmpty = GetBool(parameters, "AllowEmpty", false),
                 MaxPoints = Math.Max(0, GetInt(parameters, "MaxPoints", 300))
             };
@@ -154,7 +212,7 @@ namespace OpenVisionLab
             for (int sourceIndex = 0; sourceIndex < sourceResults.Count; sourceIndex++)
             {
                 VisionPipelineStepResult sourceResult = sourceResults[sourceIndex];
-                Scalar color = ResolveSourceColor(sourceIndex);
+                Scalar color = ResolveSourceColor(sourceIndex, options.RenderPreset);
                 foreach (VisionToolOverlay overlay in sourceResult?.ToolResult?.Overlays ?? Enumerable.Empty<VisionToolOverlay>())
                 {
                     if (overlay == null)
@@ -172,25 +230,25 @@ namespace OpenVisionLab
             switch (overlay.Kind)
             {
                 case VisionToolOverlayKind.Rectangle:
-                    DrawRectangle(image, overlay, color, options.DrawLabels);
+                    DrawRectangle(image, overlay, color, options);
                     break;
                 case VisionToolOverlayKind.Point:
-                    DrawPoint(image, overlay.Center, color);
-                    if (options.DrawLabels)
+                    DrawPoint(image, overlay.Center, color, options);
+                    if (options.LabelMode != VisionPipelineOverlayLabelMode.None)
                     {
-                        DrawLabel(image, overlay.Label, overlay.Center, color);
+                        DrawLabel(image, overlay.Label, overlay.Center, overlay.Center, color, options);
                     }
                     break;
                 case VisionToolOverlayKind.Points:
-                    DrawPoints(image, overlay.Points, color, options.MaxPoints);
+                    DrawPoints(image, overlay.Points, color, options);
                     break;
                 case VisionToolOverlayKind.Line:
-                    DrawLine(image, overlay, color, options.DrawLabels);
+                    DrawLine(image, overlay, color, options);
                     break;
             }
         }
 
-        private static void DrawRectangle(Mat image, VisionToolOverlay overlay, Scalar color, bool drawLabel)
+        private static void DrawRectangle(Mat image, VisionToolOverlay overlay, Scalar color, MergeOptions options)
         {
             Rect rect = ToImageRect(overlay.Bounds, image.Width, image.Height);
             if (rect.Width <= 0 || rect.Height <= 0)
@@ -198,15 +256,21 @@ namespace OpenVisionLab
                 return;
             }
 
-            Cv2.Rectangle(image, rect, color, 2);
-            DrawPoint(image, overlay.Center, color);
-            if (drawLabel)
+            Cv2.Rectangle(image, rect, color, options.LineWidth);
+            DrawPoint(image, overlay.Center, color, options);
+            if (options.LabelMode != VisionPipelineOverlayLabelMode.None)
             {
-                DrawLabel(image, overlay.Label, new PointF(rect.X, rect.Y), color);
+                DrawLabel(
+                    image,
+                    overlay.Label,
+                    new PointF(rect.X, rect.Y),
+                    overlay.Center,
+                    color,
+                    options);
             }
         }
 
-        private static void DrawLine(Mat image, VisionToolOverlay overlay, Scalar color, bool drawLabel)
+        private static void DrawLine(Mat image, VisionToolOverlay overlay, Scalar color, MergeOptions options)
         {
             CvPoint start = ToImagePoint(overlay.Start, image.Width, image.Height);
             CvPoint end = ToImagePoint(overlay.End, image.Width, image.Height);
@@ -215,18 +279,18 @@ namespace OpenVisionLab
                 return;
             }
 
-            Cv2.Line(image, start, end, color, 2);
+            Cv2.Line(image, start, end, color, options.LineWidth);
             PointF center = new PointF((start.X + end.X) / 2F, (start.Y + end.Y) / 2F);
-            DrawPoint(image, center, color);
-            if (drawLabel)
+            DrawPoint(image, center, color, options);
+            if (options.LabelMode != VisionPipelineOverlayLabelMode.None)
             {
-                DrawLabel(image, overlay.Label, center, color);
+                DrawLabel(image, overlay.Label, center, center, color, options);
             }
         }
 
-        private static void DrawPoints(Mat image, IEnumerable<PointF> points, Scalar color, int maxPoints)
+        private static void DrawPoints(Mat image, IEnumerable<PointF> points, Scalar color, MergeOptions options)
         {
-            if (maxPoints <= 0)
+            if (options.MaxPoints <= 0)
             {
                 return;
             }
@@ -234,35 +298,90 @@ namespace OpenVisionLab
             int count = 0;
             foreach (PointF point in points ?? Enumerable.Empty<PointF>())
             {
-                if (count++ >= maxPoints)
+                if (count++ >= options.MaxPoints)
                 {
                     break;
                 }
 
-                Cv2.Circle(image, ToImagePoint(point, image.Width, image.Height), 2, color, -1);
+                Cv2.Circle(
+                    image,
+                    ToImagePoint(point, image.Width, image.Height),
+                    Math.Max(1, options.PointSize / 2),
+                    color,
+                    -1);
             }
         }
 
-        private static void DrawPoint(Mat image, PointF point, Scalar color)
+        private static void DrawPoint(Mat image, PointF point, Scalar color, MergeOptions options)
         {
             CvPoint center = ToImagePoint(point, image.Width, image.Height);
-            Cv2.Line(image, new CvPoint(center.X - 4, center.Y), new CvPoint(center.X + 4, center.Y), color, 1);
-            Cv2.Line(image, new CvPoint(center.X, center.Y - 4), new CvPoint(center.X, center.Y + 4), color, 1);
+            int markerSize = options.PointSize;
+            int markerThickness = Math.Max(1, options.LineWidth / 2);
+            Cv2.Line(
+                image,
+                new CvPoint(center.X - markerSize, center.Y),
+                new CvPoint(center.X + markerSize, center.Y),
+                color,
+                markerThickness);
+            Cv2.Line(
+                image,
+                new CvPoint(center.X, center.Y - markerSize),
+                new CvPoint(center.X, center.Y + markerSize),
+                color,
+                markerThickness);
         }
 
-        private static void DrawLabel(Mat image, string label, PointF anchor, Scalar color)
+        private static void DrawLabel(
+            Mat image,
+            string label,
+            PointF anchor,
+            PointF coordinate,
+            Scalar color,
+            MergeOptions options)
         {
             if (string.IsNullOrWhiteSpace(label))
             {
                 return;
             }
 
+            string displayText = options.LabelMode == VisionPipelineOverlayLabelMode.NameWithCoordinates
+                ? string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0} @ ({1:0.##}, {2:0.##})",
+                    label,
+                    coordinate.X,
+                    coordinate.Y)
+                : label;
+            displayText = Truncate(displayText, 64);
             CvPoint point = ToImagePoint(anchor, image.Width, image.Height);
             int x = Math.Max(0, Math.Min(point.X, Math.Max(0, image.Width - 8)));
             int y = Math.Max(12, Math.Min(point.Y - 4, Math.Max(12, image.Height - 4)));
+            if (options.LabelBackground)
+            {
+                OpenCvSharp.Size textSize = Cv2.GetTextSize(
+                    displayText,
+                    HersheyFonts.HersheySimplex,
+                    0.35,
+                    1,
+                    out int baseline);
+                int margin = options.LabelMargin;
+                int left = Math.Max(0, x - margin);
+                int top = Math.Max(0, y - textSize.Height - margin);
+                int right = Math.Min(image.Width, x + textSize.Width + margin);
+                int bottom = Math.Min(image.Height, y + baseline + margin);
+                if (right > left && bottom > top)
+                {
+                    Cv2.Rectangle(
+                        image,
+                        new Rect(left, top, right - left, bottom - top),
+                        Scalar.Black,
+                        -1);
+                }
+            }
+
             Cv2.PutText(
                 image,
-                Truncate(label, 32),
+                displayText,
                 new CvPoint(x, y),
                 HersheyFonts.HersheySimplex,
                 0.35,
@@ -297,8 +416,48 @@ namespace OpenVisionLab
             return Math.Max(min, Math.Min((int)Math.Round(value), max));
         }
 
-        private static Scalar ResolveSourceColor(int sourceIndex)
+        private static Scalar ResolveSourceColor(
+            int sourceIndex,
+            VisionPipelineOverlayRenderPreset preset)
         {
+            if (preset == VisionPipelineOverlayRenderPreset.HighContrast)
+            {
+                switch (sourceIndex % 6)
+                {
+                    case 1:
+                        return new Scalar(0, 255, 255);
+                    case 2:
+                        return new Scalar(255, 255, 0);
+                    case 3:
+                        return new Scalar(255, 0, 255);
+                    case 4:
+                        return new Scalar(0, 80, 255);
+                    case 5:
+                        return new Scalar(80, 255, 80);
+                    default:
+                        return Scalar.White;
+                }
+            }
+
+            if (preset == VisionPipelineOverlayRenderPreset.ColorBlindSafe)
+            {
+                switch (sourceIndex % 6)
+                {
+                    case 1:
+                        return new Scalar(178, 114, 0);
+                    case 2:
+                        return new Scalar(0, 158, 230);
+                    case 3:
+                        return new Scalar(94, 60, 213);
+                    case 4:
+                        return new Scalar(115, 158, 0);
+                    case 5:
+                        return new Scalar(167, 121, 204);
+                    default:
+                        return new Scalar(66, 180, 86);
+                }
+            }
+
             switch (sourceIndex % 5)
             {
                 case 1:
@@ -391,6 +550,24 @@ namespace OpenVisionLab
             return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int result)
                 ? result
                 : defaultValue;
+        }
+
+        private static T GetEnum<T>(
+            IDictionary<string, string> parameters,
+            string key,
+            T defaultValue)
+            where T : struct
+        {
+            string value = GetValue(parameters, key);
+            return Enum.TryParse(value, true, out T result)
+                && Enum.IsDefined(typeof(T), result)
+                    ? result
+                    : defaultValue;
+        }
+
+        private static int Clamp(int value, int minimum, int maximum)
+        {
+            return Math.Max(minimum, Math.Min(value, maximum));
         }
 
         private static string Truncate(string text, int maxLength)

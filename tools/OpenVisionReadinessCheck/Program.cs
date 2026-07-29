@@ -1208,6 +1208,25 @@ internal static class Program
         RequireContains(tutorial, "LEARN_MEAN.md", "Tutorial links Mean learn page.");
         RequireContains(tutorial, "LEARN_FEATURE_MATCHING.md", "Tutorial links FeatureMatching learn page.");
         RequireContains(tutorial, "LEARN_EDGE_BASED_MATCHING.md", "Tutorial links EdgeBasedMatching learn page.");
+        string tutorialMarkdown = Read(
+            repoRoot,
+            @"docs\learn\OPENVISIONLAB_TUTORIAL.md");
+        RequireContains(
+            tutorialMarkdown,
+            "](../assets/tutorial/",
+            "Moved Markdown tutorial resolves assets relative to docs/learn.");
+        RequireNotContains(
+            tutorialMarkdown,
+            "](assets/tutorial/",
+            "Moved Markdown tutorial has no stale docs-root asset links.");
+        RequireContains(
+            tutorialMarkdown,
+            "](LEARN_MATCHING.md)",
+            "Moved Markdown tutorial resolves Learn topics within docs/learn.");
+        RequireNotContains(
+            tutorialMarkdown,
+            "](learn/",
+            "Moved Markdown tutorial has no duplicated learn/ path segment.");
 
         foreach (string relativePath in new[]
         {
@@ -1896,7 +1915,16 @@ internal static class Program
         RequireContains(pipelineValidator, "\"hsv\"", "Pipeline validator supports HSV ToolType.");
         RequireContains(pipelineValidator, "Hue is circular", "Pipeline validator documents circular HSV hue validation.");
         RequireNotContains(pipelineValidator, "ValidateMinMax(result, label, step, \"HueMin\", \"HueMax\")", "Pipeline validator allows circular HSV hue ranges.");
-        string llmToolCatalog = Read(repoRoot, @"docs\OPENVISIONLAB_LLM_TOOL_CATALOG.json");
+        string llmToolCatalogRedirect = Read(
+            repoRoot,
+            @"docs\OPENVISIONLAB_LLM_TOOL_CATALOG.json");
+        RequireContains(
+            llmToolCatalogRedirect,
+            "\"movedTo\": \"contracts/openvisionlab/OPENVISIONLAB_LLM_TOOL_CATALOG.json\"",
+            "Legacy LLM tool catalog path is a parse-safe redirect to the canonical catalog.");
+        string llmToolCatalog = Read(
+            repoRoot,
+            @"docs\contracts\openvisionlab\OPENVISIONLAB_LLM_TOOL_CATALOG.json");
         RequireContains(llmToolCatalog, "\"toolType\": \"HSV\"", "LLM tool catalog exposes the HSV ToolType.");
         RequireContains(llmToolCatalog, "\"MaskPixelRatio\"", "LLM tool catalog exposes the HSV mask-ratio metric.");
         RequireContains(llmToolCatalog, "HueMin greater than HueMax intentionally wraps", "LLM tool catalog documents the HSV hue-wrap contract.");

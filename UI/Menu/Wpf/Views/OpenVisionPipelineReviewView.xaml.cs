@@ -19,6 +19,9 @@ namespace OpenVisionLab
         private VisionPipelineObjectMetricKind objectMetricKind = VisionPipelineObjectMetricKind.Area;
         private VisionPipelineObjectMetricDistribution objectMetricDistribution;
         private bool suppressObjectSelection;
+        private IReadOnlyList<VisionPipelineInstanceResult> instanceResults =
+            Array.Empty<VisionPipelineInstanceResult>();
+        private bool suppressInstanceSelection;
         private IReadOnlyList<VisionPipelineGeometryFeatureResult> geometryResults = Array.Empty<VisionPipelineGeometryFeatureResult>();
         private bool suppressGeometrySelection;
         private VisionPipelineCircleEvidence circleEvidence;
@@ -107,6 +110,22 @@ namespace OpenVisionLab
         public bool HasOutputPreview => ViewModel.HasOutputPreview;
         public int ObjectResultCount => objectResults.Count;
         public int SelectedObjectResultNumber => objectResultsGrid.SelectedItem is VisionPipelineObjectResult item ? item.Number : 0;
+        internal int InstanceResultCountForTest => instanceResults.Count;
+        internal string SelectedInstanceIdForTest =>
+            instanceResultsGrid.SelectedItem is VisionPipelineInstanceResult item
+                ? item.InstanceId
+                : string.Empty;
+        internal void SelectInstanceForTest(int index)
+        {
+            if (index < 0 || index >= instanceResults.Count)
+            {
+                return;
+            }
+
+            VisionPipelineInstanceResult item = instanceResults[index];
+            instanceResultsGrid.SelectedItem = item;
+            instanceResultsGrid.ScrollIntoView(item);
+        }
         public bool HasObjectHighlight { get; private set; }
         public int SelectedFlowIndex => pipelineFlowView.SelectedIndex;
         public bool IsFixtureDesignerVisible => ViewModel.IsFixtureDesignerVisible;
@@ -150,6 +169,7 @@ namespace OpenVisionLab
             lblResult.Text = T("PipelineReview.Result", "Result");
             lblRunLog.Text = T("PipelineReview.RunLog", "Run Log");
             objectInspectorTab.Header = T("PipelineReview.ObjectInspector.Title", "Object Results");
+            instanceInspectorTab.Header = T("PipelineReview.InstanceInspector.Title", "Instance Results");
             geometryReviewTab.Header = T("PipelineReview.GeometryReview.Title", "Geometry Review");
             circleEvidenceTab.Header = T("PipelineReview.CircleEvidence.Title", "Circle Evidence");
             matcherDiagnosticTab.Header = T("PipelineReview.MatcherDiagnostics.Title", "Matcher Diagnostics");
@@ -159,6 +179,7 @@ namespace OpenVisionLab
             stepDetailsTab.Header = T("PipelineReview.StepDetails.Title", "Step Details");
             fixtureDesignerTab.Header = T("PipelineReview.FixtureDesigner.Title", "Fixture / Relative ROI");
             lblObjectHighlight.Text = T("PipelineReview.ObjectInspector.Highlight", "Selected object highlight");
+            lblInstanceHighlight.Text = T("PipelineReview.InstanceInspector.Highlight", "Selected instance relative ROI");
             lblGeometryHighlight.Text = T("PipelineReview.GeometryReview.Highlight", "Selected geometry highlight");
             lblScaleCalibrationPreview.Text = T("PipelineReview.ScaleCalibration.Preview", "Point A/B evidence");
             lblScaleCalibrationInputs.Text = T("PipelineReview.ScaleCalibration.Inputs", "Same-run point evidence");
@@ -368,6 +389,48 @@ namespace OpenVisionLab
                 {
                     geometryResultsGrid.SelectedItem = first;
                     geometryResultsGrid.ScrollIntoView(first);
+                }
+                else
+                {
+                    RestoreObjectResultPreview();
+                }
+            }
+        }
+
+        public void SetInstanceResults(
+            bool isSupportedTool,
+            IEnumerable<VisionPipelineInstanceResult> results)
+        {
+            suppressInstanceSelection = true;
+            instanceResults = (results ?? Enumerable.Empty<VisionPipelineInstanceResult>())
+                .Select(item => item?.Clone())
+                .Where(item => item != null)
+                .OrderBy(item => item.Number)
+                .ToList();
+            instanceResultsGrid.ItemsSource = instanceResults;
+            instanceInspectorTab.Visibility = isSupportedTool
+                ? System.Windows.Visibility.Visible
+                : System.Windows.Visibility.Collapsed;
+            instanceResultCountText.Text = TF(
+                "PipelineReview.InstanceInspector.CountFormat",
+                "Instances {0} / OK {1} / NG {2}",
+                instanceResults.Count,
+                instanceResults.Count(item => item.Accepted),
+                instanceResults.Count(item => !item.Accepted));
+            instanceResultsGrid.SelectedItem = null;
+            suppressInstanceSelection = false;
+            UpdateReviewDetailRowHeight();
+
+            if (isSupportedTool)
+            {
+                reviewDetailTabs.SelectedItem = instanceInspectorTab;
+                VisionPipelineInstanceResult first =
+                    instanceResults.FirstOrDefault(item => !item.Accepted)
+                    ?? instanceResults.FirstOrDefault();
+                if (first != null)
+                {
+                    instanceResultsGrid.SelectedItem = first;
+                    instanceResultsGrid.ScrollIntoView(first);
                 }
                 else
                 {

@@ -6,6 +6,7 @@ using Lib.OpenCV;
 using OpenVisionLab;
 using OpenVisionLab.Core;
 using OpenVisionLab.Logging.Controls.View;
+using OpenVisionLab.Pipeline.Controls;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using System;
 using System.Collections.Generic;
@@ -110,10 +111,12 @@ internal static class Program
         ["wpf_shell_host_workspace_sample_pipeline_review_bentpin_ng_metrics"] = CaptureShellHostWorkspaceSamplePipelineReviewBentPinNgMetrics,
         ["wpf_shell_host_workspace_sample_pipeline_review_film_ng_metrics"] = CaptureShellHostWorkspaceSamplePipelineReviewFilmNgMetrics,
         ["p213_geometry_review"] = CaptureP213GeometryReview,
+        ["cvr10_multi_match_mean_review"] = CaptureCvr10MultiMatchMeanReview,
         ["cvr06_matcher_diagnostic"] = CaptureCvr06MatcherDiagnostic,
         ["cvr07_threshold_suggestion"] = CaptureCvr07ThresholdSuggestion,
         ["cvr05_object_metric_distribution"] = CaptureCvr05ObjectMetricDistribution,
         ["cvr04_circle_residual_review"] = CaptureCvr04CircleResidualReview,
+        ["cvr20_overlay_rendering"] = CaptureCvr20OverlayRendering,
         ["p213_geometry_property_grid"] = CaptureP213GeometryPropertyGrid,
         ["cvr09_line_fixture_property_grid"] = CaptureCvr09LineFixturePropertyGrid,
         ["p219_affine_point_binding_property_grid"] = CaptureP219AffinePointBindingPropertyGrid,
@@ -3709,6 +3712,581 @@ internal static class Program
         }
     }
 
+    private static CaptureResult CaptureCvr20OverlayRendering(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        CleanupTransientRecipeWorkspaces();
+        VerifyCvr20OverlayRenderingContract(outputPath);
+        string recipeName = "Smoke_Cvr20Overlay_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+        VisionPipeline pipeline = new VisionPipeline { Name = "CVR20_Overlay_Rendering" };
+        VisionPipelineStep threshold = new VisionPipelineStep
+        {
+            Name = "01 Threshold Source",
+            ToolType = "Threshold",
+            InputLayer = "Main",
+            OutputLayer = "Threshold_Result"
+        };
+        threshold.Parameters["THRESHOLD"] = "128";
+        VisionPipelineStep overlay = new VisionPipelineStep
+        {
+            Name = "02 Review Overlay",
+            ToolType = "OverlayMerge",
+            InputLayer = "Main",
+            OutputLayer = "Overlay_Result"
+        };
+        overlay.Parameters["SourceSteps"] = threshold.Name;
+        overlay.Parameters["BurnIn"] = "true";
+        overlay.Parameters["DrawLabels"] = "true";
+        overlay.Parameters["CVR20_PRESERVE_UNKNOWN"] = "retained";
+        pipeline.Steps.Add(threshold);
+        pipeline.Steps.Add(overlay);
+        VisionPipelineStorage.Save(recipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
+
+        OpenVisionShellHostView shellHost = CreateShellHost(recipeName, seedMainLayer: false);
+        try
+        {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                ToggleButton recipeManagerButton =
+                    FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager")
+                    ?? throw new InvalidOperationException("CVR-20 baseline could not find Recipe Manager.");
+                recipeManagerButton.IsChecked = true;
+                Pump(100);
+                ToggleButton advanced =
+                    FindNamedVisualChild<ToggleButton>(shellHost, "recipeAdvancedReviewToggle")
+                    ?? throw new InvalidOperationException("CVR-20 baseline could not find Advanced Review.");
+                advanced.IsChecked = true;
+                Pump(60);
+                TabItem pipelineTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipeline")
+                    ?? throw new InvalidOperationException("CVR-20 baseline could not find Pipeline tab.");
+                pipelineTab.IsSelected = true;
+                Pump(40);
+                TabItem stepsTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineXmlSteps")
+                    ?? throw new InvalidOperationException("CVR-20 baseline could not find XML/Steps tab.");
+                stepsTab.IsSelected = true;
+                Pump(80);
+
+                OpenVisionRecipePipelineStepPreview preview =
+                    shellHost.RecipeCommands.SelectedRecipeSummary.PipelinePreviewSteps
+                        .Single(item => string.Equals(item.ToolType, "OverlayMerge", StringComparison.OrdinalIgnoreCase));
+                shellHost.RecipeCommands.SelectedPipelinePreviewStep = preview;
+                shellHost.RecipeCommands.LoadSelectedStepParametersCommand.Execute(null);
+                Pump(180);
+                if (!shellHost.RecipeCommands.HasSelectedStepEditObject
+                    || !shellHost.RecipeCommands.HasSelectedOverlayMergeEditObject)
+                {
+                    throw new InvalidOperationException(
+                        "CVR-20 OverlayMerge PropertyGrid was not exposed.");
+                }
+
+                FrameworkElement propertyGridHost = FindVisualChildren<FrameworkElement>(shellHost)
+                    .FirstOrDefault(item => item.IsVisible && string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "HostRecipeSelectedStepPropertyGridHost",
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("CVR-20 OverlayMerge PropertyGrid host was not visible.");
+                System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid =
+                    FindVisualChildren<System.Windows.Controls.WpfPropertyGrid.PropertyGrid>(propertyGridHost)
+                        .FirstOrDefault(item => item.IsVisible && item.SelectedObject != null)
+                    ?? throw new InvalidOperationException("CVR-20 OverlayMerge PropertyGrid did not load.");
+                PropertyDescriptorCollection descriptors = TypeDescriptor.GetProperties(grid.SelectedObject);
+                string[] requiredProperties =
+                {
+                    "SourceLayers", "SourceSteps", "RenderPreset", "LabelMode", "LineWidth",
+                    "PointSize", "LabelBackground", "LabelMargin", "MaxPoints", "BurnIn", "AllowEmpty"
+                };
+                string[] missingProperties = requiredProperties
+                    .Where(name => descriptors.Find(name, true) == null)
+                    .ToArray();
+                if (missingProperties.Length > 0)
+                {
+                    throw new InvalidOperationException(
+                        "CVR-20 OverlayMerge PropertyGrid missed: "
+                        + string.Join(",", missingProperties));
+                }
+
+                int previewRunsBefore = shellHost.NativePreviewRunCount;
+                int layerCountBefore = shellHost.LayerDocumentCount;
+                string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+                string inputRouteBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string outputRouteBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+
+                descriptors["RenderPreset"]!.SetValue(
+                    grid.SelectedObject,
+                    VisionPipelineOverlayRenderPreset.HighContrast);
+                descriptors["LabelMode"]!.SetValue(
+                    grid.SelectedObject,
+                    VisionPipelineOverlayLabelMode.NameWithCoordinates);
+                descriptors["LineWidth"]!.SetValue(grid.SelectedObject, 4);
+                descriptors["PointSize"]!.SetValue(grid.SelectedObject, 6);
+                descriptors["LabelBackground"]!.SetValue(grid.SelectedObject, true);
+                descriptors["LabelMargin"]!.SetValue(grid.SelectedObject, 3);
+                grid.RefreshSelectedObject();
+                Pump(60);
+                shellHost.RecipeCommands.MarkSelectedStepEditDirty();
+                shellHost.RecipeCommands.ApplySelectedStepParametersCommand.Execute(null);
+                Pump(220);
+
+                VisionPipeline savedPipeline = VisionPipelineStorage.Load(recipeName, pipeline.Name);
+                VisionPipelineStep savedOverlay = savedPipeline.Steps.Single(
+                    item => VisionPipelineOverlayMergeService.IsMergeTool(item.ToolType));
+                if (!string.Equals(
+                        savedOverlay.Parameters.GetValueOrDefault(
+                            VisionPipelineOverlayMergeService.RenderPresetParameter),
+                        "HighContrast",
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        savedOverlay.Parameters.GetValueOrDefault(
+                            VisionPipelineOverlayMergeService.LabelModeParameter),
+                        "NameWithCoordinates",
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        savedOverlay.Parameters.GetValueOrDefault(
+                            VisionPipelineOverlayMergeService.LineWidthParameter),
+                        "4",
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        savedOverlay.Parameters.GetValueOrDefault(
+                            VisionPipelineOverlayMergeService.PointSizeParameter),
+                        "6",
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        savedOverlay.Parameters.GetValueOrDefault(
+                            VisionPipelineOverlayMergeService.LabelBackgroundParameter),
+                        "True",
+                        StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(
+                        savedOverlay.Parameters.GetValueOrDefault(
+                            VisionPipelineOverlayMergeService.LabelMarginParameter),
+                        "3",
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        savedOverlay.Parameters.GetValueOrDefault("CVR20_PRESERVE_UNKNOWN"),
+                        "retained",
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "CVR-20 display settings or an unrepresented parameter were lost on apply/save/reload. "
+                        + string.Join(
+                            ", ",
+                            new[]
+                            {
+                                VisionPipelineOverlayMergeService.RenderPresetParameter,
+                                VisionPipelineOverlayMergeService.LabelModeParameter,
+                                VisionPipelineOverlayMergeService.LineWidthParameter,
+                                VisionPipelineOverlayMergeService.PointSizeParameter,
+                                VisionPipelineOverlayMergeService.LabelBackgroundParameter,
+                                VisionPipelineOverlayMergeService.LabelMarginParameter,
+                                "CVR20_PRESERVE_UNKNOWN"
+                            }.Select(key => key + "=" + savedOverlay.Parameters.GetValueOrDefault(key, "<missing>"))));
+                }
+
+                if (!shellHost.RecipeCommands.ResetSelectedStepDisplayDefaultsCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException("CVR-20 explicit display-default reset command was disabled.");
+                }
+
+                shellHost.RecipeCommands.ResetSelectedStepDisplayDefaultsCommand.Execute(null);
+                Pump(80);
+                object resetObject = shellHost.RecipeCommands.SelectedStepEditObject;
+                PropertyDescriptorCollection resetDescriptors = TypeDescriptor.GetProperties(resetObject);
+                if ((VisionPipelineOverlayRenderPreset)resetDescriptors["RenderPreset"]!.GetValue(resetObject)!
+                        != VisionPipelineOverlayRenderPreset.LegacyDefault
+                    || (VisionPipelineOverlayLabelMode)resetDescriptors["LabelMode"]!.GetValue(resetObject)!
+                        != VisionPipelineOverlayLabelMode.None
+                    || (int)resetDescriptors["LineWidth"]!.GetValue(resetObject)!
+                        != VisionPipelineOverlayMergeService.DefaultLineWidth
+                    || (int)resetDescriptors["PointSize"]!.GetValue(resetObject)!
+                        != VisionPipelineOverlayMergeService.DefaultPointSize
+                    || (bool)resetDescriptors["LabelBackground"]!.GetValue(resetObject)!
+                    || (int)resetDescriptors["LabelMargin"]!.GetValue(resetObject)!
+                        != VisionPipelineOverlayMergeService.DefaultLabelMargin
+                    || !shellHost.RecipeCommands.IsSelectedStepEditDirty)
+                {
+                    throw new InvalidOperationException(
+                        "CVR-20 display-default reset did not restore the documented defaults.");
+                }
+
+                shellHost.RecipeCommands.ApplySelectedStepParametersCommand.Execute(null);
+                Pump(220);
+                VisionPipeline resetPipeline = VisionPipelineStorage.Load(recipeName, pipeline.Name);
+                VisionPipelineStep resetOverlay = resetPipeline.Steps.Single(
+                    item => VisionPipelineOverlayMergeService.IsMergeTool(item.ToolType));
+                if (!string.Equals(
+                        resetOverlay.Parameters.GetValueOrDefault(
+                            VisionPipelineOverlayMergeService.RenderPresetParameter),
+                        "LegacyDefault",
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        resetOverlay.Parameters.GetValueOrDefault(
+                            VisionPipelineOverlayMergeService.LabelModeParameter),
+                        "None",
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        resetOverlay.Parameters.GetValueOrDefault("DrawLabels"),
+                        "False",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "CVR-20 reset defaults were not persisted through save/reload.");
+                }
+
+                object finalObject = shellHost.RecipeCommands.SelectedStepEditObject;
+                PropertyDescriptorCollection finalDescriptors = TypeDescriptor.GetProperties(finalObject);
+                finalDescriptors["RenderPreset"]!.SetValue(
+                    finalObject,
+                    VisionPipelineOverlayRenderPreset.HighContrast);
+                finalDescriptors["LabelMode"]!.SetValue(
+                    finalObject,
+                    VisionPipelineOverlayLabelMode.NameWithCoordinates);
+                finalDescriptors["LineWidth"]!.SetValue(finalObject, 4);
+                finalDescriptors["PointSize"]!.SetValue(finalObject, 6);
+                finalDescriptors["LabelBackground"]!.SetValue(finalObject, true);
+                finalDescriptors["LabelMargin"]!.SetValue(finalObject, 3);
+                grid.RefreshSelectedObject();
+                Pump(60);
+                shellHost.RecipeCommands.MarkSelectedStepEditDirty();
+                shellHost.RecipeCommands.ApplySelectedStepParametersCommand.Execute(null);
+                Pump(220);
+
+                object reopenedObject = shellHost.RecipeCommands.SelectedStepEditObject;
+                PropertyDescriptorCollection reopenedDescriptors = TypeDescriptor.GetProperties(reopenedObject);
+                if ((VisionPipelineOverlayRenderPreset)reopenedDescriptors["RenderPreset"]!.GetValue(reopenedObject)!
+                        != VisionPipelineOverlayRenderPreset.HighContrast
+                    || (VisionPipelineOverlayLabelMode)reopenedDescriptors["LabelMode"]!.GetValue(reopenedObject)!
+                        != VisionPipelineOverlayLabelMode.NameWithCoordinates
+                    || (int)reopenedDescriptors["LineWidth"]!.GetValue(reopenedObject)! != 4
+                    || (int)reopenedDescriptors["PointSize"]!.GetValue(reopenedObject)! != 6
+                    || !(bool)reopenedDescriptors["LabelBackground"]!.GetValue(reopenedObject)!
+                    || (int)reopenedDescriptors["LabelMargin"]!.GetValue(reopenedObject)! != 3
+                    || shellHost.NativePreviewRunCount != previewRunsBefore
+                    || shellHost.LayerDocumentCount != layerCountBefore
+                    || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBefore, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "CVR-20 restoration changed Preview/Run, layers, active layer, routing, or persisted display values.");
+                }
+
+                System.Windows.Controls.WpfPropertyGrid.PropertyGrid reopenedGrid =
+                    FindVisualChildren<System.Windows.Controls.WpfPropertyGrid.PropertyGrid>(propertyGridHost)
+                        .FirstOrDefault(item => item.IsVisible && item.SelectedObject != null)
+                    ?? throw new InvalidOperationException("CVR-20 reopened PropertyGrid was not visible.");
+                TextBox searchTextBox = GetActivePropertyGridSearchTextBox(
+                    reopenedGrid,
+                    "CVR-20 OverlayMerge recipe step");
+                searchTextBox.Text = "Label";
+                searchTextBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+                reopenedGrid.UpdateLayout();
+                Pump(80);
+                ScrollViewer pipelineScrollViewer = FindNamedVisualChild<ScrollViewer>(
+                    shellHost,
+                    "recipePipelineTabScrollViewer")
+                    ?? throw new InvalidOperationException("CVR-20 Pipeline scroll viewer was not found.");
+                pipelineScrollViewer.ScrollToBottom();
+                pipelineScrollViewer.UpdateLayout();
+                Pump(80);
+                BringPropertyGridPropertyIntoView(
+                    reopenedGrid,
+                    "LabelMode",
+                    "CVR-20 OverlayMerge recipe step",
+                    0D);
+            }, captureFloatingToolWindow: false, captureScreen: true);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static void VerifyCvr20OverlayRenderingContract(string outputPath)
+    {
+        string evidenceDirectory = Path.Combine(
+            Path.GetDirectoryName(outputPath) ?? Environment.CurrentDirectory,
+            "runtime");
+        Directory.CreateDirectory(evidenceDirectory);
+        using CvMat input = new CvMat(
+            240,
+            360,
+            OpenCvSharp.MatType.CV_8UC3,
+            new OpenCvSharp.Scalar(35, 35, 35));
+        Cv.Rectangle(
+            input,
+            new OpenCvSharp.Rect(30, 30, 300, 180),
+            new OpenCvSharp.Scalar(80, 80, 80),
+            -1);
+
+        VisionPipelineStep sourceStep = new VisionPipelineStep
+        {
+            Name = "Detected objects",
+            ToolType = "Blob",
+            InputLayer = "Main",
+            OutputLayer = "Blob_Result"
+        };
+        VisionToolOverlay[] overlays =
+        {
+            new VisionToolOverlay
+            {
+                Kind = VisionToolOverlayKind.Rectangle,
+                Label = "Object A",
+                Bounds = new System.Drawing.RectangleF(70, 55, 100, 80),
+                Center = new System.Drawing.PointF(120, 95)
+            },
+            new VisionToolOverlay
+            {
+                Kind = VisionToolOverlayKind.Line,
+                Label = "Datum",
+                Start = new System.Drawing.PointF(45, 175),
+                End = new System.Drawing.PointF(310, 175),
+                Center = new System.Drawing.PointF(177.5F, 175)
+            },
+            new VisionToolOverlay
+            {
+                Kind = VisionToolOverlayKind.Point,
+                Label = "Center",
+                Center = new System.Drawing.PointF(240, 100)
+            }
+        };
+        VisionToolResult sourceToolResult = VisionToolResult.Passed(
+            input.Clone(),
+            TimeSpan.Zero,
+            new Dictionary<string, double> { [VisionPipelineKnownMetrics.ResultCount] = overlays.Length },
+            overlays);
+        VisionPipelineRunResult priorRun = new VisionPipelineRunResult();
+        priorRun.StepResults.Add(new VisionPipelineStepResult
+        {
+            Step = sourceStep,
+            ToolResult = sourceToolResult,
+            AcceptancePassed = true
+        });
+
+        VisionPipelineStep legacyStep = CreateCvr20OverlayStep("Legacy");
+        legacyStep.Parameters["DrawLabels"] = "true";
+        VisionPipelineStep explicitLegacyStep = CreateCvr20OverlayStep("Explicit legacy");
+        explicitLegacyStep.Parameters["DrawLabels"] = "true";
+        explicitLegacyStep.Parameters[VisionPipelineOverlayMergeService.RenderPresetParameter] =
+            VisionPipelineOverlayRenderPreset.LegacyDefault.ToString();
+        explicitLegacyStep.Parameters[VisionPipelineOverlayMergeService.LabelModeParameter] =
+            VisionPipelineOverlayLabelMode.Name.ToString();
+        explicitLegacyStep.Parameters[VisionPipelineOverlayMergeService.LineWidthParameter] =
+            VisionPipelineOverlayMergeService.DefaultLineWidth.ToString(CultureInfo.InvariantCulture);
+        explicitLegacyStep.Parameters[VisionPipelineOverlayMergeService.PointSizeParameter] =
+            VisionPipelineOverlayMergeService.DefaultPointSize.ToString(CultureInfo.InvariantCulture);
+        explicitLegacyStep.Parameters[VisionPipelineOverlayMergeService.LabelBackgroundParameter] = "false";
+        explicitLegacyStep.Parameters[VisionPipelineOverlayMergeService.LabelMarginParameter] =
+            VisionPipelineOverlayMergeService.DefaultLabelMargin.ToString(CultureInfo.InvariantCulture);
+        VisionPipelineStep highContrastStep = CreateCvr20OverlayStep("High contrast");
+        highContrastStep.Parameters[VisionPipelineOverlayMergeService.RenderPresetParameter] =
+            VisionPipelineOverlayRenderPreset.HighContrast.ToString();
+        highContrastStep.Parameters[VisionPipelineOverlayMergeService.LabelModeParameter] =
+            VisionPipelineOverlayLabelMode.NameWithCoordinates.ToString();
+        highContrastStep.Parameters[VisionPipelineOverlayMergeService.LineWidthParameter] = "4";
+        highContrastStep.Parameters[VisionPipelineOverlayMergeService.PointSizeParameter] = "6";
+        highContrastStep.Parameters[VisionPipelineOverlayMergeService.LabelBackgroundParameter] = "true";
+        highContrastStep.Parameters[VisionPipelineOverlayMergeService.LabelMarginParameter] = "3";
+        VisionPipelineStep colorBlindStep = CreateCvr20OverlayStep("Color blind safe");
+        colorBlindStep.Parameters[VisionPipelineOverlayMergeService.RenderPresetParameter] =
+            VisionPipelineOverlayRenderPreset.ColorBlindSafe.ToString();
+        colorBlindStep.Parameters[VisionPipelineOverlayMergeService.LabelModeParameter] =
+            VisionPipelineOverlayLabelMode.Name.ToString();
+
+        VisionToolResult legacy = VisionPipelineOverlayMergeService.Execute(legacyStep, input, priorRun);
+        VisionToolResult explicitLegacy = VisionPipelineOverlayMergeService.Execute(explicitLegacyStep, input, priorRun);
+        VisionToolResult highContrast = VisionPipelineOverlayMergeService.Execute(highContrastStep, input, priorRun);
+        VisionToolResult colorBlind = VisionPipelineOverlayMergeService.Execute(colorBlindStep, input, priorRun);
+        try
+        {
+            if (!legacy.Success || !explicitLegacy.Success || !highContrast.Success || !colorBlind.Success)
+            {
+                throw new InvalidOperationException("CVR-20 runtime rendering case failed unexpectedly.");
+            }
+
+            double legacyDelta = Cv.Norm(
+                legacy.ResultImage,
+                explicitLegacy.ResultImage,
+                OpenCvSharp.NormTypes.L1);
+            double displayDelta = Cv.Norm(
+                legacy.ResultImage,
+                highContrast.ResultImage,
+                OpenCvSharp.NormTypes.L1);
+            if (legacyDelta != 0D || displayDelta <= 0D)
+            {
+                throw new InvalidOperationException(
+                    $"CVR-20 legacy compatibility/display delta failed. Legacy={legacyDelta}, Display={displayDelta}");
+            }
+
+            string[] metricNames =
+            {
+                VisionPipelineKnownMetrics.ResultCount,
+                VisionPipelineKnownMetrics.MergeOverlayCount,
+                VisionPipelineKnownMetrics.MergeSourceCount
+            };
+            foreach (string metricName in metricNames)
+            {
+                double expected = legacy.Metrics[metricName];
+                if (explicitLegacy.Metrics[metricName] != expected
+                    || highContrast.Metrics[metricName] != expected
+                    || colorBlind.Metrics[metricName] != expected)
+                {
+                    throw new InvalidOperationException(
+                        "CVR-20 display-only settings changed metric " + metricName + ".");
+                }
+            }
+
+            bool[] acceptance =
+            {
+                VisionPipelineAcceptanceEvaluator.Evaluate(legacyStep, legacy).Passed,
+                VisionPipelineAcceptanceEvaluator.Evaluate(explicitLegacyStep, explicitLegacy).Passed,
+                VisionPipelineAcceptanceEvaluator.Evaluate(highContrastStep, highContrast).Passed,
+                VisionPipelineAcceptanceEvaluator.Evaluate(colorBlindStep, colorBlind).Passed
+            };
+            if (acceptance.Any(value => !value)
+                || new[] { legacy, explicitLegacy, highContrast, colorBlind }
+                    .Any(result => result.Overlays.Count != overlays.Length))
+            {
+                throw new InvalidOperationException(
+                    "CVR-20 display-only settings changed acceptance or overlay evidence.");
+            }
+
+            Cv.ImWrite(Path.Combine(evidenceDirectory, "legacy.png"), legacy.ResultImage);
+            Cv.ImWrite(Path.Combine(evidenceDirectory, "high_contrast_coordinates.png"), highContrast.ResultImage);
+            Cv.ImWrite(Path.Combine(evidenceDirectory, "color_blind_safe.png"), colorBlind.ResultImage);
+
+            string reportRecipeName =
+                "Smoke_Cvr20Runtime_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+            try
+            {
+                VisionPipeline reportPipeline = new VisionPipeline { Name = "CVR20_Rendering_Evidence" };
+                reportPipeline.Steps.Add(sourceStep);
+                reportPipeline.Steps.Add(highContrastStep);
+                VisionPipelineRunResult reportRun = new VisionPipelineRunResult();
+                reportRun.StepResults.Add(new VisionPipelineStepResult
+                {
+                    Step = sourceStep,
+                    ToolResult = sourceToolResult,
+                    AcceptancePassed = true
+                });
+                reportRun.StepResults.Add(new VisionPipelineStepResult
+                {
+                    Step = highContrastStep,
+                    ToolResult = highContrast,
+                    AcceptancePassed = true
+                });
+                DateTime reportStartedAt = DateTime.UtcNow;
+                string reportPath = VisionPipelineRunReportStorage.Save(
+                    reportRecipeName,
+                    reportPipeline,
+                    reportRun,
+                    reportStartedAt,
+                    reportStartedAt.AddMilliseconds(1),
+                    false,
+                    "CVR20");
+                VisionPipelineRunReport storedReport =
+                    VisionPipelineRunReportStorage.Load(reportPath)
+                    ?? throw new InvalidOperationException(
+                        "CVR-20 saved Run Report could not be reloaded.");
+                VisionPipelineStepRunReport storedOverlay =
+                    storedReport.Steps.Single(step => VisionPipelineOverlayMergeService.IsMergeTool(step.ToolType));
+                Dictionary<string, string> storedParameters = storedOverlay.Parameters
+                    .ToDictionary(parameter => parameter.Key, parameter => parameter.Value, StringComparer.OrdinalIgnoreCase);
+                if (!string.Equals(
+                        storedParameters.GetValueOrDefault(
+                            VisionPipelineOverlayMergeService.RenderPresetParameter),
+                        VisionPipelineOverlayRenderPreset.HighContrast.ToString(),
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        storedParameters.GetValueOrDefault(
+                            VisionPipelineOverlayMergeService.LabelModeParameter),
+                        VisionPipelineOverlayLabelMode.NameWithCoordinates.ToString(),
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        storedParameters.GetValueOrDefault(
+                            VisionPipelineOverlayMergeService.LineWidthParameter),
+                        "4",
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "CVR-20 Run Report did not retain rendering parameters.");
+                }
+
+                File.Copy(
+                    reportPath,
+                    Path.Combine(evidenceDirectory, "run_report.xml"),
+                    true);
+                File.Copy(
+                    Path.Combine(
+                        Path.GetDirectoryName(reportPath) ?? string.Empty,
+                        storedReport.PipelineSnapshotFile),
+                    Path.Combine(evidenceDirectory, "pipeline_snapshot.xml"),
+                    true);
+            }
+            finally
+            {
+                RecipeWorkspaceService.DeleteVisionWorkspace(reportRecipeName);
+            }
+
+            VisionPipeline invalidPipeline = new VisionPipeline { Name = "Invalid overlay rendering" };
+            invalidPipeline.Steps.Add(sourceStep);
+            VisionPipelineStep invalidOverlay = CreateCvr20OverlayStep("Invalid width");
+            invalidOverlay.Parameters[VisionPipelineOverlayMergeService.LineWidthParameter] = "9";
+            invalidPipeline.Steps.Add(invalidOverlay);
+            VisionPipelineValidationResult invalidValidation =
+                VisionPipelineValidator.Validate(invalidPipeline, new[] { "Main" });
+            if (invalidValidation.Success
+                || !invalidValidation.Errors.Any(error => error.Contains(
+                    VisionPipelineOverlayMergeService.LineWidthParameter,
+                    StringComparison.Ordinal)))
+            {
+                throw new InvalidOperationException(
+                    "CVR-20 invalid rendering bound did not fail closed.");
+            }
+
+            File.WriteAllLines(
+                Path.Combine(evidenceDirectory, "overlay_rendering_contract.txt"),
+                new[]
+                {
+                    "LegacyMissingKeysPixelDelta=" + legacyDelta.ToString(CultureInfo.InvariantCulture),
+                    "HighContrastPixelDelta=" + displayDelta.ToString(CultureInfo.InvariantCulture),
+                    "MetricsUnchanged=true",
+                    "AcceptanceUnchanged=true",
+                    "OverlayEvidenceUnchanged=true",
+                    "RunReportRenderingParametersRetained=true",
+                    "InvalidLineWidthRejected=true"
+                });
+        }
+        finally
+        {
+            legacy.ResultImage?.Dispose();
+            explicitLegacy.ResultImage?.Dispose();
+            highContrast.ResultImage?.Dispose();
+            colorBlind.ResultImage?.Dispose();
+            sourceToolResult.ResultImage?.Dispose();
+        }
+    }
+
+    private static VisionPipelineStep CreateCvr20OverlayStep(string name)
+    {
+        VisionPipelineStep step = new VisionPipelineStep
+        {
+            Name = name,
+            ToolType = "OverlayMerge",
+            InputLayer = "Main",
+            OutputLayer = name.Replace(" ", "_") + "_Result",
+            UseAcceptance = true,
+            ExpectedSuccess = true,
+            AcceptanceMetricName = VisionPipelineKnownMetrics.MergeOverlayCount,
+            UseAcceptanceMetricMinimum = true,
+            AcceptanceMetricMinimum = 3,
+            UseAcceptanceMetricMaximum = true,
+            AcceptanceMetricMaximum = 3
+        };
+        step.Parameters["SourceSteps"] = "Detected objects";
+        step.Parameters["BurnIn"] = "true";
+        return step;
+    }
+
     private static void CaptureRecipeFixturePropertyStep(
         OpenVisionShellHostView shellHost,
         OpenVisionRecipePipelineStepPreview step,
@@ -5631,6 +6209,7 @@ internal static class Program
         bool captureReviewQueue = false)
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        AssertApprovedValidationVariants();
         string recipeName = "Smoke_LocalValidationSet_" + Guid.NewGuid().ToString("N");
         const string pipelineName = "Local_Set_Pipeline";
         VisionPipelineSampleCatalogItem sample = VisionPipelineSampleCatalogItem.LoadRunnable()
@@ -5703,11 +6282,19 @@ internal static class Program
                 if (!shellHost.RecipeCommands.AddValidationSetImagesForTest(
                         OpenVisionRecipeValidationSetImage.ExpectedOk,
                         new[] { sample.ImageFullPath },
-                        "Known-good reference")
+                        "Known-good reference",
+                        "FixtureReference",
+                        "",
+                        "",
+                        "")
                     || !shellHost.RecipeCommands.AddValidationSetImagesForTest(
                         OpenVisionRecipeValidationSetImage.ExpectedNg,
                         new[] { ngImagePath },
-                        "Expected rejection probe"))
+                        "Expected rejection probe",
+                        "FixtureReject",
+                        "",
+                        "",
+                        ""))
                 {
                     throw new InvalidOperationException("Local validation set image registration failed.");
                 }
@@ -5790,6 +6377,12 @@ internal static class Program
                 if (shellHost.RecipeCommands.SelectedValidationSetOption?.MissingCount != 0
                     || !string.Equals(repairedRow.Expected, OpenVisionRecipeValidationSetImage.ExpectedNg, StringComparison.Ordinal)
                     || !string.Equals(repairedRow.Notes, "Expected rejection probe", StringComparison.Ordinal)
+                    || !string.Equals(repairedRow.VariantId, "FixtureReject", StringComparison.Ordinal)
+                    || !string.IsNullOrWhiteSpace(repairedRow.ExpectedMetricText)
+                    || !string.Equals(shellHost.RecipeCommands.ValidationSetPendingVariantId, "FixtureReject", StringComparison.Ordinal)
+                    || !string.IsNullOrWhiteSpace(shellHost.RecipeCommands.ValidationSetPendingMetricName)
+                    || !string.IsNullOrWhiteSpace(shellHost.RecipeCommands.ValidationSetPendingMetricMinimum)
+                    || !string.IsNullOrWhiteSpace(shellHost.RecipeCommands.ValidationSetPendingMetricMaximum)
                     || shellHost.RecipeCommands.ValidationSetImageRows.Any(row =>
                         string.Equals(row.Path, ngImagePath, StringComparison.OrdinalIgnoreCase))
                     || shellHost.RecipeCommands.RepairValidationSetImagePathCommand.CanExecute(null)
@@ -5798,6 +6391,35 @@ internal static class Program
                     throw new InvalidOperationException(
                         "Repaired local validation image did not preserve metadata or re-enable explicit suite run. "
                         + shellHost.RecipeCommands.ValidationSetSelectionSummaryText);
+                }
+
+                shellHost.RecipeCommands.ValidationSetPendingMetricName = "ResultCount";
+                shellHost.RecipeCommands.ValidationSetPendingMetricMinimum = "10";
+                shellHost.RecipeCommands.ValidationSetPendingMetricMaximum = "1";
+                shellHost.RecipeCommands.ApplyValidationSetVariantContractCommand.Execute(null);
+                if (!shellHost.RecipeCommands.ValidationSuiteStatusText.Contains("ERROR", StringComparison.OrdinalIgnoreCase)
+                    || !string.IsNullOrWhiteSpace(repairedRow.ExpectedMetricText))
+                {
+                    throw new InvalidOperationException("Invalid Validation Variant range did not fail closed.");
+                }
+
+                shellHost.RecipeCommands.ResetValidationSetVariantContractCommand.Execute(null);
+                OpenVisionRecipeValidationSetImageRow resetRow = shellHost.RecipeCommands.ValidationSetImageRows
+                    .Single(row => string.Equals(row.Path, repairedNgImagePath, StringComparison.OrdinalIgnoreCase));
+                if (!string.Equals(resetRow.VariantId, "Default", StringComparison.Ordinal)
+                    || !string.IsNullOrWhiteSpace(resetRow.ExpectedMetricText))
+                {
+                    throw new InvalidOperationException("Validation Variant reset did not restore Default/no-gate.");
+                }
+
+                shellHost.RecipeCommands.SelectedValidationSetImageRow = resetRow;
+                shellHost.RecipeCommands.ValidationSetPendingVariantId = "FixtureReject";
+                shellHost.RecipeCommands.ApplyValidationSetVariantContractCommand.Execute(null);
+                repairedRow = shellHost.RecipeCommands.ValidationSetImageRows
+                    .Single(row => string.Equals(row.Path, repairedNgImagePath, StringComparison.OrdinalIgnoreCase));
+                if (!string.Equals(repairedRow.VariantId, "FixtureReject", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Validation Variant explicit Apply did not persist after Reset.");
                 }
 
                 if (shellHost.NativePreviewRunCount != previewRunsBefore
@@ -5859,6 +6481,12 @@ internal static class Program
                             result.ActualOutcome,
                             VisionPipelineBatchOutcomeContract.OkOutcome,
                             StringComparison.Ordinal))
+                    || savedSummary.Results.Count(result =>
+                        string.Equals(result.VariantId, "FixtureReference", StringComparison.Ordinal)
+                        && string.IsNullOrWhiteSpace(result.ExpectedMetricName)) != 1
+                    || savedSummary.Results.Count(result =>
+                        string.Equals(result.VariantId, "FixtureReject", StringComparison.Ordinal)
+                        && string.IsNullOrWhiteSpace(result.ExpectedMetricName)) != 1
                     || savedSummary.Results.Count(result => result.HasJudgment && result.JudgmentCorrect) != 3
                     || savedSummary.Results.Count(result =>
                         result.HasJudgment
@@ -5904,6 +6532,20 @@ internal static class Program
                         + $"Rows={savedSummary.ReviewQueue.Count}, RebuiltHash='{rebuiltReviewQueue.Sha256}'.");
                 }
                 AssertReviewQueueMetricExtremes(savedSummary);
+                VisionPipelineBatchRunSummary incompatibleSummary =
+                    VisionPipelineBatchRunSummaryStorage.Load(savedRun.SummaryPath);
+                incompatibleSummary.Results[0].VariantId = "DifferentVariant";
+                IReadOnlyList<OpenVisionRecipeBatchRunComparisonRow> incompatibleRows =
+                    OpenVisionRecipeRunHistoryPresenter.BuildComparisonRows(
+                        savedRun,
+                        savedRun,
+                        savedSummary,
+                        incompatibleSummary);
+                if (incompatibleRows.Any(row => row?.IsComparable == true))
+                {
+                    throw new InvalidOperationException(
+                        "Run History merged incompatible Validation Variant contracts.");
+                }
 
                 VisionPipelineBatchSampleRunResult[] judgmentCases =
                 {
@@ -6298,6 +6940,12 @@ internal static class Program
                     "HostRecipeCreateValidationSetButton",
                     "HostRecipeDeleteValidationSetButton",
                     "HostRecipeValidationSetNotesTextBox",
+                    "HostRecipeValidationVariantIdTextBox",
+                    "HostRecipeValidationMetricNameTextBox",
+                    "HostRecipeValidationMetricMinimumTextBox",
+                    "HostRecipeValidationMetricMaximumTextBox",
+                    "HostRecipeApplyValidationVariantButton",
+                    "HostRecipeResetValidationVariantButton",
                     "HostRecipeAddValidationSetOkImagesButton",
                     "HostRecipeAddValidationSetNgImagesButton",
                     "HostRecipeAddValidationSetOkFolderButton",
@@ -6402,7 +7050,7 @@ internal static class Program
                 }
                 else
                 {
-                    evidenceBoard.BringIntoView();
+                    editor.BringIntoView();
                 }
                 shellHost.UpdateLayout();
                 Pump(100);
@@ -6411,6 +7059,45 @@ internal static class Program
         finally
         {
             RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static void AssertApprovedValidationVariants()
+    {
+        Dictionary<string, (string Minimum, string Maximum)> approved =
+            new Dictionary<string, (string Minimum, string Maximum)>(StringComparer.Ordinal)
+            {
+                ["Product_Field_FilmStripe_SurfaceReview"] = ("3", "8"),
+                ["Product_Field_TexturedRoller_SurfaceReview"] = ("1", "4")
+            };
+        Dictionary<string, VisionPipelineSampleCatalogItem> samples =
+            VisionPipelineSampleCatalogItem.LoadRunnable(VisionPipelineSampleCatalogSourceKind.Product)
+                .Where(item => item != null && approved.ContainsKey(item.SampleName))
+                .ToDictionary(item => item.SampleName, StringComparer.Ordinal);
+        foreach (KeyValuePair<string, (string Minimum, string Maximum)> variant in approved)
+        {
+            if (!samples.TryGetValue(variant.Key, out VisionPipelineSampleCatalogItem? sample)
+                || sample == null
+                || !string.Equals(sample.ExpectedMetricName, "ResultCount", StringComparison.Ordinal)
+                || !string.Equals(sample.ExpectedMetricMinimum, variant.Value.Minimum, StringComparison.Ordinal)
+                || !string.Equals(sample.ExpectedMetricMaximum, variant.Value.Maximum, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Approved Validation Variant is missing or its catalog gate changed: " + variant.Key);
+            }
+
+            VisionPipelineSampleCheckResult result =
+                VisionPipelineSampleCheckService.RunSampleCheckSafe(sample);
+            if (!result.ExecutionCompleted || !result.Success)
+            {
+                throw new InvalidOperationException(
+                    "Approved Validation Variant failed its existing deterministic pipeline/gate: "
+                    + variant.Key
+                    + " | "
+                    + result.Message
+                    + " | "
+                    + result.MetricReviewText);
+            }
         }
     }
 
@@ -7501,12 +8188,31 @@ internal static class Program
             VisionPipelineBatchRunSummaryStorage.BatchReviewQueue scaleQueue =
                 VisionPipelineBatchRunSummaryStorage.BuildReviewQueue(scaleRows);
             if (scaleQueue.Entries.Count != 6
-                || scaleQueue.Entries.Count(entry => entry.Reasons.Contains("hash-audit:OK", StringComparer.Ordinal)) != 3
-                || scaleQueue.Entries.Count(entry => entry.Reasons.Contains("hash-audit:NG", StringComparer.Ordinal)) != 3)
+                || scaleQueue.Entries.Count(entry =>
+                    entry.Reasons.Contains("hash-audit:VARIANT:Default|ROLE:OK", StringComparer.Ordinal)) != 3
+                || scaleQueue.Entries.Count(entry =>
+                    entry.Reasons.Contains("hash-audit:VARIANT:Default|ROLE:NG", StringComparer.Ordinal)) != 3)
             {
                 throw new InvalidOperationException(
                     "Review-queue 500-row bounded hash audit was not 3 rows per declared stratum. "
                     + "Rows=" + scaleQueue.Entries.Count.ToString(CultureInfo.InvariantCulture));
+            }
+
+            VisionPipelineBatchRunSummaryStorage.BatchReviewQueue legacyScaleQueue =
+                VisionPipelineBatchRunSummaryStorage.BuildReviewQueue(
+                    scaleRows,
+                    VisionPipelineBatchRunSummaryStorage.LegacyReviewQueuePolicyV2);
+            if (!string.Equals(
+                    legacyScaleQueue.Policy,
+                    VisionPipelineBatchRunSummaryStorage.LegacyReviewQueuePolicyV2,
+                    StringComparison.Ordinal)
+                || legacyScaleQueue.Entries.Count(entry =>
+                    entry.Reasons.Contains("hash-audit:OK", StringComparer.Ordinal)) != 3
+                || legacyScaleQueue.Entries.Count(entry =>
+                    entry.Reasons.Contains("hash-audit:NG", StringComparer.Ordinal)) != 3)
+            {
+                throw new InvalidOperationException(
+                    "Legacy review-queue v2 strata no longer rebuild for backward compatibility.");
             }
         }
         finally
@@ -20512,6 +21218,147 @@ internal static class Program
         return CaptureElement(view, outputPath, 1180, 890);
     }
 
+    private static CaptureResult CaptureCvr10MultiMatchMeanReview(string outputPath)
+    {
+        using Bitmap preview = new(640, 400);
+        using (Graphics graphics = Graphics.FromImage(preview))
+        {
+            graphics.Clear(DrawingColor.FromArgb(28, 28, 28));
+            (int X, int Y, bool Accepted)[] instances =
+            {
+                (130, 110, true),
+                (390, 96, true),
+                (150, 292, false),
+                (410, 276, true)
+            };
+            using System.Drawing.Pen locatorPen = new(DrawingColor.Gainsboro, 3F);
+            using System.Drawing.Pen okPen = new(DrawingColor.LimeGreen, 3F);
+            using System.Drawing.Pen ngPen = new(DrawingColor.OrangeRed, 3F);
+            for (int index = 0; index < instances.Length; index++)
+            {
+                (int x, int y, bool accepted) = instances[index];
+                graphics.DrawRectangle(locatorPen, x - 20, y - 20, 40, 40);
+                graphics.DrawLine(locatorPen, x - 12, y - 12, x + 12, y + 12);
+                graphics.DrawEllipse(locatorPen, x - 11, y + 3, 12, 12);
+                graphics.DrawRectangle(
+                    accepted ? okPen : ngPen,
+                    x + 40,
+                    y - 2,
+                    30,
+                    24);
+            }
+        }
+
+        VisionPipelineInstanceResult[] rows =
+        {
+            new() { Number = 1, InstanceId = "I01", SourceStep = "01 Locate Four Instances", Accepted = true, Score = 1, CenterX = 130, CenterY = 110, Angle = 0, Scale = 1, RoiCenterX = 185, RoiCenterY = 120, RoiWidth = 30, RoiHeight = 24, RoiAngle = 0, MeanValue = 225, ValidPixelRatio = 1 },
+            new() { Number = 2, InstanceId = "I02", SourceStep = "01 Locate Four Instances", Accepted = true, Score = 1, CenterX = 390, CenterY = 96, Angle = 0, Scale = 1, RoiCenterX = 445, RoiCenterY = 106, RoiWidth = 30, RoiHeight = 24, RoiAngle = 0, MeanValue = 225, ValidPixelRatio = 0.573 },
+            new() { Number = 3, InstanceId = "I03", SourceStep = "01 Locate Four Instances", Accepted = false, Score = 1, CenterX = 150, CenterY = 292, Angle = 0, Scale = 1, RoiCenterX = 205, RoiCenterY = 302, RoiWidth = 30, RoiHeight = 24, RoiAngle = 0, MeanValue = 65, ValidPixelRatio = 0.528, RejectReason = "Mean 65 is outside 170..255" },
+            new() { Number = 4, InstanceId = "I04", SourceStep = "01 Locate Four Instances", Accepted = true, Score = 1, CenterX = 410, CenterY = 276, Angle = 0, Scale = 1, RoiCenterX = 465, RoiCenterY = 286, RoiWidth = 30, RoiHeight = 24, RoiAngle = 0, MeanValue = 225, ValidPixelRatio = 0.329 }
+        };
+        VisionPipelineStep step = new()
+        {
+            Name = "02 Inspect Every Instance Pad",
+            ToolType = "MultiMatchMean",
+            Enabled = true,
+            InputLayer = "Main",
+            OutputLayer = "InstanceInspection"
+        };
+        AddParameters(
+            step,
+            ("SOURCE_STEP", "01 Locate Four Instances"),
+            ("RELATIVE_ROI", "170,108,30,24"),
+            ("MIN_INSTANCES", "4"),
+            ("MAX_INSTANCES", "4"),
+            ("MIN_MEAN", "170"),
+            ("MAX_MEAN", "255"),
+            ("REQUIRE_ALL", "true"));
+
+        OpenVisionPipelineReviewView view = new();
+        int reviewRequests = 0;
+        view.RunReviewRequested += (_, _) => reviewRequests++;
+        view.SetPipelineHeader("CVR10 Multi-Instance Fan-Out", 2);
+        view.SetRecipeContext("Deterministic Multi-Instance Review");
+        view.SetReviewProgress("OK 0 / NG 1 / WAIT 0");
+        view.SetSteps(new[]
+        {
+            new PipelineFlowStepItem
+            {
+                Index = 0,
+                Name = "01 Locate Four Instances",
+                ToolType = "Matching",
+                InputLayer = "Main",
+                OutputLayer = "InstanceMatches",
+                FlowStateText = "Main -> InstanceMatches",
+                StatusText = "OK",
+                Status = PipelineFlowStepStatus.Passed,
+                HasInputImage = true,
+                HasOutputImage = true
+            },
+            new PipelineFlowStepItem
+            {
+                Index = 1,
+                Name = "02 Inspect Every Instance Pad",
+                ToolType = "MultiMatchMean",
+                InputLayer = "Main",
+                OutputLayer = "InstanceInspection",
+                FlowStateText = "Branch Main -> InstanceInspection",
+                StatusText = "NG",
+                Status = PipelineFlowStepStatus.Failed,
+                HasInputImage = true,
+                HasOutputImage = true
+            }
+        });
+        view.SelectStep(1, PipelineFlowPreviewMode.Overlay);
+        view.SetNavigationState(1, 2);
+        view.SetIssueNavigationState(true);
+        view.SetSelectedStep(
+            "02 Inspect Every Instance Pad",
+            "MultiMatchMean",
+            "NG",
+            "Main",
+            preview,
+            "InstanceInspection",
+            preview,
+            "Matching fan-out / stable row-major I01..I04",
+            "SOURCE_STEP=01 Locate Four Instances / RELATIVE_ROI=170,108,30,24 / REQUIRE_ALL=true",
+            "Explicit Run / InstancePassCount=3 / InstanceFailCount=1 / InstanceAggregatePassed=0");
+        view.SetValidation(
+            "VALID",
+            "Matching source and exact InstanceAggregatePassed=1 acceptance are valid.");
+        view.SetResultSummary(
+            "NG / 3 of 4 instances passed",
+            "I03 rejected: Mean 65 is outside 170..255.");
+        view.SetReviewGuide(new OpenVisionPipelineReviewGuideState(
+            "2 / 2",
+            "02 Inspect Every Instance Pad",
+            "Review I03 and adjust the recipe only if the physical requirement changed.",
+            "NG / one instance rejected",
+            "Stable row-major instances I01..I04 were inspected in one explicit Run. I03 failed the fixed relative-ROI Mean range."));
+        view.SetObjectResults(
+            false,
+            step,
+            Array.Empty<VisionPipelineObjectResult>(),
+            preview,
+            preview);
+        view.SetInstanceResults(true, rows);
+        if (view.InstanceResultCountForTest != 4
+            || !string.Equals(view.SelectedInstanceIdForTest, "I03", StringComparison.Ordinal)
+            || !view.HasObjectHighlight
+            || reviewRequests != 0)
+        {
+            throw new InvalidOperationException(
+                "CVR-10 Instance Results did not select and highlight the first rejected stable instance without another Run.");
+        }
+
+        view.Measure(new System.Windows.Size(1400, 1150));
+        view.Arrange(new System.Windows.Rect(0, 0, 1400, 1150));
+        view.UpdateLayout();
+        view.SelectInstanceForTest(2);
+        Pump(4);
+        return CaptureElement(view, outputPath, 1400, 1150);
+    }
+
     private static CaptureResult CaptureCvr05ObjectMetricDistribution(string outputPath)
     {
         using Bitmap preview = new(640, 420);
@@ -26124,6 +26971,7 @@ internal static class Program
                     property.NUM_MATCH = 1;
                     property.USE_UNIQUE_MATCH_VALIDATION = true;
                     property.UNIQUE_MATCH_MIN_SCORE_MARGIN = 0.07D;
+                    property.ALLOW_GLOBAL_POLARITY_REVERSAL = true;
                     property.SEARCH_STEP = 2;
                     property.USE_POSITION_REFINE = true;
                     property.USE_SUBPIXEL_REFINE = true;
@@ -26152,6 +27000,10 @@ internal static class Program
                     "UNIQUE_MATCH_MIN_SCORE_MARGIN",
                     0.07D,
                     0.000001D);
+                AssertFloatingSelectedObjectBooleanProperty(
+                    "EdgeBasedMatching global-polarity option",
+                    "ALLOW_GLOBAL_POLARITY_REVERSAL",
+                    true);
                 AssertFloatingSelectedObjectBooleanProperty(
                     "EdgeBasedMatching grayscale edge default",
                     "USE_THRESHOLD",
@@ -26349,6 +27201,7 @@ internal static class Program
                     || !step.Parameters.ContainsKey("SCORE_MIN")
                     || !string.Equals(step.Parameters["USE_UNIQUE_MATCH_VALIDATION"], "true", StringComparison.OrdinalIgnoreCase)
                     || !string.Equals(step.Parameters["UNIQUE_MATCH_MIN_SCORE_MARGIN"], "0.07", StringComparison.Ordinal)
+                    || !string.Equals(step.Parameters["ALLOW_GLOBAL_POLARITY_REVERSAL"], "true", StringComparison.OrdinalIgnoreCase)
                     || !string.Equals(step.Parameters["USE_THRESHOLD"], "false", StringComparison.OrdinalIgnoreCase)
                     || !string.Equals(step.Parameters["USE_ADAPTIVE_THRESHOLD"], "false", StringComparison.OrdinalIgnoreCase)
                     || !step.Parameters.ContainsKey("CANNY_LOW"))
@@ -26360,6 +27213,7 @@ internal static class Program
                     VisionPipelineStepPropertyMapper.CreateProperty(step) as EdgeBasedMatchingProperty;
                 if (roundTripProperty == null
                     || !roundTripProperty.USE_UNIQUE_MATCH_VALIDATION
+                    || !roundTripProperty.ALLOW_GLOBAL_POLARITY_REVERSAL
                     || roundTripProperty.USE_THRESHOLD
                     || roundTripProperty.USE_ADAPTIVE_THRESHOLD
                     || Math.Abs(roundTripProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN - 0.07D) > 0.000001D)
@@ -26418,6 +27272,7 @@ internal static class Program
                     || !string.Equals(applyStep.Parameters["SCORE_MIN"], step.Parameters["SCORE_MIN"], StringComparison.Ordinal)
                     || !string.Equals(applyStep.Parameters["USE_UNIQUE_MATCH_VALIDATION"], "true", StringComparison.OrdinalIgnoreCase)
                     || !string.Equals(applyStep.Parameters["UNIQUE_MATCH_MIN_SCORE_MARGIN"], "0.07", StringComparison.Ordinal)
+                    || !string.Equals(applyStep.Parameters["ALLOW_GLOBAL_POLARITY_REVERSAL"], "true", StringComparison.OrdinalIgnoreCase)
                     || !string.Equals(applyStep.Parameters["USE_THRESHOLD"], "false", StringComparison.OrdinalIgnoreCase)
                     || !string.Equals(applyStep.Parameters["USE_ADAPTIVE_THRESHOLD"], "false", StringComparison.OrdinalIgnoreCase)
                     || !string.Equals(applyStep.Parameters["CANNY_LOW"], step.Parameters["CANNY_LOW"], StringComparison.Ordinal))
@@ -26446,14 +27301,16 @@ internal static class Program
                 VisionPipelineStep legacyStep = CloneStep(step);
                 legacyStep.Parameters.Remove("USE_UNIQUE_MATCH_VALIDATION");
                 legacyStep.Parameters.Remove("UNIQUE_MATCH_MIN_SCORE_MARGIN");
+                legacyStep.Parameters.Remove("ALLOW_GLOBAL_POLARITY_REVERSAL");
                 EdgeBasedMatchingProperty? legacyProperty =
                     VisionPipelineStepPropertyMapper.CreateProperty(legacyStep) as EdgeBasedMatchingProperty;
                 if (legacyProperty == null
                     || legacyProperty.USE_UNIQUE_MATCH_VALIDATION
+                    || legacyProperty.ALLOW_GLOBAL_POLARITY_REVERSAL
                     || Math.Abs(legacyProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN - 0.03D) > 0.000001D)
                 {
                     throw new InvalidOperationException(
-                        "Legacy EdgeBasedMatching XML without unique-match keys did not restore disabled/0.03 defaults.");
+                        "Legacy EdgeBasedMatching XML without unique-match/polarity keys did not restore disabled defaults.");
                 }
 
                 VisionPipeline validPipeline = new VisionPipeline { Name = "P224 Unique Match Valid" };
@@ -26478,6 +27335,20 @@ internal static class Program
                 {
                     throw new InvalidOperationException(
                         "Unique-match validator did not fail closed for NUM_MATCH=2.");
+                }
+
+                VisionPipeline invalidPolarityPipeline = new VisionPipeline { Name = "CVR-11 Invalid Polarity" };
+                VisionPipelineStep invalidPolarityStep = CloneStep(step);
+                invalidPolarityStep.Parameters["ALLOW_GLOBAL_POLARITY_REVERSAL"] = "sometimes";
+                invalidPolarityPipeline.Steps.Add(invalidPolarityStep);
+                VisionPipelineValidationResult invalidPolarityDefinition =
+                    VisionPipelineValidator.Validate(invalidPolarityPipeline, new[] { "Main" });
+                if (invalidPolarityDefinition.Success
+                    || !invalidPolarityDefinition.Errors.Any(error =>
+                        error.Contains("must be true or false", StringComparison.Ordinal)))
+                {
+                    throw new InvalidOperationException(
+                        "Global-polarity validator did not fail closed for a non-Boolean value.");
                 }
 
                 autoMPointTemplatePath = step.Parameters["PATTERN_PATH"];

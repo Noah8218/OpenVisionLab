@@ -285,6 +285,7 @@ namespace OpenVisionLab
                 NUM_MATCH = GetInt(parameters, nameof(EdgeBasedMatchingProperty.NUM_MATCH), 1),
                 USE_UNIQUE_MATCH_VALIDATION = GetBool(parameters, nameof(EdgeBasedMatchingProperty.USE_UNIQUE_MATCH_VALIDATION), false),
                 UNIQUE_MATCH_MIN_SCORE_MARGIN = GetDouble(parameters, nameof(EdgeBasedMatchingProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN), 0.03),
+                ALLOW_GLOBAL_POLARITY_REVERSAL = GetBool(parameters, nameof(EdgeBasedMatchingProperty.ALLOW_GLOBAL_POLARITY_REVERSAL), false),
                 PATTERN_PATH = GetString(parameters, nameof(EdgeBasedMatchingProperty.PATTERN_PATH), GetString(parameters, "TemplatePath", string.Empty)),
                 USE_FIND_ANGLE = GetBool(parameters, nameof(EdgeBasedMatchingProperty.USE_FIND_ANGLE), false),
                 FIND_ANGLE = GetDouble(parameters, nameof(EdgeBasedMatchingProperty.FIND_ANGLE), 1.0),

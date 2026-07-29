@@ -45,6 +45,8 @@ namespace OpenVisionLab
             ["MEAN_TYPES"] = typeof(MeanType),
             ["MeasurementMode"] = typeof(PinArrayGapMeasurementMode),
             ["EDGE_POLARITY"] = typeof(CircleGaugeEdgePolarity),
+            [VisionPipelineOverlayMergeService.RenderPresetParameter] = typeof(VisionPipelineOverlayRenderPreset),
+            [VisionPipelineOverlayMergeService.LabelModeParameter] = typeof(VisionPipelineOverlayLabelMode),
             [VisionPipelineFixtureFrameService.ApplyModeParameter] = typeof(VisionPipelineFixtureApplyMode)
         };
 
@@ -96,6 +98,9 @@ namespace OpenVisionLab
             "ScharrDegreeY",
             "LaplacianKernelSize",
             "MaxPoints",
+            VisionPipelineOverlayMergeService.LineWidthParameter,
+            VisionPipelineOverlayMergeService.PointSizeParameter,
+            VisionPipelineOverlayMergeService.LabelMarginParameter,
             "HueMin",
             "HueMax",
             "SaturationMin",
@@ -127,6 +132,11 @@ namespace OpenVisionLab
             VisionPipelineFixtureFrameService.ReferenceImageHeightParameter,
             VisionPipelineLineFixtureService.MinimumSupportAParameter,
             VisionPipelineLineFixtureService.MinimumSupportBParameter,
+            VisionPipelineMultiMatchMeanService.ReferenceImageWidthParameter,
+            VisionPipelineMultiMatchMeanService.ReferenceImageHeightParameter,
+            VisionPipelineMultiMatchMeanService.MinimumInstancesParameter,
+            VisionPipelineMultiMatchMeanService.MaximumInstancesParameter,
+            VisionPipelineMultiMatchMeanService.MinimumPassCountParameter,
             nameof(AffineTransformToolProperty.OutputWidth),
             nameof(AffineTransformToolProperty.OutputHeight)
         };
@@ -212,6 +222,18 @@ namespace OpenVisionLab
             VisionPipelineLineFixtureService.MaximumFitResidualBParameter,
             VisionPipelineLineFixtureService.MinimumIncludedAngleParameter,
             VisionPipelineLineFixtureService.MaximumIncludedAngleParameter,
+            VisionPipelineMultiMatchMeanService.ReferenceXParameter,
+            VisionPipelineMultiMatchMeanService.ReferenceYParameter,
+            VisionPipelineMultiMatchMeanService.ReferenceAngleParameter,
+            VisionPipelineMultiMatchMeanService.ReferenceScaleParameter,
+            VisionPipelineMultiMatchMeanService.RowToleranceParameter,
+            VisionPipelineMultiMatchMeanService.MaximumOverlapParameter,
+            VisionPipelineMultiMatchMeanService.MinimumMeanParameter,
+            VisionPipelineMultiMatchMeanService.MaximumMeanParameter,
+            VisionPipelineMultiMatchMeanService.MaximumAngleDeltaParameter,
+            VisionPipelineMultiMatchMeanService.MinimumScaleRatioParameter,
+            VisionPipelineMultiMatchMeanService.MaximumScaleRatioParameter,
+            VisionPipelineMultiMatchMeanService.MinimumValidPixelRatioParameter,
             nameof(AffineTransformToolProperty.SourcePoint1X),
             nameof(AffineTransformToolProperty.SourcePoint1Y),
             nameof(AffineTransformToolProperty.SourcePoint2X),
@@ -348,11 +370,13 @@ namespace OpenVisionLab
                     || string.Equals(key, "Invert", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, "BurnIn", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, "DrawLabels", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(key, VisionPipelineOverlayMergeService.LabelBackgroundParameter, StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, "AllowEmpty", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, "IgnoreLeftBorderTouching", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, VisionPipelineArithmeticStep.ParameterUseConstantInput, StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, VisionPipelineArithmeticStep.ParameterUseColorConstant, StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, "UseL2Gradient", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(key, VisionPipelineMultiMatchMeanService.RequireAllParameter, StringComparison.OrdinalIgnoreCase)
                     || string.Equals(key, VisionPipelineGeometryMeasureService.RequireResultInImageParameter, StringComparison.OrdinalIgnoreCase));
         }
     }

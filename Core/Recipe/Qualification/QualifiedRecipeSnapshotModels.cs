@@ -88,6 +88,18 @@ namespace OpenVisionLab
         [XmlAttribute]
         public string Sha256 { get; set; } = string.Empty;
 
+        [XmlAttribute]
+        public string VariantId { get; set; } = string.Empty;
+
+        [XmlAttribute]
+        public string ExpectedMetricName { get; set; } = string.Empty;
+
+        [XmlAttribute]
+        public string ExpectedMetricMinimum { get; set; } = string.Empty;
+
+        [XmlAttribute]
+        public string ExpectedMetricMaximum { get; set; } = string.Empty;
+
         public string Notes { get; set; } = string.Empty;
     }
 
@@ -212,6 +224,18 @@ namespace OpenVisionLab
 
         [XmlAttribute]
         public string SourceSha256 { get; set; } = string.Empty;
+
+        [XmlAttribute]
+        public string VariantId { get; set; } = string.Empty;
+
+        [XmlAttribute]
+        public string ExpectedMetricName { get; set; } = string.Empty;
+
+        [XmlAttribute]
+        public string ExpectedMetricMinimum { get; set; } = string.Empty;
+
+        [XmlAttribute]
+        public string ExpectedMetricMaximum { get; set; } = string.Empty;
 
         [XmlAttribute]
         public string ReportFile { get; set; } = string.Empty;

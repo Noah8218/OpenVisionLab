@@ -37,6 +37,8 @@ namespace OpenVisionLab
         public Dictionary<string, double> Metrics { get; set; } = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
         public IReadOnlyList<VisionPipelineObjectResult> ObjectResults { get; set; } = Array.Empty<VisionPipelineObjectResult>();
         public int ObjectResultCount => ObjectResults?.Count ?? 0;
+        public IReadOnlyList<VisionPipelineInstanceResult> InstanceResults { get; set; } = Array.Empty<VisionPipelineInstanceResult>();
+        public int InstanceResultCount => InstanceResults?.Count ?? 0;
         public IReadOnlyList<VisionPipelineGeometryFeatureResult> GeometryFeatures { get; set; } = Array.Empty<VisionPipelineGeometryFeatureResult>();
         public int GeometryFeatureCount => GeometryFeatures?.Count ?? 0;
         public VisionPipelineCircleEvidence CircleEvidence { get; set; }
@@ -91,6 +93,7 @@ namespace OpenVisionLab
                 Metrics = VisionPipelineKnownMetrics.OrderMetrics(toolResult?.Metrics)
                     .ToDictionary(metric => metric.Key, metric => metric.Value, StringComparer.OrdinalIgnoreCase),
                 ObjectResults = VisionPipelineObjectResultStore.Get(toolResult).ToList(),
+                InstanceResults = VisionPipelineInstanceResultStore.Get(toolResult).Select(item => item.Clone()).ToList(),
                 GeometryFeatures = VisionPipelineGeometryFeatureStore.Get(toolResult).Select(item => item.Clone()).ToList(),
                 CircleEvidence = VisionPipelineCircleEvidenceStore.Get(toolResult),
                 EdgeBasedMatchingDiagnostics = toolResult?.EdgeBasedMatchingDiagnostics?.Clone()

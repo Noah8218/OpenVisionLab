@@ -110,6 +110,17 @@ internal static class Program
                 && verified.Manifest.Counts.CorrectAccept == 1
                 && verified.Manifest.Counts.CorrectReject == 1,
                 "Qualification counts were not frozen correctly.");
+            Require(verified.Manifest.EvidenceRows.Count == 2
+                && verified.Manifest.EvidenceRows.Any(row =>
+                    string.Equals(row.VariantId, "Product_Field_FilmStripe_SurfaceReview", StringComparison.Ordinal)
+                    && string.Equals(row.ExpectedMetricName, "ResultCount", StringComparison.Ordinal)
+                    && string.Equals(row.ExpectedMetricMinimum, "3", StringComparison.Ordinal)
+                    && string.Equals(row.ExpectedMetricMaximum, "8", StringComparison.Ordinal))
+                && verified.Manifest.EvidenceRows.Any(row =>
+                    string.Equals(row.VariantId, "Product_Field_TexturedRoller_SurfaceReview", StringComparison.Ordinal)
+                    && string.Equals(row.ExpectedMetricMinimum, "1", StringComparison.Ordinal)
+                    && string.Equals(row.ExpectedMetricMaximum, "4", StringComparison.Ordinal)),
+                "Validation Variant contracts were not frozen in evidence rows.");
 
             request.CreatedAtUtc = request.CreatedAtUtc.AddMinutes(1);
             QualifiedRecipeSnapshotCreateResult reused = store.Create(request);
@@ -405,6 +416,12 @@ internal static class Program
                 ReportPath = sourcePath,
                 PairGroup = "Frozen OK-NG",
                 PairRole = expected,
+                VariantId = string.Equals(expected, "OK", StringComparison.Ordinal)
+                    ? "Product_Field_FilmStripe_SurfaceReview"
+                    : "Product_Field_TexturedRoller_SurfaceReview",
+                ExpectedMetricName = "ResultCount",
+                ExpectedMetricMinimum = string.Equals(expected, "OK", StringComparison.Ordinal) ? "3" : "1",
+                ExpectedMetricMaximum = string.Equals(expected, "OK", StringComparison.Ordinal) ? "8" : "4",
                 ExpectedText = "ExpectedActual: Expected " + expected,
                 RunReportPath = reportPath
             };
@@ -420,6 +437,10 @@ internal static class Program
             ExpectedOutcome = expected,
             SourcePath = sourcePath,
             Sha256 = sourceSha,
+            VariantId = row.VariantId,
+            ExpectedMetricName = row.ExpectedMetricName,
+            ExpectedMetricMinimum = row.ExpectedMetricMinimum,
+            ExpectedMetricMaximum = row.ExpectedMetricMaximum,
             Notes = "Qualification smoke row."
         });
         rows.Add(row);
@@ -522,6 +543,14 @@ internal static class Program
                 .Append(Path.GetFullPath(image.SourcePath))
                 .Append('|')
                 .Append(image.Sha256.ToUpperInvariant())
+                .Append('|')
+                .Append(string.IsNullOrWhiteSpace(image.VariantId) ? "Default" : image.VariantId.Trim())
+                .Append('|')
+                .Append((image.ExpectedMetricName ?? string.Empty).Trim())
+                .Append('|')
+                .Append((image.ExpectedMetricMinimum ?? string.Empty).Trim())
+                .Append('|')
+                .Append((image.ExpectedMetricMaximum ?? string.Empty).Trim())
                 .AppendLine();
         }
 

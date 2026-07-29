@@ -23,7 +23,7 @@ OpenVisionLab은 OpenCvSharp4 기반의 룰베이스 비전 검사 워크벤치�
 
 프로그램을 처음 열면 왼쪽에는 Tool 목록, 가운데에는 이미지 workspace, 상단에는 Layer와 실행 상태 영역이 보입니다.
 
-![Main workspace walkthrough](assets/tutorial/annotated/main_workspace_callouts.png)
+![Main workspace walkthrough](../assets/tutorial/annotated/main_workspace_callouts.png)
 
 위 화면은 다음 순서로 보면 됩니다.
 
@@ -36,14 +36,14 @@ OpenVisionLab은 OpenCvSharp4 기반의 룰베이스 비전 검사 워크벤치�
 실행 로그는 기본적으로 접힌 상태로 둡니다.
 최근 상태만 보고 작업 공간을 넓게 쓰다가, 실패 원인이나 실행 이력이 필요할 때만 `로그 열기`로 펼쳐서 확인합니다.
 
-![Run log collapsed walkthrough](assets/tutorial/annotated/run_log_collapsed_callouts.png)
+![Run log collapsed walkthrough](../assets/tutorial/annotated/run_log_collapsed_callouts.png)
 
 1. `Run Log`: 실행 이벤트를 모아 보는 영역입니다.
 2. `Recent Summary`: 최근 이벤트의 요약을 접힌 상태에서도 확인합니다.
 3. `Log Count`: 현재 표시되는 로그 개수를 확인합니다.
 4. `Open Log`: 상세 로그가 필요할 때만 펼칩니다.
 
-![Run log open walkthrough](assets/tutorial/annotated/run_log_open_callouts.png)
+![Run log open walkthrough](../assets/tutorial/annotated/run_log_open_callouts.png)
 
 1. `Run Log`: 상세 실행 로그가 열린 상태입니다.
 2. `Recent Events`: 이미지 로드, Preview, Run, Tool 검증 이벤트를 확인합니다.
@@ -72,7 +72,7 @@ Sample Catalog는 OpenVisionLab의 학습과 검증 기준입니다.
 | EdgeBasedMatching 형상 비교 | `Public_Edge_Fiducial_Good` | `Public_Edge_Fiducial_Wrong_Bad` | `ScoreMax`, `ResultCount` |
 | LineGauge로 거리 보기 | `Public_Line_Pins_Good` | `Public_Line_Pins_WidePin_Bad` | `DistanceMmAvg` |
 
-![Public sample catalog walkthrough](assets/tutorial/annotated/sample_catalog_public_callouts.png)
+![Public sample catalog walkthrough](../assets/tutorial/annotated/sample_catalog_public_callouts.png)
 
 Sample Catalog 화면은 다음 순서로 봅니다.
 
@@ -88,14 +88,14 @@ Tool Preview나 Pipeline Review는 사용자가 직접 실행해야 결과가 �
 
 툴별로 따라 할 때는 아래 Learn 문서를 먼저 보는 것이 좋습니다.
 
-- [Matching 배우기](learn/LEARN_MATCHING.md)
-- [Blob으로 입자 세기](learn/LEARN_BLOB.md)
-- [Contour로 모양 개수 보기](learn/LEARN_CONTOUR.md)
-- [Threshold로 밝은 영역 분리](learn/LEARN_THRESHOLD.md)
-- [Mean으로 밝기 drift 보기](learn/LEARN_MEAN.md)
-- [FeatureMatching 점수 비교](learn/LEARN_FEATURE_MATCHING.md)
-- [EdgeBasedMatching 형상 비교](learn/LEARN_EDGE_BASED_MATCHING.md)
-- [LineGauge로 거리 보기](learn/LEARN_LINE.md)
+- [Matching 배우기](LEARN_MATCHING.md)
+- [Blob으로 입자 세기](LEARN_BLOB.md)
+- [Contour로 모양 개수 보기](LEARN_CONTOUR.md)
+- [Threshold로 밝은 영역 분리](LEARN_THRESHOLD.md)
+- [Mean으로 밝기 drift 보기](LEARN_MEAN.md)
+- [FeatureMatching 점수 비교](LEARN_FEATURE_MATCHING.md)
+- [EdgeBasedMatching 형상 비교](LEARN_EDGE_BASED_MATCHING.md)
+- [LineGauge로 거리 보기](LEARN_LINE.md)
 
 ## 3. Matching 샘플 따라 하기
 
@@ -112,12 +112,12 @@ Tool Preview나 Pipeline Review는 사용자가 직접 실행해야 결과가 �
 9. 괜찮으면 Pipeline Step으로 추가합니다.
 10. Pipeline Review에서 `리뷰 실행`을 눌러 같은 결과가 재현되는지 확인합니다.
 
-![Matching tool walkthrough](assets/tutorial/annotated/tool_matching_form_callouts.png)
+![Matching tool walkthrough](../assets/tutorial/annotated/tool_matching_form_callouts.png)
 
 Matching은 Score만 높다고 좋은 결과가 아닙니다.
 아래처럼 실제 Preview 결과에서 overlay box와 중심점이 대상 위에 붙는지 봐야 “정확히 잡혔다”고 판단할 수 있습니다.
 
-![Actual Matching preview result](assets/tutorial/current/matching_preview_actual_current.png)
+![Actual Matching preview result](../assets/tutorial/current/matching_preview_actual_current.png)
 
 확인할 metric:
 
@@ -180,7 +180,7 @@ Layer 이름은 가능한 한 역할이 보이게 짓는 것이 좋습니다.
 
 Layer Docking을 사용하면 원본과 결과를 나란히 놓고 볼 수 있습니다.
 
-![Layer docking walkthrough](assets/tutorial/annotated/layer_docking_callouts.png)
+![Layer docking walkthrough](../assets/tutorial/annotated/layer_docking_callouts.png)
 
 검사 결과가 이상하면 최종 결과만 보지 말고, 바로 이전 Layer를 같이 봐야 합니다.
 Threshold가 잘못된 것인지, Morphology에서 객체가 붙어버린 것인지, 마지막 검출 조건이 너무 빡빡한 것인지 단계별로 확인할 수 있습니다.
@@ -201,7 +201,7 @@ Threshold는 전처리의 시작점입니다.
 
 Blob은 연결된 객체를 세고, 면적이나 box 크기를 확인할 때 사용합니다.
 
-![Blob tool walkthrough](assets/tutorial/annotated/tool_blob_form_callouts.png)
+![Blob tool walkthrough](../assets/tutorial/annotated/tool_blob_form_callouts.png)
 
 확인할 metric:
 
@@ -238,7 +238,7 @@ EdgeDetection은 Canny 같은 edge image를 만들고, LineGauge나 surface defe
 
 LineGauge는 edge, 거리, 교차점, 각도 확인에 사용합니다.
 
-![Line tool walkthrough](assets/tutorial/annotated/tool_line_form_callouts.png)
+![Line tool walkthrough](../assets/tutorial/annotated/tool_line_form_callouts.png)
 
 확인할 것:
 
@@ -283,7 +283,7 @@ Pipeline Review는 Recipe가 실제로 제대로 동작하는지 확인하는 �
 4. OK/NG가 어떤 metric 기준으로 결정되었는가
 5. NG라면 어느 Step에서 왜 실패했는가
 
-![Pipeline matching review walkthrough](assets/tutorial/annotated/pipeline_matching_review_callouts.png)
+![Pipeline matching review walkthrough](../assets/tutorial/annotated/pipeline_matching_review_callouts.png)
 
 Pipeline Review는 아래 번호 순서로 확인합니다.
 

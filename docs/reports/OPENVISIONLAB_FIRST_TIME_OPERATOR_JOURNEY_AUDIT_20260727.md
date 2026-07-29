@@ -1,6 +1,6 @@
 # OpenVisionLab First-Time Operator Journey Audit
 
-Updated: 2026-07-27 KST
+Updated: 2026-07-29 KST
 
 ## Decision
 
@@ -104,6 +104,16 @@ independent first-time operator can form the intended mental model and complete
 the core path without coaching. Only a human trial can answer that.
 
 ## Independent First-Time Operator Trial Protocol
+
+The reusable study materials are separated to prevent answer leakage:
+
+- participant-visible task only:
+  `OPENVISIONLAB_CVR00_PARTICIPANT_TASK_SHEET_20260729.md`;
+- facilitator setup, raw observation, runtime identity, and decision gate:
+  `OPENVISIONLAB_CVR00_FACILITATOR_PACKET_20260729.md`.
+
+Do not give this audit report to a participant because the journey table and
+verification sections disclose the intended product answers.
 
 ### Prerequisite
 

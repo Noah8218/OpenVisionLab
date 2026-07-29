@@ -333,6 +333,10 @@ namespace OpenVisionLab
                     JudgmentCorrect = prepared.Result.JudgmentCorrect,
                     SourceSha256 = QualifiedRecipeSnapshotPreflight.NormalizeSha(
                         prepared.ValidationImage.Sha256),
+                    VariantId = prepared.ValidationImage.VariantId ?? string.Empty,
+                    ExpectedMetricName = prepared.ValidationImage.ExpectedMetricName ?? string.Empty,
+                    ExpectedMetricMinimum = prepared.ValidationImage.ExpectedMetricMinimum ?? string.Empty,
+                    ExpectedMetricMaximum = prepared.ValidationImage.ExpectedMetricMaximum ?? string.Empty,
                     ReportFile = ToArchivePath(
                         Path.GetRelativePath(temporaryDirectory, reportArchivePath)),
                     ReportSha256 =
@@ -388,8 +392,9 @@ namespace OpenVisionLab
             result.Manifest = manifest;
             result.SnapshotId =
                 QualifiedRecipeSnapshotPreflight.NormalizeSha(manifest.SnapshotId);
-            if (manifest.SchemaVersion !=
-                QualifiedRecipeSnapshotPreflight.CurrentSnapshotSchemaVersion)
+            if (manifest.SchemaVersion < 1
+                || manifest.SchemaVersion >
+                    QualifiedRecipeSnapshotPreflight.CurrentSnapshotSchemaVersion)
             {
                 result.Errors.Add("Unsupported snapshot schema: " + manifest.SchemaVersion);
             }
@@ -757,14 +762,19 @@ namespace OpenVisionLab
                 (manifest.EvidenceRows ?? new List<QualifiedRecipeEvidenceRow>())
                 .OrderBy(item => item.Index))
             {
-                AppendIdentity(
-                    canonical,
-                    "row",
+                string rowIdentity =
                     row.Index + "|" + row.SampleName + "|" + row.ExpectedOutcome + "|"
-                    + row.ActualOutcome + "|" + row.JudgmentCorrect + "|"
-                    + row.SourceSha256 + "|" + row.ReportFile + "|"
+                    + row.ActualOutcome + "|" + row.JudgmentCorrect + "|";
+                if (manifest.SchemaVersion >= 2)
+                {
+                    rowIdentity += row.VariantId + "|" + row.ExpectedMetricName + "|"
+                        + row.ExpectedMetricMinimum + "|" + row.ExpectedMetricMaximum + "|";
+                }
+
+                rowIdentity += row.SourceSha256 + "|" + row.ReportFile + "|"
                     + row.ReportSha256 + "|" + row.PipelineFile + "|"
-                    + row.PipelineSha256 + "|" + row.SourceFile);
+                    + row.PipelineSha256 + "|" + row.SourceFile;
+                AppendIdentity(canonical, "row", rowIdentity);
             }
 
             return QualifiedRecipeSnapshotPreflight.ComputeTextSha256(canonical.ToString());

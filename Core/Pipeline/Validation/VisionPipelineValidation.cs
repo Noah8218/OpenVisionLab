@@ -52,6 +52,8 @@ namespace OpenVisionLab
             "geometricmeasurement",
             "linefixture",
             "dualedgefixture",
+            "multimatchmean",
+            "multifixturemean",
             "matching",
             "templatematching",
             "edgebasedmatching",
@@ -143,6 +145,7 @@ namespace OpenVisionLab
                 ValidateParameters(result, label, step);
                 ValidateGeometryMeasureSources(result, label, step, enabledSteps.Take(enabledSteps.Count - 1).ToList());
                 ValidateLineFixtureSources(result, label, step, enabledSteps.Take(enabledSteps.Count - 1).ToList());
+                ValidateMultiMatchMeanSource(result, label, step, enabledSteps.Take(enabledSteps.Count - 1).ToList());
 
                 bool isMergeStep = VisionPipelineOverlayMergeService.IsMergeTool(step.ToolType);
                 if (isMergeStep)
@@ -306,6 +309,7 @@ namespace OpenVisionLab
             ValidateUnitInterval(result, label, step, "GREEDINESS");
             ValidateUnitInterval(result, label, step, "HYBRID_VERIFY_IMAGE_WEIGHT");
             ValidateUnitInterval(result, label, step, nameof(EdgeBasedMatchingProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN));
+            ValidateBooleanWhenPresent(result, label, step, nameof(EdgeBasedMatchingProperty.ALLOW_GLOBAL_POLARITY_REVERSAL));
             ValidatePositiveDouble(result, label, step, "MAGNIFIATION");
             ValidatePositiveDouble(result, label, step, "RANSAC_REPROJ_THRESHOLD");
             ValidatePositiveDouble(result, label, step, "COARSE_ANGLE_STEP");
@@ -440,6 +444,64 @@ namespace OpenVisionLab
                 }
             }
 
+            if (toolType == "multimatchmean" || toolType == "multifixturemean")
+            {
+                ValidatePositiveInt(result, label, step, VisionPipelineMultiMatchMeanService.MinimumInstancesParameter, oddOnly: false);
+                ValidatePositiveInt(result, label, step, VisionPipelineMultiMatchMeanService.MaximumInstancesParameter, oddOnly: false);
+                ValidatePositiveInt(result, label, step, VisionPipelineMultiMatchMeanService.MinimumPassCountParameter, oddOnly: false);
+                ValidateNonNegativeDouble(result, label, step, VisionPipelineMultiMatchMeanService.RowToleranceParameter);
+                ValidateUnitInterval(result, label, step, VisionPipelineMultiMatchMeanService.MaximumOverlapParameter);
+                ValidateNonNegativeDouble(result, label, step, VisionPipelineMultiMatchMeanService.MinimumMeanParameter);
+                ValidateNonNegativeDouble(result, label, step, VisionPipelineMultiMatchMeanService.MaximumMeanParameter);
+                ValidateMinMax(result, label, step, VisionPipelineMultiMatchMeanService.MinimumMeanParameter, VisionPipelineMultiMatchMeanService.MaximumMeanParameter);
+                ValidateNonNegativeDouble(result, label, step, VisionPipelineMultiMatchMeanService.MaximumAngleDeltaParameter);
+                ValidatePositiveDouble(result, label, step, VisionPipelineMultiMatchMeanService.MinimumScaleRatioParameter);
+                ValidatePositiveDouble(result, label, step, VisionPipelineMultiMatchMeanService.MaximumScaleRatioParameter);
+                ValidateMinMax(result, label, step, VisionPipelineMultiMatchMeanService.MinimumScaleRatioParameter, VisionPipelineMultiMatchMeanService.MaximumScaleRatioParameter);
+                ValidateUnitInterval(result, label, step, VisionPipelineMultiMatchMeanService.MinimumValidPixelRatioParameter);
+
+                int minimumInstances = GetIntOrDefault(
+                    step,
+                    VisionPipelineMultiMatchMeanService.MinimumInstancesParameter,
+                    1);
+                int maximumInstances = GetIntOrDefault(
+                    step,
+                    VisionPipelineMultiMatchMeanService.MaximumInstancesParameter,
+                    8);
+                int minimumPassCount = GetIntOrDefault(
+                    step,
+                    VisionPipelineMultiMatchMeanService.MinimumPassCountParameter,
+                    1);
+                if (maximumInstances < minimumInstances || maximumInstances > 64)
+                {
+                    result.Errors.Add($"{label} '{step.Name}': instance limits must satisfy MIN_INSTANCES <= MAX_INSTANCES <= 64.");
+                }
+                if (minimumPassCount > maximumInstances)
+                {
+                    result.Errors.Add($"{label} '{step.Name}': MIN_PASS_COUNT cannot exceed MAX_INSTANCES.");
+                }
+                if (GetDoubleOrDefault(
+                        step,
+                        VisionPipelineMultiMatchMeanService.MaximumMeanParameter,
+                        255D) > 255D)
+                {
+                    result.Errors.Add($"{label} '{step.Name}': MAX_MEAN must be 255 or less.");
+                }
+                if (!step.UseAcceptance
+                    || !string.Equals(
+                        step.AcceptanceMetricName,
+                        VisionPipelineMultiMatchMeanService.InstanceAggregatePassedMetric,
+                        StringComparison.OrdinalIgnoreCase)
+                    || !step.UseAcceptanceMetricMinimum
+                    || step.AcceptanceMetricMinimum != 1D
+                    || !step.UseAcceptanceMetricMaximum
+                    || step.AcceptanceMetricMaximum != 1D)
+                {
+                    result.Errors.Add(
+                        $"{label} '{step.Name}': MultiMatchMean requires acceptance metric InstanceAggregatePassed with exact range 1..1.");
+                }
+            }
+
             if (toolType == "circlegauge")
             {
                 if (!bool.TryParse(ReadParameter(step, "USE_ROI"), out bool useRoi) || !useRoi)
@@ -563,6 +625,85 @@ namespace OpenVisionLab
             {
                 result.Errors.Add(
                     $"{label} '{consumer.Name}': LineFixture source '{sourceStepName}' must use Line or LineGauge.");
+            }
+        }
+
+        private static void ValidateMultiMatchMeanSource(
+            VisionPipelineValidationResult result,
+            string label,
+            VisionPipelineStep consumer,
+            IReadOnlyList<VisionPipelineStep> earlierEnabledSteps)
+        {
+            if (!VisionPipelineMultiMatchMeanService.IsMultiMatchMean(
+                    consumer?.ToolType))
+            {
+                return;
+            }
+
+            string sourceStepName = ReadParameter(
+                consumer,
+                VisionPipelineMultiMatchMeanService.SourceStepParameter);
+            if (string.IsNullOrWhiteSpace(sourceStepName))
+            {
+                result.Errors.Add(
+                    $"{label} '{consumer.Name}': {VisionPipelineMultiMatchMeanService.SourceStepParameter} is required.");
+                return;
+            }
+
+            List<VisionPipelineStep> matches = (earlierEnabledSteps
+                    ?? Array.Empty<VisionPipelineStep>())
+                .Where(item => string.Equals(
+                    item?.Name,
+                    sourceStepName,
+                    StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (matches.Count != 1)
+            {
+                result.Errors.Add(matches.Count == 0
+                    ? $"{label} '{consumer.Name}': multi-match source '{sourceStepName}' must be an earlier enabled Step."
+                    : $"{label} '{consumer.Name}': multi-match source '{sourceStepName}' is ambiguous.");
+                return;
+            }
+
+            VisionPipelineStep producer = matches[0];
+            string type = VisionPipelineNormalizer.NormalizeToolType(
+                producer.ToolType);
+            if (type != "matching"
+                && type != "templatematching"
+                && type != "edgebasedmatching"
+                && type != "edgebasedtemplatematching"
+                && type != "edgetemplatematching")
+            {
+                result.Errors.Add(
+                    $"{label} '{consumer.Name}': source '{sourceStepName}' must use Matching or EdgeBasedMatching.");
+            }
+
+            if (!string.Equals(
+                    producer.InputLayer,
+                    consumer.InputLayer,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                result.Errors.Add(
+                    $"{label} '{consumer.Name}': source '{sourceStepName}' must use the same input coordinate layer '{consumer.InputLayer}'.");
+            }
+
+            if (!int.TryParse(
+                    ReadParameter(producer, "NUM_MATCH"),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out int requestedMatches)
+                || requestedMatches < 2)
+            {
+                result.Errors.Add(
+                    $"{label} '{consumer.Name}': source '{sourceStepName}' must request NUM_MATCH >= 2.");
+            }
+
+            if (string.IsNullOrWhiteSpace(ReadParameter(
+                    consumer,
+                    VisionPipelineMultiMatchMeanService.RelativeRoiParameter)))
+            {
+                result.Errors.Add(
+                    $"{label} '{consumer.Name}': {VisionPipelineMultiMatchMeanService.RelativeRoiParameter} is required.");
             }
         }
 
@@ -812,6 +953,28 @@ namespace OpenVisionLab
                     result.Errors.Add($"{label} '{step.Name}': OverlayMerge SourceStep '{sourceStep}' does not exist before this step.");
                 }
             }
+
+            ValidateBoundedInt(
+                result,
+                label,
+                step,
+                VisionPipelineOverlayMergeService.LineWidthParameter,
+                VisionPipelineOverlayMergeService.MinimumLineWidth,
+                VisionPipelineOverlayMergeService.MaximumLineWidth);
+            ValidateBoundedInt(
+                result,
+                label,
+                step,
+                VisionPipelineOverlayMergeService.PointSizeParameter,
+                VisionPipelineOverlayMergeService.MinimumPointSize,
+                VisionPipelineOverlayMergeService.MaximumPointSize);
+            ValidateBoundedInt(
+                result,
+                label,
+                step,
+                VisionPipelineOverlayMergeService.LabelMarginParameter,
+                VisionPipelineOverlayMergeService.MinimumLabelMargin,
+                VisionPipelineOverlayMergeService.MaximumLabelMargin);
         }
 
         private static void ValidateFinalReviewIntent(
@@ -1057,9 +1220,31 @@ namespace OpenVisionLab
                 && bool.TryParse(text, out value);
         }
 
+        private static void ValidateBooleanWhenPresent(
+            VisionPipelineValidationResult result,
+            string label,
+            VisionPipelineStep step,
+            string key)
+        {
+            if (step?.Parameters != null
+                && step.Parameters.TryGetValue(key, out string text)
+                && !bool.TryParse(text, out _))
+            {
+                result.Errors.Add($"{label} '{step.Name}': {key} must be true or false.");
+            }
+        }
+
         private static double GetDoubleOrDefault(VisionPipelineStep step, string key, double defaultValue)
         {
             return TryGetDouble(step, key, out double value) ? value : defaultValue;
+        }
+
+        private static int GetIntOrDefault(
+            VisionPipelineStep step,
+            string key,
+            int defaultValue)
+        {
+            return TryGetInt(step, key, out int value) ? value : defaultValue;
         }
 
         private static double TriangleArea(

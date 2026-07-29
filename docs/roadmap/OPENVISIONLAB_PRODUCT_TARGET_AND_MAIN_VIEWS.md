@@ -1,6 +1,6 @@
 # OpenVisionLab Product Target And Main Views
 
-Updated: 2026-07-24 KST
+Updated: 2026-07-29 KST
 
 > **Live status and next priority:** Read `docs\OPENVISIONLAB_CURRENT_HANDOFF.md` first. This document owns stable product direction and main-view responsibilities; it does not replace current git/test evidence.
 
@@ -64,6 +64,34 @@ Keep these boundaries stable:
 - Camera/lighting/PLC/I/O screens are out of scope unless the user explicitly changes product direction.
 - Top-level account/session UI is out of scope unless real login, user profile, permissions, or audit requirements are added. Keep operator guidance inside recipe/review workflows instead.
 - Main window minimize, maximize/restore, and close controls are required window chrome and must remain visible even when account/session UI is removed.
+
+## User-Centered Workflow And Persisted Setup Direction
+
+Future development starts from the operator's goal and the shortest safe normal
+workflow. Internal view, dialog, component, class, and storage boundaries must
+not make one durable task require repeated configuration in several places.
+
+When related settings belong to one reusable workflow:
+
+1. expose one coherent first-use setup or option surface;
+2. require explicit operator confirmation;
+3. persist at the narrowest correct Tool, Recipe, project, workspace, or user
+   scope;
+4. restore the setup visibly and editably on the next equivalent use;
+5. provide an explicit reset/default path;
+6. fail closed with a direct stale/incompatible-state explanation;
+7. restore configuration without Preview/Run, layer, active-layer, or routing
+   side effects.
+
+Every implementation must verify first use, save, close/reload/reopen, exact
+restoration, visible reset, incompatible-state handling where applicable, and
+zero unintended execution/layer/routing mutation. Do not silently share
+inspection-specific ROI, tolerance, template, dependency, or coordinate-frame
+state across unrelated Recipes or workspaces.
+
+The reusable admission template, commercial-video rationale, and current
+evidence-gated priority order are in
+`docs/reports/OPENVISIONLAB_USER_CENTERED_WORKFLOW_DIRECTION_20260729.md`.
 
 ## Main Views To Build Toward
 
@@ -167,7 +195,7 @@ Already completed enough to avoid redoing:
 
 - LLM assistant fields, prompt creation/copy, XML starter creation, XML draft load, clipboard paste, validation, import draft, reference image, dependency copy report, dependency/path action hints, dependency path drill-down rows, draft import review, before/after diff review, inline validation report, and LLM correction review-bundle copy exist. The correction bundle includes selected Step operator context and failed-Step review text.
 - LLM result-channel contract now exists in the in-app prompt/review/validation flow: `Inspection.Status`, `Inspection.FailedStep`, `Inspection.Evidence`, `Inspection.Benchmark`, and `Inspection.NextAction` are derived after validation and explicit runs, not emitted as XML nodes.
-- External LLM prompt-side API guidance now exists: `docs\OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md` and `docs\OPENVISIONLAB_LLM_TOOL_CATALOG.json`. Use these before collecting GPT/Gemini/Claude transcript examples so the LLM learns the actual OpenVisionLab XML contract instead of guessing.
+- External LLM prompt-side API guidance now exists at `docs\contracts\openvisionlab\OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md` and `docs\contracts\openvisionlab\OPENVISIONLAB_LLM_TOOL_CATALOG.json`. Use these only for maintenance-mode XML compatibility work so the LLM learns the actual OpenVisionLab XML contract instead of guessing.
 
 Next development focus:
 
@@ -324,7 +352,10 @@ Future sessions should not spend time re-discovering these unless a regression i
 
 ## Current Next Priority Order
 
-1. Select and explicitly approve one P226 Auto MPoint sample/rank/ROI before any cross-image Matching qualification. Prerequisite: operator confirmation that the suggested ROI is the same durable physical feature across the representative set; score alone is insufficient. Recommended model: none until operator candidate approval | Reasoning effort: none until operator candidate approval.
+1. Collect raw observations from at least three independent novice users through the existing `CVR-00` protocol. Prerequisite: real participants and unedited observations. Recommended model: none before observations; `gpt-5.6-terra` for synthesis afterward | Reasoning effort: none before observations; low afterward.
+2. CVR-19 Validation Variant v1 completed on 2026-07-29 for two explicitly approved Product styles under one unchanged Pipeline. Preserve its image-level identity/range, comparison isolation, Snapshot retention, and no-side-effect contract. Do not expand it into per-Variant Pipeline mutation or compliance scope. Recommended model: `gpt-5.6-terra` for a narrow regression | Reasoning effort: medium.
+3. CVR-20 Overlay Rendering v1 completed on 2026-07-29 inside existing `OverlayMerge`. Preserve bounded palettes, coordinate-label presentation, recipe-scoped restoration/reset, evidence retention, legacy defaults, and metric/acceptance invariance. Recommended model: `gpt-5.6-terra` for a narrow regression | Reasoning effort: low.
+4. The commercial-video queue has no remaining automatic implementation row. Wait for real CVR-00 observations, a complete named admission packet, or a verified current-build regression. Recommended model: none until evidence exists | Reasoning effort: none until evidence exists.
 
 The user closed repeated image inspection, dataset tuning, and LLM validation as active work. Do not resume them without a new explicit request. See `docs\OPENVISIONLAB_RULE_BASED_UI_GAP_AUDIT_20260723.md`.
 

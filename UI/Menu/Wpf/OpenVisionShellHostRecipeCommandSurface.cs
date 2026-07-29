@@ -182,6 +182,10 @@ namespace OpenVisionLab
         private bool isPinArrayGapValidationIdentityFrozen;
         private string newValidationSetName = "Local_Validation_Set";
         private string validationSetPendingNotes = string.Empty;
+        private string validationSetPendingVariantId = string.Empty;
+        private string validationSetPendingMetricName = string.Empty;
+        private string validationSetPendingMetricMinimum = string.Empty;
+        private string validationSetPendingMetricMaximum = string.Empty;
         private string statusText = string.Empty;
         private OpenVisionRecipeValidationSetDocument validationSetDocument = OpenVisionRecipeValidationSetStorage.CreateEmpty();
         private readonly OpenVisionRecipePipelineExchangeUseCase pipelineExchangeUseCase = new OpenVisionRecipePipelineExchangeUseCase();
@@ -334,6 +338,12 @@ namespace OpenVisionLab
                 RepairValidationSetImagePath,
                 CanRepairValidationSetImagePath);
             RemoveValidationSetImageCommand = new RelayCommand(RemoveValidationSetImage, CanRemoveValidationSetImage);
+            ApplyValidationSetVariantContractCommand = new RelayCommand(
+                ApplyValidationSetVariantContract,
+                CanApplyValidationSetVariantContract);
+            ResetValidationSetVariantContractCommand = new RelayCommand(
+                ResetValidationSetVariantContract,
+                CanApplyValidationSetVariantContract);
             SelectPairSampleResultCommand = new RelayCommand<OpenVisionRecipePairSampleRunSummary>(
                 SelectPairSampleResult,
                 CanSelectPairSampleResult);
@@ -359,6 +369,9 @@ namespace OpenVisionLab
             SelectNextPipelinePreviewStepCommand = new RelayCommand(SelectNextPipelinePreviewStep, CanSelectNextPipelinePreviewStep);
             OpenSelectedStepToolCommand = new RelayCommand(OpenSelectedStepTool, CanOpenSelectedStepTool);
             LoadSelectedStepParametersCommand = new RelayCommand(LoadSelectedStepParameters, CanLoadSelectedStepParameters);
+            ResetSelectedStepDisplayDefaultsCommand = new RelayCommand(
+                ResetSelectedStepDisplayDefaults,
+                CanResetSelectedStepDisplayDefaults);
             ApplySelectedStepParametersCommand = new RelayCommand(ApplySelectedStepParameters, CanApplySelectedStepParameters);
             CopyOperatorHandoffReportCommand = new RelayCommand(CopyOperatorHandoffReport, CanCopyOperatorHandoffReport);
             CopySelectedRecentBatchRunReviewCommand = new RelayCommand(CopySelectedRecentBatchRunReview, CanCopySelectedRecentBatchRunReview);
@@ -538,6 +551,7 @@ namespace OpenVisionLab
             {
                 if (SetProperty(ref selectedValidationSetImageRow, value))
                 {
+                    LoadSelectedValidationVariantContract();
                     RefreshCommandState();
                 }
             }
@@ -814,7 +828,58 @@ namespace OpenVisionLab
             get => selectedStepEditSession.EditObject;
         }
 
+        public string ValidationSetPendingVariantId
+        {
+            get => validationSetPendingVariantId;
+            set
+            {
+                if (SetProperty(ref validationSetPendingVariantId, value ?? string.Empty))
+                {
+                    RefreshCommandState();
+                }
+            }
+        }
+
+        public string ValidationSetPendingMetricName
+        {
+            get => validationSetPendingMetricName;
+            set
+            {
+                if (SetProperty(ref validationSetPendingMetricName, value ?? string.Empty))
+                {
+                    RefreshCommandState();
+                }
+            }
+        }
+
+        public string ValidationSetPendingMetricMinimum
+        {
+            get => validationSetPendingMetricMinimum;
+            set
+            {
+                if (SetProperty(ref validationSetPendingMetricMinimum, value ?? string.Empty))
+                {
+                    RefreshCommandState();
+                }
+            }
+        }
+
+        public string ValidationSetPendingMetricMaximum
+        {
+            get => validationSetPendingMetricMaximum;
+            set
+            {
+                if (SetProperty(ref validationSetPendingMetricMaximum, value ?? string.Empty))
+                {
+                    RefreshCommandState();
+                }
+            }
+        }
+
         public bool HasSelectedStepEditObject => SelectedStepEditObject != null;
+
+        public bool HasSelectedOverlayMergeEditObject =>
+            VisionPipelineOverlayMergePropertyAdapter.IsProperty(SelectedStepEditObject);
 
         public string SelectedStepEditStatusText =>
             string.IsNullOrWhiteSpace(selectedStepEditSession.StatusText)
@@ -1900,6 +1965,10 @@ namespace OpenVisionLab
 
         public ICommand RemoveValidationSetImageCommand { get; private set; }
 
+        public ICommand ApplyValidationSetVariantContractCommand { get; private set; }
+
+        public ICommand ResetValidationSetVariantContractCommand { get; private set; }
+
         public ICommand SelectPairSampleResultCommand { get; private set; }
 
         public ICommand BuildLlmPromptCommand { get; private set; }
@@ -1937,6 +2006,8 @@ namespace OpenVisionLab
         public ICommand OpenSelectedStepToolCommand { get; private set; }
 
         public ICommand LoadSelectedStepParametersCommand { get; private set; }
+
+        public ICommand ResetSelectedStepDisplayDefaultsCommand { get; private set; }
 
         public ICommand ApplySelectedStepParametersCommand { get; private set; }
 
@@ -2231,6 +2302,22 @@ namespace OpenVisionLab
 
         public string ValidationSetPendingNotesLabelText => LocalText("추가 파일 메모", "New image notes");
 
+        public string ValidationSetVariantIdLabelText => LocalText("Variant", "Variant");
+
+        public string ValidationSetMetricNameLabelText => LocalText("판정 Metric", "Expected metric");
+
+        public string ValidationSetMetricMinimumLabelText => LocalText("최소", "Min");
+
+        public string ValidationSetMetricMaximumLabelText => LocalText("최대", "Max");
+
+        public string ApplyValidationSetVariantContractText => LocalText("선택 항목 적용", "Apply selected");
+
+        public string ResetValidationSetVariantContractText => LocalText("기본값", "Reset");
+
+        public string ValidationSetVariantContractToolTipText => LocalText(
+            "선택한 이미지의 Variant와 기대 Metric 범위를 표시·편집합니다. 적용 또는 기본값 버튼은 Preview/Run을 실행하지 않습니다.",
+            "Shows and edits the selected image Variant and expected metric range. Apply and Reset never Preview or Run.");
+
         public string AddValidationSetOkImagesText => LocalText("OK 이미지 추가", "Add OK images");
 
         public string AddValidationSetNgImagesText => LocalText("NG 이미지 추가", "Add NG images");
@@ -2442,6 +2529,8 @@ namespace OpenVisionLab
         public string SelectNextPipelineStepText => LocalText("다음", "Next");
 
         public string LoadSelectedStepParametersText => LocalText("파라미터 불러오기", "Load parameters");
+
+        public string ResetSelectedStepDisplayDefaultsText => LocalText("표시 기본값", "Display defaults");
 
         public string ApplySelectedStepParametersText => LocalText("XML 반영", "Apply to XML");
 

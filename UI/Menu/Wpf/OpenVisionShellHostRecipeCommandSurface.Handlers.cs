@@ -1004,7 +1004,11 @@ namespace OpenVisionLab
                 {
                     Expected = image.Expected,
                     Path = image.Path,
-                    Notes = image.Notes
+                    Notes = image.Notes,
+                    VariantId = image.VariantId,
+                    ExpectedMetricName = image.ExpectedMetricName,
+                    ExpectedMetricMinimum = image.ExpectedMetricMinimum,
+                    ExpectedMetricMaximum = image.ExpectedMetricMaximum
                 })
                 .ToList();
             string recipeName = NormalizeRecipeName(selectedRecipeName);
@@ -1043,7 +1047,17 @@ namespace OpenVisionLab
                     VisionPipelineSampleCheckResult result =
                         await VisionPipelineSampleCheckService.RunSampleCheckWithReportSafeAsync(sample, pipelineXmlText, recipeName);
                     VisionPipelineBatchSampleRunResult storageResult = CreateBatchSampleRunResult(sample, result);
-                    storageResult.ExpectedText = "ExpectedActual: Expected " + image.Expected;
+                    storageResult.VariantId = OpenVisionRecipeValidationSetStorage.GetVariantDisplayId(image);
+                    storageResult.ExpectedMetricName = image.ExpectedMetricName ?? string.Empty;
+                    storageResult.ExpectedMetricMinimum = image.ExpectedMetricMinimum ?? string.Empty;
+                    storageResult.ExpectedMetricMaximum = image.ExpectedMetricMaximum ?? string.Empty;
+                    storageResult.ExpectedText = "ExpectedActual: Expected "
+                        + image.Expected
+                        + " | Variant "
+                        + storageResult.VariantId
+                        + (string.IsNullOrWhiteSpace(image.ExpectedMetricName)
+                            ? string.Empty
+                            : " | " + OpenVisionRecipeValidationSetStorage.BuildExpectedMetricText(image));
                     VisionPipelineBatchOutcomeContract.Apply(
                         storageResult,
                         result?.ExecutionCompleted == true,
@@ -1153,6 +1167,9 @@ namespace OpenVisionLab
                 ValidationMode = image.IsExpectedNg ? "ExpectedFailure" : "ExpectedSuccess",
                 PairGroup = setName ?? string.Empty,
                 PairRole = image.Expected ?? OpenVisionRecipeValidationSetImage.ExpectedOk,
+                ExpectedMetricName = image.ExpectedMetricName ?? string.Empty,
+                ExpectedMetricMinimum = image.ExpectedMetricMinimum ?? string.Empty,
+                ExpectedMetricMaximum = image.ExpectedMetricMaximum ?? string.Empty,
                 Notes = image.Notes ?? string.Empty,
                 CatalogSourceKind = VisionPipelineSampleCatalogSourceKind.Unknown
             };
@@ -3538,6 +3555,31 @@ namespace OpenVisionLab
             TryApplySelectedStepParameters();
         }
 
+        private void ResetSelectedStepDisplayDefaults()
+        {
+            if (!VisionPipelineOverlayMergePropertyAdapter.TryResetRenderingDefaults(
+                SelectedStepEditObject))
+            {
+                SetSelectedStepEditStatus(OpenVisionRecipeText.Local(
+                    "선택 Step에는 표시 기본값이 없습니다.",
+                    "The selected Step has no display defaults."));
+                return;
+            }
+
+            OnPropertyChanged(nameof(SelectedStepEditObject));
+            MarkSelectedStepEditDirty();
+            OnPropertyChanged(nameof(CorrectedOutputReviewText));
+            SetSelectedStepEditStatus(OpenVisionRecipeText.Local(
+                "표시 설정을 기존 호환 기본값으로 되돌렸습니다. XML 반영을 눌러 저장하세요.",
+                "Display settings were reset to backward-compatible defaults. Apply to XML to save."));
+        }
+
+        private bool CanResetSelectedStepDisplayDefaults()
+        {
+            return VisionPipelineOverlayMergePropertyAdapter.IsProperty(
+                SelectedStepEditObject);
+        }
+
         private bool TryApplySelectedStepParameters()
         {
             if (SelectedStepEditObject == null && !LoadSelectedStepParametersForEdit(updateStatus: true))
@@ -3880,6 +3922,7 @@ namespace OpenVisionLab
                 case nameof(OpenVisionRecipeStepEditSessionViewModel.EditObject):
                     OnPropertyChanged(nameof(SelectedStepEditObject));
                     OnPropertyChanged(nameof(HasSelectedStepEditObject));
+                    OnPropertyChanged(nameof(HasSelectedOverlayMergeEditObject));
                     RefreshCommandState();
                     break;
                 case nameof(OpenVisionRecipeStepEditSessionViewModel.IsDirty):

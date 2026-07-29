@@ -1351,6 +1351,84 @@
                             </Grid>
                         </Grid>
                     </TabItem>
+                    <TabItem x:Name="instanceInspectorTab"
+                             Header="Instance Results"
+                             AutomationProperties.AutomationId="PipelineReviewInstanceResultsTab"
+                             Visibility="Collapsed">
+                        <Grid Margin="6">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="6" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="300" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="instanceResultCountText"
+                                       Grid.ColumnSpan="3"
+                                       AutomationProperties.AutomationId="PipelineReviewInstanceResultCount"
+                                       Foreground="{StaticResource PipelineReview.AccentBrush}"
+                                       FontWeight="SemiBold"
+                                       Text="Instances 0 / OK 0 / NG 0" />
+                            <Border Grid.Row="2"
+                                    Grid.Column="0"
+                                    Style="{StaticResource PreviewWellStyle}">
+                                <Grid>
+                                    <Image x:Name="imgInstanceResultPreview"
+                                           AutomationProperties.AutomationId="PipelineReviewInstanceHighlightPreview"
+                                           Stretch="Uniform"
+                                           Source="{Binding OutputPreviewImage}" />
+                                    <Border HorizontalAlignment="Left"
+                                            VerticalAlignment="Top"
+                                            Background="#CC102027"
+                                            Padding="5,2">
+                                        <TextBlock x:Name="lblInstanceHighlight"
+                                                   Text="Selected instance relative ROI"
+                                                   Foreground="White"
+                                                   FontSize="10" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+                            <DataGrid x:Name="instanceResultsGrid"
+                                      Grid.Row="2"
+                                      Grid.Column="2"
+                                      AutomationProperties.AutomationId="PipelineReviewInstanceResultsTable"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      IsReadOnly="True"
+                                      SelectionMode="Single"
+                                      SelectionUnit="FullRow"
+                                      SelectionChanged="InstanceResultsGrid_SelectionChanged"
+                                      HeadersVisibility="Column"
+                                      GridLinesVisibility="Horizontal">
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Setter Property="Foreground" Value="{StaticResource PipelineReview.OkBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Accepted}" Value="False">
+                                                <Setter Property="Foreground" Value="#B5473A" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="ID" Binding="{Binding InstanceId}" Width="52" />
+                                    <DataGridTextColumn Header="State" Binding="{Binding StateText}" Width="58" />
+                                    <DataGridTextColumn Header="Score" Binding="{Binding Score, StringFormat={}{0:0.###}}" Width="68" />
+                                    <DataGridTextColumn Header="Center X" Binding="{Binding CenterX, StringFormat={}{0:0.##}}" Width="72" />
+                                    <DataGridTextColumn Header="Center Y" Binding="{Binding CenterY, StringFormat={}{0:0.##}}" Width="72" />
+                                    <DataGridTextColumn Header="Angle" Binding="{Binding Angle, StringFormat={}{0:0.##}}" Width="62" />
+                                    <DataGridTextColumn Header="Scale" Binding="{Binding Scale, StringFormat={}{0:0.###}}" Width="62" />
+                                    <DataGridTextColumn Header="Mean" Binding="{Binding MeanValue, StringFormat={}{0:0.###}}" Width="70" />
+                                    <DataGridTextColumn Header="Valid" Binding="{Binding ValidPixelRatio, StringFormat={}{0:P1}}" Width="64" />
+                                    <DataGridTextColumn Header="Reject reason" Binding="{Binding RejectReason}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </TabItem>
                     <TabItem x:Name="matcherDiagnosticTab"
                              Header="Matcher Diagnostics"
                              AutomationProperties.AutomationId="PipelineReviewMatcherDiagnosticTab"

@@ -268,6 +268,17 @@ namespace OpenVisionLab
                 return new[] { OpenVisionRecipeBatchRunComparisonRow.CreateNoBaseline(currentOption.DisplayText) };
             }
 
+            if (!HaveEquivalentSampleSets(current, baseline))
+            {
+                return new[]
+                {
+                    OpenVisionRecipeBatchRunComparisonRow.CreateNoBaseline(
+                        OpenVisionRecipeText.Local(
+                            "Variant/판정 계약이 다른 실행",
+                            "Run with a different Variant/judgment contract"))
+                };
+            }
+
             Dictionary<string, VisionPipelineBatchSampleRunResult> currentBySample = BuildResultMap(current.Results);
             Dictionary<string, VisionPipelineBatchSampleRunResult> baselineBySample = BuildResultMap(baseline.Results);
             List<string> sampleNames = currentBySample.Keys
@@ -343,7 +354,9 @@ namespace OpenVisionLab
         {
             return (results ?? Enumerable.Empty<VisionPipelineBatchSampleRunResult>())
                 .Where(result => result != null && !string.IsNullOrWhiteSpace(result.SampleName))
-                .GroupBy(result => result.SampleName.Trim(), StringComparer.OrdinalIgnoreCase)
+                .GroupBy(
+                    result => NormalizeVariantId(result.VariantId) + " | " + result.SampleName.Trim(),
+                    StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
         }
 
@@ -424,13 +437,24 @@ namespace OpenVisionLab
                     string path = string.IsNullOrWhiteSpace(result.SampleImagePath)
                         ? result.ReportPath
                         : result.SampleImagePath;
-                    return string.IsNullOrWhiteSpace(path)
+                    string sourceIdentity = string.IsNullOrWhiteSpace(path)
                         ? "name:" + (result.SampleName ?? string.Empty).Trim()
                         : "path:" + path.Trim().Replace('/', '\\');
+                    return sourceIdentity
+                        + "|expected:" + (result.ExpectedOutcome ?? result.PairRole ?? string.Empty).Trim()
+                        + "|variant:" + NormalizeVariantId(result.VariantId)
+                        + "|metric:" + (result.ExpectedMetricName ?? string.Empty).Trim()
+                        + "|min:" + (result.ExpectedMetricMinimum ?? string.Empty).Trim()
+                        + "|max:" + (result.ExpectedMetricMaximum ?? string.Empty).Trim();
                 })
                 .Where(identity => !string.Equals(identity, "name:", StringComparison.Ordinal))
                 .OrderBy(identity => identity, StringComparer.OrdinalIgnoreCase)
                 .ToList();
+        }
+
+        private static string NormalizeVariantId(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? "Default" : value.Trim();
         }
     }
 

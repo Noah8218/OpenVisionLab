@@ -214,6 +214,9 @@ namespace OpenVisionLab
                     MetricsText = VisionPipelineKnownMetrics.FormatMetrics(metrics),
                     Overlays = overlays,
                     ObjectResults = VisionPipelineObjectResultStore.Get(stepResult?.ToolResult).ToList(),
+                    InstanceResults = VisionPipelineInstanceResultStore.Get(stepResult?.ToolResult)
+                        .Select(item => item.Clone())
+                        .ToList(),
                     GeometryFeatures = VisionPipelineGeometryFeatureStore.Get(stepResult?.ToolResult).Select(item => item.Clone()).ToList()
                 });
             }
@@ -463,6 +466,7 @@ namespace OpenVisionLab
         public string MetricsText { get; set; } = string.Empty;
         public List<VisionRecipeOverlaySummary> Overlays { get; set; } = new List<VisionRecipeOverlaySummary>();
         public List<VisionPipelineObjectResult> ObjectResults { get; set; } = new List<VisionPipelineObjectResult>();
+        public List<VisionPipelineInstanceResult> InstanceResults { get; set; } = new List<VisionPipelineInstanceResult>();
         public List<VisionPipelineGeometryFeatureResult> GeometryFeatures { get; set; } = new List<VisionPipelineGeometryFeatureResult>();
         public string ResultImageSizeText => ResultImageWidth > 0 && ResultImageHeight > 0
             ? $"{ResultImageWidth} x {ResultImageHeight}"

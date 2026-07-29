@@ -230,6 +230,22 @@ namespace OpenVisionLab
             suppressGeometrySelection = false;
         }
 
+        private void InstanceResultsGrid_SelectionChanged(
+            object sender,
+            SelectionChangedEventArgs e)
+        {
+            if (suppressInstanceSelection)
+            {
+                return;
+            }
+
+            VisionPipelineInstanceResult selected =
+                instanceResultsGrid?.SelectedItem as VisionPipelineInstanceResult;
+            suppressInstanceSelection = true;
+            ShowInstanceHighlight(selected);
+            suppressInstanceSelection = false;
+        }
+
         private void CircleSamplesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (suppressCircleSelection)
@@ -467,6 +483,29 @@ namespace OpenVisionLab
             }
 
             DrawingBitmap preview = OpenVisionPipelineReviewViewRenderService.CreateGeometryHighlight(objectResultBaseImage, item);
+            if (preview == null)
+            {
+                RestoreObjectResultPreview();
+                return;
+            }
+
+            ViewModel.SetHighlightedOutputPreview(preview);
+            preview.Dispose();
+            HasObjectHighlight = true;
+        }
+
+        private void ShowInstanceHighlight(VisionPipelineInstanceResult item)
+        {
+            if (item == null || objectResultBaseImage == null)
+            {
+                RestoreObjectResultPreview();
+                return;
+            }
+
+            DrawingBitmap preview =
+                OpenVisionPipelineReviewInstanceRenderService.CreateHighlight(
+                    objectResultBaseImage,
+                    item);
             if (preview == null)
             {
                 RestoreObjectResultPreview();
