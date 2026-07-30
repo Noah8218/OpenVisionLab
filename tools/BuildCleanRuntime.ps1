@@ -187,6 +187,7 @@ function Invoke-GitText {
 }
 
 $sourceCommit = Invoke-GitText @("rev-parse", "HEAD")
+$sourceCommitTime = Invoke-GitText @("show", "-s", "--format=%cI", "HEAD")
 $sourceBranch = Invoke-GitText @("branch", "--show-current")
 $sourceStatus = Invoke-GitText @("status", "--porcelain", "--untracked-files=no")
 $sourceRemote = Invoke-GitText @("remote", "get-url", "origin")
@@ -206,7 +207,12 @@ $runtimeFiles = @(
 
 $manifest = [pscustomobject][ordered]@{
     SchemaVersion = 2
-    BuiltAtUtc = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+    SourceCommitTimeUtc = if ([string]::IsNullOrWhiteSpace($sourceCommitTime)) {
+        ""
+    }
+    else {
+        ([DateTimeOffset]::Parse($sourceCommitTime)).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+    }
     Mode = $Mode
     Configuration = $Configuration
     Platform = $Platform
@@ -257,7 +263,50 @@ $manifestPath = Join-Path $outputFullPath "clean_runtime_manifest.json"
 $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
 
 if ($Mode -eq "Release") {
-    Compress-Archive -LiteralPath $outputFullPath -DestinationPath $releaseArchivePath -CompressionLevel Optimal
+    Add-Type -AssemblyName System.IO.Compression
+    $archiveStream = [System.IO.File]::Open(
+        $releaseArchivePath,
+        [System.IO.FileMode]::CreateNew,
+        [System.IO.FileAccess]::ReadWrite,
+        [System.IO.FileShare]::None)
+    try {
+        $archive = [System.IO.Compression.ZipArchive]::new(
+            $archiveStream,
+            [System.IO.Compression.ZipArchiveMode]::Create,
+            $false)
+        try {
+            $fixedArchiveTime = [DateTimeOffset]::Parse("2000-01-01T00:00:00Z")
+            $archiveSourceFiles = @(
+                Get-ChildItem -LiteralPath $outputFullPath -File -Recurse |
+                    Sort-Object {
+                        $_.FullName.Substring($outputFullPath.Length).Replace('\', '/')
+                    }
+            )
+            foreach ($archiveSourceFile in $archiveSourceFiles) {
+                $relativeArchivePath =
+                    $archiveSourceFile.FullName.Substring($outputFullPath.Length).TrimStart('\', '/').Replace('\', '/')
+                $entry = $archive.CreateEntry(
+                    "OpenVisionLab/" + $relativeArchivePath,
+                    [System.IO.Compression.CompressionLevel]::Optimal)
+                $entry.LastWriteTime = $fixedArchiveTime
+                $entryStream = $entry.Open()
+                $sourceStream = [System.IO.File]::OpenRead($archiveSourceFile.FullName)
+                try {
+                    $sourceStream.CopyTo($entryStream)
+                }
+                finally {
+                    $sourceStream.Dispose()
+                    $entryStream.Dispose()
+                }
+            }
+        }
+        finally {
+            $archive.Dispose()
+        }
+    }
+    finally {
+        $archiveStream.Dispose()
+    }
     $archiveHash = (Get-FileHash -LiteralPath $releaseArchivePath -Algorithm SHA256).Hash
     Set-Content -LiteralPath $releaseChecksumPath -Value ($archiveHash + " *" + (Split-Path -Leaf $releaseArchivePath)) -Encoding ASCII
 }
