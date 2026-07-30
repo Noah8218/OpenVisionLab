@@ -581,9 +581,11 @@ namespace OpenVisionLab
             if (!SetProperty(ref selectedPipelineOption, option, nameof(SelectedPipelineOption)))
             {
                 PipelineEditName = option.PipelineName;
+                NotifySelectedPipelinePersistenceStatusChanged();
                 return;
             }
 
+            NotifySelectedPipelinePersistenceStatusChanged();
             SelectedPipelinePreviewStep = null;
             PipelineEditName = option.PipelineName;
             LatestCatalogBenchmarkSummary = OpenVisionRecipeCatalogBenchmarkSummary.Empty;
@@ -2914,6 +2916,7 @@ namespace OpenVisionLab
                 || executionSession.IsCatalogBenchmarkRunning
                 || executionSession.IsSampleCheckRunning
                 || !CanUseSelectedPipeline()
+                || HasSelectedRecipePersistenceFailure
                 || SelectedSampleOption?.Sample == null)
             {
                 return false;
@@ -2935,6 +2938,7 @@ namespace OpenVisionLab
                 || executionSession.IsPairCheckRunning
                 || executionSession.IsSampleCheckRunning
                 || !CanUseSelectedPipeline()
+                || HasSelectedRecipePersistenceFailure
                 || SelectedSampleOption?.Sample == null)
             {
                 return false;
@@ -2962,7 +2966,8 @@ namespace OpenVisionLab
                 || executionSession.IsCatalogBenchmarkRunning
                 || executionSession.IsPairCheckRunning
                 || executionSession.IsSampleCheckRunning
-                || !CanUseSelectedPipeline())
+                || !CanUseSelectedPipeline()
+                || HasSelectedRecipePersistenceFailure)
             {
                 return false;
             }
@@ -3009,6 +3014,26 @@ namespace OpenVisionLab
             return CanRunLocalValidationSet(SelectedValidationSetOption);
         }
 
+        private void NotifySelectedPipelinePersistenceStatusChanged()
+        {
+            OnPropertyChanged(
+                nameof(HasSelectedPipelinePersistenceStatus));
+            OnPropertyChanged(
+                nameof(HasSelectedPipelinePersistenceFailure));
+            OnPropertyChanged(
+                nameof(SelectedPipelinePersistenceStatusText));
+            OnPropertyChanged(
+                nameof(SelectedPipelinePersistenceHelpText));
+            OnPropertyChanged(
+                nameof(HasSelectedRecipePersistenceStatus));
+            OnPropertyChanged(
+                nameof(HasSelectedRecipePersistenceFailure));
+            OnPropertyChanged(
+                nameof(SelectedRecipePersistenceStatusText));
+            OnPropertyChanged(
+                nameof(SelectedRecipePersistenceHelpText));
+        }
+
         private bool CanRunLocalValidationSet(
             OpenVisionRecipeValidationSetOption option)
         {
@@ -3018,6 +3043,7 @@ namespace OpenVisionLab
                 || executionSession.IsPairCheckRunning
                 || executionSession.IsSampleCheckRunning
                 || !CanUseSelectedPipeline()
+                || HasSelectedRecipePersistenceFailure
                 || option?.Set?.Images == null
                 || option.Set.Images.Count == 0
                 || option.Set.Images.Any(image => image == null || !image.Exists))
@@ -3167,6 +3193,14 @@ namespace OpenVisionLab
             {
                 VisionPipelineStorage.Load(recipeName, activePipelineName);
                 pipelineNames = RecipeWorkspaceService.GetVisionPipelineNames(recipeName);
+                if (pipelineNames.Length == 0
+                    && VisionPipelineStorage.TryGetPersistenceState(
+                        recipeName,
+                        activePipelineName,
+                        out _))
+                {
+                    pipelineNames = new[] { activePipelineName };
+                }
             }
 
             IReadOnlyList<OpenVisionRecipePipelineOption> options = pipelineNames
@@ -3197,6 +3231,7 @@ namespace OpenVisionLab
             {
                 selectedPipelineOption = selectedOption;
                 OnPropertyChanged(nameof(SelectedPipelineOption));
+                NotifySelectedPipelinePersistenceStatusChanged();
             }
 
             PipelineEditName = selectedOption?.PipelineName ?? string.Empty;
@@ -3310,8 +3345,23 @@ namespace OpenVisionLab
                 VisionPipelineAppendService.DefaultPipelineName);
             string previewPipelineName = selectedPipelineOption?.PipelineName ?? activePipelineName;
             string pipelinePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, previewPipelineName);
+            int pipelineCount =
+                PipelineOptions?.Count
+                ?? pipelineNames.Length;
             DateTime? lastWriteTime = RecipeWorkspaceService.GetRecipeLastWriteTime(recipeName);
-            bool xmlOk = VisionPipelineStorage.TryLoadFromFile(pipelinePath, out VisionPipeline activePipeline, out string xmlMessage);
+            bool storedXmlLoaded = VisionPipelineStorage.TryLoadFromFile(
+                pipelinePath,
+                out VisionPipeline activePipeline,
+                out string xmlMessage);
+            bool xmlOk =
+                storedXmlLoaded
+                && !HasSelectedRecipePersistenceFailure;
+            if (storedXmlLoaded
+                && HasSelectedRecipePersistenceFailure)
+            {
+                xmlMessage =
+                    SelectedRecipePersistenceStatusText;
+            }
             int stepCount = activePipeline?.Steps?.Count ?? 0;
             string llmValidationReport = OpenVisionRecipeStoredPipelineValidationReportBuilder.Build(
                 new OpenVisionRecipeStoredPipelineValidationReportRequest
@@ -3328,7 +3378,7 @@ namespace OpenVisionLab
             string detail = string.Join(
                 Environment.NewLine,
                 string.Format(CultureInfo.CurrentCulture, LocalText("활성 파이프라인: {0}", "Active pipeline: {0}"), activePipelineName),
-                string.Format(CultureInfo.CurrentCulture, LocalText("파이프라인 수: {0}", "Pipelines: {0}"), pipelineNames.Length),
+                string.Format(CultureInfo.CurrentCulture, LocalText("파이프라인 수: {0}", "Pipelines: {0}"), pipelineCount),
                 string.Format(CultureInfo.CurrentCulture, LocalText("Step 수: {0}", "Steps: {0}"), stepCount),
                 string.Format(CultureInfo.CurrentCulture, LocalText("XML: {0}", "XML: {0}"), xmlOk ? "OK" : "NG - " + xmlMessage),
                 string.Format(CultureInfo.CurrentCulture, LocalText("수정: {0}", "Updated: {0}"), updatedText),
@@ -3342,7 +3392,7 @@ namespace OpenVisionLab
                 recipeName,
                 activePipelineName,
                 previewPipelineName,
-                pipelineNames.Length,
+                pipelineCount,
                 stepCount,
                 xmlOk,
                 detail,
@@ -3913,6 +3963,7 @@ namespace OpenVisionLab
                 string saveFailure = OpenVisionRecipeText.Local("XML 저장 실패: ", "XML save failed: ")
                     + ex.GetBaseException().Message;
                 TryRestorePipelineAfterFailedApply(recipeName, originalPipeline, out string restoreMessage);
+                RefreshPipelineOptions(pipelineName);
                 SetSelectedStepEditStatus(saveFailure + Environment.NewLine + restoreMessage);
                 return false;
             }
@@ -3933,6 +3984,7 @@ namespace OpenVisionLab
                     recipeName,
                     originalPipeline,
                     out string restoreMessage);
+                RefreshPipelineOptions(pipelineName);
                 SetSelectedStepEditStatus(
                     OpenVisionRecipeText.Local(
                         "XML 왕복 검증에 실패하여 전환을 중단했습니다: ",
@@ -3951,7 +4003,7 @@ namespace OpenVisionLab
             }
 
             selectedStepEditSession.MarkClean();
-            UpdateSelectedRecipeSummary();
+            RefreshPipelineOptions(pipelineName);
             SelectedPipelinePreviewStep = SelectedRecipeSummary?.PipelinePreviewSteps?
                 .FirstOrDefault(stepPreview => stepPreview.Index == selectedIndex);
             LoadSelectedStepParametersForEdit(updateStatus: false);

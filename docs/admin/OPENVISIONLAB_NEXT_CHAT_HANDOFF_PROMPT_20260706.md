@@ -332,13 +332,29 @@ Preview/Run/layer/route side effects. Evidence:
 `docs\reports\OPENVISIONLAB_SETTINGS_STORE_PERSISTENCE_FEEDBACK_20260730.md`
 and `artifacts\p271_settings_persistence_feedback_20260730`.
 
-Next priority: statically audit higher-impact Recipe/Pipeline persistence,
-beginning with `VisionPipelineStorage` and `RecipeDataStorage`. Implement
-feedback parity only after reproducing an operator-visible silent fallback.
-Recommended model: `gpt-5.6-terra` | Reasoning effort: `medium`.
-Syntactically valid semantic staleness remains blocked on a future explicit
-schema/version contract. CVR-00 still requires three real independent
-first-time participants.
+P272 completes that Recipe/Pipeline persistence audit and bounded correction.
+A malformed active Pipeline previously became a zero-Step editable default
+while Recipe Manager still showed `XML OK`; unreadable Recipe `CData` could
+propagate a Recipe-switch load exception. Pipeline and Recipe-data storage now
+retain invalid substitution, unreadable load, save failure, and one-time
+recovery. Exact invalid backups precede atomic replacement, Recipe Manager
+shows nonmodal Korean/English failure context and `XML NG`, execution paths
+fail closed, and Direct Tool append distinguishes memory-only edits from disk
+state. R1-R10, current Debug EXE before/after, Direct retry, Recipe
+Pipeline/pending-edit, and P269-P271 regressions passed with zero automatic
+Preview/Run/layer/route changes. Evidence:
+`docs\reports\OPENVISIONLAB_RECIPE_PIPELINE_PERSISTENCE_FEEDBACK_20260730.md`
+and `artifacts\p272_recipe_pipeline_persistence_20260730`.
+
+There is no active feature implementation after P272. CVR-00 remains blocked
+on three real independent first-time participants; use no model tokens until
+their raw observations exist, then use `gpt-5.6-terra` with `low`. A
+Productionization track requires an explicit distribution decision; afterward
+use `gpt-5.6-terra` with `medium` for the first bounded audit. Algorithm
+expansion requires a named operator task and admission packet; for an approved
+high-risk matching/metrology/calibration task use `gpt-5.6-sol` with `high`.
+R10 syntactically valid semantic staleness remains blocked on an explicit
+schema/version contract.
 
 ## 2026-07-29 P253 / Workspace Sample / Recipe Context Sync
 

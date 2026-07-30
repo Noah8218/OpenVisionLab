@@ -9,6 +9,11 @@ namespace OpenVisionLab
     internal static class VisionPipelineStorage
     {
         private const string ActivePipelineFileName = "pipeline.active";
+        private static readonly object persistenceStateSync = new object();
+        private static readonly Dictionary<string, VisionPipelinePersistenceState>
+            persistenceStates =
+                new Dictionary<string, VisionPipelinePersistenceState>(
+                    StringComparer.OrdinalIgnoreCase);
 
         public static VisionPipeline Load(string recipeName, string pipelineName)
         {
@@ -18,14 +23,118 @@ namespace OpenVisionLab
             };
 
             string path = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, defaultPipeline.Name);
-            return SerializeHelper.LoadOrCreateXmlFile(path, defaultPipeline, out _);
+            try
+            {
+                if (SerializeHelper.TryLoadFromXmlFile(
+                        path,
+                        out VisionPipeline pipeline,
+                        out Exception loadException)
+                    && pipeline != null)
+                {
+                    return pipeline;
+                }
+
+                if (!File.Exists(path))
+                {
+                    ClearPersistenceState(path);
+                    SerializeHelper.SaveXmlFile(
+                        path,
+                        defaultPipeline);
+                    return defaultPipeline;
+                }
+
+                VisionPipelinePersistenceState previousState =
+                    GetPersistenceState(path);
+                string backupPath =
+                    previousState?.Kind
+                            == VisionPipelinePersistenceStateKind
+                                .InvalidFileSubstituted
+                        && File.Exists(previousState.BackupPath)
+                            ? previousState.BackupPath
+                            : SerializeHelper.BackupInvalidXmlFile(
+                                path);
+                SetPersistenceState(
+                    path,
+                    new VisionPipelinePersistenceState(
+                        VisionPipelinePersistenceStateKind
+                            .InvalidFileSubstituted,
+                        recipeName,
+                        defaultPipeline.Name,
+                        path,
+                        backupPath,
+                        loadException?.Message));
+                return defaultPipeline;
+            }
+            catch (Exception ex)
+            {
+                SetPersistenceState(
+                    path,
+                    new VisionPipelinePersistenceState(
+                        VisionPipelinePersistenceStateKind.LoadFailed,
+                        recipeName,
+                        defaultPipeline.Name,
+                        path,
+                        string.Empty,
+                        ex.GetBaseException().Message));
+                return defaultPipeline;
+            }
         }
 
         public static void Save(string recipeName, VisionPipeline pipeline)
         {
             VisionPipeline target = pipeline ?? new VisionPipeline { Name = "Pipeline" };
             string path = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, target.Name);
-            SerializeHelper.SaveXmlFile(path, target);
+            VisionPipelinePersistenceState previousState =
+                GetPersistenceState(path);
+            try
+            {
+                SerializeHelper.SaveXmlFile(path, target);
+                if (previousState?.IsFailure == true)
+                {
+                    SetPersistenceState(
+                        path,
+                        new VisionPipelinePersistenceState(
+                            VisionPipelinePersistenceStateKind.SaveRecovered,
+                            recipeName,
+                            target.Name,
+                            path,
+                            previousState.BackupPath,
+                            string.Empty));
+                }
+                else
+                {
+                    ClearPersistenceState(path);
+                }
+            }
+            catch (Exception ex)
+            {
+                SetPersistenceState(
+                    path,
+                    new VisionPipelinePersistenceState(
+                        VisionPipelinePersistenceStateKind.SaveFailed,
+                        recipeName,
+                        target.Name,
+                        path,
+                        previousState?.BackupPath,
+                        ex.GetBaseException().Message));
+                throw;
+            }
+        }
+
+        internal static bool TryGetPersistenceState(
+            string recipeName,
+            string pipelineName,
+            out VisionPipelinePersistenceState state)
+        {
+            string name = string.IsNullOrWhiteSpace(pipelineName)
+                ? "Pipeline"
+                : pipelineName.Trim();
+            string path =
+                RecipeWorkspaceService.GetVisionPipelinePath(
+                    recipeName,
+                    name);
+            state = GetPersistenceState(path);
+            return state != null;
         }
 
         public static bool TryLoadFromFile(string path, out VisionPipeline pipeline, out string message)
@@ -234,6 +343,44 @@ namespace OpenVisionLab
             char[] invalidChars = Path.GetInvalidFileNameChars();
             string sanitized = new string(name.Select(ch => invalidChars.Contains(ch) ? '_' : ch).ToArray());
             return string.IsNullOrWhiteSpace(sanitized) ? "Pipeline" : sanitized;
+        }
+
+        private static VisionPipelinePersistenceState GetPersistenceState(
+            string path)
+        {
+            string key = NormalizePersistencePath(path);
+            lock (persistenceStateSync)
+            {
+                persistenceStates.TryGetValue(
+                    key,
+                    out VisionPipelinePersistenceState state);
+                return state;
+            }
+        }
+
+        private static void SetPersistenceState(
+            string path,
+            VisionPipelinePersistenceState state)
+        {
+            string key = NormalizePersistencePath(path);
+            lock (persistenceStateSync)
+            {
+                persistenceStates[key] = state;
+            }
+        }
+
+        private static void ClearPersistenceState(string path)
+        {
+            string key = NormalizePersistencePath(path);
+            lock (persistenceStateSync)
+            {
+                persistenceStates.Remove(key);
+            }
+        }
+
+        private static string NormalizePersistencePath(string path)
+        {
+            return Path.GetFullPath(path ?? string.Empty);
         }
 
         public static bool TryValidateRoundTrip(string recipeName, VisionPipeline pipeline, out string message)

@@ -4,6 +4,57 @@ Updated: 2026-07-30 KST
 
 This is the current continuation brief for a new OpenVisionLab chat. Read it after `AGENTS.md` and before choosing implementation work. It is a status and priority document; it does not override stable behavioral contracts in `AGENTS.md` or `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`.
 
+## Incremental Work Update — P272 Recipe/Pipeline Persistence Feedback (2026-07-30)
+
+- P272 reproduced the admitted operator-visible defect. A malformed active
+  Pipeline was backed up and replaced by a zero-Step editable default, while
+  Recipe Manager still showed `XML OK` and did not name the damage,
+  substitution, or backup.
+- The Recipe-data audit also showed that an unreadable `CData` file could
+  propagate a Recipe-switch load exception. `DataState` is currently an empty
+  `<CData>` contract, so P272 corrects file/failure identity without inventing
+  Recipe business fields.
+- `VisionPipelineStorage` and `RecipeDataStorage` now retain invalid
+  substitution, unreadable load, save failure, and one-time save recovery.
+  Invalid originals are copied to exact `.invalid-<timestamp>.xml` backups
+  before atomic replacement, so failed replacement preserves the canonical
+  previous file.
+- Recipe Manager shows a compact nonmodal Korean/English warning with full
+  Recipe/Pipeline/path/cause/backup Tooltip and accessibility HelpText. Failure
+  marks the Recipe `XML NG` and blocks selected-sample, pair, catalog, and
+  validation-set execution until explicit save/replacement.
+- Direct Tool Pipeline append reports that failed edits are memory-only and
+  may be lost after reopen. A retry after releasing the actual file lock
+  persisted exactly one Step and produced one recovery state.
+- R1-R10 passed for Pipeline and applicable Recipe-data file contracts.
+  Unknown elements remain the documented R10 detectability boundary because
+  no schema/version semantic-staleness rule exists.
+- A separate current EXE process reopened the retained invalid canonical
+  Pipeline, reused the exact backup, and reproduced the fail-closed warning
+  before explicit save.
+- Current Debug EXE Korean/English before/after, Tooltip/accessibility, Direct
+  save retry, Recipe Pipeline/pending-edit round trip, P269-P271 regressions,
+  full build, readiness, and diff checks passed with zero automatic
+  Preview/Run, layer, active-layer, or route changes.
+- Evidence:
+  `artifacts\p272_recipe_pipeline_persistence_20260730` and
+  `docs\reports\OPENVISIONLAB_RECIPE_PIPELINE_PERSISTENCE_FEEDBACK_20260730.md`.
+- Status: P272 `Complete`.
+- There is no active feature priority after P272.
+  1. CVR-00 remains blocked until three real independent first-time
+     participants and raw observations exist. Recommended model: none before
+     observations; `gpt-5.6-terra` for synthesis afterward | Reasoning effort:
+     none before observations; `low` afterward.
+  2. A Productionization track requires an explicit distribution decision.
+     Recommended model: none before the decision; `gpt-5.6-terra` for the
+     first bounded audit afterward | Reasoning effort: none before the
+     decision; `medium` afterward.
+  3. Algorithm expansion requires a named operator task, reproducible
+     current-tool failure, Good/Bad/held-out evidence, metrics, acceptance,
+     and physical tolerance ownership. Recommended model: none before the
+     packet; `gpt-5.6-sol` for an approved high-risk task | Reasoning effort:
+     none before the packet; `high` afterward.
+
 ## Incremental Work Update — P271 Settings Store Persistence Feedback (2026-07-30)
 
 - The P270 follow-up reproduced silent load-default substitution and swallowed
@@ -33,11 +84,16 @@ This is the current continuation brief for a new OpenVisionLab chat. Read it aft
 - Status: P271 `Complete`.
 - Boundary: syntactically valid semantic staleness remains undetectable without
   an explicit schema/version or semantic-validation contract.
-- Next bounded priority: statically audit higher-impact Recipe/Pipeline
+- Historical next bounded priority at P271: statically audit higher-impact Recipe/Pipeline
   persistence, beginning with `VisionPipelineStorage` and
   `RecipeDataStorage`; implement only after reproducing an operator-visible
   silent fallback.
-  Recommended model: `gpt-5.6-terra` | Reasoning effort: `medium`.
+  The admitted P272 scope, R1-R10 reproduction matrix, A1-A12 acceptance
+  criteria, implementation gate, and ordered post-P272 priorities are defined
+  in
+  `docs\reports\OPENVISIONLAB_NEXT_DEVELOPMENT_DECISION_20260730.md`.
+  Recommended model: `gpt-5.6-terra` | Reasoning effort: `medium`. P272 above
+  now completes this item; do not treat it as current work.
 - CVR-00 remains deferred until three independent first-time participants and
   raw observations exist.
 

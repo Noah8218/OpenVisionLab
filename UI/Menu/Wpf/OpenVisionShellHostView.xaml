@@ -2947,6 +2947,38 @@
                                                                    FontSize="11" />
                                                     </Border>
                                                 </WrapPanel>
+                                                <Border Margin="0,12,0,0"
+                                                        Padding="9,7"
+                                                        Visibility="{Binding RecipeCommands.HasSelectedRecipePersistenceStatus, Converter={StaticResource ShellHost.BooleanToVisibilityConverter}}"
+                                                        AutomationProperties.AutomationId="HostRecipePersistenceStatus">
+                                                    <Border.Style>
+                                                        <Style TargetType="{x:Type Border}">
+                                                            <Setter Property="Background" Value="#3B2C16" />
+                                                            <Setter Property="BorderBrush" Value="#D8A451" />
+                                                            <Setter Property="BorderThickness" Value="1" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding RecipeCommands.HasSelectedRecipePersistenceFailure}" Value="False">
+                                                                    <Setter Property="Background" Value="#143B35" />
+                                                                    <Setter Property="BorderBrush" Value="#45967F" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <DockPanel>
+                                                        <iconPacks:PackIconMaterial Kind="AlertOutline"
+                                                                                    Width="15"
+                                                                                    Height="15"
+                                                                                    Margin="0,1,7,0"
+                                                                                    Foreground="#F3D79B" />
+                                                        <TextBlock Text="{Binding RecipeCommands.SelectedRecipePersistenceStatusText}"
+                                                                   ToolTip="{Binding RecipeCommands.SelectedRecipePersistenceHelpText}"
+                                                                   AutomationProperties.Name="{Binding RecipeCommands.SelectedRecipePersistenceStatusText}"
+                                                                   AutomationProperties.HelpText="{Binding RecipeCommands.SelectedRecipePersistenceHelpText}"
+                                                                   Foreground="#F8E8C2"
+                                                                   FontSize="11"
+                                                                   TextWrapping="Wrap" />
+                                                    </DockPanel>
+                                                </Border>
                                             </StackPanel>
                                         </Border>
                                         <Border Grid.Column="2"

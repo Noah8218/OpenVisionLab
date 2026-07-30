@@ -55,6 +55,21 @@ namespace OpenVisionLab
             string targetRecipeName = Normalize(recipeName, "Default");
             string targetPipelineName = Normalize(pipelineName, DefaultPipelineName);
             VisionPipeline pipeline = VisionPipelineStorage.Load(targetRecipeName, targetPipelineName);
+            if (VisionPipelineStorage.TryGetPersistenceState(
+                targetRecipeName,
+                targetPipelineName,
+                out VisionPipelinePersistenceState persistenceState)
+                && (persistenceState.Kind
+                        == VisionPipelinePersistenceStateKind
+                            .InvalidFileSubstituted
+                    || persistenceState.Kind
+                        == VisionPipelinePersistenceStateKind
+                            .LoadFailed))
+            {
+                throw new InvalidOperationException(
+                    "Pipeline persistence requires operator review before a Step can be added.");
+            }
+
             if (pipeline == null)
             {
                 pipeline = new VisionPipeline { Name = targetPipelineName };

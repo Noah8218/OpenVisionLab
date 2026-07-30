@@ -44,7 +44,7 @@ namespace OpenVisionLab
             return TryLoadFromXmlFile(path, out value, out _);
         }
 
-        private static bool TryLoadFromXmlFile<T>(
+        internal static bool TryLoadFromXmlFile<T>(
             string path,
             out T value,
             out Exception loadException)
@@ -240,7 +240,7 @@ namespace OpenVisionLab
             File.Move(tempPath, path);
         }
 
-        private static string BackupInvalidXmlFile(string path)
+        internal static string BackupInvalidXmlFile(string path)
         {
             string directory = Path.GetDirectoryName(path);
             string fileName = Path.GetFileNameWithoutExtension(path);
@@ -251,9 +251,76 @@ namespace OpenVisionLab
                 directory = Directory.GetCurrentDirectory();
             }
 
+            string[] existingBackups = Directory.GetFiles(
+                directory,
+                $"{fileName}.invalid-*{extension}");
+            foreach (string existingBackup in existingBackups)
+            {
+                if (FilesAreEqual(path, existingBackup))
+                {
+                    return existingBackup;
+                }
+            }
+
             string backupPath = Path.Combine(directory, $"{fileName}.invalid-{DateTime.Now:yyyyMMddHHmmssfff}{extension}");
-            File.Move(path, backupPath);
+            // Keep the original in place until the atomic replacement succeeds.
+            // If the subsequent default save fails, the operator's prior file
+            // remains available at its canonical path and the exact backup is
+            // still retained for diagnosis/recovery.
+            File.Copy(path, backupPath, overwrite: false);
             return backupPath;
+        }
+
+        private static bool FilesAreEqual(string leftPath, string rightPath)
+        {
+            FileInfo left = new FileInfo(leftPath);
+            FileInfo right = new FileInfo(rightPath);
+            if (left.Length != right.Length)
+            {
+                return false;
+            }
+
+            const int BufferSize = 81920;
+            byte[] leftBuffer = new byte[BufferSize];
+            byte[] rightBuffer = new byte[BufferSize];
+            using FileStream leftStream = new FileStream(
+                leftPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read);
+            using FileStream rightStream = new FileStream(
+                rightPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read);
+            while (true)
+            {
+                int leftRead = leftStream.Read(
+                    leftBuffer,
+                    0,
+                    leftBuffer.Length);
+                int rightRead = rightStream.Read(
+                    rightBuffer,
+                    0,
+                    rightBuffer.Length);
+                if (leftRead != rightRead)
+                {
+                    return false;
+                }
+
+                if (leftRead == 0)
+                {
+                    return true;
+                }
+
+                for (int i = 0; i < leftRead; i++)
+                {
+                    if (leftBuffer[i] != rightBuffer[i])
+                    {
+                        return false;
+                    }
+                }
+            }
         }
     }
 

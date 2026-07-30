@@ -362,7 +362,8 @@ namespace OpenVisionLab
             int stepCount,
             bool xmlValid,
             bool routeValid,
-            string statusText)
+            string statusText,
+            VisionPipelinePersistenceState persistenceState)
         {
             PipelineName = pipelineName ?? string.Empty;
             IsActive = isActive;
@@ -370,6 +371,15 @@ namespace OpenVisionLab
             XmlValid = xmlValid;
             RouteValid = routeValid;
             StatusText = statusText ?? string.Empty;
+            HasPersistenceStatus = persistenceState != null;
+            HasPersistenceFailure =
+                persistenceState?.IsFailure == true;
+            PersistenceStatusText =
+                OpenVisionRecipePersistenceStatusPresenter
+                    .CreateCompactText(persistenceState);
+            PersistenceHelpText =
+                OpenVisionRecipePersistenceStatusPresenter
+                    .CreateHelpText(persistenceState);
         }
 
         public string PipelineName { get; }
@@ -383,6 +393,14 @@ namespace OpenVisionLab
         public bool RouteValid { get; }
 
         public string StatusText { get; }
+
+        public bool HasPersistenceStatus { get; }
+
+        public bool HasPersistenceFailure { get; }
+
+        public string PersistenceStatusText { get; }
+
+        public string PersistenceHelpText { get; }
 
         public string DisplayText =>
             (IsActive ? OpenVisionRecipeText.Local("[활성] ", "[ACTIVE] ") : string.Empty)
@@ -401,12 +419,42 @@ namespace OpenVisionLab
             string name = string.IsNullOrWhiteSpace(pipelineName) ? "Pipeline" : pipelineName.Trim();
             string path = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, name);
             bool isActive = string.Equals(name, activePipelineName, StringComparison.OrdinalIgnoreCase);
+            VisionPipelineStorage.TryGetPersistenceState(
+                recipeName,
+                name,
+                out VisionPipelinePersistenceState persistenceState);
             if (!VisionPipelineStorage.TryLoadFromFile(path, out VisionPipeline pipeline, out string message))
             {
-                return new OpenVisionRecipePipelineOption(name, isActive, 0, false, false, "XML NG - " + message);
+                string loadStatus = persistenceState?.IsFailure == true
+                    ? OpenVisionRecipeText.Local(
+                        "저장 복원 검토 필요",
+                        "Storage restoration review required")
+                    : "XML NG - " + message;
+                return new OpenVisionRecipePipelineOption(
+                    name,
+                    isActive,
+                    0,
+                    false,
+                    false,
+                    loadStatus,
+                    persistenceState);
             }
 
             VisionPipelineValidationResult validation = VisionPipelineValidator.Validate(pipeline, new[] { "Main" });
+            if (persistenceState?.IsFailure == true)
+            {
+                return new OpenVisionRecipePipelineOption(
+                    name,
+                    isActive,
+                    pipeline?.Steps?.Count ?? 0,
+                    false,
+                    false,
+                    OpenVisionRecipeText.Local(
+                        "저장 복원 검토 필요",
+                        "Storage restoration review required"),
+                    persistenceState);
+            }
+
             string status = validation.Success
                 ? OpenVisionRecipeText.Local("XML OK / 경로 OK", "XML OK / Route OK")
                 : OpenVisionRecipeText.Local("XML OK / 경로 NG ", "XML OK / Route NG ") + validation.Errors.Count.ToString(CultureInfo.InvariantCulture);
@@ -416,7 +464,8 @@ namespace OpenVisionLab
                 pipeline?.Steps?.Count ?? 0,
                 true,
                 validation.Success,
-                status);
+                status,
+                persistenceState);
         }
     }
 

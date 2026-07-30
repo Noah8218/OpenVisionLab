@@ -139,6 +139,9 @@ Recipe/Pipeline boundaries, beginning with `VisionPipelineStorage` and
 `RecipeDataStorage`, because their current `LoadOrCreateXmlFile` calls may also
 collapse invalid saved state into a default. Audit first; implement only when
 an operator-visible silent fallback is reproduced.
+The admitted P272 scope, R1-R10 reproduction matrix, A1-A12 acceptance
+criteria, implementation gate, and ordered later priorities are recorded in
+`docs\reports\OPENVISIONLAB_NEXT_DEVELOPMENT_DECISION_20260730.md`.
 
 Recommended model: `gpt-5.6-terra` | Reasoning effort: `medium`.
 

@@ -56,8 +56,10 @@ namespace OpenVisionLab
 
         private VisionPipelineStep AddCreatedStep(Func<VisionPipelineStep> createStep)
         {
+            OpenVisionRecipeContext recipeContext = null;
             try
             {
+                recipeContext = recipeContextProvider();
                 // Pipeline creation is centralized so tool views do not duplicate append/status behavior.
                 VisionPipelineStep step = createStep();
                 if (step == null)
@@ -65,7 +67,6 @@ namespace OpenVisionLab
                     return ReportUnavailable();
                 }
 
-                OpenVisionRecipeContext recipeContext = recipeContextProvider();
                 VisionPipelineStep addedStep =
                     VisionPipelineAppendService.AddStep(step, recipeContext);
                 string savedContext = string.Format(
@@ -83,6 +84,19 @@ namespace OpenVisionLab
             }
             catch (Exception ex)
             {
+                if (recipeContext != null
+                    && VisionPipelineStorage.TryGetPersistenceState(
+                        recipeContext.Name,
+                        recipeContext.PipelineName,
+                        out VisionPipelinePersistenceState persistenceState)
+                    && persistenceState.IsFailure)
+                {
+                    setStatus(
+                        OpenVisionRecipePersistenceStatusPresenter
+                            .CreateHelpText(persistenceState));
+                    return null;
+                }
+
                 setStatus("Pipeline add NG / " + ex.GetBaseException().Message);
                 return null;
             }

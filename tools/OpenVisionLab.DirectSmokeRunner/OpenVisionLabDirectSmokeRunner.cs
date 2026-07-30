@@ -206,6 +206,24 @@ namespace OpenVisionLab
                     return true;
                 }
 
+                if (string.Equals(
+                    scenario,
+                    "recipe-pipeline-persistence-feedback",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    RunRecipePipelinePersistenceFeedback(args, outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(
+                    scenario,
+                    "recipe-persistence-reopen-probe",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    RunRecipePersistenceReopenProbe(args, outputDirectory);
+                    return true;
+                }
+
                 if (string.Equals(scenario, "recipe-manager-llm-intent-skills", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(scenario, "llm-intent-skills", StringComparison.OrdinalIgnoreCase))
                 {
@@ -7062,6 +7080,1253 @@ namespace OpenVisionLab
                 }
 
                 app.Shutdown();
+            }
+        }
+
+        private static void RunRecipePipelinePersistenceFeedback(
+            string[] args,
+            string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            CleanupKnownSmokeRecipeWorkspaces("Smoke_RecipePersistence_");
+            bool expectProtection = ResolveOptionalBoolOption(
+                args,
+                "--expect-protection",
+                false);
+            string matrixEvidence = expectProtection
+                ? VerifyRecipePersistenceMatrix(
+                    outputDirectory)
+                : "NotApplicable";
+            string recipeName =
+                "Smoke_RecipePersistence_"
+                + Guid.NewGuid().ToString("N").Substring(0, 12);
+            const string pipelineName = "Persistence_Probe";
+            string pipelinePath =
+                RecipeWorkspaceService.GetVisionPipelinePath(
+                    recipeName,
+                    pipelineName);
+
+            VisionPipelineStorage.Save(
+                recipeName,
+                CreateDirectSmokePipeline(pipelineName, 2));
+            VisionPipelineStorage.SaveActivePipelineName(
+                recipeName,
+                pipelineName);
+            byte[] validBytes = File.ReadAllBytes(pipelinePath);
+            File.WriteAllText(
+                pipelinePath,
+                "<VisionPipeline",
+                Encoding.UTF8);
+            byte[] invalidBytes =
+                File.ReadAllBytes(pipelinePath);
+            string reopenProbeEvidence = "NotApplicable";
+            if (expectProtection)
+            {
+                string reopenProbeDirectory =
+                    Path.Combine(
+                        outputDirectory,
+                        "cross_process_reopen_probe");
+                Directory.CreateDirectory(
+                    reopenProbeDirectory);
+                ProcessStartInfo startInfo =
+                    new ProcessStartInfo
+                    {
+                        FileName =
+                            Environment.ProcessPath
+                            ?? throw new InvalidOperationException(
+                                "Current executable path is unavailable."),
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                startInfo.ArgumentList.Add("--smoke");
+                startInfo.ArgumentList.Add(
+                    "recipe-persistence-reopen-probe");
+                startInfo.ArgumentList.Add("--recipe-name");
+                startInfo.ArgumentList.Add(recipeName);
+                startInfo.ArgumentList.Add("--pipeline-name");
+                startInfo.ArgumentList.Add(pipelineName);
+                startInfo.ArgumentList.Add("--output");
+                startInfo.ArgumentList.Add(
+                    reopenProbeDirectory);
+                using Process reopenProbe =
+                    Process.Start(startInfo)
+                    ?? throw new InvalidOperationException(
+                        "Could not start the cross-process reopen probe.");
+                if (!reopenProbe.WaitForExit(30000))
+                {
+                    reopenProbe.Kill(
+                        entireProcessTree: true);
+                    throw new TimeoutException(
+                        "Cross-process reopen probe timed out.");
+                }
+
+                string reopenReportPath =
+                    Path.Combine(
+                        reopenProbeDirectory,
+                        "report.txt");
+                reopenProbeEvidence =
+                    File.Exists(reopenReportPath)
+                        ? File.ReadAllText(
+                            reopenReportPath,
+                            Encoding.UTF8)
+                        : string.Empty;
+                if (reopenProbe.ExitCode != 0
+                    || !reopenProbeEvidence.StartsWith(
+                        "Result: PASS",
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Cross-process reopen probe failed. "
+                        + reopenProbeEvidence);
+                }
+            }
+
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(
+                OpenVisionLanguage.Korean,
+                false);
+
+            OpenVisionShellHostWindow window = null;
+            try
+            {
+                ApplicationRuntimeContext runtimeContext =
+                    ApplicationRuntimeContext.CreateDefault();
+                window = new OpenVisionShellHostWindow(runtimeContext)
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation =
+                        WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+                app.MainWindow = window;
+                window.Show();
+                window.Activate();
+                Pump(36);
+
+                OpenVisionShellHostView shellHost =
+                    window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException(
+                        "Recipe persistence feedback smoke did not create the shell host.");
+                int previewRunsBefore =
+                    shellHost.NativePreviewRunCount;
+                int layerCountBefore =
+                    shellHost.LayerDocumentCount;
+                string activeLayerBefore =
+                    shellHost.ActiveHostLayerTitle;
+                string recipeLayerBefore =
+                    shellHost.ActiveRecipeContextLayerNameForTest;
+
+                shellHost.SwitchRecipeContextForTest(recipeName);
+                Pump(48);
+
+                string workspaceDirectory =
+                    Path.GetDirectoryName(pipelinePath)
+                    ?? string.Empty;
+                string invalidBackupPath =
+                    Directory.GetFiles(
+                        workspaceDirectory,
+                        pipelineName + ".invalid-*.xml")
+                    .SingleOrDefault();
+                if (string.IsNullOrWhiteSpace(invalidBackupPath)
+                    || !File.Exists(invalidBackupPath)
+                    || !File.ReadAllBytes(invalidBackupPath)
+                        .SequenceEqual(invalidBytes)
+                    || !File.ReadAllBytes(pipelinePath)
+                        .SequenceEqual(invalidBytes))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe persistence feedback smoke did not retain the malformed pipeline backup.");
+                }
+
+                VisionPipeline substituted =
+                    VisionPipelineStorage.Load(
+                        recipeName,
+                        pipelineName);
+                OpenVisionRecipePipelineOption option =
+                    shellHost.RecipeCommands.PipelineOptions
+                        .FirstOrDefault(item => string.Equals(
+                            item.PipelineName,
+                            pipelineName,
+                            StringComparison.OrdinalIgnoreCase));
+                bool appearsAsOrdinaryXml =
+                    option != null
+                    && option.XmlValid
+                    && substituted?.Steps?.Count == 0;
+                bool protectionVisible =
+                    option != null
+                    && (option.StatusText.Contains(
+                            "\uBCF5\uC6D0",
+                            StringComparison.Ordinal)
+                        || option.StatusText.Contains(
+                            "restore",
+                            StringComparison.OrdinalIgnoreCase)
+                        || option.StatusText.Contains(
+                            "\uC190\uC0C1",
+                            StringComparison.Ordinal)
+                        || option.StatusText.Contains(
+                            "damaged",
+                            StringComparison.OrdinalIgnoreCase)
+                        || option.StatusText.Contains(
+                            "could not be loaded",
+                            StringComparison.OrdinalIgnoreCase));
+                if (protectionVisible != expectProtection)
+                {
+                    throw new InvalidOperationException(
+                        "Recipe persistence protection did not match the expected state. "
+                        + "Expected="
+                        + expectProtection
+                        + ", Option='"
+                        + option?.StatusText
+                        + "', Steps="
+                        + (substituted?.Steps?.Count ?? -1)
+                            .ToString(CultureInfo.InvariantCulture)
+                        + ".");
+                }
+                if (!expectProtection && !appearsAsOrdinaryXml)
+                {
+                    throw new InvalidOperationException(
+                        "Current-source baseline no longer reproduces the silent default-substitution defect. "
+                        + "Option='"
+                        + option?.StatusText
+                        + "', XmlValid="
+                        + option?.XmlValid
+                        + ", RouteValid="
+                        + option?.RouteValid
+                        + ", Steps="
+                        + (substituted?.Steps?.Count ?? -1)
+                            .ToString(CultureInfo.InvariantCulture)
+                        + ".");
+                }
+
+                System.Windows.Controls.Primitives.ToggleButton
+                    recipeManagerButton =
+                        FindNamedVisualChild<
+                            System.Windows.Controls.Primitives.ToggleButton>(
+                            shellHost,
+                            "btnHostRecipeManager",
+                            "Recipe persistence feedback");
+                recipeManagerButton.IsChecked = true;
+                Pump(60);
+                string screenshotName = expectProtection
+                    ? "OpenVisionLab_Recipe_Persistence_Protected_After.png"
+                    : "OpenVisionLab_Recipe_Persistence_Silent_Before.png";
+                SaveWindowScreenScreenshot(
+                    window,
+                    Path.Combine(
+                        outputDirectory,
+                        screenshotName));
+
+                string recoveryStatus = "NotApplicable";
+                string ordinarySaveStatus = "NotApplicable";
+                string englishFailureStatus = "NotApplicable";
+                string directSaveFailureStatus = "NotApplicable";
+                string directSaveRecoveryState = "NotApplicable";
+                if (expectProtection)
+                {
+                    if (!shellHost.RecipeCommands
+                            .HasSelectedRecipePersistenceFailure
+                        || shellHost.RecipeCommands
+                            .SelectedRecipeSummary.XmlValid
+                        || shellHost.RecipeCommands
+                            .RunSelectedSampleCheckCommand
+                            .CanExecute(null))
+                    {
+                        throw new InvalidOperationException(
+                            "Recipe persistence failure did not fail closed for summary and explicit sample Run.");
+                    }
+
+                    Border persistenceBorder =
+                        FindVisualChildren<Border>(window)
+                            .FirstOrDefault(item =>
+                                item.IsVisible
+                                && string.Equals(
+                                    System.Windows.Automation
+                                        .AutomationProperties
+                                        .GetAutomationId(item),
+                                    "HostRecipePersistenceStatus",
+                                    StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            "Recipe persistence status border was not visible.");
+                    TextBlock persistenceText =
+                        FindVisualChildren<TextBlock>(
+                            persistenceBorder)
+                            .FirstOrDefault(item =>
+                                item.IsVisible
+                                && string.Equals(
+                                    item.Text,
+                                    shellHost.RecipeCommands
+                                        .SelectedRecipePersistenceStatusText,
+                                    StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            "Recipe persistence status text was not visible.");
+                    if (!string.Equals(
+                            persistenceText.ToolTip?.ToString(),
+                            shellHost.RecipeCommands
+                                .SelectedRecipePersistenceHelpText,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            System.Windows.Automation
+                                .AutomationProperties
+                                .GetHelpText(persistenceText),
+                            shellHost.RecipeCommands
+                                .SelectedRecipePersistenceHelpText,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "Recipe persistence full cause/path was not available through tooltip and accessibility HelpText.");
+                    }
+
+                    OpenVisionLanguageService.SetLanguage(
+                        OpenVisionLanguage.English,
+                        false);
+                    shellHost.SwitchRecipeContextForTest(
+                        "Default");
+                    shellHost.SwitchRecipeContextForTest(
+                        recipeName);
+                    Pump(48);
+                    englishFailureStatus =
+                        shellHost.RecipeCommands
+                            .SelectedRecipePersistenceStatusText;
+                    if (!englishFailureStatus.Contains(
+                            "damaged",
+                            StringComparison.OrdinalIgnoreCase)
+                        || !shellHost.RecipeCommands
+                            .SelectedRecipePersistenceHelpText
+                            .Contains(
+                                pipelinePath,
+                                StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            "Recipe persistence failure was not localized with the full saved path. Status='"
+                            + englishFailureStatus
+                            + "'.");
+                    }
+                    SaveWindowScreenScreenshot(
+                        window,
+                        Path.Combine(
+                            outputDirectory,
+                            "OpenVisionLab_Recipe_Persistence_Protected_After_EN.png"));
+                    OpenVisionLanguageService.SetLanguage(
+                        OpenVisionLanguage.Korean,
+                        false);
+                    shellHost.SwitchRecipeContextForTest(
+                        "Default");
+                    shellHost.SwitchRecipeContextForTest(
+                        recipeName);
+                    Pump(48);
+
+                    VisionPipelineStorage.Save(
+                        recipeName,
+                        substituted);
+                    shellHost.SwitchRecipeContextForTest(
+                        "Default");
+                    shellHost.SwitchRecipeContextForTest(
+                        recipeName);
+                    Pump(48);
+                    recoveryStatus =
+                        shellHost.RecipeCommands
+                            .SelectedRecipePersistenceStatusText;
+                    if (shellHost.RecipeCommands
+                            .HasSelectedRecipePersistenceFailure
+                        || !recoveryStatus.Contains(
+                            "\uBCF5\uAD6C",
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "Recipe persistence successful save did not expose one recovery state. Status='"
+                            + recoveryStatus
+                            + "'.");
+                    }
+
+                    VisionPipelineStorage.Save(
+                        recipeName,
+                        substituted);
+                    shellHost.SwitchRecipeContextForTest(
+                        "Default");
+                    shellHost.SwitchRecipeContextForTest(
+                        recipeName);
+                    Pump(48);
+                    ordinarySaveStatus =
+                        shellHost.RecipeCommands
+                            .SelectedRecipePersistenceStatusText;
+                    if (shellHost.RecipeCommands
+                            .HasSelectedRecipePersistenceStatus
+                        || !string.IsNullOrWhiteSpace(
+                            ordinarySaveStatus))
+                    {
+                        throw new InvalidOperationException(
+                            "Recipe persistence recovery notice repeated after an ordinary successful save. Status='"
+                            + ordinarySaveStatus
+                            + "'.");
+                    }
+
+                    recipeManagerButton.IsChecked = false;
+                    shellHost.SelectToolForTest(
+                        VISION_MENU.Blob);
+                    Pump(48);
+                    int directRunsBefore =
+                        shellHost.NativePreviewRunCount;
+                    int directLayersBefore =
+                        shellHost.LayerDocumentCount;
+                    string directActiveLayerBefore =
+                        shellHost.ActiveHostLayerTitle;
+                    string directInputRouteBefore =
+                        shellHost
+                            .ActiveNativeRouteInputLayerNameForTest;
+                    string directOutputRouteBefore =
+                        shellHost
+                            .ActiveNativeRouteOutputLayerNameForTest;
+                    string directDiskHashBefore =
+                        ComputeC9FileSha256(pipelinePath);
+                    VisionPipelineStep failedAdd;
+                    using (FileStream lockedPipeline =
+                        new FileStream(
+                            pipelinePath,
+                            FileMode.Open,
+                            FileAccess.Read,
+                            FileShare.Read))
+                    {
+                        failedAdd =
+                            shellHost
+                                .AddActiveNativePipelineStepForTest();
+                    }
+                    Pump(24);
+                    directSaveFailureStatus =
+                        shellHost.ActiveNativeStatusText;
+                    if (failedAdd != null
+                        || !directSaveFailureStatus.Contains(
+                            "\uBA54\uBAA8\uB9AC",
+                            StringComparison.Ordinal)
+                        || !directSaveFailureStatus.Contains(
+                            "\uC190\uC2E4",
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            ComputeC9FileSha256(pipelinePath),
+                            directDiskHashBefore,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "Direct teaching save failure did not distinguish memory and disk state. Status='"
+                            + directSaveFailureStatus
+                            + "'.");
+                    }
+
+                    VisionPipelineStep recoveredAdd =
+                        shellHost
+                            .AddActiveNativePipelineStepForTest();
+                    Pump(24);
+                    if (recoveredAdd == null
+                        || !VisionPipelineStorage
+                            .TryGetPersistenceState(
+                                recipeName,
+                                pipelineName,
+                                out VisionPipelinePersistenceState
+                                    directRecovered)
+                        || directRecovered.Kind
+                            != VisionPipelinePersistenceStateKind
+                                .SaveRecovered
+                        || VisionPipelineStorage.Load(
+                                recipeName,
+                                pipelineName)
+                            .Steps.Count != 1)
+                    {
+                        throw new InvalidOperationException(
+                            "Direct teaching retry did not recover and persist exactly one Step.");
+                    }
+                    directSaveRecoveryState =
+                        directRecovered.Kind.ToString();
+                    if (shellHost.NativePreviewRunCount
+                            != directRunsBefore
+                        || shellHost.LayerDocumentCount
+                            != directLayersBefore
+                        || !string.Equals(
+                            shellHost.ActiveHostLayerTitle,
+                            directActiveLayerBefore,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            shellHost
+                                .ActiveNativeRouteInputLayerNameForTest,
+                            directInputRouteBefore,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            shellHost
+                                .ActiveNativeRouteOutputLayerNameForTest,
+                            directOutputRouteBefore,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "Direct teaching save failure/recovery changed Preview/Run, layers, active layer, or routes.");
+                    }
+                }
+
+                if (shellHost.NativePreviewRunCount
+                        != previewRunsBefore
+                    || shellHost.LayerDocumentCount
+                        != layerCountBefore
+                    || !string.Equals(
+                        shellHost.ActiveHostLayerTitle,
+                        activeLayerBefore,
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        shellHost.ActiveRecipeContextLayerNameForTest,
+                        recipeLayerBefore,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Recipe persistence feedback changed Preview/Run, layers, active layer, or routing.");
+                }
+
+                File.WriteAllText(
+                    Path.Combine(
+                        outputDirectory,
+                        "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: recipe-pipeline-persistence-feedback"
+                    + Environment.NewLine
+                    + "RuntimeExe: "
+                    + Process.GetCurrentProcess().MainModule?.FileName
+                    + Environment.NewLine
+                    + "ExpectedProtection: "
+                    + expectProtection
+                    + Environment.NewLine
+                    + "MatrixEvidence: "
+                    + matrixEvidence
+                    + Environment.NewLine
+                    + "CrossProcessReopenProbe: "
+                    + (reopenProbeEvidence
+                        .Split(
+                            new[]
+                            {
+                                "\r\n",
+                                "\n"
+                            },
+                            StringSplitOptions.None)
+                        .FirstOrDefault()
+                        ?? string.Empty)
+                    + Environment.NewLine
+                    + "OriginalValidBytes: "
+                    + validBytes.Length.ToString(
+                        CultureInfo.InvariantCulture)
+                    + Environment.NewLine
+                    + "InvalidBackup: "
+                    + invalidBackupPath
+                    + Environment.NewLine
+                    + "InvalidBackupExact: True"
+                    + Environment.NewLine
+                    + "CanonicalInvalidRetainedUntilExplicitSave: True"
+                    + Environment.NewLine
+                    + "SubstitutedStepCount: "
+                    + (substituted?.Steps?.Count ?? -1)
+                        .ToString(CultureInfo.InvariantCulture)
+                    + Environment.NewLine
+                    + "PipelineStatus: "
+                    + option?.StatusText
+                    + Environment.NewLine
+                    + "XmlValid: "
+                    + option?.XmlValid
+                    + Environment.NewLine
+                    + "RouteValid: "
+                    + option?.RouteValid
+                    + Environment.NewLine
+                    + "RecoveryStatus: "
+                    + recoveryStatus
+                    + Environment.NewLine
+                    + "OrdinarySaveStatus: "
+                    + ordinarySaveStatus
+                    + Environment.NewLine
+                    + "EnglishFailureStatus: "
+                    + englishFailureStatus
+                    + Environment.NewLine
+                    + "DirectSaveFailureStatus: "
+                    + directSaveFailureStatus
+                    + Environment.NewLine
+                    + "DirectSaveRecoveryState: "
+                    + directSaveRecoveryState
+                    + Environment.NewLine
+                    + "PreviewRunCount: "
+                    + shellHost.NativePreviewRunCount.ToString(
+                        CultureInfo.InvariantCulture)
+                    + Environment.NewLine
+                    + "LayerCount: "
+                    + shellHost.LayerDocumentCount.ToString(
+                        CultureInfo.InvariantCulture)
+                    + Environment.NewLine
+                    + "Screenshot: "
+                    + screenshotName
+                    + Environment.NewLine,
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                window?.Close();
+                app.Shutdown();
+                RecipeWorkspaceService.DeleteVisionWorkspace(
+                    recipeName);
+            }
+        }
+
+        private static void RunRecipePersistenceReopenProbe(
+            string[] args,
+            string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string recipeName =
+                ResolveOptionalTextOption(
+                    args,
+                    "--recipe-name");
+            string pipelineName =
+                ResolveOptionalTextOption(
+                    args,
+                    "--pipeline-name");
+            if (string.IsNullOrWhiteSpace(recipeName)
+                || string.IsNullOrWhiteSpace(pipelineName))
+            {
+                throw new ArgumentException(
+                    "Cross-process reopen probe requires recipe and pipeline names.");
+            }
+
+            string pipelinePath =
+                RecipeWorkspaceService.GetVisionPipelinePath(
+                    recipeName,
+                    pipelineName);
+            string canonicalHash =
+                ComputeC9FileSha256(pipelinePath);
+            VisionPipeline loaded =
+                VisionPipelineStorage.Load(
+                    recipeName,
+                    pipelineName);
+            string backupPath =
+                Directory.GetFiles(
+                    Path.GetDirectoryName(pipelinePath)
+                        ?? string.Empty,
+                    pipelineName + ".invalid-*.xml")
+                    .Single();
+            if (loaded.Steps.Count != 0
+                || !VisionPipelineStorage
+                    .TryGetPersistenceState(
+                        recipeName,
+                        pipelineName,
+                        out VisionPipelinePersistenceState state)
+                || state.Kind
+                    != VisionPipelinePersistenceStateKind
+                        .InvalidFileSubstituted
+                || !string.Equals(
+                    ComputeC9FileSha256(pipelinePath),
+                    canonicalHash,
+                    StringComparison.Ordinal)
+                || !string.Equals(
+                    ComputeC9FileSha256(backupPath),
+                    canonicalHash,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Cross-process reopen did not retain the invalid canonical file, exact backup, memory default, and failure state.");
+            }
+
+            File.WriteAllText(
+                Path.Combine(
+                    outputDirectory,
+                    "report.txt"),
+                "Result: PASS"
+                + Environment.NewLine
+                + "Scenario: recipe-persistence-reopen-probe"
+                + Environment.NewLine
+                + "Recipe: "
+                + recipeName
+                + Environment.NewLine
+                + "Pipeline: "
+                + pipelineName
+                + Environment.NewLine
+                + "CanonicalHash: "
+                + canonicalHash
+                + Environment.NewLine
+                + "Backup: "
+                + backupPath
+                + Environment.NewLine,
+                Encoding.UTF8);
+        }
+
+        private static string VerifyRecipePersistenceMatrix(
+            string outputDirectory)
+        {
+            string prefix =
+                "Smoke_RecipePersistence_Matrix_"
+                + Guid.NewGuid().ToString("N").Substring(0, 8);
+            List<string> recipes = new List<string>();
+            List<string> rows = new List<string>
+            {
+                "ID\tPipeline\tRecipeData\tResult\tEvidence"
+            };
+
+            string NewRecipe(string id)
+            {
+                string recipe = prefix + "_" + id;
+                recipes.Add(recipe);
+                return recipe;
+            }
+
+            void Require(bool condition, string message)
+            {
+                if (!condition)
+                {
+                    throw new InvalidOperationException(
+                        "P272 matrix: " + message);
+                }
+            }
+
+            string FindBackup(string path)
+            {
+                return Directory.GetFiles(
+                    Path.GetDirectoryName(path) ?? string.Empty,
+                    Path.GetFileNameWithoutExtension(path)
+                        + ".invalid-*"
+                        + Path.GetExtension(path))
+                    .Single();
+            }
+
+            void VerifyInvalid(
+                string id,
+                string pipelineXml,
+                string dataXml)
+            {
+                string recipe = NewRecipe(id);
+                string pipelineName = id + "_Pipeline";
+                string pipelinePath =
+                    RecipeWorkspaceService.GetVisionPipelinePath(
+                        recipe,
+                        pipelineName);
+                string dataPath =
+                    RecipeWorkspaceService.GetVisionDataPath(
+                        recipe);
+                Directory.CreateDirectory(
+                    Path.GetDirectoryName(pipelinePath)
+                    ?? string.Empty);
+                File.WriteAllText(
+                    pipelinePath,
+                    pipelineXml,
+                    Encoding.UTF8);
+                File.WriteAllText(
+                    dataPath,
+                    dataXml,
+                    Encoding.UTF8);
+                string pipelineHash =
+                    ComputeC9FileSha256(pipelinePath);
+                string dataHash =
+                    ComputeC9FileSha256(dataPath);
+                VisionPipeline loadedPipeline =
+                    VisionPipelineStorage.Load(
+                        recipe,
+                        pipelineName);
+                DataState loadedData =
+                    RecipeDataStorage.Load(
+                        recipe,
+                        new DataState());
+                string pipelineBackup =
+                    FindBackup(pipelinePath);
+                string dataBackup =
+                    FindBackup(dataPath);
+                Require(
+                    loadedPipeline.Steps.Count == 0
+                    && loadedData != null
+                    && string.Equals(
+                        ComputeC9FileSha256(
+                            pipelineBackup),
+                        pipelineHash,
+                        StringComparison.Ordinal)
+                    && string.Equals(
+                        ComputeC9FileSha256(pipelinePath),
+                        pipelineHash,
+                        StringComparison.Ordinal)
+                    && string.Equals(
+                        ComputeC9FileSha256(dataBackup),
+                        dataHash,
+                        StringComparison.Ordinal)
+                    && string.Equals(
+                        ComputeC9FileSha256(dataPath),
+                        dataHash,
+                        StringComparison.Ordinal)
+                    && VisionPipelineStorage
+                        .TryGetPersistenceState(
+                            recipe,
+                            pipelineName,
+                            out VisionPipelinePersistenceState
+                                pipelineState)
+                    && pipelineState.Kind
+                        == VisionPipelinePersistenceStateKind
+                            .InvalidFileSubstituted
+                    && RecipeDataStorage
+                        .TryGetPersistenceState(
+                            recipe,
+                            out RecipeDataPersistenceState dataState)
+                    && dataState.Kind
+                        == RecipeDataPersistenceStateKind
+                            .InvalidFileSubstituted,
+                    id
+                        + " did not retain exact invalid backups and explicit substitution state.");
+                rows.Add(
+                    id
+                    + "\tExact backup; canonical invalid retained; memory default\tExact backup; canonical invalid retained; memory default\tPASS\t"
+                    + pipelineHash
+                    + " / "
+                    + dataHash);
+            }
+
+            try
+            {
+                string r1 = NewRecipe("R1");
+                const string r1PipelineName = "Missing_First_Use";
+                VisionPipeline r1Pipeline =
+                    VisionPipelineStorage.Load(
+                        r1,
+                        r1PipelineName);
+                DataState r1Data =
+                    RecipeDataStorage.Load(
+                        r1,
+                        new DataState());
+                string r1PipelinePath =
+                    RecipeWorkspaceService.GetVisionPipelinePath(
+                        r1,
+                        r1PipelineName);
+                string r1DataPath =
+                    RecipeWorkspaceService.GetVisionDataPath(r1);
+                Require(
+                    r1Pipeline.Steps.Count == 0
+                    && r1Data != null
+                    && File.Exists(r1PipelinePath)
+                    && File.Exists(r1DataPath)
+                    && !VisionPipelineStorage
+                        .TryGetPersistenceState(
+                            r1,
+                            r1PipelineName,
+                            out _)
+                    && !RecipeDataStorage
+                        .TryGetPersistenceState(r1, out _),
+                    "R1 first use was not quiet.");
+                rows.Add(
+                    "R1\tQuiet editable default\tQuiet empty CData\tPASS\t"
+                    + ComputeC9FileSha256(r1PipelinePath)
+                    + " / "
+                    + ComputeC9FileSha256(r1DataPath));
+
+                string r2 = NewRecipe("R2");
+                const string r2PipelineName = "Valid_Roundtrip";
+                VisionPipeline r2Source =
+                    CreateDirectSmokePipeline(
+                        r2PipelineName,
+                        2);
+                r2Source.Steps[0].Name =
+                    "Distinctive_Source";
+                r2Source.Steps[1].Name =
+                    "Distinctive_Result";
+                r2Source.Steps[1].OutputLayer =
+                    "Distinctive_Output";
+                VisionPipelineStorage.Save(r2, r2Source);
+                RecipeDataStorage.Save(
+                    r2,
+                    new DataState());
+                VisionPipeline r2Loaded =
+                    VisionPipelineStorage.Load(
+                        r2,
+                        r2PipelineName);
+                DataState r2Data =
+                    RecipeDataStorage.Load(
+                        r2,
+                        new DataState());
+                Require(
+                    r2Loaded.Steps.Count == 2
+                    && string.Equals(
+                        r2Loaded.Steps[0].Name,
+                        "Distinctive_Source",
+                        StringComparison.Ordinal)
+                    && string.Equals(
+                        r2Loaded.Steps[1].OutputLayer,
+                        "Distinctive_Output",
+                        StringComparison.Ordinal)
+                    && r2Data != null,
+                    "R2 valid identity did not round-trip.");
+                rows.Add(
+                    "R2\tExact Step/order/route restored\tCData restored; current contract has no fields\tPASS\tValid round-trip");
+
+                VerifyInvalid(
+                    "R3",
+                    "<VisionPipeline",
+                    "<CData");
+                VerifyInvalid(
+                    "R4",
+                    "<?xml version=\"1.0\"?><WrongPipeline />",
+                    "<?xml version=\"1.0\"?><WrongData />");
+
+                string r5 = NewRecipe("R5");
+                const string r5PipelineName = "Unreadable";
+                VisionPipelineStorage.Save(
+                    r5,
+                    CreateDirectSmokePipeline(
+                        r5PipelineName,
+                        2));
+                RecipeDataStorage.Save(
+                    r5,
+                    new DataState());
+                string r5PipelinePath =
+                    RecipeWorkspaceService.GetVisionPipelinePath(
+                        r5,
+                        r5PipelineName);
+                string r5DataPath =
+                    RecipeWorkspaceService.GetVisionDataPath(r5);
+                string r5PipelineHash =
+                    ComputeC9FileSha256(r5PipelinePath);
+                string r5DataHash =
+                    ComputeC9FileSha256(r5DataPath);
+                using (FileStream lockedPipeline =
+                    new FileStream(
+                        r5PipelinePath,
+                        FileMode.Open,
+                        FileAccess.Read,
+                        FileShare.None))
+                {
+                    VisionPipeline loaded =
+                        VisionPipelineStorage.Load(
+                            r5,
+                            r5PipelineName);
+                    Require(
+                        loaded.Steps.Count == 0
+                        && VisionPipelineStorage
+                            .TryGetPersistenceState(
+                                r5,
+                                r5PipelineName,
+                                out VisionPipelinePersistenceState
+                                    state)
+                        && state.Kind
+                            == VisionPipelinePersistenceStateKind
+                                .LoadFailed,
+                        "R5 Pipeline lock was not fail-closed.");
+                }
+                Require(
+                    string.Equals(
+                        ComputeC9FileSha256(r5PipelinePath),
+                        r5PipelineHash,
+                        StringComparison.Ordinal),
+                    "R5 Pipeline disk identity changed.");
+                using (FileStream lockedData =
+                    new FileStream(
+                        r5DataPath,
+                        FileMode.Open,
+                        FileAccess.Read,
+                        FileShare.None))
+                {
+                    DataState loaded =
+                        RecipeDataStorage.Load(
+                            r5,
+                            new DataState());
+                    Require(
+                        loaded != null
+                        && RecipeDataStorage
+                            .TryGetPersistenceState(
+                                r5,
+                                out RecipeDataPersistenceState state)
+                        && state.Kind
+                            == RecipeDataPersistenceStateKind
+                                .LoadFailed,
+                        "R5 Data lock was not fail-closed.");
+                }
+                Require(
+                    string.Equals(
+                        ComputeC9FileSha256(r5DataPath),
+                        r5DataHash,
+                        StringComparison.Ordinal),
+                    "R5 Recipe Data disk identity changed.");
+                rows.Add(
+                    "R5\tMemory default + LoadFailed; disk unchanged\tCurrent default + LoadFailed; disk unchanged\tPASS\t"
+                    + r5PipelineHash
+                    + " / "
+                    + r5DataHash);
+
+                string r6 = NewRecipe("R6");
+                const string r6PipelineName = "Save_Exception";
+                VisionPipelineStorage.Save(
+                    r6,
+                    CreateDirectSmokePipeline(
+                        r6PipelineName,
+                        1));
+                RecipeDataStorage.Save(
+                    r6,
+                    new DataState());
+                string r6PipelinePath =
+                    RecipeWorkspaceService.GetVisionPipelinePath(
+                        r6,
+                        r6PipelineName);
+                string r6DataPath =
+                    RecipeWorkspaceService.GetVisionDataPath(r6);
+                string r6PipelineHash =
+                    ComputeC9FileSha256(r6PipelinePath);
+                string r6DataHash =
+                    ComputeC9FileSha256(r6DataPath);
+                bool r6PipelineFailed = false;
+                using (FileStream lockedPipeline =
+                    new FileStream(
+                        r6PipelinePath,
+                        FileMode.Open,
+                        FileAccess.Read,
+                        FileShare.Read))
+                {
+                    try
+                    {
+                        VisionPipelineStorage.Save(
+                            r6,
+                            CreateDirectSmokePipeline(
+                                r6PipelineName,
+                                2));
+                    }
+                    catch (IOException)
+                    {
+                        r6PipelineFailed = true;
+                    }
+                }
+                bool r6DataFailed = false;
+                using (FileStream lockedData =
+                    new FileStream(
+                        r6DataPath,
+                        FileMode.Open,
+                        FileAccess.Read,
+                        FileShare.Read))
+                {
+                    try
+                    {
+                        RecipeDataStorage.Save(
+                            r6,
+                            new DataState());
+                    }
+                    catch (IOException)
+                    {
+                        r6DataFailed = true;
+                    }
+                }
+                Require(
+                    r6PipelineFailed
+                    && r6DataFailed
+                    && VisionPipelineStorage
+                        .TryGetPersistenceState(
+                            r6,
+                            r6PipelineName,
+                            out VisionPipelinePersistenceState
+                                r6PipelineState)
+                    && r6PipelineState.Kind
+                        == VisionPipelinePersistenceStateKind
+                            .SaveFailed
+                    && RecipeDataStorage
+                        .TryGetPersistenceState(
+                            r6,
+                            out RecipeDataPersistenceState
+                                r6DataState)
+                    && r6DataState.Kind
+                        == RecipeDataPersistenceStateKind
+                            .SaveFailed
+                    && string.Equals(
+                        ComputeC9FileSha256(r6PipelinePath),
+                        r6PipelineHash,
+                        StringComparison.Ordinal)
+                    && string.Equals(
+                        ComputeC9FileSha256(r6DataPath),
+                        r6DataHash,
+                        StringComparison.Ordinal),
+                    "R6 save failure did not retain old disk identity.");
+                rows.Add(
+                    "R6\tSaveFailed; edit memory-only; old hash intact\tSaveFailed; old hash intact\tPASS\t"
+                    + r6PipelineHash
+                    + " / "
+                    + r6DataHash);
+
+                VerifyInvalid(
+                    "R7",
+                    "<?xml version=\"1.0\"?><VisionPipeline><Steps>",
+                    "<?xml version=\"1.0\"?><CData>");
+
+                string r8 = NewRecipe("R8");
+                const string r8PipelineName = "Replace_Failure";
+                VisionPipelineStorage.Save(
+                    r8,
+                    CreateDirectSmokePipeline(
+                        r8PipelineName,
+                        1));
+                RecipeDataStorage.Save(
+                    r8,
+                    new DataState());
+                string r8PipelinePath =
+                    RecipeWorkspaceService.GetVisionPipelinePath(
+                        r8,
+                        r8PipelineName);
+                string r8DataPath =
+                    RecipeWorkspaceService.GetVisionDataPath(r8);
+                string r8PipelineHash =
+                    ComputeC9FileSha256(r8PipelinePath);
+                string r8DataHash =
+                    ComputeC9FileSha256(r8DataPath);
+                VisionPipeline r8Modified =
+                    CreateDirectSmokePipeline(
+                        r8PipelineName,
+                        2);
+                using (FileStream lockedPipeline =
+                    new FileStream(
+                        r8PipelinePath,
+                        FileMode.Open,
+                        FileAccess.Read,
+                        FileShare.Read))
+                {
+                    try
+                    {
+                        VisionPipelineStorage.Save(
+                            r8,
+                            r8Modified);
+                    }
+                    catch (IOException)
+                    {
+                    }
+                }
+                using (FileStream lockedData =
+                    new FileStream(
+                        r8DataPath,
+                        FileMode.Open,
+                        FileAccess.Read,
+                        FileShare.Read))
+                {
+                    try
+                    {
+                        RecipeDataStorage.Save(
+                            r8,
+                            new DataState());
+                    }
+                    catch (IOException)
+                    {
+                    }
+                }
+                Require(
+                    string.Equals(
+                        ComputeC9FileSha256(r8PipelinePath),
+                        r8PipelineHash,
+                        StringComparison.Ordinal)
+                    && string.Equals(
+                        ComputeC9FileSha256(r8DataPath),
+                        r8DataHash,
+                        StringComparison.Ordinal),
+                    "R8 replace failure damaged the prior file.");
+                rows.Add(
+                    "R8\tFailed replace preserved prior file byte-exact\tFailed replace preserved prior file byte-exact\tPASS\t"
+                    + r8PipelineHash
+                    + " / "
+                    + r8DataHash);
+
+                VisionPipelineStorage.Save(r8, r8Modified);
+                RecipeDataStorage.Save(
+                    r8,
+                    new DataState());
+                Require(
+                    VisionPipelineStorage
+                        .TryGetPersistenceState(
+                            r8,
+                            r8PipelineName,
+                            out VisionPipelinePersistenceState
+                                recoveredPipeline)
+                    && recoveredPipeline.Kind
+                        == VisionPipelinePersistenceStateKind
+                            .SaveRecovered
+                    && RecipeDataStorage
+                        .TryGetPersistenceState(
+                            r8,
+                            out RecipeDataPersistenceState
+                                recoveredData)
+                    && recoveredData.Kind
+                        == RecipeDataPersistenceStateKind
+                            .SaveRecovered
+                    && VisionPipelineStorage.Load(
+                            r8,
+                            r8PipelineName)
+                        .Steps.Count == 2,
+                    "R9 recovery was not retained once.");
+                VisionPipelineStorage.Save(r8, r8Modified);
+                RecipeDataStorage.Save(
+                    r8,
+                    new DataState());
+                Require(
+                    !VisionPipelineStorage
+                        .TryGetPersistenceState(
+                            r8,
+                            r8PipelineName,
+                            out _)
+                    && !RecipeDataStorage
+                        .TryGetPersistenceState(r8, out _),
+                    "R9 recovery repeated after ordinary save.");
+                rows.Add(
+                    "R9\tSaveRecovered once + exact two-Step reopen; next save cleared\tSaveRecovered once; next save cleared\tPASS\tOne-time recovery");
+
+                string r10 = NewRecipe("R10");
+                const string r10PipelineName = "Semantic_Boundary";
+                VisionPipelineStorage.Save(
+                    r10,
+                    CreateDirectSmokePipeline(
+                        r10PipelineName,
+                        1));
+                RecipeDataStorage.Save(
+                    r10,
+                    new DataState());
+                string r10PipelinePath =
+                    RecipeWorkspaceService.GetVisionPipelinePath(
+                        r10,
+                        r10PipelineName);
+                string r10DataPath =
+                    RecipeWorkspaceService.GetVisionDataPath(r10);
+                File.WriteAllText(
+                    r10PipelinePath,
+                    File.ReadAllText(r10PipelinePath)
+                        .Replace(
+                            "</VisionPipeline>",
+                            "<LegacyUnknown>1</LegacyUnknown></VisionPipeline>",
+                            StringComparison.Ordinal),
+                    Encoding.UTF8);
+                File.WriteAllText(
+                    r10DataPath,
+                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+                    + "<CData><LegacyUnknown>1</LegacyUnknown></CData>",
+                    Encoding.UTF8);
+                VisionPipeline r10Loaded =
+                    VisionPipelineStorage.Load(
+                        r10,
+                        r10PipelineName);
+                DataState r10Data =
+                    RecipeDataStorage.Load(
+                        r10,
+                        new DataState());
+                Require(
+                    r10Loaded.Steps.Count == 1
+                    && r10Data != null
+                    && !VisionPipelineStorage
+                        .TryGetPersistenceState(
+                            r10,
+                            r10PipelineName,
+                            out _)
+                    && !RecipeDataStorage
+                        .TryGetPersistenceState(r10, out _),
+                    "R10 compatibility boundary changed.");
+                rows.Add(
+                    "R10\tUnknown element accepted; no schema/version stale detection\tUnknown element accepted; CData has no version/fields\tPASS\tDocumented detectability boundary");
+
+                string matrixPath =
+                    Path.Combine(
+                        outputDirectory,
+                        "p272_persistence_matrix.tsv");
+                File.WriteAllLines(
+                    matrixPath,
+                    rows,
+                    Encoding.UTF8);
+                return Path.GetFileName(matrixPath);
+            }
+            finally
+            {
+                foreach (string recipe in recipes)
+                {
+                    RecipeWorkspaceService
+                        .DeleteVisionWorkspace(recipe);
+                }
             }
         }
 

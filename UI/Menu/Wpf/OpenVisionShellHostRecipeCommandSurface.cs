@@ -1817,6 +1817,70 @@ namespace OpenVisionLab
             set => SelectPipelineOption(value);
         }
 
+        public bool HasSelectedPipelinePersistenceStatus =>
+            selectedPipelineOption?.HasPersistenceStatus == true;
+
+        public bool HasSelectedPipelinePersistenceFailure =>
+            selectedPipelineOption?.HasPersistenceFailure == true;
+
+        public string SelectedPipelinePersistenceStatusText =>
+            selectedPipelineOption?.PersistenceStatusText
+            ?? string.Empty;
+
+        public string SelectedPipelinePersistenceHelpText =>
+            selectedPipelineOption?.PersistenceHelpText
+            ?? string.Empty;
+
+        private RecipeDataPersistenceState SelectedRecipeDataPersistenceState
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(
+                    selectedRecipeName))
+                {
+                    return null;
+                }
+
+                RecipeDataStorage.TryGetPersistenceState(
+                    selectedRecipeName,
+                    out RecipeDataPersistenceState state);
+                return state;
+            }
+        }
+
+        public bool HasSelectedRecipePersistenceStatus =>
+            HasSelectedPipelinePersistenceStatus
+            || SelectedRecipeDataPersistenceState != null;
+
+        public bool HasSelectedRecipePersistenceFailure =>
+            HasSelectedPipelinePersistenceFailure
+            || SelectedRecipeDataPersistenceState?.IsFailure == true;
+
+        public string SelectedRecipePersistenceStatusText =>
+            string.Join(
+                Environment.NewLine,
+                new[]
+                {
+                    SelectedPipelinePersistenceStatusText,
+                    OpenVisionRecipePersistenceStatusPresenter
+                        .CreateCompactText(
+                            SelectedRecipeDataPersistenceState)
+                }.Where(text =>
+                    !string.IsNullOrWhiteSpace(text)));
+
+        public string SelectedRecipePersistenceHelpText =>
+            string.Join(
+                Environment.NewLine
+                + Environment.NewLine,
+                new[]
+                {
+                    SelectedPipelinePersistenceHelpText,
+                    OpenVisionRecipePersistenceStatusPresenter
+                        .CreateHelpText(
+                            SelectedRecipeDataPersistenceState)
+                }.Where(text =>
+                    !string.IsNullOrWhiteSpace(text)));
+
         public OpenVisionRecipeManagerSummary SelectedRecipeSummary
         {
             get => selectedRecipeSummary;
