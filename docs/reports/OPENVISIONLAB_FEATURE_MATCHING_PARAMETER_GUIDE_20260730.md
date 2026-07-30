@@ -1,7 +1,7 @@
 # OpenVisionLab FeatureMatching Parameter Guide
 
-Date: 2026-07-30 KST  
-Priority: P263  
+Date: 2026-07-30 KST<br>
+Priority: P263<br>
 Status: Complete
 
 ## Outcome
@@ -117,23 +117,22 @@ Evidence:
 
 ## Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: Detailed contextual guidance for the three FeatureMatching-specific
-properties and correct unit presentation only.  
+properties and correct unit presentation only.<br>
 Acceptance criteria: FeatureMatching 3/3 detailed in Korean/English; Lowe
 ratio and result Score scales explicitly separated; RANSAC tolerance shown in
 pixels; template and geometry evidence named; actual EXE guide remains
 non-obstructing; focus, explicit hide/reopen, and zero Preview/Run/layer/route
-side effects preserved.  
+side effects preserved.<br>
 Verification: Focused guide smoke, shared PropertyGrid guide regression,
 actual FeatureMatching template/Preview/Pipeline round trip, Guided Setup,
 actual Debug EXE before/after evidence, standalone canonical audit, full Debug
-build, readiness, and patch hygiene.  
+build, readiness, and patch hygiene.<br>
 Evidence: `artifacts\p263_feature_matching_parameter_guide_20260730` and this
-report.  
+report.<br>
 Boundary / next dependency: This is operator guidance, not automatic template
 selection, parameter optimization, FeatureMatching qualification, unseen-data
 robustness, or field evidence. The remaining 71 Basic entries require another
 bounded-family admission. CVR-00 still requires three independent first-time
 participants and raw observations.
-

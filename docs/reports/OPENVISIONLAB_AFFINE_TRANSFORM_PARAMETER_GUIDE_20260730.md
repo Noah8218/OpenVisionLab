@@ -1,7 +1,7 @@
 # OpenVisionLab AffineTransform Parameter Guide
 
-Date: 2026-07-30 KST  
-Priority: P267  
+Date: 2026-07-30 KST<br>
+Priority: P267<br>
 Status: Complete
 
 ## Outcome
@@ -153,20 +153,20 @@ their raw observations exist.
 
 ## Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: Runtime-grounded bilingual detailed guidance for the 20 formerly Basic
 AffineTransform coordinates, output, sampling/border, and geometry/coverage
-gate properties, including Recipe detected-Point applicability.  
+gate properties, including Recipe detected-Point applicability.<br>
 Acceptance criteria: all 20 audited and AffineTransform 38/38 detailed;
 ordered correspondence and pixel-only boundary stated; output zero/canvas
 behavior stated; supported sampling/border policies and conditional
 BorderValue stated; collinear and valid-source-coverage gates stated; actual
-EXE remains non-obstructing; no Preview/Run/layer/route side effects.  
+EXE remains non-obstructing; no Preview/Run/layer/route side effects.<br>
 Verification: Focused/shared guide and Affine Tool regressions, known-matrix/
 alias/round-trip/fail-closed runtime contract, actual Debug EXE before/after,
-standalone canonical audit, full Debug build, and readiness.  
+standalone canonical audit, full Debug build, and readiness.<br>
 Evidence: `artifacts\p267_affine_transform_parameter_guide_20260730` and this
-report.  
+report.<br>
 Boundary / next dependency: This is guidance for an existing deterministic
 pixel-only Affine contract, not automatic correspondence, Homography,
 calibration, certified metrology, unseen-data robustness, field qualification,

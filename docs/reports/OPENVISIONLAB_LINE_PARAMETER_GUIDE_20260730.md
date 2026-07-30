@@ -1,7 +1,7 @@
 # OpenVisionLab Line Parameter Guide
 
-Date: 2026-07-30 KST  
-Priority: P265  
+Date: 2026-07-30 KST<br>
+Priority: P265<br>
 Status: Complete
 
 ## Outcome
@@ -124,18 +124,18 @@ participants and their raw observations exist.
 
 ## Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: Detailed contextual guidance for the 11 formerly Basic
-LineGauge/LineDistance properties, with verified runtime/legacy boundaries.  
+LineGauge/LineDistance properties, with verified runtime/legacy boundaries.<br>
 Acceptance criteria: LineGauge/LineDistance 36/36 detailed in Korean/English;
 manual angle separated from edge search; fitted-edge pair activation and
 drawing-only extend length stated; inactive average fields and legacy drawing
 flags disclosed; actual EXE guide remains non-obstructing; focus, hide/reopen,
-and zero Preview/Run/layer/route effects preserved.  
+and zero Preview/Run/layer/route effects preserved.<br>
 Verification: Focused/shared guide smokes, Line Tool/preset/measurement/signal
 regressions, actual Debug EXE before/after, standalone canonical audit, full
-Debug solution build, and readiness.  
-Evidence: `artifacts\p265_line_parameter_guide_20260730` and this report.  
+Debug solution build, and readiness.<br>
+Evidence: `artifacts\p265_line_parameter_guide_20260730` and this report.<br>
 Boundary / next dependency: This is operator guidance, not an average-filter
 implementation, a change to current review drawings, Line metrology
 qualification, field robustness, equipment integration, or CVR-00 participant

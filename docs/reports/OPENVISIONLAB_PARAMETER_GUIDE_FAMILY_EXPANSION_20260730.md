@@ -1,7 +1,7 @@
 # OpenVisionLab Parameter Guide Family Expansion
 
-Date: 2026-07-30 KST  
-Record: P259  
+Date: 2026-07-30 KST<br>
+Record: P259<br>
 Depends on: P257 design and P258 shared Parameter Guide implementation
 
 ## 1. Outcome
@@ -137,9 +137,9 @@ for it.
 
 ## 6. Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: Detailed contextual guidance and selection integration for Threshold,
-Blob, Contour, Morphology, and Filter.  
+Blob, Contour, Morphology, and Filter.<br>
 Acceptance criteria:
 
 - every browsable property resolves detailed Korean/English content -> pass,
@@ -156,9 +156,9 @@ Acceptance criteria:
 
 Verification: Full solution build, focused P259 target, related P257 and Tool
 shell regressions, localization uniqueness/contract, readiness contract, and
-diff hygiene all passed as recorded in Section 4.  
+diff hygiene all passed as recorded in Section 4.<br>
 Evidence:
-`artifacts/p259_parameter_guide_expansion_20260730` and this report.  
+`artifacts/p259_parameter_guide_expansion_20260730` and this report.<br>
 Boundary / next dependency: Remaining families stay on visible Basic fallback
 until their runtime/property contracts are audited and the user requests the
 next bounded expansion. CVR-00 remains externally deferred.

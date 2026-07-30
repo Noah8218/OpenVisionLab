@@ -1,7 +1,7 @@
 # OpenVisionLab Settings Store Persistence Feedback
 
-Date: 2026-07-30 KST  
-Priority: P271  
+Date: 2026-07-30 KST<br>
+Priority: P271<br>
 Status: Complete
 
 ## Outcome
@@ -154,20 +154,20 @@ That requires an explicit schema/version or semantic-validation contract.
 
 ## Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: `OpenVisionNativeToolSettingsStore` missing/valid/invalid/load-exception
 state preservation, invalid-file backup, save-failure feedback, and one-time
-explicit-save recovery for the named Direct Tool families.  
+explicit-save recovery for the named Direct Tool families.<br>
 Acceptance criteria: normal first use and valid restore remain warning-free;
 invalid files are backed up and identified; unreadable load and failed save
 state are explicit; full Korean/English status is non-obstructing and
 accessible; successful save clears failure once; zero
-Preview/Run/layer/route side effects.  
+Preview/Run/layer/route side effects.<br>
 Verification: current Debug EXE before/after, missing/valid/invalid/backup/
 recovery file contract, P269/P270 actual-EXE regressions, focused Tool-family
-and localization smokes, readiness, standard Debug build, and diff check.  
+and localization smokes, readiness, standard Debug build, and diff check.<br>
 Evidence:
-`artifacts\p271_settings_persistence_feedback_20260730` and this report.  
+`artifacts\p271_settings_persistence_feedback_20260730` and this report.<br>
 Boundary / next dependency: syntactically valid semantic staleness remains
 undetectable without a schema/version rule. Recipe/Pipeline persistence is a
 separate higher-impact audit, not proven defective or corrected by P271.

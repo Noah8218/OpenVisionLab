@@ -1,7 +1,7 @@
 # OpenVisionLab Non-Obstructing Parameter Guide And RotateScale
 
-Date: 2026-07-30 KST  
-Priority: P261  
+Date: 2026-07-30 KST<br>
+Priority: P261<br>
 Status: Complete
 
 ## Outcome
@@ -106,23 +106,22 @@ Reusable audit:
 
 ## Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: Non-obstructing shared Parameter Guide presentation and detailed
-RotateScale guidance only.  
+RotateScale guidance only.<br>
 Acceptance criteria: Actual EXE before obstruction reproduced; actual EXE
 EdgeDetection and RotateScale after checks found no intersecting teaching
 controls; automatic display retained input focus; explicit hide/reopen passed;
 zero Preview/Run/layer/routing side effects; RotateScale detailed coverage is
-5/5 in Korean and English.  
+5/5 in Korean and English.<br>
 Verification: Current Debug EXE layout reports/screenshots, focused guide
 smokes, RotateScale runtime and dock/float regressions, full Debug solution
-build, and readiness all passed.  
+build, and readiness all passed.<br>
 Evidence:
-`artifacts\p261_parameter_guide_non_obstructing_20260730` and this report.  
+`artifacts\p261_parameter_guide_non_obstructing_20260730` and this report.<br>
 Boundary / next dependency: The visual proof covers the current workstation
 and the tested `920 x 660` Tool size, not every monitor/DPI topology. It is
 operator guidance, not automatic tuning or algorithm qualification. CVR-00
 still requires three independent first-time participants and raw observations.
 The remaining 77 Basic entries require a fresh bounded-family selection; they
 must not be bulk-authored without runtime and workflow grounding.
-

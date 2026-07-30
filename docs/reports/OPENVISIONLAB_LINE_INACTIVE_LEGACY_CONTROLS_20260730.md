@@ -1,7 +1,7 @@
 # OpenVisionLab Line Inactive And Legacy Controls
 
-Date: 2026-07-30 KST  
-Priority: P266  
+Date: 2026-07-30 KST<br>
+Priority: P266<br>
 Status: Complete
 
 ## Outcome
@@ -106,20 +106,20 @@ participants and their raw observations exist.
 
 ## Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: Non-editable but visible compatibility treatment for the seven inactive
 or legacy-only Line properties in Direct Tool and Recipe Manager, plus preset
-preservation.  
+preservation.<br>
 Acceptance criteria: seven rows visibly and accurately labelled; editor and
 bridge mutation blocked; existing XML/Recipe/Line A/B values preserved;
 Basic/Fast/Precise do not mutate them; contextual guidance remains available;
 no Preview/Run/layer/route side effects; actual EXE layout remains
-non-obstructing.  
+non-obstructing.<br>
 Verification: Focused/shared guide smokes, Direct/Recipe PropertyGrid and
 preset/measurement regressions, actual Debug EXE before/after, standalone
-audit, full Debug solution build, and readiness.  
+audit, full Debug solution build, and readiness.<br>
 Evidence: `artifacts\p266_line_inactive_legacy_controls_20260730` and this
-report.  
+report.<br>
 Boundary / next dependency: This does not implement average filtering, make
 legacy drawing flags control current WPF/Pipeline evidence, increase detailed
 guide coverage, qualify Line metrology, prove field robustness, integrate

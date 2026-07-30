@@ -1,7 +1,7 @@
 # OpenVisionLab Failure Correction Handoff
 
-Date: 2026-07-29 KST  
-Status: Complete  
+Date: 2026-07-29 KST<br>
+Status: Complete<br>
 Scope: P251, explicit Run History failure-to-PropertyGrid correction preparation
 
 ## Outcome

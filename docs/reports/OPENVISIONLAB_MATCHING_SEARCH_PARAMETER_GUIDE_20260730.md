@@ -1,7 +1,7 @@
 # OpenVisionLab Matching Search Parameter Guide
 
-Date: 2026-07-30 KST  
-Priority: P264  
+Date: 2026-07-30 KST<br>
+Priority: P264<br>
 Status: Complete
 
 ## Outcome
@@ -110,20 +110,20 @@ Evidence:
 
 ## Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: Detailed contextual guidance for the eight formerly Basic Matching
 properties, plus accurate active-Tool smoke lookup in the presence of the
-nonmodal guide sidecar.  
+nonmodal guide sidecar.<br>
 Acceptance criteria: Matching 42/42 detailed in Korean/English; working
 resolution separated from target scale; coarse angle and pyramid activation/
 fallback conditions stated; padding false identified as Reflect; actual EXE
 guide remains non-obstructing; focus, hide/reopen, and zero Preview/Run/layer/
-route effects preserved.  
+route effects preserved.<br>
 Verification: Focused and shared guide smokes, Matching pyramid/angle/Tool/
 preset regressions, actual Debug EXE before/after, standalone canonical audit,
-full Debug solution build, and readiness.  
+full Debug solution build, and readiness.<br>
 Evidence:
-`artifacts\p264_matching_search_parameter_guide_20260730` and this report.  
+`artifacts\p264_matching_search_parameter_guide_20260730` and this report.<br>
 Boundary / next dependency: This is operator guidance, not automatic search
 configuration, Matching qualification, unseen-data robustness, or field
 evidence. The next bounded priority is to audit the 11 remaining

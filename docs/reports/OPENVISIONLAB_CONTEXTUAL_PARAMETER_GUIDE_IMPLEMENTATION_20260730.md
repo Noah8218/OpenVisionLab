@@ -1,7 +1,7 @@
 # OpenVisionLab Contextual Property Parameter Guide Implementation
 
-Date: 2026-07-30 KST  
-Record: P258  
+Date: 2026-07-30 KST<br>
+Record: P258<br>
 Design: `docs/reports/OPENVISIONLAB_CONTEXTUAL_PARAMETER_GUIDE_DESIGN_20260730.md`
 
 ## 1. Outcome
@@ -158,10 +158,10 @@ SHA-256:
 
 ## 8. Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: Shared PropertyGrid mouse/keyboard selection contract, reusable in-Tool
 guide drawer, and detailed Matching/EdgeBasedMatching/LineGauge/LineDistance
-pilot with visible fallback for every browsable pilot property.  
+pilot with visible fallback for every browsable pilot property.<br>
 Acceptance criteria:
 
 - exact mouse/keyboard parameter selection -> pass, focused smoke;
@@ -177,9 +177,9 @@ Acceptance criteria:
 
 Verification: Current-source build, focused UI/semantic/regression targets,
 OpenVisionLab readiness contract, and diff hygiene checks listed in Section 6
-passed.  
+passed.<br>
 Evidence:
-`artifacts/p257_contextual_parameter_guide_20260730` and this report.  
+`artifacts/p257_contextual_parameter_guide_20260730` and this report.<br>
 Boundary / next dependency: This does not implement automatic parameter
 selection, automatic tuning, automatic Preview/Run, algorithm qualification,
 certified metrology, production/field robustness, or CVR-00 participant

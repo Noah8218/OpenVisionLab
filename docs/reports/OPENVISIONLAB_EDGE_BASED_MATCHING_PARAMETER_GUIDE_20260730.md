@@ -1,7 +1,7 @@
 # OpenVisionLab EdgeBasedMatching Parameter Guide
 
-Date: 2026-07-30 KST  
-Priority: P268  
+Date: 2026-07-30 KST<br>
+Priority: P268<br>
 Status: Complete
 
 ## Outcome
@@ -163,22 +163,22 @@ their raw observations exist.
 
 ## Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: Runtime-grounded bilingual detailed guidance for all 32 formerly Basic
 EdgeBasedMatching template/display, Auto MPoint teaching, edge-model, and
 runtime-search entries, plus exact Recipe selected-Step restoration of active
-scale, subpixel, and pyramid values.  
+scale, subpixel, and pyramid values.<br>
 Acceptance criteria: 32/32 audited; EdgeBasedMatching 65/65 and canonical
 318/318 detailed; physical identity is not inferred from score/margin/rank;
 Auto MPoint remains explicit Suggested teaching; display/model/search
 boundaries are stated; selected-Step apply/reload preserves active runtime
 values; actual EXE remains non-obstructing; zero Preview/Run/layer/route side
-effects.  
+effects.<br>
 Verification: Focused/shared guide, Direct Tool, Auto MPoint, localization,
 Recipe round-trip, global-polarity runtime, actual Debug EXE before/after,
-standalone canonical audit, and full Debug build.  
+standalone canonical audit, and full Debug build.<br>
 Evidence:
-`artifacts\p268_edge_based_matching_parameter_guide_20260730` and this report.  
+`artifacts\p268_edge_based_matching_parameter_guide_20260730` and this report.<br>
 Boundary / next dependency: This is guidance and persistence correction for
 the existing deterministic matcher. It is not automatic physical-feature
 selection, matcher qualification, new dataset evidence, calibration,

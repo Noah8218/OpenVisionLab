@@ -1,7 +1,7 @@
 # OpenVisionLab Four-Step Route Clarity Walkthrough
 
-Date: 2026-07-29  
-Work item: P256  
+Date: 2026-07-29<br>
+Work item: P256<br>
 Status: Complete
 
 ## Outcome
@@ -165,21 +165,21 @@ Results:
 
 ## Durable Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: one blank-workspace four-Step direct-Teaching Recipe authored, saved,
 reviewed, restarted, restored without execution, and explicitly run in a clean
-current runtime.  
+current runtime.<br>
 Acceptance criteria: named Recipe/image -> pass; four explicit
 Preview/save Steps -> pass; predecessor-output selection -> pass; preset route
 preservation/no-run -> pass; pre-restart route review -> pass; post-restart
 exact restoration in WAIT -> pass; one explicit Run with drawings/object rows
--> pass.  
+-> pass.<br>
 Verification: clean-runtime build; 335.33-second actual-EXE recording; exact
 XML route/hash assertion; focused area-preset route/no-run smoke; Debug
-solution build; visual frame review.  
+solution build; visual frame review.<br>
 Evidence:
 `artifacts\p256_four_step_route_clarity_20260729`,
-`artifacts\openvisionlab_clean_runtime_p256_before_20260729`, and this report.  
+`artifacts\openvisionlab_clean_runtime_p256_before_20260729`, and this report.<br>
 Boundary / next dependency: no route-selection blocker remains from this
 bounded workflow. CVR-00 remains externally dependent on three real
 independent first-time participants. Do not admit another product feature

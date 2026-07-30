@@ -1,7 +1,7 @@
 # OpenVisionLab Property Persistence Failure Feedback
 
-Date: 2026-07-30 KST  
-Priority: P269  
+Date: 2026-07-30 KST<br>
+Priority: P269<br>
 Status: Complete
 
 ## Outcome
@@ -139,20 +139,20 @@ their raw observations exist.
 
 ## Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: Static post-guide workflow reassessment and one bounded Direct Tool
-property-save failure/recovery feedback correction.  
+property-save failure/recovery feedback correction.<br>
 Acceptance criteria: failed disk save preserves current memory state but
 publishes failure; active Tool/Recipe and reopen-loss risk are visible;
 complete message is tooltip/accessibility-readable; next success reports
 recovery once; ordinary saves add no status noise; Korean/English work; zero
-Preview/Run/layer/route side effects.  
+Preview/Run/layer/route side effects.<br>
 Verification: Focused failure/recovery event and UI smoke, actual current Debug
 EXE before/after, Direct teaching persistence, contextual guide,
 EdgeBasedMatching guide isolated regression, Blob Tool, localization, full
-Debug build, readiness, and diff checks.  
+Debug build, readiness, and diff checks.<br>
 Evidence:
-`artifacts\p269_property_persistence_feedback_20260730` and this report.  
+`artifacts\p269_property_persistence_feedback_20260730` and this report.<br>
 Boundary / next dependency: This corrects property-save trust only. It does not
 yet distinguish missing, stale, corrupt, incompatible, or unreadable saved
 configuration during load; that paired load-path audit is the next dependency.

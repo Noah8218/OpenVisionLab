@@ -1,6 +1,6 @@
 # OpenVisionLab P260 EdgeDetection Parameter Guide
 
-Date: 2026-07-30 KST  
+Date: 2026-07-30 KST<br>
 Status: Complete
 
 ## Outcome
@@ -103,18 +103,18 @@ CVR-00 participant validation.
 
 ## Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: EdgeDetection 11/11 detailed Parameter Guide content plus dynamic-card
-selection integration.  
+selection integration.<br>
 Acceptance criteria: exhaustive content, conditional applicability,
 Korean/English, correct focus identity, and zero guide-caused execution/layer/
-route effects all passed.  
+route effects all passed.<br>
 Verification: current solution build, focused UI smoke, post-change fallback
 audit, shared-guide and preprocess regressions, readiness, visual inspection,
-and diff check passed.  
+and diff check passed.<br>
 Evidence:
 `artifacts/p260_edge_detection_parameter_guide_20260730`,
-`artifacts/p260_parameter_guide_fallback_audit_20260730`, and this report.  
+`artifacts/p260_parameter_guide_fallback_audit_20260730`, and this report.<br>
 Boundary / next dependency: the next bounded family is `RotateScale`, whose
 five properties remain Basic fallback; CVR-00 still requires three independent
 first-time participants and raw observations.

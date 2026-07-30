@@ -1,7 +1,7 @@
 # OpenVisionLab Direct Teaching Pipeline Persistence
 
-Date: 2026-07-29  
-Work item: P254  
+Date: 2026-07-29<br>
+Work item: P254<br>
 Status: Complete
 
 ## Outcome
@@ -144,20 +144,20 @@ Results:
 
 ## Durable Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: Beginner-visible add-and-save identity plus exact Recipe/Pipeline
-completion context for direct Tool View teaching.  
+completion context for direct Tool View teaching.<br>
 Acceptance criteria: add/save wording -> pass; exact destination and next
 action -> pass; storage reload -> pass; Recipe Manager refresh/reopen -> pass;
 explicit Run Review result/drawing -> pass; zero add/save execution/layer/route
-side effects -> pass.  
+side effects -> pass.<br>
 Verification: Debug solution build; screenshot-runner build; focused P254
 runtime/capture; PowerShell parser; actual EXE recording and extracted-frame
-review.  
+review.<br>
 Evidence:
 `artifacts\p254_direct_teaching_pipeline_persistence_20260729`,
 `artifacts\novice_blob_pipeline_persistence_20260729\raw_r1_review\frame_55s.png`,
-and this report.  
+and this report.<br>
 Boundary / next dependency: CVR-00 remains dependent on three independent
 first-time participants. No additional deterministic feature is admitted from
 this completed workflow; wait for a named current-build operator blocker,

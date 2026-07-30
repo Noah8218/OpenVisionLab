@@ -1,8 +1,8 @@
 # OpenVisionLab Contextual Property Parameter Guide Design
 
-Date: 2026-07-30 KST  
-Record: P257  
-Implementation status: Complete in P258  
+Date: 2026-07-30 KST<br>
+Record: P257<br>
+Implementation status: Complete in P258<br>
 Design status: Complete
 
 ## 1. Decision
@@ -391,9 +391,9 @@ row has an exact or approved fallback explanation.
 
 ## 12. Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: Contextual PropertyGrid parameter-help UX, content contract, ownership,
-pilot families, rollout, exclusions, and implementation acceptance criteria.  
+pilot families, rollout, exclusions, and implementation acceptance criteria.<br>
 Acceptance criteria:
 
 - same-Tool operator workflow defined -> pass, Sections 3-4;
@@ -407,8 +407,8 @@ Acceptance criteria:
 Verification: Inspected the current PropertyGrid property metadata, bridge,
 shared Tool shell, Learn/verification surfaces, localization pattern, and
 canonical Tool catalog. `git diff --check` passed after recording P257, and all
-seven referenced source/catalog paths were confirmed present.  
-Evidence: `docs/reports/OPENVISIONLAB_CONTEXTUAL_PARAMETER_GUIDE_DESIGN_20260730.md`  
+seven referenced source/catalog paths were confirmed present.<br>
+Evidence: `docs/reports/OPENVISIONLAB_CONTEXTUAL_PARAMETER_GUIDE_DESIGN_20260730.md`<br>
 Boundary / next dependency: This completes design only. No UI, catalog,
 selection event, localization text, or runtime behavior is proved by this
 design record alone. P258 subsequently completed Slice A and the four-family

@@ -1,7 +1,7 @@
 # OpenVisionLab Workspace Sample / Recipe Context Sync
 
-Date: 2026-07-29  
-Work item: P253  
+Date: 2026-07-29<br>
+Work item: P253<br>
 Status: Complete
 
 ## Outcome
@@ -122,20 +122,20 @@ Contact-sheet SHA-256:
 
 ## Durable Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: Exact workspace sample/generated-Pipeline synchronization into Recipe
-Manager plus one actual-EXE correction-loop walkthrough.  
+Manager plus one actual-EXE correction-loop walkthrough.<br>
 Acceptance criteria: stale-context reproduction -> pass; exact Mapping pair
 selection -> pass; pending-edit cancellation -> pass; zero unintended
 execution/layer/route mutation -> pass; end-to-end recorded walkthrough ->
-pass.  
+pass.<br>
 Verification: Debug solution build; screenshot-runner build; focused P253,
 P250, P251, P252 and readiness checks; PowerShell parser; actual EXE recording
-and visual frame review.  
+and visual frame review.<br>
 Evidence:
 `artifacts\novice_matching_correction_loop_20260729`,
 `artifacts\p253_workspace_sample_recipe_context_sync_20260729`, and this
-report.  
+report.<br>
 Boundary / next dependency: CVR-00 remains dependent on three independent
 first-time participants. The next agent-operated workflow should test direct
 teaching result persistence through Add-to-Pipeline, recipe save/reopen, and

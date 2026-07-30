@@ -1,7 +1,7 @@
 # OpenVisionLab Scratch Threshold -> Blob Recipe Walkthrough
 
-Date: 2026-07-29  
-Work item: P255  
+Date: 2026-07-29<br>
+Work item: P255<br>
 Status: Complete
 
 ## Outcome
@@ -143,19 +143,19 @@ Results:
 
 ## Durable Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: one blank-workspace Threshold -> Blob Recipe authored through direct
 Teaching, saved, restarted, restored, and explicitly run in a clean current
-runtime.  
+runtime.<br>
 Acceptance criteria: named Recipe -> pass; image load -> pass; explicit
 Threshold Preview/save -> pass; Blob predecessor selection/save -> pass;
 two-Step pre-restart route -> pass; restart restoration without auto-run ->
-pass; explicit Run with drawings/metrics -> pass.  
+pass; explicit Run with drawings/metrics -> pass.<br>
 Verification: clean-runtime build; 171-second actual-EXE recording; saved XML
-hash inspection; corrected focused runtime smoke; visual frame review.  
+hash inspection; corrected focused runtime smoke; visual frame review.<br>
 Evidence:
 `artifacts\p255_scratch_threshold_blob_recipe_20260729`,
-`artifacts\openvisionlab_clean_runtime_p255_r7_20260729`, and this report.  
+`artifacts\openvisionlab_clean_runtime_p255_r7_20260729`, and this report.<br>
 Boundary / next dependency: CVR-00 remains externally dependent on three real
 independent first-time participants. The next bounded development priority is
 input/output route clarity across a longer operator-authored Pipeline only if

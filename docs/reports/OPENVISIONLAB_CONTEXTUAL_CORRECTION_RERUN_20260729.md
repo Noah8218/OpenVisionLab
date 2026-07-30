@@ -1,7 +1,7 @@
 # OpenVisionLab Contextual Correction Rerun
 
-Date: 2026-07-29 KST  
-Status: Complete  
+Date: 2026-07-29 KST<br>
+Status: Complete<br>
 Scope: P252, source-aware explicit rerun after selected-Step correction
 
 ## Reproduced Gap

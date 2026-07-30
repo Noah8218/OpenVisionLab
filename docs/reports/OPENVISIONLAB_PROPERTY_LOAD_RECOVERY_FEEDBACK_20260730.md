@@ -1,7 +1,7 @@
 # OpenVisionLab Property Load Recovery Feedback
 
-Date: 2026-07-30 KST  
-Priority: P270  
+Date: 2026-07-30 KST<br>
+Priority: P270<br>
 Status: Complete
 
 ## Outcome
@@ -167,21 +167,21 @@ bounded correction.
 
 ## Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: Direct PropertyGrid Tool saved-setting load result preservation,
 invalid-file backup/default-substitution feedback, unreadable-load feedback,
-and successful-save recovery.  
+and successful-save recovery.<br>
 Acceptance criteria: missing configuration remains warning-free; valid
 configuration restores; invalid configuration is backed up and identified;
 read exceptions state that the saved file was not changed; repository-preload
 and session-load paths retain the result; full Korean/English message is
 non-obstructing and accessible; successful save clears the warning; zero
-Preview/Run/layer/route side effects.  
+Preview/Run/layer/route side effects.<br>
 Verification: Current Debug EXE before/after, missing/valid/invalid file
 contract, repository-preload backup and save recovery, P269, P268, Blob Tool,
-localization, full Debug build, readiness, duplicate-key, and diff checks.  
+localization, full Debug build, readiness, duplicate-key, and diff checks.<br>
 Evidence:
-`artifacts\p270_property_load_feedback_20260730` and this report.  
+`artifacts\p270_property_load_feedback_20260730` and this report.<br>
 Boundary / next dependency: Syntactically valid semantic staleness remains
 undetectable without a schema/version rule. The separate
 `OpenVisionNativeToolSettingsStore` persistence path is the next bounded

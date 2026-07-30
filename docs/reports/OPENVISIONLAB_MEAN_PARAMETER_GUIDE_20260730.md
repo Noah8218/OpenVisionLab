@@ -1,7 +1,7 @@
 # OpenVisionLab Mean Parameter Guide
 
-Date: 2026-07-30 KST  
-Priority: P262  
+Date: 2026-07-30 KST<br>
+Priority: P262<br>
 Status: Complete
 
 ## Outcome
@@ -111,21 +111,20 @@ Evidence:
 
 ## Completion Record
 
-Status: Complete  
+Status: Complete<br>
 Scope: Detailed contextual guidance and Direct Tool binding for the three Mean
-family properties only.  
+family properties only.<br>
 Acceptance criteria: Mean 3/3 detailed in Korean/English; Mean and MeanStdDev
 semantics distinguished; inclusive GV bounds and Direct Preview/Pipeline
 acceptance boundary stated; actual EXE guide does not obstruct teaching;
 focus, explicit hide/reopen, and zero Preview/Run/layer/routing side effects
-preserved.  
+preserved.<br>
 Verification: Focused and shared-guide UI smokes, Mean preprocessing/result
 review regressions, actual Debug EXE before/after evidence, standalone
-canonical audit, full Debug build, readiness, and patch hygiene.  
-Evidence: `artifacts\p262_mean_parameter_guide_20260730` and this report.  
+canonical audit, full Debug build, readiness, and patch hygiene.<br>
+Evidence: `artifacts\p262_mean_parameter_guide_20260730` and this report.<br>
 Boundary / next dependency: This is operator guidance, not automatic
 threshold selection, Mean algorithm qualification, unseen-data robustness, or
 field evidence. The remaining 74 Basic entries need another bounded-family
 admission. CVR-00 still requires three independent first-time participants and
 raw observations.
-
