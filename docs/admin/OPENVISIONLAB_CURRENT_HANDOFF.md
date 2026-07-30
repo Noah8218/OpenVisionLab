@@ -4,6 +4,48 @@ Updated: 2026-07-30 KST
 
 This is the current continuation brief for a new OpenVisionLab chat. Read it after `AGENTS.md` and before choosing implementation work. It is a status and priority document; it does not override stable behavioral contracts in `AGENTS.md` or `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`.
 
+## Incremental Work Update — P273 Production Release Candidate Gate (2026-07-30)
+
+- The user explicitly opened the Productionization track and requested
+  commit/push plus clone/build verification from another local path.
+- The initial clean clone reproduced hidden developer-workspace dependencies:
+  the historical 60-row precheck referenced untracked local `Sample\...`
+  inputs; Release used an absolute output path, non-deterministic/Debug-flavored
+  settings, an omitted solution project, symbols, and incomplete package
+  evidence; the first ZIP was not byte-reproducible.
+- `tools\VerifyReleaseCandidate.ps1` now performs locked restore, Debug and
+  Release solution builds, readiness, external-reference, public-asset,
+  repository-portable 33-row public sample, package, archive, and optional
+  launch gates.
+- `.github\workflows\ci.yml` calls the same gate with `-SkipLaunch` and uploads
+  the verified portable package and evidence.
+- Two independent clean clones of commit
+  `38e7eec8188b494b1c3f5d81a82cefa1ee9d19fe` produced the same 75-file,
+  zero-PDB framework-dependent `win-x64` payload and exact ZIP SHA-256
+  `E8244D5EDF13E3BBE515E4C1F4EAFE0A9695AD11E3591DCF6EAF59236FEEC524`.
+- Debug and Release solution builds completed with zero warnings/errors;
+  readiness passed 12/12; all 33 public rows passed; copied-location EXE launch
+  passed.
+- Evidence:
+  `docs\reports\OPENVISIONLAB_PRODUCTION_RELEASE_GATE_20260730.md`,
+  `C:\Git\OpenVisionLab_Production_RC_Final_20260730`, and
+  `C:\Git\OpenVisionLab_Production_Repro_Final_20260730`.
+- Status: P273 `Complete` for the portable RC gate, not commercial GA.
+- Current next priorities:
+  1. Separate immutable installation files from writable user/Recipe/log data
+     with migration and backup behavior. Recommended model: `gpt-5.6-sol` |
+     Reasoning effort: `high`.
+  2. Select the distribution model and obtain a signing identity/certificate
+     before installer, signing, update/rollback, and uninstall work.
+     Recommended model: none until prerequisites; `gpt-5.6-sol` afterward |
+     Reasoning effort: none until prerequisites; `high` afterward.
+  3. Generate/review SBOM and license evidence, then add support-bundle and
+     bounded performance gates. Recommended model: `gpt-5.6-terra` |
+     Reasoning effort: `medium`.
+- CVR-00 remains separately blocked on three real independent novice
+  participants and unedited observations. It is not replaced by the release
+  gate.
+
 ## Incremental Work Update — P272 Recipe/Pipeline Persistence Feedback (2026-07-30)
 
 - P272 reproduced the admitted operator-visible defect. A malformed active
@@ -40,7 +82,7 @@ This is the current continuation brief for a new OpenVisionLab chat. Read it aft
   `artifacts\p272_recipe_pipeline_persistence_20260730` and
   `docs\reports\OPENVISIONLAB_RECIPE_PIPELINE_PERSISTENCE_FEEDBACK_20260730.md`.
 - Status: P272 `Complete`.
-- There is no active feature priority after P272.
+- Historical state immediately after P272:
   1. CVR-00 remains blocked until three real independent first-time
      participants and raw observations exist. Recommended model: none before
      observations; `gpt-5.6-terra` for synthesis afterward | Reasoning effort:

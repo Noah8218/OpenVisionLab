@@ -1,6 +1,6 @@
 # OpenVisionLab Release and Version Policy
 
-Updated: 2026-07-19
+Updated: 2026-07-30
 
 이 문서는 OpenVisionLab, vendored Library-Noah DLL, WPG PropertyGrid DLL, ImageCompare standalone 산출물을 어떤 기준으로 릴리즈할지 정의합니다.
 
@@ -80,6 +80,45 @@ Updated: 2026-07-19
 - Both modes reject an existing output directory. Release mode accepts only `dist\OpenVisionLab`; this prevents a stale package from being silently reused or overwritten.
 - `bin\Debug` remains a retained local recipe workspace. It is not a clean-runtime evidence path or a release package and is not deleted, moved, or migrated automatically.
 - P134/P137 verify the template-dependency part of the output contract: Import copies an operator-accessible template into the recipe and stores an installation-root-relative `RECIPE\...\Template\...` reference; Matching, EdgeBasedMatching, and FeatureMatching resolve that path from the running installation root. A freshly published `dist\OpenVisionLab` package was copied to another root and replayed successfully. This does not establish installer, signing, update, or production-deployment qualification.
+
+## P273 Portable Release Candidate Gate (2026-07-30)
+
+Run the canonical repository gate from a clean clone:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\VerifyReleaseCandidate.ps1
+```
+
+The gate must use committed source and vendored dependencies only. It performs
+locked restore, Debug and Release solution builds, readiness, external
+reference checks, public asset policy checks, all repository-portable public
+sample rows, framework-dependent `win-x64` publish, manifest/hash/archive
+verification, and copied-location EXE launch unless `-SkipLaunch` is explicit.
+
+Required outputs are:
+
+- `dist\OpenVisionLab`
+- `dist\OpenVisionLab-win-x64-framework-dependent.zip`
+- `dist\OpenVisionLab-win-x64-framework-dependent.zip.sha256`
+- `artifacts\production_release_candidate_<commit>\release_candidate_summary.json`
+
+The manifest must record the clean source commit/branch/remote, SDK, runtime,
+self-contained mode, and SHA-256 for every payload file. The default Release
+package must contain no PDBs. ZIP entry ordering and timestamps are derived
+deterministically so a second clean clone of the same commit produces the same
+archive hash.
+
+P273 verified commit
+`38e7eec8188b494b1c3f5d81a82cefa1ee9d19fe` in two independent local clone
+paths. Both produced 75 payload files and ZIP SHA-256
+`E8244D5EDF13E3BBE515E4C1F4EAFE0A9695AD11E3591DCF6EAF59236FEEC524`.
+All 33 repository-portable public sample rows and copied-location launch passed.
+
+This package is unsigned, framework-dependent, and requires Microsoft .NET 8
+Desktop Runtime x64. Until writable CONFIG/RECIPE/Log data is separated from
+the install root, deploy only to an operator-writable folder. This gate does
+not establish an installer, signing, update/rollback, uninstall, SBOM/legal
+approval, support SLA, performance qualification, or commercial GA.
 
 ## Current Policy Decision
 

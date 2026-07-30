@@ -10,23 +10,25 @@ This map prevents a new chat from treating large historical records or old readi
    - Operating rules, repository boundary, product scope, stable constraints, source organization, verification rules, and priority discipline.
 2. `docs/OPENVISIONLAB_CURRENT_HANDOFF.md`
    - Current project state, completed evidence, known gaps, exact next-priority order, latest repository baseline, and restart checklist.
-3. `docs/reports/OPENVISIONLAB_NEXT_DEVELOPMENT_DECISION_20260730.md`
+3. `docs/reports/OPENVISIONLAB_PRODUCTION_RELEASE_GATE_20260730.md`
+   - P273 clean-clone Release Candidate gate, reproduced release defects, two-path deterministic archive evidence, deployment boundary, and ordered Productionization work.
+4. `docs/reports/OPENVISIONLAB_NEXT_DEVELOPMENT_DECISION_20260730.md`
    - Completed P272 Recipe/Pipeline persistence decision, R1-R10 matrix, A1-A12 closure, and ordered post-P272 prerequisites.
-4. `docs/reports/OPENVISIONLAB_RECIPE_PIPELINE_PERSISTENCE_FEEDBACK_20260730.md`
+5. `docs/reports/OPENVISIONLAB_RECIPE_PIPELINE_PERSISTENCE_FEEDBACK_20260730.md`
    - P272 reproduced defects, bounded implementation, operator contract, current Debug EXE evidence, verification, and limits.
-5. `docs/reports/OPENVISIONLAB_COMMERCIAL_VIDEO_QUEUE_HANDOFF_20260728.md`
+6. `docs/reports/OPENVISIONLAB_COMMERCIAL_VIDEO_QUEUE_HANDOFF_20260728.md`
    - Compact current progress, observed dirty repository state, full `CVR-00` through `CVR-20` status/trigger/model table, video traceability, and paste-ready restart request.
-6. `docs/OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md`
+7. `docs/OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md`
    - Durable `CVR-00` through `CVR-20` commercial-video candidate inventory, activation gates, ordered implementation queue, model recommendations, and exclusion register. Only the current handoff decides which row is active.
-7. `docs/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md`
+8. `docs/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md`
    - Product identity, intended operator workflow, and responsibility split between Learn, Tool Views, Pipeline, Pipeline Review, and Recipe Manager.
-8. `docs/reports/OPENVISIONLAB_USER_CENTERED_WORKFLOW_DIRECTION_20260729.md`
+9. `docs/reports/OPENVISIONLAB_USER_CENTERED_WORKFLOW_DIRECTION_20260729.md`
    - User-goal-first workflow, coherent first-use setup, narrow-scope persistence/restoration, reset/stale-state behavior, side-effect verification, and evidence-gated future direction.
-9. `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`
+10. `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`
    - Behavioral contracts that must not regress.
-10. `docs/contracts/openvisionlab/OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md` and `docs/contracts/openvisionlab/OPENVISIONLAB_LLM_TOOL_CATALOG.json`
+11. `docs/contracts/openvisionlab/OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md` and `docs/contracts/openvisionlab/OPENVISIONLAB_LLM_TOOL_CATALOG.json`
    - Read when LLM XML, prompt packets, validation, import, tool parameters, or acceptance metrics are involved.
-11. `docs/OPENVISIONLAB_PUBLIC_SAMPLE_ASSET_POLICY.md`, `docs/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md`, and `docs/OPENVISIONLAB_RELEASE_VERSION_POLICY.md`
+12. `docs/OPENVISIONLAB_PUBLIC_SAMPLE_ASSET_POLICY.md`, `docs/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md`, and `docs/OPENVISIONLAB_RELEASE_VERSION_POLICY.md`
    - Read when samples, DLLs, external references, release artifacts, or repository publication are involved.
 
 After this reading, run `git status --short` and `git log --oneline -5` in Dev before choosing work. If the user asks for a product/maturity/commercial comparison, also read the historical assessment documents listed below, but do not treat their old percentages as current truth.
@@ -49,6 +51,7 @@ If documents conflict, do not smooth over the conflict. Follow the higher-ranked
 | Document | Use it for | Freshness note |
 | --- | --- | --- |
 | `OPENVISIONLAB_CURRENT_HANDOFF.md` | First continuation brief. | Includes completed Recipe change-safety, explicit validation outcomes, Qualified Recipe Snapshot, completed `CVR-01` through bounded `CVR-11`, CVR-09/CVR-11 physical-qualification limits, and current external prerequisites. |
+| `reports/OPENVISIONLAB_PRODUCTION_RELEASE_GATE_20260730.md` | P273 reproducible portable RC implementation, clean-clone findings, two-path archive proof, operator deployment boundary, and next Productionization priorities. | Current completion authority for the unsigned framework-dependent portable RC gate; it explicitly does not claim installer/signing/updates/SBOM/legal/field qualification or commercial GA. |
 | `OPENVISIONLAB_NEXT_DEVELOPMENT_DECISION_20260730.md` | P272 Recipe/Pipeline persistence audit scope, R1-R10 reproduction matrix, A1-A12 acceptance, implementation admission gate, and ordered next conditions. | Completed decision authority; defects were reproduced and corrected. |
 | `reports/OPENVISIONLAB_RECIPE_PIPELINE_PERSISTENCE_FEEDBACK_20260730.md` | P272 implementation, R1-R10 results, current EXE evidence, verification, and boundary. | Current completion authority for Recipe/Pipeline persistence feedback; R10 schema/version semantics and empty `CData` remain explicit limits. |
 | `OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md` | Full priority-ordered development inventory derived from all 16 reviewed Cognex/HALCON/MERLIC videos. | Canonical `CVR-00` through `CVR-20` queue with activation triggers, detailed minimum contracts, model/reasoning recommendations, source-video traceability, excluded scope, and durable evidence. CVR-01 through bounded CVR-11 plus bounded CVR-19/CVR-20 are complete; CVR-12 through CVR-18 audits are complete without implementation admission. |
