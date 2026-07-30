@@ -38,8 +38,8 @@ when those broader checks are specifically needed.
 ## User Workflow
 
 ```powershell
-git clone --branch codex/public-sample-ux-docs --single-branch https://github.com/Noah8218/OpenVisionLab_Dev.git
-cd OpenVisionLab_Dev
+git clone https://github.com/Noah8218/OpenVisionLab.git
+cd OpenVisionLab
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\VerifySourceBuild.ps1
 .\bin\Debug\OpenVisionLab.exe
 ```
@@ -49,11 +49,6 @@ first NuGet restore, and exact .NET SDK `8.0.421`. Visual Studio is optional.
 If the SDK is missing or differs, the verifier stops with the required version
 and the official .NET download location instead of allowing compiler
 roll-forward.
-
-The branch is explicit because GitHub currently resolves the repository
-default to `main`, which does not yet contain this verified workbench baseline.
-After reviewed promotion to the default branch, the extra branch arguments can
-be removed.
 
 ## Lightweight Verification Contract
 

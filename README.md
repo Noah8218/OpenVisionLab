@@ -69,16 +69,11 @@ Requirements:
 - Internet access for the first NuGet package restore
 
 ```powershell
-git clone --branch codex/public-sample-ux-docs --single-branch https://github.com/Noah8218/OpenVisionLab_Dev.git
-cd OpenVisionLab_Dev
+git clone https://github.com/Noah8218/OpenVisionLab.git
+cd OpenVisionLab
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\VerifySourceBuild.ps1
 .\bin\Debug\OpenVisionLab.exe
 ```
-
-The branch is explicit because the repository's current default `main` branch
-does not yet contain the verified workbench source. Remove the `--branch` and
-`--single-branch` arguments after this branch is reviewed and promoted to the
-default branch.
 
 `VerifySourceBuild.ps1` performs the locked package restore, Debug and Release
 solution builds, repository readiness check, and vendored DLL check. It does
