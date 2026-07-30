@@ -83,6 +83,7 @@ namespace OpenVisionLab
                 shell.gbOutputLayer.MinHeight = docked ? DockedPreviewCardMinHeight : 0D;
                 shell.gbParameters.MinHeight = docked ? DockedParameterGroupMinHeight : FloatingParameterGroupMinHeight;
                 shell.propertyGridHost.MinHeight = docked ? DockedPropertyGridMinHeight : FloatingPropertyGridMinHeight;
+                shell.parameterGuideView.SetCompactMode(docked);
                 ApplyPresetDensity(docked);
                 ApplySummaryStatusDensity(docked);
                 ApplyResultReviewDensity(docked);

@@ -16,7 +16,7 @@ namespace OpenVisionLab
         private readonly Dictionary<string, Button> buttons;
         private readonly ContextMenu menu;
         private readonly List<MenuItem> menuItems = new List<MenuItem>();
-        private string lastAppliedPresetName = string.Empty;
+        private VisionToolPreset<TProperty> lastAppliedPreset;
         private bool disposed;
 
         private VisionToolPresetButtonPresenter(
@@ -83,16 +83,17 @@ namespace OpenVisionLab
             shell.PresetTitleText.Text = VisionToolVerificationText.T(
                 "VisionTool.Preset.Title",
                 "Recommended presets");
-            shell.PresetDetailText.Text = string.IsNullOrWhiteSpace(lastAppliedPresetName)
+            shell.PresetDetailText.Text = lastAppliedPreset == null
                 ? VisionToolVerificationText.T(
                     "VisionTool.Preset.Detail",
-                    "Choose a starting point. It updates PropertyGrid values only; run Preview to verify.")
+                    "Basic = first check / Fast = quick screening / Precise = final tuning. Select one to see why.")
                 : string.Format(
                     CultureInfo.CurrentCulture,
                     VisionToolVerificationText.T(
                         "VisionTool.Preset.AppliedDetailFormat",
-                        "{0} applied. Run Preview to verify."),
-                    lastAppliedPresetName);
+                        "{0}: {1} Values only; run Preview to verify."),
+                    lastAppliedPreset.DisplayName,
+                    lastAppliedPreset.Description);
 
             foreach (KeyValuePair<string, Button> pair in buttons)
             {
@@ -230,7 +231,7 @@ namespace OpenVisionLab
         private void ApplyPresetAndRefresh(VisionToolPreset<TProperty> preset)
         {
             applyPreset(preset);
-            lastAppliedPresetName = preset.DisplayName;
+            lastAppliedPreset = preset;
             ApplyLocalization();
         }
     }

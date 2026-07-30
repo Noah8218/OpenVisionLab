@@ -108,6 +108,21 @@ namespace OpenVisionLab
             }
 
             document = registration.CreateDocument(displayManager);
+            string settingsConfigName =
+                OpenVisionNativeToolSettingsStore.CreateConfigName(
+                    document.ToolName);
+            if (OpenVisionNativeToolSettingsStore.TryGetLoadFailure(
+                    settingsConfigName,
+                    out OpenVisionNativeToolSettingsLoadFailure loadFailure))
+            {
+                document.SetPropertyPersistenceStatus(
+                    OpenVisionNativeToolPersistenceStatusText.CreateLoadFailure(
+                        loadFailure.ToolName,
+                        loadFailure.RecipeName,
+                        loadFailure.ErrorMessage,
+                        loadFailure.BackupPath));
+            }
+
             return true;
         }
 

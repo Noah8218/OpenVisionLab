@@ -9,6 +9,8 @@ namespace OpenVisionLab
     {
         private readonly DockedInspectorLayoutController layoutController;
         private readonly VisionToolLearnWindowController learnWindowController;
+        private readonly VisionToolParameterGuideView parameterGuideView;
+        private readonly VisionToolParameterGuideSidecarController parameterGuideSidecarController;
 
         public static readonly DependencyProperty TitleIconKindProperty =
             DependencyProperty.Register(
@@ -44,6 +46,13 @@ namespace OpenVisionLab
                 typeof(Visibility),
                 typeof(VisionToolSingleInputPropertyToolShell),
                 new PropertyMetadata(Visibility.Collapsed));
+
+        public static readonly DependencyProperty ParameterGuideVisibilityProperty =
+            DependencyProperty.Register(
+                nameof(ParameterGuideVisibility),
+                typeof(Visibility),
+                typeof(VisionToolSingleInputPropertyToolShell),
+                new PropertyMetadata(Visibility.Collapsed, OnParameterGuideVisibilityChanged));
 
         public static readonly DependencyProperty ResultReviewVisibilityProperty =
             DependencyProperty.Register(
@@ -97,6 +106,9 @@ namespace OpenVisionLab
         public VisionToolSingleInputPropertyToolShell()
         {
             InitializeComponent();
+            parameterGuideView = new VisionToolParameterGuideView();
+            parameterGuideSidecarController =
+                new VisionToolParameterGuideSidecarController(this, parameterGuideView);
             layoutController = new DockedInspectorLayoutController(this);
             learnWindowController = new VisionToolLearnWindowController(() => Window.GetWindow(this));
             ApplyDockedInspectorMode();
@@ -132,6 +144,12 @@ namespace OpenVisionLab
         {
             get => (Visibility)GetValue(ParameterContentVisibilityProperty);
             set => SetValue(ParameterContentVisibilityProperty, value);
+        }
+
+        public Visibility ParameterGuideVisibility
+        {
+            get => (Visibility)GetValue(ParameterGuideVisibilityProperty);
+            set => SetValue(ParameterGuideVisibilityProperty, value);
         }
 
         public Visibility ResultReviewVisibility
@@ -214,6 +232,7 @@ namespace OpenVisionLab
         public Button AddPipelineButton => btnAddPipeline;
         public Button NImageVerificationButton => btnNImageVerification;
         public Border PropertyGridHost => propertyGridHost;
+        public VisionToolParameterGuideView ParameterGuide => parameterGuideView;
 
         private static void OnIsDockedInspectorModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -224,14 +243,31 @@ namespace OpenVisionLab
             }
         }
 
+        private static void OnParameterGuideVisibilityChanged(
+            DependencyObject d,
+            DependencyPropertyChangedEventArgs e)
+        {
+            if (d is VisionToolSingleInputPropertyToolShell shell)
+            {
+                shell.parameterGuideSidecarController?.SetAvailable(
+                    (Visibility)e.NewValue == Visibility.Visible);
+            }
+        }
+
         private void ApplyDockedInspectorMode()
         {
             layoutController?.Apply();
+            parameterGuideSidecarController?.OnLayoutModeChanged();
         }
 
         private void LearnTopicButton_Click(object sender, RoutedEventArgs e)
         {
             learnWindowController.Open(LearnTopicIndex);
+        }
+
+        private void ParameterGuideButton_Click(object sender, RoutedEventArgs e)
+        {
+            parameterGuideSidecarController.Toggle();
         }
     }
 }

@@ -12,6 +12,7 @@ namespace OpenVisionLab
     [CategoryOrder("Scan Line", 10)]
     [CategoryOrder("Fit Line", 11)]
     [CategoryOrder("Filter", 12)]
+    [CategoryOrder("Compatibility", 98)]
     [CategoryOrder("Draw", 99)]
     [System.Xml.Serialization.XmlRoot("CPropertyLineGuage")]
     public class LineGaugeProperty : OpenCvPropertyBase, IOpenCvPropertyLineGauge, IOpenCvConfigurableProperty<LineGaugeProperty>
@@ -95,19 +96,22 @@ namespace OpenVisionLab
 
         [PropertyOrder(2)]
         [Browsable(true)]
+        [PropertyGridCompatibilityReadOnly]
         [PropertyEditor(typeof(WpgSliderEditor))]
         [NumberRange(0, 255, 1, 0)]
-        [CategoryAttribute("Filter"), DescriptionAttribute("평균 엣지 필터링 차이값입니다. 평균값과 엣지 값의 차이가 설정값이상 나온다면 필터링 합니다."), DisplayNameAttribute("Average diff")]
+        [CategoryAttribute("Compatibility"), DescriptionAttribute("Stored for Recipe/Preset compatibility. The current LineGauge runtime does not consume this value."), DisplayNameAttribute("Compatibility (inactive) · Average diff")]
         public double AVERAGE_Diff { get; set; } = 100;
 
         [PropertyOrder(0)]
         [Browsable(true)]
-        [CategoryAttribute("Filter"), DescriptionAttribute("평균값으로 엣지 필터링을 사용할지 결정합니다."), DisplayNameAttribute("Use average filter")]
+        [PropertyGridCompatibilityReadOnly]
+        [CategoryAttribute("Compatibility"), DescriptionAttribute("Stored for Recipe/Preset compatibility. The current LineGauge runtime does not enable an average filter."), DisplayNameAttribute("Compatibility (inactive) · Average filter")]
         public bool USE_AVERAGE_FILTER { get; set; } = false;
 
         [PropertyOrder(1)]
         [Browsable(true)]
-        [CategoryAttribute("Filter"), DescriptionAttribute("필터링할 엣지 타입을 결정합니다.(X/Y)"), DisplayNameAttribute("Average filter type")]
+        [PropertyGridCompatibilityReadOnly]
+        [CategoryAttribute("Compatibility"), DescriptionAttribute("Stored for Recipe/Preset compatibility. The current LineGauge runtime does not consume this X/Y selection."), DisplayNameAttribute("Compatibility (inactive) · Average axis")]
         public AVERAGE_FILTER_TYPES AVERAGE_FILTER_TYPE { get; set; } = AVERAGE_FILTER_TYPES.Y;
 
         public enum AVERAGE_FILTER_TYPES
@@ -118,22 +122,26 @@ namespace OpenVisionLab
 
         [PropertyOrder(0)]
         [Browsable(true)]
-        [CategoryAttribute("Draw"), DescriptionAttribute("검사 Draw시 스캔 라인을 Draw할지 결정합니다."), DisplayNameAttribute("Show scan line")]
+        [PropertyGridCompatibilityReadOnly]
+        [CategoryAttribute("Compatibility"), DescriptionAttribute("Legacy bitmap Draw value. Current WPF Preview and Pipeline Review retain scan evidence."), DisplayNameAttribute("Legacy draw · Scan line")]
         public bool SHOW_VERTICAL_LINE { get; set; } = true;
 
         [PropertyOrder(1)]
         [Browsable(true)]
-        [CategoryAttribute("Draw"), DescriptionAttribute("검사 Draw시 엣지를 Draw할지 결정합니다."), DisplayNameAttribute("Show edge")]
+        [PropertyGridCompatibilityReadOnly]
+        [CategoryAttribute("Compatibility"), DescriptionAttribute("Legacy bitmap Draw value. Current WPF Preview and Pipeline Review retain detected-edge evidence."), DisplayNameAttribute("Legacy draw · Edge")]
         public bool SHOW_EDGE { get; set; } = true;
 
         [PropertyOrder(2)]
         [Browsable(true)]
-        [CategoryAttribute("Draw"), DescriptionAttribute("검사 Draw시 엣지들의 연결을 Draw할지 결정합니다."), DisplayNameAttribute("Show contour line")]
+        [PropertyGridCompatibilityReadOnly]
+        [CategoryAttribute("Compatibility"), DescriptionAttribute("Legacy bitmap Draw value. The current WPF/Pipeline overlay contract does not consume it."), DisplayNameAttribute("Legacy draw · Contour")]
         public bool SHOW_CONTOUR { get; set; } = true;
 
         [PropertyOrder(3)]
         [Browsable(true)]
-        [CategoryAttribute("Draw"), DescriptionAttribute("검사 Draw시 핏팅 라인을 Draw할지 결정합니다."), DisplayNameAttribute("Show fit line")]
+        [PropertyGridCompatibilityReadOnly]
+        [CategoryAttribute("Compatibility"), DescriptionAttribute("Legacy bitmap Draw value. Current WPF Preview and Pipeline Review retain fitted-line evidence."), DisplayNameAttribute("Legacy draw · Fit line")]
         public bool SHOW_FITLINE { get; set; } = true;
 
         public LineGaugeProperty() : base() { }

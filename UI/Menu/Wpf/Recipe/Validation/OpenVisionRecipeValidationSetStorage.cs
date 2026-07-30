@@ -358,26 +358,27 @@ namespace OpenVisionLab
             out string error)
         {
             string variantId = NormalizeVariantId(image?.VariantId);
-            string metricName = image?.ExpectedMetricName?.Trim() ?? string.Empty;
-            string minimum = image?.ExpectedMetricMinimum?.Trim() ?? string.Empty;
-            string maximum = image?.ExpectedMetricMaximum?.Trim() ?? string.Empty;
             if (variantId.Length > 80 || variantId.Any(char.IsControl))
             {
                 error = "Variant ID must be 80 characters or fewer and contain no control characters.";
                 return false;
             }
 
-            if (metricName.Length > 100 || metricName.Any(char.IsControl))
+            string metricNamesText = image?.ExpectedMetricName?.Trim() ?? string.Empty;
+            string minimumsText = image?.ExpectedMetricMinimum?.Trim() ?? string.Empty;
+            string maximumsText = image?.ExpectedMetricMaximum?.Trim() ?? string.Empty;
+            if (metricNamesText.Length > 500 || metricNamesText.Any(char.IsControl))
             {
-                error = "Expected metric name must be 100 characters or fewer and contain no control characters.";
+                error = "Expected metric names must be 500 characters or fewer and contain no control characters.";
                 return false;
             }
 
-            bool hasMinimum = !string.IsNullOrWhiteSpace(minimum);
-            bool hasMaximum = !string.IsNullOrWhiteSpace(maximum);
-            if (string.IsNullOrWhiteSpace(metricName))
+            string[] metricNames = SplitMetricContractParts(metricNamesText);
+            string[] minimums = SplitMetricContractParts(minimumsText);
+            string[] maximums = SplitMetricContractParts(maximumsText);
+            if (metricNames.Length == 0)
             {
-                if (hasMinimum || hasMaximum)
+                if (minimums.Length > 0 || maximums.Length > 0)
                 {
                     error = "Expected metric name is required when a minimum or maximum is entered.";
                     return false;
@@ -387,30 +388,53 @@ namespace OpenVisionLab
                 return true;
             }
 
-            if (!hasMinimum && !hasMaximum)
+            if (!IsMetricContractPartCountValid(minimums, metricNames.Length)
+                || !IsMetricContractPartCountValid(maximums, metricNames.Length))
             {
-                error = "At least one expected metric bound is required.";
+                error = "Expected metric bounds must contain either one value or one value per metric.";
                 return false;
             }
 
-            double minimumValue = double.NaN;
-            double maximumValue = double.NaN;
-            if (hasMinimum && !TryParseFinite(minimum, out minimumValue))
+            for (int index = 0; index < metricNames.Length; index++)
             {
-                error = "Expected metric minimum must be a finite number.";
-                return false;
-            }
+                string metricName = metricNames[index];
+                if (string.IsNullOrWhiteSpace(metricName)
+                    || metricName.Length > 100
+                    || metricName.Any(char.IsControl))
+                {
+                    error = "Each expected metric name must be 100 characters or fewer and contain no control characters.";
+                    return false;
+                }
 
-            if (hasMaximum && !TryParseFinite(maximum, out maximumValue))
-            {
-                error = "Expected metric maximum must be a finite number.";
-                return false;
-            }
+                string minimum = ResolveMetricContractPart(minimums, index);
+                string maximum = ResolveMetricContractPart(maximums, index);
+                bool hasMinimum = !string.IsNullOrWhiteSpace(minimum);
+                bool hasMaximum = !string.IsNullOrWhiteSpace(maximum);
+                if (!hasMinimum && !hasMaximum)
+                {
+                    error = "At least one expected metric bound is required for " + metricName + ".";
+                    return false;
+                }
 
-            if (hasMinimum && hasMaximum && minimumValue > maximumValue)
-            {
-                error = "Expected metric minimum cannot exceed the maximum.";
-                return false;
+                double minimumValue = double.NaN;
+                double maximumValue = double.NaN;
+                if (hasMinimum && !TryParseFinite(minimum, out minimumValue))
+                {
+                    error = "Expected metric minimum must be a finite number for " + metricName + ".";
+                    return false;
+                }
+
+                if (hasMaximum && !TryParseFinite(maximum, out maximumValue))
+                {
+                    error = "Expected metric maximum must be a finite number for " + metricName + ".";
+                    return false;
+                }
+
+                if (hasMinimum && hasMaximum && minimumValue > maximumValue)
+                {
+                    error = "Expected metric minimum cannot exceed the maximum for " + metricName + ".";
+                    return false;
+                }
             }
 
             error = string.Empty;
@@ -435,12 +459,22 @@ namespace OpenVisionLab
                 return string.Empty;
             }
 
-            return image.ExpectedMetricName.Trim()
-                + " ["
-                + (string.IsNullOrWhiteSpace(image.ExpectedMetricMinimum) ? "-∞" : image.ExpectedMetricMinimum.Trim())
-                + ".."
-                + (string.IsNullOrWhiteSpace(image.ExpectedMetricMaximum) ? "+∞" : image.ExpectedMetricMaximum.Trim())
-                + "]";
+            string[] metricNames = SplitMetricContractParts(image.ExpectedMetricName);
+            string[] minimums = SplitMetricContractParts(image.ExpectedMetricMinimum);
+            string[] maximums = SplitMetricContractParts(image.ExpectedMetricMaximum);
+            return string.Join(
+                "; ",
+                metricNames.Select((metricName, index) =>
+                    metricName
+                    + " ["
+                    + (string.IsNullOrWhiteSpace(ResolveMetricContractPart(minimums, index))
+                        ? "-∞"
+                        : ResolveMetricContractPart(minimums, index))
+                    + ".."
+                    + (string.IsNullOrWhiteSpace(ResolveMetricContractPart(maximums, index))
+                        ? "+∞"
+                        : ResolveMetricContractPart(maximums, index))
+                    + "]"));
         }
 
         public static bool TryRepairMissingImagePath(
@@ -787,6 +821,35 @@ namespace OpenVisionLab
                     out parsed)
                 && !double.IsNaN(parsed)
                 && !double.IsInfinity(parsed);
+        }
+
+        private static string[] SplitMetricContractParts(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? Array.Empty<string>()
+                : value.Split(new[] { ';' }, StringSplitOptions.None)
+                    .Select(part => part.Trim())
+                    .ToArray();
+        }
+
+        private static bool IsMetricContractPartCountValid(string[] values, int metricCount)
+        {
+            return values.Length == 0 || values.Length == 1 || values.Length == metricCount;
+        }
+
+        private static string ResolveMetricContractPart(string[] values, int index)
+        {
+            if (values == null || values.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            if (index >= 0 && index < values.Length)
+            {
+                return values[index]?.Trim() ?? string.Empty;
+            }
+
+            return values.Length == 1 ? values[0]?.Trim() ?? string.Empty : string.Empty;
         }
 
         private static bool IsFileSha256Match(string path, string expected)

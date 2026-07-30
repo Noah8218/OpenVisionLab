@@ -628,14 +628,93 @@ namespace OpenVisionLab
             WorkspaceCommands?.RefreshCanExecute();
         }
 
-        private void OnNativeToolPropertySaved(object sender, EventArgs e)
+        private void OnNativeToolPropertySaved(
+            object sender,
+            OpenVisionNativeToolPropertySavedEventArgs e)
         {
             RefreshToolReadiness();
+            OpenVisionNativeToolDocument document =
+                documentController?.ActiveNativeDocument;
+            if (document == null
+                || e == null
+                || !string.Equals(
+                    document.ToolName,
+                    e.ToolName,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            string recipeName = string.IsNullOrWhiteSpace(e.RecipeName)
+                ? T(
+                    "VisionTool.Persistence.DefaultRecipe",
+                    "default Recipe")
+                : e.RecipeName;
+            if (!e.Succeeded)
+            {
+                string format = T(
+                    "VisionTool.Persistence.SaveFailedFormat",
+                    "Settings could not be saved for {0} / Recipe {1}. "
+                    + "The current values remain in memory but may be lost after reopening. Cause: {2}");
+                document.SetPropertyPersistenceStatus(
+                    string.Format(
+                        System.Globalization.CultureInfo.CurrentCulture,
+                        format,
+                        e.ToolName,
+                        recipeName,
+                        string.IsNullOrWhiteSpace(e.ErrorMessage)
+                            ? T(
+                                "VisionTool.Persistence.UnknownError",
+                                "unknown error")
+                            : e.ErrorMessage));
+            }
+            else if (e.RecoveredFromFailure)
+            {
+                string format = T(
+                    "VisionTool.Persistence.SaveRecoveredFormat",
+                    "Settings save recovered for {0} / Recipe {1}. "
+                    + "The current values are now persisted.");
+                document.SetPropertyPersistenceStatus(
+                    string.Format(
+                        System.Globalization.CultureInfo.CurrentCulture,
+                        format,
+                        e.ToolName,
+                        recipeName));
+            }
         }
 
-        private void OnNativeToolSettingsSaved(object sender, EventArgs e)
+        private void OnNativeToolSettingsSaved(
+            object sender,
+            OpenVisionNativeToolSettingsSavedEventArgs e)
         {
             RefreshToolReadiness();
+            OpenVisionNativeToolDocument document =
+                documentController?.ActiveNativeDocument;
+            if (document == null
+                || e == null
+                || !string.Equals(
+                    document.ToolName,
+                    e.ToolName,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (!e.Succeeded)
+            {
+                document.SetPropertyPersistenceStatus(
+                    OpenVisionNativeToolPersistenceStatusText.CreateSaveFailure(
+                        e.ToolName,
+                        e.RecipeName,
+                        e.ErrorMessage));
+            }
+            else if (e.RecoveredFromFailure)
+            {
+                document.SetPropertyPersistenceStatus(
+                    OpenVisionNativeToolPersistenceStatusText.CreateSaveRecovered(
+                        e.ToolName,
+                        e.RecipeName));
+            }
         }
 
         private void RefreshToolReadiness()

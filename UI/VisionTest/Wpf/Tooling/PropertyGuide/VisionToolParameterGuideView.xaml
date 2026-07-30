@@ -1,0 +1,145 @@
+<UserControl x:Class="OpenVisionLab.VisionToolParameterGuideView"
+             x:Name="root"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:local="clr-namespace:OpenVisionLab"
+             AutomationProperties.AutomationId="VisionToolParameterGuide">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <local:SharedResourceDictionary Source="../Presentation/VisionToolWpfTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Border Background="{StaticResource VisionTool.PanelBrush}"
+            BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="4"
+            Padding="0">
+        <Expander x:Name="guideExpander"
+                  IsExpanded="False"
+                  AutomationProperties.AutomationId="VisionToolParameterGuideExpander">
+            <Expander.Header>
+                <Grid Margin="8,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="6" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <iconPacks:PackIconMaterial Grid.Column="0"
+                                                Kind="HelpCircleOutline"
+                                                Width="15"
+                                                Height="15"
+                                                VerticalAlignment="Center"
+                                                Foreground="{StaticResource VisionTool.AccentBrush}" />
+                    <TextBlock x:Name="txtHeader"
+                               Grid.Column="2"
+                               VerticalAlignment="Center"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource VisionTool.ActionTextBrush}"
+                               Text="Parameter Guide" />
+                    <TextBlock x:Name="txtCoverage"
+                               Grid.Column="3"
+                               Margin="8,0,0,0"
+                               Padding="5,1"
+                               VerticalAlignment="Center"
+                               FontSize="10"
+                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
+                               AutomationProperties.AutomationId="VisionToolParameterGuideCoverage" />
+                </Grid>
+            </Expander.Header>
+
+            <ScrollViewer x:Name="guideScroll"
+                          MaxHeight="184"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="10,3,10,9">
+                    <TextBlock x:Name="txtTitle"
+                               FontWeight="SemiBold"
+                               FontSize="13"
+                               TextWrapping="Wrap"
+                               AutomationProperties.AutomationId="VisionToolParameterGuideTitle" />
+                    <TextBlock x:Name="txtIdentity"
+                               Margin="0,2,0,0"
+                               FontFamily="Consolas"
+                               FontSize="10"
+                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
+                               TextWrapping="Wrap"
+                               AutomationProperties.AutomationId="VisionToolParameterGuideIdentity" />
+                    <TextBlock x:Name="txtApplicability"
+                               Margin="0,5,0,0"
+                               Padding="6,3"
+                               Background="#2A9A6A1A"
+                               Foreground="#FFC38B2C"
+                               TextWrapping="Wrap"
+                               Visibility="Collapsed"
+                               AutomationProperties.AutomationId="VisionToolParameterGuideApplicability" />
+
+                    <StackPanel x:Name="summarySection" Margin="0,7,0,0">
+                        <TextBlock x:Name="lblSummary"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource VisionTool.ActionTextBrush}" />
+                        <TextBlock x:Name="txtSummary"
+                                   Margin="0,2,0,0"
+                                   TextWrapping="Wrap"
+                                   AutomationProperties.AutomationId="VisionToolParameterGuideSummary" />
+                    </StackPanel>
+
+                    <StackPanel x:Name="impactSection" Margin="0,7,0,0">
+                        <TextBlock x:Name="lblImpact"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource VisionTool.ActionTextBrush}" />
+                        <TextBlock x:Name="txtImpact"
+                                   Margin="0,2,0,0"
+                                   TextWrapping="Wrap"
+                                   AutomationProperties.AutomationId="VisionToolParameterGuideImpact" />
+                    </StackPanel>
+
+                    <StackPanel x:Name="bestWhenSection" Margin="0,7,0,0">
+                        <TextBlock x:Name="lblBestWhen"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource VisionTool.ActionTextBrush}" />
+                        <TextBlock x:Name="txtBestWhen"
+                                   Margin="0,2,0,0"
+                                   TextWrapping="Wrap"
+                                   AutomationProperties.AutomationId="VisionToolParameterGuideBestWhen" />
+                    </StackPanel>
+
+                    <StackPanel x:Name="riskSection" Margin="0,7,0,0">
+                        <TextBlock x:Name="lblRisk"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource VisionTool.ActionTextBrush}" />
+                        <TextBlock x:Name="txtRisk"
+                                   Margin="0,2,0,0"
+                                   TextWrapping="Wrap"
+                                   AutomationProperties.AutomationId="VisionToolParameterGuideRisk" />
+                    </StackPanel>
+
+                    <StackPanel x:Name="checkSection" Margin="0,7,0,0">
+                        <TextBlock x:Name="lblCheck"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource VisionTool.ActionTextBrush}" />
+                        <TextBlock x:Name="txtCheck"
+                                   Margin="0,2,0,0"
+                                   TextWrapping="Wrap"
+                                   AutomationProperties.AutomationId="VisionToolParameterGuideCheck" />
+                    </StackPanel>
+
+                    <StackPanel x:Name="relatedSection"
+                                Margin="0,7,0,0"
+                                Visibility="Collapsed">
+                        <TextBlock x:Name="lblRelated"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource VisionTool.ActionTextBrush}" />
+                        <WrapPanel x:Name="relatedButtons"
+                                   Margin="0,3,0,0"
+                                   AutomationProperties.AutomationId="VisionToolParameterGuideRelated" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Expander>
+    </Border>
+</UserControl>

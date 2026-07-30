@@ -110,6 +110,11 @@ namespace OpenVisionLab
         public bool HasOutputPreview => ViewModel.HasOutputPreview;
         public int ObjectResultCount => objectResults.Count;
         public int SelectedObjectResultNumber => objectResultsGrid.SelectedItem is VisionPipelineObjectResult item ? item.Number : 0;
+        internal string ValidationLabelTextForTest => lblState.Text;
+        internal string ResultLabelTextForTest => lblTopResult.Text;
+        internal string ObjectInspectorTitleForTest => objectInspectorTab.Header?.ToString() ?? string.Empty;
+        internal string ObjectCandidateCountTextForTest => objectResultCountText.Text;
+        internal string ObjectCandidateGuideTextForTest => txtObjectCandidateGuide.Text;
         internal int InstanceResultCountForTest => instanceResults.Count;
         internal string SelectedInstanceIdForTest =>
             instanceResultsGrid.SelectedItem is VisionPipelineInstanceResult item
@@ -159,16 +164,19 @@ namespace OpenVisionLab
             lblStepFlow.Text = T("PipelineReview.StepFlow", "Step Flow");
             lblStep.Text = T("PipelineReview.Step", "Step");
             lblRoute.Text = T("PipelineReview.Route", "Route");
-            lblState.Text = T("PipelineReview.Validation", "Validation");
-            lblTopResult.Text = T("PipelineReview.Result", "Result");
+            lblState.Text = T("PipelineReview.Validation", "Pipeline definition");
+            lblTopResult.Text = T("PipelineReview.Result", "Inspection result");
             lblInput.Text = T("PipelineReview.Input", "Input");
             lblOutput.Text = T("PipelineReview.Output", "Output");
             lblFlow.Text = T("PipelineReview.Flow", "Flow");
             lblParameters.Text = T("PipelineReview.Parameters", "Parameters");
-            lblValidation.Text = T("PipelineReview.Validation", "Validation");
-            lblResult.Text = T("PipelineReview.Result", "Result");
+            lblValidation.Text = T("PipelineReview.Validation", "Pipeline definition");
+            lblResult.Text = T("PipelineReview.Result", "Inspection result");
             lblRunLog.Text = T("PipelineReview.RunLog", "Run Log");
-            objectInspectorTab.Header = T("PipelineReview.ObjectInspector.Title", "Object Results");
+            objectInspectorTab.Header = T("PipelineReview.ObjectInspector.Title", "Detection candidates");
+            txtObjectCandidateGuide.Text = T(
+                "PipelineReview.ObjectInspector.CandidateGuide",
+                "Detection candidates come from segmentation/contours and may differ from the physical object count. Green marks inspection objects; red marks candidates filtered out by the current PropertyGrid ranges.");
             instanceInspectorTab.Header = T("PipelineReview.InstanceInspector.Title", "Instance Results");
             geometryReviewTab.Header = T("PipelineReview.GeometryReview.Title", "Geometry Review");
             circleEvidenceTab.Header = T("PipelineReview.CircleEvidence.Title", "Circle Evidence");
@@ -334,7 +342,7 @@ namespace OpenVisionLab
                 : System.Windows.Visibility.Collapsed;
             objectResultCountText.Text = TF(
                 "PipelineReview.ObjectInspector.CountFormat",
-                "Objects {0} / accepted {1} / rejected {2}",
+                "Candidates {0} / inspection objects {1} / filtered out {2}",
                 objectResults.Count,
                 objectResults.Count(item => item.Accepted),
                 objectResults.Count(item => !item.Accepted));

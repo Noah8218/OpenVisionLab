@@ -7,11 +7,50 @@ using System.Xml.Serialization;
 
 namespace OpenVisionLab
 {
+    internal enum XmlFileLoadDisposition
+    {
+        Loaded,
+        CreatedDefaultForMissingFile,
+        ReplacedInvalidFile
+    }
+
+    internal sealed class XmlFileLoadResult
+    {
+        public XmlFileLoadResult(
+            XmlFileLoadDisposition disposition,
+            string sourcePath,
+            string backupPath,
+            string errorMessage)
+        {
+            Disposition = disposition;
+            SourcePath = sourcePath ?? string.Empty;
+            BackupPath = backupPath ?? string.Empty;
+            ErrorMessage = errorMessage ?? string.Empty;
+        }
+
+        public XmlFileLoadDisposition Disposition { get; }
+
+        public string SourcePath { get; }
+
+        public string BackupPath { get; }
+
+        public string ErrorMessage { get; }
+    }
+
     public static class SerializeHelper
     {
         public static bool TryLoadFromXmlFile<T>(string path, out T value)
         {
+            return TryLoadFromXmlFile(path, out value, out _);
+        }
+
+        private static bool TryLoadFromXmlFile<T>(
+            string path,
+            out T value,
+            out Exception loadException)
+        {
             value = default(T);
+            loadException = null;
 
             if (!File.Exists(path))
             {
@@ -28,19 +67,22 @@ namespace OpenVisionLab
 
                 return value != null;
             }
-            catch (InvalidOperationException)
+            catch (InvalidOperationException exception)
             {
                 value = default(T);
+                loadException = exception.GetBaseException();
                 return false;
             }
-            catch (XmlException)
+            catch (XmlException exception)
             {
                 value = default(T);
+                loadException = exception.GetBaseException();
                 return false;
             }
-            catch (IOException)
+            catch (IOException exception)
             {
                 value = default(T);
+                loadException = exception.GetBaseException();
                 return false;
             }
         }
@@ -82,23 +124,53 @@ namespace OpenVisionLab
 
         public static T LoadOrCreateXmlFile<T>(string path, T defaultValue, out bool loaded)
         {
-            if (TryLoadFromXmlFile(path, out T loadedValue) && loadedValue != null)
+            return LoadOrCreateXmlFile(
+                path,
+                defaultValue,
+                out loaded,
+                out _);
+        }
+
+        internal static T LoadOrCreateXmlFile<T>(
+            string path,
+            T defaultValue,
+            out bool loaded,
+            out XmlFileLoadResult loadResult)
+        {
+            if (TryLoadFromXmlFile(
+                    path,
+                    out T loadedValue,
+                    out Exception loadException)
+                && loadedValue != null)
             {
                 loaded = true;
+                loadResult = new XmlFileLoadResult(
+                    XmlFileLoadDisposition.Loaded,
+                    path,
+                    string.Empty,
+                    string.Empty);
                 return loadedValue;
             }
 
             loaded = false;
             if (File.Exists(path))
             {
-                BackupInvalidXmlFile(path);
-            }
-
-            if (!File.Exists(path))
-            {
+                string backupPath = BackupInvalidXmlFile(path);
                 SaveXmlFile(path, defaultValue);
+                loadResult = new XmlFileLoadResult(
+                    XmlFileLoadDisposition.ReplacedInvalidFile,
+                    path,
+                    backupPath,
+                    loadException?.Message);
+                return defaultValue;
             }
 
+            SaveXmlFile(path, defaultValue);
+            loadResult = new XmlFileLoadResult(
+                XmlFileLoadDisposition.CreatedDefaultForMissingFile,
+                path,
+                string.Empty,
+                string.Empty);
             return defaultValue;
         }
 
@@ -168,7 +240,7 @@ namespace OpenVisionLab
             File.Move(tempPath, path);
         }
 
-        private static void BackupInvalidXmlFile(string path)
+        private static string BackupInvalidXmlFile(string path)
         {
             string directory = Path.GetDirectoryName(path);
             string fileName = Path.GetFileNameWithoutExtension(path);
@@ -181,6 +253,7 @@ namespace OpenVisionLab
 
             string backupPath = Path.Combine(directory, $"{fileName}.invalid-{DateTime.Now:yyyyMMddHHmmssfff}{extension}");
             File.Move(path, backupPath);
+            return backupPath;
         }
     }
 

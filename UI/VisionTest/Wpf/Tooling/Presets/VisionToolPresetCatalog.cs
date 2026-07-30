@@ -202,7 +202,6 @@ namespace OpenVisionLab
                         property.POINT_RANGE = 10;
                         property.USE_MANUAL_ANGLE = false;
                         property.USE_EXTEND_FIT_LINE = false;
-                        property.USE_AVERAGE_FILTER = false;
                     }),
                 new VisionToolPreset<LineGaugeProperty>(
                     "fast",
@@ -219,14 +218,13 @@ namespace OpenVisionLab
                         property.POINT_RANGE = 16;
                         property.USE_MANUAL_ANGLE = false;
                         property.USE_EXTEND_FIT_LINE = false;
-                        property.USE_AVERAGE_FILTER = false;
                     }),
                 new VisionToolPreset<LineGaugeProperty>(
                     "precise",
                     "VisionTool.Preset.Precise",
                     "Precise",
                     "VisionTool.Preset.Line.Precise.Description",
-                    "Lower contrast, denser scan lines, fit-line extension, and average filtering for final tuning.",
+                    "Lower contrast, denser scan lines, and fit-line extension for final tuning.",
                     property =>
                     {
                         ApplyLineCommon(property);
@@ -237,9 +235,6 @@ namespace OpenVisionLab
                         property.USE_MANUAL_ANGLE = false;
                         property.USE_EXTEND_FIT_LINE = true;
                         property.EXTEND_FIT_LINE_VALUE = 150;
-                        property.USE_AVERAGE_FILTER = true;
-                        property.AVERAGE_Diff = 80D;
-                        property.AVERAGE_FILTER_TYPE = LineGaugeProperty.AVERAGE_FILTER_TYPES.Y;
                     })
             };
         }
@@ -254,10 +249,6 @@ namespace OpenVisionLab
             property.USE_THRESHOLD = false;
             property.USE_ADAPTIVE_THRESHOLD = false;
             property.USE_BITWISENOT = false;
-            property.SHOW_VERTICAL_LINE = true;
-            property.SHOW_EDGE = true;
-            property.SHOW_CONTOUR = true;
-            property.SHOW_FITLINE = true;
         }
 
         private static IReadOnlyList<VisionToolPreset<TProperty>> CastPresets<TProperty, TSource>(IReadOnlyList<VisionToolPreset<TSource>> presets)

@@ -43,6 +43,7 @@ namespace OpenVisionLab
             // so PropertyGrid editors do not keep editing a previous recipe's model instance.
             toolPrewarmController.Cancel();
             OpenVisionNativeToolPropertySessionStore.SetRepositoryContext(() => runtimeContext.Global?.VisionTools);
+            OpenVisionNativeToolSettingsStore.ResetContext();
             toolWindowLifecycleController.CloseActiveWpfToolWindow();
             documentController.CloseAllDocuments();
             setActiveDocumentText(string.Empty);

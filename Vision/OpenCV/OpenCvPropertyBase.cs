@@ -61,6 +61,11 @@ namespace OpenVisionLab.Vision._1._Tools.OpenCV
         [CategoryAttribute("Parameter"), DescriptionAttribute(""), DisplayNameAttribute("Pixel / mm")]
         public double PIXELPERMM { get; set; } = 0.006D;
 
+        [XmlIgnore]
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        internal XmlFileLoadResult LastConfigLoadResult { get; private set; }
+
         [PropertyOrder(0)]
         [CategoryAttribute("Threshold"), DescriptionAttribute("검사를 하기전 이진화처리를 하고 검사를 할지 결정합니다."), DisplayNameAttribute("Use threshold")]
         public virtual bool USE_THRESHOLD { get; set; } = true;
@@ -186,8 +191,13 @@ namespace OpenVisionLab.Vision._1._Tools.OpenCV
         protected T LoadConfigFile<T>(string RecipeName) where T : OpenCvPropertyBase
         {
             string strPath = GetConfigPath(RecipeName);
-            T loaded = SerializeHelper.LoadOrCreateXmlFile(strPath, (T)this, out _);
+            T loaded = SerializeHelper.LoadOrCreateXmlFile(
+                strPath,
+                (T)this,
+                out _,
+                out XmlFileLoadResult loadResult);
             loaded.NAME = NAME;
+            loaded.LastConfigLoadResult = loadResult;
             return loaded;
         }
 
@@ -200,8 +210,13 @@ namespace OpenVisionLab.Vision._1._Tools.OpenCV
 
         protected T LoadTestConfigFile<T>(string path) where T : OpenCvPropertyBase
         {
-            T loaded = SerializeHelper.LoadOrCreateXmlFile(path, (T)this, out _);
+            T loaded = SerializeHelper.LoadOrCreateXmlFile(
+                path,
+                (T)this,
+                out _,
+                out XmlFileLoadResult loadResult);
             loaded.NAME = NAME;
+            loaded.LastConfigLoadResult = loadResult;
             return loaded;
         }
 
@@ -214,7 +229,13 @@ namespace OpenVisionLab.Vision._1._Tools.OpenCV
 
         public void SaveConfig(string RecipeName)
         {
-            SerializeHelper.SaveXmlFile(GetConfigPath(RecipeName), this);
+            string path = GetConfigPath(RecipeName);
+            SerializeHelper.SaveXmlFile(path, this);
+            LastConfigLoadResult = new XmlFileLoadResult(
+                XmlFileLoadDisposition.Loaded,
+                path,
+                string.Empty,
+                string.Empty);
         }
 
         public void SaveTestConfig(string Path)
@@ -222,6 +243,11 @@ namespace OpenVisionLab.Vision._1._Tools.OpenCV
             AppUtil.InitDirectory("TEST");
             string strPath = Path;
             SerializeHelper.SaveXmlFile(strPath, this);
+            LastConfigLoadResult = new XmlFileLoadResult(
+                XmlFileLoadDisposition.Loaded,
+                strPath,
+                string.Empty,
+                string.Empty);
         }
 
         private string GetConfigPath(string recipeName)

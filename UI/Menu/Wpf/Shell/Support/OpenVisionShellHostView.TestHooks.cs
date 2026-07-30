@@ -371,6 +371,14 @@ namespace OpenVisionLab
 
         public IReadOnlyList<string> RecipeOptionsForTest => RecipeCommands?.RecipeOptions ?? Array.Empty<string>();
 
+        public string RecipeManagerSelectedPipelineNameForTest =>
+            RecipeCommands?.SelectedPipelineOption?.PipelineName
+            ?? string.Empty;
+
+        public string RecipeManagerSelectedSampleNameForTest =>
+            RecipeCommands?.SelectedSampleOption?.SampleName
+            ?? string.Empty;
+
         public bool IsRecipeManagerOpenForTest => btnHostRecipeManager?.IsChecked == true;
 
         public void QueuePendingRecipeEditDecisionForTest(

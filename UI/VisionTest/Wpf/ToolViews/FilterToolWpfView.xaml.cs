@@ -1,5 +1,7 @@
 using Lib.OpenCV.Property;
 using System;
+using System.Collections.Generic;
+using System.Windows;
 using System.Windows.Data;
 using OpenVisionLab.Contracts;
 
@@ -14,6 +16,7 @@ namespace OpenVisionLab
         private readonly VisionToolKernelSizeController kernelSizeController;
         private readonly VisionToolFilterInteractionController filterInteractionController;
         private readonly FilterToolTextPresenter textPresenter;
+        private readonly VisionToolCustomParameterGuideBinder parameterGuideBinder;
         private bool suppressEvents = true;
 
         internal FilterToolWpfView(FilterToolPresenter presenter)
@@ -81,6 +84,20 @@ namespace OpenVisionLab
                 clearResultReview: null,
                 applyToolLocalization: ApplyLocalization);
             ToolController.BindSummary(new Binding("Summary"));
+            parameterGuideBinder = VisionToolCustomParameterGuideBinder.Attach(
+                toolShell,
+                presenter.CreateProperty,
+                new Dictionary<FrameworkElement, string>
+                {
+                    [cbFilterType] = nameof(FilterToolProperty.FilterType),
+                    [cbBorderType] = nameof(FilterToolProperty.BorderType),
+                    [txtWidth] = nameof(FilterToolProperty.KernelWidth),
+                    [txtHeight] = nameof(FilterToolProperty.KernelHeight),
+                    [txtMedianKernel] = nameof(FilterToolProperty.MedianKernelSize),
+                    [txtDiameter] = nameof(FilterToolProperty.Diameter),
+                    [txtSigmaColor] = nameof(FilterToolProperty.SigmaColor),
+                    [txtSigmaSpace] = nameof(FilterToolProperty.SigmaSpace)
+                });
             ApplyLocalization();
             filterInteractionController.InitializeOptions();
             parameterChangeController.RefreshProgrammatic(filterInteractionController.RefreshModePanels);
@@ -89,6 +106,7 @@ namespace OpenVisionLab
 
         protected override void DisposeToolResources()
         {
+            parameterGuideBinder.Dispose();
             filterInteractionController.Detach();
             kernelSizeController.Detach();
             previewScheduler.Dispose();

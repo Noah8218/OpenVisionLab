@@ -22,7 +22,8 @@ namespace OpenVisionLab
         private readonly Func<string> workspaceLayerTitleProvider;
         private readonly Func<OpenVisionRecipeContext> recipeContextProvider;
         private readonly Action<VISION_MENU> selectToolMenu;
-        private readonly Action sampleWorkspaceLoaded;
+        private readonly Func<string, string, bool> prepareSampleWorkspaceContext;
+        private readonly Action<string, string> sampleWorkspaceLoaded;
         private readonly Action manualWorkspaceImageLoaded;
         private string lastWorkspaceImageDirectory;
         private OpenVisionLearnWindow learnWindow;
@@ -35,7 +36,8 @@ namespace OpenVisionLab
             Func<string> workspaceLayerTitleProvider,
             Func<OpenVisionRecipeContext> recipeContextProvider,
             Action<VISION_MENU> selectToolMenu,
-            Action sampleWorkspaceLoaded = null,
+            Func<string, string, bool> prepareSampleWorkspaceContext = null,
+            Action<string, string> sampleWorkspaceLoaded = null,
             Action manualWorkspaceImageLoaded = null)
         {
             this.ownerProvider = ownerProvider ?? throw new ArgumentNullException(nameof(ownerProvider));
@@ -45,6 +47,7 @@ namespace OpenVisionLab
             this.workspaceLayerTitleProvider = workspaceLayerTitleProvider ?? throw new ArgumentNullException(nameof(workspaceLayerTitleProvider));
             this.recipeContextProvider = recipeContextProvider ?? throw new ArgumentNullException(nameof(recipeContextProvider));
             this.selectToolMenu = selectToolMenu ?? throw new ArgumentNullException(nameof(selectToolMenu));
+            this.prepareSampleWorkspaceContext = prepareSampleWorkspaceContext;
             this.sampleWorkspaceLoaded = sampleWorkspaceLoaded;
             this.manualWorkspaceImageLoaded = manualWorkspaceImageLoaded;
         }
@@ -257,13 +260,18 @@ namespace OpenVisionLab
                 return false;
             }
 
+            pipeline.Name = CreateSamplePipelineName(sample.SampleName);
+            if (prepareSampleWorkspaceContext?.Invoke(sample.SampleName, pipeline.Name) == false)
+            {
+                return false;
+            }
+
             if (!loadWorkspaceImage(sample.ImageFullPath))
             {
                 ShowSampleImageLoadFailedMessage(sample.ImageFullPath);
                 return false;
             }
 
-            pipeline.Name = CreateSamplePipelineName(sample.SampleName);
             OpenVisionRecipeContext recipeContext = ResolveRecipeContextForSample();
             VisionPipelineStorage.Save(recipeContext.Name, pipeline);
             VisionPipelineStorage.SaveActivePipelineName(recipeContext.Name, pipeline.Name);
@@ -276,7 +284,7 @@ namespace OpenVisionLab
                 sample.SampleName,
                 "Pipeline",
                 pipeline.Name);
-            sampleWorkspaceLoaded?.Invoke();
+            sampleWorkspaceLoaded?.Invoke(sample.SampleName, pipeline.Name);
             return true;
         }
 

@@ -65,8 +65,20 @@ namespace OpenVisionLab
                     return ReportUnavailable();
                 }
 
-                VisionPipelineStep addedStep = VisionPipelineAppendService.AddStep(step, recipeContextProvider());
-                setStatus(string.Format(CultureInfo.CurrentCulture, "Pipeline added / {0}", addedStep.Name));
+                OpenVisionRecipeContext recipeContext = recipeContextProvider();
+                VisionPipelineStep addedStep =
+                    VisionPipelineAppendService.AddStep(step, recipeContext);
+                string savedContext = string.Format(
+                    CultureInfo.CurrentCulture,
+                    OpenVisionLanguageService.T(
+                        "VisionTool.Status.PipelineSavedContextFormat"),
+                    addedStep.Name,
+                    recipeContext.Name,
+                    recipeContext.PipelineName);
+                setStatus(string.Format(
+                    CultureInfo.CurrentCulture,
+                    "Pipeline added / {0}",
+                    savedContext));
                 return addedStep;
             }
             catch (Exception ex)

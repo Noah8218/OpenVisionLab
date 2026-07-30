@@ -18,6 +18,7 @@ namespace OpenVisionLab
         private readonly VisionToolKernelSizeController kernelSizeController;
         private readonly VisionToolMorphologyInteractionController morphologyInteractionController;
         private readonly MorphologyToolTextPresenter textPresenter;
+        private readonly VisionToolCustomParameterGuideBinder parameterGuideBinder;
         private bool suppressEvents = true;
 
         internal MorphologyToolWpfView(MorphologyToolPresenter presenter)
@@ -78,6 +79,25 @@ namespace OpenVisionLab
                 refreshViewState: UpdateSummary,
                 clearResultReview: null,
                 applyToolLocalization: ApplyLocalization);
+            parameterGuideBinder = VisionToolCustomParameterGuideBinder.Attach(
+                toolShell,
+                presenter.CreateProperty,
+                new Dictionary<FrameworkElement, string>
+                {
+                    [btnMorphOperationErode] = nameof(MorphologyToolProperty.Operator),
+                    [btnMorphOperationDilate] = nameof(MorphologyToolProperty.Operator),
+                    [btnMorphOperationOpen] = nameof(MorphologyToolProperty.Operator),
+                    [btnMorphOperationClose] = nameof(MorphologyToolProperty.Operator),
+                    [btnMorphOperationTopHat] = nameof(MorphologyToolProperty.Operator),
+                    [btnMorphOperationBlackHat] = nameof(MorphologyToolProperty.Operator),
+                    [btnMorphOperationHitMiss] = nameof(MorphologyToolProperty.Operator),
+                    [btnMorphOperationGradient] = nameof(MorphologyToolProperty.Operator),
+                    [rdoShapeRect] = nameof(MorphologyToolProperty.Shape),
+                    [rdoShapeEllipse] = nameof(MorphologyToolProperty.Shape),
+                    [rdoShapeCross] = nameof(MorphologyToolProperty.Shape),
+                    [txtWidth] = nameof(MorphologyToolProperty.KernelWidth),
+                    [txtHeight] = nameof(MorphologyToolProperty.KernelHeight)
+                });
             ApplyLocalization();
             parameterChangeController.RefreshProgrammatic(morphologyInteractionController.RefreshOperationButtons);
             suppressEvents = false;
@@ -85,6 +105,7 @@ namespace OpenVisionLab
 
         protected override void DisposeToolResources()
         {
+            parameterGuideBinder.Dispose();
             morphologyInteractionController.Detach();
             kernelSizeController.Detach();
             previewScheduler.Dispose();

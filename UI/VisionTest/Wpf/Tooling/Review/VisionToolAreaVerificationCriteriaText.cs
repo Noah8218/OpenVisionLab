@@ -43,9 +43,7 @@ namespace OpenVisionLab
             int maxHeight,
             string suffix)
         {
-            string roiText = property.USE_ROI
-                ? (property.USE_MULTI_ROI ? VisionToolVerificationText.MultiRoi : VisionToolVerificationText.RoiOn)
-                : VisionToolVerificationText.FullImage;
+            string roiText = CreateEffectiveRoiText(property);
             string thresholdText = property.USE_THRESHOLD
                 ? VisionToolVerificationText.FormatThreshold(property.THRESHOLD)
                 : VisionToolVerificationText.ThresholdOff;
@@ -66,6 +64,23 @@ namespace OpenVisionLab
                 maxWidthText,
                 minHeight,
                 maxHeightText);
+        }
+
+        private static string CreateEffectiveRoiText(OpenCvPropertyBase property)
+        {
+            if (!property.USE_ROI)
+            {
+                return VisionToolVerificationText.FullImage;
+            }
+
+            if (property.USE_MULTI_ROI)
+            {
+                return VisionToolVerificationText.MultiRoi;
+            }
+
+            return property.CvROI.Width == 0 || property.CvROI.Height == 0
+                ? VisionToolVerificationText.FullImageRoiFallback
+                : VisionToolVerificationText.RoiOn;
         }
     }
 }

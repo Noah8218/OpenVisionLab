@@ -56,6 +56,11 @@ namespace System.Windows.Controls.WpfPropertyGrid
         public Type EditorType { get; }
     }
 
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
+    public sealed class PropertyGridCompatibilityReadOnlyAttribute : Attribute
+    {
+    }
+
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
     public sealed class NumberRangeAttribute : Attribute
     {
@@ -174,6 +179,16 @@ namespace System.Windows.Controls.WpfPropertyGrid
         Dark
     }
 
+    public sealed class PropertyGridSelectedPropertyChangedEventArgs : EventArgs
+    {
+        public PropertyGridSelectedPropertyChangedEventArgs(string propertyName)
+        {
+            PropertyName = propertyName ?? string.Empty;
+        }
+
+        public string PropertyName { get; }
+    }
+
     public class PropertyGrid : UserControl, IPropertyGridView
     {
         private readonly WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyGrid innerPropertyGrid;
@@ -246,6 +261,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
         private bool normalizeScheduled;
         private bool searchFeedbackUpdateScheduled;
         private bool metadataCacheClearPending;
+        private string selectedPropertyName = string.Empty;
 
         public PropertyGrid()
         {
@@ -290,6 +306,14 @@ namespace System.Windows.Controls.WpfPropertyGrid
                     SelectedObjectsChanged?.Invoke(this, EventArgs.Empty);
                 }
             };
+            innerPropertyGrid.AddHandler(
+                Mouse.PreviewMouseDownEvent,
+                new MouseButtonEventHandler(InnerPropertyGrid_PreviewMouseLeftButtonDown),
+                true);
+            innerPropertyGrid.AddHandler(
+                UIElement.GotKeyboardFocusEvent,
+                new KeyboardFocusChangedEventHandler(InnerPropertyGrid_GotKeyboardFocus),
+                true);
 
             SubscribeLanguageChanged();
             Loaded += (sender, e) =>
@@ -764,6 +788,9 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
         public event EventHandler<PropertyGridPropertyValueChangedEventArgs> PropertyValueChanged;
         public event EventHandler SelectedObjectsChanged;
+        public event EventHandler<PropertyGridSelectedPropertyChangedEventArgs> SelectedPropertyChanged;
+
+        public string SelectedPropertyName => selectedPropertyName;
 
         public object SelectedObject
         {
@@ -893,6 +920,105 @@ namespace System.Windows.Controls.WpfPropertyGrid
             }
 
             return committed;
+        }
+
+        public bool FocusProperty(string propertyName)
+        {
+            if (string.IsNullOrWhiteSpace(propertyName) || innerPropertyGrid == null)
+            {
+                return false;
+            }
+
+            object innerItem = FindInnerPropertyItem(propertyName);
+            if (innerItem == null)
+            {
+                return false;
+            }
+
+            foreach (FrameworkElement element in FindVisualChildren<FrameworkElement>(innerPropertyGrid))
+            {
+                string resolvedName = ResolveSelectedPropertyName(element.DataContext);
+                if (!string.Equals(resolvedName, propertyName, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                element.BringIntoView();
+                element.Focus();
+                Keyboard.Focus(element);
+                RaiseSelectedPropertyChanged(propertyName);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void InnerPropertyGrid_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            RaiseSelectedPropertyChangedFromSource(e?.OriginalSource as DependencyObject);
+        }
+
+        private void InnerPropertyGrid_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            RaiseSelectedPropertyChangedFromSource(e?.NewFocus as DependencyObject);
+        }
+
+        private void RaiseSelectedPropertyChangedFromSource(DependencyObject source)
+        {
+            DependencyObject current = source;
+            while (current != null)
+            {
+                if (current is FrameworkElement frameworkElement)
+                {
+                    string propertyName = ResolveSelectedPropertyName(frameworkElement.DataContext);
+                    if (!string.IsNullOrWhiteSpace(propertyName))
+                    {
+                        RaiseSelectedPropertyChanged(propertyName);
+                        return;
+                    }
+                }
+
+                DependencyObject visualParent = VisualTreeHelper.GetParent(current);
+                current = visualParent ?? LogicalTreeHelper.GetParent(current);
+            }
+        }
+
+        private string ResolveSelectedPropertyName(object candidate)
+        {
+            if (candidate == null)
+            {
+                return string.Empty;
+            }
+
+            if (IsOriginalPropertyItem(candidate))
+            {
+                return new PropertyItem(this, candidate).Name ?? string.Empty;
+            }
+
+            if (IsOriginalPropertyItemValue(candidate))
+            {
+                PropertyInfo parentProperty = candidate.GetType().GetProperty("ParentProperty");
+                object parent = parentProperty?.GetValue(candidate, null);
+                return IsOriginalPropertyItem(parent)
+                    ? new PropertyItem(this, parent).Name ?? string.Empty
+                    : string.Empty;
+            }
+
+            return string.Empty;
+        }
+
+        private void RaiseSelectedPropertyChanged(string propertyName)
+        {
+            if (string.IsNullOrWhiteSpace(propertyName)
+                || string.Equals(selectedPropertyName, propertyName, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            selectedPropertyName = propertyName;
+            SelectedPropertyChanged?.Invoke(
+                this,
+                new PropertyGridSelectedPropertyChangedEventArgs(propertyName));
         }
 
         private static bool IsCommitCandidate(FrameworkElement element)
@@ -1525,6 +1651,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
             }
 
             string propertyName = ResolvePropertyName(rowBorder.DataContext);
+            ApplyCompatibilityReadOnlyPresentation(rowBorder, propertyName);
             if (IsRangeCompanionPropertyName(propertyName))
             {
                 // Keep the companion descriptor alive for the WPG RangeEditor, but remove the
@@ -1573,6 +1700,41 @@ namespace System.Windows.Controls.WpfPropertyGrid
                     textBlock.Margin.Right,
                     textBlock.Margin.Bottom);
                 textBlock.Foreground = darkTheme ? BrushFromRgb(168, 203, 209) : BrushFromRgb(66, 91, 112);
+            }
+        }
+
+        private void ApplyCompatibilityReadOnlyPresentation(Border rowBorder, string propertyName)
+        {
+            if (rowBorder == null
+                || string.IsNullOrWhiteSpace(propertyName)
+                || SelectedObject == null)
+            {
+                return;
+            }
+
+            PropertyDescriptor descriptor = TypeDescriptor.GetProperties(SelectedObject)[propertyName];
+            if (!(descriptor?.Attributes[typeof(PropertyGridCompatibilityReadOnlyAttribute)]
+                is PropertyGridCompatibilityReadOnlyAttribute))
+            {
+                return;
+            }
+
+            rowBorder.ToolTip = descriptor.Description;
+            foreach (Control editor in FindVisualChildren<Control>(rowBorder))
+            {
+                editor.IsEnabled = false;
+                editor.IsTabStop = false;
+            }
+
+            bool darkTheme = ThemeVariant == PropertyGridThemeVariant.Dark;
+            foreach (Border border in FindVisualChildren<Border>(rowBorder))
+            {
+                if (Grid.GetColumn(border) == 1)
+                {
+                    border.Background = darkTheme
+                        ? BrushFromRgb(25, 42, 47)
+                        : BrushFromRgb(244, 247, 249);
+                }
             }
         }
 
@@ -2825,7 +2987,9 @@ namespace System.Windows.Controls.WpfPropertyGrid
         internal void SetPropertyValue(string propertyName, object value)
         {
             PropertyInfo property = SelectedObject?.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
-            if (property != null && property.CanWrite)
+            if (property != null
+                && property.CanWrite
+                && property.GetCustomAttribute<PropertyGridCompatibilityReadOnlyAttribute>(true) == null)
             {
                 object oldValue = property.GetValue(SelectedObject, null);
                 property.SetValue(SelectedObject, value, null);
@@ -2837,7 +3001,9 @@ namespace System.Windows.Controls.WpfPropertyGrid
         internal bool IsPropertyReadOnly(string propertyName)
         {
             PropertyInfo property = SelectedObject?.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
-            return property == null || !property.CanWrite;
+            return property == null
+                || !property.CanWrite
+                || property.GetCustomAttribute<PropertyGridCompatibilityReadOnlyAttribute>(true) != null;
         }
 
         internal bool HasClrProperty(string propertyName)
@@ -3219,6 +3385,15 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
         public void SetValue(object value)
         {
+            PropertyDescriptor descriptor = GetPropertyDescriptor();
+            if ((!string.IsNullOrEmpty(propertyName)
+                    && owner?.IsPropertyReadOnly(propertyName) == true)
+                || descriptor?.Attributes[typeof(PropertyGridCompatibilityReadOnlyAttribute)]
+                    is PropertyGridCompatibilityReadOnlyAttribute)
+            {
+                return;
+            }
+
             if (!string.IsNullOrEmpty(propertyName))
             {
                 owner?.SetPropertyValue(propertyName, value);

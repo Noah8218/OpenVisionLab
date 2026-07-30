@@ -11,6 +11,12 @@ and current-build screen baseline are ready. CVR-00 cannot complete until at
 least three independent first-time participants perform the tasks and their raw
 observations are retained.
 
+CVR-00 is therefore deferred external validation, not a general implementation
+blocker. While participants are unavailable, the user has authorized bounded
+operator-UX work using automated checks and fresh actual-EXE before/after
+recordings. Those recordings must remain labelled agent-operated evidence and
+cannot complete or substitute for this study.
+
 Do not show this facilitator packet, the prior journey audit, smoke screenshots,
 expected metric values, or product-answer tables to a participant. Show only:
 
@@ -220,5 +226,5 @@ Scope: CVR-00 unbiased participant task sheet, facilitator protocol, raw observa
 Acceptance criteria: Current build and five screen contracts pass; participant and facilitator material are separated; exact raw-observation and 2-of-3 decision gates are reusable.
 Verification: Debug solution build passed with 0 warnings and 0 errors; five individual WPF screenshot-smoke targets passed; runtime and public sample SHA-256 identities were recorded.
 Evidence: docs/reports/OPENVISIONLAB_CVR00_PARTICIPANT_TASK_SHEET_20260729.md; docs/reports/OPENVISIONLAB_CVR00_FACILITATOR_PACKET_20260729.md; artifacts/cvr00_participant_study_readiness_20260729/current_source
-Boundary / next dependency: At least three real independent first-time participants and their unedited raw observations. No model synthesis or product implementation is authorized before those observations exist.
+Boundary / next dependency: At least three real independent first-time participants and their unedited raw observations are still required to complete CVR-00. Bounded user-approved video-gated development may continue separately, but agent recordings do not count as participant evidence.
 ```

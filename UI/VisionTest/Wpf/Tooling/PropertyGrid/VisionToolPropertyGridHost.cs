@@ -12,6 +12,8 @@ namespace OpenVisionLab
     {
         private readonly Border host;
         private readonly EventHandler<PropertyGridPropertyValueChangedEventArgs> propertyValueChanged;
+        private readonly VisionToolParameterGuidePresenter parameterGuidePresenter;
+        private readonly VisionToolLanguageChangeController parameterGuideLanguageController;
         private bool disposed;
 
         private VisionToolPropertyGridHost(
@@ -32,8 +34,21 @@ namespace OpenVisionLab
             {
                 Grid.PropertyValueChanged += OnPropertyValueChanged;
                 Grid.SelectedObjectsChanged += Binder.Wpg_SelectedObjectsChanged;
+                Grid.SelectedPropertyChanged += OnSelectedPropertyChanged;
             });
             OpenVisionToolOpenProfiler.Measure("AttachPropertyGridToHost", () => this.host.Child = Grid);
+            VisionToolSingleInputPropertyToolShell shell = FindShell(host);
+            if (shell?.ParameterGuide != null)
+            {
+                shell.ParameterGuideVisibility = Visibility.Visible;
+                parameterGuidePresenter = new VisionToolParameterGuidePresenter(
+                    shell.ParameterGuide,
+                    selectedObject,
+                    Grid.FocusProperty);
+                parameterGuideLanguageController =
+                    VisionToolLanguageChangeController.Attach(parameterGuidePresenter.Refresh);
+            }
+
             ScheduleInitialSelectedObject(selectedObject);
         }
 
@@ -94,12 +109,14 @@ namespace OpenVisionLab
         public void RefreshSelectedObject()
         {
             Grid.RefreshSelectedObject();
+            parameterGuidePresenter?.Refresh();
         }
 
         public void RefreshAndApplyVisibilityRules()
         {
             Grid.RefreshSelectedObject();
             Binder.ApplyVisibilityRules(Grid);
+            parameterGuidePresenter?.Refresh();
         }
 
         public bool CommitPendingEdit()
@@ -120,6 +137,7 @@ namespace OpenVisionLab
             }
 
             Grid.SelectedObject = selectedObject;
+            parameterGuidePresenter?.SelectObject(selectedObject);
             // Conditional PropertyGrid rows must be refreshed when their generated WPG items already exist;
             // otherwise hidden children such as Contour EPSILON remain visible on first open.
             bool visibilityRefreshed = Binder.ApplyVisibilityRules(Grid, refreshOnChange: true);
@@ -140,6 +158,8 @@ namespace OpenVisionLab
             Grid.SaveNavigationState();
             Grid.PropertyValueChanged -= OnPropertyValueChanged;
             Grid.SelectedObjectsChanged -= Binder.Wpg_SelectedObjectsChanged;
+            Grid.SelectedPropertyChanged -= OnSelectedPropertyChanged;
+            parameterGuideLanguageController?.Dispose();
             if (ReferenceEquals(host.Child, Grid))
             {
                 host.Child = null;
@@ -149,23 +169,39 @@ namespace OpenVisionLab
         private void OnPropertyValueChanged(object sender, PropertyGridPropertyValueChangedEventArgs e)
         {
             Binder.Wpg_PropertyValueChanged(sender, e);
+            parameterGuidePresenter?.SelectProperty(
+                string.IsNullOrWhiteSpace(parameterGuidePresenter.SelectedPropertyName)
+                    ? e?.PropertyName
+                    : parameterGuidePresenter.SelectedPropertyName);
             propertyValueChanged?.Invoke(sender, e);
         }
 
+        private void OnSelectedPropertyChanged(
+            object sender,
+            System.Windows.Controls.WpfPropertyGrid.PropertyGridSelectedPropertyChangedEventArgs e)
+        {
+            parameterGuidePresenter?.SelectProperty(e?.PropertyName);
+        }
+
         private static bool IsHostedInDockedSingleInputShell(DependencyObject element)
+        {
+            return FindShell(element)?.IsDockedInspectorMode == true;
+        }
+
+        private static VisionToolSingleInputPropertyToolShell FindShell(DependencyObject element)
         {
             DependencyObject current = element;
             while (current != null)
             {
                 if (current is VisionToolSingleInputPropertyToolShell shell)
                 {
-                    return shell.IsDockedInspectorMode;
+                    return shell;
                 }
 
                 current = GetParent(current);
             }
 
-            return false;
+            return null;
         }
 
         private static DependencyObject GetParent(DependencyObject element)

@@ -4306,6 +4306,19 @@
                                                      </Button>
                                                      <Button Height="25"
                                                              Margin="0,5,0,0"
+                                                             ToolTip="{Binding RecipeCommands.CreateValidationSetFromSelectedPairToolTipText}"
+                                                             AutomationProperties.AutomationId="HostRecipeCreateValidationSetFromPairButton"
+                                                             AutomationProperties.Name="{Binding RecipeCommands.CreateValidationSetFromSelectedPairText}"
+                                                             Command="{Binding RecipeCommands.CreateValidationSetFromSelectedPairCommand}">
+                                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                             <iconPacks:PackIconMaterial Kind="ImagePlus" Width="13" Height="13" Margin="0,1,5,0" />
+                                                             <TextBlock Text="{Binding RecipeCommands.CreateValidationSetFromSelectedPairText}"
+                                                                        FontSize="10"
+                                                                        TextTrimming="CharacterEllipsis" />
+                                                         </StackPanel>
+                                                     </Button>
+                                                     <Button Height="25"
+                                                             Margin="0,5,0,0"
                                                              AutomationProperties.AutomationId="HostRecipeRunCatalogBenchmarkCompactButton"
                                                              Command="{Binding RecipeCommands.RunCatalogBenchmarkCommand}">
                                                          <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -5855,6 +5868,18 @@
                                                              Text="{Binding RecipeCommands.SelectedRecentBatchRunComparisonReviewText, Mode=OneWay}" />
                                                     <WrapPanel Margin="0,6,0,0"
                                                                AutomationProperties.AutomationId="HostRecipeRunHistoryFailureActionPanel">
+                                                        <Button MinWidth="108"
+                                                                Height="24"
+                                                                Margin="0,0,5,0"
+                                                                ToolTip="{Binding RecipeCommands.PrepareSelectedRunFailureCorrectionToolTipText}"
+                                                                AutomationProperties.Name="{Binding RecipeCommands.PrepareSelectedRunFailureCorrectionText}"
+                                                                AutomationProperties.AutomationId="HostRecipeRunHistoryPrepareCorrectionButton"
+                                                                Command="{Binding RecipeCommands.PrepareSelectedRunFailureCorrectionCommand}">
+                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                <iconPacks:PackIconMaterial Kind="WrenchOutline" Width="12" Height="12" Margin="0,1,4,0" />
+                                                                <TextBlock Text="{Binding RecipeCommands.PrepareSelectedRunFailureCorrectionText}" FontSize="10" FontWeight="SemiBold" />
+                                                            </StackPanel>
+                                                        </Button>
                                                         <Button MinWidth="86"
                                                                 Height="24"
                                                                 Margin="0,0,5,0"
@@ -6934,14 +6959,16 @@
                                                                     MinWidth="108"
                                                                     Height="24"
                                                                     Padding="7,3"
+                                                                    ToolTip="{Binding RecipeCommands.CorrectedOutputRerunToolTipText}"
+                                                                    AutomationProperties.Name="{Binding RecipeCommands.CorrectedOutputRerunText}"
                                                                     AutomationProperties.AutomationId="HostRecipeCorrectedOutputRerunButton"
-                                                                    Command="{Binding RecipeCommands.RunSelectedSamplePairCheckCommand}">
+                                                                    Command="{Binding RecipeCommands.RerunCorrectedOutputCommand}">
                                                                 <StackPanel Orientation="Horizontal">
                                                                     <iconPacks:PackIconMaterial Kind="Refresh"
                                                                                                 Width="12"
                                                                                                 Height="12"
                                                                                                 Margin="0,1,4,0" />
-                                                                    <TextBlock Text="{Binding RecipeCommands.RerunFailurePairCheckText}"
+                                                                    <TextBlock Text="{Binding RecipeCommands.CorrectedOutputRerunText}"
                                                                                FontSize="10" />
                                                                 </StackPanel>
                                                             </Button>

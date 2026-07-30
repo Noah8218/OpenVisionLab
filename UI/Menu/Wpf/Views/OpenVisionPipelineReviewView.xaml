@@ -1337,10 +1337,13 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
                                 </Grid.RowDefinitions>
-                                <TextBlock Margin="2,0,0,2"
+                                <TextBlock x:Name="txtObjectCandidateGuide"
+                                           Margin="2,0,0,2"
                                            Foreground="{StaticResource PipelineReview.MutedTextBrush}"
                                            FontSize="10"
-                                           Text="Accepted (green) / rejected (red). Current read-only PropertyGrid range markers." />
+                                           TextWrapping="Wrap"
+                                           AutomationProperties.AutomationId="PipelineReviewObjectCandidateGuide"
+                                           Text="Detection candidates come from segmentation/contours and may differ from the physical object count. Green marks inspection objects; red marks candidates filtered out by the current PropertyGrid ranges." />
                                 <local:VisionToolSignalPlotSurface x:Name="objectMetricPlot"
                                                                    Grid.Row="1"
                                                                    MinWidth="250"

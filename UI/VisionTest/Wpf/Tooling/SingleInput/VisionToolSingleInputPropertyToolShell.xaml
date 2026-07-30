@@ -212,6 +212,8 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="6" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="6" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock x:Name="txtParameterHeader"
                                    Grid.Column="0"
@@ -252,7 +254,24 @@
                                 <TextBlock Text="{Binding LearnButtonText, RelativeSource={RelativeSource AncestorType=local:VisionToolSingleInputPropertyToolShell}}"
                                            FontWeight="SemiBold"
                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                            </StackPanel>
+                                </StackPanel>
+                        </Button>
+                        <Button x:Name="btnParameterGuide"
+                                Grid.Column="6"
+                                Width="24"
+                                Height="22"
+                                Padding="0"
+                                Click="ParameterGuideButton_Click"
+                                ToolTip="Parameter Guide"
+                                Visibility="{Binding ParameterGuideVisibility, RelativeSource={RelativeSource AncestorType=local:VisionToolSingleInputPropertyToolShell}}"
+                                Style="{StaticResource VisionTool.IconButtonStyle}"
+                                AutomationProperties.Name="Parameter Guide"
+                                AutomationProperties.AutomationId="VisionToolParameterGuideButton">
+                            <iconPacks:PackIconMaterial Kind="HelpCircleOutline"
+                                                        Width="14"
+                                                        Height="14"
+                                                        HorizontalAlignment="Center"
+                                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         </Button>
                     </Grid>
                 </GroupBox.Header>
@@ -285,7 +304,8 @@
                                            Margin="0,3,0,0"
                                            FontSize="11"
                                            Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
-                                           TextTrimming="CharacterEllipsis" />
+                                           TextWrapping="Wrap"
+                                           TextTrimming="None" />
                             </StackPanel>
                             <UniformGrid Grid.Column="2"
                                          Rows="1"
@@ -397,7 +417,9 @@
                 <TextBlock x:Name="txtStatus"
                            Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
                            MinHeight="14"
-                           TextTrimming="CharacterEllipsis" />
+                           TextTrimming="CharacterEllipsis"
+                           ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
+                           AutomationProperties.HelpText="{Binding Text, RelativeSource={RelativeSource Self}}" />
             </Border>
 
             <Grid Grid.Row="12">

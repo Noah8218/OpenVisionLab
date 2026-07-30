@@ -646,56 +646,80 @@ namespace OpenVisionLab
             return string.IsNullOrWhiteSpace(value) ? "Default" : value.Trim();
         }
 
-        private static bool TryValidateVariantContract(
+        internal static bool TryValidateVariantContract(
             QualifiedRecipeValidationImageSource image,
             out string error)
         {
             string variantId = image?.VariantId?.Trim() ?? string.Empty;
-            string metricName = image?.ExpectedMetricName?.Trim() ?? string.Empty;
-            string minimum = image?.ExpectedMetricMinimum?.Trim() ?? string.Empty;
-            string maximum = image?.ExpectedMetricMaximum?.Trim() ?? string.Empty;
             if (variantId.Length > 80 || variantId.Any(char.IsControl))
             {
                 error = "Variant ID is invalid.";
                 return false;
             }
 
-            if (metricName.Length > 100 || metricName.Any(char.IsControl))
+            string metricNamesText = image?.ExpectedMetricName?.Trim() ?? string.Empty;
+            string minimumsText = image?.ExpectedMetricMinimum?.Trim() ?? string.Empty;
+            string maximumsText = image?.ExpectedMetricMaximum?.Trim() ?? string.Empty;
+            if (metricNamesText.Length > 500 || metricNamesText.Any(char.IsControl))
             {
-                error = "Expected metric name is invalid.";
+                error = "Expected metric names are invalid.";
                 return false;
             }
 
-            bool hasMinimum = !string.IsNullOrWhiteSpace(minimum);
-            bool hasMaximum = !string.IsNullOrWhiteSpace(maximum);
-            if (string.IsNullOrWhiteSpace(metricName))
+            string[] metricNames = SplitMetricContractParts(metricNamesText);
+            string[] minimums = SplitMetricContractParts(minimumsText);
+            string[] maximums = SplitMetricContractParts(maximumsText);
+            if (metricNames.Length == 0)
             {
-                error = hasMinimum || hasMaximum
+                error = minimums.Length > 0 || maximums.Length > 0
                     ? "Expected metric name is required when a bound is entered."
                     : string.Empty;
                 return string.IsNullOrEmpty(error);
             }
 
-            if (!hasMinimum && !hasMaximum)
+            if (!IsMetricContractPartCountValid(minimums, metricNames.Length)
+                || !IsMetricContractPartCountValid(maximums, metricNames.Length))
             {
-                error = "At least one expected metric bound is required.";
+                error = "Expected metric bounds must contain either one value or one value per metric.";
                 return false;
             }
 
-            double minimumValue = double.NaN;
-            double maximumValue = double.NaN;
-            bool minimumValid = !hasMinimum || TryParseFinite(minimum, out minimumValue);
-            bool maximumValid = !hasMaximum || TryParseFinite(maximum, out maximumValue);
-            if (!minimumValid || !maximumValid)
+            for (int index = 0; index < metricNames.Length; index++)
             {
-                error = "Expected metric bounds must be finite numbers.";
-                return false;
-            }
+                string metricName = metricNames[index];
+                if (string.IsNullOrWhiteSpace(metricName)
+                    || metricName.Length > 100
+                    || metricName.Any(char.IsControl))
+                {
+                    error = "Expected metric name is invalid.";
+                    return false;
+                }
 
-            if (hasMinimum && hasMaximum && minimumValue > maximumValue)
-            {
-                error = "Expected metric minimum cannot exceed maximum.";
-                return false;
+                string minimum = ResolveMetricContractPart(minimums, index);
+                string maximum = ResolveMetricContractPart(maximums, index);
+                bool hasMinimum = !string.IsNullOrWhiteSpace(minimum);
+                bool hasMaximum = !string.IsNullOrWhiteSpace(maximum);
+                if (!hasMinimum && !hasMaximum)
+                {
+                    error = "At least one expected metric bound is required.";
+                    return false;
+                }
+
+                double minimumValue = double.NaN;
+                double maximumValue = double.NaN;
+                bool minimumValid = !hasMinimum || TryParseFinite(minimum, out minimumValue);
+                bool maximumValid = !hasMaximum || TryParseFinite(maximum, out maximumValue);
+                if (!minimumValid || !maximumValid)
+                {
+                    error = "Expected metric bounds must be finite numbers.";
+                    return false;
+                }
+
+                if (hasMinimum && hasMaximum && minimumValue > maximumValue)
+                {
+                    error = "Expected metric minimum cannot exceed maximum.";
+                    return false;
+                }
             }
 
             error = string.Empty;
@@ -707,6 +731,35 @@ namespace OpenVisionLab
             return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out parsed)
                 && !double.IsNaN(parsed)
                 && !double.IsInfinity(parsed);
+        }
+
+        private static string[] SplitMetricContractParts(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? Array.Empty<string>()
+                : value.Split(new[] { ';' }, StringSplitOptions.None)
+                    .Select(part => part.Trim())
+                    .ToArray();
+        }
+
+        private static bool IsMetricContractPartCountValid(string[] values, int metricCount)
+        {
+            return values.Length == 0 || values.Length == 1 || values.Length == metricCount;
+        }
+
+        private static string ResolveMetricContractPart(string[] values, int index)
+        {
+            if (values == null || values.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            if (index >= 0 && index < values.Length)
+            {
+                return values[index]?.Trim() ?? string.Empty;
+            }
+
+            return values.Length == 1 ? values[0]?.Trim() ?? string.Empty : string.Empty;
         }
 
         private static bool HaveEquivalentPipelineShape(

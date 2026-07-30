@@ -1,5 +1,6 @@
 using MahApps.Metro.IconPacks;
 using System;
+using System.Collections.Generic;
 using System.Windows;
 
 namespace OpenVisionLab
@@ -10,6 +11,7 @@ namespace OpenVisionLab
         private readonly SimplePreprocessTextPresenter textPresenter;
         private readonly VisionToolDebouncedPreviewScheduler previewScheduler;
         private readonly VisionToolParameterChangeController parameterChangeController;
+        private VisionToolCustomParameterGuideBinder parameterGuideBinder;
         private bool suppressEvents;
 
         public SimplePreprocessToolWpfView()
@@ -45,6 +47,43 @@ namespace OpenVisionLab
 
         internal SimplePreprocessParameterController Parameters => parameterController;
 
+        internal void AttachParameterGuide(
+            Func<object> selectedObjectFactory,
+            params string[] propertyNames)
+        {
+            parameterGuideBinder?.Dispose();
+            var bindings = parameterController.CreateParameterGuideBindings(propertyNames);
+            if (bindings.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    "Simple preprocess Parameter Guide requires at least one registered editor.");
+            }
+
+            parameterGuideBinder = VisionToolCustomParameterGuideBinder.Attach(
+                toolShell,
+                selectedObjectFactory,
+                bindings);
+        }
+
+        internal void AttachParameterGuide(
+            Func<object> selectedObjectFactory,
+            IReadOnlyDictionary<string, string> controlPropertyNames)
+        {
+            parameterGuideBinder?.Dispose();
+            var bindings =
+                parameterController.CreateParameterGuideBindings(controlPropertyNames);
+            if (bindings.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    "Simple preprocess Parameter Guide requires at least one registered editor.");
+            }
+
+            parameterGuideBinder = VisionToolCustomParameterGuideBinder.Attach(
+                toolShell,
+                selectedObjectFactory,
+                bindings);
+        }
+
         internal bool SignalInspectorHasEvidenceForTest => signalInspector.HasEvidence;
 
         internal string SignalInspectorEvidenceIdForTest => signalInspector.EvidenceId;
@@ -55,6 +94,7 @@ namespace OpenVisionLab
 
         protected override void DisposeToolResources()
         {
+            parameterGuideBinder?.Dispose();
             previewScheduler.Dispose();
         }
 

@@ -2,6 +2,7 @@ using Lib.OpenCV;
 using Lib.OpenCV.Property;
 using MahApps.Metro.IconPacks;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
@@ -29,6 +30,19 @@ namespace OpenVisionLab
             view.Parameters.AddNumber("ScharrDegreeX", "Scharr X", 1, 0, 9, false, false, "PropertyGrid.Property.ScharrDegreeX.DisplayName");
             view.Parameters.AddNumber("ScharrDegreeY", "Scharr Y", 0, 0, 9, false, false, "PropertyGrid.Property.ScharrDegreeY.DisplayName");
             view.Parameters.AddNumber("LaplacianKernelSize", "Laplacian Kernel", 3, 1, 31, false, false, "PropertyGrid.Property.LaplacianKernelSize.DisplayName");
+            view.AttachParameterGuide(
+                () => OpenVisionNativeSimplePreprocessPropertyFactory.CreateEdgeDetectionProperty(view),
+                "EdgeType",
+                "CannyThresholdLow",
+                "CannyThresholdHigh",
+                "CannyApertureSize",
+                "UseL2Gradient",
+                "SobelDegreeX",
+                "SobelDegreeY",
+                "SobelKernelSize",
+                "ScharrDegreeX",
+                "ScharrDegreeY",
+                "LaplacianKernelSize");
             view.ParameterChanged += (sender, e) =>
             {
                 UpdateEdgeDetectionParameterVisibility(view);
@@ -45,6 +59,11 @@ namespace OpenVisionLab
             view.Parameters.AddSlider("Angle", "Angle", -180, 180, 0, 1, "RotateScale.rjLabel4.Text");
             view.Parameters.AddSlider("ScaleXPercent", "Scale X", 10, 300, 100, 1, "RotateScale.rjLabelScaleX.Text");
             view.Parameters.AddSlider("ScaleYPercent", "Scale Y", 10, 300, 100, 1, "RotateScale.rjLabelScaleY.Text");
+            view.AttachParameterGuide(
+                () => OpenVisionNativeSimplePreprocessPropertyFactory.CreateRotateScaleProperty(view),
+                "Angle",
+                "ScaleXPercent",
+                "ScaleYPercent");
             view.ParameterChanged += (sender, e) => UpdateRotateScaleSummary(view);
             UpdateRotateScaleSummary(view);
         }
@@ -62,6 +81,14 @@ namespace OpenVisionLab
                 "SimplePreprocess.MeanType");
             view.Parameters.AddSlider("MeanMin", "Min Mean", 0, 255, property.MEAN_MIN, 1, "SimplePreprocess.MeanMin");
             view.Parameters.AddSlider("MeanMax", "Max Mean", 0, 255, property.MEAN_MAX, 1, "SimplePreprocess.MeanMax");
+            view.AttachParameterGuide(
+                () => OpenVisionNativeSimplePreprocessPropertyFactory.CreateMeanProperty(view),
+                new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["MeanType"] = nameof(MeanProperty.MEAN_TYPES),
+                    ["MeanMin"] = nameof(MeanProperty.MEAN_MIN),
+                    ["MeanMax"] = nameof(MeanProperty.MEAN_MAX)
+                });
             view.ParameterChanged += (sender, e) => UpdateMeanSummary(view);
             UpdateMeanSummary(view);
         }

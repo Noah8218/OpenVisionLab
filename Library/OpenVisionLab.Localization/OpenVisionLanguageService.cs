@@ -24,6 +24,108 @@ namespace OpenVisionLab
         private static readonly Dictionary<string, DefaultCatalogMigration> DefaultCatalogMigrations = new Dictionary<string, DefaultCatalogMigration>(StringComparer.OrdinalIgnoreCase)
         {
             {
+                "PipelineReview.Validation",
+                new DefaultCatalogMigration(
+                    "\uAC80\uC99D",
+                    "Validation")
+            },
+            {
+                "PipelineReview.Result",
+                new DefaultCatalogMigration(
+                    "\uACB0\uACFC",
+                    "Result")
+            },
+            {
+                "PipelineReview.ObjectInspector.Title",
+                new DefaultCatalogMigration(
+                    "\uAC1D\uCCB4 \uACB0\uACFC",
+                    "Object Results")
+            },
+            {
+                "PipelineReview.ObjectInspector.CountFormat",
+                new DefaultCatalogMigration(
+                    "\uAC1D\uCCB4 {0} / \uD1B5\uACFC {1} / \uC81C\uC678 {2}",
+                    "Objects {0} / accepted {1} / rejected {2}")
+            },
+            {
+                "VisionTool.Preset.Detail",
+                new DefaultCatalogMigration(
+                    "\uD504\uB9AC\uC14B\uC740 PropertyGrid \uAC12\uB9CC \uBC14\uAFC9\uB2C8\uB2E4. \uBBF8\uB9AC\uBCF4\uAE30\uB85C \uAC80\uC99D\uD558\uC138\uC694.",
+                    "Choose a starting point. It updates PropertyGrid values only; run Preview to verify.")
+            },
+            {
+                "VisionTool.Preset.AppliedDetailFormat",
+                new DefaultCatalogMigration(
+                    "{0} \uC801\uC6A9\uB428 / \uBBF8\uB9AC\uBCF4\uAE30\uB85C \uAC80\uC99D\uD558\uC138\uC694.",
+                    "{0} applied. Run Preview to verify.")
+            },
+            {
+                "VisionTool.Preset.Line.Precise.Description",
+                new DefaultCatalogMigration(
+                    "Line \uC815\uBC00 \uAC80\uC0AC: \uB0AE\uC740 \uB300\uBE44, \uCD18\uCD18\uD55C \uC2A4\uCE94, \uD54F\uB77C\uC778 \uD655\uC7A5, \uD3C9\uADE0 \uD544\uD130 \uC801\uC6A9",
+                    "Lower contrast, denser scan lines, fit-line extension, and average filtering for final tuning.")
+            },
+            {
+                "PropertyGrid.Property.AVERAGE_Diff.DisplayName",
+                new DefaultCatalogMigration(
+                    "\uD3C9\uADE0 \uCC28\uC774",
+                    "Average diff")
+            },
+            {
+                "PropertyGrid.Property.USE_AVERAGE_FILTER.DisplayName",
+                new DefaultCatalogMigration(
+                    "\uD3C9\uADE0 \uD544\uD130 \uC0AC\uC6A9",
+                    "Use average filter")
+            },
+            {
+                "PropertyGrid.Property.AVERAGE_FILTER_TYPE.DisplayName",
+                new DefaultCatalogMigration(
+                    "\uD3C9\uADE0 \uD544\uD130 \uD0C0\uC785",
+                    "Average filter type")
+            },
+            {
+                "PropertyGrid.Property.SHOW_VERTICAL_LINE.DisplayName",
+                new DefaultCatalogMigration(
+                    "\uC2A4\uCE94 \uB77C\uC778 \uD45C\uC2DC",
+                    "Show scan line")
+            },
+            {
+                "PropertyGrid.Property.SHOW_EDGE.DisplayName",
+                new DefaultCatalogMigration(
+                    "\uC5E3\uC9C0 \uD45C\uC2DC",
+                    "Show edge")
+            },
+            {
+                "PropertyGrid.Property.SHOW_CONTOUR.DisplayName",
+                new DefaultCatalogMigration(
+                    "\uCEE8\uD22C\uC5B4 \uB77C\uC778 \uD45C\uC2DC",
+                    "Show contour line")
+            },
+            {
+                "PropertyGrid.Property.SHOW_FITLINE.DisplayName",
+                new DefaultCatalogMigration(
+                    "\uD53C\uD305 \uB77C\uC778 \uD45C\uC2DC",
+                    "Show fit line")
+            },
+            {
+                "VisionTool.Preset.Blob.Basic.Description",
+                new DefaultCatalogMigration(
+                    "Blob \uAE30\uBCF8 \uAC80\uC0AC: \uC911\uAC04 \uBA74\uC801 \uAE30\uC900\uACFC \uB2E8\uC21C \uC774\uC9C4\uD654\uB85C \uC2DC\uC791",
+                    "Start with thresholded bright/dark regions and a medium area filter.")
+            },
+            {
+                "VisionTool.Preset.Blob.Fast.Description",
+                new DefaultCatalogMigration(
+                    "Blob \uBE60\uB978 \uAC80\uC0AC: \uC791\uC740 \uB178\uC774\uC988\uB97C \uBB34\uC2DC\uD558\uB3C4\uB85D \uBA74\uC801 \uAE30\uC900\uC744 \uB192\uC784",
+                    "Ignore small noise with a larger area floor and simple thresholding.")
+            },
+            {
+                "VisionTool.Preset.Blob.Precise.Description",
+                new DefaultCatalogMigration(
+                    "Blob \uC815\uBC00 \uAC80\uC0AC: \uC791\uC740 \uC601\uC5ED\uB3C4 \uBCF4\uB3C4\uB85D \uBA74\uC801 \uAE30\uC900\uC744 \uB0AE\uCD94\uACE0 \uC801\uC751\uD615 \uC774\uC9C4\uD654 \uC0AC\uC6A9",
+                    "Keep smaller regions and enable adaptive thresholding for uneven lighting.")
+            },
+            {
                 "PipelineReview.FixtureDesigner.RelationshipFormat",
                 new DefaultCatalogMigration(
                     "{0}: {1:00} {2} → {3:00} {4} → {5:00} {6} / ROI {7}",
@@ -329,6 +431,12 @@ namespace OpenVisionLab
                 new DefaultCatalogMigration(
                     "제안 후보 {0}개입니다. 드로잉과 수치를 검토한 뒤 하나를 선택해 적용하고, Preview는 별도로 실행하십시오.",
                     "{0} suggestions found. Review the drawing and metrics, apply one, then run Preview separately.")
+            },
+            {
+                "ToolView.AddPipeline",
+                new DefaultCatalogMigration(
+                    "\uD30C\uC774\uD504\uB77C\uC778 \uCD94\uAC00",
+                    "Add Pipeline")
             }
         };
         private static bool loaded;

@@ -8,6 +8,80 @@ namespace OpenVisionLab
 {
     public sealed partial class OpenVisionShellHostRecipeCommandSurface
     {
+        private void CreateValidationSetFromSelectedPair()
+        {
+            CreateValidationSetFromSelectedPairCore();
+        }
+
+        internal bool CreateValidationSetFromSelectedPairForTest()
+        {
+            return CreateValidationSetFromSelectedPairCore();
+        }
+
+        private bool CreateValidationSetFromSelectedPairCore()
+        {
+            if (!CanCreateValidationSetFromSelectedPair())
+            {
+                return false;
+            }
+
+            OpenVisionRecipeCatalogPairValidationSetImportResult result =
+                OpenVisionRecipeCatalogPairValidationSetService.Import(
+                    validationSetDocument,
+                    SelectedSampleOption.Sample,
+                    SampleOptions.Select(option => option?.Sample),
+                    SelectedPipelineOption?.PipelineName);
+            if (!result.Success)
+            {
+                ValidationSuiteStatusText = LocalText(
+                    "카탈로그 쌍 가져오기 ERROR: ",
+                    "Catalog pair import ERROR: ")
+                    + result.Error;
+                return false;
+            }
+
+            if (!TrySaveValidationSetDocument(LocalText(
+                    "카탈로그 쌍을 검증 세트로 저장",
+                    "Save catalog pair as validation set")))
+            {
+                return false;
+            }
+
+            SelectedValidationSuiteScopeOption = ValidationSuiteScopeOptions.FirstOrDefault(option =>
+                string.Equals(
+                    option.Key,
+                    OpenVisionRecipeValidationSuiteScopeOption.LocalValidationSetKey,
+                    StringComparison.OrdinalIgnoreCase));
+            RefreshValidationSetOptions(result.SetName);
+            NewValidationSetName = CreateUniqueValidationSetName();
+            ValidationSuiteStatusText = string.Format(
+                CultureInfo.CurrentCulture,
+                result.Updated
+                    ? LocalText(
+                        "카탈로그 쌍 검증 세트를 갱신했습니다: {0} | OK {1} / NG {2} | 실행 안 함",
+                        "Updated catalog pair validation set: {0} | OK {1} / NG {2} | not run")
+                    : LocalText(
+                        "카탈로그 쌍 검증 세트를 만들었습니다: {0} | OK {1} / NG {2} | 실행 안 함",
+                        "Created catalog pair validation set: {0} | OK {1} / NG {2} | not run"),
+                result.SetName,
+                result.OkCount,
+                result.NgCount);
+            StatusText = ValidationSuiteStatusText;
+            return true;
+        }
+
+        private bool CanCreateValidationSetFromSelectedPair()
+        {
+            return validationSetStorageReady
+                && !executionSession.IsValidationSuiteRunning
+                && !executionSession.IsSampleCheckRunning
+                && !executionSession.IsPairCheckRunning
+                && !executionSession.IsCatalogBenchmarkRunning
+                && OpenVisionRecipeCatalogPairValidationSetService.CanImport(
+                    SelectedSampleOption?.Sample,
+                    SampleOptions.Select(option => option?.Sample));
+        }
+
         private void CreateValidationSet()
         {
             if (!CanCreateValidationSet())

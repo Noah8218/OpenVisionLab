@@ -63,6 +63,12 @@ namespace OpenVisionLab
             RunCatalogBenchmarkCommand = new RelayCommand(RunCatalogBenchmark, CanRunCatalogBenchmark);
             RunValidationSuiteCommand = new RelayCommand(RunValidationSuite, CanRunValidationSuite);
             StopValidationSuiteCommand = new RelayCommand(RequestValidationSuiteStop, CanStopValidationSuite);
+            RerunCorrectedOutputCommand = new RelayCommand(
+                RerunCorrectedOutput,
+                CanRerunCorrectedOutput);
+            CreateValidationSetFromSelectedPairCommand = new RelayCommand(
+                CreateValidationSetFromSelectedPair,
+                CanCreateValidationSetFromSelectedPair);
             CreateValidationSetCommand = new RelayCommand(CreateValidationSet, CanCreateValidationSet);
             DeleteValidationSetCommand = new RelayCommand(DeleteValidationSet, CanDeleteValidationSet);
             AddValidationSetOkImagesCommand = new RelayCommand(
@@ -110,6 +116,9 @@ namespace OpenVisionLab
         private void InitializeSampleSelectionCommands()
         {
             LoadSelectedRunSampleImageToInputLayerCommand = new RelayCommand(LoadSelectedRunSampleImageToInputLayer, CanLoadSelectedRunSampleImageToInputLayer);
+            PrepareSelectedRunFailureCorrectionCommand = new RelayCommand(
+                PrepareSelectedRunFailureCorrection,
+                CanPrepareSelectedRunFailureCorrection);
             OpenSelectedRecentBatchRunEvidenceCommand = new RelayCommand(OpenSelectedRecentBatchRunEvidence, CanOpenSelectedRecentBatchRunEvidence);
         }
 

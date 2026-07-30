@@ -40,6 +40,7 @@ namespace OpenVisionLab
         private readonly Func<string, string, bool> loadImageIntoLayer;
         private readonly Func<OpenVisionRecipeRunEvidence, bool> openSelectedBatchRunEvidence;
         private readonly Action openPinArrayGapValidationRuns;
+        private readonly Action openPipelineXmlSteps;
         private readonly Action<VISION_MENU> selectStepTool;
         private readonly Func<bool> commitSelectedStepEdit;
         private readonly Action<string, VisionPipeline> saveStepEditPipeline;
@@ -235,7 +236,8 @@ namespace OpenVisionLab
             Action<string, VisionPipeline> saveStepEditPipeline = null,
             OpenVisionRecipeQualifiedSnapshotController qualifiedSnapshotController = null,
             Func<string, string, string, bool> confirmQualifiedSnapshotLifecycle = null,
-            Func<string, bool> openQualifiedSnapshotEvidence = null)
+            Func<string, bool> openQualifiedSnapshotEvidence = null,
+            Action openPipelineXmlSteps = null)
         {
             this.currentRecipeProvider = currentRecipeProvider ?? throw new ArgumentNullException(nameof(currentRecipeProvider));
             this.switchRecipe = switchRecipe ?? throw new ArgumentNullException(nameof(switchRecipe));
@@ -256,6 +258,7 @@ namespace OpenVisionLab
             this.loadImageIntoLayer = loadImageIntoLayer ?? ((_, _) => false);
             this.openSelectedBatchRunEvidence = openSelectedBatchRunEvidence ?? (_ => false);
             this.openPinArrayGapValidationRuns = openPinArrayGapValidationRuns ?? (() => { });
+            this.openPipelineXmlSteps = openPipelineXmlSteps ?? (() => { });
             this.qualifiedSnapshotController =
                 qualifiedSnapshotController
                 ?? new OpenVisionRecipeQualifiedSnapshotController();
@@ -320,6 +323,12 @@ namespace OpenVisionLab
             RunCatalogBenchmarkCommand = new RelayCommand(RunCatalogBenchmark, CanRunCatalogBenchmark);
             RunValidationSuiteCommand = new RelayCommand(RunValidationSuite, CanRunValidationSuite);
             StopValidationSuiteCommand = new RelayCommand(RequestValidationSuiteStop, CanStopValidationSuite);
+            RerunCorrectedOutputCommand = new RelayCommand(
+                RerunCorrectedOutput,
+                CanRerunCorrectedOutput);
+            CreateValidationSetFromSelectedPairCommand = new RelayCommand(
+                CreateValidationSetFromSelectedPair,
+                CanCreateValidationSetFromSelectedPair);
             CreateValidationSetCommand = new RelayCommand(CreateValidationSet, CanCreateValidationSet);
             DeleteValidationSetCommand = new RelayCommand(DeleteValidationSet, CanDeleteValidationSet);
             AddValidationSetOkImagesCommand = new RelayCommand(
@@ -358,6 +367,9 @@ namespace OpenVisionLab
             NavigateSelectedStepOutputLayerCommand = new RelayCommand(NavigateSelectedStepOutputLayer, CanNavigateSelectedStepOutputLayer);
             FocusSelectedRunFailureStepCommand = new RelayCommand(FocusSelectedRunFailureStep, CanFocusSelectedRunFailureStep);
             LoadSelectedRunSampleImageToInputLayerCommand = new RelayCommand(LoadSelectedRunSampleImageToInputLayer, CanLoadSelectedRunSampleImageToInputLayer);
+            PrepareSelectedRunFailureCorrectionCommand = new RelayCommand(
+                PrepareSelectedRunFailureCorrection,
+                CanPrepareSelectedRunFailureCorrection);
             OpenSelectedRecentBatchRunEvidenceCommand = new RelayCommand(OpenSelectedRecentBatchRunEvidence, CanOpenSelectedRecentBatchRunEvidence);
             FreezePinArrayGapValidationIdentityCommand = new RelayCommand(
                 FreezePinArrayGapValidationIdentity,
@@ -717,6 +729,9 @@ namespace OpenVisionLab
                     OnPropertyChanged(nameof(OperatorDecisionEvidenceText));
                     OnPropertyChanged(nameof(FailureReviewText));
                     OnPropertyChanged(nameof(PipelineSelectedStepOperatorContextText));
+                    OnPropertyChanged(nameof(CorrectedOutputRerunText));
+                    OnPropertyChanged(nameof(CorrectedOutputRerunToolTipText));
+                    OnPropertyChanged(nameof(CorrectedOutputReviewText));
                     NotifyQualifiedSnapshotContextChanged();
                     CommandManager.InvalidateRequerySuggested();
                 }
@@ -1949,6 +1964,10 @@ namespace OpenVisionLab
 
         public ICommand StopValidationSuiteCommand { get; private set; }
 
+        public ICommand RerunCorrectedOutputCommand { get; private set; }
+
+        public ICommand CreateValidationSetFromSelectedPairCommand { get; private set; }
+
         public ICommand CreateValidationSetCommand { get; private set; }
 
         public ICommand DeleteValidationSetCommand { get; private set; }
@@ -1992,6 +2011,8 @@ namespace OpenVisionLab
         public ICommand FocusSelectedRunFailureStepCommand { get; private set; }
 
         public ICommand LoadSelectedRunSampleImageToInputLayerCommand { get; private set; }
+
+        public ICommand PrepareSelectedRunFailureCorrectionCommand { get; private set; }
 
         public ICommand OpenSelectedRecentBatchRunEvidenceCommand { get; private set; }
 
@@ -2388,6 +2409,14 @@ namespace OpenVisionLab
 
         public string RunSelectedSamplePairCheckText => executionSession.IsPairCheckRunning ? LocalText("실행 중...", "Running...") : LocalText("쌍 검사", "Run pair");
 
+        public string CreateValidationSetFromSelectedPairText =>
+            LocalText("쌍을 검증 세트로", "Save pair as set");
+
+        public string CreateValidationSetFromSelectedPairToolTipText =>
+            LocalText(
+                "선택한 카탈로그 OK/NG 쌍의 역할, 기대 지표, 이미지 SHA-256을 현재 레시피의 로컬 검증 세트로 저장합니다. Preview/Run은 실행하지 않습니다.",
+                "Save the selected catalog OK/NG pair, expected metrics, and image SHA-256 values as a recipe-local validation set. Preview/Run is not executed.");
+
         public string SelectedSampleAcceptanceSummaryText =>
             SelectedSampleOption?.AcceptanceSummaryText ?? LocalText("기대 지표 기준을 확인할 샘플을 선택하세요.", "Select a sample to review expected metric gates.");
 
@@ -2463,7 +2492,39 @@ namespace OpenVisionLab
 
         public string LoadSelectedRunSampleImageToInputLayerText => LocalText("샘플->입력", "Sample -> input");
 
+        public string PrepareSelectedRunFailureCorrectionText => LocalText("실패 수정 준비", "Prepare correction");
+
+        public string PrepareSelectedRunFailureCorrectionToolTipText => LocalText(
+            "실패 Step과 보존된 샘플을 불러와 PropertyGrid 수정을 준비합니다. Preview/Run은 실행하지 않습니다.",
+            "Load the failed Step and retained sample for PropertyGrid correction. This does not run Preview/Run.");
+
         public string RerunFailurePairCheckText => LocalText("Good/Bad 재검사", "Rerun Good/Bad");
+
+        public string CorrectedOutputRerunText => IsSelectedRunLocalValidationSet()
+            ? LocalText("동일 세트 재검사", "Rerun same set")
+            : RerunFailurePairCheckText;
+
+        public string CorrectedOutputRerunToolTipText
+        {
+            get
+            {
+                if (!IsSelectedRunLocalValidationSet())
+                {
+                    return LocalText(
+                        "현재 카탈로그 Good/Bad 쌍을 명시적으로 재검사합니다.",
+                        "Explicitly rerun the current catalog Good/Bad pair.");
+                }
+
+                return TryResolveSelectedRunValidationSet(
+                        out OpenVisionRecipeValidationSetOption option,
+                        out string reason)
+                    ? LocalText(
+                        "실패가 기록된 동일 검증 세트를 현재 수정된 파이프라인으로 명시적으로 재실행합니다: ",
+                        "Explicitly rerun the same validation set with the corrected current pipeline: ")
+                        + option.Name
+                    : reason;
+            }
+        }
 
         public string LoadFailureStepParametersText => LocalText("파라미터 검토", "Review parameters");
 
@@ -2541,7 +2602,8 @@ namespace OpenVisionLab
                 ? OpenVisionRecipePipelineStepReviewPresenter.BuildCorrectedOutputReviewText(
                     SelectedPipelinePreviewStep,
                     selectedStepEditSession.IsDirty,
-                    SelectedStepEditObject)
+                    SelectedStepEditObject,
+                    IsSelectedRunLocalValidationSet())
                 : selectedStepEditSession.CorrectedOutputReviewText;
 
         public string OpenSelectedStepToolText =>

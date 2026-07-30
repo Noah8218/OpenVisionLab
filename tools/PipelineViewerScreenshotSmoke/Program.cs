@@ -132,6 +132,20 @@ internal static class Program
         ["wpf_shell_host_recipe_review_bundle_import"] = CaptureShellHostRecipeReviewBundleImport,
         ["wpf_shell_host_recipe_local_validation_set"] = outputPath =>
             CaptureShellHostRecipeLocalValidationSet(outputPath, captureReviewQueue: false),
+        ["p250_catalog_pair_validation_set"] =
+            CaptureP250CatalogPairValidationSet,
+        ["p253_workspace_sample_recipe_context_sync"] =
+            CaptureP253WorkspaceSampleRecipeContextSync,
+        ["p254_direct_teaching_pipeline_persistence"] =
+            CaptureP254DirectTeachingPipelinePersistence,
+        ["p251_failure_correction_handoff"] =
+            outputPath => CaptureP251FailureCorrectionHandoff(
+                outputPath,
+                rerunSameValidationSet: false),
+        ["p252_contextual_correction_rerun"] =
+            outputPath => CaptureP251FailureCorrectionHandoff(
+                outputPath,
+                rerunSameValidationSet: true),
         ["wpf_shell_host_recipe_run_history_review_queue"] = outputPath =>
             CaptureShellHostRecipeLocalValidationSet(outputPath, captureReviewQueue: true),
         ["wpf_shell_host_recipe_qualified_snapshot"] =
@@ -229,6 +243,19 @@ internal static class Program
         ["wpf_shell_host_line_intersection_tool"] = CaptureShellHostLineIntersectionTool,
         ["wpf_shell_host_matching_tool"] = CaptureShellHostMatchingTool,
         ["wpf_shell_host_matching_tool_docked_verification"] = CaptureShellHostMatchingTool,
+        ["p257_contextual_parameter_guide"] = CaptureP257ContextualParameterGuide,
+        ["p259_parameter_guide_expansion"] = CaptureP259ParameterGuideExpansion,
+        ["p260_parameter_guide_fallback_audit"] = CaptureP260ParameterGuideFallbackAudit,
+        ["p260_edge_detection_parameter_guide"] = CaptureP260EdgeDetectionParameterGuide,
+        ["p261_rotate_scale_parameter_guide"] = CaptureP261RotateScaleParameterGuide,
+        ["p262_mean_parameter_guide"] = CaptureP262MeanParameterGuide,
+        ["p263_feature_matching_parameter_guide"] = CaptureP263FeatureMatchingParameterGuide,
+        ["p264_matching_search_parameter_guide"] = CaptureP264MatchingSearchParameterGuide,
+        ["p265_line_parameter_guide"] = CaptureP265LineParameterGuide,
+        ["p266_line_inactive_legacy_controls"] = CaptureP266LineInactiveLegacyControls,
+        ["p267_affine_transform_parameter_guide"] = CaptureP267AffineTransformParameterGuide,
+        ["p268_edge_based_matching_parameter_guide"] = CaptureP268EdgeBasedMatchingParameterGuide,
+        ["p269_property_persistence_feedback"] = CaptureP269PropertyPersistenceFeedback,
         ["wpf_shell_host_matching_presets"] = CaptureShellHostMatchingPresets,
         ["wpf_shell_host_matching_pyramid_property_grid"] = CaptureShellHostMatchingPyramidPropertyGrid,
         ["matching_angle_easy_match"] = CaptureMatchingAngleEasyMatch,
@@ -3525,6 +3552,13 @@ internal static class Program
         step.Parameters["LeftCONTRAST"] = "18";
         step.Parameters["LeftTHICKNESS"] = "2";
         step.Parameters["LeftUSE_THRESHOLD"] = "false";
+        step.Parameters["LeftUSE_AVERAGE_FILTER"] = "true";
+        step.Parameters["LeftAVERAGE_Diff"] = "73";
+        step.Parameters["LeftAVERAGE_FILTER_TYPE"] = "X";
+        step.Parameters["LeftSHOW_VERTICAL_LINE"] = "false";
+        step.Parameters["LeftSHOW_EDGE"] = "true";
+        step.Parameters["LeftSHOW_CONTOUR"] = "false";
+        step.Parameters["LeftSHOW_FITLINE"] = "true";
         step.Parameters["RightUSE_ROI"] = "true";
         step.Parameters["RightCvROI"] = "485,170,70,145";
         step.Parameters["RightPRJ_PORALITY"] = "BTOW";
@@ -3535,6 +3569,13 @@ internal static class Program
         step.Parameters["RightCONTRAST"] = "44";
         step.Parameters["RightTHICKNESS"] = "7";
         step.Parameters["RightUSE_THRESHOLD"] = "true";
+        step.Parameters["RightUSE_AVERAGE_FILTER"] = "false";
+        step.Parameters["RightAVERAGE_Diff"] = "91";
+        step.Parameters["RightAVERAGE_FILTER_TYPE"] = "Y";
+        step.Parameters["RightSHOW_VERTICAL_LINE"] = "true";
+        step.Parameters["RightSHOW_EDGE"] = "false";
+        step.Parameters["RightSHOW_CONTOUR"] = "true";
+        step.Parameters["RightSHOW_FITLINE"] = "false";
         pipeline.Steps.Add(step);
 
         object mappedProperty = VisionPipelineStepPropertyMapper.CreateProperty(step)
@@ -3555,8 +3596,12 @@ internal static class Program
         {
             "LeftUSE_ROI", "LeftCvROI", "LeftPRJ_PORALITY", "LeftPRJ_DIR", "LeftVER_PRJ_DIR",
             "LeftUSE_MANUAL_ANGLE", "LeftMANUAL_ANGLE_VALUE", "LeftCONTRAST", "LeftTHICKNESS", "LeftUSE_THRESHOLD",
+            "LeftUSE_AVERAGE_FILTER", "LeftAVERAGE_Diff", "LeftAVERAGE_FILTER_TYPE",
+            "LeftSHOW_VERTICAL_LINE", "LeftSHOW_EDGE", "LeftSHOW_CONTOUR", "LeftSHOW_FITLINE",
             "RightUSE_ROI", "RightCvROI", "RightPRJ_PORALITY", "RightPRJ_DIR", "RightVER_PRJ_DIR",
-            "RightUSE_MANUAL_ANGLE", "RightMANUAL_ANGLE_VALUE", "RightCONTRAST", "RightTHICKNESS", "RightUSE_THRESHOLD"
+            "RightUSE_MANUAL_ANGLE", "RightMANUAL_ANGLE_VALUE", "RightCONTRAST", "RightTHICKNESS", "RightUSE_THRESHOLD",
+            "RightUSE_AVERAGE_FILTER", "RightAVERAGE_Diff", "RightAVERAGE_FILTER_TYPE",
+            "RightSHOW_VERTICAL_LINE", "RightSHOW_EDGE", "RightSHOW_CONTOUR", "RightSHOW_FITLINE"
         };
         string[] lostParameters = asymmetricParameters
             .Where(key => !roundTrip.Parameters.TryGetValue(key, out string? actual)
@@ -3653,7 +3698,9 @@ internal static class Program
                 {
                     "UseRoi", "Roi", "LeftDirection", "Polarity", "VerticalProjectionDirection",
                     "UseManualAngle", "ManualAngleValue", "RightUseRoi", "RightRoi", "RightDirection",
-                    "RightPolarity", "RightVerticalProjectionDirection", "RightUseManualAngle", "RightManualAngleValue"
+                    "RightPolarity", "RightVerticalProjectionDirection", "RightUseManualAngle", "RightManualAngleValue",
+                    "UseAverageFilter", "AverageDiff", "AverageFilterType",
+                    "ShowVerticalLine", "ShowEdge", "ShowContour", "ShowFitLine"
                 };
                 PropertyDescriptorCollection descriptors = TypeDescriptor.GetProperties(grid.SelectedObject);
                 string[] missingProperties = requiredProperties
@@ -3664,6 +3711,24 @@ internal static class Program
                     throw new InvalidOperationException(
                         "Line pair PropertyGrid missed independent A/B properties: "
                         + string.Join(",", missingProperties));
+                }
+                string[] editableCompatibilityProperties = new[]
+                    {
+                        "UseAverageFilter",
+                        "AverageDiff",
+                        "AverageFilterType",
+                        "ShowVerticalLine",
+                        "ShowEdge",
+                        "ShowContour",
+                        "ShowFitLine"
+                    }
+                    .Where(name => !IsCompatibilityReadOnlyProperty(grid.SelectedObject, name))
+                    .ToArray();
+                if (editableCompatibilityProperties.Length > 0)
+                {
+                    throw new InvalidOperationException(
+                        "Recipe Manager exposed inactive/legacy Line values as editable: "
+                        + string.Join(",", editableCompatibilityProperties));
                 }
 
                 int previewRunsBeforeApply = shellHost.NativePreviewRunCount;
@@ -3805,7 +3870,6 @@ internal static class Program
                         "CVR-20 OverlayMerge PropertyGrid missed: "
                         + string.Join(",", missingProperties));
                 }
-
                 int previewRunsBefore = shellHost.NativePreviewRunCount;
                 int layerCountBefore = shellHost.LayerDocumentCount;
                 string activeLayerBefore = shellHost.ActiveHostLayerTitle;
@@ -7055,6 +7119,1264 @@ internal static class Program
                 shellHost.UpdateLayout();
                 Pump(100);
             }, captureFloatingToolWindow: false, captureScreen: true);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static CaptureResult CaptureP250CatalogPairValidationSet(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        string recipeName = "Smoke_CatalogPairSet_" + Guid.NewGuid().ToString("N");
+        const string pipelineName = "Catalog_Pair_Pipeline";
+        const string sampleName = "Public_Matching_DiePad_Good";
+        VisionPipelineSampleCatalogItem sample = VisionPipelineSampleCatalogItem
+            .LoadRunnable(VisionPipelineSampleCatalogSourceKind.Public)
+            .FirstOrDefault(item => string.Equals(
+                item?.SampleName,
+                sampleName,
+                StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                "P250 public multi-metric pair sample is missing: " + sampleName);
+        if (!SerializeHelper.TryLoadFromXmlFile(
+                sample.PipelineFullPath,
+                out VisionPipeline pipeline)
+            || pipeline == null)
+        {
+            throw new InvalidOperationException(
+                "P250 sample pipeline could not be loaded: " + sample.PipelineFullPath);
+        }
+
+        pipeline.Name = pipelineName;
+        VisionPipelineStorage.Save(recipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipelineName);
+
+        OpenVisionShellHostView shellHost =
+            CreateShellHost(recipeName, seedMainLayer: false);
+        return CaptureWindowWithContent(
+                shellHost,
+                outputPath,
+                1600,
+                900,
+                () =>
+                {
+                    OpenVisionRecipeSampleOption sampleOption =
+                        shellHost.RecipeCommands.SampleOptions.FirstOrDefault(option =>
+                            string.Equals(
+                                option?.SampleName,
+                                sampleName,
+                                StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            "P250 Recipe Manager sample selector did not expose "
+                            + sampleName);
+                    shellHost.RecipeCommands.SelectedSampleOption = sampleOption;
+                    Pump(40);
+
+                    int previewRunsBefore = shellHost.NativePreviewRunCount;
+                    int layerCountBefore = shellHost.LayerDocumentCount;
+                    string workspaceLayerBefore = shellHost.WorkspaceLayerTitle;
+                    string inputRouteBefore =
+                        shellHost.ActiveNativeRouteInputLayerNameForTest;
+                    string outputRouteBefore =
+                        shellHost.ActiveNativeRouteOutputLayerNameForTest;
+
+                    if (!shellHost.RecipeCommands
+                        .CreateValidationSetFromSelectedPairCommand
+                        .CanExecute(null))
+                    {
+                        throw new InvalidOperationException(
+                            "P250 save-pair-as-set command was disabled for "
+                            + sampleName);
+                    }
+
+                    if (!shellHost.RecipeCommands
+                        .CreateValidationSetFromSelectedPairForTest())
+                    {
+                        throw new InvalidOperationException(
+                            "P250 catalog pair import failed: "
+                            + shellHost.RecipeCommands.ValidationSuiteStatusText);
+                    }
+
+                    string importedSetName =
+                        shellHost.RecipeCommands.SelectedValidationSetOption?.Name
+                        ?? string.Empty;
+                    IReadOnlyList<OpenVisionRecipeValidationSetImageRow> rows =
+                        shellHost.RecipeCommands.ValidationSetImageRows;
+                    OpenVisionRecipeValidationSetImageRow goodRow =
+                        rows.SingleOrDefault(row => string.Equals(
+                            row.VariantId,
+                            sampleName,
+                            StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            "P250 imported Good row is missing.");
+                    if (rows.Count != 2
+                        || shellHost.RecipeCommands.SelectedValidationSetOption?.OkCount != 1
+                        || shellHost.RecipeCommands.SelectedValidationSetOption?.NgCount != 1
+                        || sample.ExpectedMetrics.Count != 2
+                        || string.IsNullOrWhiteSpace(goodRow.Image.Sha256)
+                        || !string.Equals(
+                            goodRow.Image.Sha256,
+                            OpenVisionRecipeValidationSetStorage.ComputeFileSha256(
+                                goodRow.Path),
+                            StringComparison.OrdinalIgnoreCase)
+                        || !string.Equals(
+                            goodRow.Image.ExpectedMetricName,
+                            "ResultCount;ScoreMax",
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            goodRow.Image.ExpectedMetricMinimum,
+                            "3;80",
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            goodRow.Image.ExpectedMetricMaximum,
+                            "3;100",
+                            StringComparison.Ordinal)
+                        || !goodRow.ExpectedMetricText.Contains(
+                            "ResultCount [3..3]",
+                            StringComparison.Ordinal)
+                        || !goodRow.ExpectedMetricText.Contains(
+                            "ScoreMax [80..100]",
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "P250 imported set lost pair roles, SHA-256, or multi-metric gates. "
+                            + shellHost.RecipeCommands.ValidationSetSelectionSummaryText);
+                    }
+
+                    QualifiedRecipeValidationImageSource qualifiedMetricProbe =
+                        new QualifiedRecipeValidationImageSource
+                        {
+                            VariantId = goodRow.Image.VariantId,
+                            ExpectedMetricName = goodRow.Image.ExpectedMetricName,
+                            ExpectedMetricMinimum = goodRow.Image.ExpectedMetricMinimum,
+                            ExpectedMetricMaximum = goodRow.Image.ExpectedMetricMaximum
+                        };
+                    QualifiedRecipeValidationImageSource invalidQualifiedMetricProbe =
+                        new QualifiedRecipeValidationImageSource
+                        {
+                            VariantId = goodRow.Image.VariantId,
+                            ExpectedMetricName = "ResultCount;ScoreMax",
+                            ExpectedMetricMinimum = "3;80;999",
+                            ExpectedMetricMaximum = "3;100"
+                        };
+                    if (!QualifiedRecipeSnapshotPreflight.TryValidateVariantContract(
+                            qualifiedMetricProbe,
+                            out string qualifiedMetricError)
+                        || QualifiedRecipeSnapshotPreflight.TryValidateVariantContract(
+                            invalidQualifiedMetricProbe,
+                            out _))
+                    {
+                        throw new InvalidOperationException(
+                            "P250 Qualified Snapshot multi-metric preflight contract failed: "
+                            + qualifiedMetricError);
+                    }
+
+                    if (!OpenVisionRecipeValidationSetStorage.TryLoad(
+                            recipeName,
+                            out OpenVisionRecipeValidationSetDocument reloaded,
+                            out string reloadError))
+                    {
+                        throw new InvalidOperationException(
+                            "P250 validation set reload failed: " + reloadError);
+                    }
+
+                    OpenVisionRecipeValidationSet persistedSet =
+                        reloaded.Sets.SingleOrDefault(set => string.Equals(
+                            set?.Name,
+                            importedSetName,
+                            StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            "P250 imported set was not persisted.");
+                    if (persistedSet.Images.Count != 2
+                        || persistedSet.Images.Any(image =>
+                            string.IsNullOrWhiteSpace(image?.Sha256)))
+                    {
+                        throw new InvalidOperationException(
+                            "P250 persisted set did not retain both image hashes.");
+                    }
+
+                    if (!shellHost.RecipeCommands
+                        .CreateValidationSetFromSelectedPairForTest()
+                        || shellHost.RecipeCommands.ValidationSetOptions.Count(option =>
+                            string.Equals(
+                                option.Name,
+                                importedSetName,
+                                StringComparison.Ordinal)) != 1
+                        || shellHost.RecipeCommands.ValidationSetImageRows.Count != 2
+                        || (!shellHost.RecipeCommands.ValidationSuiteStatusText.Contains(
+                                "Updated",
+                                StringComparison.OrdinalIgnoreCase)
+                            && !shellHost.RecipeCommands.ValidationSuiteStatusText.Contains(
+                                "갱신",
+                                StringComparison.Ordinal)))
+                    {
+                        throw new InvalidOperationException(
+                            "P250 repeat import duplicated the set or did not report an update. "
+                            + "Sets="
+                            + string.Join(
+                                ",",
+                                shellHost.RecipeCommands.ValidationSetOptions
+                                    .Select(option => option.Name))
+                            + " | Rows="
+                            + shellHost.RecipeCommands.ValidationSetImageRows.Count
+                            + " | Status="
+                            + shellHost.RecipeCommands.ValidationSuiteStatusText);
+                    }
+
+                    if (shellHost.NativePreviewRunCount != previewRunsBefore
+                        || shellHost.LayerDocumentCount != layerCountBefore
+                        || !string.Equals(
+                            shellHost.WorkspaceLayerTitle,
+                            workspaceLayerBefore,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            shellHost.ActiveNativeRouteInputLayerNameForTest,
+                            inputRouteBefore,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            shellHost.ActiveNativeRouteOutputLayerNameForTest,
+                            outputRouteBefore,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "P250 pair import changed Preview/Run, layers, workspace, or routing.");
+                    }
+
+                    ToggleButton recipeManagerButton =
+                        FindNamedVisualChild<ToggleButton>(
+                            shellHost,
+                            "btnHostRecipeManager")
+                        ?? throw new InvalidOperationException(
+                            "P250 Recipe Manager button is missing.");
+                    recipeManagerButton.IsChecked = true;
+                    Pump(80);
+                    ToggleButton advancedToggle =
+                        FindNamedVisualChild<ToggleButton>(
+                            shellHost,
+                            "recipeAdvancedReviewToggle")
+                        ?? throw new InvalidOperationException(
+                            "P250 advanced review toggle is missing.");
+                    advancedToggle.IsChecked = true;
+                    TabItem pipelineTab =
+                        FindNamedVisualChild<TabItem>(
+                            shellHost,
+                            "tabRecipePipeline")
+                        ?? throw new InvalidOperationException(
+                            "P250 Pipeline tab is missing.");
+                    pipelineTab.IsSelected = true;
+                    Pump(80);
+
+                    FrameworkElement importButton =
+                        FindVisualChildren<FrameworkElement>(shellHost)
+                            .FirstOrDefault(element => string.Equals(
+                                System.Windows.Automation.AutomationProperties
+                                    .GetAutomationId(element),
+                                "HostRecipeCreateValidationSetFromPairButton",
+                                StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            "P250 pair import button is missing from Recipe Manager.");
+                    importButton.BringIntoView();
+                    shellHost.UpdateLayout();
+                    Pump(80);
+                    TabItem runHistoryTab =
+                        FindNamedVisualChild<TabItem>(
+                            shellHost,
+                            "tabRecipePipelineRunHistory")
+                        ?? throw new InvalidOperationException(
+                            "P250 Run History tab is missing.");
+                    runHistoryTab.IsSelected = true;
+                    Pump(80);
+                    pipelineTab.IsSelected = true;
+                    importButton.BringIntoView();
+                    shellHost.UpdateLayout();
+                    Pump(80);
+                },
+                captureFloatingToolWindow: false,
+                captureScreen: true);
+    }
+
+    private static CaptureResult CaptureP253WorkspaceSampleRecipeContextSync(
+        string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        string recipeName =
+            "Smoke_WorkspaceSampleSync_" + Guid.NewGuid().ToString("N");
+        const string sampleName = "Public_Matching_DiePad_Good";
+        const string expectedPipelineName =
+            "Sample_Public_Matching_DiePad_Good";
+        const string cancelledSampleName = "Public_Blob_Particles_Good";
+
+        OpenVisionShellHostView shellHost =
+            CreateShellHost(recipeName, seedMainLayer: false);
+        try
+        {
+            return CaptureWindowWithContent(
+                shellHost,
+                outputPath,
+                1600,
+                900,
+                () =>
+                {
+                    int previewRunsBefore = shellHost.NativePreviewRunCount;
+
+                    if (!shellHost.OpenWorkspaceSampleForTest(sampleName))
+                    {
+                        throw new InvalidOperationException(
+                            "P253 could not open the public Matching sample.");
+                    }
+
+                    if (!string.Equals(
+                            shellHost.ActivePipelineNameForTest,
+                            expectedPipelineName,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            shellHost.RecipeManagerSelectedPipelineNameForTest,
+                            expectedPipelineName,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            shellHost.RecipeManagerSelectedSampleNameForTest,
+                            sampleName,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "P253 workspace sample did not synchronize the "
+                            + "Recipe Manager sample/pipeline context. Active="
+                            + shellHost.ActivePipelineNameForTest
+                            + " | SelectedPipeline="
+                            + shellHost.RecipeManagerSelectedPipelineNameForTest
+                            + " | SelectedSample="
+                            + shellHost.RecipeManagerSelectedSampleNameForTest);
+                    }
+                    if (shellHost.NativePreviewRunCount != previewRunsBefore)
+                    {
+                        throw new InvalidOperationException(
+                            "P253 opening and synchronizing a workspace sample "
+                            + "ran Preview/Run automatically.");
+                    }
+
+                    int layerCountAfterSampleOpen =
+                        shellHost.LayerDocumentCount;
+                    string routeInputAfterSampleOpen =
+                        shellHost.ActiveNativeRouteInputLayerNameForTest;
+                    string routeOutputAfterSampleOpen =
+                        shellHost.ActiveNativeRouteOutputLayerNameForTest;
+
+                    if (!shellHost.RecipeCommands
+                        .CreateValidationSetFromSelectedPairForTest())
+                    {
+                        throw new InvalidOperationException(
+                            "P253 synchronized catalog pair import failed: "
+                            + shellHost.RecipeCommands.ValidationSuiteStatusText);
+                    }
+
+                    IReadOnlyList<OpenVisionRecipeValidationSetImageRow> rows =
+                        shellHost.RecipeCommands.ValidationSetImageRows;
+                    if (rows.Count != 2
+                        || !rows.Any(row => string.Equals(
+                            row?.VariantId,
+                            sampleName,
+                            StringComparison.Ordinal))
+                        || !rows.Any(row => string.Equals(
+                            row?.VariantId,
+                            "Public_Matching_DiePad_NoTarget_Bad",
+                            StringComparison.Ordinal)))
+                    {
+                        throw new InvalidOperationException(
+                            "P253 imported the wrong catalog pair after "
+                            + "workspace sample synchronization. Rows="
+                            + string.Join(
+                                ",",
+                                rows.Select(row => row?.VariantId ?? "-")));
+                    }
+
+                    OpenVisionRecipePipelineStepPreview firstStep =
+                        shellHost.RecipeCommands.SelectedRecipeSummary
+                            .PipelinePreviewSteps
+                            .FirstOrDefault()
+                        ?? throw new InvalidOperationException(
+                            "P253 synchronized sample pipeline has no Step.");
+                    shellHost.RecipeCommands.SelectedPipelinePreviewStep =
+                        firstStep;
+                    shellHost.RecipeCommands.LoadSelectedStepParametersCommand
+                        .Execute(null);
+                    shellHost.RecipeCommands
+                        .MarkSelectedStepEditDirtyForQualificationTest();
+                    shellHost.QueuePendingRecipeEditDecisionForTest(
+                        OpenVisionRecipePendingEditDecision.Cancel);
+
+                    if (shellHost.OpenWorkspaceSampleForTest(
+                            cancelledSampleName)
+                        || !shellHost.RecipeCommands.IsSelectedStepEditDirty
+                        || !string.Equals(
+                            shellHost.ActivePipelineNameForTest,
+                            expectedPipelineName,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            shellHost.RecipeManagerSelectedSampleNameForTest,
+                            sampleName,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "P253 pending-edit cancellation did not fail closed "
+                            + "before changing the workspace sample context.");
+                    }
+
+                    shellHost.RecipeCommands
+                        .DiscardSelectedStepEditForQualificationTest();
+
+                    if (shellHost.NativePreviewRunCount != previewRunsBefore
+                        || shellHost.LayerDocumentCount
+                            != layerCountAfterSampleOpen
+                        || !string.Equals(
+                            shellHost.ActiveNativeRouteInputLayerNameForTest,
+                            routeInputAfterSampleOpen,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            shellHost.ActiveNativeRouteOutputLayerNameForTest,
+                            routeOutputAfterSampleOpen,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "P253 context synchronization or pair persistence "
+                            + "changed Preview/Run, layers, or routing.");
+                    }
+
+                    ToggleButton recipeManagerButton =
+                        FindNamedVisualChild<ToggleButton>(
+                            shellHost,
+                            "btnHostRecipeManager")
+                        ?? throw new InvalidOperationException(
+                            "P253 Recipe Manager button is missing.");
+                    recipeManagerButton.IsChecked = true;
+                    Pump(80);
+                    ToggleButton advancedToggle =
+                        FindNamedVisualChild<ToggleButton>(
+                            shellHost,
+                            "recipeAdvancedReviewToggle")
+                        ?? throw new InvalidOperationException(
+                            "P253 advanced review toggle is missing.");
+                    advancedToggle.IsChecked = true;
+                    TabItem pipelineTab =
+                        FindNamedVisualChild<TabItem>(
+                            shellHost,
+                            "tabRecipePipeline")
+                        ?? throw new InvalidOperationException(
+                            "P253 Pipeline tab is missing.");
+                    pipelineTab.IsSelected = true;
+                    Pump(80);
+
+                    FrameworkElement pairButton =
+                        FindVisualChildren<FrameworkElement>(shellHost)
+                            .First(element => string.Equals(
+                                System.Windows.Automation.AutomationProperties
+                                    .GetAutomationId(element),
+                                "HostRecipeCreateValidationSetFromPairButton",
+                                StringComparison.Ordinal));
+                    pairButton.BringIntoView();
+                    shellHost.UpdateLayout();
+                    Pump(80);
+                },
+                captureFloatingToolWindow: false,
+                captureScreen: true);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static CaptureResult CaptureP254DirectTeachingPipelinePersistence(
+        string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        string recipeName =
+            "Smoke_DirectTeachingPersistence_" + Guid.NewGuid().ToString("N");
+        const string sampleName = "Public_Blob_Particles_Good";
+        const string expectedPipelineName =
+            "Sample_Public_Blob_Particles_Good";
+
+        OpenVisionShellHostView shellHost =
+            CreateShellHost(recipeName, seedMainLayer: false);
+        try
+        {
+            return CaptureWindowWithContent(
+                shellHost,
+                outputPath,
+                1600,
+                900,
+                () =>
+                {
+                    if (!shellHost.OpenWorkspaceSampleForTest(sampleName))
+                    {
+                        throw new InvalidOperationException(
+                            "P254 could not open the public Blob sample.");
+                    }
+
+                    string activeRecipeName =
+                        shellHost.ActiveRecipeContextNameForTest;
+                    int originalStepCount =
+                        shellHost.ActivePipelineStepCountForTest;
+                    if (string.IsNullOrWhiteSpace(activeRecipeName)
+                        || !string.Equals(
+                            shellHost.ActivePipelineNameForTest,
+                            expectedPipelineName,
+                            StringComparison.Ordinal)
+                        || originalStepCount < 2)
+                    {
+                        throw new InvalidOperationException(
+                            "P254 public Blob sample did not establish the "
+                            + "expected Recipe/Pipeline context. Recipe="
+                            + activeRecipeName
+                            + " | Pipeline="
+                            + shellHost.ActivePipelineNameForTest
+                            + " | Steps="
+                            + originalStepCount.ToString(
+                                CultureInfo.InvariantCulture));
+                    }
+
+                    shellHost.SelectToolForTest(VISION_MENU.Blob);
+                    Pump(80);
+                    ClickFloatingButtonByName(
+                        "btnPresetBasic",
+                        "P254 Blob Basic preset");
+                    Button addButton = GetActiveToolButtonByName(
+                        "btnAddPipeline",
+                        "P254 add-and-save button");
+                    string expectedAddText =
+                        OpenVisionLanguageService.T("ToolView.AddPipeline");
+                    if (!FindVisualChildren<TextBlock>(addButton)
+                        .Any(text => string.Equals(
+                            text.Text,
+                            expectedAddText,
+                            StringComparison.Ordinal)))
+                    {
+                        throw new InvalidOperationException(
+                            "P254 add action does not state that it saves. "
+                            + "Expected=" + expectedAddText);
+                    }
+
+                    shellHost.RunActiveNativePreviewForTest();
+                    Pump(80);
+                    if (!shellHost.HasNativePreviewResult)
+                    {
+                        throw new InvalidOperationException(
+                            "P254 explicit Blob Preview produced no result: "
+                            + shellHost.ActiveNativeStatusText);
+                    }
+
+                    int previewRunsBeforeAdd =
+                        shellHost.NativePreviewRunCount;
+                    int layerCountBeforeAdd = shellHost.LayerDocumentCount;
+                    string activeLayerBeforeAdd =
+                        shellHost.ActiveHostLayerTitle;
+                    string inputRouteBeforeAdd =
+                        shellHost.ActiveNativeRouteInputLayerNameForTest;
+                    string outputRouteBeforeAdd =
+                        shellHost.ActiveNativeRouteOutputLayerNameForTest;
+
+                    VisionPipelineStep addedStep =
+                        shellHost.AddActiveNativePipelineStepForTest();
+                    if (addedStep == null)
+                    {
+                        throw new InvalidOperationException(
+                            "P254 direct Blob Step add/save failed: "
+                            + shellHost.ActiveNativeStatusText);
+                    }
+
+                    VisionPipeline? reopenedPipeline =
+                        VisionPipelineStorage.Load(
+                            activeRecipeName,
+                            expectedPipelineName);
+                    VisionPipelineStep? reopenedStep =
+                        reopenedPipeline?.Steps?.LastOrDefault();
+                    if (reopenedPipeline?.Steps?.Count
+                            != originalStepCount + 1
+                        || reopenedStep == null
+                        || !string.Equals(
+                            reopenedStep.Name,
+                            addedStep.Name,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            reopenedStep.ToolType,
+                            "Blob",
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "P254 persisted Pipeline did not reopen with the "
+                            + "new Blob Step.");
+                    }
+
+                    string savedStatus = shellHost.ActiveNativeStatusText;
+                    if (!savedStatus.Contains(
+                            addedStep.Name,
+                            StringComparison.Ordinal)
+                        || !savedStatus.Contains(
+                            activeRecipeName,
+                            StringComparison.Ordinal)
+                        || !savedStatus.Contains(
+                            expectedPipelineName,
+                            StringComparison.Ordinal)
+                        || !savedStatus.Contains(
+                            "Pipeline 보기",
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "P254 save status did not expose the exact "
+                            + "Recipe/Pipeline and next action. Status="
+                            + savedStatus);
+                    }
+
+                    if (shellHost.NativePreviewRunCount
+                            != previewRunsBeforeAdd
+                        || shellHost.LayerDocumentCount
+                            != layerCountBeforeAdd
+                        || !string.Equals(
+                            shellHost.ActiveHostLayerTitle,
+                            activeLayerBeforeAdd,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            shellHost.ActiveNativeRouteInputLayerNameForTest,
+                            inputRouteBeforeAdd,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            shellHost.ActiveNativeRouteOutputLayerNameForTest,
+                            outputRouteBeforeAdd,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "P254 add/save changed Preview/Run, layers, "
+                            + "active layer, or routing.");
+                    }
+
+                    WriteFloatingToolWindowCapture(outputPath);
+                    shellHost.CloseActiveWpfToolWindowForTest();
+                    Pump(60);
+                    shellHost.RecipeCommands.RefreshOptions();
+                    Pump(80);
+                    if (!string.Equals(
+                            shellHost.RecipeManagerSelectedPipelineNameForTest,
+                            expectedPipelineName,
+                            StringComparison.Ordinal)
+                        || shellHost.RecipeCommands.SelectedRecipeSummary
+                            ?.PipelinePreviewSteps?.Count
+                            != originalStepCount + 1)
+                    {
+                        throw new InvalidOperationException(
+                            "P254 Recipe Manager refresh/reopen did not "
+                            + "retain the saved Pipeline and Step.");
+                    }
+
+                    shellHost.OpenSamplePipelineForTest();
+                    Pump(120);
+                    if (shellHost.PipelineReviewStepCount
+                            != originalStepCount + 1)
+                    {
+                        throw new InvalidOperationException(
+                            "P254 Pipeline Review did not reopen the saved "
+                            + "Step list.");
+                    }
+
+                    WaitForTaskWithPump(
+                        shellHost.RunPipelineReviewForTestAsync(),
+                        30000,
+                        "P254 explicit Run Review");
+                    Pump(120);
+                    shellHost.SelectPipelineReviewStepForTest(
+                        originalStepCount,
+                        OpenVisionLab.Pipeline.Controls
+                            .PipelineFlowPreviewMode.Output);
+                    Pump(80);
+                    if (!shellHost.HasPipelineReviewOutputPreview
+                        || string.IsNullOrWhiteSpace(
+                            shellHost.PipelineReviewResultSummaryText)
+                        || !shellHost.PipelineReviewSelectedStepName
+                            .Contains(
+                                addedStep.Name,
+                                StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "P254 explicit Run Review did not retain the "
+                            + "added Step result/drawing. Selected="
+                            + shellHost.PipelineReviewSelectedStepName
+                            + " | Summary="
+                            + shellHost.PipelineReviewResultSummaryText);
+                    }
+                },
+                captureFloatingToolWindow: true,
+                captureScreen: false);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static CaptureResult CaptureP251FailureCorrectionHandoff(
+        string outputPath,
+        bool rerunSameValidationSet)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        string recipeName =
+            "Smoke_FailureCorrection_" + Guid.NewGuid().ToString("N");
+        const string pipelineName = "Failure_Correction_Pipeline";
+        const string sampleName = "Public_Matching_DiePad_Good";
+        VisionPipelineSampleCatalogItem sample = VisionPipelineSampleCatalogItem
+            .LoadRunnable(VisionPipelineSampleCatalogSourceKind.Public)
+            .FirstOrDefault(item => string.Equals(
+                item?.SampleName,
+                sampleName,
+                StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                "P251 public sample is missing: " + sampleName);
+        if (!SerializeHelper.TryLoadFromXmlFile(
+                sample.PipelineFullPath,
+                out VisionPipeline pipeline)
+            || pipeline == null)
+        {
+            throw new InvalidOperationException(
+                "P251 sample pipeline could not be loaded: "
+                + sample.PipelineFullPath);
+        }
+
+        pipeline.Name = pipelineName;
+        VisionPipelineStorage.Save(recipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipelineName);
+
+        OpenVisionShellHostView shellHost =
+            CreateShellHost(recipeName, seedMainLayer: true);
+        try
+        {
+            return CaptureWindowWithContent(
+                shellHost,
+                outputPath,
+                1600,
+                900,
+                () =>
+                {
+                    ToggleButton recipeManagerButton =
+                        FindNamedVisualChild<ToggleButton>(
+                            shellHost,
+                            "btnHostRecipeManager")
+                        ?? throw new InvalidOperationException(
+                            "P251 Recipe Manager button is missing.");
+                    recipeManagerButton.IsChecked = true;
+                    Pump(80);
+                    ToggleButton advancedToggle =
+                        FindNamedVisualChild<ToggleButton>(
+                            shellHost,
+                            "recipeAdvancedReviewToggle")
+                        ?? throw new InvalidOperationException(
+                            "P251 advanced review toggle is missing.");
+                    advancedToggle.IsChecked = true;
+                    TabItem pipelineTab =
+                        FindNamedVisualChild<TabItem>(
+                            shellHost,
+                            "tabRecipePipeline")
+                        ?? throw new InvalidOperationException(
+                            "P251 Pipeline tab is missing.");
+                    pipelineTab.IsSelected = true;
+                    Pump(80);
+
+                    OpenVisionRecipeSampleOption sampleOption =
+                        shellHost.RecipeCommands.SampleOptions.FirstOrDefault(
+                            option => string.Equals(
+                                option?.SampleName,
+                                sampleName,
+                                StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            "P251 Recipe Manager sample selector did not expose "
+                            + sampleName);
+                    shellHost.RecipeCommands.SelectedSampleOption = sampleOption;
+                    if (!shellHost.RecipeCommands
+                        .CreateValidationSetFromSelectedPairForTest())
+                    {
+                        throw new InvalidOperationException(
+                            "P251 could not save the catalog pair as a Validation Set: "
+                            + shellHost.RecipeCommands.ValidationSuiteStatusText);
+                    }
+
+                    int previewRunsBefore = shellHost.NativePreviewRunCount;
+                    int layerCountBefore = shellHost.LayerDocumentCount;
+                    string workspaceLayerBefore = shellHost.WorkspaceLayerTitle;
+                    string inputRouteBefore =
+                        shellHost.ActiveNativeRouteInputLayerNameForTest;
+                    string outputRouteBefore =
+                        shellHost.ActiveNativeRouteOutputLayerNameForTest;
+
+                    if (!shellHost.RecipeCommands.RunValidationSuiteCommand
+                        .CanExecute(null))
+                    {
+                        throw new InvalidOperationException(
+                            "P251 explicit Validation Set run was disabled: "
+                            + shellHost.RecipeCommands.ValidationSuiteSummaryText);
+                    }
+
+                    shellHost.RecipeCommands.RunValidationSuiteCommand.Execute(null);
+                    DateTime deadline = DateTime.UtcNow.AddSeconds(30);
+                    while (DateTime.UtcNow < deadline)
+                    {
+                        Pump(10);
+                        if (shellHost.RecipeCommands.RunValidationSuiteCommand
+                                .CanExecute(null)
+                            && shellHost.RecipeCommands.RecentBatchRunOptions.Any(
+                                option => !string.IsNullOrWhiteSpace(
+                                    option?.SummaryPath)))
+                        {
+                            break;
+                        }
+                    }
+
+                    OpenVisionRecipeBatchRunOption savedRun =
+                        shellHost.RecipeCommands.RecentBatchRunOptions
+                            .FirstOrDefault(option =>
+                                !string.IsNullOrWhiteSpace(option?.SummaryPath))
+                        ?? throw new InvalidOperationException(
+                            "P251 Validation Set run did not persist Run History.");
+                    shellHost.RecipeCommands.SelectedRecentBatchRunOption = savedRun;
+                    OpenVisionRecipeBatchSampleResultOption failedSample =
+                        savedRun.SampleResults.FirstOrDefault(result =>
+                            result != null
+                            && result.HasExpectedOutcome
+                            && !result.ExpectedSuccess
+                            && !string.IsNullOrWhiteSpace(result.FailedStep))
+                        ?? throw new InvalidOperationException(
+                            "P251 retained pair did not expose an NG row with a linked failed Step.");
+                    shellHost.RecipeCommands.SelectedRecentBatchSampleResultOption =
+                        failedSample;
+                    Pump(40);
+
+                    TabItem runHistoryTab =
+                        FindNamedVisualChild<TabItem>(
+                            shellHost,
+                            "tabRecipePipelineRunHistory")
+                        ?? throw new InvalidOperationException(
+                            "P251 Run History tab is missing.");
+                    runHistoryTab.IsSelected = true;
+                    Pump(80);
+                    AssertVisibleAutomationIds(
+                        shellHost,
+                        "P251 explicit correction action",
+                        "HostRecipeRunHistoryFailureActionPanel",
+                        "HostRecipeRunHistoryPrepareCorrectionButton");
+                    FrameworkElement correctionButton =
+                        FindVisualChildren<FrameworkElement>(shellHost)
+                            .First(element => string.Equals(
+                                System.Windows.Automation.AutomationProperties
+                                    .GetAutomationId(element),
+                                "HostRecipeRunHistoryPrepareCorrectionButton",
+                                StringComparison.Ordinal));
+                    correctionButton.BringIntoView();
+                    shellHost.UpdateLayout();
+                    Pump(80);
+                    SaveVisibleAutomationElementPng(
+                        shellHost,
+                        "HostRecipeRunHistoryFailureActionPanel",
+                        outputPath,
+                        "p251-failure-action-panel.png");
+                    SaveVisibleAutomationElementPng(
+                        shellHost,
+                        "HostRecipeManagerPanel",
+                        outputPath,
+                        "p251-run-history-before-action.png");
+
+                    string failedInputLayer =
+                        shellHost.RecipeCommands.SelectedPipelinePreviewStep
+                            ?.InputLayer
+                        ?? "Main";
+                    if (!shellHost.LoadImageIntoLayerForTest(
+                            failedInputLayer,
+                            sample.ImageFullPath))
+                    {
+                        throw new InvalidOperationException(
+                            "P251 could not seed the pre-correction input image.");
+                    }
+
+                    shellHost.RecipeCommands.LoadSelectedStepParametersCommand
+                        .Execute(null);
+                    shellHost.RecipeCommands.MarkSelectedStepEditDirty();
+                    using Bitmap beforeCancelledPrepare =
+                        shellHost.GetLayerImageCloneForTest(failedInputLayer);
+                    string beforeCancelledPrepareHash =
+                        VisionPipelineScaleCalibrationStorage
+                            .ComputeBitmapSha256(beforeCancelledPrepare);
+                    shellHost.QueuePendingRecipeEditDecisionForTest(
+                        OpenVisionRecipePendingEditDecision.Cancel);
+                    shellHost.RecipeCommands
+                        .PrepareSelectedRunFailureCorrectionCommand.Execute(null);
+                    using Bitmap afterCancelledPrepare =
+                        shellHost.GetLayerImageCloneForTest(failedInputLayer);
+                    string afterCancelledPrepareHash =
+                        VisionPipelineScaleCalibrationStorage
+                            .ComputeBitmapSha256(afterCancelledPrepare);
+                    if (!shellHost.RecipeCommands.IsSelectedStepEditDirty
+                        || !string.Equals(
+                            beforeCancelledPrepareHash,
+                            afterCancelledPrepareHash,
+                            StringComparison.OrdinalIgnoreCase)
+                        || (!shellHost.RecipeCommands.StatusText.Contains(
+                                "stopped",
+                                StringComparison.OrdinalIgnoreCase)
+                            && !shellHost.RecipeCommands.StatusText.Contains(
+                                "중단",
+                                StringComparison.Ordinal)))
+                    {
+                        throw new InvalidOperationException(
+                            "P251 cancelled pending-edit transition changed the input image or discarded the edit.");
+                    }
+
+                    shellHost.QueuePendingRecipeEditDecisionForTest(
+                        OpenVisionRecipePendingEditDecision.Discard);
+                    if (!shellHost.RecipeCommands
+                        .PrepareSelectedRunFailureCorrectionCommand
+                        .CanExecute(null))
+                    {
+                        throw new InvalidOperationException(
+                            "P251 prepare-correction command was disabled for the retained failed row.");
+                    }
+
+                    shellHost.RecipeCommands
+                        .PrepareSelectedRunFailureCorrectionCommand.Execute(null);
+                    Pump(100);
+
+                    OpenVisionRecipePipelineStepPreview? selectedStep =
+                        shellHost.RecipeCommands.SelectedPipelinePreviewStep;
+                    TabItem xmlStepsTab =
+                        FindNamedVisualChild<TabItem>(
+                            shellHost,
+                            "tabRecipePipelineXmlSteps")
+                        ?? throw new InvalidOperationException(
+                            "P251 XML/Steps tab is missing.");
+                    string failedSamplePath = !string.IsNullOrWhiteSpace(
+                        failedSample.SampleImagePath)
+                        ? failedSample.SampleImagePath
+                        : failedSample.ReportPath;
+                    using Bitmap expectedImage = new Bitmap(failedSamplePath);
+                    using Bitmap loadedImage =
+                        shellHost.GetLayerImageCloneForTest(
+                            selectedStep?.InputLayer ?? string.Empty);
+                    string expectedHash =
+                        VisionPipelineScaleCalibrationStorage
+                            .ComputeBitmapSha256(expectedImage);
+                    string loadedHash =
+                        VisionPipelineScaleCalibrationStorage
+                            .ComputeBitmapSha256(loadedImage);
+                    bool statusReady =
+                        shellHost.RecipeCommands.StatusText.Contains(
+                            "Correction preparation complete",
+                            StringComparison.OrdinalIgnoreCase)
+                        || shellHost.RecipeCommands.StatusText.Contains(
+                            "실패 수정 준비 완료",
+                            StringComparison.Ordinal);
+
+                    if (selectedStep == null
+                        || !failedSample.FailedStep.Contains(
+                            selectedStep.Name,
+                            StringComparison.Ordinal)
+                        || shellHost.RecipeCommands.SelectedStepEditObject == null
+                        || shellHost.RecipeCommands.IsSelectedStepEditDirty
+                        || xmlStepsTab.IsSelected != true
+                        || !string.Equals(
+                            expectedHash,
+                            loadedHash,
+                            StringComparison.OrdinalIgnoreCase)
+                        || !statusReady)
+                    {
+                        throw new InvalidOperationException(
+                            "P251 did not prepare the failed sample, Step parameters, and XML/Steps editor together. "
+                            + $"Selected={selectedStep?.Name}; Failed={failedSample.FailedStep}; "
+                            + $"Edit={(shellHost.RecipeCommands.SelectedStepEditObject != null)}; "
+                            + $"Dirty={shellHost.RecipeCommands.IsSelectedStepEditDirty}; "
+                            + $"XmlTab={xmlStepsTab.IsSelected}; "
+                            + $"Hash={string.Equals(expectedHash, loadedHash, StringComparison.OrdinalIgnoreCase)}; "
+                            + shellHost.RecipeCommands.StatusText);
+                    }
+
+                    if (shellHost.NativePreviewRunCount != previewRunsBefore
+                        || shellHost.LayerDocumentCount != layerCountBefore
+                        || !string.Equals(
+                            shellHost.WorkspaceLayerTitle,
+                            workspaceLayerBefore,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            shellHost.ActiveNativeRouteInputLayerNameForTest,
+                            inputRouteBefore,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            shellHost.ActiveNativeRouteOutputLayerNameForTest,
+                            outputRouteBefore,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "P251 correction preparation changed Preview/Run, layers, workspace selection, or routing.");
+                    }
+
+                    if (rerunSameValidationSet)
+                    {
+                        string sourceSetName =
+                            savedRun.RunSummary?.SuiteName
+                            ?? string.Empty;
+                        OpenVisionRecipePairRunSummary pairBeforeRerun =
+                            shellHost.RecipeCommands.LatestPairRunSummary;
+                        if (!ContainsAny(
+                                shellHost.RecipeCommands.CorrectedOutputRerunText,
+                                "동일 세트 재검사",
+                                "Rerun same set")
+                            || !shellHost.RecipeCommands
+                                .CorrectedOutputRerunToolTipText.Contains(
+                                    sourceSetName,
+                                    StringComparison.Ordinal)
+                            || !shellHost.RecipeCommands
+                                .RerunCorrectedOutputCommand.CanExecute(null))
+                        {
+                            throw new InvalidOperationException(
+                                "P252 corrected-output action did not resolve the source Validation Set. "
+                                + $"Text='{shellHost.RecipeCommands.CorrectedOutputRerunText}', "
+                                + $"Tip='{shellHost.RecipeCommands.CorrectedOutputRerunToolTipText}', "
+                                + $"Set='{sourceSetName}'.");
+                        }
+
+                        FrameworkElement rerunButton =
+                            FindVisualChildren<FrameworkElement>(shellHost)
+                                .FirstOrDefault(element => string.Equals(
+                                    AutomationProperties.GetAutomationId(element),
+                                    "HostRecipeCorrectedOutputRerunButton",
+                                    StringComparison.Ordinal))
+                            ?? throw new InvalidOperationException(
+                                "P252 corrected-output rerun button is missing.");
+                        rerunButton.BringIntoView();
+                        shellHost.UpdateLayout();
+                        Pump(80);
+                        SaveVisibleAutomationElementPng(
+                            shellHost,
+                            "HostRecipeManagerPanel",
+                            outputPath,
+                            "p252-same-validation-rerun-action.png");
+
+                        int recentRunCountBeforeApply =
+                            shellHost.RecipeCommands.RecentBatchRunOptions.Count;
+                        shellHost.RecipeCommands
+                            .ApplySelectedStepParametersCommand.Execute(null);
+                        Pump(100);
+                        if (shellHost.NativePreviewRunCount != previewRunsBefore
+                            || shellHost.LayerDocumentCount != layerCountBefore
+                            || shellHost.RecipeCommands
+                                .RecentBatchRunOptions.Count
+                                != recentRunCountBeforeApply
+                            || !ReferenceEquals(
+                                shellHost.RecipeCommands.LatestPairRunSummary,
+                                pairBeforeRerun))
+                        {
+                            throw new InvalidOperationException(
+                                "P252 no-op XML apply executed a run or changed layers.");
+                        }
+
+                        HashSet<string> previousSummaryPaths =
+                            shellHost.RecipeCommands.RecentBatchRunOptions
+                                .Select(option => option?.SummaryPath ?? string.Empty)
+                                .Where(path => !string.IsNullOrWhiteSpace(path))
+                                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                        shellHost.RecipeCommands
+                            .RerunCorrectedOutputCommand.Execute(null);
+                        DateTime rerunDeadline = DateTime.UtcNow.AddSeconds(30);
+                        OpenVisionRecipeBatchRunOption? correctedRun = null;
+                        while (DateTime.UtcNow < rerunDeadline)
+                        {
+                            Pump(10);
+                            correctedRun = shellHost.RecipeCommands
+                                .RecentBatchRunOptions
+                                .FirstOrDefault(option =>
+                                    !string.IsNullOrWhiteSpace(option?.SummaryPath)
+                                    && !previousSummaryPaths.Contains(
+                                        option.SummaryPath));
+                            if (correctedRun != null
+                                && shellHost.RecipeCommands
+                                    .RunValidationSuiteCommand.CanExecute(null))
+                            {
+                                break;
+                            }
+                        }
+
+                        if (correctedRun?.RunSummary == null
+                            || !string.Equals(
+                                correctedRun.RunSummary.SuiteKind,
+                                "LocalValidationSet",
+                                StringComparison.Ordinal)
+                            || !string.Equals(
+                                correctedRun.RunSummary.SuiteName,
+                                sourceSetName,
+                                StringComparison.Ordinal)
+                            || correctedRun.SampleResults.Count != 2
+                            || !ReferenceEquals(
+                                shellHost.RecipeCommands.LatestPairRunSummary,
+                                pairBeforeRerun)
+                            || !shellHost.RecipeCommands.IsLocalValidationSetSelected
+                            || !string.Equals(
+                                shellHost.RecipeCommands
+                                    .SelectedValidationSetOption?.Name,
+                                sourceSetName,
+                                StringComparison.Ordinal)
+                            || shellHost.NativePreviewRunCount != previewRunsBefore
+                            || shellHost.LayerDocumentCount != layerCountBefore
+                            || !string.Equals(
+                                shellHost.ActiveNativeRouteInputLayerNameForTest,
+                                inputRouteBefore,
+                                StringComparison.Ordinal)
+                            || !string.Equals(
+                                shellHost.ActiveNativeRouteOutputLayerNameForTest,
+                                outputRouteBefore,
+                                StringComparison.Ordinal)
+                            || !string.Equals(
+                                shellHost.WorkspaceLayerTitle,
+                                workspaceLayerBefore,
+                                StringComparison.Ordinal))
+                        {
+                            throw new InvalidOperationException(
+                                "P252 did not persist a second run of the same Validation Set without pair/Preview/layer/route side effects. "
+                                + $"Run='{correctedRun?.RunSummary?.SuiteKind}/{correctedRun?.RunSummary?.SuiteName}', "
+                                + $"Rows={correctedRun?.SampleResults.Count}, "
+                                + $"Set='{shellHost.RecipeCommands.SelectedValidationSetOption?.Name}', "
+                                + $"PairChanged={!ReferenceEquals(shellHost.RecipeCommands.LatestPairRunSummary, pairBeforeRerun)}.");
+                        }
+
+                        shellHost.RecipeCommands.SelectedRecentBatchRunOption =
+                            correctedRun;
+                        OpenVisionRecipeBatchRunOption baselineRun =
+                            shellHost.RecipeCommands.RecentBatchRunOptions
+                                .First(option => string.Equals(
+                                    option?.SummaryPath,
+                                    savedRun.SummaryPath,
+                                    StringComparison.OrdinalIgnoreCase));
+                        shellHost.RecipeCommands
+                            .SelectedBenchmarkBaselineRunOption = baselineRun;
+                        if (shellHost.RecipeCommands
+                                .RecentBatchRunComparisonRows.Count != 2)
+                        {
+                            throw new InvalidOperationException(
+                                "P252 same-set rerun did not expose the two source rows for baseline comparison.");
+                        }
+
+                        if (!OpenVisionRecipeValidationSetStorage.TryLoad(
+                                recipeName,
+                                out OpenVisionRecipeValidationSetDocument document,
+                                out string loadError))
+                        {
+                            throw new InvalidOperationException(
+                                "P252 could not load the Validation Set for missing-source rejection: "
+                                + loadError);
+                        }
+
+                        OpenVisionRecipeValidationSet removedSet =
+                            document.Sets.First(set => string.Equals(
+                                set?.Name,
+                                sourceSetName,
+                                StringComparison.Ordinal));
+                        document.Sets.Remove(removedSet);
+                        if (!OpenVisionRecipeValidationSetStorage.TrySave(
+                                recipeName,
+                                document,
+                                out string removeError))
+                        {
+                            throw new InvalidOperationException(
+                                "P252 could not stage a missing source Validation Set: "
+                                + removeError);
+                        }
+
+                        shellHost.RecipeCommands.RefreshOptions();
+                        shellHost.RecipeCommands.SelectedRecentBatchRunOption =
+                            shellHost.RecipeCommands.RecentBatchRunOptions
+                                .First(option => string.Equals(
+                                    option?.SummaryPath,
+                                    correctedRun.SummaryPath,
+                                    StringComparison.OrdinalIgnoreCase));
+                        if (shellHost.RecipeCommands
+                                .RerunCorrectedOutputCommand.CanExecute(null)
+                            || !shellHost.RecipeCommands
+                                .CorrectedOutputRerunToolTipText.Contains(
+                                    sourceSetName,
+                                    StringComparison.Ordinal))
+                        {
+                            throw new InvalidOperationException(
+                                "P252 missing source set silently fell back to the catalog pair.");
+                        }
+
+                        document.Sets.Add(removedSet);
+                        if (!OpenVisionRecipeValidationSetStorage.TrySave(
+                                recipeName,
+                                document,
+                                out string restoreError))
+                        {
+                            throw new InvalidOperationException(
+                                "P252 could not restore the source Validation Set: "
+                                + restoreError);
+                        }
+
+                        shellHost.RecipeCommands.RefreshOptions();
+                        string correctedSummaryPath = correctedRun.SummaryPath;
+                        correctedRun = shellHost.RecipeCommands
+                            .RecentBatchRunOptions
+                            .First(option => string.Equals(
+                                option?.SummaryPath,
+                                correctedSummaryPath,
+                                StringComparison.OrdinalIgnoreCase));
+                        shellHost.RecipeCommands.SelectedRecentBatchRunOption =
+                            correctedRun;
+                        shellHost.RecipeCommands
+                            .SelectedBenchmarkBaselineRunOption =
+                            shellHost.RecipeCommands.RecentBatchRunOptions
+                                .First(option => string.Equals(
+                                    option?.SummaryPath,
+                                    savedRun.SummaryPath,
+                                    StringComparison.OrdinalIgnoreCase));
+                        pipelineTab.IsSelected = true;
+                        runHistoryTab.IsSelected = true;
+                        Pump(100);
+                        FrameworkElement comparisonPanel =
+                            FindVisualChildren<FrameworkElement>(shellHost)
+                                .FirstOrDefault(element => string.Equals(
+                                    AutomationProperties.GetAutomationId(element),
+                                    "HostRecipeRecentBatchRunComparisonPanel",
+                                    StringComparison.Ordinal))
+                            ?? throw new InvalidOperationException(
+                                "P252 Run History comparison panel is missing.");
+                        comparisonPanel.BringIntoView();
+                        shellHost.UpdateLayout();
+                        Pump(100);
+                        SaveVisibleAutomationElementPng(
+                            shellHost,
+                            "HostRecipeManagerPanel",
+                            outputPath,
+                            "p252-same-validation-rerun-history.png");
+                        return;
+                    }
+
+                    pipelineTab.IsSelected = true;
+                    xmlStepsTab.IsSelected = true;
+                    Pump(100);
+
+                    AssertVisibleAutomationIds(
+                        shellHost,
+                        "P251 failure correction handoff",
+                        "HostRecipeManagerPanel",
+                        "HostRecipePipelineXmlStepsTab",
+                        "HostRecipePipelineSelectedStepDetailPanel",
+                        "HostRecipeSelectedStepPropertyGridHost");
+                    FrameworkElement editor =
+                        FindVisualChildren<FrameworkElement>(shellHost)
+                            .FirstOrDefault(element => string.Equals(
+                                System.Windows.Automation.AutomationProperties
+                                    .GetAutomationId(element),
+                                "HostRecipeSelectedStepPropertyGridHost",
+                                StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            "P251 selected-Step editor is missing.");
+                    editor.BringIntoView();
+                    shellHost.UpdateLayout();
+                    Pump(100);
+                },
+                captureFloatingToolWindow: false,
+                captureScreen: true);
         }
         finally
         {
@@ -11958,15 +13280,20 @@ internal static class Program
                 outputPath,
                 "fixture-step-edit-applied.png");
 
-            if (!shellHost.RecipeCommands.RunSelectedSamplePairCheckCommand.CanExecute(null))
+            if (!ContainsAny(
+                    shellHost.RecipeCommands.CorrectedOutputRerunText,
+                    "Good/Bad 재검사",
+                    "Rerun Good/Bad")
+                || !shellHost.RecipeCommands
+                    .RerunCorrectedOutputCommand.CanExecute(null))
             {
                 throw new InvalidOperationException(
-                    "Fixture Good/Bad rerun command was disabled after XML apply. "
+                    "Fixture corrected-output fallback did not retain the Good/Bad rerun after XML apply. "
                     + $"Sample='{shellHost.RecipeCommands.SelectedSampleOption?.SampleName}', Pipeline='{pipelineName}'");
             }
 
             OpenVisionRecipePairRunSummary pairSummaryBeforeRerun = shellHost.RecipeCommands.LatestPairRunSummary;
-            shellHost.RecipeCommands.RunSelectedSamplePairCheckCommand.Execute(null);
+            shellHost.RecipeCommands.RerunCorrectedOutputCommand.Execute(null);
             Stopwatch rerunStopwatch = Stopwatch.StartNew();
             while (ReferenceEquals(shellHost.RecipeCommands.LatestPairRunSummary, pairSummaryBeforeRerun)
                 || !shellHost.RecipeCommands.LatestPairRunSummary.HasResult)
@@ -21361,6 +22688,7 @@ internal static class Program
 
     private static CaptureResult CaptureCvr05ObjectMetricDistribution(string outputPath)
     {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
         using Bitmap preview = new(640, 420);
         using (Graphics graphics = Graphics.FromImage(preview))
         {
@@ -21417,6 +22745,13 @@ internal static class Program
         view.SetObjectResults(true, step, rows, preview, preview);
         if (view.ObjectResultCount != 5
             || view.SelectedObjectResultNumber != 1
+            || view.ValidationLabelTextForTest != "Pipeline 구성"
+            || view.ResultLabelTextForTest != "검사 결과"
+            || view.ObjectInspectorTitleForTest != "검출 후보"
+            || !view.ObjectCandidateCountTextForTest.Contains("검출 후보 5", StringComparison.Ordinal)
+            || !view.ObjectCandidateCountTextForTest.Contains("검사 대상 2", StringComparison.Ordinal)
+            || !view.ObjectCandidateCountTextForTest.Contains("필터 제외 3", StringComparison.Ordinal)
+            || !view.ObjectCandidateGuideTextForTest.Contains("실제 물체 수와 다를 수", StringComparison.Ordinal)
             || view.ObjectMetricDistributionSeriesCountForTest != 2
             || view.ObjectMetricDistributionMarkerCountForTest != 2
             || view.ObjectMetricDistributionMetricForTest != "Area"
@@ -21424,7 +22759,13 @@ internal static class Program
             || string.IsNullOrWhiteSpace(view.ObjectMetricDistributionEvidenceIdForTest))
         {
             throw new InvalidOperationException(
-                "CVR-05 Object Results did not retain the expected rows, Area distribution, and current range markers.");
+                "CVR-05 Detection candidates did not retain the expected labels, rows, Area distribution, and current range markers. "
+                + $"Validation='{view.ValidationLabelTextForTest}', Result='{view.ResultLabelTextForTest}', "
+                + $"Tab='{view.ObjectInspectorTitleForTest}', Count='{view.ObjectCandidateCountTextForTest}', "
+                + $"Guide='{view.ObjectCandidateGuideTextForTest}', Rows={view.ObjectResultCount}, "
+                + $"Selected={view.SelectedObjectResultNumber}, Series={view.ObjectMetricDistributionSeriesCountForTest}, "
+                + $"Markers={view.ObjectMetricDistributionMarkerCountForTest}, Metric='{view.ObjectMetricDistributionMetricForTest}', "
+                + $"Summary='{view.ObjectMetricDistributionSummaryForTest}', Evidence='{view.ObjectMetricDistributionEvidenceIdForTest}'.");
         }
 
         string directory = Path.GetDirectoryName(outputPath)
@@ -23198,6 +24539,14 @@ internal static class Program
         }
     }
 
+    private sealed class ParameterGuideFallbackProbe
+    {
+        [Category("Probe")]
+        [DisplayName("Unregistered parameter")]
+        [Description("A smoke-only property used to verify the Basic fallback contract.")]
+        public bool UNREGISTERED_PARAMETER { get; set; } = true;
+    }
+
     private sealed class PropertyContext : ITypeDescriptorContext
     {
         public PropertyContext(object instance, PropertyDescriptor descriptor) { Instance = instance; PropertyDescriptor = descriptor; }
@@ -23749,13 +25098,22 @@ internal static class Program
 
             Pump(8);
             int beforeThresholdRuns = shellHost.NativePreviewRunCount;
-            SetFloatingSliderValueByName("Threshold basic auto-preview slider", "sliderThreshold", 84D);
+            SetFloatingSliderValueByName("Threshold basic slider", "sliderThreshold", 84D);
             Thread.Sleep(180);
             Pump(30);
-            if (!shellHost.HasNativePreviewResult || shellHost.NativePreviewRunCount <= beforeThresholdRuns)
+            if (shellHost.HasNativePreviewResult || shellHost.NativePreviewRunCount != beforeThresholdRuns)
             {
                 throw new InvalidOperationException(
-                    "Threshold slider did not auto-preview into Threshold_Preview. "
+                    "Threshold slider change must wait for explicit Preview. "
+                    + $"RunsBefore={beforeThresholdRuns}, RunsAfter={shellHost.NativePreviewRunCount}, Status={shellHost.ActiveNativeStatusText}");
+            }
+
+            shellHost.RunActiveNativePreviewForTest();
+            Pump(30);
+            if (!shellHost.HasNativePreviewResult || shellHost.NativePreviewRunCount != beforeThresholdRuns + 1)
+            {
+                throw new InvalidOperationException(
+                    "Explicit Threshold Preview did not produce Threshold_Preview exactly once. "
                     + $"RunsBefore={beforeThresholdRuns}, RunsAfter={shellHost.NativePreviewRunCount}, Status={shellHost.ActiveNativeStatusText}");
             }
 
@@ -23867,7 +25225,38 @@ internal static class Program
             shellHost.SelectToolForTest(VISION_MENU.Blob);
             Pump(16);
             AssertToolHeaderLearnOpensTopic(shellHost, 5, "Blob header Learn");
-            AssertActiveToolTextsVisible("Blob verification guide initial", "Blob 검증", "미리보기 전", "면적 ", "다음:");
+            AssertActiveToolTextsVisible(
+                "Blob verification guide initial",
+                "Blob 검증",
+                "미리보기 전",
+                "면적 ",
+                "전체 이미지 (ROI 미지정)",
+                "다음:");
+            AssertActiveToolTextsVisible(
+                "Blob preset choice guidance",
+                "기본=첫 검사",
+                "빠른=빠른 선별",
+                "정밀=최종 튜닝",
+                "적용 이유");
+            if (shellHost.NativePreviewRunCount != 0)
+            {
+                throw new InvalidOperationException(
+                    "Blob effective full-image ROI explanation must not run Preview.");
+            }
+            int beforeBasicPresetRuns = shellHost.NativePreviewRunCount;
+            ClickFloatingButtonByName("btnPresetBasic", "Blob basic preset guidance");
+            Pump(24);
+            AssertActiveToolTextsVisible(
+                "Blob selected preset guidance",
+                "기본:",
+                "단순 이진화와 중간 면적으로 시작",
+                "대상/배경 밝기가 갈리는 지점",
+                "미리보기로 검증");
+            if (shellHost.NativePreviewRunCount != beforeBasicPresetRuns)
+            {
+                throw new InvalidOperationException(
+                    "Applying the Blob Basic preset must not run Preview.");
+            }
             ComboBox inputLayerCombo = FindFloatingComboBox("cbInputLayer");
             AssertVisionToolComboTemplate(inputLayerCombo, "Blob input layer combo");
             AssertComboBoxPopupLayout(inputLayerCombo, "Blob input layer combo");
@@ -24506,6 +25895,12 @@ internal static class Program
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
         OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostAreaToolPresets");
+        using Bitmap auxiliaryInput = CreateDockingPanelSmokeBitmap(7);
+        if (!shellHost.AddLayerImageForTest("Aux_Preset_Input", auxiliaryInput))
+        {
+            throw new InvalidOperationException("Area preset route smoke could not create the auxiliary input layer.");
+        }
+
         return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
         {
             shellHost.SelectToolForTest(VISION_MENU.Blob);
@@ -24517,8 +25912,40 @@ internal static class Program
                 OpenVisionLanguageService.T("VisionTool.Preset.Fast"),
                 OpenVisionLanguageService.T("VisionTool.Preset.Precise"));
             AssertFloatingPropertyGridRowsRendered("Blob preset property grid");
+            ComboBox blobInputLayerCombo = FindFloatingComboBox("cbInputLayer");
+            SelectComboBoxItemText(
+                blobInputLayerCombo,
+                "Aux_Preset_Input",
+                "Blob preset route input combo");
+            Pump(12);
+            if (!string.Equals(
+                    shellHost.ActiveNativeRouteInputLayerNameForTest,
+                    "Aux_Preset_Input",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Blob preset route setup did not retain the explicitly selected input layer.");
+            }
 
             int beforeBlobPresetRuns = shellHost.NativePreviewRunCount;
+            ClickFloatingButtonByName("btnPresetBasic", "Blob basic preset");
+            Thread.Sleep(180);
+            Pump(30);
+            if (!string.Equals(
+                    shellHost.ActiveNativeRouteInputLayerNameForTest,
+                    "Aux_Preset_Input",
+                    StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(
+                    GetComboBoxCurrentText(FindFloatingComboBox("cbInputLayer")),
+                    "Aux_Preset_Input",
+                    StringComparison.OrdinalIgnoreCase)
+                || shellHost.NativePreviewRunCount != beforeBlobPresetRuns
+                || shellHost.HasNativePreviewResult)
+            {
+                throw new InvalidOperationException(
+                    "Blob basic preset changed the explicitly selected input route or ran Preview.");
+            }
+
             ClickFloatingButtonByName("btnPresetFast", "Blob fast preset");
             Thread.Sleep(180);
             Pump(30);
@@ -24531,6 +25958,18 @@ internal static class Program
             if (shellHost.NativePreviewRunCount != beforeBlobPresetRuns || shellHost.HasNativePreviewResult)
             {
                 throw new InvalidOperationException("Blob fast preset must update PropertyGrid only, not run preview.");
+            }
+            if (!string.Equals(
+                    shellHost.ActiveNativeRouteInputLayerNameForTest,
+                    "Aux_Preset_Input",
+                    StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(
+                    GetComboBoxCurrentText(FindFloatingComboBox("cbInputLayer")),
+                    "Aux_Preset_Input",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Blob fast preset changed the explicitly selected input layer route.");
             }
 
             ClickFloatingButtonByName("btnPresetPrecise", "Blob precise preset");
@@ -24545,6 +25984,18 @@ internal static class Program
             if (shellHost.NativePreviewRunCount != beforeBlobPresetRuns || shellHost.HasNativePreviewResult)
             {
                 throw new InvalidOperationException("Blob precise preset must update PropertyGrid only, not run preview.");
+            }
+            if (!string.Equals(
+                    shellHost.ActiveNativeRouteInputLayerNameForTest,
+                    "Aux_Preset_Input",
+                    StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(
+                    GetComboBoxCurrentText(FindFloatingComboBox("cbInputLayer")),
+                    "Aux_Preset_Input",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Blob precise preset changed the explicitly selected input layer route.");
             }
 
             AssertDockActiveNativeTool(shellHost, "BlobToolWpfView", "Docked Blob preset menu");
@@ -25014,7 +26465,7 @@ internal static class Program
                 AssertFloatingSelectedObjectNumericPropertyWithin("Matching basic preset count", "NUM_MATCH", 1D, 0.001D);
                 AssertFloatingSelectedObjectNumericPropertyWithin("Matching basic preset magnification", "MAGNIFIATION", 1.0D, 0.001D);
                 AssertFloatingPropertyBrowsable("Matching basic preset angle step hidden", "FIND_ANGLE", false);
-                AssertActiveToolTextsVisible("Matching preset applied detail", "기본 적용됨", "미리보기로 검증");
+                AssertActiveToolTextsVisible("Matching preset applied detail", "기본:", "미리보기로 검증");
                 if (shellHost.NativePreviewRunCount != beforePresetRuns || shellHost.HasNativePreviewResult)
                 {
                     throw new InvalidOperationException("Matching basic preset must update PropertyGrid only, not run preview.");
@@ -27641,6 +29092,2424 @@ internal static class Program
         });
     }
 
+    private static CaptureResult CaptureP257ContextualParameterGuide(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        AssertParameterGuideBrowsableCoverage(new MatchingProperty(), "Matching");
+        AssertParameterGuideBrowsableCoverage(new EdgeBasedMatchingProperty(), "EdgeBasedMatching");
+        AssertParameterGuideBrowsableCoverage(new LineGaugeProperty(), "LineGauge/LineDistance");
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_P257ContextualParameterGuide");
+        using Bitmap matchingBitmap = CreateMatchingSmokeBitmap();
+        shellHost.SetMainLayerImageForTest(matchingBitmap);
+
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            shellHost.SelectToolForTest(VISION_MENU.Matching);
+            Pump(24);
+            AssertFloatingPropertyGridRowsRendered("P257 Matching PropertyGrid");
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                "SCORE_MIN",
+                guide =>
+                {
+                    AssertContains(
+                        guide.IdentityForTest,
+                        "SCORE_MIN",
+                        "P257 Matching guide identity");
+                    AssertContains(
+                        guide.ImpactForTest,
+                        "오검출",
+                        "P257 Matching guide impact");
+                    AssertContains(
+                        guide.CheckForTest,
+                        "ScoreMax",
+                        "P257 Matching guide Preview check");
+                    AssertContains(
+                        guide.CoverageForTest,
+                        "상세",
+                        "P257 Matching guide coverage");
+
+                    Button related = FindVisualChildren<Button>(guide)
+                        .FirstOrDefault(button => string.Equals(
+                            Convert.ToString(button.Content, CultureInfo.InvariantCulture),
+                            "NUM_MATCH",
+                            StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            "P257 Matching guide did not expose related NUM_MATCH navigation.");
+                    related.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    Pump(8);
+                    AssertContains(
+                        guide.IdentityForTest,
+                        "NUM_MATCH",
+                        "P257 related-parameter navigation");
+
+                    RaisePropertyGridRowMouseSelection(
+                        GetActiveFloatingPropertyGrid("P257 mouse selection"),
+                        "SCORE_MIN");
+                    Pump(8);
+                    AssertContains(
+                        guide.IdentityForTest,
+                        "SCORE_MIN",
+                        "P257 mouse property selection");
+
+                    guide.SetExpandedForTest(false);
+                    if (guide.IsExpandedForTest)
+                    {
+                        throw new InvalidOperationException("P257 guide collapse did not apply.");
+                    }
+
+                    guide.SetExpandedForTest(true);
+                    if (!guide.IsExpandedForTest)
+                    {
+                        throw new InvalidOperationException("P257 guide expand did not apply.");
+                    }
+                });
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+            Pump(16);
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                "SCORE_MIN",
+                guide =>
+                {
+                    AssertContains(guide.TitleForTest, "Min score", "P257 English title");
+                    AssertContains(guide.ImpactForTest, "Raising", "P257 English impact");
+                    AssertContains(guide.CheckForTest, "ScoreMax", "P257 English check");
+                });
+
+            MatchingProperty inactiveMatching = new()
+            {
+                USE_FIND_ANGLE = false
+            };
+            VisionToolParameterGuideContent inactiveAngle =
+                VisionToolParameterGuideCatalog.Resolve(inactiveMatching, "FIND_ANGLE");
+            if (inactiveAngle == null
+                || !inactiveAngle.Applicability.Contains("inactive", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "P257 conditional guide did not explain the inactive angle step.");
+            }
+
+            shellHost.SelectToolForTest(VISION_MENU.EdgeBasedMatching);
+            Pump(24);
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                "SCORE_MIN",
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "SCORE_MIN", "P257 Edge Matching identity");
+                    AssertContains(guide.ImpactForTest, "Raising", "P257 Edge Matching impact");
+                    AssertContains(guide.CheckForTest, "unique", "P257 Edge Matching check");
+                });
+
+            EdgeBasedMatchingProperty edgeProperty = new()
+            {
+                USE_UNIQUE_MATCH_VALIDATION = false
+            };
+            VisionToolParameterGuideContent inactiveUnique =
+                VisionToolParameterGuideCatalog.Resolve(
+                    edgeProperty,
+                    "UNIQUE_MATCH_MIN_SCORE_MARGIN");
+            if (inactiveUnique == null
+                || !inactiveUnique.Applicability.Contains("inactive", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "P257 conditional guide did not explain the inactive unique margin.");
+            }
+
+            VisionToolParameterGuideContent basicFallback =
+                VisionToolParameterGuideCatalog.Resolve(
+                    new ParameterGuideFallbackProbe(),
+                    nameof(ParameterGuideFallbackProbe.UNREGISTERED_PARAMETER));
+            if (basicFallback == null
+                || !basicFallback.Coverage.Contains("Basic", StringComparison.OrdinalIgnoreCase)
+                || string.IsNullOrWhiteSpace(basicFallback.Summary)
+                || string.IsNullOrWhiteSpace(basicFallback.CheckAfterPreview))
+            {
+                throw new InvalidOperationException(
+                    "P257 missing-detail fallback was not visible and usable.");
+            }
+
+            shellHost.SelectToolForTest(VISION_MENU.Line);
+            Pump(24);
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                "CONTRAST",
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "CONTRAST", "P257 Line identity");
+                    AssertContains(guide.ImpactForTest, "Raising", "P257 Line impact");
+                    AssertContains(guide.CheckForTest, "EdgeCount", "P257 Line check");
+                });
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                "PIXELPERMM",
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "mm/px", "P257 Line scale unit");
+                    AssertContains(guide.SummaryForTest, "millimetres per pixel", "P257 Line scale meaning");
+                    AssertContains(guide.CheckForTest, "certified metrology", "P257 Line scale boundary");
+                });
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            shellHost.SelectToolForTest(VISION_MENU.Matching);
+            Pump(24);
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                "SCORE_MIN",
+                guide =>
+                {
+                    AssertContains(guide.TitleForTest, "최소 점수", "P257 final Korean title");
+                    AssertContains(guide.ImpactForTest, "높이면", "P257 final Korean impact");
+                });
+
+            string reportDirectory = Path.GetDirectoryName(outputPath) ?? ".";
+            File.WriteAllLines(
+                Path.Combine(reportDirectory, "parameter-guide-smoke.txt"),
+                new[]
+                {
+                    "Status=OK",
+                    "PilotFamilies=Matching,EdgeBasedMatching,LineGauge,LineDistance",
+                    "Selection=mouse-keyboard bridge contract exercised by focused PropertyGrid rows",
+                    "Localization=Korean,English",
+                    "ConditionalGuidance=angle-step,unique-margin",
+                    "Fallback=visible basic guide",
+                    "RelatedNavigation=NUM_MATCH",
+                    "PreviewRunLayerRouteSideEffects=unchanged"
+                });
+        });
+    }
+
+    private static void AssertParameterGuideSelectionSideEffects(
+        OpenVisionShellHostView shellHost,
+        string propertyName,
+        Action<VisionToolParameterGuideView> assertGuide)
+    {
+        int previewRunsBefore = shellHost.NativePreviewRunCount;
+        int layersBefore = shellHost.LayerDocumentCount;
+        string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+        string inputRouteBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+        string outputRouteBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+
+        System.Windows.Controls.WpfPropertyGrid.PropertyGrid propertyGrid =
+            GetActiveFloatingPropertyGrid("P257 parameter guide");
+        if (!propertyGrid.FocusProperty(propertyName))
+        {
+            BringPropertyGridPropertyIntoView(
+                propertyGrid,
+                propertyName,
+                "P257 read-only parameter guide",
+                0D);
+            RaisePropertyGridRowMouseSelection(propertyGrid, propertyName);
+        }
+
+        Pump(12);
+        VisionToolParameterGuideView guide = Application.Current.Windows
+            .OfType<Window>()
+            .Where(window => window.IsVisible)
+            .SelectMany(FindVisualChildren<VisionToolParameterGuideView>)
+            .LastOrDefault(view => view.IsVisible)
+            ?? throw new InvalidOperationException(
+                "P257 contextual Parameter Guide was not visible.");
+        if (!guide.IsExpandedForTest)
+        {
+            throw new InvalidOperationException(
+                "P257 selecting '" + propertyName + "' did not expand the guide.");
+        }
+
+        assertGuide?.Invoke(guide);
+        Pump(8);
+        if (shellHost.NativePreviewRunCount != previewRunsBefore
+            || shellHost.LayerDocumentCount != layersBefore
+            || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal)
+            || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBefore, StringComparison.Ordinal)
+            || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBefore, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "P257 guide selection/navigation changed execution, layers, active layer, or routing. "
+                + $"Property={propertyName}, Runs={previewRunsBefore}->{shellHost.NativePreviewRunCount}, "
+                + $"Layers={layersBefore}->{shellHost.LayerDocumentCount}, "
+                + $"Active='{activeLayerBefore}'->'{shellHost.ActiveHostLayerTitle}', "
+                + $"Input='{inputRouteBefore}'->'{shellHost.ActiveNativeRouteInputLayerNameForTest}', "
+                + $"Output='{outputRouteBefore}'->'{shellHost.ActiveNativeRouteOutputLayerNameForTest}'.");
+        }
+    }
+
+    private static void AssertContains(string actual, string expected, string name)
+    {
+        if (string.IsNullOrWhiteSpace(actual)
+            || string.IsNullOrWhiteSpace(expected)
+            || !actual.Contains(expected, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                name + " did not contain '" + expected + "'. Actual='" + actual + "'.");
+        }
+    }
+
+    private static void AssertParameterGuideBrowsableCoverage(object property, string family)
+    {
+        List<string> missing = new();
+        foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(property)
+            .Cast<PropertyDescriptor>()
+            .Where(descriptor => descriptor.IsBrowsable))
+        {
+            VisionToolParameterGuideContent content =
+                VisionToolParameterGuideCatalog.Resolve(property, descriptor.Name);
+            if (content == null
+                || string.IsNullOrWhiteSpace(content.Title)
+                || string.IsNullOrWhiteSpace(content.Identity)
+                || string.IsNullOrWhiteSpace(content.Summary)
+                || string.IsNullOrWhiteSpace(content.Impact)
+                || string.IsNullOrWhiteSpace(content.CheckAfterPreview)
+                || string.IsNullOrWhiteSpace(content.Coverage))
+            {
+                missing.Add(descriptor.Name);
+            }
+        }
+
+        if (missing.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "P257 guide coverage is incomplete for "
+                + family
+                + ": "
+                + string.Join(",", missing));
+        }
+    }
+
+    private static CaptureResult CaptureP259ParameterGuideExpansion(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        AssertParameterGuideDetailedCoverage(new BlobProperty(), "Blob");
+        AssertParameterGuideDetailedCoverage(new ContourProperty(), "Contour");
+        AssertParameterGuideDetailedCoverage(new ThresholdToolProperty(), "Threshold");
+        AssertParameterGuideDetailedCoverage(new MorphologyToolProperty(), "Morphology");
+        AssertParameterGuideDetailedCoverage(new FilterToolProperty(), "Filter");
+
+        VisionToolParameterGuideContent inactiveThreshold =
+            VisionToolParameterGuideCatalog.Resolve(
+                new ThresholdToolProperty
+                {
+                    Mode = ThresholdToolMode.Threshold
+                },
+                nameof(ThresholdToolProperty.BlockSize));
+        if (inactiveThreshold == null
+            || string.IsNullOrWhiteSpace(inactiveThreshold.Applicability))
+        {
+            throw new InvalidOperationException(
+                "P259 Threshold mode-dependent guide did not show inactive state.");
+        }
+
+        VisionToolParameterGuideContent inactiveFilter =
+            VisionToolParameterGuideCatalog.Resolve(
+                new FilterToolProperty
+                {
+                    FilterType = FilterToolType.Blur
+                },
+                nameof(FilterToolProperty.Diameter));
+        if (inactiveFilter == null
+            || string.IsNullOrWhiteSpace(inactiveFilter.Applicability))
+        {
+            throw new InvalidOperationException(
+                "P259 Filter type-dependent guide did not show inactive state.");
+        }
+
+        VisionToolParameterGuideContent inactiveContour =
+            VisionToolParameterGuideCatalog.Resolve(
+                new ContourProperty
+                {
+                    USE_APPROXPOLYDP = false
+                },
+                nameof(ContourProperty.EPSILON));
+        if (inactiveContour == null
+            || string.IsNullOrWhiteSpace(inactiveContour.Applicability))
+        {
+            throw new InvalidOperationException(
+                "P259 Contour approximation-dependent guide did not show inactive state.");
+        }
+
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_P259ParameterGuideExpansion");
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            shellHost.SelectToolForTest(VISION_MENU.Threshold);
+            Pump(24);
+            RadioButton adaptiveMode = Application.Current.Windows
+                .OfType<Window>()
+                .Where(window => window.IsVisible)
+                .SelectMany(FindVisualChildren<RadioButton>)
+                .LastOrDefault(element => element.IsVisible
+                    && string.Equals(element.Name, "rbAdaptive", StringComparison.Ordinal))
+                ?? throw new InvalidOperationException(
+                    "P259 could not find the Threshold Adaptive mode control.");
+            adaptiveMode.IsChecked = true;
+            Pump(16);
+            Thread.Sleep(260);
+            Pump(24);
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "txtBlockSize",
+                nameof(ThresholdToolProperty.BlockSize),
+                guide =>
+                {
+                    AssertContains(guide.TitleForTest, "블록", "P259 Threshold title");
+                    AssertContains(guide.IdentityForTest, "BlockSize", "P259 Threshold identity");
+                    AssertContains(guide.IdentityForTest, "px", "P259 Threshold unit");
+                    AssertContains(guide.CheckForTest, "특징", "P259 Threshold check");
+                });
+
+            shellHost.SelectToolForTest(VISION_MENU.Blob);
+            Pump(24);
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(BlobProperty.MIN_AREA),
+                guide =>
+                {
+                    AssertContains(guide.TitleForTest, "면적", "P259 Blob title");
+                    AssertContains(guide.IdentityForTest, "px²", "P259 Blob unit");
+                    AssertContains(guide.CheckForTest, "Rejected", "P259 Blob object-row check");
+                });
+
+            shellHost.SelectToolForTest(VISION_MENU.Contour);
+            Pump(24);
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(ContourProperty.USE_APPROXPOLYDP),
+                guide =>
+                {
+                    AssertContains(
+                        guide.IdentityForTest,
+                        "USE_APPROXPOLYDP",
+                        "P259 Contour identity");
+                    AssertContains(guide.SummaryForTest, "단순화", "P259 Contour meaning");
+                    AssertContains(guide.CheckForTest, "윤곽", "P259 Contour check");
+                });
+
+            shellHost.SelectToolForTest(VISION_MENU.Morphology);
+            Pump(24);
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "txtWidth",
+                nameof(MorphologyToolProperty.KernelWidth),
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "KernelWidth", "P259 Morphology identity");
+                    AssertContains(guide.IdentityForTest, "px", "P259 Morphology unit");
+                    AssertContains(guide.ImpactForTest, "수평", "P259 Morphology impact");
+                });
+
+            shellHost.SelectToolForTest(VISION_MENU.Filter);
+            Pump(24);
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "cbFilterType",
+                nameof(FilterToolProperty.FilterType),
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "FilterType", "P259 Filter identity");
+                    AssertContains(guide.ImpactForTest, "노이즈", "P259 Filter impact");
+                    AssertContains(guide.CheckForTest, "Threshold", "P259 Filter check");
+                });
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+            Pump(16);
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "cbFilterType",
+                nameof(FilterToolProperty.FilterType),
+                guide =>
+                {
+                    AssertContains(guide.TitleForTest, "Filter type", "P259 Filter English title");
+                    AssertContains(guide.ImpactForTest, "noise", "P259 Filter English impact");
+                });
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            shellHost.SelectToolForTest(VISION_MENU.Threshold);
+            Pump(24);
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "txtBlockSize",
+                nameof(ThresholdToolProperty.BlockSize),
+                guide => AssertContains(
+                    guide.TitleForTest,
+                    "블록",
+                    "P259 final Threshold title"));
+
+            string reportDirectory = Path.GetDirectoryName(outputPath) ?? ".";
+            File.WriteAllLines(
+                Path.Combine(reportDirectory, "p259-parameter-guide-smoke.txt"),
+                new[]
+                {
+                    "Status=OK",
+                    "DetailedFamilies=Threshold,Blob,Contour,Morphology,Filter",
+                    "Selection=PropertyGrid mouse-keyboard plus custom-control focus contract",
+                    "Localization=Korean,English",
+                    "ConditionalGuidance=Threshold Mode,FilterType,Contour USE_APPROXPOLYDP",
+                    "Units=GV,px,px2",
+                    "PreviewRunLayerRouteSideEffects=unchanged"
+                });
+        });
+    }
+
+    private static void AssertParameterGuideDetailedCoverage(object property, string family)
+    {
+        List<string> missing = new();
+        foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(property)
+            .Cast<PropertyDescriptor>()
+            .Where(descriptor => descriptor.IsBrowsable))
+        {
+            VisionToolParameterGuideContent content =
+                VisionToolParameterGuideCatalog.Resolve(property, descriptor.Name);
+            if (content == null
+                || string.IsNullOrWhiteSpace(content.Title)
+                || string.IsNullOrWhiteSpace(content.Identity)
+                || string.IsNullOrWhiteSpace(content.Summary)
+                || string.IsNullOrWhiteSpace(content.Impact)
+                || string.IsNullOrWhiteSpace(content.CheckAfterPreview)
+                || content.Coverage.Contains("Basic", StringComparison.OrdinalIgnoreCase)
+                || content.Coverage.Contains("기본", StringComparison.OrdinalIgnoreCase))
+            {
+                missing.Add(descriptor.Name);
+            }
+        }
+
+        if (missing.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "P259 detailed guide coverage is incomplete for "
+                + family
+                + ": "
+                + string.Join(",", missing));
+        }
+    }
+
+    private static void AssertCustomParameterGuideSelectionSideEffects(
+        OpenVisionShellHostView shellHost,
+        string controlName,
+        string propertyName,
+        Action<VisionToolParameterGuideView> assertGuide)
+    {
+        int previewRunsBefore = shellHost.NativePreviewRunCount;
+        int layersBefore = shellHost.LayerDocumentCount;
+        string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+        string inputRouteBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+        string outputRouteBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+
+        FrameworkElement control = Application.Current.Windows
+            .OfType<Window>()
+            .Where(window => window.IsVisible)
+            .SelectMany(FindVisualChildren<FrameworkElement>)
+            .LastOrDefault(element => element.IsVisible
+                && string.Equals(element.Name, controlName, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                "P259 could not find visible custom parameter control '" + controlName + "'.");
+        if (!control.Focus())
+        {
+            throw new InvalidOperationException(
+                "P259 could not keyboard-focus custom parameter control '" + controlName + "'.");
+        }
+
+        Pump(12);
+        VisionToolParameterGuideView guide = Application.Current.Windows
+            .OfType<Window>()
+            .Where(window => window.IsVisible)
+            .SelectMany(FindVisualChildren<VisionToolParameterGuideView>)
+            .LastOrDefault(view => view.IsVisible)
+            ?? throw new InvalidOperationException(
+                "P259 custom contextual Parameter Guide was not visible.");
+        if (!guide.IsExpandedForTest
+            || !guide.IdentityForTest.Contains(propertyName, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "P259 custom control did not expand the expected guide. "
+                + $"Control={controlName}, Property={propertyName}, Identity={guide.IdentityForTest}");
+        }
+
+        assertGuide?.Invoke(guide);
+        Pump(8);
+        if (shellHost.NativePreviewRunCount != previewRunsBefore
+            || shellHost.LayerDocumentCount != layersBefore
+            || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal)
+            || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBefore, StringComparison.Ordinal)
+            || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBefore, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "P259 custom guide selection changed execution, layers, active layer, or routing. "
+                + $"Control={controlName}, Runs={previewRunsBefore}->{shellHost.NativePreviewRunCount}, "
+                + $"Layers={layersBefore}->{shellHost.LayerDocumentCount}, "
+                + $"Active='{activeLayerBefore}'->'{shellHost.ActiveHostLayerTitle}', "
+                + $"Input='{inputRouteBefore}'->'{shellHost.ActiveNativeRouteInputLayerNameForTest}', "
+                + $"Output='{outputRouteBefore}'->'{shellHost.ActiveNativeRouteOutputLayerNameForTest}'.");
+        }
+    }
+
+    private static CaptureResult CaptureP260ParameterGuideFallbackAudit(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        (string Family, object Property)[] families =
+        {
+            ("Matching", new MatchingProperty()),
+            ("EdgeBasedMatching", new EdgeBasedMatchingProperty()),
+            ("LineGauge/LineDistance", new LineGaugeProperty()),
+            ("Threshold", new ThresholdToolProperty()),
+            ("Blob", new BlobProperty()),
+            ("Contour", new ContourProperty()),
+            ("Morphology", new MorphologyToolProperty()),
+            ("Filter", new FilterToolProperty()),
+            ("AffineTransform", new AffineTransformProperty()),
+            ("FeatureMatching", new FeatureMatchingProperty()),
+            ("EdgeDetection", new EdgeDetectionToolProperty()),
+            ("RotateScale", new RotateScaleToolProperty()),
+            ("Mean", new MeanProperty())
+        };
+
+        List<string> report = new()
+        {
+            "Status=OK",
+            "Source=Current canonical native Tool property families",
+            "Family\tBrowsable\tDetailed\tBasic\tBasicProperties"
+        };
+        List<string> summary = new()
+        {
+            "Parameter Guide fallback audit",
+            string.Empty
+        };
+        int totalBrowsable = 0;
+        int totalDetailed = 0;
+        int totalBasic = 0;
+        foreach ((string family, object property) in families)
+        {
+            List<PropertyDescriptor> descriptors = TypeDescriptor.GetProperties(property)
+                .Cast<PropertyDescriptor>()
+                .Where(descriptor => descriptor.IsBrowsable)
+                .ToList();
+            List<string> basic = descriptors
+                .Where(descriptor =>
+                {
+                    VisionToolParameterGuideContent content =
+                        VisionToolParameterGuideCatalog.Resolve(property, descriptor.Name);
+                    return content == null
+                        || content.Coverage.Contains("Basic", StringComparison.OrdinalIgnoreCase);
+                })
+                .Select(descriptor => descriptor.Name)
+                .ToList();
+            int detailed = descriptors.Count - basic.Count;
+            totalBrowsable += descriptors.Count;
+            totalDetailed += detailed;
+            totalBasic += basic.Count;
+            report.Add(
+                family
+                + "\t"
+                + descriptors.Count.ToString(CultureInfo.InvariantCulture)
+                + "\t"
+                + detailed.ToString(CultureInfo.InvariantCulture)
+                + "\t"
+                + basic.Count.ToString(CultureInfo.InvariantCulture)
+                + "\t"
+                + string.Join(",", basic));
+            summary.Add(
+                family.PadRight(24)
+                + $" {detailed}/{descriptors.Count} detailed"
+                + (basic.Count == 0 ? string.Empty : $" | Basic {basic.Count}"));
+        }
+
+        report.Add(
+            "TOTAL\t"
+            + totalBrowsable.ToString(CultureInfo.InvariantCulture)
+            + "\t"
+            + totalDetailed.ToString(CultureInfo.InvariantCulture)
+            + "\t"
+            + totalBasic.ToString(CultureInfo.InvariantCulture));
+        string reportDirectory = Path.GetDirectoryName(outputPath) ?? ".";
+        Directory.CreateDirectory(reportDirectory);
+        File.WriteAllLines(
+            Path.Combine(reportDirectory, "p260-parameter-guide-fallback-audit.tsv"),
+            report);
+
+        Border content = new()
+        {
+            Background = new SolidColorBrush(Color.FromRgb(238, 242, 246)),
+            Padding = new Thickness(28),
+            Child = new TextBlock
+            {
+                FontFamily = new FontFamily("Consolas"),
+                FontSize = 14,
+                Foreground = new SolidColorBrush(Color.FromRgb(34, 48, 60)),
+                Text = string.Join(Environment.NewLine, summary),
+                TextWrapping = TextWrapping.Wrap
+            }
+        };
+        return CaptureWindowWithContent(
+            content,
+            outputPath,
+            920,
+            620,
+            () =>
+            {
+                if (totalBrowsable <= 0 || totalDetailed <= 0)
+                {
+                    throw new InvalidOperationException(
+                        "P260 fallback audit did not inspect current Tool properties.");
+                }
+            });
+    }
+
+    private static CaptureResult CaptureP260EdgeDetectionParameterGuide(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        AssertParameterGuideDetailedCoverage(new EdgeDetectionToolProperty(), "EdgeDetection");
+
+        foreach ((EdgeDetectionToolType edgeType, string propertyName) in new[]
+        {
+            (EdgeDetectionToolType.Sobel, nameof(EdgeDetectionToolProperty.CannyThresholdLow)),
+            (EdgeDetectionToolType.Canny, nameof(EdgeDetectionToolProperty.SobelDegreeX)),
+            (EdgeDetectionToolType.Canny, nameof(EdgeDetectionToolProperty.ScharrDegreeX)),
+            (EdgeDetectionToolType.Canny, nameof(EdgeDetectionToolProperty.LaplacianKernelSize))
+        })
+        {
+            VisionToolParameterGuideContent inactive = VisionToolParameterGuideCatalog.Resolve(
+                new EdgeDetectionToolProperty { EdgeType = edgeType },
+                propertyName);
+            if (inactive == null || string.IsNullOrWhiteSpace(inactive.Applicability))
+            {
+                throw new InvalidOperationException(
+                    "P260 EdgeDetection guide did not expose inactive applicability for "
+                    + propertyName
+                    + " while EdgeType="
+                    + edgeType
+                    + ".");
+            }
+        }
+
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_P260EdgeDetectionParameterGuide");
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            shellHost.SelectToolForTest(VISION_MENU.EdgeDetection);
+            Pump(24);
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "cbEdgeType",
+                nameof(EdgeDetectionToolProperty.EdgeType),
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "EdgeType", "P260 EdgeDetection type identity");
+                    AssertContains(guide.SummaryForTest, "Canny", "P260 EdgeDetection type meaning");
+                    AssertContains(guide.CheckForTest, "EdgePointCount", "P260 EdgeDetection type check");
+                });
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "txtCannyThresholdLow",
+                nameof(EdgeDetectionToolProperty.CannyThresholdLow),
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "GV", "P260 Canny Low unit");
+                    AssertContains(guide.ImpactForTest, "약한 경계", "P260 Canny Low impact");
+                    AssertContains(guide.CheckForTest, "EdgePointCount", "P260 Canny Low check");
+                });
+
+            ComboBox edgeType = FindFloatingComboBox("cbEdgeType");
+            edgeType.SelectedItem = EdgeDetectionToolType.Sobel;
+            Pump(16);
+            Thread.Sleep(260);
+            Pump(24);
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "txtSobelDegreeX",
+                nameof(EdgeDetectionToolProperty.SobelDegreeX),
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "SobelDegreeX", "P260 Sobel X identity");
+                    AssertContains(guide.SummaryForTest, "수직 경계", "P260 Sobel X meaning");
+                    AssertContains(guide.CheckForTest, "동시에 0", "P260 Sobel X derivative-pair check");
+                });
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+            Pump(16);
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "txtSobelDegreeX",
+                nameof(EdgeDetectionToolProperty.SobelDegreeX),
+                guide =>
+                {
+                    AssertContains(guide.TitleForTest, "Sobel X degree", "P260 Sobel X English title");
+                    AssertContains(guide.SummaryForTest, "vertical edges", "P260 Sobel X English meaning");
+                    AssertContains(guide.CheckForTest, "both zero", "P260 Sobel X English check");
+                });
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            edgeType.SelectedItem = EdgeDetectionToolType.Canny;
+            Pump(16);
+            Thread.Sleep(260);
+            Pump(24);
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "txtCannyThresholdHigh",
+                nameof(EdgeDetectionToolProperty.CannyThresholdHigh),
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "CannyThresholdHigh", "P260 final identity");
+                    AssertContains(guide.CheckForTest, "Low", "P260 final relationship check");
+                });
+
+            string reportDirectory = Path.GetDirectoryName(outputPath) ?? ".";
+            File.WriteAllLines(
+                Path.Combine(reportDirectory, "p260-edge-detection-parameter-guide-smoke.txt"),
+                new[]
+                {
+                    "Status=OK",
+                    "DetailedFamily=EdgeDetection",
+                    "DetailedProperties=11/11",
+                    "Selection=Dynamic parameter-card keyboard focus and mouse selection",
+                    "Localization=Korean,English",
+                    "ConditionalGuidance=Canny,Sobel,Scharr,Laplacian",
+                    "RuntimeGrounding=VisionPipelineEdgeDetectionTool",
+                    "PreviewRunLayerRouteSideEffects=unchanged"
+                });
+        });
+    }
+
+    private static CaptureResult CaptureP261RotateScaleParameterGuide(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        AssertParameterGuideDetailedCoverage(new RotateScaleToolProperty(), "RotateScale");
+
+        VisionToolParameterGuideContent angle = VisionToolParameterGuideCatalog.Resolve(
+            new RotateScaleToolProperty { Angle = 15D },
+            nameof(RotateScaleToolProperty.Angle));
+        VisionToolParameterGuideContent scaleX = VisionToolParameterGuideCatalog.Resolve(
+            new RotateScaleToolProperty { ScaleXPercent = 80D },
+            nameof(RotateScaleToolProperty.ScaleXPercent));
+        if (angle == null
+            || !angle.Identity.Contains("deg", StringComparison.Ordinal)
+            || scaleX == null
+            || !scaleX.Identity.Contains("%", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "P261 RotateScale guide did not expose exact degree/percent units.");
+        }
+
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_P261RotateScaleParameterGuide");
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            shellHost.SelectToolForTest(VISION_MENU.RotateAndScale);
+            Pump(24);
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "txtAngle",
+                nameof(RotateScaleToolProperty.Angle),
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "deg", "P261 RotateScale angle unit");
+                    AssertContains(guide.SummaryForTest, "영상 중심", "P261 RotateScale angle meaning");
+                    AssertContains(guide.CheckForTest, "고정 ROI", "P261 RotateScale angle check");
+                });
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "txtScaleXPercent",
+                nameof(RotateScaleToolProperty.ScaleXPercent),
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "%", "P261 RotateScale X unit");
+                    AssertContains(guide.ImpactForTest, "형상 비율", "P261 RotateScale X impact");
+                    AssertContains(guide.CheckForTest, "ResultImageWidth", "P261 RotateScale X check");
+                });
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "txtScaleYPercent",
+                nameof(RotateScaleToolProperty.ScaleYPercent),
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "%", "P261 RotateScale Y unit");
+                    AssertContains(guide.CheckForTest, "ResultImageHeight", "P261 RotateScale Y check");
+                });
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+            Pump(16);
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "txtAngle",
+                nameof(RotateScaleToolProperty.Angle),
+                guide =>
+                {
+                    AssertContains(guide.TitleForTest, "Angle", "P261 RotateScale English title");
+                    AssertContains(guide.ImpactForTest, "counterclockwise", "P261 RotateScale English impact");
+                });
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            Pump(16);
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "txtAngle",
+                nameof(RotateScaleToolProperty.Angle),
+                guide => AssertContains(
+                    guide.TitleForTest,
+                    "회전 각도",
+                    "P261 final RotateScale title"));
+
+            string reportDirectory = Path.GetDirectoryName(outputPath) ?? ".";
+            File.WriteAllLines(
+                Path.Combine(reportDirectory, "p261-rotate-scale-parameter-guide-smoke.txt"),
+                new[]
+                {
+                    "Status=OK",
+                    "DetailedFamily=RotateScale",
+                    "DetailedProperties=5/5",
+                    "DirectToolBindings=Angle,ScaleXPercent,ScaleYPercent",
+                    "RecipePropertyGrid=Interpolation,BorderType",
+                    "Localization=Korean,English",
+                    "Units=deg,percent",
+                    "PreviewRunLayerRouteSideEffects=unchanged"
+                });
+        });
+    }
+
+    private static CaptureResult CaptureP262MeanParameterGuide(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        AssertParameterGuideDetailedCoverage(new MeanProperty(), "Mean");
+
+        MeanProperty standardDeviationProperty = new()
+        {
+            MEAN_TYPES = MeanType.MeanStdDev,
+            MEAN_MIN = 15,
+            MEAN_MAX = 45
+        };
+        VisionToolParameterGuideContent meanType = VisionToolParameterGuideCatalog.Resolve(
+            standardDeviationProperty,
+            nameof(MeanProperty.MEAN_TYPES));
+        VisionToolParameterGuideContent minimum = VisionToolParameterGuideCatalog.Resolve(
+            standardDeviationProperty,
+            nameof(MeanProperty.MEAN_MIN));
+        VisionToolParameterGuideContent maximum = VisionToolParameterGuideCatalog.Resolve(
+            standardDeviationProperty,
+            nameof(MeanProperty.MEAN_MAX));
+        if (meanType == null
+            || minimum == null
+            || maximum == null
+            || !meanType.Summary.Contains("표준편차", StringComparison.Ordinal)
+            || !minimum.Identity.Contains("GV", StringComparison.Ordinal)
+            || !maximum.Identity.Contains("GV", StringComparison.Ordinal)
+            || !minimum.CheckAfterPreview.Contains("AcceptanceMetricName/Minimum", StringComparison.Ordinal)
+            || !maximum.CheckAfterPreview.Contains("AcceptanceMetricName/Maximum", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "P262 Mean guide did not preserve statistic semantics, exact units, or Pipeline acceptance boundary.");
+        }
+
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_P262MeanParameterGuide");
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            shellHost.SelectToolForTest(VISION_MENU.Mean);
+            Pump(24);
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "cbMeanType",
+                nameof(MeanProperty.MEAN_TYPES),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "평균 밝기", "P262 Mean type meaning");
+                    AssertContains(guide.SummaryForTest, "표준편차", "P262 MeanStdDev meaning");
+                    AssertContains(guide.ImpactForTest, "Pipeline 판정값", "P262 type gate reset guidance");
+                    AssertContains(guide.CheckForTest, "Good/Bad", "P262 type evidence check");
+                });
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "txtMeanMin",
+                nameof(MeanProperty.MEAN_MIN),
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "GV", "P262 Mean minimum unit");
+                    AssertContains(guide.ImpactForTest, "영상 자체", "P262 minimum non-processing boundary");
+                    AssertContains(guide.CheckForTest, "AcceptanceMetricName/Minimum", "P262 minimum Pipeline boundary");
+                });
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "txtMeanMax",
+                nameof(MeanProperty.MEAN_MAX),
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "GV", "P262 Mean maximum unit");
+                    AssertContains(guide.ImpactForTest, "영상 자체", "P262 maximum non-processing boundary");
+                    AssertContains(guide.CheckForTest, "AcceptanceMetricName/Maximum", "P262 maximum Pipeline boundary");
+                });
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+            Pump(16);
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "cbMeanType",
+                nameof(MeanProperty.MEAN_TYPES),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "standard deviation", "P262 Mean English meaning");
+                    AssertContains(guide.ImpactForTest, "acceptance values", "P262 Mean English gate warning");
+                });
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            Pump(16);
+            AssertCustomParameterGuideSelectionSideEffects(
+                shellHost,
+                "cbMeanType",
+                nameof(MeanProperty.MEAN_TYPES),
+                guide => AssertContains(
+                    guide.TitleForTest,
+                    "평균 타입",
+                    "P262 final Mean type title"));
+
+            string reportDirectory = Path.GetDirectoryName(outputPath) ?? ".";
+            File.WriteAllLines(
+                Path.Combine(reportDirectory, "p262-mean-parameter-guide-smoke.txt"),
+                new[]
+                {
+                    "Status=OK",
+                    "DetailedFamily=Mean",
+                    "DetailedProperties=3/3",
+                    "DirectToolBindings=MeanType->MEAN_TYPES,MeanMin->MEAN_MIN,MeanMax->MEAN_MAX",
+                    "StatisticSemantics=Mean brightness,MeanStdDev standard deviation",
+                    "DirectPreviewBoundary=MEAN_MIN..MEAN_MAX",
+                    "PipelineBoundary=AcceptanceMetricName/Minimum/Maximum checked separately",
+                    "Localization=Korean,English",
+                    "Units=GV",
+                    "PreviewRunLayerRouteSideEffects=unchanged"
+                });
+        });
+    }
+
+    private static CaptureResult CaptureP263FeatureMatchingParameterGuide(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        FeatureMatchingProperty property = new()
+        {
+            SCORE_MIN = 0.6D,
+            RANSAC_REPROJ_THRESHOLD = 3D,
+            PATTERN_PATH = @"templates\feature.png"
+        };
+        AssertParameterGuideDetailedCoverage(property, "FeatureMatching");
+
+        VisionToolParameterGuideContent pattern = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(FeatureMatchingProperty.PATTERN_PATH));
+        VisionToolParameterGuideContent ratio = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(FeatureMatchingProperty.SCORE_MIN));
+        VisionToolParameterGuideContent ransac = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(FeatureMatchingProperty.RANSAC_REPROJ_THRESHOLD));
+        if (pattern == null
+            || ratio == null
+            || ransac == null
+            || !ratio.Identity.Contains("0..1", StringComparison.Ordinal)
+            || !ratio.Summary.Contains("Lowe ratio", StringComparison.Ordinal)
+            || !ratio.Risk.Contains("0.6", StringComparison.Ordinal)
+            || !ratio.CheckAfterPreview.Contains("0..100", StringComparison.Ordinal)
+            || !ransac.Identity.Contains("px", StringComparison.Ordinal)
+            || ransac.Identity.Contains("GV", StringComparison.Ordinal)
+            || !pattern.CheckAfterPreview.Contains("GoodMatches", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "P263 FeatureMatching guide did not preserve template, Lowe ratio, result-score, or RANSAC pixel semantics.");
+        }
+
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_P263FeatureMatchingParameterGuide");
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            shellHost.SelectToolForTest(VISION_MENU.FeatureMatching);
+            Pump(24);
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(FeatureMatchingProperty.SCORE_MIN),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "Lowe ratio", "P263 ratio meaning");
+                    AssertContains(guide.ImpactForTest, "작을수록", "P263 inverse tuning direction");
+                    AssertContains(guide.CheckForTest, "0..100", "P263 result Score separation");
+                });
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(FeatureMatchingProperty.RANSAC_REPROJ_THRESHOLD),
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "px", "P263 RANSAC unit");
+                    AssertContains(guide.ImpactForTest, "homography", "P263 RANSAC effect");
+                    AssertContains(guide.CheckForTest, "변환 사각형", "P263 RANSAC drawing check");
+                });
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(FeatureMatchingProperty.PATTERN_PATH),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "실행 전에 실패", "P263 missing template boundary");
+                    AssertContains(guide.ImpactForTest, "물리적 정체성", "P263 template identity");
+                    AssertContains(guide.CheckForTest, "GoodMatches", "P263 template evidence");
+                });
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+            Pump(16);
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(FeatureMatchingProperty.SCORE_MIN),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "second-nearest", "P263 English ratio meaning");
+                    AssertContains(guide.ImpactForTest, "more correspondences", "P263 English ratio direction");
+                    AssertContains(guide.CheckForTest, "0..100", "P263 English result score separation");
+                });
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            Pump(16);
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(FeatureMatchingProperty.SCORE_MIN),
+                guide => AssertContains(
+                    guide.TitleForTest,
+                    "Ratio",
+                    "P263 final ratio title"));
+
+            string reportDirectory = Path.GetDirectoryName(outputPath) ?? ".";
+            File.WriteAllLines(
+                Path.Combine(reportDirectory, "p263-feature-matching-parameter-guide-smoke.txt"),
+                new[]
+                {
+                    "Status=OK",
+                    "DetailedFamily=FeatureMatching",
+                    "DetailedProperties=3/3",
+                    "ScoreMinSemantics=Lowe descriptor ratio 0..1; lower is stricter",
+                    "ResultScoreSemantics=RANSAC inlier percentage 0..100",
+                    "RansacUnit=px",
+                    "TemplateEvidence=readiness,keypoints,GoodMatches,transformed quadrilateral",
+                    "Localization=Korean,English",
+                    "PreviewRunLayerRouteSideEffects=unchanged"
+                });
+        });
+    }
+
+    private static CaptureResult CaptureP264MatchingSearchParameterGuide(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        MatchingProperty property = new()
+        {
+            MAGNIFIATION = 4D,
+            USE_FIND_ANGLE = true,
+            FIND_ANGLE = 0.5D,
+            USE_COARSE_TO_FINE_ANGLE_SEARCH = true,
+            COARSE_ANGLE_STEP = 5D,
+            COARSE_ANGLE_TOP_K = 3,
+            USE_FIND_SCALE = true,
+            USE_PYRAMID_POSITION_PROPOSAL = true,
+            PYRAMID_POSITION_TOP_N = 8,
+            PYRAMID_POSITION_MIN_SCORE = 0.7D,
+            USE_PADDING_COLOR_WHITE = true
+        };
+        AssertParameterGuideDetailedCoverage(property, "Matching");
+
+        VisionToolParameterGuideContent magnification = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(MatchingProperty.MAGNIFIATION));
+        VisionToolParameterGuideContent coarseUse = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(MatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH));
+        VisionToolParameterGuideContent coarseStep = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(MatchingProperty.COARSE_ANGLE_STEP));
+        VisionToolParameterGuideContent coarseTopK = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(MatchingProperty.COARSE_ANGLE_TOP_K));
+        VisionToolParameterGuideContent pyramidUse = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(MatchingProperty.USE_PYRAMID_POSITION_PROPOSAL));
+        VisionToolParameterGuideContent pyramidTopN = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(MatchingProperty.PYRAMID_POSITION_TOP_N));
+        VisionToolParameterGuideContent pyramidMinScore = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(MatchingProperty.PYRAMID_POSITION_MIN_SCORE));
+        VisionToolParameterGuideContent whitePadding = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(MatchingProperty.USE_PADDING_COLOR_WHITE));
+        if (magnification == null
+            || coarseUse == null
+            || coarseStep == null
+            || coarseTopK == null
+            || pyramidUse == null
+            || pyramidTopN == null
+            || pyramidMinScore == null
+            || whitePadding == null
+            || !magnification.Summary.Contains("working-resolution divisor", StringComparison.Ordinal)
+            || !magnification.Risk.Contains("minimum/maximum target scale", StringComparison.Ordinal)
+            || !coarseUse.Summary.Contains("full angle range", StringComparison.Ordinal)
+            || !coarseStep.Identity.Contains("deg", StringComparison.Ordinal)
+            || !coarseStep.Risk.Contains("not greater than Angle step", StringComparison.Ordinal)
+            || !coarseTopK.Impact.Contains("true angle", StringComparison.Ordinal)
+            || !pyramidUse.Summary.Contains("falls back", StringComparison.Ordinal)
+            || !pyramidUse.Impact.Contains("angle search is off", StringComparison.Ordinal)
+            || !pyramidTopN.Summary.Contains("per scale", StringComparison.Ordinal)
+            || !pyramidMinScore.Identity.Contains("0..1", StringComparison.Ordinal)
+            || !pyramidMinScore.Summary.Contains("separate from the final", StringComparison.Ordinal)
+            || !whitePadding.Summary.Contains("reflected template borders", StringComparison.Ordinal)
+            || !whitePadding.Summary.Contains("not black", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "P264 Matching guide did not preserve working-resolution, coarse-angle, pyramid-proposal, or rotation-padding semantics.");
+        }
+
+        property.USE_FIND_ANGLE = false;
+        VisionToolParameterGuideContent inactiveCoarse = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(MatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH));
+        if (inactiveCoarse == null || string.IsNullOrWhiteSpace(inactiveCoarse.Applicability))
+        {
+            throw new InvalidOperationException(
+                "P264 Matching coarse-angle guide did not report its inactive angle-search condition.");
+        }
+        property.USE_FIND_ANGLE = true;
+
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_P264MatchingSearchParameterGuide");
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            shellHost.SelectToolForTest(VISION_MENU.Matching);
+            Pump(24);
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+            Pump(16);
+            System.Windows.Controls.WpfPropertyGrid.PropertyGrid liveGrid =
+                GetActiveFloatingPropertyGrid("P264 Matching parameter guide");
+            MatchingProperty live = liveGrid.SelectedObject as MatchingProperty
+                ?? throw new InvalidOperationException("P264 Matching PropertyGrid was not available.");
+            live.USE_FIND_ANGLE = true;
+            live.USE_COARSE_TO_FINE_ANGLE_SEARCH = true;
+            live.USE_FIND_SCALE = true;
+            live.USE_PYRAMID_POSITION_PROPOSAL = true;
+            new OpenVisionLab.Common.PropertyGridEventBinder(null)
+                .ApplyVisibilityRules(liveGrid);
+            Pump(16);
+
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(MatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH),
+                guide => AssertContains(
+                    guide.SummaryForTest,
+                    "full angle range",
+                    "P264 coarse search meaning"));
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(MatchingProperty.COARSE_ANGLE_STEP),
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "deg", "P264 coarse step unit");
+                    AssertContains(guide.SummaryForTest, "Angle step", "P264 coarse path boundary");
+                });
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(MatchingProperty.PYRAMID_POSITION_MIN_SCORE),
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "0..1", "P264 pyramid score unit");
+                    AssertContains(guide.SummaryForTest, "separate", "P264 proposal/final score distinction");
+                });
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(MatchingProperty.USE_PADDING_COLOR_WHITE),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "reflected", "P264 padding false behavior");
+                    AssertContains(guide.SummaryForTest, "not black", "P264 padding black misconception");
+                });
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            Pump(16);
+            string reportDirectory = Path.GetDirectoryName(outputPath) ?? ".";
+            File.WriteAllLines(
+                Path.Combine(reportDirectory, "p264-matching-search-parameter-guide-smoke.txt"),
+                new[]
+                {
+                    "Status=OK",
+                    "DetailedFamily=Matching",
+                    "DetailedProperties=42/42",
+                    "AuditedProperties=8/8",
+                    "Groups=working-resolution,coarse-angle,pyramid-position,rotation-padding",
+                    "MagnificationSemantics=working-resolution divisor; not target scale range",
+                    "CoarseSemantics=wide-range coarse scan then fine Angle-step neighborhoods",
+                    "PyramidSemantics=angle-off proposal verification with full-search fallback",
+                    "PaddingSemantics=true constant white 255; false reflected border",
+                    "Localization=Korean,English",
+                    "PreviewRunLayerRouteSideEffects=unchanged"
+                });
+        });
+    }
+
+    private static CaptureResult CaptureP265LineParameterGuide(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        LineGaugeProperty property = new()
+        {
+            USE_MANUAL_ANGLE = true,
+            MANUAL_ANGLE_VALUE = 90D,
+            USE_EXTEND_FIT_LINE = true,
+            EXTEND_FIT_LINE_VALUE = 120,
+            USE_AVERAGE_FILTER = true,
+            AVERAGE_Diff = 80D,
+            AVERAGE_FILTER_TYPE = LineGaugeProperty.AVERAGE_FILTER_TYPES.X,
+            SHOW_VERTICAL_LINE = false,
+            SHOW_EDGE = false,
+            SHOW_CONTOUR = false,
+            SHOW_FITLINE = false
+        };
+
+        VisionToolParameterGuideContent manualUse = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(LineGaugeProperty.USE_MANUAL_ANGLE));
+        VisionToolParameterGuideContent extendUse = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(LineGaugeProperty.USE_EXTEND_FIT_LINE));
+        VisionToolParameterGuideContent averageUse = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(LineGaugeProperty.USE_AVERAGE_FILTER));
+        VisionToolParameterGuideContent showScans = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(LineGaugeProperty.SHOW_VERTICAL_LINE));
+        VisionToolParameterGuideContent showEdges = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(LineGaugeProperty.SHOW_EDGE));
+        VisionToolParameterGuideContent showContour = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(LineGaugeProperty.SHOW_CONTOUR));
+        VisionToolParameterGuideContent showFit = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(LineGaugeProperty.SHOW_FITLINE));
+        List<string> unresolved = new[]
+            {
+                (nameof(LineGaugeProperty.USE_MANUAL_ANGLE), manualUse),
+                (nameof(LineGaugeProperty.USE_EXTEND_FIT_LINE), extendUse),
+                (nameof(LineGaugeProperty.USE_AVERAGE_FILTER), averageUse),
+                (nameof(LineGaugeProperty.SHOW_VERTICAL_LINE), showScans),
+                (nameof(LineGaugeProperty.SHOW_EDGE), showEdges),
+                (nameof(LineGaugeProperty.SHOW_CONTOUR), showContour),
+                (nameof(LineGaugeProperty.SHOW_FITLINE), showFit)
+            }
+            .Where(item => item.Item2 == null)
+            .Select(item => item.Item1)
+            .ToList();
+        if (unresolved.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "P265 Line guide did not resolve audited properties: "
+                + string.Join(",", unresolved)
+                + ".");
+        }
+        AssertContains(manualUse.Summary, "distance-sampling lines", "P265 static manual sampling meaning");
+        AssertContains(manualUse.Summary, "does not change edge-search", "P265 static manual edge-search boundary");
+        AssertContains(extendUse.Summary, "both Line A and Line B", "P265 static paired fitted-edge rule");
+        AssertContains(extendUse.Impact, "Detected edge points do not change", "P265 static fitted-edge detection boundary");
+        AssertContains(averageUse.Summary, "do not read it", "P265 static inactive average-filter runtime boundary");
+        AssertContains(averageUse.Impact, "does not alter", "P265 static inactive average-filter effect");
+        AssertContains(showScans.Summary, "legacy bitmap Draw path", "P265 static legacy scan-line path");
+        AssertContains(showScans.Summary, "Current WPF direct Preview", "P265 static current scan-line path");
+        AssertContains(showEdges.Summary, "always retain edge evidence", "P265 static current edge-evidence path");
+        AssertContains(showContour.Impact, "current overlays", "P265 static current contour path");
+        AssertContains(showFit.Summary, "retain fit evidence", "P265 static current fit-evidence path");
+
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_P265LineParameterGuide");
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            shellHost.SelectToolForTest(VISION_MENU.Line);
+            Pump(24);
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+            Pump(16);
+            System.Windows.Controls.WpfPropertyGrid.PropertyGrid liveGrid =
+                GetActiveFloatingPropertyGrid("P265 Line parameter guide");
+            LineGaugeProperty live = liveGrid.SelectedObject as LineGaugeProperty
+                ?? throw new InvalidOperationException("P265 Line PropertyGrid was not available.");
+            live.USE_MANUAL_ANGLE = true;
+            live.USE_EXTEND_FIT_LINE = true;
+            live.USE_AVERAGE_FILTER = true;
+            new OpenVisionLab.Common.PropertyGridEventBinder(null)
+                .ApplyVisibilityRules(liveGrid);
+            Pump(16);
+            AssertParameterGuideDetailedCoverage(live, "LineGauge/LineDistance");
+
+            VisionToolParameterGuideContent liveManualAngle = VisionToolParameterGuideCatalog.Resolve(
+                live,
+                nameof(LineGaugeProperty.MANUAL_ANGLE_VALUE));
+            VisionToolParameterGuideContent liveExtendLength = VisionToolParameterGuideCatalog.Resolve(
+                live,
+                nameof(LineGaugeProperty.EXTEND_FIT_LINE_VALUE));
+            VisionToolParameterGuideContent liveAverageDiff = VisionToolParameterGuideCatalog.Resolve(
+                live,
+                nameof(LineGaugeProperty.AVERAGE_Diff));
+            VisionToolParameterGuideContent liveAverageType = VisionToolParameterGuideCatalog.Resolve(
+                live,
+                nameof(LineGaugeProperty.AVERAGE_FILTER_TYPE));
+            if (liveManualAngle == null
+                || liveExtendLength == null
+                || liveAverageDiff == null
+                || liveAverageType == null)
+            {
+                throw new InvalidOperationException(
+                    "P265 Line conditional detailed guides were not visible after enabling their parent controls.");
+            }
+            AssertContains(liveManualAngle.Identity, "deg", "P265 conditional manual angle unit");
+            AssertContains(liveManualAngle.Impact, "edge points", "P265 conditional manual angle edge boundary");
+            AssertContains(liveExtendLength.Summary, "drawing", "P265 conditional extend-length drawing meaning");
+            AssertContains(liveExtendLength.Summary, "not a distance tolerance", "P265 conditional extend-length tolerance boundary");
+            AssertContains(liveAverageDiff.Summary, "does not read", "P265 conditional inactive average-difference boundary");
+            AssertContains(liveAverageType.Summary, "does not read", "P265 conditional inactive average-axis boundary");
+
+            live.USE_MANUAL_ANGLE = false;
+            live.USE_EXTEND_FIT_LINE = false;
+            live.USE_AVERAGE_FILTER = false;
+            foreach (string dependentProperty in new[]
+            {
+                nameof(LineGaugeProperty.MANUAL_ANGLE_VALUE),
+                nameof(LineGaugeProperty.EXTEND_FIT_LINE_VALUE),
+                nameof(LineGaugeProperty.AVERAGE_Diff),
+                nameof(LineGaugeProperty.AVERAGE_FILTER_TYPE)
+            })
+            {
+                VisionToolParameterGuideContent inactive = VisionToolParameterGuideCatalog.Resolve(
+                    live,
+                    dependentProperty);
+                if (inactive == null || string.IsNullOrWhiteSpace(inactive.Applicability))
+                {
+                    throw new InvalidOperationException(
+                        "P265 Line guide did not report the inactive parent condition for "
+                        + dependentProperty
+                        + ".");
+                }
+            }
+            live.USE_MANUAL_ANGLE = true;
+            live.USE_EXTEND_FIT_LINE = true;
+            live.USE_AVERAGE_FILTER = true;
+
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(LineGaugeProperty.USE_MANUAL_ANGLE),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "distance-sampling lines", "P265 manual sampling meaning");
+                    AssertContains(guide.SummaryForTest, "does not change edge-search", "P265 manual edge-search boundary");
+                });
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(LineGaugeProperty.MANUAL_ANGLE_VALUE),
+                guide =>
+                {
+                    AssertContains(guide.IdentityForTest, "deg", "P265 manual angle unit");
+                    AssertContains(guide.ImpactForTest, "edge points", "P265 manual angle edge boundary");
+                });
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(LineGaugeProperty.USE_EXTEND_FIT_LINE),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "both Line A and Line B", "P265 paired fitted-edge rule");
+                    AssertContains(guide.ImpactForTest, "Detected edge points do not change", "P265 fitted-edge detection boundary");
+                });
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(LineGaugeProperty.EXTEND_FIT_LINE_VALUE),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "drawing", "P265 extend-length drawing meaning");
+                    AssertContains(guide.SummaryForTest, "not a distance tolerance", "P265 extend-length tolerance boundary");
+                });
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(LineGaugeProperty.USE_AVERAGE_FILTER),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "do not read it", "P265 inactive average-filter runtime boundary");
+                    AssertContains(guide.ImpactForTest, "does not alter", "P265 inactive average-filter effect");
+                });
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(LineGaugeProperty.SHOW_VERTICAL_LINE),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "legacy bitmap Draw path", "P265 legacy scan-line path");
+                    AssertContains(guide.SummaryForTest, "Current WPF direct Preview", "P265 current scan-line path");
+                });
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(LineGaugeProperty.SHOW_FITLINE),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "retain fit evidence", "P265 current fit-evidence path");
+                    AssertContains(guide.ImpactForTest, "does not alter fitting", "P265 display/algorithm boundary");
+                });
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            Pump(16);
+            string reportDirectory = Path.GetDirectoryName(outputPath) ?? ".";
+            File.WriteAllLines(
+                Path.Combine(reportDirectory, "p265-line-parameter-guide-smoke.txt"),
+                new[]
+                {
+                    "Status=OK",
+                    "DetailedFamily=LineGauge/LineDistance",
+                    "DetailedProperties=36/36",
+                    "AuditedProperties=11/11",
+                    "Groups=manual-distance-sampling,fitted-edge-distance,stored-inactive-average-filter,legacy-current-drawing-path",
+                    "ManualAngleBoundary=LineDistance sample lines; not edge search or fit",
+                    "FittedEdgeBoundary=pair switch requires both A and B; extend length is drawing-only",
+                    "AverageFilterBoundary=stored but not consumed by current runtime",
+                    "DrawingBoundary=legacy bitmap only; current WPF/Pipeline evidence retained",
+                    "Localization=Korean,English",
+                    "PreviewRunLayerRouteSideEffects=unchanged"
+                });
+        });
+    }
+
+    private static CaptureResult CaptureP266LineInactiveLegacyControls(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        LineGaugeProperty property = new()
+        {
+            USE_AVERAGE_FILTER = true,
+            AVERAGE_Diff = 73D,
+            AVERAGE_FILTER_TYPE = LineGaugeProperty.AVERAGE_FILTER_TYPES.X,
+            SHOW_VERTICAL_LINE = false,
+            SHOW_EDGE = true,
+            SHOW_CONTOUR = false,
+            SHOW_FITLINE = true
+        };
+        string[] compatibilityProperties =
+        {
+            nameof(LineGaugeProperty.USE_AVERAGE_FILTER),
+            nameof(LineGaugeProperty.AVERAGE_Diff),
+            nameof(LineGaugeProperty.AVERAGE_FILTER_TYPE),
+            nameof(LineGaugeProperty.SHOW_VERTICAL_LINE),
+            nameof(LineGaugeProperty.SHOW_EDGE),
+            nameof(LineGaugeProperty.SHOW_CONTOUR),
+            nameof(LineGaugeProperty.SHOW_FITLINE)
+        };
+        string[] editable = compatibilityProperties
+            .Where(name => !IsCompatibilityReadOnlyProperty(property, name))
+            .ToArray();
+        if (editable.Length > 0)
+        {
+            throw new InvalidOperationException(
+                "P266 inactive/legacy Line descriptors remained editable: "
+                + string.Join(",", editable));
+        }
+
+        VisionToolParameterGuideContent averageEnglish = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(LineGaugeProperty.USE_AVERAGE_FILTER));
+        VisionToolParameterGuideContent edgeEnglish = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(LineGaugeProperty.SHOW_EDGE));
+        if (averageEnglish == null
+            || edgeEnglish == null
+            || !averageEnglish.Title.Contains("Compatibility", StringComparison.Ordinal)
+            || !averageEnglish.Title.Contains("inactive", StringComparison.OrdinalIgnoreCase)
+            || !edgeEnglish.Title.Contains("Legacy draw", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "P266 English inactive/legacy labels were not explicit. "
+                + "Average='"
+                + averageEnglish?.Title
+                + "', Edge='"
+                + edgeEnglish?.Title
+                + "'.");
+        }
+
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        VisionToolParameterGuideContent averageKorean = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(LineGaugeProperty.USE_AVERAGE_FILTER));
+        VisionToolParameterGuideContent edgeKorean = VisionToolParameterGuideCatalog.Resolve(
+            property,
+            nameof(LineGaugeProperty.SHOW_EDGE));
+        if (averageKorean == null
+            || edgeKorean == null
+            || !averageKorean.Title.Contains("호환", StringComparison.Ordinal)
+            || !averageKorean.Title.Contains("미적용", StringComparison.Ordinal)
+            || !edgeKorean.Title.Contains("레거시", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "P266 Korean inactive/legacy labels were not explicit. "
+                + "Average='"
+                + averageKorean?.Title
+                + "', Edge='"
+                + edgeKorean?.Title
+                + "'.");
+        }
+
+        foreach (VisionToolPreset<LineGaugeProperty> preset in VisionToolPresetCatalog.GetLinePresets())
+        {
+            LineGaugeProperty presetProperty = (LineGaugeProperty)property.DeepCopy();
+            preset.ApplyTo(presetProperty);
+            if (presetProperty.USE_AVERAGE_FILTER != property.USE_AVERAGE_FILTER
+                || Math.Abs(presetProperty.AVERAGE_Diff - property.AVERAGE_Diff) > 0.000001D
+                || presetProperty.AVERAGE_FILTER_TYPE != property.AVERAGE_FILTER_TYPE
+                || presetProperty.SHOW_VERTICAL_LINE != property.SHOW_VERTICAL_LINE
+                || presetProperty.SHOW_EDGE != property.SHOW_EDGE
+                || presetProperty.SHOW_CONTOUR != property.SHOW_CONTOUR
+                || presetProperty.SHOW_FITLINE != property.SHOW_FITLINE)
+            {
+                throw new InvalidOperationException(
+                    "P266 Line preset changed inactive/legacy compatibility values: "
+                    + preset.Id);
+            }
+        }
+
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_P266LineInactiveLegacyControls");
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            shellHost.SelectToolForTest(VISION_MENU.Line);
+            Pump(24);
+            System.Windows.Controls.WpfPropertyGrid.PropertyGrid liveGrid =
+                GetActiveFloatingPropertyGrid("P266 Line compatibility controls");
+            LineGaugeProperty live = liveGrid.SelectedObject as LineGaugeProperty
+                ?? throw new InvalidOperationException("P266 Line PropertyGrid was not available.");
+            live.USE_AVERAGE_FILTER = true;
+            live.AVERAGE_Diff = 73D;
+            live.AVERAGE_FILTER_TYPE = LineGaugeProperty.AVERAGE_FILTER_TYPES.X;
+            live.SHOW_VERTICAL_LINE = false;
+            live.SHOW_EDGE = true;
+            live.SHOW_CONTOUR = false;
+            live.SHOW_FITLINE = true;
+            new OpenVisionLab.Common.PropertyGridEventBinder(null)
+                .ApplyVisibilityRules(liveGrid);
+            liveGrid.RefreshSelectedObject();
+            Pump(16);
+            AssertLineLegacyPropertiesReadOnly("P266 Line compatibility controls");
+            OpenVisionLab.PropertyGrid.IPropertyGridProperty? averageGridProperty =
+                liveGrid.Properties?[nameof(LineGaugeProperty.USE_AVERAGE_FILTER)];
+            averageGridProperty?.SetValue(false);
+            if (!live.USE_AVERAGE_FILTER)
+            {
+                throw new InvalidOperationException(
+                    "P266 PropertyGrid bridge changed a compatibility read-only value.");
+            }
+
+            if (!liveGrid.FocusProperty(nameof(LineGaugeProperty.USE_AVERAGE_FILTER)))
+            {
+                throw new InvalidOperationException(
+                    "P266 could not focus the visible average-filter compatibility row.");
+            }
+            Pump(12);
+            Border averageRow = FindVisualChildren<Border>(liveGrid)
+                .FirstOrDefault(element => element.IsVisible
+                    && string.Equals(
+                        ResolvePropertyGridPropertyName(element.DataContext),
+                        nameof(LineGaugeProperty.USE_AVERAGE_FILTER),
+                        StringComparison.Ordinal))
+                ?? throw new InvalidOperationException(
+                    "P266 average-filter compatibility row was not rendered.");
+            CheckBox averageEditor = FindVisualChildren<CheckBox>(averageRow)
+                .FirstOrDefault()
+                ?? throw new InvalidOperationException(
+                    "P266 average-filter compatibility checkbox was not rendered.");
+            if (averageEditor.IsEnabled || averageEditor.IsTabStop)
+            {
+                throw new InvalidOperationException(
+                    "P266 average-filter compatibility editor remained interactive.");
+            }
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+            Pump(12);
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(LineGaugeProperty.USE_AVERAGE_FILTER),
+                guide =>
+                {
+                    AssertContains(guide.TitleForTest, "Compatibility", "P266 average-filter compatibility label");
+                    AssertContains(guide.TitleForTest, "inactive", "P266 average-filter inactive label");
+                    AssertContains(guide.SummaryForTest, "do not read it", "P266 average-filter runtime boundary");
+                });
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(LineGaugeProperty.SHOW_EDGE),
+                guide =>
+                {
+                    AssertContains(guide.TitleForTest, "Legacy draw", "P266 edge legacy label");
+                    AssertContains(guide.SummaryForTest, "always retain edge evidence", "P266 current WPF edge boundary");
+                });
+
+            int previewRunsBefore = shellHost.NativePreviewRunCount;
+            int layerCountBefore = shellHost.LayerDocumentCount;
+            string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+            string inputRouteBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+            string outputRouteBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+            foreach (VisionToolPreset<LineGaugeProperty> preset in VisionToolPresetCatalog.GetLinePresets())
+            {
+                preset.ApplyTo(live);
+            }
+            if (!live.USE_AVERAGE_FILTER
+                || Math.Abs(live.AVERAGE_Diff - 73D) > 0.000001D
+                || live.AVERAGE_FILTER_TYPE != LineGaugeProperty.AVERAGE_FILTER_TYPES.X
+                || live.SHOW_VERTICAL_LINE
+                || !live.SHOW_EDGE
+                || live.SHOW_CONTOUR
+                || !live.SHOW_FITLINE
+                || shellHost.NativePreviewRunCount != previewRunsBefore
+                || shellHost.LayerDocumentCount != layerCountBefore
+                || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBefore, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBefore, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "P266 preset compatibility preservation or zero-side-effect contract changed.");
+            }
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            Pump(12);
+            string reportDirectory = Path.GetDirectoryName(outputPath) ?? ".";
+            File.WriteAllLines(
+                Path.Combine(reportDirectory, "p266-line-inactive-legacy-controls-smoke.txt"),
+                new[]
+                {
+                    "Status=OK",
+                    "ReadOnlyProperties=7/7",
+                    "DirectToolLabels=CompatibilityInactive,LegacyDraw",
+                    "RecipePresetValues=preserved",
+                    "PresetMutation=none",
+                    "Localization=Korean,English",
+                    "CurrentWpfPipelineEvidence=retained",
+                    "PreviewRunLayerRouteSideEffects=unchanged"
+                });
+        });
+    }
+
+    private static CaptureResult CaptureP267AffineTransformParameterGuide(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        AffineTransformProperty property = new()
+        {
+            SourcePoint1X = 20D,
+            SourcePoint1Y = 25D,
+            SourcePoint2X = 220D,
+            SourcePoint2Y = 30D,
+            SourcePoint3X = 35D,
+            SourcePoint3Y = 190D,
+            DestinationPoint1X = 40D,
+            DestinationPoint1Y = 50D,
+            DestinationPoint2X = 280D,
+            DestinationPoint2Y = 50D,
+            DestinationPoint3X = 40D,
+            DestinationPoint3Y = 250D,
+            OutputWidth = 640,
+            OutputHeight = 480,
+            Interpolation = OpenCvSharp.InterpolationFlags.Cubic,
+            BorderType = OpenCvSharp.BorderTypes.Reflect,
+            BorderValue = 32D,
+            MinimumSourceTriangleArea = 100D,
+            MinimumDestinationTriangleArea = 100D,
+            MinimumValidPixelRatio = 0.65D
+        };
+        string[] auditedProperties =
+        {
+            nameof(AffineTransformProperty.SourcePoint1X),
+            nameof(AffineTransformProperty.SourcePoint1Y),
+            nameof(AffineTransformProperty.SourcePoint2X),
+            nameof(AffineTransformProperty.SourcePoint2Y),
+            nameof(AffineTransformProperty.SourcePoint3X),
+            nameof(AffineTransformProperty.SourcePoint3Y),
+            nameof(AffineTransformProperty.DestinationPoint1X),
+            nameof(AffineTransformProperty.DestinationPoint1Y),
+            nameof(AffineTransformProperty.DestinationPoint2X),
+            nameof(AffineTransformProperty.DestinationPoint2Y),
+            nameof(AffineTransformProperty.DestinationPoint3X),
+            nameof(AffineTransformProperty.DestinationPoint3Y),
+            nameof(AffineTransformProperty.OutputWidth),
+            nameof(AffineTransformProperty.OutputHeight),
+            nameof(AffineTransformProperty.Interpolation),
+            nameof(AffineTransformProperty.BorderType),
+            nameof(AffineTransformProperty.BorderValue),
+            nameof(AffineTransformProperty.MinimumSourceTriangleArea),
+            nameof(AffineTransformProperty.MinimumDestinationTriangleArea),
+            nameof(AffineTransformProperty.MinimumValidPixelRatio)
+        };
+        AssertParameterGuideDetailedCoverage(property, "AffineTransform");
+        string[] basic = auditedProperties
+            .Where(name =>
+            {
+                VisionToolParameterGuideContent content =
+                    VisionToolParameterGuideCatalog.Resolve(property, name);
+                return content == null
+                    || content.Coverage.Contains("Basic", StringComparison.OrdinalIgnoreCase)
+                    || content.Coverage.Contains("湲곕낯", StringComparison.OrdinalIgnoreCase);
+            })
+            .ToArray();
+        if (basic.Length > 0)
+        {
+            throw new InvalidOperationException(
+                "P267 AffineTransform properties remained Basic: "
+                + string.Join(",", basic));
+        }
+
+        VisionToolParameterGuideContent sourceX =
+            VisionToolParameterGuideCatalog.Resolve(
+                property,
+                nameof(AffineTransformProperty.SourcePoint1X));
+        VisionToolParameterGuideContent outputWidth =
+            VisionToolParameterGuideCatalog.Resolve(
+                property,
+                nameof(AffineTransformProperty.OutputWidth));
+        VisionToolParameterGuideContent interpolation =
+            VisionToolParameterGuideCatalog.Resolve(
+                property,
+                nameof(AffineTransformProperty.Interpolation));
+        VisionToolParameterGuideContent borderValue =
+            VisionToolParameterGuideCatalog.Resolve(
+                property,
+                nameof(AffineTransformProperty.BorderValue));
+        VisionToolParameterGuideContent sourceArea =
+            VisionToolParameterGuideCatalog.Resolve(
+                property,
+                nameof(AffineTransformProperty.MinimumSourceTriangleArea));
+        VisionToolParameterGuideContent validRatio =
+            VisionToolParameterGuideCatalog.Resolve(
+                property,
+                nameof(AffineTransformProperty.MinimumValidPixelRatio));
+        AssertContains(sourceX?.Summary ?? string.Empty, "correspond in order", "P267 source-point order");
+        AssertContains(sourceX?.Risk ?? string.Empty, "mirrored or sheared", "P267 source-point semantic risk");
+        AssertContains(outputWidth?.Summary ?? string.Empty, "Zero keeps the input-image width", "P267 output zero contract");
+        AssertContains(interpolation?.Summary ?? string.Empty, "Nearest, Linear, Cubic, and Lanczos4", "P267 supported interpolation");
+        AssertContains(borderValue?.Applicability ?? string.Empty, "Currently inactive", "P267 conditional border value");
+        AssertContains(sourceArea?.Impact ?? string.Empty, "Even at zero", "P267 collinear fail-closed boundary");
+        AssertContains(validRatio?.Summary ?? string.Empty, "Border fill does not count", "P267 coverage-mask boundary");
+
+        VisionPipelineStep detectedStep = VisionPipelineStepBuilder.FromAffineTransformProperty(
+            property,
+            "Affine detected source",
+            "Main",
+            "Reference");
+        detectedStep.Parameters[
+            VisionPipelineAffinePointBindingService.UseDetectedSourcePointsParameter] = "true";
+        detectedStep.Parameters[
+            VisionPipelineAffinePointBindingService.SourcePoint1FeatureParameter] =
+            "LocateA/Center";
+        detectedStep.Parameters[
+            VisionPipelineAffinePointBindingService.SourcePoint2FeatureParameter] =
+            "LocateB/Center";
+        detectedStep.Parameters[
+            VisionPipelineAffinePointBindingService.SourcePoint3FeatureParameter] =
+            "LocateC/Center";
+        object detectedProperty = VisionPipelineStepPropertyMapper.CreateProperty(detectedStep)
+            ?? throw new InvalidOperationException(
+                "P267 Recipe Affine PropertyGrid mapping returned no property.");
+        VisionToolParameterGuideContent detectedSourceX =
+            VisionToolParameterGuideCatalog.Resolve(
+                detectedProperty,
+                nameof(AffineTransformProperty.SourcePoint1X));
+        if (detectedSourceX == null
+            || detectedSourceX.Coverage.Contains("Basic", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "P267 Recipe Affine fixed-source guidance did not resolve as detailed.");
+        }
+        AssertContains(
+            detectedSourceX.Applicability,
+            "Currently inactive",
+            "P267 detected-source fixed-coordinate applicability");
+
+        OpenVisionShellHostView shellHost =
+            CreateShellHost("Smoke_P267AffineTransformParameterGuide");
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            shellHost.SelectToolForTest(VISION_MENU.AffineTransform);
+            Pump(24);
+            System.Windows.Controls.WpfPropertyGrid.PropertyGrid liveGrid =
+                GetActiveFloatingPropertyGrid("P267 AffineTransform guide");
+            AffineTransformProperty live =
+                liveGrid.SelectedObject as AffineTransformProperty
+                ?? throw new InvalidOperationException(
+                    "P267 AffineTransform PropertyGrid was not available.");
+            live.BorderType = OpenCvSharp.BorderTypes.Constant;
+            live.MinimumValidPixelRatio = 0.65D;
+            liveGrid.RefreshSelectedObject();
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+            Pump(12);
+            AssertParameterGuideDetailedCoverage(live, "AffineTransform live");
+
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(AffineTransformProperty.SourcePoint1X),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "correspond in order", "P267 live source order");
+                    AssertContains(guide.ImpactForTest, "translation", "P267 live source effect");
+                });
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(AffineTransformProperty.Interpolation),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "Lanczos4", "P267 live interpolation support");
+                    AssertContains(guide.ImpactForTest, "Nearest", "P267 live interpolation effect");
+                });
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(AffineTransformProperty.BorderValue),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "every gray or color channel", "P267 live constant border");
+                });
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(AffineTransformProperty.MinimumValidPixelRatio),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "Border fill does not count", "P267 live valid coverage");
+                    AssertContains(guide.CheckForTest, "every downstream fixed ROI", "P267 live global-ratio boundary");
+                });
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            Pump(12);
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(AffineTransformProperty.SourcePoint1X),
+                guide =>
+                {
+                    AssertContains(guide.CoverageForTest, "상세", "P267 Korean detailed coverage");
+                    AssertContains(guide.SummaryForTest, "순서대로 대응", "P267 Korean source order");
+                });
+
+            string reportDirectory = Path.GetDirectoryName(outputPath) ?? ".";
+            File.WriteAllLines(
+                Path.Combine(reportDirectory, "p267-affine-transform-parameter-guide-smoke.txt"),
+                new[]
+                {
+                    "Status=OK",
+                    "DetailedFamily=AffineTransform",
+                    "DetailedProperties=38/38",
+                    "AuditedProperties=20/20",
+                    "Groups=source-destination-correspondence,output-canvas,sampling-border,fail-closed-gates",
+                    "CoordinateBoundary=pixel-only ordered 3-point correspondence",
+                    "OutputBoundary=zero keeps corresponding input dimension; canvas does not rescale coordinates",
+                    "SamplingBoundary=Nearest,Linear,Cubic,Lanczos4; five supported border policies",
+                    "CoverageBoundary=source-mask coverage; border fill excluded",
+                    "DetectedPointBoundary=Recipe detected mode replaces fixed source coordinates",
+                    "Localization=Korean,English",
+                    "PreviewRunLayerRouteSideEffects=unchanged"
+                });
+        });
+    }
+
+    private static CaptureResult CaptureP268EdgeBasedMatchingParameterGuide(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        EdgeBasedMatchingProperty property = new("P268_EdgeBasedMatching")
+        {
+            PATTERN_PATH = "reviewed-template.png",
+            ALLOW_GLOBAL_POLARITY_REVERSAL = true,
+            USE_DRAW_IMAGE = false,
+            AUTO_MPOINT_USE_ANALYSIS_ROI = true,
+            AUTO_MPOINT_ANALYSIS_ROI = new OpenCvSharp.Rect(20, 30, 240, 180),
+            AUTO_MPOINT_PATTERN_WIDTH = 80,
+            AUTO_MPOINT_PATTERN_HEIGHT = 72,
+            AUTO_MPOINT_STRIDE = 12,
+            AUTO_MPOINT_MAX_RESULTS = 6,
+            AUTO_MPOINT_MIN_FEATURE_QUALITY = 0.22D,
+            AUTO_MPOINT_MIN_UNIQUENESS = 0.08D,
+            AUTO_MPOINT_MAX_POSITION_ERROR = 1.75D,
+            AUTO_MPOINT_MIN_REPRESENTATIVE_IMAGES = 4,
+            AUTO_MPOINT_MIN_REPRESENTATIVE_SUCCESS_RATE = 0.80D,
+            CANNY_APERTURE_SIZE = 5,
+            USE_L2_GRADIENT = true,
+            CONTOUR_RETRIEVAL_MODE = OpenCvSharp.RetrievalModes.Tree,
+            CONTOUR_APPROXIMATION_MODE = OpenCvSharp.ContourApproximationModes.ApproxSimple,
+            MAX_TEMPLATE_POINTS = 420,
+            MIN_GRADIENT_MAGNITUDE = 2.5D,
+            USE_FIND_ANGLE = true,
+            USE_COARSE_TO_FINE_ANGLE_SEARCH = true,
+            COARSE_ANGLE_STEP = 6D,
+            COARSE_ANGLE_TOP_K = 4,
+            USE_FIND_SCALE = true,
+            FIND_SCALE_MIN = 0.92D,
+            FIND_SCALE_MAX = 1.08D,
+            FIND_SCALE_STEP = 0.02D,
+            SEARCH_STEP = 3,
+            USE_POSITION_REFINE = true,
+            USE_SUBPIXEL_REFINE = true,
+            GREEDINESS = 0.84D,
+            USE_PYRAMID_POSITION_PROPOSAL = true,
+            PYRAMID_POSITION_TOP_N = 7,
+            PYRAMID_POSITION_MIN_SCORE = 0.73D,
+            USE_HYBRID_VERIFY = true,
+            HYBRID_VERIFY_TOP_N = 6,
+            HYBRID_VERIFY_IMAGE_WEIGHT = 0.40D
+        };
+        string[] auditedProperties =
+        {
+            nameof(EdgeBasedMatchingProperty.PATTERN_PATH),
+            nameof(EdgeBasedMatchingProperty.ALLOW_GLOBAL_POLARITY_REVERSAL),
+            nameof(EdgeBasedMatchingProperty.USE_DRAW_IMAGE),
+            nameof(EdgeBasedMatchingProperty.AUTO_MPOINT_USE_ANALYSIS_ROI),
+            nameof(EdgeBasedMatchingProperty.AUTO_MPOINT_ANALYSIS_ROI),
+            nameof(EdgeBasedMatchingProperty.AUTO_MPOINT_PATTERN_WIDTH),
+            nameof(EdgeBasedMatchingProperty.AUTO_MPOINT_PATTERN_HEIGHT),
+            nameof(EdgeBasedMatchingProperty.AUTO_MPOINT_STRIDE),
+            nameof(EdgeBasedMatchingProperty.AUTO_MPOINT_MAX_RESULTS),
+            nameof(EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_FEATURE_QUALITY),
+            nameof(EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_UNIQUENESS),
+            nameof(EdgeBasedMatchingProperty.AUTO_MPOINT_MAX_POSITION_ERROR),
+            nameof(EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_REPRESENTATIVE_IMAGES),
+            nameof(EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_REPRESENTATIVE_SUCCESS_RATE),
+            nameof(EdgeBasedMatchingProperty.CANNY_APERTURE_SIZE),
+            nameof(EdgeBasedMatchingProperty.USE_L2_GRADIENT),
+            nameof(EdgeBasedMatchingProperty.CONTOUR_RETRIEVAL_MODE),
+            nameof(EdgeBasedMatchingProperty.CONTOUR_APPROXIMATION_MODE),
+            nameof(EdgeBasedMatchingProperty.MAX_TEMPLATE_POINTS),
+            nameof(EdgeBasedMatchingProperty.MIN_GRADIENT_MAGNITUDE),
+            nameof(EdgeBasedMatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH),
+            nameof(EdgeBasedMatchingProperty.COARSE_ANGLE_STEP),
+            nameof(EdgeBasedMatchingProperty.COARSE_ANGLE_TOP_K),
+            nameof(EdgeBasedMatchingProperty.USE_POSITION_REFINE),
+            nameof(EdgeBasedMatchingProperty.USE_SUBPIXEL_REFINE),
+            nameof(EdgeBasedMatchingProperty.GREEDINESS),
+            nameof(EdgeBasedMatchingProperty.USE_PYRAMID_POSITION_PROPOSAL),
+            nameof(EdgeBasedMatchingProperty.PYRAMID_POSITION_TOP_N),
+            nameof(EdgeBasedMatchingProperty.PYRAMID_POSITION_MIN_SCORE),
+            nameof(EdgeBasedMatchingProperty.USE_HYBRID_VERIFY),
+            nameof(EdgeBasedMatchingProperty.HYBRID_VERIFY_TOP_N),
+            nameof(EdgeBasedMatchingProperty.HYBRID_VERIFY_IMAGE_WEIGHT)
+        };
+        AssertParameterGuideDetailedCoverage(property, "EdgeBasedMatching");
+        string[] basic = auditedProperties
+            .Where(name =>
+            {
+                VisionToolParameterGuideContent content =
+                    VisionToolParameterGuideCatalog.Resolve(property, name);
+                return content == null
+                    || content.Coverage.Contains("Basic", StringComparison.OrdinalIgnoreCase);
+            })
+            .ToArray();
+        if (basic.Length > 0)
+        {
+            throw new InvalidOperationException(
+                "P268 EdgeBasedMatching properties remained Basic: "
+                + string.Join(",", basic));
+        }
+
+        VisionToolParameterGuideContent pattern =
+            VisionToolParameterGuideCatalog.Resolve(
+                property,
+                nameof(EdgeBasedMatchingProperty.PATTERN_PATH));
+        VisionToolParameterGuideContent draw =
+            VisionToolParameterGuideCatalog.Resolve(
+                property,
+                nameof(EdgeBasedMatchingProperty.USE_DRAW_IMAGE));
+        VisionToolParameterGuideContent autoMPoint =
+            VisionToolParameterGuideCatalog.Resolve(
+                property,
+                nameof(EdgeBasedMatchingProperty.AUTO_MPOINT_MAX_RESULTS));
+        VisionToolParameterGuideContent aperture =
+            VisionToolParameterGuideCatalog.Resolve(
+                property,
+                nameof(EdgeBasedMatchingProperty.CANNY_APERTURE_SIZE));
+        VisionToolParameterGuideContent pyramid =
+            VisionToolParameterGuideCatalog.Resolve(
+                property,
+                nameof(EdgeBasedMatchingProperty.USE_PYRAMID_POSITION_PROPOSAL));
+        VisionToolParameterGuideContent hybridWeight =
+            VisionToolParameterGuideCatalog.Resolve(
+                property,
+                nameof(EdgeBasedMatchingProperty.HYBRID_VERIFY_IMAGE_WEIGHT));
+        AssertContains(pattern?.Risk ?? string.Empty, "does not prove", "P268 physical-identity boundary");
+        AssertContains(draw?.Impact ?? string.Empty, "even when Off", "P268 successful drawing boundary");
+        AssertContains(autoMPoint?.Risk ?? string.Empty, "auto-selected", "P268 Suggested-only boundary");
+        AssertContains(aperture?.Summary ?? string.Empty, "3, 5, or 7", "P268 Canny normalization");
+        AssertContains(pyramid?.Impact ?? string.Empty, "bypassed when scale search", "P268 scale/pyramid boundary");
+        AssertContains(hybridWeight?.Summary ?? string.Empty, "public result score remains", "P268 public-score boundary");
+
+        property.AUTO_MPOINT_USE_ANALYSIS_ROI = false;
+        property.USE_FIND_ANGLE = true;
+        property.USE_COARSE_TO_FINE_ANGLE_SEARCH = false;
+        property.USE_PYRAMID_POSITION_PROPOSAL = false;
+        property.USE_HYBRID_VERIFY = false;
+        foreach (string inactiveProperty in new[]
+        {
+            nameof(EdgeBasedMatchingProperty.AUTO_MPOINT_ANALYSIS_ROI),
+            nameof(EdgeBasedMatchingProperty.COARSE_ANGLE_STEP),
+            nameof(EdgeBasedMatchingProperty.PYRAMID_POSITION_MIN_SCORE),
+            nameof(EdgeBasedMatchingProperty.HYBRID_VERIFY_IMAGE_WEIGHT)
+        })
+        {
+            VisionToolParameterGuideContent inactive =
+                VisionToolParameterGuideCatalog.Resolve(property, inactiveProperty);
+            if (inactive == null
+                || !inactive.Applicability.Contains(
+                    "Currently inactive",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "P268 conditional applicability was not explicit for "
+                    + inactiveProperty
+                    + ".");
+            }
+        }
+
+        property.USE_FIND_SCALE = true;
+        property.FIND_SCALE_MIN = 0.92D;
+        property.FIND_SCALE_MAX = 1.08D;
+        property.FIND_SCALE_STEP = 0.02D;
+        property.USE_SUBPIXEL_REFINE = true;
+        property.USE_PYRAMID_POSITION_PROPOSAL = true;
+        property.PYRAMID_POSITION_TOP_N = 7;
+        property.PYRAMID_POSITION_MIN_SCORE = 0.73D;
+        VisionPipelineStep roundTripStep =
+            VisionPipelineStepBuilder.FromProperty(property, "Main", "EdgeResult");
+        object mappedObject =
+            VisionPipelineStepPropertyMapper.CreateProperty(roundTripStep)
+            ?? throw new InvalidOperationException(
+                "P268 Recipe EdgeBasedMatching PropertyGrid mapping returned no property.");
+        EdgeBasedMatchingProperty mapped = mappedObject as EdgeBasedMatchingProperty
+            ?? throw new InvalidOperationException(
+                "P268 Recipe EdgeBasedMatching PropertyGrid returned the wrong property type.");
+        if (!mapped.USE_FIND_SCALE
+            || Math.Abs(mapped.FIND_SCALE_MIN - 0.92D) > 0.000001D
+            || Math.Abs(mapped.FIND_SCALE_MAX - 1.08D) > 0.000001D
+            || Math.Abs(mapped.FIND_SCALE_STEP - 0.02D) > 0.000001D
+            || !mapped.USE_SUBPIXEL_REFINE
+            || !mapped.USE_PYRAMID_POSITION_PROPOSAL
+            || mapped.PYRAMID_POSITION_TOP_N != 7
+            || Math.Abs(mapped.PYRAMID_POSITION_MIN_SCORE - 0.73D) > 0.000001D)
+        {
+            throw new InvalidOperationException(
+                "P268 Recipe EdgeBasedMatching scale/subpixel/pyramid values were not restored.");
+        }
+        if (!VisionPipelineStepPropertyMapper.ApplyProperty(roundTripStep, mapped))
+        {
+            throw new InvalidOperationException(
+                "P268 Recipe EdgeBasedMatching PropertyGrid apply failed.");
+        }
+        EdgeBasedMatchingProperty reloaded =
+            VisionPipelineStepPropertyMapper.CreateProperty(roundTripStep)
+                as EdgeBasedMatchingProperty
+            ?? throw new InvalidOperationException(
+                "P268 Recipe EdgeBasedMatching reload returned no property.");
+        if (!reloaded.USE_FIND_SCALE
+            || !reloaded.USE_SUBPIXEL_REFINE
+            || !reloaded.USE_PYRAMID_POSITION_PROPOSAL
+            || reloaded.PYRAMID_POSITION_TOP_N != 7
+            || Math.Abs(reloaded.PYRAMID_POSITION_MIN_SCORE - 0.73D) > 0.000001D)
+        {
+            throw new InvalidOperationException(
+                "P268 Recipe EdgeBasedMatching apply/reload lost active runtime values.");
+        }
+        string[] recipeBasic = auditedProperties
+            .Where(name =>
+            {
+                VisionToolParameterGuideContent content =
+                    VisionToolParameterGuideCatalog.Resolve(mappedObject, name);
+                return content == null
+                    || content.Coverage.Contains("Basic", StringComparison.OrdinalIgnoreCase);
+            })
+            .ToArray();
+        if (recipeBasic.Length > 0)
+        {
+            throw new InvalidOperationException(
+                "P268 Recipe EdgeBasedMatching audited properties remained Basic: "
+                + string.Join(",", recipeBasic));
+        }
+
+        OpenVisionShellHostView shellHost =
+            CreateShellHost("Smoke_P268EdgeBasedMatchingParameterGuide");
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            shellHost.SelectToolForTest(VISION_MENU.EdgeBasedMatching);
+            Pump(24);
+            System.Windows.Controls.WpfPropertyGrid.PropertyGrid liveGrid =
+                GetActiveFloatingPropertyGrid("P268 EdgeBasedMatching guide");
+            EdgeBasedMatchingProperty live =
+                liveGrid.SelectedObject as EdgeBasedMatchingProperty
+                ?? throw new InvalidOperationException(
+                    "P268 EdgeBasedMatching PropertyGrid was not available.");
+            live.AUTO_MPOINT_USE_ANALYSIS_ROI = true;
+            live.USE_FIND_ANGLE = true;
+            live.USE_COARSE_TO_FINE_ANGLE_SEARCH = true;
+            live.USE_PYRAMID_POSITION_PROPOSAL = true;
+            live.USE_HYBRID_VERIFY = true;
+            new OpenVisionLab.Common.PropertyGridEventBinder(null)
+                .ApplyVisibilityRules(liveGrid);
+            liveGrid.RefreshSelectedObject();
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+            Pump(16);
+            AssertParameterGuideDetailedCoverage(live, "EdgeBasedMatching live");
+
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(EdgeBasedMatchingProperty.PATTERN_PATH),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "directed-edge model", "P268 live pattern model");
+                    AssertContains(guide.ImpactForTest, "physical feature", "P268 live physical identity");
+                });
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(EdgeBasedMatchingProperty.AUTO_MPOINT_MAX_RESULTS),
+                guide =>
+                {
+                    AssertContains(guide.SummaryForTest, "Suggested rows", "P268 live Auto MPoint scope");
+                    AssertContains(guide.CheckForTest, "explicitly apply", "P268 live explicit apply");
+                });
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(EdgeBasedMatchingProperty.CANNY_APERTURE_SIZE),
+                guide => AssertContains(
+                    guide.SummaryForTest,
+                    "3, 5, or 7",
+                    "P268 live Canny normalization"));
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(EdgeBasedMatchingProperty.USE_DRAW_IMAGE),
+                guide => AssertContains(
+                    guide.ImpactForTest,
+                    "even when Off",
+                    "P268 live drawing boundary"));
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(EdgeBasedMatchingProperty.USE_PYRAMID_POSITION_PROPOSAL),
+                guide => AssertContains(
+                    guide.ImpactForTest,
+                    "bypassed when scale search",
+                    "P268 live pyramid boundary"));
+            AssertParameterGuideSelectionSideEffects(
+                shellHost,
+                nameof(EdgeBasedMatchingProperty.HYBRID_VERIFY_IMAGE_WEIGHT),
+                guide => AssertContains(
+                    guide.SummaryForTest,
+                    "public result score remains",
+                    "P268 live hybrid score boundary"));
+
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            Pump(12);
+            string koreanPattern = OpenVisionLanguageService.T(
+                "VisionTool.ParameterGuide.EdgeMatching.Pattern.Summary");
+            if (string.IsNullOrWhiteSpace(koreanPattern)
+                || koreanPattern.StartsWith(
+                    "VisionTool.ParameterGuide.",
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "P268 Korean EdgeBasedMatching guide localization was not resolved.");
+            }
+
+            string reportDirectory = Path.GetDirectoryName(outputPath) ?? ".";
+            File.WriteAllLines(
+                Path.Combine(reportDirectory, "p268-edge-based-matching-parameter-guide-smoke.txt"),
+                new[]
+                {
+                    "Status=OK",
+                    "DetailedFamily=EdgeBasedMatching",
+                    "DetailedProperties=65/65",
+                    "AuditedProperties=32/32",
+                    "Groups=template-display,auto-mpoint-teaching,edge-model,coarse-refine-pyramid-hybrid-search",
+                    "IdentityBoundary=score,margin,rank do not prove physical-feature identity",
+                    "AutoMPointBoundary=explicit Analyze candidates; Suggested not Qualified; explicit Use this pattern",
+                    "DrawingBoundary=display-only; successful evidence retained when Off",
+                    "RuntimeRoundTrip=scale,subpixel,pyramid apply-reload preserved",
+                    "Localization=Korean,English",
+                    "PreviewRunLayerRouteSideEffects=unchanged"
+                });
+        });
+    }
+
+    private static CaptureResult CaptureP269PropertyPersistenceFeedback(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+        OpenVisionShellHostView shellHost =
+            CreateShellHost("Smoke_P269PropertyPersistenceFeedback");
+        List<OpenVisionNativeToolPropertySavedEventArgs> events = new();
+        EventHandler<OpenVisionNativeToolPropertySavedEventArgs> savedHandler =
+            (_, args) => events.Add(args);
+        OpenVisionNativeToolPropertySessionStore.PropertySaved += savedHandler;
+        try
+        {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                shellHost.SelectToolForTest(VISION_MENU.Blob);
+                Pump(24);
+                System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid =
+                    GetActiveFloatingPropertyGrid("P269 persistence feedback");
+                BlobProperty property = grid.SelectedObject as BlobProperty
+                    ?? throw new InvalidOperationException(
+                        "P269 Blob PropertyGrid was not available.");
+                Window toolWindow =
+                    GetActiveFloatingToolWindow("P269 persistence feedback");
+                OpenVisionLanguageService.SetLanguage(
+                    OpenVisionLanguage.English,
+                    false);
+                Pump(12);
+                TextBlock statusText = FindVisualChildren<TextBlock>(toolWindow)
+                    .FirstOrDefault(item => string.Equals(
+                            item.Name,
+                            "txtStatus",
+                            StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException(
+                        "P269 Tool status text was not available.");
+
+                int previewRunsBefore = shellHost.NativePreviewRunCount;
+                int layerCountBefore = shellHost.LayerDocumentCount;
+                string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+                string inputRouteBefore =
+                    shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string outputRouteBefore =
+                    shellHost.ActiveNativeRouteOutputLayerNameForTest;
+
+                OpenVisionNativeToolPropertySessionStore.FailNextSaveForTest = true;
+                OpenVisionNativeToolPropertySessionStore.Save("Blob", property);
+                Pump(12);
+                OpenVisionNativeToolPropertySavedEventArgs failure =
+                    events.LastOrDefault()
+                    ?? throw new InvalidOperationException(
+                        "P269 did not publish the failed persistence result.");
+                if (failure.Succeeded
+                    || failure.RecoveredFromFailure
+                    || !shellHost.ActiveNativeStatusText.Contains(
+                        "remain in memory",
+                        StringComparison.OrdinalIgnoreCase)
+                    || !shellHost.ActiveNativeStatusText.Contains(
+                        "lost after reopening",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "P269 English failure feedback did not describe memory-only state and reopen loss. Status='"
+                        + shellHost.ActiveNativeStatusText
+                        + "'.");
+                }
+                if (!string.Equals(
+                        statusText.ToolTip?.ToString(),
+                        shellHost.ActiveNativeStatusText,
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        System.Windows.Automation.AutomationProperties.GetHelpText(
+                            statusText),
+                        shellHost.ActiveNativeStatusText,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "P269 full failure message was not available through tooltip and accessibility help.");
+                }
+
+                OpenVisionNativeToolPropertySessionStore.Save("Blob", property);
+                Pump(12);
+                OpenVisionNativeToolPropertySavedEventArgs recovery =
+                    events.LastOrDefault()
+                    ?? throw new InvalidOperationException(
+                        "P269 did not publish the recovery result.");
+                if (!recovery.Succeeded
+                    || !recovery.RecoveredFromFailure
+                    || !shellHost.ActiveNativeStatusText.Contains(
+                        "recovered",
+                        StringComparison.OrdinalIgnoreCase)
+                    || !shellHost.ActiveNativeStatusText.Contains(
+                        "persisted",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "P269 recovery feedback was not explicit. Status='"
+                        + shellHost.ActiveNativeStatusText
+                        + "'.");
+                }
+
+                string recoveryStatus = shellHost.ActiveNativeStatusText;
+                OpenVisionNativeToolPropertySessionStore.Save("Blob", property);
+                Pump(12);
+                OpenVisionNativeToolPropertySavedEventArgs ordinarySuccess =
+                    events.LastOrDefault()
+                    ?? throw new InvalidOperationException(
+                        "P269 did not publish the ordinary success result.");
+                if (!ordinarySuccess.Succeeded
+                    || ordinarySuccess.RecoveredFromFailure
+                    || !string.Equals(
+                        shellHost.ActiveNativeStatusText,
+                        recoveryStatus,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "P269 ordinary saves should not repeatedly replace the Tool status.");
+                }
+
+                OpenVisionLanguageService.SetLanguage(
+                    OpenVisionLanguage.Korean,
+                    false);
+                OpenVisionNativeToolPropertySessionStore.FailNextSaveForTest = true;
+                OpenVisionNativeToolPropertySessionStore.Save("Blob", property);
+                Pump(12);
+                if (!shellHost.ActiveNativeStatusText.Contains(
+                        "메모리에만 유지",
+                        StringComparison.Ordinal)
+                    || !shellHost.ActiveNativeStatusText.Contains(
+                        "재개방 후 손실",
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "P269 Korean failure feedback was not explicit. Status='"
+                        + shellHost.ActiveNativeStatusText
+                        + "'.");
+                }
+
+                if (shellHost.NativePreviewRunCount != previewRunsBefore
+                    || shellHost.LayerDocumentCount != layerCountBefore
+                    || !string.Equals(
+                        shellHost.ActiveHostLayerTitle,
+                        activeLayerBefore,
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        shellHost.ActiveNativeRouteInputLayerNameForTest,
+                        inputRouteBefore,
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        shellHost.ActiveNativeRouteOutputLayerNameForTest,
+                        outputRouteBefore,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "P269 persistence feedback changed Preview/Run, layers, active layer, or routes.");
+                }
+
+                string reportDirectory =
+                    Path.GetDirectoryName(outputPath) ?? ".";
+                File.WriteAllLines(
+                    Path.Combine(
+                        reportDirectory,
+                        "p269-property-persistence-feedback-smoke.txt"),
+                    new[]
+                    {
+                        "Status=OK",
+                        "FailureResult=published",
+                        "InMemoryValue=retained",
+                        "ReopenLossRisk=visible",
+                        "RecoveryResult=published-once",
+                        "OrdinarySuccessStatusNoise=none",
+                        "FullMessage=tooltip,accessibility-help",
+                        "Localization=Korean,English",
+                        "PreviewRunLayerRouteSideEffects=unchanged"
+                    });
+            });
+        }
+        finally
+        {
+            OpenVisionNativeToolPropertySessionStore.FailNextSaveForTest = false;
+            OpenVisionNativeToolPropertySessionStore.PropertySaved -= savedHandler;
+        }
+    }
+
+    private static void RaisePropertyGridRowMouseSelection(
+        System.Windows.Controls.WpfPropertyGrid.PropertyGrid propertyGrid,
+        string propertyName)
+    {
+        FrameworkElement rowElement = FindVisualChildren<FrameworkElement>(propertyGrid)
+            .FirstOrDefault(element => string.Equals(
+                ResolvePropertyGridPropertyName(element.DataContext),
+                propertyName,
+                StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                "P257 could not find a rendered PropertyGrid row for mouse selection: " + propertyName);
+        MouseButtonEventArgs args = new(
+            Mouse.PrimaryDevice,
+            Environment.TickCount,
+            MouseButton.Left)
+        {
+            RoutedEvent = Mouse.PreviewMouseDownEvent,
+            Source = rowElement
+        };
+        rowElement.RaiseEvent(args);
+    }
+
     private static CaptureResult CaptureLineSignalProfile(string outputPath)
     {
         AssertLineSignalDirectionMatrix();
@@ -28305,6 +32174,21 @@ internal static class Program
             int beforePresetRuns = shellHost.NativePreviewRunCount;
             shellHost.SetActiveLineSettingForTest("Line A");
             Pump(8);
+            System.Windows.Controls.WpfPropertyGrid.PropertyGrid lineAGrid =
+                GetActiveFloatingPropertyGrid("Line A legacy preset preservation");
+            LineGaugeProperty lineAProperty = lineAGrid.SelectedObject as LineGaugeProperty
+                ?? throw new InvalidOperationException("Line A property model was not available.");
+            lineAProperty.USE_AVERAGE_FILTER = true;
+            lineAProperty.AVERAGE_Diff = 73D;
+            lineAProperty.AVERAGE_FILTER_TYPE = LineGaugeProperty.AVERAGE_FILTER_TYPES.X;
+            lineAProperty.SHOW_VERTICAL_LINE = false;
+            lineAProperty.SHOW_EDGE = false;
+            lineAProperty.SHOW_CONTOUR = true;
+            lineAProperty.SHOW_FITLINE = false;
+            new OpenVisionLab.Common.PropertyGridEventBinder(null)
+                .ApplyVisibilityRules(lineAGrid);
+            Pump(8);
+            AssertLineLegacyPropertiesReadOnly("Line A");
             ClickFloatingButtonByName("btnPresetFast", "Line A fast preset");
             Thread.Sleep(180);
             Pump(30);
@@ -28312,20 +32196,40 @@ internal static class Program
             AssertFloatingSelectedObjectBooleanProperty("Line A fast adaptive", "USE_ADAPTIVE_THRESHOLD", false);
             AssertFloatingSelectedObjectBooleanProperty("Line A fast manual angle", "USE_MANUAL_ANGLE", false);
             AssertFloatingSelectedObjectBooleanProperty("Line A fast extend fit", "USE_EXTEND_FIT_LINE", false);
-            AssertFloatingSelectedObjectBooleanProperty("Line A fast average filter", "USE_AVERAGE_FILTER", false);
+            AssertFloatingSelectedObjectBooleanProperty("Line A fast preserved average filter", "USE_AVERAGE_FILTER", true);
+            AssertFloatingSelectedObjectNumericPropertyWithin("Line A fast preserved average diff", "AVERAGE_Diff", 73D, 0.001D);
+            AssertFloatingSelectedObjectEnumProperty("Line A fast preserved average axis", "AVERAGE_FILTER_TYPE", "X");
+            AssertFloatingSelectedObjectBooleanProperty("Line A fast preserved scan draw", "SHOW_VERTICAL_LINE", false);
+            AssertFloatingSelectedObjectBooleanProperty("Line A fast preserved edge draw", "SHOW_EDGE", false);
+            AssertFloatingSelectedObjectBooleanProperty("Line A fast preserved contour draw", "SHOW_CONTOUR", true);
+            AssertFloatingSelectedObjectBooleanProperty("Line A fast preserved fit draw", "SHOW_FITLINE", false);
             AssertFloatingSelectedObjectNumericPropertyWithin("Line A fast contrast", "CONTRAST", 45D, 0.001D);
             AssertFloatingSelectedObjectNumericPropertyWithin("Line A fast thickness", "THICKNESS", 4D, 0.001D);
             AssertFloatingSelectedObjectNumericPropertyWithin("Line A fast sampling", "SAMPLING_STEP", 16D, 0.001D);
             AssertFloatingSelectedObjectNumericPropertyWithin("Line A fast scan interval", "POINT_RANGE", 16D, 0.001D);
             AssertFloatingPropertyBrowsable("Line A fast manual angle hidden", "MANUAL_ANGLE_VALUE", false);
             AssertFloatingPropertyBrowsable("Line A fast extend length hidden", "EXTEND_FIT_LINE_VALUE", false);
-            AssertFloatingPropertyBrowsable("Line A fast average diff hidden", "AVERAGE_Diff", false);
+            AssertFloatingPropertyBrowsable("Line A fast average diff visible", "AVERAGE_Diff", true);
             if (shellHost.NativePreviewRunCount != beforePresetRuns || shellHost.HasNativePreviewResult)
             {
                 throw new InvalidOperationException("Line A fast preset must update selected PropertyGrid values only, not run preview.");
             }
 
             shellHost.SetActiveLineSettingForTest("Line B");
+            Pump(8);
+            System.Windows.Controls.WpfPropertyGrid.PropertyGrid lineBGrid =
+                GetActiveFloatingPropertyGrid("Line B legacy preset preservation");
+            LineGaugeProperty lineBProperty = lineBGrid.SelectedObject as LineGaugeProperty
+                ?? throw new InvalidOperationException("Line B property model was not available.");
+            lineBProperty.USE_AVERAGE_FILTER = false;
+            lineBProperty.AVERAGE_Diff = 91D;
+            lineBProperty.AVERAGE_FILTER_TYPE = LineGaugeProperty.AVERAGE_FILTER_TYPES.Y;
+            lineBProperty.SHOW_VERTICAL_LINE = true;
+            lineBProperty.SHOW_EDGE = false;
+            lineBProperty.SHOW_CONTOUR = true;
+            lineBProperty.SHOW_FITLINE = false;
+            new OpenVisionLab.Common.PropertyGridEventBinder(null)
+                .ApplyVisibilityRules(lineBGrid);
             Pump(8);
             ClickFloatingButtonByName("btnPresetPrecise", "Line B precise preset");
             Thread.Sleep(180);
@@ -28334,16 +32238,22 @@ internal static class Program
             AssertFloatingSelectedObjectBooleanProperty("Line B precise adaptive", "USE_ADAPTIVE_THRESHOLD", false);
             AssertFloatingSelectedObjectBooleanProperty("Line B precise manual angle", "USE_MANUAL_ANGLE", false);
             AssertFloatingSelectedObjectBooleanProperty("Line B precise extend fit", "USE_EXTEND_FIT_LINE", true);
-            AssertFloatingSelectedObjectBooleanProperty("Line B precise average filter", "USE_AVERAGE_FILTER", true);
+            AssertFloatingSelectedObjectBooleanProperty("Line B precise preserved average filter", "USE_AVERAGE_FILTER", false);
+            AssertFloatingSelectedObjectNumericPropertyWithin("Line B precise preserved average diff", "AVERAGE_Diff", 91D, 0.001D);
+            AssertFloatingSelectedObjectEnumProperty("Line B precise preserved average axis", "AVERAGE_FILTER_TYPE", "Y");
+            AssertFloatingSelectedObjectBooleanProperty("Line B precise preserved scan draw", "SHOW_VERTICAL_LINE", true);
+            AssertFloatingSelectedObjectBooleanProperty("Line B precise preserved edge draw", "SHOW_EDGE", false);
+            AssertFloatingSelectedObjectBooleanProperty("Line B precise preserved contour draw", "SHOW_CONTOUR", true);
+            AssertFloatingSelectedObjectBooleanProperty("Line B precise preserved fit draw", "SHOW_FITLINE", false);
             AssertFloatingSelectedObjectNumericPropertyWithin("Line B precise contrast", "CONTRAST", 20D, 0.001D);
             AssertFloatingSelectedObjectNumericPropertyWithin("Line B precise thickness", "THICKNESS", 3D, 0.001D);
             AssertFloatingSelectedObjectNumericPropertyWithin("Line B precise sampling", "SAMPLING_STEP", 4D, 0.001D);
             AssertFloatingSelectedObjectNumericPropertyWithin("Line B precise scan interval", "POINT_RANGE", 4D, 0.001D);
             AssertFloatingSelectedObjectNumericPropertyWithin("Line B precise extend length", "EXTEND_FIT_LINE_VALUE", 150D, 0.001D);
-            AssertFloatingSelectedObjectNumericPropertyWithin("Line B precise average diff", "AVERAGE_Diff", 80D, 0.001D);
             AssertFloatingPropertyBrowsable("Line B precise manual angle hidden", "MANUAL_ANGLE_VALUE", false);
             AssertFloatingPropertyBrowsable("Line B precise extend length visible", "EXTEND_FIT_LINE_VALUE", true);
-            AssertFloatingPropertyBrowsable("Line B precise average diff visible", "AVERAGE_Diff", true);
+            AssertFloatingPropertyBrowsable("Line B precise average diff hidden", "AVERAGE_Diff", false);
+            AssertLineLegacyPropertiesReadOnly("Line B");
             if (shellHost.NativePreviewRunCount != beforePresetRuns || shellHost.HasNativePreviewResult)
             {
                 throw new InvalidOperationException("Line B precise preset must update selected PropertyGrid values only, not run preview.");
@@ -28353,7 +32263,7 @@ internal static class Program
             Pump(8);
             AssertFloatingSelectedObjectNumericPropertyWithin("Line A fast preserved contrast", "CONTRAST", 45D, 0.001D);
             AssertFloatingSelectedObjectNumericPropertyWithin("Line A fast preserved sampling", "SAMPLING_STEP", 16D, 0.001D);
-            AssertFloatingSelectedObjectBooleanProperty("Line A fast preserved average filter", "USE_AVERAGE_FILTER", false);
+            AssertFloatingSelectedObjectBooleanProperty("Line A fast retained average filter", "USE_AVERAGE_FILTER", true);
             if (shellHost.NativePreviewRunCount != beforePresetRuns || shellHost.HasNativePreviewResult)
             {
                 throw new InvalidOperationException("Line A/B selection after presets must not run preview.");
@@ -28369,7 +32279,9 @@ internal static class Program
             AssertFloatingSelectedObjectNumericPropertyWithin("Docked Line basic sampling", "SAMPLING_STEP", 10D, 0.001D);
             AssertFloatingSelectedObjectNumericPropertyWithin("Docked Line basic scan interval", "POINT_RANGE", 10D, 0.001D);
             AssertFloatingSelectedObjectBooleanProperty("Docked Line basic extend fit", "USE_EXTEND_FIT_LINE", false);
-            AssertFloatingSelectedObjectBooleanProperty("Docked Line basic average filter", "USE_AVERAGE_FILTER", false);
+            AssertFloatingSelectedObjectBooleanProperty("Docked Line basic preserved average filter", "USE_AVERAGE_FILTER", true);
+            AssertFloatingSelectedObjectNumericPropertyWithin("Docked Line basic preserved average diff", "AVERAGE_Diff", 73D, 0.001D);
+            AssertFloatingSelectedObjectBooleanProperty("Docked Line basic preserved scan draw", "SHOW_VERTICAL_LINE", false);
             if (shellHost.NativePreviewRunCount != beforeDockedPresetRuns || shellHost.HasNativePreviewResult)
             {
                 throw new InvalidOperationException("Docked Line preset menu must update PropertyGrid only, not run preview.");
@@ -28392,6 +32304,14 @@ internal static class Program
             AssertActiveToolTextsVisible("Line purpose controls", "목적", "라인", "엣지", "측정", "교차");
             AssertFloatingPropertyGridRowsRendered("Line property grid");
             AssertFloatingPropertyGridMinimumSize("Line property grid", 600D, 380D);
+            System.Windows.Controls.WpfPropertyGrid.PropertyGrid lineGrid =
+                GetActiveFloatingPropertyGrid("Line measurement compatibility baseline");
+            LineGaugeProperty lineProperty = lineGrid.SelectedObject as LineGaugeProperty
+                ?? throw new InvalidOperationException("Line measurement property model was not available.");
+            lineProperty.USE_AVERAGE_FILTER = false;
+            new OpenVisionLab.Common.PropertyGridEventBinder(null)
+                .ApplyVisibilityRules(lineGrid);
+            Pump(8);
             int beforeLineVisibilityToggleRuns = shellHost.NativePreviewRunCount;
             AssertFloatingPropertyBrowsable("Line point range before manual angle", "POINT_RANGE", true);
             AssertFloatingPropertyBrowsable("Line manual angle before enable", "MANUAL_ANGLE_VALUE", false);
@@ -28434,26 +32354,12 @@ internal static class Program
                 throw new InvalidOperationException("Line USE_EXTEND_FIT_LINE disable should not run auto-preview.");
             }
 
-            AssertFloatingPropertyBrowsable("Line average diff before enable", "AVERAGE_Diff", false);
-            AssertFloatingPropertyBrowsable("Line average filter type before enable", "AVERAGE_FILTER_TYPE", false);
-            SetFloatingPropertyGridPropertyValue("Line enable average filter", "USE_AVERAGE_FILTER", true);
-            Thread.Sleep(180);
-            Pump(30);
-            AssertFloatingPropertyBrowsable("Line average diff after enable", "AVERAGE_Diff", true);
-            AssertFloatingPropertyBrowsable("Line average filter type after enable", "AVERAGE_FILTER_TYPE", true);
+            AssertFloatingPropertyBrowsable("Line inactive average diff hidden", "AVERAGE_Diff", false);
+            AssertFloatingPropertyBrowsable("Line inactive average filter type hidden", "AVERAGE_FILTER_TYPE", false);
+            AssertLineLegacyPropertiesReadOnly("Line measurement");
             if (shellHost.NativePreviewRunCount != beforeLineVisibilityToggleRuns)
             {
-                throw new InvalidOperationException("Line USE_AVERAGE_FILTER should only update filter rows, not run auto-preview.");
-            }
-
-            SetFloatingPropertyGridPropertyValue("Line disable average filter", "USE_AVERAGE_FILTER", false);
-            Thread.Sleep(180);
-            Pump(30);
-            AssertFloatingPropertyBrowsable("Line average diff after disable", "AVERAGE_Diff", false);
-            AssertFloatingPropertyBrowsable("Line average filter type after disable", "AVERAGE_FILTER_TYPE", false);
-            if (shellHost.NativePreviewRunCount != beforeLineVisibilityToggleRuns)
-            {
-                throw new InvalidOperationException("Line USE_AVERAGE_FILTER disable should not run auto-preview.");
+                throw new InvalidOperationException("Inspecting Line compatibility fields must not run auto-preview.");
             }
 
             AssertFloatingInlinePreviewSlotCount("Line input", 1);
@@ -29295,7 +33201,9 @@ internal static class Program
             "Shell.PendingTool.Status",
             "Shell.PendingTool.NavStatus",
             "Common.Close",
-            "VisionMenu.Blob"
+            "VisionMenu.Blob",
+            "ToolView.AddPipeline",
+            "VisionTool.Status.PipelineSavedContextFormat"
         };
 
         foreach (string key in required)
@@ -29305,6 +33213,120 @@ internal static class Program
             {
                 throw new InvalidOperationException("Missing localization key: " + key);
             }
+        }
+
+        MethodInfo? migrateDefault = typeof(OpenVisionLanguageService).GetMethod(
+            "TryMigrateDefaultCatalogValue",
+            BindingFlags.NonPublic | BindingFlags.Static);
+        if (migrateDefault == null)
+        {
+            throw new InvalidOperationException("Localization default migration seam is unavailable.");
+        }
+
+        OpenVisionLocalizationEntry shippedPresetDetail = new()
+        {
+            Key = "VisionTool.Preset.Detail",
+            Korean = "프리셋은 PropertyGrid 값만 바꿉니다. 미리보기로 검증하세요.",
+            English = "Choose a starting point. It updates PropertyGrid values only; run Preview to verify."
+        };
+        OpenVisionLocalizationEntry currentPresetDetail = new()
+        {
+            Key = shippedPresetDetail.Key,
+            Korean = "기본=첫 검사 / 빠른=빠른 선별 / 정밀=최종 튜닝. 선택하면 적용 이유를 표시합니다.",
+            English = "Basic = first check / Fast = quick screening / Precise = final tuning. Select one to see why."
+        };
+        bool migratedPresetDetail = (bool)(migrateDefault.Invoke(
+            null,
+            new object[] { shippedPresetDetail.Key, shippedPresetDetail, currentPresetDetail }) ?? false);
+        if (!migratedPresetDetail
+            || !string.Equals(shippedPresetDetail.Korean, currentPresetDetail.Korean, StringComparison.Ordinal)
+            || !string.Equals(shippedPresetDetail.English, currentPresetDetail.English, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The shipped preset-detail default did not migrate to the current guidance.");
+        }
+
+        OpenVisionLocalizationEntry customizedPresetDetail = new()
+        {
+            Key = shippedPresetDetail.Key,
+            Korean = "사용자 지정 프리셋 안내",
+            English = "User-customized preset guidance"
+        };
+        bool migratedCustomizedPresetDetail = (bool)(migrateDefault.Invoke(
+            null,
+            new object[] { customizedPresetDetail.Key, customizedPresetDetail, currentPresetDetail }) ?? false);
+        if (migratedCustomizedPresetDetail
+            || !string.Equals(customizedPresetDetail.Korean, "사용자 지정 프리셋 안내", StringComparison.Ordinal)
+            || !string.Equals(customizedPresetDetail.English, "User-customized preset guidance", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Localization migration overwrote a customized preset-detail value.");
+        }
+
+        OpenVisionLocalizationEntry shippedAddPipeline = new()
+        {
+            Key = "ToolView.AddPipeline",
+            Korean = "\uD30C\uC774\uD504\uB77C\uC778 \uCD94\uAC00",
+            English = "Add Pipeline"
+        };
+        OpenVisionLocalizationEntry currentAddPipeline = new()
+        {
+            Key = shippedAddPipeline.Key,
+            Korean =
+                "\uD30C\uC774\uD504\uB77C\uC778\uC5D0 "
+                + "\uCD94\uAC00\u00B7\uC800\uC7A5",
+            English = "Add and save to Pipeline"
+        };
+        bool migratedAddPipeline = (bool)(migrateDefault.Invoke(
+            null,
+            new object[]
+            {
+                shippedAddPipeline.Key,
+                shippedAddPipeline,
+                currentAddPipeline
+            }) ?? false);
+        if (!migratedAddPipeline
+            || !string.Equals(
+                shippedAddPipeline.Korean,
+                currentAddPipeline.Korean,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                shippedAddPipeline.English,
+                currentAddPipeline.English,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The shipped add-Pipeline default did not migrate to the "
+                + "add-and-save guidance.");
+        }
+
+        OpenVisionLocalizationEntry customizedAddPipeline = new()
+        {
+            Key = shippedAddPipeline.Key,
+            Korean = "\uC0AC\uC6A9\uC790 \uC800\uC7A5 \uB3D9\uC791",
+            English = "User-customized save action"
+        };
+        bool migratedCustomizedAddPipeline = (bool)(migrateDefault.Invoke(
+            null,
+            new object[]
+            {
+                customizedAddPipeline.Key,
+                customizedAddPipeline,
+                currentAddPipeline
+            }) ?? false);
+        if (migratedCustomizedAddPipeline
+            || !string.Equals(
+                customizedAddPipeline.Korean,
+                "\uC0AC\uC6A9\uC790 \uC800\uC7A5 \uB3D9\uC791",
+                StringComparison.Ordinal)
+            || !string.Equals(
+                customizedAddPipeline.English,
+                "User-customized save action",
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Localization migration overwrote a customized "
+                + "add-Pipeline value.");
         }
 
         Border report = new()
@@ -30862,7 +34884,7 @@ internal static class Program
             .Where(item => item.IsVisible)
             .ToList();
 
-        roots.AddRange(visibleWindows.Where(IsFloatingToolWindow));
+        roots.AddRange(visibleWindows.Where(IsPrimaryFloatingToolWindow));
         foreach (Window window in visibleWindows.Where(item => !IsFloatingToolWindow(item)))
         {
             roots.AddRange(FindVisualChildren<ContentControl>(window)
@@ -30896,11 +34918,17 @@ internal static class Program
         return window != null && window.GetType().Name == "OpenVisionFloatingToolWindow";
     }
 
+    private static bool IsPrimaryFloatingToolWindow(Window window)
+    {
+        return IsFloatingToolWindow(window)
+            && !FindVisualChildren<VisionToolParameterGuideView>(window).Any();
+    }
+
     private static int CountVisibleFloatingToolWindows()
     {
         return Application.Current.Windows
             .OfType<Window>()
-            .Count(item => item.IsVisible && IsFloatingToolWindow(item));
+            .Count(item => item.IsVisible && IsPrimaryFloatingToolWindow(item));
     }
 
     private static void AssertActiveToolWindowState(
@@ -31589,7 +35617,7 @@ internal static class Program
     {
         Window? window = Application.Current.Windows
             .OfType<Window>()
-            .LastOrDefault(item => item.IsVisible && item.GetType().Name == "OpenVisionFloatingToolWindow");
+            .LastOrDefault(item => item.IsVisible && IsPrimaryFloatingToolWindow(item));
         if (window == null)
         {
             throw new InvalidOperationException(scope + " did not open a floating tool window.");
@@ -32076,6 +36104,46 @@ internal static class Program
                 + ", Actual="
                 + property.IsBrowsable.ToString(CultureInfo.InvariantCulture));
         }
+    }
+
+    private static void AssertLineLegacyPropertiesReadOnly(string name)
+    {
+        System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid =
+            GetActiveFloatingPropertyGrid(name);
+        string[] editable = new[]
+            {
+                nameof(LineGaugeProperty.USE_AVERAGE_FILTER),
+                nameof(LineGaugeProperty.AVERAGE_Diff),
+                nameof(LineGaugeProperty.AVERAGE_FILTER_TYPE),
+                nameof(LineGaugeProperty.SHOW_VERTICAL_LINE),
+                nameof(LineGaugeProperty.SHOW_EDGE),
+                nameof(LineGaugeProperty.SHOW_CONTOUR),
+                nameof(LineGaugeProperty.SHOW_FITLINE)
+            }
+            .Where(propertyName => !IsCompatibilityReadOnlyProperty(grid.SelectedObject, propertyName))
+            .ToArray();
+        if (editable.Length > 0)
+        {
+            throw new InvalidOperationException(
+                name
+                + " exposed inactive/legacy Line fields as editable: "
+                + string.Join(",", editable));
+        }
+    }
+
+    private static bool IsCompatibilityReadOnlyProperty(object? instance, string propertyName)
+    {
+        if (instance == null || string.IsNullOrWhiteSpace(propertyName))
+        {
+            return false;
+        }
+
+        return instance.GetType()
+            .GetProperty(propertyName)?
+            .GetCustomAttributes(
+                typeof(System.Windows.Controls.WpfPropertyGrid.PropertyGridCompatibilityReadOnlyAttribute),
+                true)
+            .Length > 0;
     }
 
     private static int CountInnerPropertyGridItems(System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid)
@@ -33089,6 +37157,23 @@ internal static class Program
             ? booleanValue
             : value != null && Convert.ToBoolean(value, CultureInfo.CurrentCulture);
         if (actual != expected)
+        {
+            throw new InvalidOperationException(
+                name + " property value mismatch for " + propertyName
+                + ". Expected=" + expected
+                + ", Actual=" + actual);
+        }
+    }
+
+    private static void AssertFloatingSelectedObjectEnumProperty(
+        string name,
+        string propertyName,
+        string expected)
+    {
+        string actual = Convert.ToString(
+            GetFloatingSelectedObjectPropertyValue(propertyName),
+            CultureInfo.InvariantCulture) ?? string.Empty;
+        if (!string.Equals(actual, expected, StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
                 name + " property value mismatch for " + propertyName

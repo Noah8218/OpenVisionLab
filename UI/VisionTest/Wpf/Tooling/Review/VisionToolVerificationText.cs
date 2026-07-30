@@ -76,6 +76,9 @@ namespace OpenVisionLab
 
         public static string FullImage => T("VisionTool.Review.FullImage", "Full image");
 
+        public static string FullImageRoiFallback =>
+            T("VisionTool.Review.FullImageRoiFallback", "Full image (ROI not set)");
+
         public static string OriginalImage => T("VisionTool.Review.OriginalImage", "Original");
 
         public static string RoiOn => T("VisionTool.Review.RoiOn", "ROI on");

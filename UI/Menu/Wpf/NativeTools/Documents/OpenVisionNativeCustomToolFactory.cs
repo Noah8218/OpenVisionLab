@@ -23,7 +23,8 @@ namespace OpenVisionLab
                 () => new LineGaugeProperty("Line(R)_1"));
             var viewModel = VisionToolCompositionService.CreateLineToolViewModel(lineAProperty, lineBProperty);
             LineToolPresenter presenter = new LineToolPresenter(viewModel);
-            return OpenVisionNativeCustomToolDocumentBuilder.Create(
+            OpenVisionNativeToolDocument document =
+                OpenVisionNativeCustomToolDocumentBuilder.Create(
                 displayManager,
                 new OpenVisionNativeCustomToolDescriptor<LineToolWpfView, LineToolPresenter, LineGaugeProperty>(
                     "Line",
@@ -32,6 +33,10 @@ namespace OpenVisionLab
                     viewPresenter => new LineToolWpfView(viewPresenter),
                     OpenVisionNativeToolPreviewExecutor.ExecuteLineGaugePreview,
                     OpenVisionNativeToolStepFactory.CreateLineGaugeStep));
+            return OpenVisionNativePropertyGridToolFactory.ApplyLoadFailureStatus(
+                document,
+                lineAProperty.NAME,
+                lineBProperty.NAME);
         }
 
         public static OpenVisionNativeToolDocument CreateFilter(IDisplayManager displayManager)

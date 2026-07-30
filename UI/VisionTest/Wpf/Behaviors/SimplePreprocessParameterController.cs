@@ -286,6 +286,54 @@ namespace OpenVisionLab
             }
         }
 
+        public IReadOnlyDictionary<FrameworkElement, string> CreateParameterGuideBindings(
+            IEnumerable<string> propertyNames)
+        {
+            Dictionary<FrameworkElement, string> bindings =
+                new Dictionary<FrameworkElement, string>();
+            if (propertyNames == null)
+            {
+                return bindings;
+            }
+
+            foreach (string propertyName in propertyNames.Where(name => !string.IsNullOrWhiteSpace(name)))
+            {
+                AddParameterGuideBinding(bindings, choiceControls, propertyName);
+                AddParameterGuideBinding(bindings, numberControls, propertyName);
+                AddParameterGuideBinding(bindings, checkControls, propertyName);
+                AddParameterGuideBinding(bindings, sliderControls, propertyName);
+            }
+
+            return bindings;
+        }
+
+        public IReadOnlyDictionary<FrameworkElement, string> CreateParameterGuideBindings(
+            IReadOnlyDictionary<string, string> controlPropertyNames)
+        {
+            Dictionary<FrameworkElement, string> bindings =
+                new Dictionary<FrameworkElement, string>();
+            if (controlPropertyNames == null)
+            {
+                return bindings;
+            }
+
+            foreach (KeyValuePair<string, string> binding in controlPropertyNames)
+            {
+                if (string.IsNullOrWhiteSpace(binding.Key)
+                    || string.IsNullOrWhiteSpace(binding.Value))
+                {
+                    continue;
+                }
+
+                AddParameterGuideBinding(bindings, choiceControls, binding.Key, binding.Value);
+                AddParameterGuideBinding(bindings, numberControls, binding.Key, binding.Value);
+                AddParameterGuideBinding(bindings, checkControls, binding.Key, binding.Value);
+                AddParameterGuideBinding(bindings, sliderControls, binding.Key, binding.Value);
+            }
+
+            return bindings;
+        }
+
         public T GetEnum<T>(string key, T fallback)
             where T : struct
         {
@@ -710,6 +758,28 @@ namespace OpenVisionLab
             }
 
             return string.Empty;
+        }
+
+        private static void AddParameterGuideBinding<T>(
+            IDictionary<FrameworkElement, string> bindings,
+            IReadOnlyDictionary<string, T> controls,
+            string propertyName)
+            where T : FrameworkElement
+        {
+            AddParameterGuideBinding(bindings, controls, propertyName, propertyName);
+        }
+
+        private static void AddParameterGuideBinding<T>(
+            IDictionary<FrameworkElement, string> bindings,
+            IReadOnlyDictionary<string, T> controls,
+            string controlName,
+            string propertyName)
+            where T : FrameworkElement
+        {
+            if (controls.TryGetValue(controlName, out T control))
+            {
+                bindings[control] = propertyName;
+            }
         }
 
         private readonly struct NumberOptions

@@ -104,7 +104,8 @@ namespace OpenVisionLab
         internal static string BuildCorrectedOutputReviewText(
             OpenVisionRecipePipelineStepPreview step,
             bool isStepEditDirty,
-            object selectedStepEditObject)
+            object selectedStepEditObject,
+            bool rerunValidationSet)
         {
             if (step == null)
             {
@@ -115,6 +116,13 @@ namespace OpenVisionLab
 
             if (isStepEditDirty)
             {
+                if (rerunValidationSet)
+                {
+                    return OpenVisionRecipeText.Local(
+                        "편집됨: XML 반영 후 출력 보기 또는 동일 세트 재검사로 수정 결과를 확인하세요.",
+                        "Edited: apply to XML, then use View output or Rerun same set to check the correction.");
+                }
+
                 return OpenVisionRecipeText.Local(
                     "편집됨: XML 반영을 누른 뒤 출력 보기 또는 Good/Bad 재검사로 수정 결과를 확인하세요.",
                     "Edited: apply to XML, then use View output or Rerun Good/Bad to check the correction.");
@@ -122,6 +130,13 @@ namespace OpenVisionLab
 
             if (selectedStepEditObject == null)
             {
+                if (rerunValidationSet)
+                {
+                    return OpenVisionRecipeText.Local(
+                        "파라미터 불러오기 -> PropertyGrid 검토 -> XML 반영 -> 출력 보기/동일 세트 재검사 순서로 확인하세요.",
+                        "Load parameters -> review in PropertyGrid -> apply to XML -> view output or rerun the same set.");
+                }
+
                 return OpenVisionRecipeText.Local(
                     "파라미터 불러오기 -> PropertyGrid 검토 -> XML 반영 -> 출력 보기/Good-Bad 재검사 순서로 확인하세요.",
                     "Load parameters -> review in PropertyGrid -> apply to XML -> view output or rerun Good/Bad.");
@@ -136,11 +151,32 @@ namespace OpenVisionLab
             OpenVisionRecipePipelineStepPreview step,
             string pipelineName,
             int selectedIndex,
-            string validationMessage)
+            string validationMessage,
+            bool rerunValidationSet)
         {
             string route = step == null
                 ? "-"
                 : step.InputLayer + " -> " + step.OutputLayer;
+
+            if (rerunValidationSet)
+            {
+                return OpenVisionRecipeText.Local(
+                        "XML 반영 완료: ",
+                        "Applied to XML: ")
+                    + pipelineName
+                    + " / Step "
+                    + selectedIndex.ToString(CultureInfo.InvariantCulture)
+                    + Environment.NewLine
+                    + OpenVisionRecipeText.Local("확인 경로: ", "Check route: ")
+                    + route
+                    + Environment.NewLine
+                    + OpenVisionRecipeText.Local(
+                        "다음: 수정 출력 레이어를 확인한 뒤 동일 검증 세트를 명시적으로 재검사하세요.",
+                        "Next: view the corrected output layer, then explicitly rerun the same validation set.")
+                    + Environment.NewLine
+                    + OpenVisionRecipeText.Local("검증: ", "Validation: ")
+                    + validationMessage;
+            }
 
             return OpenVisionRecipeText.Local(
                     "XML 반영 완료: ",

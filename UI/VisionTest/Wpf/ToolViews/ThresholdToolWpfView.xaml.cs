@@ -1,6 +1,7 @@
 using Lib.OpenCV;
 using Lib.OpenCV.Property;
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Data;
 using OpenVisionLab.Contracts;
@@ -17,6 +18,7 @@ namespace OpenVisionLab
         private readonly VisionToolThresholdInteractionController thresholdInteractionController;
         private readonly ThresholdToolLearnWindowController learnWindowController;
         private readonly ThresholdToolTextPresenter textPresenter;
+        private readonly VisionToolCustomParameterGuideBinder parameterGuideBinder;
         private VisionToolThresholdSuggestion thresholdSuggestion;
         private ThresholdSuggestionUndoState thresholdSuggestionUndo;
         private bool suppressEvents = true;
@@ -98,6 +100,33 @@ namespace OpenVisionLab
                 clearResultReview: ClearSignalEvidence,
                 applyToolLocalization: ApplyLocalization);
             ToolController.BindSummary(new Binding("Summary"));
+            parameterGuideBinder = VisionToolCustomParameterGuideBinder.Attach(
+                toolShell,
+                presenter.CreateProperty,
+                new Dictionary<FrameworkElement, string>
+                {
+                    [rbBasic] = nameof(ThresholdToolProperty.Mode),
+                    [rbRange] = nameof(ThresholdToolProperty.Mode),
+                    [rbAdaptive] = nameof(ThresholdToolProperty.Mode),
+                    [rbBasicBinary] = nameof(ThresholdToolProperty.ThresholdType),
+                    [rbBasicInvert] = nameof(ThresholdToolProperty.ThresholdType),
+                    [txtThreshold] = nameof(ThresholdToolProperty.Threshold),
+                    [sliderThreshold] = nameof(ThresholdToolProperty.Threshold),
+                    [txtMaxValue] = nameof(ThresholdToolProperty.MaxValue),
+                    [txtRangeMin] = nameof(ThresholdToolProperty.RangeMin),
+                    [sliderRangeMin] = nameof(ThresholdToolProperty.RangeMin),
+                    [txtRangeMax] = nameof(ThresholdToolProperty.RangeMax),
+                    [sliderRangeMax] = nameof(ThresholdToolProperty.RangeMax),
+                    [chkRangeInvert] = nameof(ThresholdToolProperty.Invert),
+                    [rbAdaptiveMean] = nameof(ThresholdToolProperty.AdaptiveType),
+                    [rbAdaptiveGaussian] = nameof(ThresholdToolProperty.AdaptiveType),
+                    [rbAdaptiveBinary] = nameof(ThresholdToolProperty.AdaptiveThresholdType),
+                    [rbAdaptiveInvert] = nameof(ThresholdToolProperty.AdaptiveThresholdType),
+                    [txtAdaptiveMaxValue] = nameof(ThresholdToolProperty.MaxValue),
+                    [txtBlockSize] = nameof(ThresholdToolProperty.BlockSize),
+                    [sliderBlockSize] = nameof(ThresholdToolProperty.BlockSize),
+                    [txtWeight] = nameof(ThresholdToolProperty.Weight)
+                });
 
             ApplyLocalization();
             suppressEvents = false;
@@ -106,6 +135,7 @@ namespace OpenVisionLab
 
         protected override void DisposeToolResources()
         {
+            parameterGuideBinder.Dispose();
             learnWindowController.Dispose();
             signalInspector.MarkerValueChangeRequested -= SignalInspector_MarkerValueChangeRequested;
             thresholdInteractionController.Detach();

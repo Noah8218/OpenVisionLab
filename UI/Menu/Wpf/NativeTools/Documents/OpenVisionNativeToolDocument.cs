@@ -181,6 +181,7 @@ namespace OpenVisionLab
         }
 
         public FrameworkElement View => element;
+        public string ToolName => toolName;
         public string ActiveViewTypeName => element.GetType().Name;
         public string RouteInputLayerName => arithmeticView == null ? ResolveInputLayer() : ResolveArithmeticInputLayerA();
         public string RouteInputLayerBName => arithmeticView == null ? string.Empty : ResolveArithmeticInputLayerB();
@@ -191,6 +192,12 @@ namespace OpenVisionLab
         public int PreviewRunCount { get; private set; }
         public bool HasPreviewResult { get; private set; }
         public string LastStatusText { get; private set; } = string.Empty;
+
+        internal void SetPropertyPersistenceStatus(string status)
+        {
+            SetStatus(status);
+        }
+
         public string ResultReviewText
         {
             get

@@ -141,6 +141,7 @@ namespace OpenVisionLab
             PropertyGridEditorFactory.SetRuntimeContext(() => displayManager);
             PropertyGridEditorFactory.SetRecipeNameContext(() => recipeContextStore.CurrentRecipeName);
             OpenVisionNativeToolPropertySessionStore.SetRepositoryContext(() => this.runtimeContext.Global?.VisionTools);
+            OpenVisionNativeToolSettingsStore.ResetContext();
             viewModel = OpenVisionShellPreviewViewModel.CreatePreview();
             documentController = new OpenVisionShellHostDocumentController(
                 (sender, e) => toolWindowLifecycleController?.OnNativeDocumentLayerStateChanged(sender, e));
@@ -374,10 +375,17 @@ namespace OpenVisionLab
                 () => WorkspaceLayerTitle,
                 () => recipeContextStore.Current,
                 SelectToolMenu,
-                () =>
+                (sampleName, pipelineName) =>
+                    RecipeCommands?.PrepareWorkspaceSampleContext(
+                        sampleName,
+                        pipelineName) != false,
+                (sampleName, pipelineName) =>
                 {
                     mainActionPresenter.Hide();
                     RefreshRecipeContext();
+                    RecipeCommands?.SynchronizeWorkspaceSampleContext(
+                        sampleName,
+                        pipelineName);
                     sampleWorkflowPresenter.ShowForActiveSample();
                     chromeController.SetWorkspaceSampleReadyStatus();
                     WorkspaceCommands?.RefreshCanExecute();
@@ -433,7 +441,9 @@ namespace OpenVisionLab
                 confirmQualifiedSnapshotLifecycle:
                     ConfirmQualifiedSnapshotLifecycle,
                 openQualifiedSnapshotEvidence:
-                    OpenQualifiedSnapshotEvidence);
+                    OpenQualifiedSnapshotEvidence,
+                openPipelineXmlSteps:
+                    () => tabRecipePipelineXmlSteps.IsSelected = true);
             AttachRecipeStepPropertyGridHost();
             ChromeCommands = new OpenVisionShellHostChromeCommandSurface(
                 () => IsToolRailCompact = !IsToolRailCompact,

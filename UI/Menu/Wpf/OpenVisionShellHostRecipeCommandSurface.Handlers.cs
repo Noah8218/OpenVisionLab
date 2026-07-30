@@ -64,6 +64,84 @@ namespace OpenVisionLab
             }
         }
 
+        public bool PrepareWorkspaceSampleContext(
+            string sampleName,
+            string pipelineName)
+        {
+            string requestedPipeline = NormalizePipelineName(pipelineName);
+            if (string.IsNullOrWhiteSpace(sampleName)
+                || string.IsNullOrWhiteSpace(requestedPipeline))
+            {
+                StatusText = OpenVisionRecipeText.Local(
+                    "작업공간 샘플 문맥을 준비할 수 없습니다.",
+                    "Cannot prepare the workspace sample context.");
+                return false;
+            }
+
+            if (string.Equals(
+                    selectedPipelineOption?.PipelineName,
+                    requestedPipeline,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (TryLeaveSelectedStepEdit(
+                    OpenVisionRecipePendingEditTransitionKind.Pipeline,
+                    requestedPipeline))
+            {
+                return true;
+            }
+
+            StatusText = OpenVisionRecipeText.Local(
+                    "보류 중인 Step 편집 전환이 취소되어 샘플 열기를 중단했습니다: ",
+                    "Opening the sample was cancelled because the pending Step edit transition was cancelled: ")
+                + sampleName;
+            return false;
+        }
+
+        public bool SynchronizeWorkspaceSampleContext(
+            string sampleName,
+            string pipelineName)
+        {
+            string requestedPipeline = NormalizePipelineName(pipelineName);
+            RefreshPipelineOptions(requestedPipeline);
+            RefreshSampleOptions();
+
+            OpenVisionRecipePipelineOption pipelineOption =
+                PipelineOptions.FirstOrDefault(option => string.Equals(
+                    option?.PipelineName,
+                    requestedPipeline,
+                    StringComparison.OrdinalIgnoreCase));
+            OpenVisionRecipeSampleOption sampleOption =
+                SampleOptions.FirstOrDefault(option => string.Equals(
+                    option?.SampleName,
+                    sampleName,
+                    StringComparison.OrdinalIgnoreCase));
+            if (pipelineOption == null || sampleOption == null)
+            {
+                StatusText = OpenVisionRecipeText.Local(
+                        "작업공간 샘플과 Recipe Manager 문맥을 맞추지 못했습니다: ",
+                        "Could not synchronize the workspace sample and Recipe Manager context: ")
+                    + sampleName;
+                RefreshCommandState();
+                return false;
+            }
+
+            SelectedPipelineOption = pipelineOption;
+            SelectedSampleOption = sampleOption;
+            StatusText = OpenVisionRecipeText.Local(
+                    "작업공간 샘플 문맥 동기화: ",
+                    "Workspace sample context synchronized: ")
+                + sampleName
+                + " / "
+                + requestedPipeline
+                + OpenVisionRecipeText.Local(
+                    ". Preview/Run은 실행되지 않았습니다.",
+                    ". Preview/Run was not executed.");
+            return true;
+        }
+
         public bool FocusPipelineStepForEdit(string recipeName, string pipelineName, int stepNumber)
         {
             string requestedRecipe = NormalizeRecipeName(recipeName);
@@ -256,7 +334,11 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(ViewFailureOutputLayerText));
             OnPropertyChanged(nameof(FocusSelectedRunFailureStepText));
             OnPropertyChanged(nameof(LoadSelectedRunSampleImageToInputLayerText));
+            OnPropertyChanged(nameof(PrepareSelectedRunFailureCorrectionText));
+            OnPropertyChanged(nameof(PrepareSelectedRunFailureCorrectionToolTipText));
             OnPropertyChanged(nameof(RerunFailurePairCheckText));
+            OnPropertyChanged(nameof(CorrectedOutputRerunText));
+            OnPropertyChanged(nameof(CorrectedOutputRerunToolTipText));
             OnPropertyChanged(nameof(LoadFailureStepParametersText));
             OnPropertyChanged(nameof(LlmXmlValidationReportText));
             OnPropertyChanged(nameof(PipelinePreviewStepListText));
@@ -2924,7 +3006,12 @@ namespace OpenVisionLab
 
         private bool CanRunLocalValidationSet()
         {
-            OpenVisionRecipeValidationSetOption option = SelectedValidationSetOption;
+            return CanRunLocalValidationSet(SelectedValidationSetOption);
+        }
+
+        private bool CanRunLocalValidationSet(
+            OpenVisionRecipeValidationSetOption option)
+        {
             if (!validationSetStorageReady
                 || executionSession.IsValidationSuiteRunning
                 || executionSession.IsCatalogBenchmarkRunning
@@ -3358,6 +3445,196 @@ namespace OpenVisionLab
                 && File.Exists(ResolveSelectedRunSampleImagePath());
         }
 
+        private void PrepareSelectedRunFailureCorrection()
+        {
+            OpenVisionRecipePipelineStepPreview step = ResolveSelectedRunFailureStep();
+            string sampleImagePath = ResolveSelectedRunSampleImagePath();
+            if (step == null)
+            {
+                StatusText = LocalText("연결된 실패 Step이 없습니다.", "No linked failed step.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(sampleImagePath) || !File.Exists(sampleImagePath))
+            {
+                StatusText = LocalText("보존된 실패 샘플 이미지 경로를 찾을 수 없습니다.", "Could not find the retained failed sample image path.");
+                return;
+            }
+
+            if (IsSamePipelinePreviewStep(SelectedPipelinePreviewStep, step)
+                && selectedStepEditSession.IsDirty
+                && !TryLeaveSelectedStepEdit(
+                    OpenVisionRecipePendingEditTransitionKind.Step,
+                    step.DisplayText))
+            {
+                StatusText = LocalText(
+                    "현재 Step 편집 전환이 취소되어 실패 수정 준비를 중단했습니다.",
+                    "Correction preparation stopped because the current Step edit transition was cancelled.");
+                return;
+            }
+
+            SelectedPipelinePreviewStep = step;
+            if (!IsSamePipelinePreviewStep(SelectedPipelinePreviewStep, step))
+            {
+                StatusText = LocalText(
+                    "현재 Step 편집 전환이 취소되어 실패 수정 준비를 중단했습니다.",
+                    "Correction preparation stopped because the current Step edit transition was cancelled.");
+                return;
+            }
+
+            if (!LoadSelectedStepParametersForEdit(updateStatus: true))
+            {
+                return;
+            }
+
+            if (!loadImageIntoLayer(step.InputLayer, sampleImagePath))
+            {
+                StatusText = LocalText(
+                    "실패 Step 파라미터는 불러왔지만 보존된 샘플을 입력 레이어에 로드하지 못했습니다: ",
+                    "Loaded the failed Step parameters, but could not load the retained sample into the input layer: ")
+                    + step.InputLayer;
+                CommandManager.InvalidateRequerySuggested();
+                return;
+            }
+
+            openPipelineXmlSteps();
+            StatusText = LocalText(
+                "실패 수정 준비 완료: 샘플과 Step 파라미터를 불러왔습니다. PropertyGrid에서 수정한 뒤 명시적으로 Preview/Run 하세요.",
+                "Correction preparation complete: the sample and Step parameters are loaded. Edit in the PropertyGrid, then explicitly Preview/Run.");
+            CommandManager.InvalidateRequerySuggested();
+        }
+
+        private bool CanPrepareSelectedRunFailureCorrection()
+        {
+            return CanLoadSelectedRunSampleImageToInputLayer();
+        }
+
+        private void RerunCorrectedOutput()
+        {
+            if (!IsSelectedRunLocalValidationSet())
+            {
+                RunSelectedSamplePairCheck();
+                return;
+            }
+
+            if (!TryResolveSelectedRunValidationSet(
+                    out OpenVisionRecipeValidationSetOption validationSet,
+                    out string reason))
+            {
+                StatusText = reason;
+                return;
+            }
+
+            OpenVisionRecipeValidationSuiteScopeOption localScope =
+                ValidationSuiteScopeOptions.FirstOrDefault(option => string.Equals(
+                    option?.Key,
+                    OpenVisionRecipeValidationSuiteScopeOption.LocalValidationSetKey,
+                    StringComparison.OrdinalIgnoreCase));
+            if (localScope == null)
+            {
+                StatusText = LocalText(
+                    "로컬 검증 세트 실행 범위를 찾을 수 없습니다.",
+                    "The Local Validation Set suite scope is unavailable.");
+                return;
+            }
+
+            SelectedValidationSuiteScopeOption = localScope;
+            SelectedValidationSetOption = validationSet;
+            if (!CanRunLocalValidationSet(validationSet))
+            {
+                StatusText = LocalText(
+                    "동일 검증 세트를 재실행할 수 없습니다. 이미지 경로, 잠금된 파이프라인, 현재 실행 상태를 확인하세요: ",
+                    "The same validation set cannot be rerun. Check image paths, locked pipeline identity, and current execution state: ")
+                    + validationSet.Name;
+                return;
+            }
+
+            StatusText = LocalText(
+                "동일 검증 세트 재실행 시작: ",
+                "Started rerunning the same validation set: ")
+                + validationSet.Name;
+            RunValidationSuite();
+        }
+
+        private bool CanRerunCorrectedOutput()
+        {
+            if (!IsSelectedRunLocalValidationSet())
+            {
+                return CanRunSelectedSamplePairCheck();
+            }
+
+            return TryResolveSelectedRunValidationSet(
+                    out OpenVisionRecipeValidationSetOption validationSet,
+                    out _)
+                && CanRunLocalValidationSet(validationSet);
+        }
+
+        private bool IsSelectedRunLocalValidationSet()
+        {
+            string suiteKind =
+                SelectedRecentBatchRunOption?.RunSummary?.SuiteKind
+                ?? string.Empty;
+            return string.Equals(
+                    suiteKind,
+                    "LocalValidationSet",
+                    StringComparison.OrdinalIgnoreCase)
+                || string.Equals(
+                    suiteKind,
+                    "LocalValidationSetPartial",
+                    StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool TryResolveSelectedRunValidationSet(
+            out OpenVisionRecipeValidationSetOption validationSet,
+            out string reason)
+        {
+            validationSet = null;
+            reason = string.Empty;
+            VisionPipelineBatchRunSummary summary =
+                SelectedRecentBatchRunOption?.RunSummary;
+            if (summary == null || !IsSelectedRunLocalValidationSet())
+            {
+                reason = LocalText(
+                    "선택 실행은 로컬 검증 세트 이력이 아닙니다.",
+                    "The selected run is not Local Validation Set history.");
+                return false;
+            }
+
+            string recipeName = NormalizeRecipeName(selectedRecipeName);
+            string pipelineName = SelectedPipelineOption?.PipelineName
+                ?? string.Empty;
+            if (!string.Equals(
+                    summary.RecipeName,
+                    recipeName,
+                    StringComparison.Ordinal)
+                || !string.Equals(
+                    summary.PipelineName,
+                    pipelineName,
+                    StringComparison.Ordinal))
+            {
+                reason = LocalText(
+                    "선택 이력의 레시피/파이프라인이 현재 편집 대상과 다릅니다.",
+                    "The selected run recipe/pipeline differs from the current edit target.");
+                return false;
+            }
+
+            validationSet = ValidationSetOptions.FirstOrDefault(option =>
+                string.Equals(
+                    option?.Name,
+                    summary.SuiteName,
+                    StringComparison.Ordinal));
+            if (validationSet == null)
+            {
+                reason = LocalText(
+                    "선택 이력의 원본 검증 세트를 찾을 수 없습니다: ",
+                    "Could not find the source validation set for the selected run: ")
+                    + summary.SuiteName;
+                return false;
+            }
+
+            return true;
+        }
+
         private void OpenSelectedRecentBatchRunEvidence()
         {
             if (!OpenVisionRecipeRunEvidence.TryCreate(
@@ -3402,6 +3679,12 @@ namespace OpenVisionLab
         private string ResolveSelectedRunSampleImagePath()
         {
             string path = SelectedRecentBatchRunComparisonRow?.SampleImagePath;
+            if (File.Exists(path))
+            {
+                return path;
+            }
+
+            path = SelectedRecentBatchSampleResultOption?.SampleImagePath;
             if (File.Exists(path))
             {
                 return path;
@@ -3684,7 +3967,8 @@ namespace OpenVisionLab
                     SelectedPipelinePreviewStep,
                     pipelineName,
                     selectedIndex,
-                    validationMessage));
+                    validationMessage,
+                    IsSelectedRunLocalValidationSet()));
             StatusText = OpenVisionRecipeText.Local("Step XML 반영 완료", "Step XML apply complete");
             return true;
         }
@@ -4124,6 +4408,8 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(StopValidationSuiteText));
             OnPropertyChanged(nameof(IsLocalValidationSetRunning));
             OnPropertyChanged(nameof(ValidationSuiteSummaryText));
+            OnPropertyChanged(nameof(CorrectedOutputRerunText));
+            OnPropertyChanged(nameof(CorrectedOutputRerunToolTipText));
             OnPropertyChanged(nameof(QualifiedSnapshotPreflightText));
             CommandManager.InvalidateRequerySuggested();
         }

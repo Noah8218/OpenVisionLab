@@ -565,38 +565,52 @@ namespace OpenVisionLab
             public int ExtendFitLineValue { get; set; }
 
             [PropertyOrder(11)]
-            [Category("Line Pair")]
-            [DisplayName("Use average filter")]
+            [PropertyGridCompatibilityReadOnly]
+            [Category("Compatibility (read-only)")]
+            [DisplayName("Compatibility (inactive) · Average filter")]
+            [Description("Preserved from existing Recipe/XML. The current LineGauge runtime does not consume this value.")]
             public bool UseAverageFilter { get; set; }
 
             [PropertyOrder(12)]
-            [Category("Line Pair")]
-            [DisplayName("Average diff")]
+            [PropertyGridCompatibilityReadOnly]
+            [Category("Compatibility (read-only)")]
+            [DisplayName("Compatibility (inactive) · Average diff")]
+            [Description("Preserved from existing Recipe/XML. The current LineGauge runtime does not consume this value.")]
             public double AverageDiff { get; set; }
 
             [PropertyOrder(13)]
-            [Category("Line Pair")]
-            [DisplayName("Average filter type")]
+            [PropertyGridCompatibilityReadOnly]
+            [Category("Compatibility (read-only)")]
+            [DisplayName("Compatibility (inactive) · Average axis")]
+            [Description("Preserved from existing Recipe/XML. The current LineGauge runtime does not consume this X/Y value.")]
             public LineGaugeProperty.AVERAGE_FILTER_TYPES AverageFilterType { get; set; }
 
             [PropertyOrder(14)]
-            [Category("Line Pair")]
-            [DisplayName("Show vertical line")]
+            [PropertyGridCompatibilityReadOnly]
+            [Category("Compatibility (read-only)")]
+            [DisplayName("Legacy draw · Scan line")]
+            [Description("Preserved for the legacy bitmap Draw path. Current WPF/Pipeline review retains scan evidence.")]
             public bool ShowVerticalLine { get; set; }
 
             [PropertyOrder(15)]
-            [Category("Line Pair")]
-            [DisplayName("Show edge")]
+            [PropertyGridCompatibilityReadOnly]
+            [Category("Compatibility (read-only)")]
+            [DisplayName("Legacy draw · Edge")]
+            [Description("Preserved for the legacy bitmap Draw path. Current WPF/Pipeline review retains edge evidence.")]
             public bool ShowEdge { get; set; }
 
             [PropertyOrder(16)]
-            [Category("Line Pair")]
-            [DisplayName("Show contour")]
+            [PropertyGridCompatibilityReadOnly]
+            [Category("Compatibility (read-only)")]
+            [DisplayName("Legacy draw · Contour")]
+            [Description("Preserved for the legacy bitmap Draw path. The current WPF/Pipeline overlay contract does not consume it.")]
             public bool ShowContour { get; set; }
 
             [PropertyOrder(17)]
-            [Category("Line Pair")]
-            [DisplayName("Show fit line")]
+            [PropertyGridCompatibilityReadOnly]
+            [Category("Compatibility (read-only)")]
+            [DisplayName("Legacy draw · Fit line")]
+            [Description("Preserved for the legacy bitmap Draw path. Current WPF/Pipeline review retains fitted-line evidence.")]
             public bool ShowFitLine { get; set; }
 
             [PropertyOrder(0)]

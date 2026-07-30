@@ -135,7 +135,7 @@ namespace OpenVisionLab
             where TProperty : OpenCvPropertyBase
         {
             IPropertyGridToolViewModel<TProperty> viewModel = OpenVisionToolOpenProfiler.Measure("CreatePropertyGridViewModel", () => createViewModel(property));
-            return OpenVisionToolOpenProfiler.Measure(
+            OpenVisionNativeToolDocument document = OpenVisionToolOpenProfiler.Measure(
                 "CreatePropertyGridDocument",
                 () => OpenVisionNativePropertyGridToolDocumentBuilder.Create(
                 displayManager,
@@ -148,6 +148,7 @@ namespace OpenVisionLab
                     createView,
                     executePreview,
                     persistSelectedObject: () => OpenVisionNativeToolPropertySessionStore.Save(toolName, property))));
+            return ApplyLoadFailureStatus(document, property.NAME);
         }
 
         private static OpenVisionNativeToolDocument CreateTemplatePropertyGridDocument<TView, TProperty>(
@@ -162,7 +163,7 @@ namespace OpenVisionLab
             where TProperty : OpenCvPropertyBase
         {
             ITemplateBackedPropertyGridToolViewModel<TProperty> viewModel = OpenVisionToolOpenProfiler.Measure("CreatePropertyGridViewModel", () => createViewModel(property));
-            return OpenVisionToolOpenProfiler.Measure(
+            OpenVisionNativeToolDocument document = OpenVisionToolOpenProfiler.Measure(
                 "CreatePropertyGridDocument",
                 () => OpenVisionNativePropertyGridToolDocumentBuilder.Create(
                 displayManager,
@@ -178,6 +179,87 @@ namespace OpenVisionLab
                     applyTemplatePathForTest: viewModel.ApplyTemplatePathForTest,
                     reloadTemplateIfPatternChanged: viewModel.ReloadTemplateIfPatternChanged,
                     persistSelectedObject: () => OpenVisionNativeToolPropertySessionStore.Save(toolName, property))));
+            return ApplyLoadFailureStatus(document, property.NAME);
+        }
+
+        internal static OpenVisionNativeToolDocument ApplyLoadFailureStatus(
+            OpenVisionNativeToolDocument document,
+            params string[] propertyKeys)
+        {
+            if (document == null || propertyKeys == null)
+            {
+                return document;
+            }
+
+            foreach (string propertyKey in propertyKeys)
+            {
+                if (!OpenVisionNativeToolPropertySessionStore.TryGetLoadFailure(
+                        propertyKey,
+                        out OpenVisionNativeToolPropertyLoadFailure failure))
+                {
+                    continue;
+                }
+
+                string recipeName = string.IsNullOrWhiteSpace(failure.RecipeName)
+                    ? LocalizedText(
+                        "VisionTool.Persistence.DefaultRecipe",
+                        "default Recipe")
+                    : failure.RecipeName;
+                string errorMessage = string.IsNullOrWhiteSpace(failure.ErrorMessage)
+                    ? LocalizedText(
+                        "VisionTool.Persistence.UnknownError",
+                        "unknown error")
+                    : failure.ErrorMessage;
+                string format;
+                object[] arguments;
+                if (failure.PreviousFileWasBackedUp)
+                {
+                    format = LocalizedText(
+                        "VisionTool.Persistence.LoadRecoveredInvalidFormat",
+                        "{0} / Recipe {1}: Saved settings were invalid or incompatible, "
+                        + "so this Tool opened with default values. Do not assume prior teaching was restored. "
+                        + "Review the values. The previous file was preserved at {2}. Cause: {3}");
+                    arguments = new object[]
+                    {
+                        failure.ToolName,
+                        recipeName,
+                        failure.BackupPath,
+                        errorMessage
+                    };
+                }
+                else
+                {
+                    format = LocalizedText(
+                        "VisionTool.Persistence.LoadFailedFormat",
+                        "{0} / Recipe {1}: Saved settings could not be loaded, "
+                        + "so this Tool opened with default values. Do not assume prior teaching was restored. "
+                        + "Review the values; the saved file was not changed. Cause: {2}");
+                    arguments = new object[]
+                    {
+                        failure.ToolName,
+                        recipeName,
+                        errorMessage
+                    };
+                }
+
+                document.SetPropertyPersistenceStatus(
+                    string.Format(
+                        System.Globalization.CultureInfo.CurrentCulture,
+                        format,
+                        arguments));
+                break;
+            }
+
+            return document;
+        }
+
+        private static string LocalizedText(string key, string fallbackText)
+        {
+            string value = OpenVisionLanguageService.T(key);
+            return string.IsNullOrWhiteSpace(value)
+                || string.Equals(value, key, StringComparison.Ordinal)
+                ? fallbackText ?? string.Empty
+                : value;
         }
     }
 }

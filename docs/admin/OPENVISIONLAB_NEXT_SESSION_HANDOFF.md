@@ -27,6 +27,305 @@ Work starts in `C:\Git\OpenVisionLab_Dev`; only reviewed and stabilized changes 
   moves from the P192/P193 hybrid candidate to P195. Preserve the gap rather
   than fabricating a feature or completion claim.
 
+## P271 Settings Store Persistence Feedback On 2026-07-30
+
+- The separate settings store used by Threshold, Filter, Morphology,
+  Arithmetic, EdgeDetection, RotateScale, Mean, HSV, and Histogram silently
+  substituted defaults after load failures and swallowed save failures.
+- It now retains normal missing/valid outcomes, invalid-file backup and
+  replacement, unreadable-load state, memory-only save failure, and one-time
+  explicit-save recovery by Tool/Recipe.
+- Full Korean/English status remains in the existing nonmodal bottom Tool
+  status, Tooltip, and accessibility HelpText. Initial settings application
+  cannot auto-save away a retained warning.
+- Current Debug EXE before/after, exact missing/valid/invalid/backup/recovery
+  contract, P269/P270 actual-EXE regressions, all affected Tool-family UI,
+  localization, readiness, full build, and diff checks passed with zero
+  Preview/Run/layer/route side effects.
+- Status: Complete. Evidence:
+  `artifacts\p271_settings_persistence_feedback_20260730` and
+  `docs\reports\OPENVISIONLAB_SETTINGS_STORE_PERSISTENCE_FEEDBACK_20260730.md`.
+- Boundary: syntactically valid semantic staleness still requires an explicit
+  schema/version or semantic-validation rule.
+- Next audit `VisionPipelineStorage` and `RecipeDataStorage` before changing
+  Recipe/Pipeline persistence; reproduce an operator-visible silent fallback
+  first.
+  Recommended model: `gpt-5.6-terra` | Reasoning effort: `medium`.
+
+## P270 Property Load Recovery Feedback On 2026-07-30
+
+- The P269 follow-up reproduced silent default substitution when Direct
+  PropertyGrid Tool saved settings were invalid or a load exception occurred.
+- The shared XML load contract now retains valid load, normal first-use
+  default creation, and invalid-file replacement. Invalid originals remain at
+  exact `.invalid-<timestamp>.xml` backup paths.
+- Session-loaded and Recipe-repository-preloaded Properties both retain the
+  result. Missing/valid files remain warning-free; invalid/incompatible and
+  unreadable states show Tool/Recipe, default-substitution, review, file
+  mutation boundary, backup path when present, and cause.
+- A successful explicit property save clears the retained load failure and
+  reports P269 recovery once.
+- Current Debug EXE before/after remained non-obstructing with zero
+  Preview/Run/layer/route side effects. Missing/valid/invalid, backup,
+  repository preload, recovery, localization, P269, P268, Blob, full Debug
+  build, readiness, and diff regressions passed.
+- Status: Complete. Evidence:
+  `artifacts\p270_property_load_feedback_20260730` and
+  `docs\reports\OPENVISIONLAB_PROPERTY_LOAD_RECOVERY_FEEDBACK_20260730.md`.
+- Boundary: syntactically valid semantic staleness still requires a future
+  schema/version rule. P270 does not cover the separate
+  `OpenVisionNativeToolSettingsStore`.
+- Next audit that settings store for Threshold, Filter, Morphology,
+  Arithmetic, and SimplePreprocess before implementing persistence parity.
+  Recommended model: `gpt-5.6-terra` | Reasoning effort: `medium`.
+
+## P269 Property Persistence Failure Feedback On 2026-07-30
+
+- The post-guide reassessment found one concrete persistence-trust defect:
+  Direct Tool property save exceptions were swallowed and still published as
+  an undifferentiated saved event.
+- Failed saves now retain the current memory value while Tool/Recipe-scoped
+  Korean/English status explains that the value can be lost after reopening
+  and retains the cause.
+- The next save success reports recovery once; ordinary successes add no
+  repeated status noise. Full truncated text is available through Tooltip and
+  accessibility HelpText.
+- Actual current Debug EXE before/after at `920 x 660` remained
+  non-obstructing with zero Preview/Run/layer/route side effects.
+- Focused, P254 persistence, P257 guide, isolated P268 guide, Blob Tool,
+  localization, full build, and readiness regressions passed.
+- Status: Complete. Evidence:
+  `artifacts\p269_property_persistence_feedback_20260730` and
+  `docs\reports\OPENVISIONLAB_PROPERTY_PERSISTENCE_FAILURE_FEEDBACK_20260730.md`.
+- Boundary: save-failure trust only, not saved-setting load diagnosis,
+  inspection algorithms, automatic tuning, new datasets, LLM work, equipment
+  integration, or CVR-00.
+- Next audit the paired load path and distinguish missing, valid, stale,
+  corrupt, incompatible, and unreadable saved Tool/Recipe configuration
+  before implementation.
+  Recommended model: `gpt-5.6-terra` | Reasoning effort: `medium`.
+
+## P268 EdgeBasedMatching Parameter Guide On 2026-07-30
+
+- All 32 formerly Basic EdgeBasedMatching entries now have detailed Korean/
+  English guidance. EdgeBasedMatching is 65/65 detailed and the canonical
+  standalone audit is 318/318 detailed with zero Basic entries.
+- Guidance separates template identity/global polarity/display, explicit Auto
+  MPoint teaching-time analysis, Canny/contour model construction, and
+  coarse/refine/pyramid/hybrid runtime search.
+- Score, margin, and Suggested rank do not prove durable physical identity.
+  Auto MPoint remains explicit analysis and operator apply; `USE_DRAW_IMAGE`
+  does not hide successful current WPF/Pipeline evidence.
+- The Recipe selected-Step mapper now restores scale, subpixel, and pyramid
+  runtime values that Pipeline XML already retained. Create/apply/reload
+  passed exactly with zero Preview/Run/layer/route side effects.
+- Actual current Debug EXE before/after at `920 x 660` remained
+  non-obstructing. Direct Tool, Auto MPoint, localization, shared guide, and
+  20/20 global-polarity runtime regressions passed.
+- Status: Complete. Evidence:
+  `artifacts\p268_edge_based_matching_parameter_guide_20260730` and
+  `docs\reports\OPENVISIONLAB_EDGE_BASED_MATCHING_PARAMETER_GUIDE_20260730.md`.
+- Boundary: existing deterministic matcher guidance and persistence
+  correction only, not automatic physical-feature selection, matcher
+  qualification, field robustness, equipment integration, LLM expansion, or
+  CVR-00.
+- Next perform a static post-guide usability reassessment; admit a new feature
+  only from a concrete current-source operator blocker or verified regression.
+  Recommended model: `gpt-5.6-terra` | Reasoning effort: `low`.
+
+## P267 AffineTransform Parameter Guide On 2026-07-30
+
+- All 20 formerly Basic AffineTransform entries now have detailed Korean/
+  English guidance and the family is 38/38 detailed.
+- Ordered source-to-destination point identity, pixel-only coordinates,
+  detected-Point replacement, output-canvas behavior, exact supported
+  interpolation/border policies, and fail-closed area/coverage semantics are
+  explicit.
+- BorderValue is active only for Constant. Collinear points fail even at a zero
+  area gate. AffineValidPixelRatio uses actual source-mask coverage and
+  excludes border fill; it does not prove one critical ROI remains uncut.
+- Actual current Debug EXE before/after at `920 x 660` remained
+  non-obstructing with zero Preview/Run/layer/route side effects.
+- Existing known-matrix, alias, XML/PropertyGrid round-trip, collinear, and
+  coverage-failure contracts passed. The standalone audit is 286/318 detailed
+  and 32 Basic, all in EdgeBasedMatching.
+- Status: Complete. Evidence:
+  `artifacts\p267_affine_transform_parameter_guide_20260730` and
+  `docs\reports\OPENVISIONLAB_AFFINE_TRANSFORM_PARAMETER_GUIDE_20260730.md`.
+- Boundary: existing deterministic pixel-only Affine guidance only, not
+  automatic correspondence, Homography, calibration, physical-feature
+  qualification, or CVR-00.
+- Next audit the 32 EdgeBasedMatching Basic entries before guide
+  implementation.
+  Recommended model: `gpt-5.6-sol` | Reasoning effort: `medium`.
+
+## P266 Line Inactive/Legacy Controls On 2026-07-30
+
+- The three inactive average-filter values and four legacy bitmap drawing
+  values remain visible for saved Recipe/XML review, but Direct Line and
+  Recipe Manager selected-Step PropertyGrid editors are now read-only.
+- Explicit Korean/English compatibility and legacy labels replace active-
+  looking names. Rows remain selectable for detailed guidance, while both UI
+  editors and PropertyGrid bridge mutation APIs reject changes.
+- Basic/Fast/Precise presets preserve all seven values. Asymmetric Line A/B
+  values survived no-edit apply, save, and reload exactly.
+- Actual current Debug EXE before/after at `920 x 860` remained
+  non-obstructing with zero Preview/Run/layer/route side effects. Focused,
+  shared, Direct/Recipe, preset, Line measurement, full build, and readiness
+  checks passed.
+- Status: Complete. Evidence:
+  `artifacts\p266_line_inactive_legacy_controls_20260730` and
+  `docs\reports\OPENVISIONLAB_LINE_INACTIVE_LEGACY_CONTROLS_20260730.md`.
+- Boundary: compatibility and operator-trust cleanup only. No average-filter
+  runtime was added, legacy flags do not hide current WPF/Pipeline evidence,
+  and detailed guide coverage remains 266/318.
+- Next audit the 20 AffineTransform Basic entries against current runtime and
+  tests before admitting guide implementation.
+  Recommended model: `gpt-5.6-sol` | Reasoning effort: `medium`.
+
+## P265 Line Parameter Guide On 2026-07-30
+
+- All 11 remaining LineGauge/LineDistance Basic entries now have detailed
+  Korean/English guidance and the family is 36/36 detailed.
+- Manual angle is LineDistance sample-line direction rather than edge-search
+  or fitted-line angle. Fitted-edge distance requires both A/B extend toggles;
+  extend length changes drawing extent only.
+- The three persisted average-filter fields have no current LineGauge runtime
+  consumer. The four drawing flags apply only to the legacy bitmap Draw path;
+  current WPF Preview/Pipeline Review retains review evidence.
+- Actual current Debug EXE before/after at `920 x 660` proved Basic-to-detailed
+  presentation without obstruction, focus loss, unintended Preview/Run, or
+  layer changes.
+- Focused/shared guide and Line Tool/preset/measurement/signal regressions
+  passed. The standalone audit is 266/318 detailed and 52 Basic.
+- Status: Complete. Evidence:
+  `artifacts\p265_line_parameter_guide_20260730` and
+  `docs\reports\OPENVISIONLAB_LINE_PARAMETER_GUIDE_20260730.md`.
+- Boundary: guidance only, not an average-filter implementation, drawing
+  evidence removal, metrology qualification, or CVR-00 participant evidence.
+  Next address the seven inactive/legacy controls explicitly while preserving
+  compatible saved values.
+
+## P264 Matching Search Parameter Guide On 2026-07-30
+
+- All eight remaining Matching Basic entries now have detailed Korean/English
+  guidance and Matching is 42/42 detailed.
+- The audit kept four real responsibilities separate: working-resolution
+  divisor, coarse-to-fine angle search, pyramid position proposal, and
+  rotated-template border policy.
+- `MAGNIFIATION` divides source/template working dimensions and is not target
+  scale variation. Coarse search states its angle/fine-step conditions.
+  Pyramid proposal states its angle-off path, separate 0..1 proposal gate, and
+  full-search fallback. Padding false is Reflect rather than black.
+- Actual Debug EXE before/after at `920 x 660` proved Basic-to-detailed
+  presentation without obstruction, focus loss, unintended Preview/Run, or
+  layer changes.
+- Focused/shared guide, Matching pyramid/angle/Tool/preset, full build, and
+  readiness checks passed. The smoke harness now distinguishes the primary
+  Tool window from its nonmodal guide sidecar.
+- The standalone audit is 255/318 detailed and 63 Basic.
+- Status: Complete. Evidence:
+  `artifacts\p264_matching_search_parameter_guide_20260730` and
+  `docs\reports\OPENVISIONLAB_MATCHING_SEARCH_PARAMETER_GUIDE_20260730.md`.
+- Boundary: guidance only, not automatic parameter selection, Matching
+  qualification, field robustness, or CVR-00 participant evidence. Audit the
+  11 `LineGauge/LineDistance` Basic entries before another implementation.
+
+## P263 FeatureMatching Parameter Guide On 2026-07-30
+
+- `PATTERN_PATH`, `SCORE_MIN`, and `RANSAC_REPROJ_THRESHOLD` now have detailed
+  Korean/English guidance without changing FeatureMatching runtime or teaching
+  controls.
+- `SCORE_MIN` is documented as the Lowe ratio on 0..1 where smaller is
+  stricter, while result `ScoreMax` is a separate RANSAC inlier percentage on
+  0..100.
+- RANSAC tolerance now reports pixels rather than generic threshold GV and
+  names the distorted-homography risk of an overly permissive value.
+- Template guidance names readable dependency, stable feature-rich crop,
+  keypoints, GoodMatches, transformed quadrilateral, and N-sample evidence.
+- Actual Debug EXE before/after, focused/shared guide, actual FeatureMatching
+  template/Preview/Pipeline, and Guided Setup checks passed with zero
+  guide-caused execution/layer/route side effects.
+- The standalone audit is 247/318 detailed and 71 Basic.
+- Status: Complete. Evidence:
+  `artifacts\p263_feature_matching_parameter_guide_20260730` and
+  `docs\reports\OPENVISIONLAB_FEATURE_MATCHING_PARAMETER_GUIDE_20260730.md`.
+- Boundary: guidance only, not automatic template selection, parameter
+  optimization, algorithm qualification, field robustness, or CVR-00
+  participant evidence. Audit Matching's eight Basic entries before another
+  implementation.
+
+## P262 Mean Parameter Guide On 2026-07-30
+
+- The three remaining Mean Basic properties now have detailed Korean/English
+  guidance and the Direct Tool maps its friendly controls to exact stable
+  PropertyGrid/XML identities.
+- Guidance distinguishes Mean average brightness from MeanStdDev gray-value
+  standard deviation, invalidates reused limits after a type switch, and
+  defines Min/Max as inclusive GV bounds for Direct Preview review.
+- Saved Pipeline users are explicitly told to verify the separate Step
+  acceptance metric/minimum/maximum rather than assuming Mean Min/Max are the
+  final Pipeline gate.
+- Actual current Debug EXE before evidence had no Mean guide. Final `920 x
+  660` evidence found no obstruction, retained focus, passed hide/reopen, and
+  kept Preview/Run and layers unchanged.
+- Focused and shared guide/Mean regressions passed. The standalone canonical
+  audit is 244/318 detailed and 74 Basic.
+- Status: Complete. Evidence:
+  `artifacts\p262_mean_parameter_guide_20260730` and
+  `docs\reports\OPENVISIONLAB_MEAN_PARAMETER_GUIDE_20260730.md`.
+- Boundary: operator guidance only, not automatic tuning, Mean qualification,
+  field robustness, or CVR-00 evidence. Audit FeatureMatching's three Basic
+  entries before admitting another implementation.
+
+## P261 Non-Obstructing Parameter Guide And RotateScale On 2026-07-30
+
+- The actual current Debug EXE reproduced a guide-layout defect at a `920 x
+  660` Tool size: the former overlay intersected Canny High, Canny Aperture,
+  and L2 teaching controls.
+- The shared guide is now a nonmodal Tool-owned sidecar that opens adjacent to
+  a floating Tool without taking keyboard focus. The header `?` action hides
+  and reopens it; a session hide is remembered. Docked Tools do not auto-open
+  the sidecar.
+- Final actual-EXE EdgeDetection and RotateScale checks reported no obstructed
+  controls, retained focus, successful explicit hide/reopen, and zero
+  Preview/Run or layer changes.
+- All five RotateScale properties now have runtime-grounded Korean/English
+  guidance. The canonical audit is 241/318 detailed and 77 Basic.
+- Focused and related guide/runtime/dock regressions, the zero-warning Debug
+  build, and all readiness categories passed.
+- Status: Complete. Evidence:
+  `artifacts\p261_parameter_guide_non_obstructing_20260730` and
+  `docs\reports\OPENVISIONLAB_NON_OBSTRUCTING_PARAMETER_GUIDE_AND_ROTATE_SCALE_20260730.md`.
+- Boundary: one current workstation and tested Tool size, not every
+  monitor/DPI topology; operator guidance, not automatic tuning or algorithm
+  qualification. Reassess the remaining 77 Basic entries before admitting
+  another family.
+
+## P260 EdgeDetection Parameter Guide On 2026-07-30
+
+- A current canonical-family audit inspected 318 browsable properties and
+  found 225 detailed / 93 Basic fallback before implementation.
+- EdgeDetection was selected because all 11 properties were Basic fallback and
+  incorrect thresholds, derivative pairs, or kernels directly affect
+  downstream evidence.
+- All 11 properties now provide runtime-grounded Korean/English meaning,
+  tuning effect, related settings, explicit Canny/Sobel/Scharr/Laplacian
+  applicability, and evidence to inspect after explicit Preview.
+- Runtime-generated EdgeDetection parameter cards now feed the existing shared
+  Parameter Guide. Focus/selection changes no Preview/Run, layer, active-layer,
+  or route state.
+- Current solution build, exhaustive 11/11 coverage, Korean/English,
+  conditional applicability, focused UI smoke, before/after visual review,
+  and the post-change audit passed. The audit is now 236 detailed / 82 Basic.
+- Status: Complete. Evidence:
+  `artifacts\p260_edge_detection_parameter_guide_20260730`,
+  `artifacts\p260_parameter_guide_fallback_audit_20260730`, and
+  `docs\reports\OPENVISIONLAB_EDGE_DETECTION_PARAMETER_GUIDE_20260730.md`.
+- Boundary: operator guidance only, not automatic tuning, runtime algorithm
+  qualification, field robustness, equipment scope, or CVR-00 participant
+  evidence. The next bounded family is RotateScale, currently 0/5.
+
 ## P105 Current-EXE Novice Workflow Audit On 2026-07-17
 
 - With no new natural GPT/Gemini/Claude correction transcript supplied, the bounded fallback was a current Debug EXE audit of the public fixture and Recipe Manager novice routes.
@@ -4606,3 +4905,218 @@ git log --oneline -5
   novice participants. The video queue has no remaining implementation row.
   Recommended model: none until new evidence exists | Reasoning effort: none
   until evidence exists.
+
+## 2026-07-29 P250 / Catalog Pair -> Validation Set
+
+- Status: Complete.
+- The user explicitly redirected development to the many existing samples and
+  asked whether algorithms were the only commercial gap. The first reproduced
+  non-algorithm gap was the disconnected Sample Catalog -> Local Validation
+  Set workflow.
+- Recipe Manager now exposes one explicit `Save pair as set` action. It retains
+  OK/NG roles, sample-name Variants, image SHA-256 values, and catalog metric
+  bounds, selects Local Set scope, and never runs Preview/Run or a suite.
+- The validation-set and Qualified Snapshot contract now accepts
+  semicolon-separated multi-metric strings while preserving existing
+  one-metric XML behavior.
+- Same-pair import updates rather than duplicates. Unrelated set-name
+  collisions and hash-locked evidence are not overwritten.
+- `Public_Matching_DiePad` proved OK 1 / NG 1, two exact image hashes,
+  `ResultCount;ScoreMax`, save/reload/reopen, repeat update, and unchanged
+  Preview/Run, layers, workspace, and routes.
+- Verification: full solution and screenshot-runner builds passed with zero
+  warnings/errors; P250, Local Validation Set, Qualified Snapshot, and all 12
+  readiness categories passed.
+- Evidence:
+  `artifacts\p250_catalog_pair_validation_set_20260729` and
+  `docs\reports\OPENVISIONLAB_CATALOG_PAIR_VALIDATION_SET_20260729.md`.
+- Boundary: workflow/storage fidelity only, not imported-recipe qualification,
+  field robustness, or an algorithm-breadth claim.
+- Next priority: use one existing saved pair to inspect the explicit
+  `Run suite -> failed row -> focus failed Step -> correct -> rerun` chain and
+  implement only a reproduced missing handoff or repeated setup. Recommended
+  model: `gpt-5.6-terra` | Reasoning effort: medium.
+
+## 2026-07-29 P251 / Failure Correction Handoff
+
+- Status: Complete.
+- Run History now exposes one explicit `Prepare correction` action for a
+  retained row with a linked failed Step.
+- The action respects pending-edit Save/Discard/Cancel, selects the failed
+  Step, loads its persisted PropertyGrid, loads the retained sample into the
+  existing input layer, and opens XML/Steps.
+- It does not Preview/Run, create/delete a layer, change workspace selection,
+  or change input/output routing. Individual diagnostic actions and explicit
+  Good/Bad/Validation Set reruns remain available.
+- The actual `Public_Matching_DiePad` saved-set run proved exact decoded sample
+  bytes, the linked Matching Step, clean PropertyGrid/tab handoff,
+  cancel-without-data-loss, and discard/retry completion.
+- Verification: solution/screenshot-runner builds 0 warnings/errors; focused
+  `p251_failure_correction_handoff`, existing Local Validation Set, P250, and
+  readiness checks passed.
+- Evidence:
+  `artifacts\p251_failure_correction_handoff_20260729` and
+  `docs\reports\OPENVISIONLAB_FAILURE_CORRECTION_HANDOFF_20260729.md`.
+- Boundary: one public-pair workflow proof only; no semantic correction,
+  matcher qualification, new algorithm, automatic execution, or field
+  robustness.
+
+Next priority: none is admitted from the inspected chain. Wait for a new
+current-build operator blocker or verified regression. Recommended model: none
+until evidence exists | Reasoning effort: none until evidence exists.
+
+## 2026-07-29 P252 / Contextual Correction Rerun
+
+- Status: Complete.
+- The corrected-output action now uses the selected run source. Local
+  Validation Set or partial history shows `Rerun same set`, resolves the saved
+  recipe/pipeline/suite identity, selects that Local Set, explicitly executes
+  the corrected current Pipeline, and persists a comparable Run History
+  summary.
+- A missing or cross-context source set disables the command rather than
+  silently running the catalog Good/Bad pair. Non-Local-Set editing retains
+  the existing Good/Bad fallback.
+- XML Apply remains non-executing. Contextual guidance and button text now
+  agree on the rerun scope.
+- `Public_Matching_DiePad` produced a second same-suite two-row history and
+  previous-run comparison without changing the pair summary, native
+  Preview/Run count, layers, workspace selection, or routes. Missing-set
+  rejection/restoration and the Fixture Good/Bad fallback also passed.
+- Verification: solution/screenshot-runner builds 0 warnings/errors; focused
+  P252, P251, Fixture pair fallback, Local Validation Set, and readiness checks
+  passed.
+- Evidence:
+  `artifacts\p252_contextual_correction_rerun_20260729` and
+  `docs\reports\OPENVISIONLAB_CONTEXTUAL_CORRECTION_RERUN_20260729.md`.
+- Boundary: rerun-scope fidelity for one public set only; no semantic
+  correction, matcher qualification, automatic post-Apply run, or field
+  robustness.
+
+Next priority: none is admitted from this chain. Wait for a new current-build
+operator blocker or verified regression. Recommended model: none until evidence
+exists | Reasoning effort: none until evidence exists.
+
+## 2026-07-29 P253 / Workspace Sample / Recipe Context Sync
+
+- Status: Complete.
+- A current Debug EXE novice-role walkthrough reproduced a mismatch between
+  the newly opened workspace sample/generated Pipeline and Recipe Manager's
+  retained sample/Pipeline. The visible pair-save command could therefore save
+  an older pair.
+- Workspace sample opening now performs the existing pending-edit preflight
+  before mutation and synchronizes Recipe Manager to the exact generated
+  Pipeline and sample after success. Cancel preserves the prior context and
+  dirty edit.
+- The focused smoke proved the exact `Public_Matching_DiePad` Good/Bad pair,
+  edit-cancel fail-closed behavior, and zero automatic Preview/Run or
+  additional layer/route mutation.
+- The actual 112-second EXE recording completed pair save, first saved-set
+  run, retained NG correction preparation, no-op XML Apply, explicit rerun of
+  the same set, and comparison. It intentionally retained `Still NG 1` rather
+  than manufacture a semantic correction.
+- Evidence:
+  `artifacts\novice_matching_correction_loop_20260729`,
+  `artifacts\p253_workspace_sample_recipe_context_sync_20260729`, and
+  `docs\reports\OPENVISIONLAB_WORKSPACE_SAMPLE_RECIPE_CONTEXT_SYNC_20260729.md`.
+- Boundary: agent/developer workflow evidence only; CVR-00 still requires
+  three independent first-time participants, and Matching remains
+  unqualified.
+
+The historical P253 next priority is completed by P254 below and is no longer
+active.
+
+## 2026-07-29 P254 / Direct Teaching Pipeline Persistence
+
+- Status: Complete.
+- The existing direct Tool View action already persisted the taught Step, but
+  its former label and status did not state that saving was complete or name
+  the exact destination.
+- The shared action now says `Add and save to Pipeline` and reports the saved
+  Step, exact `Recipe > Pipeline` context, and `Next: Open Pipeline`.
+- No second save action, automatic navigation, Preview/Run, layer,
+  active-layer, or route mutation was introduced.
+- Focused current-source runtime evidence reloaded the 3-Step Pipeline,
+  refreshed Recipe Manager, reopened Pipeline Review, and explicitly ran the
+  added Blob Step with retained result/drawing evidence.
+- The actual Debug EXE recording proves the new add/save wording and exact
+  destination through successful add/save; its later stages are not claimed
+  because desktop capture automation did not dismiss the floating Tool View.
+- Verification: solution and screenshot-runner builds passed with zero
+  warnings/errors; focused P254 and localization checks passed; actual EXE
+  video/frame and current-source before/after captures were reviewed.
+- Evidence:
+  `artifacts\p254_direct_teaching_pipeline_persistence_20260729` and
+  `docs\reports\OPENVISIONLAB_DIRECT_TEACHING_PIPELINE_PERSISTENCE_20260729.md`.
+- Boundary: agent/developer workflow evidence only; CVR-00 remains incomplete
+  pending three independent novices, and Blob remains unqualified.
+
+Next priority: none admitted from the completed P254 chain. Wait for a named
+current-build operator blocker, verified regression, or an existing named
+participant/data prerequisite. Recommended model: none until evidence exists |
+Reasoning effort: none until evidence exists.
+
+## 2026-07-29 P255 / Scratch Threshold -> Blob Recipe Walkthrough
+
+- Status: Complete.
+- A 171-second clean-runtime recording completed the first blank-workspace
+  direct-Teaching Recipe from start through restart:
+  `new Recipe -> image -> explicit Threshold Preview/save -> Blob input
+  Threshold_Preview -> explicit Blob Preview/save -> route review -> restart ->
+  restore -> explicit Run Review`.
+- The saved Pipeline has two ordered Steps and exact route
+  `Main -> Threshold_Preview -> Blob_Preview`.
+- After restart and before Run, both Steps were `WAIT`; the one explicit Run
+  completed both as `OK / 21.5 ms` and retained 13 Blob object candidates,
+  drawings, and metrics.
+- Verification: clean Dev runtime build; actual-EXE recording
+  `Status=Complete`; saved Pipeline XML hash inspection; focused
+  `wpf_threshold_to_blob_detection_e2e` smoke passed at 1600x900 with zero
+  layout/text/internal failures; PowerShell parser and visual frame review
+  passed.
+- The focused smoke now preserves the explicit Preview contract instead of
+  expecting slider auto-preview.
+- Evidence:
+  `artifacts\p255_scratch_threshold_blob_recipe_20260729`,
+  `artifacts\openvisionlab_clean_runtime_p255_r7_20260729`, and
+  `docs\reports\OPENVISIONLAB_SCRATCH_THRESHOLD_BLOB_RECIPE_WALKTHROUGH_20260729.md`.
+- Boundary: agent/developer workflow evidence only. CVR-00 still requires
+  three real independent first-time participants; Threshold/Blob production
+  qualification and arbitrary long-Pipeline usability remain unproven.
+
+Next bounded priority: record a longer operator-authored Pipeline and admit a
+route-clarity change only if the current build reproduces a concrete
+input/output blocker. Recommended model: gpt-5.6-sol | Reasoning effort:
+medium.
+
+## 2026-07-29 P256 / Four-Step Route Clarity Walkthrough
+
+- Status: Complete.
+- A 335.33-second clean-runtime recording completed:
+  `new Recipe -> image -> Filter -> Threshold -> Morphology -> Blob -> exact
+  route review -> restart -> restore in WAIT -> explicit Run Review`.
+- Exact saved/restored routes:
+  `Filter Main -> Filter_Preview`,
+  `Threshold Filter_Preview -> Threshold_Preview`,
+  `Morphology Threshold_Preview -> Morphology_Preview`,
+  `Blob_1 Morphology_Preview -> Blob_Preview`.
+- Blob Basic preserved the selected predecessor route and caused no Preview.
+  After restart all four Steps were `WAIT`; one explicit Run completed
+  `OK 4 / NG 0 / WAIT 0`, `OK / 21.5 ms`, with 12 retained Blob rows and
+  drawings.
+- Invalid preliminary recordings exposed only recorder foreground,
+  ComboBox-selection verification, and concurrent-WPF-window defects. They
+  are not final product evidence. The final run was isolated.
+- Verification: final actual-EXE `Status=Complete`; exact XML route/hash
+  assertion; PowerShell parser; focused Basic/Fast/Precise preset route/no-run
+  smoke; Debug solution build with zero warnings/errors; visual review.
+- Evidence:
+  `artifacts\p256_four_step_route_clarity_20260729`,
+  `artifacts\openvisionlab_clean_runtime_p256_before_20260729`, and
+  `docs\reports\OPENVISIONLAB_FOUR_STEP_ROUTE_CLARITY_WALKTHROUGH_20260729.md`.
+- Boundary: agent/developer evidence only. CVR-00 still needs three real
+  independent first-time participants; production qualification and arbitrary
+  branching remain unproven.
+
+Next priority: no feature is admitted from P256. Wait for a named operator task
+or verified current-build regression. Recommended model: none until evidence
+exists | Reasoning effort: none until evidence exists.

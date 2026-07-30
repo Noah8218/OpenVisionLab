@@ -4,6 +4,7 @@ using Lib.OpenCV.Property;
 using Microsoft.Web.WebView2.Wpf;
 using OpenVisionLab.Core;
 using OpenVisionLab.Docking.Controls;
+using OpenVisionLab.Vision._1._Tools.OpenCV;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -150,6 +151,39 @@ namespace OpenVisionLab
                 if (string.Equals(scenario, "learn-edge-detection-practice", StringComparison.OrdinalIgnoreCase))
                 {
                     RunLearnEdgeDetectionPractice(outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "parameter-guide-layout", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunParameterGuideLayout(args, outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(
+                    scenario,
+                    "property-persistence-feedback",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    RunPropertyPersistenceFeedback(args, outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(
+                    scenario,
+                    "property-load-feedback",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    RunPropertyLoadFeedback(args, outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(
+                    scenario,
+                    "settings-persistence-feedback",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    RunSettingsPersistenceFeedback(args, outputDirectory);
                     return true;
                 }
 
@@ -7028,6 +7062,1685 @@ namespace OpenVisionLab
                 }
 
                 app.Shutdown();
+            }
+        }
+
+        private static void RunPropertyPersistenceFeedback(
+            string[] args,
+            string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            bool expectFeedback = ResolveOptionalBoolOption(
+                args,
+                "--expect-feedback",
+                false);
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+
+            OpenVisionShellHostWindow window = null;
+            try
+            {
+                ApplicationRuntimeContext runtimeContext =
+                    ApplicationRuntimeContext.CreateDefault();
+                window = new OpenVisionShellHostWindow(runtimeContext)
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+                app.MainWindow = window;
+                window.Show();
+                window.Activate();
+                Pump(36);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException(
+                        "Property persistence feedback smoke did not create the shell host.");
+                shellHost.SelectToolForTest(VISION_MENU.Blob);
+                Pump(48);
+                OpenVisionFloatingToolWindow toolWindow = Application.Current.Windows
+                    .OfType<OpenVisionFloatingToolWindow>()
+                    .FirstOrDefault(item => item.IsVisible)
+                    ?? throw new InvalidOperationException(
+                        "Property persistence feedback smoke did not open Blob.");
+                toolWindow.Width = 920D;
+                toolWindow.Height = 660D;
+                toolWindow.WindowStartupLocation = WindowStartupLocation.Manual;
+                toolWindow.Left = Math.Max(0D, SystemParameters.WorkArea.Left + 20D);
+                toolWindow.Top = Math.Max(0D, SystemParameters.WorkArea.Top + 20D);
+                toolWindow.Activate();
+                Pump(24);
+
+                System.Windows.Controls.WpfPropertyGrid.PropertyGrid propertyGrid =
+                    FindVisualChildren<System.Windows.Controls.WpfPropertyGrid.PropertyGrid>(
+                        toolWindow)
+                    .FirstOrDefault(item => item.IsVisible)
+                    ?? throw new InvalidOperationException(
+                        "Property persistence feedback smoke did not find the Blob PropertyGrid.");
+                BlobProperty property = propertyGrid.SelectedObject as BlobProperty
+                    ?? throw new InvalidOperationException(
+                        "Property persistence feedback smoke did not find the Blob property.");
+
+                int previewRunsBefore = shellHost.NativePreviewRunCount;
+                int layerCountBefore = shellHost.LayerDocumentCount;
+                string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+                string inputRouteBefore =
+                    shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string outputRouteBefore =
+                    shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                string statusBefore = shellHost.ActiveNativeStatusText;
+
+                OpenVisionNativeToolPropertySessionStore.FailNextSaveForTest = true;
+                OpenVisionNativeToolPropertySessionStore.Save("Blob", property);
+                Pump(24);
+                string failureStatus = shellHost.ActiveNativeStatusText;
+                bool feedbackVisible =
+                    failureStatus.Contains("저장", StringComparison.Ordinal)
+                    && failureStatus.Contains("메모리", StringComparison.Ordinal);
+                if (feedbackVisible != expectFeedback)
+                {
+                    throw new InvalidOperationException(
+                        "Property persistence failure feedback did not match the expected state. "
+                        + "Expected="
+                        + expectFeedback
+                        + ", Before='"
+                        + statusBefore
+                        + "', After='"
+                        + failureStatus
+                        + "'.");
+                }
+                if (expectFeedback)
+                {
+                    TextBlock statusText = FindVisualChildren<TextBlock>(toolWindow)
+                        .FirstOrDefault(item => item.IsVisible
+                            && string.Equals(
+                                item.Name,
+                                "txtStatus",
+                                StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            "Property persistence feedback smoke did not find the Tool status text.");
+                    if (!string.Equals(
+                            statusText.ToolTip?.ToString(),
+                            failureStatus,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            System.Windows.Automation.AutomationProperties.GetHelpText(
+                                statusText),
+                            failureStatus,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "The complete persistence failure message was not available through tooltip and accessibility help.");
+                    }
+                }
+
+                if (shellHost.NativePreviewRunCount != previewRunsBefore
+                    || shellHost.LayerDocumentCount != layerCountBefore
+                    || !string.Equals(
+                        shellHost.ActiveHostLayerTitle,
+                        activeLayerBefore,
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        shellHost.ActiveNativeRouteInputLayerNameForTest,
+                        inputRouteBefore,
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        shellHost.ActiveNativeRouteOutputLayerNameForTest,
+                        outputRouteBefore,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Property persistence feedback changed Preview/Run, layers, active layer, or routes.");
+                }
+
+                string screenshotName = expectFeedback
+                    ? "OpenVisionLab_Property_Save_Failure_Visible_After.png"
+                    : "OpenVisionLab_Property_Save_Failure_Silent_Before.png";
+                SaveWindowsScreenScreenshot(
+                    new[] { toolWindow },
+                    Path.Combine(outputDirectory, screenshotName));
+
+                string recoveryStatus = "NotApplicable";
+                if (expectFeedback)
+                {
+                    OpenVisionNativeToolPropertySessionStore.Save("Blob", property);
+                    Pump(24);
+                    recoveryStatus = shellHost.ActiveNativeStatusText;
+                    if (!recoveryStatus.Contains("저장", StringComparison.Ordinal)
+                        || !recoveryStatus.Contains("복구", StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "Property persistence recovery feedback was not visible. Status='"
+                            + recoveryStatus
+                            + "'.");
+                    }
+                }
+
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: property-persistence-feedback" + Environment.NewLine
+                    + "RuntimeExe: " + Process.GetCurrentProcess().MainModule?.FileName + Environment.NewLine
+                    + "ManagedAssembly: " + typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location + Environment.NewLine
+                    + "ExpectedFeedback: " + expectFeedback + Environment.NewLine
+                    + "StatusBefore: " + statusBefore + Environment.NewLine
+                    + "FailureStatus: " + failureStatus + Environment.NewLine
+                    + "RecoveryStatus: " + recoveryStatus + Environment.NewLine
+                    + "PreviewRunCount: " + shellHost.NativePreviewRunCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "LayerCount: " + shellHost.LayerDocumentCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "RoutesUnchanged: True" + Environment.NewLine
+                    + "Screenshot: " + screenshotName + Environment.NewLine,
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                OpenVisionNativeToolPropertySessionStore.FailNextSaveForTest = false;
+                window?.Close();
+                app.Shutdown();
+            }
+        }
+
+        private static void RunPropertyLoadFeedback(
+            string[] args,
+            string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            bool expectFeedback = ResolveOptionalBoolOption(
+                args,
+                "--expect-feedback",
+                false);
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+
+            OpenVisionShellHostWindow window = null;
+            OpenVisionFloatingToolWindow toolWindow = null;
+            OpenVisionNativeToolDocument loadDocument = null;
+            try
+            {
+                string[] fileContractEvidence =
+                    VerifyPropertyLoadFileContract(outputDirectory);
+                string saveRecoveryEvidence =
+                    VerifyPropertyLoadSaveRecovery();
+                ApplicationRuntimeContext runtimeContext =
+                    ApplicationRuntimeContext.CreateDefault();
+                window = new OpenVisionShellHostWindow(runtimeContext)
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+                app.MainWindow = window;
+                window.Show();
+                window.Activate();
+                Pump(36);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException(
+                        "Property load feedback smoke did not create the shell host.");
+                int previewRunsBefore = shellHost.NativePreviewRunCount;
+                int layerCountBefore = shellHost.LayerDocumentCount;
+                string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+
+                // Force this smoke through the Direct Tool session-store load path
+                // instead of the already-populated runtime repository.
+                OpenVisionNativeToolPropertySessionStore.SetRepositoryContext(() => null);
+                OpenVisionNativeToolPropertySessionStore.FailNextLoadKeyForTest =
+                    "Blob_1";
+                _ = OpenVisionNativeToolPropertySessionStore.GetOrLoad(
+                    "Blob_1",
+                    () => new BlobProperty("Blob_1"));
+                loadDocument =
+                    OpenVisionNativePropertyGridToolFactory.CreateBlob(
+                        runtimeContext.DisplayManager);
+                toolWindow = new OpenVisionFloatingToolWindow(
+                    "Blob",
+                    loadDocument.View)
+                {
+                    Owner = window
+                };
+                toolWindow.Width = 920D;
+                toolWindow.Height = 660D;
+                toolWindow.WindowStartupLocation = WindowStartupLocation.Manual;
+                toolWindow.Left = Math.Max(0D, SystemParameters.WorkArea.Left + 20D);
+                toolWindow.Top = Math.Max(0D, SystemParameters.WorkArea.Top + 20D);
+                toolWindow.Show();
+                toolWindow.Activate();
+                Pump(24);
+
+                string loadStatus = loadDocument.LastStatusText;
+                bool feedbackVisible =
+                    (loadStatus.Contains("saved settings", StringComparison.OrdinalIgnoreCase)
+                        && loadStatus.Contains("default values", StringComparison.OrdinalIgnoreCase))
+                    || (loadStatus.Contains(
+                            "\uC800\uC7A5 \uC124\uC815",
+                            StringComparison.Ordinal)
+                        && loadStatus.Contains(
+                            "\uAE30\uBCF8\uAC12",
+                            StringComparison.Ordinal));
+                if (feedbackVisible != expectFeedback)
+                {
+                    throw new InvalidOperationException(
+                        "Property load failure feedback did not match the expected state. "
+                        + "Expected="
+                        + expectFeedback
+                        + ", Status='"
+                        + loadStatus
+                        + "'.");
+                }
+
+                if (expectFeedback)
+                {
+                    TextBlock statusText = FindVisualChildren<TextBlock>(toolWindow)
+                        .FirstOrDefault(item => item.IsVisible
+                            && string.Equals(
+                                item.Name,
+                                "txtStatus",
+                                StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            "Property load feedback smoke did not find the visible Tool status text.");
+                    if (!string.Equals(
+                            statusText.ToolTip?.ToString(),
+                            loadStatus,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            System.Windows.Automation.AutomationProperties.GetHelpText(
+                                statusText),
+                            loadStatus,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "The complete property load failure message was not available through tooltip and accessibility help.");
+                    }
+                }
+
+                string inputRoute =
+                    loadDocument.RouteInputLayerName;
+                string outputRoute =
+                    loadDocument.RouteOutputLayerName;
+                if (loadDocument.PreviewRunCount != previewRunsBefore
+                    || shellHost.LayerDocumentCount != layerCountBefore
+                    || !string.Equals(
+                        shellHost.ActiveHostLayerTitle,
+                        activeLayerBefore,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Property load feedback changed Preview/Run, layers, or active layer.");
+                }
+
+                string screenshotName = expectFeedback
+                    ? "OpenVisionLab_Property_Load_Failure_Visible_After.png"
+                    : "OpenVisionLab_Property_Load_Failure_Silent_Before.png";
+                SaveWindowsScreenScreenshot(
+                    new[] { toolWindow },
+                    Path.Combine(outputDirectory, screenshotName));
+
+                OpenVisionLanguageService.SetLanguage(
+                    OpenVisionLanguage.English,
+                    false);
+                using (OpenVisionNativeToolDocument englishDocument =
+                    OpenVisionNativePropertyGridToolFactory.CreateBlob(
+                        runtimeContext.DisplayManager))
+                {
+                    if (!englishDocument.LastStatusText.Contains(
+                            "Saved settings could not be loaded",
+                            StringComparison.Ordinal)
+                        || !englishDocument.LastStatusText.Contains(
+                            "default values",
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "P270 English load failure feedback was not localized.");
+                    }
+                }
+                OpenVisionLanguageService.SetLanguage(
+                    OpenVisionLanguage.Korean,
+                    false);
+
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: property-load-feedback" + Environment.NewLine
+                    + "RuntimeExe: " + Process.GetCurrentProcess().MainModule?.FileName + Environment.NewLine
+                    + "ManagedAssembly: " + typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location + Environment.NewLine
+                    + "ExpectedFeedback: " + expectFeedback + Environment.NewLine
+                    + "LoadStatus: " + loadStatus + Environment.NewLine
+                    + "PreviewRunCount: " + loadDocument.PreviewRunCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "LayerCount: " + shellHost.LayerDocumentCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "InputRoute: " + inputRoute + Environment.NewLine
+                    + "OutputRoute: " + outputRoute + Environment.NewLine
+                    + string.Join(Environment.NewLine, fileContractEvidence)
+                    + Environment.NewLine
+                    + saveRecoveryEvidence
+                    + Environment.NewLine
+                    + "LocalizationContract: Korean,English"
+                    + Environment.NewLine
+                    + "Screenshot: " + screenshotName + Environment.NewLine,
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                OpenVisionNativeToolPropertySessionStore.FailNextLoadKeyForTest =
+                    string.Empty;
+                toolWindow?.ClearHostedContent();
+                toolWindow?.Close();
+                loadDocument?.Dispose();
+                window?.Close();
+                app.Shutdown();
+            }
+        }
+
+        private static string[] VerifyPropertyLoadFileContract(
+            string outputDirectory)
+        {
+            string contractDirectory = Path.Combine(
+                outputDirectory,
+                "file_contract_"
+                + DateTime.Now.ToString(
+                    "yyyyMMddHHmmssfff",
+                    CultureInfo.InvariantCulture));
+            Directory.CreateDirectory(contractDirectory);
+
+            string missingPath = Path.Combine(
+                contractDirectory,
+                "missing_then_valid.xml");
+            BlobProperty defaultMissing =
+                new BlobProperty("P270_MissingThenValid");
+            BlobProperty created = SerializeHelper.LoadOrCreateXmlFile(
+                missingPath,
+                defaultMissing,
+                out bool missingLoaded,
+                out XmlFileLoadResult missingResult);
+            if (missingLoaded
+                || missingResult.Disposition
+                    != XmlFileLoadDisposition.CreatedDefaultForMissingFile
+                || !File.Exists(missingPath)
+                || !ReferenceEquals(created, defaultMissing))
+            {
+                throw new InvalidOperationException(
+                    "P270 missing configuration was not created as a normal default.");
+            }
+
+            BlobProperty valid = SerializeHelper.LoadOrCreateXmlFile(
+                missingPath,
+                new BlobProperty("P270_MissingThenValid"),
+                out bool validLoaded,
+                out XmlFileLoadResult validResult);
+            if (!validLoaded
+                || validResult.Disposition != XmlFileLoadDisposition.Loaded
+                || valid == null)
+            {
+                throw new InvalidOperationException(
+                    "P270 valid configuration did not restore as a loaded value.");
+            }
+
+            string invalidPath = Path.Combine(
+                contractDirectory,
+                "invalid_then_recovered.xml");
+            File.WriteAllText(
+                invalidPath,
+                "<BlobProperty><MIN_AREA>not-a-number</MIN_AREA>",
+                Encoding.UTF8);
+            BlobProperty recovered = SerializeHelper.LoadOrCreateXmlFile(
+                invalidPath,
+                new BlobProperty("P270_Invalid"),
+                out bool invalidLoaded,
+                out XmlFileLoadResult invalidResult);
+            if (invalidLoaded
+                || invalidResult.Disposition
+                    != XmlFileLoadDisposition.ReplacedInvalidFile
+                || string.IsNullOrWhiteSpace(invalidResult.BackupPath)
+                || !File.Exists(invalidResult.BackupPath)
+                || !File.Exists(invalidPath)
+                || recovered == null)
+            {
+                throw new InvalidOperationException(
+                    "P270 invalid configuration was not backed up and replaced with a default.");
+            }
+
+            return new[]
+            {
+                "MissingConfigDisposition: "
+                    + missingResult.Disposition,
+                "ValidConfigDisposition: "
+                    + validResult.Disposition,
+                "InvalidConfigDisposition: "
+                    + invalidResult.Disposition,
+                "InvalidBackup: "
+                    + invalidResult.BackupPath,
+                "FileContractDirectory: "
+                    + contractDirectory
+            };
+        }
+
+        private static string VerifyPropertyLoadSaveRecovery()
+        {
+            string propertyKey = "P270_LoadRecovery_"
+                + Guid.NewGuid().ToString("N");
+            string recipeName = PropertyGridEditorFactory.GetRecipeName();
+            string configPath = RecipeWorkspaceService.GetVisionConfigPath(
+                recipeName,
+                propertyKey);
+            string invalidBackupPath = string.Empty;
+            OpenVisionNativeToolPropertySavedEventArgs savedResult = null;
+            EventHandler<OpenVisionNativeToolPropertySavedEventArgs> handler =
+                (_, args) =>
+                {
+                    if (string.Equals(
+                            args?.ToolName,
+                            "P270Recovery",
+                            StringComparison.Ordinal))
+                    {
+                        savedResult = args;
+                    }
+                };
+            OpenVisionNativeToolPropertySessionStore.PropertySaved += handler;
+            try
+            {
+                if (File.Exists(configPath))
+                {
+                    throw new InvalidOperationException(
+                        "P270 recovery probe unexpectedly reused an existing configuration.");
+                }
+
+                File.WriteAllText(
+                    configPath,
+                    "<BlobProperty><MIN_AREA>not-a-number</MIN_AREA>",
+                    Encoding.UTF8);
+                BlobProperty preloadedProperty =
+                    new BlobProperty(propertyKey).LoadConfig(recipeName);
+                VisionToolRepository repository = new VisionToolRepository();
+                repository.Blobs.Add(preloadedProperty);
+                OpenVisionNativeToolPropertySessionStore.SetRepositoryContext(
+                    () => repository);
+                BlobProperty property =
+                    OpenVisionNativeToolPropertySessionStore.GetRepositoryProperty(
+                        propertyKey,
+                        item => item.Blobs,
+                        () => new BlobProperty(propertyKey));
+                if (!OpenVisionNativeToolPropertySessionStore.TryGetLoadFailure(
+                        propertyKey,
+                        out OpenVisionNativeToolPropertyLoadFailure loadFailure)
+                    || !loadFailure.PreviousFileWasBackedUp
+                    || !File.Exists(loadFailure.BackupPath))
+                {
+                    throw new InvalidOperationException(
+                        "P270 recovery probe did not retain the invalid-file backup.");
+                }
+                invalidBackupPath = loadFailure.BackupPath;
+
+                OpenVisionNativeToolPropertySessionStore.Save(
+                    "P270Recovery",
+                    property);
+                _ = OpenVisionNativeToolPropertySessionStore.GetRepositoryProperty(
+                    propertyKey,
+                    item => item.Blobs,
+                    () => new BlobProperty(propertyKey));
+                if (savedResult == null
+                    || !savedResult.Succeeded
+                    || !savedResult.RecoveredFromFailure
+                    || OpenVisionNativeToolPropertySessionStore.TryGetLoadFailure(
+                        propertyKey,
+                        out _)
+                    || !File.Exists(configPath))
+                {
+                    throw new InvalidOperationException(
+                        "P270 explicit save did not clear the retained load failure.");
+                }
+
+                return "RepositoryPreloadedInvalidBackupAndSaveRecovery: Passed";
+            }
+            finally
+            {
+                OpenVisionNativeToolPropertySessionStore.PropertySaved -= handler;
+                OpenVisionNativeToolPropertySessionStore.FailNextLoadKeyForTest =
+                    string.Empty;
+                string fullConfigPath = Path.GetFullPath(configPath);
+                string fullRecipeRoot = Path.GetFullPath(
+                    Path.Combine(
+                        AppPathService.StartupPath,
+                        "RECIPE"))
+                    .TrimEnd(
+                        Path.DirectorySeparatorChar,
+                        Path.AltDirectorySeparatorChar)
+                    + Path.DirectorySeparatorChar;
+                if (fullConfigPath.StartsWith(
+                        fullRecipeRoot,
+                        StringComparison.OrdinalIgnoreCase)
+                    && File.Exists(fullConfigPath))
+                {
+                    File.Delete(fullConfigPath);
+                }
+
+                if (!string.IsNullOrWhiteSpace(invalidBackupPath))
+                {
+                    string fullBackupPath =
+                        Path.GetFullPath(invalidBackupPath);
+                    if (fullBackupPath.StartsWith(
+                            fullRecipeRoot,
+                            StringComparison.OrdinalIgnoreCase)
+                        && File.Exists(fullBackupPath))
+                    {
+                        File.Delete(fullBackupPath);
+                    }
+                }
+            }
+        }
+
+        private static void RunSettingsPersistenceFeedback(
+            string[] args,
+            string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string fileContractEvidence =
+                VerifySettingsStoreFileContract();
+            bool expectFeedback = ResolveOptionalBoolOption(
+                args,
+                "--expect-feedback",
+                false);
+            string configName =
+                OpenVisionNativeToolSettingsStore.CreateConfigName(
+                    "Threshold");
+            string recipeName = PropertyGridEditorFactory.GetRecipeName();
+            string configPath = RecipeWorkspaceService.GetVisionConfigPath(
+                recipeName,
+                configName);
+            bool configExisted = File.Exists(configPath);
+            byte[] originalConfig = configExisted
+                ? File.ReadAllBytes(configPath)
+                : Array.Empty<byte>();
+            string previousDisablePrewarm =
+                Environment.GetEnvironmentVariable(
+                    "OPENVISIONLAB_DISABLE_NATIVE_PREWARM");
+            Environment.SetEnvironmentVariable(
+                "OPENVISIONLAB_DISABLE_NATIVE_PREWARM",
+                "1");
+
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(
+                OpenVisionLanguage.Korean,
+                false);
+            OpenVisionShellHostWindow window = null;
+            try
+            {
+                ApplicationRuntimeContext runtimeContext =
+                    ApplicationRuntimeContext.CreateDefault();
+                OpenVisionNativeToolSettingsStore.FailNextLoadKeyForTest =
+                    configName;
+                window = new OpenVisionShellHostWindow(runtimeContext)
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+                app.MainWindow = window;
+                window.Show();
+                window.Activate();
+                Pump(28);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException(
+                        "Settings persistence feedback smoke did not create the shell host.");
+                shellHost.SelectToolForTest(VISION_MENU.Threshold);
+                Pump(40);
+                OpenVisionFloatingToolWindow toolWindow =
+                    Application.Current.Windows
+                        .OfType<OpenVisionFloatingToolWindow>()
+                        .FirstOrDefault(item => item.IsVisible
+                            && FindVisualChildren<ThresholdToolWpfView>(item)
+                                .Any())
+                    ?? throw new InvalidOperationException(
+                        "Settings persistence feedback smoke did not open Threshold.");
+                toolWindow.Width = 920D;
+                toolWindow.Height = 660D;
+                toolWindow.WindowStartupLocation =
+                    WindowStartupLocation.Manual;
+                toolWindow.Left = Math.Max(
+                    0D,
+                    SystemParameters.WorkArea.Left + 20D);
+                toolWindow.Top = Math.Max(
+                    0D,
+                    SystemParameters.WorkArea.Top + 20D);
+                toolWindow.Activate();
+                Pump(24);
+
+                int previewRunsBefore = shellHost.NativePreviewRunCount;
+                int layerCountBefore = shellHost.LayerDocumentCount;
+                string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+                string inputRouteBefore =
+                    shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string outputRouteBefore =
+                    shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                string loadStatus = shellHost.ActiveNativeStatusText;
+                bool loadFeedbackVisible =
+                    ContainsSettingsLoadFailureFeedback(loadStatus);
+                if (loadFeedbackVisible != expectFeedback)
+                {
+                    throw new InvalidOperationException(
+                        "Settings load feedback did not match the expected state. "
+                        + "Expected="
+                        + expectFeedback
+                        + ", Status='"
+                        + loadStatus
+                        + "'.");
+                }
+
+                TextBlock statusText = FindVisualChildren<TextBlock>(toolWindow)
+                    .FirstOrDefault(item => item.IsVisible
+                        && string.Equals(
+                            item.Name,
+                            "txtStatus",
+                            StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException(
+                        "Settings persistence feedback smoke did not find the visible Tool status text.");
+                if (expectFeedback
+                    && (!string.Equals(
+                            statusText.ToolTip?.ToString(),
+                            loadStatus,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            System.Windows.Automation.AutomationProperties.GetHelpText(
+                                statusText),
+                            loadStatus,
+                            StringComparison.Ordinal)))
+                {
+                    throw new InvalidOperationException(
+                        "The complete settings load failure message was not available through tooltip and accessibility help.");
+                }
+
+                string loadScreenshot = expectFeedback
+                    ? "OpenVisionLab_Settings_Load_Failure_Visible_After.png"
+                    : "OpenVisionLab_Settings_Load_Save_Failure_Silent_Before.png";
+                SaveWindowsScreenScreenshot(
+                    new[] { toolWindow },
+                    Path.Combine(outputDirectory, loadScreenshot));
+
+                OpenVisionNativeToolSettingsStore.FailNextSaveKeyForTest =
+                    configName;
+                OpenVisionNativeToolSettingsStore.Save(
+                    configName,
+                    new ThresholdToolSettings());
+                Pump(20);
+                string saveStatus = shellHost.ActiveNativeStatusText;
+                bool saveFeedbackVisible =
+                    ContainsSettingsSaveFailureFeedback(saveStatus);
+                if (saveFeedbackVisible != expectFeedback)
+                {
+                    throw new InvalidOperationException(
+                        "Settings save feedback did not match the expected state. "
+                        + "Expected="
+                        + expectFeedback
+                        + ", Status='"
+                        + saveStatus
+                        + "'.");
+                }
+
+                if (expectFeedback
+                    && (!string.Equals(
+                            statusText.ToolTip?.ToString(),
+                            saveStatus,
+                            StringComparison.Ordinal)
+                        || !string.Equals(
+                            System.Windows.Automation.AutomationProperties.GetHelpText(
+                                statusText),
+                            saveStatus,
+                            StringComparison.Ordinal)))
+                {
+                    throw new InvalidOperationException(
+                        "The complete settings save failure message was not available through tooltip and accessibility help.");
+                }
+
+                string saveScreenshot = "NotApplicable";
+                string recoveryStatus = "NotApplicable";
+                string englishFailureStatus = "NotApplicable";
+                string englishRecoveryStatus = "NotApplicable";
+                if (expectFeedback)
+                {
+                    saveScreenshot =
+                        "OpenVisionLab_Settings_Save_Failure_Visible_After.png";
+                    SaveWindowsScreenScreenshot(
+                        new[] { toolWindow },
+                        Path.Combine(outputDirectory, saveScreenshot));
+                    OpenVisionNativeToolSettingsStore.Save(
+                        configName,
+                        new ThresholdToolSettings());
+                    Pump(20);
+                    recoveryStatus = shellHost.ActiveNativeStatusText;
+                    if (!recoveryStatus.Contains(
+                            "\uBCF5\uAD6C",
+                            StringComparison.Ordinal)
+                        && !recoveryStatus.Contains(
+                            "recovered",
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            "Settings save recovery feedback was not visible. Status='"
+                            + recoveryStatus
+                            + "'.");
+                    }
+
+                    OpenVisionNativeToolSettingsStore.Save(
+                        configName,
+                        new ThresholdToolSettings());
+                    Pump(20);
+                    if (!string.Equals(
+                            shellHost.ActiveNativeStatusText,
+                            recoveryStatus,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "An ordinary settings save replaced the one-time recovery feedback.");
+                    }
+
+                    OpenVisionLanguageService.SetLanguage(
+                        OpenVisionLanguage.English,
+                        false);
+                    OpenVisionNativeToolSettingsStore.FailNextSaveKeyForTest =
+                        configName;
+                    OpenVisionNativeToolSettingsStore.Save(
+                        configName,
+                        new ThresholdToolSettings());
+                    Pump(20);
+                    englishFailureStatus = shellHost.ActiveNativeStatusText;
+                    if (!englishFailureStatus.Contains(
+                            "could not be saved",
+                            StringComparison.OrdinalIgnoreCase)
+                        || !englishFailureStatus.Contains(
+                            "remain in memory",
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            "Settings save failure feedback was not localized in English. Status='"
+                            + englishFailureStatus
+                            + "'.");
+                    }
+
+                    OpenVisionNativeToolSettingsStore.Save(
+                        configName,
+                        new ThresholdToolSettings());
+                    Pump(20);
+                    englishRecoveryStatus = shellHost.ActiveNativeStatusText;
+                    if (!englishRecoveryStatus.Contains(
+                            "recovered",
+                            StringComparison.OrdinalIgnoreCase)
+                        || !englishRecoveryStatus.Contains(
+                            "persisted",
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            "Settings save recovery feedback was not localized in English. Status='"
+                            + englishRecoveryStatus
+                            + "'.");
+                    }
+                    OpenVisionLanguageService.SetLanguage(
+                        OpenVisionLanguage.Korean,
+                        false);
+                }
+
+                if (shellHost.NativePreviewRunCount != previewRunsBefore
+                    || shellHost.LayerDocumentCount != layerCountBefore
+                    || !string.Equals(
+                        shellHost.ActiveHostLayerTitle,
+                        activeLayerBefore,
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        shellHost.ActiveNativeRouteInputLayerNameForTest,
+                        inputRouteBefore,
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        shellHost.ActiveNativeRouteOutputLayerNameForTest,
+                        outputRouteBefore,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Settings persistence feedback changed Preview/Run, layers, active layer, or routes.");
+                }
+
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: settings-persistence-feedback"
+                    + Environment.NewLine
+                    + "RuntimeExe: "
+                    + Process.GetCurrentProcess().MainModule?.FileName
+                    + Environment.NewLine
+                    + "ManagedAssembly: "
+                    + typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location
+                    + Environment.NewLine
+                    + "ExpectedFeedback: "
+                    + expectFeedback
+                    + Environment.NewLine
+                    + "LoadStatus: "
+                    + loadStatus
+                    + Environment.NewLine
+                    + "SaveStatus: "
+                    + saveStatus
+                    + Environment.NewLine
+                    + "RecoveryStatus: "
+                    + recoveryStatus
+                    + Environment.NewLine
+                    + "EnglishFailureStatus: "
+                    + englishFailureStatus
+                    + Environment.NewLine
+                    + "EnglishRecoveryStatus: "
+                    + englishRecoveryStatus
+                    + Environment.NewLine
+                    + fileContractEvidence
+                    + Environment.NewLine
+                    + "StatusTooltipAccessibility: "
+                    + (expectFeedback ? "Passed" : "NotApplicable")
+                    + Environment.NewLine
+                    + "PreviewRunCount: "
+                    + shellHost.NativePreviewRunCount.ToString(
+                        CultureInfo.InvariantCulture)
+                    + Environment.NewLine
+                    + "LayerCount: "
+                    + shellHost.LayerDocumentCount.ToString(
+                        CultureInfo.InvariantCulture)
+                    + Environment.NewLine
+                    + "InputRoute: "
+                    + shellHost.ActiveNativeRouteInputLayerNameForTest
+                    + Environment.NewLine
+                    + "OutputRoute: "
+                    + shellHost.ActiveNativeRouteOutputLayerNameForTest
+                    + Environment.NewLine
+                    + "LoadScreenshot: "
+                    + loadScreenshot
+                    + Environment.NewLine
+                    + "SaveScreenshot: "
+                    + saveScreenshot
+                    + Environment.NewLine,
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                OpenVisionNativeToolSettingsStore.FailNextLoadKeyForTest =
+                    string.Empty;
+                OpenVisionNativeToolSettingsStore.FailNextSaveKeyForTest =
+                    string.Empty;
+                window?.Close();
+                app.Shutdown();
+                Environment.SetEnvironmentVariable(
+                    "OPENVISIONLAB_DISABLE_NATIVE_PREWARM",
+                    previousDisablePrewarm);
+
+                string fullConfigPath = Path.GetFullPath(configPath);
+                string fullRecipeRoot = Path.GetFullPath(
+                    Path.Combine(
+                        AppPathService.StartupPath,
+                        "RECIPE"))
+                    .TrimEnd(
+                        Path.DirectorySeparatorChar,
+                        Path.AltDirectorySeparatorChar)
+                    + Path.DirectorySeparatorChar;
+                if (fullConfigPath.StartsWith(
+                        fullRecipeRoot,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    if (configExisted)
+                    {
+                        File.WriteAllBytes(fullConfigPath, originalConfig);
+                    }
+                    else if (File.Exists(fullConfigPath))
+                    {
+                        File.Delete(fullConfigPath);
+                    }
+                }
+            }
+        }
+
+        private static string VerifySettingsStoreFileContract()
+        {
+            string toolName = "P271Recovery_"
+                + Guid.NewGuid().ToString("N");
+            string configName =
+                OpenVisionNativeToolSettingsStore.CreateConfigName(toolName);
+            string recipeName = PropertyGridEditorFactory.GetRecipeName();
+            string configPath = RecipeWorkspaceService.GetVisionConfigPath(
+                recipeName,
+                configName);
+            string backupPath = string.Empty;
+            OpenVisionNativeToolSettingsSavedEventArgs firstSave = null;
+            OpenVisionNativeToolSettingsSavedEventArgs secondSave = null;
+            EventHandler<OpenVisionNativeToolSettingsSavedEventArgs> handler =
+                (_, args) =>
+                {
+                    if (!string.Equals(
+                            args?.ConfigName,
+                            configName,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        return;
+                    }
+
+                    if (firstSave == null)
+                    {
+                        firstSave = args;
+                    }
+                    else
+                    {
+                        secondSave = args;
+                    }
+                };
+
+            OpenVisionNativeToolSettingsStore.SettingsSaved += handler;
+            try
+            {
+                OpenVisionNativeToolSettingsStore.ResetContext();
+                if (File.Exists(configPath))
+                {
+                    throw new InvalidOperationException(
+                        "P271 Settings Store recovery probe unexpectedly reused an existing configuration.");
+                }
+
+                ThresholdToolSettings missing =
+                    OpenVisionNativeToolSettingsStore.Load(
+                        configName,
+                        new ThresholdToolSettings());
+                if (missing == null
+                    || !File.Exists(configPath)
+                    || OpenVisionNativeToolSettingsStore.TryGetLoadFailure(
+                        configName,
+                        out _))
+                {
+                    throw new InvalidOperationException(
+                        "P271 missing Settings Store configuration was not created as a normal default.");
+                }
+
+                ThresholdToolSettings valid =
+                    OpenVisionNativeToolSettingsStore.Load(
+                        configName,
+                        new ThresholdToolSettings());
+                if (valid == null
+                    || OpenVisionNativeToolSettingsStore.TryGetLoadFailure(
+                        configName,
+                        out _))
+                {
+                    throw new InvalidOperationException(
+                        "P271 valid Settings Store configuration did not load without a warning.");
+                }
+
+                File.WriteAllText(
+                    configPath,
+                    "<ThresholdToolSettings><Threshold>not-a-number</Threshold>",
+                    Encoding.UTF8);
+                OpenVisionNativeToolSettingsStore.ResetContext();
+                ThresholdToolSettings recoveredDefault =
+                    OpenVisionNativeToolSettingsStore.Load(
+                        configName,
+                        new ThresholdToolSettings());
+                if (recoveredDefault == null
+                    || !OpenVisionNativeToolSettingsStore.TryGetLoadFailure(
+                        configName,
+                        out OpenVisionNativeToolSettingsLoadFailure loadFailure)
+                    || !loadFailure.PreviousFileWasBackedUp
+                    || string.IsNullOrWhiteSpace(loadFailure.BackupPath)
+                    || !File.Exists(loadFailure.BackupPath))
+                {
+                    throw new InvalidOperationException(
+                        "P271 invalid Settings Store configuration was not backed up and retained as a visible load failure.");
+                }
+                backupPath = loadFailure.BackupPath;
+
+                OpenVisionNativeToolSettingsStore.Save(
+                    configName,
+                    recoveredDefault);
+                if (firstSave == null
+                    || !firstSave.Succeeded
+                    || !firstSave.RecoveredFromFailure
+                    || OpenVisionNativeToolSettingsStore.TryGetLoadFailure(
+                        configName,
+                        out _))
+                {
+                    throw new InvalidOperationException(
+                        "P271 first explicit save did not clear the retained load failure as a recovery.");
+                }
+
+                OpenVisionNativeToolSettingsStore.Save(
+                    configName,
+                    recoveredDefault);
+                if (secondSave == null
+                    || !secondSave.Succeeded
+                    || secondSave.RecoveredFromFailure)
+                {
+                    throw new InvalidOperationException(
+                        "P271 ordinary Settings Store save incorrectly repeated recovery.");
+                }
+
+                return "MissingValidInvalidBackupRecovery: Passed"
+                    + Environment.NewLine
+                    + "InvalidBackup: "
+                    + backupPath;
+            }
+            finally
+            {
+                OpenVisionNativeToolSettingsStore.SettingsSaved -= handler;
+                OpenVisionNativeToolSettingsStore.ResetContext();
+
+                string fullConfigPath = Path.GetFullPath(configPath);
+                string fullRecipeRoot = Path.GetFullPath(
+                    Path.Combine(
+                        AppPathService.StartupPath,
+                        "RECIPE"))
+                    .TrimEnd(
+                        Path.DirectorySeparatorChar,
+                        Path.AltDirectorySeparatorChar)
+                    + Path.DirectorySeparatorChar;
+                if (fullConfigPath.StartsWith(
+                        fullRecipeRoot,
+                        StringComparison.OrdinalIgnoreCase)
+                    && File.Exists(fullConfigPath))
+                {
+                    File.Delete(fullConfigPath);
+                }
+
+                if (!string.IsNullOrWhiteSpace(backupPath))
+                {
+                    string fullBackupPath = Path.GetFullPath(backupPath);
+                    if (fullBackupPath.StartsWith(
+                            fullRecipeRoot,
+                            StringComparison.OrdinalIgnoreCase)
+                        && File.Exists(fullBackupPath))
+                    {
+                        File.Delete(fullBackupPath);
+                    }
+                }
+            }
+        }
+
+        private static bool ContainsSettingsLoadFailureFeedback(string status)
+        {
+            return (status ?? string.Empty).Contains(
+                    "\uC800\uC7A5 \uC124\uC815",
+                    StringComparison.Ordinal)
+                && (status ?? string.Empty).Contains(
+                    "\uAE30\uBCF8\uAC12",
+                    StringComparison.Ordinal);
+        }
+
+        private static bool ContainsSettingsSaveFailureFeedback(string status)
+        {
+            return (status ?? string.Empty).Contains(
+                    "\uC800\uC7A5\uD558\uC9C0 \uBABB",
+                    StringComparison.Ordinal)
+                && (status ?? string.Empty).Contains(
+                    "\uBA54\uBAA8\uB9AC",
+                    StringComparison.Ordinal);
+        }
+
+        private static void RunParameterGuideLayout(string[] args, string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            bool expectObstruction = ResolveOptionalBoolOption(args, "--expect-obstruction", false);
+            bool expectGuide = ResolveOptionalBoolOption(args, "--expect-guide", true);
+            bool expectBasicGuide = ResolveOptionalBoolOption(args, "--expect-basic-guide", false);
+            bool expectLineLegacyReadOnly = ResolveOptionalBoolOption(
+                args,
+                "--expect-line-legacy-read-only",
+                false);
+            string toolName = ResolveOptionalTextOption(args, "--tool");
+            bool useRotateScale = string.Equals(
+                toolName,
+                "RotateScale",
+                StringComparison.OrdinalIgnoreCase);
+            bool useMean = string.Equals(
+                toolName,
+                "Mean",
+                StringComparison.OrdinalIgnoreCase);
+            bool useFeatureMatching = string.Equals(
+                toolName,
+                "FeatureMatching",
+                StringComparison.OrdinalIgnoreCase);
+            bool useMatching = string.Equals(
+                toolName,
+                "Matching",
+                StringComparison.OrdinalIgnoreCase);
+            bool useEdgeBasedMatching = string.Equals(
+                toolName,
+                "EdgeBasedMatching",
+                StringComparison.OrdinalIgnoreCase);
+            bool useAffineTransform = string.Equals(
+                toolName,
+                "AffineTransform",
+                StringComparison.OrdinalIgnoreCase);
+            bool useLineLegacy = string.Equals(
+                toolName,
+                "LineLegacy",
+                StringComparison.OrdinalIgnoreCase);
+            bool useLine = useLineLegacy || string.Equals(
+                toolName,
+                "Line",
+                StringComparison.OrdinalIgnoreCase);
+            bool usePropertyGrid =
+                useFeatureMatching
+                || useMatching
+                || useEdgeBasedMatching
+                || useAffineTransform
+                || useLine;
+            VISION_MENU selectedMenu = useRotateScale
+                ? VISION_MENU.RotateAndScale
+                : useMean
+                    ? VISION_MENU.Mean
+                    : useFeatureMatching
+                        ? VISION_MENU.FeatureMatching
+                        : useMatching
+                            ? VISION_MENU.Matching
+                            : useEdgeBasedMatching
+                                ? VISION_MENU.EdgeBasedMatching
+                                : useAffineTransform
+                                ? VISION_MENU.AffineTransform
+                            : useLine
+                                ? VISION_MENU.Line
+                                : VISION_MENU.EdgeDetection;
+            string selectedEditorName = useRotateScale
+                ? "txtAngle"
+                : useMean
+                    ? "txtMeanMin"
+                    : useFeatureMatching
+                        ? nameof(FeatureMatchingProperty.SCORE_MIN)
+                        : useMatching
+                            ? nameof(MatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH)
+                            : useEdgeBasedMatching
+                                ? nameof(EdgeBasedMatchingProperty.PATTERN_PATH)
+                                : useAffineTransform
+                                ? nameof(AffineTransformProperty.SourcePoint1X)
+                            : useLine
+                                ? useLineLegacy
+                                    ? nameof(LineGaugeProperty.USE_AVERAGE_FILTER)
+                                    : nameof(LineGaugeProperty.USE_MANUAL_ANGLE)
+                                : "txtCannyThresholdHigh";
+            string selectedToolName = useRotateScale
+                ? "RotateScale"
+                : useMean
+                    ? "Mean"
+                        : useFeatureMatching
+                            ? "FeatureMatching"
+                            : useMatching
+                                ? "Matching"
+                                : useEdgeBasedMatching
+                                    ? "EdgeBasedMatching"
+                                    : useAffineTransform
+                                    ? "AffineTransform"
+                                : useLine
+                                    ? "Line"
+                                    : "EdgeDetection";
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+
+            OpenVisionShellHostWindow window = null;
+            try
+            {
+                ApplicationRuntimeContext runtimeContext = ApplicationRuntimeContext.CreateDefault();
+                window = new OpenVisionShellHostWindow(runtimeContext)
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+
+                app.MainWindow = window;
+                window.Show();
+                window.Activate();
+                Pump(36);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("OpenVision shell host was not created.");
+
+                shellHost.SelectToolForTest(selectedMenu);
+                Pump(48);
+                OpenVisionFloatingToolWindow toolWindow = Application.Current.Windows
+                    .OfType<OpenVisionFloatingToolWindow>()
+                    .FirstOrDefault(item => item.IsVisible)
+                    ?? throw new InvalidOperationException("Parameter Guide layout smoke did not open a floating Tool window.");
+                toolWindow.Width = 920D;
+                toolWindow.Height = useLineLegacy ? 860D : 660D;
+                toolWindow.WindowStartupLocation = WindowStartupLocation.Manual;
+                toolWindow.Left = Math.Max(0D, SystemParameters.WorkArea.Left + 20D);
+                toolWindow.Top = Math.Max(0D, SystemParameters.WorkArea.Top + 20D);
+                toolWindow.Activate();
+                Pump(24);
+
+                int previewRunsBefore = shellHost.NativePreviewRunCount;
+                int layerCountBefore = shellHost.LayerDocumentCount;
+                string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+                string inputRouteBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string outputRouteBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                FrameworkElement selectedEditor;
+                if (usePropertyGrid)
+                {
+                    string selectedPropertyName = useFeatureMatching
+                        ? nameof(FeatureMatchingProperty.SCORE_MIN)
+                        : useMatching
+                            ? nameof(MatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH)
+                            : useEdgeBasedMatching
+                                ? nameof(EdgeBasedMatchingProperty.PATTERN_PATH)
+                                : useAffineTransform
+                                ? nameof(AffineTransformProperty.SourcePoint1X)
+                            : useLineLegacy
+                                ? nameof(LineGaugeProperty.USE_AVERAGE_FILTER)
+                                : nameof(LineGaugeProperty.USE_MANUAL_ANGLE);
+                    System.Windows.Controls.WpfPropertyGrid.PropertyGrid propertyGrid =
+                        FindVisualChildren<System.Windows.Controls.WpfPropertyGrid.PropertyGrid>(toolWindow)
+                            .FirstOrDefault(item => item.IsVisible)
+                        ?? throw new InvalidOperationException(
+                            "Parameter Guide layout smoke did not find the "
+                            + selectedToolName
+                            + " PropertyGrid.");
+                    if (useLineLegacy)
+                    {
+                        LineGaugeProperty lineProperty = propertyGrid.SelectedObject as LineGaugeProperty
+                            ?? throw new InvalidOperationException(
+                                "Parameter Guide layout smoke did not find the Line property model.");
+                        lineProperty.USE_AVERAGE_FILTER = true;
+                        new OpenVisionLab.Common.PropertyGridEventBinder(null)
+                            .ApplyVisibilityRules(propertyGrid);
+                        Pump(12);
+                    }
+                    if (!propertyGrid.FocusProperty(selectedPropertyName))
+                    {
+                        throw new InvalidOperationException(
+                            "Parameter Guide layout smoke could not focus the "
+                            + selectedToolName
+                            + " "
+                            + selectedPropertyName
+                            + " row.");
+                    }
+                    Pump(12);
+                    FrameworkElement propertyRow = FindVisualChildren<FrameworkElement>(toolWindow)
+                        .FirstOrDefault(item => item.IsVisible
+                            && string.Equals(
+                                ResolvePropertyName(item.DataContext),
+                                selectedPropertyName,
+                                StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            "Parameter Guide layout smoke did not find the "
+                            + selectedToolName
+                            + " "
+                            + selectedPropertyName
+                            + " row.");
+                    selectedEditor = FindVisualChildren<FrameworkElement>(propertyRow)
+                        .FirstOrDefault(item => item.IsVisible
+                            && (item is TextBox || item is CheckBox || item is ComboBox))
+                        ?? propertyRow;
+                    selectedEditor.RaiseEvent(new MouseButtonEventArgs(
+                        Mouse.PrimaryDevice,
+                        Environment.TickCount,
+                        MouseButton.Left)
+                    {
+                        RoutedEvent = Mouse.PreviewMouseDownEvent,
+                        Source = selectedEditor
+                    });
+                }
+                else
+                {
+                    selectedEditor = FindVisualChildren<TextBox>(toolWindow)
+                        .FirstOrDefault(item => item.IsVisible
+                            && string.Equals(item.Name, selectedEditorName, StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            "Parameter Guide layout smoke did not find " + selectedEditorName + ".");
+                }
+
+                selectedEditor.Focus();
+                Pump(24);
+
+                if (!expectGuide)
+                {
+                    if (Application.Current.Windows
+                        .OfType<Window>()
+                        .Where(item => item.IsVisible)
+                        .SelectMany(FindVisualChildren<VisionToolParameterGuideView>)
+                        .Any(item => item.IsVisible))
+                    {
+                        throw new InvalidOperationException(
+                            selectedToolName + " baseline unexpectedly showed a Parameter Guide.");
+                    }
+
+                    if (shellHost.NativePreviewRunCount != previewRunsBefore
+                        || shellHost.LayerDocumentCount != layerCountBefore
+                        || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal)
+                        || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBefore, StringComparison.Ordinal)
+                        || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBefore, StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "Parameter Guide baseline inspection changed execution, layers, active layer, or routes.");
+                    }
+
+                    const string baselineScreenshotName =
+                        "OpenVisionLab_Mean_ParameterGuide_Missing_Before.png";
+                    SaveWindowsScreenScreenshot(
+                        new[] { toolWindow },
+                        Path.Combine(outputDirectory, baselineScreenshotName));
+                    File.WriteAllText(
+                        Path.Combine(outputDirectory, "report.txt"),
+                        "Result: PASS" + Environment.NewLine
+                        + "Scenario: parameter-guide-layout" + Environment.NewLine
+                        + "Tool: " + selectedToolName + Environment.NewLine
+                        + "RuntimeExe: " + Process.GetCurrentProcess().MainModule?.FileName + Environment.NewLine
+                        + "ManagedAssembly: " + typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location + Environment.NewLine
+                        + "WindowSize: " + toolWindow.ActualWidth.ToString("0", CultureInfo.InvariantCulture)
+                        + "x" + toolWindow.ActualHeight.ToString("0", CultureInfo.InvariantCulture) + Environment.NewLine
+                        + "GuideVisible: False" + Environment.NewLine
+                        + "SelectedEditor: " + selectedEditorName + Environment.NewLine
+                        + "PreviewRunCount: " + shellHost.NativePreviewRunCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                        + "LayerCount: " + shellHost.LayerDocumentCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                        + "Screenshot: " + baselineScreenshotName + Environment.NewLine,
+                        Encoding.UTF8);
+                    return;
+                }
+
+                VisionToolParameterGuideView guide = Application.Current.Windows
+                    .OfType<Window>()
+                    .Where(item => item.IsVisible)
+                    .SelectMany(FindVisualChildren<VisionToolParameterGuideView>)
+                    .FirstOrDefault(item => item.IsVisible)
+                    ?? throw new InvalidOperationException("Parameter Guide layout smoke did not show the guide.");
+                if (!guide.IsExpandedForTest)
+                {
+                    throw new InvalidOperationException("Parameter Guide layout smoke did not expand the focused guide.");
+                }
+
+                if (useLineLegacy)
+                {
+                    if (guide.IsKeyboardFocusWithin || Window.GetWindow(guide)?.IsActive == true)
+                    {
+                        throw new InvalidOperationException(
+                            "Parameter Guide sidecar took focus from the read-only Line compatibility row.");
+                    }
+                }
+                else if (!selectedEditor.IsKeyboardFocused && !selectedEditor.IsKeyboardFocusWithin)
+                {
+                    throw new InvalidOperationException(
+                        "Parameter Guide sidecar stole keyboard focus from " + selectedEditorName + ".");
+                }
+
+                if (usePropertyGrid)
+                {
+                    bool basicCoverage =
+                        guide.CoverageForTest.Contains("Basic", StringComparison.OrdinalIgnoreCase)
+                        || guide.CoverageForTest.Contains("기본", StringComparison.Ordinal);
+                    if (basicCoverage != expectBasicGuide)
+                    {
+                        throw new InvalidOperationException(
+                            selectedToolName + " guide coverage did not match the expected baseline. "
+                            + "ExpectedBasic="
+                            + expectBasicGuide
+                            + ", Actual="
+                            + guide.CoverageForTest);
+                    }
+                }
+                if (useLineLegacy)
+                {
+                    System.Windows.Controls.WpfPropertyGrid.PropertyGrid propertyGrid =
+                        FindVisualChildren<System.Windows.Controls.WpfPropertyGrid.PropertyGrid>(toolWindow)
+                            .First(item => item.IsVisible);
+                    PropertyDescriptor descriptor = TypeDescriptor.GetProperties(
+                        propertyGrid.SelectedObject)[nameof(LineGaugeProperty.USE_AVERAGE_FILTER)];
+                    bool compatibilityReadOnly =
+                        descriptor?.Attributes[typeof(PropertyGridCompatibilityReadOnlyAttribute)]
+                            is PropertyGridCompatibilityReadOnlyAttribute;
+                    if (descriptor == null
+                        || compatibilityReadOnly != expectLineLegacyReadOnly)
+                    {
+                        throw new InvalidOperationException(
+                            "Line legacy control read-only state did not match. Expected="
+                            + expectLineLegacyReadOnly
+                            + ", Actual="
+                            + (descriptor == null ? "missing" : compatibilityReadOnly.ToString()));
+                    }
+                }
+
+                Button guideButton = FindVisualChildren<Button>(toolWindow)
+                    .FirstOrDefault(item => item.IsVisible
+                        && string.Equals(
+                            System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                            "VisionToolParameterGuideButton",
+                            StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException(
+                        "Parameter Guide layout smoke did not find the explicit guide toggle.");
+                guideButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, guideButton));
+                Pump(12);
+                if (Application.Current.Windows
+                    .OfType<Window>()
+                    .Where(item => item.IsVisible)
+                    .SelectMany(FindVisualChildren<VisionToolParameterGuideView>)
+                    .Any(item => item.IsVisible))
+                {
+                    throw new InvalidOperationException(
+                        "Parameter Guide toggle did not hide the sidecar.");
+                }
+
+                guideButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, guideButton));
+                Pump(18);
+                guide = Application.Current.Windows
+                    .OfType<Window>()
+                    .Where(item => item.IsVisible)
+                    .SelectMany(FindVisualChildren<VisionToolParameterGuideView>)
+                    .FirstOrDefault(item => item.IsVisible)
+                    ?? throw new InvalidOperationException(
+                        "Parameter Guide toggle did not reopen the sidecar.");
+
+                string[] teachingControlNames = useRotateScale
+                    ? new[]
+                    {
+                        "txtAngle",
+                        "sliderAngle",
+                        "txtScaleXPercent",
+                        "sliderScaleXPercent",
+                        "txtScaleYPercent",
+                        "sliderScaleYPercent",
+                        "btnRunPreview",
+                        "cbInputLayer",
+                        "cbOutputLayer",
+                        "bdInputPreview",
+                        "bdOutputPreview"
+                    }
+                    : useMean
+                        ? new[]
+                        {
+                            "cbMeanType",
+                            "txtMeanMin",
+                            "sliderMeanMin",
+                            "txtMeanMax",
+                            "sliderMeanMax",
+                            "btnRunPreview",
+                            "cbInputLayer",
+                            "cbOutputLayer",
+                            "bdInputPreview",
+                            "bdOutputPreview"
+                        }
+                    : usePropertyGrid
+                        ? new[]
+                        {
+                            "propertyGridHost",
+                            "btnRunPreview",
+                            "cbInputLayer",
+                            "cbOutputLayer",
+                            "bdInputPreview",
+                            "bdOutputPreview"
+                        }
+                    : new[]
+                    {
+                        "cbEdgeType",
+                        "txtCannyThresholdLow",
+                        "txtCannyThresholdHigh",
+                        "txtCannyApertureSize",
+                        "chkUseL2Gradient",
+                        "btnRunPreview",
+                        "cbInputLayer",
+                        "cbOutputLayer",
+                        "bdInputPreview",
+                        "bdOutputPreview"
+                    };
+                Rect guideBounds = GetElementScreenBounds(guide);
+                List<string> obstructed = FindVisualChildren<FrameworkElement>(toolWindow)
+                    .Where(item => item.IsVisible && teachingControlNames.Contains(item.Name, StringComparer.Ordinal))
+                    .Where(item => guideBounds.IntersectsWith(GetElementScreenBounds(item)))
+                    .Select(item => item.Name)
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(item => item, StringComparer.Ordinal)
+                    .ToList();
+
+                if (expectObstruction && obstructed.Count == 0)
+                {
+                    throw new InvalidOperationException(
+                        "Parameter Guide baseline expected an obstruction but found none.");
+                }
+
+                if (!expectObstruction && obstructed.Count > 0)
+                {
+                    throw new InvalidOperationException(
+                        "Parameter Guide still obstructs teaching controls: "
+                        + string.Join(",", obstructed));
+                }
+
+                if (shellHost.NativePreviewRunCount != previewRunsBefore
+                    || shellHost.LayerDocumentCount != layerCountBefore
+                    || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBefore, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Parameter Guide layout inspection changed execution, layers, active layer, or routes.");
+                }
+
+                string screenshotName = expectObstruction
+                    ? "OpenVisionLab_ParameterGuide_Obstructing_Before.png"
+                    : useRotateScale
+                        ? "OpenVisionLab_RotateScale_Guide_NonObstructing_After.png"
+                        : useMean
+                            ? "OpenVisionLab_Mean_Guide_NonObstructing_After.png"
+                            : useFeatureMatching && expectBasicGuide
+                                ? "OpenVisionLab_FeatureMatching_Basic_Guide_Before.png"
+                                : useFeatureMatching
+                                    ? "OpenVisionLab_FeatureMatching_Detailed_Guide_After.png"
+                                    : useMatching && expectBasicGuide
+                                        ? "OpenVisionLab_Matching_Basic_Guide_Before.png"
+                                    : useMatching
+                                            ? "OpenVisionLab_Matching_Detailed_Guide_After.png"
+                                            : useEdgeBasedMatching && expectBasicGuide
+                                                ? "OpenVisionLab_EdgeBasedMatching_Basic_Guide_Before.png"
+                                            : useEdgeBasedMatching
+                                                    ? "OpenVisionLab_EdgeBasedMatching_Detailed_Guide_After.png"
+                                            : useAffineTransform && expectBasicGuide
+                                                ? "OpenVisionLab_AffineTransform_Basic_Guide_Before.png"
+                                            : useAffineTransform
+                                                    ? "OpenVisionLab_AffineTransform_Detailed_Guide_After.png"
+                                            : useLineLegacy && expectLineLegacyReadOnly
+                                                ? "OpenVisionLab_Line_Legacy_Controls_ReadOnly_After.png"
+                                                : useLineLegacy
+                                                    ? "OpenVisionLab_Line_Legacy_Controls_Editable_Before.png"
+                                            : useLine && expectBasicGuide
+                                                ? "OpenVisionLab_Line_Basic_Guide_Before.png"
+                                                : useLine
+                                                    ? "OpenVisionLab_Line_Detailed_Guide_After.png"
+                                            : "OpenVisionLab_ParameterGuide_NonObstructing_After.png";
+                Window guideWindow = Window.GetWindow(guide);
+                SaveWindowsScreenScreenshot(
+                    new[] { toolWindow, guideWindow },
+                    Path.Combine(outputDirectory, screenshotName));
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: parameter-guide-layout" + Environment.NewLine
+                    + "Tool: " + selectedToolName + Environment.NewLine
+                    + "RuntimeExe: " + Process.GetCurrentProcess().MainModule?.FileName + Environment.NewLine
+                    + "ManagedAssembly: " + typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location + Environment.NewLine
+                    + "WindowSize: " + toolWindow.ActualWidth.ToString("0", CultureInfo.InvariantCulture)
+                    + "x" + toolWindow.ActualHeight.ToString("0", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "GuideBounds: " + FormatGuideLayoutRect(guideBounds) + Environment.NewLine
+                    + "ObstructedControls: " + (obstructed.Count == 0 ? "None" : string.Join(",", obstructed)) + Environment.NewLine
+                    + "GuideCoverage: " + guide.CoverageForTest + Environment.NewLine
+                    + "LineLegacyReadOnly: " + (useLineLegacy
+                        ? expectLineLegacyReadOnly.ToString()
+                        : "NotApplicable") + Environment.NewLine
+                    + "AutomaticShowFocusRetained: True" + Environment.NewLine
+                    + "ExplicitHideReopen: PASS" + Environment.NewLine
+                    + "PreviewRunCount: " + shellHost.NativePreviewRunCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "LayerCount: " + shellHost.LayerDocumentCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "Screenshot: " + screenshotName + Environment.NewLine,
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                if (window != null)
+                {
+                    window.Close();
+                }
+
+                app.Shutdown();
+            }
+        }
+
+        private static Rect GetElementScreenBounds(FrameworkElement element)
+        {
+            if (element == null || element.ActualWidth <= 0D || element.ActualHeight <= 0D)
+            {
+                return Rect.Empty;
+            }
+
+            System.Windows.Point topLeft = element.PointToScreen(new System.Windows.Point(0D, 0D));
+            System.Windows.Point bottomRight = element.PointToScreen(
+                new System.Windows.Point(element.ActualWidth, element.ActualHeight));
+            return new Rect(topLeft, bottomRight);
+        }
+
+        private static string FormatGuideLayoutRect(Rect rect)
+        {
+            return string.Join(
+                ",",
+                rect.X.ToString("0.0", CultureInfo.InvariantCulture),
+                rect.Y.ToString("0.0", CultureInfo.InvariantCulture),
+                rect.Width.ToString("0.0", CultureInfo.InvariantCulture),
+                rect.Height.ToString("0.0", CultureInfo.InvariantCulture));
+        }
+
+        private static void SaveWindowsScreenScreenshot(IEnumerable<Window> windows, string path)
+        {
+            List<Window> visibleWindows = windows
+                .Where(window => window?.IsVisible == true)
+                .Distinct()
+                .ToList();
+            if (visibleWindows.Count == 0)
+            {
+                throw new InvalidOperationException("No visible windows were supplied for screen capture.");
+            }
+
+            foreach (Window window in visibleWindows)
+            {
+                BringWindowToFront(window);
+            }
+
+            Pump(24);
+            Rect union = Rect.Empty;
+            foreach (Window window in visibleWindows)
+            {
+                System.Windows.Point topLeft = window.PointToScreen(new System.Windows.Point(0D, 0D));
+                System.Windows.Point bottomRight = window.PointToScreen(
+                    new System.Windows.Point(window.ActualWidth, window.ActualHeight));
+                Rect bounds = new Rect(topLeft, bottomRight);
+                union = union.IsEmpty ? bounds : Rect.Union(union, bounds);
+            }
+
+            int pixelWidth = Math.Max(1, (int)Math.Ceiling(union.Width));
+            int pixelHeight = Math.Max(1, (int)Math.Ceiling(union.Height));
+            using (Bitmap bitmap = new Bitmap(pixelWidth, pixelHeight))
+            using (Graphics graphics = Graphics.FromImage(bitmap))
+            {
+                graphics.CopyFromScreen(
+                    (int)Math.Floor(union.X),
+                    (int)Math.Floor(union.Y),
+                    0,
+                    0,
+                    new System.Drawing.Size(pixelWidth, pixelHeight));
+                bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Png);
             }
         }
 
