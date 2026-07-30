@@ -277,7 +277,7 @@ namespace OpenVisionLab
                 return Path.GetFullPath(candidate);
             }
 
-            return Path.GetFullPath(Path.Combine(AppPathService.StartupPath, candidate));
+            return AppPathService.ResolveExistingDataOrInstallationPath(candidate);
         }
 
         private static OpenVisionRecipeDependencyReviewRow BuildReviewBundleReferenceRow(OpenVisionRecipeReviewBundlePathReview review)
@@ -327,7 +327,7 @@ namespace OpenVisionLab
             string templateDirectory = RecipeWorkspaceService.GetTemplateDirectory(recipeName);
             string targetPath = CreateUniqueFilePath(templateDirectory, Path.GetFileName(sourcePath));
             File.Copy(sourcePath, targetPath, overwrite: false);
-            return Path.GetRelativePath(AppPathService.StartupPath, targetPath);
+            return AppPathService.GetDataRelativePath(targetPath);
         }
 
         private static string CreateUniqueFilePath(string directory, string fileName)

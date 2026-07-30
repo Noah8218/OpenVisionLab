@@ -141,8 +141,17 @@ Runtime: $Runtime
 Packaging: $(if ($SelfContained) { "self-contained" } else { "framework-dependent" })
 Prerequisite: $(if ($SelfContained) { "No separately installed .NET runtime is required." } else { "Install the Microsoft .NET 8 Desktop Runtime (x64) before starting OpenVisionLab." })
 
-This package is portable and writes CONFIG, RECIPE, and Log data below its extracted directory.
-Extract it to an operator-writable folder. Do not install this package under Program Files.
+Release builds keep installation files immutable. Writable CONFIG, RECIPE, Log,
+qualified snapshots, captures, and runtime evidence use:
+  %LOCALAPPDATA%\OpenVisionLab
+
+Administrators may set OPENVISIONLAB_DATA_ROOT to an absolute writable directory
+before launch. The resolved data root is reused on the next equivalent launch.
+
+On first launch, legacy writable data found beside the EXE is copied without
+deleting or overwriting either side. Review data-root-migration-v1.txt in the new
+data root. Migration failure stops startup instead of silently opening an empty
+workspace.
 
 This package is not code-signed and is not an installer. Verify the adjacent SHA-256 file
 before distribution. Installer, certificate signing, update, rollback, and uninstall remain
@@ -256,6 +265,14 @@ $manifest = [pscustomobject][ordered]@{
     else {
         ""
     }
+    DefaultDataRoot = if ($Mode -eq "Release") {
+        "%LOCALAPPDATA%\OpenVisionLab"
+    }
+    else {
+        "Runtime output directory unless OPENVISIONLAB_DATA_ROOT is set"
+    }
+    DataRootOverrideEnvironmentVariable = "OPENVISIONLAB_DATA_ROOT"
+    InstallationFilesImmutable = ($Mode -eq "Release")
     Files = $runtimeFiles
 }
 

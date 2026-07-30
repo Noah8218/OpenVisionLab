@@ -259,8 +259,23 @@ namespace OpenVisionLab
 
         private static string GetPersistedImageDirectoryPath()
         {
-            string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            return Path.Combine(appData, "OpenVisionLab", "image_compare_last_directory.txt");
+            string configuredRoot = Environment.GetEnvironmentVariable(
+                "OPENVISIONLAB_DATA_ROOT");
+            string dataRoot = !string.IsNullOrWhiteSpace(configuredRoot)
+                && Path.IsPathRooted(
+                    Environment.ExpandEnvironmentVariables(
+                        configuredRoot.Trim().Trim('"')))
+                ? Path.GetFullPath(
+                    Environment.ExpandEnvironmentVariables(
+                        configuredRoot.Trim().Trim('"')))
+                : Path.Combine(
+                    Environment.GetFolderPath(
+                        Environment.SpecialFolder.LocalApplicationData),
+                    "OpenVisionLab");
+            return Path.Combine(
+                dataRoot,
+                "CONFIG",
+                "image_compare_last_directory.txt");
         }
     }
 }

@@ -7,7 +7,6 @@ namespace OpenVisionLab
     internal static class OpenVisionNativeToolRecentSelectionStore
     {
         private const string DisableEnvironmentVariable = "OPENVISIONLAB_DISABLE_TOOL_RECENT_STORE";
-        private const string DirectoryName = "OpenVisionLab";
         private const string FileName = "recent-native-tool.txt";
 
         public static bool TryRead(out VISION_MENU menu)
@@ -70,10 +69,10 @@ namespace OpenVisionLab
 
         private static string GetStorePath()
         {
-            string root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            return string.IsNullOrWhiteSpace(root)
-                ? null
-                : Path.Combine(root, DirectoryName, FileName);
+            return Path.Combine(
+                AppPathService.ConfigRootDirectory,
+                "UI",
+                FileName);
         }
     }
 }

@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Xml;
 
 namespace OpenVisionLab.Logging
 {
@@ -49,7 +50,7 @@ namespace OpenVisionLab.Logging
 			string configPath = Path.Combine(assemblyDirectory ?? AppDomain.CurrentDomain.BaseDirectory, "log4net.config");
 			if (File.Exists(configPath))
 			{
-				log4net.Config.XmlConfigurator.ConfigureAndWatch(new FileInfo(configPath));
+				ConfigureFromFile(configPath, GetFallbackLogDirectory());
 			}
 
 			log4net.Util.LogLog.InternalDebugging = false;
@@ -109,7 +110,7 @@ namespace OpenVisionLab.Logging
 			string logDirPath = GetLogDirectory();
 			if (string.IsNullOrWhiteSpace(logDirPath))
 			{
-				logDirPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Log");
+				logDirPath = GetFallbackLogDirectory();
 			}
 
 			Directory.CreateDirectory(logDirPath);
@@ -132,6 +133,61 @@ namespace OpenVisionLab.Logging
 			{
 				MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), file.SafeFileHandle.DangerousGetHandle(), dumpType, ref info, IntPtr.Zero, IntPtr.Zero);
 			}
+		}
+
+		private static void ConfigureFromFile(string configPath, string logDirectory)
+		{
+			Directory.CreateDirectory(logDirectory);
+			XmlDocument document = new XmlDocument
+			{
+				XmlResolver = null
+			};
+			document.Load(configPath);
+			foreach (XmlNode node in document.SelectNodes("//appender/file"))
+			{
+				XmlElement fileElement = node as XmlElement;
+				if (fileElement == null)
+				{
+					continue;
+				}
+
+				string configuredValue = fileElement.GetAttribute("value") ?? string.Empty;
+				string fileName = configuredValue.EndsWith(
+					".log",
+					StringComparison.OrdinalIgnoreCase)
+					? Path.GetFileName(configuredValue)
+					: string.Empty;
+				fileElement.SetAttribute(
+					"value",
+					string.IsNullOrWhiteSpace(fileName)
+						? logDirectory + Path.DirectorySeparatorChar
+						: Path.Combine(logDirectory, fileName));
+			}
+
+			XmlElement log4netElement =
+				document.SelectSingleNode("//log4net") as XmlElement;
+			if (log4netElement == null)
+			{
+				throw new InvalidDataException(
+					"log4net.config does not contain a log4net element.");
+			}
+
+			log4net.Config.XmlConfigurator.Configure(
+				LogManager.GetRepository(),
+				log4netElement);
+		}
+
+		private static string GetFallbackLogDirectory()
+		{
+			string configured = Environment.GetEnvironmentVariable(
+				"OPENVISIONLAB_LOG_ROOT");
+			if (!string.IsNullOrWhiteSpace(configured)
+				&& Path.IsPathRooted(configured))
+			{
+				return Path.GetFullPath(configured);
+			}
+
+			return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Log");
 		}
 
 		public static void Write(params object[] values)

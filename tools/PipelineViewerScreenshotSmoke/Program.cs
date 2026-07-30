@@ -8871,9 +8871,8 @@ internal static class Program
         {
             RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
             RecipeWorkspaceService.DeleteVisionWorkspace(workingRecipeName);
-            string qualifiedRoot = Path.Combine(
-                AppPathService.StartupPath,
-                "QUALIFIED_RECIPE");
+            string qualifiedRoot =
+                AppPathService.QualifiedRecipeRootDirectory;
             foreach (string snapshotId in createdSnapshotIds
                 .Where(QualifiedRecipeSnapshotPreflight.IsSha256)
                 .Distinct(StringComparer.Ordinal))

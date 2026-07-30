@@ -455,10 +455,11 @@ namespace OpenVisionLab
                 return Path.GetFullPath(candidate);
             }
 
-            string startupRelativePath = Path.GetFullPath(Path.Combine(AppPathService.StartupPath, candidate));
-            if (File.Exists(startupRelativePath))
+            string resolvedPath =
+                AppPathService.ResolveExistingDataOrInstallationPath(candidate);
+            if (File.Exists(resolvedPath))
             {
-                return startupRelativePath;
+                return resolvedPath;
             }
 
             return Path.GetFullPath(candidate);

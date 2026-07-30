@@ -42,6 +42,17 @@ namespace OpenVisionLab
 
                 var runtimeContext = ApplicationRuntimeContext.CreateDefault();
                 runtimeContext.Global.System.ApplyLogConfig();
+                OVLog.Write(
+                    LogCategory.System,
+                    LogLevel.Info,
+                    $"Runtime data root: {AppPathService.DataRootDirectory}");
+                if (!string.IsNullOrWhiteSpace(AppPathService.MigrationNotice))
+                {
+                    OVLog.Write(
+                        LogCategory.System,
+                        LogLevel.Warning,
+                        AppPathService.MigrationNotice);
+                }
                 OVLog.Write(LogCategory.System, LogLevel.Info, $"Application ready. Version {AppVersion.VERSION}");
 
                 application.Run(new OpenVisionShellHostWindow(runtimeContext));

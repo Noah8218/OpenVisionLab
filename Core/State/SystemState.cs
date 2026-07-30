@@ -198,10 +198,20 @@ namespace OpenVisionLab
             LogDirectory = Environment.ExpandEnvironmentVariables(LogDirectory.Trim());
             if (!Path.IsPathRooted(LogDirectory))
             {
-                LogDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, LogDirectory);
+                LogDirectory = Path.Combine(
+                    AppPathService.DataRootDirectory,
+                    LogDirectory);
             }
 
             LogDirectory = Path.GetFullPath(LogDirectory);
+            if (!string.Equals(
+                    AppPathService.DataRootDirectory,
+                    AppPathService.InstallationRootDirectory,
+                    StringComparison.OrdinalIgnoreCase)
+                && AppPathService.IsPathUnderInstallationRoot(LogDirectory))
+            {
+                LogDirectory = GetDefaultLogDirectory();
+            }
             MaximumFileSizeMB = Math.Max(1, MaximumFileSizeMB);
             MaxBackupFileCount = Math.Max(1, MaxBackupFileCount);
             RetentionDays = Math.Max(1, RetentionDays);
@@ -215,7 +225,7 @@ namespace OpenVisionLab
 
         private static string GetDefaultLogDirectory()
         {
-            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Log");
+            return AppPathService.LogRootDirectory;
         }
         #endregion
     }

@@ -18,7 +18,7 @@ namespace OpenVisionLab
             string qualifiedRecipeRoot = null)
         {
             string root = string.IsNullOrWhiteSpace(qualifiedRecipeRoot)
-                ? Path.Combine(AppPathService.StartupPath, "QUALIFIED_RECIPE")
+                ? AppPathService.QualifiedRecipeRootDirectory
                 : Path.GetFullPath(qualifiedRecipeRoot);
             store = new QualifiedRecipeSnapshotStore(root);
             lifecycle = new QualifiedRecipeSnapshotLifecycleStore(root, store);

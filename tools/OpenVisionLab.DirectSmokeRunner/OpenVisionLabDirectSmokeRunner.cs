@@ -187,6 +187,15 @@ namespace OpenVisionLab
                     return true;
                 }
 
+                if (string.Equals(
+                    scenario,
+                    "runtime-data-root-contract",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    RunRuntimeDataRootContract(outputDirectory);
+                    return true;
+                }
+
                 if (string.Equals(scenario, "learn-line-distance-practice", StringComparison.OrdinalIgnoreCase))
                 {
                     RunLearnLineDistancePractice(outputDirectory);
@@ -8867,7 +8876,7 @@ namespace OpenVisionLab
                 string fullConfigPath = Path.GetFullPath(configPath);
                 string fullRecipeRoot = Path.GetFullPath(
                     Path.Combine(
-                        AppPathService.StartupPath,
+                        AppPathService.DataRootDirectory,
                         "RECIPE"))
                     .TrimEnd(
                         Path.DirectorySeparatorChar,
@@ -9238,7 +9247,7 @@ namespace OpenVisionLab
                 string fullConfigPath = Path.GetFullPath(configPath);
                 string fullRecipeRoot = Path.GetFullPath(
                     Path.Combine(
-                        AppPathService.StartupPath,
+                        AppPathService.DataRootDirectory,
                         "RECIPE"))
                     .TrimEnd(
                         Path.DirectorySeparatorChar,
@@ -9391,7 +9400,7 @@ namespace OpenVisionLab
                 string fullConfigPath = Path.GetFullPath(configPath);
                 string fullRecipeRoot = Path.GetFullPath(
                     Path.Combine(
-                        AppPathService.StartupPath,
+                        AppPathService.DataRootDirectory,
                         "RECIPE"))
                     .TrimEnd(
                         Path.DirectorySeparatorChar,
@@ -15022,6 +15031,136 @@ namespace OpenVisionLab
                     + $"Before='{selectedPipelineBeforeImport}', After='{selectedPipelineAfterImport}', "
                     + $"Validation='{shellHost.RecipeCommands.LlmXmlDraftValidationReport}'");
             }
+        }
+
+        private static void RunRuntimeDataRootContract(string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string dataRoot = Path.GetFullPath(
+                AppPathService.DataRootDirectory);
+            string installationRoot = Path.GetFullPath(
+                AppPathService.InstallationRootDirectory);
+            if (string.Equals(
+                    dataRoot,
+                    installationRoot,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Runtime data-root smoke requires an external "
+                    + AppPathService.DataRootEnvironmentVariable
+                    + " value.");
+            }
+
+            string recipeName =
+                "Smoke_RuntimeDataRoot_"
+                + Guid.NewGuid().ToString("N").Substring(0, 12);
+            string relativeTemplate = string.Empty;
+            try
+            {
+                string templateDirectory =
+                    RecipeWorkspaceService.GetTemplateDirectory(recipeName);
+                string templatePath = Path.Combine(
+                    templateDirectory,
+                    "resolver-marker.png");
+                File.WriteAllText(
+                    templatePath,
+                    "runtime-data-root-marker",
+                    Encoding.UTF8);
+                relativeTemplate =
+                    AppPathService.GetDataRelativePath(templatePath);
+                string runtimeResolved =
+                    VisionPipelineAppToolFactory.ResolveTemplatePath(
+                        relativeTemplate);
+                string reviewResolved =
+                    OpenVisionRecipeDependencyReviewService
+                    .ResolveDependencySourcePath(relativeTemplate);
+                string expected = Path.GetFullPath(templatePath);
+                if (!string.Equals(
+                        runtimeResolved,
+                        expected,
+                        StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(
+                        reviewResolved,
+                        expected,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Data-root-relative template resolution did not "
+                        + "round-trip through runtime and review paths.");
+                }
+
+                string configPath = Path.Combine(
+                    AppPathService.ConfigRootDirectory,
+                    "UI",
+                    "runtime-data-root-smoke.txt");
+                Directory.CreateDirectory(
+                    Path.GetDirectoryName(configPath));
+                File.WriteAllText(
+                    configPath,
+                    "runtime-data-root-config",
+                    Encoding.UTF8);
+                LogConfig relativeLog = new LogConfig
+                {
+                    LogDirectory = "Log"
+                }.Normalize();
+                if (!AppPathService.IsPathUnderInstallationRoot(
+                        installationRoot)
+                    || !StartsWithRoot(templatePath, dataRoot)
+                    || !StartsWithRoot(configPath, dataRoot)
+                    || !StartsWithRoot(
+                        AppPathService.QualifiedRecipeRootDirectory,
+                        dataRoot)
+                    || !StartsWithRoot(relativeLog.LogDirectory, dataRoot)
+                    || !StartsWithRoot(
+                        OpenVisionLanguageService.CatalogPath,
+                        dataRoot))
+                {
+                    throw new InvalidOperationException(
+                        "One or more writable runtime paths escaped the "
+                        + "selected data root.");
+                }
+
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: runtime-data-root-contract" + Environment.NewLine
+                    + "InstallationRoot: " + installationRoot + Environment.NewLine
+                    + "DataRoot: " + dataRoot + Environment.NewLine
+                    + "ConfigRoot: " + AppPathService.ConfigRootDirectory + Environment.NewLine
+                    + "RecipeRoot: " + AppPathService.RecipeRootDirectory + Environment.NewLine
+                    + "QualifiedRecipeRoot: " + AppPathService.QualifiedRecipeRootDirectory + Environment.NewLine
+                    + "LogRoot: " + relativeLog.LogDirectory + Environment.NewLine
+                    + "RelativeTemplate: " + relativeTemplate + Environment.NewLine
+                    + "RuntimeResolvedTemplate: " + runtimeResolved + Environment.NewLine
+                    + "ReviewResolvedTemplate: " + reviewResolved + Environment.NewLine
+                    + "PreviewRunCount: 0" + Environment.NewLine
+                    + "LayerCount: 0" + Environment.NewLine
+                    + "RoutesChanged: False",
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+            }
+        }
+
+        private static bool StartsWithRoot(string path, string root)
+        {
+            string fullRoot = Path.GetFullPath(root)
+                .TrimEnd(
+                    Path.DirectorySeparatorChar,
+                    Path.AltDirectorySeparatorChar)
+                + Path.DirectorySeparatorChar;
+            string fullPath = Path.GetFullPath(path);
+            return fullPath.StartsWith(
+                    fullRoot,
+                    StringComparison.OrdinalIgnoreCase)
+                || string.Equals(
+                    fullPath.TrimEnd(
+                        Path.DirectorySeparatorChar,
+                        Path.AltDirectorySeparatorChar),
+                    fullRoot.TrimEnd(Path.DirectorySeparatorChar),
+                    StringComparison.OrdinalIgnoreCase);
         }
 
         private static string ResolveOutputDirectory(string[] args)

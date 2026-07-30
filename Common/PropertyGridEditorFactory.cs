@@ -61,9 +61,8 @@ namespace OpenVisionLab
             try
             {
                 string directory = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "OpenVisionLab",
-                    "Logs");
+                    AppPathService.LogRootDirectory,
+                    "Diagnostics");
                 Directory.CreateDirectory(directory);
                 File.AppendAllText(
                     Path.Combine(directory, "property-grid-editors.log"),

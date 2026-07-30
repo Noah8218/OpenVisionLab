@@ -126,8 +126,8 @@ namespace OpenVisionLab
 
             string learnDirectory = Path.GetDirectoryName(markdownPath) ?? string.Empty;
             string outputDirectory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "OpenVisionLab",
+                AppPathService.DataRootDirectory,
+                "CACHE",
                 "LearnHtml",
                 HtmlCacheVersion);
             Directory.CreateDirectory(outputDirectory);

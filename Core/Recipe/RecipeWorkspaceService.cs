@@ -12,7 +12,8 @@ namespace OpenVisionLab
 
         public static void EnsureRoot()
         {
-            AppUtil.InitDirectory(RecipeRoot);
+            Directory.CreateDirectory(
+                Path.Combine(AppPathService.DataRootDirectory, RecipeRoot));
         }
 
         public static void EnsureVisionWorkspace(string recipeName)
@@ -20,18 +21,27 @@ namespace OpenVisionLab
             EnsureRoot();
             if (string.IsNullOrWhiteSpace(recipeName))
             {
+                Directory.CreateDirectory(
+                    Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, "VISION"));
+                Directory.CreateDirectory(
+                    Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, "GRAPH"));
+                Directory.CreateDirectory(
+                    Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, "PATTERN"));
                 return;
             }
 
-            AppUtil.InitDirectory($@"{RecipeRoot}\{recipeName}\VISION");
-            AppUtil.InitDirectory($@"{RecipeRoot}\{recipeName}\GRAPH");
-            AppUtil.InitDirectory($@"{RecipeRoot}\{recipeName}\PATTERN");
+            Directory.CreateDirectory(
+                Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, recipeName, "VISION"));
+            Directory.CreateDirectory(
+                Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, recipeName, "GRAPH"));
+            Directory.CreateDirectory(
+                Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, recipeName, "PATTERN"));
         }
 
         public static string[] GetRecipeNames()
         {
             EnsureRoot();
-            string root = Path.Combine(AppPathService.StartupPath, RecipeRoot);
+            string root = Path.Combine(AppPathService.DataRootDirectory, RecipeRoot);
             if (!Directory.Exists(root))
             {
                 return new[] { "Default" };
@@ -235,14 +245,14 @@ namespace OpenVisionLab
 
         public static string GetAccountConfigPath(string configName)
         {
-            string accountDirectory = Path.Combine(AppPathService.StartupPath, "CONFIG", "ACCOUNT");
+            string accountDirectory = Path.Combine(AppPathService.DataRootDirectory, "CONFIG", "ACCOUNT");
             Directory.CreateDirectory(accountDirectory);
             return Path.Combine(accountDirectory, EnsureXmlExtension(configName));
         }
 
         public static string GetSystemConfigPath(string configName)
         {
-            return Path.Combine(AppPathService.StartupPath, EnsureXmlExtension(configName));
+            return Path.Combine(AppPathService.DataRootDirectory, EnsureXmlExtension(configName));
         }
 
         public static string GetVisionDataPath(string recipeName)
@@ -251,10 +261,10 @@ namespace OpenVisionLab
 
             if (string.IsNullOrWhiteSpace(recipeName))
             {
-                return Path.Combine(AppPathService.StartupPath, RecipeRoot, "VISION.xml");
+                return Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, "VISION.xml");
             }
 
-            return Path.Combine(AppPathService.StartupPath, RecipeRoot, recipeName, "VISION.xml");
+            return Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, recipeName, "VISION.xml");
         }
 
         public static string GetVisionPipelinePath(string recipeName, string pipelineName)
@@ -336,15 +346,15 @@ namespace OpenVisionLab
         {
             if (string.IsNullOrWhiteSpace(recipeName))
             {
-                return Path.Combine(AppPathService.StartupPath, RecipeRoot);
+                return Path.Combine(AppPathService.DataRootDirectory, RecipeRoot);
             }
 
-            return Path.Combine(AppPathService.StartupPath, RecipeRoot, recipeName);
+            return Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, recipeName);
         }
 
         private static bool IsSafeRecipeChildPath(string path)
         {
-            string root = Path.GetFullPath(Path.Combine(AppPathService.StartupPath, RecipeRoot));
+            string root = Path.GetFullPath(Path.Combine(AppPathService.DataRootDirectory, RecipeRoot));
             string target = Path.GetFullPath(path ?? string.Empty);
             string rootWithSeparator = root.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal)
                 ? root
@@ -374,10 +384,10 @@ namespace OpenVisionLab
         {
             if (string.IsNullOrWhiteSpace(recipeName))
             {
-                return Path.Combine(AppPathService.StartupPath, RecipeRoot, "VISION");
+                return Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, "VISION");
             }
 
-            return Path.Combine(AppPathService.StartupPath, RecipeRoot, recipeName, "VISION");
+            return Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, recipeName, "VISION");
         }
 
         private static void EnsureRecipeDirectory(string recipeName)
@@ -397,12 +407,21 @@ namespace OpenVisionLab
         {
             if (string.IsNullOrWhiteSpace(recipeName))
             {
-                AppUtil.InitDirectory($@"{RecipeRoot}\{childDirectory}");
-                return Path.Combine(AppPathService.StartupPath, RecipeRoot, childDirectory);
+                string defaultPath = Path.Combine(
+                    AppPathService.DataRootDirectory,
+                    RecipeRoot,
+                    childDirectory);
+                Directory.CreateDirectory(defaultPath);
+                return defaultPath;
             }
 
-            AppUtil.InitDirectory($@"{RecipeRoot}\{recipeName}\{childDirectory}");
-            return Path.Combine(AppPathService.StartupPath, RecipeRoot, recipeName, childDirectory);
+            string recipePath = Path.Combine(
+                AppPathService.DataRootDirectory,
+                RecipeRoot,
+                recipeName,
+                childDirectory);
+            Directory.CreateDirectory(recipePath);
+            return recipePath;
         }
 
         private static string SanitizePathSegment(string value)

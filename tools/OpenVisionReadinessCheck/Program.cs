@@ -33,6 +33,7 @@ internal static class Program
         CheckLocalizationExpansion(repoRoot);
         CheckTutorialAndLearningDocs(repoRoot);
         CheckReleaseAndExternalPolicy(repoRoot);
+        CheckRuntimeDataRootOwnership(repoRoot);
         CheckCompletedItemHygiene(repoRoot);
 
         foreach (string item in Passed)
@@ -3255,6 +3256,61 @@ internal static class Program
         }
 
         return File.ReadAllText(path, Encoding.UTF8);
+    }
+
+    private static void CheckRuntimeDataRootOwnership(string repoRoot)
+    {
+        string appPaths = Read(repoRoot, @"Common\AppPathService.cs");
+        RequireContains(
+            appPaths,
+            "OPENVISIONLAB_DATA_ROOT",
+            "Release runtime data root has an explicit deployment override.");
+        RequireContains(
+            appPaths,
+            "Environment.SpecialFolder.LocalApplicationData",
+            "Release runtime data defaults outside the installation directory.");
+        RequireContains(
+            appPaths,
+            "data-root-migration-v1.txt",
+            "Legacy runtime data migration leaves a durable report.");
+        RequireContains(
+            appPaths,
+            "ConflictTargetKept",
+            "Legacy migration never overwrites selected data-root state.");
+
+        string recipes = Read(
+            repoRoot,
+            @"Core\Recipe\RecipeWorkspaceService.cs");
+        RequireContains(
+            recipes,
+            "AppPathService.DataRootDirectory",
+            "Recipe storage uses the runtime data root.");
+        RequireNotContains(
+            recipes,
+            "AppPathService.StartupPath",
+            "Recipe storage does not write to the installation root.");
+
+        string loggingAssembly = Read(
+            repoRoot,
+            @"Library\OpenVisionLab.Logging\Properties\AssemblyInfo.cs");
+        RequireNotContains(
+            loggingAssembly,
+            "XmlConfigurator",
+            "Logging does not auto-create files before the data root is resolved.");
+
+        string distributionCheck = Read(
+            repoRoot,
+            @"tools\TestReleaseDistribution.ps1");
+        RequireContains(
+            distributionCheck,
+            "changed the immutable installation file",
+            "Release launch verifies immutable installation files.");
+        RequireContains(
+            distributionCheck,
+            "Second launch did not preserve",
+            "Release launch verifies restored data-root state.");
+
+        Pass("Runtime data-root ownership contract");
     }
 
     private static string ReadSourceFamily(string repoRoot, string relativePath)

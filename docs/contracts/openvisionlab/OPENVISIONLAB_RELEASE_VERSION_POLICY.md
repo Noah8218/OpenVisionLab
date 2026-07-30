@@ -114,11 +114,35 @@ paths. Both produced 75 payload files and ZIP SHA-256
 `E8244D5EDF13E3BBE515E4C1F4EAFE0A9695AD11E3591DCF6EAF59236FEEC524`.
 All 33 repository-portable public sample rows and copied-location launch passed.
 
-This package is unsigned, framework-dependent, and requires Microsoft .NET 8
-Desktop Runtime x64. Until writable CONFIG/RECIPE/Log data is separated from
-the install root, deploy only to an operator-writable folder. This gate does
+At P273 this package was unsigned, framework-dependent, required Microsoft
+.NET 8 Desktop Runtime x64, and still required an operator-writable install
+folder. P274 below supersedes only that writable-folder limitation. P273 did
 not establish an installer, signing, update/rollback, uninstall, SBOM/legal
 approval, support SLA, performance qualification, or commercial GA.
+
+## P274 Runtime Data Root v1 (2026-07-30)
+
+Release builds now keep installation files immutable. The default writable
+root is `%LOCALAPPDATA%\OpenVisionLab`; administrators may set the absolute
+`OPENVISIONLAB_DATA_ROOT` deployment value. Release rejects an override inside
+the installation directory.
+
+Former portable `CONFIG`, `RECIPE`, `QUALIFIED_RECIPE`, `CAPTURE`, `TEST`,
+`Image`, `Log`, `SYSTEM.xml`, and legacy `VISION.xml` data is copied once
+without overwrite or deletion. The new root retains
+`data-root-migration-v1.txt`; any copy failure writes `.incomplete` evidence
+and blocks startup. Relative Recipe dependencies resolve from the data root
+first and retain installation/repository read compatibility.
+
+The Release distribution launch gate seeds legacy and conflicting data,
+launches twice against an external root, verifies migration and restoration,
+and proves that the copied installation inventory and hashes did not change.
+See
+`docs\contracts\openvisionlab\OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_CONTRACT.md`.
+
+This removes the P273 operator-writable-install-folder limitation. It does not
+complete an installer, signing, update/rollback, uninstall, shared-user
+permissions, SBOM/legal approval, or commercial GA.
 
 ## Current Policy Decision
 

@@ -28,7 +28,7 @@ namespace OpenVisionLab
         internal static QualifiedRecipeSnapshotStore CreateDefault()
         {
             return new QualifiedRecipeSnapshotStore(
-                Path.Combine(AppPathService.StartupPath, "QUALIFIED_RECIPE"));
+                AppPathService.QualifiedRecipeRootDirectory);
         }
 
         internal QualifiedRecipeSnapshotCreateResult Create(

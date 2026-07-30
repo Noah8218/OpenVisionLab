@@ -20,6 +20,7 @@ namespace OpenVisionLab
         private const string LanguageFileName = "language.txt";
 
         private static readonly object SyncRoot = new object();
+        private static string configuredConfigDirectory = string.Empty;
         private static readonly Dictionary<string, OpenVisionLocalizationEntry> Entries = new Dictionary<string, OpenVisionLocalizationEntry>(StringComparer.OrdinalIgnoreCase);
         private static readonly Dictionary<string, DefaultCatalogMigration> DefaultCatalogMigrations = new Dictionary<string, DefaultCatalogMigration>(StringComparer.OrdinalIgnoreCase)
         {
@@ -447,6 +448,32 @@ namespace OpenVisionLab
 
         public static string CatalogPath => Path.Combine(GetConfigDirectory(), CatalogFileName);
 
+        public static void ConfigureDataDirectory(string configDirectory)
+        {
+            if (string.IsNullOrWhiteSpace(configDirectory))
+            {
+                throw new ArgumentException(
+                    "Localization config directory is required.",
+                    nameof(configDirectory));
+            }
+
+            string resolved = Path.GetFullPath(configDirectory);
+            lock (SyncRoot)
+            {
+                if (loaded
+                    && !string.Equals(
+                        configuredConfigDirectory,
+                        resolved,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Localization data directory cannot change after loading.");
+                }
+
+                configuredConfigDirectory = resolved;
+            }
+        }
+
         public static void Load()
         {
             EnsureCatalogFile();
@@ -819,6 +846,24 @@ namespace OpenVisionLab
 
         private static string GetConfigDirectory()
         {
+            lock (SyncRoot)
+            {
+                if (!string.IsNullOrWhiteSpace(configuredConfigDirectory))
+                {
+                    return configuredConfigDirectory;
+                }
+            }
+
+            string resolvedDataRoot = Environment.GetEnvironmentVariable(
+                "OPENVISIONLAB_DATA_ROOT_RESOLVED");
+            if (!string.IsNullOrWhiteSpace(resolvedDataRoot)
+                && Path.IsPathRooted(resolvedDataRoot))
+            {
+                return Path.Combine(
+                    Path.GetFullPath(resolvedDataRoot),
+                    ConfigDirectoryName);
+            }
+
             return Path.Combine(
                 AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
                 ConfigDirectoryName);

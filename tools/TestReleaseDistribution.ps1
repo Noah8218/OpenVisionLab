@@ -155,27 +155,123 @@ finally {
 }
 
 $launchEvidence = "Skipped"
+$launchDataRoot = "Skipped"
 if (-not $SkipLaunch) {
     $launchRoot = Join-Path $repoRoot ("artifacts\release_launch_smoke_" + (Get-Date -Format "yyyyMMdd_HHmmss"))
     if (Test-Path -LiteralPath $launchRoot) {
         throw "Launch smoke directory already exists: $launchRoot"
     }
-    Copy-Item -LiteralPath $distributionFullPath -Destination $launchRoot -Recurse
-    $launchExe = Join-Path $launchRoot "OpenVisionLab.exe"
-    $process = Start-Process -FilePath $launchExe -WorkingDirectory $launchRoot -WindowStyle Hidden -PassThru
-    Start-Sleep -Seconds 6
-    $process.Refresh()
-    if ($process.HasExited) {
-        throw "Release EXE exited during startup smoke. ExitCode=$($process.ExitCode)"
-    }
-    Stop-Process -Id $process.Id -Force
-    $process.WaitForExit()
 
-    foreach ($runtimeDataDirectory in @("CONFIG", "RECIPE", "Log")) {
-        if (-not (Test-Path -LiteralPath (Join-Path $launchRoot $runtimeDataDirectory) -PathType Container)) {
-            throw "Release launch did not initialize expected portable data directory: $runtimeDataDirectory"
+    $launchInstallRoot = Join-Path $launchRoot "install"
+    $launchDataRoot = Join-Path $launchRoot "data"
+    Copy-Item -LiteralPath $distributionFullPath -Destination $launchInstallRoot -Recurse
+
+    $legacyConfig = Join-Path $launchInstallRoot "CONFIG"
+    $legacyRecipe = Join-Path $launchInstallRoot "RECIPE\LegacyMigration"
+    $legacyQualified = Join-Path $launchInstallRoot "QUALIFIED_RECIPE"
+    New-Item -ItemType Directory -Force -Path $legacyConfig,$legacyRecipe,$legacyQualified | Out-Null
+    Set-Content -LiteralPath (Join-Path $legacyConfig "legacy-marker.txt") -Value "legacy-config" -Encoding UTF8
+    Set-Content -LiteralPath (Join-Path $legacyRecipe "legacy-marker.txt") -Value "legacy-recipe" -Encoding UTF8
+    Set-Content -LiteralPath (Join-Path $legacyQualified "legacy-marker.txt") -Value "legacy-qualified" -Encoding UTF8
+    Set-Content -LiteralPath (Join-Path $legacyConfig "conflict-marker.txt") -Value "legacy-conflict" -Encoding UTF8
+    New-Item -ItemType Directory -Force -Path (Join-Path $launchDataRoot "CONFIG") | Out-Null
+    Set-Content -LiteralPath (Join-Path $launchDataRoot "CONFIG\conflict-marker.txt") -Value "data-root-wins" -Encoding UTF8
+
+    function Get-InstallFileSnapshot {
+        param([string]$Root)
+
+        $snapshot = @{}
+        Get-ChildItem -LiteralPath $Root -File -Recurse | ForEach-Object {
+            $relative = $_.FullName.Substring($Root.Length).TrimStart('\', '/')
+            $snapshot[$relative] = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
+        }
+        return $snapshot
+    }
+
+    function Invoke-ReleaseLaunch {
+        param(
+            [string]$Exe,
+            [string]$WorkingDirectory,
+            [string]$DataRoot
+        )
+
+        $previousDataRoot = $env:OPENVISIONLAB_DATA_ROOT
+        try {
+            $env:OPENVISIONLAB_DATA_ROOT = $DataRoot
+            $process = Start-Process -FilePath $Exe -WorkingDirectory $WorkingDirectory -WindowStyle Hidden -PassThru
+            Start-Sleep -Seconds 6
+            $process.Refresh()
+            if ($process.HasExited) {
+                throw "Release EXE exited during startup smoke. ExitCode=$($process.ExitCode)"
+            }
+            Stop-Process -Id $process.Id -Force
+            $process.WaitForExit()
+        }
+        finally {
+            $env:OPENVISIONLAB_DATA_ROOT = $previousDataRoot
         }
     }
+
+    $beforeInstall = Get-InstallFileSnapshot -Root $launchInstallRoot
+    $launchExe = Join-Path $launchInstallRoot "OpenVisionLab.exe"
+    Invoke-ReleaseLaunch -Exe $launchExe -WorkingDirectory $launchInstallRoot -DataRoot $launchDataRoot
+
+    foreach ($runtimeDataDirectory in @("CONFIG", "RECIPE", "Log")) {
+        if (-not (Test-Path -LiteralPath (Join-Path $launchDataRoot $runtimeDataDirectory) -PathType Container)) {
+            throw "Release launch did not initialize expected data-root directory: $runtimeDataDirectory"
+        }
+    }
+
+    $migrationExpectations = @{
+        "CONFIG\legacy-marker.txt" = "legacy-config"
+        "RECIPE\LegacyMigration\legacy-marker.txt" = "legacy-recipe"
+        "QUALIFIED_RECIPE\legacy-marker.txt" = "legacy-qualified"
+        "CONFIG\conflict-marker.txt" = "data-root-wins"
+    }
+    foreach ($relativePath in $migrationExpectations.Keys) {
+        $migratedPath = Join-Path $launchDataRoot $relativePath
+        if (-not (Test-Path -LiteralPath $migratedPath -PathType Leaf)) {
+            throw "Release data-root migration did not retain expected file: $relativePath"
+        }
+        $actualValue = (Get-Content -LiteralPath $migratedPath -Raw).Trim()
+        if ($actualValue -ne $migrationExpectations[$relativePath]) {
+            throw "Release data-root migration changed expected content: $relativePath"
+        }
+    }
+
+    $migrationReport = Join-Path $launchDataRoot "data-root-migration-v1.txt"
+    if (-not (Test-Path -LiteralPath $migrationReport -PathType Leaf)) {
+        throw "Release data-root migration report was not created."
+    }
+    $migrationReportText = Get-Content -LiteralPath $migrationReport -Raw
+    $migrationReportValid =
+        $migrationReportText.Contains("Status=Complete") -and
+        $migrationReportText.Contains("ConflictTargetKept=CONFIG\conflict-marker.txt")
+    if (-not $migrationReportValid) {
+        throw "Release data-root migration report does not retain completion/conflict evidence."
+    }
+
+    $afterInstall = Get-InstallFileSnapshot -Root $launchInstallRoot
+    if ($beforeInstall.Count -ne $afterInstall.Count) {
+        throw "Release launch changed the immutable installation file inventory."
+    }
+    foreach ($relativePath in $beforeInstall.Keys) {
+        $installFileChanged =
+            (-not $afterInstall.ContainsKey($relativePath)) -or
+            ($beforeInstall[$relativePath] -ne $afterInstall[$relativePath])
+        if ($installFileChanged) {
+            throw "Release launch changed an immutable installation file: $relativePath"
+        }
+    }
+    if (Test-Path -LiteralPath (Join-Path $launchInstallRoot "Log")) {
+        throw "Release launch created a Log directory inside the installation root."
+    }
+
+    Invoke-ReleaseLaunch -Exe $launchExe -WorkingDirectory $launchInstallRoot -DataRoot $launchDataRoot
+    if ((Get-Content -LiteralPath (Join-Path $launchDataRoot "CONFIG\conflict-marker.txt") -Raw).Trim() -ne "data-root-wins") {
+        throw "Second launch did not preserve the selected data-root state."
+    }
+
     $launchEvidence = $launchRoot
 }
 
@@ -187,3 +283,4 @@ Write-Host "PayloadFiles=$($manifest.Files.Count)"
 Write-Host "Archive=$archiveFullPath"
 Write-Host "ArchiveSHA256=$actualArchiveHash"
 Write-Host "LaunchEvidence=$launchEvidence"
+Write-Host "LaunchDataRoot=$launchDataRoot"
