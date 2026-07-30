@@ -4,6 +4,52 @@ Updated: 2026-07-30 KST
 
 This is the current continuation brief for a new OpenVisionLab chat. Read it after `AGENTS.md` and before choosing implementation work. It is a status and priority document; it does not override stable behavioral contracts in `AGENTS.md` or `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`.
 
+## Incremental Work Update — P274 Runtime Data Root v1 (2026-07-30)
+
+- P274 removes the P273 requirement to deploy into an operator-writable
+  installation folder. Release writable state now defaults to
+  `%LOCALAPPDATA%\OpenVisionLab` or an absolute external
+  `OPENVISIONLAB_DATA_ROOT`; unsafe relative or installation-contained roots
+  fail closed.
+- Installation owns executable/read-only payload only. CONFIG, RECIPE,
+  QUALIFIED_RECIPE, Log, CAPTURE, TEST, Image, CACHE, SYSTEM.xml, and legacy
+  root VISION.xml belong to the resolved data root.
+- One-time legacy migration copies missing files only, preserves source and
+  existing targets, reports conflicts, blocks incomplete migration, and does
+  not repeat after successful completion.
+- Actual runtime work exposed and corrected premature log4net
+  installation-root files and a mixed Recipe folder-creation path.
+- A copied Release installation passed first/second launch, migration,
+  conflict retention, data-root logs, and full installation-inventory
+  immutability. Focused Recipe/PropertyGrid/settings persistence and relative
+  template resolution passed with zero Preview/Run/layer/routing side effects.
+- Two independent clean clones of commit
+  `823d2d8acb87a269b79c602d29316e0908081ab0` produced the same 75-file
+  framework-dependent ZIP SHA-256
+  `807747DB316FE115E48728DF930F224F7CFB289CD597BDD0F5774B253CC123BD`.
+  Debug/Release builds had zero warnings/errors, readiness passed 13/13, all
+  33 public sample rows passed, and copied-package launch passed.
+- Evidence:
+  `docs\reports\OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_20260730.md`,
+  `docs\contracts\openvisionlab\OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_CONTRACT.md`,
+  `C:\Git\OpenVisionLab_Production_DataRoot_RC_20260730`, and
+  `C:\Git\OpenVisionLab_Production_DataRoot_Repro_20260730`.
+- Status: P274 `Complete` for Runtime Data Root v1, not commercial GA.
+- Current next priorities:
+  1. Approve the distribution model, publisher/signing identity and
+     certificate, update channel, and machine/per-user policy. Prerequisite:
+     those business/deployment inputs. Recommended model: none until
+     prerequisites; `gpt-5.6-sol` afterward | Reasoning effort: none until
+     prerequisites; `high` afterward.
+  2. Implement installer, signed payload, update/rollback, uninstall, data
+     retention, and migration recovery against that approved model.
+     Recommended model: `gpt-5.6-sol` | Reasoning effort: `high`.
+  3. Generate/review SBOM and license evidence, then add an operator support
+     bundle and bounded startup/run performance gates. Recommended model:
+     `gpt-5.6-terra` | Reasoning effort: `medium`.
+- CVR-00 remains separately blocked on three real independent novice
+  participants and unedited observations.
+
 ## Incremental Work Update — P273 Production Release Candidate Gate (2026-07-30)
 
 - The user explicitly opened the Productionization track and requested
