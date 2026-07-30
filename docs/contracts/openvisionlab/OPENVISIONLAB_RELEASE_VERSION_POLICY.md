@@ -144,6 +144,29 @@ This removes the P273 operator-writable-install-folder limitation. It does not
 complete an installer, signing, update/rollback, uninstall, shared-user
 permissions, SBOM/legal approval, or commercial GA.
 
+## P275 GitHub Source Build Gate (2026-07-31)
+
+The user-confirmed normal distribution goal is source restore/build
+availability, not a commercial installer. The canonical lightweight command is:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\VerifySourceBuild.ps1
+```
+
+It checks the exact SDK from `global.json`, locked solution restore, Debug and
+Release builds, readiness, vendored DLLs, and expected executables. It does not
+create a package, run the public catalog, launch the UI, or establish installer
+and commercial-deployment readiness.
+
+`tools\WindowsSandbox\InvokeSourceBuildSandbox.ps1` is an optional disposable
+Windows replay for changes to SDK, solution, dependency, or clean-machine
+assumptions. Windows Sandbox is not a prerequisite and the tool must not enable
+Windows features or expose the full repository as a writable mapped folder.
+
+The GitHub Actions Release Candidate gate remains a stricter clean-checkout
+superset. Installer, signing, automatic update, uninstall, SBOM/legal review,
+and commercial GA work require a new explicit user direction.
+
 ## Current Policy Decision
 
 - OpenVisionLab은 `Library-Noah`와 `WPG-CUSTOM` 소스 프로젝트를 직접 참조하지 않는다.

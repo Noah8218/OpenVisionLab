@@ -55,12 +55,68 @@ Preview and Run are always explicit user actions. These recordings use public
 example images to demonstrate the workflow; production use requires validation
 with representative application data.
 
+## Build From A Fresh GitHub Clone
+
+This is the shortest supported source-build path. Visual Studio is optional;
+the command line only needs Git, PowerShell, and the exact .NET SDK pinned by
+`global.json`.
+
+Requirements:
+
+- Windows 10 or Windows 11 x64
+- Git
+- .NET SDK `8.0.421`
+- Internet access for the first NuGet package restore
+
+```powershell
+git clone --branch codex/public-sample-ux-docs --single-branch https://github.com/Noah8218/OpenVisionLab_Dev.git
+cd OpenVisionLab_Dev
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\VerifySourceBuild.ps1
+.\bin\Debug\OpenVisionLab.exe
+```
+
+The branch is explicit because the repository's current default `main` branch
+does not yet contain the verified workbench source. Remove the `--branch` and
+`--single-branch` arguments after this branch is reviewed and promoted to the
+default branch.
+
+`VerifySourceBuild.ps1` performs the locked package restore, Debug and Release
+solution builds, repository readiness check, and vendored DLL check. It does
+not create an installer, run the public sample suite, or modify Recipe/Layer
+state.
+
+If the script reports a missing SDK, install the exact .NET SDK version from
+the [.NET 8 download page](https://dotnet.microsoft.com/download/dotnet/8.0).
+The repository deliberately disables SDK roll-forward so a different 8.0 SDK
+is not silently treated as the verified compiler.
+
+### Optional Clean Windows Sandbox Check
+
+Windows Pro, Enterprise, or Education users who have Windows Sandbox enabled
+can run an additional disposable-VM check:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\WindowsSandbox\InvokeSourceBuildSandbox.ps1
+```
+
+The host script archives the current committed source, maps only a new
+task-specific evidence folder into Sandbox, downloads the pinned SDK inside
+Sandbox, and runs the same source-build verifier. The Sandbox is temporary and
+the launcher closes the instance after writing its result under
+`artifacts\source_build_sandbox_*`. `sandbox-progress.txt` shows the current
+download, extraction, restore, or build phase while it runs.
+Networking is required for the SDK and NuGet downloads.
+
+Windows Sandbox is optional. GitHub Actions already runs a clean Windows
+checkout and a stricter superset of this build check. Do not enable Windows
+features or change virtualization settings solely to build OpenVisionLab.
+
 ## Requirements and Running the Application
 
 Requirements:
 
 - Windows development environment
-- .NET SDK 8.0.x (`global.json` currently pins `8.0.421`)
+- .NET SDK `8.0.421` (`global.json` pins the exact version)
 - WPF/Windows Desktop build support
 - Runtime DLLs included in the repository's `dll/` directory
 

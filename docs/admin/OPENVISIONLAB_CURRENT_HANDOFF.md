@@ -1,8 +1,43 @@
 ﻿# OpenVisionLab Current Project Handoff
 
-Updated: 2026-07-30 KST
+Updated: 2026-07-31 KST
 
 This is the current continuation brief for a new OpenVisionLab chat. Read it after `AGENTS.md` and before choosing implementation work. It is a status and priority document; it does not override stable behavioral contracts in `AGENTS.md` or `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`.
+
+## Incremental Work Update — P275 GitHub Source Build Experience (2026-07-31)
+
+- The user clarified that the intended distribution check is whether a GitHub
+  source recipient can restore and build, not whether OpenVisionLab has a
+  signed commercial installer.
+- The root README now gives one exact clone/build/run sequence. The supported
+  command is `tools\VerifySourceBuild.ps1`, which checks SDK `8.0.421`, locked
+  restore, Debug/Release, readiness, vendored DLLs, and expected EXEs.
+- The lightweight command does not run the full public catalog, create a
+  package, open the UI, or perform installer/signing work. Existing GitHub
+  Actions remains the stricter clean-checkout superset.
+- An optional Windows Sandbox launcher maps only a task artifact folder,
+  installs the exact SDK in a disposable Windows environment, reports each
+  stage, runs the same verifier, and closes its own Sandbox.
+- The first actual Sandbox replay exposed a missing stock PowerShell Archive
+  resource. The runner now uses the .NET ZIP API. The final Windows 10
+  Sandbox replay passed locked restore, Debug/Release, readiness 13/13,
+  vendored references, and expected EXEs; no Sandbox process remained.
+- Evidence:
+  `docs\reports\OPENVISIONLAB_GITHUB_SOURCE_BUILD_EXPERIENCE_20260731.md`,
+  `artifacts\p275_source_build_local_20260731`, and
+  `artifacts\p275_windows_sandbox_actual_r4_20260731`.
+- Status: P275 `Complete`.
+- Current priority:
+  1. Maintain this source-build path only when solution, SDK, vendored DLL, or
+     clean-machine assumptions change. Recommended model: `gpt-5.6-terra` |
+     Reasoning effort: `low`.
+  2. Installer, signing, update, uninstall, SBOM/legal, and commercial
+     deployment are inactive until the user explicitly changes the goal.
+     Recommended model: none before that decision | Reasoning effort: none.
+  3. CVR-00 remains externally dependent on three independent novices and
+     unedited observations. Recommended model: none before observations;
+     `gpt-5.6-terra` afterward | Reasoning effort: none before observations;
+     `low` afterward.
 
 ## Incremental Work Update — P274 Runtime Data Root v1 (2026-07-30)
 
