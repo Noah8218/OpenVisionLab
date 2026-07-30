@@ -93,8 +93,7 @@ foreach ($entry in $manifest.Files) {
 $unexpectedPayloadFiles = @(
     Get-ChildItem -LiteralPath $distributionFullPath -File -Recurse |
         Where-Object {
-            $_.FullName -ne $manifestPath
-            -and -not $manifestFilePaths.Contains($_.FullName)
+            ($_.FullName -ne $manifestPath) -and (-not $manifestFilePaths.Contains($_.FullName))
         }
 )
 if ($unexpectedPayloadFiles.Count -gt 0) {
