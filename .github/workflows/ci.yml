@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    name: Build and policy checks
+    name: Clean-clone release candidate gate
     runs-on: windows-latest
 
     steps:
@@ -22,18 +22,19 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Build
+      - name: Verify Debug, Release, policies, public samples, and package
         shell: pwsh
-        run: dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools\VerifyReleaseCandidate.ps1 -SkipLaunch -OutputDir artifacts\ci_release_candidate
 
-      - name: Readiness
-        shell: pwsh
-        run: dotnet run --project "tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj" -c Debug -- "${{ github.workspace }}"
-
-      - name: External reference policy
-        shell: pwsh
-        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestExternalReferences.ps1
-
-      - name: Public sample asset policy
-        shell: pwsh
-        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestPublicSampleAssets.ps1
+      - name: Upload verified portable release candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenVisionLab-win-x64-framework-dependent-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            dist/OpenVisionLab-win-x64-framework-dependent.zip
+            dist/OpenVisionLab-win-x64-framework-dependent.zip.sha256
+            dist/OpenVisionLab/clean_runtime_manifest.json
+            artifacts/ci_release_candidate/release_candidate_summary.json
+            artifacts/ci_release_candidate/public_sample_catalog/sample_catalog_summary.json

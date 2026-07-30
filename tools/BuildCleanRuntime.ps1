@@ -3,7 +3,11 @@ param(
     [string]$Platform = "AnyCPU",
     [ValidateSet("Dev", "Release")]
     [string]$Mode = "Dev",
-    [string]$OutputDir = ""
+    [string]$OutputDir = "",
+    [ValidateSet("win-x64")]
+    [string]$Runtime = "win-x64",
+    [switch]$SelfContained,
+    [switch]$IncludeSymbols
 )
 
 $ErrorActionPreference = "Stop"
@@ -12,6 +16,9 @@ $repoRoot = [System.IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 $artifactRoot = [System.IO.Path]::GetFullPath((Join-Path $repoRoot "artifacts"))
 $distributionRoot = [System.IO.Path]::GetFullPath((Join-Path $repoRoot "dist"))
 $releaseOutputRoot = [System.IO.Path]::GetFullPath((Join-Path $distributionRoot "OpenVisionLab"))
+$releaseArchivePath = [System.IO.Path]::GetFullPath(
+    (Join-Path $distributionRoot ("OpenVisionLab-" + $Runtime + "-" + $(if ($SelfContained) { "self-contained" } else { "framework-dependent" }) + ".zip")))
+$releaseChecksumPath = $releaseArchivePath + ".sha256"
 
 if ([string]::IsNullOrWhiteSpace($Configuration)) {
     $Configuration = if ($Mode -eq "Release") { "Release" } else { "Debug" }
@@ -67,6 +74,16 @@ if (Test-Path -LiteralPath $outputFullPath) {
     throw "Clean runtime output directory already exists. Choose a new OutputDir: $outputFullPath"
 }
 
+if ($Mode -eq "Release") {
+    if (Test-Path -LiteralPath $releaseArchivePath) {
+        throw "Release archive already exists. Start from a clean dist directory: $releaseArchivePath"
+    }
+
+    if (Test-Path -LiteralPath $releaseChecksumPath) {
+        throw "Release checksum already exists. Start from a clean dist directory: $releaseChecksumPath"
+    }
+}
+
 New-Item -ItemType Directory -Force -Path $outputFullPath | Out-Null
 
 $projectPath = Join-Path $repoRoot "OpenVisionLab.csproj"
@@ -77,6 +94,10 @@ $runtimeArguments = if ($Mode -eq "Release") {
         "-c",
         $Configuration,
         "-p:Platform=$Platform",
+        "-r",
+        $Runtime,
+        "--self-contained",
+        $SelfContained.IsPresent.ToString().ToLowerInvariant(),
         "-p:PublishDir=$outputFullPath\"
     )
 }
@@ -96,6 +117,40 @@ if ($LASTEXITCODE -ne 0) {
     throw "$Mode clean runtime build failed. Exit code=$LASTEXITCODE. Output: $outputFullPath"
 }
 
+if ($Mode -eq "Release" -and -not $IncludeSymbols) {
+    $symbolFiles = @(Get-ChildItem -LiteralPath $outputFullPath -Filter "*.pdb" -File -Recurse)
+    foreach ($symbolFile in $symbolFiles) {
+        Remove-Item -LiteralPath $symbolFile.FullName -Force
+    }
+}
+
+if ($Mode -eq "Release") {
+    foreach ($legalFileName in @("LICENSE", "NOTICE")) {
+        $sourceLegalPath = Join-Path $repoRoot $legalFileName
+        if (-not (Test-Path -LiteralPath $sourceLegalPath -PathType Leaf)) {
+            throw "Required release legal file is missing: $sourceLegalPath"
+        }
+
+        Copy-Item -LiteralPath $sourceLegalPath -Destination (Join-Path $outputFullPath $legalFileName)
+    }
+
+    $deploymentReadme = @"
+OpenVisionLab portable release candidate
+
+Runtime: $Runtime
+Packaging: $(if ($SelfContained) { "self-contained" } else { "framework-dependent" })
+Prerequisite: $(if ($SelfContained) { "No separately installed .NET runtime is required." } else { "Install the Microsoft .NET 8 Desktop Runtime (x64) before starting OpenVisionLab." })
+
+This package is portable and writes CONFIG, RECIPE, and Log data below its extracted directory.
+Extract it to an operator-writable folder. Do not install this package under Program Files.
+
+This package is not code-signed and is not an installer. Verify the adjacent SHA-256 file
+before distribution. Installer, certificate signing, update, rollback, and uninstall remain
+separate release gates.
+"@
+    Set-Content -LiteralPath (Join-Path $outputFullPath "DEPLOYMENT_README.txt") -Value $deploymentReadme -Encoding UTF8
+}
+
 $requiredFiles = @(
     "OpenVisionLab.exe",
     "OpenVisionLab.dll",
@@ -105,6 +160,13 @@ $requiredFiles = @(
     "Lib.OpenCV.dll",
     "System.Windows.Controls.WpfPropertyGrid.dll"
 )
+if ($Mode -eq "Release") {
+    $requiredFiles += @(
+        "LICENSE",
+        "NOTICE",
+        "DEPLOYMENT_README.txt"
+    )
+}
 
 $missingFiles = @($requiredFiles | Where-Object {
     -not (Test-Path -LiteralPath (Join-Path $outputFullPath $_))
@@ -113,32 +175,97 @@ if ($missingFiles.Count -gt 0) {
     throw "Clean runtime is missing required file(s): " + ($missingFiles -join ", ")
 }
 
-$runtimeFiles = @(
-    foreach ($fileName in $requiredFiles) {
-        $filePath = Join-Path $outputFullPath $fileName
-        $file = Get-Item -LiteralPath $filePath
-        [pscustomobject][ordered]@{
-            Name = $file.Name
-            Length = $file.Length
-            SHA256 = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
-        }
+function Invoke-GitText {
+    param([string[]]$Arguments)
+
+    $output = & git -C $repoRoot @Arguments 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        return ""
     }
+
+    return (($output | ForEach-Object { $_.ToString() }) -join "`n").Trim()
+}
+
+$sourceCommit = Invoke-GitText @("rev-parse", "HEAD")
+$sourceBranch = Invoke-GitText @("branch", "--show-current")
+$sourceStatus = Invoke-GitText @("status", "--porcelain", "--untracked-files=no")
+$sourceRemote = Invoke-GitText @("remote", "get-url", "origin")
+$sdkVersion = (& dotnet --version).Trim()
+
+$runtimeFiles = @(
+    Get-ChildItem -LiteralPath $outputFullPath -File -Recurse |
+        Sort-Object FullName |
+        ForEach-Object {
+            [pscustomobject][ordered]@{
+                Path = Convert-ToDisplayPath $_.FullName
+                Length = $_.Length
+                SHA256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
+            }
+        }
 )
 
 $manifest = [pscustomobject][ordered]@{
-    BuiltAt = (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
+    SchemaVersion = 2
+    BuiltAtUtc = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
     Mode = $Mode
     Configuration = $Configuration
     Platform = $Platform
+    Runtime = if ($Mode -eq "Release") { $Runtime } else { "" }
+    SelfContained = if ($Mode -eq "Release") { $SelfContained.IsPresent } else { $false }
+    IncludeSymbols = $IncludeSymbols.IsPresent
+    DotnetSdk = $sdkVersion
+    SourceCommit = $sourceCommit
+    SourceBranch = $sourceBranch
+    SourceRemote = $sourceRemote
+    SourceTreeClean = [string]::IsNullOrWhiteSpace($sourceStatus)
     RuntimeDirectory = Convert-ToDisplayPath $outputFullPath
     RuntimeExe = Convert-ToDisplayPath (Join-Path $outputFullPath "OpenVisionLab.exe")
-    RuntimeArguments = $runtimeArguments
-    RequiredFiles = $runtimeFiles
+    RuntimeArguments = if ($Mode -eq "Release") {
+        @(
+            "dotnet",
+            "publish",
+            "OpenVisionLab.csproj",
+            "-c",
+            $Configuration,
+            "-p:Platform=$Platform",
+            "-r",
+            $Runtime,
+            "--self-contained",
+            $SelfContained.IsPresent.ToString().ToLowerInvariant()
+        )
+    }
+    else {
+        @(
+            "dotnet",
+            "build",
+            "OpenVisionLab.csproj",
+            "-c",
+            $Configuration,
+            "-p:Platform=$Platform"
+        )
+    }
+    RuntimePrerequisite = if ($Mode -eq "Release" -and -not $SelfContained) {
+        "Microsoft .NET 8 Desktop Runtime (x64)"
+    }
+    else {
+        ""
+    }
+    Files = $runtimeFiles
 }
 
 $manifestPath = Join-Path $outputFullPath "clean_runtime_manifest.json"
 $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
 
+if ($Mode -eq "Release") {
+    Compress-Archive -LiteralPath $outputFullPath -DestinationPath $releaseArchivePath -CompressionLevel Optimal
+    $archiveHash = (Get-FileHash -LiteralPath $releaseArchivePath -Algorithm SHA256).Hash
+    Set-Content -LiteralPath $releaseChecksumPath -Value ($archiveHash + " *" + (Split-Path -Leaf $releaseArchivePath)) -Encoding ASCII
+}
+
 Write-Host "$Mode clean runtime: $(Convert-ToDisplayPath $outputFullPath)"
 Write-Host "Runtime EXE: $(Convert-ToDisplayPath (Join-Path $outputFullPath 'OpenVisionLab.exe'))"
 Write-Host "Manifest: $(Convert-ToDisplayPath $manifestPath)"
+if ($Mode -eq "Release") {
+    Write-Host "Archive: $(Convert-ToDisplayPath $releaseArchivePath)"
+    Write-Host "Checksum: $(Convert-ToDisplayPath $releaseChecksumPath)"
+}

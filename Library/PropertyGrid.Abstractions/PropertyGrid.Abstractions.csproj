@@ -4,7 +4,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>OpenVisionLab.PropertyGrid</RootNamespace>
     <AssemblyName>PropertyGrid.Abstractions</AssemblyName>
-    <Deterministic>false</Deterministic>
+    <Deterministic>true</Deterministic>
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
 </Project>

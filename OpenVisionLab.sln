@@ -35,6 +35,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenVisionLab.ImageCanvas",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenVisionLab.Docking.Controls", "Library\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj", "{77987599-0D3F-4BF4-94B0-9014522494F3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenVisionLab.Mvvm", "Library\OpenVisionLab.Mvvm\OpenVisionLab.Mvvm.csproj", "{0F3D4E37-8421-4078-B315-828D5458499D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -213,6 +215,18 @@ Global
 		{77987599-0D3F-4BF4-94B0-9014522494F3}.Release|x64.Build.0 = Release|Any CPU
 		{77987599-0D3F-4BF4-94B0-9014522494F3}.Release|x86.ActiveCfg = Release|Any CPU
 		{77987599-0D3F-4BF4-94B0-9014522494F3}.Release|x86.Build.0 = Release|Any CPU
+		{0F3D4E37-8421-4078-B315-828D5458499D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F3D4E37-8421-4078-B315-828D5458499D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F3D4E37-8421-4078-B315-828D5458499D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0F3D4E37-8421-4078-B315-828D5458499D}.Debug|x64.Build.0 = Debug|Any CPU
+		{0F3D4E37-8421-4078-B315-828D5458499D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0F3D4E37-8421-4078-B315-828D5458499D}.Debug|x86.Build.0 = Debug|Any CPU
+		{0F3D4E37-8421-4078-B315-828D5458499D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F3D4E37-8421-4078-B315-828D5458499D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F3D4E37-8421-4078-B315-828D5458499D}.Release|x64.ActiveCfg = Release|Any CPU
+		{0F3D4E37-8421-4078-B315-828D5458499D}.Release|x64.Build.0 = Release|Any CPU
+		{0F3D4E37-8421-4078-B315-828D5458499D}.Release|x86.ActiveCfg = Release|Any CPU
+		{0F3D4E37-8421-4078-B315-828D5458499D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -229,6 +243,7 @@ Global
 		{F3687CF1-A8D6-407F-815E-88A28FC2A9CD} = {C4D4ABE5-8FBD-4C6E-98C9-E9E3DB3FE596}
 		{C4713B26-8E99-44B9-9DD8-8DA4C6E69CB2} = {50A17DA1-3556-4046-CEDC-33EB466D9C32}
 		{77987599-0D3F-4BF4-94B0-9014522494F3} = {50A17DA1-3556-4046-CEDC-33EB466D9C32}
+		{0F3D4E37-8421-4078-B315-828D5458499D} = {50A17DA1-3556-4046-CEDC-33EB466D9C32}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B6BCC3D2-D39A-48EE-950C-07D87629A137}

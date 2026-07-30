@@ -11,5 +11,9 @@
     <Copyright>Copyright (c) 2026 최노아(Noah-Choi)</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+    <DebugSymbols Condition="'$(Configuration)' == 'Release'">false</DebugSymbols>
   </PropertyGroup>
 </Project>

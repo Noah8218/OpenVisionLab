@@ -5,7 +5,7 @@
     <RootNamespace>WpfPropertyGridBridge</RootNamespace>
     <AssemblyName>WpfPropertyGridBridge</AssemblyName>
     <UseWPF>true</UseWPF>
-    <Deterministic>false</Deterministic>
+    <Deterministic>true</Deterministic>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
