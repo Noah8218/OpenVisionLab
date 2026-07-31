@@ -8,9 +8,9 @@ Updated: 2026-06-18
 
 | Area | Scope | Implementation | Verification |
 | --- | --- | --- | --- |
-| PropertyGrid | Tool Form의 WPG property 값 변경을 `Ctrl+Z`, `Ctrl+Y`, `Ctrl+Shift+Z`로 되돌린다. | `Library/RJControls/RJForms/VisionTestForm.cs`, `Library/OpenVisionLab.History/PropertyGridUndoBinder.cs` | `HistoryContract=OK`, build OK |
+| PropertyGrid | Tool Form의 WPG property 값 변경을 `Ctrl+Z`, `Ctrl+Y`, `Ctrl+Shift+Z`로 되돌린다. | `src/Libraries/RJControls/RJForms/VisionTestForm.cs`, `src/Libraries/OpenVisionLab.History/PropertyGridUndoBinder.cs` | `HistoryContract=OK`, build OK |
 | Pipeline | Step 추가, 삭제, 이동, 복제, 활성화, acceptance preset, Step property 변경을 되돌린다. | `0. UI/6) Vision Test/FormVision_Pipeline.cs` | platform precheck OK |
-| ROI edit | ROI draw, move, delete, paste를 snapshot으로 되돌린다. | `0. UI/2) POPUP/FormImageEditView.cs`, `Library/OpenVisionLab.ImageCanvas` | `HistoryContract=OK` |
+| ROI edit | ROI draw, move, delete, paste를 snapshot으로 되돌린다. | `0. UI/2) POPUP/FormImageEditView.cs`, `src/Libraries/OpenVisionLab.ImageCanvas` | `HistoryContract=OK` |
 | Layer image | 기존 레이어의 image buffer 변경을 snapshot으로 되돌린다. | `1. Core/DisplayLayerImageHistoryService.cs`, `1. Core/DisplayManagerService.cs` | build OK, `HistoryContract=OK` |
 | Layer create/delete | 새 레이어 생성과 사용자 닫기 삭제를 같은 layer history stack에서 되돌린다. 복원 시 원래 title, index, image, ROI, TrainROI를 복원한다. | `DisplayLayerSnapshot`, `DisplayLayerPresenter`, `DisplayManagerService`, `ImageSpaceService` | build OK, `HistoryContract=OK` |
 

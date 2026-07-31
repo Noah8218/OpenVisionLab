@@ -29,7 +29,7 @@ The latest full solution build passed with zero warnings and zero errors before 
 
 ## Public Packet
 
-`llm_prompt_packets/hsv_color_patch` contains only the first-round material:
+`docs/evidence/llm/prompt-packets/hsv_color_patch` contains only the first-round material:
 
 - `README.md`
 - `COPY_THIS_TO_GPT.txt`

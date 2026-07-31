@@ -59,12 +59,12 @@ but the descriptions are not a complete user-facing explanation system:
 
 Representative inspected sources:
 
-- `Vision/OpenCV/MatchingProperty.cs`
-- `Vision/OpenCV/EdgeBasedMatchingProperty.cs`
-- `Vision/OpenCV/LineGaugeProperty.cs`
-- `UI/VisionTest/Wpf/Tooling/PropertyGrid/VisionToolPropertyGridHost.cs`
-- `Library/WpfPropertyGridBridge/WpfPropertyGridAdapter.cs`
-- `UI/VisionTest/Wpf/Tooling/SingleInput/VisionToolSingleInputPropertyToolShell.xaml`
+- `src/OpenVisionLab/Vision/OpenCV/MatchingProperty.cs`
+- `src/OpenVisionLab/Vision/OpenCV/EdgeBasedMatchingProperty.cs`
+- `src/OpenVisionLab/Vision/OpenCV/LineGaugeProperty.cs`
+- `src/OpenVisionLab/UI/VisionTest/Wpf/Tooling/PropertyGrid/VisionToolPropertyGridHost.cs`
+- `src/Libraries/WpfPropertyGridBridge/WpfPropertyGridAdapter.cs`
+- `src/OpenVisionLab/UI/VisionTest/Wpf/Tooling/SingleInput/VisionToolSingleInputPropertyToolShell.xaml`
 - `docs/contracts/openvisionlab/OPENVISIONLAB_LLM_TOOL_CATALOG.json`
 
 The LLM tool catalog already provides canonical ToolType, aliases, validation

@@ -60,9 +60,9 @@ failed the newly added selection/load assertions before completing the task.
 
 Changed implementation:
 
-- `UI\VisionTest\Wpf\Tooling\Presets\VisionToolPresetButtonPresenter.cs`
-- `UI\VisionTest\Wpf\Tooling\SingleInput\VisionToolSingleInputPropertyToolShell.xaml`
-- `Library\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv`
+- `src\OpenVisionLab\UI\VisionTest\Wpf\Tooling\Presets\VisionToolPresetButtonPresenter.cs`
+- `src\OpenVisionLab\UI\VisionTest\Wpf\Tooling\SingleInput\VisionToolSingleInputPropertyToolShell.xaml`
+- `src\Libraries\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv`
 - `tools\PipelineViewerScreenshotSmoke\Program.cs`
 - `tools\OperatorWalkthroughCapture\Record-OperatorWalkthrough.ps1`
 

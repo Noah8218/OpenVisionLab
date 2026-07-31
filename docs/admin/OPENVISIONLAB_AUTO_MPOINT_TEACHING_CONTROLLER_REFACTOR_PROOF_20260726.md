@@ -43,7 +43,7 @@ Scope: `EdgeBasedMatchingToolWpfView`에 남아 있던 Auto MPoint 교육
 ### After
 
 - Responsibility owner:
-  `UI/VisionTest/Wpf/Tooling/Review/AutoMPointTeachingController.cs`
+  `src/OpenVisionLab/UI/VisionTest/Wpf/Tooling/Review/AutoMPointTeachingController.cs`
 - Call path: View composition -> `AutoMPointTeachingController` -> existing
   matching controller/runtime/exporter
 - Dependency direction: View는 Auto MPoint Controller만 사용하며,

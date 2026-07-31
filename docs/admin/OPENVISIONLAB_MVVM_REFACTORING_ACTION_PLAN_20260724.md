@@ -1,4 +1,4 @@
-﻿# OpenVisionLab MVVM Refactoring Action Plan (2026-07-24)
+# OpenVisionLab MVVM Refactoring Action Plan (2026-07-24)
 
 Updated: 2026-07-26 KST
 
@@ -26,7 +26,7 @@ switch case 수, partial 대칭을 이유로 이 계획을 재개하지 않습�
   - `docs/admin`, `docs/contracts`, `docs/research`, `docs/analysis`, `docs/roadmap`, `docs/learn`, `docs/reports`, `docs/runbooks`, `docs/evidence`, `docs/assets`
   - 루트 `docs/*.md`은 인덱스/안내 스텁(현재 본문은 하위 폴더)로 유지됩니다.
 - 소스 구조상 번호형(legacy) 루트 폴더는 현재 경로에서 제거되었고, 주요 실행 경로는 `UI`, `Core`, `Common`, `Vision`, `Property`, `Library`, `tools` 하위로 정리되어 있습니다.
-- `llm_prompt_packets/pin_gap_distance/` 내 참조/파일명이 정리되었습니다.
+- `docs/evidence/llm/prompt-packets/pin_gap_distance/` 내 참조/파일명이 정리되었습니다.
   - `COPY_THIS_TO_GPT.md`
   - `SEND_VALIDATION_NG_TO_GPT.md`
   - `FINAL_USER_MESSAGE_XML_ONLY.md`
@@ -37,21 +37,21 @@ switch case 수, partial 대칭을 이유로 이 계획을 재개하지 않습�
 
 `obj/`/`bin/`의 생성 코드와 산출물을 제외한 후보만 반영합니다.
 
-1) **`UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.cs`** (7,973줄)
+1) **`src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.cs`** (7,973줄)
    - 명령 라우팅/유효성/상태 갱신이 매우 밀집
    - 현재 가장 큰 이해장벽 후보
 
-2) **`UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs` + `OpenVisionShellHostView.Interactions.cs`**
+2) **`src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs` + `OpenVisionShellHostView.Interactions.cs`**
    - 생성/바인딩/이벤트 훅이 커맨드 표면과 결합
    - 분해 효과는 중간급 (현재 일부 분리된 상태)
 
-3) **`UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs`** (1,932줄)
+3) **`src/OpenVisionLab/UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs`** (1,932줄)
    - 문서 오케스트레이션 + 출력 상태 반영이 혼재
 
-4) **`UI/Menu/Wpf/Views/OpenVisionPipelineReviewView.xaml.cs`** (+ 분리된 `Events.cs`, `OpenVisionPipelineReviewViewRenderService.cs`)
+4) **`src/OpenVisionLab/UI/Menu/Wpf/Views/OpenVisionPipelineReviewView.xaml.cs`** (+ 분리된 `Events.cs`, `OpenVisionPipelineReviewViewRenderService.cs`)
    - 이미 부분 분리가 되어 있으나, 상태 갱신 경로를 더 분리할 수 있음
 
-5) **`UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs`** (3,750줄)
+5) **`src/OpenVisionLab/UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs`** (3,750줄)
    - 도구별 매핑/어댑터 분해가 다음 단계에서 명확한 리스크 절감 효과
 
 ## 3) 역사적 1회차 적용 계획
@@ -75,7 +75,7 @@ switch case 수, partial 대칭을 이유로 이 계획을 재개하지 않습�
 
 ## 3-1) 바로 진행한 작업 (2026-07-25)
 
-- `UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs`에서
+- `src/OpenVisionLab/UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs`에서
   이벤트 핸들러/스텝 제어(선택/실행/언어 변경/보정 작업 요청) 경로를
   `OpenVisionPipelineReviewDocument.Events.cs`로 partial 분리했습니다.
 - 동작은 유지되며 `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"`는 PASS(0 경고/0 오류)했습니다.
@@ -88,7 +88,7 @@ switch case 수, partial 대칭을 이유로 이 계획을 재개하지 않습�
   - 분리 후 빌드 재확인(`dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"`) 통과(0 경고/0 오류).
 
 - **완료 업데이트 (2026-07-25):**
-  - `UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.cs`를 partial class로 전환했고,
+  - `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.cs`를 partial class로 전환했고,
     모든 커맨드 바인딩 초기화를 `OpenVisionShellHostRecipeCommandSurface.Commands.cs`로 이동했습니다.
   - `public ICommand ...` 프로퍼티를 `get; private set;`로 변경해 생성자/분리 메서드 간 할당을 안정화했습니다.
   - 전체 빌드(`dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"`) 통과(0 경고/0 오류).
@@ -100,7 +100,7 @@ switch case 수, partial 대칭을 이유로 이 계획을 재개하지 않습�
 - Slice A-2: `OpenVisionShellHostRecipeCommandSurface`에서 Step 네비게이션/요약/명명/선택 유틸 책임을 `StepNavigation` partial로 분리 ✅ 완료
   - 완료 기준 충족: 해당 블록을 분리하고 동일 빌드/회귀 기준 통과
 - Slice B(문서 오케스트레이션 partial 추가 분해) ✅ 완료
-  - `UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs`의 이벤트/선택 제어 경로 분리 적용
+  - `src/OpenVisionLab/UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs`의 이벤트/선택 제어 경로 분리 적용
 
 ### 다음 제안 우선순위 (2026-07-25)
 
@@ -159,10 +159,10 @@ switch case 수, partial 대칭을 이유로 이 계획을 재개하지 않습�
   baseline 선택 / 기본 sample 결과 선택 책임을 분리 ✅ 완료
   - 최근 3개 이력, 이전 선택 유지, 자동 baseline, review-queue/NG 우선순위 계약 유지
   - current-source `wpf_shell_host_recipe_local_validation_set` smoke, Debug build 통과
-- **1순위:** `UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs`의 다음 Tool family별 매핑 분해
-- **2순위:** `UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface`의 비-LLM Recipe/Pipeline 관리 명령군 추가 분할
+- **1순위:** `src/OpenVisionLab/UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs`의 다음 Tool family별 매핑 분해
+- **2순위:** `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface`의 비-LLM Recipe/Pipeline 관리 명령군 추가 분할
   - 유지조건: Preview/Run 라우팅·레이어 변경 계약 불변
-- **3순위:** `UI/VisionTest/Wpf/Learn/OpenVisionLearnWindow.xaml.cs`의 뷰 동작(애니메이션/탐색/상태)와 도메인 동작 분리
+- **3순위:** `src/OpenVisionLab/UI/VisionTest/Wpf/Learn/OpenVisionLearnWindow.xaml.cs`의 뷰 동작(애니메이션/탐색/상태)와 도메인 동작 분리
 
 ## 4) 완료 기준
 

@@ -30,7 +30,7 @@ Move the local Validation Set lifecycle from the broad recipe command-handler fi
 ## Evidence
 
 - `artifacts\\maintenance_recipe_validation_set_refactor_20260725\\wpf_shell_host_recipe_local_validation_set.png\\wpf_shell_host_recipe_local_validation_set.png`
-- `UI\\Menu\\Wpf\\OpenVisionShellHostRecipeCommandSurface.ValidationSets.cs`
+- `src\OpenVisionLab\UI\\Menu\\Wpf\\OpenVisionShellHostRecipeCommandSurface.ValidationSets.cs`
 
 ## Boundary
 

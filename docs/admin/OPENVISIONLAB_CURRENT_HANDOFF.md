@@ -1,8 +1,35 @@
-﻿# OpenVisionLab Current Project Handoff
+# OpenVisionLab Current Project Handoff
 
 Updated: 2026-07-31 KST
 
 This is the current continuation brief for a new OpenVisionLab chat. Read it after `AGENTS.md` and before choosing implementation work. It is a status and priority document; it does not override stable behavioral contracts in `AGENTS.md` or `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`.
+
+## Incremental Work Update — P276 Source Layout Migration (2026-07-31)
+
+- The user explicitly approved the follow-on source-root cleanup after the
+  repository-root analysis and cleanup.
+- The main WPF application now belongs to `src\OpenVisionLab`; 12 independent
+  internal libraries belong to `src\Libraries`. The solution, 31
+  ProjectReferences, linked sources, DLL HintPaths, tools, scripts, and current
+  path documentation use those roots.
+- A 734-file before/after manifest retained 732 exact hashes; the only two
+  differences are intentional project-file path changes. Old active root
+  source/project items are absent. Main compile ownership contains 504 items,
+  zero library/external-tool violations, and one intended `CViewer` item.
+- Debug and Release solution builds passed with zero warnings/errors;
+  readiness passed 13/13; localization found 2,551 entries and 106 direct keys;
+  public assets passed at 33/229/17; and all 33 public sample rows passed.
+  Dev clean-runtime and framework-dependent win-x64 Release publish paths also
+  passed from the new project location.
+- Product behavior, namespaces, UI, XML, PropertyGrid, Preview/Run, layers,
+  routing, and runtime data-root contracts were unchanged. No UI screenshot
+  was required for this structural-only change.
+- Status: P276 `Complete`. Evidence:
+  `docs\reports\OPENVISIONLAB_SRC_LAYOUT_MIGRATION_20260731.md` and
+  `artifacts\src_layout_migration_20260731`.
+- Current priority: do not continue cosmetic restructuring. Reopen only for a
+  concrete owner-boundary defect or operator-blocking workflow. Recommended
+  model: `gpt-5.6-terra` | Reasoning effort: `medium`.
 
 ## Incremental Work Update — P275 GitHub Source Build Experience (2026-07-31)
 
@@ -718,8 +745,8 @@ the table as the current branch head.
 ## Incremental Work Update (2026-07-25)
 
 - Ran `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` after MVVM 구조 분해 Slice의 1개 부분 작업을 적용해 PASS(0 오류, 0 경고).
-- `UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs`의 이벤트/스텝 제어 경로를
-  `UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.Events.cs`로 partial 분리해 가독성을 개선했습니다.
+- `src/OpenVisionLab/UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs`의 이벤트/스텝 제어 경로를
+  `src/OpenVisionLab/UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.Events.cs`로 partial 분리해 가독성을 개선했습니다.
   동작 계약(명시적 Preview/Run, 라우팅/레이어 유지)은 기존과 동일하게 유지했습니다.
 
 - OpenVisionShellHostRecipeCommandSurface additionally received a second refactor slice: StepNavigation methods were extracted to OpenVisionShellHostRecipeCommandSurface.StepNavigation.cs (preview step matching/selection, run-evidence resolve, run/sampling helpers, unique name helpers, and command-state refresh).
@@ -778,7 +805,7 @@ the table as the current branch head.
 - Contract:
   `docs\reports\OPENVISIONLAB_QUALIFIED_RECIPE_SNAPSHOT_AUDIT_20260727.md`.
 - The Qualified Recipe Snapshot non-WPF core is now complete under
-  `Core\Recipe\Qualification`. It validates exact Pipeline/Validation
+  `src\OpenVisionLab\Core\Recipe\Qualification`. It validates exact Pipeline/Validation
   Set/batch/report/source/drawing/review-queue/runtime identities, writes a
   self-contained `.creating-*` payload, verifies it, atomically renames it to a
   SHA-256 Snapshot ID, and reuses the same verified ID for the same immutable
@@ -1191,7 +1218,7 @@ truth; a completed engineering slice does not imply field qualification.
 | LLM XML authoring and inspection-intent skills | Preserved; planned expansion frozen by P196. | Guide/catalog, strict validation/import, prompt/evidence packages, Pin Phase 1/2, and hybrid relative-ROI Phase 1 remain compatible. | Natural Pin Phase 3 failure/correction and broad GPT/Gemini/Claude reliability are incomplete and intentionally not active backlog. |
 | Deterministic fixture, measurement, object review, and calibration UI (P197-P217) | Completed bounded product slices. | Relative-ROI workflow, LineDistance drawing/persistence, CenterPitch, Object Results, Fixture Review, GeometryMeasure/CircleGauge, two-point scale, and Blob/Contour dimension filters have focused runtime/UI evidence. | Pixel/synthetic or selected-corpus evidence is not certified metrology, unseen robustness, or industrial truth. Missing-pin candidates P205/P207/P209 were correctly rejected rather than tuned indefinitely. |
 | Three-point affine and detected-point fixture (P218-P221) | Core and product wiring complete; one strict pilot remains incomplete. | Library-Noah Affine, PropertyGrid/Pipeline/XML/Learn, typed Point x3 binding, and a 12/12 coarse fixed-ROI linkage exist. | P220 remains 10/12 at its frozen `<=3 px` residual gate; the separate accepted `<=5 px` coarse ROI does not retroactively pass it. No homography, lens calibration, or field proof. |
-| Auto MPoint and unique edge matching (P222-P231) | Training UI/reporting complete; qualification is intentionally selective. | Deterministic candidate ranking, explicit apply, ambiguity states, representative-image evaluation, HTML export, and one frozen Die Pad 1 full-stratum qualification exist. | The card `R` anchor was rejected; other corpus strata are not qualified. Score alone cannot prove durable physical-feature identity or authorize automatic template selection. |
+| Auto MPoint and unique edge matching (P222-P231) | Training src/OpenVisionLab/UI/reporting complete; qualification is intentionally selective. | Deterministic candidate ranking, explicit apply, ambiguity states, representative-image evaluation, HTML export, and one frozen Die Pad 1 full-stratum qualification exist. | The card `R` anchor was rejected; other corpus strata are not qualified. Score alone cannot prove durable physical-feature identity or authorize automatic template selection. |
 | Shared Tool View N-image verification and Recipe promotion (P232-P235) | Complete for sequential quick verification and locator handoff. | Thirteen eligible single-input Tool Views share frozen-Step N-image execution/reporting; P234 proves one real 24-image folder path; P235 promotes an exact hash-locked locator expected-success set into Recipe Manager. | Execution is sequential, sample roles are not inferred, promoted `Expected OK` is locator success rather than defect truth, and no field robustness is claimed. |
 | Commercial-video signal evidence (`CVR-01` through `CVR-05`) | Shared foundation plus bounded Threshold Basic/Range, Line representative-scan, CircleGauge radial/residual, and Blob/Contour object-distribution integrations are complete. | Current Preview/Run provenance, Histogram source/result distributions, Threshold full-image population with editable `T` or `Lower`/`Upper` markers, Line prepared intensity/signed response, Circle actual radial samples/residual/profile, and Blob/Contour accepted/rejected Area/Width/Height distributions with existing range markers and row/image/plot selection are retained without review-control execution/layer/route side effects. | Circle evidence is current-run/in-memory and pixel-only; Line shows one representative scan; Adaptive has no global chart; object distributions add no new descriptor or automatic gate; matcher diagnostics remain conditional; no field qualification exists. |
 | Release/runtime evidence | Complete for the approved bounded contract. | Timestamped clean Dev runtimes and `dist\OpenVisionLab` Release output avoid stale `bin\Debug` evidence. | This is not an installer, deployment platform, equipment runtime, or production support contract. |
@@ -1275,7 +1302,7 @@ Overall: OpenVisionLab is a feature-rich internal learning and verification work
 ### LLM XML authoring and real evidence
 
 - `docs/contracts/openvisionlab/OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md` and `docs/contracts/openvisionlab/OPENVISIONLAB_LLM_TOOL_CATALOG.json` define the validated XML contract. The current catalog contains 25 tool descriptions and 47 accepted `ToolType` names/aliases. This count describes the maintenance-mode LLM catalog, not every runtime-only family or a product-maturity score.
-- There are 12 self-contained prompt-packet folders under `llm_prompt_packets` and 11 public-safe evidence packages under `docs/evidence/llm`.
+- There are 12 self-contained prompt-packet folders under `docs/evidence/llm/prompt-packets` and 11 public-safe evidence packages under `docs/evidence/llm`.
 - The public evidence inventory contains one manually transferred GPT correction-loop package (`20260715_matching_die_pad_gpt_correction_loop`), nine GPT direct-success packages, and one Gemini direct-success package.
 - Manual-transfer packages must state what is unknown: exact provider model/version, API evidence, and a full conversation export were not supplied unless the package says otherwise. Do not invent missing transcript details.
 - A direct-success response with zero correction rounds is useful evidence, but it does not prove LLM reliability or a correction loop. Never manufacture a failure/correction round merely to fill the corpus.
@@ -1337,7 +1364,7 @@ Read the full stable-contract document before touching these areas. At minimum p
 - Viewer, ROI, template, comparison, docking, and main-window controls.
 - Recipe Manager/Pipeline/Pipeline Review role separation.
 - Public-sample and external-DLL policies.
-- `Library\OpenVisionLab.Docking.Controls` ownership of AvalonDock; do not add `Dirkster.AvalonDock` directly to `OpenVisionLab.csproj`.
+- `src\Libraries\OpenVisionLab.Docking.Controls` ownership of AvalonDock; do not add `Dirkster.AvalonDock` directly to `src/OpenVisionLab/OpenVisionLab.csproj`.
 
 ## Latest Verification Baseline
 
@@ -1449,7 +1476,7 @@ For any later UI work, build after source changes and capture new before/after e
 
 - P118 used a new user-authorized GPT project-chat workflow and transferred only `Morphology_Cleanup_Synthetic_OK.png` and `Morphology_Cleanup_Synthetic_Missing_NG.png`. The natural prompt required Threshold -> elliptical-kernel Morphology Open -> Contour count, nominal four-target acceptance, missing-target NG rejection, and prohibited use of project/repository XML. No XML, source, private asset, API credential, template path, or hardware data was sent.
 - The actual first response is `artifacts\p118_gpt_morphology_ellipse_natural_prompt_20260718\gpt_first_response.txt`. It used `InputLayers`/`OutputLayers`/`BinaryThreshold`/`ConnectedComponents`/`AcceptanceGate` custom XML rather than OpenVisionLab child Step fields. Current Debug reported `ValidationOk=False`, `ImportEnabled=False`, and `Imported=False`, with 16 schema errors; image execution was skipped. This is a real initial provider XML-schema failure, not an expected NG-sample result. Evidence: `first_nominal\report.txt`.
-- The actual same-conversation failure report was sent back using `gpt_correction_prompt.txt`, but the provider UI remained in a loading state for about five minutes and returned no correction text. Record this as an unreceived provider UI/hang observation, not an absent model response or a correction failure.
+- The actual same-conversation failure report was sent back using `gpt_correction_prompt.txt`, but the provider UI remained in a loading state for about five minutes and returned no correction text. Record this as an unreceived provider src/OpenVisionLab/UI/hang observation, not an absent model response or a correction failure.
 - A new recovery project conversation received the exact initial draft plus actual validation report through `gpt_retry_correction_prompt.txt`. Its completed response is preserved at `gpt_retry_correction_response.xml` (the artifact appends only one terminal newline because the provider copy action exposed no browser clipboard payload). It declares Threshold -> Morphology -> Contour, `Shape=Ellipse`, `Operator=Open`, and a final `ResultCount` minimum/maximum of four.
 - On the fresh current Debug build, the recovery response validated/imported and passed the nominal sample: three Steps accepted and the final Contour returned `ResultCount=4`. Evidence: `retry_correction_nominal\report.txt`. The unchanged recovery response passed `--expect-run-success false` on the public missing-target image: the final Contour returned intended `ResultCount=2 < 4`, with `ExpectedRunSuccess=False`, `ActualRunSuccess=False`, and smoke `Result: PASS`. Evidence: `retry_correction_missing_expected_ng\report.txt`.
 - P118 is real GPT recovery-correction evidence across two project conversations: actual initial response, actual local validation failure, actual recovery correction response, and current-Debug nominal/NG replay. It is not a pure same-conversation correction-loop completion and must not be generalized to independent authoring, provider reliability, or production quality. Full provenance: `artifacts\p118_gpt_morphology_ellipse_natural_prompt_20260718\README.md`.
@@ -1585,7 +1612,7 @@ For any later UI work, build after source changes and capture new before/after e
 - The selected intent is now a strict validation contract: an enabled `ReferenceDifference` Step with exact `ResultCount=0` is required. Current-source smoke changed the maximum gate to `1`, confirmed validation failure with corrective guidance, restored the original XML, and confirmed import readiness.
 - Fresh current-source UI smoke passed at 1600x900 with all layout/text/internal counters at zero. A new clean Dev runtime at `artifacts\openvisionlab_clean_runtime_20260719_210850` passed the focused EXE scenario with four dependency rows, unchanged Preview/Run count, and unchanged layer/route state.
 - The older broad `recipe-manager-tabs` clean-runtime scenario stopped earlier at a non-packaged historical `docs` Matching template path and is not used as P145 success evidence. This is a smoke portability boundary, not a ReferenceDifference product failure.
-- Final solution build completed with 0 warnings/errors. Readiness, external-reference policy, public-sample policy (`30` catalog rows, `229` manifest assets, `15` pipelines), and `git diff --check` passed; line-ending conversion notices remain informational. Full closure and UI/EXE evidence: `artifacts\p145_reference_difference_guided_setup_20260719\README.md`.
+- Final solution build completed with 0 warnings/errors. Readiness, external-reference policy, public-sample policy (`30` catalog rows, `229` manifest assets, `15` pipelines), and `git diff --check` passed; line-ending conversion notices remain informational. Full closure and src/OpenVisionLab/UI/EXE evidence: `artifacts\p145_reference_difference_guided_setup_20260719\README.md`.
 
 ## P146/P147 Batch Drawing Evidence And Pin_1 GPT XML Audit (2026-07-20)
 
@@ -2121,7 +2148,7 @@ For any later UI work, build after source changes and capture new before/after e
 - Status: Complete. Evidence: `artifacts\p214_two_point_scale_teaching_20260723` and `docs\OPENVISIONLAB_TWO_POINT_SCALE_TEACHING_CONTRACT.md`.
 - Boundary: this is one uniform image-plane scale and synthetic/UI integration evidence. It does not calibrate lens distortion, perspective, separate X/Y scales, camera/world/robot coordinates, uncertainty, traceability, or industrial metrology accuracy.
 
-### P215 Post-P214 Commercial UI/Tool Gap Reassessment
+### P215 Post-P214 Commercial src/OpenVisionLab/UI/Tool Gap Reassessment
 
 - Completed a static source/catalog and official commercial-workflow reassessment after P211-P214. No image, Preview, Run, batch, recipe tuning, or LLM provider workflow was executed.
 - The current machine-readable catalog contains 23 canonical tool families and 42 accepted ToolType names/aliases. P211 already persists Blob/Contour object rows with area, center, bounds, angle, accepted/rejected state, and drawing selection.
@@ -2212,7 +2239,7 @@ For any later UI work, build after source changes and capture new before/after e
   `C:\Git\Library-Noah\artifacts\auto_mpoint_v1_20260724` and
   `docs\OPENVISIONLAB_AUTO_MPOINT_V1_CONTRACT.md`.
 - Boundary: operator confirmation on real images, automatic size selection, and
-  field qualification remain pending. P223 completes the UI/DLL integration only.
+  field qualification remain pending. P223 completes the src/OpenVisionLab/UI/DLL integration only.
 
 ### P223 Auto MPoint Teaching UI And Matcher Direction Review
 
@@ -3346,7 +3373,7 @@ Repeated dataset inspection, `short_pin` auditing, recipe tuning, and LLM valida
   teaching workflow: source/representative image lifetime, analysis execution,
   candidate/definition state, report validation/export, and template apply.
 - `AutoMPointTeachingController` now owns that workflow and state under
-  `UI\VisionTest\Wpf\Tooling\Review`. The View retains composition,
+  `src\OpenVisionLab\UI\VisionTest\Wpf\Tooling\Review`. The View retains composition,
   verification-guide visibility, existing facade delegation, input-preview
   forwarding, and disposal wiring.
 - No interface, factory, partial, algorithm, setting, or automatic Preview/Run

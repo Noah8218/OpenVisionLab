@@ -1,4 +1,4 @@
-﻿# OpenVisionLab Source Structure Refactor Design
+# OpenVisionLab Source Structure Refactor Design
 
 Date: 2026-07-24
 Updated: 2026-07-26 KST
@@ -10,9 +10,9 @@ Final execution snapshot (2026-07-26):
 
 - Root directory migration from numbered folders (`0. UI`, `1. Core`, `2. Common`, `4. Vision`, `5. Property`) to semantic names is complete in working tree; legacy numeric roots are no longer active references in source files.
 - P1 dependency-direction cleanup completed its targeted Core decoupling:
-  - `Core/Recipe/VisionToolRepository` no longer uses `VisionMessageBox` (UI dependency removed).
-  - `Core/Pipeline/Definition/VisionPipelineAppendService` no longer reads recipe name from `PropertyGridEditorFactory`.
-- `Core/Pipeline/Definition/VisionPipelineStepPropertyMapper` WPF/PropertyGrid migration is complete (`UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs`).
+  - `src/OpenVisionLab/Core/Recipe/VisionToolRepository` no longer uses `VisionMessageBox` (UI dependency removed).
+  - `src/OpenVisionLab/Core/Pipeline/Definition/VisionPipelineAppendService` no longer reads recipe name from `PropertyGridEditorFactory`.
+- `src/OpenVisionLab/Core/Pipeline/Definition/VisionPipelineStepPropertyMapper` WPF/PropertyGrid migration is complete (`src/OpenVisionLab/UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs`).
 - The reviewed mapper families, Recipe application state/policies, Pipeline
   Review presentation, Learn calculations, and Auto MPoint teaching workflow
   now have the explicit owners listed in the canonical completion record.
@@ -83,7 +83,7 @@ Non-negotiable behavior:
 - Active root config/docs check (today):
   - Root docs/config/state files: `AGENTS.md`, `CHANGELOG.md`, `README.md`,
     `App.config`, `Directory.Build.props`, `global.json`, `log4net.config`,
-    `OpenVisionLab.csproj`, `OpenVisionLab.sln`, `Program.cs`, `LICENSE`,
+    `src/OpenVisionLab/OpenVisionLab.csproj`, `OpenVisionLab.sln`, `Program.cs`, `LICENSE`,
     `NOTICE`, `desktop.ini`.
   - Numeric legacy-root search command result:
     `rg --files | rg '(^|/)[0-9]+[\\)\\.]'` → no active matches in source.
@@ -211,20 +211,20 @@ Recipe Manager host
 
 Evidence:
 
-- `VisionPipelineStepPropertyMapper.cs` is now owned by `UI/Menu/Wpf/Recipe/PropertyGrid`.
+- `VisionPipelineStepPropertyMapper.cs` is now owned by `src/OpenVisionLab/UI/Menu/Wpf/Recipe/PropertyGrid`.
 - `Core` no longer has direct `System.Windows.Controls.WpfPropertyGrid`/`VisionMessageBox`/`PropertyGridEditorFactory` ownership for this contract.
 - Its production caller remains Recipe Manager command surface; smoke/readiness tools consume it as contract consumers.
 
 Current status:
 
-1. ? Completed: move from `Core/Pipeline/Definition/VisionPipelineStepPropertyMapper.cs` to `UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs`.
+1. ? Completed: move from `src/OpenVisionLab/Core/Pipeline/Definition/VisionPipelineStepPropertyMapper.cs` to `src/OpenVisionLab/UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs`.
 2. ?? Next: split by tool family into adapters with explicit instance context.
 3. Pass layer and typed-feature choices through context object; remove mutable static delegates.
 
 Target path (target design):
 
 ```text
-UI/Menu/Wpf/Recipe/PropertyGrid/
+src/OpenVisionLab/UI/Menu/Wpf/Recipe/PropertyGrid/
   VisionPipelinePropertyEditorService.cs
   VisionPipelinePropertyContext.cs
   Adapters/
@@ -292,7 +292,7 @@ Decision:
 Target path:
 
 ```text
-UI/Menu/Wpf/
+src/OpenVisionLab/UI/Menu/Wpf/
   Shell/
     Views/OpenVisionShellHostView.xaml
     Chrome/OpenVisionShellTheme.xaml
@@ -429,7 +429,7 @@ Decision:
 
 - do not mass-rename roots before P0-P3;
 - eliminate the generic `Common` ownership by moving files to a real owner;
-- preserve existing independent `Library\*.csproj` projects;
+- preserve existing independent `src\Libraries\*.csproj` projects;
 - perform a final physical root migration only as a separately approved,
   mechanical change after dependency contracts pass.
 
@@ -438,11 +438,11 @@ Proposed final physical layout:
 ```text
 src/
   OpenVisionLab/
-    App/
+    src/OpenVisionLab/App/
       Program.cs
       Composition/
       Configuration/
-    Core/
+    src/OpenVisionLab/Core/
       State/
       Recipe/
       Pipeline/
@@ -454,9 +454,9 @@ src/
       Paths/
       Serialization/
       Storage/
-    Vision/
+    src/OpenVisionLab/Vision/
       Imaging/
-      Properties/OpenCv/
+      src/OpenVisionLab/Properties/OpenCv/
     Presentation/Wpf/
       Shell/
       Recipe/
@@ -467,7 +467,7 @@ src/
       Viewer/
       Docking/
       Windows/
-Library/
+src/Libraries/
   ...existing independent projects...
 tools/
   Checks/
@@ -483,10 +483,10 @@ Initial `2. Common` move map:
 | --- | --- |
 | path resolution | `Infrastructure/Paths` |
 | serialization | `Infrastructure/Serialization` |
-| bitmap drawing/template extraction | `Vision/Imaging` |
+| bitmap drawing/template extraction | `src/OpenVisionLab/Vision/Imaging` |
 | PropertyGrid editor factory/runtime/services | `Presentation/Wpf/PropertyGrid` |
 | message dialogs | `Presentation/Wpf/Dialogs` |
-| live recipe/defect/edge models | the specific `Core/Recipe` or `Core/Pipeline` owner |
+| live recipe/defect/edge models | the specific `src/OpenVisionLab/Core/Recipe` or `src/OpenVisionLab/Core/Pipeline` owner |
 | unreferenced legacy models | delete only after compile and runtime evidence |
 
 Initial root move map:
@@ -494,10 +494,10 @@ Initial root move map:
 | Current | Target |
 | --- | --- |
 | `Core` | `src/OpenVisionLab/Core` |
-| `Vision\OpenCV` | `src/OpenVisionLab/Vision/Properties/OpenCv` |
+| `src\OpenVisionLab\Vision\OpenCV` | `src/OpenVisionLab/Vision/Properties/OpenCv` |
 | `Property` | split between App configuration and WPF PropertyGrid owners |
-| `UI/Menu/Wpf` | `src/OpenVisionLab/Presentation/Wpf` |
-| `UI/VisionTest` | `src/OpenVisionLab/Presentation/Wpf/VisionTools` |
+| `src/OpenVisionLab/UI/Menu/Wpf` | `src/OpenVisionLab/Presentation/Wpf` |
+| `src/OpenVisionLab/UI/VisionTest` | `src/OpenVisionLab/Presentation/Wpf/VisionTools` |
 
 The final root migration does not create new assemblies by itself. A separate
 Core project should be considered only after the no-WPF/no-dialog/no-static-UI
@@ -532,11 +532,11 @@ and predictable state flow while keeping behavior stable.
 | File | Why it is hard to understand today | Refactor target |
 | --- | --- | --- |
 | `tools/OpenVisionLab.DirectSmokeRunner/OpenVisionLabDirectSmokeRunner.cs` | Runtime bootstrap combines scenario discovery, orchestration, native input simulation, artifact writing, and assertions in one path | Split into dispatch entry + scenario families + shared artifact helpers |
-| `UI\Menu\Wpf\OpenVisionShellHostView.xaml` | Shell, Recipe Manager, and legacy control state are mixed in one visual surface | Extract Recipe Manager and legacy-rail replacement views into dedicated `Views` with dedicated `ViewModel`/Presenter contracts |
-| `UI\Menu\Wpf\OpenVisionShellHostView.xaml.cs` | View lifecycle logic is coupled to orchestration and command decisions | Keep as shell wrapper code-behind only; move orchestration to command presenters and a dedicated shell coordinator |
-| `UI\Menu\Wpf\OpenVisionShellHostRecipeCommandSurface.cs` | High cognitive load by mixing recipe, sample, layer, and execution flows | Split by complete owner only (recipe workflow, sample/workspace workflow, execution/preview workflow) after behavior evidence is preserved |
-| `UI\VisionTest\Wpf\Learn\OpenVisionLearnWindow.xaml.cs` | One class owns many independent topic state machines and animation/interaction branches | Keep host as selector; move one topic at a time into dedicated topic presenter/controller classes only when a topic change is active |
-| `UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineStepPropertyMapper.cs` | One class performs all tool-family conversions and context filtering | Keep `P1` decomposition and move to tool-family adapters behind a context model |
+| `src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostView.xaml` | Shell, Recipe Manager, and legacy control state are mixed in one visual surface | Extract Recipe Manager and legacy-rail replacement views into dedicated `Views` with dedicated `ViewModel`/Presenter contracts |
+| `src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostView.xaml.cs` | View lifecycle logic is coupled to orchestration and command decisions | Keep as shell wrapper code-behind only; move orchestration to command presenters and a dedicated shell coordinator |
+| `src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostRecipeCommandSurface.cs` | High cognitive load by mixing recipe, sample, layer, and execution flows | Split by complete owner only (recipe workflow, sample/workspace workflow, execution/preview workflow) after behavior evidence is preserved |
+| `src\OpenVisionLab\UI\VisionTest\Wpf\Learn\OpenVisionLearnWindow.xaml.cs` | One class owns many independent topic state machines and animation/interaction branches | Keep host as selector; move one topic at a time into dedicated topic presenter/controller classes only when a topic change is active |
+| `src\OpenVisionLab\UI\Menu\Wpf\Recipe\PropertyGrid\VisionPipelineStepPropertyMapper.cs` | One class performs all tool-family conversions and context filtering | Keep `P1` decomposition and move to tool-family adapters behind a context model |
 | `tools/PipelineViewerScreenshotSmoke/Program.cs`, `tools/VisionRecipeRunnerSmoke/Program.cs` | Scenario and support logic are tightly coupled in executable roots | Split into `Scenarios` + `Support` modules under a stable CLI contract |
 
 ### MVVM 가독성 분해 우선순위(사용자 요청 반영)
@@ -544,8 +544,8 @@ and predictable state flow while keeping behavior stable.
 | Slice | 제약/대상 | 핵심 분해 목표 | 기대 효과 |
 | --- | --- | --- | --- |
 | P0 | `Program` + `OpenVisionLabDirectSmokeRunner` | 조건부 컴파일된 smoke 호스트 + 시나리오 레지스트리 | 제품 빌드에서 smoke 코드 분리 |
-| P1 | `UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs` | 툴 패밀리별 어댑터 분해 | 매퍼 책임 분산, 매핑 회귀 영향 구간 축소 |
-| P2 | `UI/Menu/Wpf/OpenVisionShellHostView.xaml` + `...RecipeCommandSurface.cs` | Shell-Recipe 이원 분리, Recipe Manager 뷰/컨트롤러 경계 정리 | 화면 변경의 책임 추적성 향상 |
+| P1 | `src/OpenVisionLab/UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs` | 툴 패밀리별 어댑터 분해 | 매퍼 책임 분산, 매핑 회귀 영향 구간 축소 |
+| P2 | `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml` + `...RecipeCommandSurface.cs` | Shell-Recipe 이원 분리, Recipe Manager 뷰/컨트롤러 경계 정리 | 화면 변경의 책임 추적성 향상 |
 | P3 | `tools/PipelineViewerScreenshotSmoke/Program.cs`, `tools/VisionRecipeRunnerSmoke/Program.cs` | 시나리오별 모듈 + 공용 지원 모듈 | 런너 유지보수성 향상, 시나리오 추가/수정 비용 감소 |
 
 Target refactor conventions (for active new work):
@@ -638,7 +638,7 @@ Scope: Current-source structure/refactor audit and phased target design only
 Acceptance criteria:
 
 - current structure and largest responsibility surfaces inventoried: pass;
-- actual production/test and Core/WPF coupling verified: pass;
+- actual production/test and src/OpenVisionLab/Core/WPF coupling verified: pass;
 - intended owners, call paths, state owners, removed couplings, and gates
   specified for each selected phase: pass;
 - current build/readiness baseline recorded: pass.

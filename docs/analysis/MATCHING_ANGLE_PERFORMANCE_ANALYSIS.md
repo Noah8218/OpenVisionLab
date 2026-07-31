@@ -199,7 +199,7 @@ Wide/fine angle search
 - `MatchingToolViewModel.Summary`에 `Candidates N` 표시를 추가했다.
 - 후보 수가 500 이상이면 `Slow`, 1500 이상이면 `Very slow`를 표시한다.
 - 계산식은 `Lib.noah`의 `CreatePositiveSearchAngles()` / `CreateNegativeSearchAngles()` 반복 방식과 맞춘다.
-- 검증: `dotnet build .\OpenVisionLab.csproj -c Debug -p:Platform=x64 -p:WpgCustomBuildEnabled=false -m:1 -nr:false` 통과.
+- 검증: `dotnet build .\src\OpenVisionLab\OpenVisionLab.csproj -c Debug -p:Platform=x64 -p:WpgCustomBuildEnabled=false -m:1 -nr:false` 통과.
 - 검증: `tools\RunUiPrecheck.ps1 -Targets "wpf_shell_host_matching_tool" -FailOnWarn -OutputDir "artifacts\ui_precheck_matching_angle_candidates_20260626" -WpgCustomBuildEnabled false -TimeoutSeconds 420` 통과.
 
 ### 2. Coarse-to-fine 각도 탐색
@@ -246,7 +246,7 @@ Wide/fine angle search
 ```powershell
 dotnet run --project .\.codex\MatchingAngleBenchmark\MatchingAngleBenchmark.csproj -c Release
 dotnet build C:\Git\Library-Noah\Lib.Common.sln -c Release -p:Platform=x64 -m:1 -nr:false
-dotnet build .\OpenVisionLab.csproj -c Debug -p:Platform=x64 -p:WpgCustomBuildEnabled=false -m:1 -nr:false
+dotnet build .\src\OpenVisionLab\OpenVisionLab.csproj -c Debug -p:Platform=x64 -p:WpgCustomBuildEnabled=false -m:1 -nr:false
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunUiPrecheck.ps1 -Targets "wpf_shell_host_matching_tool" -FailOnWarn -OutputDir "artifacts\ui_precheck_matching_coarse_angle_20260626_diag" -WpgCustomBuildEnabled false -TimeoutSeconds 420
 ```
 
@@ -297,7 +297,7 @@ angle
 검증:
 
 - `dotnet build C:\Git\Library-Noah\Lib.Common.sln -c Release -p:Platform=x64 -m:1 -nr:false` 통과.
-- `dotnet build .\OpenVisionLab.csproj -c Debug -p:Platform=x64 -p:WpgCustomBuildEnabled=false -m:1 -nr:false` 통과.
+- `dotnet build .\src\OpenVisionLab\OpenVisionLab.csproj -c Debug -p:Platform=x64 -p:WpgCustomBuildEnabled=false -m:1 -nr:false` 통과.
 - `.codex\MatchingAngleBenchmark`에서 EasyMatch Die Pad 1~4 및 큰 템플릿 반복 측정 확인.
 - Matching UI smoke: `artifacts\ui_precheck_matching_rotated_template_cache_20260626_final` OK.
 

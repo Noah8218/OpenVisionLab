@@ -43,7 +43,7 @@ Use `docs\VISION_TOOL_PROPERTY_GRID_POLICY.md` and `docs\OPENVISIONLAB_STABLE_FE
 
 1. Add or reuse a property model in the OpenCV tool layer.
 2. Add a ViewModel contract in `VisionToolViewModelContracts` if the tool needs summary, normalization, template status, or test hooks.
-3. Add the ViewModel implementation under `0. UI/6) Vision Test/ViewModels`.
+3. Add the ViewModel implementation under `src/OpenVisionLab/UI/VisionTest/ViewModels`.
 4. Add a factory method in `VisionToolCompositionService`.
 5. Add or reuse a WPF view that preserves the PropertyGrid editor.
 6. Add preview execution in `OpenVisionNativeToolPreviewExecutor`.

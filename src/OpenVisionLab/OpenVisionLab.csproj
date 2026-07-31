@@ -9,52 +9,53 @@
     <ApplicationIcon>lens.ico</ApplicationIcon>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <ProduceReferenceAssembly>True</ProduceReferenceAssembly>
+    <OpenVisionLabOutputRoot>$(OpenVisionLabRepoRoot)bin\</OpenVisionLabOutputRoot>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' and ('$(Platform)' == 'AnyCPU' or '$(Platform)' == 'Any CPU') ">
     <PlatformTarget>x64</PlatformTarget>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>$(OpenVisionLabOutputRoot)Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG;TEST;OPENCV</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' and ('$(Platform)' == 'AnyCPU' or '$(Platform)' == 'Any CPU') ">
     <PlatformTarget>x64</PlatformTarget>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>$(OpenVisionLabOutputRoot)Release\</OutputPath>
     <DefineConstants>TRACE;RELEASE;OPENCV</DefineConstants>
     <Optimize>true</Optimize>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
-    <OutputPath>bin\x86\Debug\</OutputPath>
+    <OutputPath>$(OpenVisionLabOutputRoot)x86\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG;TEST;OPENCV</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
-    <OutputPath>bin\x86\Release\</OutputPath>
+    <OutputPath>$(OpenVisionLabOutputRoot)x86\Release\</OutputPath>
     <DefineConstants>TRACE;RELEASE;OPENCV</DefineConstants>
     <Optimize>true</Optimize>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <OutputPath>bin\x64\Debug\</OutputPath>
+    <OutputPath>$(OpenVisionLabOutputRoot)x64\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG;TEST;OPENCV</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>bin\x64\Release\</OutputPath>
+    <OutputPath>$(OpenVisionLabOutputRoot)x64\Release\</OutputPath>
     <DefineConstants>TRACE;RELEASE;OPENCV</DefineConstants>
     <Optimize>true</Optimize>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Side_2|AnyCPU'">
-    <OutputPath>bin\Side_2\</OutputPath>
+  <PropertyGroup Condition="'$(Configuration)' == 'Side_2' and ('$(Platform)' == 'AnyCPU' or '$(Platform)' == 'Any CPU')">
+    <OutputPath>$(OpenVisionLabOutputRoot)Side_2\</OutputPath>
     <DefineConstants>TRACE;DEBUG;TEST;OPENCV</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Side_2|x86'">
-    <OutputPath>bin\x86\Side_2\</OutputPath>
+    <OutputPath>$(OpenVisionLabOutputRoot)x86\Side_2\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Side_2|x64'">
-    <OutputPath>bin\x64\Side_2\</OutputPath>
+    <OutputPath>$(OpenVisionLabOutputRoot)x64\Side_2\</OutputPath>
   </PropertyGroup>
   <PropertyGroup>
     <OpenVisionLabEnableEmbeddedSmokeRunner Condition="'$(OpenVisionLabEnableEmbeddedSmokeRunner)' == ''">false</OpenVisionLabEnableEmbeddedSmokeRunner>
@@ -64,10 +65,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="FontAwesome.Sharp">
-      <HintPath>dll\FontAwesome.Sharp.dll</HintPath>
+      <HintPath>$(OpenVisionLabDllRoot)FontAwesome.Sharp.dll</HintPath>
     </Reference>
     <Reference Include="Vila.Core">
-      <HintPath>dll\Vila.Core.dll</HintPath>
+      <HintPath>$(OpenVisionLabDllRoot)Vila.Core.dll</HintPath>
     </Reference>
     <Reference Include="System.Windows.Controls.WpfPropertyGrid">
       <HintPath>$(OpenVisionLabDllRoot)System.Windows.Controls.WpfPropertyGrid.dll</HintPath>
@@ -109,70 +110,23 @@
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.8" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Library\PropertyGrid.Abstractions\PropertyGrid.Abstractions.csproj" />
-    <ProjectReference Include="Library\WpfPropertyGridBridge\WpfPropertyGridBridge.csproj" />
-    <ProjectReference Include="Library\OpenVisionLab.Display.Core\OpenVisionLab.Display.Core.csproj" />
-    <ProjectReference Include="Library\OpenVisionLab.ImageCanvas\OpenVisionLab.ImageCanvas.csproj" />
-    <ProjectReference Include="Library\OpenVisionLab.ImageSpace.Core\OpenVisionLab.ImageSpace.Core.csproj" />
-    <ProjectReference Include="Library\OpenVisionLab.Logging\OpenVisionLab.Logging.csproj" />
-    <ProjectReference Include="Library\OpenVisionLab.Logging.Controls\OpenVisionLab.Logging.Controls.csproj" />
-    <ProjectReference Include="Library\OpenVisionLab.Pipeline.Controls\OpenVisionLab.Pipeline.Controls.csproj" />
-    <ProjectReference Include="Library\OpenVisionLab.Localization\OpenVisionLab.Localization.csproj" />
-    <ProjectReference Include="Library\OpenVisionLab.History\OpenVisionLab.History.csproj" />
-    <ProjectReference Include="Library\OpenVisionLab.Mvvm\OpenVisionLab.Mvvm.csproj" />
-    <ProjectReference Include="Library\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj" />
+    <ProjectReference Include="..\Libraries\PropertyGrid.Abstractions\PropertyGrid.Abstractions.csproj" />
+    <ProjectReference Include="..\Libraries\WpfPropertyGridBridge\WpfPropertyGridBridge.csproj" />
+    <ProjectReference Include="..\Libraries\OpenVisionLab.Display.Core\OpenVisionLab.Display.Core.csproj" />
+    <ProjectReference Include="..\Libraries\OpenVisionLab.ImageCanvas\OpenVisionLab.ImageCanvas.csproj" />
+    <ProjectReference Include="..\Libraries\OpenVisionLab.ImageSpace.Core\OpenVisionLab.ImageSpace.Core.csproj" />
+    <ProjectReference Include="..\Libraries\OpenVisionLab.Logging\OpenVisionLab.Logging.csproj" />
+    <ProjectReference Include="..\Libraries\OpenVisionLab.Logging.Controls\OpenVisionLab.Logging.Controls.csproj" />
+    <ProjectReference Include="..\Libraries\OpenVisionLab.Pipeline.Controls\OpenVisionLab.Pipeline.Controls.csproj" />
+    <ProjectReference Include="..\Libraries\OpenVisionLab.Localization\OpenVisionLab.Localization.csproj" />
+    <ProjectReference Include="..\Libraries\OpenVisionLab.History\OpenVisionLab.History.csproj" />
+    <ProjectReference Include="..\Libraries\OpenVisionLab.Mvvm\OpenVisionLab.Mvvm.csproj" />
+    <ProjectReference Include="..\Libraries\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="tools\OpenVisionLab.DirectSmokeRunner\OpenVisionLabDirectSmokeRunner.cs" Condition=" '$(OpenVisionLabEnableEmbeddedSmokeRunner)' != 'true' " />
-    <Compile Remove="Library\OpenVisionLab.Docking.Controls\**\*.cs" />
-    <Compile Remove="Library\OpenVisionLab.Logging\**\*.cs" />
-    <Compile Remove="Library\OpenVisionLab.Logging.Controls\**\*.cs" />
-    <Compile Remove="Library\OpenVisionLab.History\**\*.cs" />
-    <Compile Remove="Library\OpenVisionLab.Pipeline.Controls\**\*.cs" />
-    <Compile Remove="Library\OpenVisionLab.Localization\**\*.cs" />
-    <Compile Remove="Library\Controls.Viewer2D\**\*.cs" />
-    <Compile Remove="Library\Lib.Common\**\*.cs" />
-    <Compile Remove="Library\Lib.OpenCV\**\*.cs" />
-    <Compile Remove="Library\Lib.OpenCV.Blob\**\*.cs" />
-    <Compile Remove="Library\OpenVisionLab.Display.Core\**\*.cs" />
-    <Compile Remove="Library\OpenVisionLab.ImageCanvas\**\*.cs" />
-    <Compile Remove="Library\OpenVisionLab.ImageSpace.Core\**\*.cs" />
-    <Compile Remove="Library\OpenVisionLab.Mvvm\**\*.cs" />
-    <Compile Remove="Library\PropertyGrid.Abstractions\**\*.cs" />
-    <Compile Remove="Library\WpfPropertyGridBridge\**\*.cs" />
-    <Compile Remove="tools\**\*.cs" />
-    <Compile Include="tools\OpenVisionLab.DirectSmokeRunner\OpenVisionLabDirectSmokeRunner.cs" Condition=" '$(OpenVisionLabEnableEmbeddedSmokeRunner)' == 'true' " />
-    <EmbeddedResource Remove="Library\OpenVisionLab.Docking.Controls\**\*.resx" />
-    <EmbeddedResource Remove="Library\OpenVisionLab.ImageSpace.Core\**\*.resx" />
-    <EmbeddedResource Remove="Library\OpenVisionLab.ImageCanvas\**\*.resx" />
-    <EmbeddedResource Remove="Library\OpenVisionLab.Logging\**\*.resx" />
-    <EmbeddedResource Remove="Library\OpenVisionLab.Logging.Controls\**\*.resx" />
-    <EmbeddedResource Remove="Library\OpenVisionLab.Mvvm\**\*.resx" />
-    <EmbeddedResource Remove="Library\OpenVisionLab.Localization\**\*" />
-    <EmbeddedResource Remove="Library\Controls.Viewer2D\**\*.resx" />
-    <Page Remove="Library\OpenVisionLab.Docking.Controls\**\*.xaml" />
-    <Page Remove="Library\OpenVisionLab.Logging\**\*.xaml" />
-    <Page Remove="Library\OpenVisionLab.Logging.Controls\**\*.xaml" />
-    <Page Remove="Library\OpenVisionLab.ImageCanvas\**\*.xaml" />
-    <Page Remove="Library\OpenVisionLab.Mvvm\**\*.xaml" />
-    <Page Remove="Library\Controls.Viewer2D\**\*.xaml" />
-    <None Remove="Library\OpenVisionLab.Docking.Controls\**\*" />
-    <None Remove="Library\OpenVisionLab.Display.Core\**\*" />
-    <None Remove="Library\OpenVisionLab.ImageCanvas\**\*" />
-    <None Remove="Library\OpenVisionLab.ImageSpace.Core\**\*" />
-    <None Remove="Library\PropertyGrid.Abstractions\**\*" />
-    <None Remove="Library\WpfPropertyGridBridge\**\*" />
-    <None Remove="Library\OpenVisionLab.Logging\**\*" />
-    <None Remove="Library\OpenVisionLab.Logging.Controls\**\*" />
-    <None Remove="Library\OpenVisionLab.History\**\*" />
-    <None Remove="Library\OpenVisionLab.Pipeline.Controls\**\*" />
-    <None Remove="Library\OpenVisionLab.Localization\**\*" />
-    <None Remove="Library\OpenVisionLab.Mvvm\**\*" />
-    <None Remove="Library\Controls.Viewer2D\**\*" />
-    <None Remove="Library\Lib.Common\**\*" />
-    <None Remove="Library\Lib.OpenCV\**\*" />
-    <None Remove="Library\Lib.OpenCV.Blob\**\*" />
-    <None Remove="tools\**\*" />
+    <Compile Include="$(OpenVisionLabRepoRoot)tools\OpenVisionLab.DirectSmokeRunner\OpenVisionLabDirectSmokeRunner.cs"
+             Link="OpenVisionLabDirectSmokeRunner.cs"
+             Condition=" '$(OpenVisionLabEnableEmbeddedSmokeRunner)' == 'true' " />
   </ItemGroup>
   <ItemGroup>
     <Content Include="$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.dll">

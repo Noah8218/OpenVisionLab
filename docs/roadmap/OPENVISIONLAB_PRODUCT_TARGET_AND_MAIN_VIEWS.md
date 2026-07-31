@@ -412,7 +412,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestExternalReferences
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestPublicSampleAssets.ps1
 ```
 
-For UI/UX changes:
+For src/OpenVisionLab/UI/UX changes:
 
 - Capture fresh current-build before and after screenshots.
 - Store them under a clearly named `artifacts\...` folder.

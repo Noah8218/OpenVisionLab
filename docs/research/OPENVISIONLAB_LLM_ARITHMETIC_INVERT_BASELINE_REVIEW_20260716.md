@@ -25,7 +25,7 @@ The full solution build passed with zero warnings and zero errors before these a
 
 ## Manual GPT Packet
 
-`llm_prompt_packets/arithmetic_invert` contains:
+`docs/evidence/llm/prompt-packets/arithmetic_invert` contains:
 
 - `README.md`
 - `COPY_THIS_TO_GPT.txt`

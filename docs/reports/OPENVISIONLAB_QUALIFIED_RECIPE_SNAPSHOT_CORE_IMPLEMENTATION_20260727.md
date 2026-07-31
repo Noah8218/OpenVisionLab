@@ -5,7 +5,7 @@ Date: 2026-07-27 KST
 ## Outcome
 
 The non-WPF `Qualified Recipe Snapshot` core boundary is implemented under
-`Core\Recipe\Qualification`. It now owns eligibility checks, immutable manifest
+`src\OpenVisionLab\Core\Recipe\Qualification`. It now owns eligibility checks, immutable manifest
 identity, self-contained evidence copying, payload inventory, atomic creation,
 idempotent same-identity reuse, full reload verification, current-runtime
 fingerprint comparison, and terminal supersede/revoke records.
@@ -158,7 +158,7 @@ Commands actually run:
 
 ```powershell
 dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
-dotnet build OpenVisionLab.csproj -c Debug -p:Platform="Any CPU" -m:1
+dotnet build src/OpenVisionLab/OpenVisionLab.csproj -c Debug -p:Platform="Any CPU" -m:1
 dotnet build tools\QualifiedRecipeSnapshotSmoke\QualifiedRecipeSnapshotSmoke.csproj -c Debug -p:Platform="Any CPU" -m:1
 dotnet tools\QualifiedRecipeSnapshotSmoke\bin\Any CPU\Debug\net8.0-windows7.0\QualifiedRecipeSnapshotSmoke.dll artifacts\qualified_recipe_snapshot_core_20260727\final
 dotnet run --no-build --project tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj -c Debug

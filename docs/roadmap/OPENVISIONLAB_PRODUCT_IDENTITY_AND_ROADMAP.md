@@ -32,7 +32,7 @@ OpenVisionLab은 단순 이미지 뷰어가 아니라 **레이어 기반 rule-ba
 - Docking에서 global bottom은 전체 workspace 하단을 가져가고, pane-local bottom은 대상 pane 내부 하단만 가져갑니다.
 - Docked layer tab click만으로 docking guide가 뜨면 안 됩니다.
 - Layer dragging 중 큰 AvalonDock native floating document preview가 workspace를 가리면 안 됩니다.
-- AvalonDock 패키지 소유권은 `Library/OpenVisionLab.Docking.Controls`에 둡니다. `OpenVisionLab.csproj`에 직접 `Dirkster.AvalonDock`을 추가하지 않습니다.
+- AvalonDock 패키지 소유권은 `src/Libraries/OpenVisionLab.Docking.Controls`에 둡니다. `src/OpenVisionLab/OpenVisionLab.csproj`에 직접 `Dirkster.AvalonDock`을 추가하지 않습니다.
 
 상세 계약은 `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`를 우선합니다.
 
@@ -240,7 +240,7 @@ powershell -ExecutionPolicy Bypass -File tools\RunVisionPlatformPrecheck.ps1
 ## 8. 작업 원칙
 
 - 안정 계약 문서에 있는 동작은 먼저 보호합니다.
-- UI/UX 변경은 실제 EXE 또는 focused screenshot smoke로 확인합니다.
+- src/OpenVisionLab/UI/UX 변경은 실제 EXE 또는 focused screenshot smoke로 확인합니다.
 - 관련 없는 dirty file은 되돌리지 않습니다.
 - 새 abstraction은 반복을 줄이거나 책임 경계를 명확히 할 때만 추가합니다.
 - 문서와 검증이 없는 완료 주장은 하지 않습니다.

@@ -31,15 +31,15 @@ OpenVisionLab은 여러 이미지 레이어를 중심으로 동작하는 rule-ba
 
 | 경로 | 역할 |
 | --- | --- |
-| `Program.cs` | WPF 애플리케이션 진입점입니다. |
-| `OpenVisionLab.csproj` | 메인 WPF 앱 프로젝트입니다. `net8.0-windows7.0`, WPF 사용, x64 중심입니다. |
+| `src/OpenVisionLab/Program.cs` | WPF 애플리케이션 진입점입니다. |
+| `src/OpenVisionLab/OpenVisionLab.csproj` | 메인 WPF 앱 프로젝트입니다. `net8.0-windows7.0`, WPF 사용, x64 중심입니다. |
 | `Directory.Build.props` | 저장소 공통 MSBuild 경로와 vendored DLL root를 정의합니다. |
-| `0. UI/` | 현재 WPF UI, Shell, tool view, popup, teaching panel 중심 코드입니다. |
-| `1. Core/` | 기존 core 영역입니다. 공통 도메인/기반 코드가 섞여 있을 수 있어 변경 전 호출 관계 확인이 필요합니다. |
-| `2. Common/` | 공통 event args, binder, shared helper류가 위치합니다. |
-| `4. Vision/` | OpenCV 기반 vision tool property/model/wrapper 계층입니다. |
-| `5. Property/` | 기존 property 관련 코드가 남아 있는 영역입니다. PropertyGrid 모델과 연결될 수 있습니다. |
-| `Library/` | 재사용 가능한 분리 라이브러리 프로젝트들입니다. MVVM, 이미지 캔버스, 레이어 core, logging, localization 등을 포함합니다. |
+| `src/OpenVisionLab/UI/` | 현재 WPF UI, Shell, tool view, popup, teaching panel 중심 코드입니다. |
+| `src/OpenVisionLab/Core/` | application, recipe, pipeline, storage, state service가 위치하는 핵심 영역입니다. |
+| `src/OpenVisionLab/Common/` | 공통 event args, binder, shared helper류가 위치합니다. |
+| `src/OpenVisionLab/Vision/` | OpenCV 기반 vision tool property/model/wrapper 계층입니다. |
+| `src/OpenVisionLab/Property/` | 저수준 property container와 PropertyGrid 연결 모델이 위치합니다. |
+| `src/Libraries/` | 재사용 가능한 분리 라이브러리 프로젝트들입니다. MVVM, 이미지 캔버스, 레이어 core, logging, localization 등을 포함합니다. |
 | `tools/` | UI smoke, contract check, recipe runner 등 검증/보조 실행 프로젝트입니다. |
 | `docs/` | 설계 문서, 운영 문서, smoke 정책, extension guide가 위치합니다. |
 | `dll/` | vendored runtime DLL 위치입니다. Library-Noah, WPG PropertyGrid DLL 참조가 여기서 해결됩니다. |
@@ -48,7 +48,7 @@ OpenVisionLab은 여러 이미지 레이어를 중심으로 동작하는 rule-ba
 
 ## 3. 메인 앱과 Shell 구조
 
-메인 작업영역은 `0. UI/0) MENU/Wpf` 아래에 집중되어 있습니다.
+메인 작업영역은 `src/OpenVisionLab/UI/Menu/Wpf` 아래에 집중되어 있습니다.
 
 | 파일/영역 | 책임 |
 | --- | --- |
@@ -95,7 +95,7 @@ OpenVisionLab의 중심 모델은 레이어입니다.
 
 ## 5. Native WPF Tool 구조
 
-툴 UI는 `0. UI/6) Vision Test` 아래에 집중되어 있습니다.
+툴 UI는 `src/OpenVisionLab/UI/VisionTest` 아래에 집중되어 있습니다.
 
 | 경로 | 역할 |
 | --- | --- |
@@ -176,9 +176,9 @@ PropertyGrid 기반 알고리즘 툴은 반드시 유지해야 하는 핵심 구
 
 | 위치 | 역할 |
 | --- | --- |
-| `Library/PropertyGrid.Abstractions` | PropertyGrid 관련 추상 contract입니다. |
-| `Library/WpfPropertyGridBridge` | 기존 WPG/WPF PropertyGrid 연결 계층입니다. 현재 WPF 직접 사용 방향으로 점진 정리 대상입니다. |
-| `2. Common/PropertyGridEventBinder.cs` | PropertyGrid event 연결 helper입니다. |
+| `src/Libraries/PropertyGrid.Abstractions` | PropertyGrid 관련 추상 contract입니다. |
+| `src/Libraries/WpfPropertyGridBridge` | 기존 WPG/WPF PropertyGrid 연결 계층입니다. 현재 WPF 직접 사용 방향으로 점진 정리 대상입니다. |
+| `src/OpenVisionLab/Common/PropertyGridEventBinder.cs` | PropertyGrid event 연결 helper입니다. |
 | `VisionToolPropertyGridHost.cs` | tool shell 안에서 PropertyGrid control을 생성/유지하는 host입니다. |
 | `OpenVisionNativePropertyGridToolFactory.cs` | PropertyGrid 기반 tool 생성 lane입니다. |
 
@@ -189,7 +189,7 @@ PropertyGrid 기반 알고리즘 툴은 반드시 유지해야 하는 핵심 구
 
 ## 8. Vision / OpenCV 계층
 
-`4. Vision/OpenCV`는 OpenCV 기반 툴 property, wrapper, execution 관련 코드가 위치하는 영역입니다.
+`src/OpenVisionLab/Vision/OpenCV`는 OpenCV 기반 툴 property, wrapper, execution 관련 코드가 위치하는 영역입니다.
 
 관련 외부 runtime:
 
@@ -209,7 +209,7 @@ Pipeline은 툴 실행을 반복 가능한 step으로 저장하고 재실행하�
 | `Lib.OpenCV.Pipeline` 참조 | `VisionPipelineStep` 등 기존 pipeline model을 제공합니다. |
 | `OpenVisionNativePipelineCommandController.cs` | 현재 tool state를 pipeline step으로 추가합니다. |
 | `Documents/OpenVisionPipelineReviewDocument.cs` | pipeline review UI document입니다. |
-| `Library/OpenVisionLab.Pipeline.Controls` | pipeline UI control library입니다. |
+| `src/Libraries/OpenVisionLab.Pipeline.Controls` | pipeline UI control library입니다. |
 | `tools/VisionRecipeRunnerSmoke` | recipe/pipeline 실행 smoke입니다. |
 | `docs/VISION_PIPELINE_*` | XML recipe schema, LLM recipe contract, runtime plan 문서입니다. |
 
@@ -219,7 +219,7 @@ Pipeline 관련 변경 시 확인할 것:
 - output layer 이름, input layer 이름, parameter key가 recipe contract와 맞는지 확인합니다.
 - 결과 metric/overlay contract는 `docs/VISION_TOOL_RESULT_CONTRACT.md`를 기준으로 확인합니다.
 
-## 10. Library 프로젝트
+## 10. Libraries 프로젝트
 
 | 프로젝트 | 역할 |
 | --- | --- |
@@ -235,7 +235,7 @@ Pipeline 관련 변경 시 확인할 것:
 | `PropertyGrid.Abstractions` | PropertyGrid abstraction입니다. |
 | `WpfPropertyGridBridge` | WPF PropertyGrid bridge입니다. |
 
-Library 프로젝트를 수정할 때는 메인 앱이 해당 library source를 직접 compile하지 않도록 `OpenVisionLab.csproj`의 `Compile Remove` 설정이 있다는 점을 기억합니다.
+메인 앱과 내부 라이브러리는 각각 `src/OpenVisionLab/`과 `src/Libraries/`의 독립 프로젝트 루트에 있습니다. 메인 앱은 `ProjectReference`로 필요한 라이브러리를 참조하며, 라이브러리 소스는 메인 프로젝트의 기본 compile glob 범위에 포함되지 않습니다.
 
 ## 11. 검증 도구와 smoke 전략
 
@@ -262,7 +262,7 @@ Library 프로젝트를 수정할 때는 메인 앱이 해당 library source를 
 자주 쓰는 명령:
 
 ```powershell
-dotnet build .\OpenVisionLab.csproj -c Debug -p:Platform=x64 -p:WpgCustomBuildEnabled=false -m:1 -nr:false
+dotnet build .\src\OpenVisionLab\OpenVisionLab.csproj -c Debug -p:Platform=x64 -p:WpgCustomBuildEnabled=false -m:1 -nr:false
 dotnet build .\tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -p:Platform=x64 -p:WpgCustomBuildEnabled=false -m:1 -nr:false
 dotnet .\tools\PipelineViewerScreenshotSmoke\bin\x64\Debug\net8.0-windows7.0\PipelineViewerScreenshotSmoke.dll --list
 ```

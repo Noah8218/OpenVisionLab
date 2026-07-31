@@ -28,7 +28,7 @@ Move existing LLM XML draft load, review-bundle dry-run, validation, dependency 
 ## Evidence
 
 - `artifacts\\maintenance_llm_xml_draft_workflow_refactor_20260725\\wpf_shell_host_recipe_manager_summary.png\\wpf_shell_host_recipe_manager_summary.png`
-- `UI\\Menu\\Wpf\\OpenVisionShellHostRecipeCommandSurface.LlmXmlDraftWorkflow.cs`
+- `src\OpenVisionLab\UI\\Menu\\Wpf\\OpenVisionShellHostRecipeCommandSurface.LlmXmlDraftWorkflow.cs`
 
 ## Boundary
 

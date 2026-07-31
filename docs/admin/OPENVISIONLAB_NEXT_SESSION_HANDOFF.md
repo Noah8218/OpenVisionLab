@@ -27,6 +27,24 @@ Work starts in `C:\Git\OpenVisionLab_Dev`; only reviewed and stabilized changes 
   moves from the P192/P193 hybrid candidate to P195. Preserve the gap rather
   than fabricating a feature or completion claim.
 
+## P276 Source Layout Migration On 2026-07-31
+
+- The main WPF application moved to `src\OpenVisionLab`; 12 internal libraries
+  moved to `src\Libraries` with solution, reference, tool, script, and current
+  documentation paths updated.
+- The 734-file manifest, 15 solution projects, 31 ProjectReferences, bounded
+  main compile graph, Debug/Release builds, readiness 13/13, localization,
+  public assets, public samples 33/33, Dev clean runtime, and Release publish
+  all passed.
+- Runtime behavior, UI, XML, PropertyGrid, explicit Preview/Run, layer/routing,
+  and data-root contracts were unchanged.
+- Status: Complete. Evidence:
+  `docs\reports\OPENVISIONLAB_SRC_LAYOUT_MIGRATION_20260731.md` and
+  `artifacts\src_layout_migration_20260731`.
+- Do not continue cosmetic restructuring without a concrete ownership or
+  workflow defect. Recommended model: `gpt-5.6-terra` | Reasoning effort:
+  `medium`.
+
 ## P271 Settings Store Persistence Feedback On 2026-07-30
 
 - The separate settings store used by Threshold, Filter, Morphology,
@@ -436,7 +454,7 @@ Work starts in `C:\Git\OpenVisionLab_Dev`; only reviewed and stabilized changes 
 
 - A user-authorized GPT project chat received only the public `Morphology_Cleanup_Synthetic_OK.png` and `Morphology_Cleanup_Synthetic_Missing_NG.png` images. The natural request required Threshold -> Morphology Open with `Shape=Ellipse` -> Contour count, nominal four-target acceptance, missing-target NG rejection, and no project/repository XML retrieval. It supplied no XML, source, private asset, API key, template path, or hardware data.
 - The actual first raw response is `artifacts\p118_gpt_morphology_ellipse_natural_prompt_20260718\gpt_first_response.txt`. It used custom `InputLayers`/`OutputLayers`/`BinaryThreshold`/`ConnectedComponents`/`AcceptanceGate` nodes. The fresh current-Debug `llm-xml-draft-file` validation failed before import with `ValidationOk=False`, `ImportEnabled=False`, `Imported=False`, and 16 schema errors, including missing Step Name, ToolType, InputLayer, and OutputLayer. This is an actual provider XML-schema failure, not an expected sample NG.
-- The exact validation report and repair rules were sent in the same conversation (`gpt_correction_prompt.txt`), but the provider UI stayed loading for about five minutes and returned no correction text. Preserve this as an unreceived provider UI/hang observation; do not score it as a model correction failure.
+- The exact validation report and repair rules were sent in the same conversation (`gpt_correction_prompt.txt`), but the provider UI stayed loading for about five minutes and returned no correction text. Preserve this as an unreceived provider src/OpenVisionLab/UI/hang observation; do not score it as a model correction failure.
 - A new recovery project conversation then received the exact failed response and current-Debug report (`gpt_retry_correction_prompt.txt`). Its completed rendered XML response is stored in `gpt_retry_correction_response.xml`; storage adds only one terminal newline because the provider copy action yielded no browser clipboard payload. The response uses the required Threshold/Morphology/Contour Step schema, `Shape=Ellipse`, `Operator=Open`, and a Contour ResultCount minimum/maximum of four.
 - After the fresh 0-warning/0-error Debug build, `llm-xml-draft-file` validation/import and nominal replay passed: `ResultCount=4` at final `CountLargeTargets`. The unchanged recovery response also passed `--expect-run-success false` on the public missing image, returning the intended `ResultCount=2 < 4` NG with smoke `Result: PASS`. Evidence: `retry_correction_nominal\report.txt`, `retry_correction_missing_expected_ng\report.txt`, and package `README.md`.
 - P118 is real GPT recovery-correction evidence across two conversations: actual first response, actual local failed validation, actual recovery correction response, and current-Debug nominal/NG replay. It is not same-conversation correction-loop proof, independent authoring proof, provider reliability evidence, or production-quality evidence.
@@ -876,14 +894,14 @@ Latest UI evidence for pin-gap intent ROI suggestion:
 - Product contract: `Sample ROI` is a starter ROI helper. It scales the existing whole-array ROI samples from the selected sample/reference image size. It does not claim automatic visual understanding, does not create a run result, and does not trigger Preview/Run.
 - Before: `artifacts\pin_gap_roi_suggest_before_20260707_r1\OpenVisionLab_RecipeManager_LlmIntentSkills_PinGap.png`.
 - After: `artifacts\pin_gap_roi_suggest_after_20260707_r1\OpenVisionLab_RecipeManager_LlmIntentSkills_PinGap.png`.
-- Current-build UI smoke: `dotnet run --no-build --project OpenVisionLab.csproj -c Debug -- --smoke recipe-manager-llm-intent-skills artifacts\pin_gap_roi_suggest_after_20260707_r1` passed after a fresh Debug build.
+- Current-build UI smoke: `dotnet run --no-build --project src/OpenVisionLab/OpenVisionLab.csproj -c Debug -- --smoke recipe-manager-llm-intent-skills artifacts\pin_gap_roi_suggest_after_20260707_r1` passed after a fresh Debug build.
 - Current-build direct smoke: `artifacts\pin_gap_roi_suggest_recipe_manager_tabs_20260707_r1\report.txt` passed with `LlmPinGapRoiSuggest: selected sample image suggested multi-sample ROI without Preview/Run`.
 - Current-build XML/image run: `artifacts\pin_gap_roi_suggest_generated_xml_image_run_20260707_r1\report.txt` passed on `Sample\EasyGauge\Pin 1.jpg` with final layer `PinArray_Review` and `MergeOverlayCount=24`.
 
 Latest LLM prompt evidence for pin-gap GPT handoff:
 
 - Scope: when `Pin gap / edge distance (LineDistance)` is selected, Recipe Manager `Build prompt` now embeds a self-contained GPT task packet for pin gap/pitch/edge-to-edge distance XML. It includes whole-array default scope, ROI samples, DistanceMmAvg and DistanceMmRange gates, mm/px, LineDistance-only constraints, OverlayMerge review, and XML-only response format.
-- Product contract: this reduces manual document hunting for the operator. The preferred user flow is Recipe Manager -> LLM XML -> select pin-gap intent -> set ROI/spec fields -> `Build prompt` -> `Copy prompt` -> paste into GPT with the image. File packets under `llm_prompt_packets\pin_gap_distance` remain as fallback/reference material.
+- Product contract: this reduces manual document hunting for the operator. The preferred user flow is Recipe Manager -> LLM XML -> select pin-gap intent -> set ROI/spec fields -> `Build prompt` -> `Copy prompt` -> paste into GPT with the image. File packets under `docs\evidence\llm\prompt-packets\pin_gap_distance` remain as fallback/reference material.
 - Before: `artifacts\pin_gap_prompt_packet_before_20260707_r1\OpenVisionLab_RecipeManager_LlmIntentLineDistance.png`.
 - After: `artifacts\pin_gap_prompt_packet_after_20260707_r1\OpenVisionLab_RecipeManager_LlmIntentLineDistance.png`.
 - Current-build direct smoke: `artifacts\pin_gap_prompt_packet_after_20260707_r1\report.txt` passed with `LlmPinGapPromptPacket: copy-ready GPT XML-only packet copied`.
@@ -986,7 +1004,7 @@ Latest LLM intent-contract replay evidence:
 - User-provided pin image XML replay is local-only under `artifacts\llm_transcripts\manual\20260706_user_pins_marked_roi_length_measure.xml`. It is a manual draft/replay artifact, not a real external GPT/Gemini/Claude transcript.
 - Product lesson: when the selected intent is pin-to-pin, edge-to-edge, gap, pitch, width, or clearance, OpenVisionLab must lock the tool family to `LineDistance`. `Contour` plus `BoundsHeightAvg` does not satisfy a distance intent.
 - Source behavior: `OpenVisionShellHostRecipeCommandSurface.AppendLlmIntentContractValidation` blocks drafts whose selected `Pin gap / edge distance (LineDistance)` intent lacks an enabled `LineDistance` or accepted `LineDistanceGauge` step.
-- Latest direct EXE smoke: `dotnet run --no-build --project OpenVisionLab.csproj -c Debug -- --smoke recipe-manager-llm-intent-skills artifacts\llm_manual_replay_contract_after_20260707_r1` passed with `Result: PASS`, `PinGapContourMismatch: blocked by intent contract`, and `PreviewRunCountUnchanged: 0`.
+- Latest direct EXE smoke: `dotnet run --no-build --project src/OpenVisionLab/OpenVisionLab.csproj -c Debug -- --smoke recipe-manager-llm-intent-skills artifacts\llm_manual_replay_contract_after_20260707_r1` passed with `Result: PASS`, `PinGapContourMismatch: blocked by intent contract`, and `PreviewRunCountUnchanged: 0`.
 - Validation evidence: `artifacts\llm_manual_replay_contract_after_20260707_r1\PinGapContourMismatchValidation.txt` reports `Error: Intent contract mismatch. Selected intent 'Pin gap / edge distance' requires ToolType=LineDistance.` and `Draft enabled ToolTypes: Contour, Threshold`.
 - UI evidence: `artifacts\llm_manual_replay_contract_after_20260707_r1\OpenVisionLab_RecipeManager_LlmIntentSkills_PinGapContourMismatch.png`.
 - Next transcript work remains unchanged: capture one real GPT/Gemini/Claude correction-loop transcript when an API key or manually exported transcript is available. Do not treat this manual replay as that evidence.
@@ -1075,7 +1093,7 @@ Latest current-build evidence rule and Arithmetic event-owner cleanup:
 - `ArithmeticToolInteractionController` now owns Arithmetic parameter event attach/detach for operation mode, source mode, constant/offset text changes, and numeric input filtering. `ArithmeticToolWpfView.xaml` no longer wires those events to code-behind forwarding methods, and `ArithmeticToolWpfView.xaml.cs` no longer contains those forwarding methods.
 - This is a narrow Tool View cleanup only; it does not change Preview/Run behavior, Arithmetic A/B input routing, output layer creation, or docked/floating layout.
 - Latest build: `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` passed with 0 warnings and 0 errors on 2026-07-06 21:57 KST.
-- Latest direct EXE smoke: `dotnet run --no-build --project OpenVisionLab.csproj -c Debug -- --smoke recipe-manager-tabs artifacts\current_exe_recipe_manager_tabs_20260706_r2_direct` passed. Report includes `Result: PASS`, `LlmCorrectedDraftImport: imported`, `BranchOutputComparison: 2`, `ActualMultiBranchComparison: 7`, and `ActualThreeWayBranchComparison: 5`.
+- Latest direct EXE smoke: `dotnet run --no-build --project src/OpenVisionLab/OpenVisionLab.csproj -c Debug -- --smoke recipe-manager-tabs artifacts\current_exe_recipe_manager_tabs_20260706_r2_direct` passed. Report includes `Result: PASS`, `LlmCorrectedDraftImport: imported`, `BranchOutputComparison: 2`, `ActualMultiBranchComparison: 7`, and `ActualThreeWayBranchComparison: 5`.
 - Latest current-source view capture: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_layer_selection_arithmetic_tool artifacts\current_source_arithmetic_tool_20260706_r2` passed with `layout=0`, `text=0`, and `internal=0`.
 - Current UI evidence from this turn:
   - `artifacts\current_exe_recipe_manager_tabs_20260706_r2_direct\OpenVisionLab_RecipeManager_LlmXml.png`
@@ -1156,7 +1174,7 @@ Latest LLM XML correction-loop scenario:
 - The same review bundle now includes selected Step operator context and failed-Step review text, so GPT/Gemini/Claude-style correction requests carry the current Step, route, failure link, and next action without adding another UI surface.
 - Added a direct EXE smoke path for bad draft -> correction bundle copy -> corrected XML validation -> explicit import.
 - The corrected draft uses `Threshold=128` and `USE_ROI=False`, validates OK, imports as a new selected pipeline, and then the smoke restores the previous pipeline selection so the remaining Recipe Manager checks stay stable.
-- Direct EXE evidence: `dotnet run --no-build --project OpenVisionLab.csproj -c Debug -- --smoke recipe-manager-tabs artifacts\llm_step_context_bundle_after_20260706_r1_direct` passed with `Result: PASS`, `LlmCorrectionBundle: copied`, and `LlmCorrectedDraftImport: imported`.
+- Direct EXE evidence: `dotnet run --no-build --project src/OpenVisionLab/OpenVisionLab.csproj -c Debug -- --smoke recipe-manager-tabs artifacts\llm_step_context_bundle_after_20260706_r1_direct` passed with `Result: PASS`, `LlmCorrectionBundle: copied`, and `LlmCorrectedDraftImport: imported`.
 - Screenshot smoke evidence: `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_recipe_language_controls artifacts\llm_step_context_bundle_after_20260706_r1` passed with `layout=0`, `text=0`, and `internal=0`.
 
 Latest LLM XML tool-parameter compatibility guard:
@@ -1402,7 +1420,7 @@ Key latest stable code/workflow commits in `C:\Git\OpenVisionLab`:
     - `C:\Git\OpenVisionLab\docs\samples\public\product\Product_Field_SurfaceMean.pipeline.xml`
     - 16 `Product_Field_*` Explore rows in `docs\samples\OpenVisionLab.ProductSampleCatalog.csv`
     - 16 field provenance rows in `docs\samples\public\product\OpenVisionLab.ProductSampleManifest.csv`
-  - Original UI/runtime imported:
+  - Original src/OpenVisionLab/UI/runtime imported:
     - `OpenVisionWorkspaceSampleFocusOption` now exposes a `field` focus only for `ValidationMode=Explore` field-style samples.
     - `OpenVisionWorkspaceSamplePickerViewModel` shows `Explore sample`, reference metric copy, and `ExploratoryGuideText` for Explore rows.
     - `OpenVisionWorkspaceSamplePickerView.xaml` displays `WorkspaceSamplePickerExploreGuide`.
@@ -1512,7 +1530,7 @@ Key latest stable code/workflow commits in `C:\Git\OpenVisionLab`:
     - `dotnet run --no-build --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_sample_pipeline_review_ng_metrics artifacts\pipeline_operator_review_ux_after_dev_20260703_02` passed.
     - `git diff --check --` over the touched Pipeline Review/localization/smoke files passed with CRLF warnings only.
   - Structure evidence:
-    - `rg -n "PipelineReviewGuideTriage(Failure|Adjustment|Rerun)|ReviewGuideTriage(Failure|Adjustment|Rerun)|HasReviewGuideTriage|TriageRerunPair" "0. UI\0) MENU\Wpf" "Library\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv" "tools\PipelineViewerScreenshotSmoke\Program.cs"` shows the ViewModel, View, document/test hook, localization, and smoke assertion path.
+    - `rg -n "PipelineReviewGuideTriage(Failure|Adjustment|Rerun)|ReviewGuideTriage(Failure|Adjustment|Rerun)|HasReviewGuideTriage|TriageRerunPair" "0. UI\0) MENU\Wpf" "src\Libraries\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv" "tools\PipelineViewerScreenshotSmoke\Program.cs"` shows the ViewModel, View, document/test hook, localization, and smoke assertion path.
 - Dev MainView/Product sample counterpart affordance:
   - Current-flow evaluation screenshots were refreshed before changing the MainView workflow strip:
     - Picker before/evaluation: `C:\Git\OpenVisionLab_Dev\artifacts\mainview_product_flow_eval_dev_20260703_01\wpf_shell_host_workspace_sample_product_focus_picker.png`
@@ -1966,7 +1984,7 @@ Key latest stable code/workflow commits in `C:\Git\OpenVisionLab`:
     - `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_sample_pipeline_review_ng_metrics artifacts\pipeline_review_first_issue_after_dev_20260703_02` passed.
     - `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_workspace_product_sample_review artifacts\pipeline_review_first_issue_after_dev_20260703_02` passed.
     - `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_pipeline_review_ng artifacts\pipeline_review_first_issue_navigation_dev_20260704_01` passed.
-    - `git diff --check -- "0. UI\0) MENU\Wpf\Documents\OpenVisionPipelineReviewDocument.cs" "0. UI\0) MENU\Wpf\OpenVisionShellHostStatePresenter.cs" "0. UI\0) MENU\Wpf\OpenVisionShellHostToolTestFacade.cs" "0. UI\0) MENU\Wpf\OpenVisionShellHostView.TestHooks.cs" "0. UI\0) MENU\Wpf\ViewModels\OpenVisionPipelineReviewViewModel.cs" "0. UI\0) MENU\Wpf\Views\OpenVisionPipelineReviewView.xaml" "0. UI\0) MENU\Wpf\Views\OpenVisionPipelineReviewView.xaml.cs" "Library\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv" "tools\PipelineViewerScreenshotSmoke\Program.cs"` passed with CRLF warnings only.
+    - `git diff --check -- "0. UI\0) MENU\Wpf\Documents\OpenVisionPipelineReviewDocument.cs" "0. UI\0) MENU\Wpf\OpenVisionShellHostStatePresenter.cs" "0. UI\0) MENU\Wpf\OpenVisionShellHostToolTestFacade.cs" "0. UI\0) MENU\Wpf\OpenVisionShellHostView.TestHooks.cs" "0. UI\0) MENU\Wpf\ViewModels\OpenVisionPipelineReviewViewModel.cs" "0. UI\0) MENU\Wpf\Views\OpenVisionPipelineReviewView.xaml" "0. UI\0) MENU\Wpf\Views\OpenVisionPipelineReviewView.xaml.cs" "src\Libraries\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv" "tools\PipelineViewerScreenshotSmoke\Program.cs"` passed with CRLF warnings only.
 - Tool View code-behind cleanup, Line preview controller:
   - Added `LineToolPreviewController` to own Line tool debounced auto-preview scheduling, threshold teaching preview requests, and input ROI overlay refresh.
   - `LineToolWpfView.xaml.cs` now delegates preview/ROI state to the controller and is reduced from 407 lines to 369 lines.
@@ -2082,7 +2100,7 @@ Key latest stable code/workflow commits in `C:\Git\OpenVisionLab`:
   - Verification:
     - `dotnet build tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug` passed with 0 warnings and 0 errors.
     - `dotnet run --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_pipeline_review_ng artifacts\pipeline_review_progress_after_20260704_03` passed and now asserts the progress text directly.
-    - `git diff --check -- "0. UI\0) MENU\Wpf\Documents\OpenVisionPipelineReviewDocument.cs" "0. UI\0) MENU\Wpf\ViewModels\OpenVisionPipelineReviewViewModel.cs" "0. UI\0) MENU\Wpf\Views\OpenVisionPipelineReviewView.xaml" "0. UI\0) MENU\Wpf\Views\OpenVisionPipelineReviewView.xaml.cs" "0. UI\0) MENU\Wpf\OpenVisionShellHostStatePresenter.cs" "0. UI\0) MENU\Wpf\OpenVisionShellHostToolTestFacade.cs" "0. UI\0) MENU\Wpf\OpenVisionShellHostView.TestHooks.cs" "Library\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv" "tools\PipelineViewerScreenshotSmoke\Program.cs"` passed with CRLF warnings only.
+    - `git diff --check -- "0. UI\0) MENU\Wpf\Documents\OpenVisionPipelineReviewDocument.cs" "0. UI\0) MENU\Wpf\ViewModels\OpenVisionPipelineReviewViewModel.cs" "0. UI\0) MENU\Wpf\Views\OpenVisionPipelineReviewView.xaml" "0. UI\0) MENU\Wpf\Views\OpenVisionPipelineReviewView.xaml.cs" "0. UI\0) MENU\Wpf\OpenVisionShellHostStatePresenter.cs" "0. UI\0) MENU\Wpf\OpenVisionShellHostToolTestFacade.cs" "0. UI\0) MENU\Wpf\OpenVisionShellHostView.TestHooks.cs" "src\Libraries\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv" "tools\PipelineViewerScreenshotSmoke\Program.cs"` passed with CRLF warnings only.
 - Post-00:44 continuation, Blob/Contour area review controller cleanup:
   - Added `VisionToolThresholdTeachingPreviewController` for the shared threshold-teaching preview request flag used by Blob and Contour.
   - Added a `VisionToolSingleInputPropertyToolController<TProperty>.ShowAreaResultReview(...)` overload that pairs verification guide update with the existing area result review presenter.
@@ -2425,7 +2443,7 @@ git log --oneline -5
 ## 2026-07-15 P11 Public GPT Pin-Gap Packet
 
 - The manual GPT packet now uses only project-authored public images: `docs/samples/public/Line_Pins_Synthetic_OK.png` and `Line_Pins_Synthetic_WidePin_NG.png`. The local `Sample/EasyGauge/Pin 1.jpg` vendor/legacy path is no longer part of the external-send instructions.
-- The first GPT round requires only the two images plus the complete contents of `llm_prompt_packets/pin_gap_distance/COPY_THIS_TO_GPT.md`. README, expanded references, and the correction template are not first-round uploads.
+- The first GPT round requires only the two images plus the complete contents of `docs/evidence/llm/prompt-packets/pin_gap_distance/COPY_THIS_TO_GPT.md`. README, expanded references, and the correction template are not first-round uploads.
 - The intent is fixed to whole-array adjacent-pin edge-to-edge gap measurement with four verified ROI windows: `108,170,65,120`, `204,170,65,120`, `300,170,65,120`, and `396,170,65,120`.
 - Current-source runner evidence under `artifacts/llm_gpt_packet_public_pin_20260715` proves the starter contract before any external LLM claim: the nominal image passed all 9 reference Steps with `DistanceMmAvg=0.151..0.159` and `DistanceMmRange=0.006..0.012`; the wide-pin image failed at `0.116 < 0.14`.
 - This is prompt/fixture readiness evidence only. No real GPT transcript has been received yet, and no external response may be described as validated until the user's raw response is preserved and run through Recipe Manager validation/correction/import review.
@@ -2563,7 +2581,7 @@ git log --oneline -5
 
 ## 2026-07-15 P24 GPT Blob Particle Count Packet
 
-- Added a self-contained manual GPT packet at `llm_prompt_packets/blob_particle_count` so the user does not need to locate or attach the full authoring guide/tool catalog.
+- Added a self-contained manual GPT packet at `docs/evidence/llm/prompt-packets/blob_particle_count` so the user does not need to locate or attach the full authoring guide/tool catalog.
 - The packet contains byte-identical copies of the public-safe 572x420 nominal and sparse-negative Blob samples, `COPY_THIS_TO_GPT.txt`, `PASTE_VALIDATION_NG_BACK_TO_GPT.txt`, and one short `README.md` with the exact transfer order.
 - The initial prompt constrains the task to `Threshold -> Blob`, preserves explicit Preview/Run behavior, defines `Main -> Particle_Binary -> Particle_Count_Preview`, filters area `200..2000`, and requires a `ResultCount` acceptance band of `8..14`. It requests XML only and forbids unrelated ToolTypes/custom nodes.
 - The correction template must be used only after actual OpenVisionLab Validation/Run evidence exists. The user must return the first GPT response unchanged, even if it contains prose, fences, or invalid XML; do not repair it before capture.
@@ -2582,7 +2600,7 @@ git log --oneline -5
 
 ## 2026-07-15 P26 GPT Matching Die-Pad Packet
 
-- Added the next self-contained manual GPT packet at `llm_prompt_packets/matching_die_pad` for a different tool family and a real template-file dependency.
+- Added the next self-contained manual GPT packet at `docs/evidence/llm/prompt-packets/matching_die_pad` for a different tool family and a real template-file dependency.
 - The packet contains byte-identical copies of the public-safe nominal image, no-target negative image, and matching template plus `COPY_THIS_TO_GPT.txt`, `PASTE_VALIDATION_NG_BACK_TO_GPT.txt`, and a short `README.md`.
 - The initial prompt requires exactly one `Matching` Step, the repository-relative template path in both `TemplatePath` and `PATTERN_PATH`, normalized `SCORE_MIN=0.6`, the product's exact `MAGNIFIATION` spelling, `NUM_MATCH=3`, angle-search settings, and a `ResultCount` acceptance gate of exactly 3.
 - SHA-256 checks passed for all three copied images: nominal `EF12511...A68BF`, negative `C01E877...2649`, and template `FE8B979...A5144`. The prompt contract check passed all required Matching, path, score, count, and acceptance tokens.
@@ -2628,7 +2646,7 @@ git log --oneline -5
 
 ## 2026-07-16 P31 GPT Edge-Fiducial Packet
 
-- Added a six-file self-contained manual GPT packet under `llm_prompt_packets/edge_fiducial_matching`: one README, one first-round prompt, one correction template, and three project-authored public synthetic PNGs. The first round requires only those three PNGs plus the complete contents of `COPY_THIS_TO_GPT.txt`; the full authoring guide and tool catalog are not separate uploads.
+- Added a six-file self-contained manual GPT packet under `docs/evidence/llm/prompt-packets/edge_fiducial_matching`: one README, one first-round prompt, one correction template, and three project-authored public synthetic PNGs. The first round requires only those three PNGs plus the complete contents of `COPY_THIS_TO_GPT.txt`; the full authoring guide and tool catalog are not separate uploads.
 - The contract is intentionally narrow: exactly one full-image `EdgeBasedMatching` Step finds the supplied asymmetric L fiducial once in the nominal image and rejects the wrong T-shape image. Both template parameters use the verified Debug StartupPath-relative path `..\..\docs\samples\public\templates\Edge_Fiducial_Synthetic_Template.png`.
 - The prompt explicitly separates normalized inputs (`SCORE_MIN=0.70`, `GREEDINESS=0.90`) from the percentage-like `ScoreMax` result gate (`70..100`) and forbids unsupported tools, invented parameters, absolute paths, automatic execution, explanatory prose, and Markdown fences.
 - A mechanically derived reference contract passed Recipe Manager validation/import with 1 Step, 0 errors, 0 warnings, both dependencies copied, and `ImageRun: SKIPPED`. Import therefore preserved the explicit Preview/Run contract.
@@ -2678,7 +2696,7 @@ git log --oneline -5
 - A fresh full solution build passed with 0 warnings and 0 errors. The latest EXE is `bin/Debug/OpenVisionLab.exe`, timestamp `2026-07-16 09:39:33 KST`, SHA-256 `53E9223D...B0F85`.
 - Five sequential latest-EXE runs per image were stable. Nominal passed 5/5 at `ResultCount=1`, `ScoreMax=96.7`, 210.595-288.316 ms; wrong-card produced expected NG 5/5 at `ResultCount=1`, `ScoreMax=26.7`, 261.463-286.012 ms. Each group produced one unique result-image hash.
 - The wrong-card result proves that `ResultCount` alone is unsafe for this FeatureMatching task. The packet and baseline require the final `ScoreMax` gate of `80..100`.
-- Added `llm_prompt_packets/feature_matching_card` with exactly six files: README, first-round prompt, correction template, and byte-identical nominal/negative/template PNGs. The prompt requires one full-image `FeatureMatching` Step with `SCORE_MIN=0.85`, `RANSAC_REPROJ_THRESHOLD=4`, and explicit `ScoreMax` acceptance.
+- Added `docs/evidence/llm/prompt-packets/feature_matching_card` with exactly six files: README, first-round prompt, correction template, and byte-identical nominal/negative/template PNGs. The prompt requires one full-image `FeatureMatching` Step with `SCORE_MIN=0.85`, `RANSAC_REPROJ_THRESHOLD=4`, and explicit `ScoreMax` acceptance.
 - Recipe Manager validation/import resolved and copied both startup-relative template dependencies, imported one Step with 0 errors/warnings, and reported `ImageRun: SKIPPED`. Direct raw replay passed when launched with the real `bin/Debug` startup working directory; launching raw XML from the repository-root working directory cannot resolve the startup-relative path and is retained only as harness-condition evidence.
 - Packet audit passed: exactly six files, all three image hashes equal their public sources, all required prompt tokens present, 0 absolute-path matches, one correction-report placeholder, and no external response claimed.
 - Detailed evidence is `docs/OPENVISIONLAB_LLM_FEATURE_MATCHING_BASELINE_REVIEW_20260716.md`, `artifacts/p35_feature_matching_sequential_20260716`, and `artifacts/p35_feature_matching_packet_20260716`.
@@ -2687,7 +2705,7 @@ git log --oneline -5
 ## 2026-07-16 P36 GPT FeatureMatching Direct-Success Replay
 
 - The user returned one XML-only GPT response after using the P35 FeatureMatching packet. The complete visible one-line response is preserved under `artifacts/llm_transcripts/raw/20260716_feature_card_gpt_round1/response.xml`; its SHA-256 is `F06E9259...E245`.
-- The exact packet prompt is preserved as `prompt.txt`, SHA-256 `B9F32A8C...BBFE`, and is byte-identical to `llm_prompt_packets/feature_matching_card/COPY_THIS_TO_GPT.txt`.
+- The exact packet prompt is preserved as `prompt.txt`, SHA-256 `B9F32A8C...BBFE`, and is byte-identical to `docs/evidence/llm/prompt-packets/feature_matching_card/COPY_THIS_TO_GPT.txt`.
 - Transfer was manual through a user-operated ChatGPT conversation. No API was used. The exact GPT model/version was not supplied and must remain unknown rather than inferred.
 - XML-only checks passed: no prose or Markdown fence, one `FeatureMatching` Step, 8 parameters, no duplicate keys, and zero structural differences from the mechanically verified P35 reference contract.
 - A fresh full solution build passed with 0 warnings and 0 errors. Latest EXE remained `bin/Debug/OpenVisionLab.exe`, timestamp `2026-07-16 09:39:33 KST`, SHA-256 `53E9223D...B0F85`.
@@ -2773,7 +2791,7 @@ git log --oneline -5
 - Found and fixed one contract mismatch: `VisionPipelineHsvMaskTool` intentionally accepts circular hue ranges such as `HueMin=170`, `HueMax=10` by joining the `170..179` and `0..10` ranges, while generic XML validation rejected the same values. The validator now retains 0..179 bounds but allows hue wrap; saturation/value ordering remains enforced.
 - `docs/OPENVISIONLAB_LLM_TOOL_CATALOG.json` now exposes `HSV`, `HsvMask`, `ColorHSV`, and `ColorMask`, their range rules, separate-mask routing, and `MaskPixelCount`/`MaskPixelRatio` metrics. The authoring guide includes a one-Step HSV Color Mask pattern and repair rule. Readiness protects those contracts.
 - Fresh latest-EXE `llm-xml-draft-file` validation/import passed for the circular-hue XML with one Step, 0 errors/warnings, and `ImageRun: SKIPPED`; evidence is `artifacts/p44_hsv_llm_contract_after_20260716/direct_validation/report.txt`.
-- Explicit current-build replay passed the nominal public image at `MaskPixelRatio=0.058` and produced expected NG for the missing-patch image at `MaskPixelRatio=0.015 < 0.05`. The packet is `llm_prompt_packets/hsv_color_patch`; its two PNGs are byte-identical to public synthetic sources. See `docs/OPENVISIONLAB_LLM_HSV_COLOR_PATCH_BASELINE_REVIEW_20260716.md`.
+- Explicit current-build replay passed the nominal public image at `MaskPixelRatio=0.058` and produced expected NG for the missing-patch image at `MaskPixelRatio=0.015 < 0.05`. The packet is `docs/evidence/llm/prompt-packets/hsv_color_patch`; its two PNGs are byte-identical to public synthetic sources. See `docs/OPENVISIONLAB_LLM_HSV_COLOR_PATCH_BASELINE_REVIEW_20260716.md`.
 - No real GPT response has been received or claimed. The next dependency is the user's complete unchanged first response after attaching the two packet images and pasting `COPY_THIS_TO_GPT.txt`. P44 is uncommitted and unpushed; the Original repository remains untouched.
 
 ## 2026-07-16 P45 LLM Intent Smoke Advanced-Review State
@@ -2818,7 +2836,7 @@ git log --oneline -5
 
 - Selected `Mean` as the next bounded external-authoring task because it is not represented by the current real GPT evidence set, has a one-Step operator-facing workflow, and has a deterministic public Good/Dark pair. It teaches full-image brightness judgement without introducing a new tool or expanding platform scope.
 - The current public baseline `docs/samples/public/Public_Mean_BrightnessDrift.pipeline.xml` passed the nominal at `MeanValueAvg=201.5` and produced expected dark NG at `117.5 < 185`; both inputs retained 3 channels. The two latest-EXE baseline commands returned exit code 0 through explicit expected-result declarations.
-- Added `llm_prompt_packets/mean_brightness` with exactly five files: README, first-round prompt, correction template, and two byte-identical public synthetic PNGs. The packet requires exactly one full-image `Mean` Step, `MEAN_TYPES=Mean`, disabled internal threshold/adaptive/invert/multi-ROI flags, and a `MeanValueAvg` gate of `185..220`.
+- Added `docs/evidence/llm/prompt-packets/mean_brightness` with exactly five files: README, first-round prompt, correction template, and two byte-identical public synthetic PNGs. The packet requires exactly one full-image `Mean` Step, `MEAN_TYPES=Mean`, disabled internal threshold/adaptive/invert/multi-ROI flags, and a `MeanValueAvg` gate of `185..220`.
 - Its mechanically derived reference XML passed latest-EXE validation/import with one Step, 0 errors/warnings, and `ImageRun: SKIPPED`; explicit nominal passed at `201.5`, and dark negative produced expected NG at `117.5 < 185`. Packet checks passed: 5 files, all required prompt tokens, no absolute Windows path, one correction placeholder, and the expected one-Step XML structure.
 - No external GPT response exists for P50 yet. Send the two packet images and complete `COPY_THIS_TO_GPT.txt` in one new GPT conversation, then preserve the full first response unchanged. Use `PASTE_VALIDATION_NG_BACK_TO_GPT.txt` only after a natural current-build validation or Good/NG failure.
 
@@ -2845,7 +2863,7 @@ git log --oneline -5
 
 - Selected the first bounded multi-Step external-authoring candidate after the direct single-tool examples: `Threshold -> Morphology(Open) -> Contour`. It exercises sequential layer routing without introducing a branch, template dependency, new tool, or product-scope expansion.
 - The existing public baseline `docs/samples/public/Public_Morphology_Cleanup.pipeline.xml` passed fresh latest-EXE validation/import with 3 Steps, 0 errors, 0 warnings, and no external dependencies. Explicit nominal passed `ResultCount=4` with 3 -> 1 -> 1 Step channel transitions and four overlays. Explicit missing-target input produced expected product NG at `ResultCount=2 < 4` with two overlays. Both expected-result commands returned exit code 0.
-- Added `llm_prompt_packets/morphology_cleanup` with five files: README, first-round prompt, correction template, and two byte-identical project-authored public synthetic PNGs. The first-round prompt locks Step names, ToolTypes, layer route `Main -> Morphology_Binary -> Morphology_Clean -> Morphology_Cleanup_Preview`, all verified parameters, and a final `ResultCount=4..4` gate.
+- Added `docs/evidence/llm/prompt-packets/morphology_cleanup` with five files: README, first-round prompt, correction template, and two byte-identical project-authored public synthetic PNGs. The first-round prompt locks Step names, ToolTypes, layer route `Main -> Morphology_Binary -> Morphology_Clean -> Morphology_Cleanup_Preview`, all verified parameters, and a final `ResultCount=4..4` gate.
 - Packet checks passed: 5 files, all required tool/route/parameter/acceptance tokens, exactly one correction-report placeholder, no absolute Windows path in the first-round prompt, and both images byte-identical to their public inputs. The baseline review is `docs/OPENVISIONLAB_LLM_MORPHOLOGY_CLEANUP_BASELINE_REVIEW_20260716.md`; latest-EXE evidence is `artifacts/p53_morphology_baseline_20260716`.
 - No external GPT response or correction loop exists for P53 yet. The user should send the two packet PNGs and the full first-round prompt to GPT, then return the complete first response unchanged. Use the correction template only after an actual current-build validation or Good/NG failure.
 - P53 is not committed or pushed. The Original repository remains untouched.
@@ -2864,7 +2882,7 @@ git log --oneline -5
 - Selected `Filter(MedianBlur) -> Threshold -> Contour` as the next independent public-safe authoring candidate. Filter is not covered by the existing real GPT evidence packages, while the existing public Good/NG pair provides a deterministic downstream `ResultCount` decision instead of treating preprocessing output alone as an inspection result.
 - A fresh full solution build passed with 0 warnings and 0 errors. Latest actual-EXE baseline import of `docs/samples/public/Public_Filter_Denoise.pipeline.xml` passed with 3 Steps, 0 errors, 0 warnings, no dependencies, and `ImageRun: SKIPPED`.
 - Explicit current-EXE nominal execution passed at `ResultCount=4` with Step channel transitions `3 -> 3 -> 1`, four overlays, and `29.848 ms`. The missing-target image produced expected product NG at `ResultCount=2 < 4`, two overlays, and `27.179 ms`. Both commands used explicit expected-result declarations and returned exit code 0.
-- Added the five-file self-contained packet `llm_prompt_packets/filter_denoise`: README, first-round prompt, correction template, and byte-identical copies of the registered Filter public Good/NG assets. The prompt locks `FilterType=MedianBlur`, `MedianKernelSize=5`, `BorderType=Reflect101`, the sequential route `Main -> Filter_Denoised -> Filter_Denoise_Binary -> Filter_Denoise_Preview`, and a final `ResultCount=4..4` gate.
+- Added the five-file self-contained packet `docs/evidence/llm/prompt-packets/filter_denoise`: README, first-round prompt, correction template, and byte-identical copies of the registered Filter public Good/NG assets. The prompt locks `FilterType=MedianBlur`, `MedianKernelSize=5`, `BorderType=Reflect101`, the sequential route `Main -> Filter_Denoised -> Filter_Denoise_Binary -> Filter_Denoise_Preview`, and a final `ResultCount=4..4` gate.
 - The exact mechanically derived packet reference XML passed latest-EXE validation/import without image execution, nominal `ResultCount=4`, and expected missing-target NG `ResultCount=2 < 4`; evidence is `artifacts/p55_filter_denoise_packet_20260716`. Packet audit passed: 5 files, copied image hashes match public sources, required prompt tokens and one correction placeholder are present, no private/path token is present, and the reference XML matches the required 3-Step route/gate.
 - Updated the LLM tool catalog so Filter lists `MedianKernelSize`, bilateral parameters, and the correct per-filter validation hints. The authoring guide now explains the `MedianBlur -> Threshold -> Contour` route and why the acceptance gate belongs on Contour.
 - No external GPT response or correction loop exists for P55 yet. Send the two packet images and the complete first-round prompt in one new GPT conversation, preserve the complete first XML response unchanged, and use the correction template only after a natural current-build validation or Good/NG failure.
@@ -2923,7 +2941,7 @@ git log --oneline -5
 
 - Selected the distinct public-safe `Arithmetic(Bitwise_NOT) -> Mean` workflow after the existing public baseline showed a deterministic two-Step Good/Bright-NG split. This adds Arithmetic evidence coverage without introducing a new tool, template dependency, camera path, or platform feature.
 - Fresh full solution build passed with 0 warnings and 0 errors. Latest actual `bin/Debug/OpenVisionLab.exe` imported `Public_Arithmetic_Invert.pipeline.xml` with 2 Steps, 0 errors/warnings, no dependencies, and `ImageRun: SKIPPED`; the nominal image passed at `MeanValueAvg=208`, and the bright-input image produced expected NG at `MeanValueAvg=76.7 < 190`.
-- Added the self-contained five-file packet `llm_prompt_packets/arithmetic_invert`: README, first-round prompt, correction template, and byte-identical public Good/Bright-NG image copies. The packet locks the sequential route `Main -> Arithmetic_Invert_Result -> Arithmetic_Invert_Mean`, unary `Bitwise_NOT` without `InputLayerB`, and the `190..230` MeanValueAvg gate.
+- Added the self-contained five-file packet `docs/evidence/llm/prompt-packets/arithmetic_invert`: README, first-round prompt, correction template, and byte-identical public Good/Bright-NG image copies. The packet locks the sequential route `Main -> Arithmetic_Invert_Result -> Arithmetic_Invert_Mean`, unary `Bitwise_NOT` without `InputLayerB`, and the `190..230` MeanValueAvg gate.
 - The exact packet reference XML replayed in the same latest EXE: import passed with 2 Steps and 0 errors/warnings, nominal passed at `208`, and Bright-NG produced expected product NG at `76.7 < 190`; all three commands returned exit code 0. Evidence is `artifacts/p62_arithmetic_invert_baseline_20260716`.
 - No external GPT response or correction loop exists for P62. The next external gate is the user's unchanged first response after attaching the two packet images and sending the packet prompt. Do not invent or publish a response, failure, or correction round before that input exists. P62 is uncommitted and unpushed; the Original repository remains untouched.
 
@@ -2955,7 +2973,7 @@ git log --oneline -5
 
 - Selected the distinct public-safe `EdgeDetection(Canny) -> Morphology(Close) -> Contour` workflow as the next bounded LLM-authoring candidate. It adds EdgeDetection coverage while retaining the existing rule-based sequential pipeline and final Contour count gate; no new tool, template dependency, camera path, or platform feature was introduced.
 - A fresh full solution build passed with 0 warnings and 0 errors. Latest actual `bin/Debug/OpenVisionLab.exe` imported `Public_EdgeDetection_Shapes.pipeline.xml` with 3 Steps, 0 errors/warnings, no dependencies, and `ImageRun: SKIPPED`; nominal passed `ResultCount=4` and missing-shape input produced expected product NG `ResultCount=2 < 4`.
-- Added the self-contained five-file packet `llm_prompt_packets/edge_detection_shapes`: README, first-round prompt, correction template, and byte-identical public Good/Missing-NG image copies. The prompt locks Canny `40/120`, `3`, `UseL2Gradient=true`; Morphology Close `3x3`; Contour ROI `90,100,410,95`; route `Main -> EdgeDetection_Edge -> EdgeDetection_EdgeJoin -> EdgeDetection_Shape_Preview`; and a final `ResultCount=4..4` gate.
+- Added the self-contained five-file packet `docs/evidence/llm/prompt-packets/edge_detection_shapes`: README, first-round prompt, correction template, and byte-identical public Good/Missing-NG image copies. The prompt locks Canny `40/120`, `3`, `UseL2Gradient=true`; Morphology Close `3x3`; Contour ROI `90,100,410,95`; route `Main -> EdgeDetection_Edge -> EdgeDetection_EdgeJoin -> EdgeDetection_Shape_Preview`; and a final `ResultCount=4..4` gate.
 - The exact packet reference XML replayed in the same latest EXE: import passed with 3 Steps and 0 errors/warnings, nominal passed `ResultCount=4`, and Missing-NG produced expected product NG `ResultCount=2 < 4`; all three commands returned exit code 0. Evidence is `artifacts/p66_edge_detection_baseline_20260716`; packet audit passed with five files, copied public image hashes, required prompt route/parameters/gate, one correction placeholder, and no private/path token.
 - No external GPT response or correction loop exists for P66 yet. The user should send the two packet images and the complete first-round prompt in one new GPT conversation, then return the complete first XML response unchanged. Use the correction template only after an actual current-build validation or Good/NG failure. P66 is not committed or pushed; the Original repository remains untouched.
 
@@ -2988,7 +3006,7 @@ git log --oneline -5
 - Selected the distinct public-safe `RotateScale` geometry workflow as the next bounded external-authoring candidate. The one-Step contract resizes `Main` to `Geometry_ResizeHalf_Result` with Angle 0, 50 percent X/Y scale, Linear interpolation, and Constant border. It gates `ResultImageWidth=286..286`; it is an output-size check, not object detection, physical calibration, or a new platform feature.
 - The first current-EXE baseline exposed a real review-copy gap: a valid `UseAcceptance` metric/range was not treated as explicit judgement evidence. `HasJudgementParameter` now recognizes an enabled acceptance metric with a configured minimum or maximum. This changes only the LLM review explanation; it does not alter XML execution, Preview/Run, layer creation, active-layer selection, or routing.
 - After a fresh 0-warning/0-error build, latest actual `bin/Debug/OpenVisionLab.exe` import passed with 1 Step, 0 errors/warnings, no dependencies, `ImageRun: SKIPPED`, and `Inspection.Evidence: OK - explicit judgement criteria are present.` Explicit nominal execution passed `572x420 -> 286x210` at `ResultImageWidth=286` in 3.428 ms. The Wide-NG input produced expected product NG `640x420 -> 320x210`, `ResultImageWidth=320 > 286`, in 3.18 ms.
-- Added the self-contained five-file GPT packet at `llm_prompt_packets/rotate_scale_geometry`: README, first-round prompt, correction template, and byte-identical public nominal/Wide-NG images. Packet audit passed: five files, copied public image hashes, locked route/parameters/gate, one correction placeholder, and no private/path token. The baseline review is `docs/OPENVISIONLAB_LLM_ROTATE_SCALE_BASELINE_REVIEW_20260716.md`; the authoring guide now includes a `RotateScale` geometry example.
+- Added the self-contained five-file GPT packet at `docs/evidence/llm/prompt-packets/rotate_scale_geometry`: README, first-round prompt, correction template, and byte-identical public nominal/Wide-NG images. Packet audit passed: five files, copied public image hashes, locked route/parameters/gate, one correction placeholder, and no private/path token. The baseline review is `docs/OPENVISIONLAB_LLM_ROTATE_SCALE_BASELINE_REVIEW_20260716.md`; the authoring guide now includes a `RotateScale` geometry example.
 - No real GPT/Gemini/Claude response exists for P70 yet. Send the two packet images and complete `COPY_THIS_TO_GPT.txt` prompt in one new GPT conversation, preserve the first complete XML response unchanged, and use the correction template only after an actual current-build validation or Good/Wide-NG failure. P70 is not committed or pushed, and the Original repository remains untouched.
 
 ## 2026-07-17 P71 Pipeline Review Inspection Readiness
@@ -3085,7 +3103,7 @@ git log --oneline -5
 
 ## 2026-07-17 P80 Core Source Organization
 
-- Added durable source-organization rules to `AGENTS.md`: folder ownership signals, Core/WPF boundaries, no dumping folders, View code-behind responsibilities, small clean move groups, namespace preservation, and build/smoke verification after every group.
+- Added durable source-organization rules to `AGENTS.md`: folder ownership signals, src/OpenVisionLab/Core/WPF boundaries, no dumping folders, View code-behind responsibilities, small clean move groups, namespace preservation, and build/smoke verification after every group.
 - Replaced the flat Core layout with physical-only responsibility folders while preserving namespaces and public APIs: `State` (5 files), `Display` (9), `Recipe` (5), `Pipeline/Definition` (6), `Pipeline/Execution` (6), `Pipeline/Storage` (5), `Pipeline/Validation` (3), and `Pipeline/Tools` (7). The Core root now contains only `desktop.ini` and the already-modified `VisionPipelineValidation.cs`.
 - `VisionPipelineValidation.cs` deliberately remains at the old root path because it was dirty before the organization pass. Do not move it until its current behavior change is stabilized and verified as a separate clean move; this avoids mixing a user-visible validation change with a physical refactor.
 - Updated `tools/OpenVisionReadinessCheck` to inspect the new explicit Validation and Tools paths. The check does not retain hidden old-path fallback behavior, so future structure regressions are visible.
@@ -3339,7 +3357,7 @@ git log --oneline -5
 
 ## Cautions
 
-- UI/UX changes require fresh current-build before/after screenshots. Do not reuse old screenshots.
+- src/OpenVisionLab/UI/UX changes require fresh current-build before/after screenshots. Do not reuse old screenshots.
 - `PipelineViewerScreenshotSmoke` can hang when multiple WPF targets are run in one process. Use `tools\RunSampleReviewUiSmokes.ps1` or single-target runs.
 - Do not run WPF smoke targets in parallel; `OpenCvSharpExtern.dll` lock warnings can appear.
 - Do not bulk-copy Dev into Original.
@@ -3954,7 +3972,7 @@ git log --oneline -5
 
 - The user closed repeated image inspection, dataset switching/tuning, and LLM XML/provider validation as active development work. These tasks require a new explicit user request before they may resume.
 - Static source and document inspection found 21 canonical tool families, broad deterministic preprocessing/segmentation/matching/metrology coverage, explicit PropertyGrid and Preview/Run contracts, aggregate metrics/drawings, and saved Run History evidence.
-- The decisive gap is UI/result depth rather than another image campaign. Blob/Contour currently expose area-oriented configuration and aggregate Pipeline metrics; an unused legacy `DefectListResult` can hold per-object area/angle/center/bounds, but current Pipeline reports do not persist first-class per-object rows.
+- The decisive gap is src/OpenVisionLab/UI/result depth rather than another image campaign. Blob/Contour currently expose area-oriented configuration and aggregate Pipeline metrics; an unused legacy `DefectListResult` can hold per-object area/angle/center/bounds, but current Pipeline reports do not persist first-class per-object rows.
 - Official Cognex, MVTec MERLIC, KEYENCE, and Zebra materials support three selected workbench gaps: Object Results Inspector first; unified Fixture/relative-ROI designer second; general circle/point/line geometric measurement workspace third.
 - No product code, UI, image, Preview/Run, batch validation, or LLM provider work was performed. Audit: `docs\OPENVISIONLAB_RULE_BASED_UI_GAP_AUDIT_20260723.md`.
 - Status: Complete for the static audit and priority decision. Next dependency is explicit user selection/approval of one UI item.
@@ -3966,7 +3984,7 @@ git log --oneline -5
 - Object rows now round-trip through direct Pipeline and saved recipe-run report contracts. The focused report artifact preserves accepted and rejected rows plus the `MIN_AREA` reason.
 - Blob exposes its full area-audit candidates. Contour intentionally audits only candidates at or above 25% of configured `MIN_AREA` in addition to all accepted rows; the earlier unbounded audit exceeded two minutes on pixel-noise contours, while the bounded current-build Contour smoke completed normally.
 - Fresh current-build Blob and Contour UI smokes passed. Evidence: `artifacts\p211_object_results_inspector_20260723`.
-- Status: Complete for this bounded UI/result-contract slice. Next priority is the Fixture And Relative-ROI Designer over existing Matching -> NormalizeImage -> reference-coordinate ROI behavior. Recommended model: gpt-5.6-sol | Reasoning effort: high.
+- Status: Complete for this bounded src/OpenVisionLab/UI/result-contract slice. Next priority is the Fixture And Relative-ROI Designer over existing Matching -> NormalizeImage -> reference-coordinate ROI behavior. Recommended model: gpt-5.6-sol | Reasoning effort: high.
 
 ## 2026-07-23 P212 Fixture And Relative-ROI Designer
 
@@ -3995,9 +4013,9 @@ git log --oneline -5
 - Same identity/coincident points, cross-frame/dimension mismatch, missing or changed image content, invalid distance, incompatible target, and target input-layer mismatch fail closed. Positive scale also enables P213 geometry-distance/clearance and circle-radius/diameter mm metrics.
 - Current Debug/focused builds, numeric/unit conversions, negative gates, evidence/pipeline round trips, actual Pipeline Review Run/calculate/apply isolation, fresh UI capture, and P213 geometry plus legacy Line-family regressions passed. Evidence: `artifacts\p214_two_point_scale_teaching_20260723`.
 - Boundary: uniform image-plane scale only; no distortion/perspective/non-uniform correction, physical-standard verification, uncertainty, certified metrology, or field qualification.
-- Next priority: statically reassess remaining commercial UI/tool gaps after P211-P214 and select at most one bounded deterministic workbench slice from fresh evidence. Do not resume image campaigns or LLM development by default. Recommended model: gpt-5.6-sol | Reasoning effort: medium.
+- Next priority: statically reassess remaining commercial src/OpenVisionLab/UI/tool gaps after P211-P214 and select at most one bounded deterministic workbench slice from fresh evidence. Do not resume image campaigns or LLM development by default. Recommended model: gpt-5.6-sol | Reasoning effort: medium.
 
-## 2026-07-23 P215 Post-P214 Commercial UI/Tool Gap Reassessment
+## 2026-07-23 P215 Post-P214 Commercial src/OpenVisionLab/UI/Tool Gap Reassessment
 
 - Completed a documentation/source-only reassessment. No image, Preview, Run, batch, recipe tuning, or LLM workflow was executed.
 - The current catalog contains 23 canonical tool families and 42 accepted names/aliases. P211 already persists Blob/Contour area, center, bounding rectangle, angle, state, reject reason, and table/drawing selection.
@@ -4357,7 +4375,7 @@ git log --oneline -5
 - Changed source/settings/representative file identity and missing/count-mismatched
   evidence fail closed. Export does not apply a candidate, Preview/Run, or mutate
   layers/routing.
-- Current-source UI/report smoke passed: 3 rows, 4 embedded PNGs, zero external
+- Current-source src/OpenVisionLab/UI/report smoke passed: 3 rows, 4 embedded PNGs, zero external
   image links, visible report button, and unchanged workspace state. Evidence:
   `artifacts\p231_auto_mpoint_operator_html_report_20260724\after_current_build_r3`.
 - Boundary: locator-teaching evidence only; Recipe Manager Validation Set and Run

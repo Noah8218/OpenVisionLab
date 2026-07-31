@@ -72,7 +72,7 @@ WPG-CUSTOM 소스를 수정해야 할 때의 절차:
 
 1. 별도 WPG-CUSTOM 저장소에서 수정하고 DLL을 생성한다.
 2. 생성된 DLL/XML을 OpenVisionLab `dll\` 폴더에 복사한다.
-3. PropertyGrid bridge 빌드와 UI/계약 프리체크를 통과시킨다.
+3. PropertyGrid bridge 빌드와 src/OpenVisionLab/UI/계약 프리체크를 통과시킨다.
 
 ## 5. Commit Policy
 

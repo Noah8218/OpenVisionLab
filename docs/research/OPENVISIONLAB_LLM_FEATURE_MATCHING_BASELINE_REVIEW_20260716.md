@@ -77,7 +77,7 @@ Therefore raw-XML replay commands must either run from the EXE startup directory
 
 ## Decision and next gate
 
-The public FeatureMatching baseline is deterministic enough for a bounded external GPT XML-authoring test. The self-contained packet belongs under `llm_prompt_packets/feature_matching_card` and must include byte-identical copies of the nominal, negative, and template images.
+The public FeatureMatching baseline is deterministic enough for a bounded external GPT XML-authoring test. The self-contained packet belongs under `docs/evidence/llm/prompt-packets/feature_matching_card` and must include byte-identical copies of the nominal, negative, and template images.
 
 The next gate is external evidence:
 

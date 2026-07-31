@@ -96,7 +96,7 @@ Complete.
 
 ## Evidence
 
-- `UI/VisionTest/Wpf/Learn/OpenVisionLearnBasicGrayscaleSimulationModel.cs`
+- `src/OpenVisionLab/UI/VisionTest/Wpf/Learn/OpenVisionLearnBasicGrayscaleSimulationModel.cs`
 - `artifacts/refactor_learn_basic_grayscale_model_20260726/before`
 - `artifacts/refactor_learn_basic_grayscale_model_20260726/after_contract`
 

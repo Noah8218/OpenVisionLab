@@ -75,21 +75,21 @@ industrial controller, or certified metrology platform.
 The current source proves an audit candidate, not a completed defect
 reproduction:
 
-- `Core/Pipeline/Storage/VisionPipelineStorage.cs`
+- `src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineStorage.cs`
   - `Load` calls `SerializeHelper.LoadOrCreateXmlFile(..., out _)` and discards
     the load disposition.
   - `Save` writes through `SerializeHelper.SaveXmlFile`, while its many callers
     do not share one operator-visible save/recovery contract.
-- `Core/Recipe/RecipeDataStorage.cs`
+- `src/OpenVisionLab/Core/Recipe/RecipeDataStorage.cs`
   - `Load` also discards the load disposition.
   - `Save` does not itself publish memory-only or reopen-loss state.
-- `Common/SerializeHelper.cs`
+- `src/OpenVisionLab/Common/SerializeHelper.cs`
   - distinguishes `Loaded`, `CreatedDefaultForMissingFile`, and
     `ReplacedInvalidFile`;
   - moves an invalid original to an exact timestamped backup before writing a
     default;
   - writes through a temporary file and replaces or moves it into place.
-- `Core/Recipe/RecipeRuntimeStorage.cs` and `Core/State/RecipeState.cs`
+- `src/OpenVisionLab/Core/Recipe/RecipeRuntimeStorage.cs` and `src/OpenVisionLab/Core/State/RecipeState.cs`
   - are part of the Recipe switch/load/save path and must be observed for
     error propagation, current in-memory state, and operator feedback.
 

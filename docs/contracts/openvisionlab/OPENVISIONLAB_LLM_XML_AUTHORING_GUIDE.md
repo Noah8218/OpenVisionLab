@@ -776,12 +776,12 @@ The reusable review format and the first audited candidate are documented in `OP
 
 This guide is based on:
 
-- `0. UI\0) MENU\Wpf\OpenVisionShellHostRecipeCommandSurface.cs`
-- `1. Core\Pipeline\Validation\VisionPipelineValidation.cs`
-- `1. Core\Pipeline\Definition\VisionPipelineStepParameterSchema.cs`
-- `1. Core\Pipeline\Validation\VisionPipelineKnownMetrics.cs`
-- `1. Core\Pipeline\Tools\VisionPipelineHsvMaskTool.cs`
-- `1. Core\Pipeline\Tools\VisionPipelineArithmeticStep.cs`
-- `1. Core\Pipeline\Tools\VisionPipelineReferenceDifferenceTool.cs`
+- `src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostRecipeCommandSurface.cs`
+- `src\OpenVisionLab\Core\Pipeline\Validation\VisionPipelineValidation.cs`
+- `src\OpenVisionLab\Core\Pipeline\Definition\VisionPipelineStepParameterSchema.cs`
+- `src\OpenVisionLab\Core\Pipeline\Validation\VisionPipelineKnownMetrics.cs`
+- `src\OpenVisionLab\Core\Pipeline\Tools\VisionPipelineHsvMaskTool.cs`
+- `src\OpenVisionLab\Core\Pipeline\Tools\VisionPipelineArithmeticStep.cs`
+- `src\OpenVisionLab\Core\Pipeline\Tools\VisionPipelineReferenceDifferenceTool.cs`
 - `docs\samples\*.pipeline.xml`
 - Direct smoke coverage in `OpenVisionLabDirectSmokeRunner.cs` for malformed XML, missing input layer, unsupported ToolType, missing dependency path, invalid parameter values, matching score percentage misuse, `Inspection.*` misuse, correction-bundle copy, corrected import, and missing Arithmetic `InputLayerB`.

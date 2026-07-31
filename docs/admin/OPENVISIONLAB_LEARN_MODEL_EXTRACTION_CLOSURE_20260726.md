@@ -79,8 +79,8 @@ real color-simulation test need appears.
 
 ## Evidence
 
-- `UI/VisionTest/Wpf/Learn/OpenVisionLearnBasicGrayscaleSimulationModel.cs`
-- `UI/VisionTest/Wpf/Learn/OpenVisionLearnWindow.xaml.cs`
+- `src/OpenVisionLab/UI/VisionTest/Wpf/Learn/OpenVisionLearnBasicGrayscaleSimulationModel.cs`
+- `src/OpenVisionLab/UI/VisionTest/Wpf/Learn/OpenVisionLearnWindow.xaml.cs`
 - `artifacts/refactor_learn_threshold_model_closure_20260726/before`
 - `artifacts/refactor_learn_threshold_model_closure_20260726/after`
 

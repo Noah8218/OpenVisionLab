@@ -33,12 +33,12 @@ Blob/Contour, or matcher diagnostic rows.
 
 | Responsibility | Owner |
 | --- | --- |
-| Immutable signal/provenance data | `UI/VisionTest/Wpf/Tooling/SignalInspection/VisionToolSignalEvidence.cs` |
-| Provenance-preserving TSV | `UI/VisionTest/Wpf/Tooling/SignalInspection/VisionToolSignalEvidenceExporter.cs` |
-| Shared plot gestures/rendering | `UI/VisionTest/Wpf/Tooling/SignalInspection/VisionToolSignalPlotSurface.cs` |
-| Shared inspector presentation | `UI/VisionTest/Wpf/Tooling/SignalInspection/VisionToolSignalInspectorView.xaml(.cs)` |
-| Histogram data extraction/hash | `UI/Menu/Wpf/NativeTools/SignalInspection/OpenVisionNativeHistogramSignalEvidenceFactory.cs` |
-| Histogram Preview integration | `UI/Menu/Wpf/NativeTools/Preview/OpenVisionNativeSimplePreprocessPreviewExecutor.cs` |
+| Immutable signal/provenance data | `src/OpenVisionLab/UI/VisionTest/Wpf/Tooling/SignalInspection/VisionToolSignalEvidence.cs` |
+| Provenance-preserving TSV | `src/OpenVisionLab/UI/VisionTest/Wpf/Tooling/SignalInspection/VisionToolSignalEvidenceExporter.cs` |
+| Shared plot gestures/rendering | `src/OpenVisionLab/UI/VisionTest/Wpf/Tooling/SignalInspection/VisionToolSignalPlotSurface.cs` |
+| Shared inspector presentation | `src/OpenVisionLab/UI/VisionTest/Wpf/Tooling/SignalInspection/VisionToolSignalInspectorView.xaml(.cs)` |
+| Histogram data extraction/hash | `src/OpenVisionLab/UI/Menu/Wpf/NativeTools/SignalInspection/OpenVisionNativeHistogramSignalEvidenceFactory.cs` |
+| Histogram Preview integration | `src/OpenVisionLab/UI/Menu/Wpf/NativeTools/Preview/OpenVisionNativeSimplePreprocessPreviewExecutor.cs` |
 
 The Histogram view reuses the shared inspector. Future tool-specific rows must
 produce the shared evidence model and prove their own image-coordinate/drawing

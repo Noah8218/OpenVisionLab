@@ -38,7 +38,7 @@ Current replacement paths covered by smoke contracts:
 1. Do not remove a legacy class until its replacement has sample coverage and synthetic edge-case coverage.
 2. Do not rename public compatibility classes in the same step as behavior changes.
 3. Preserve CVBlob DLL usage. Do not upgrade or replace the external blob DLL.
-4. For each removal candidate, first search UI/forms and recipe code for direct usage.
+4. For each removal candidate, first search src/OpenVisionLab/UI/forms and recipe code for direct usage.
 5. If a class is still referenced by a form, migrate that form to the Tool path first.
 6. If old behavior is faster, keep the behavior and only isolate naming/adapter compatibility.
 

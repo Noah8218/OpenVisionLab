@@ -202,12 +202,12 @@ capture.
 
 ## Changed Ownership
 
-- `Core\Pipeline\Execution\VisionPipelineSampleCheckService.cs`
-- `Core\Pipeline\Storage\VisionPipelineBatchOutcomeContract.cs`
-- `Core\Pipeline\Storage\VisionPipelineBatchRunSummaryStorage.cs`
-- `UI\Menu\Wpf\OpenVisionShellHostRecipeCommandSurface.Handlers.cs`
-- `UI\Menu\Wpf\Recipe\Models\OpenVisionRecipeSampleRunModels.cs`
-- `UI\Menu\Wpf\Recipe\Review\OpenVisionRecipeRunHistoryPresenter.cs`
+- `src\OpenVisionLab\Core\Pipeline\Execution\VisionPipelineSampleCheckService.cs`
+- `src\OpenVisionLab\Core\Pipeline\Storage\VisionPipelineBatchOutcomeContract.cs`
+- `src\OpenVisionLab\Core\Pipeline\Storage\VisionPipelineBatchRunSummaryStorage.cs`
+- `src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostRecipeCommandSurface.Handlers.cs`
+- `src\OpenVisionLab\UI\Menu\Wpf\Recipe\Models\OpenVisionRecipeSampleRunModels.cs`
+- `src\OpenVisionLab\UI\Menu\Wpf\Recipe\Review\OpenVisionRecipeRunHistoryPresenter.cs`
 - `tools\PipelineViewerScreenshotSmoke\Program.cs`
 
 ## Completion Record

@@ -135,7 +135,7 @@ unrelated roots.
 | D10 | Recipe/CONFIG/Qualified/Log writes | all occur below selected data root |
 | D11 | Template relative round trip | data-root `RECIPE\...` resolves exactly |
 | D12 | Installation inventory | no added, removed, or modified files |
-| D13 | Property/Recipe persistence regressions | pass with task-specific data root |
+| D13 | src/OpenVisionLab/Property/Recipe persistence regressions | pass with task-specific data root |
 | D14 | Restore side effects | zero automatic Preview/Run/layer/routing changes |
 
 ## Release Verification

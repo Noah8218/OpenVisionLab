@@ -1,4 +1,4 @@
-﻿# OpenVisionLab Rule-Based UI And Tool Gap Audit
+# OpenVisionLab Rule-Based UI And Tool Gap Audit
 
 Updated: 2026-07-23 KST
 Status: Complete
@@ -184,7 +184,7 @@ Recommended model: gpt-5.6-sol | Reasoning effort: high.
 Before implementing any item from this audit:
 
 1. Name the operator task and why the current UI cannot complete it.
-2. Identify whether the algorithm already exists and only UI/result plumbing is missing.
+2. Identify whether the algorithm already exists and only src/OpenVisionLab/UI/result plumbing is missing.
 3. Define PropertyGrid inputs, result rows/metrics, drawings, and failure reasons.
 4. Preserve explicit Preview/Run and layer/routing contracts.
 5. Capture fresh before/after UI evidence from the current build.

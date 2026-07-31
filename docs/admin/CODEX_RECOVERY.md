@@ -372,7 +372,7 @@ Changed files:
 - `0. UI\0) MENU\Wpf\OpenVisionShellHostStatePresenter.cs`
 - `0. UI\0) MENU\Wpf\OpenVisionShellHostToolTestFacade.cs`
 - `0. UI\0) MENU\Wpf\OpenVisionShellHostView.TestHooks.cs`
-- `Library\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv`
+- `src\Libraries\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv`
 - `tools\PipelineViewerScreenshotSmoke\Program.cs`
 - `docs\assets\tutorial\current\product_sample_review_current.png`
 
@@ -414,7 +414,7 @@ Changed files:
 - `0. UI\0) MENU\Wpf\OpenVisionShellHostSampleWorkflowPresenter.cs`
 - `tools\PipelineViewerScreenshotSmoke\Program.cs`
 - `0. UI\0) MENU\Wpf\OpenVisionPipelineReviewGuidePresenter.cs`
-- `Library\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv`
+- `src\Libraries\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv`
 - `docs\learn\LEARN_PRODUCT_SAMPLES.md`
 - `docs\assets\tutorial\current\product_focus_picker_current.png`
 - `docs\assets\tutorial\current\product_focus_open_current.png`
@@ -431,7 +431,7 @@ Behavior:
 - Added a Product-focus open smoke that selects a Product + Battery sample through the picker ViewModel, opens that exact sample in the workspace, and verifies the breadcrumb carries the same category/role/tool-flow context.
 - Updated the Product Sample Guide with current-build screenshots for Product focus selection, Product focus open, and Product sample review.
 - Pipeline Review final-step guidance now explicitly reminds the user to compare the output image, metric, and matching Good/Bad pair before accepting a pipeline.
-- Runtime CONFIG copies were refreshed from `Library\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv` so the updated guidance is visible in the current EXE/smoke output.
+- Runtime CONFIG copies were refreshed from `src\Libraries\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv` so the updated guidance is visible in the current EXE/smoke output.
 
 Validation:
 
@@ -4064,7 +4064,7 @@ Validation:
 - `powershell -ExecutionPolicy Bypass -File tools\RunDockingVerification.ps1 -SkipBuild`: PASS.
   - Output: `artifacts\docking_verification\actual_exe_20260630_194900`.
   - Covered startup empty workspace, docking layout verification, tab click no-guide, initial docked workspace, and actual mouse drag.
-- `dotnet list OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1` appears under transitive packages only.
+- `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1` appears under transitive packages only.
 
 ## 2026-06-30 Update - Docked layer orchestrator factory split
 
@@ -4086,7 +4086,7 @@ Validation:
 - `powershell -ExecutionPolicy Bypass -File tools\RunDockingVerification.ps1 -SkipBuild`: PASS.
   - Output: `artifacts\docking_verification\actual_exe_20260630_192934`.
   - Covered startup empty workspace, docking layout, tab click no-guide, initial docked workspace, and docking mouse drag.
-- AvalonDock package boundary remains unchanged: `Dirkster.AvalonDock` is owned by `Library\OpenVisionLab.Docking.Controls`.
+- AvalonDock package boundary remains unchanged: `Dirkster.AvalonDock` is owned by `src\Libraries\OpenVisionLab.Docking.Controls`.
 
 ## 2026-06-30 Update - Dock workspace composition facade
 
@@ -4109,7 +4109,7 @@ Validation:
 - `powershell -ExecutionPolicy Bypass -File tools\RunDockingVerification.ps1 -SkipBuild`: PASS.
   - Output: `artifacts\docking_verification\actual_exe_20260630_191125`.
   - Covered startup empty workspace, docking layout, tab click no-guide, initial docked workspace, and docking mouse drag.
-- AvalonDock package boundary: `Dirkster.AvalonDock` remains only in `Library\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj`, not in `OpenVisionLab.csproj`.
+- AvalonDock package boundary: `Dirkster.AvalonDock` remains only in `src\Libraries\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj`, not in `src/OpenVisionLab/OpenVisionLab.csproj`.
 
 ## 2026-06-30 Update - Docking guide appears only after drag threshold
 
@@ -4142,9 +4142,9 @@ The AvalonDock workspace/controller/gesture/layout composition was moved out of 
 
 Changed structure:
 
-- Added `Library\OpenVisionLab.Docking.Controls\OpenVisionDockWorkspaceCompositionOptions.cs`.
+- Added `src\Libraries\OpenVisionLab.Docking.Controls\OpenVisionDockWorkspaceCompositionOptions.cs`.
   - Captures generic docking construction inputs: wrapper view, document state/content source, content predicate, projection delegates, command delegates, refresh/save callbacks, and document close handler.
-- Added `Library\OpenVisionLab.Docking.Controls\OpenVisionDockWorkspaceComposition.cs`.
+- Added `src\Libraries\OpenVisionLab.Docking.Controls\OpenVisionDockWorkspaceComposition.cs`.
   - Creates the generic `OpenVisionDockWorkspaceController`, document controller, document orchestrator, synchronization controller, projection controller, guide/gesture controllers, state-save scheduler, layout controller, and lifecycle binder.
   - Owns idempotent gesture handler attachment, lifecycle attachment, layout refresh, and state-save queue/stop helpers for the wrapper workspace.
 - Removed the app-local `OpenVisionShellHostDockedLayerOrchestratorComposition`.
@@ -4158,7 +4158,7 @@ Validation:
   - Output: `artifacts\docking_verification\actual_exe_20260630_174400`.
   - Covered startup empty workspace, actual EXE docking layout, initial docked workspace, and docking mouse drag checks.
   - The final passing mouse-drag report did not need a retry.
-- AvalonDock package boundary: `Dirkster.AvalonDock` remains only in `Library\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj`, not in `OpenVisionLab.csproj`.
+- AvalonDock package boundary: `Dirkster.AvalonDock` remains only in `src\Libraries\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj`, not in `src/OpenVisionLab/OpenVisionLab.csproj`.
 
 ## 2026-06-30 Update - Docked layer content composition split
 
@@ -4187,7 +4187,7 @@ The app-local docked layer orchestrator was split so it no longer constructs eve
 
 Changed structure:
 
-- Added `Library\OpenVisionLab.Docking.Controls\OpenVisionDockDocumentSynchronizationController.cs`.
+- Added `src\Libraries\OpenVisionLab.Docking.Controls\OpenVisionDockDocumentSynchronizationController.cs`.
   - Owns generic document id synchronization against `IOpenVisionDockDocumentState`.
   - Refreshes documents, refreshes layout, and saves workspace state only when the synchronized document set changed.
 - Added `OpenVisionShellHostDockedLayerOrchestratorOptions`.
@@ -4318,7 +4318,7 @@ OpenVisionLab은 단순 이미지 뷰어가 아니라 다중 레이어 기반 �
 - ROI, Template editor는 활성 WPF Shell의 `IDisplayManager` 컨텍스트를 사용해야 한다.
 - Viewer의 zoom, pan, drag, ROI 표시, overlay, output click sync 같은 기존 사용성 기능을 제거하면 안 된다.
 - 도킹 UX는 Visual Studio식 전체 워크스페이스 도킹 + 패널 내부 도킹이 목표다.
-- AvalonDock 패키지는 app 프로젝트가 직접 소유하지 않고 `Library\OpenVisionLab.Docking.Controls`가 소유하는 방향이다.
+- AvalonDock 패키지는 app 프로젝트가 직접 소유하지 않고 `src\Libraries\OpenVisionLab.Docking.Controls`가 소유하는 방향이다.
 
 ## 최근 완료된 핵심 작업
 
@@ -4336,8 +4336,8 @@ OpenVisionLab은 단순 이미지 뷰어가 아니라 다중 레이어 기반 �
 관련 파일:
 
 - `0. UI/0) MENU/Wpf/OpenVisionShellHostView.xaml`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingGuidePresenter.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingGuidePolicy.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingGuidePresenter.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingGuidePolicy.cs`
 
 ### 2. 도킹 command 분리
 
@@ -4345,7 +4345,7 @@ OpenVisionLab은 단순 이미지 뷰어가 아니라 다중 레이어 기반 �
 
 관련 파일:
 
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingCommandController.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingCommandController.cs`
 
 역할:
 
@@ -4359,7 +4359,7 @@ OpenVisionLab은 단순 이미지 뷰어가 아니라 다중 레이어 기반 �
 
 관련 파일:
 
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingGestureController.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingGestureController.cs`
 - `0. UI/0) MENU/Wpf/OpenVisionShellHostView.xaml.cs`
 
 현재 상태:
@@ -4389,21 +4389,21 @@ AvalonDock 패키지 소유권을 app 프로젝트에서 별도 library 프로�
 
 추가된 프로젝트:
 
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionLab.Docking.Controls.csproj`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionLab.Docking.Controls.csproj`
 
 변경된 파일:
 
 - `OpenVisionLab.sln`
-- `OpenVisionLab.csproj`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingGuidePolicy.cs`
+- `src/OpenVisionLab/OpenVisionLab.csproj`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingGuidePolicy.cs`
 - `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`
 
 현재 상태:
 
-- `OpenVisionLab.csproj`에서 직접 `Dirkster.AvalonDock` PackageReference를 제거했습니다.
-- `OpenVisionLab.csproj`는 `OpenVisionLab.Docking.Controls.csproj`를 ProjectReference합니다.
+- `src/OpenVisionLab/OpenVisionLab.csproj`에서 직접 `Dirkster.AvalonDock` PackageReference를 제거했습니다.
+- `src/OpenVisionLab/OpenVisionLab.csproj`는 `OpenVisionLab.Docking.Controls.csproj`를 ProjectReference합니다.
 - `OpenVisionLab.Docking.Controls.csproj`가 `Dirkster.AvalonDock 4.74.1`을 소유합니다.
-- `dotnet list OpenVisionLab.csproj package --include-transitive` 기준 AvalonDock은 top-level이 아니라 transitive package입니다.
+- `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive` 기준 AvalonDock은 top-level이 아니라 transitive package입니다.
 - ShellHost XAML/C#의 raw AvalonDock 타입 참조는 wrapper control/library 이동으로 제거된 상태입니다.
 
 ### 6. 안정 계약 문서 업데이트
@@ -4414,8 +4414,8 @@ AvalonDock 패키지 소유권을 app 프로젝트에서 별도 library 프로�
 
 추가된 의도:
 
-- `Dirkster.AvalonDock`을 다시 `OpenVisionLab.csproj` top-level package로 추가하지 않는다.
-- docking policy/control은 `Library\OpenVisionLab.Docking.Controls` 방향으로 이동한다.
+- `Dirkster.AvalonDock`을 다시 `src/OpenVisionLab/OpenVisionLab.csproj` top-level package로 추가하지 않는다.
+- docking policy/control은 `src\Libraries\OpenVisionLab.Docking.Controls` 방향으로 이동한다.
 - ShellHost는 최종적으로 AvalonDock raw API가 아니라 wrapper/control API를 소비해야 한다.
 
 ### 7. ShellHost session/chrome/test surface 추가 분리
@@ -4468,11 +4468,11 @@ AvalonDock 패키지 소유권을 app 프로젝트에서 별도 library 프로�
 
 추가된 library 파일:
 
-- `Library/OpenVisionLab.Docking.Controls/IOpenVisionDockDocumentWorkspace.cs`
-- `Library/OpenVisionLab.Docking.Controls/IOpenVisionDockDocumentState.cs`
-- `Library/OpenVisionLab.Docking.Controls/IOpenVisionDockDocumentContentSource.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentRefreshResult.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentController.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/IOpenVisionDockDocumentWorkspace.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/IOpenVisionDockDocumentState.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/IOpenVisionDockDocumentContentSource.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentRefreshResult.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentController.cs`
 
 정리 내용:
 
@@ -4502,7 +4502,7 @@ app-local workspace forwarding adapter를 제거하고 orchestrator가 library w
 
 추가된 library 파일:
 
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentOrchestrator.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentOrchestrator.cs`
 
 정리 내용:
 
@@ -4518,8 +4518,8 @@ app-local workspace forwarding adapter를 제거하고 orchestrator가 library w
 
 추가된 library 파일:
 
-- `Library/OpenVisionLab.Docking.Controls/IOpenVisionDockLifecycle.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockWorkspaceLifecycleBinder.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/IOpenVisionDockLifecycle.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockWorkspaceLifecycleBinder.cs`
 
 정리 내용:
 
@@ -4527,7 +4527,7 @@ app-local workspace forwarding adapter를 제거하고 orchestrator가 library w
 - app의 `OpenVisionShellHostLifecycleController`는 `IOpenVisionDockLifecycle`를 구현해 attach/detach 추적만 제공합니다.
 - app의 `OpenVisionShellHostDockedLayerOrchestrator.Events.cs`는 library binder 호출과 layout save timer 등록만 남기는 형태로 줄었습니다.
 - Current state update: document-close, layout refresh, and state-save callbacks are now owned by `OpenVisionDockWorkspaceComposition`; app partials no longer implement `OnDocumentClosed`.
-- ShellHost 쪽 raw AvalonDock 참조는 계속 제거된 상태이며, AvalonDock package ownership은 `Library/OpenVisionLab.Docking.Controls`에 남아 있습니다.
+- ShellHost 쪽 raw AvalonDock 참조는 계속 제거된 상태이며, AvalonDock package ownership은 `src/Libraries/OpenVisionLab.Docking.Controls`에 남아 있습니다.
 
 ### 13. Dock guide overlay state controller library 이동
 
@@ -4535,7 +4535,7 @@ guide overlay visible/active-zone/pane margin reset 상태 조작을 library con
 
 추가된 library 파일:
 
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockingGuideStateController.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockingGuideStateController.cs`
 
 정리 내용:
 
@@ -4550,8 +4550,8 @@ layout changed/docking state changed 이벤트 처리와 docking workspace state
 
 추가된 library 파일:
 
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockWorkspaceStateSaveScheduler.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockWorkspaceLayoutController.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockWorkspaceStateSaveScheduler.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockWorkspaceLayoutController.cs`
 
 정리 내용:
 
@@ -4567,7 +4567,7 @@ docked layer document forwarding adapter와 layer-specific refresh result를 제
 
 추가된 library 파일:
 
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentProjectionController.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentProjectionController.cs`
 
 추가된 app 파일:
 
@@ -4604,8 +4604,8 @@ docked layer title persistence와 pane-map persistence를 generic document state
 
 추가된 library 파일:
 
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentStateStore.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentStateController.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentStateStore.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentStateController.cs`
 
 추가된 app 파일:
 
@@ -4784,7 +4784,7 @@ Titles: Main|HSV_Preview
 명령:
 
 ```powershell
-dotnet list "OpenVisionLab.csproj" package --include-transitive
+dotnet list "src/OpenVisionLab/OpenVisionLab.csproj" package --include-transitive
 ```
 
 결과:
@@ -4799,7 +4799,7 @@ dotnet list "OpenVisionLab.csproj" package --include-transitive
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"`: PASS, warnings 0, errors 0.
 - `dotnet run --project "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_layer_global_docking,wpf_shell_host_layer_docking_guide_visible,wpf_shell_host_layer_tab_drag_guide_visible,wpf_shell_host_workspace_output,wpf_shell_host_native_tool,wpf_tool_window_dock_float_cycle,wpf_shell_host_layer_popout artifacts\docking_smoke_session_refactor_large`: PASS 7/7.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_session_refactor_large`: PASS, DockedLayers 2, DockedPanes 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
-- `dotnet list OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
+- `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
 - `0. UI/0) MENU/Wpf/*.cs` AvalonDock raw type 검색: 결과 없음.
 
 ### Latest docked-layer abstraction validation
@@ -4809,7 +4809,7 @@ dotnet list "OpenVisionLab.csproj" package --include-transitive
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"`: PASS, warnings 0, errors 0.
 - `dotnet run --project "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_layer_global_docking,wpf_shell_host_layer_docking_guide_visible,wpf_shell_host_layer_tab_drag_guide_visible,wpf_shell_host_workspace_output,wpf_shell_host_native_tool,wpf_tool_window_dock_float_cycle,wpf_shell_host_layer_popout artifacts\docking_smoke_orchestrator_contract`: PASS 7/7.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_orchestrator_contract`: PASS, DockedLayers 2, DockedPanes 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
-- `dotnet list OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
+- `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
 - `0. UI/0) MENU/Wpf/*.cs` AvalonDock raw type 검색: 결과 없음.
 
 ### Latest generic dock document controller validation
@@ -4819,8 +4819,8 @@ dotnet list "OpenVisionLab.csproj" package --include-transitive
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"`: PASS, warnings 0, errors 0.
 - `dotnet run --project "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_layer_global_docking,wpf_shell_host_layer_docking_guide_visible,wpf_shell_host_layer_tab_drag_guide_visible,wpf_shell_host_workspace_output,wpf_shell_host_native_tool,wpf_tool_window_dock_float_cycle,wpf_shell_host_layer_popout artifacts\docking_smoke_document_controller_library`: PASS 7/7.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_document_controller_library`: PASS, DockedLayers 2, DockedPanes 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
-- `Library/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap` 결과 없음.
-- `dotnet list OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
+- `src/Libraries/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap` 결과 없음.
+- `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
 - `0. UI/0) MENU/Wpf/*.cs` AvalonDock raw type 검색: 결과 없음.
 
 ### Latest workspace adapter removal validation
@@ -4830,8 +4830,8 @@ dotnet list "OpenVisionLab.csproj" package --include-transitive
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"`: PASS, warnings 0, errors 0.
 - `dotnet run --project "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_layer_global_docking,wpf_shell_host_layer_docking_guide_visible,wpf_shell_host_layer_tab_drag_guide_visible,wpf_shell_host_workspace_output,wpf_shell_host_native_tool,wpf_tool_window_dock_float_cycle,wpf_shell_host_layer_popout artifacts\docking_smoke_workspace_adapter_removed`: PASS 7/7.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_workspace_adapter_removed`: PASS, DockedLayers 2, DockedPanes 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
-- `Library/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap` 결과 없음.
-- `dotnet list OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
+- `src/Libraries/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap` 결과 없음.
+- `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
 - `0. UI/0) MENU/Wpf/*.cs` AvalonDock raw type 검색: 결과 없음.
 
 ### Latest generic dock document orchestrator validation
@@ -4841,8 +4841,8 @@ dotnet list "OpenVisionLab.csproj" package --include-transitive
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"`: PASS, warnings 0, errors 0.
 - `dotnet run --project "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_layer_global_docking,wpf_shell_host_layer_docking_guide_visible,wpf_shell_host_layer_tab_drag_guide_visible,wpf_shell_host_workspace_output,wpf_shell_host_native_tool,wpf_tool_window_dock_float_cycle,wpf_shell_host_layer_popout artifacts\docking_smoke_document_orchestrator_library`: PASS 7/7.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_document_orchestrator_library`: PASS, DockedLayers 2, DockedPanes 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
-- `Library/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap` 결과 없음.
-- `dotnet list OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
+- `src/Libraries/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap` 결과 없음.
+- `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
 - `0. UI/0) MENU/Wpf/*.cs` AvalonDock raw type 검색: 결과 없음.
 
 ### Latest workspace lifecycle binder validation
@@ -4852,9 +4852,9 @@ dotnet list "OpenVisionLab.csproj" package --include-transitive
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"`: PASS, warnings 0, errors 0.
 - `dotnet run --project "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_layer_global_docking,wpf_shell_host_layer_docking_guide_visible,wpf_shell_host_layer_tab_drag_guide_visible,wpf_shell_host_workspace_output,wpf_shell_host_native_tool,wpf_tool_window_dock_float_cycle,wpf_shell_host_layer_popout artifacts\docking_smoke_workspace_lifecycle_binder`: PASS 7/7.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_workspace_lifecycle_binder`: PASS, DockedLayers 2, DockedPanes 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
-- `dotnet list OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
+- `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
 - `0. UI/0) MENU/Wpf/*.cs` AvalonDock raw type 검색: 결과 없음.
-- `Library/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap` 결과 없음.
+- `src/Libraries/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap` 결과 없음.
 
 ### Latest guide state controller validation
 
@@ -4863,10 +4863,10 @@ dotnet list "OpenVisionLab.csproj" package --include-transitive
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"`: PASS, warnings 0, errors 0.
 - `dotnet run --project "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_layer_global_docking,wpf_shell_host_layer_docking_guide_visible,wpf_shell_host_layer_tab_drag_guide_visible,wpf_shell_host_workspace_output,wpf_shell_host_native_tool,wpf_tool_window_dock_float_cycle,wpf_shell_host_layer_popout artifacts\docking_smoke_guide_state_controller`: PASS 7/7.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_guide_state_controller`: PASS, DockedLayers 2, DockedPanes 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
-- `dotnet list OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
+- `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
 - `0. UI/0) MENU/Wpf/*.cs` AvalonDock raw type 검색: 결과 없음.
-- `Library/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap` 결과 없음.
-- guide overlay state 검색: wrapper DP 직접 쓰기는 `Library/OpenVisionLab.Docking.Controls/OpenVisionDockingGuideStateController.cs`에 집중되어 있고, ShellHost에는 read-only test hook만 남아 있습니다.
+- `src/Libraries/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap` 결과 없음.
+- guide overlay state 검색: wrapper DP 직접 쓰기는 `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockingGuideStateController.cs`에 집중되어 있고, ShellHost에는 read-only test hook만 남아 있습니다.
 
 ### Latest workspace layout controller validation
 
@@ -4875,9 +4875,9 @@ dotnet list "OpenVisionLab.csproj" package --include-transitive
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"`: PASS, warnings 0, errors 0.
 - `dotnet run --project "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_layer_global_docking,wpf_shell_host_layer_docking_guide_visible,wpf_shell_host_layer_tab_drag_guide_visible,wpf_shell_host_workspace_output,wpf_shell_host_native_tool,wpf_tool_window_dock_float_cycle,wpf_shell_host_layer_popout artifacts\docking_smoke_layout_controller`: PASS 7/7.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_layout_controller`: PASS, DockedLayers 2, DockedPanes 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
-- `dotnet list OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
+- `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
 - `0. UI/0) MENU/Wpf/*.cs` AvalonDock raw type 검색: 결과 없음.
-- `Library/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap` 결과 없음.
+- `src/Libraries/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap` 결과 없음.
 - app WPF docked layer orchestrator 검색: `layoutSaveTimer`, layout event handler, `OnLayoutSaveTimerTick`, app-local `NormalizeComparisonLayout`, `normalizingLayout` 결과 없음.
 
 ### Latest generic dock document projection validation
@@ -4887,9 +4887,9 @@ dotnet list "OpenVisionLab.csproj" package --include-transitive
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"`: PASS, warnings 0, errors 0.
 - `dotnet run --project "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_layer_global_docking,wpf_shell_host_layer_docking_guide_visible,wpf_shell_host_layer_tab_drag_guide_visible,wpf_shell_host_workspace_output,wpf_shell_host_native_tool,wpf_tool_window_dock_float_cycle,wpf_shell_host_layer_popout artifacts\docking_smoke_document_projection_controller`: PASS 7/7.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_document_projection_controller`: PASS, DockedLayers 2, DockedPanes 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
-- `dotnet list OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
+- `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
 - `0. UI/0) MENU/Wpf/*.cs` AvalonDock raw type 검색: 결과 없음.
-- `Library/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap` 결과 없음.
+- `src/Libraries/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap` 결과 없음.
 - app forwarding adapter 검색: `IOpenVisionDockedLayerContentSource`, `OpenVisionDockedLayerDocumentController`, `OpenVisionDockedLayerRefreshResult`, `GenericController`, `HasWorkspaceLayers` 결과 없음.
 
 ### Latest dock document state contract validation
@@ -4899,9 +4899,9 @@ dotnet list "OpenVisionLab.csproj" package --include-transitive
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"`: PASS, warnings 0, errors 0.
 - `dotnet run --project "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_layer_global_docking,wpf_shell_host_layer_docking_guide_visible,wpf_shell_host_layer_tab_drag_guide_visible,wpf_shell_host_workspace_output,wpf_shell_host_native_tool,wpf_tool_window_dock_float_cycle,wpf_shell_host_layer_popout artifacts\docking_smoke_document_state_contract_final`: PASS 7/7.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_document_state_contract_final`: PASS, DockedLayers 2, DockedPanes 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
-- `dotnet list OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
+- `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
 - `0. UI/0) MENU/Wpf/*.cs` AvalonDock raw type 검색: 결과 없음.
-- `Library/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap` 결과 없음.
+- `src/Libraries/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap` 결과 없음.
 - `IOpenVisionDockedLayerState` 검색: 코드 결과 없음. 이 단계 당시 `OpenVisionShellHostDockedLayerController`는 `IOpenVisionDockDocumentState`를 직접 구현했습니다. 이후 section 17에서 generic `OpenVisionDockDocumentStateController`로 대체됐습니다.
 
 ### Latest generic dock document state store validation
@@ -4911,9 +4911,9 @@ dotnet list "OpenVisionLab.csproj" package --include-transitive
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"`: PASS, warnings 0, errors 0.
 - `dotnet run --project "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_layer_global_docking,wpf_shell_host_layer_docking_guide_visible,wpf_shell_host_layer_tab_drag_guide_visible,wpf_shell_host_workspace_output,wpf_shell_host_native_tool,wpf_tool_window_dock_float_cycle,wpf_shell_host_layer_popout artifacts\docking_smoke_document_state_store_library`: PASS 7/7.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_document_state_store_library`: PASS, DockedLayers 2, DockedPanes 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
-- `dotnet list OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
+- `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
 - `0. UI/0) MENU/Wpf/*.cs` AvalonDock raw type 검색: 결과 없음.
-- `Library/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap`, `AppPathService` 결과 없음.
+- `src/Libraries/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap`, `AppPathService` 결과 없음.
 - state store 검색: `OpenVisionDockedLayerStateStore`, `OpenVisionShellHostDockedLayerController` 결과 없음. app에는 `OpenVisionDockedLayerDocumentStateFactory`만 남아 기존 `LayerDocking.layers/layout` 경로를 제공합니다.
 
 ### Latest docked layer workspace runtime/ViewModel validation
@@ -4923,9 +4923,9 @@ dotnet list "OpenVisionLab.csproj" package --include-transitive
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"`: PASS, warnings 0, errors 0.
 - `dotnet run --project "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_layer_global_docking,wpf_shell_host_layer_docking_guide_visible,wpf_shell_host_layer_tab_drag_guide_visible,wpf_shell_host_workspace_output,wpf_shell_host_native_tool,wpf_tool_window_dock_float_cycle,wpf_shell_host_layer_popout artifacts\docking_smoke_workspace_runtime_mvvm`: PASS 7/7.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_workspace_runtime_mvvm`: PASS, DockedLayers 2, DockedPanes 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
-- `dotnet list OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
+- `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
 - `0. UI/0) MENU/Wpf/*.cs` AvalonDock raw type 검색: 결과 없음.
-- `Library/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap`, `AppPathService` 결과 없음.
+- `src/Libraries/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap`, `AppPathService` 결과 없음.
 - ShellHost 직접 조립 검색: `OpenVisionDockedLayerDocumentStateFactory.Create`, `new OpenVisionDockedLayerContentSource`, `new OpenVisionDockedLayerViewerFactory`, `new OpenVisionShellHostDockedLayerOrchestrator`는 `OpenVisionShellHostView.xaml.cs`에서 결과 없음. 해당 조립은 `OpenVisionDockedLayerWorkspaceRuntime`에 모였습니다.
 
 ### Latest layer command surface validation
@@ -4935,9 +4935,9 @@ dotnet list "OpenVisionLab.csproj" package --include-transitive
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"`: PASS, warnings 0, errors 0.
 - `dotnet run --project "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_layer_global_docking,wpf_shell_host_layer_docking_guide_visible,wpf_shell_host_layer_tab_drag_guide_visible,wpf_shell_host_workspace_output,wpf_shell_host_native_tool,wpf_tool_window_dock_float_cycle,wpf_shell_host_layer_popout artifacts\docking_smoke_layer_command_surface`: PASS 7/7.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_layer_command_surface`: PASS, DockedLayers 2, DockedPanes 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
-- `dotnet list OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
+- `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1`은 transitive package로만 표시됩니다.
 - `0. UI/0) MENU/Wpf/*.cs` AvalonDock raw type 검색: 결과 없음.
-- `Library/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap`, `AppPathService` 결과 없음.
+- `src/Libraries/OpenVisionLab.Docking.Controls` app-local dependency 검색: `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap`, `AppPathService` 결과 없음.
 - legacy layer interaction 검색: `OpenVisionShellHostLayerInteractionController`, `layerInteractionController`, removed layer Click handlers, `HostLayerRowsList_SelectionChanged`, `HostLayerRowsList_MouseDoubleClick` 결과 없음.
 
 ## 현재 중요한 파일
@@ -4966,27 +4966,27 @@ dotnet list "OpenVisionLab.csproj" package --include-transitive
 
 새 library:
 
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionLab.Docking.Controls.csproj`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionLayerDockWorkspaceView.xaml`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionLayerDockWorkspaceView.xaml.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingGuidePolicy.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingGuidePresenter.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingCommandController.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingGestureController.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentController.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentOrchestrator.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentProjectionController.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentStateStore.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentStateController.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockWorkspaceLifecycleBinder.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockingGuideStateController.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockWorkspaceStateSaveScheduler.cs`
-- `Library/OpenVisionLab.Docking.Controls/OpenVisionDockWorkspaceLayoutController.cs`
-- `Library/OpenVisionLab.Docking.Controls/IOpenVisionDockLifecycle.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionLab.Docking.Controls.csproj`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionLayerDockWorkspaceView.xaml`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionLayerDockWorkspaceView.xaml.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingGuidePolicy.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingGuidePresenter.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingCommandController.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionLayerDockingGestureController.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentController.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentOrchestrator.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentProjectionController.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentStateStore.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockDocumentStateController.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockWorkspaceLifecycleBinder.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockingGuideStateController.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockWorkspaceStateSaveScheduler.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionDockWorkspaceLayoutController.cs`
+- `src/Libraries/OpenVisionLab.Docking.Controls/IOpenVisionDockLifecycle.cs`
 
 Project/reference:
 
-- `OpenVisionLab.csproj`
+- `src/OpenVisionLab/OpenVisionLab.csproj`
 - `OpenVisionLab.sln`
 
 문서:
@@ -5041,9 +5041,9 @@ Validation:
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"`: PASS, warnings 0, errors 0.
 - `dotnet run --project "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_layer_global_docking,wpf_shell_host_layer_docking_guide_visible,wpf_shell_host_layer_tab_drag_guide_visible,wpf_shell_host_workspace_output,wpf_shell_host_native_tool,wpf_tool_window_dock_float_cycle,wpf_shell_host_layer_popout artifacts\docking_smoke_menu_command_surfaces`: PASS 7/7.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_menu_command_surfaces`: PASS. Report: DockedLayers 2, DockedPanes 2, DockedTiles 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
-- `Dirkster.AvalonDock` PackageReference remains only in `Library\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj`; `OpenVisionLab.csproj` sees it only transitively.
+- `Dirkster.AvalonDock` PackageReference remains only in `src\Libraries\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj`; `src/OpenVisionLab/OpenVisionLab.csproj` sees it only transitively.
 - ShellHost WPF raw AvalonDock search did not find raw XAML/API use. Remaining matches are state/test names such as `NestedLayoutPanelCount` and an unload comment.
-- `Library\OpenVisionLab.Docking.Controls` app-local dependency search for `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap`, and `AppPathService` returned no matches.
+- `src\Libraries\OpenVisionLab.Docking.Controls` app-local dependency search for `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap`, and `AppPathService` returned no matches.
 
 Next priority:
 
@@ -5078,9 +5078,9 @@ Validation:
 - `dotnet run --project "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_layer_global_docking,wpf_shell_host_layer_docking_guide_visible,wpf_shell_host_layer_tab_drag_guide_visible,wpf_shell_host_workspace_output,wpf_shell_host_native_tool,wpf_tool_window_dock_float_cycle,wpf_shell_host_layer_popout artifacts\docking_smoke_chrome_session_commands`: PASS 7/7.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_chrome_session_commands`: PASS. Report: DockedLayers 2, DockedPanes 2, DockedTiles 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
 - ShellHost direct handler search for `Click=`, direct Loaded/Unloaded subscriptions, and removed handler names returned no matches in `OpenVisionShellHostView.xaml` / `.xaml.cs`.
-- `Dirkster.AvalonDock` PackageReference remains only in `Library\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj`; `OpenVisionLab.csproj` sees it only transitively.
+- `Dirkster.AvalonDock` PackageReference remains only in `src\Libraries\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj`; `src/OpenVisionLab/OpenVisionLab.csproj` sees it only transitively.
 - ShellHost WPF raw AvalonDock search did not find raw XAML/API use. Remaining matches are state/test names such as `NestedLayoutPanelCount` and an unload comment.
-- `Library\OpenVisionLab.Docking.Controls` app-local dependency search for `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap`, and `AppPathService` returned no matches.
+- `src\Libraries\OpenVisionLab.Docking.Controls` app-local dependency search for `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap`, and `AppPathService` returned no matches.
 
 Next priority:
 
@@ -5116,9 +5116,9 @@ Validation:
 - `dotnet run --project "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_layer_global_docking,wpf_shell_host_layer_docking_guide_visible,wpf_shell_host_layer_tab_drag_guide_visible,wpf_shell_host_workspace_output,wpf_shell_host_native_tool,wpf_tool_window_dock_float_cycle,wpf_shell_host_layer_popout artifacts\docking_smoke_refresh_coordinator`: PASS 7/7.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_refresh_coordinator`: PASS. Report: DockedLayers 2, DockedPanes 2, DockedTiles 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
 - ShellHost private refresh wrapper search returned no matches in `OpenVisionShellHostView.xaml.cs`.
-- `Dirkster.AvalonDock` PackageReference remains only in `Library\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj`; `OpenVisionLab.csproj` sees it only transitively.
+- `Dirkster.AvalonDock` PackageReference remains only in `src\Libraries\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj`; `src/OpenVisionLab/OpenVisionLab.csproj` sees it only transitively.
 - ShellHost WPF raw AvalonDock search did not find raw XAML/API use. Remaining matches are state/test names such as `NestedLayoutPanelCount` and an unload comment.
-- `Library\OpenVisionLab.Docking.Controls` app-local dependency search for `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap`, and `AppPathService` returned no matches.
+- `src\Libraries\OpenVisionLab.Docking.Controls` app-local dependency search for `IDisplayManager`, `OpenVisionLayerViewerView`, `System.Drawing`, `Bitmap`, and `AppPathService` returned no matches.
 
 Next priority:
 
@@ -5154,8 +5154,8 @@ Validation:
 - Visual inspection of `artifacts\docking_smoke_vs_guides\wpf_shell_host_layer_docking_guide_visible.png` confirmed a single compact pane compass.
 - Visual inspection of `artifacts\docking_smoke_vs_guides\wpf_shell_host_layer_tab_drag_guide_visible.png` confirmed only the active global edge guide is shown for global edge targeting.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_vs_guides`: PASS. Report: DockedLayers 2, DockedPanes 2, DockedTiles 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
-- `Dirkster.AvalonDock` PackageReference remains only in `Library\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj`.
-- `Library\OpenVisionLab.Docking.Controls` app-local dependency search for `OpenVisionLab.ViewModels`, `OpenVisionLab.Controllers`, `OpenVisionLab.Views`, and `OpenVisionLab.Services` returned no matches.
+- `Dirkster.AvalonDock` PackageReference remains only in `src\Libraries\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj`.
+- `src\Libraries\OpenVisionLab.Docking.Controls` app-local dependency search for `OpenVisionLab.ViewModels`, `OpenVisionLab.Controllers`, `OpenVisionLab.Views`, and `OpenVisionLab.Services` returned no matches.
 
 Next priority:
 
@@ -5242,8 +5242,8 @@ Validation:
 - `dotnet run --project "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_layer_global_docking,wpf_shell_host_layer_bottom_docking_semantics,wpf_shell_host_layer_docking_guide_visible,wpf_shell_host_layer_tab_drag_guide_visible artifacts\docking_smoke_bottom_semantics`: PASS 4/4.
 - Visual inspection of `artifacts\docking_smoke_bottom_semantics\wpf_shell_host_layer_bottom_docking_semantics.png` confirmed `Dock_LocalBottom` is nested under the left comparison pane while `HSV_Preview` remains the right workspace column.
 - `bin\Debug\OpenVisionLab.exe --smoke layer-global-docking --output artifacts\actual_exe_layer_global_docking_bottom_semantics`: PASS. Report: DockedLayers 2, DockedPanes 2, RootOrientation Horizontal, Titles Main|HSV_Preview.
-- `dotnet list OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1` remains transitive.
-- Direct PackageReference search shows `Dirkster.AvalonDock` only in `Library\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj`.
+- `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive`: `Dirkster.AvalonDock 4.74.1` remains transitive.
+- Direct PackageReference search shows `Dirkster.AvalonDock` only in `src\Libraries\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj`.
 
 Next priority:
 
@@ -5383,7 +5383,7 @@ Next priority:
 ## 주의사항
 
 - 현재 worktree에는 여러 이전 작업의 dirty file이 있을 수 있습니다. 관련 없는 변경을 되돌리지 마십시오.
-- `Library/OpenVisionLab.Docking.Controls\bin` 및 `obj`는 build artifact입니다. Git에 포함할지는 별도 판단이 필요합니다.
+- `src/Libraries/OpenVisionLab.Docking.Controls\bin` 및 `obj`는 build artifact입니다. Git에 포함할지는 별도 판단이 필요합니다.
 - 작업 완료를 주장하기 전에 실제 build/smoke/EXE smoke 중 변경 범위에 맞는 검증을 실행해야 합니다.
 - 테스트는 변경 포인트 중심으로 최소화합니다. 무관한 전체 테스트 남발은 피합니다.
 - 코드 수정 후 문서도 함께 갱신해야 합니다. 특히 완료되어 건드리면 안 되는 동작은 `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`에 추가합니다.

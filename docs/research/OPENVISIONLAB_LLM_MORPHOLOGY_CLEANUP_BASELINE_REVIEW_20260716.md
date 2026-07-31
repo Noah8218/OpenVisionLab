@@ -25,7 +25,7 @@ The latest full solution build passed with zero warnings and zero errors before 
 
 ## Manual GPT Packet
 
-`llm_prompt_packets/morphology_cleanup` contains:
+`docs/evidence/llm/prompt-packets/morphology_cleanup` contains:
 
 - `README.md`
 - `COPY_THIS_TO_GPT.txt`

@@ -21,8 +21,8 @@ Complete.
 
 ## Evidence
 
-- `UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.Handlers.cs` no longer owns recent batch-history refresh, baseline selection, or default-result selection.
-- `UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.RunHistory.cs` owns the complete history/baseline/default-selection flow.
+- `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.Handlers.cs` no longer owns recent batch-history refresh, baseline selection, or default-result selection.
+- `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.RunHistory.cs` owns the complete history/baseline/default-selection flow.
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` passed with 0 warnings and 0 errors.
 - `dotnet run --no-build --project "tools\\PipelineViewerScreenshotSmoke\\PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_recipe_local_validation_set "C:\\Git\\OpenVisionLab_Dev\\artifacts\\maintenance_run_history_command_refactor_20260725"` passed.
 - Current-source UI artifact: `artifacts/maintenance_run_history_command_refactor_20260725/wpf_shell_host_recipe_local_validation_set.png`.

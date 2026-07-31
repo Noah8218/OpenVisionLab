@@ -77,7 +77,7 @@ Latest 2026-06-22 docking/OpenGL/large-image hardening pass:
 - Tool preview image load/save smoke now uses unique temp image paths to avoid GDI+ file-lock collisions during full-sequence runs.
 - Tutorial screenshots for docking, Line measure, and Line intersection were refreshed, and `docs/OPENVISIONLAB_TUTORIAL_PORTABLE.html` was regenerated with embedded images.
 - Verification passed:
-  - `dotnet build .\OpenVisionLab.csproj -c Debug -v:minimal`
+  - `dotnet build .\src\OpenVisionLab\OpenVisionLab.csproj -c Debug -v:minimal`
   - `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\RunUiPrecheck.ps1 -Targets "wpf_shell_host_layer_docking_functional,wpf_shell_host_layer_docking,wpf_shell_host_large_image,wpf_shell_host_line_measure_tool,wpf_shell_host_line_intersection_tool" -OutputDir artifacts\ui_precheck_docking_large_line_opengl_r2_20260622 -TimeoutSeconds 420 -FailOnWarn`
   - `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\RunUiPrecheck.ps1 -Targets "wpf_shell_host_large_image_16k_perf" -OutputDir artifacts\ui_precheck_large_16k_perf_r2_20260622 -TimeoutSeconds 1200 -FailOnWarn`
   - `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\RunUiPrecheck.ps1 -Targets "wpf_shell_host_layer_docking,wpf_shell_host_line_measure_tool,wpf_shell_host_line_intersection_tool" -OutputDir artifacts\ui_precheck_docking_line_visible_r1_20260622 -TimeoutSeconds 420 -VisibleCapture -FailOnWarn`
@@ -121,7 +121,7 @@ Latest 2026-06-22 docking/OpenGL/large-image hardening pass:
   - `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\RunUiPrecheck.ps1 -Targets "wpf_shell_host_tool_input_empty,wpf_shell_host_tool_input_image_load_save,wpf_shell_host_threshold_tool,wpf_shell_host_blob_tool,wpf_shell_host_contour_tool,wpf_shell_host_line_measure_tool,wpf_shell_host_line_intersection_tool,wpf_shell_host_matching_tool,wpf_shell_host_feature_matching_tool,wpf_shell_host_workspace_output" -OutputDir artifacts\ui_precheck_release_gate_tool_views_r1_20260622 -TimeoutSeconds 720 -FailOnWarn` passed `10 OK / 0 WARN / 0 NG`.
   - `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\RunUiPrecheck.ps1 -Targets "wpf_shell_host_large_image_16k_perf" -OutputDir artifacts\ui_precheck_release_gate_16k_r1_20260622 -TimeoutSeconds 1200 -FailOnWarn` passed with 16K workspace/docked/popout OpenGL tiles and working set `143.4 MB -> 1592.9 MB`.
   - `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\RunUiPrecheck.ps1 -OutputDir artifacts\ui_precheck_release_gate_full_r1_20260622 -TimeoutSeconds 900 -FailOnWarn` passed the full default WPF UI gate: `33 OK / 0 WARN / 0 NG`.
-  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\RunVisionPlatformPrecheck.ps1 -SkipUi -OutputDir artifacts\platform_precheck_release_gate_r1_20260622` passed all non-UI platform gates: vendored DLLs, build, UI/history/localization/readiness/XML contracts, runner API, AI recipe/tool-result/sample inventory contracts, sample catalog `58 OK / 0 NG`, and tutorial portable `28/28` embedded images.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\RunVisionPlatformPrecheck.ps1 -SkipUi -OutputDir artifacts\platform_precheck_release_gate_r1_20260622` passed all non-UI platform gates: vendored DLLs, build, src/OpenVisionLab/UI/history/localization/readiness/XML contracts, runner API, AI recipe/tool-result/sample inventory contracts, sample catalog `58 OK / 0 NG`, and tutorial portable `28/28` embedded images.
   - `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\RunVisionPlatformPrecheck.ps1 -SkipUi -OutputDir artifacts\platform_precheck_auto_dock_slider_r1_20260622` passed all platform gates; sample catalog `58 OK / 0 NG`, tutorial portable `28/28` images embedded.
   - `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\RunUiPrecheck.ps1 -Targets "wpf_shell_host_large_image_16k_perf" -OutputDir artifacts\wpf_16k_perf_auto_dock_slider_r1_20260622 -TimeoutSeconds 720 -FailOnWarn` passed functionally with 16384x16384 input and 16 OpenGL tiles.
   - `git diff --check` passed with LF/CRLF conversion warnings only.
@@ -166,10 +166,10 @@ Remaining focused work:
 
 Latest 2026-06-21 WPF migration update:
 
-- WPF-only cleanup pass completed: `OpenVisionLab.csproj` now uses `UseWPF=true` and `UseWindowsForms=false`, and normal startup remains `OpenVisionShellHostWindow`.
+- WPF-only cleanup pass completed: `src/OpenVisionLab/OpenVisionLab.csproj` now uses `UseWPF=true` and `UseWindowsForms=false`, and normal startup remains `OpenVisionShellHostWindow`.
 - Removed legacy WinForms/RJ UI dependency projects and wrappers from the active solution path: `RJControls`, `OpenVisionLab.MessageBox`, `OpenVisionLab.Controls.Init`, `OpenVisionLab.ImageCanvas`, old `FormMainFrame`/`FormTeachingVision`, old `FormVision_*`, old popup forms, old `DisplayDockHost`, old `VisionPipelineFormBridge`, and old Image Compare coordinate-contract tooling.
 - `AppCommon`/`CCommon` now route message prompts through a WPF message wrapper; path/config helpers no longer depend on `Application.StartupPath`.
-- `Library/OpenVisionLab.Localization` is WPF/console-safe (`UseWindowsForms=false`) and no longer contains the WinForms localization editor/localizer.
+- `src/Libraries/OpenVisionLab.Localization` is WPF/console-safe (`UseWindowsForms=false`) and no longer contains the WinForms localization editor/localizer.
 - Unfinished algorithm tools now show a neutral pending tool surface (`준비 중` / `Pending`) instead of exposing implementation wording.
 - Latest WPF-only UI verification passed: `tools\RunUiPrecheck.ps1 -FailOnWarn -OutputDir artifacts\ui_precheck_wpf_only_cycle221 -WpgCustomBuildEnabled false -TimeoutSeconds 300`; screenshots were visually reviewed for the shell workspace/output switch, native HSV tool, ROI editor, and Image Compare.
 - Latest focused pending-tool wording verification passed: `tools\RunUiPrecheck.ps1 -Targets wpf_shell_host_pending_tool -FailOnWarn -OutputDir artifacts\ui_precheck_pending_wording_cycle225 -WpgCustomBuildEnabled false -TimeoutSeconds 300`; captured UX no longer shows WPF implementation copy.
@@ -894,7 +894,7 @@ Current expected sample metrics:
   - Uncovered sample folders: `0`
 - Current assessment:
   - Core Pipeline/Runner/Tool contracts are stable enough to treat the platform backbone as validated.
-  - Remaining work should focus less on broad refactoring and more on targeted product quality: richer sample recipes, UI/operator clarity, shared property editors, and packaging/version policy.
+  - Remaining work should focus less on broad refactoring and more on targeted product quality: richer sample recipes, src/OpenVisionLab/UI/operator clarity, shared property editors, and packaging/version policy.
 - 2026-06-17 follow-up hardening:
   - WPG common editor metadata was expanded for `Threshold`, `Morphology`, `Filter`, and `RotateScale` pipeline properties.
   - `pipeline_property_grid_contract_check` now asserts shared slider/range editor contracts for these tools.

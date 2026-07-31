@@ -74,10 +74,10 @@ Excluded:
 
 Relevant source:
 
-- `UI\Menu\Wpf\Recipe\Review\OpenVisionRecipeStepEditSessionViewModel.cs`
-- `UI\Menu\Wpf\OpenVisionShellHostRecipeCommandSurface.cs`
-- `UI\Menu\Wpf\OpenVisionShellHostRecipeCommandSurface.Handlers.cs`
-- `UI\Menu\Wpf\OpenVisionShellHostView.Interactions.cs`
+- `src\OpenVisionLab\UI\Menu\Wpf\Recipe\Review\OpenVisionRecipeStepEditSessionViewModel.cs`
+- `src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostRecipeCommandSurface.cs`
+- `src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostRecipeCommandSurface.Handlers.cs`
+- `src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostView.Interactions.cs`
 
 ## Evidence
 

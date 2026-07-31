@@ -49,7 +49,7 @@ Status: Complete
 ### Responsibility split
 
 - Moved responsibility: selected-Step feature lookup context.
-- New owner: `UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelinePropertyContext.cs`.
+- New owner: `src/OpenVisionLab/UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelinePropertyContext.cs`.
 - Evidence: Geometry and Affine feature converters read the context stored by their own PropertyGrid model.
 
 ### Dependency and state flow

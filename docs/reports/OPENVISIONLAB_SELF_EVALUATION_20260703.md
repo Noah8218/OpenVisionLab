@@ -150,7 +150,7 @@ OpenVisionLab은 상용 장비 플랫폼과 정면 경쟁하는 제품이 아니
 
 2. MainView/Product sample review 흐름 재점검
    - current EXE 캡처 기준으로 Sample Picker -> sample open -> Pipeline Review -> pair comparison 흐름을 한 번 더 걸어 본다.
-   - UI/UX를 바꾸면 반드시 새 before/after 캡처를 남긴다.
+   - src/OpenVisionLab/UI/UX를 바꾸면 반드시 새 before/after 캡처를 남긴다.
 
 3. Tool View code-behind 축소
    - 이미 추출된 공통 controller 패턴을 기준으로 반복 wiring만 줄인다.

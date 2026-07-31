@@ -572,7 +572,7 @@ matching, line, circle, affine, object filter를 각각 구현한 데 그치지 
 
 ### 7.4 field and calibration qualification
 
-현재 증거는 synthetic/public/local selected corpus와 UI/runtime smoke가 중심이다. acquisition drift, lens distortion, certified reference, long-term repeatability, production environment, installer/deployment를 증명하지 않는다.
+현재 증거는 synthetic/public/local selected corpus와 src/OpenVisionLab/UI/runtime smoke가 중심이다. acquisition drift, lens distortion, certified reference, long-term repeatability, production environment, installer/deployment를 증명하지 않는다.
 
 ## 8. 개발 우선순위
 

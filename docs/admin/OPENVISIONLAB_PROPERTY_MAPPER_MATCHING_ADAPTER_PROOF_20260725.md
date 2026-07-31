@@ -28,7 +28,7 @@ Move the existing general `Matching`/`TemplateMatching` PropertyGrid mapping fro
 ## Evidence
 
 - `artifacts\\maintenance_property_mapper_matching_adapter_20260725\\wpf_shell_host_recipe_fixture_properties.png\\wpf_shell_host_recipe_fixture_properties.png`
-- `UI\\Menu\\Wpf\\Recipe\\PropertyGrid\\VisionPipelineStepPropertyMapper.Matching.cs`
+- `src\OpenVisionLab\UI\\Menu\\Wpf\\Recipe\\PropertyGrid\\VisionPipelineStepPropertyMapper.Matching.cs`
 
 ## Boundary
 

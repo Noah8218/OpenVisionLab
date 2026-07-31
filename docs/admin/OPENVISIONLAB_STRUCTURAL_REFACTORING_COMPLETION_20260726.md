@@ -191,3 +191,11 @@ View-local presentation임을 확인했습니다. 자세한 stop decision은
 재개 시에는 owner, 입력/출력, 상태 수명, 금지 의존성, focused smoke와
 완료 기준을 먼저 정의합니다. 이 조건이 없으면 현재 완료 상태를
 유지합니다.
+
+## Authorized follow-on on 2026-07-31
+
+The user explicitly reopened only the repository source-root layout. The main
+application and internal libraries now belong to `src/OpenVisionLab` and
+`src/Libraries`; this did not reopen behavior-level MVVM or feature
+refactoring. See
+`docs/reports/OPENVISIONLAB_SRC_LAYOUT_MIGRATION_20260731.md`.

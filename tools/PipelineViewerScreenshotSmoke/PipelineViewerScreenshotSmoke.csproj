@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0-windows7.0</TargetFramework>
@@ -9,11 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\OpenVisionLab.csproj" />
-    <ProjectReference Include="..\..\Library\OpenVisionLab.ImageCanvas\OpenVisionLab.ImageCanvas.csproj" />
-    <ProjectReference Include="..\..\Library\OpenVisionLab.Logging\OpenVisionLab.Logging.csproj" />
-    <ProjectReference Include="..\..\Library\OpenVisionLab.Logging.Controls\OpenVisionLab.Logging.Controls.csproj" />
-    <ProjectReference Include="..\..\Library\OpenVisionLab.Localization\OpenVisionLab.Localization.csproj" />
+    <ProjectReference Include="..\..\src\OpenVisionLab\OpenVisionLab.csproj" />
+    <ProjectReference Include="..\..\src\Libraries\OpenVisionLab.ImageCanvas\OpenVisionLab.ImageCanvas.csproj" />
+    <ProjectReference Include="..\..\src\Libraries\OpenVisionLab.Logging\OpenVisionLab.Logging.csproj" />
+    <ProjectReference Include="..\..\src\Libraries\OpenVisionLab.Logging.Controls\OpenVisionLab.Logging.Controls.csproj" />
+    <ProjectReference Include="..\..\src\Libraries\OpenVisionLab.Localization\OpenVisionLab.Localization.csproj" />
   </ItemGroup>
 
   <ItemGroup>

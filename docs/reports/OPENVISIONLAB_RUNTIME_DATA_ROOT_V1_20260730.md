@@ -67,7 +67,7 @@ conflicts, and writes `data-root-migration-v1.txt`. A failed required copy
 writes `.incomplete` evidence and blocks startup. A second equivalent launch
 restores the same data scope without repeating a completed migration.
 
-Older flat `%LOCALAPPDATA%\OpenVisionLab` UI/log/cache files are also copied to
+Older flat `%LOCALAPPDATA%\OpenVisionLab` src/OpenVisionLab/UI/log/cache files are also copied to
 their v1 owners with a separate `data-layout-migration-v1.txt` record.
 
 ## Acceptance Evidence

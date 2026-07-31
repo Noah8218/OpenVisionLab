@@ -23,4 +23,4 @@ OpenVisionLab의 사용자-visible 변경과 release evidence를 짧게 추적�
 - `dotnet run --project tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj -c Debug -- "C:\Git\OpenVisionLab_Dev"`
 - `powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestExternalReferences.ps1`
 - `powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestPublicSampleAssets.ps1`
-- UI/UX 변경 시 current-build/current-source before/after screenshot smoke evidence
+- src/OpenVisionLab/UI/UX 변경 시 current-build/current-source before/after screenshot smoke evidence

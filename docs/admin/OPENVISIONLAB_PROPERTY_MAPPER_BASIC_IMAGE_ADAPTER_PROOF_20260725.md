@@ -48,7 +48,7 @@ Status: Complete
 ### Responsibility split
 
 - Moved responsibility: Basic Image PropertyGrid projection and pipeline Step reconstruction.
-- New owner: `UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.BasicImage.cs`.
+- New owner: `src/OpenVisionLab/UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.BasicImage.cs`.
 - Preserved owner: `VisionPipelineStepBuilder` remains the only XML-compatible Step serialization owner.
 
 ### Checks run

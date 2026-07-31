@@ -45,7 +45,7 @@ OpenVisionLab의 정체성:
 - 레이어 생성/삭제/이미지 로드는 자동 Run을 유발하면 안 됩니다.
 - Viewer zoom/pan/drag, ROI overlay, template editor, 레이어 비교/도킹 기능을 제거하지 마세요.
 - 안정 계약 문서에 기록된 동작은 임의로 바꾸지 마세요.
-- `Dirkster.AvalonDock` PackageReference를 `OpenVisionLab.csproj`에 직접 추가하지 마세요.
+- `Dirkster.AvalonDock` PackageReference를 `src/OpenVisionLab/OpenVisionLab.csproj`에 직접 추가하지 마세요.
 - root `Sample/` 또는 SDK 샘플을 공개 경로에 다시 넣지 마세요.
 - `dll\Library-Noah\OpenCvSharpExtern.dll`을 다시 추가하지 마세요. native runtime은 `dll\OpenCVSharp\OpenCvSharpExtern.dll`만 공유 사용합니다.
 
@@ -75,7 +75,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestPublicSampleAssets
 4. Tool View code-behind 축소와 공통 runtime/controller/template 정리
 5. Pipeline/Recipe operator review UX 보강
 
-UI/UX 변경 시 반드시 같은 시나리오로 이전/이후 캡처를 남기고 비교해 주세요. 이전 캡처를 재사용하지 말고 현재 EXE/current build 기준으로 캡처합니다.
+src/OpenVisionLab/UI/UX 변경 시 반드시 같은 시나리오로 이전/이후 캡처를 남기고 비교해 주세요. 이전 캡처를 재사용하지 말고 현재 EXE/current build 기준으로 캡처합니다.
 
 작업 완료 후 한국어로 아래 항목을 보고해 주세요.
 

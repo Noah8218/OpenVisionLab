@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 
 internal static class Program
 {
@@ -14,7 +14,7 @@ internal static class Program
         try
         {
             string repoRoot = ResolveRepoRoot(args);
-            string catalogPath = Path.Combine(repoRoot, "Library", "OpenVisionLab.Localization", "Resources", "LocalizationCatalog.tsv");
+            string catalogPath = Path.Combine(repoRoot, "src", "Libraries", "OpenVisionLab.Localization", "Resources", "LocalizationCatalog.tsv");
             Dictionary<string, CatalogEntry> catalog = LoadCatalog(catalogPath);
             List<string> usedKeys = FindDirectLocalizationKeys(repoRoot);
             List<string> missing = usedKeys
@@ -49,7 +49,7 @@ internal static class Program
         string current = AppContext.BaseDirectory;
         while (!string.IsNullOrWhiteSpace(current))
         {
-            if (File.Exists(Path.Combine(current, "OpenVisionLab.csproj")))
+            if (File.Exists(Path.Combine(current, "OpenVisionLab.sln")))
             {
                 return current;
             }
@@ -110,9 +110,8 @@ internal static class Program
     {
         string[] roots =
         {
-            Path.Combine(repoRoot, "UI"),
-            Path.Combine(repoRoot, "Core"),
-            Path.Combine(repoRoot, "Library")
+            Path.Combine(repoRoot, "src", "OpenVisionLab"),
+            Path.Combine(repoRoot, "src", "Libraries")
         };
 
         List<string> keys = new List<string>();
@@ -120,7 +119,7 @@ internal static class Program
         {
             foreach (string path in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
             {
-                if (path.Contains(Path.Combine("Library", "OpenVisionLab.Localization", "Resources"), StringComparison.OrdinalIgnoreCase))
+                if (path.Contains(Path.Combine("src", "Libraries", "OpenVisionLab.Localization", "Resources"), StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }

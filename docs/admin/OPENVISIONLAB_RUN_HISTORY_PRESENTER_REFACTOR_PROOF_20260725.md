@@ -21,8 +21,8 @@ Complete.
 
 ## Evidence
 
-- `UI/Menu/Wpf/Recipe/Review/OpenVisionRecipeRunHistoryPresenter.cs` now owns `BuildRecentRunSelection`, `BuildBaselineRunSelection`, `SelectDefaultBatchSampleResult`, and `SelectDefaultPairSampleResult`. `OpenVisionRecipeRunHistorySelection` explicitly carries options and the selected option.
-- `UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.RunHistory.cs` only reads `VisionPipelineBatchRunSummaryStorage` and projects the Presenter result; the root command surface delegates default-result selection to the Presenter.
+- `src/OpenVisionLab/UI/Menu/Wpf/Recipe/Review/OpenVisionRecipeRunHistoryPresenter.cs` now owns `BuildRecentRunSelection`, `BuildBaselineRunSelection`, `SelectDefaultBatchSampleResult`, and `SelectDefaultPairSampleResult`. `OpenVisionRecipeRunHistorySelection` explicitly carries options and the selected option.
+- `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.RunHistory.cs` only reads `VisionPipelineBatchRunSummaryStorage` and projects the Presenter result; the root command surface delegates default-result selection to the Presenter.
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` passed with 0 warnings and 0 errors after correcting a compile-only list null-coalescing type mismatch in the Presenter.
 - `dotnet run --no-build --project "tools\\PipelineViewerScreenshotSmoke\\PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_recipe_local_validation_set artifacts\\mvvm_run_history_presenter_20260725` passed (`OK`, 1600x900).
 - `dotnet run --no-build --project "tools\\OpenVisionReadinessCheck\\OpenVisionReadinessCheck.csproj" -c Debug` passed every readiness contract.

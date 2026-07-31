@@ -28,7 +28,7 @@ Move the existing Blob and Contour PropertyGrid mapping family from the root `Vi
 ## Evidence
 
 - `artifacts\\maintenance_property_mapper_object_inspection_adapter_20260725\\p216_object_dimension_filters_property_grid.png\\p216_object_dimension_filters_property_grid.png`
-- `UI\\Menu\\Wpf\\Recipe\\PropertyGrid\\VisionPipelineStepPropertyMapper.ObjectInspection.cs`
+- `src\OpenVisionLab\UI\\Menu\\Wpf\\Recipe\\PropertyGrid\\VisionPipelineStepPropertyMapper.ObjectInspection.cs`
 
 ## Boundary
 

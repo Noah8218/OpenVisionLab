@@ -80,7 +80,7 @@ Results:
 
 - Full Debug solution build: pass, 0 warnings, 0 errors.
 - Screenshot runner build: pass, 0 warnings, 0 errors.
-- P250 focused current-source UI/storage smoke: pass.
+- P250 focused current-source src/OpenVisionLab/UI/storage smoke: pass.
 - Existing Local Validation Set regression: pass.
 - Existing Qualified Snapshot regression: pass.
 - Readiness contract: all checks pass.

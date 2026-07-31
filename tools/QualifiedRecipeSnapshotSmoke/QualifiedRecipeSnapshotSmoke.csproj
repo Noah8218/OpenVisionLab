@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\OpenVisionLab.csproj" />
+    <ProjectReference Include="..\..\src\OpenVisionLab\OpenVisionLab.csproj" />
     <Reference Include="Lib.OpenCV">
       <HintPath>..\..\dll\Library-Noah\Lib.OpenCV.dll</HintPath>
       <Private>true</Private>

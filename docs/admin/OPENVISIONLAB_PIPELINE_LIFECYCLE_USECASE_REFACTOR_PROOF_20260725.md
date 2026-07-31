@@ -22,7 +22,7 @@ Complete.
 
 ## Evidence
 
-- `UI/Menu/Wpf/Recipe/OpenVisionRecipePipelineLifecycleUseCase.cs` owns `Activate`, `Duplicate`, `Rename`, `Delete`, and `DuplicateFromSample`; `OpenVisionRecipePipelineLifecycleResult` carries the outcome.
+- `src/OpenVisionLab/UI/Menu/Wpf/Recipe/OpenVisionRecipePipelineLifecycleUseCase.cs` owns `Activate`, `Duplicate`, `Rename`, `Delete`, and `DuplicateFromSample`; `OpenVisionRecipePipelineLifecycleResult` carries the outcome.
 - Structural search found `VisionPipelineStorage.SaveActivePipelineName`, `TryDuplicatePipeline`, `TryRenamePipeline`, `TryDeletePipeline`, `TryLoadFromFile`, `Save`, and lifecycle unique-name generation only in the UseCase for this command path.
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` passed with 0 warnings and 0 errors.
 - `dotnet run --no-build --project "tools\\PipelineViewerScreenshotSmoke\\PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_recipe_context_switch artifacts\\mvvm_pipeline_lifecycle_usecase_20260725` passed (`OK`, 1600x900).

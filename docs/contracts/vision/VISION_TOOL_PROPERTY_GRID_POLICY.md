@@ -90,7 +90,7 @@ Threshold, Filter, Morphology 같은 전처리성 native WPF 툴은 사용성이
 - 검증: `dotnet build .\OpenVisionLab.sln -c Debug -p:Platform=x64 -m:1 -nr:false` 통과.
 - 검증: `tools\RunUiPrecheck.ps1 -Targets "wpf_shell_host_threshold_tool,wpf_layer_selection_all_native_tools,wpf_tool_open_perf" -OutputDir "artifacts\ui_precheck_custom_shell_threshold_filter_morphology" -TimeoutSeconds 180` 통과.
 - 2026-06-26: Matching RangeEditor의 Max endpoint 조절과 숫자 TextBox transient edit를 검증했다. `FIND_ANGLE_MAX` companion descriptor를 유지한 상태에서 visual duplicate row만 숨겨야 하며, 각도 TextBox는 빈 값으로 지워도 즉시 이전 값으로 되돌아가면 안 된다.
-- 검증: `dotnet build .\OpenVisionLab.csproj -c Debug -p:Platform=x64 -p:WpgCustomBuildEnabled=false -m:1 -nr:false` 통과.
+- 검증: `dotnet build .\src\OpenVisionLab\OpenVisionLab.csproj -c Debug -p:Platform=x64 -p:WpgCustomBuildEnabled=false -m:1 -nr:false` 통과.
 - 검증: `tools\RunUiPrecheck.ps1 -Targets "wpf_shell_host_matching_tool" -FailOnWarn -OutputDir "artifacts\ui_precheck_matching_range_text_transient_20260626" -WpgCustomBuildEnabled false -TimeoutSeconds 420` 통과.
 - 2026-06-26: Matching template editor image 표시, angle overlay 회전 표시, result review Tact, manual/auto preview option, RangeEditor Max endpoint, RangeEditor transient text edit를 Matching 안정 계약으로 묶었다.
 - 검증: `artifacts\ui_precheck_matching_template_image_fixed_20260626_final`, `artifacts\ui_precheck_matching_rotated_overlay_20260626`, `artifacts\ui_precheck_matching_tact_label_ui_20260626`, `artifacts\ui_precheck_matching_auto_preview_option_20260626`, `artifacts\ui_precheck_matching_angle_max_range_20260626_visual_hidden`, `artifacts\ui_precheck_matching_range_text_transient_20260626` 모두 OK.

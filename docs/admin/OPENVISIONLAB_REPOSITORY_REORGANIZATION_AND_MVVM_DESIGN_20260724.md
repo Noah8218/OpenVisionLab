@@ -12,7 +12,7 @@
 - `docs/`는 카테고리 하위 폴더로 재배치 완료
   - `docs/admin`, `docs/contracts`, `docs/analysis`, `docs/reports`, `docs/research`, `docs/roadmap`, `docs/learn`, `docs/runbooks`, `docs/assets`, `docs/evidence`
 - 루트 docs는 안내 스텁 중심으로 축소됨(원본 본문은 하위 폴더)
-- 구조상 동작 영향이 큰 고우선 후보는 UI/쉘/런타임 오케스트레이션 파일에 집중
+- 구조상 동작 영향이 큰 고우선 후보는 src/OpenVisionLab/UI/쉘/런타임 오케스트레이션 파일에 집중
 
 ## 2) 구조 원칙(강제 규칙)
 
@@ -30,31 +30,31 @@
 - 이유: 유지보수성 및 코드 정합성 확보, 의도치 않은 런타임 영향 감소
 
 ### P1 — 핵심 쉘/리시피 오케스트레이션 분리
-- `UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.cs`
-- `UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs`
+- `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.cs`
+- `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs`
 - 목표: 명령 라우팅(실행/전환), 상태(필드), UI 트리거를 분리
 - 방식: `Command/State/Formatting`로 최소 2~3개 partial 또는 보조 클래스로 나누기
 
 ### P2 — 리뷰/도큐먼트 경계 정리
-- `UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs`
-- `UI/Menu/Wpf/OpenVisionPipelineReviewView.xaml.cs`
+- `src/OpenVisionLab/UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs`
+- `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionPipelineReviewView.xaml.cs`
 - 목표: 문서/실행 상태 vs UI 표시 상태 분리
 
 ### P3 — 도메인 매퍼 정리
-- `UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs`
+- `src/OpenVisionLab/UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs`
 - 목표: Tool family별 Adapter 분할(Line/Blob/Matching/Threshold/Geometry 등)
 
 ### P4 — Learn 윈도우 분리
-- `UI/VisionTest/Wpf/Learn/OpenVisionLearnWindow.xaml.cs`
+- `src/OpenVisionLab/UI/VisionTest/Wpf/Learn/OpenVisionLearnWindow.xaml.cs`
 - 목표: 애니메이션/콘텐츠/네비게이션 상태를 ViewModel + 서비스로 분리
 
 ## 4) 현재 파일별 리팩토링 후보(우선 처리 리스트)
 
-- `UI/VisionTest/Wpf/Learn/OpenVisionLearnWindow.xaml.cs`
-- `UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.cs`
-- `UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs`
-- `UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs`
-- `UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs`
+- `src/OpenVisionLab/UI/VisionTest/Wpf/Learn/OpenVisionLearnWindow.xaml.cs`
+- `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.cs`
+- `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs`
+- `src/OpenVisionLab/UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs`
+- `src/OpenVisionLab/UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs`
 
 ## 5) 적용 원칙 및 중단 기준
 

@@ -21,8 +21,8 @@ Complete.
 
 ## Evidence
 
-- `UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.Handlers.cs` no longer owns pipeline activation, duplication, rename, deletion, or sample-pipeline duplication.
-- `UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.PipelineLifecycle.cs` owns that complete selected/sample pipeline lifecycle flow.
+- `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.Handlers.cs` no longer owns pipeline activation, duplication, rename, deletion, or sample-pipeline duplication.
+- `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.PipelineLifecycle.cs` owns that complete selected/sample pipeline lifecycle flow.
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` passed with 0 warnings and 0 errors.
 - `dotnet run --no-build --project "tools\\PipelineViewerScreenshotSmoke\\PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_recipe_context_switch "C:\\Git\\OpenVisionLab_Dev\\artifacts\\maintenance_pipeline_lifecycle_command_refactor_20260725_context"` passed.
 - Current-source UI artifact: `artifacts/maintenance_pipeline_lifecycle_command_refactor_20260725_context/wpf_shell_host_recipe_context_switch.png`.

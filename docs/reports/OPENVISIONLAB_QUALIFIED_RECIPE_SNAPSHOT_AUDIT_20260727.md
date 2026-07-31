@@ -339,7 +339,7 @@ Action: Create qualified snapshot
    - add a four-outcome OK/NG matrix and a real Local Validation Set integration
      smoke that checks stored fields, UI judgment, counts, and review reasons.
 2. **Add the qualification domain and storage boundary — Complete**
-   - new cohesive owner under `Core\Recipe\Qualification`;
+   - new cohesive owner under `src\OpenVisionLab\Core\Recipe\Qualification`;
    - manifest/inventory models, preflight use case, atomic archive writer,
      full verifier, and lifecycle event store;
    - no WPF types or command-surface private state in the domain owner.
@@ -400,14 +400,14 @@ Recipe workflow.
 
 ## Source Evidence
 
-- `Core\Recipe\RecipeWorkspaceService.cs`
-- `UI\Menu\Wpf\Recipe\Validation\OpenVisionRecipeValidationSetStorage.cs`
-- `UI\Menu\Wpf\NativeTools\Review\VisionToolNImageValidationPromotionService.cs`
-- `UI\Menu\Wpf\OpenVisionShellHostRecipeCommandSurface.Handlers.cs`
-- `Core\Pipeline\Storage\VisionPipelineRunReportStorage.cs`
-- `Core\Pipeline\Storage\VisionPipelineBatchRunSummaryStorage.cs`
-- `UI\Menu\Wpf\OpenVisionShellHostRecipeCommandSurface.RunHistory.cs`
-- `UI\Menu\Wpf\Recipe\Models\OpenVisionRecipeSampleRunModels.cs`
+- `src\OpenVisionLab\Core\Recipe\RecipeWorkspaceService.cs`
+- `src\OpenVisionLab\UI\Menu\Wpf\Recipe\Validation\OpenVisionRecipeValidationSetStorage.cs`
+- `src\OpenVisionLab\UI\Menu\Wpf\NativeTools\Review\VisionToolNImageValidationPromotionService.cs`
+- `src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostRecipeCommandSurface.Handlers.cs`
+- `src\OpenVisionLab\Core\Pipeline\Storage\VisionPipelineRunReportStorage.cs`
+- `src\OpenVisionLab\Core\Pipeline\Storage\VisionPipelineBatchRunSummaryStorage.cs`
+- `src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostRecipeCommandSurface.RunHistory.cs`
+- `src\OpenVisionLab\UI\Menu\Wpf\Recipe\Models\OpenVisionRecipeSampleRunModels.cs`
 - `tools\PipelineViewerScreenshotSmoke\Program.cs`
 - `docs\contracts\openvisionlab\OPENVISIONLAB_TOOL_VIEW_N_IMAGE_VERIFICATION_DESIGN.md`
 - `docs\reports\OPENVISIONLAB_VALIDATION_SUITE_RESULT_ARCHIVE_DESIGN_20260707.md`

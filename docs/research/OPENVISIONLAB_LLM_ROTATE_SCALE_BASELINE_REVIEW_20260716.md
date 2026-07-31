@@ -52,7 +52,7 @@ The first P70 import was valid but displayed a misleading generic warning becaus
 
 ## Packet
 
-`llm_prompt_packets/rotate_scale_geometry` contains the self-contained prompt, correction template, and byte-identical public Good/Wide-NG images. Its response contract is deliberately constrained to the verified one-Step XML so that a returned first response can be structurally compared to the public reference and replayed without manual cleanup.
+`docs/evidence/llm/prompt-packets/rotate_scale_geometry` contains the self-contained prompt, correction template, and byte-identical public Good/Wide-NG images. Its response contract is deliberately constrained to the verified one-Step XML so that a returned first response can be structurally compared to the public reference and replayed without manual cleanup.
 
 ## Limits
 

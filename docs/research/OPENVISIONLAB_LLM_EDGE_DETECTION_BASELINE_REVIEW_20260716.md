@@ -26,7 +26,7 @@ The full solution build passed with zero warnings and zero errors before these a
 
 ## Manual GPT Packet
 
-`llm_prompt_packets/edge_detection_shapes` contains:
+`docs/evidence/llm/prompt-packets/edge_detection_shapes` contains:
 
 - `README.md`
 - `COPY_THIS_TO_GPT.txt`

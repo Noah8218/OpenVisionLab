@@ -57,13 +57,13 @@ tuned after observing the outcomes.
 
 | Responsibility | Owner |
 | --- | --- |
-| Common gray histogram and image identity | `UI/Menu/Wpf/NativeTools/SignalInspection/OpenVisionNativeGraySignalEvidenceCalculator.cs` |
-| Threshold evidence/marker contract | `UI/Menu/Wpf/NativeTools/SignalInspection/OpenVisionNativeThresholdSignalEvidenceFactory.cs` |
-| Marker drawing and release commit request | `UI/VisionTest/Wpf/Tooling/SignalInspection/VisionToolSignalPlotSurface.cs` |
-| Shared inspector presentation/export | `UI/VisionTest/Wpf/Tooling/SignalInspection/VisionToolSignalInspectorView.xaml(.cs)` |
-| Threshold overlay and stale-evidence policy | `UI/VisionTest/Wpf/ToolViews/ThresholdToolWpfView.xaml(.cs)` |
-| Existing-model marker synchronization | `UI/VisionTest/Wpf/Behaviors/VisionToolThresholdInteractionController.cs` |
-| Explicit Preview integration | `UI/Menu/Wpf/NativeTools/Preview/OpenVisionNativeThresholdPreviewExecutor.cs` |
+| Common gray histogram and image identity | `src/OpenVisionLab/UI/Menu/Wpf/NativeTools/SignalInspection/OpenVisionNativeGraySignalEvidenceCalculator.cs` |
+| Threshold evidence/marker contract | `src/OpenVisionLab/UI/Menu/Wpf/NativeTools/SignalInspection/OpenVisionNativeThresholdSignalEvidenceFactory.cs` |
+| Marker drawing and release commit request | `src/OpenVisionLab/UI/VisionTest/Wpf/Tooling/SignalInspection/VisionToolSignalPlotSurface.cs` |
+| Shared inspector presentation/export | `src/OpenVisionLab/UI/VisionTest/Wpf/Tooling/SignalInspection/VisionToolSignalInspectorView.xaml(.cs)` |
+| Threshold overlay and stale-evidence policy | `src/OpenVisionLab/UI/VisionTest/Wpf/ToolViews/ThresholdToolWpfView.xaml(.cs)` |
+| Existing-model marker synchronization | `src/OpenVisionLab/UI/VisionTest/Wpf/Behaviors/VisionToolThresholdInteractionController.cs` |
+| Explicit Preview integration | `src/OpenVisionLab/UI/Menu/Wpf/NativeTools/Preview/OpenVisionNativeThresholdPreviewExecutor.cs` |
 
 ## Verification
 

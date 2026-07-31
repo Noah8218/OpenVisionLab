@@ -34,10 +34,10 @@ Previous owner:
 
 Current owner:
 
-- `UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineReferenceDifferencePropertyAdapter.cs`
+- `src/OpenVisionLab/UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineReferenceDifferencePropertyAdapter.cs`
   contains the recognition, projection, model, fallback, and reconstruction
   behavior.
-- `UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs`
+- `src/OpenVisionLab/UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs`
   contains only three adapter integration points: property creation, Step
   creation, and metric ToolType resolution.
 - The former nested `PipelineReferenceDifferenceProperty`, direct switch case,

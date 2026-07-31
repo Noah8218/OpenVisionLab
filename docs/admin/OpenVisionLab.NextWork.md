@@ -13,7 +13,7 @@ OpenVisionLab is a rule-based OpenCVSharp vision workbench. The goal is not to b
 - External runner path: about 95%.
 - Main viewer polish, Pipeline Flow clarity, logging/message UX, Threshold form polish, in-program HTML tutorial access, and the first Korean/English localization path now have focused smoke/contract coverage at the 95% UI pass level. The tutorial now includes tool-specific test guides for Contour, Blob, Pattern Matching, EdgeDetection, LineGauge, distance/measurement workflows, inspection-form teaching flow, and multi-layer image comparison. Pixel/mm-derived measurement metrics are now validated for representative bounds and line samples. AI Recipe feedback now includes failed-step XML field candidates, metric context, a copyable XML Patch Request for the selected Step, a safe auto-fix preview, selectable Safe Fix rows, and operator-editable Safe Fix values before applying Step/Parameter/Layer Flow/Acceptance limit corrections. Shared WPG visual finish is now applied through the bridge runtime style path and verified by Pipeline/Contour/Line/Threshold focused smoke captures.
 - AI Recipe import now has a visible next-action banner. It changes from waiting, to validation OK/NG, to Preview OK/NG, so operators can decide whether to run preview, apply to Pipeline, use Safe Fix/Layer Flow, or copy AI Feedback without reading XML or logs first.
-- Localization is now separated into `Library/OpenVisionLab.Localization`. Translation text is centrally managed through `CONFIG/localization_catalog.tsv`, seeded from the library resource catalog, with a runtime `FormLocalizationEditor` for operator-side Korean/English correction. Main, AI Recipe, Pipeline, Pipeline Flow WPF control, Threshold, LogPanel, shared MessageBox, Image Compare, ImageCanvas context menus, Layer Display empty/status text, Pipeline Add Step, Pipeline Samples, Pipeline Batch, Pipeline History, and Pipeline Batch History now consume the service. The service also merges newly shipped catalog keys into an existing operator-edited CONFIG catalog without overwriting existing translations. WPG PropertyGrid display name/category/description localization is handled centrally through the bridge `PropertyDescriptor` path, including display-name alias keys for inherited/common property labels. `OpenVisionWinFormsLocalizer` now provides name-based automatic WinForms text, placeholder, grid-column, menu, tab, and tooltip localization for future forms.
+- Localization is now separated into `src/Libraries/OpenVisionLab.Localization`. Translation text is centrally managed through `CONFIG/localization_catalog.tsv`, seeded from the library resource catalog, with a runtime `FormLocalizationEditor` for operator-side Korean/English correction. Main, AI Recipe, Pipeline, Pipeline Flow WPF control, Threshold, LogPanel, shared MessageBox, Image Compare, ImageCanvas context menus, Layer Display empty/status text, Pipeline Add Step, Pipeline Samples, Pipeline Batch, Pipeline History, and Pipeline Batch History now consume the service. The service also merges newly shipped catalog keys into an existing operator-edited CONFIG catalog without overwriting existing translations. WPG PropertyGrid display name/category/description localization is handled centrally through the bridge `PropertyDescriptor` path, including display-name alias keys for inherited/common property labels. `OpenVisionWinFormsLocalizer` now provides name-based automatic WinForms text, placeholder, grid-column, menu, tab, and tooltip localization for future forms.
 - The tutorial now includes real full-form Tool screenshots and sample result images for Contour, Blob, Pattern Matching, FeatureMatching, EdgeDetection, and LineGauge/measurement workflows. The guide separates "where to tune parameters" from "where to verify detection result" so users can learn by inspecting actual input/output form UI and validated sample outputs.
 - Pattern Matching tutorial assets now use a tight 7PQRS button template, detected crop, and overlay result. The sample contract validates the detected center and bounds so the guide cannot regress to a loose background-heavy template.
 - The Matching Tool Form now has an in-form Match Review area. After Run it shows the template image, detected crop, score, center, size, count, and confirms that the overlay result is written to the Output layer. The UI smoke now runs the Contour sample and validates that both preview images are populated.
@@ -106,7 +106,7 @@ Latest focused UX/contract reports:
 - WPG PropertyGrid localization contract smoke: `C:\Users\nacho\AppData\Local\Temp\ovl_smoke_localization3\property_grid_localization_contract_check.png`
 - Image Compare localization/source-format smoke: `C:\Users\nacho\AppData\Local\Temp\ovl_smoke_image_compare_loc\image_compare_png_source_format.png`
 - Image Compare n-image load smoke: `C:\Users\nacho\AppData\Local\Temp\ovl_smoke_image_compare_loc\image_compare_multi_load.png`
-- Image Compare non-visible maintenance pass: pixel marker size now follows screen-scale instead of forcing a large image-space minimum at high zoom. Verified without opening UI by building `Library\OpenVisionLab.ImageCanvas\OpenVisionLab.ImageCanvas.csproj`, building `tools\OpenVisionLab.ImageCompare\OpenVisionLab.ImageCompare.csproj`, and publishing `dist\OpenVisionLab.ImageCompare` through `scripts\Publish-ImageCompare.ps1` with no smoke window.
+- Image Compare non-visible maintenance pass: pixel marker size now follows screen-scale instead of forcing a large image-space minimum at high zoom. Verified without opening UI by building `src\Libraries\OpenVisionLab.ImageCanvas\OpenVisionLab.ImageCanvas.csproj`, building `tools\OpenVisionLab.ImageCompare\OpenVisionLab.ImageCompare.csproj`, and publishing `dist\OpenVisionLab.ImageCompare` through `scripts\Publish-ImageCompare.ps1` with no smoke window.
 - Layer Display/ImageCanvas localization smoke: `C:\Users\nacho\AppData\Local\Temp\ovl_smoke_layer_imagecanvas_loc\main_workspace.png`
 - Pipeline menu localization smoke: `C:\Users\nacho\AppData\Local\Temp\ovl_smoke_pipeline_menu_loc\pipeline_form.png`
 - Latest localization surface smoke: `C:\Users\nacho\AppData\Local\Temp\ovl_smoke_localization_surface_final2\main_workspace.png`, `C:\Users\nacho\AppData\Local\Temp\ovl_smoke_localization_surface_final2\pipeline_form.png`, `C:\Users\nacho\AppData\Local\Temp\ovl_smoke_localization_surface_final2\image_compare_png_source_format.png`
@@ -628,7 +628,7 @@ Completed after the Tool Form common localization pass:
 - Pipeline Check/Preview/Publish hints and common blocking message boxes now resolve through localization keys instead of inline literals.
 - Pipeline button icon setup now reads labels from the localization catalog, so designer initialization and runtime localization do not fight each other.
 - Pipeline Summary overlay badge text is now catalog-based while preserving the same compact visual format.
-- The latest verification was run as a targeted Pipeline smoke group because the full platform precheck had already passed and these changes are UI/localization scoped.
+- The latest verification was run as a targeted Pipeline smoke group because the full platform precheck had already passed and these changes are src/OpenVisionLab/UI/localization scoped.
 
 Verification:
 
@@ -767,7 +767,7 @@ C:\Users\nacho\AppData\Local\Temp\ovl_smoke_pipeline_io_flow_bundle_final\pipeli
 
 Next focus:
 
-- Do not run visible UI/capture checks while the user is at work. Use build/static checks only until visible UI checks are explicitly allowed again.
+- Do not run visible src/OpenVisionLab/UI/capture checks while the user is at work. Use build/static checks only until visible UI checks are explicitly allowed again.
 - Continue with non-visual work first: Image Compare packaging logic, Good/Bad sample metadata, or localization/catalog cleanup.
 - When visible checks are allowed again, verify Pipeline Flow at smaller widths and branch-heavy recipes.
 
@@ -779,7 +779,7 @@ Completed after the Pipeline Input/Output Flow clarity pass:
 - The published standalone output is still cleaned by `scripts\Publish-ImageCompare.ps1`, and the current output contains 20 files at about 55.97 MB.
 - Image Compare source-format display remains separated from the OpenGL/display bitmap format, so 8-bit PNG/BMP source metadata is not confused with the 24/32-bit rendering path.
 - The ImageCanvas pixel marker now scales by screen zoom only. It no longer forces a large image-space minimum that can make the marker appear to cover a broad area at high zoom.
-- Visible UI/capture checks were intentionally skipped because the user requested no UI windows while at work.
+- Visible src/OpenVisionLab/UI/capture checks were intentionally skipped because the user requested no UI windows while at work.
 
 Verification:
 

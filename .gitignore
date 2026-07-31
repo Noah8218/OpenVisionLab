@@ -61,12 +61,15 @@ BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
 artifacts/
-.artifacts/
 
 # Codex/local smoke output and temporary performance artifacts.
 .codex/
+.codex-temp/
 tmp/
 docs/samples/generated/
+
+# Windows Explorer metadata is machine-specific.
+desktop.ini
 
 # Local/vendor sample assets are not public-safe. Use docs/samples/public instead.
 [Ss]ample/

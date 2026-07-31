@@ -153,7 +153,7 @@ Validation:
 - `EdgeBasedSampleRotationBenchmark`: `EdgeHybrid` 50/50 pass, average 71.738 ms, median 69.369 ms.
 - `.codex\EdgeBasedAngleProbe`: all listed scenarios returned success.
 - `.codex\MatchingRobustnessProbe`: Hybrid verify variants returned the true target on clutter distractor cases; pure edge step variants can still choose the distractor and must not be promoted as universal defaults.
-- `OpenVisionLab.csproj` Debug x64 build: passed, 0 warnings, 0 errors.
+- `src/OpenVisionLab/OpenVisionLab.csproj` Debug x64 build: passed, 0 warnings, 0 errors.
 - UI smoke: offscreen hit-test failed on the property-grid dialog button while listing the expected `...` button; visible capture passed at `artifacts\ui_precheck_edge_based_model_diagnostics_visible_20260627`.
 
 Guardrail:
@@ -189,7 +189,7 @@ Validation:
 - `EdgeBasedSampleRotationBenchmark`: `EdgeHybrid` 50/50 pass, average 124.935 ms, median 114.588 ms. Absolute time was higher in this run, but relative order stayed: `EdgeHybrid` was still faster than `ImageCoarse` and `ImageExhaustive` on average.
 - `.codex\EdgeBasedAngleProbe`: all listed scenarios returned success.
 - `.codex\MatchingRobustnessProbe`: Hybrid verify variants returned the true target on clutter distractor cases; pure edge step variants can still choose the distractor.
-- `OpenVisionLab.csproj` Debug x64 build: passed, 0 warnings, 0 errors.
+- `src/OpenVisionLab/OpenVisionLab.csproj` Debug x64 build: passed, 0 warnings, 0 errors.
 - UI smoke: `artifacts\ui_precheck_edge_based_candidate_diagnostics_20260627` passed with visible capture.
 
 Guardrail:
@@ -210,7 +210,7 @@ Accepted:
 Validation:
 
 - `Lib.Common.sln` Release x64 build: passed with existing Lib.Common warnings only.
-- `OpenVisionLab.csproj` Debug x64 build: passed, 0 warnings, 0 errors.
+- `src/OpenVisionLab/OpenVisionLab.csproj` Debug x64 build: passed, 0 warnings, 0 errors.
 - `EdgeBasedSampleRotationBenchmark`: `EdgeHybrid` 50/50 pass, average 77.013 ms in `artifacts\edge_based_pyramid_outline_20260627\benchmark_console.csv`.
 - `EdgeBasedAngleProbe`: all listed scenarios returned success.
 - Visual result artifact: `artifacts\edge_based_pyramid_outline_20260627\EasyMatchDiePad1_edge_angle_on_outline.png`.
@@ -488,7 +488,7 @@ Relevant public references reviewed on 2026-06-27:
    - Search high pyramid levels first.
    - Keep only spatial/angle candidate seeds.
    - Refine candidates down to the original level.
-   - This aligns with HALCON/Adaptive Vision/Cognex style candidate filtering and directly targets the largest measured bottleneck.
+   - This aligns with HALCON/Adaptive src/OpenVisionLab/Vision/Cognex style candidate filtering and directly targets the largest measured bottleneck.
    - Required difference from the rejected attempt: preserve more spatial hypotheses with a validated diagnostic view of coarse-level misses before replacing full original search.
 
 2. Reduce `HybridProposal.ScaledMatch` work.
@@ -965,7 +965,7 @@ Use focused checks, not a broad regression suite, unless shared routing/UI code 
 ```powershell
 dotnet build C:\Git\Library-Noah\Lib.Common.sln -c Release -p:Platform=x64 -m:1 -nr:false
 Copy-Item C:\Git\Library-Noah\Lib.OpenCV\bin\Release\netstandard2.0\Lib.OpenCV.dll .\dll\Library-Noah\Lib.OpenCV.dll -Force
-dotnet build .\OpenVisionLab.csproj -c Debug -p:Platform=x64 -p:WpgCustomBuildEnabled=false -m:1 -nr:false
+dotnet build .\src\OpenVisionLab\OpenVisionLab.csproj -c Debug -p:Platform=x64 -p:WpgCustomBuildEnabled=false -m:1 -nr:false
 dotnet run --project .codex\EdgeBasedSampleRotationBenchmark\EdgeBasedSampleRotationBenchmark.csproj -c Release -p:Platform=x64 -- "C:\Git\OpenVisionLab_Dev\bin\Debug\EasyMatch" baseline
 dotnet build .codex\EdgeBasedScaleProbe\EdgeBasedScaleProbe.csproj -c Release -p:Platform=x64 -m:1 -nr:false
 dotnet run --project .codex\EdgeBasedScaleProbe\EdgeBasedScaleProbe.csproj -c Release -p:Platform=x64 -- "C:\Git\OpenVisionLab_Dev\bin\Debug\EasyMatch"

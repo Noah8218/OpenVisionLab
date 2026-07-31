@@ -22,8 +22,8 @@ Complete.
 
 ## Evidence
 
-- `UI/Menu/Wpf/Recipe/Review/OpenVisionRecipePipelineExchangeUseCase.cs` owns `Import`, `Export`, and `ExportReviewBundle`; each returns `OpenVisionRecipePipelineExchangeResult` with explicit success, selected pipeline name, and detail values.
-- `UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.PipelineExchange.cs` contains only the selected-recipe/UI workflow adapter and calls `pipelineExchangeUseCase`; structural search found `VisionPipelineStorage.TryLoadFromFile`, `VisionPipelineStorage.TrySaveToFile`, `VisionPipelineStorage.Save`, `VisionPipelineStorage.SaveActivePipelineName`, `OpenVisionRecipeReviewBundleExporter`, and `SerializePipelineToXmlText` only in the UseCase file.
+- `src/OpenVisionLab/UI/Menu/Wpf/Recipe/Review/OpenVisionRecipePipelineExchangeUseCase.cs` owns `Import`, `Export`, and `ExportReviewBundle`; each returns `OpenVisionRecipePipelineExchangeResult` with explicit success, selected pipeline name, and detail values.
+- `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.PipelineExchange.cs` contains only the selected-recipe/UI workflow adapter and calls `pipelineExchangeUseCase`; structural search found `VisionPipelineStorage.TryLoadFromFile`, `VisionPipelineStorage.TrySaveToFile`, `VisionPipelineStorage.Save`, `VisionPipelineStorage.SaveActivePipelineName`, `OpenVisionRecipeReviewBundleExporter`, and `SerializePipelineToXmlText` only in the UseCase file.
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` passed with 0 warnings and 0 errors.
 - `dotnet run --no-build --project "tools\\PipelineViewerScreenshotSmoke\\PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_recipe_review_bundle_import artifacts\\mvvm_pipeline_exchange_usecase_20260725` passed (`OK`, 1600x900).
 - `dotnet run --no-build --project "tools\\OpenVisionReadinessCheck\\OpenVisionReadinessCheck.csproj" -c Debug` passed every readiness contract.

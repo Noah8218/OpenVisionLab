@@ -163,7 +163,7 @@ Observed result:
 
 Current source location:
 
-`Core\Pipeline\Tools\VisionPipelineNormalizeImageTool.cs`,
+`src\OpenVisionLab\Core\Pipeline\Tools\VisionPipelineNormalizeImageTool.cs`,
 `ResolveValidBounds`, where `Cv2.FindContours(validMask, ...)` is called.
 
 Assessment: this is a release-blocking reliability defect for any public
@@ -183,7 +183,7 @@ Observed result:
 
 Current source location:
 
-`App\Bootstrap\OpenVisionLabApplication.cs`; the `finally` block assigns
+`src\OpenVisionLab\App\Bootstrap\OpenVisionLabApplication.cs`; the `finally` block assigns
 `application.ShutdownMode = OnExplicitShutdown` after `Application.Run`
 returns.
 

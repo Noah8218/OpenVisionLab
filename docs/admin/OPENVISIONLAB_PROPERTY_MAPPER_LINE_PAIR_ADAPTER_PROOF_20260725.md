@@ -28,7 +28,7 @@ Move the existing LineDistance/LineIntersection two-line PropertyGrid mapping fr
 ## Evidence
 
 - `artifacts\\maintenance_property_mapper_line_pair_adapter_20260725\\wpf_shell_host_recipe_line_pair_properties.png\\wpf_shell_host_recipe_line_pair_properties.png`
-- `UI\\Menu\\Wpf\\Recipe\\PropertyGrid\\VisionPipelineStepPropertyMapper.LinePair.cs`
+- `src\OpenVisionLab\UI\\Menu\\Wpf\\Recipe\\PropertyGrid\\VisionPipelineStepPropertyMapper.LinePair.cs`
 
 ## Boundary
 

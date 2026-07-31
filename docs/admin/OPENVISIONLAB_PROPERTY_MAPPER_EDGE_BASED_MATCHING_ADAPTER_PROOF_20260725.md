@@ -22,8 +22,8 @@ Complete.
 
 ## Evidence
 
-- `UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs` now delegates only the three EdgeBasedMatching aliases to `CreateEdgeBasedMatchingProperty`.
-- `UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.EdgeBasedMatching.cs` owns the adapter defaults, PropertyGrid model, step metadata, and acceptance metadata.
+- `src/OpenVisionLab/UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs` now delegates only the three EdgeBasedMatching aliases to `CreateEdgeBasedMatchingProperty`.
+- `src/OpenVisionLab/UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.EdgeBasedMatching.cs` owns the adapter defaults, PropertyGrid model, step metadata, and acceptance metadata.
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` passed with 0 warnings and 0 errors.
 - `dotnet run --no-build --project "tools\\PipelineViewerScreenshotSmoke\\PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_edge_based_matching_tool "C:\\Git\\OpenVisionLab_Dev\\artifacts\\maintenance_property_mapper_edge_based_matching_adapter_20260725"` passed.
 - Current-source UI artifact: `artifacts/maintenance_property_mapper_edge_based_matching_adapter_20260725/wpf_shell_host_edge_based_matching_tool.png`.

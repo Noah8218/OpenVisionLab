@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0-windows7.0</TargetFramework>
     <OutputType>WinExe</OutputType>
@@ -6,7 +6,7 @@
     <UseWPF>true</UseWPF>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     <PlatformTarget>x64</PlatformTarget>
-    <ApplicationIcon>..\..\lens.ico</ApplicationIcon>
+    <ApplicationIcon>..\..\src\OpenVisionLab\lens.ico</ApplicationIcon>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AssemblyName>OpenVisionLab.ImageCompare</AssemblyName>
     <RootNamespace>OpenVisionLab.ImageCompare</RootNamespace>
@@ -14,22 +14,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Library\OpenVisionLab.Localization\OpenVisionLab.Localization.csproj" />
+    <ProjectReference Include="..\..\src\Libraries\OpenVisionLab.Localization\OpenVisionLab.Localization.csproj" />
     <PackageReference Include="MahApps.Metro.IconPacks.Material" Version="6.2.1" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.27" />
   </ItemGroup>
 
   <ItemGroup>
-    <Page Include="..\..\UI\Popup\Wpf\ImageCompareWindow.xaml">
+    <Page Include="..\..\src\OpenVisionLab\UI\Popup\Wpf\ImageCompareWindow.xaml">
       <Link>ImageCompareWindow.xaml</Link>
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Compile Include="..\..\UI\Popup\Wpf\ImageCompareWindow.xaml.cs">
+    <Compile Include="..\..\src\OpenVisionLab\UI\Popup\Wpf\ImageCompareWindow.xaml.cs">
       <Link>ImageCompareWindow.xaml.cs</Link>
       <DependentUpon>ImageCompareWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="..\..\UI\Popup\Wpf\ViewModels\ImageCompareViewModel.cs">
+    <Compile Include="..\..\src\OpenVisionLab\UI\Popup\Wpf\ViewModels\ImageCompareViewModel.cs">
       <Link>ViewModels\ImageCompareViewModel.cs</Link>
     </Compile>
   </ItemGroup>

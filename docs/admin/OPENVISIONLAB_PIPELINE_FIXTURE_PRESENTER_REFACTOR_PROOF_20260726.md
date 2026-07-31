@@ -81,7 +81,7 @@ Boundary / next dependency: 이 변경은 기존 Fixture Designer 표시 책임�
 ### After
 
 - Owner:
-  `UI/Menu/Wpf/PipelineReview/Presenters/OpenVisionPipelineReviewFixturePresenter.cs`
+  `src/OpenVisionLab/UI/Menu/Wpf/PipelineReview/Presenters/OpenVisionPipelineReviewFixturePresenter.cs`
 - Call path: Document orchestration -> Presenter `Create` -> immutable
   presentation state -> Document의 WPF-bound property 갱신
 - Dependencies: Presenter는 pipeline/summary/preview resolver를 입력받고,

@@ -21,8 +21,8 @@ Complete.
 
 ## Evidence
 
-- `UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.Handlers.cs` no longer owns XML import/export, review-bundle export, or review-reference construction.
-- `UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.PipelineExchange.cs` owns the complete exchange command flow while reusing the existing LLM partial only for review-bundle dry-run routing.
+- `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.Handlers.cs` no longer owns XML import/export, review-bundle export, or review-reference construction.
+- `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.PipelineExchange.cs` owns the complete exchange command flow while reusing the existing LLM partial only for review-bundle dry-run routing.
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` passed with 0 warnings and 0 errors.
 - `dotnet run --no-build --project "tools\\PipelineViewerScreenshotSmoke\\PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_recipe_review_bundle_import "C:\\Git\\OpenVisionLab_Dev\\artifacts\\maintenance_pipeline_exchange_command_refactor_20260725_import"` passed.
 - The same current build's `wpf_shell_host_recipe_context_switch` smoke passed.

@@ -21,8 +21,8 @@ Complete.
 
 ## Evidence
 
-- `UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.Handlers.cs` no longer owns the recipe creation, duplication, rename, deletion, or post-create switch methods.
-- `UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.RecipeWorkspace.cs` owns that complete lifecycle command flow.
+- `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.Handlers.cs` no longer owns the recipe creation, duplication, rename, deletion, or post-create switch methods.
+- `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface.RecipeWorkspace.cs` owns that complete lifecycle command flow.
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` passed with 0 warnings and 0 errors.
 - `dotnet run --no-build --project "tools\\PipelineViewerScreenshotSmoke\\PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_recipe_manager_summary "C:\\Git\\OpenVisionLab_Dev\\artifacts\\maintenance_recipe_workspace_command_refactor_20260725"` passed.
 - `dotnet run --no-build --project "tools\\OpenVisionReadinessCheck\\OpenVisionReadinessCheck.csproj" -c Debug -- "C:\\Git\\OpenVisionLab_Dev"` passed after the new partial was added to the explicit WPF shell composition allowlist.

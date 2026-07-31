@@ -89,7 +89,7 @@ Complete.
 
 ## Evidence
 
-- `UI/VisionTest/Wpf/Learn/OpenVisionLearnMatchingSimulationModel.cs`
+- `src/OpenVisionLab/UI/VisionTest/Wpf/Learn/OpenVisionLearnMatchingSimulationModel.cs`
 - `artifacts/refactor_learn_matching_simulation_model_20260726/before`
 - `artifacts/refactor_learn_matching_simulation_model_20260726/after`
 

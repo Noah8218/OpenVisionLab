@@ -40,18 +40,18 @@ parameter and does not execute the Tool.
 
 ## 3. Implementation Ownership
 
-- `Library/WpfPropertyGridBridge/WpfPropertyGridAdapter.cs`
+- `src/Libraries/WpfPropertyGridBridge/WpfPropertyGridAdapter.cs`
   - publishes stable mouse/keyboard selected-property changes;
   - exposes the selected CLR property name;
   - supports related-property focus.
-- `UI/VisionTest/Wpf/Tooling/PropertyGuide/`
+- `src/OpenVisionLab/UI/VisionTest/Wpf/Tooling/PropertyGuide/`
   - owns guide content, catalog lookup, presentation, and the reusable view.
-- `UI/VisionTest/Wpf/Tooling/PropertyGrid/VisionToolPropertyGridHost.cs`
+- `src/OpenVisionLab/UI/VisionTest/Wpf/Tooling/PropertyGrid/VisionToolPropertyGridHost.cs`
   - connects the shared PropertyGrid host to the guide and refreshes current
     value/language state.
-- `UI/VisionTest/Wpf/Tooling/SingleInput/VisionToolSingleInputPropertyToolShell.*`
+- `src/OpenVisionLab/UI/VisionTest/Wpf/Tooling/SingleInput/VisionToolSingleInputPropertyToolShell.*`
   - owns the shared collapsible in-Tool drawer placement.
-- `Library/OpenVisionLab.Localization/Resources/LocalizationCatalog.tsv`
+- `src/Libraries/OpenVisionLab.Localization/Resources/LocalizationCatalog.tsv`
   - owns Korean/English guide chrome and detailed pilot content.
 - `tools/PipelineViewerScreenshotSmoke/Program.cs`
   - owns focused interaction, coverage, side-effect, localization, and current
@@ -175,7 +175,7 @@ Acceptance criteria:
   assertions;
 - current-source before/after evidence -> pass, retained artifact paths above.
 
-Verification: Current-source build, focused UI/semantic/regression targets,
+Verification: Current-source build, focused src/OpenVisionLab/UI/semantic/regression targets,
 OpenVisionLab readiness contract, and diff hygiene checks listed in Section 6
 passed.<br>
 Evidence:

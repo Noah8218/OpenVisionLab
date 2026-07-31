@@ -33,7 +33,7 @@ the existing shared in-Tool Parameter Guide. The post-change audit reports
   their stable property identity to the existing shared guide binder.
 - Applicability guidance follows the selected `EdgeType`.
 - Guidance is grounded in
-  `Core/Pipeline/Tools/VisionPipelineEdgeDetectionTool.cs` and the current
+  `src/OpenVisionLab/Core/Pipeline/Tools/VisionPipelineEdgeDetectionTool.cs` and the current
   Pipeline validation rules.
 
 ## Operator Guidance Contract

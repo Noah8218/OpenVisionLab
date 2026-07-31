@@ -1,7 +1,0 @@
-﻿CREATE TABLE [dbo].[Table]
-(
-	[ID] INT NOT NULL PRIMARY KEY, 
-    [DATE] DATETIME NULL, 
-    [CODE] TEXT NULL, 
-    [DESC] TEXT NULL
-)

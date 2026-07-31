@@ -86,7 +86,7 @@ if ($Mode -eq "Release") {
 
 New-Item -ItemType Directory -Force -Path $outputFullPath | Out-Null
 
-$projectPath = Join-Path $repoRoot "OpenVisionLab.csproj"
+$projectPath = Join-Path $repoRoot "src\OpenVisionLab\OpenVisionLab.csproj"
 $runtimeArguments = if ($Mode -eq "Release") {
     @(
         "publish",
@@ -239,7 +239,7 @@ $manifest = [pscustomobject][ordered]@{
         @(
             "dotnet",
             "publish",
-            "OpenVisionLab.csproj",
+            "src\OpenVisionLab\OpenVisionLab.csproj",
             "-c",
             $Configuration,
             "-p:Platform=$Platform",
@@ -253,7 +253,7 @@ $manifest = [pscustomobject][ordered]@{
         @(
             "dotnet",
             "build",
-            "OpenVisionLab.csproj",
+            "src\OpenVisionLab\OpenVisionLab.csproj",
             "-c",
             $Configuration,
             "-p:Platform=$Platform"

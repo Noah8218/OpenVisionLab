@@ -22,7 +22,7 @@ Complete.
 
 ## Evidence
 
-- `UI/Menu/Wpf/Recipe/OpenVisionRecipeWorkspaceUseCase.cs` owns `Create`, `Duplicate`, `Rename`, `Delete`, and unique-name generation. `OpenVisionRecipeWorkspaceResult` carries success and the resulting recipe name.
+- `src/OpenVisionLab/UI/Menu/Wpf/Recipe/OpenVisionRecipeWorkspaceUseCase.cs` owns `Create`, `Duplicate`, `Rename`, `Delete`, and unique-name generation. `OpenVisionRecipeWorkspaceResult` carries success and the resulting recipe name.
 - Structural search found `RecipeWorkspaceService.EnsureVisionWorkspace`, `DuplicateVisionWorkspace`, `RenameVisionWorkspace`, `DeleteVisionWorkspace`, `VisionPipelineStorage.SaveActivePipelineName`, `VisionPipelineStorage.Load`, and `CreateUniqueRecipeName` only in the UseCase for the Recipe Workspace CRUD path.
 - `dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"` passed with 0 warnings and 0 errors.
 - `dotnet run --no-build --project "tools\\PipelineViewerScreenshotSmoke\\PipelineViewerScreenshotSmoke.csproj" -c Debug -- --target wpf_shell_host_recipe_manager_summary artifacts\\mvvm_recipe_workspace_usecase_20260725` passed (`OK`, 1600x900).

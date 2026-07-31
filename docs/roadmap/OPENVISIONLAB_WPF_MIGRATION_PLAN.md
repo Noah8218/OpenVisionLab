@@ -6,7 +6,7 @@ Updated: 2026-06-21
 
 OpenVisionLab is now a WPF-only application at the active app/UI project layer:
 
-- `OpenVisionLab.csproj` targets `net8.0-windows` with `UseWPF=true` and `UseWindowsForms=false`.
+- `src/OpenVisionLab/OpenVisionLab.csproj` targets `net8.0-windows` with `UseWPF=true` and `UseWindowsForms=false`.
 - `OpenVisionLab.ImageSpace.Core`, `OpenVisionLab.Logging.Controls`, `OpenVisionLab.Pipeline.Controls`, and `WpfPropertyGridBridge` are the active WPF-side UI investments.
 - The legacy WinForms UI projects and wrappers have been removed from the active solution path, including `RJControls`, `OpenVisionLab.MessageBox`, `OpenVisionLab.Controls.Init`, `OpenVisionLab.ImageCanvas`, and old `FormVision_*` surfaces.
 - The default shell, layer workspace, ROI editor, native preprocessing tools, bottom log panel, and standalone Image Compare are WPF.
@@ -392,7 +392,7 @@ A migrated preprocessing form is done when:
 - 2026-06-21 cycle313: `tools\RunUiPrecheck.ps1 -Targets wpf_shell_host_tool_input_empty,wpf_shell_host_tool_input_image_load_save,wpf_shell_host_workspace_image_load -FailOnWarn -OutputDir artifacts\ui_precheck_wpf_tool_preview_image_commands_cycle313 -WpgCustomBuildEnabled false -TimeoutSeconds 420` passed after adding per-Tool-View input image loading, empty-image prompts, `Main` fallback input-layer selection, and preview image save actions. Visual review confirmed the Filter tool input slot starts with a clear prompt, then loads and saves the selected image.
 - 2026-06-21 cycle314: `tools\RunUiPrecheck.ps1 -FailOnWarn -OutputDir artifacts\ui_precheck_wpf_tool_preview_image_commands_full_cycle314 -WpgCustomBuildEnabled false -TimeoutSeconds 720` passed all 20 default WPF UI targets after adding Tool View input load/save coverage.
 - 2026-06-21 cycle315: `tools\RunVisionPlatformPrecheck.ps1 -SkipUi -WpgCustomBuildEnabled:$false -OutputDir artifacts\platform_precheck_wpf_tool_preview_image_commands_cycle315` passed external references, build, Vision UI, History, Localization, Readiness, XML compatibility, recipe runner/sample catalog, WPF shell contract, and tutorial portable gates after the Tool View input load/save update.
-- 2026-06-22: `dotnet build .\OpenVisionLab.csproj -c Debug -v:minimal` passed after moving Line Tool input ROI rectangles from the separate WPF Canvas overlay into `VisionToolOpenGlPreviewSlot` OpenGL overlays.
+- 2026-06-22: `dotnet build .\src\OpenVisionLab\OpenVisionLab.csproj -c Debug -v:minimal` passed after moving Line Tool input ROI rectangles from the separate WPF Canvas overlay into `VisionToolOpenGlPreviewSlot` OpenGL overlays.
 - 2026-06-22: `tools\RunUiPrecheck.ps1 -Targets wpf_shell_host_line_measure_tool,wpf_shell_host_line_intersection_tool -OutputDir artifacts\ui_precheck_line_opengl_roi_overlay_assert_r1_20260622 -TimeoutSeconds 520 -FailOnWarn` passed after adding smoke assertions that both Line A/B OpenGL ROI overlays are published before Run Preview.
 - 2026-06-22: `tools\RunUiPrecheck.ps1 -WpfTools -OutputDir artifacts\wpf_tools_line_opengl_roi_overlay_full_r1_20260622 -TimeoutSeconds 720 -FailOnWarn` passed all 29 WPF tool/shell targets after the Line OpenGL ROI overlay move.
 - 2026-06-22: `tools\RunVisionPlatformPrecheck.ps1 -SkipUi -OutputDir artifacts\platform_precheck_line_opengl_roi_overlay_r1_20260622` passed build, contracts, XML compatibility, sample catalog (`58 OK / 0 NG`), WPF shell contract, and portable tutorial gates after the Line OpenGL ROI overlay move.
