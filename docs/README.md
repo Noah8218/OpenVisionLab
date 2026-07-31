@@ -1,42 +1,88 @@
-﻿# OpenVisionLab Documentation
+# OpenVisionLab 문서 시작점
 
-이 저장소의 문서는 아래 분류로 이동해 두었습니다. 루트 `docs`는 카테고리 안내용 인덱스만 유지하고, 실제 본문은 하위 폴더에 위치합니다.
+Updated: 2026-07-31 KST
 
-## 핵심 참조 순서
+이 파일은 사람과 LLM이 프로젝트 문서를 찾을 때 사용하는 단일 진입점입니다. 문서를 처음부터 전부 읽지 말고, 아래 최소 세트와 작업별 경로만 읽으세요.
 
-1. `AGENTS.md` (운영 규칙)
-2. `docs/OPENVISIONLAB_CURRENT_HANDOFF.md` (현재 상태/다음 우선순위)
-3. `docs/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md`
-4. `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`
-5. `docs/contracts/openvisionlab/OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md` + `docs/contracts/openvisionlab/OPENVISIONLAB_LLM_TOOL_CATALOG.json`
-6. `docs/OPENVISIONLAB_PUBLIC_SAMPLE_ASSET_POLICY.md`, `docs/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md`, `docs/OPENVISIONLAB_RELEASE_VERSION_POLICY.md`
+기계 판독용 색인은 `docs/LLM_DOCUMENT_INDEX.json`, 전체 상세 등록부는 `docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md`입니다.
 
-현재 활성 외부 우선순위는 `CVR-00` 독립 초보 사용자 3인의 실제 관찰 자료 확보이며 아직 미완료입니다. `CVR-19` Validation Variant v1과 `CVR-20` Overlay Rendering v1은 각각 승인된 제한 범위로 완료되었습니다. 상용 영상 큐에는 더 이상 자동 진행할 구현 항목이 없으며, 다음 개발은 실제 사용자 관찰·명시된 운영 작업·현재 빌드 회귀 증거가 생길 때만 선택합니다.
+## 30초 시작 순서
 
-## docs 폴더 구조
+1. `AGENTS.md` — 저장소 규칙, 제품 경계, 변경/검증 계약
+2. `docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md` — 현재 상태, 최신 완료 근거, 실제 다음 우선순위
+3. `docs/roadmap/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md` — 제품 정체성과 화면별 책임
+4. `docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md` — 회귀시키면 안 되는 동작
 
-- `docs/admin/` : 운영 문서, handoff, 정책, 진행 관리용 메모
-- `docs/contracts/` : 기능/동작 계약, LLM/툴 스펙, 안정성 계약
-- `docs/research/` : 경쟁사/현황/참고조사 자료
-- `docs/roadmap/` : 제품 방향, 단계 계획, 이력/요약
-- `docs/analysis/` : 성능/실험 분석 노트
-- `docs/runbooks/` : 실행 절차, Smoke/Test 가이드
-- `docs/learn/` : 사용자 튜토리얼
-- `docs/reports/` : 실행 결과 리포트(데이터/회수)
-- `docs/evidence/` : 검증 로그/리포트 원문
-- `docs/assets/` : 문서 관련 부속 자료
+그 다음 `docs/LLM_DOCUMENT_INDEX.json`의 `routes`에서 현재 작업과 일치하는 항목만 추가로 읽습니다. 수백 KB의 `OPENVISIONLAB_NEXT_SESSION_HANDOFF.md`는 특정 P 번호나 과거 결정의 상세 근거가 필요할 때만 검색합니다.
 
-## 루트에 남아 있는 파일 규칙
+## 문서 권위 순서
 
-루트 `docs`에 남아 있는 `*.md` 중 대부분은 **이동 안내 스텁**입니다.
-실제 본문은 상기 하위 폴더로 이동되어 링크만 유지합니다.
+충돌할 때는 아래 순서를 따르고, 충돌을 숨기지 않습니다.
 
-- 스텁 형식인지 빠르게 확인하려면 본문 맨 위에 `# 이동 안내` 문구가 있는지 확인하세요.
-- 본문이 길거나 핵심 운영/계약 문서는 하위 폴더로 이동 후 스텁으로 유지합니다.
+| 순위 | 문서 | 용도 |
+| --- | --- | --- |
+| 1 | `AGENTS.md` | 작업 규칙, 저장소/제품 경계, 검증 의무 |
+| 2 | `docs/contracts/**` | 안정 동작, XML, 배포, 외부 참조 계약 |
+| 3 | `docs/roadmap/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md` | 제품 정체성과 책임 소유권 |
+| 4 | `docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md` | 최신 상태, 증거, 다음 우선순위 |
+| 5 | `docs/reports/**` | 특정 작업의 완료·실패·한계 증거 |
+| 6 | `docs/admin/OPENVISIONLAB_NEXT_SESSION_HANDOFF.md` 및 과거 평가 | 상세 연대기와 역사적 문맥 |
 
-## 빠른 작업 체크리스트
+오래된 완성도 백분율, 우선순위, 상용 비교 결론은 현재 사실로 재사용하지 않습니다. 현재 핸드오프와 최신 코드·테스트·스크린샷으로 다시 확인합니다.
 
-1. 작업 시작 전 `git status --short` / `git log --oneline -5` 확인
-2. 문서 수정은 `docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md`의 우선순위를 준수
-3. 코드 변경은 해당 뷰/도메인 문서의 최신 계약 문서와 함께 변경
-4. 중요한 구조 변경은 `OPENVISIONLAB_SOURCE_OWNERSHIP_REFACTOR_PROOF_20260717.md`에 반영
+## 작업별 빠른 경로
+
+| 작업 | 먼저 읽을 문서 |
+| --- | --- |
+| 작업 시작/계속 | `AGENTS.md` → 현재 핸드오프 → 제품 목표 → 안정 계약 |
+| 현재 상태/다음 작업 | 현재 핸드오프 → 최신 날짜의 관련 `docs/reports/` → 완료 추적기 |
+| UI/운영 흐름 변경 | 안정 계약 → 사용자 중심 워크플로 보고서 → 관련 기능 계약 → UI smoke runbook |
+| Recipe/Pipeline/XML 변경 | 안정 계약 → Vision Tool 계약/결과 계약 → LLM XML 가이드와 Tool Catalog(LLM 호환성이 관련될 때만) |
+| 샘플/검증/외부 자산 | Public Sample 정책 → External Reference 정책 → 관련 검증 보고서 |
+| 빌드/릴리스/배포 | Release Version 정책 → Source Build 보고서 → Runtime Data Root 계약/보고서 → Production Release Gate |
+| 소스 구조/소유권 | `docs/admin/CODEBASE_STRUCTURE.md` → 구조 리팩터링 완료 기록 → 최신 Source Layout Migration 보고서 |
+| 상용 제품 비교 | 현재 핸드오프 → Commercial Video Backlog/Queue → 과거 비교 문서(참고만) |
+| 특정 `P###` 조사 | 현재 핸드오프에서 검색 → 완료 추적기 → 상세 세션 핸드오프 → 해당 보고서/증거 폴더 |
+
+정확한 경로 목록과 작업별 `read` 배열은 `docs/LLM_DOCUMENT_INDEX.json`이 관리합니다.
+
+## 폴더 의미
+
+- `docs/admin/`: 현재 핸드오프, 문서 지도, 운영·구조 기록
+- `docs/contracts/`: 현재 동작/정책/XML/API 계약
+- `docs/roadmap/`: 제품 목표와 승인된 개발 큐
+- `docs/reports/`: 작업 단위의 결과, 검증, 실패와 한계
+- `docs/evidence/`: 원시 또는 상세 검증 자료
+- `docs/research/`, `docs/analysis/`: 조사·비교·실험 분석(현재 권위가 아님)
+- `docs/runbooks/`: 반복 가능한 실행/Smoke 절차
+- `docs/learn/`: 사용자 학습 문서
+- `docs/assets/`, `docs/samples/`: 문서 부속 자료와 샘플 메타데이터
+
+## 루트 리다이렉트 규칙
+
+`docs/` 바로 아래의 기존 문서 대부분은 이전 링크 호환을 위한 작은 이동 안내 파일입니다. LLM은 이동 안내에서 가리키는 하위 폴더의 본문을 읽어야 하며, 이동 안내 자체를 권위 문서로 인용하면 안 됩니다.
+
+루트의 문서 진입점은 `README.md`와 `LLM_DOCUMENT_INDEX.json`입니다. `VISION_PIPELINE_RECIPE_SCHEMA.xsd`를 포함한 나머지 루트 문서 소스는 호환 리다이렉트이며, `OPENVISIONLAB_TUTORIAL.html`은 배포 가능한 독립 튜토리얼 산출물입니다.
+
+## 검색 예시
+
+```powershell
+# 파일명 또는 문서 본문 찾기
+rg --files docs | rg "CURRENT_HANDOFF|RUNTIME_DATA_ROOT|P276"
+rg -n "P276|ResultCount|Preview/Run" AGENTS.md docs
+
+# 최신 보고서 후보 보기
+Get-ChildItem docs/reports -File | Sort-Object LastWriteTime -Descending | Select-Object -First 20
+
+# 문서 색인과 모든 루트 리다이렉트 검증
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/TestDocumentationIndex.ps1
+```
+
+## 문서 갱신 규칙
+
+1. 현재 상태나 우선순위가 바뀌면 `docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md`를 갱신합니다.
+2. 안정 동작이 바뀌면 해당 `docs/contracts/` 문서를 갱신합니다.
+3. 완료/실패/검증 한계는 날짜가 있는 `docs/reports/` 문서에 기록합니다.
+4. 새 문서가 반복 작업의 주요 입구라면 `docs/LLM_DOCUMENT_INDEX.json`의 관련 route에 추가합니다.
+5. 전체 상세 등록이 필요하면 `docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md`를 갱신합니다.
+6. `tools/TestDocumentationIndex.ps1`가 통과해야 문서 정리가 완료됩니다.

@@ -205,27 +205,21 @@ At the start of a new OpenVisionLab chat, after a handoff, or whenever the user 
 
 - Work in `C:\Git\OpenVisionLab_Dev`.
 - Run `git status --short` and `git log --oneline -5` before interpreting the current state.
-- Read the current handoff and contract documents before choosing the next task:
+- Start from the LLM-oriented document entrypoint and its machine-readable routes:
   - `AGENTS.md`
-  - `docs\OPENVISIONLAB_CURRENT_HANDOFF.md`
-  - `docs\OPENVISIONLAB_DOCUMENTATION_MAP.md`
-  - `docs\OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md`
-  - `docs\OPENVISIONLAB_NEXT_CHAT_HANDOFF_PROMPT_20260706.md`
-  - `docs\OPENVISIONLAB_NEXT_SESSION_HANDOFF.md`
-  - `docs\OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md`
-  - `docs\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`
-  - `docs\OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md`
-  - `docs\contracts\openvisionlab\OPENVISIONLAB_LLM_TOOL_CATALOG.json`
-  - `docs\OPENVISIONLAB_PUBLIC_SAMPLE_ASSET_POLICY.md`
-  - `docs\OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md`
-  - `docs\OPENVISIONLAB_RELEASE_VERSION_POLICY.md`
+  - `docs\README.md`
+  - `docs\LLM_DOCUMENT_INDEX.json`
+  - `docs\admin\OPENVISIONLAB_CURRENT_HANDOFF.md`
+  - `docs\roadmap\OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md`
+  - `docs\contracts\openvisionlab\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`
+- Use the matching `routes[].read` list in `docs\LLM_DOCUMENT_INDEX.json` for task-specific contracts, reports, policies, and historical evidence. Do not load the full chronological handoff or LLM documents when the current task does not involve them.
 - When the user asks about current status, product direction, commercial comparison, or "what is next", also check the status/comparison history docs when present:
-  - `docs\OPENVISIONLAB_PRODUCT_IDENTITY_AND_ROADMAP.md`
-  - `docs\OPENVISIONLAB_STATUS_AND_NEXT_STEPS.md`
-  - `docs\OPENVISIONLAB_UX_COMPETITOR_REVIEW_20260701.md`
-  - `docs\OPENVISIONLAB_COMPETITOR_PRIORITY_REVIEW_20260701.md`
-  - `docs\OPENVISIONLAB_SELF_EVALUATION_20260703.md`
-- Use `docs\OPENVISIONLAB_CURRENT_HANDOFF.md` as the current source of truth for live status, completed evidence, known gaps, and next priority. Use the product-target document and stable contracts for product/behavioral authority. Treat older readiness percentages and chronological handoff entries as historical or scoped evidence unless fresh code/tests/screenshots confirm them.
+  - `docs\roadmap\OPENVISIONLAB_PRODUCT_IDENTITY_AND_ROADMAP.md`
+  - `docs\roadmap\OPENVISIONLAB_STATUS_AND_NEXT_STEPS.md`
+  - `docs\research\OPENVISIONLAB_UX_COMPETITOR_REVIEW_20260701.md`
+  - `docs\research\OPENVISIONLAB_COMPETITOR_PRIORITY_REVIEW_20260701.md`
+  - `docs\reports\OPENVISIONLAB_SELF_EVALUATION_20260703.md`
+- Use `docs\admin\OPENVISIONLAB_CURRENT_HANDOFF.md` as the current source of truth for live status, completed evidence, known gaps, and next priority. Use the product-target document and stable contracts for product/behavioral authority. Treat older readiness percentages and chronological handoff entries as historical or scoped evidence unless fresh code/tests/screenshots confirm them.
 - Before selecting work, explicitly restate:
   - current product identity;
   - current maturity/completeness estimate and its source;

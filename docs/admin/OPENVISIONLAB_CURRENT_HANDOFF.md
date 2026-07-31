@@ -2,7 +2,31 @@
 
 Updated: 2026-07-31 KST
 
-This is the current continuation brief for a new OpenVisionLab chat. Read it after `AGENTS.md` and before choosing implementation work. It is a status and priority document; it does not override stable behavioral contracts in `AGENTS.md` or `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`.
+This is the current continuation brief for a new OpenVisionLab chat. Reach it through `docs/README.md` after reading `AGENTS.md`, and read it before choosing implementation work. It is a status and priority document; it does not override stable behavioral contracts in `AGENTS.md` or `docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`.
+
+## Incremental Work Update — P277 LLM Document Discovery (2026-07-31)
+
+- Existing canonical documents and evidence were preserved in place. The new
+  `docs\README.md` is the single human/LLM entrypoint, and
+  `docs\LLM_DOCUMENT_INDEX.json` supplies machine-readable authority and ten
+  task-specific read routes.
+- The minimal default read is now AGENTS, current handoff, product target, and
+  stable contracts. The large chronological handoff, LLM XML documents, and
+  historical assessments are loaded only when their route applies.
+- `tools\TestDocumentationIndex.ps1` validates every indexed path and every
+  compatibility redirect directly under `docs`; it rejects missing targets,
+  duplicate routes/ranks, repository escapes, and indexing a redirect instead
+  of its canonical document.
+- Status: P277 `Complete`. Evidence:
+  `docs\reports\OPENVISIONLAB_LLM_DOCUMENT_DISCOVERY_20260731.md`.
+- Immediate priority: maintain the index only when a new durable document
+  becomes a repeated work entrypoint. Recommended model: `gpt-5.6-terra` |
+  Reasoning effort: `low`.
+- Remaining project priority: do not invent a feature after P276/P277. Reopen
+  implementation only for a named operator-blocking workflow or verified
+  current-build regression; CVR-00 still requires three independent novice
+  observations. Recommended model: none until evidence exists | Reasoning
+  effort: none until evidence exists.
 
 ## Incremental Work Update — P276 Source Layout Migration (2026-07-31)
 

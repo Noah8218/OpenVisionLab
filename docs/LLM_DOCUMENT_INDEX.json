@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "1.0",
+  "updated": "2026-07-31",
+  "purpose": "Curated, machine-readable routing index for OpenVisionLab documentation. It is intentionally smaller than the full documentation registry.",
+  "entrypoint": "docs/README.md",
+  "detailedRegistry": "docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
+  "rules": {
+    "readMinimalSetFirst": true,
+    "followRootRedirects": true,
+    "treatOldPercentagesAsHistorical": true,
+    "treatReportsAsScopedEvidence": true,
+    "doNotLoadFullChronologyUnlessNeeded": true,
+    "currentPrioritySource": "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md"
+  },
+  "authority": [
+    { "rank": 1, "id": "workspace_rules", "path": "AGENTS.md", "role": "Operating rules, repository boundaries, product scope, and verification discipline." },
+    { "rank": 2, "id": "stable_contracts", "path": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md", "role": "Stable non-regression behavior." },
+    { "rank": 3, "id": "product_target", "path": "docs/roadmap/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md", "role": "Product identity, core workflow, and view ownership." },
+    { "rank": 4, "id": "current_handoff", "path": "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md", "role": "Current status, evidence, gaps, and next priority." }
+  ],
+  "routes": [
+    {
+      "id": "start_or_continue",
+      "intent": "Start a new chat, continue project work, or rebuild context.",
+      "keywords": ["start", "continue", "handoff", "orientation", "current"],
+      "read": ["AGENTS.md", "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md", "docs/roadmap/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md", "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md"]
+    },
+    {
+      "id": "status_and_next_priority",
+      "intent": "Assess current product status, maturity, completeness, or next work.",
+      "keywords": ["status", "maturity", "completeness", "priority", "what next"],
+      "read": ["docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md", "docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md", "docs/roadmap/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md", "docs/reports/OPENVISIONLAB_LLM_DOCUMENT_DISCOVERY_20260731.md"]
+    },
+    {
+      "id": "ui_and_operator_workflow",
+      "intent": "Change visible UI, navigation, workflow, settings persistence, or operator behavior.",
+      "keywords": ["UI", "UX", "workflow", "PropertyGrid", "Preview", "Run", "screen"],
+      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md", "docs/reports/OPENVISIONLAB_USER_CENTERED_WORKFLOW_DIRECTION_20260729.md", "docs/runbooks/UI_SCREENSHOT_SMOKE.md"]
+    },
+    {
+      "id": "recipe_pipeline_and_tool_contracts",
+      "intent": "Change recipe, Pipeline, Tool View, parameter mapping, result, or XML behavior.",
+      "keywords": ["recipe", "pipeline", "tool", "parameter", "result", "XML"],
+      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md", "docs/contracts/vision/VISION_TOOL_CONTRACT.md", "docs/contracts/vision/VISION_TOOL_RESULT_CONTRACT.md", "docs/contracts/vision/VISION_TOOL_PROPERTY_GRID_POLICY.md", "docs/contracts/vision/VISION_TOOL_NATIVE_WPF_EXTENSION_GUIDE.md"]
+    },
+    {
+      "id": "llm_xml_maintenance",
+      "intent": "Maintain existing LLM XML authoring, validation, import, or tool catalog compatibility.",
+      "keywords": ["LLM", "prompt", "XML draft", "import", "tool catalog"],
+      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md", "docs/contracts/openvisionlab/OPENVISIONLAB_LLM_TOOL_CATALOG.json", "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md"]
+    },
+    {
+      "id": "samples_validation_and_external_assets",
+      "intent": "Work with public samples, validation evidence, DLLs, or external references.",
+      "keywords": ["sample", "validation", "asset", "DLL", "external reference", "evidence"],
+      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_PUBLIC_SAMPLE_ASSET_POLICY.md", "docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md", "docs/reports/OPENVISIONLAB_COMPLETED_TRACKER.md"]
+    },
+    {
+      "id": "source_build_release_and_runtime_data",
+      "intent": "Change or verify source build, release, publish, deployment, or writable runtime data ownership.",
+      "keywords": ["build", "release", "publish", "deployment", "runtime data", "GitHub clone"],
+      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_RELEASE_VERSION_POLICY.md", "docs/reports/OPENVISIONLAB_GITHUB_SOURCE_BUILD_EXPERIENCE_20260731.md", "docs/contracts/openvisionlab/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_CONTRACT.md", "docs/reports/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_20260730.md", "docs/reports/OPENVISIONLAB_PRODUCTION_RELEASE_GATE_20260730.md"]
+    },
+    {
+      "id": "source_structure_and_ownership",
+      "intent": "Move, split, or reorganize source based on a verified ownership boundary.",
+      "keywords": ["structure", "folder", "ownership", "move", "refactor", "partial"],
+      "read": ["docs/admin/CODEBASE_STRUCTURE.md", "docs/admin/OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md", "docs/admin/OPENVISIONLAB_SOURCE_OWNERSHIP_REFACTOR_PROOF_20260717.md", "docs/reports/OPENVISIONLAB_SRC_LAYOUT_MIGRATION_20260731.md"]
+    },
+    {
+      "id": "commercial_comparison",
+      "intent": "Review commercial-tool lessons or the evidence-gated candidate backlog.",
+      "keywords": ["commercial", "competitor", "Cognex", "HALCON", "MERLIC", "CVR"],
+      "read": ["docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md", "docs/roadmap/OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md", "docs/reports/OPENVISIONLAB_COMMERCIAL_VIDEO_QUEUE_HANDOFF_20260728.md", "docs/research/OPENVISIONLAB_UX_COMPETITOR_REVIEW_20260701.md", "docs/research/OPENVISIONLAB_COMPETITOR_PRIORITY_REVIEW_20260701.md"]
+    },
+    {
+      "id": "historical_work_item",
+      "intent": "Investigate a specific P-number, past decision, failure, or evidence boundary.",
+      "keywords": ["P-number", "history", "past decision", "failure", "chronology"],
+      "read": ["docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md", "docs/reports/OPENVISIONLAB_COMPLETED_TRACKER.md", "docs/admin/OPENVISIONLAB_NEXT_SESSION_HANDOFF.md"]
+    }
+  ],
+  "references": [
+    { "id": "full_documentation_registry", "path": "docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md", "role": "Detailed current and historical document registry." },
+    { "id": "restart_prompt", "path": "docs/admin/OPENVISIONLAB_NEXT_CHAT_HANDOFF_PROMPT_20260706.md", "role": "Short restart request; not a status authority." },
+    { "id": "historical_product_identity", "path": "docs/roadmap/OPENVISIONLAB_PRODUCT_IDENTITY_AND_ROADMAP.md", "role": "Historical identity and roadmap context." },
+    { "id": "historical_status", "path": "docs/roadmap/OPENVISIONLAB_STATUS_AND_NEXT_STEPS.md", "role": "Historical status and prior measurements." },
+    { "id": "historical_self_evaluation", "path": "docs/reports/OPENVISIONLAB_SELF_EVALUATION_20260703.md", "role": "Historical self-assessment; not a current release decision." },
+    { "id": "root_artifact_map", "path": "docs/admin/ROOT_ARTIFACT_MAP_20260724.md", "role": "Repository-root artifact ownership and placement." }
+  ],
+  "discovery": {
+    "filenameSearch": "rg --files docs | rg \"<term>\"",
+    "contentSearch": "rg -n \"<term>\" AGENTS.md docs",
+    "pNumberSearchOrder": ["docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md", "docs/reports/OPENVISIONLAB_COMPLETED_TRACKER.md", "docs/admin/OPENVISIONLAB_NEXT_SESSION_HANDOFF.md", "docs/reports", "artifacts"],
+    "rootRedirectPolicy": "Markdown, JSON, and XSD files directly under docs other than README.md and LLM_DOCUMENT_INDEX.json are compatibility redirects. Follow their canonical target before reading or citing. OPENVISIONLAB_TUTORIAL.html is a standalone tutorial artifact."
+  }
+}

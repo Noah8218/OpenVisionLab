@@ -4,40 +4,29 @@ Updated: 2026-07-31 KST
 
 This map prevents a new chat from treating large historical records or old readiness estimates as the current plan.
 
+> Fast path: start at `docs/README.md`, then use
+> `docs/LLM_DOCUMENT_INDEX.json` to select only the route for the current task.
+> This file is the detailed registry, not the default first-read bundle.
+
 ## Required Reading Order For A New Chat
 
 1. `AGENTS.md`
    - Operating rules, repository boundary, product scope, stable constraints, source organization, verification rules, and priority discipline.
-2. `docs/OPENVISIONLAB_CURRENT_HANDOFF.md`
+2. `docs/README.md` and `docs/LLM_DOCUMENT_INDEX.json`
+   - Human entrypoint, authority order, canonical paths, and task-specific machine-readable routes.
+3. `docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md`
    - Current project state, completed evidence, known gaps, exact next-priority order, latest repository baseline, and restart checklist.
-3. `docs/reports/OPENVISIONLAB_GITHUB_SOURCE_BUILD_EXPERIENCE_20260731.md`
-   - P275 user-confirmed source-build scope, one-command verifier, actual Windows Sandbox replay, reproduced harness defect, evidence, and explicit commercial-installer exclusion.
-4. `docs/reports/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_20260730.md`
-   - P274 Release installation/data ownership, legacy migration, actual copied-package/reopen evidence, two-clone archive reproduction, limits, and ordered Productionization work.
-5. `docs/contracts/openvisionlab/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_CONTRACT.md`
-   - Release root precedence, writable-data ownership, migration, relative-path compatibility, log behavior, D1-D14 acceptance matrix, and installer boundary.
-6. `docs/reports/OPENVISIONLAB_PRODUCTION_RELEASE_GATE_20260730.md`
-   - P273 clean-clone Release Candidate gate, reproduced release defects, two-path deterministic archive evidence, deployment boundary, and ordered Productionization work.
-7. `docs/reports/OPENVISIONLAB_NEXT_DEVELOPMENT_DECISION_20260730.md`
-   - Completed P272 Recipe/Pipeline persistence decision, R1-R10 matrix, A1-A12 closure, and ordered post-P272 prerequisites.
-8. `docs/reports/OPENVISIONLAB_RECIPE_PIPELINE_PERSISTENCE_FEEDBACK_20260730.md`
-   - P272 reproduced defects, bounded implementation, operator contract, current Debug EXE evidence, verification, and limits.
-9. `docs/reports/OPENVISIONLAB_COMMERCIAL_VIDEO_QUEUE_HANDOFF_20260728.md`
-   - Compact current progress, observed dirty repository state, full `CVR-00` through `CVR-20` status/trigger/model table, video traceability, and paste-ready restart request.
-10. `docs/OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md`
-   - Durable `CVR-00` through `CVR-20` commercial-video candidate inventory, activation gates, ordered implementation queue, model recommendations, and exclusion register. Only the current handoff decides which row is active.
-11. `docs/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md`
+4. `docs/roadmap/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md`
    - Product identity, intended operator workflow, and responsibility split between Learn, Tool Views, Pipeline, Pipeline Review, and Recipe Manager.
-12. `docs/reports/OPENVISIONLAB_USER_CENTERED_WORKFLOW_DIRECTION_20260729.md`
-   - User-goal-first workflow, coherent first-use setup, narrow-scope persistence/restoration, reset/stale-state behavior, side-effect verification, and evidence-gated future direction.
-13. `docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`
+5. `docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`
    - Behavioral contracts that must not regress.
-14. `docs/contracts/openvisionlab/OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md` and `docs/contracts/openvisionlab/OPENVISIONLAB_LLM_TOOL_CATALOG.json`
-   - Read when LLM XML, prompt packets, validation, import, tool parameters, or acceptance metrics are involved.
-15. `docs/OPENVISIONLAB_PUBLIC_SAMPLE_ASSET_POLICY.md`, `docs/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md`, and `docs/OPENVISIONLAB_RELEASE_VERSION_POLICY.md`
-   - Read when samples, DLLs, external references, release artifacts, or repository publication are involved.
 
-After this reading, run `git status --short` and `git log --oneline -5` in Dev before choosing work. If the user asks for a product/maturity/commercial comparison, also read the historical assessment documents listed below, but do not treat their old percentages as current truth.
+After this minimum, follow only the matching `routes[].read` entry in
+`docs/LLM_DOCUMENT_INDEX.json`. Build/release reports, LLM XML documents,
+commercial-review documents, and the large chronological handoff are
+conditional reads, not a mandatory bundle. Run `git status --short` and
+`git log --oneline -5` before choosing work. Historical assessments remain
+context only; do not treat their old percentages as current truth.
 
 ## Authority And Conflict Rules
 
@@ -56,6 +45,8 @@ If documents conflict, do not smooth over the conflict. Follow the higher-ranked
 
 | Document | Use it for | Freshness note |
 | --- | --- | --- |
+| `README.md` and `LLM_DOCUMENT_INDEX.json` | Fast human/LLM entrypoint and task-to-canonical-document routing. | Current discovery authority; intentionally smaller than this full registry. |
+| `reports/OPENVISIONLAB_LLM_DOCUMENT_DISCOVERY_20260731.md` | P277 discovery-layer scope, acceptance, verification, and boundary. | Current completion authority for document routing; it does not replace feature contracts or evidence reports. |
 | `reports/OPENVISIONLAB_SRC_LAYOUT_MIGRATION_20260731.md` | P276 application/library source ownership, path migration, hash/build/tool/sample evidence, and structural boundary. | Current authority for the `src/OpenVisionLab` and `src/Libraries` layout; no product behavior or UI scope changed. |
 | `OPENVISIONLAB_CURRENT_HANDOFF.md` | First continuation brief. | Includes completed Recipe change-safety, explicit validation outcomes, Qualified Recipe Snapshot, completed `CVR-01` through bounded `CVR-11`, CVR-09/CVR-11 physical-qualification limits, and current external prerequisites. |
 | `reports/OPENVISIONLAB_GITHUB_SOURCE_BUILD_EXPERIENCE_20260731.md` | P275 fresh-clone commands, lightweight source-build contract, actual Windows Sandbox replay, failure correction, and evidence boundary. | Current authority for the user-confirmed GitHub source-build goal; installer/signing/update/SBOM work is inactive without a new explicit direction. |
@@ -152,12 +143,13 @@ After every bounded work slice:
    physical moves, new ownership boundaries, or source-check changes.
 5. Update the LLM guide/catalog only when the validated XML contract changes. Do not change it merely because one model response was weak.
 6. Update policy documents only for actual policy decisions. Do not mix policy edits with unrelated UI work.
+7. When a document becomes a repeated task entrypoint, add its canonical path to the matching `docs/LLM_DOCUMENT_INDEX.json` route and run `tools/TestDocumentationIndex.ps1`. Do not index root compatibility redirects.
 
 For UI changes, the current handoff entry must name a freshly generated before/after artifact directory and state whether it is EXE evidence or a current-source view capture. For non-UI code, name the smallest relevant build/smoke/check command and outcome.
 
 ## Minimal Restart Prompt
 
 ```text
-Work in C:\Git\OpenVisionLab_Dev. Read AGENTS.md, docs/OPENVISIONLAB_CURRENT_HANDOFF.md, docs/OPENVISIONLAB_DOCUMENTATION_MAP.md, docs/OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md, docs/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md, and docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md. Run git status -sb and git log --oneline -5 in both repositories when publication/synchronization is in scope. State the product identity, current evidence-based maturity, immediate priority, remaining priority, commercial lessons to emulate, and out-of-scope platform areas before changing anything. Treat the current handoff as the active-priority truth and the `CVR-00` through `CVR-20` document as the durable commercial-video candidate queue; do not auto-activate later rows. Preserve PropertyGrid tools and explicit Preview/Run/no-auto-route contracts. Do not invent an implementation priority when the current handoff says none.
+Work in C:\Git\OpenVisionLab_Dev. Read AGENTS.md and docs/README.md, then use docs/LLM_DOCUMENT_INDEX.json to load the start_or_continue route plus only the route matching the requested task. Run git status -sb and git log --oneline -5 before interpreting state. State the product identity, current evidence-based maturity, immediate priority, remaining priority, commercial lessons to emulate, and out-of-scope platform areas before changing anything. Treat the current handoff as the active-priority truth and stable contracts as behavioral authority. Preserve PropertyGrid tools and explicit Preview/Run/no-auto-route contracts. Do not invent an implementation priority when the current handoff says none.
 For structural work, also read docs/admin/OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md and reopen only when its evidence prerequisite is satisfied.
 ```
