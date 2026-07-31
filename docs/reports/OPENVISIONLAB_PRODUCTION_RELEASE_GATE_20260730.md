@@ -80,8 +80,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\VerifyReleaseCandidate
 | Verified source commit | `38e7eec8188b494b1c3f5d81a82cefa1ee9d19fe` |
 | Branch | `codex/public-sample-ux-docs` |
 | SDK | `.NET SDK 8.0.421` |
-| Clean clone A | `C:\Git\OpenVisionLab_Production_RC_Final_20260730` |
-| Clean clone B | `C:\Git\OpenVisionLab_Production_Repro_Final_20260730` |
+| Clean clone A | `D:\OpenVisionLab-TestData\ProductionVerification_20260730\OpenVisionLab_Production_RC_Final_20260730` |
+| Clean clone B | `D:\OpenVisionLab-TestData\ProductionVerification_20260730\OpenVisionLab_Production_Repro_Final_20260730` |
 | Debug solution build | PASS, 0 warnings, 0 errors |
 | Release solution build | PASS, 0 warnings, 0 errors |
 | Readiness | PASS, 12/12 |
@@ -96,10 +96,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\VerifyReleaseCandidate
 
 Primary evidence:
 
-- `C:\Git\OpenVisionLab_Production_RC_Final_20260730\artifacts\production_release_candidate_38e7eec\release_candidate_summary.json`
-- `C:\Git\OpenVisionLab_Production_RC_Final_20260730\artifacts\release_launch_smoke_20260730_212448`
-- `C:\Git\OpenVisionLab_Production_RC_Final_20260730\dist\OpenVisionLab-win-x64-framework-dependent.zip`
-- `C:\Git\OpenVisionLab_Production_Repro_Final_20260730\dist\OpenVisionLab-win-x64-framework-dependent.zip`
+- `D:\OpenVisionLab-TestData\ProductionVerification_20260730\OpenVisionLab_Production_RC_Final_20260730\artifacts\production_release_candidate_38e7eec\release_candidate_summary.json`
+- `D:\OpenVisionLab-TestData\ProductionVerification_20260730\OpenVisionLab_Production_RC_Final_20260730\artifacts\release_launch_smoke_20260730_212448`
+- `D:\OpenVisionLab-TestData\ProductionVerification_20260730\OpenVisionLab_Production_RC_Final_20260730\dist\OpenVisionLab-win-x64-framework-dependent.zip`
+- `D:\OpenVisionLab-TestData\ProductionVerification_20260730\OpenVisionLab_Production_Repro_Final_20260730\dist\OpenVisionLab-win-x64-framework-dependent.zip`
 
 ## Operator Deployment Boundary
 

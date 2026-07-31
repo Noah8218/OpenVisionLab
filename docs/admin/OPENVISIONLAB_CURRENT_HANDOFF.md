@@ -4,6 +4,38 @@ Updated: 2026-07-31 KST
 
 This is the current continuation brief for a new OpenVisionLab chat. Reach it through `docs/README.md` after reading `AGENTS.md`, and read it before choosing implementation work. It is a status and priority document; it does not override stable behavioral contracts in `AGENTS.md` or `docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`.
 
+## Incremental Work Update — P278 Local Data Externalization (2026-07-31)
+
+- The user requested reducing C: usage by moving local execution folders,
+  test images, caches, and generated test/build data to D:.
+- Sixty-eight Git-untracked/ignored directories containing 44,085 files and
+  8,612,491,468 bytes now live under
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev`; their original repository
+  paths are compatible NTFS Junctions. The pre-existing `artifacts` Junction
+  remains at `D:\OpenVisionLab_Data\Dev\artifacts`.
+- Git-tracked tools, source, public samples/document assets, DLLs, and `.git`
+  remain in the repository so clean clone/build/CI contracts are preserved.
+- `tools\Move-OpenVisionLabLocalData.ps1` is idempotent, refuses tracked
+  content, validates root boundaries, supports long paths and verified partial
+  recovery, and exposes `-RestoreToRepo` as the explicit reset path.
+- Eight verification clones formerly stored under the C: Git root were audited
+  and then moved to
+  `D:\OpenVisionLab-TestData\ProductionVerification_20260730`. SHA-256 copy
+  verification preserved 25,455 files / 10,778,903,628 bytes; all eight C:
+  source folders are absent. Seven destination worktrees are clean and the one
+  dirty clone retains only the audited non-semantic formatting difference.
+  Four P273/P274 evidence references now use the D: paths. Manifest:
+  `D:\OpenVisionLab-TestData\ProductionVerification_20260730\migration_manifest.json`.
+- Status: P278 `Complete`. Evidence:
+  `docs\reports\OPENVISIONLAB_LOCAL_DATA_EXTERNALIZATION_20260731.md`.
+- Immediate priority: maintain this mapping only if a new large ignored local
+  output root appears. Recommended model: `gpt-5.6-terra` | Reasoning effort:
+  `low`.
+- Remaining project priority: no product feature is active without a named
+  operator blocker or current-build regression; CVR-00 still requires three
+  independent novice observations. Recommended model: none until evidence
+  exists | Reasoning effort: none until evidence exists.
+
 ## Incremental Work Update — P277 LLM Document Discovery (2026-07-31)
 
 - Existing canonical documents and evidence were preserved in place. The new
@@ -118,8 +150,8 @@ This is the current continuation brief for a new OpenVisionLab chat. Reach it th
 - Evidence:
   `docs\reports\OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_20260730.md`,
   `docs\contracts\openvisionlab\OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_CONTRACT.md`,
-  `C:\Git\OpenVisionLab_Production_DataRoot_RC_20260730`, and
-  `C:\Git\OpenVisionLab_Production_DataRoot_Repro_20260730`.
+  `D:\OpenVisionLab-TestData\ProductionVerification_20260730\OpenVisionLab_Production_DataRoot_RC_20260730`, and
+  `D:\OpenVisionLab-TestData\ProductionVerification_20260730\OpenVisionLab_Production_DataRoot_Repro_20260730`.
 - Status: P274 `Complete` for Runtime Data Root v1, not commercial GA.
 - Current next priorities:
   1. Approve the distribution model, publisher/signing identity and
@@ -160,8 +192,8 @@ This is the current continuation brief for a new OpenVisionLab chat. Reach it th
   passed.
 - Evidence:
   `docs\reports\OPENVISIONLAB_PRODUCTION_RELEASE_GATE_20260730.md`,
-  `C:\Git\OpenVisionLab_Production_RC_Final_20260730`, and
-  `C:\Git\OpenVisionLab_Production_Repro_Final_20260730`.
+  `D:\OpenVisionLab-TestData\ProductionVerification_20260730\OpenVisionLab_Production_RC_Final_20260730`, and
+  `D:\OpenVisionLab-TestData\ProductionVerification_20260730\OpenVisionLab_Production_Repro_Final_20260730`.
 - Status: P273 `Complete` for the portable RC gate, not commercial GA.
 - Current next priorities:
   1. Separate immutable installation files from writable user/Recipe/log data

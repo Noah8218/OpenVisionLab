@@ -100,8 +100,8 @@ Verified implementation commit:
 
 | Check | Result |
 | --- | --- |
-| Clean clone A | `C:\Git\OpenVisionLab_Production_DataRoot_RC_20260730` |
-| Clean clone B | `C:\Git\OpenVisionLab_Production_DataRoot_Repro_20260730` |
+| Clean clone A | `D:\OpenVisionLab-TestData\ProductionVerification_20260730\OpenVisionLab_Production_DataRoot_RC_20260730` |
+| Clean clone B | `D:\OpenVisionLab-TestData\ProductionVerification_20260730\OpenVisionLab_Production_DataRoot_Repro_20260730` |
 | Debug build | PASS, 0 warnings, 0 errors |
 | Release build | PASS, 0 warnings, 0 errors |
 | Readiness | PASS, 13/13 |
@@ -116,10 +116,10 @@ Verified implementation commit:
 
 Primary Release evidence:
 
-- `C:\Git\OpenVisionLab_Production_DataRoot_RC_20260730\artifacts\production_release_candidate_823d2d8\release_candidate_summary.json`
-- `C:\Git\OpenVisionLab_Production_DataRoot_RC_20260730\artifacts\release_launch_smoke_20260730_224128`
-- `C:\Git\OpenVisionLab_Production_DataRoot_RC_20260730\dist\OpenVisionLab-win-x64-framework-dependent.zip`
-- `C:\Git\OpenVisionLab_Production_DataRoot_Repro_20260730\dist\OpenVisionLab-win-x64-framework-dependent.zip`
+- `D:\OpenVisionLab-TestData\ProductionVerification_20260730\OpenVisionLab_Production_DataRoot_RC_20260730\artifacts\production_release_candidate_823d2d8\release_candidate_summary.json`
+- `D:\OpenVisionLab-TestData\ProductionVerification_20260730\OpenVisionLab_Production_DataRoot_RC_20260730\artifacts\release_launch_smoke_20260730_224128`
+- `D:\OpenVisionLab-TestData\ProductionVerification_20260730\OpenVisionLab_Production_DataRoot_RC_20260730\dist\OpenVisionLab-win-x64-framework-dependent.zip`
+- `D:\OpenVisionLab-TestData\ProductionVerification_20260730\OpenVisionLab_Production_DataRoot_Repro_20260730\dist\OpenVisionLab-win-x64-framework-dependent.zip`
 
 ## Next Production Priorities
 

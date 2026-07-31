@@ -46,6 +46,7 @@ If documents conflict, do not smooth over the conflict. Follow the higher-ranked
 | Document | Use it for | Freshness note |
 | --- | --- | --- |
 | `README.md` and `LLM_DOCUMENT_INDEX.json` | Fast human/LLM entrypoint and task-to-canonical-document routing. | Current discovery authority; intentionally smaller than this full registry. |
+| `reports/OPENVISIONLAB_LOCAL_DATA_EXTERNALIZATION_20260731.md` | P278 C:/D: local execution, build, test-image, cache, Junction, production-verification clone archive, recovery, and reset contract. | Current authority for this PC's local ignored-data placement; tracked repository payload remains portable. |
 | `reports/OPENVISIONLAB_LLM_DOCUMENT_DISCOVERY_20260731.md` | P277 discovery-layer scope, acceptance, verification, and boundary. | Current completion authority for document routing; it does not replace feature contracts or evidence reports. |
 | `reports/OPENVISIONLAB_SRC_LAYOUT_MIGRATION_20260731.md` | P276 application/library source ownership, path migration, hash/build/tool/sample evidence, and structural boundary. | Current authority for the `src/OpenVisionLab` and `src/Libraries` layout; no product behavior or UI scope changed. |
 | `OPENVISIONLAB_CURRENT_HANDOFF.md` | First continuation brief. | Includes completed Recipe change-safety, explicit validation outcomes, Qualified Recipe Snapshot, completed `CVR-01` through bounded `CVR-11`, CVR-09/CVR-11 physical-qualification limits, and current external prerequisites. |

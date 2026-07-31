@@ -65,7 +65,7 @@
       "id": "source_structure_and_ownership",
       "intent": "Move, split, or reorganize source based on a verified ownership boundary.",
       "keywords": ["structure", "folder", "ownership", "move", "refactor", "partial"],
-      "read": ["docs/admin/CODEBASE_STRUCTURE.md", "docs/admin/OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md", "docs/admin/OPENVISIONLAB_SOURCE_OWNERSHIP_REFACTOR_PROOF_20260717.md", "docs/reports/OPENVISIONLAB_SRC_LAYOUT_MIGRATION_20260731.md"]
+      "read": ["docs/admin/CODEBASE_STRUCTURE.md", "docs/admin/OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md", "docs/admin/OPENVISIONLAB_SOURCE_OWNERSHIP_REFACTOR_PROOF_20260717.md", "docs/reports/OPENVISIONLAB_SRC_LAYOUT_MIGRATION_20260731.md", "docs/reports/OPENVISIONLAB_LOCAL_DATA_EXTERNALIZATION_20260731.md"]
     },
     {
       "id": "commercial_comparison",
