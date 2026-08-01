@@ -2,6 +2,7 @@
 param(
     [string]$RepoRoot = '',
     [string]$ExternalRoot = 'D:\OpenVisionLab-TestData\OpenVisionLab_Dev',
+    [string[]]$ExcludeRelativePath = @(),
     [switch]$RestoreToRepo
 )
 
@@ -30,6 +31,34 @@ function Get-RelativePath {
     }
 
     return $resolved.Substring($repoPrefix.Length)
+}
+
+$excludedRelativePaths = [System.Collections.Generic.HashSet[string]]::new(
+    [System.StringComparer]::OrdinalIgnoreCase)
+foreach ($excludedPath in $ExcludeRelativePath) {
+    if ([string]::IsNullOrWhiteSpace($excludedPath)) { continue }
+    if ([System.IO.Path]::IsPathRooted($excludedPath)) {
+        throw "ExcludeRelativePath must be repository-relative: $excludedPath"
+    }
+
+    $excludedFullPath = [System.IO.Path]::GetFullPath((Join-Path $repoPath $excludedPath))
+    if (-not $excludedFullPath.StartsWith($repoPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "ExcludeRelativePath escapes the repository: $excludedPath"
+    }
+
+    [void]$excludedRelativePaths.Add((Get-RelativePath $excludedFullPath).TrimEnd('\', '/'))
+}
+
+function Test-IsExcludedRelativePath {
+    param([string]$RelativePath)
+
+    foreach ($excludedPath in $excludedRelativePaths) {
+        if ($RelativePath.Equals($excludedPath, [System.StringComparison]::OrdinalIgnoreCase) -or
+            $RelativePath.StartsWith($excludedPath + '\', [System.StringComparison]::OrdinalIgnoreCase)) {
+            return $true
+        }
+    }
+    return $false
 }
 
 function Get-DirectoryStats {
@@ -187,6 +216,7 @@ if (Test-Path -LiteralPath $libraryRoot -PathType Container) {
 $candidates = @($candidatePaths | Sort-Object -Unique | ForEach-Object {
     $source = $_
     $relative = Get-RelativePath $source
+    if (Test-IsExcludedRelativePath $relative) { return }
     $destination = [System.IO.Path]::GetFullPath((Join-Path $externalPath $relative))
     if (-not $destination.StartsWith($externalPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
         throw "Destination escapes ExternalRoot: $destination"
