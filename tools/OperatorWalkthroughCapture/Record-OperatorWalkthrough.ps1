@@ -71,6 +71,34 @@ Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
 Add-Type -AssemblyName System.Windows.Forms
 
+$availableScreens = @(
+    [System.Windows.Forms.Screen]::AllScreens |
+        Sort-Object { $_.Bounds.Left }, { $_.Bounds.Top }
+)
+if ($availableScreens.Count -gt 0) {
+    $recordingScreen = $availableScreens[0]
+    $script:recordingMonitorName = $recordingScreen.DeviceName
+    $script:recordingLeft = [int]$recordingScreen.Bounds.Left
+    $script:recordingTop = [int]$recordingScreen.Bounds.Top
+    $script:recordingWidth = [int]$recordingScreen.Bounds.Width
+    $script:recordingHeight = [int]$recordingScreen.Bounds.Height
+    $script:recordingMonitorFallback = $availableScreens.Count -eq 1
+}
+else {
+    $virtualBounds = [System.Windows.Forms.SystemInformation]::VirtualScreen
+    $script:recordingMonitorName = "VirtualScreen"
+    $script:recordingLeft = [int]$virtualBounds.Left
+    $script:recordingTop = [int]$virtualBounds.Top
+    $script:recordingWidth = [int]$virtualBounds.Width
+    $script:recordingHeight = [int]$virtualBounds.Height
+    $script:recordingMonitorFallback = $true
+}
+$script:recordingWindowBounds = "unverified"
+
+if ($script:recordingWidth -le 0 -or $script:recordingHeight -le 0) {
+    throw "No usable desktop bounds were available for EXE recording."
+}
+
 if (-not ("OpenVisionNaturalInput" -as [type])) {
     Add-Type @"
 using System;
@@ -139,8 +167,10 @@ function Start-DesktopRecording {
     $psi.RedirectStandardError = $true
     $psi.Arguments = (
         "-hide_banner -loglevel warning -y " +
-        "-f gdigrab -framerate 30 -offset_x 320 -offset_y 180 " +
-        "-video_size 1920x1080 -draw_mouse 1 -i desktop " +
+        "-f gdigrab -framerate 30 " +
+        "-offset_x $($script:recordingLeft) -offset_y $($script:recordingTop) " +
+        "-video_size $($script:recordingWidth)x$($script:recordingHeight) " +
+        "-draw_mouse 1 -i desktop " +
         "-c:v libx264 -preset veryfast -crf 18 -pix_fmt yuv420p " +
         "-movflags +faststart `"$videoPath`"")
 
@@ -152,7 +182,9 @@ function Start-DesktopRecording {
 
     $script:ffmpegErrorTask = $script:ffmpegProcess.StandardError.ReadToEndAsync()
     $script:recordingClock.Restart()
-    Add-TimelineEvent "recording-start" "1920x1080 30fps desktop crop 320,180 with cursor"
+    Add-TimelineEvent `
+        "recording-start" `
+        "Monitor=$($script:recordingMonitorName); Bounds=$($script:recordingLeft),$($script:recordingTop),$($script:recordingWidth),$($script:recordingHeight); Window=$($script:recordingWindowBounds); Fallback=$($script:recordingMonitorFallback); 30fps with cursor"
 }
 
 function Stop-DesktopRecording {
@@ -463,13 +495,36 @@ function Position-MainWindowForRecording {
     [OpenVisionNaturalInput]::SetWindowPos(
         $recordingWindowHandle,
         [IntPtr](-1),
-        320,
-        180,
-        1920,
-        1080,
+        $script:recordingLeft,
+        $script:recordingTop,
+        $script:recordingWidth,
+        $script:recordingHeight,
         0x0040) | Out-Null
     [OpenVisionNaturalInput]::SetForegroundWindow($recordingWindowHandle) | Out-Null
     Start-Sleep -Milliseconds 900
+
+    $windowElement = [System.Windows.Automation.AutomationElement]::FromHandle(
+        $recordingWindowHandle)
+    $windowBounds = $windowElement.Current.BoundingRectangle
+    $monitorRight = $script:recordingLeft + $script:recordingWidth
+    $monitorBottom = $script:recordingTop + $script:recordingHeight
+    $windowRight = $windowBounds.Left + $windowBounds.Width
+    $windowBottom = $windowBounds.Top + $windowBounds.Height
+    $intersectsMonitor =
+        $windowBounds.Left -lt $monitorRight -and
+        $windowRight -gt $script:recordingLeft -and
+        $windowBounds.Top -lt $monitorBottom -and
+        $windowBottom -gt $script:recordingTop
+    if (-not $intersectsMonitor) {
+        throw "OpenVisionLab window does not intersect the selected recording monitor."
+    }
+
+    $script:recordingWindowBounds = (
+        "{0},{1},{2},{3}" -f
+        [int]$windowBounds.Left,
+        [int]$windowBounds.Top,
+        [int]$windowBounds.Width,
+        [int]$windowBounds.Height)
 }
 
 function Minimize-OtherOpenVisionWindows {
@@ -1574,6 +1629,10 @@ function Invoke-NoviceBlobTeachingSelfTrialScenario {
         "Blob" `
         -ApplyBasicPreset `
         -ThresholdValue "150"
+    Click-AutomationId `
+        "VisionToolParameterGuideButton" `
+        "Close Parameter Guide after reviewing the selected threshold" `
+        500
     Add-TimelineEvent `
         "teaching-review" `
         "Basic preset and threshold 150 preview reviewed without saving or running a Pipeline"
@@ -1785,10 +1844,30 @@ function Invoke-NoviceScratchThresholdBlobRecipeScenario {
         -AutomationId "VisionToolRunPreviewButton" `
         -Name $null `
         -TimeoutMilliseconds 15000 | Out-Null
-    Select-ComboBoxItemName `
-        -AutomationId "cbInputLayer" `
-        -ItemName "Threshold_Preview" `
-        -Label "Connect Threshold output to Blob input"
+    try {
+        Select-ComboBoxItemName `
+            -AutomationId "cbInputLayer" `
+            -ItemName "Threshold_Preview" `
+            -Label "Connect Threshold output to Blob input"
+    }
+    catch {
+        Add-TimelineEvent `
+            "next-tool-open-retry" `
+            "The direct Tool switch did not expose the Blob input list; close the current Tool View and retry once"
+        Close-ActiveToolViewForRouteReview
+        Click-AutomationId `
+            "HostToolNav_Blob" `
+            "Retry opening Blob Tool View" `
+            1600
+        Wait-AutomationElement `
+            -AutomationId "VisionToolRunPreviewButton" `
+            -Name $null `
+            -TimeoutMilliseconds 15000 | Out-Null
+        Select-ComboBoxItemName `
+            -AutomationId "cbInputLayer" `
+            -ItemName "Threshold_Preview" `
+            -Label "Connect Threshold output to Blob input after retry"
+    }
     Click-AutomationId `
         "VisionToolPresetBasic" `
         "Apply the reviewable Blob Basic preset" `
@@ -2493,6 +2572,10 @@ finally {
         "APPASSEMBLY=$appAssemblyPath",
         "APPASSEMBLYSHA256=$appAssemblyHash",
         "APPASSEMBLYLastWriteKST=$((Get-Item -LiteralPath $appAssemblyPath).LastWriteTime.ToString('O'))",
+        "Monitor=$($script:recordingMonitorName)",
+        "MonitorBounds=$($script:recordingLeft),$($script:recordingTop),$($script:recordingWidth),$($script:recordingHeight)",
+        "MonitorFallback=$($script:recordingMonitorFallback)",
+        "WindowBounds=$($script:recordingWindowBounds)",
         "Video=$videoPath",
         "Timeline=$timelinePath",
         "Failure=$failureMessage"

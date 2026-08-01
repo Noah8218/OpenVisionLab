@@ -145,6 +145,21 @@
       <Link>OpenCvSharpExtern.dll</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="$(OpenVisionLabRepoRoot)docs\manual\generated\OpenVisionLab_User_Manual.ko.html">
+      <Link>Guide\OpenVisionLab_User_Manual.ko.html</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="$(OpenVisionLabRepoRoot)docs\manual\generated\OpenVisionLab_User_Manual.en.html">
+      <Link>Guide\OpenVisionLab_User_Manual.en.html</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="$(OpenVisionLabRepoRoot)docs\manual\generated\guide-manifest.json">
+      <Link>Guide\guide-manifest.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
     <Content Include="lens.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -162,6 +177,11 @@
     </ItemGroup>
     <Error Condition="!Exists('%(RequiredNoahRuntime.Identity)')" Text="Missing vendored Library-Noah runtime: %(RequiredNoahRuntime.Identity). Restore dll\Library-Noah from the repository or refresh the vendor DLLs." />
     <Error Condition="!Exists('%(RequiredOpenCvSharpRuntime.Identity)')" Text="Missing shared OpenCVSharp native runtime: %(RequiredOpenCvSharpRuntime.Identity). Restore dll\OpenCVSharp\OpenCvSharpExtern.dll from the repository." />
+  </Target>
+  <Target Name="ValidateGeneratedUserManual" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Error Condition="!Exists('$(OpenVisionLabRepoRoot)docs\manual\generated\OpenVisionLab_User_Manual.ko.html')" Text="Generated Korean user manual is missing. Run tools\OpenVisionUserManualBuilder before building OpenVisionLab." />
+    <Error Condition="!Exists('$(OpenVisionLabRepoRoot)docs\manual\generated\OpenVisionLab_User_Manual.en.html')" Text="Generated English user manual is missing. Run tools\OpenVisionUserManualBuilder before building OpenVisionLab." />
+    <Error Condition="!Exists('$(OpenVisionLabRepoRoot)docs\manual\generated\guide-manifest.json')" Text="Generated user manual manifest is missing. Run tools\OpenVisionUserManualBuilder before building OpenVisionLab." />
   </Target>
 
   <Target Name="ValidateWpgPropertyGridReference" BeforeTargets="ResolveReferences" Condition="'$(DesignTimeBuild)' != 'true' and !Exists('$(OpenVisionLabDllRoot)System.Windows.Controls.WpfPropertyGrid.dll')">

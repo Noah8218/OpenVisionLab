@@ -13,6 +13,9 @@ Updated: 2026-07-31 KST
 3. `docs/roadmap/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md` — 제품 정체성과 화면별 책임
 4. `docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md` — 회귀시키면 안 되는 동작
 
+사용 방법이나 초보자 흐름을 찾는 경우에는 `docs/manual/README.md`를 먼저 읽습니다.
+배포본의 상단 `Guide` 버튼도 이 원본에서 생성한 단일 HTML을 엽니다.
+
 그 다음 `docs/LLM_DOCUMENT_INDEX.json`의 `routes`에서 현재 작업과 일치하는 항목만 추가로 읽습니다. 수백 KB의 `OPENVISIONLAB_NEXT_SESSION_HANDOFF.md`는 특정 P 번호나 과거 결정의 상세 근거가 필요할 때만 검색합니다.
 
 ## 문서 권위 순서
@@ -37,6 +40,7 @@ Updated: 2026-07-31 KST
 | 작업 시작/계속 | `AGENTS.md` → 현재 핸드오프 → 제품 목표 → 안정 계약 |
 | 현재 상태/다음 작업 | 현재 핸드오프 → 최신 날짜의 관련 `docs/reports/` → 완료 추적기 |
 | UI/운영 흐름 변경 | 안정 계약 → 사용자 중심 워크플로 보고서 → 관련 기능 계약 → UI smoke runbook |
+| 초보자 매뉴얼/튜토리얼/Learn | `docs/manual/README.md` → `docs/manual/manual-visuals.json` → `docs/learn/OPENVISIONLAB_TUTORIAL.md` → 관련 Tool Learn 문서 |
 | Recipe/Pipeline/XML 변경 | 안정 계약 → Vision Tool 계약/결과 계약 → LLM XML 가이드와 Tool Catalog(LLM 호환성이 관련될 때만) |
 | 샘플/검증/외부 자산 | Public Sample 정책 → External Reference 정책 → 관련 검증 보고서 |
 | 빌드/릴리스/배포 | Release Version 정책 → Source Build 보고서 → Runtime Data Root 계약/보고서 → Production Release Gate |
@@ -62,7 +66,7 @@ Updated: 2026-07-31 KST
 
 `docs/` 바로 아래의 기존 문서 대부분은 이전 링크 호환을 위한 작은 이동 안내 파일입니다. LLM은 이동 안내에서 가리키는 하위 폴더의 본문을 읽어야 하며, 이동 안내 자체를 권위 문서로 인용하면 안 됩니다.
 
-루트의 문서 진입점은 `README.md`와 `LLM_DOCUMENT_INDEX.json`입니다. `VISION_PIPELINE_RECIPE_SCHEMA.xsd`를 포함한 나머지 루트 문서 소스는 호환 리다이렉트이며, `OPENVISIONLAB_TUTORIAL.html`은 배포 가능한 독립 튜토리얼 산출물입니다.
+루트의 문서 진입점은 `README.md`와 `LLM_DOCUMENT_INDEX.json`입니다. 나머지 루트 문서는 이전 링크 호환용 이동 안내입니다. 배포용 튜토리얼은 `docs/learn/OPENVISIONLAB_TUTORIAL_PORTABLE.html`입니다.
 
 ## 검색 예시
 

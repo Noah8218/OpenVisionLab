@@ -18,6 +18,8 @@ namespace OpenVisionLab
         private readonly TextBlock detailText;
         private readonly Button counterpartButton;
         private readonly TextBlock counterpartButtonText;
+        private readonly TextBlock pipelineButtonText;
+        private readonly TextBlock firstStepButtonText;
         private readonly Func<OpenVisionRecipeContext> recipeContextProvider;
         private VISION_MENU? firstStepMenu;
         private VisionPipelineStep firstStep;
@@ -30,6 +32,8 @@ namespace OpenVisionLab
             TextBlock detailText,
             Button counterpartButton,
             TextBlock counterpartButtonText,
+            TextBlock pipelineButtonText,
+            TextBlock firstStepButtonText,
             Func<OpenVisionRecipeContext> recipeContextProvider)
         {
             this.overlay = overlay;
@@ -38,7 +42,10 @@ namespace OpenVisionLab
             this.detailText = detailText;
             this.counterpartButton = counterpartButton;
             this.counterpartButtonText = counterpartButtonText;
+            this.pipelineButtonText = pipelineButtonText;
+            this.firstStepButtonText = firstStepButtonText;
             this.recipeContextProvider = recipeContextProvider ?? throw new ArgumentNullException(nameof(recipeContextProvider));
+            ApplyLocalization();
         }
 
         public bool IsVisible => overlay?.Visibility == Visibility.Visible;
@@ -59,8 +66,15 @@ namespace OpenVisionLab
 
         public bool CanOpenCounterpartSample => IsVisible && !string.IsNullOrWhiteSpace(counterpartSampleName);
 
+        public void ApplyLocalization()
+        {
+            SetText(pipelineButtonText, Local("Pipeline 보기", "View Pipeline"));
+            SetText(firstStepButtonText, Local("첫 단계 열기", "Open First Step"));
+        }
+
         public void ShowForActiveSample()
         {
+            ApplyLocalization();
             SampleWorkflowState state = LoadActiveSampleWorkflow();
             if (state == null)
             {
@@ -71,7 +85,7 @@ namespace OpenVisionLab
             firstStepMenu = ResolveToolMenu(state.FirstTool);
             firstStep = state.FirstStep;
             counterpartSampleName = state.CounterpartSampleName;
-            SetText(titleText, "샘플 파이프라인 준비됨");
+            SetText(titleText, Local("샘플 파이프라인 준비됨", "Sample pipeline ready"));
             SetCounterpartButton(state.CounterpartActionText);
             if (state.HasCatalogSample)
             {
@@ -86,7 +100,9 @@ namespace OpenVisionLab
                     detailText,
                     string.Format(
                         CultureInfo.CurrentCulture,
-                        "제품군: {0} / 기준: {1}{3} / 다음: Pipeline 보기 -> Run Review 또는 첫 단계 열기 / 흐름: {2}",
+                        Local(
+                            "제품군: {0} / 기준: {1}{3} / 다음: Pipeline 보기 -> Run Review 또는 첫 단계 열기 / 흐름: {2}",
+                            "Product group: {0} / Criteria: {1}{3} / Next: View Pipeline -> Run Review or open the first step / Flow: {2}"),
                         state.Category,
                         state.PairRole,
                         state.ToolFlow,
@@ -105,7 +121,9 @@ namespace OpenVisionLab
                     detailText,
                     string.Format(
                         CultureInfo.CurrentCulture,
-                        "첫 단계: {0} / 흐름: {1} / 다음: Pipeline 보기 -> Run Review 또는 첫 단계 열기",
+                        Local(
+                            "첫 단계: {0} / 흐름: {1} / 다음: Pipeline 보기 -> Run Review 또는 첫 단계 열기",
+                            "First step: {0} / Flow: {1} / Next: View Pipeline -> Run Review or open the first step"),
                         state.FirstTool,
                         state.ToolFlow));
             }
@@ -237,7 +255,9 @@ namespace OpenVisionLab
                     : "Good/Bad";
             return string.Format(
                 CultureInfo.CurrentCulture,
-                "비교: Pipeline Review에서 {0} 기준 열고 Run Review",
+                Local(
+                    "비교: Pipeline Review에서 {0} 기준 열고 Run Review",
+                    "Compare: open the {0} reference in Pipeline Review, then Run Review"),
                 oppositeRole);
         }
 
@@ -293,7 +313,10 @@ namespace OpenVisionLab
                 : IsNgSampleReference(counterpartSample)
                     ? "NG"
                     : "Good/Bad";
-            return string.Format(CultureInfo.CurrentCulture, "{0} \uAE30\uC900 \uC5F4\uAE30", role);
+            return string.Format(
+                CultureInfo.CurrentCulture,
+                Local("{0} 기준 열기", "Open {0} reference"),
+                role);
         }
 
         private static string FormatPairReviewSuffix(string pairReviewHint)
@@ -337,6 +360,13 @@ namespace OpenVisionLab
         private static string SafeText(string text, string fallback)
         {
             return string.IsNullOrWhiteSpace(text) ? fallback : text.Trim();
+        }
+
+        private static string Local(string korean, string english)
+        {
+            return OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.English
+                ? english
+                : korean;
         }
 
         private static string CreateSamplePipelineName(string sampleName)

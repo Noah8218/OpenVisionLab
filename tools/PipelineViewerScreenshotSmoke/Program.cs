@@ -197,6 +197,42 @@ internal static class Program
         ["wpf_shell_host_layer_popout"] = CaptureShellHostLayerPopout,
         ["wpf_shell_host_bridge"] = CaptureShellHostBridge,
         ["wpf_shell_host_native_tool"] = CaptureShellHostNativeTool,
+        ["manual_threshold_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Threshold),
+        ["manual_filter_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Filter),
+        ["manual_morphology_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Morphology),
+        ["manual_arithmetic_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Arithmetic),
+        ["manual_edge_detection_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.EdgeDetection),
+        ["manual_rotate_scale_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.RotateAndScale),
+        ["manual_affine_transform_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.AffineTransform),
+        ["manual_histogram_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Histogram),
+        ["manual_hsv_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.HSV),
+        ["manual_mean_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Mean),
+        ["manual_blob_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Blob),
+        ["manual_line_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Line),
+        ["manual_matching_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Matching),
+        ["manual_edge_based_matching_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.EdgeBasedMatching),
+        ["manual_feature_matching_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.FeatureMatching),
+        ["manual_en_workspace_empty"] = outputPath => CaptureShellHostWorkspaceEmpty(outputPath, OpenVisionLanguage.English),
+        ["manual_en_workspace_sample_picker"] = outputPath => CaptureShellHostWorkspaceSamplePicker(outputPath, OpenVisionLanguage.English),
+        ["manual_en_workspace_sample_open"] = outputPath => CaptureShellHostWorkspaceSampleOpen(outputPath, OpenVisionLanguage.English),
+        ["manual_en_pipeline_review"] = outputPath => CaptureShellHostPipelineReview(outputPath, OpenVisionLanguage.English),
+        ["manual_en_recipe_manager"] = outputPath => CaptureShellHostRecipeManagerSummary(outputPath, OpenVisionLanguage.English),
+        ["manual_en_threshold_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Threshold, OpenVisionLanguage.English),
+        ["manual_en_filter_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Filter, OpenVisionLanguage.English),
+        ["manual_en_morphology_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Morphology, OpenVisionLanguage.English),
+        ["manual_en_arithmetic_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Arithmetic, OpenVisionLanguage.English),
+        ["manual_en_edge_detection_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.EdgeDetection, OpenVisionLanguage.English),
+        ["manual_en_rotate_scale_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.RotateAndScale, OpenVisionLanguage.English),
+        ["manual_en_affine_transform_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.AffineTransform, OpenVisionLanguage.English),
+        ["manual_en_histogram_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Histogram, OpenVisionLanguage.English),
+        ["manual_en_hsv_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.HSV, OpenVisionLanguage.English),
+        ["manual_en_mean_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Mean, OpenVisionLanguage.English),
+        ["manual_en_blob_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Blob, OpenVisionLanguage.English),
+        ["manual_en_contour_tool_ui"] = outputPath => CaptureShellHostContourTool(outputPath, OpenVisionLanguage.English),
+        ["manual_en_line_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Line, OpenVisionLanguage.English),
+        ["manual_en_matching_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.Matching, OpenVisionLanguage.English),
+        ["manual_en_edge_based_matching_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.EdgeBasedMatching, OpenVisionLanguage.English),
+        ["manual_en_feature_matching_tool_ui"] = outputPath => CaptureManualToolView(outputPath, VISION_MENU.FeatureMatching, OpenVisionLanguage.English),
         ["wpf_shell_host_threshold_basic_tool"] = CaptureShellHostThresholdBasicTool,
         ["wpf_shell_host_threshold_tool"] = CaptureShellHostThresholdTool,
         ["wpf_threshold_tool_guide"] = outputPath => CaptureOpenVisionLearnThreshold(outputPath, 0),
@@ -287,7 +323,8 @@ internal static class Program
         ["wpf_template_editor_opengl"] = CaptureOpenGlTemplateEditor,
         ["wpf_image_compare"] = CaptureImageCompare,
         ["log_panel_contract_check"] = CaptureLogPanel,
-        ["localization_catalog_contract_check"] = CaptureLocalizationCatalog
+        ["localization_catalog_contract_check"] = CaptureLocalizationCatalog,
+        ["manual_guide_language_contract"] = CaptureManualGuideLanguageContract
     };
 
     private static readonly Dictionary<string, string[]> Suites = new(StringComparer.OrdinalIgnoreCase)
@@ -347,7 +384,23 @@ internal static class Program
             }
 
             EnsureApplication();
-            OpenVisionLanguageService.Load();
+            OpenVisionLanguage? manualCaptureLanguage = ResolveManualCaptureLanguage(args);
+            if (manualCaptureLanguage.HasValue)
+            {
+                string languageCode = manualCaptureLanguage.Value == OpenVisionLanguage.English ? "en" : "ko";
+                string localizationDirectory = Path.Combine(
+                    Path.GetTempPath(),
+                    "OpenVisionLab-ScreenshotSmoke",
+                    "manual-localization-" + languageCode);
+                Directory.CreateDirectory(localizationDirectory);
+                OpenVisionLanguageService.ConfigureDataDirectory(localizationDirectory);
+                OpenVisionLanguageService.Load();
+                OpenVisionLanguageService.SetLanguage(manualCaptureLanguage.Value, true);
+            }
+            else
+            {
+                OpenVisionLanguageService.Load();
+            }
 
             if (args.Length >= 2 && string.Equals(args[0], "--all", StringComparison.OrdinalIgnoreCase))
             {
@@ -597,8 +650,16 @@ internal static class Program
 
     private static CaptureResult CaptureShellHostWorkspaceEmpty(string outputPath)
     {
-        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        return CaptureShellHostWorkspaceEmpty(outputPath, OpenVisionLanguage.Korean);
+    }
+
+    private static CaptureResult CaptureShellHostWorkspaceEmpty(
+        string outputPath,
+        OpenVisionLanguage language)
+    {
+        OpenVisionLanguageService.SetLanguage(language, false);
         OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostWorkspaceEmpty", seedMainLayer: false);
+        OpenVisionLanguageService.SetLanguage(language, false);
         return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
         {
             if (shellHost.HasMainLayer || shellHost.HasWorkspaceLayerPreview)
@@ -644,6 +705,7 @@ internal static class Program
                 "WorkspaceEmptySampleButton",
                 "WorkspaceEmptyGuideButton",
                 "WorkspaceEmptyPipelineButton",
+                "HostGuideButton",
                 "WorkspaceEmptyLogHint",
                 "ShellLogCollapsiblePanel",
                 "ShellLogCollapsedSummary",
@@ -658,41 +720,48 @@ internal static class Program
                 OpenVisionLanguageService.T("Shell.WorkspaceEmptySampleButton"),
                 OpenVisionLanguageService.T("Shell.WorkspaceEmptyGuideButton"),
                 OpenVisionLanguageService.T("Shell.WorkspaceEmptyPipelineButton"),
+                OpenVisionLanguageService.T("Menu.Guide"),
                 OpenVisionLanguageService.T("Shell.WorkspaceEmptyLogHint"),
                 OpenVisionLanguageService.T("Pipeline.RunLog"),
                 OpenVisionLanguageService.T("Shell.LogPanel.Open"));
-            AssertVisibleTextDoesNotContain(shellHost, "WPF workspace empty Korean copy", "Preview 확인");
+            AssertVisibleTextDoesNotContain(
+                shellHost,
+                "WPF workspace empty stale language copy",
+                language == OpenVisionLanguage.English ? "이미지 없음" : "No image");
 
             if (shellHost.RecipeCommands.LlmXmlDraftDependencyRows.Count == 0)
             {
                 throw new InvalidOperationException("Recipe manager LLM XML dependency path drilldown did not expose any rows.");
             }
 
-            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
-            Pump(8);
-            AssertVisibleTextContains(
-                shellHost,
-                "WPF workspace empty English copy",
-                OpenVisionLanguageService.T("Shell.WorkspaceStatus.EmptyTitle"),
-                OpenVisionLanguageService.T("Shell.WorkspaceEmptyStepPipelineTitle"),
-                OpenVisionLanguageService.T("Shell.WorkspaceEmptyStepPreviewTitle"),
-                OpenVisionLanguageService.T("Shell.WorkspaceEmptySampleButton"),
-                OpenVisionLanguageService.T("Shell.WorkspaceEmptyPipelineButton"));
-            if (shellHost.IsActiveWpfToolWindowVisibleForTest || shellHost.IsNativeDocumentActive)
+            if (language == OpenVisionLanguage.Korean)
             {
-                throw new InvalidOperationException("Changing workspace empty language must not open a tool window.");
-            }
+                OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+                Pump(8);
+                AssertVisibleTextContains(
+                    shellHost,
+                    "WPF workspace empty English copy",
+                    OpenVisionLanguageService.T("Shell.WorkspaceStatus.EmptyTitle"),
+                    OpenVisionLanguageService.T("Shell.WorkspaceEmptyStepPipelineTitle"),
+                    OpenVisionLanguageService.T("Shell.WorkspaceEmptyStepPreviewTitle"),
+                    OpenVisionLanguageService.T("Shell.WorkspaceEmptySampleButton"),
+                    OpenVisionLanguageService.T("Shell.WorkspaceEmptyPipelineButton"));
+                if (shellHost.IsActiveWpfToolWindowVisibleForTest || shellHost.IsNativeDocumentActive)
+                {
+                    throw new InvalidOperationException("Changing workspace empty language must not open a tool window.");
+                }
 
-            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
-            Pump(8);
-            AssertVisibleTextContains(
-                shellHost,
-                "WPF workspace empty Korean copy after language restore",
-                OpenVisionLanguageService.T("Shell.WorkspaceStatus.EmptyTitle"),
-                OpenVisionLanguageService.T("Shell.WorkspaceEmptyStepPipelineTitle"),
-                OpenVisionLanguageService.T("Shell.WorkspaceEmptyStepPreviewTitle"),
-                OpenVisionLanguageService.T("Shell.WorkspaceEmptySampleButton"),
-                OpenVisionLanguageService.T("Shell.WorkspaceEmptyPipelineButton"));
+                OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+                Pump(8);
+                AssertVisibleTextContains(
+                    shellHost,
+                    "WPF workspace empty Korean copy after language restore",
+                    OpenVisionLanguageService.T("Shell.WorkspaceStatus.EmptyTitle"),
+                    OpenVisionLanguageService.T("Shell.WorkspaceEmptyStepPipelineTitle"),
+                    OpenVisionLanguageService.T("Shell.WorkspaceEmptyStepPreviewTitle"),
+                    OpenVisionLanguageService.T("Shell.WorkspaceEmptySampleButton"),
+                    OpenVisionLanguageService.T("Shell.WorkspaceEmptyPipelineButton"));
+            }
         }, captureFloatingToolWindow: false);
     }
 
@@ -2551,8 +2620,16 @@ internal static class Program
 
     private static CaptureResult CaptureShellHostWorkspaceSampleOpen(string outputPath)
     {
-        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        return CaptureShellHostWorkspaceSampleOpen(outputPath, OpenVisionLanguage.Korean);
+    }
+
+    private static CaptureResult CaptureShellHostWorkspaceSampleOpen(
+        string outputPath,
+        OpenVisionLanguage language)
+    {
+        OpenVisionLanguageService.SetLanguage(language, false);
         OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostWorkspaceSampleOpen", seedMainLayer: false);
+        OpenVisionLanguageService.SetLanguage(language, false);
         return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
         {
             if (!shellHost.IsWorkspaceEmptyPromptVisible)
@@ -2572,6 +2649,8 @@ internal static class Program
 
             shellHost.OpenFirstRunnableWorkspaceSampleForTest();
             Pump(60);
+            OpenVisionLanguageService.SetLanguage(language, false);
+            Pump(24);
 
             if (!shellHost.HasMainLayer
                 || !shellHost.HasWorkspaceLayerPreview
@@ -2602,14 +2681,20 @@ internal static class Program
             string activeSampleName = shellHost.ActivePipelineNameForTest.StartsWith("Sample_", StringComparison.Ordinal)
                 ? shellHost.ActivePipelineNameForTest.Substring("Sample_".Length)
                 : shellHost.ActivePipelineNameForTest;
+            bool hasExpectedWorkflowCopy = language == OpenVisionLanguage.English
+                ? shellHost.WorkspaceSampleWorkflowTitleForTest.Contains("Sample", StringComparison.OrdinalIgnoreCase)
+                    && workflowDetail.Contains("product", StringComparison.OrdinalIgnoreCase)
+                    && workflowDetail.Contains("criteria", StringComparison.OrdinalIgnoreCase)
+                    && workflowDetail.Contains("next", StringComparison.OrdinalIgnoreCase)
+                : shellHost.WorkspaceSampleWorkflowTitleForTest.Contains("\uC0D8\uD50C", StringComparison.Ordinal)
+                    && workflowDetail.Contains("\uC81C\uD488\uAD70", StringComparison.Ordinal)
+                    && workflowDetail.Contains("\uAE30\uC900", StringComparison.Ordinal)
+                    && workflowDetail.Contains("\uB2E4\uC74C", StringComparison.Ordinal);
             if (!shellHost.IsWorkspaceSampleWorkflowVisibleForTest
-                || !shellHost.WorkspaceSampleWorkflowTitleForTest.Contains("\uC0D8\uD50C", StringComparison.Ordinal)
+                || !hasExpectedWorkflowCopy
                 || !shellHost.WorkspaceSampleWorkflowMetaForTest.Contains(activeSampleName, StringComparison.Ordinal)
                 || string.IsNullOrWhiteSpace(workflowDetail)
                 || string.IsNullOrWhiteSpace(firstStepMenu)
-                || !workflowDetail.Contains("\uC81C\uD488\uAD70", StringComparison.Ordinal)
-                || !workflowDetail.Contains("\uAE30\uC900", StringComparison.Ordinal)
-                || !workflowDetail.Contains("\uB2E4\uC74C", StringComparison.Ordinal)
                 || !workflowDetail.Contains("Run Review", StringComparison.Ordinal)
                 || !workflowDetail.Contains(firstStepMenu, StringComparison.Ordinal))
             {
@@ -4063,6 +4148,18 @@ internal static class Program
         {
             RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
         }
+    }
+
+    private static OpenVisionLanguage? ResolveManualCaptureLanguage(string[] args)
+    {
+        if (args.Length >= 2 &&
+            string.Equals(args[0], "--target", StringComparison.OrdinalIgnoreCase) &&
+            SplitNames(args[1]).Any(name => name.StartsWith("manual_en_", StringComparison.OrdinalIgnoreCase)))
+        {
+            return OpenVisionLanguage.English;
+        }
+
+        return null;
     }
 
     private static void VerifyCvr20OverlayRenderingContract(string outputPath)
@@ -9892,7 +9989,14 @@ internal static class Program
 
     private static CaptureResult CaptureShellHostRecipeManagerSummary(string outputPath)
     {
-        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        return CaptureShellHostRecipeManagerSummary(outputPath, OpenVisionLanguage.Korean);
+    }
+
+    private static CaptureResult CaptureShellHostRecipeManagerSummary(
+        string outputPath,
+        OpenVisionLanguage language)
+    {
+        OpenVisionLanguageService.SetLanguage(language, false);
         CleanupTransientRecipeWorkspaces();
 
         string recipe = "Smoke_RecipeSummary_" + Guid.NewGuid().ToString("N");
@@ -9900,6 +10004,7 @@ internal static class Program
         VisionPipelineStorage.SaveActivePipelineName(recipe, "Summary_Source");
 
         OpenVisionShellHostView shellHost = CreateShellHost(recipe, seedMainLayer: true);
+        OpenVisionLanguageService.SetLanguage(language, false);
         return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
         {
             ToggleButton recipeManagerButton = FindNamedVisualChild<ToggleButton>(shellHost, "btnHostRecipeManager")
@@ -9942,12 +10047,18 @@ internal static class Program
             }
 
             string workSampleName = shellHost.RecipeCommands.SelectedSampleOption?.SampleName ?? string.Empty;
+            bool hasExpectedSummaryCopy = language == OpenVisionLanguage.English
+                ? !string.IsNullOrWhiteSpace(shellHost.RecipeCommands.RecipeOverviewSelectedSampleText)
+                    && !string.IsNullOrWhiteSpace(shellHost.RecipeCommands.RecipeOverviewSelectedSampleContextText)
+                    && !string.IsNullOrWhiteSpace(shellHost.RecipeCommands.RecipeOverviewLastResultText)
+                    && !string.IsNullOrWhiteSpace(shellHost.RecipeCommands.RecipeOverviewLastResultValueText)
+                : shellHost.RecipeCommands.RecipeOverviewSelectedSampleText.Contains("작업 샘플", StringComparison.Ordinal)
+                    && shellHost.RecipeCommands.RecipeOverviewSelectedSampleContextText.Contains("샘플 검사 실행 후", StringComparison.Ordinal)
+                    && shellHost.RecipeCommands.RecipeOverviewLastResultText.Contains("현재 레시피", StringComparison.Ordinal)
+                    && shellHost.RecipeCommands.RecipeOverviewLastResultValueText.Contains("검사하지 않음", StringComparison.Ordinal);
             if (string.IsNullOrWhiteSpace(workSampleName)
-                || !shellHost.RecipeCommands.RecipeOverviewSelectedSampleText.Contains("작업 샘플", StringComparison.Ordinal)
-                || !shellHost.RecipeCommands.RecipeOverviewSelectedSampleContextText.Contains("샘플 검사 실행 후", StringComparison.Ordinal)
-                || !shellHost.RecipeCommands.RecipeOverviewLastResultText.Contains("현재 레시피", StringComparison.Ordinal)
+                || !hasExpectedSummaryCopy
                 || shellHost.RecipeCommands.HasCurrentRecipeSampleExecution
-                || !shellHost.RecipeCommands.RecipeOverviewLastResultValueText.Contains("검사하지 않음", StringComparison.Ordinal)
                 || shellHost.RecipeCommands.RecipeOverviewLastResultValueText.Contains(workSampleName, StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException(
@@ -14432,7 +14543,14 @@ internal static class Program
 
     private static CaptureResult CaptureShellHostWorkspaceSamplePicker(string outputPath)
     {
-        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        return CaptureShellHostWorkspaceSamplePicker(outputPath, OpenVisionLanguage.Korean);
+    }
+
+    private static CaptureResult CaptureShellHostWorkspaceSamplePicker(
+        string outputPath,
+        OpenVisionLanguage language)
+    {
+        OpenVisionLanguageService.SetLanguage(language, false);
         List<VisionPipelineSampleCatalogItem> samples = VisionPipelineSampleCatalogItem.LoadRunnable()
             .Where(item => item.CanOpen)
             .ToList();
@@ -14443,6 +14561,7 @@ internal static class Program
 
         OpenVisionWorkspaceSamplePickerViewModel viewModel = new(samples);
         OpenVisionWorkspaceSamplePickerWindow window = new(viewModel);
+        OpenVisionLanguageService.SetLanguage(language, false);
         return CaptureStandaloneWindow(window, outputPath, 1040, 742, () =>
         {
             AssertVisibleAutomationIds(
@@ -21052,6 +21171,35 @@ internal static class Program
         });
     }
 
+    private static CaptureResult CaptureManualToolView(
+        string outputPath,
+        VISION_MENU menu,
+        OpenVisionLanguage language = OpenVisionLanguage.Korean)
+    {
+        OpenVisionLanguageService.SetLanguage(language, false);
+        OpenVisionShellHostView shellHost = CreateShellHost("Manual_" + menu);
+        OpenVisionLanguageService.SetLanguage(language, false);
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            int beforeRuns = shellHost.NativePreviewRunCount;
+            shellHost.SelectToolForTest(menu);
+            Pump(24);
+            if (!shellHost.IsNativeDocumentActive || !shellHost.IsActiveWpfToolWindowVisibleForTest)
+            {
+                throw new InvalidOperationException(
+                    "Manual capture did not open the requested Tool View. "
+                    + $"Menu={menu}, Type={shellHost.ActiveNativeDocumentTypeName}, Title={shellHost.ActiveWpfToolWindowTitle}");
+            }
+
+            if (shellHost.NativePreviewRunCount != beforeRuns || shellHost.HasNativePreviewResult)
+            {
+                throw new InvalidOperationException(
+                    "Opening a Tool View for the manual must not run Preview. "
+                    + $"Menu={menu}, Runs={shellHost.NativePreviewRunCount}, HasResult={shellHost.HasNativePreviewResult}");
+            }
+        });
+    }
+
     private static void WriteCvr07ThresholdSuggestionPublicReplay(string outputPath)
     {
         const string goodSampleName = "Public_Threshold_BandPads_Good";
@@ -24559,15 +24707,25 @@ internal static class Program
 
     private static CaptureResult CaptureShellHostPipelineReview(string outputPath)
     {
-        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        return CaptureShellHostPipelineReview(outputPath, OpenVisionLanguage.Korean);
+    }
+
+    private static CaptureResult CaptureShellHostPipelineReview(
+        string outputPath,
+        OpenVisionLanguage language)
+    {
+        OpenVisionLanguageService.SetLanguage(language, false);
         string recipeName = "Smoke_WpfPipelineReview_" + Guid.NewGuid().ToString("N");
         OpenVisionShellHostView shellHost = CreateShellHost(recipeName);
+        OpenVisionLanguageService.SetLanguage(language, false);
         VisionPipeline pipeline = CreatePipelineReviewReadabilityPipeline();
         VisionPipelineStorage.Save(recipeName, pipeline);
         VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
         return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
         {
             shellHost.SelectToolForTest(VISION_MENU.Pipeline);
+            Pump(24);
+            OpenVisionLanguageService.SetLanguage(language, false);
             Pump(24);
             Window reviewWindow = GetActiveFloatingToolWindow("Pipeline review readiness");
             AssertVisibleAutomationIds(
@@ -24685,30 +24843,33 @@ internal static class Program
                     + $"Prev={shellHost.CanSelectPreviousPipelineReviewStepForTest}, Next={shellHost.CanSelectNextPipelineReviewStepForTest}");
             }
 
-            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
-            Pump(16);
-            string expectedEnglishReadinessSummary = string.Format(
-                CultureInfo.CurrentCulture,
-                OpenVisionLanguageService.T("PipelineReview.Readiness.SummaryChecksAndAdviceFormat"),
-                1,
-                2);
-            if (!shellHost.PipelineReviewGuideCurrentStepText.Contains("Filter", StringComparison.OrdinalIgnoreCase)
-                || !shellHost.PipelineReviewGuideDetailText.Contains("Branch:", StringComparison.Ordinal)
-                || !shellHost.PipelineReviewGuideNextActionText.Contains("Run Review", StringComparison.Ordinal)
-                || !string.Equals(
-                    ReadVisibleTextByAutomationId(reviewWindow, "PipelineReviewReadinessSummary"),
-                    expectedEnglishReadinessSummary,
-                    StringComparison.Ordinal))
+            if (language == OpenVisionLanguage.Korean)
             {
-                throw new InvalidOperationException(
-                    "Pipeline review guide and readiness did not recalculate dynamic text after switching to English. "
-                    + $"Current='{shellHost.PipelineReviewGuideCurrentStepText}', Stage='{shellHost.PipelineReviewGuideStageText}', "
-                    + $"Flow='{shellHost.PipelineReviewFlowSummaryText}', Next='{shellHost.PipelineReviewGuideNextActionText}', "
-                    + $"Detail='{shellHost.PipelineReviewGuideDetailText}'");
-            }
+                OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+                Pump(16);
+                string expectedEnglishReadinessSummary = string.Format(
+                    CultureInfo.CurrentCulture,
+                    OpenVisionLanguageService.T("PipelineReview.Readiness.SummaryChecksAndAdviceFormat"),
+                    1,
+                    2);
+                if (!shellHost.PipelineReviewGuideCurrentStepText.Contains("Filter", StringComparison.OrdinalIgnoreCase)
+                    || !shellHost.PipelineReviewGuideDetailText.Contains("Branch:", StringComparison.Ordinal)
+                    || !shellHost.PipelineReviewGuideNextActionText.Contains("Run Review", StringComparison.Ordinal)
+                    || !string.Equals(
+                        ReadVisibleTextByAutomationId(reviewWindow, "PipelineReviewReadinessSummary"),
+                        expectedEnglishReadinessSummary,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Pipeline review guide and readiness did not recalculate dynamic text after switching to English. "
+                        + $"Current='{shellHost.PipelineReviewGuideCurrentStepText}', Stage='{shellHost.PipelineReviewGuideStageText}', "
+                        + $"Flow='{shellHost.PipelineReviewFlowSummaryText}', Next='{shellHost.PipelineReviewGuideNextActionText}', "
+                        + $"Detail='{shellHost.PipelineReviewGuideDetailText}'");
+                }
 
-            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
-            Pump(16);
+                OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+                Pump(16);
+            }
             WaitForTaskWithPump(shellHost.RunPipelineReviewForTestAsync(), 30000, "Pipeline review execution");
             Pump(32);
             if (string.IsNullOrWhiteSpace(shellHost.PipelineReviewValidationStatusText)
@@ -25746,13 +25907,28 @@ internal static class Program
 
     private static CaptureResult CaptureShellHostContourTool(string outputPath)
     {
-        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        return CaptureShellHostContourTool(outputPath, OpenVisionLanguage.Korean);
+    }
+
+    private static CaptureResult CaptureShellHostContourTool(
+        string outputPath,
+        OpenVisionLanguage language)
+    {
+        OpenVisionLanguageService.SetLanguage(language, false);
         OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostContour");
+        OpenVisionLanguageService.SetLanguage(language, false);
         return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
         {
             shellHost.SelectToolForTest(VISION_MENU.Contour);
             Pump(16);
-            AssertActiveToolTextsVisible("Contour verification guide initial", "Contour 검증", "미리보기 전", "면적 ", "다음:");
+            if (language == OpenVisionLanguage.Korean)
+            {
+                AssertActiveToolTextsVisible("Contour verification guide initial", "Contour 검증", "미리보기 전", "면적 ", "다음:");
+            }
+            else
+            {
+                AssertActiveToolTextsVisible("English Contour guide initial", "Contour", "Preview not run", "Area", "Next:");
+            }
             AssertToolHeaderLearnOpensTopic(shellHost, 6, "Contour header Learn");
             AssertFloatingPropertyGridRowsRendered("Contour property grid");
             System.Windows.Controls.WpfPropertyGrid.PropertyGrid contourGrid = GetActiveFloatingPropertyGrid("Contour property grid");
@@ -25858,9 +26034,16 @@ internal static class Program
 
             shellHost.RunActiveNativePreviewForTest();
             Pump(24);
-            AssertResultReviewVisible("Contour", "Contour /", "검출", "최대 면적", "중심", "박스");
-            AssertResultReviewVisible("Contour result guidance", "미리보기 OK", "합격 기준:", "최대 면적", "박스", "다음:");
-            AssertActiveToolTextsVisible("Contour verification guide result", "Contour 검증", "미리보기 OK", "면적 ", "다음:");
+            if (language == OpenVisionLanguage.Korean)
+            {
+                AssertResultReviewVisible("Contour", "Contour /", "검출", "최대 면적", "중심", "박스");
+                AssertResultReviewVisible("Contour result guidance", "미리보기 OK", "합격 기준:", "최대 면적", "박스", "다음:");
+                AssertActiveToolTextsVisible("Contour verification guide result", "Contour 검증", "미리보기 OK", "면적 ", "다음:");
+            }
+            else
+            {
+                AssertActiveToolTextsVisible("English Contour guide result", "Contour", "Preview OK", "Area", "Next:");
+            }
             using (Bitmap contourDrawLayer = shellHost.GetLayerImageCloneForTest("Contour_Preview"))
             {
                 AssertBitmapContainsColorNear(contourDrawLayer, DrawingColor.Red, 30, "Contour draw result red overlay");
@@ -25885,8 +26068,15 @@ internal static class Program
             }
 
             AssertDockActiveNativeTool(shellHost, "ContourToolWpfView", "Docked Contour tool layout");
-            AssertResultReviewVisible("Docked Contour result guidance", "미리보기 OK", "합격 기준:", "최대 면적", "박스", "다음:");
-            AssertActiveToolTextsVisible("Docked Contour verification guide", "Contour 검증", "미리보기 OK", "면적 ", "다음:");
+            if (language == OpenVisionLanguage.Korean)
+            {
+                AssertResultReviewVisible("Docked Contour result guidance", "미리보기 OK", "합격 기준:", "최대 면적", "박스", "다음:");
+                AssertActiveToolTextsVisible("Docked Contour verification guide", "Contour 검증", "미리보기 OK", "면적 ", "다음:");
+            }
+            else
+            {
+                AssertActiveToolTextsVisible("Docked English Contour guide", "Contour", "Preview OK", "Area", "Next:");
+            }
         });
     }
 
@@ -33340,6 +33530,98 @@ internal static class Program
             }
         };
         return CaptureElement(report, outputPath, 760, 420);
+    }
+
+    private static CaptureResult CaptureManualGuideLanguageContract(string outputPath)
+    {
+        OpenVisionLanguage originalLanguage = OpenVisionLanguageService.CurrentLanguage;
+        string testRoot = Path.Combine(
+            Path.GetTempPath(),
+            "OpenVisionLab-ScreenshotSmoke",
+            "manual-guide-language-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(testRoot);
+        try
+        {
+            List<string> reportLines = new List<string>();
+            string[] languageCodes = { "ko", "en", "ko" };
+            string sourceDirectory = string.Empty;
+            foreach (string languageCode in languageCodes)
+            {
+                OpenVisionLanguageService.SetLanguage(
+                    string.Equals(languageCode, "en", StringComparison.Ordinal)
+                        ? OpenVisionLanguage.English
+                        : OpenVisionLanguage.Korean,
+                    false);
+                if (!OpenVisionShellHostCommandController.TryResolveUserManualPath(
+                        out string resolvedPath,
+                        out string failureDetail)
+                    || !string.Equals(
+                        Path.GetFileName(resolvedPath),
+                        $"OpenVisionLab_User_Manual.{languageCode}.html",
+                        StringComparison.Ordinal)
+                    || !File.ReadAllText(resolvedPath).Contains(
+                        $"data-openvisionlab-manual-language=\"{languageCode}\"",
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"Guide did not resolve the {languageCode} manual. Path='{resolvedPath}', Failure='{failureDetail}'");
+                }
+
+                sourceDirectory = Path.GetDirectoryName(resolvedPath) ?? string.Empty;
+                reportLines.Add($"{languageCode.ToUpperInvariant()} -> {Path.GetFileName(resolvedPath)}");
+            }
+
+            File.Copy(Path.Combine(sourceDirectory, "guide-manifest.json"), Path.Combine(testRoot, "guide-manifest.json"), true);
+            File.Copy(
+                Path.Combine(sourceDirectory, "OpenVisionLab_User_Manual.ko.html"),
+                Path.Combine(testRoot, "OpenVisionLab_User_Manual.ko.html"),
+                true);
+            if (OpenVisionShellHostCommandController.TryValidateUserManual(
+                    testRoot,
+                    "en",
+                    out _,
+                    out _))
+            {
+                throw new InvalidOperationException("Guide crossed over to Korean when the selected English manual was missing.");
+            }
+            reportLines.Add("Missing EN -> fail closed (no KO fallback)");
+
+            string englishSourcePath = Path.Combine(sourceDirectory, "OpenVisionLab_User_Manual.en.html");
+            string englishTestPath = Path.Combine(testRoot, "OpenVisionLab_User_Manual.en.html");
+            File.Copy(englishSourcePath, englishTestPath, true);
+            File.AppendAllText(englishTestPath, Environment.NewLine);
+            if (OpenVisionShellHostCommandController.TryValidateUserManual(
+                    testRoot,
+                    "en",
+                    out _,
+                    out _))
+            {
+                throw new InvalidOperationException("Guide accepted an English manual with a mismatched SHA-256 hash.");
+            }
+            reportLines.Add("Damaged EN -> fail closed (SHA-256)");
+
+            Border report = new Border
+            {
+                Background = Brushes.White,
+                Padding = new Thickness(24),
+                Child = new TextBlock
+                {
+                    Text = "Guide Language Contract OK" + Environment.NewLine + string.Join(Environment.NewLine, reportLines),
+                    FontSize = 18,
+                    LineHeight = 30,
+                    Foreground = Brushes.DarkSlateGray
+                }
+            };
+            return CaptureElement(report, outputPath, 900, 380);
+        }
+        finally
+        {
+            OpenVisionLanguageService.SetLanguage(originalLanguage, false);
+            if (Directory.Exists(testRoot))
+            {
+                Directory.Delete(testRoot, true);
+            }
+        }
     }
 
     private static OpenVisionShellHostView CreateShellHost(string recipeName, bool seedMainLayer = true)

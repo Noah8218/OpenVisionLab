@@ -1,6 +1,6 @@
 # OpenVisionLab Documentation Map
 
-Updated: 2026-07-31 KST
+Updated: 2026-08-01 KST
 
 This map prevents a new chat from treating large historical records or old readiness estimates as the current plan.
 
@@ -46,6 +46,11 @@ If documents conflict, do not smooth over the conflict. Follow the higher-ranked
 | Document | Use it for | Freshness note |
 | --- | --- | --- |
 | `README.md` and `LLM_DOCUMENT_INDEX.json` | Fast human/LLM entrypoint and task-to-canonical-document routing. | Current discovery authority; intentionally smaller than this full registry. |
+| `manual/README.md` and `manual/manual-manifest*.json` | Korean/English packaged Guide source ownership, chapter order, UI-visual mapping, build command, and localization contract. | Current manual-authoring entrypoint; preserve 26-section/17-Tool structural parity and same-language current UI evidence. |
+| `reports/OPENVISIONLAB_LOCALIZED_USER_MANUAL_20260801.md` | P282 language-at-click Guide routing, bilingual manifest/hash validation, same-language current UI captures, copied-runtime packaging, and fail-closed evidence. | Current completion authority for Korean/English packaged manuals; no cross-language fallback is allowed. |
+| `reports/OPENVISIONLAB_DISTRIBUTABLE_USER_MANUAL_20260801.md` | P281 self-contained offline manual, numbered UI figures/callouts, runtime packaging, and moved-stub exclusion. | Historical single-language implementation baseline superseded by P282 only for localization and schema-2 packaging. |
+| `roadmap/OPENVISIONLAB_DISTRIBUTABLE_USER_MANUAL_DESIGN_20260801.md` | P280/P282 manual architecture, novice workflow coverage, distribution boundary, and bilingual amendment. | Design authority for the packaged manual; verify final behavior against the P282 report and current source. |
+| `reports/OPENVISIONLAB_BEGINNER_TUTORIAL_V2_20260801.md` | P279 beginner tutorial rewrite, canonical Learn routing, public Blob first-use path, and evidence boundary. | Current tutorial scope; the packaged Guide implementation and language selection are owned by P282. |
 | `reports/OPENVISIONLAB_LOCAL_DATA_EXTERNALIZATION_20260731.md` | P278 C:/D: local execution, build, test-image, cache, Junction, production-verification clone archive, recovery, and reset contract. | Current authority for this PC's local ignored-data placement; tracked repository payload remains portable. |
 | `reports/OPENVISIONLAB_LLM_DOCUMENT_DISCOVERY_20260731.md` | P277 discovery-layer scope, acceptance, verification, and boundary. | Current completion authority for document routing; it does not replace feature contracts or evidence reports. |
 | `reports/OPENVISIONLAB_SRC_LAYOUT_MIGRATION_20260731.md` | P276 application/library source ownership, path migration, hash/build/tool/sample evidence, and structural boundary. | Current authority for the `src/OpenVisionLab` and `src/Libraries` layout; no product behavior or UI scope changed. |

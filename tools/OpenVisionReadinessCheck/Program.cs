@@ -1190,25 +1190,173 @@ internal static class Program
 
     private static void CheckTutorialAndLearningDocs(string repoRoot)
     {
-        string tutorial = Read(repoRoot, @"docs\OPENVISIONLAB_TUTORIAL.html");
-        RequireContains(tutorial, "Contour", "Tutorial includes contour workflow.");
-        RequireContains(tutorial, "Blob", "Tutorial includes blob workflow.");
-        RequireContains(tutorial, "Pattern Matching", "Tutorial includes pattern matching workflow.");
-        RequireContains(tutorial, "EdgeDetection", "Tutorial includes edge detection workflow.");
-        RequireContains(tutorial, "LineGauge", "Tutorial includes line gauge workflow.");
-        RequireContains(tutorial, "Layer", "Tutorial includes layer workflow.");
-        RequireContains(tutorial, "Recipe", "Tutorial includes recipe workflow.");
-        RequireContains(tutorial, "Good/Bad", "Tutorial includes Good/Bad sample workflow.");
-        RequireContains(tutorial, "run_log_collapsed_callouts.png", "Tutorial includes collapsed Run Log walkthrough.");
-        RequireContains(tutorial, "run_log_open_callouts.png", "Tutorial includes open Run Log walkthrough.");
-        RequireContains(tutorial, "assets/tutorial/", "Source tutorial uses asset references.");
-        RequirePathExists(repoRoot, @"docs\assets\tutorial\annotated\run_log_collapsed_callouts.png", "Collapsed Run Log tutorial asset exists.");
-        RequirePathExists(repoRoot, @"docs\assets\tutorial\annotated\run_log_open_callouts.png", "Open Run Log tutorial asset exists.");
-        RequireContains(tutorial, "LEARN_CONTOUR.md", "Tutorial links Contour learn page.");
-        RequireContains(tutorial, "LEARN_THRESHOLD.md", "Tutorial links Threshold learn page.");
-        RequireContains(tutorial, "LEARN_MEAN.md", "Tutorial links Mean learn page.");
-        RequireContains(tutorial, "LEARN_FEATURE_MATCHING.md", "Tutorial links FeatureMatching learn page.");
-        RequireContains(tutorial, "LEARN_EDGE_BASED_MATCHING.md", "Tutorial links EdgeBasedMatching learn page.");
+        const string tutorialRelativePath = @"docs\learn\OPENVISIONLAB_TUTORIAL.html";
+        string tutorial = Read(repoRoot, tutorialRelativePath);
+        RequireContains(tutorial, "data-tutorial-version=\"2026-08-01\"", "Tutorial records its current version.");
+        RequireContains(tutorial, "OpenVisionLab 처음 사용하기", "Tutorial is written for a first-time operator.");
+        RequireContains(tutorial, "Public_Blob_Particles_Good", "Tutorial starts with the public Blob sample.");
+        RequireContains(tutorial, "기준값", "Tutorial explains the threshold in operator language.");
+        RequireContains(tutorial, "Parameter Guide", "Tutorial explains the Parameter Guide.");
+        RequireContains(tutorial, "Threshold_Preview", "Tutorial provides the exact Threshold output layer name.");
+        RequireContains(tutorial, "Blob_Preview", "Tutorial provides the exact Blob output layer name.");
+        RequireContains(tutorial, "검증 OK", "Tutorial distinguishes validation from inspection judgement.");
+        RequireContains(tutorial, "결과 OK/NG", "Tutorial explains the final inspection judgement.");
+        RequireContains(tutorial, "Run Review", "Tutorial ends with the explicit recipe run workflow.");
+        RequireContains(tutorial, "public_blob_particles_good_result.png", "Tutorial includes the verified public Blob result evidence.");
+        RequireContains(tutorial, "LEARN_BLOB.md", "Tutorial links the Blob learn page.");
+        RequireContains(tutorial, "LEARN_THRESHOLD.md", "Tutorial links the Threshold learn page.");
+        RequireContains(tutorial, "LEARN_PIPELINE_LAYER_ROUTING.md", "Tutorial links the Pipeline and Layer learn page.");
+        RequireContains(tutorial, "LEARN_METRICS_ACCEPTANCE.md", "Tutorial links the metrics and acceptance learn page.");
+        RequireContains(tutorial, "OPENVISIONLAB_LEARN_CURRICULUM.md", "Tutorial links the full learning sequence.");
+        RequireNotContains(tutorial, "src=\"assets/tutorial/", "Moved HTML tutorial has no stale docs-root asset links.");
+        RequireNotContains(tutorial, "href=\"learn/", "Moved HTML tutorial has no duplicated learn/ path segment.");
+        RequireLocalHtmlReferencesResolve(repoRoot, tutorialRelativePath, tutorial);
+
+        string shellController = Read(
+            repoRoot,
+            @"src\OpenVisionLab\UI\Menu\Wpf\Shell\Commands\OpenVisionShellHostCommandController.cs");
+        RequireContains(shellController, "\"Guide\"", "Guide resolver owns the packaged Guide directory.");
+        RequireContains(shellController, "OpenVisionLab_User_Manual.{language}.html", "Guide resolver selects the language-specific packaged user manual.");
+        RequireContains(shellController, "OpenVisionLanguageService.CurrentLanguage", "Guide resolver uses the current application language.");
+        RequireContains(shellController, "guide-manifest.json", "Guide resolver validates the packaged manifest.");
+        RequireContains(shellController, "schemaVersion.GetInt32() != 2", "Guide resolver requires the bilingual Guide manifest schema.");
+        RequireContains(shellController, "manualsElement.EnumerateArray()", "Guide resolver selects one manifest entry by language.");
+        RequireContains(shellController, "SHA256.HashData", "Guide resolver verifies the packaged manual hash.");
+        RequireContains(shellController, "data-openvisionlab-manual-version=", "Guide resolver validates the manual marker.");
+        RequireContains(shellController, "data-openvisionlab-manual-language=", "Guide resolver validates the selected manual language marker.");
+        RequireNotContains(shellController, "OPENVISIONLAB_TUTORIAL_PORTABLE.html", "Guide resolver cannot open the legacy moved tutorial stub.");
+        RequireNotContains(shellController, "OPENVISIONLAB_TUTORIAL.html", "Guide resolver cannot open the legacy moved HTML stub.");
+
+        string appProject = Read(repoRoot, @"src\OpenVisionLab\OpenVisionLab.csproj");
+        RequireContains(appProject, @"docs\manual\generated\OpenVisionLab_User_Manual.ko.html", "Application build includes the Korean user manual.");
+        RequireContains(appProject, @"docs\manual\generated\OpenVisionLab_User_Manual.en.html", "Application build includes the English user manual.");
+        RequireContains(appProject, @"<Link>Guide\OpenVisionLab_User_Manual.ko.html</Link>", "Application output owns the Korean Guide path.");
+        RequireContains(appProject, @"<Link>Guide\OpenVisionLab_User_Manual.en.html</Link>", "Application output owns the English Guide path.");
+        RequireContains(appProject, @"<Link>Guide\guide-manifest.json</Link>", "Application output includes the Guide hash manifest.");
+        RequireContains(appProject, "CopyToPublishDirectory", "Published output includes the Guide files.");
+
+        string[] expectedToolIds = new[]
+        {
+            "Threshold", "Filter", "Morphology", "Arithmetic", "EdgeDetection",
+            "RotateAndScale", "AffineTransform", "Histogram", "HSV", "Mean",
+            "Blob", "Contour", "Line", "Matching", "EdgeBasedMatching",
+            "FeatureMatching", "Pipeline"
+        };
+        foreach ((string Language, string Path) sourceManifest in new[]
+        {
+            ("ko", @"docs\manual\manual-manifest.json"),
+            ("en", @"docs\manual\manual-manifest.en.json")
+        })
+        {
+            string sourceManualManifest = Read(repoRoot, sourceManifest.Path);
+            foreach (string toolId in expectedToolIds)
+            {
+                RequireContains(sourceManualManifest, $"\"toolId\": \"{toolId}\"", $"{sourceManifest.Language} user manual includes the {toolId} chapter.");
+            }
+        }
+
+        Dictionary<string, int> expectedCalloutCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach ((string Language, string Path, string SourceMarker) sourceVisual in new[]
+        {
+            ("ko", @"docs\manual\manual-visuals.json", "Current-source OpenVisionLab WPF capture"),
+            ("en", @"docs\manual\manual-visuals.en.json", "Current-source OpenVisionLab English WPF capture")
+        })
+        {
+            string sourceManualVisuals = Read(repoRoot, sourceVisual.Path);
+            RequireContains(sourceManualVisuals, sourceVisual.SourceMarker, $"{sourceVisual.Language} user manual visuals identify current-source UI evidence.");
+            int expectedCalloutCount = 0;
+            using System.Text.Json.JsonDocument visualManifest = System.Text.Json.JsonDocument.Parse(sourceManualVisuals);
+            System.Text.Json.JsonElement visualRows = visualManifest.RootElement.GetProperty("visuals");
+            if (visualRows.GetArrayLength() != 26)
+            {
+                Failures.Add($"{sourceVisual.Language} user manual visual coverage mismatch. Expected=26 Actual={visualRows.GetArrayLength()}");
+            }
+
+            string manualRoot = Path.GetFullPath(Path.Combine(repoRoot, "docs", "manual"));
+            string manualRootPrefix = manualRoot.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            foreach (System.Text.Json.JsonElement visualRow in visualRows.EnumerateArray())
+            {
+                string image = visualRow.GetProperty("image").GetString() ?? string.Empty;
+                string imagePath = Path.GetFullPath(Path.Combine(manualRoot, image));
+                if (!imagePath.StartsWith(manualRootPrefix, StringComparison.OrdinalIgnoreCase) || !File.Exists(imagePath))
+                {
+                    Failures.Add($"{sourceVisual.Language} user manual UI image is missing or outside docs/manual: {image}");
+                }
+                expectedCalloutCount += visualRow.GetProperty("callouts").GetArrayLength();
+            }
+
+            expectedCalloutCounts[sourceVisual.Language] = expectedCalloutCount;
+        }
+
+        Dictionary<string, string> generatedManualPaths = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["ko"] = @"docs\manual\generated\OpenVisionLab_User_Manual.ko.html",
+            ["en"] = @"docs\manual\generated\OpenVisionLab_User_Manual.en.html"
+        };
+        foreach (KeyValuePair<string, string> generated in generatedManualPaths)
+        {
+            string generatedManual = Read(repoRoot, generated.Value);
+            RequireContains(generatedManual, "data-openvisionlab-manual-version=\"2026-08-01\"", $"Generated {generated.Key} manual records its version.");
+            RequireContains(generatedManual, $"data-openvisionlab-manual-language=\"{generated.Key}\"", $"Generated {generated.Key} manual records its language.");
+            RequireContains(generatedManual, $"<html lang=\"{generated.Key}\"", $"Generated {generated.Key} manual declares its HTML language.");
+            RequireContains(generatedManual, "data:image/", $"Generated {generated.Key} manual embeds its evidence image.");
+            RequireNotContains(generatedManual, "Moved to canonical location", $"Generated {generated.Key} manual is not a moved stub.");
+            RequireNotContains(generatedManual, "../../assets/", $"Generated {generated.Key} manual has no relative image dependency.");
+            int manualSectionCount = Regex.Matches(generatedManual, @"<section\b[^>]*\bdata-manual-section\b", RegexOptions.IgnoreCase).Count;
+            int manualFigureCount = Regex.Matches(generatedManual, @"<figure\b[^>]*\bdata-manual-figure\b", RegexOptions.IgnoreCase).Count;
+            int manualCalloutCount = Regex.Matches(generatedManual, @"<span\s+class=""manual-callout""", RegexOptions.IgnoreCase).Count;
+            if (manualSectionCount != 26)
+            {
+                Failures.Add($"Generated {generated.Key} user manual section count mismatch. Expected=26 Actual={manualSectionCount}");
+            }
+            if (manualFigureCount != 26)
+            {
+                Failures.Add($"Generated {generated.Key} user manual UI figure count mismatch. Expected=26 Actual={manualFigureCount}");
+            }
+            if (manualCalloutCount != expectedCalloutCounts[generated.Key])
+            {
+                Failures.Add($"Generated {generated.Key} user manual callout count mismatch. Expected={expectedCalloutCounts[generated.Key]} Actual={manualCalloutCount}");
+            }
+            RequireContains(generatedManual, "manual-callout-key", $"Generated {generated.Key} manual includes numbered callout explanations.");
+        }
+
+        string generatedGuideManifestPath = Path.Combine(repoRoot, @"docs\manual\generated\guide-manifest.json");
+        using (System.Text.Json.JsonDocument guideManifest = System.Text.Json.JsonDocument.Parse(
+            File.ReadAllText(generatedGuideManifestPath, Encoding.UTF8)))
+        {
+            System.Text.Json.JsonElement root = guideManifest.RootElement;
+            if (root.GetProperty("schemaVersion").GetInt32() != 2)
+            {
+                Failures.Add("Generated Guide manifest schema is not 2.");
+            }
+            System.Text.Json.JsonElement manuals = root.GetProperty("manuals");
+            if (manuals.GetArrayLength() != 2)
+            {
+                Failures.Add($"Generated Guide manifest language count mismatch. Expected=2 Actual={manuals.GetArrayLength()}");
+            }
+            foreach (System.Text.Json.JsonElement manual in manuals.EnumerateArray())
+            {
+                string language = manual.GetProperty("language").GetString() ?? string.Empty;
+                string file = manual.GetProperty("file").GetString() ?? string.Empty;
+                string expectedManualHash = manual.GetProperty("sha256").GetString() ?? string.Empty;
+                if (!generatedManualPaths.TryGetValue(language, out string relativePath)
+                    || !string.Equals(Path.GetFileName(relativePath), file, StringComparison.Ordinal))
+                {
+                    Failures.Add($"Generated Guide manifest has an unexpected language/file entry: {language}/{file}");
+                    continue;
+                }
+                string actualManualHash = Convert.ToHexString(
+                    System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(Path.Combine(repoRoot, relativePath))));
+                if (!string.Equals(expectedManualHash, actualManualHash, StringComparison.OrdinalIgnoreCase))
+                {
+                    Failures.Add($"Generated {language} user manual SHA-256 does not match guide-manifest.json.");
+                }
+            }
+        }
+
+        string portableBuilder = Read(repoRoot, @"tools\BuildPortableTutorial.ps1");
+        RequireContains(portableBuilder, @"docs\learn\OPENVISIONLAB_TUTORIAL.html", "Portable tutorial builder reads the canonical HTML.");
+        RequireContains(portableBuilder, @"docs\learn\OPENVISIONLAB_TUTORIAL_PORTABLE.html", "Portable tutorial builder writes beside the canonical HTML.");
         string tutorialMarkdown = Read(
             repoRoot,
             @"docs\learn\OPENVISIONLAB_TUTORIAL.md");
@@ -1222,8 +1370,8 @@ internal static class Program
             "Moved Markdown tutorial has no stale docs-root asset links.");
         RequireContains(
             tutorialMarkdown,
-            "](LEARN_MATCHING.md)",
-            "Moved Markdown tutorial resolves Learn topics within docs/learn.");
+            "](LEARN_BLOB.md)",
+            "Moved Markdown tutorial resolves the beginner Blob topic within docs/learn.");
         RequireNotContains(
             tutorialMarkdown,
             "](learn/",
@@ -2627,8 +2775,9 @@ internal static class Program
             RequirePathExists(repoRoot, evidence.Asset, $"Learn result evidence asset exists for {evidence.Document}.");
         }
 
-        string portable = Read(repoRoot, @"docs\OPENVISIONLAB_TUTORIAL_PORTABLE.html");
+        string portable = Read(repoRoot, @"docs\learn\OPENVISIONLAB_TUTORIAL_PORTABLE.html");
         RequireContains(portable, "data:image/", "Portable tutorial embeds images.");
+        RequireNotContains(portable, "../assets/tutorial/", "Portable tutorial has no remaining relative image references.");
         Pass("Tutorial and learning document contract");
     }
 
@@ -2669,6 +2818,40 @@ internal static class Program
         RequireContains(progress, "Current Snapshot After Priority 1-7 Pass", "Progress tracker separates current 1-7 snapshot.");
         RequireContains(progress, "Removed From Active Work", "Progress tracker has a removed-from-active section.");
         Pass("Completed/progress tracker hygiene contract");
+    }
+
+    private static void RequireLocalHtmlReferencesResolve(
+        string repoRoot,
+        string htmlRelativePath,
+        string html)
+    {
+        string htmlPath = Path.GetFullPath(Path.Combine(repoRoot, htmlRelativePath));
+        string htmlDirectory = Path.GetDirectoryName(htmlPath) ?? repoRoot;
+        Regex referencePattern = new(
+            @"(?:src|href)\s*=\s*""(?<path>[^""#][^"" ]*)""",
+            RegexOptions.IgnoreCase);
+
+        foreach (Match match in referencePattern.Matches(html))
+        {
+            string reference = match.Groups["path"].Value;
+            if (reference.StartsWith("data:", StringComparison.OrdinalIgnoreCase) ||
+                reference.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                reference.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
+                reference.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            string pathOnly = reference.Split('#', 2)[0];
+            string resolvedPath = Path.GetFullPath(
+                Path.Combine(
+                    htmlDirectory,
+                    Uri.UnescapeDataString(pathOnly).Replace('/', Path.DirectorySeparatorChar)));
+            if (!File.Exists(resolvedPath))
+            {
+                Failures.Add($"Tutorial local reference does not resolve: {reference}");
+            }
+        }
     }
 
     private static void RequireCatalogKey(string catalogText, string key)

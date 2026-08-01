@@ -17,6 +17,28 @@ This file defines the working agreement for Codex in this repository.
 - The main workflow is sample image -> direct PropertyGrid teaching and Pipeline composition -> explicit Preview/Run -> layer/result comparison -> N-sample validation -> saved recipe. Existing LLM XML draft/validation/import may optionally accelerate the composition step.
 - It is not a camera, lighting, PLC, or I/O integration platform.
 
+## Localized User Manual Contract
+
+- The application `Guide` command must select the offline manual from
+  `OpenVisionLanguageService.CurrentLanguage`: Korean UI opens only the Korean
+  manual and English UI opens only the English manual.
+- Do not silently fall back to a manual in a different language. A missing,
+  damaged, duplicated, or hash-mismatched selected-language entry must fail
+  closed with the localized Guide error.
+- Package all supported manual languages beside the EXE under `Guide`, and
+  validate each exact language/file/SHA-256 mapping through
+  `Guide\guide-manifest.json` before opening it.
+- Keep Korean and English manuals structurally equivalent: the same supported
+  workflow chapters, Tool coverage, reference scope, numbered callouts, and
+  explicit Preview/Run contracts. A language-specific manual must use current
+  UI captures from that same application language wherever UI text is visible.
+- A language change or Guide open must not run Preview/Run, create/delete/select
+  layers, change the active layer, or mutate Pipeline routing.
+- Verify both language selections from the current build and a copied clean
+  runtime. Check exact HTML language markers, manifest hashes, missing-language
+  failure, and that switching Korean -> English -> Korean changes only the
+  selected manual path and localized presentation state.
+
 ## User-Centered Workflow And Persisted Setup
 
 - Design each feature from the operator's goal and the shortest safe normal

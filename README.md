@@ -18,6 +18,13 @@ rule-based inspection recipes from image samples.
   Layer comparison, public samples, and multi-image validation
 - LLM/XML assistance is optional and is not required to use the application
 
+## User Manual
+
+Open the application and select `Guide` to open the offline user manual. The
+same source is maintained under [docs/manual](docs/manual/README.md). Every
+workflow and all 17 Tool chapters include a current OpenVisionLab UI capture,
+numbered callouts, and the matching click or review order.
+
 ## Tool Views in the Current EXE
 
 The following recording shows the main Tool Views running in the current Debug
@@ -331,7 +338,7 @@ conditional backlog items.
 
 ## Documentation
 
-- [Tutorial](docs/OPENVISIONLAB_TUTORIAL.md)
+- [Tutorial](docs/learn/OPENVISIONLAB_TUTORIAL.md)
 - [Learn Mode guide](docs/learn/README.md)
 - [Stable feature contracts](docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md)
 - [Current status and next steps](docs/OPENVISIONLAB_STATUS_AND_NEXT_STEPS.md)

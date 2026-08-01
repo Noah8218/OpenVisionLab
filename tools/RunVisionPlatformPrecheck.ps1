@@ -77,8 +77,8 @@ $sampleCatalogScript = Join-Path $repoRoot "tools\RunVisionSampleCatalog.ps1"
 $uiPrecheckScript = Join-Path $repoRoot "tools\RunUiPrecheck.ps1"
 $externalReferenceScript = Join-Path $repoRoot "tools\TestExternalReferences.ps1"
 $docsSamples = Join-Path $repoRoot "docs\samples"
-$tutorialHtml = Join-Path $repoRoot "docs\OPENVISIONLAB_TUTORIAL.html"
-$portableTutorialHtml = Join-Path $repoRoot "docs\OPENVISIONLAB_TUTORIAL_PORTABLE.html"
+$tutorialHtml = Join-Path $repoRoot "docs\learn\OPENVISIONLAB_TUTORIAL.html"
+$portableTutorialHtml = Join-Path $repoRoot "docs\learn\OPENVISIONLAB_TUTORIAL_PORTABLE.html"
 $buildOutDir = ""
 $msBuildCandidates = @(
     "C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe",
@@ -650,24 +650,20 @@ if ($tutorialPortableIssues.Count -eq 0) {
     $sourceImageCount = [regex]::Matches($sourceHtml, "<img\b", [System.Text.RegularExpressions.RegexOptions]::IgnoreCase).Count
     $embeddedImageCount = [regex]::Matches($portableHtml, "data:image/", [System.Text.RegularExpressions.RegexOptions]::IgnoreCase).Count
     $requiredTutorialTerms = @(
-        "Contour",
+        "OpenVisionLab 처음 사용하기",
         "Blob",
-        "Pattern Matching",
-        "FeatureMatching",
-        "EdgeDetection",
-        "LineGauge",
-        "Layer",
+        "Public_Blob_Particles_Good",
+        "Parameter Guide",
         "Preview",
         "Recipe",
-        "Good/Bad"
+        "Threshold_Preview",
+        "Blob_Preview",
+        "검증 OK",
+        "결과 OK/NG",
+        "Run Review"
     )
     $requiredTutorialImages = @(
-        "annotated/main_workspace_callouts.png",
-        "annotated/sample_catalog_public_callouts.png",
-        "annotated/tool_matching_form_callouts.png",
-        "annotated/layer_docking_callouts.png",
-        "annotated/pipeline_matching_review_callouts.png",
-        "current/matching_preview_actual_current.png"
+        "current/public_blob_particles_good_result.png"
     )
 
     if ($sourceImageCount -le 0) {
@@ -689,7 +685,7 @@ if ($tutorialPortableIssues.Count -eq 0) {
     }
 
     foreach ($imageName in $requiredTutorialImages) {
-        $imageReference = "assets/tutorial/$imageName"
+        $imageReference = "../assets/tutorial/$imageName"
         $imagePath = Join-Path $repoRoot "docs\assets\tutorial\$imageName"
         if ($sourceHtml.IndexOf($imageReference, [StringComparison]::OrdinalIgnoreCase) -lt 0) {
             $tutorialPortableIssues.Add("Tutorial is missing required image reference: $imageReference") | Out-Null
@@ -705,8 +701,8 @@ $tutorialPortableLines.Add("Source=$tutorialHtml") | Out-Null
 $tutorialPortableLines.Add("Portable=$portableTutorialHtml") | Out-Null
 $tutorialPortableLines.Add("SourceImageCount=$sourceImageCount") | Out-Null
 $tutorialPortableLines.Add("EmbeddedImageCount=$embeddedImageCount") | Out-Null
-$tutorialPortableLines.Add("RequiredTerms=Contour,Blob,Pattern Matching,FeatureMatching,EdgeDetection,LineGauge,Layer,Preview,Recipe,Good/Bad") | Out-Null
-$tutorialPortableLines.Add("RequiredImages=annotated/main_workspace_callouts,annotated/sample_catalog_public_callouts,annotated/tool_matching_form_callouts,annotated/layer_docking_callouts,annotated/pipeline_matching_review_callouts,current/matching_preview_actual_current") | Out-Null
+$tutorialPortableLines.Add("RequiredTerms=OpenVisionLab 처음 사용하기,Blob,Public_Blob_Particles_Good,Parameter Guide,Preview,Recipe,Threshold_Preview,Blob_Preview,검증 OK,결과 OK/NG,Run Review") | Out-Null
+$tutorialPortableLines.Add("RequiredImages=current/public_blob_particles_good_result") | Out-Null
 if ($tutorialPortableIssues.Count -eq 0) {
     $tutorialPortableLines.Add("Gate=OK") | Out-Null
 }

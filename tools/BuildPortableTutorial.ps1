@@ -1,6 +1,6 @@
 param(
-    [string]$InputHtml = "docs\OPENVISIONLAB_TUTORIAL.html",
-    [string]$OutputHtml = "docs\OPENVISIONLAB_TUTORIAL_PORTABLE.html"
+    [string]$InputHtml = "docs\learn\OPENVISIONLAB_TUTORIAL.html",
+    [string]$OutputHtml = "docs\learn\OPENVISIONLAB_TUTORIAL_PORTABLE.html"
 )
 
 $ErrorActionPreference = "Stop"
@@ -81,7 +81,11 @@ if (!(Test-Path -LiteralPath $outputDirectory)) {
     New-Item -ItemType Directory -Path $outputDirectory | Out-Null
 }
 
-Set-Content -LiteralPath $outputPath -Value $portableHtml -Encoding UTF8
+$portableHtml = $portableHtml.TrimEnd("`r", "`n") + "`r`n"
+[System.IO.File]::WriteAllText(
+    $outputPath,
+    $portableHtml,
+    [System.Text.UTF8Encoding]::new($false))
 
 $relativeOutput = Resolve-Path -LiteralPath $outputPath
 Write-Host "Portable tutorial generated: $relativeOutput"

@@ -1,8 +1,104 @@
 # OpenVisionLab Current Project Handoff
 
-Updated: 2026-07-31 KST
+Updated: 2026-08-01 KST
 
 This is the current continuation brief for a new OpenVisionLab chat. Reach it through `docs/README.md` after reading `AGENTS.md`, and read it before choosing implementation work. It is a status and priority document; it does not override stable behavioral contracts in `AGENTS.md` or `docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`.
+
+## Incremental Work Update — P282 Localized User Manual (2026-08-01)
+
+- Guide now selects the packaged manual from the language active at click time:
+  Korean opens `OpenVisionLab_User_Manual.ko.html` and English opens
+  `OpenVisionLab_User_Manual.en.html`.
+- Schema 2 `guide-manifest.json` owns both file names and hashes. Missing,
+  duplicate, renamed, damaged, or incorrectly marked selected-language content
+  fails closed; Korean and English do not substitute for each other.
+- The two manuals have matching 26-chapter / 17-Tool structure, 26 current UI
+  figures, and 102 numbered callouts. Twenty-one English current-source images
+  use English UI. A fixed Korean sample-workflow strip now switches correctly.
+- Actual copied-EXE evidence exposed the English `Guide` label clipped to `G`;
+  the top navigation allocation now shows `Learn` and `Guide` in full. Wide and
+  Compact current-source smokes passed.
+- Final manual hashes are Korean
+  `070FD81D92F528B1C672E920E145FF8FAEA85F11F7A45DCB12E17C16ADF2C0CB`
+  and English
+  `59B547F9A9D332EAA13B4B27A2CB8CEB9E3DD724D2882752C94A9E394A998D49`.
+  The final clean runtime contains exactly the two manuals plus the manifest;
+  generated HTML line endings are normalized with zero `CRCRLF` sequences.
+- Full build/readiness, Korean -> English -> Korean selection, missing/damaged
+  fail-closed checks, browser desktop/mobile/search checks, copied-file hashes,
+  and actual copied-EXE English leftmost-monitor smoke passed.
+- Status: P282 `Complete`. Evidence:
+  `docs\reports\OPENVISIONLAB_LOCALIZED_USER_MANUAL_20260801.md`.
+- Remaining project priority: no product feature is active without a named
+  operator blocker or current-build regression. CVR-00 still requires three
+  independent first-time-user observations. Recommended model: none until that
+  evidence exists | Reasoning effort: none until that evidence exists.
+
+## Incremental Work Update — P281 Distributable Numbered User Manual (2026-08-01)
+
+- The copied/released runtime now owns `Guide\OpenVisionLab_User_Manual.html`
+  and `Guide\guide-manifest.json`. Guide validates schema, file name, manual
+  marker, and SHA-256 before opening; moved-path stubs cannot be selected.
+- The offline manual contains 26 chapters: six common workflows, all 17 current
+  Tool entries, and three reference chapters. Every chapter has a current-source
+  WPF UI figure with responsive numbered markers and a matching action key.
+  Twenty-two unique UI captures are reused across the 26 figures.
+- Release builder/readiness checks, a zero-warning/error clean runtime build,
+  103/103 copied-file path/length/SHA-256 checks, desktop/mobile browser checks,
+  and an actual copied-EXE Guide invocation on the dynamic leftmost monitor all
+  passed. The generated manual SHA-256 is
+  `3745E7FE31A77FC9493EECE439B50606D00C65735A0E0CC08C2D0A95E02D796C`.
+- Status: P281 `Complete`; P279's copied/distributed Guide criterion is also
+  closed. Evidence:
+  `docs\reports\OPENVISIONLAB_DISTRIBUTABLE_USER_MANUAL_20260801.md`.
+- Remaining project priority: no product feature is active without a named
+  operator blocker or current-build regression. CVR-00 still requires three
+  independent first-time-user observations. Recommended model: none until that
+  evidence exists | Reasoning effort: none until that evidence exists.
+
+## Incremental Work Update — P280 Distributable User Manual Design (2026-08-01)
+
+- The operator reported that Guide opens a `Moved to canonical location` page
+  and required a distribution-safe, step-by-step manual for actual users.
+- The root cause is confirmed: docs-root `.html` files are Markdown moved stubs,
+  the resolver can select them, and the P279 clean runtime contains no Tutorial
+  or Guide file. The source-tree preference added in P279 is therefore not a
+  copied/distributed-runtime fix.
+- The selected design packages one self-contained offline manual at
+  `Guide\OpenVisionLab_User_Manual.html`, validates it through a manifest/hash,
+  removes moved stubs from runtime candidates, and permits a repository fallback
+  only in a verified development checkout.
+- The manual design covers the first-run workflow, common Image/Layer/Tool/
+  Recipe/Pipeline/validation operations, a goal-to-Tool chooser, and one fixed
+  action/result/failure/save/Good-Bad template for all 17 current navigation
+  features.
+- Status: P280 design `Complete`; P281 implemented and verified it. Evidence:
+  `docs\roadmap\OPENVISIONLAB_DISTRIBUTABLE_USER_MANUAL_DESIGN_20260801.md`.
+- The packaged Guide, manifest/composer, 26 chapters, and numbered current UI
+  figures are closed by P281. No continuation is required unless a current
+  regression or novice observation identifies a concrete defect.
+
+## Incremental Work Update — P279 Beginner Tutorial v2 (2026-08-01)
+
+- The outdated broad tutorial is replaced by one Korean first-use path covering
+  public Blob selection, direct Preview, Good/Bad interpretation, and a saved
+  `Main -> Threshold_Preview -> Blob_Preview` Recipe with explicit Run Review.
+- Repository README, docs entrypoint, Learn index, and LLM document index route
+  to the canonical tutorial and new user manual. P281 packages and verifies the
+  actual runtime Guide and excludes the old moved stubs.
+- The portable tutorial embeds one verified public Blob result and has no
+  remaining relative image dependency. Clean runtime build, documentation
+  index, readiness, and diff checks passed.
+- Human-paced cursor movement remains presentation-only. No slow recording was
+  rerun after the user requested fast deterministic testing; the retained failed
+  attempt is recorder diagnostic evidence only and is not novice-user proof.
+- Status: P279 `Complete`; P281 closed its copied/distributed EXE Guide
+  criterion. Evidence:
+  `docs\reports\OPENVISIONLAB_BEGINNER_TUTORIAL_V2_20260801.md`.
+- Remaining project priority: no product feature is active without a named
+  operator blocker or current-build regression; CVR-00 still requires three
+  independent novice observations. Recommended model: none until evidence
+  exists | Reasoning effort: none until evidence exists.
 
 ## Incremental Work Update — P278 Local Data Externalization (2026-07-31)
 

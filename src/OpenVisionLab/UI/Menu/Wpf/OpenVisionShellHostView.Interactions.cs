@@ -608,6 +608,11 @@ namespace OpenVisionLab
         {
             chromeController.ApplyLocalization(IsToolRailCompact);
             mainActionPresenter?.ApplyLocalization();
+            sampleWorkflowPresenter?.ApplyLocalization();
+            if (sampleWorkflowPresenter?.IsVisible == true)
+            {
+                sampleWorkflowPresenter.ShowForActiveSample();
+            }
             recipeContextPresenter?.Refresh();
             RecipeCommands?.RefreshLocalization();
             LayerCommands?.RefreshLocalization();

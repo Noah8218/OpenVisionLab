@@ -358,6 +358,8 @@ namespace OpenVisionLab
                 txtWorkspaceSampleWorkflowDetail,
                 btnWorkspaceSampleCounterpart,
                 txtWorkspaceSampleCounterpartButtonText,
+                txtWorkspaceSamplePipelineButtonText,
+                txtWorkspaceSampleFirstStepButtonText,
                 () => recipeContextStore.Current);
             mainActionPresenter = new OpenVisionShellHostMainActionPresenter(
                 workspaceMainActionOverlay,

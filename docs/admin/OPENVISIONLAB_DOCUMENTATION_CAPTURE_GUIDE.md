@@ -46,11 +46,22 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "tools\GenerateOpenVisionSyn
 ## 캡처 생성
 
 ```powershell
-dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
+dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU" `
+  -p:OpenVisionLabEnableEmbeddedSmokeRunner=true
 
-& "C:\Git\OpenVisionLab_Dev\bin\Debug\OpenVisionLab.exe" `
-  --smoke tutorial-captures `
-  --output "C:\Git\OpenVisionLab_Dev\artifacts\tutorial_current_exe_YYYYMMDD"
+$process = Start-Process `
+  -FilePath "C:\Git\OpenVisionLab_Dev\bin\Debug\OpenVisionLab.exe" `
+  -ArgumentList @(
+    "--smoke",
+    "tutorial-captures",
+    "--output",
+    "C:\Git\OpenVisionLab_Dev\artifacts\tutorial_current_exe_YYYYMMDD"
+  ) `
+  -PassThru `
+  -Wait
+if ($process.ExitCode -ne 0) {
+  throw "tutorial-captures failed with exit code $($process.ExitCode)."
+}
 ```
 
 성공하면 output 폴더에 아래 파일이 생성되어야 합니다.
@@ -141,7 +152,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "tools\BuildPortableTutorial
 - `docs/assets/tutorial/annotated/public_edge_fiducial_good_callouts.png`
 - `docs/assets/tutorial/annotated/public_line_pins_good_callouts.png`
 - `docs/assets/tutorial/annotated/pipeline_matching_review_callouts.png`
-- `docs/OPENVISIONLAB_TUTORIAL_PORTABLE.html`
+- `docs/learn/OPENVISIONLAB_TUTORIAL_PORTABLE.html`
 
 ## 작성 체크리스트
 

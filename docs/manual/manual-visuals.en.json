@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 1,
+  "captureDate": "2026-08-01",
+  "source": "Current-source OpenVisionLab English WPF capture",
+  "visuals": [
+    {
+      "sectionId": "first-start", "image": "assets/ui/en/workflow-first-start.png",
+      "alt": "OpenVisionLab empty workspace on first run",
+      "caption": "On first run, 1 open an image or sample, 2 select a Tool, 3 build a Pipeline, and 4 check the readiness banner.",
+      "callouts": [
+        { "number": 1, "x": 39, "y": 58, "label": "Load an image or open a sample" },
+        { "number": 2, "x": 8, "y": 28, "label": "Select a Tool from the left rail" },
+        { "number": 3, "x": 64, "y": 58, "label": "Open Pipeline" },
+        { "number": 4, "x": 84, "y": 7, "label": "Check the current readiness state" }
+      ]
+    },
+    {
+      "sectionId": "image-sample-layer", "image": "assets/ui/en/workflow-sample-picker.png",
+      "alt": "OpenVisionLab public sample picker",
+      "caption": "Public samples include a purpose and expected result. Check the category, details, and Good/Bad pair before opening one.",
+      "callouts": [
+        { "number": 1, "x": 23, "y": 38, "label": "Select public or product sample scope" },
+        { "number": 2, "x": 17, "y": 58, "label": "Select an inspection purpose or Learn path" },
+        { "number": 3, "x": 62, "y": 47, "label": "Review the input image and Pipeline details" },
+        { "number": 4, "x": 93, "y": 96, "label": "Open the selected sample" }
+      ]
+    },
+    {
+      "sectionId": "direct-tool-teaching", "image": "assets/ui/en/tool-threshold.png",
+      "alt": "Threshold Tool View setup",
+      "caption": "Every Tool View follows the same basic order: choose the input, edit settings, run Preview explicitly, and inspect the result.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "Select the input Layer" },
+        { "number": 2, "x": 70, "y": 28, "label": "Set the mode and parameters" },
+        { "number": 3, "x": 68, "y": 96, "label": "Run Preview" },
+        { "number": 4, "x": 18, "y": 78, "label": "Review the output image and Layer" }
+      ]
+    },
+    {
+      "sectionId": "recipe-pipeline", "image": "assets/ui/en/tool-pipeline.png",
+      "alt": "OpenVisionLab Pipeline Review",
+      "caption": "Pipeline Review shows Step order, input/output routes, explicit review execution, and the final decision in one place.",
+      "callouts": [
+        { "number": 1, "x": 16, "y": 55, "label": "Select the Step order" },
+        { "number": 2, "x": 52, "y": 57, "label": "Review the current Step input and output" },
+        { "number": 3, "x": 94, "y": 11, "label": "Run Review" },
+        { "number": 4, "x": 92, "y": 29, "label": "Check the OK/NG decision and next action" }
+      ]
+    },
+    {
+      "sectionId": "good-bad-validation", "image": "assets/ui/en/workflow-sample-open.png",
+      "alt": "OpenVisionLab workspace with a Good sample open",
+      "caption": "Do not save after checking only one Good sample. Open the paired NG reference and run the same Pipeline in the same order.",
+      "callouts": [
+        { "number": 1, "x": 50, "y": 45, "label": "Review the current Good input image" },
+        { "number": 2, "x": 79, "y": 84, "label": "Open the paired NG reference" },
+        { "number": 3, "x": 88, "y": 84, "label": "Open the same Pipeline" },
+        { "number": 4, "x": 83, "y": 7, "label": "Check readiness and the next action" }
+      ]
+    },
+    {
+      "sectionId": "validation-history", "image": "assets/ui/en/workflow-recipe-manager.png",
+      "alt": "OpenVisionLab Recipe Manager",
+      "caption": "Fix the Recipe and working sample first, then continue to image-set validation and Pipeline Review.",
+      "callouts": [
+        { "number": 1, "x": 16, "y": 42, "label": "Select the Recipe to validate" },
+        { "number": 2, "x": 61, "y": 31, "label": "Review Pipeline structure and validation state" },
+        { "number": 3, "x": 91, "y": 20, "label": "Open image-set validation" },
+        { "number": 4, "x": 91, "y": 15, "label": "Open Pipeline Review" }
+      ]
+    },
+    {
+      "sectionId": "tool-threshold", "image": "assets/ui/en/tool-threshold.png", "alt": "Threshold Tool View",
+      "caption": "Check Threshold in this order: input Layer, separation mode and values, Preview, then the binary result.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "Input Layer" }, { "number": 2, "x": 71, "y": 28, "label": "Basic, Range, or Adaptive mode and values" },
+        { "number": 3, "x": 68, "y": 96, "label": "Run Preview" }, { "number": 4, "x": 18, "y": 76, "label": "Binary result in Threshold_Preview" }
+      ]
+    },
+    {
+      "sectionId": "tool-filter", "image": "assets/ui/en/tool-filter.png", "alt": "Filter Tool View",
+      "caption": "Select the input Layer, set the Filter Type and Kernel, then compare noise and boundaries in the Preview result.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "Input Layer" }, { "number": 2, "x": 70, "y": 25, "label": "Filter Type, Kernel, and border handling" },
+        { "number": 3, "x": 68, "y": 96, "label": "Run Preview" }, { "number": 4, "x": 18, "y": 77, "label": "Compare Filter_Preview" }
+      ]
+    },
+    {
+      "sectionId": "tool-morphology", "image": "assets/ui/en/tool-morphology.png", "alt": "Morphology Tool View",
+      "caption": "Change Operation, Kernel, and Iteration, then check how small noise and broken regions change.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "Input Layer" }, { "number": 2, "x": 70, "y": 28, "label": "Operation, Kernel, and Iteration" },
+        { "number": 3, "x": 68, "y": 96, "label": "Run Preview" }, { "number": 4, "x": 18, "y": 77, "label": "Review Morphology_Preview" }
+      ]
+    },
+    {
+      "sectionId": "tool-arithmetic", "image": "assets/ui/en/tool-arithmetic.png", "alt": "Arithmetic Tool View",
+      "caption": "Fix the two inputs or an input and constant, select the operation, and then review the output Layer.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 33, "label": "Input Layer A" }, { "number": 2, "x": 18, "y": 64, "label": "Input B or a constant" },
+        { "number": 3, "x": 70, "y": 27, "label": "Operation, offset, and operation type" }, { "number": 4, "x": 68, "y": 96, "label": "Preview and review Arithmetic_Preview" }
+      ]
+    },
+    {
+      "sectionId": "tool-edge-detection", "image": "assets/ui/en/tool-edge-detection.png", "alt": "Edge Detection Tool View",
+      "caption": "Check the input Layer, detector and thresholds, Preview, and the resulting edge map.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "Input Layer" }, { "number": 2, "x": 70, "y": 28, "label": "Canny or Sobel-family detector and thresholds" },
+        { "number": 3, "x": 68, "y": 96, "label": "Run Preview" }, { "number": 4, "x": 18, "y": 77, "label": "Review EdgeDetection_Preview" }
+      ]
+    },
+    {
+      "sectionId": "tool-rotate-scale", "image": "assets/ui/en/tool-rotate-scale.png", "alt": "Rotate Scale Tool View",
+      "caption": "Set the rotation center and Angle/Scale, then check cropping and empty borders in the result.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "Input Layer" }, { "number": 2, "x": 70, "y": 30, "label": "Angle, Scale, center, and output size" },
+        { "number": 3, "x": 68, "y": 96, "label": "Run Preview" }, { "number": 4, "x": 18, "y": 77, "label": "Review RotateScale_Preview" }
+      ]
+    },
+    {
+      "sectionId": "tool-affine-transform", "image": "assets/ui/en/tool-affine-transform.png", "alt": "Affine Transform Tool View",
+      "caption": "Enter three source and three destination points in order, then check the output size and valid pixels.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "Input Layer" }, { "number": 2, "x": 70, "y": 35, "label": "Three source/destination points and output size" },
+        { "number": 3, "x": 68, "y": 96, "label": "Run Preview" }, { "number": 4, "x": 70, "y": 82, "label": "Check transform state and valid pixels" }
+      ]
+    },
+    {
+      "sectionId": "tool-histogram", "image": "assets/ui/en/tool-histogram.png", "alt": "Histogram Tool View",
+      "caption": "Select the input Layer and processing mode, then check whether the brightness distribution suits the next Step.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "Input Layer" }, { "number": 2, "x": 70, "y": 24, "label": "Histogram Type and detailed values" },
+        { "number": 3, "x": 68, "y": 96, "label": "Run Preview" }, { "number": 4, "x": 70, "y": 83, "label": "Review status and the output Layer" }
+      ]
+    },
+    {
+      "sectionId": "tool-hsv", "image": "assets/ui/en/tool-hsv.png", "alt": "HSV Tool View",
+      "caption": "Set the H/S/V ranges and check that the Preview mask keeps only the intended color.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "Input Layer" }, { "number": 2, "x": 70, "y": 30, "label": "Hue, Saturation, and Value ranges" },
+        { "number": 3, "x": 68, "y": 96, "label": "Run Preview" }, { "number": 4, "x": 18, "y": 77, "label": "Review the HSV_Preview mask" }
+      ]
+    },
+    {
+      "sectionId": "tool-mean", "image": "assets/ui/en/tool-mean.png", "alt": "Mean Tool View",
+      "caption": "Set the ROI and mean calculation, then check whether the value separates Good and Bad evidence.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "Input Layer" }, { "number": 2, "x": 70, "y": 30, "label": "Mean Type, ROI, and acceptance range" },
+        { "number": 3, "x": 68, "y": 96, "label": "Run Preview" }, { "number": 4, "x": 70, "y": 83, "label": "Review the mean value and decision" }
+      ]
+    },
+    {
+      "sectionId": "tool-blob", "image": "assets/ui/en/tool-blob.png", "alt": "Blob Tool View",
+      "caption": "Check the input, threshold/ROI and area/size filters, Preview, and object results in that order.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "Input Layer" }, { "number": 2, "x": 70, "y": 43, "label": "ROI and area/width/height filters" },
+        { "number": 3, "x": 68, "y": 96, "label": "Run Preview" }, { "number": 4, "x": 70, "y": 82, "label": "Review ResultCount and object results" }
+      ]
+    },
+    {
+      "sectionId": "tool-contour", "image": "assets/ui/en/tool-contour.png", "alt": "OpenVisionLab with Contour results",
+      "caption": "Check the Contour Tool, PropertyGrid settings, explicit Preview, and the physical contour overlay together.",
+      "callouts": [
+        { "number": 1, "x": 8, "y": 42, "label": "Select the Contour Tool" }, { "number": 2, "x": 81, "y": 53, "label": "Set ROI, threshold, and Contour filters" },
+        { "number": 3, "x": 80, "y": 94, "label": "Run Preview" }, { "number": 4, "x": 40, "y": 53, "label": "Review detected contours and centers" }
+      ]
+    },
+    {
+      "sectionId": "tool-line", "image": "assets/ui/en/tool-line.png", "alt": "Line Tool View",
+      "caption": "Choose the Purpose and Line A/B, set ROI, polarity, and scan conditions, then review drawings and metrics.",
+      "callouts": [
+        { "number": 1, "x": 52, "y": 14, "label": "Edge, Measure, or Intersection and Line A/B" }, { "number": 2, "x": 70, "y": 50, "label": "ROI, polarity, direction, and scan conditions" },
+        { "number": 3, "x": 68, "y": 96, "label": "Run Preview" }, { "number": 4, "x": 70, "y": 82, "label": "Review the line, distance, or intersection" }
+      ]
+    },
+    {
+      "sectionId": "tool-matching", "image": "assets/ui/en/tool-matching.png", "alt": "Matching Tool View",
+      "caption": "Set the Template, search ROI, score/count, and pose ranges, then inspect the physical result location.",
+      "callouts": [
+        { "number": 1, "x": 70, "y": 14, "label": "Template registration state" }, { "number": 2, "x": 70, "y": 47, "label": "Score, count, angle/scale, and ROI" },
+        { "number": 3, "x": 68, "y": 96, "label": "Run Preview" }, { "number": 4, "x": 70, "y": 82, "label": "Review location, ScoreMax, and ResultCount" }
+      ]
+    },
+    {
+      "sectionId": "tool-edge-matching", "image": "assets/ui/en/tool-edge-based-matching.png", "alt": "Edge Based Matching Tool View",
+      "caption": "Set the edge Template and unique-match conditions, then inspect competing candidates as well as the best result.",
+      "callouts": [
+        { "number": 1, "x": 70, "y": 14, "label": "Edge Template registration state" }, { "number": 2, "x": 70, "y": 48, "label": "Score, uniqueness margin, Canny, and search conditions" },
+        { "number": 3, "x": 68, "y": 96, "label": "Run Preview" }, { "number": 4, "x": 70, "y": 82, "label": "Check Success, NoMatch, or Ambiguous" }
+      ]
+    },
+    {
+      "sectionId": "tool-feature-matching", "image": "assets/ui/en/tool-feature-matching.png", "alt": "Feature Matching Tool View",
+      "caption": "Set the feature Template, Ratio, and RANSAC conditions, then review the actual correspondence and ResultCount.",
+      "callouts": [
+        { "number": 1, "x": 70, "y": 14, "label": "Feature Template registration state" }, { "number": 2, "x": 70, "y": 48, "label": "Ratio, RANSAC, and search ROI" },
+        { "number": 3, "x": 68, "y": 96, "label": "Run Preview" }, { "number": 4, "x": 70, "y": 82, "label": "Review correspondences, bounds, and ResultCount" }
+      ]
+    },
+    {
+      "sectionId": "tool-pipeline", "image": "assets/ui/en/tool-pipeline.png", "alt": "Pipeline Review",
+      "caption": "Review Step order and Layer routes, run Run Review explicitly, and then approve or reject the result.",
+      "callouts": [
+        { "number": 1, "x": 16, "y": 55, "label": "Select Step order and branches" }, { "number": 2, "x": 52, "y": 57, "label": "Review input/output Layers and parameters" },
+        { "number": 3, "x": 94, "y": 11, "label": "Run Review" }, { "number": 4, "x": 92, "y": 29, "label": "Check the Step and Pipeline decision" }
+      ]
+    },
+    {
+      "sectionId": "troubleshooting", "image": "assets/ui/en/workflow-first-start.png", "alt": "OpenVisionLab workspace and Run Log area",
+      "caption": "When something fails, check the Run Log and its details before changing result parameters.",
+      "callouts": [
+        { "number": 1, "x": 50, "y": 92, "label": "Review Preview, Run, and error events" }, { "number": 2, "x": 96, "y": 92, "label": "Open the detailed log" }
+      ]
+    },
+    {
+      "sectionId": "glossary", "image": "assets/ui/en/workflow-first-start.png", "alt": "Main OpenVisionLab screen areas",
+      "caption": "Learn terms together with their screen locations. Tool, Layer, Workspace, and Pipeline are the four basic areas.",
+      "callouts": [
+        { "number": 1, "x": 8, "y": 28, "label": "Tool list" }, { "number": 2, "x": 44, "y": 7, "label": "Current Layer" },
+        { "number": 3, "x": 57, "y": 47, "label": "Workspace" }, { "number": 4, "x": 64, "y": 58, "label": "Pipeline entry" }
+      ]
+    },
+    {
+      "sectionId": "limits-evidence", "image": "assets/ui/en/tool-pipeline.png", "alt": "Pipeline Review evidence screen",
+      "caption": "Acceptance needs more than one number: review input/output images, drawings, metrics, and Good/Bad replay history together.",
+      "callouts": [
+        { "number": 1, "x": 49, "y": 62, "label": "Input-image evidence" }, { "number": 2, "x": 80, "y": 62, "label": "Output image and drawing evidence" },
+        { "number": 3, "x": 64, "y": 44, "label": "Step metrics and route" }, { "number": 4, "x": 60, "y": 22, "label": "Good/Bad evidence and final decision" }
+      ]
+    }
+  ]
+}

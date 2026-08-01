@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "updated": "2026-07-31",
+  "updated": "2026-08-01",
   "purpose": "Curated, machine-readable routing index for OpenVisionLab documentation. It is intentionally smaller than the full documentation registry.",
   "entrypoint": "docs/README.md",
   "detailedRegistry": "docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
@@ -36,6 +36,12 @@
       "intent": "Change visible UI, navigation, workflow, settings persistence, or operator behavior.",
       "keywords": ["UI", "UX", "workflow", "PropertyGrid", "Preview", "Run", "screen"],
       "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md", "docs/reports/OPENVISIONLAB_USER_CENTERED_WORKFLOW_DIRECTION_20260729.md", "docs/runbooks/UI_SCREENSHOT_SMOKE.md"]
+    },
+    {
+      "id": "beginner_tutorial_and_learn",
+      "intent": "Review or update the beginner tutorial, Learn content, screenshots, or first-use instructions.",
+      "keywords": ["tutorial", "beginner", "Learn", "guide", "first use", "초보", "튜토리얼"],
+      "read": ["docs/manual/README.md", "docs/manual/manual-manifest.json", "docs/manual/manual-visuals.json", "docs/manual/manual-manifest.en.json", "docs/manual/manual-visuals.en.json", "docs/roadmap/OPENVISIONLAB_DISTRIBUTABLE_USER_MANUAL_DESIGN_20260801.md", "docs/learn/OPENVISIONLAB_TUTORIAL.md", "docs/learn/README.md", "docs/reports/OPENVISIONLAB_LOCALIZED_USER_MANUAL_20260801.md", "docs/reports/OPENVISIONLAB_DISTRIBUTABLE_USER_MANUAL_20260801.md", "docs/reports/OPENVISIONLAB_BEGINNER_TUTORIAL_V2_20260801.md", "docs/admin/OPENVISIONLAB_DOCUMENTATION_CAPTURE_GUIDE.md", "docs/reports/OPENVISIONLAB_FIRST_TIME_OPERATOR_JOURNEY_AUDIT_20260727.md"]
     },
     {
       "id": "recipe_pipeline_and_tool_contracts",
@@ -92,6 +98,6 @@
     "filenameSearch": "rg --files docs | rg \"<term>\"",
     "contentSearch": "rg -n \"<term>\" AGENTS.md docs",
     "pNumberSearchOrder": ["docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md", "docs/reports/OPENVISIONLAB_COMPLETED_TRACKER.md", "docs/admin/OPENVISIONLAB_NEXT_SESSION_HANDOFF.md", "docs/reports", "artifacts"],
-    "rootRedirectPolicy": "Markdown, JSON, and XSD files directly under docs other than README.md and LLM_DOCUMENT_INDEX.json are compatibility redirects. Follow their canonical target before reading or citing. OPENVISIONLAB_TUTORIAL.html is a standalone tutorial artifact."
+    "rootRedirectPolicy": "Files directly under docs other than README.md and LLM_DOCUMENT_INDEX.json are compatibility redirects. Follow their canonical target before reading or citing. The standalone tutorial artifacts are under docs/learn."
   }
 }

@@ -1216,7 +1216,7 @@ Menu.Guide	가이드	Guide
 Menu.Guide.ToolTip	OpenVisionLab 튜토리얼을 엽니다.	Open the OpenVisionLab tutorial.
 Menu.Learn	Learn	Learn
 Menu.Learn.ToolTip	OpenVisionLab Learn을 엽니다.	Open OpenVisionLab Learn.
-Shell.TutorialNotFoundMessage	튜토리얼 파일을 찾을 수 없습니다.\n{0}	Tutorial file was not found.\n{0}
+Shell.TutorialNotFoundMessage	사용 설명서 파일이 없거나 손상되었습니다. OpenVisionLab의 Guide 폴더를 복원하거나 프로그램을 다시 받으십시오.\n확인한 경로: {0}	The user manual is missing or damaged. Restore the OpenVisionLab Guide folder or download the program again.\nChecked path: {0}
 Shell.TutorialOpenFailedMessage	튜토리얼을 열 수 없습니다.\n{0}	Could not open the tutorial.\n{0}
 Menu.View.ShowLogDockTitle	Log 패널 제목 표시	Show Log panel title
 Menu.View.SaveWorkspaceLayout	레이아웃 저장	Save layout

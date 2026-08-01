@@ -8,6 +8,8 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text.Json;
 using System.Windows;
 using static OpenVisionLab.DEFINE;
 
@@ -110,13 +112,12 @@ namespace OpenVisionLab
 
         public void OpenTutorial()
         {
-            string tutorialPath = ResolveTutorialPath();
-            if (!File.Exists(tutorialPath))
+            if (!TryResolveUserManualPath(out string tutorialPath, out string failureDetail))
             {
                 string message = string.Format(
                     CultureInfo.CurrentCulture,
                     OpenVisionLanguageService.T("Shell.TutorialNotFoundMessage"),
-                    tutorialPath);
+                    failureDetail);
                 MessageBox.Show(message, "OpenVisionLab", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -370,27 +371,129 @@ namespace OpenVisionLab
             }
         }
 
-        private static string ResolveTutorialPath()
+        internal static bool TryResolveUserManualPath(out string manualPath, out string failureDetail)
         {
-            foreach (string root in EnumerateTutorialSearchRoots())
+            string language = OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.English
+                ? "en"
+                : "ko";
+            string packagedDirectory = Path.Combine(AppContext.BaseDirectory, "Guide");
+            if (TryValidateUserManual(packagedDirectory, language, out manualPath, out failureDetail))
             {
-                string portablePath = Path.Combine(root, "docs", "OPENVISIONLAB_TUTORIAL_PORTABLE.html");
-                if (File.Exists(portablePath))
-                {
-                    return portablePath;
-                }
+                return true;
+            }
 
-                string htmlPath = Path.Combine(root, "docs", "OPENVISIONLAB_TUTORIAL.html");
-                if (File.Exists(htmlPath))
+            string packagedFailure = failureDetail;
+            foreach (string root in EnumerateDevelopmentRepositoryRoots())
+            {
+                string developmentDirectory = Path.Combine(
+                    root,
+                    "docs",
+                    "manual",
+                    "generated");
+                if (TryValidateUserManual(
+                        developmentDirectory,
+                        language,
+                        out manualPath,
+                        out failureDetail))
                 {
-                    return htmlPath;
+                    return true;
                 }
             }
 
-            return Path.Combine(Environment.CurrentDirectory, "docs", "OPENVISIONLAB_TUTORIAL_PORTABLE.html");
+            manualPath = Path.Combine(
+                packagedDirectory,
+                $"OpenVisionLab_User_Manual.{language}.html");
+            failureDetail = packagedFailure;
+            return false;
         }
 
-        private static IEnumerable<string> EnumerateTutorialSearchRoots()
+        internal static bool TryValidateUserManual(
+            string manualDirectory,
+            string language,
+            out string manualPath,
+            out string failureDetail)
+        {
+            string expectedFileName = $"OpenVisionLab_User_Manual.{language}.html";
+            manualPath = Path.Combine(manualDirectory, expectedFileName);
+            string manifestPath = Path.Combine(manualDirectory, "guide-manifest.json");
+            failureDetail = manifestPath;
+            if (!File.Exists(manifestPath))
+            {
+                return false;
+            }
+
+            try
+            {
+                using JsonDocument manifest = JsonDocument.Parse(File.ReadAllText(manifestPath));
+                JsonElement root = manifest.RootElement;
+                if (!root.TryGetProperty("schemaVersion", out JsonElement schemaVersion) ||
+                    schemaVersion.GetInt32() != 2 ||
+                    !root.TryGetProperty("manuals", out JsonElement manualsElement) ||
+                    manualsElement.ValueKind != JsonValueKind.Array)
+                {
+                    failureDetail = manifestPath;
+                    return false;
+                }
+
+                JsonElement selectedManual = default;
+                bool found = false;
+                foreach (JsonElement candidate in manualsElement.EnumerateArray())
+                {
+                    if (!candidate.TryGetProperty("language", out JsonElement candidateLanguage) ||
+                        !string.Equals(candidateLanguage.GetString(), language, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    if (found)
+                    {
+                        failureDetail = manifestPath + $" (duplicate {language} manual)";
+                        return false;
+                    }
+
+                    selectedManual = candidate;
+                    found = true;
+                }
+
+                if (!found ||
+                    !selectedManual.TryGetProperty("file", out JsonElement fileElement) ||
+                    !string.Equals(fileElement.GetString(), expectedFileName, StringComparison.Ordinal) ||
+                    !selectedManual.TryGetProperty("sha256", out JsonElement hashElement) ||
+                    !File.Exists(manualPath))
+                {
+                    failureDetail = found ? manualPath : manifestPath + $" ({language} manual missing)";
+                    return false;
+                }
+
+                string expectedHash = hashElement.GetString() ?? string.Empty;
+                string actualHash = Convert.ToHexString(
+                    SHA256.HashData(File.ReadAllBytes(manualPath)));
+                if (!string.Equals(expectedHash, actualHash, StringComparison.OrdinalIgnoreCase))
+                {
+                    failureDetail = manualPath + " (SHA-256 mismatch)";
+                    return false;
+                }
+
+                string html = File.ReadAllText(manualPath);
+                if (!html.Contains("data-openvisionlab-manual-version=", StringComparison.Ordinal) ||
+                    !html.Contains($"data-openvisionlab-manual-language=\"{language}\"", StringComparison.Ordinal) ||
+                    !html.Contains($"<html lang=\"{language}\"", StringComparison.OrdinalIgnoreCase) ||
+                    html.Contains("Moved to canonical location", StringComparison.OrdinalIgnoreCase))
+                {
+                    failureDetail = manualPath + " (invalid manual content)";
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                failureDetail = manualPath + " (" + ex.Message + ")";
+                return false;
+            }
+        }
+
+        private static IEnumerable<string> EnumerateDevelopmentRepositoryRoots()
         {
             HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (string start in new[] { Environment.CurrentDirectory, AppDomain.CurrentDomain.BaseDirectory })
@@ -403,7 +506,10 @@ namespace OpenVisionLab
                 DirectoryInfo directory = new DirectoryInfo(start);
                 for (int depth = 0; directory != null && depth < 8; depth++)
                 {
-                    if (seen.Add(directory.FullName))
+                    bool hasSolution = File.Exists(Path.Combine(directory.FullName, "OpenVisionLab.sln"));
+                    string gitPath = Path.Combine(directory.FullName, ".git");
+                    bool hasGitMarker = Directory.Exists(gitPath) || File.Exists(gitPath);
+                    if (hasSolution && hasGitMarker && seen.Add(directory.FullName))
                     {
                         yield return directory.FullName;
                     }

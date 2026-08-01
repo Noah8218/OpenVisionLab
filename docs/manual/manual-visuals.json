@@ -1,0 +1,317 @@
+{
+  "schemaVersion": 1,
+  "captureDate": "2026-08-01",
+  "source": "Current-source OpenVisionLab WPF capture",
+  "visuals": [
+    {
+      "sectionId": "first-start",
+      "image": "assets/ui/workflow-first-start.png",
+      "alt": "OpenVisionLab 첫 실행 빈 작업 화면",
+      "caption": "처음 실행하면 ① 이미지 또는 샘플을 열고 ② Tool을 고른 뒤 ③ Pipeline을 구성하고 ④ 상단 준비 상태를 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 39, "y": 58, "label": "이미지 로드 또는 샘플 열기" },
+        { "number": 2, "x": 8, "y": 28, "label": "왼쪽 Tool 선택" },
+        { "number": 3, "x": 64, "y": 58, "label": "Pipeline 열기" },
+        { "number": 4, "x": 84, "y": 7, "label": "현재 준비 상태 확인" }
+      ]
+    },
+    {
+      "sectionId": "image-sample-layer",
+      "image": "assets/ui/workflow-sample-picker.png",
+      "alt": "OpenVisionLab 공개 샘플 선택 화면",
+      "caption": "공개 샘플은 목적과 예상 결과가 함께 제공됩니다. 검색보다 먼저 분류, 상세, Good/Bad 쌍을 확인하십시오.",
+      "callouts": [
+        { "number": 1, "x": 23, "y": 38, "label": "공개/제품군 샘플 범위 선택" },
+        { "number": 2, "x": 17, "y": 58, "label": "검사 목적 또는 Learn 경로 선택" },
+        { "number": 3, "x": 62, "y": 47, "label": "입력 이미지와 Pipeline 상세 확인" },
+        { "number": 4, "x": 93, "y": 96, "label": "선택한 샘플 열기" }
+      ]
+    },
+    {
+      "sectionId": "direct-tool-teaching",
+      "image": "assets/ui/tool-threshold.png",
+      "alt": "Threshold Tool View 설정 화면",
+      "caption": "Tool View의 기본 순서는 모든 도구에서 같습니다. 입력을 고르고 설정한 다음 Preview를 직접 실행하고 결과를 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "입력 Layer 선택" },
+        { "number": 2, "x": 70, "y": 28, "label": "모드와 파라미터 설정" },
+        { "number": 3, "x": 68, "y": 96, "label": "미리보기 실행" },
+        { "number": 4, "x": 18, "y": 78, "label": "결과 이미지와 출력 Layer 확인" }
+      ]
+    },
+    {
+      "sectionId": "recipe-pipeline",
+      "image": "assets/ui/tool-pipeline.png",
+      "alt": "OpenVisionLab Pipeline Review 화면",
+      "caption": "Pipeline Review에서는 Step 순서, 입출력 경로, 명시적 리뷰 실행, 최종 판정을 한 화면에서 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 16, "y": 55, "label": "Step 순서 선택" },
+        { "number": 2, "x": 52, "y": 57, "label": "현재 Step 입출력 확인" },
+        { "number": 3, "x": 94, "y": 11, "label": "리뷰 실행" },
+        { "number": 4, "x": 92, "y": 29, "label": "OK/NG 판정과 다음 확인" }
+      ]
+    },
+    {
+      "sectionId": "good-bad-validation",
+      "image": "assets/ui/workflow-sample-open.png",
+      "alt": "Good 샘플이 열린 OpenVisionLab 작업 화면",
+      "caption": "Good 샘플만 보고 저장하지 마십시오. 같은 Pipeline을 연 뒤 짝으로 제공된 NG 기준도 같은 순서로 실행합니다.",
+      "callouts": [
+        { "number": 1, "x": 50, "y": 45, "label": "현재 Good 입력 이미지 확인" },
+        { "number": 2, "x": 79, "y": 84, "label": "NG 기준 샘플 열기" },
+        { "number": 3, "x": 88, "y": 84, "label": "같은 Pipeline 열기" },
+        { "number": 4, "x": 83, "y": 7, "label": "준비 상태와 다음 작업 확인" }
+      ]
+    },
+    {
+      "sectionId": "validation-history",
+      "image": "assets/ui/workflow-recipe-manager.png",
+      "alt": "OpenVisionLab Recipe Manager 화면",
+      "caption": "검증은 선택한 Recipe와 현재 작업 샘플을 먼저 고정한 뒤 이미지 묶음 검증과 Pipeline Review로 이어집니다.",
+      "callouts": [
+        { "number": 1, "x": 16, "y": 42, "label": "검증할 Recipe 선택" },
+        { "number": 2, "x": 61, "y": 31, "label": "Pipeline 구성과 검증 상태 확인" },
+        { "number": 3, "x": 91, "y": 20, "label": "이미지 묶음 검증" },
+        { "number": 4, "x": 91, "y": 15, "label": "Pipeline을 열어 결과 재검토" }
+      ]
+    },
+    {
+      "sectionId": "tool-threshold",
+      "image": "assets/ui/tool-threshold.png",
+      "alt": "Threshold Tool View",
+      "caption": "Threshold는 입력 Layer, 분리 방식과 값, Preview, 이진 결과 순서로 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "입력 Layer" },
+        { "number": 2, "x": 71, "y": 28, "label": "Basic/Range/Adaptive와 기준값" },
+        { "number": 3, "x": 68, "y": 96, "label": "미리보기 실행" },
+        { "number": 4, "x": 18, "y": 76, "label": "이진 결과와 Threshold_Preview" }
+      ]
+    },
+    {
+      "sectionId": "tool-filter",
+      "image": "assets/ui/tool-filter.png",
+      "alt": "Filter Tool View",
+      "caption": "Filter는 입력 Layer를 고른 뒤 Filter Type과 Kernel을 설정하고 Preview 결과의 노이즈와 경계를 비교합니다.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "입력 Layer" },
+        { "number": 2, "x": 70, "y": 25, "label": "Filter Type, Kernel, 외곽 처리" },
+        { "number": 3, "x": 68, "y": 96, "label": "미리보기 실행" },
+        { "number": 4, "x": 18, "y": 77, "label": "Filter_Preview 비교" }
+      ]
+    },
+    {
+      "sectionId": "tool-morphology",
+      "image": "assets/ui/tool-morphology.png",
+      "alt": "Morphology Tool View",
+      "caption": "Morphology는 Operation, Kernel, Iteration을 바꾼 뒤 작은 노이즈와 끊어진 영역이 어떻게 달라지는지 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "입력 Layer" },
+        { "number": 2, "x": 70, "y": 28, "label": "Operation, Kernel, Iteration" },
+        { "number": 3, "x": 68, "y": 96, "label": "미리보기 실행" },
+        { "number": 4, "x": 18, "y": 77, "label": "Morphology_Preview 확인" }
+      ]
+    },
+    {
+      "sectionId": "tool-arithmetic",
+      "image": "assets/ui/tool-arithmetic.png",
+      "alt": "Arithmetic Tool View",
+      "caption": "Arithmetic는 두 입력 또는 상수를 먼저 고정하고 연산 종류를 선택한 뒤 결과 Layer를 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 33, "label": "입력 Layer A" },
+        { "number": 2, "x": 18, "y": 64, "label": "입력 B 또는 상수" },
+        { "number": 3, "x": 70, "y": 27, "label": "연산/오프셋과 연산 종류" },
+        { "number": 4, "x": 68, "y": 96, "label": "Preview 후 Arithmetic_Preview 확인" }
+      ]
+    },
+    {
+      "sectionId": "tool-edge-detection",
+      "image": "assets/ui/tool-edge-detection.png",
+      "alt": "Edge Detection Tool View",
+      "caption": "Edge Detection은 입력 Layer, 검출 방식과 임계값, Preview, 경계 지도 순서로 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "입력 Layer" },
+        { "number": 2, "x": 70, "y": 28, "label": "Canny/Sobel 계열과 임계값" },
+        { "number": 3, "x": 68, "y": 96, "label": "미리보기 실행" },
+        { "number": 4, "x": 18, "y": 77, "label": "EdgeDetection_Preview 확인" }
+      ]
+    },
+    {
+      "sectionId": "tool-rotate-scale",
+      "image": "assets/ui/tool-rotate-scale.png",
+      "alt": "Rotate Scale Tool View",
+      "caption": "Rotate/Scale은 회전 중심과 Angle/Scale을 설정한 뒤 잘림과 빈 영역을 결과에서 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "입력 Layer" },
+        { "number": 2, "x": 70, "y": 30, "label": "Angle, Scale, 중심과 출력 크기" },
+        { "number": 3, "x": 68, "y": 96, "label": "미리보기 실행" },
+        { "number": 4, "x": 18, "y": 77, "label": "RotateScale_Preview 확인" }
+      ]
+    },
+    {
+      "sectionId": "tool-affine-transform",
+      "image": "assets/ui/tool-affine-transform.png",
+      "alt": "Affine Transform Tool View",
+      "caption": "Affine Transform은 소스 3점과 목표 3점을 순서대로 입력하고 출력 크기와 유효 픽셀을 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "입력 Layer" },
+        { "number": 2, "x": 70, "y": 35, "label": "소스/목표 3점과 출력 크기" },
+        { "number": 3, "x": 68, "y": 96, "label": "미리보기 실행" },
+        { "number": 4, "x": 70, "y": 82, "label": "변환 상태와 유효 픽셀 확인" }
+      ]
+    },
+    {
+      "sectionId": "tool-histogram",
+      "image": "assets/ui/tool-histogram.png",
+      "alt": "Histogram Tool View",
+      "caption": "Histogram은 입력 Layer와 처리 방식을 선택하고 밝기 분포 변화가 다음 Step에 적합한지 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "입력 Layer" },
+        { "number": 2, "x": 70, "y": 24, "label": "Histogram Type과 세부값" },
+        { "number": 3, "x": 68, "y": 96, "label": "미리보기 실행" },
+        { "number": 4, "x": 70, "y": 83, "label": "상태와 결과 Layer 확인" }
+      ]
+    },
+    {
+      "sectionId": "tool-hsv",
+      "image": "assets/ui/tool-hsv.png",
+      "alt": "HSV Tool View",
+      "caption": "HSV는 H/S/V 범위를 정하고 Preview 마스크가 원하는 색만 남기는지 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "입력 Layer" },
+        { "number": 2, "x": 70, "y": 30, "label": "Hue, Saturation, Value 범위" },
+        { "number": 3, "x": 68, "y": 96, "label": "미리보기 실행" },
+        { "number": 4, "x": 18, "y": 77, "label": "HSV_Preview 마스크 확인" }
+      ]
+    },
+    {
+      "sectionId": "tool-mean",
+      "image": "assets/ui/tool-mean.png",
+      "alt": "Mean Tool View",
+      "caption": "Mean은 ROI와 평균 계산 방식을 정한 뒤 측정값이 Good/Bad 기준 사이에서 분리되는지 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "입력 Layer" },
+        { "number": 2, "x": 70, "y": 30, "label": "Mean Type, ROI, 기준 범위" },
+        { "number": 3, "x": 68, "y": 96, "label": "미리보기 실행" },
+        { "number": 4, "x": 70, "y": 83, "label": "평균값과 판정 확인" }
+      ]
+    },
+    {
+      "sectionId": "tool-blob",
+      "image": "assets/ui/tool-blob.png",
+      "alt": "Blob Tool View",
+      "caption": "Blob은 입력, 이진화/ROI와 면적·크기 필터, Preview, Object 결과 순서로 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 18, "y": 49, "label": "입력 Layer" },
+        { "number": 2, "x": 70, "y": 43, "label": "ROI와 면적/폭/높이 필터" },
+        { "number": 3, "x": 68, "y": 96, "label": "미리보기 실행" },
+        { "number": 4, "x": 70, "y": 82, "label": "ResultCount와 Object 결과" }
+      ]
+    },
+    {
+      "sectionId": "tool-contour",
+      "image": "assets/ui/tool-contour.png",
+      "alt": "Contour 결과가 표시된 OpenVisionLab 화면",
+      "caption": "Contour는 Tool 선택, PropertyGrid 설정, 명시적 Preview, 실제 외곽선 오버레이를 함께 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 8, "y": 42, "label": "Contour Tool 선택" },
+        { "number": 2, "x": 81, "y": 53, "label": "ROI, 이진화와 Contour 필터" },
+        { "number": 3, "x": 80, "y": 94, "label": "미리보기 실행" },
+        { "number": 4, "x": 40, "y": 53, "label": "검출 외곽선과 중심 확인" }
+      ]
+    },
+    {
+      "sectionId": "tool-line",
+      "image": "assets/ui/tool-line.png",
+      "alt": "Line Tool View",
+      "caption": "Line은 목적과 Line A/B를 고른 뒤 ROI·극성·스캔 조건을 설정하고 Preview 도형과 지표를 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 52, "y": 14, "label": "Edge/Measure/Intersection 목적과 Line A/B" },
+        { "number": 2, "x": 70, "y": 50, "label": "ROI, 극성, 방향과 스캔 조건" },
+        { "number": 3, "x": 68, "y": 96, "label": "미리보기 실행" },
+        { "number": 4, "x": 70, "y": 82, "label": "선, 거리 또는 교차 결과 확인" }
+      ]
+    },
+    {
+      "sectionId": "tool-matching",
+      "image": "assets/ui/tool-matching.png",
+      "alt": "Matching Tool View",
+      "caption": "Matching은 Template, 검색 ROI, 점수·개수와 자세 범위를 정하고 결과 위치를 직접 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 70, "y": 14, "label": "Template 등록 상태" },
+        { "number": 2, "x": 70, "y": 47, "label": "점수, 개수, 각도/배율과 ROI" },
+        { "number": 3, "x": 68, "y": 96, "label": "미리보기 실행" },
+        { "number": 4, "x": 70, "y": 82, "label": "결과 위치, ScoreMax와 ResultCount" }
+      ]
+    },
+    {
+      "sectionId": "tool-edge-matching",
+      "image": "assets/ui/tool-edge-based-matching.png",
+      "alt": "Edge Based Matching Tool View",
+      "caption": "Edge Based Matching은 edge Template과 고유 매칭 조건을 설정하고 경쟁 후보까지 함께 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 70, "y": 14, "label": "edge Template 등록 상태" },
+        { "number": 2, "x": 70, "y": 48, "label": "점수, 고유 여유, Canny와 검색 조건" },
+        { "number": 3, "x": 68, "y": 96, "label": "미리보기 실행" },
+        { "number": 4, "x": 70, "y": 82, "label": "Success/NoMatch/Ambiguous 확인" }
+      ]
+    },
+    {
+      "sectionId": "tool-feature-matching",
+      "image": "assets/ui/tool-feature-matching.png",
+      "alt": "Feature Matching Tool View",
+      "caption": "Feature Matching은 특징 Template, Ratio와 RANSAC 조건을 정하고 실제 대응 위치와 ResultCount를 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 70, "y": 14, "label": "Feature Template 등록 상태" },
+        { "number": 2, "x": 70, "y": 48, "label": "Ratio, RANSAC과 검색 ROI" },
+        { "number": 3, "x": 68, "y": 96, "label": "미리보기 실행" },
+        { "number": 4, "x": 70, "y": 82, "label": "대응점, 박스와 ResultCount 확인" }
+      ]
+    },
+    {
+      "sectionId": "tool-pipeline",
+      "image": "assets/ui/tool-pipeline.png",
+      "alt": "Pipeline Review 화면",
+      "caption": "Pipeline은 Step 순서와 Layer 경로를 검토한 뒤 Run Review를 명시적으로 실행하고 결과를 승인합니다.",
+      "callouts": [
+        { "number": 1, "x": 16, "y": 55, "label": "Step 순서와 분기 선택" },
+        { "number": 2, "x": 52, "y": 57, "label": "입출력 Layer와 파라미터 확인" },
+        { "number": 3, "x": 94, "y": 11, "label": "리뷰 실행" },
+        { "number": 4, "x": 92, "y": 29, "label": "Step/Pipeline 판정 확인" }
+      ]
+    },
+    {
+      "sectionId": "troubleshooting",
+      "image": "assets/ui/reference-run-log.png",
+      "alt": "OpenVisionLab 실행 로그 화면",
+      "caption": "문제가 생기면 결과만 바꾸지 말고 실행 로그의 이벤트와 상세 내용을 먼저 확인합니다.",
+      "callouts": [
+        { "number": 1, "x": 50, "y": 54, "label": "Preview/Run/오류 이벤트 확인" },
+        { "number": 2, "x": 95, "y": 6, "label": "상세 로그 열기" }
+      ]
+    },
+    {
+      "sectionId": "glossary",
+      "image": "assets/ui/workflow-first-start.png",
+      "alt": "OpenVisionLab 주요 화면 영역",
+      "caption": "용어는 화면 위치와 함께 익히십시오. Tool, Layer, Workspace, Pipeline이 기본 네 영역입니다.",
+      "callouts": [
+        { "number": 1, "x": 8, "y": 28, "label": "Tool 목록" },
+        { "number": 2, "x": 44, "y": 7, "label": "현재 Layer" },
+        { "number": 3, "x": 57, "y": 47, "label": "Workspace" },
+        { "number": 4, "x": 64, "y": 58, "label": "Pipeline 진입" }
+      ]
+    },
+    {
+      "sectionId": "limits-evidence",
+      "image": "assets/ui/tool-pipeline.png",
+      "alt": "Pipeline Review 근거 화면",
+      "caption": "합격 근거는 한 숫자가 아니라 입력·출력 이미지, 도형, Metric, Good/Bad 재실행 기록을 함께 봅니다.",
+      "callouts": [
+        { "number": 1, "x": 49, "y": 62, "label": "입력 이미지 근거" },
+        { "number": 2, "x": 80, "y": 62, "label": "출력 이미지와 도형 근거" },
+        { "number": 3, "x": 64, "y": 44, "label": "Step Metric과 경로" },
+        { "number": 4, "x": 60, "y": 22, "label": "Good/Bad와 최종 판정" }
+      ]
+    }
+  ]
+}

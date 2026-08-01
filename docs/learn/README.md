@@ -2,11 +2,17 @@
 
 Updated: 2026-07-07
 
+처음 사용하는 경우에는 [번호가 붙은 사용자 매뉴얼](../manual/README.md)부터
+확인합니다. 배포본에서는 상단 `Guide` 버튼이 같은 단일 HTML 매뉴얼을 엽니다.
+개념을 더 깊게 학습할 때 아래 Learn 문서를 이어서 사용합니다.
+
 Learn Mode is for learning rule-based vision inspection with public sample assets. The important flow is:
 
 `image -> layer -> tool -> metric -> OK/NG reason`
 
 Open the Good sample first, then open the Bad sample from the same PairGroup and run the same baseline pipeline. A sample is useful only when the result can be explained by image, overlay, metric, and log together.
+
+처음 사용하는 경우 [OpenVisionLab 처음 사용하기](OPENVISIONLAB_TUTORIAL.md)부터 진행합니다.
 
 ## Curriculum First
 

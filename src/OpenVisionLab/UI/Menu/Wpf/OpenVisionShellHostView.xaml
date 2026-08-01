@@ -781,7 +781,7 @@
 
         <Grid Grid.Row="1" Background="{StaticResource ShellHost.ChromeAltBrush}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="360" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="0.68*" MinWidth="360" MaxWidth="560" />
             </Grid.ColumnDefinitions>
@@ -804,6 +804,7 @@
                         Cursor="Hand"
                         Command="{Binding ChromeCommands.OpenLearnCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}" />
                 <Button Style="{StaticResource TopNavButtonStyle}"
+                        AutomationProperties.AutomationId="HostGuideButton"
                         Content="{Binding GuideText}"
                         ToolTip="{Binding GuideToolTipText}"
                         Cursor="Hand"
@@ -1820,7 +1821,8 @@
                                                                      Height="15"
                                                                      Foreground="#EAFBFC"
                                                                      Margin="0,0,6,0" />
-                                         <TextBlock Text="Pipeline 보기"
+                                         <TextBlock x:Name="txtWorkspaceSamplePipelineButtonText"
+                                                    Text="Pipeline 보기"
                                                     Foreground="#EAFBFC"
                                                    FontWeight="SemiBold"
                                                    FontSize="12" />
@@ -1840,7 +1842,8 @@
                                                                      Height="15"
                                                                      Foreground="#EAFBFC"
                                                                      Margin="0,0,6,0" />
-                                         <TextBlock Text="첫 단계 열기"
+                                         <TextBlock x:Name="txtWorkspaceSampleFirstStepButtonText"
+                                                    Text="첫 단계 열기"
                                                     Foreground="#EAFBFC"
                                                    FontWeight="SemiBold"
                                                    FontSize="12" />
