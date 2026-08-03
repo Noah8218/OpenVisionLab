@@ -563,9 +563,9 @@ internal static class Program
                 throw new InvalidOperationException("Main layer was not seeded.");
             }
 
-            if (!shellHost.IsNativeDocumentActive)
+            if (shellHost.IsNativeDocumentActive || shellHost.IsActiveWpfToolWindowVisibleForTest)
             {
-                throw new InvalidOperationException("Initial WPF tool document was not active.");
+                throw new InvalidOperationException("Seeding Main must not auto-open a WPF tool document.");
             }
         });
     }
@@ -16907,7 +16907,8 @@ internal static class Program
         OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostLayerAutoDocking");
         return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
         {
-            // Historical target name; the current contract is manual docking only.
+            // Historical target name; live layers now mirror into one AvalonDock pane,
+            // while comparison splits remain explicit operator actions.
             Pump(24);
             if (!shellHost.IsWorkspaceLayerDropEnabledForTest)
             {
@@ -16920,13 +16921,15 @@ internal static class Program
             }
 
             Pump(20);
-            if (shellHost.DockedLayerCount != 0
-                || shellHost.IsDockedWorkspaceVisibleForTest
-                || !shellHost.IsSingleWorkspaceVisibleForTest)
+            if (shellHost.DockedLayerCount != 1
+                || !shellHost.IsDockedWorkspaceVisibleForTest
+                || shellHost.IsSingleWorkspaceVisibleForTest
+                || shellHost.DockedLayerPaneCount != 1
+                || !shellHost.DockedLayerTitles.Contains("Main", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException(
-                    "Layer activation must not auto-dock the workspace. "
-                    + $"Count={shellHost.DockedLayerCount}, DockedVisible={shellHost.IsDockedWorkspaceVisibleForTest}, SingleVisible={shellHost.IsSingleWorkspaceVisibleForTest}, Tiles={shellHost.DockedLayerTextureTileCount}");
+                    "Main was not mirrored into the one-pane AvalonDock workspace. "
+                    + $"Count={shellHost.DockedLayerCount}, DockedVisible={shellHost.IsDockedWorkspaceVisibleForTest}, SingleVisible={shellHost.IsSingleWorkspaceVisibleForTest}, Panes={shellHost.DockedLayerPaneCount}, Titles={shellHost.DockedLayerTitles}");
             }
 
             shellHost.SelectToolForTest(VISION_MENU.HSV);
@@ -16938,18 +16941,16 @@ internal static class Program
                 throw new InvalidOperationException("Preview execution did not create and select the HSV preview layer.");
             }
 
-            if (shellHost.DockedLayerCount != 0
-                || shellHost.IsDockedWorkspaceVisibleForTest
-                || !shellHost.IsSingleWorkspaceVisibleForTest)
+            if (shellHost.DockedLayerCount != 2
+                || !shellHost.IsDockedWorkspaceVisibleForTest
+                || shellHost.IsSingleWorkspaceVisibleForTest
+                || shellHost.DockedLayerPaneCount != 1
+                || !shellHost.DockedLayerTitles.Contains("Main", StringComparison.OrdinalIgnoreCase)
+                || !shellHost.DockedLayerTitles.Contains("HSV_Preview", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException(
-                    "Preview execution must not auto-dock any result layer. "
-                    + $"Count={shellHost.DockedLayerCount}, DockedVisible={shellHost.IsDockedWorkspaceVisibleForTest}, SingleVisible={shellHost.IsSingleWorkspaceVisibleForTest}, Titles={shellHost.DockedLayerTitles}");
-            }
-
-            if (!shellHost.DockLayerForTest("Main"))
-            {
-                throw new InvalidOperationException("Explicit Main docking did not add the layer.");
+                    "Preview must mirror the result as a same-pane tab without auto-splitting comparison panes. "
+                    + $"Count={shellHost.DockedLayerCount}, DockedVisible={shellHost.IsDockedWorkspaceVisibleForTest}, SingleVisible={shellHost.IsSingleWorkspaceVisibleForTest}, Panes={shellHost.DockedLayerPaneCount}, Titles={shellHost.DockedLayerTitles}");
             }
 
             if (!shellHost.SelectHostLayerRowForTest("Main")
@@ -16959,11 +16960,11 @@ internal static class Program
             }
 
             Pump(18);
-            if (shellHost.DockedLayerCount != 1 || !shellHost.DockedLayerTitles.Contains("Main", StringComparison.OrdinalIgnoreCase))
+            if (shellHost.DockedLayerCount != 2 || shellHost.DockedLayerPaneCount != 1)
             {
                 throw new InvalidOperationException(
-                    "Layer list selection must not dock preview results automatically. "
-                    + $"Count={shellHost.DockedLayerCount}, Titles={shellHost.DockedLayerTitles}");
+                    "Layer list selection must not rearrange the mirrored same-pane tabs. "
+                    + $"Count={shellHost.DockedLayerCount}, Panes={shellHost.DockedLayerPaneCount}, Titles={shellHost.DockedLayerTitles}");
             }
 
             if (!shellHost.ActivateHostLayerForTest("HSV_Preview"))
@@ -16971,16 +16972,16 @@ internal static class Program
                 throw new InvalidOperationException("Selecting HSV_Preview did not activate the layer.");
             }
 
-            if (shellHost.DockedLayerCount != 1 || !shellHost.DockedLayerTitles.Contains("Main", StringComparison.OrdinalIgnoreCase))
+            if (shellHost.DockedLayerCount != 2 || shellHost.DockedLayerPaneCount != 1)
             {
                 throw new InvalidOperationException(
-                    "Selecting a preview result must not auto-dock the output layer. "
-                    + $"Count={shellHost.DockedLayerCount}, Titles={shellHost.DockedLayerTitles}");
+                    "Selecting a preview result must not split or rearrange the workspace. "
+                    + $"Count={shellHost.DockedLayerCount}, Panes={shellHost.DockedLayerPaneCount}, Titles={shellHost.DockedLayerTitles}");
             }
 
-            if (!shellHost.DockLayerForTest("HSV_Preview"))
+            if (!shellHost.DockLayerToGuideZoneForTest("HSV_Preview", "Right"))
             {
-                throw new InvalidOperationException("Explicit HSV_Preview docking did not add the layer.");
+                throw new InvalidOperationException("Explicit HSV_Preview comparison split failed.");
             }
 
             Pump(24);
@@ -16990,7 +16991,7 @@ internal static class Program
                 || !shellHost.AreDockedLayerTabHeadersGestureReadyForTest)
             {
                 throw new InvalidOperationException(
-                    "Explicit docking did not create a ready side-by-side comparison workspace. "
+                    "Explicit comparison placement did not create a ready side-by-side workspace. "
                     + $"Count={shellHost.DockedLayerCount}, Panes={shellHost.DockedLayerPaneCount}, Tiles={shellHost.DockedLayerTextureTileCount}, Headers={shellHost.DockedLayerTabHeaderCount}, Titles={shellHost.DockedLayerTitles}");
             }
         }, captureFloatingToolWindow: false);
@@ -17310,9 +17311,15 @@ internal static class Program
                     + $"Headers={shellHost.DockedLayerTabHeaderCount}, Titles={shellHost.DockedLayerTitles}");
             }
 
+            if (!shellHost.DockLayerToGuideZoneForTest("HSV_Preview", "Right"))
+            {
+                throw new InvalidOperationException("Layer docking could not explicitly split the preview into the right comparison pane.");
+            }
+
+            Pump(20);
             if (shellHost.DockedLayerPaneCount < 2)
             {
-                throw new InvalidOperationException("Layer docking did not place the second layer into a separate docking pane.");
+                throw new InvalidOperationException("Layer docking did not place the explicitly split layer into a separate docking pane.");
             }
 
             Pump(20);
@@ -17467,9 +17474,24 @@ internal static class Program
 
             shellHost.ClearDockedLayersForTest();
             Pump(12);
+            if (shellHost.DockedLayerCount != 0)
+            {
+                throw new InvalidOperationException(
+                    "Clear Docked Layers did not remove the comparison documents. "
+                    + $"Count={shellHost.DockedLayerCount}, Panes={shellHost.DockedLayerPaneCount}, Titles={shellHost.DockedLayerTitles}");
+            }
+
+            if (!shellHost.DockLayerForTest("Main") || !shellHost.DockLayerForTest("HSV_Preview"))
+            {
+                throw new InvalidOperationException("Docked layers could not be restored explicitly after clearing the comparison workspace.");
+            }
+
+            Pump(12);
             if (shellHost.DockedLayerCount != 2 || shellHost.DockedLayerPaneCount != 1)
             {
-                throw new InvalidOperationException("Workspace clear should reset comparison panes while keeping live layer tabs visible.");
+                throw new InvalidOperationException(
+                    "Explicit re-dock did not restore the live layers as same-pane tabs. "
+                    + $"Count={shellHost.DockedLayerCount}, Panes={shellHost.DockedLayerPaneCount}, Titles={shellHost.DockedLayerTitles}");
             }
 
             if (!shellHost.DockLayerToGuideZoneForTest("HSV_Preview", "Right"))

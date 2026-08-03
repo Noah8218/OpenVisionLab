@@ -17,11 +17,18 @@ namespace OpenVisionLab.Docking.Controls
 
         public FrameworkElement PaneGuideOverlay => paneDockingGuideOverlay;
 
-        public int GuideZoneCount => EnumerateVisualDescendants<FrameworkElement>(this)
-            .Count(element => string.Equals(
-                AutomationProperties.GetAutomationId(element),
-                "DockingGuideZone",
-                StringComparison.Ordinal));
+        public int GuideZoneCount => new FrameworkElement[]
+        {
+            dockGuideGlobalLeftZone,
+            dockGuideGlobalRightZone,
+            dockGuideGlobalTopZone,
+            dockGuideGlobalBottomZone,
+            dockGuideLeftZone,
+            dockGuideRightZone,
+            dockGuideTopZone,
+            dockGuideBottomZone,
+            dockGuideCenterZone
+        }.Count(element => element != null);
 
         public void ApplyActiveZone(DockingGuideZone activeZone)
         {

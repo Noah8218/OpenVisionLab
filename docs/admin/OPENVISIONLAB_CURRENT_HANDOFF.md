@@ -1,8 +1,39 @@
 # OpenVisionLab Current Project Handoff
 
-Updated: 2026-08-01 KST
+Updated: 2026-08-03 KST
 
 This is the current continuation brief for a new OpenVisionLab chat. Reach it through `docs/README.md` after reading `AGENTS.md`, and read it before choosing implementation work. It is a status and priority document; it does not override stable behavioral contracts in `AGENTS.md` or `docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`.
+
+## Incremental Work Update — P283 Windows Reinstall Recovery (2026-08-03)
+
+- The restored workstation uses .NET SDK `8.0.421`; locked restore, Debug and
+  Release builds, readiness 13/13, vendored references, XML compatibility,
+  and all 60 public sample rows passed.
+- Seventy-one repository-local output paths now resolve to their approved
+  D-drive roots. The verified test-data copy retained 45,113 files and
+  9,022,299,950 bytes with matching SHA-256 values.
+- One mismatched catalog row now owns a sample-specific
+  `EasyImage_Text_Contour` Pipeline. The sample catalog passes 60/60 with no
+  artifact or metadata issues.
+- Four stale WPF docking smokes now match the current same-pane live-layer and
+  explicit comparison-split contract. Docking guide count inspection no longer
+  depends on hidden VisualTree materialization. The final focused UI/Guide
+  bundle passed 6/6 with no warnings or failures.
+- The current Debug EXE launched from the D-backed runtime on the dynamically
+  selected leftmost monitor. Korean startup, 17 Tool entries, beginner
+  guidance, Korean/English switching, and both localized Guide paths were
+  checked. Guide reached the Windows HTML application chooser without an
+  application path error.
+- Status: P283 project recovery `Complete`. Evidence:
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\post_restore_recovery_20260803\POST_RESTORE_RECOVERY_REPORT.md`.
+- Boundary: GitHub CLI authentication and the Windows `.html` default browser
+  remain user-scoped machine setup. The verified E-drive source copies remain
+  backups and must not be deleted without a separate approval and the required
+  artifact verification. No original-repository sync or push is included.
+- Remaining project priority: no product feature is active without a named
+  operator blocker or current-build regression. CVR-00 still requires three
+  independent first-time-user observations. Recommended model: none until that
+  evidence exists | Reasoning effort: none until that evidence exists.
 
 ## Incremental Work Update — P282 Localized User Manual (2026-08-01)
 
