@@ -76,11 +76,19 @@ Requirements:
 - Internet access for the first NuGet package restore
 
 ```powershell
+New-Item -ItemType Directory -Force C:\src | Out-Null
+Set-Location C:\src
 git clone https://github.com/Noah8218/OpenVisionLab.git
 cd OpenVisionLab
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\VerifySourceBuild.ps1
 .\bin\Debug\OpenVisionLab.exe
 ```
+
+Keep the checkout path short, such as `C:\src\OpenVisionLab` or
+`D:\src\OpenVisionLab`, on Windows systems where long-path support is disabled.
+The WPF/MSBuild release pipeline creates long temporary file names;
+`VerifyReleaseCandidate.ps1` stops early with a clear path-length error when the
+checkout cannot support them.
 
 `VerifySourceBuild.ps1` performs the locked package restore, Debug and Release
 solution builds, repository readiness check, and vendored DLL check. It does

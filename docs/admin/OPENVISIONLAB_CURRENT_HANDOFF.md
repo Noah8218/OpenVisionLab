@@ -4,6 +4,42 @@ Updated: 2026-08-03 KST
 
 This is the current continuation brief for a new OpenVisionLab chat. Reach it through `docs/README.md` after reading `AGENTS.md`, and read it before choosing implementation work. It is a status and priority document; it does not override stable behavioral contracts in `AGENTS.md` or `docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`.
 
+## Incremental Work Update — P284 GitHub Clone Release Verification (2026-08-03)
+
+- The verified P283 recovery commit was pushed to the Dev branch and
+  cherry-picked without deviation into the original repository `main`. Stable
+  patch-id and all five committed Git blob identities matched before the
+  original push.
+- A fresh original-repository clone under a deliberately deep D-drive path
+  reproduced one release-workflow defect: with Windows `LongPathsEnabled=0`,
+  the WPF temporary editor-config path reached 261 characters and the public
+  sample Runner rebuild failed after the main Debug/Release builds had passed.
+- `VerifyReleaseCandidate.ps1` now detects that exact unsafe checkout condition
+  before restore/build work and reports a short-path correction such as
+  `C:\src\OpenVisionLab` or `D:\src\OpenVisionLab`. The public README now uses
+  the promoted original repository `main` and the short-path source-build flow.
+- A second clean clone at `D:\OpenVisionLab-TestData\OVL_GitHub_R2` completed
+  the full Release candidate gate: Debug/Release builds, readiness 13/13,
+  vendored references, public assets, all 33 public sample rows, 78-file
+  framework-dependent package, copied-location launch, and archive SHA-256
+  `0F3822188201B3CAADB6B90108AB26C1CDB9BEA28112F6B87AFC61F1E6132E9D`.
+- The actual packaged EXE was opened and maximized on the only active display,
+  `DISPLAY1 (0,0,1920,1080)`. Current UI evidence showed application-ready
+  version `2.1.0`, 17 Tool entries, Korean first-use guidance, and the explicit
+  Preview/Run wording. The test EXE closed cleanly afterward.
+- Both packaged Korean and English manual hashes matched schema 2
+  `guide-manifest.json` exactly.
+- Status: P284 `Complete`. Detailed evidence:
+  `D:\OpenVisionLab-TestData\DistributionVerification_20260803\GITHUB_CLONE_RELEASE_VERIFICATION.md`.
+- Boundary: this proves the framework-dependent GitHub-source Release package
+  and one current Windows workstation. It is not installer/signing/update,
+  self-contained runtime, multi-PC, or field qualification evidence.
+- Remaining project priority: no new product feature is active. Before a public
+  release decision, obtain the separate distribution/signing policy inputs if
+  installer, signing, update, or uninstall work is desired. Recommended model:
+  none until those inputs exist | Reasoning effort: none until those inputs
+  exist.
+
 ## Incremental Work Update — P283 Windows Reinstall Recovery (2026-08-03)
 
 - The restored workstation uses .NET SDK `8.0.421`; locked restore, Debug and

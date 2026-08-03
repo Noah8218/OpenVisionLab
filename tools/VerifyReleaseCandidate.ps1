@@ -25,6 +25,16 @@ if (Test-Path -LiteralPath $outputFullPath) {
     throw "Release candidate evidence directory already exists: $outputFullPath"
 }
 
+$longPathsEnabled = Get-ItemPropertyValue `
+    -LiteralPath "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" `
+    -Name LongPathsEnabled `
+    -ErrorAction SilentlyContinue
+$wpfGeneratedPathProbe = Join-Path $repoRoot `
+    "src\Libraries\OpenVisionLab.Logging.Controls\obj\Any CPU\Release\net8.0-windows7.0\OpenVisionLab.Logging.Controls_00000000_wpftmp.GeneratedMSBuildEditorConfig.editorconfig"
+if ($longPathsEnabled -ne 1 -and $wpfGeneratedPathProbe.Length -ge 260) {
+    throw "Windows long-path support is disabled and this checkout is too deep for WPF/MSBuild release validation ($($wpfGeneratedPathProbe.Length) characters). Clone OpenVisionLab to a shorter path such as C:\src\OpenVisionLab or D:\src\OpenVisionLab, then run this command again."
+}
+
 $trackedStatus = (& git -C $repoRoot status --porcelain --untracked-files=no) -join "`n"
 if ($LASTEXITCODE -ne 0) {
     throw "Could not inspect the Git working tree."
