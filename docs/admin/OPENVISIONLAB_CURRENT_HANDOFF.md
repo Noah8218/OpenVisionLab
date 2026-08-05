@@ -1,6 +1,6 @@
 # OpenVisionLab Current Project Handoff
 
-Updated: 2026-08-05 KST
+Updated: 2026-08-06 KST
 
 This is the compact live-status source for a new OpenVisionLab task. Read
 `AGENTS.md`, `docs/README.md`, and `docs/LLM_DOCUMENT_INDEX.json` first. Stable
@@ -52,6 +52,27 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   hardware qualification, calibrated metrology, or field robustness.
 
 ## Latest Completed Work
+
+### P290 Shared Analysis Runtime Stability Review - Complete In Dev
+
+- The shared project analysis was adopted as a bounded decision input, not as
+  an undifferentiated P0/P1 roadmap. OpenVisionLab remains a deterministic
+  rule-based vision Recipe workbench; equipment integration, Worker Process,
+  plugin SDK, installer/signing, and new algorithms were not activated.
+- Pipeline timeout/cancellation now classifies the deadline and drains the
+  already-started in-process Step before disposing run-owned input, Context,
+  late result image, or run result. This prevents detached work from using
+  disposed state; it is not hard termination of a hung native call.
+- Sample verification awaits Recipe execution end to end with cancellation.
+  Unexpected dispatcher exceptions remain fatal after logging; only expected
+  cancellation is marked handled.
+- Indexed Bitmap conversion, OpenGL glyph allocation/deletion, log cleanup
+  visibility, and caller-frame capture now have explicit resource/diagnostic
+  ownership and focused regression coverage.
+- Debug solution build, runtime stability contract, readiness 13/13, external
+  references, public assets, documentation index, and current-source WPF view
+  lifecycle/render checks passed. Evidence:
+  `docs/reports/OPENVISIONLAB_SHARED_ANALYSIS_STABILITY_REVIEW_20260806.md`.
 
 ### OpenVisionLab 2.1.0 RC1 Publication - Complete
 
@@ -194,6 +215,8 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 ## Current Priority And Activation Conditions
 
+- P290 is complete and verified in Dev. Promotion to the original repository
+  remains a separate explicitly authorized task.
 - P286 and P287 are published in Dev and original and their hosted GitHub
   Actions runs pass. No repository reliability correction is active without a
   new verified regression.

@@ -18,6 +18,8 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 {
 	public static partial class OpenGlDrawing
 	{
+		internal const int FontGlyphCount = 256;
+
 		public static void DrawText(OpenGL gl, List<OpenGlFontBitmapEntry> fontBitmapEntries, float xSpan, float ySpan, SizeF offsetSize, float x, float y, System.Drawing.Color color, string faceName, float baseFontSize, string text)
 		{
 			float r, g, b, a = 1.0f;
@@ -191,18 +193,36 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 			//  Select the font handle.
 			var hOldObject = Win32.SelectObject(gl.RenderContextProvider.DeviceContextHandle, hFont);
 
-			//  Create the list base.
-			var listBase = gl.GenLists(1);
+			//  CallLists uses every byte value, so reserve one contiguous list per glyph.
+			var listBase = gl.GenLists(FontGlyphCount);
+			if (listBase == 0)
+			{
+				Win32.SelectObject(gl.RenderContextProvider.DeviceContextHandle, hOldObject);
+				Win32.DeleteObject(hFont);
+				throw new InvalidOperationException("OpenGL font display lists could not be allocated.");
+			}
 
-			//  Create the font bitmaps.
+			bool ok;
+			try
+			{
+				ok = TryUseFontBitmapsWithRetry(gl, gl.RenderContextProvider.DeviceContextHandle, listBase);
+			}
+			catch
+			{
+				gl.DeleteLists(listBase, FontGlyphCount);
+				throw;
+			}
+			finally
+			{
+				Win32.SelectObject(gl.RenderContextProvider.DeviceContextHandle, hOldObject);
+				Win32.DeleteObject(hFont);
+			}
 
-			bool ok = TryUseFontBitmapsWithRetry(gl, gl.RenderContextProvider.DeviceContextHandle, listBase);
-
-			//  Reselect the old font.
-			Win32.SelectObject(gl.RenderContextProvider.DeviceContextHandle, hOldObject);
-
-			//  Free the font.
-			Win32.DeleteObject(hFont);
+			if (!ok)
+			{
+				gl.DeleteLists(listBase, FontGlyphCount);
+				throw new InvalidOperationException("OpenGL font bitmaps could not be created.");
+			}
 
 			//  Create the font bitmap entry.
 			var fbe = new OpenGlFontBitmapEntry()
@@ -212,7 +232,7 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 				FaceName = faceName,
 				Height = height,
 				ListBase = listBase,
-				ListCount = 255
+				ListCount = FontGlyphCount
 			};
 
 			//  Add the font bitmap entry to the internal list.
@@ -231,7 +251,7 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 
 				gl.Finish();
 
-				if (Win32.wglUseFontBitmaps(hdc, 0, 256, listBase))
+				if (Win32.wglUseFontBitmaps(hdc, 0, FontGlyphCount, listBase))
 					return true;
 
 				System.Threading.Thread.Sleep(0);

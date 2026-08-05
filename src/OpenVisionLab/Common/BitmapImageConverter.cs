@@ -1,7 +1,6 @@
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Linq;
 using System.Runtime.InteropServices;
 using OpenCvSharp;
 
@@ -160,8 +159,7 @@ namespace OpenVisionLab.Common
                             throw new NotSupportedException("Too big dst Mat");
                         var buffer = new byte[length];
                         Marshal.Copy(srcData, buffer, 0, buffer.Length);
-                        // Apply conversion by palette
-                        buffer = buffer.Select(b => palette[b]).ToArray();
+                        ApplyPalette(buffer, palette);
                         // Write to dst Mat
                         Marshal.Copy(buffer, 0, dst2.Data, buffer.Length);
                     }
@@ -175,8 +173,7 @@ namespace OpenVisionLab.Common
                         {
                             // Read Bitmap pixel data to managed array
                             Marshal.Copy(new IntPtr(sp), buffer, 0, buffer.Length);
-                            // Apply conversion by palette
-                            buffer = buffer.Select(b => palette[b]).ToArray();
+                            ApplyPalette(buffer, palette);
                             // Write to dst Mat
                             Marshal.Copy(buffer, 0, new IntPtr(dp), buffer.Length);
 
@@ -217,9 +214,9 @@ namespace OpenVisionLab.Common
                         paletteB[i] = c.B;
                     }
 
-                    var dstR = new Mat(h, w, MatType.CV_8UC1);
-                    var dstG = new Mat(h, w, MatType.CV_8UC1);
-                    var dstB = new Mat(h, w, MatType.CV_8UC1);
+                    using var dstR = new Mat(h, w, MatType.CV_8UC1);
+                    using var dstG = new Mat(h, w, MatType.CV_8UC1);
+                    using var dstB = new Mat(h, w, MatType.CV_8UC1);
 
                     Ch1(dstR, h, srcStep, (uint)dstR.Step(), bd.Scan0, paletteR);
                     Ch1(dstG, h, srcStep, (uint)dstG.Step(), bd.Scan0, paletteG);
@@ -229,6 +226,14 @@ namespace OpenVisionLab.Common
                 else
                 {
                     throw new ArgumentException($"Invalid channels of dst Mat ({channels})");
+                }
+
+                static void ApplyPalette(byte[] buffer, byte[] palette)
+                {
+                    for (int i = 0; i < buffer.Length; i++)
+                    {
+                        buffer[i] = palette[buffer[i]];
+                    }
                 }
             }
 

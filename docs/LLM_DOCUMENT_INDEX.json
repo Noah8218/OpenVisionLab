@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "updated": "2026-08-05",
+  "updated": "2026-08-06",
   "purpose": "Curated, machine-readable routing index for OpenVisionLab documentation. It is intentionally smaller than the full documentation registry.",
   "entrypoint": "docs/README.md",
   "detailedRegistry": "docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
@@ -48,6 +48,12 @@
       "intent": "Change recipe, Pipeline, Tool View, parameter mapping, result, or XML behavior.",
       "keywords": ["recipe", "pipeline", "tool", "parameter", "result", "XML"],
       "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md", "docs/contracts/vision/VISION_TOOL_CONTRACT.md", "docs/contracts/vision/VISION_TOOL_RESULT_CONTRACT.md", "docs/contracts/vision/VISION_TOOL_PROPERTY_GRID_POLICY.md", "docs/contracts/vision/VISION_TOOL_NATIVE_WPF_EXTENSION_GUIDE.md"]
+    },
+    {
+      "id": "runtime_stability_and_resource_ownership",
+      "intent": "Investigate or change Pipeline timeout, cancellation, exception policy, native resource ownership, logging cleanup, or sample-check async behavior.",
+      "keywords": ["timeout", "cancellation", "exception", "resource", "Mat", "OpenGL", "logging", "async", "stability"],
+      "read": ["docs/reports/OPENVISIONLAB_SHARED_ANALYSIS_STABILITY_REVIEW_20260806.md", "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md", "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md"]
     },
     {
       "id": "llm_xml_maintenance",

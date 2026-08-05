@@ -49,7 +49,12 @@ namespace OpenVisionLab
                 LogCategory.System,
                 LogLevel.Error,
                 e.Exception?.ToString() ?? "Unhandled UI thread exception.");
-            e.Handled = true;
+            e.Handled = IsRecoverableDispatcherException(e.Exception);
+        }
+
+        internal static bool IsRecoverableDispatcherException(Exception exception)
+        {
+            return exception is OperationCanceledException;
         }
     }
 }

@@ -7,6 +7,7 @@ using OpenVisionLab.Vision2D.Pipeline;
 using OpenVisionLab.Vision2D.Property;
 using OpenVisionLab.Vision2D.Tool;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
+using OpenVisionLab.ImageCanvas.OpenGLRendering;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -14,13 +15,22 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using System.Drawing.Imaging;
+using Bitmap = System.Drawing.Bitmap;
 
 if (args.Length == 1 && string.Equals(args[0], "--pinarraygap-intent-contract", StringComparison.OrdinalIgnoreCase))
 {
     return RunPinArrayGapIntentContract();
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--runtime-stability-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await RunRuntimeStabilityContractAsync(args.Length == 2 ? args[1] : null);
 }
 
 if ((args.Length == 1 || args.Length == 2)
@@ -126,6 +136,7 @@ if (args.Length < 2)
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --batch <imageListPath> <datasetRoot> <pipelineXmlPath> <csvPath>");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --batch-evidence <imageListPath> <datasetRoot> <pipelineXmlPath> <csvPath> <evidenceRoot>");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pinarraygap-intent-contract");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --runtime-stability-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --object-dimension-filter-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --tool-n-image-verification-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --affine-transform-contract [evidenceDirectory]");
@@ -160,6 +171,152 @@ static string? GetOptionValue(string[] args, string optionName)
     }
 
     return null;
+}
+
+static async Task<int> RunRuntimeStabilityContractAsync(string? requestedEvidenceDirectory)
+{
+    string evidenceDirectory = Path.GetFullPath(requestedEvidenceDirectory
+        ?? Path.Combine("artifacts", "runtime_stability_contract"));
+    Directory.CreateDirectory(evidenceDirectory);
+    List<string> failures = new List<string>();
+
+    if (!OpenVisionLabUnhandledExceptionPolicy.IsRecoverableDispatcherException(new OperationCanceledException())
+        || OpenVisionLabUnhandledExceptionPolicy.IsRecoverableDispatcherException(new InvalidOperationException("fatal")))
+    {
+        failures.Add("Dispatcher exception policy did not distinguish cancellation from a fatal unhandled exception.");
+    }
+
+    using (CancellationTokenSource canceled = new CancellationTokenSource())
+    {
+        canceled.Cancel();
+        VisionPipelineSampleCheckResult canceledResult = await VisionPipelineSampleCheckService.RunSampleCheckSafeAsync(
+            null,
+            null,
+            canceled.Token);
+        if (!canceledResult.Message.Contains("canceled", StringComparison.OrdinalIgnoreCase))
+        {
+            failures.Add("A pre-canceled sample check did not return the safe cancellation result.");
+        }
+    }
+
+    VisionPipelineSampleCatalogItem? publicSample = VisionPipelineSampleCatalogItem
+        .LoadRunnable(VisionPipelineSampleCatalogSourceKind.Public)
+        .FirstOrDefault(item => string.Equals(
+            item.SampleName,
+            "Public_Threshold_BandPads_Good",
+            StringComparison.OrdinalIgnoreCase));
+    if (publicSample == null)
+    {
+        failures.Add("The public Threshold stability sample was not found.");
+    }
+    else
+    {
+        VisionPipelineSampleCheckResult publicResult = await VisionPipelineSampleCheckService.RunSampleCheckSafeAsync(
+            publicSample,
+            cancellationToken: CancellationToken.None);
+        if (!publicResult.ExecutionCompleted || !publicResult.Success)
+        {
+            failures.Add("The valid async public sample path failed: " + publicResult.Message);
+        }
+    }
+
+    TaskCompletionSource<VisionToolResult> lateCompletion = new TaskCompletionSource<VisionToolResult>(
+        TaskCreationOptions.RunContinuationsAsynchronously);
+    Task<bool> deadlineWait = VisionPipelineExecutionService.WaitForStepCompletionAsync(
+        lateCompletion.Task,
+        1,
+        CancellationToken.None);
+    await Task.Delay(100);
+    if (deadlineWait.IsCompleted)
+    {
+        failures.Add("A timed-out Step returned before its in-process work released owned resources.");
+    }
+
+    Mat lateImage = new Mat(2, 2, MatType.CV_8UC1, Scalar.White);
+    lateCompletion.SetResult(new VisionToolResult
+    {
+        Success = true,
+        ResultImage = lateImage
+    });
+    bool completedWithinDeadline = await deadlineWait;
+    if (completedWithinDeadline || !lateImage.IsDisposed)
+    {
+        failures.Add("The timed-out Step drain did not report the deadline or dispose the late result image.");
+    }
+
+    bool immediateCompletion = await VisionPipelineExecutionService.WaitForStepCompletionAsync(
+        Task.FromResult(new VisionToolResult { Success = true }),
+        1000,
+        CancellationToken.None);
+    if (!immediateCompletion)
+    {
+        failures.Add("A completed Step was incorrectly reported as timed out.");
+    }
+
+    using (Bitmap indexed = new Bitmap(2, 1, PixelFormat.Format8bppIndexed))
+    {
+        ColorPalette palette = indexed.Palette;
+        palette.Entries[1] = System.Drawing.Color.FromArgb(10, 20, 30);
+        palette.Entries[2] = System.Drawing.Color.FromArgb(40, 50, 60);
+        indexed.Palette = palette;
+        BitmapData bitmapData = indexed.LockBits(
+            new System.Drawing.Rectangle(0, 0, 2, 1),
+            ImageLockMode.WriteOnly,
+            indexed.PixelFormat);
+        try
+        {
+            Marshal.Copy(new byte[] { 1, 2, 0, 0 }, 0, bitmapData.Scan0, bitmapData.Stride);
+        }
+        finally
+        {
+            indexed.UnlockBits(bitmapData);
+        }
+
+        using Mat converted = new Mat(1, 2, MatType.CV_8UC3);
+        BitmapImageConverter.ToMat(indexed, converted);
+        Vec3b first = converted.At<Vec3b>(0, 0);
+        Vec3b second = converted.At<Vec3b>(0, 1);
+        if (first.Item0 != 30 || first.Item1 != 20 || first.Item2 != 10
+            || second.Item0 != 60 || second.Item1 != 50 || second.Item2 != 40)
+        {
+            failures.Add("Indexed Bitmap palette conversion did not preserve BGR values.");
+        }
+    }
+
+    FieldInfo? glyphCountField = typeof(OpenGlDrawing).GetField(
+        "FontGlyphCount",
+        BindingFlags.Static | BindingFlags.NonPublic);
+    if (glyphCountField?.GetRawConstantValue() is not int glyphCount || glyphCount != 256)
+    {
+        failures.Add("OpenGL text rendering does not reserve all 256 byte glyph display lists.");
+    }
+
+    string reportPath = Path.Combine(evidenceDirectory, "runtime_stability_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "DispatcherPolicy: cancellation handled; unexpected UI exceptions remain fatal",
+            "PipelineDeadline: timed-out in-process work drained before Context ownership ends",
+            "SampleCheck: async CancellationToken path active",
+            "BitmapConverter: indexed BGR conversion and temporary Mat ownership checked",
+            "OpenGLFontLists: 256 contiguous glyph lists required"
+        }.Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Runtime stability contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Runtime stability contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+    return 1;
 }
 
 static int RunEdgeGlobalPolarityContract(string? requestedEvidenceDirectory)

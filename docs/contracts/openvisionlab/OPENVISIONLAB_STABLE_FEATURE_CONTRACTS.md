@@ -71,6 +71,29 @@ When a feature below is marked stable, do not refactor, simplify, replace, or re
 - Public sample assets must be project-authored synthetic assets or otherwise clearly licensed for redistribution. The root `Sample/` folder is local/vendor sample reference material and must not be tracked or reintroduced into public GitHub output. Public sample and tutorial flows should use `docs/samples/public/` and `docs/samples/public/product/`.
 - Public README/tutorial/Learn content must not mention private goals such as portfolio, hiring, submission, or internal-only intent. Keep those notes in recovery/handoff documents only.
 
+### Runtime Stability And Resource Ownership
+
+- A Pipeline Step timeout or cancellation stops advancement to the next Step,
+  but an already-started in-process native operation must be drained before its
+  input, Pipeline Context, run result, or late result image is disposed. Return
+  `StepTimeout` or `StepCanceled`; never publish the late result as success.
+- The in-process timeout is a classification deadline, not a claim that an
+  arbitrary OpenCV/native call was forcibly terminated. Hard termination
+  requires a separately approved isolated Runtime process.
+- Do not add parallel image execution to hide timeout or sequential-performance
+  problems. Require a measured bottleneck and explicit approval first.
+- Sample-check async entry points must await Recipe execution and propagate the
+  caller's cancellation token. Existing explicit synchronous smoke entry points
+  may retain their compatibility wrapper.
+- The global WPF dispatcher exception policy may handle expected cancellation.
+  Unexpected unhandled UI exceptions must be logged and remain unhandled rather
+  than continuing from an unknown state.
+- Bitmap conversion must dispose temporary native Mats. OpenGL font rendering
+  must reserve the full glyph display-list range, reject creation failure, and
+  delete cached lists with the owning canvas.
+- Background maintenance failures such as log retention cleanup must leave an
+  observable trace. Do not create recursive or speculative logging layers.
+
 ### LLM Maintenance-Mode Boundary
 
 - Planned LLM feature expansion is frozen by P196. Existing LLM Assistant, Guided Setup, XML prompt/guide/catalog, validation, correction display, and explicit import behavior remain supported compatibility surfaces.

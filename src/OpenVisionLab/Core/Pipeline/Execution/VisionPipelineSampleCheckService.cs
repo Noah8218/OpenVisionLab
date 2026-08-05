@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OpenVisionLab
@@ -39,22 +40,30 @@ namespace OpenVisionLab
     {
         public static Task<VisionPipelineSampleCheckResult> RunSampleCheckSafeAsync(
             VisionPipelineSampleCatalogItem sample,
-            string pipelineXmlText = null)
+            string pipelineXmlText = null,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
-            return Task.Run(() => RunSampleCheckSafe(sample, pipelineXmlText));
+            return Task.Run(() => RunSampleCheckSafeCoreAsync(
+                sample,
+                pipelineXmlText,
+                null,
+                false,
+                cancellationToken));
         }
 
         public static Task<VisionPipelineSampleCheckResult> RunSampleCheckWithReportSafeAsync(
             VisionPipelineSampleCatalogItem sample,
             string pipelineXmlText,
             string recipeName,
-            bool normalizeInputToGray = false)
+            bool normalizeInputToGray = false,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
-            return Task.Run(() => RunSampleCheckSafe(
+            return Task.Run(() => RunSampleCheckSafeCoreAsync(
                 sample,
                 pipelineXmlText,
                 recipeName,
-                normalizeInputToGray));
+                normalizeInputToGray,
+                cancellationToken));
         }
 
         public static VisionPipelineSampleCheckResult RunSampleCheckSafe(
@@ -72,31 +81,81 @@ namespace OpenVisionLab
         {
             try
             {
-                if (sample == null)
+                VisionPipelineSampleCheckResult validationError = ValidateSample(sample, pipelineXmlText);
+                if (validationError != null)
                 {
-                    return CreateErrorResult("Sample is null.");
+                    return validationError;
                 }
 
-                if (string.IsNullOrWhiteSpace(sample.ImageFullPath) || !System.IO.File.Exists(sample.ImageFullPath))
-                {
-                    return CreateErrorResult($"Sample image is missing: {sample.SampleName}");
-                }
-
-                if (string.IsNullOrWhiteSpace(pipelineXmlText) && !sample.CanOpen)
-                {
-                    return CreateErrorResult($"Sample pipeline is missing: {sample.SampleName}");
-                }
-
-                return RunSampleCheck(
-                    sample,
-                    pipelineXmlText,
-                    reportRecipeName,
-                    normalizeInputToGray);
+                return RunSampleCheckAsync(
+                        sample,
+                        pipelineXmlText,
+                        reportRecipeName,
+                        normalizeInputToGray,
+                        CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
             }
             catch (Exception ex)
             {
                 return CreateErrorResult(ex.GetBaseException().Message);
             }
+        }
+
+        private static async Task<VisionPipelineSampleCheckResult> RunSampleCheckSafeCoreAsync(
+            VisionPipelineSampleCatalogItem sample,
+            string pipelineXmlText,
+            string reportRecipeName,
+            bool normalizeInputToGray,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return CreateErrorResult("Sample check canceled.");
+                }
+
+                VisionPipelineSampleCheckResult validationError = ValidateSample(sample, pipelineXmlText);
+                if (validationError != null)
+                {
+                    return validationError;
+                }
+
+                return await RunSampleCheckAsync(
+                    sample,
+                    pipelineXmlText,
+                    reportRecipeName,
+                    normalizeInputToGray,
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return CreateErrorResult("Sample check canceled.");
+            }
+            catch (Exception ex)
+            {
+                return CreateErrorResult(ex.GetBaseException().Message);
+            }
+        }
+
+        private static VisionPipelineSampleCheckResult ValidateSample(
+            VisionPipelineSampleCatalogItem sample,
+            string pipelineXmlText)
+        {
+            if (sample == null)
+            {
+                return CreateErrorResult("Sample is null.");
+            }
+
+            if (string.IsNullOrWhiteSpace(sample.ImageFullPath) || !System.IO.File.Exists(sample.ImageFullPath))
+            {
+                return CreateErrorResult($"Sample image is missing: {sample.SampleName}");
+            }
+
+            return string.IsNullOrWhiteSpace(pipelineXmlText) && !sample.CanOpen
+                ? CreateErrorResult($"Sample pipeline is missing: {sample.SampleName}")
+                : null;
         }
 
         public static VisionPipelineSampleCheckResult CreateErrorResult(string message)
@@ -164,157 +223,167 @@ namespace OpenVisionLab
             return "-";
         }
 
-        private static VisionPipelineSampleCheckResult RunSampleCheck(
+        private static async Task<VisionPipelineSampleCheckResult> RunSampleCheckAsync(
             VisionPipelineSampleCatalogItem sample,
             string pipelineXmlText,
             string reportRecipeName,
-            bool normalizeInputToGray)
+            bool normalizeInputToGray,
+            CancellationToken cancellationToken)
         {
             DateTime checkedAt = DateTime.Now;
             using (Bitmap bitmap = new Bitmap(sample.ImageFullPath))
             using (Mat source = BitmapImageConverter.ToMat(bitmap))
             using (Mat executionSource = normalizeInputToGray ? source.Clone() : null)
-            using (VisionRecipeRunResult result = RunRecipe(
-                sample,
-                PrepareExecutionSource(source, executionSource, normalizeInputToGray),
-                pipelineXmlText,
-                out VisionPipeline pipeline))
             {
-                DateTime finishedAt = DateTime.Now;
-                string runReportPath = string.IsNullOrWhiteSpace(reportRecipeName)
-                    ? string.Empty
-                    : VisionPipelineRunReportStorage.Save(
-                        reportRecipeName,
-                        pipeline,
-                        result,
-                        checkedAt,
-                        finishedAt,
-                        sourceImage: source);
-                List<string> messages = new List<string>();
-                bool expectedFailure = sample.ExpectsFailure;
-                if (!result.Success && !expectedFailure && !string.IsNullOrWhiteSpace(result.Message))
+                (VisionRecipeRunResult result, VisionPipeline pipeline) = await RunRecipeAsync(
+                    sample,
+                    PrepareExecutionSource(source, executionSource, normalizeInputToGray),
+                    pipelineXmlText,
+                    cancellationToken).ConfigureAwait(false);
+                using (result)
                 {
-                    messages.Add(result.Message);
-                }
-                else if (result.Success && expectedFailure)
-                {
-                    messages.Add("Expected failure did not occur.");
-                }
-
-                if (sample.Width > 0
-                    && sample.Height > 0
-                    && (bitmap.Width != sample.Width || bitmap.Height != sample.Height))
-                {
-                    messages.Add($"Image size {bitmap.Width} x {bitmap.Height} does not match catalog {sample.Width} x {sample.Height}.");
-                }
-
-                bool success = expectedFailure ? !result.Success : result.Success;
-                string metricText = "no metric gate";
-                string metricReviewText = "Metric review: no metric gate";
-
-                IReadOnlyList<VisionPipelineSampleExpectedMetric> expectedMetrics = sample.ExpectedMetrics;
-                if (expectedMetrics.Count > 0)
-                {
-                    List<string> metricParts = new List<string>();
-                    List<string> metricReviewLines = new List<string>();
-                    foreach (VisionPipelineSampleExpectedMetric expectedMetric in expectedMetrics)
+                    DateTime finishedAt = DateTime.Now;
+                    string runReportPath = string.IsNullOrWhiteSpace(reportRecipeName)
+                        ? string.Empty
+                        : VisionPipelineRunReportStorage.Save(
+                            reportRecipeName,
+                            pipeline,
+                            result,
+                            checkedAt,
+                            finishedAt,
+                            sourceImage: source);
+                    List<string> messages = new List<string>();
+                    bool expectedFailure = sample.ExpectsFailure;
+                    if (!result.Success && !expectedFailure && !string.IsNullOrWhiteSpace(result.Message))
                     {
-                        if (string.IsNullOrWhiteSpace(expectedMetric.Name))
-                        {
-                            continue;
-                        }
-
-                        string expectedRangeText = BuildExpectedMetricRangeText(expectedMetric);
-                        if (!TryFindMetric(result, expectedMetric.Name, out double metricValue))
-                        {
-                            messages.Add($"Expected metric '{expectedMetric.Name}' was not produced.");
-                            metricParts.Add($"{expectedMetric.Name}=missing");
-                            metricReviewLines.Add($"{expectedMetric.Name}: expected {expectedRangeText}, actual missing, judgment MISSING");
-                            continue;
-                        }
-
-                        metricParts.Add($"{expectedMetric.Name}={metricValue:0.###}");
-                        bool metricPassed = true;
-                        if (TryParseDouble(expectedMetric.Minimum, out double minimum) && metricValue < minimum)
-                        {
-                            messages.Add($"{expectedMetric.Name} {metricValue:0.###} < {minimum:0.###}.");
-                            metricPassed = false;
-                        }
-
-                        if (TryParseDouble(expectedMetric.Maximum, out double maximum) && metricValue > maximum)
-                        {
-                            messages.Add($"{expectedMetric.Name} {metricValue:0.###} > {maximum:0.###}.");
-                            metricPassed = false;
-                        }
-
-                        metricReviewLines.Add(
-                            $"{expectedMetric.Name}: expected {expectedRangeText}, actual {metricValue:0.###}, judgment {(metricPassed ? "OK" : "NG")}");
+                        messages.Add(result.Message);
+                    }
+                    else if (result.Success && expectedFailure)
+                    {
+                        messages.Add("Expected failure did not occur.");
                     }
 
-                    metricText = metricParts.Count == 0 ? "no metric gate" : string.Join("; ", metricParts);
-                    metricReviewText = metricReviewLines.Count == 0
-                        ? "Metric review: no metric gate"
-                        : "Metric review:" + Environment.NewLine + " - " + string.Join(Environment.NewLine + " - ", metricReviewLines);
+                    if (sample.Width > 0
+                        && sample.Height > 0
+                        && (bitmap.Width != sample.Width || bitmap.Height != sample.Height))
+                    {
+                        messages.Add($"Image size {bitmap.Width} x {bitmap.Height} does not match catalog {sample.Width} x {sample.Height}.");
+                    }
+
+                    bool success = expectedFailure ? !result.Success : result.Success;
+                    string metricText = "no metric gate";
+                    string metricReviewText = "Metric review: no metric gate";
+
+                    IReadOnlyList<VisionPipelineSampleExpectedMetric> expectedMetrics = sample.ExpectedMetrics;
+                    if (expectedMetrics.Count > 0)
+                    {
+                        List<string> metricParts = new List<string>();
+                        List<string> metricReviewLines = new List<string>();
+                        foreach (VisionPipelineSampleExpectedMetric expectedMetric in expectedMetrics)
+                        {
+                            if (string.IsNullOrWhiteSpace(expectedMetric.Name))
+                            {
+                                continue;
+                            }
+
+                            string expectedRangeText = BuildExpectedMetricRangeText(expectedMetric);
+                            if (!TryFindMetric(result, expectedMetric.Name, out double metricValue))
+                            {
+                                messages.Add($"Expected metric '{expectedMetric.Name}' was not produced.");
+                                metricParts.Add($"{expectedMetric.Name}=missing");
+                                metricReviewLines.Add($"{expectedMetric.Name}: expected {expectedRangeText}, actual missing, judgment MISSING");
+                                continue;
+                            }
+
+                            metricParts.Add($"{expectedMetric.Name}={metricValue:0.###}");
+                            bool metricPassed = true;
+                            if (TryParseDouble(expectedMetric.Minimum, out double minimum) && metricValue < minimum)
+                            {
+                                messages.Add($"{expectedMetric.Name} {metricValue:0.###} < {minimum:0.###}.");
+                                metricPassed = false;
+                            }
+
+                            if (TryParseDouble(expectedMetric.Maximum, out double maximum) && metricValue > maximum)
+                            {
+                                messages.Add($"{expectedMetric.Name} {metricValue:0.###} > {maximum:0.###}.");
+                                metricPassed = false;
+                            }
+
+                            metricReviewLines.Add(
+                                $"{expectedMetric.Name}: expected {expectedRangeText}, actual {metricValue:0.###}, judgment {(metricPassed ? "OK" : "NG")}");
+                        }
+
+                        metricText = metricParts.Count == 0 ? "no metric gate" : string.Join("; ", metricParts);
+                        metricReviewText = metricReviewLines.Count == 0
+                            ? "Metric review: no metric gate"
+                            : "Metric review:" + Environment.NewLine + " - " + string.Join(Environment.NewLine + " - ", metricReviewLines);
+                    }
+
+                    success = success && messages.Count == 0;
+                    string message = messages.Count == 0
+                        ? result.Message
+                        : string.Join(" ", messages);
+
+                    return new VisionPipelineSampleCheckResult
+                    {
+                        Status = success ? "OK" : "NG",
+                        ExecutionCompleted = true,
+                        ActualSuccess = result.Success,
+                        Success = success,
+                        Message = message,
+                        MetricText = metricText,
+                        DistanceMetricText = BuildDistanceMetricText(result),
+                        MetricReviewText = metricReviewText,
+                        FinalLayerText = string.IsNullOrWhiteSpace(result.FinalLayer) ? "-" : result.FinalLayer,
+                        OverlayCountText = ResolveOverlayCountText(result),
+                        FailedStepText = ResolveFailedStepText(result),
+                        ActionSummaryText = result.ActionSummaryText,
+                        StepSummaryText = result.StepSummaryText,
+                        RunReportPath = runReportPath,
+                        TotalMilliseconds = result.TotalMilliseconds,
+                        CheckedAt = checkedAt
+                    };
                 }
-
-                success = success && messages.Count == 0;
-                string message = messages.Count == 0
-                    ? result.Message
-                    : string.Join(" ", messages);
-
-                return new VisionPipelineSampleCheckResult
-                {
-                    Status = success ? "OK" : "NG",
-                    ExecutionCompleted = true,
-                    ActualSuccess = result.Success,
-                    Success = success,
-                    Message = message,
-                    MetricText = metricText,
-                    DistanceMetricText = BuildDistanceMetricText(result),
-                    MetricReviewText = metricReviewText,
-                    FinalLayerText = string.IsNullOrWhiteSpace(result.FinalLayer) ? "-" : result.FinalLayer,
-                    OverlayCountText = ResolveOverlayCountText(result),
-                    FailedStepText = ResolveFailedStepText(result),
-                    ActionSummaryText = result.ActionSummaryText,
-                    StepSummaryText = result.StepSummaryText,
-                    RunReportPath = runReportPath,
-                    TotalMilliseconds = result.TotalMilliseconds,
-                    CheckedAt = checkedAt
-                };
             }
         }
 
-        private static VisionRecipeRunResult RunRecipe(
+        private static async Task<(VisionRecipeRunResult Result, VisionPipeline Pipeline)> RunRecipeAsync(
             VisionPipelineSampleCatalogItem sample,
             Mat source,
             string pipelineXmlText,
-            out VisionPipeline pipeline)
+            CancellationToken cancellationToken)
         {
             VisionRecipeRunner runner = new VisionRecipeRunner();
             if (!string.IsNullOrWhiteSpace(pipelineXmlText))
             {
-                if (!SerializeHelper.TryLoadFromXmlText(pipelineXmlText, out pipeline, out string loadError) || pipeline == null)
+                if (!SerializeHelper.TryLoadFromXmlText(pipelineXmlText, out VisionPipeline pipeline, out string loadError) || pipeline == null)
                 {
                     throw new InvalidOperationException(string.IsNullOrWhiteSpace(loadError)
                         ? "Recipe XML could not be loaded."
                         : loadError);
                 }
 
-                return runner
-                    .RunAsync(pipeline, source, "Main", VisionRecipeRunner.DefaultStepTimeoutMilliseconds)
-                    .GetAwaiter()
-                    .GetResult();
+                VisionRecipeRunResult result = await runner.RunAsync(
+                    pipeline,
+                    source,
+                    "Main",
+                    VisionRecipeRunner.DefaultStepTimeoutMilliseconds,
+                    cancellationToken).ConfigureAwait(false);
+                return (result, pipeline);
             }
 
-            if (!SerializeHelper.TryLoadFromXmlFile(sample.PipelineFullPath, out pipeline) || pipeline == null)
+            if (!SerializeHelper.TryLoadFromXmlFile(sample.PipelineFullPath, out VisionPipeline loadedPipeline) || loadedPipeline == null)
             {
                 throw new InvalidOperationException($"Recipe XML could not be loaded: {sample.PipelineFullPath}");
             }
 
-            return runner
-                .RunAsync(pipeline, source, "Main", VisionRecipeRunner.DefaultStepTimeoutMilliseconds)
-                .GetAwaiter()
-                .GetResult();
+            VisionRecipeRunResult loadedResult = await runner.RunAsync(
+                loadedPipeline,
+                source,
+                "Main",
+                VisionRecipeRunner.DefaultStepTimeoutMilliseconds,
+                cancellationToken).ConfigureAwait(false);
+            return (loadedResult, loadedPipeline);
         }
 
         private static Mat PrepareExecutionSource(

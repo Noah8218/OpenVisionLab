@@ -1,5 +1,6 @@
 using OpenVisionLab.Vision2D.Pipeline;
 using OpenVisionLab.Vision2D.Tool;
+using OpenVisionLab.Logging;
 using OpenCvSharp;
 using System;
 using System.Collections.Generic;
@@ -193,16 +194,15 @@ namespace OpenVisionLab
                         : VisionPipelineArithmeticStep.IsArithmetic(runtimeStep)
                             ? VisionPipelineArithmeticStep.Execute(runtimeStep, input, context)
                             : ExecuteStep(runtimeStep, input));
-                Task delayTask = Task.Delay(stepTimeoutMilliseconds, cancellationToken);
-                Task completedTask = await Task.WhenAny(runTask, delayTask);
+                bool completedWithinDeadline = await WaitForStepCompletionAsync(
+                    runTask,
+                    stepTimeoutMilliseconds,
+                    cancellationToken);
 
                 VisionToolResult toolResult;
-                bool disposeInputNow = true;
-                if (completedTask != runTask)
+                if (!completedWithinDeadline)
                 {
                     stepStopwatch.Stop();
-                    disposeInputNow = false;
-                    ReleaseInputWhenTaskCompletes(runTask, input);
 
                     string message = cancellationToken.IsCancellationRequested
                         ? "Step canceled before completion."
@@ -263,10 +263,7 @@ namespace OpenVisionLab
                     runResult.StepResults.Add(stepResult);
                     NotifyStepResult(stepUpdate, step, stepResult);
 
-                    if (disposeInputNow)
-                    {
-                        input?.Dispose();
-                    }
+                    input?.Dispose();
 
                     break;
                 }
@@ -301,10 +298,7 @@ namespace OpenVisionLab
                 }
                 finally
                 {
-                    if (disposeInputNow)
-                    {
-                        input?.Dispose();
-                    }
+                    input?.Dispose();
                 }
 
                 runResult.StepResults.Add(stepResult);
@@ -432,26 +426,33 @@ namespace OpenVisionLab
             });
         }
 
-        private static void ReleaseInputWhenTaskCompletes(Task<VisionToolResult> runTask, Mat input)
+        internal static async Task<bool> WaitForStepCompletionAsync(
+            Task<VisionToolResult> runTask,
+            int timeoutMilliseconds,
+            CancellationToken cancellationToken)
         {
-            _ = runTask.ContinueWith(task =>
+            Task delayTask = Task.Delay(timeoutMilliseconds, cancellationToken);
+            Task completedTask = await Task.WhenAny(runTask, delayTask).ConfigureAwait(false);
+            if (completedTask == runTask)
             {
-                try
-                {
-                    if (task.Status == TaskStatus.RanToCompletion)
-                    {
-                        task.Result?.ResultImage?.Dispose();
-                    }
-                    else if (task.IsFaulted)
-                    {
-                        _ = task.Exception;
-                    }
-                }
-                finally
-                {
-                    input?.Dispose();
-                }
-            }, TaskScheduler.Default);
+                return true;
+            }
+
+            try
+            {
+                VisionToolResult lateResult = await runTask.ConfigureAwait(false);
+                lateResult?.ResultImage?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                OVLog.Write(
+                    LogCategory.Vision,
+                    LogLevel.Warning,
+                    "A timed-out pipeline step failed while its resources were being drained.",
+                    ex.GetBaseException().Message);
+            }
+
+            return false;
         }
 
         private static StepRuntimeValidationResult ValidateStepConfiguration(VisionPipelineStep step)

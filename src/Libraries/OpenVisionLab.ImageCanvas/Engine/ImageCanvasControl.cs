@@ -289,6 +289,38 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			return new OpenGlTextDrawOptions(_fontBitmapEntries, _xSpan, _ySpan, _offsetSize, ZoomScale);
 		}
 
+		private void ReleaseFontBitmapEntries()
+		{
+			if (_fontBitmapEntries.Count == 0)
+			{
+				return;
+			}
+
+			try
+			{
+				if (openGLControl != null && !openGLControl.IsDisposed)
+				{
+					OpenGL gl = openGLControl.OpenGL;
+					gl.MakeCurrent();
+					foreach (OpenGlFontBitmapEntry entry in _fontBitmapEntries)
+					{
+						if (entry?.ListBase > 0 && entry.ListCount > 0)
+						{
+							gl.DeleteLists(entry.ListBase, entry.ListCount);
+						}
+					}
+				}
+			}
+			catch (Exception ex) when (ex is InvalidOperationException || ex is ObjectDisposedException)
+			{
+				Trace.TraceWarning("OpenGL font display lists could not be released: {0}", ex);
+			}
+			finally
+			{
+				_fontBitmapEntries.Clear();
+			}
+		}
+
 		public System.Drawing.Size GetMaxTextureSize()
 		{
 			OpenGL gl = GetOpenGL();

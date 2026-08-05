@@ -226,9 +226,7 @@ namespace OpenVisionLab.Logging
 
 		private static string BuildMessage(LogCategory category, LogLevel level, params object[] values)
 		{
-			StackTrace stackTrace = new StackTrace();
-			int frameIndex = Math.Min(4, stackTrace.FrameCount - 1);
-			System.Reflection.MethodBase method = frameIndex >= 0 ? stackTrace.GetFrame(frameIndex)?.GetMethod() : null;
+			System.Reflection.MethodBase method = new StackFrame(4, false).GetMethod();
 			string className = method?.ReflectedType?.Name ?? "Unknown";
 			string methodName = method?.Name ?? "Unknown";
 

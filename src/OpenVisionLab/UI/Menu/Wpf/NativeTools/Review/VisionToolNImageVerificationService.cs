@@ -115,7 +115,8 @@ namespace OpenVisionLab
                         sample,
                         pipelineXml,
                         resolvedRecipeName,
-                        normalizeInputToGray);
+                        normalizeInputToGray,
+                        cancellationToken);
                 VisionToolNImageVerificationRow row = CreateRow(index + 1, path, check);
                 rows.Add(row);
                 progress?.Report(new VisionToolNImageVerificationProgress

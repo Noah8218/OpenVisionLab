@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,9 +49,9 @@ namespace OpenVisionLab.Logging.Retention
 						_retentionDays
 					);
 				}
-				catch
+				catch (Exception ex)
 				{
-					
+					Trace.TraceWarning("OpenVisionLab log retention cleanup failed: {0}", ex);
 				}
 			});
 		}
