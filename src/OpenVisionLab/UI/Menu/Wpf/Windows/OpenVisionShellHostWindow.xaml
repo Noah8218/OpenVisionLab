@@ -12,9 +12,11 @@
         WindowStyle="None"
         ResizeMode="CanResize"
         Background="Transparent"
+        UseLayoutRounding="True"
         SnapsToDevicePixels="True">
     <shell:WindowChrome.WindowChrome>
-        <shell:WindowChrome CaptionHeight="42"
+        <shell:WindowChrome x:Name="shellWindowChrome"
+                            CaptionHeight="42"
                             ResizeBorderThickness="7"
                             GlassFrameThickness="0"
                             CornerRadius="0"
@@ -26,7 +28,7 @@
             Background="#30383B">
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="42" />
+                <RowDefinition x:Name="titleBarRow" Height="42" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 

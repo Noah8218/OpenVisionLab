@@ -4,6 +4,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 
 namespace OpenVisionLab
 {
@@ -11,7 +12,15 @@ namespace OpenVisionLab
     {
         private const int WmGetMinMaxInfo = 0x0024;
         private const uint MonitorDefaultToNearest = 0x00000002;
+        private const double ReferenceWidth = 1600D;
+        private const double ReferenceHeight = 900D;
+        private const double TitleBarHeight = 42D;
+        private const double ResizeBorderThickness = 7D;
+        private const double MaximumResponsiveScale = 1.5D;
+        private readonly ScaleTransform titleBarScale = new();
+        private readonly ScaleTransform contentScale = new();
         private HwndSource windowSource;
+        private double responsiveScale = 1D;
 
         public OpenVisionShellHostWindow()
             : this(ApplicationRuntimeContext.CreateDefault())
@@ -24,9 +33,20 @@ namespace OpenVisionLab
             shellTitleBar.TitleText = "OpenVisionLab";
             shellTitleBar.IconKind = PackIconMaterialKind.ImageFilterCenterFocus;
             contentHost.Content = new OpenVisionShellHostView(runtimeContext);
+            shellTitleBar.LayoutTransform = titleBarScale;
+            contentHost.LayoutTransform = contentScale;
+            ApplyResponsiveScale(Width, Height);
         }
 
         public OpenVisionShellHostView ShellHostForSmoke => contentHost.Content as OpenVisionShellHostView;
+
+        public double ResponsiveScaleForSmoke => responsiveScale;
+
+        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+        {
+            base.OnRenderSizeChanged(sizeInfo);
+            ApplyResponsiveScale(sizeInfo.NewSize.Width, sizeInfo.NewSize.Height);
+        }
 
         protected override void OnSourceInitialized(EventArgs e)
         {
@@ -40,6 +60,26 @@ namespace OpenVisionLab
             windowSource?.RemoveHook(WindowProc);
             windowSource = null;
             base.OnClosed(e);
+        }
+
+        private void ApplyResponsiveScale(double width, double height)
+        {
+            double widthScale = width > 0D ? width / ReferenceWidth : 1D;
+            double heightScale = height > 0D ? height / ReferenceHeight : 1D;
+            double scale = Math.Clamp(Math.Min(widthScale, heightScale), 1D, MaximumResponsiveScale);
+            if (Math.Abs(scale - responsiveScale) < 0.001D)
+            {
+                return;
+            }
+
+            responsiveScale = scale;
+            titleBarScale.ScaleX = scale;
+            titleBarScale.ScaleY = scale;
+            contentScale.ScaleX = scale;
+            contentScale.ScaleY = scale;
+            titleBarRow.Height = new GridLength(TitleBarHeight * scale);
+            shellWindowChrome.CaptionHeight = TitleBarHeight * scale;
+            shellWindowChrome.ResizeBorderThickness = new Thickness(ResizeBorderThickness * scale);
         }
 
         private static IntPtr WindowProc(

@@ -76,6 +76,7 @@ internal static class Program
         ["wpf_shell_preview"] = CaptureShellPreview,
         ["wpf_shell_host_window_chrome"] = CaptureShellHostWindowChrome,
         ["wpf_shell_host_window_maximized"] = CaptureShellHostWindowMaximized,
+        ["wpf_shell_host_window_large_workspace"] = CaptureShellHostWindowLargeWorkspace,
         ["wpf_shell_host_workspace_empty"] = CaptureShellHostWorkspaceEmpty,
         ["wpf_shell_host_learn_entry"] = CaptureShellHostLearnEntry,
         ["wpf_shell_host_workspace"] = CaptureShellHostWorkspace,
@@ -515,6 +516,11 @@ internal static class Program
         OpenVisionShellHostWindow window = new(ApplicationRuntimeContext.CreateDefault());
         return CaptureStandaloneWindow(window, outputPath, 1600, 900, () =>
         {
+            if (Math.Abs(window.ResponsiveScaleForSmoke - 1D) > 0.01D)
+            {
+                throw new InvalidOperationException(
+                    $"WPF shell host reference scale was {window.ResponsiveScaleForSmoke:0.000}, expected 1.000.");
+            }
             if (window.WindowStyle != WindowStyle.None)
             {
                 throw new InvalidOperationException("WPF shell host window still uses the native title bar.");
@@ -542,10 +548,48 @@ internal static class Program
         {
             window.WindowState = WindowState.Maximized;
             Pump(40);
+            double expectedScale = Math.Clamp(
+                Math.Min(window.ActualWidth / 1600D, window.ActualHeight / 900D),
+                1D,
+                1.5D);
+            if (Math.Abs(window.ResponsiveScaleForSmoke - expectedScale) > 0.01D)
+            {
+                throw new InvalidOperationException(
+                    $"WPF shell host maximized scale was {window.ResponsiveScaleForSmoke:0.000}, expected {expectedScale:0.000}.");
+            }
+
             AssertMaximizedWindowWithinWorkArea(window, "WPF shell host maximized window");
             AssertVisibleAutomationIds(
                 window,
                 "WPF shell host maximized status bar",
+                "ShellStatusRecipe",
+                "ShellStatusLayer",
+                "ShellStatusTool");
+        });
+    }
+
+    private static CaptureResult CaptureShellHostWindowLargeWorkspace(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostWindow window = new(ApplicationRuntimeContext.CreateDefault())
+        {
+            WindowStartupLocation = WindowStartupLocation.Manual,
+            Left = 0,
+            Top = 0
+        };
+        return CaptureStandaloneWindow(window, outputPath, 2560, 1392, () =>
+        {
+            if (Math.Abs(window.ResponsiveScaleForSmoke - 1.5D) > 0.01D)
+            {
+                throw new InvalidOperationException(
+                    $"WPF shell host large workspace scale was {window.ResponsiveScaleForSmoke:0.000}, expected 1.500.");
+            }
+            AssertVisibleAutomationIds(
+                window,
+                "WPF shell host large workspace",
+                "OpenVisionWindowMinimizeButton",
+                "OpenVisionWindowMaximizeRestoreButton",
+                "OpenVisionWindowCloseButton",
                 "ShellStatusRecipe",
                 "ShellStatusLayer",
                 "ShellStatusTool");
@@ -34021,22 +34065,30 @@ internal static class Program
         }
 
         Matrix toDevice = source.CompositionTarget.TransformToDevice;
-        Rect workArea = SystemParameters.WorkArea;
-        Point workTopLeft = toDevice.Transform(new Point(workArea.Left, workArea.Top));
-        Point workBottomRight = toDevice.Transform(new Point(workArea.Right, workArea.Bottom));
+        IntPtr windowHandle = new System.Windows.Interop.WindowInteropHelper(window).Handle;
+        IntPtr monitor = MonitorFromWindow(windowHandle, 0x00000002);
+        NativeMonitorInfo monitorInfo = new()
+        {
+            Size = Marshal.SizeOf<NativeMonitorInfo>()
+        };
+        if (monitor == IntPtr.Zero || !GetMonitorInfo(monitor, ref monitorInfo))
+        {
+            throw new InvalidOperationException(name + " could not resolve its Windows monitor work area.");
+        }
+
         Point actualTopLeft = window.PointToScreen(new Point(0D, 0D));
         double actualRight = actualTopLeft.X + (window.ActualWidth * toDevice.M11);
         double actualBottom = actualTopLeft.Y + (window.ActualHeight * toDevice.M22);
         const double tolerance = 2D;
-        if (actualTopLeft.X < workTopLeft.X - tolerance
-            || actualTopLeft.Y < workTopLeft.Y - tolerance
-            || actualRight > workBottomRight.X + tolerance
-            || actualBottom > workBottomRight.Y + tolerance)
+        if (actualTopLeft.X < monitorInfo.WorkArea.Left - tolerance
+            || actualTopLeft.Y < monitorInfo.WorkArea.Top - tolerance
+            || actualRight > monitorInfo.WorkArea.Right + tolerance
+            || actualBottom > monitorInfo.WorkArea.Bottom + tolerance)
         {
             throw new InvalidOperationException(
                 name + " escaped the Windows work area. "
                 + $"Actual={actualTopLeft.X:0.0},{actualTopLeft.Y:0.0}-{actualRight:0.0},{actualBottom:0.0}; "
-                + $"WorkArea={workTopLeft.X:0.0},{workTopLeft.Y:0.0}-{workBottomRight.X:0.0},{workBottomRight.Y:0.0}");
+                + $"WorkArea={monitorInfo.WorkArea.Left},{monitorInfo.WorkArea.Top}-{monitorInfo.WorkArea.Right},{monitorInfo.WorkArea.Bottom}");
         }
 
         FrameworkElement? statusBar = FindVisualChildren<FrameworkElement>(window)
@@ -34051,11 +34103,11 @@ internal static class Program
         }
 
         Point statusBottomRight = statusBar.PointToScreen(new Point(statusBar.ActualWidth, statusBar.ActualHeight));
-        if (statusBottomRight.Y > workBottomRight.Y + tolerance)
+        if (statusBottomRight.Y > monitorInfo.WorkArea.Bottom + tolerance)
         {
             throw new InvalidOperationException(
                 name + " bottom status bar is hidden behind the Windows taskbar. "
-                + $"StatusBottom={statusBottomRight.Y:0.0}, WorkAreaBottom={workBottomRight.Y:0.0}");
+                + $"StatusBottom={statusBottomRight.Y:0.0}, WorkAreaBottom={monitorInfo.WorkArea.Bottom}");
         }
     }
 
@@ -37769,6 +37821,13 @@ internal static class Program
     [DllImport("user32.dll")]
     private static extern IntPtr WindowFromPoint(NativePoint point);
 
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr windowHandle, uint flags);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetMonitorInfo(IntPtr monitor, ref NativeMonitorInfo monitorInfo);
+
     [StructLayout(LayoutKind.Sequential)]
     private struct NativePoint
     {
@@ -37780,6 +37839,24 @@ internal static class Program
 
         public int X;
         public int Y;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativeMonitorRect
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    private struct NativeMonitorInfo
+    {
+        public int Size;
+        public NativeMonitorRect MonitorArea;
+        public NativeMonitorRect WorkArea;
+        public uint Flags;
     }
 
     private readonly record struct CaptureResult(int Width, int Height, double ElapsedMs);

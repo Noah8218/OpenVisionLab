@@ -43,6 +43,22 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 ## Latest Completed Work
 
+### P288 Responsive Shell Scale - Complete
+
+- The complete WPF shell now scales from the 1600 x 900 reference layout up to
+  1.5 based on the smaller logical window dimension, preserving the reference
+  layout while making 1920 x 1032 and 2560 x 1392 work areas more readable.
+- The title bar, navigation, toolbar, workspace guidance, log panel, status bar,
+  caption hit area, and resize border scale together; Windows continues to own
+  DPI conversion.
+- Current-source captures passed at 1600 x 900, 1920 x 1032 maximized, 2560 x
+  1392, and compact tool-rail layout. The current EXE also matched the leftmost
+  monitor work area exactly without running Preview/Run or changing layers.
+- The maximized-window screenshot check now resolves the hosting monitor rather
+  than incorrectly comparing a non-primary window with the primary work area.
+- Evidence:
+  `docs/reports/OPENVISIONLAB_RESPONSIVE_SHELL_SCALE_20260805.md`.
+
 ### P287 GitHub CI UTF-8 Source Repair - Complete
 
 - Five tracked C# files were converted from CP949 to UTF-8 without BOM.
