@@ -65,7 +65,7 @@
       "id": "source_build_release_and_runtime_data",
       "intent": "Change or verify source build, release, publish, deployment, or writable runtime data ownership.",
       "keywords": ["build", "release", "publish", "deployment", "runtime data", "GitHub clone"],
-      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_RELEASE_VERSION_POLICY.md", "docs/reports/OPENVISIONLAB_VISION_SDK_3_MIGRATION_20260805.md", "docs/reports/OPENVISIONLAB_GITHUB_CI_UTF8_SOURCE_REPAIR_20260805.md", "docs/reports/OPENVISIONLAB_VISUAL_STUDIO_2022_SOURCE_BUILD_20260805.md", "docs/reports/OPENVISIONLAB_GITHUB_CLONE_RELEASE_VERIFICATION_20260803.md", "docs/reports/OPENVISIONLAB_GITHUB_SOURCE_BUILD_EXPERIENCE_20260731.md", "docs/contracts/openvisionlab/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_CONTRACT.md", "docs/reports/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_20260730.md", "docs/reports/OPENVISIONLAB_PRODUCTION_RELEASE_GATE_20260730.md"]
+      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_RELEASE_VERSION_POLICY.md", "docs/reports/OPENVISIONLAB_2_1_0_RC1_PUBLICATION_20260805.md", "docs/reports/OPENVISIONLAB_VISION_SDK_3_MIGRATION_20260805.md", "docs/reports/OPENVISIONLAB_GITHUB_CI_UTF8_SOURCE_REPAIR_20260805.md", "docs/reports/OPENVISIONLAB_VISUAL_STUDIO_2022_SOURCE_BUILD_20260805.md", "docs/reports/OPENVISIONLAB_GITHUB_CLONE_RELEASE_VERIFICATION_20260803.md", "docs/reports/OPENVISIONLAB_GITHUB_SOURCE_BUILD_EXPERIENCE_20260731.md", "docs/contracts/openvisionlab/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_CONTRACT.md", "docs/reports/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_20260730.md", "docs/reports/OPENVISIONLAB_PRODUCTION_RELEASE_GATE_20260730.md"]
     },
     {
       "id": "source_structure_and_ownership",

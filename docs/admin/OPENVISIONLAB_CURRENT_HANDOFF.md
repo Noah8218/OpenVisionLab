@@ -43,10 +43,33 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   duplicate managed OpenCvSharp files are removed; standalone SDK, app
   Debug/Release, functional contracts, focused UI, and clean-runtime launch
   checks pass.
+- OpenVisionLab `v2.1.0-rc.1` is published from original commit
+  `9ee613676940fd3f593ec45f7e5a96f7a5880e36` as an unsigned Windows x64
+  framework-dependent GitHub pre-release. Its full local gate, hosted CI,
+  copied launch, five uploaded assets, and public-download SHA-256 round trip
+  pass.
 - This is not commercial GA, installer/signing/update evidence, multi-PC or
   hardware qualification, calibrated metrology, or field robustness.
 
 ## Latest Completed Work
+
+### OpenVisionLab 2.1.0 RC1 Publication - Complete
+
+- Annotated tag `v2.1.0-rc.1` points to original commit
+  `9ee613676940fd3f593ec45f7e5a96f7a5880e36`; the GitHub release is published
+  with `Pre-release`, not stable/latest, intent.
+- A new short D-drive clone passed the full Release candidate command without
+  `-SkipLaunch`: Debug/Release zero-warning builds, readiness 13/13, vendored
+  references, 33 public sample rows, 77-file package, SHA-256, and copied EXE
+  launch.
+- Hosted CI passed on the same commit. All five public assets were downloaded
+  again and matched GitHub digests and pre-publication hashes. The versioned
+  ZIP SHA-256 is
+  `0F8851599CC8ABFA51B4828CF414F4E2F7030CCCCD4B1DBECBFA6C2E0535E733`.
+- Release:
+  <https://github.com/Noah8218/OpenVisionLab/releases/tag/v2.1.0-rc.1>
+- Evidence:
+  `docs/reports/OPENVISIONLAB_2_1_0_RC1_PUBLICATION_20260805.md`.
 
 ### P289 OpenVisionLab Vision SDK 3.0 Migration - Complete
 
@@ -173,12 +196,12 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 - P286 and P287 are published in Dev and original and their hosted GitHub
   Actions runs pass. No repository reliability correction is active without a
   new verified regression.
-- P289 is complete, committed, and pushed in Dev (`9068a9bd9e58`) and original
-  (`c34adad70efd`). The 263 changed paths have identical before/after blobs and
-  file modes, and the original repository passed source-build, readiness,
-  reference, public-sample, Fixture, Affine detected-point, and edge-polarity
-  checks. Tag or Release-candidate publication still requires a separate
-  explicit user request.
+- P289 remains complete in Dev and original, and its Vision SDK 3.0 result is
+  included in the published `v2.1.0-rc.1` pre-release. The release tag, five
+  assets, full local gate, hosted CI, and public-download hash round trip pass.
+- Stable/GA promotion is not active. It requires explicit user acceptance of
+  RC feedback and a separate distribution decision for any installer,
+  signing, update, rollback, uninstall, or self-contained scope.
 - No product feature is active without a named operator blocker or a verified
   current-build regression.
 - CVR-00 remains deferred until three independent first-time participants and

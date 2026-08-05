@@ -45,6 +45,7 @@ If documents conflict, do not smooth over the conflict. Follow the higher-ranked
 
 | Document | Use it for | Freshness note |
 | --- | --- | --- |
+| `reports/OPENVISIONLAB_2_1_0_RC1_PUBLICATION_20260805.md` | `v2.1.0-rc.1` tag/source identity, full local gate, hosted CI, GitHub pre-release, five asset digests, and public-download round-trip evidence. | Current authority for the first published 2.1.0 RC; it is unsigned portable framework-dependent evidence, not stable/GA, installer, signing, update, self-contained, multi-PC, hardware, or field qualification. |
 | `reports/OPENVISIONLAB_VISION_SDK_3_MIGRATION_20260805.md` | P289 SDK 3.0 source identity, namespace/DLL migration, app-owned converter and Affine metadata boundary, standalone/app/package/runtime verification, and promotion boundary. | Current authority for the OpenVisionLab Vision SDK dependency; historical Library-Noah reports remain provenance only. |
 | `reports/OPENVISIONLAB_DOCUMENT_CONTROL_PLANE_CLEANUP_20260805.md` | P285 global/project AGENTS responsibility split, compact live handoff, archived legacy documents, R3 evidence routing, strict UTF-8 and HTML redirect validation. | Current authority for document control-plane ownership; it changes no product runtime, UI, XML, sample, or release behavior. |
 | `README.md` and `LLM_DOCUMENT_INDEX.json` | Fast human/LLM entrypoint and task-to-canonical-document routing. | Current discovery authority; intentionally smaller than this full registry. |
