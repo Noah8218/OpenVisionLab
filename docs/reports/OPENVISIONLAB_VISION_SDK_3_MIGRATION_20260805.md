@@ -99,8 +99,14 @@ length, the native runtime, WPG-CUSTOM, and removal of all predecessor names.
   `1290x900`, intersecting the selected leftmost monitor `DISPLAY2`
   (`-1920,365,1920x1080`).
 - Release-evidence generation found all eight prepared manifest/DLL files and
-  reported `ReleaseGateOk=true`. `TagReady=false` is expected because this
-  reviewed change set is not committed yet.
+  reported `ReleaseGateOk=true`. Its pre-commit `TagReady=false` result records
+  the state at that probe and is not a post-publication tag-readiness claim.
+- Dev committed and pushed the migration as `9068a9bd9e58`; original applied
+  the same change as `c34adad70efd` and pushed it to `main`. Direct comparison
+  of all 263 changed paths found zero before/after blob or file-mode mismatch.
+- Original then passed locked restore, Debug/Release builds with zero warnings
+  and errors, readiness 13/13, vendored reference hashes, public sample assets,
+  Fixture Smoke, Affine detected-point Smoke, and edge polarity 20/20.
 
 ## Evidence
 
@@ -122,6 +128,10 @@ length, the native runtime, WPG-CUSTOM, and removal of all predecessor names.
   `D:\OpenVisionLab-TestData\OpenVisionLab\sdk3_migration_20260805\qualified-recipe-snapshot-2`
 - Release-evidence probe:
   `D:\OpenVisionLab-TestData\OpenVisionLab\sdk3_migration_20260805\release-evidence-probe`
+- Dev-to-original Git bundle:
+  `D:\OpenVisionLab-TestData\OpenVisionLab\sdk3_migration_20260805\git-transfer\dev-9068a9bd.bundle`
+- Original source-build summary:
+  `D:\OpenVisionLab-TestData\OpenVisionLab\sdk3_migration_20260805\original-artifacts-root\source_build\source_build_summary.json`
 
 ## Closure
 
@@ -131,5 +141,5 @@ Scope: Dev repository migration from Library-Noah assemblies/namespaces to manif
 Acceptance criteria: SDK standalone build/smoke/package consumer pass; no active predecessor assembly reference remains; Debug/Release source build passes; external hashes pass; Affine fixed/detected-point and edge polarity contracts pass; XML/snapshot/public sample/fixture/UI checks pass; clean runtime EXE launches from the D-backed artifact root
 Verification: SDK Release 0 warnings/0 errors and 142/142; package consumer pass with isolated cache; OpenVisionLab locked restore plus Debug/Release 0 warnings/0 errors; readiness 13/13; public assets pass; fixture pass; Affine fixed and detected-point pass; edge polarity 20/20; XML 13 roots; snapshot pass; UI 4/4; clean runtime launch/respond/close pass
 Evidence: docs/reports/OPENVISIONLAB_VISION_SDK_3_MIGRATION_20260805.md and D:\OpenVisionLab-TestData\OpenVisionLab\sdk3_migration_20260805
-Boundary / next dependency: C:\Git\OpenVisionLab original was not changed. Dev changes are not staged, committed, pushed, tagged, or promoted; final Release tag readiness requires an intentional clean commit. Package consumers replacing another local 3.0.0 build must clear or isolate the NuGet cache.
+Boundary / next dependency: Dev and original migration commits are pushed. No tag or Release candidate was created; that publication remains a separate explicit decision. Package consumers replacing another local 3.0.0 build must clear or isolate the NuGet cache.
 ```

@@ -172,9 +172,12 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 - P286 and P287 are published in Dev and original and their hosted GitHub
   Actions runs pass. No repository reliability correction is active without a
   new verified regression.
-- P289 is complete and verified in Dev but remains an uncommitted review set.
-  Promotion to original, commit, push, tag, or Release-candidate publication
-  requires an explicit user request.
+- P289 is complete, committed, and pushed in Dev (`9068a9bd9e58`) and original
+  (`c34adad70efd`). The 263 changed paths have identical before/after blobs and
+  file modes, and the original repository passed source-build, readiness,
+  reference, public-sample, Fixture, Affine detected-point, and edge-polarity
+  checks. Tag or Release-candidate publication still requires a separate
+  explicit user request.
 - No product feature is active without a named operator blocker or a verified
   current-build regression.
 - CVR-00 remains deferred until three independent first-time participants and
