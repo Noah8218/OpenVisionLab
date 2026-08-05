@@ -1,5 +1,9 @@
 # OpenVisionLab WPF Migration Plan
 
+> Historical migration plan archived on 2026-08-05. WPF migration progress
+> and `Immediate Next Work` below are not an active priority. Current source
+> ownership is documented through `docs/LLM_DOCUMENT_INDEX.json`.
+
 Updated: 2026-06-21
 
 ## Direction

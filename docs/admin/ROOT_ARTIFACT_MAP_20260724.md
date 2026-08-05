@@ -76,7 +76,7 @@ Current high-level ownership layout is:
 
 ## Quick-doc index for operators
 
-- `docs/admin/CODEX_RECOVERY.md`
+- `docs/admin/archive/CODEX_RECOVERY_20260703.md`
   Recovery notes and historical cleanup context.
 - `docs/admin/NEXT_CODEX_PROMPT.md`
   Next-turn summary for continuation.

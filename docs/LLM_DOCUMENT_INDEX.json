@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "updated": "2026-08-01",
+  "updated": "2026-08-05",
   "purpose": "Curated, machine-readable routing index for OpenVisionLab documentation. It is intentionally smaller than the full documentation registry.",
   "entrypoint": "docs/README.md",
   "detailedRegistry": "docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
@@ -29,7 +29,7 @@
       "id": "status_and_next_priority",
       "intent": "Assess current product status, maturity, completeness, or next work.",
       "keywords": ["status", "maturity", "completeness", "priority", "what next"],
-      "read": ["docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md", "docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md", "docs/roadmap/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md", "docs/reports/OPENVISIONLAB_LLM_DOCUMENT_DISCOVERY_20260731.md"]
+      "read": ["docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md", "docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md", "docs/roadmap/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md", "docs/reports/OPENVISIONLAB_DOCUMENT_CONTROL_PLANE_CLEANUP_20260805.md", "docs/reports/OPENVISIONLAB_LLM_DOCUMENT_DISCOVERY_20260731.md"]
     },
     {
       "id": "ui_and_operator_workflow",
@@ -65,7 +65,7 @@
       "id": "source_build_release_and_runtime_data",
       "intent": "Change or verify source build, release, publish, deployment, or writable runtime data ownership.",
       "keywords": ["build", "release", "publish", "deployment", "runtime data", "GitHub clone"],
-      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_RELEASE_VERSION_POLICY.md", "docs/reports/OPENVISIONLAB_GITHUB_SOURCE_BUILD_EXPERIENCE_20260731.md", "docs/contracts/openvisionlab/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_CONTRACT.md", "docs/reports/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_20260730.md", "docs/reports/OPENVISIONLAB_PRODUCTION_RELEASE_GATE_20260730.md"]
+      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_RELEASE_VERSION_POLICY.md", "docs/reports/OPENVISIONLAB_GITHUB_CLONE_RELEASE_VERIFICATION_20260803.md", "docs/reports/OPENVISIONLAB_GITHUB_SOURCE_BUILD_EXPERIENCE_20260731.md", "docs/contracts/openvisionlab/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_CONTRACT.md", "docs/reports/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_20260730.md", "docs/reports/OPENVISIONLAB_PRODUCTION_RELEASE_GATE_20260730.md"]
     },
     {
       "id": "source_structure_and_ownership",
@@ -83,7 +83,7 @@
       "id": "historical_work_item",
       "intent": "Investigate a specific P-number, past decision, failure, or evidence boundary.",
       "keywords": ["P-number", "history", "past decision", "failure", "chronology"],
-      "read": ["docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md", "docs/reports/OPENVISIONLAB_COMPLETED_TRACKER.md", "docs/admin/OPENVISIONLAB_NEXT_SESSION_HANDOFF.md"]
+      "read": ["docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md", "docs/reports/OPENVISIONLAB_COMPLETED_TRACKER.md", "docs/admin/OPENVISIONLAB_NEXT_SESSION_HANDOFF.md", "docs/admin/archive/OPENVISIONLAB_CURRENT_HANDOFF_HISTORY_THROUGH_P284.md"]
     }
   ],
   "references": [
@@ -92,12 +92,13 @@
     { "id": "historical_product_identity", "path": "docs/roadmap/OPENVISIONLAB_PRODUCT_IDENTITY_AND_ROADMAP.md", "role": "Historical identity and roadmap context." },
     { "id": "historical_status", "path": "docs/roadmap/OPENVISIONLAB_STATUS_AND_NEXT_STEPS.md", "role": "Historical status and prior measurements." },
     { "id": "historical_self_evaluation", "path": "docs/reports/OPENVISIONLAB_SELF_EVALUATION_20260703.md", "role": "Historical self-assessment; not a current release decision." },
+    { "id": "archived_cumulative_handoff", "path": "docs/admin/archive/OPENVISIONLAB_CURRENT_HANDOFF_HISTORY_THROUGH_P284.md", "role": "Former cumulative handoff through P284; historical lookup only." },
     { "id": "root_artifact_map", "path": "docs/admin/ROOT_ARTIFACT_MAP_20260724.md", "role": "Repository-root artifact ownership and placement." }
   ],
   "discovery": {
     "filenameSearch": "rg --files docs | rg \"<term>\"",
     "contentSearch": "rg -n \"<term>\" AGENTS.md docs",
-    "pNumberSearchOrder": ["docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md", "docs/reports/OPENVISIONLAB_COMPLETED_TRACKER.md", "docs/admin/OPENVISIONLAB_NEXT_SESSION_HANDOFF.md", "docs/reports", "artifacts"],
+    "pNumberSearchOrder": ["docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md", "docs/reports/OPENVISIONLAB_COMPLETED_TRACKER.md", "docs/admin/OPENVISIONLAB_NEXT_SESSION_HANDOFF.md", "docs/admin/archive/OPENVISIONLAB_CURRENT_HANDOFF_HISTORY_THROUGH_P284.md", "docs/reports", "artifacts"],
     "rootRedirectPolicy": "Files directly under docs other than README.md and LLM_DOCUMENT_INDEX.json are compatibility redirects. Follow their canonical target before reading or citing. The standalone tutorial artifacts are under docs/learn."
   }
 }

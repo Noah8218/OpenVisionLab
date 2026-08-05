@@ -1,6 +1,6 @@
 # OpenVisionLab Next Session Handoff (Chronological Detail)
 
-Updated: 2026-07-24 KST
+Historical coverage: through P276 on 2026-07-31 KST
 
 > **Current continuation source:** Read `docs\OPENVISIONLAB_CURRENT_HANDOFF.md` and `docs\OPENVISIONLAB_DOCUMENTATION_MAP.md` before using this file. They hold current status, evidence-based maturity, and the active priority.
 >

@@ -1,6 +1,6 @@
 # OpenVisionLab 문서 시작점
 
-Updated: 2026-07-31 KST
+Updated: 2026-08-05 KST
 
 이 파일은 사람과 LLM이 프로젝트 문서를 찾을 때 사용하는 단일 진입점입니다. 문서를 처음부터 전부 읽지 말고, 아래 최소 세트와 작업별 경로만 읽으세요.
 
@@ -9,7 +9,7 @@ Updated: 2026-07-31 KST
 ## 30초 시작 순서
 
 1. `AGENTS.md` — 저장소 규칙, 제품 경계, 변경/검증 계약
-2. `docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md` — 현재 상태, 최신 완료 근거, 실제 다음 우선순위
+2. `docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md` — 현재 상태, 최신 완료 근거, 실제 다음 우선순위만 담은 짧은 핸드오프
 3. `docs/roadmap/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md` — 제품 정체성과 화면별 책임
 4. `docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md` — 회귀시키면 안 되는 동작
 
@@ -53,6 +53,7 @@ Updated: 2026-07-31 KST
 ## 폴더 의미
 
 - `docs/admin/`: 현재 핸드오프, 문서 지도, 운영·구조 기록
+- `docs/admin/archive/`, `docs/roadmap/archive/`: 현재 우선순위로 사용하지 않는 과거 핸드오프·계획 원문
 - `docs/contracts/`: 현재 동작/정책/XML/API 계약
 - `docs/roadmap/`: 제품 목표와 승인된 개발 큐
 - `docs/reports/`: 작업 단위의 결과, 검증, 실패와 한계
@@ -85,6 +86,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/TestDocumentationIndex
 ## 문서 갱신 규칙
 
 1. 현재 상태나 우선순위가 바뀌면 `docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md`를 갱신합니다.
+   최근 상태와 활성 조건만 남기고, 상세 명령과 긴 P 이력은 날짜가 있는
+   `docs/reports/` 문서에 기록합니다. 완료 항목을 계속 누적해 현재
+   핸드오프를 다시 연대기 문서로 만들지 않습니다.
 2. 안정 동작이 바뀌면 해당 `docs/contracts/` 문서를 갱신합니다.
 3. 완료/실패/검증 한계는 날짜가 있는 `docs/reports/` 문서에 기록합니다.
 4. 새 문서가 반복 작업의 주요 입구라면 `docs/LLM_DOCUMENT_INDEX.json`의 관련 route에 추가합니다.

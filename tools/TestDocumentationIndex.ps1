@@ -15,16 +15,30 @@ $repoPrefix = $resolvedRepoRoot.TrimEnd('\', '/') + [System.IO.Path]::DirectoryS
 $indexPath = Join-Path $resolvedRepoRoot 'docs\LLM_DOCUMENT_INDEX.json'
 $docsRoot = Join-Path $resolvedRepoRoot 'docs'
 $errors = [System.Collections.Generic.List[string]]::new()
+$strictUtf8 = New-Object System.Text.UTF8Encoding($false, $true)
 
 if (-not (Test-Path -LiteralPath $indexPath -PathType Leaf)) {
     throw "Documentation index was not found: $indexPath"
 }
 
 try {
-    $index = Get-Content -LiteralPath $indexPath -Raw | ConvertFrom-Json
+    $index = [System.IO.File]::ReadAllText($indexPath, $strictUtf8) | ConvertFrom-Json
 }
 catch {
-    throw "Documentation index is not valid JSON: $($_.Exception.Message)"
+    throw "Documentation index is not valid UTF-8 JSON: $($_.Exception.Message)"
+}
+
+function Read-StrictUtf8Document {
+    param([string]$Path)
+
+    try {
+        return [System.IO.File]::ReadAllText($Path, $strictUtf8)
+    }
+    catch {
+        $relativePath = $Path.Substring($resolvedRepoRoot.Length).TrimStart('\', '/')
+        $errors.Add("Document is not valid UTF-8: $relativePath")
+        return $null
+    }
 }
 
 function Add-IndexedPath {
@@ -77,8 +91,11 @@ foreach ($relativePath in $uniqueIndexedPaths) {
         continue
     }
 
-    if ([System.IO.Path]::GetExtension($fullPath) -in @('.md', '.json')) {
-        $raw = Get-Content -LiteralPath $fullPath -Raw
+    if ([System.IO.Path]::GetExtension($fullPath) -in @('.md', '.json', '.xsd', '.html')) {
+        $raw = Read-StrictUtf8Document $fullPath
+        if ($null -eq $raw) {
+            continue
+        }
         $head = $raw.Substring(0, [Math]::Min(320, $raw.Length))
         if ($head -match '^# Moved to canonical location' -or $head -match '"status"\s*:\s*"moved"') {
             $errors.Add("Index points to a compatibility redirect instead of its canonical document: $relativePath")
@@ -88,15 +105,18 @@ foreach ($relativePath in $uniqueIndexedPaths) {
 
 $rootRedirectCount = 0
 $rootFiles = Get-ChildItem -LiteralPath $docsRoot -File | Where-Object {
-    $_.Extension -in @('.md', '.json', '.xsd') -and
+    $_.Extension -in @('.md', '.json', '.xsd', '.html') -and
     $_.Name -notin @('README.md', 'LLM_DOCUMENT_INDEX.json')
 }
 
 foreach ($file in $rootFiles) {
-    $raw = Get-Content -LiteralPath $file.FullName -Raw
+    $raw = Read-StrictUtf8Document $file.FullName
+    if ($null -eq $raw) {
+        continue
+    }
     $target = $null
 
-    if ($raw -match 'Canonical location:\s*\[[^\]]+\]\((?<target>[^)]+)\)') {
+    if ($raw -match 'Canonical(?: location)?:\s*\[[^\]]+\]\((?<target>[^)]+)\)') {
         $target = $Matches.target
     }
     elseif ($raw -match 'New location:\s*\[[^\]]+\]\((?<target>[^)]+)\)') {

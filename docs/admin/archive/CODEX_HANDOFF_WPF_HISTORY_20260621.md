@@ -1,5 +1,9 @@
 # CODEX HANDOFF
 
+> Historical WPF migration record archived on 2026-08-05. Current product
+> state and priorities are owned by
+> `docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md`.
+
 ## 2026-06-21 WPF 전환 진행 기록
 
 - 전체 앱 WPF 전환 방향으로 `WPF UI`를 WPF 테마 baseline으로 채택했다. 현재 기본 실행은 WPF shell이며, 기존 WinForms shell은 환경변수 fallback으로 유지한다.

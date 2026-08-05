@@ -1,5 +1,9 @@
 # OpenVisionLab Next Work
 
+> Historical plan archived on 2026-08-05. The percentages, baseline, and
+> priority queue below are 2026-06-18 snapshots, not current readiness or
+> active work. Use `docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md`.
+
 Updated: 2026-06-18
 
 OpenVisionLab is a rule-based OpenCVSharp vision workbench. The goal is not to be a loose collection of image-processing dialogs. The goal is a platform where a user can load a sample image, build a step pipeline, validate the result through metrics/overlays/logs, save the recipe as XML, and run the same recipe from UI, batch, AI Recipe import, or an external runner.

@@ -1,6 +1,6 @@
 # OpenVisionLab Documentation Map
 
-Updated: 2026-08-01 KST
+Updated: 2026-08-05 KST
 
 This map prevents a new chat from treating large historical records or old readiness estimates as the current plan.
 
@@ -45,6 +45,7 @@ If documents conflict, do not smooth over the conflict. Follow the higher-ranked
 
 | Document | Use it for | Freshness note |
 | --- | --- | --- |
+| `reports/OPENVISIONLAB_DOCUMENT_CONTROL_PLANE_CLEANUP_20260805.md` | P285 global/project AGENTS responsibility split, compact live handoff, archived legacy documents, R3 evidence routing, strict UTF-8 and HTML redirect validation. | Current authority for document control-plane ownership; it changes no product runtime, UI, XML, sample, or release behavior. |
 | `README.md` and `LLM_DOCUMENT_INDEX.json` | Fast human/LLM entrypoint and task-to-canonical-document routing. | Current discovery authority; intentionally smaller than this full registry. |
 | `manual/README.md` and `manual/manual-manifest*.json` | Korean/English packaged Guide source ownership, chapter order, UI-visual mapping, build command, and localization contract. | Current manual-authoring entrypoint; preserve 26-section/17-Tool structural parity and same-language current UI evidence. |
 | `reports/OPENVISIONLAB_LOCALIZED_USER_MANUAL_20260801.md` | P282 language-at-click Guide routing, bilingual manifest/hash validation, same-language current UI captures, copied-runtime packaging, and fail-closed evidence. | Current completion authority for Korean/English packaged manuals; no cross-language fallback is allowed. |
@@ -56,6 +57,7 @@ If documents conflict, do not smooth over the conflict. Follow the higher-ranked
 | `reports/OPENVISIONLAB_SRC_LAYOUT_MIGRATION_20260731.md` | P276 application/library source ownership, path migration, hash/build/tool/sample evidence, and structural boundary. | Current authority for the `src/OpenVisionLab` and `src/Libraries` layout; no product behavior or UI scope changed. |
 | `OPENVISIONLAB_CURRENT_HANDOFF.md` | First continuation brief. | Includes completed Recipe change-safety, explicit validation outcomes, Qualified Recipe Snapshot, completed `CVR-01` through bounded `CVR-11`, CVR-09/CVR-11 physical-qualification limits, and current external prerequisites. |
 | `reports/OPENVISIONLAB_GITHUB_SOURCE_BUILD_EXPERIENCE_20260731.md` | P275 fresh-clone commands, lightweight source-build contract, actual Windows Sandbox replay, failure correction, and evidence boundary. | Current authority for the user-confirmed GitHub source-build goal; installer/signing/update/SBOM work is inactive without a new explicit direction. |
+| `reports/OPENVISIONLAB_GITHUB_CLONE_RELEASE_VERIFICATION_20260803.md` | P284 Dev/original GitHub pushes, exact port evidence, deep-path preflight correction, final R3 clone, Release package, copied launch, and Guide hashes. | Current authority for the final framework-dependent GitHub-clone Release verification on the restored workstation; it is not installer, signing, self-contained, multi-PC, or field evidence. |
 | `reports/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_20260730.md` | P274 installation/data-root separation, migration, actual runtime and regression evidence, clean-clone reproduction, and next Productionization priorities. | Current completion authority for Runtime Data Root v1; the package remains unsigned and framework-dependent, with no installer/update/uninstall or commercial GA claim. |
 | `contracts/openvisionlab/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_CONTRACT.md` | Release path ownership, root selection, copy-only legacy migration, log/relative-path rules, D1-D14 acceptance, and deployment boundary. | Current stable contract that must precede protected installation and must not be bypassed by later installer work. |
 | `reports/OPENVISIONLAB_PRODUCTION_RELEASE_GATE_20260730.md` | P273 reproducible portable RC implementation, clean-clone findings, two-path archive proof, operator deployment boundary, and next Productionization priorities. | Current completion authority for the unsigned framework-dependent portable RC gate; it explicitly does not claim installer/signing/updates/SBOM/legal/field qualification or commercial GA. |
@@ -129,6 +131,9 @@ If documents conflict, do not smooth over the conflict. Follow the higher-ranked
 | Document | Correct use | Do not use it for |
 | --- | --- | --- |
 | `OPENVISIONLAB_NEXT_SESSION_HANDOFF.md` | Search for a P-number, artifact, old diagnostic, or chronological decision. | The first source for current priority; it is a large cumulative log. |
+| `archive/OPENVISIONLAB_CURRENT_HANDOFF_HISTORY_THROUGH_P284.md` | Search the former cumulative current handoff for P-number detail through P284. | Live status, current priority, or a default first-read document. |
+| `archive/CODEX_RECOVERY_20260703.md`, `archive/CODEX_HANDOFF_WPF_HISTORY_20260621.md`, and `archive/OpenVisionLab.NextWork_20260618.md` | Preserve early recovery, WPF migration, and Next Work history. | Current paths, readiness percentages, sample counts, or active priorities. |
+| `roadmap/archive/OPENVISIONLAB_WPF_MIGRATION_PLAN_20260621.md` | Preserve the completed WPF migration plan and verification notes. | Current architecture priority or unfinished-work authority. |
 | `OPENVISIONLAB_NEXT_CHAT_HANDOFF_PROMPT_20260706.md` | Clean paste-ready restart prompt and minimum current constraints. | A bootstrap only; use the current handoff for detailed status and the chronological handoff for P-number evidence. |
 | `OPENVISIONLAB_PRODUCT_IDENTITY_AND_ROADMAP.md` | Historical identity/roadmap context. | Current readiness percentage or next task. |
 | `OPENVISIONLAB_STATUS_AND_NEXT_STEPS.md` | Historical completed work, regressions, and prior measurements. | Current maturity percentage or release claim. |
@@ -139,9 +144,16 @@ If documents conflict, do not smooth over the conflict. Follow the higher-ranked
 
 After every bounded work slice:
 
-1. Update `OPENVISIONLAB_CURRENT_HANDOFF.md` with the changed responsibility, completed/blocked state, command evidence, UI artifact path if applicable, and re-ranked next priority.
+1. Keep `OPENVISIONLAB_CURRENT_HANDOFF.md` compact: record the live identity,
+   current boundary, activation condition, and only a short recent-completion
+   summary. Put commands, artifact inventories, and long P-number evidence in
+   a dated `docs/reports/` document and link it from the summary. Remove older
+   summaries when they no longer affect current orientation; do not rebuild a
+   second chronological log in the live handoff.
 2. When a `CVR-*` trigger, order, status, contract, completion, or exclusion changes, update `OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md`; do not let a chat-local priority list replace the canonical queue.
-3. Append detailed chronology, raw command context, and artifact-specific notes to `OPENVISIONLAB_NEXT_SESSION_HANDOFF.md` only when that detail will help a future investigation.
+3. Treat `OPENVISIONLAB_NEXT_SESSION_HANDOFF.md` as frozen historical coverage
+   through P276. Use dated reports and the archived cumulative handoff for
+   later evidence instead of appending every completed task to that file.
 4. Read `OPENVISIONLAB_STRUCTURAL_REFACTORING_COMPLETION_20260726.md` before
    reopening structural work. Update the specific proof/current handoff for a
    new bounded boundary; update

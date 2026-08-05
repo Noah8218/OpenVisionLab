@@ -1,5 +1,10 @@
 # CODEX RECOVERY
 
+> Historical record archived on 2026-08-05. Paths, priorities, sample counts,
+> and readiness claims below describe the repository through 2026-07-03 and
+> must not be used as current state. Start from
+> `docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md`.
+
 Last updated: 2026-07-03
 
 Workspace: `C:\Git\OpenVisionLab_Dev`

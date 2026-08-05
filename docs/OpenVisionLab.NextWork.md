@@ -2,4 +2,4 @@
 
 This file is kept for backward compatibility only.
 
-Canonical location: [OpenVisionLab.NextWork](admin/OpenVisionLab.NextWork.md)
+Canonical location: [OpenVisionLab.NextWork](admin/archive/OpenVisionLab.NextWork_20260618.md)
