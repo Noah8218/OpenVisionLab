@@ -153,8 +153,11 @@ availability, not a commercial installer. The canonical lightweight command is:
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\VerifySourceBuild.ps1
 ```
 
-It checks the exact SDK from `global.json`, locked solution restore, Debug and
-Release builds, readiness, vendored DLLs, and expected executables. It does not
+It checks that `global.json` selects SDK `8.0.100` or later in the `8.x` line,
+or a Visual Studio 2022-compatible `9.x` SDK, then checks locked solution
+restore, Debug and Release builds, readiness, vendored DLLs, and expected
+executables. SDK 9 command-line environments must also provide the .NET 8
+Desktop Runtime used by the `net8.0-windows` application. It does not
 create a package, run the public catalog, launch the UI, or establish installer
 and commercial-deployment readiness.
 

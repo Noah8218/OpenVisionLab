@@ -13,6 +13,7 @@ $transcriptPath = Join-Path $SharedRoot "sandbox-transcript.txt"
 $resultPath = Join-Path $SharedRoot "sandbox-result.json"
 $progressPath = Join-Path $SharedRoot "sandbox-progress.txt"
 $startedAt = Get-Date
+$minimumSdk = "unavailable"
 
 function Write-ProgressState {
     param([string]$State)
@@ -36,7 +37,7 @@ function Write-Result {
         CompletedAtUtc = $completedAt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
         DurationSeconds = [Math]::Round(($completedAt - $startedAt).TotalSeconds, 3)
         SourceCommit = (Get-Content -LiteralPath (Join-Path $payloadRoot "source-commit.txt") -Raw).Trim()
-        DotnetSdk = "8.0.421"
+        DotnetSdk = $minimumSdk
         SourceBuildSummary = $SummaryPath
         Transcript = "sandbox-transcript.txt"
     } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $resultPath -Encoding UTF8
@@ -53,24 +54,27 @@ try {
         throw "Source-build verification script was not mapped into Windows Sandbox: $verifyScript"
     }
 
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    $installerPath = Join-Path $env:TEMP "dotnet-install.ps1"
-    Invoke-WebRequest -UseBasicParsing -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile $installerPath
-    Write-ProgressState "DotnetInstallerDownloaded"
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $installerPath -Version "8.0.421" -InstallDir $sdkRoot -Architecture x64
-    if ($LASTEXITCODE -ne 0) {
-        throw ".NET SDK installation failed with exit code $LASTEXITCODE."
-    }
-    Write-ProgressState "DotnetSdkInstalled"
-
-    $env:PATH = "$sdkRoot;$env:PATH"
     if (Test-Path -LiteralPath $sourceRoot) {
         Remove-Item -LiteralPath $sourceRoot -Recurse -Force
     }
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     [System.IO.Compression.ZipFile]::ExtractToDirectory($sourceArchive, $sourceRoot)
     Copy-Item -LiteralPath $verifyScript -Destination (Join-Path $sourceRoot "tools\VerifySourceBuild.ps1") -Force
+    $globalJsonPath = Join-Path $sourceRoot "global.json"
+    $minimumSdk = (Get-Content -LiteralPath $globalJsonPath -Raw | ConvertFrom-Json).sdk.version
     Write-ProgressState "SourceExtracted"
+
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $installerPath = Join-Path $env:TEMP "dotnet-install.ps1"
+    Invoke-WebRequest -UseBasicParsing -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile $installerPath
+    Write-ProgressState "DotnetInstallerDownloaded"
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $installerPath -Version $minimumSdk -InstallDir $sdkRoot -Architecture x64
+    if ($LASTEXITCODE -ne 0) {
+        throw ".NET SDK installation failed with exit code $LASTEXITCODE."
+    }
+    Write-ProgressState "DotnetSdkInstalled"
+
+    $env:PATH = "$sdkRoot;$env:PATH"
 
     $sandboxEvidence = Join-Path $sourceRoot "artifacts\sandbox_source_build"
     Write-ProgressState "SourceBuildStarted"

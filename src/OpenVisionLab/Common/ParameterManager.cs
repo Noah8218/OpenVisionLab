@@ -60,7 +60,7 @@ namespace OpenVisionLab.Common
             [Browsable(false)]
             public float PidutialY { get; set; } = 0;
             #endregion
-            // »ó´ëÁÂÇ¥ Àû¿ëÀÌ µÇ¾ú´ÂÁö È®ÀÎÇÏ´Â ÆÄ¶ó¹ÌÅÍ
+            // ìƒëŒ€ì¢Œí‘œ ì ìš©ì´ ë˜ì—ˆëŠ”ì§€ í™•ì¸í•˜ëŠ” íŒŒë¼ë¯¸í„°
             [Browsable(false)]
             public bool Relative_Coordinates { get; set; } = false;
             public SpecAreas() { }
@@ -90,7 +90,7 @@ namespace OpenVisionLab.Common
             [Browsable(false)]
             public float PidutialY { get; set; } = 0;
             #endregion
-            // »ó´ëÁÂÇ¥ Àû¿ëÀÌ µÇ¾ú´ÂÁö È®ÀÎÇÏ´Â ÆÄ¶ó¹ÌÅÍ
+            // ìƒëŒ€ì¢Œí‘œ ì ìš©ì´ ë˜ì—ˆëŠ”ì§€ í™•ì¸í•˜ëŠ” íŒŒë¼ë¯¸í„°
             [Browsable(false)]
             public bool Relative_Coordinates { get; set; } = false;
             public ConnectorParameter() { }
@@ -132,7 +132,7 @@ namespace OpenVisionLab.Common
             [Browsable(false)]
             public float PidutialY_Btm { get; set; } = 0;
             #endregion
-            // »ó´ëÁÂÇ¥ Àû¿ëÀÌ µÇ¾ú´ÂÁö È®ÀÎÇÏ´Â ÆÄ¶ó¹ÌÅÍ
+            // ìƒëŒ€ì¢Œí‘œ ì ìš©ì´ ë˜ì—ˆëŠ”ì§€ í™•ì¸í•˜ëŠ” íŒŒë¼ë¯¸í„°
             [Browsable(false)]
             public bool Relative_Coordinates { get; set; } = false;
             public SpecDistance() { }
@@ -147,7 +147,7 @@ namespace OpenVisionLab.Common
 
         public class SpecRectangle : INotifyPropertyChanged
         {
-            // ÃßÈÄ ÇØ´ç ÆÄ¶ó¹ÌÅÍ·Î ÇÁ·ÎÁ§Æ®¸¦ ¼öÇàÇÏ°Ô µÈ´Ù¸é ÇØ´ç ºÎºĞÀ» true·Î º¯°æ
+            // ì¶”í›„ í•´ë‹¹ íŒŒë¼ë¯¸í„°ë¡œ í”„ë¡œì íŠ¸ë¥¼ ìˆ˜í–‰í•˜ê²Œ ëœë‹¤ë©´ í•´ë‹¹ ë¶€ë¶„ì„ trueë¡œ ë³€ê²½
 
             public event PropertyChangedEventHandler PropertyChanged;
 
@@ -197,7 +197,7 @@ namespace OpenVisionLab.Common
             [Browsable(false)]
             public Rectangle PreRoi { get; set; } = new Rectangle();
 
-            [DisplayName("¾Ë°í¸®Áò")]
+            [DisplayName("ì•Œê³ ë¦¬ì¦˜")]
             [Browsable(true)]
             public DEFINE.ALGORITHM Algorithm { get; set; } = DEFINE.ALGORITHM.MATCING;
             #region Offset
@@ -208,48 +208,48 @@ namespace OpenVisionLab.Common
             #endregion
             #region Blob
 
-            // ÀÌ¹ÌÁö ¹İÀü À¯¹«
-            [DisplayName("¹İÀüÀ¯¹«")]
+            // ì´ë¯¸ì§€ ë°˜ì „ ìœ ë¬´
+            [DisplayName("ë°˜ì „ìœ ë¬´")]
             [Browsable(true)]
             public bool USE_BITWISENOT { get; set; } = true;
 
-            // ½º·¹¼ñµå °ª
-            [DisplayName("ÀÓ°è°ª")]
+            // ìŠ¤ë ˆìˆ„ë“œ ê°’
+            [DisplayName("ì„ê³„ê°’")]
             [Browsable(true)]
             public int THRESHOLD { get; set; } = 30;
 
-            // blob °ËÃâ ÃÖÀú »çÀÌÁî
-            [DisplayName("ÃÖ¼ÒÅ©±â")]
+            // blob ê²€ì¶œ ìµœì € ì‚¬ì´ì¦ˆ
+            [DisplayName("ìµœì†Œí¬ê¸°")]
             [Browsable(true)]
             public int MIN_AREA { get; set; } = 50;
 
-            // blob °ËÃâ ÃÖ´ë »çÀÌÁî
-            [DisplayName("ÃÖ´ëÅ©±â")]
+            // blob ê²€ì¶œ ìµœëŒ€ ì‚¬ì´ì¦ˆ
+            [DisplayName("ìµœëŒ€í¬ê¸°")]
             [Browsable(true)]
             public int MAX_AREA { get; set; } = 500000;
 
-            // blob °ËÃâ Ä«¿îÅÍ
-            [DisplayName("°ËÃâ°³¼ö")]
+            // blob ê²€ì¶œ ì¹´ìš´í„°
+            [DisplayName("ê²€ì¶œê°œìˆ˜")]
             [Browsable(true)]
             public int InspCount { get; set; } = 1;
             #endregion
             #region Matching
 
-            // ÆĞÅÏ °ËÃâ ½ºÄÚ¾î
+            // íŒ¨í„´ ê²€ì¶œ ìŠ¤ì½”ì–´
             [Browsable(true)]
             public double SCORE { get; set; } = 0.7;
 
-            // ÇØ´ç roi¸¦ °Ë»ç¿¡ »ç¿ëÇÒ°ÍÀÎÁö È®ÀÎÇÏ´Â ÆÄ¶ó¹ÌÅÍ
-            [DisplayName("ROI »ç¿ë/¹Ì»ç¿ë")]
+            // í•´ë‹¹ roië¥¼ ê²€ì‚¬ì— ì‚¬ìš©í• ê²ƒì¸ì§€ í™•ì¸í•˜ëŠ” íŒŒë¼ë¯¸í„°
+            [DisplayName("ROI ì‚¬ìš©/ë¯¸ì‚¬ìš©")]
             [Browsable(true)]
             public bool USE_ROI { get; set; } = true;
 
-            // ÆĞÅÏ ÀÌ¹ÌÁö À§Ä¡
-            [DisplayName("ÀÌ¹ÌÁö À§Ä¡")]
+            // íŒ¨í„´ ì´ë¯¸ì§€ ìœ„ì¹˜
+            [DisplayName("ì´ë¯¸ì§€ ìœ„ì¹˜")]
             [Browsable(true)]
             public string PATTERN_PATH { get; set; } = "TEMP";
 
-            // »ó´ëÁÂÇ¥ Àû¿ëÀÌ µÇ¾ú´ÂÁö È®ÀÎÇÏ´Â ÆÄ¶ó¹ÌÅÍ
+            // ìƒëŒ€ì¢Œí‘œ ì ìš©ì´ ë˜ì—ˆëŠ”ì§€ í™•ì¸í•˜ëŠ” íŒŒë¼ë¯¸í„°
             [Browsable(false)]
             public bool Relative_Coordinates { get; set; } = false;
             #endregion

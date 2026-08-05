@@ -14,33 +14,33 @@ namespace OpenVisionLab.Common
         
         public int No { get; set; } = 0;
 
-        [DisplayName("°ËÃâ ±æÀÌ\n[mm]")]
+        [DisplayName("ê²€ì¶œ ê¸¸ì´\n[mm]")]
         public double CenterDistY { get; set; } = 0.0;
 
-        [DisplayName("¸± ¹øÈ£")]
+        [DisplayName("ë¦´ ë²ˆí˜¸")]
         public int Reel_No { get; set; } = 0;
 
-        [DisplayName("°áÇÔ\nÁ¾·ù")]
+        [DisplayName("ê²°í•¨\nì¢…ë¥˜")]
         public string Defect_Type { get; set; } = "";
 
-        // °áÇÔÀÇ X ¹æÇâ À§Ä¡¸¦ mm´ÜÀ§·Î Ç¥½ÃÇÕ´Ï´Ù
-        [DisplayName("X À§Ä¡\n[mm]")]
+        // ê²°í•¨ì˜ X ë°©í–¥ ìœ„ì¹˜ë¥¼ mmë‹¨ìœ„ë¡œ í‘œì‹œí•©ë‹ˆë‹¤
+        [DisplayName("X ìœ„ì¹˜\n[mm]")]
         public double Pos_X { get; set; } = 0;
 
-        // °áÇÔÀÇ X ¹æÇâ Å©±â¸¦ mm´ÜÀ§·Î Ç¥½ÃÇÕ´Ï´Ù
-        [DisplayName("X Å©±â\n[mm]")]
+        // ê²°í•¨ì˜ X ë°©í–¥ í¬ê¸°ë¥¼ mmë‹¨ìœ„ë¡œ í‘œì‹œí•©ë‹ˆë‹¤
+        [DisplayName("X í¬ê¸°\n[mm]")]
         public double Size_X { get; set; } = 0;
 
-        // °áÇÔÀÇ Y ¹æÇâ Å©±â¸¦ mm´ÜÀ§·Î Ç¥½ÃÇÕ´Ï´Ù
-        [DisplayName("Y Å©±â\n[mm]")]
+        // ê²°í•¨ì˜ Y ë°©í–¥ í¬ê¸°ë¥¼ mmë‹¨ìœ„ë¡œ í‘œì‹œí•©ë‹ˆë‹¤
+        [DisplayName("Y í¬ê¸°\n[mm]")]
         public double Size_Y { get; set; } = 0;
 
-        //[DisplayName("Real\n¹øÈ£")]
+        //[DisplayName("Real\në²ˆí˜¸")]
         //public double Real_No { get; set; } = 0;
         [DisplayName("CAM")]
         public string CAM { get; set; } = "";
-        public string È®ÀÎ { get; set; } = "";
-        //public string ÄÚ¸àÆ® { get; set; } = "";
+        public string í™•ì¸ { get; set; } = "";
+        //public string ì½”ë©˜íŠ¸ { get; set; } = "";
 
         public Rectangle Bounding { get; set; } = new Rectangle();
 

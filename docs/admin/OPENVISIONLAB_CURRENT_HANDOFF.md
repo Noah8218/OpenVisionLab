@@ -30,10 +30,49 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   routing, and fail-closed manifest/hash validation.
 - A clean GitHub clone of original `main` passes the framework-dependent
   `win-x64` Release candidate gate on the restored Windows workstation.
+- The Dev source-build policy supports .NET SDK `8.0.100+` in the `8.x` line
+  and the `9.x` SDK bundled with current Visual Studio 2022. Full gates passed
+  with `8.0.100`, `8.0.300`, and `9.0.316` plus the required .NET 8 runtimes.
+  Installed Visual Studio 2022 17.14.37 with the `.NET desktop development`
+  workload also built the solution with zero warnings and zero errors.
+- The five CP949 source files that blocked GitHub Actions are now exact-ported
+  to UTF-8. A clean D-drive snapshot passed the same Release candidate command
+  used by `.github/workflows/ci.yml`; the hosted run remains pending until the
+  reviewed Dev changes are pushed.
 - This is not commercial GA, installer/signing/update evidence, multi-PC or
   hardware qualification, calibrated metrology, or field robustness.
 
 ## Latest Completed Work
+
+### P287 GitHub CI UTF-8 Source Repair - Complete
+
+- Five tracked C# files were converted from CP949 to UTF-8 without BOM.
+- Strict source/target comparison passed for all five files with identical
+  decoded characters and identical per-file CRLF/LF counts.
+- The repository-wide strict scan passed for all 1,437 tracked text files.
+- A clean D-drive snapshot passed the GitHub Actions Release candidate command:
+  Debug/Release with zero warnings and errors, readiness 13/13, references,
+  public assets, all 33 public sample rows, and the 78-file package contract.
+- Evidence:
+  `docs/reports/OPENVISIONLAB_GITHUB_CI_UTF8_SOURCE_REPAIR_20260805.md`.
+
+### P286 .NET 8 SDK Compatibility - Complete
+
+- `global.json` declares SDK `8.0.100` with `major`, preferring an installed
+  compatible 8.x SDK and allowing the 9.x SDK bundled with current Visual
+  Studio 2022 when no 8.x SDK is present.
+- The source-build verifier reports the selected SDK and validates the minimum
+  SDK 8 boundary and maximum SDK 9 boundary instead of requiring exact SDK
+  `8.0.421`.
+- Locked restore, Debug, Release, readiness 13/13, and vendored references
+  passed with isolated SDKs `8.0.100`, `8.0.300`, and `9.0.316`. New D-drive
+  Git checkouts with no prior outputs passed with `8.0.300` and the Visual
+  Studio 2022 SDK 9/.NET 8 runtime combination.
+- README now makes Visual Studio 2022 17.8+ with `.NET desktop development` the
+  recommended path. Git, PowerShell, and a separate SDK are needed only for
+  the command-line alternative.
+- Evidence:
+  `docs/reports/OPENVISIONLAB_VISUAL_STUDIO_2022_SOURCE_BUILD_20260805.md`.
 
 ### P285 Document Control-Plane Cleanup - Complete
 
@@ -88,6 +127,9 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 ## Current Priority And Activation Conditions
 
+- The next repository reliability step is review, commit, and push of P286 and
+  P287 when the user explicitly requests it, followed by confirmation of the
+  hosted GitHub Actions result. The local GitHub-equivalent gate already passes.
 - No product feature is active without a named operator blocker or a verified
   current-build regression.
 - CVR-00 remains deferred until three independent first-time participants and

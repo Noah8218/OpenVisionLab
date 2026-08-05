@@ -117,7 +117,7 @@ namespace OpenVisionLab
         internal static string ResolveUnitText(VisionScaleCalibrationUnit unit)
         {
             return unit == VisionScaleCalibrationUnit.Micrometer
-                ? "¥ìm"
+                ? "Î¼m"
                 : unit == VisionScaleCalibrationUnit.Inch ? "inch" : "mm";
         }
 

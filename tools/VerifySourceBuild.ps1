@@ -18,23 +18,42 @@ if (-not (Test-Path -LiteralPath $globalJsonPath)) {
     throw "global.json was not found. The required .NET SDK version cannot be verified."
 }
 
-$requiredSdk = (Get-Content -LiteralPath $globalJsonPath -Raw | ConvertFrom-Json).sdk.version
+$sdkPolicy = (Get-Content -LiteralPath $globalJsonPath -Raw | ConvertFrom-Json).sdk
+$minimumSdk = $sdkPolicy.version
+$rollForward = $sdkPolicy.rollForward
+$maximumSdkMajor = 9
 $dotnetCommand = Get-Command dotnet -ErrorAction SilentlyContinue
 if ($null -eq $dotnetCommand) {
-    throw ".NET SDK $requiredSdk is required. Install the official .NET 8 SDK and run this command again: https://dotnet.microsoft.com/download/dotnet/8.0"
+    throw ".NET SDK 8.0.100 or later in the 8.x or 9.x line is required. Install Visual Studio 2022 17.8+ with the .NET desktop development workload, or install a supported SDK."
 }
 
-$installedSdks = @(
-    & dotnet --list-sdks |
-        ForEach-Object { ($_ -split "\s+")[0] } |
-        Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
-)
+Set-Location -LiteralPath $repoRoot
+$selectedSdk = (& dotnet --version 2>&1 | Out-String).Trim()
 if ($LASTEXITCODE -ne 0) {
-    throw "Could not inspect installed .NET SDK versions."
+    throw "No SDK satisfies global.json. Install Visual Studio 2022 17.8+ with the .NET desktop development workload, or install .NET SDK 8.0.100+ or 9.x.`n$selectedSdk"
 }
-if ($installedSdks -notcontains $requiredSdk) {
-    $installedText = if ($installedSdks.Count -eq 0) { "none" } else { $installedSdks -join ", " }
-    throw ".NET SDK $requiredSdk is required by global.json. Installed SDKs: $installedText. Install the exact SDK and run this command again: https://dotnet.microsoft.com/download/dotnet/8.0"
+
+try {
+    $minimumSdkVersion = [Version]$minimumSdk
+    $selectedSdkVersion = [Version]$selectedSdk
+}
+catch {
+    throw "Could not parse the .NET SDK policy or selected SDK. Minimum: $minimumSdk; selected: $selectedSdk."
+}
+if ($selectedSdkVersion -lt $minimumSdkVersion -or
+    $selectedSdkVersion.Major -gt $maximumSdkMajor) {
+    throw "global.json selected unsupported .NET SDK $selectedSdk. Expected SDK 8.0.100+ in the 8.x line or SDK 9.x."
+}
+
+$installedRuntimes = @(& dotnet --list-runtimes)
+if ($LASTEXITCODE -ne 0) {
+    throw "Could not inspect installed .NET runtimes."
+}
+$net8Runtime = $installedRuntimes | Where-Object { $_ -match '^Microsoft\.NETCore\.App 8\.' } | Select-Object -Last 1
+$net8DesktopRuntime = $installedRuntimes | Where-Object { $_ -match '^Microsoft\.WindowsDesktop\.App 8\.' } | Select-Object -Last 1
+if ([string]::IsNullOrWhiteSpace($net8Runtime) -or
+    [string]::IsNullOrWhiteSpace($net8DesktopRuntime)) {
+    throw ".NET 8 Desktop Runtime is required to run the net8.0 WPF application and verification tools. Add the Visual Studio .NET desktop development workload or install the .NET 8 Desktop Runtime."
 }
 
 if ([string]::IsNullOrWhiteSpace($OutputDir)) {
@@ -124,7 +143,12 @@ $summary = [pscustomobject][ordered]@{
     CompletedAtUtc = $completedAt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
     DurationSeconds = [Math]::Round(($completedAt - $startedAt).TotalSeconds, 3)
     Commit = $commit
-    DotnetSdk = $requiredSdk
+    DotnetSdk = $selectedSdk
+    MinimumDotnetSdk = $minimumSdk
+    MaximumDotnetSdkMajor = $maximumSdkMajor
+    DotnetSdkRollForward = $rollForward
+    Net8Runtime = $net8Runtime
+    Net8DesktopRuntime = $net8DesktopRuntime
     LockedRestore = "PASS"
     DebugBuild = "PASS"
     ReleaseBuild = "PASS"

@@ -17,25 +17,25 @@ namespace OpenVisionLab.Common
 
         public int No { get; set; } = 0;
 
-        [DisplayName("Å©±â")]
+        [DisplayName("í¬ê¸°")]
         public double Area { get; set; } = 0.0;
-        [DisplayName("°¢µµ")]
+        [DisplayName("ê°ë„")]
         public double Angle { get; set; } = 0.0;
 
-        [DisplayName("¼¾ÅÍ X")]
+        [DisplayName("ì„¼í„° X")]
         public double CentetX { get; set; } = 0;
 
-        [DisplayName("¼¾ÅÍ Y")]
+        [DisplayName("ì„¼í„° Y")]
         public double CentetY { get; set; } = 0;
 
-        [DisplayName("¿µ¿ª X")]
+        [DisplayName("ì˜ì—­ X")]
         public int Bound_X { get; set; } = 0;
-        [DisplayName("¿µ¿ª Y")]
+        [DisplayName("ì˜ì—­ Y")]
         public int Bound_Y { get; set; } = 0;
-        [DisplayName("¿µ¿ª W")]
+        [DisplayName("ì˜ì—­ W")]
         public int Bound_W { get; set; } = 0;
 
-        [DisplayName("¿µ¿ª H")]
+        [DisplayName("ì˜ì—­ H")]
         public int Bound_H { get; set; } = 0;
 
         public BindingList<DefectListResult> GetBlobList(List<BlobResult> cResultBlobs)

@@ -55,7 +55,7 @@ namespace OpenVisionLab
 
 
         /// <summary>
-        /// edgeTool_L, edgeTool_R ¿¡¼­ ¿§Áö¸¦ °ËÃâÇÑ °ÍÀ» Fit LineÀ» ¸¸µé¾î¼­ ±³Â÷¿©ºÎ¸¦ ±¸ÇÏ°í Draw
+        /// edgeTool_L, edgeTool_R ì—ì„œ ì—£ì§€ë¥¼ ê²€ì¶œí•œ ê²ƒì„ Fit Lineì„ ë§Œë“¤ì–´ì„œ êµì°¨ì—¬ë¶€ë¥¼ êµ¬í•˜ê³  Draw
         /// </summary>
         /// <param name="g"></param>
         /// <param name="line1"></param>
@@ -75,7 +75,7 @@ namespace OpenVisionLab
         }
 
         /// <summary>
-        /// edgeTool_L¿¡¼­ ¿§Áö¸¦ °ËÃâÇÑ °ÍÀ» ¼öÁ÷¼±À» ¸¸µé¾î¼­ edgeTool_RÀÇ ¿§Áö ±³Â÷¿©ºÎ¸¦ ±¸ÇÏ°í Draw
+        /// edgeTool_Lì—ì„œ ì—£ì§€ë¥¼ ê²€ì¶œí•œ ê²ƒì„ ìˆ˜ì§ì„ ì„ ë§Œë“¤ì–´ì„œ edgeTool_Rì˜ ì—£ì§€ êµì°¨ì—¬ë¶€ë¥¼ êµ¬í•˜ê³  Draw
         /// </summary>
         /// <param name="g"></param>
         /// <param name="line1"></param>
@@ -135,7 +135,7 @@ namespace OpenVisionLab
 
             double T = FormulaUtil.CalculateAngle360(CommonConverter.CVPointToPointF(fitLine.Start), CommonConverter.CVPointToPointF(fitLine.End));
             g.DrawLine(new System.Drawing.Pen(System.Drawing.Color.Red, 5), CommonConverter.CVPointToPointF(fitLine.Start), CommonConverter.CVPointToPointF(fitLine.End));
-            g.DrawString(T.ToString("F1") + "¡Æ", new Font("Arial", 25, FontStyle.Bold), new SolidBrush(System.Drawing.Color.Lime), center.X - 15, center.Y);
+            g.DrawString(T.ToString("F1") + "Â°", new Font("Arial", 25, FontStyle.Bold), new SolidBrush(System.Drawing.Color.Lime), center.X - 15, center.Y);
         }
 
         public static void DrawEdge(Graphics g, List<OpenCvSharp.Point> Edges)
@@ -184,14 +184,14 @@ namespace OpenVisionLab
                     PointF start = CommonConverter.CVPointToPointF(line.Start);
                     PointF end = CommonConverter.CVPointToPointF(line.End);
 
-                    // 1. ¼± ¸ÕÀú
+                    // 1. ì„  ë¨¼ì €
                     g.DrawLine(pen, start, end);
 
-                    // 2. Æ÷ÀÎÆ® ¸ÕÀú
+                    // 2. í¬ì¸íŠ¸ ë¨¼ì €
                     DrawPoint(g, start);
                     DrawPoint(g, end);
 
-                    // 3. ±ÛÀÚ´Â ¸¶Áö¸·¿¡
+                    // 3. ê¸€ìëŠ” ë§ˆì§€ë§‰ì—
                     string text = $"{distance:F2} mm";
 
                     PointF mid = new PointF(
@@ -206,7 +206,7 @@ namespace OpenVisionLab
                         textSize.Width,
                         textSize.Height);
 
-                    // ¹è°æÀ» »ìÂ¦ ±ò¸é ¿µ»ó À§¿¡¼­µµ Àß º¸ÀÔ´Ï´Ù.
+                    // ë°°ê²½ì„ ì‚´ì§ ê¹”ë©´ ì˜ìƒ ìœ„ì—ì„œë„ ì˜ ë³´ì…ë‹ˆë‹¤.
                     g.FillRectangle(bgBrush, textRect);
                     g.DrawString(text, font, textBrush, textRect);
                 }

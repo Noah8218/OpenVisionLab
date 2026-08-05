@@ -64,15 +64,41 @@ with representative application data.
 
 ## Build From A Fresh GitHub Clone
 
-This is the shortest supported source-build path. Visual Studio is optional;
-the command line only needs Git, PowerShell, and the exact .NET SDK pinned by
-`global.json`.
+### Recommended: Visual Studio 2022 Only
 
 Requirements:
 
 - Windows 10 or Windows 11 x64
-- Git
-- .NET SDK `8.0.421`
+- Visual Studio 2022 version 17.8 or later
+- `.NET desktop development` workload selected in Visual Studio Installer
+- Internet access for the first NuGet package restore
+
+The workload supplies Visual Studio's Git support, MSBuild, WPF development
+tools, and its matching .NET SDK. A separate Git, PowerShell, or .NET SDK
+installation is not required for this path.
+
+1. Open **Visual Studio Installer**.
+2. Find Visual Studio 2022, select **Modify**, select
+   **.NET desktop development**, and apply the change.
+3. Start Visual Studio and select **Clone a repository**.
+4. Enter `https://github.com/Noah8218/OpenVisionLab.git` and choose a short
+   local path such as `C:\src\OpenVisionLab` or `D:\src\OpenVisionLab`.
+5. Open `OpenVisionLab.sln`, select `Debug` and `Any CPU`, then choose
+   **Build > Build Solution**.
+6. Press **F5** or select the `OpenVisionLab` start button.
+
+If Visual Studio is already installed without the workload, use
+**Tools > Get Tools and Features** and add it. Visual Studio 2022 versions
+earlier than 17.8 cannot build this `net8.0` solution.
+
+### Command-Line Alternative
+
+Requirements:
+
+- Windows 10 or Windows 11 x64
+- Git and Windows PowerShell
+- .NET SDK `8.0.100` or later in the `8.x` line, or .NET SDK `9.x`
+- .NET 8 Desktop Runtime when using an SDK `9.x` command-line installation
 - Internet access for the first NuGet package restore
 
 ```powershell
@@ -95,10 +121,15 @@ solution builds, repository readiness check, and vendored DLL check. It does
 not create an installer, run the public sample suite, or modify Recipe/Layer
 state.
 
-If the script reports a missing SDK, install the exact .NET SDK version from
-the [.NET 8 download page](https://dotnet.microsoft.com/download/dotnet/8.0).
-The repository deliberately disables SDK roll-forward so a different 8.0 SDK
-is not silently treated as the verified compiler.
+If the script reports a missing SDK, add the Visual Studio workload described
+above or install a supported SDK from the
+[.NET download page](https://dotnet.microsoft.com/download). The repository
+accepts `8.0.100` and later `8.x` SDKs, including `8.0.300`, and the `9.x` SDK
+bundled with current Visual Studio 2022. SDK 10 is not qualified for this
+Visual Studio 2022 source-build path. A standalone SDK 9 installation also
+needs the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
+to run this `net8.0-windows` application; the Visual Studio workload installs
+that runtime for the recommended path.
 
 ### Optional Clean Windows Sandbox Check
 
@@ -126,7 +157,8 @@ features or change virtualization settings solely to build OpenVisionLab.
 Requirements:
 
 - Windows development environment
-- .NET SDK `8.0.421` (`global.json` pins the exact version)
+- Visual Studio 2022 17.8+ with `.NET desktop development`, or a supported
+  command-line .NET SDK as described above
 - WPF/Windows Desktop build support
 - Runtime DLLs included in the repository's `dll/` directory
 
