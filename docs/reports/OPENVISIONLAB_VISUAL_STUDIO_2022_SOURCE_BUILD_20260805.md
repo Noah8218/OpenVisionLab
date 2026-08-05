@@ -108,5 +108,7 @@ Both changed PowerShell files also passed parser validation.
 - The separate non-UTF-8/CP949 source defect was resolved and passed the local
   GitHub-equivalent clean-clone gate in P287. See
   `docs/reports/OPENVISIONLAB_GITHUB_CI_UTF8_SOURCE_REPAIR_20260805.md`.
-- This Dev change is uncommitted and has not been copied to the original
-  repository or pushed.
+- The SDK policy and P287 encoding repair were published as Dev commit
+  `28bd8501f659169d02d6c5ccf951419b9feea53b` and exact-ported to original
+  commit `a17cfe6bdb48f2e583cc7e9d46fc7afd4dd4bca4`. Both hosted Actions runs
+  passed.

@@ -36,9 +36,8 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   Installed Visual Studio 2022 17.14.37 with the `.NET desktop development`
   workload also built the solution with zero warnings and zero errors.
 - The five CP949 source files that blocked GitHub Actions are now exact-ported
-  to UTF-8. A clean D-drive snapshot passed the same Release candidate command
-  used by `.github/workflows/ci.yml`; the hosted run remains pending until the
-  reviewed Dev changes are pushed.
+  to UTF-8. A clean D-drive snapshot and the hosted GitHub Actions runs for
+  both Dev and original passed the Release candidate gate.
 - This is not commercial GA, installer/signing/update evidence, multi-PC or
   hardware qualification, calibrated metrology, or field robustness.
 
@@ -53,6 +52,10 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 - A clean D-drive snapshot passed the GitHub Actions Release candidate command:
   Debug/Release with zero warnings and errors, readiness 13/13, references,
   public assets, all 33 public sample rows, and the 78-file package contract.
+- Dev commit `28bd8501f659169d02d6c5ccf951419b9feea53b` passed Actions run
+  `30995729839`. Its exact 15-file port is original commit
+  `a17cfe6bdb48f2e583cc7e9d46fc7afd4dd4bca4`, which passed Actions run
+  `30995933851`.
 - Evidence:
   `docs/reports/OPENVISIONLAB_GITHUB_CI_UTF8_SOURCE_REPAIR_20260805.md`.
 
@@ -127,9 +130,9 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 ## Current Priority And Activation Conditions
 
-- The next repository reliability step is review, commit, and push of P286 and
-  P287 when the user explicitly requests it, followed by confirmation of the
-  hosted GitHub Actions result. The local GitHub-equivalent gate already passes.
+- P286 and P287 are published in Dev and original and their hosted GitHub
+  Actions runs pass. No repository reliability correction is active without a
+  new verified regression.
 - No product feature is active without a named operator blocker or a verified
   current-build regression.
 - CVR-00 remains deferred until three independent first-time participants and

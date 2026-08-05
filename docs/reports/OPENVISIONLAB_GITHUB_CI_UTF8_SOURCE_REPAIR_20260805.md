@@ -68,12 +68,15 @@ Evidence:
 
 ## Boundary / Next Dependency
 
-- The local clean-clone gate reproduces the GitHub Actions command and passes,
-  but an actual hosted Actions run requires committing and pushing the Dev
-  changes.
+- Dev commit `28bd8501f659169d02d6c5ccf951419b9feea53b` passed hosted Actions
+  run `30995729839`:
+  `https://github.com/Noah8218/OpenVisionLab_Dev/actions/runs/30995729839`.
+- The same 15 file blobs were verified in original commit
+  `a17cfe6bdb48f2e583cc7e9d46fc7afd4dd4bca4`, which passed hosted Actions
+  run `30995933851`:
+  `https://github.com/Noah8218/OpenVisionLab/actions/runs/30995933851`.
 - The temporary D-drive verification commit is not a Dev or original-repository
   commit and must not be promoted by hash.
-- `C:\Git\OpenVisionLab` was not changed.
 
 ```text
 Status: Complete
@@ -81,5 +84,5 @@ Scope: Five tracked CP949 C# sources converted to UTF-8 without BOM with exact c
 Acceptance criteria: 5/5 exact ports PASS; tracked-text strict UTF-8 scan 1437/1437 PASS; local GitHub-equivalent release-candidate gate PASS
 Verification: VerifyReleaseCandidate.ps1 -SkipLaunch completed in 133.091 seconds with Debug/Release/readiness/references/public samples/package PASS
 Evidence: D:\OpenVisionLab-TestData\OpenVisionLab\encoding_migration_20260805 and D:\OpenVisionLab-TestData\OpenVisionLab\ci_utf8_current_20260805\artifacts\ci_release_candidate\release_candidate_summary.json
-Boundary / next dependency: Hosted GitHub Actions remains unverified until the reviewed Dev changes are committed and pushed
+Boundary / next dependency: This proves the repository CI/build/package scope; installer, signing, hardware, and multi-PC qualification remain separate scopes
 ```
