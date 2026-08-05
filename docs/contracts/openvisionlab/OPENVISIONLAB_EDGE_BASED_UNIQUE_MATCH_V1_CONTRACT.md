@@ -4,7 +4,7 @@ Status: P224 implementation complete; P225 first real-image fixed candidate reje
 
 ## Purpose
 
-The existing Library-Noah edge matcher can now be configured to fail closed when
+The existing OpenVisionLab Vision SDK edge matcher can be configured to fail closed when
 more than one spatially distinct plausible match remains. This prevents an
 external `NUM_MATCH=1` request from hiding a repeated-pattern ambiguity.
 
@@ -73,7 +73,7 @@ evidence.
 OpenVisionLab exposes the two parameters in the existing Edge Based Matching
 PropertyGrid and XML/Pipeline mapper. Edits do not auto-run Preview. Recipe
 validation fails closed for invalid one-result/one-search-region combinations,
-and Pipeline diagnostics preserve the exact Library-Noah ambiguity reason.
+and Pipeline diagnostics preserve the exact OpenVisionLab Vision SDK ambiguity reason.
 
 ## Bounded Evidence
 
@@ -87,10 +87,10 @@ The current synthetic matrix contains four cases:
 4. absent pattern: fails `MatchingNoResult`, returns zero results, and records
    `NoMatch`.
 
-Library-Noah evidence:
+Historical predecessor-library evidence:
 `artifacts\p224_unique_match_runtime_20260724\library_noah`
 
-The Library-Noah Release output, OpenVisionLab vendored copy, and current Debug
+The predecessor-library Release output, the former OpenVisionLab vendored copy, and that historical Debug
 output are assembly `2.1.0.0`, file `2.8.0.0`, SHA-256
 `000C75A7D0E796E166DF6F24C95F264FC001927881B1ED7DE7BAE31913099F6D`.
 

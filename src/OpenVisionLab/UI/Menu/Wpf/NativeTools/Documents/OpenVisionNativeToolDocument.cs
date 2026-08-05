@@ -1,5 +1,5 @@
-using Lib.OpenCV.Pipeline;
-using Lib.OpenCV.Tool;
+using OpenVisionLab.Vision2D.Pipeline;
+using OpenVisionLab.Vision2D.Tool;
 using OpenCvSharp;
 using OpenVisionLab.Core;
 using OpenVisionLab.Vision._1._Tools.OpenCV;

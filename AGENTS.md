@@ -156,7 +156,7 @@ At the start of a new OpenVisionLab chat, after a handoff, or whenever the user 
 - Do not remove the main window title-bar minimize, maximize/restore, and close controls.
 - Do not add `Dirkster.AvalonDock` directly to `src/OpenVisionLab/OpenVisionLab.csproj`; AvalonDock ownership belongs in `src\Libraries\OpenVisionLab.Docking.Controls`.
 - Do not reintroduce SDK sample assets into public sample paths.
-- Do not reintroduce `dll\Library-Noah\OpenCvSharpExtern.dll`.
+- Do not reintroduce `dll\Library-Noah` or `OpenCvSharp.Extensions.dll`; OpenVisionLab uses the manifest-verified `dll\OpenVisionLab-Vision-SDK` 3.0 managed DLLs and the single shared `dll\OpenCVSharp\OpenCvSharpExtern.dll`.
 
 ## Completion Means Commands Pass
 

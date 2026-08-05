@@ -164,9 +164,12 @@ $requiredFiles = @(
     "OpenVisionLab.exe",
     "OpenVisionLab.dll",
     "OpenVisionLab.runtimeconfig.json",
+    "OpenVisionLab.Core.dll",
+    "OpenVisionLab.Vision2D.dll",
+    "OpenVisionLab.Vision2D.Blob.dll",
     "OpenCvSharp.dll",
+    "OpenCvSharp.Blob.dll",
     "OpenCvSharpExtern.dll",
-    "Lib.OpenCV.dll",
     "System.Windows.Controls.WpfPropertyGrid.dll"
 )
 if ($Mode -eq "Release") {
@@ -201,6 +204,8 @@ $sourceBranch = Invoke-GitText @("branch", "--show-current")
 $sourceStatus = Invoke-GitText @("status", "--porcelain", "--untracked-files=no")
 $sourceRemote = Invoke-GitText @("remote", "get-url", "origin")
 $sdkVersion = (& dotnet --version).Trim()
+$visionSdkManifestPath = Join-Path $repoRoot "dll\OpenVisionLab-Vision-SDK\sdk-manifest.json"
+$visionSdkManifest = Get-Content -LiteralPath $visionSdkManifestPath -Raw | ConvertFrom-Json
 
 $runtimeFiles = @(
     Get-ChildItem -LiteralPath $outputFullPath -File -Recurse |
@@ -229,6 +234,7 @@ $manifest = [pscustomobject][ordered]@{
     SelfContained = if ($Mode -eq "Release") { $SelfContained.IsPresent } else { $false }
     IncludeSymbols = $IncludeSymbols.IsPresent
     DotnetSdk = $sdkVersion
+    VisionSdk = $visionSdkManifest.sdk
     SourceCommit = $sourceCommit
     SourceBranch = $sourceBranch
     SourceRemote = $sourceRemote

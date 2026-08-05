@@ -1,6 +1,7 @@
-using Lib.Common;
-using Lib.OpenCV;
-using Lib.OpenCV.Pipeline;
+using OpenVisionLab.Common;
+using OpenVisionLab.Core;
+using OpenVisionLab.Vision2D;
+using OpenVisionLab.Vision2D.Pipeline;
 using OpenCvSharp;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using System;

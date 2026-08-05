@@ -75,28 +75,24 @@
       <Private>True</Private>
       <Aliases>WpfPropertyGridOriginal</Aliases>
     </Reference>
-    <Reference Include="Lib.Common">
-      <HintPath>$(OpenVisionLabLibraryNoahDllRoot)Lib.Common.dll</HintPath>
+    <Reference Include="OpenVisionLab.Core">
+      <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenVisionLab.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Lib.OpenCV">
-      <HintPath>$(OpenVisionLabLibraryNoahDllRoot)Lib.OpenCV.dll</HintPath>
+    <Reference Include="OpenVisionLab.Vision2D">
+      <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenVisionLab.Vision2D.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Lib.OpenCV.Blob">
-      <HintPath>$(OpenVisionLabLibraryNoahDllRoot)Lib.OpenCV.Blob.dll</HintPath>
+    <Reference Include="OpenVisionLab.Vision2D.Blob">
+      <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenVisionLab.Vision2D.Blob.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="OpenCvSharp">
-      <HintPath>$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.dll</HintPath>
+      <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenCvSharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="OpenCvSharp.Blob">
-      <HintPath>$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.Blob.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="OpenCvSharp.Extensions">
-      <HintPath>$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.Extensions.dll</HintPath>
+      <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenCvSharp.Blob.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
@@ -129,16 +125,12 @@
              Condition=" '$(OpenVisionLabEnableEmbeddedSmokeRunner)' == 'true' " />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.dll">
+    <Content Include="$(OpenVisionLabVisionSdkDllRoot)OpenCvSharp.dll">
       <Link>OpenCvSharp.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.Blob.dll">
+    <Content Include="$(OpenVisionLabVisionSdkDllRoot)OpenCvSharp.Blob.dll">
       <Link>OpenCvSharp.Blob.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.Extensions.dll">
-      <Link>OpenCvSharp.Extensions.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="$(OpenVisionLabOpenCvSharpDllRoot)OpenCvSharpExtern.dll">
@@ -165,17 +157,16 @@
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
-  <Target Name="ValidateVendoredNoahReferences" BeforeTargets="ResolveReferences" Condition="'$(DesignTimeBuild)' != 'true'">
+  <Target Name="ValidateVendoredVisionSdkReferences" BeforeTargets="ResolveReferences" Condition="'$(DesignTimeBuild)' != 'true'">
     <ItemGroup>
-      <RequiredNoahRuntime Include="$(OpenVisionLabLibraryNoahDllRoot)Lib.Common.dll" />
-      <RequiredNoahRuntime Include="$(OpenVisionLabLibraryNoahDllRoot)Lib.OpenCV.dll" />
-      <RequiredNoahRuntime Include="$(OpenVisionLabLibraryNoahDllRoot)Lib.OpenCV.Blob.dll" />
-      <RequiredNoahRuntime Include="$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.dll" />
-      <RequiredNoahRuntime Include="$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.Blob.dll" />
-      <RequiredNoahRuntime Include="$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.Extensions.dll" />
+      <RequiredVisionSdkRuntime Include="$(OpenVisionLabVisionSdkDllRoot)OpenVisionLab.Core.dll" />
+      <RequiredVisionSdkRuntime Include="$(OpenVisionLabVisionSdkDllRoot)OpenVisionLab.Vision2D.dll" />
+      <RequiredVisionSdkRuntime Include="$(OpenVisionLabVisionSdkDllRoot)OpenVisionLab.Vision2D.Blob.dll" />
+      <RequiredVisionSdkRuntime Include="$(OpenVisionLabVisionSdkDllRoot)OpenCvSharp.dll" />
+      <RequiredVisionSdkRuntime Include="$(OpenVisionLabVisionSdkDllRoot)OpenCvSharp.Blob.dll" />
       <RequiredOpenCvSharpRuntime Include="$(OpenVisionLabOpenCvSharpDllRoot)OpenCvSharpExtern.dll" />
     </ItemGroup>
-    <Error Condition="!Exists('%(RequiredNoahRuntime.Identity)')" Text="Missing vendored Library-Noah runtime: %(RequiredNoahRuntime.Identity). Restore dll\Library-Noah from the repository or refresh the vendor DLLs." />
+    <Error Condition="!Exists('%(RequiredVisionSdkRuntime.Identity)')" Text="Missing vendored OpenVisionLab Vision SDK runtime: %(RequiredVisionSdkRuntime.Identity). Restore dll\OpenVisionLab-Vision-SDK from the repository or refresh the SDK DLLs." />
     <Error Condition="!Exists('%(RequiredOpenCvSharpRuntime.Identity)')" Text="Missing shared OpenCVSharp native runtime: %(RequiredOpenCvSharpRuntime.Identity). Restore dll\OpenCVSharp\OpenCvSharpExtern.dll from the repository." />
   </Target>
   <Target Name="ValidateGeneratedUserManual" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true'">

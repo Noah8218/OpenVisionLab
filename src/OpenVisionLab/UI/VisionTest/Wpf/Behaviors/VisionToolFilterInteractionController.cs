@@ -1,8 +1,8 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
-using Lib.OpenCV;
-using Lib.OpenCV.Tool;
+using OpenVisionLab.Vision2D;
+using OpenVisionLab.Vision2D.Tool;
 using OpenCvSharp;
 
 namespace OpenVisionLab

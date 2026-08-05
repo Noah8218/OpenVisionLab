@@ -7,7 +7,7 @@ using System.Windows.Controls.WpfPropertyGrid;
 using System.Xml;
 using System.Xml.Serialization;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
-using Lib.OpenCV.Property;
+using OpenVisionLab.Vision2D.Property;
 using OpenCvSharp;
 using static OpenVisionLab.PropertyGridEditorFactory;
 

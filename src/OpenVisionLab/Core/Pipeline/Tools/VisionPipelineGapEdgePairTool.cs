@@ -1,6 +1,6 @@
-using Lib.OpenCV;
-using Lib.OpenCV.Tool;
-using Lib.Line;
+using OpenVisionLab.Vision2D;
+using OpenVisionLab.Vision2D.Tool;
+using OpenVisionLab.Core.Geometry2D;
 using OpenCvSharp;
 using System;
 using System.Collections.Generic;

@@ -1,4 +1,4 @@
-using Lib.OpenCV.Pipeline;
+using OpenVisionLab.Vision2D.Pipeline;
 using OpenCvSharp;
 using OpenVisionLab;
 using System;
@@ -513,7 +513,7 @@ internal static class Program
                 },
                 new QualifiedRecipeRuntimeFileSource
                 {
-                    Label = "Lib.OpenCV.dll",
+                    Label = "OpenVisionLab.Vision2D.dll",
                     SourcePath = libOpenCvAssembly
                 },
                 new QualifiedRecipeRuntimeFileSource

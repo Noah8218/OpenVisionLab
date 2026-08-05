@@ -1,4 +1,4 @@
-using Lib.OpenCV;
+using OpenVisionLab.Vision2D;
 using OpenVisionLab.Mvvm;
 using OpenVisionLab.Mvvm.Behaviors;
 using System;

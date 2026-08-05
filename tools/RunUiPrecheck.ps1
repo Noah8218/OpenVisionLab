@@ -3,7 +3,6 @@ param(
     [string]$Platform = "Any CPU",
     [string]$OutputDir = "C:\Users\Public\Documents\ESTsoft\CreatorTemp\openvisionlab_ui_smoke",
     [string]$Targets = "wpf_shell_preview,wpf_shell_host_window_chrome,wpf_shell_host_workspace_empty,wpf_shell_host_workspace,wpf_shell_host_workspace_image_load,wpf_shell_host_tool_input_empty,wpf_shell_host_tool_input_image_load_save,wpf_shell_host_workspace_output,wpf_shell_host_large_image,wpf_shell_host_layer_auto_docking,wpf_shell_host_layer_docking_vertical,wpf_shell_host_layer_docking_n_panels,wpf_shell_host_layer_docking_grid,wpf_shell_host_layer_docking_tabs,wpf_shell_host_tool_rail_compact,wpf_shell_host_layer_docking,wpf_shell_host_layer_docking_functional,wpf_shell_host_layer_popout,wpf_shell_host_bridge,wpf_shell_host_native_tool,wpf_shell_host_threshold_basic_tool,wpf_shell_host_threshold_tool,wpf_shell_host_pipeline_review,wpf_shell_host_rotate_scale_tool,wpf_filter_morphology_layout_guard,wpf_shell_host_blob_tool,wpf_shell_host_contour_tool,wpf_shell_host_line_measure_tool,wpf_shell_host_line_intersection_tool,wpf_shell_host_matching_tool,wpf_shell_host_feature_matching_tool,wpf_shell_host_pending_tool,wpf_property_grid_matching_combo,wpf_roi_editor,wpf_template_editor_opengl,wpf_image_compare,log_panel_contract_check,localization_catalog_contract_check",
-    [string]$LibraryNoahSourceRoot = "",
     [string]$WpgCustomSourceRoot = "",
     [string]$WpgCustomBuildEnabled = "false",
     [switch]$SkipSolutionBuild,

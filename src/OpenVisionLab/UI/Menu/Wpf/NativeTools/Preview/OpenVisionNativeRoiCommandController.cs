@@ -1,4 +1,4 @@
-using Lib.OpenCV.Property;
+using OpenVisionLab.Vision2D.Property;
 using OpenVisionLab.Core;
 using OpenVisionLab.Contracts;
 using System;

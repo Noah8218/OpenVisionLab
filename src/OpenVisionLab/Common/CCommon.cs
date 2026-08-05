@@ -1,4 +1,4 @@
-using Lib.Common;
+using OpenVisionLab.Logging;
 using OpenVisionLab.MessageDialogs;
 using System;
 using System.IO;
@@ -18,12 +18,12 @@ namespace OpenVisionLab
         {
             try
             {
-                CLOG.NORMAL($"[{strHead}] ==> {strMessage}");
+                OVLog.Write(LogLevel.Info, $"[{strHead}] ==> {strMessage}");
                 return VisionMessageBox.Show(strHead, strMessage, type) == MessageBoxResult.OK;
             }
             catch (Exception ex)
             {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {ex.Message}");
+                OVLog.Write(LogLevel.Error, $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {ex.Message}");
                 return false;
             }
         }
@@ -35,13 +35,13 @@ namespace OpenVisionLab
         {
             try
             {
-                CLOG.NORMAL($"[{strHead}] ==> {strMessage}");
+                OVLog.Write(LogLevel.Info, $"[{strHead}] ==> {strMessage}");
                 VisionMessageBox.Show(strHead, strMessage, type);
                 return true;
             }
             catch (Exception ex)
             {
-                CLOG.ABNORMAL($"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {ex.Message}");
+                OVLog.Write(LogLevel.Error, $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {ex.Message}");
                 return false;
             }
         }

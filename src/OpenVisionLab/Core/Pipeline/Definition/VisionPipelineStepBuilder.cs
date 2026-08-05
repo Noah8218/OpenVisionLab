@@ -1,7 +1,7 @@
-using Lib.OpenCV;
-using Lib.OpenCV.Blob;
-using Lib.OpenCV.Pipeline;
-using Lib.OpenCV.Property;
+using OpenVisionLab.Vision2D;
+using OpenVisionLab.Vision2D.Blob;
+using OpenVisionLab.Vision2D.Pipeline;
+using OpenVisionLab.Vision2D.Property;
 using OpenCvSharp;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using System;

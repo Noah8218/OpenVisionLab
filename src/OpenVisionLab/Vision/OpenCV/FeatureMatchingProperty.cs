@@ -1,4 +1,4 @@
-﻿using Lib.OpenCV.Blob;
+using OpenVisionLab.Vision2D.Blob;
 using OpenCvSharp;
 using System;
 using System.Collections.Generic;
@@ -10,7 +10,7 @@ using System.Windows.Controls.WpfPropertyGrid;
 using System.Xml.Linq;
 using static OpenVisionLab.PropertyGridEditorFactory;
 using System.Xml.Serialization;
-using Lib.OpenCV.Property;
+using OpenVisionLab.Vision2D.Property;
 
 namespace OpenVisionLab.Vision._1._Tools.OpenCV
 {

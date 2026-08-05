@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using Lib.OpenCV.Property;
+using OpenVisionLab.Vision2D.Property;
 using OpenVisionLab.Services;
 
 namespace OpenVisionLab

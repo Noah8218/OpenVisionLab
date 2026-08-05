@@ -3,12 +3,12 @@
 ## Purpose
 
 This contract extends the fixed numeric three-point `AffineTransform` from P218
-without changing the Library-Noah algorithm:
+without changing the OpenVisionLab Vision SDK algorithm:
 
 ```text
 three earlier deterministic Point results
     -> current-image source points
-    -> Library-Noah AffineTransform
+    -> OpenVisionLab Vision SDK AffineTransform
     -> reference-coordinate output layer
     -> unchanged downstream ROI/inspection
 ```
@@ -20,7 +20,7 @@ can be used by the same contract.
 
 ## Ownership
 
-- Library-Noah remains authoritative for the affine point/output/gate checks,
+- OpenVisionLab Vision SDK remains authoritative for the affine point/output/gate checks,
   `GetAffineTransform`, `WarpAffine`, output coverage, matrix/decomposition
   metrics, stable error codes, and destination/frame drawings.
 - OpenVisionLab owns the same-run typed-Point references, source Step/result
@@ -95,7 +95,7 @@ Definition validation or the explicit Run fails when any of these is true:
 - the resolved source triangle or taught destination triangle is degenerate or
   below its configured area gate;
 - output dimensions, sampling, or valid-pixel coverage fail the existing P218
-  Library-Noah gates.
+  OpenVisionLab Vision SDK gates.
 
 No fixed-point fallback occurs after detected-point mode is enabled.
 
@@ -159,7 +159,7 @@ recipe/application responsibility. LLM development remains frozen.
 
 Status: Complete
 
-Scope: typed Point x3 to the existing Library-Noah Affine transform, followed by
+Scope: typed Point x3 to the existing OpenVisionLab Vision SDK Affine transform, followed by
 one unchanged fixed reference-coordinate inspection ROI.
 
 Acceptance criteria: XML/PropertyGrid persistence, actual Matching centers,

@@ -1,7 +1,8 @@
-using Lib.OpenCV;
-using Lib.OpenCV.Property;
-using Lib.OpenCV.Result;
-using Lib.OpenCV.Tool;
+using OpenVisionLab.Common;
+using OpenVisionLab.Vision2D;
+using OpenVisionLab.Vision2D.Property;
+using OpenVisionLab.Vision2D.Result;
+using OpenVisionLab.Vision2D.Tool;
 using Microsoft.Win32;
 using OpenCvSharp;
 using OpenVisionLab.Contracts;
@@ -154,7 +155,7 @@ namespace OpenVisionLab
                 EdgeBasedMatchingProperty matchingProperty = toolController.CreateProperty();
                 AutoMPointToolProperty autoProperty = CreateAutoMPointProperty(matchingProperty);
                 string definition = CreateAnalysisDefinition(autoProperty);
-                using Mat source = Lib.Common.BitmapImageConverter.ToMat(sourceBitmap);
+                using Mat source = OpenVisionLab.Common.BitmapImageConverter.ToMat(sourceBitmap);
                 foreach (string path in representativeImagePaths)
                 {
                     representativeImages.Add(Cv2.ImRead(path, ImreadModes.Unchanged));
@@ -185,7 +186,7 @@ namespace OpenVisionLab
 
                 if (execution?.ResultImage != null && !execution.ResultImage.Empty())
                 {
-                    using Bitmap resultBitmap = Lib.Common.BitmapImageConverter.ToBitmap(execution.ResultImage);
+                    using Bitmap resultBitmap = OpenVisionLab.Common.BitmapImageConverter.ToBitmap(execution.ResultImage);
                     toolController.SetOutputPreview(resultBitmap);
                 }
 
@@ -282,7 +283,7 @@ namespace OpenVisionLab
 
             try
             {
-                using Mat source = Lib.Common.BitmapImageConverter.ToMat(sourceBitmap);
+                using Mat source = OpenVisionLab.Common.BitmapImageConverter.ToMat(sourceBitmap);
                 string path = PropertyGridEditorFactory.SaveTemplateImageForTeaching(source, candidate.PatternRoi);
                 if (string.IsNullOrWhiteSpace(path))
                 {

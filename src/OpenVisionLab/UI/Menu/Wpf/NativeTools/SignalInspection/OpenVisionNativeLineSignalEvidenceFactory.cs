@@ -1,10 +1,10 @@
-using Lib.OpenCV.Result;
+using OpenVisionLab.Vision2D.Result;
 using OpenCvSharp;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using static Lib.Common.FormulaUtil;
+using static OpenVisionLab.Core.FormulaUtil;
 
 namespace OpenVisionLab
 {

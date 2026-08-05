@@ -1,4 +1,4 @@
-using Lib.OpenCV.Pipeline;
+using OpenVisionLab.Vision2D.Pipeline;
 using OpenCvSharp;
 using System;
 using System.Collections.Generic;

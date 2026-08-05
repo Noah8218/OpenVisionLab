@@ -121,6 +121,11 @@ solution builds, repository readiness check, and vendored DLL check. It does
 not create an installer, run the public sample suite, or modify Recipe/Layer
 state.
 
+The repository already includes the verified OpenVisionLab Vision SDK 3.0
+runtime under `dll\OpenVisionLab-Vision-SDK`. A separate SDK source clone is
+not required to build or run OpenVisionLab. `sdk-manifest.json` records the
+exact SDK source commit and SHA-256 of every vendored SDK DLL.
+
 If the script reports a missing SDK, add the Visual Studio workload described
 above or install a supported SDK from the
 [.NET download page](https://dotnet.microsoft.com/download). The repository

@@ -1,4 +1,4 @@
-﻿using OpenVisionLab.Core;
+using OpenVisionLab.Core;
 using OpenCvSharp;
 using System;
 using System.Collections;
@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Reflection;
-using Lib.Common;
 using OpenVisionLab.MessageDialogs;
 using System.IO;
 using System.Text;

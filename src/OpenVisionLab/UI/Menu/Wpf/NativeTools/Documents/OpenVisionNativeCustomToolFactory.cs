@@ -1,6 +1,6 @@
-using Lib.OpenCV.Pipeline;
-using Lib.OpenCV.Property;
-using Lib.OpenCV.Tool;
+using OpenVisionLab.Vision2D.Pipeline;
+using OpenVisionLab.Vision2D.Property;
+using OpenVisionLab.Vision2D.Tool;
 using OpenVisionLab.Core;
 using OpenVisionLab.Composition;
 using System;

@@ -1,4 +1,4 @@
-using Lib.OpenCV.Pipeline;
+using OpenVisionLab.Vision2D.Pipeline;
 using System;
 
 namespace OpenVisionLab

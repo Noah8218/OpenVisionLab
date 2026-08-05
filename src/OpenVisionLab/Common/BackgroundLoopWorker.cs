@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Lib.Common;
+using OpenVisionLab.Core;
 
 namespace OpenVisionLab
 {

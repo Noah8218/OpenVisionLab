@@ -5,7 +5,8 @@ Date: 2026-07-23
 ## Outcome
 
 Add a deterministic two-dimensional affine image transform that is calculated and
-executed by the separately built Library-Noah `Lib.OpenCV.dll`, then exposed in
+executed by the separately built OpenVisionLab Vision SDK
+`OpenVisionLab.Vision2D.dll`, then exposed in
 OpenVisionLab as a PropertyGrid tool, Pipeline/XML Step, and Geometry Learn path.
 
 The operator teaches three non-collinear source points and their three destination
@@ -15,7 +16,7 @@ geometry, and valid-pixel metrics.
 
 ## Included Scope
 
-- Library-Noah owns:
+- OpenVisionLab Vision SDK owns:
   - point and output validation;
   - affine matrix calculation;
   - `WarpAffine` execution;
@@ -136,10 +137,10 @@ approval.
 
 | Criterion | Required evidence |
 | --- | --- |
-| Library source ownership | Library-Noah source and standalone build with no OpenVisionLab implementation of the affine calculation |
+| SDK source ownership | OpenVisionLab Vision SDK source and standalone build with no OpenVisionLab application implementation of the affine calculation |
 | Numeric correctness | A known synthetic transform recovers the expected six coefficients within tolerance and produces the expected output geometry |
 | Fail-closed behavior | Collinear source/destination teaching and insufficient valid-pixel coverage fail with the named errors |
-| Vendored consumption | OpenVisionLab builds and executes against the copied `dll\Library-Noah\Lib.OpenCV.dll`; source version and DLL hash are recorded |
+| Vendored consumption | OpenVisionLab builds and executes against the manifest-verified `dll\OpenVisionLab-Vision-SDK\OpenVisionLab.Vision2D.dll`; SDK version, source commit, and DLL hash are recorded |
 | PropertyGrid workflow | Current-build Tool View exposes all v1 parameters and does not run until explicit Preview |
 | Pipeline/XML round trip | Canonical and alias tool names import, execute, save/load, and selected-Step edit without parameter loss |
 | Drawing/metric evidence | Fresh result image shows destination points/triangle and transformed input frame; matrix and coverage metrics match the run |
@@ -152,16 +153,16 @@ approval.
 - A small triangle amplifies noise; area gates reduce but cannot eliminate poor teaching.
 - Output size and destination points can crop the source; the valid-pixel gate exposes,
   but does not infer, the intended crop.
-- A public API addition requires a Library-Noah minor version increase and exact DLL
+- A public API addition requires an OpenVisionLab Vision SDK version increase and exact DLL
   provenance.
 
 ## Completion Record
 
 ```text
 Status: Complete
-Scope: Library-Noah three-point 2D Affine runtime plus OpenVisionLab PropertyGrid, explicit Preview, Pipeline/XML, drawings/metrics, public sample, and Geometry Learn integration.
+Scope: OpenVisionLab Vision SDK three-point 2D Affine runtime plus OpenVisionLab PropertyGrid, explicit Preview, Pipeline/XML, drawings/metrics, public sample, and Geometry Learn integration.
 Acceptance criteria: Library ownership, known matrix, collinear/coverage fail-closed gates, vendored DLL identity, PropertyGrid workflow, XML aliases/round trip, drawings/metrics, Learn path, and RotateScale regression all passed.
-Verification: Library-Noah build and 57/57 smoke; OpenVisionLab zero-warning build; focused Affine contract/public-sample/UI smokes; readiness and public-sample checks.
+Verification: Initial predecessor-library build and 57/57 smoke; OpenVisionLab zero-warning build; focused Affine contract/public-sample/UI smokes; readiness and public-sample checks. Current SDK 3.0 migration evidence is recorded separately in the SDK migration report.
 Evidence: artifacts\p218_affine_transform_v1_20260723
 Boundary / next dependency: Known-matrix synthetic evidence only. A real use case requires operator-approved corresponding point triplets, downstream reference ROI, representative samples, and acceptance criteria.
 ```

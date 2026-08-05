@@ -1,5 +1,5 @@
 using Microsoft.Win32;
-using Lib.OpenCV.Pipeline;
+using OpenVisionLab.Vision2D.Pipeline;
 using OpenVisionLab.Logging;
 using OpenVisionLab.Logging.Model;
 using System;

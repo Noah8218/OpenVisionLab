@@ -1,6 +1,6 @@
-using Lib.OpenCV.Pipeline;
-using Lib.OpenCV.Property;
-using Lib.OpenCV.Tool;
+using OpenVisionLab.Vision2D.Pipeline;
+using OpenVisionLab.Vision2D.Property;
+using OpenVisionLab.Vision2D.Tool;
 using OpenCvSharp;
 using System;
 using System.Collections.Generic;
@@ -83,6 +83,11 @@ namespace OpenVisionLab
             }
 
             VisionPipelineStep runtimeStep = CloneStep(step);
+            RemoveApplicationParameter(runtimeStep.Parameters, UseDetectedSourcePointsParameter);
+            RemoveApplicationParameter(runtimeStep.Parameters, SourcePoint1FeatureParameter);
+            RemoveApplicationParameter(runtimeStep.Parameters, SourcePoint2FeatureParameter);
+            RemoveApplicationParameter(runtimeStep.Parameters, SourcePoint3FeatureParameter);
+            RemoveApplicationParameter(runtimeStep.Parameters, VisionPipelineNormalizer.AllowBranchInputParameter);
             SetDouble(runtimeStep.Parameters, nameof(AffineTransformToolProperty.SourcePoint1X), points[0].CenterX);
             SetDouble(runtimeStep.Parameters, nameof(AffineTransformToolProperty.SourcePoint1Y), points[0].CenterY);
             SetDouble(runtimeStep.Parameters, nameof(AffineTransformToolProperty.SourcePoint2X), points[1].CenterX);
@@ -334,6 +339,16 @@ namespace OpenVisionLab
         private static void SetDouble(IDictionary<string, string> parameters, string key, double value)
         {
             parameters[key] = value.ToString("R", CultureInfo.InvariantCulture);
+        }
+
+        private static void RemoveApplicationParameter(IDictionary<string, string> parameters, string key)
+        {
+            string storedKey = parameters?.Keys.FirstOrDefault(candidate =>
+                string.Equals(candidate, key, StringComparison.OrdinalIgnoreCase));
+            if (storedKey != null)
+            {
+                parameters.Remove(storedKey);
+            }
         }
 
         private static bool IsFinite(double value)

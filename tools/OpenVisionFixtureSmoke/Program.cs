@@ -1,6 +1,6 @@
-using Lib.Common;
-using Lib.OpenCV.Pipeline;
-using Lib.OpenCV.Tool;
+using OpenVisionLab.Core;
+using OpenVisionLab.Vision2D.Pipeline;
+using OpenVisionLab.Vision2D.Tool;
 using Microsoft.VisualBasic.FileIO;
 using OpenCvSharp;
 using OpenVisionLab;

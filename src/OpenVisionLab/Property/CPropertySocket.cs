@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -9,7 +9,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
-using Lib.Common;
+using OpenVisionLab.Logging;
 using OpenCvSharp;
 
 namespace OpenVisionLab
@@ -79,7 +79,7 @@ namespace OpenVisionLab
                     }
                     catch (Exception Desc)
                     {
-                        CLOG.ABNORMAL($"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
+                        OVLog.Write(LogLevel.Error, $"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
                         xmlReader.Close();
                     }
 
@@ -93,7 +93,7 @@ namespace OpenVisionLab
             }
             catch (Exception Desc)
             {
-                CLOG.ABNORMAL($"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
+                OVLog.Write(LogLevel.Error, $"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
                 return false;
             }
             return true;
@@ -122,7 +122,7 @@ namespace OpenVisionLab
             }
             catch (Exception Desc)
             {
-                CLOG.ABNORMAL($"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
+                OVLog.Write(LogLevel.Error, $"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
             }
             finally
             {

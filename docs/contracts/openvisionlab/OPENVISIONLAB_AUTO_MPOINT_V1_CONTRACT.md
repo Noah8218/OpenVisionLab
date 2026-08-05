@@ -22,7 +22,7 @@ recipe. The runtime inspection remains the existing deterministic
 - Pattern size: operator-supplied fixed width and height.
 - Candidate search: deterministic grid, whole ROI, or both.
 - Output: up to five overlap-suppressed candidate regions.
-- Target matcher: existing Library-Noah edge-based matcher with optional hybrid
+- Target matcher: existing OpenVisionLab Vision SDK edge-based matcher with optional hybrid
   verification.
 - Evidence: feature score, self/alternative match scores, uniqueness margin,
   synthetic replay success and pose error, median/P95 runtime, exact reject reason,
@@ -54,7 +54,7 @@ edge matcher's native center and the reference offset between those two points.
 
 ## Ownership
 
-Library-Noah owns:
+OpenVisionLab Vision SDK owns:
 
 - `AutoMPointToolProperty` and its fail-closed parameter contract;
 - candidate generation, feature scoring, overlap suppression, exact matching,
@@ -64,7 +64,7 @@ Library-Noah owns:
 
 OpenVisionLab owns the P223 operator surface that:
 
-- uses the separately built Library-Noah DLL;
+- uses the separately built, manifest-verified OpenVisionLab Vision SDK DLL;
 - exposes PropertyGrid inputs;
 - runs only from an explicit `Analyze candidates` action;
 - shows candidate rows and the same result drawing;
@@ -80,12 +80,12 @@ inspection match succeeds only when the selected result is sufficiently separate
 from every spatially distinct plausible alternative. Auto MPoint analysis does
 not enable that runtime option automatically.
 
-## Completed Library Evidence
+## Historical Predecessor-Library Evidence
 
-On 2026-07-24, Library-Noah Release build completed with zero warnings/errors and
+On 2026-07-24, the predecessor Library-Noah Release build completed with zero warnings/errors and
 the full inspection smoke suite passed 60/60.
 
-The built `Lib.OpenCV.dll` retains assembly version `2.1.0.0`, file version
+The historical `Lib.OpenCV.dll` retained assembly version `2.1.0.0`, file version
 `2.8.0.0`, and SHA-256
 `3D7A0B5D392B096DB3C14091D08E52BBB840772C1BDD1B30BEB15475ABAE28D9`.
 P223 verifies the same hash for the source-library output, the Dev vendor copy,
@@ -98,10 +98,10 @@ The bounded matrix proves:
 - two identical repeated patterns both fail the uniqueness gate;
 - invalid analysis ROI and oversized pattern definitions fail closed.
 
-Source contract:
+Historical source contract:
 `C:\Git\Library-Noah\docs\AUTO_MPOINT_V1.md`
 
-Evidence:
+Historical evidence:
 `C:\Git\Library-Noah\artifacts\auto_mpoint_v1_20260724`
 
 ## Completed OpenVisionLab Integration
@@ -150,7 +150,7 @@ rejection. See
 `docs\OPENVISIONLAB_EDGE_BASED_UNIQUE_MATCH_V1_CONTRACT.md` and
 `artifacts\p224_unique_match_runtime_20260724`.
 
-The P224 source, vendored, and current Debug `Lib.OpenCV.dll` files retain
+The historical P224 source, vendored, and Debug `Lib.OpenCV.dll` files retained
 assembly `2.1.0.0`, file `2.8.0.0`, and SHA-256
 `000C75A7D0E796E166DF6F24C95F264FC001927881B1ED7DE7BAE31913099F6D`.
 
@@ -244,10 +244,10 @@ Current UI evidence:
 Primary operator report:
 `artifacts\p229_auto_mpoint_representative_best_20260724\die_pad_1_r3_current\OPENVISIONLAB_AUTO_MPOINT_REPRESENTATIVE_BEST_REPORT.html`.
 
-Library evidence:
+Historical predecessor-library evidence:
 `C:\Git\Library-Noah\artifacts\auto_mpoint_representative_v2_20260724`.
 
-The source, vendored, and current Debug `Lib.OpenCV.dll` files are assembly
+The historical source, vendored, and Debug `Lib.OpenCV.dll` files were assembly
 `2.1.0.0`, file `2.8.0.0`, SHA-256
 `B456BE7AFC002BA1535A5892092B746FB44560300961BD71342AAC0E7741B180`.
 
@@ -415,7 +415,7 @@ automatic size selection, and field qualification remain unimplemented.
 
 Status: Complete
 
-Scope: Explicit OpenVisionLab Auto MPoint teaching UI, current Library-Noah DLL
+Scope: Explicit OpenVisionLab Auto MPoint teaching UI, current OpenVisionLab Vision SDK DLL
 consumption/provenance, optional representative-image best-pattern ranking,
 operator-reviewed apply action, self-contained N-image HTML evidence export,
 documented matcher direction, and the P224 optional unique-result runtime/XML/UI
@@ -427,7 +427,7 @@ side effects, backward-compatible unique-result XML, representative and held-out
 replay evidence, and separate success/ambiguous/no-match runtime states are
 covered by the focused current-build UI and library smokes.
 
-Verification: Library-Noah Release build and 66/66 smoke; OpenVisionLab full
+Verification: Initial predecessor-library Release build and 66/66 smoke; OpenVisionLab full
 Debug build; focused Edge Based Matching/Auto MPoint UI smokes; localization,
 readiness, external-reference, public-sample, JSON, DLL hash, and
 `git diff --check`.

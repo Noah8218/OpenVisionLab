@@ -38,10 +38,33 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 - The five CP949 source files that blocked GitHub Actions are now exact-ported
   to UTF-8. A clean D-drive snapshot and the hosted GitHub Actions runs for
   both Dev and original passed the Release candidate gate.
+- Dev now consumes the manifest-verified OpenVisionLab Vision SDK 3.0 at source
+  commit `ba0055b713e0bf434b9d0a7fd3f4b0e445c1f982`. The predecessor DLL root and
+  duplicate managed OpenCvSharp files are removed; standalone SDK, app
+  Debug/Release, functional contracts, focused UI, and clean-runtime launch
+  checks pass.
 - This is not commercial GA, installer/signing/update evidence, multi-PC or
   hardware qualification, calibrated metrology, or field robustness.
 
 ## Latest Completed Work
+
+### P289 OpenVisionLab Vision SDK 3.0 Migration - Complete
+
+- Dev references now use `OpenVisionLab.Core`, `OpenVisionLab.Vision2D`, and
+  `OpenVisionLab.Vision2D.Blob` from the tracked manifest-verified SDK 3.0 DLL
+  set. The former Library-Noah and duplicate managed OpenCvSharp payloads are
+  removed.
+- The SDK-removed bitmap converter is retained as an independently verified
+  application-owned exact port. Detected-point Affine app metadata is consumed
+  at the application boundary before the SDK's strict property factory runs;
+  unknown SDK parameters still fail closed.
+- SDK Release and 142/142 inspection smoke, isolated package consumer, locked
+  restore, Debug/Release zero-warning builds, readiness, external hashes,
+  public assets, fixture, Affine, edge polarity, XML, snapshot, focused UI, and
+  clean runtime EXE checks passed.
+- Dev is not yet staged, committed, pushed, or promoted to the original repo.
+- Evidence:
+  `docs/reports/OPENVISIONLAB_VISION_SDK_3_MIGRATION_20260805.md`.
 
 ### P288 Responsive Shell Scale - Complete
 
@@ -149,6 +172,9 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 - P286 and P287 are published in Dev and original and their hosted GitHub
   Actions runs pass. No repository reliability correction is active without a
   new verified regression.
+- P289 is complete and verified in Dev but remains an uncommitted review set.
+  Promotion to original, commit, push, tag, or Release-candidate publication
+  requires an explicit user request.
 - No product feature is active without a named operator blocker or a verified
   current-build regression.
 - CVR-00 remains deferred until three independent first-time participants and

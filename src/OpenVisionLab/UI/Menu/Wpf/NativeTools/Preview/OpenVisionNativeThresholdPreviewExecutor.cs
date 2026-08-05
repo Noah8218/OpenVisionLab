@@ -1,5 +1,5 @@
-using Lib.OpenCV.Property;
-using Lib.OpenCV.Tool;
+using OpenVisionLab.Vision2D.Property;
+using OpenVisionLab.Vision2D.Tool;
 using OpenCvSharp;
 using System;
 
@@ -18,7 +18,7 @@ namespace OpenVisionLab
                 && result.Success
                 && result.ResultImage != null
                 && !result.ResultImage.Empty()
-                && property.Mode != Lib.OpenCV.ThresholdToolMode.Adaptive)
+                && property.Mode != OpenVisionLab.Vision2D.ThresholdToolMode.Adaptive)
             {
                 view.ShowSignalEvidence(OpenVisionNativeThresholdSignalEvidenceFactory.Create(
                     source,

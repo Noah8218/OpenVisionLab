@@ -1,5 +1,5 @@
-using Lib.OpenCV;
-using Lib.OpenCV.Pipeline;
+using OpenVisionLab.Vision2D;
+using OpenVisionLab.Vision2D.Pipeline;
 using System;
 using System.Collections.Generic;
 using System.Globalization;

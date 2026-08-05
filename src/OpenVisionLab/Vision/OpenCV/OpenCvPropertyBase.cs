@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -6,9 +6,9 @@ using System.Xml.Serialization;
 using static OpenVisionLab.PropertyGridEditorFactory;
 using System.Windows.Controls.WpfPropertyGrid;
 using OpenCvSharp;
-using Lib.Common;
-using Lib.OpenCV;
-using Lib.OpenCV.Property;
+using OpenVisionLab.Core;
+using OpenVisionLab.Vision2D;
+using OpenVisionLab.Vision2D.Property;
 
 namespace OpenVisionLab.Vision._1._Tools.OpenCV
 {
@@ -240,7 +240,8 @@ namespace OpenVisionLab.Vision._1._Tools.OpenCV
 
         public void SaveTestConfig(string Path)
         {
-            AppUtil.InitDirectory("TEST");
+            System.IO.Directory.CreateDirectory(
+                System.IO.Path.Combine(AppContext.BaseDirectory, "TEST"));
             string strPath = Path;
             SerializeHelper.SaveXmlFile(strPath, this);
             LastConfigLoadResult = new XmlFileLoadResult(

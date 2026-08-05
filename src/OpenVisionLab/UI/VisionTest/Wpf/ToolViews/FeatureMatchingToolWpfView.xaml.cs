@@ -1,5 +1,5 @@
-using Lib.OpenCV;
-using Lib.OpenCV.Result;
+using OpenVisionLab.Vision2D;
+using OpenVisionLab.Vision2D.Result;
 using OpenVisionLab.Contracts;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using System;

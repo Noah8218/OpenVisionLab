@@ -12,13 +12,13 @@ This is an offline recipe-workbench feature. It does not add camera setup, motio
 
 ## Existing Source Contract
 
-- `Lib.OpenCV.Result.MatchingResult` exposes `Center`, `Angle`, `Scale`, `Bounding`, and `Score`.
+- `OpenVisionLab.Vision2D.Result.MatchingResult` exposes `Center`, `Angle`, `Scale`, `Bounding`, and `Score`.
 - `VisionToolResult` exposes metrics and overlays. Matching rectangle overlays carry bounds, center, and angle. Because the external overlay contract has no scale field, the app derives uniform scale from runtime bounds versus the loaded template and snaps it to the configured Matching scale-search grid.
 - `VisionPipelineStep` has no fixture property, but its parameter dictionary preserves explicit extension parameters in XML.
 - Pipeline ROI values are image-coordinate `Rect` values. Before this change, every step executed the saved `CvROI` directly.
 - `VisionRecipeRunner` already records overlay centers and angles in step summaries.
 
-The v1 implementation therefore extends the app-owned pipeline execution layer. It does not modify the external `Lib.OpenCV.dll` contract.
+The v1 implementation therefore extends the app-owned pipeline execution layer. It does not modify the external `OpenVisionLab.Vision2D.dll` contract.
 
 ## V1 Operator Workflow
 

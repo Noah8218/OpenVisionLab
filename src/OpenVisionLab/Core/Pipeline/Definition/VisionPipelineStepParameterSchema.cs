@@ -1,6 +1,6 @@
-using Lib.Common;
-using Lib.OpenCV;
-using Lib.OpenCV.Property;
+using OpenVisionLab.Core;
+using OpenVisionLab.Vision2D;
+using OpenVisionLab.Vision2D.Property;
 using OpenCvSharp;
 using System;
 using System.Collections.Generic;

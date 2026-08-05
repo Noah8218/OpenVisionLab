@@ -1,5 +1,5 @@
-using Lib.OpenCV.Pipeline;
-using Lib.OpenCV.Property;
+using OpenVisionLab.Vision2D.Pipeline;
+using OpenVisionLab.Vision2D.Property;
 using OpenCvSharp;
 using System;
 using System.ComponentModel;

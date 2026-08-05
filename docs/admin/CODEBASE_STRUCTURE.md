@@ -42,7 +42,7 @@ OpenVisionLab은 여러 이미지 레이어를 중심으로 동작하는 rule-ba
 | `src/Libraries/` | 재사용 가능한 분리 라이브러리 프로젝트들입니다. MVVM, 이미지 캔버스, 레이어 core, logging, localization 등을 포함합니다. |
 | `tools/` | UI smoke, contract check, recipe runner 등 검증/보조 실행 프로젝트입니다. |
 | `docs/` | 설계 문서, 운영 문서, smoke 정책, extension guide가 위치합니다. |
-| `dll/` | vendored runtime DLL 위치입니다. Library-Noah, WPG PropertyGrid DLL 참조가 여기서 해결됩니다. |
+| `dll/` | vendored runtime DLL 위치입니다. OpenVisionLab Vision SDK 3.0, 공용 OpenCvSharp native runtime, WPG PropertyGrid DLL 참조가 여기서 해결됩니다. |
 | `Sample/` | 로컬/vendor 샘플 참고 영역입니다. 공개 배포나 GitHub 원본 반영 대상이 아니며, 공개 검증 자산은 `docs/samples/public/`와 `docs/samples/public/product/`를 사용합니다. |
 | `scripts/` | 보조 스크립트 영역입니다. |
 
@@ -193,9 +193,11 @@ PropertyGrid 기반 알고리즘 툴은 반드시 유지해야 하는 핵심 구
 
 관련 외부 runtime:
 
-- `dll/Library-Noah/Lib.OpenCV.dll`
-- `dll/Library-Noah/Lib.OpenCV.Blob.dll`
-- `dll/Library-Noah/OpenCvSharp*.dll`
+- `dll/OpenVisionLab-Vision-SDK/OpenVisionLab.Core.dll`
+- `dll/OpenVisionLab-Vision-SDK/OpenVisionLab.Vision2D.dll`
+- `dll/OpenVisionLab-Vision-SDK/OpenVisionLab.Vision2D.Blob.dll`
+- `dll/OpenVisionLab-Vision-SDK/OpenCvSharp*.dll`
+- `dll/OpenVisionLab-Vision-SDK/sdk-manifest.json`
 
 메인 앱은 vendored DLL이 없으면 build target에서 실패하도록 구성되어 있습니다.
 OpenCV 실행 경로를 수정할 때는 UI preview뿐 아니라 pipeline step 실행과 recipe runner 호환성도 같이 확인해야 합니다.
@@ -206,7 +208,7 @@ Pipeline은 툴 실행을 반복 가능한 step으로 저장하고 재실행하�
 
 | 영역 | 역할 |
 | --- | --- |
-| `Lib.OpenCV.Pipeline` 참조 | `VisionPipelineStep` 등 기존 pipeline model을 제공합니다. |
+| `OpenVisionLab.Vision2D.Pipeline` 참조 | `VisionPipelineStep` 등 SDK 3.0 pipeline model을 제공합니다. |
 | `OpenVisionNativePipelineCommandController.cs` | 현재 tool state를 pipeline step으로 추가합니다. |
 | `Documents/OpenVisionPipelineReviewDocument.cs` | pipeline review UI document입니다. |
 | `src/Libraries/OpenVisionLab.Pipeline.Controls` | pipeline UI control library입니다. |

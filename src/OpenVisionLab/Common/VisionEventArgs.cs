@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using Lib.OpenCV.Blob;
+using OpenVisionLab.Vision2D.Blob;
 using OpenCvSharp;
 
 namespace OpenVisionLab

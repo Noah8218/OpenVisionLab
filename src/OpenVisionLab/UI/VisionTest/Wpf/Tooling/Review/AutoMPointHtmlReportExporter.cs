@@ -1,5 +1,6 @@
-using Lib.Common;
-using Lib.OpenCV.Result;
+using OpenVisionLab.Common;
+using OpenVisionLab.Core;
+using OpenVisionLab.Vision2D.Result;
 using OpenCvSharp;
 using System;
 using System.Collections.Generic;

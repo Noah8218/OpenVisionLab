@@ -1,10 +1,11 @@
 using OpenCvSharp;
 using OpenVisionLab;
-using Lib.Common;
-using Lib.OpenCV;
-using Lib.OpenCV.Pipeline;
-using Lib.OpenCV.Property;
-using Lib.OpenCV.Tool;
+using OpenVisionLab.Common;
+using OpenVisionLab.Core;
+using OpenVisionLab.Vision2D;
+using OpenVisionLab.Vision2D.Pipeline;
+using OpenVisionLab.Vision2D.Property;
+using OpenVisionLab.Vision2D.Tool;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using System;
 using System.Collections.Generic;
@@ -234,7 +235,7 @@ static int RunEdgeGlobalPolarityContract(string? requestedEvidenceDirectory)
         EdgeBasedTemplateMatchingTool tool =
             (EdgeBasedTemplateMatchingTool)VisionPipelineAppToolFactory.Create(enabledStep);
         VisionToolResult result = tool.Execute(source);
-        Lib.OpenCV.Result.MatchingResult? match = tool.results.SingleOrDefault();
+        OpenVisionLab.Vision2D.Result.MatchingResult? match = tool.results.SingleOrDefault();
         string actual = result.Success && match != null ? "Match" : "NoMatch";
         string expected = hasTarget ? "Match" : "NoMatch";
         double centerError = double.NaN;
@@ -1201,7 +1202,7 @@ static int RunAutoMPointEasyMatchCandidates(
                     execution.Success ? "suggestions" : execution.ErrorName));
             }
 
-            foreach (Lib.OpenCV.Result.AutoMPointCandidateResult candidate in tool.candidates)
+            foreach (OpenVisionLab.Vision2D.Result.AutoMPointCandidateResult candidate in tool.candidates)
             {
                 string cropPath = string.Empty;
                 bool suggested = candidate.Rank > 0;
@@ -1278,7 +1279,7 @@ static int RunAutoMPointEasyMatchCandidates(
         string.Empty,
         "Status: Complete",
         string.Empty,
-        "Scope: Run the existing Library-Noah Auto MPoint engine once on five diverse public EasyMatch source images and retain operator-review drawings and candidate metrics.",
+        "Scope: Run the OpenVisionLab Vision SDK Auto MPoint engine once on five diverse public EasyMatch source images and retain operator-review drawings and candidate metrics.",
         string.Empty,
         "Acceptance criteria:",
         $"- Five frozen source images loaded: PASS ({samplePaths.Length}/5).",
@@ -1449,7 +1450,7 @@ static int RunAutoMPointFullStratumQualification(
                 elapsedMs = execution.Elapsed.TotalMilliseconds;
                 errorName = execution.ErrorName ?? execution.ErrorCode.ToString();
                 message = execution.Message ?? string.Empty;
-                Lib.OpenCV.Result.MatchingResult? match = matcher.results.SingleOrDefault();
+                OpenVisionLab.Vision2D.Result.MatchingResult? match = matcher.results.SingleOrDefault();
                 if (execution.Success && match != null)
                 {
                     outcome = "SUCCESS";
@@ -1948,7 +1949,7 @@ static int RunAutoMPointRepresentativeBestPilot(
     AutoMPointTool autoTool = new AutoMPointTool();
     autoTool.SetProperty(autoProperty);
     VisionToolResult autoExecution = autoTool.Execute(canonicalImage, representativeImages);
-    Lib.OpenCV.Result.AutoMPointCandidateResult? selected = null;
+    OpenVisionLab.Vision2D.Result.AutoMPointCandidateResult? selected = null;
     try
     {
         if (autoExecution.ResultImage != null && !autoExecution.ResultImage.Empty())
@@ -2066,7 +2067,7 @@ static int RunAutoMPointRepresentativeBestPilot(
             try
             {
                 elapsedMs = execution.Elapsed.TotalMilliseconds;
-                Lib.OpenCV.Result.MatchingResult? match = matcher.results.SingleOrDefault();
+                OpenVisionLab.Vision2D.Result.MatchingResult? match = matcher.results.SingleOrDefault();
                 if (execution.Success && match != null)
                 {
                     outcome = "SUCCESS";
@@ -2184,7 +2185,7 @@ static int RunAutoMPointRepresentativeBestPilot(
     }
     html.AppendLine("</section>");
     html.AppendLine("<section class=\"panel\"><h2>후보 순위 근거</h2><div class=\"scroll\"><table><thead><tr><th>Rank</th><th>ROI</th><th>상태</th><th>대표 성공</th><th>평균 점수</th><th>최소 고유성</th><th>탈락 사유</th></tr></thead><tbody>");
-    foreach (Lib.OpenCV.Result.AutoMPointCandidateResult candidate in autoTool.candidates
+    foreach (OpenVisionLab.Vision2D.Result.AutoMPointCandidateResult candidate in autoTool.candidates
         .OrderBy(candidate => candidate.Rank == 0 ? int.MaxValue : candidate.Rank)
         .ThenBy(candidate => candidate.PatternRoi.Y)
         .ThenBy(candidate => candidate.PatternRoi.X))
@@ -2385,7 +2386,7 @@ static int RunAutoMPointSixCorpusPilot(
                     Cv2.ImWrite(candidateDrawingPath, autoExecution.ResultImage);
                     candidateDrawingPaths.Add(candidateDrawingPath);
                 }
-                Lib.OpenCV.Result.AutoMPointCandidateResult? candidate = autoTool.results
+                OpenVisionLab.Vision2D.Result.AutoMPointCandidateResult? candidate = autoTool.results
                     .OrderBy(result => result.Rank)
                     .FirstOrDefault();
                 candidateDrawingLabels.Add(
@@ -2511,7 +2512,7 @@ static int RunAutoMPointSixCorpusPilot(
                         errorMessage = execution.Message ?? string.Empty;
                         elapsedMs = execution.Elapsed.TotalMilliseconds;
                         elapsedValues.Add(elapsedMs);
-                        Lib.OpenCV.Result.MatchingResult? match = matcher.results.SingleOrDefault();
+                        OpenVisionLab.Vision2D.Result.MatchingResult? match = matcher.results.SingleOrDefault();
                         if (execution.Success && match != null)
                         {
                             outcome = "SUCCESS";
@@ -3629,7 +3630,17 @@ static async Task<int> RunAffineDetectedPointsContractAsync(string? evidenceDire
         {
             if (!run.Success || run.StepResults.Count != 6)
             {
-                failures.Add("Matching -> Affine -> fixed ROI runtime failed.");
+                string stepEvidence = string.Join(
+                    " | ",
+                    run.StepResults.Select(stepResult =>
+                        $"{stepResult.Step?.Name}: "
+                        + $"ToolSuccess={stepResult.ToolResult?.Success}, "
+                        + $"Error={stepResult.ToolResult?.ErrorName}, "
+                        + $"Message={stepResult.ToolResult?.Message}, "
+                        + $"Acceptance={stepResult.AcceptancePassed} {stepResult.AcceptanceMessage}"));
+                failures.Add(
+                    $"Matching -> Affine -> fixed ROI runtime failed. "
+                    + $"Steps={run.StepResults.Count}/6. {stepEvidence}");
             }
             else
             {
@@ -3767,7 +3778,7 @@ static async Task<int> RunAffineDetectedPointsContractAsync(string? evidenceDire
         if (failures.Count == 0)
         {
             Console.WriteLine("Affine detected-point contract smoke passed.");
-            Console.WriteLine("Three Matching centers drove Library-Noah AffineTransform, then an unchanged fixed ROI found one normalized target.");
+            Console.WriteLine("Three Matching centers drove the OpenVisionLab Vision SDK AffineTransform, then an unchanged fixed ROI found one normalized target.");
             return 0;
         }
 

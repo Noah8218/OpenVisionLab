@@ -123,18 +123,18 @@ namespace OpenVisionLab
         public void ConfigureSelectedLineForTest(string projectionDirection, string polarity, string verticalDirection = null)
         {
             LineGaugeProperty property = GetSelectedLineProperty();
-            if (Enum.TryParse(projectionDirection, true, out Lib.Common.FormulaUtil.PROJECTION_DIR parsedProjectionDirection))
+            if (Enum.TryParse(projectionDirection, true, out OpenVisionLab.Core.FormulaUtil.PROJECTION_DIR parsedProjectionDirection))
             {
                 property.PRJ_DIR = parsedProjectionDirection;
             }
 
-            if (Enum.TryParse(polarity, true, out Lib.Common.FormulaUtil.PROJECTION_POLARITY parsedPolarity))
+            if (Enum.TryParse(polarity, true, out OpenVisionLab.Core.FormulaUtil.PROJECTION_POLARITY parsedPolarity))
             {
                 property.PRJ_PORALITY = parsedPolarity;
             }
 
             if (!string.IsNullOrWhiteSpace(verticalDirection)
-                && Enum.TryParse(verticalDirection, true, out Lib.Common.FormulaUtil.PROJECTION_DIR parsedVerticalDirection))
+                && Enum.TryParse(verticalDirection, true, out OpenVisionLab.Core.FormulaUtil.PROJECTION_DIR parsedVerticalDirection))
             {
                 property.VER_PRJ_DIR = parsedVerticalDirection;
             }

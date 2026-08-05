@@ -1,4 +1,4 @@
-using Lib.OpenCV.Pipeline;
+using OpenVisionLab.Vision2D.Pipeline;
 using OpenVisionLab.Core;
 using Microsoft.Win32;
 using System;
@@ -64,7 +64,7 @@ namespace OpenVisionLab
 
         private OpenVisionRecipeRoundTripValidationResult ValidateRecipeStepRoundTrip(
             string recipeName,
-            Lib.OpenCV.Pipeline.VisionPipeline pipeline)
+            OpenVisionLab.Vision2D.Pipeline.VisionPipeline pipeline)
         {
             if (failNextRecipeStepRoundTripValidationForTest)
             {
@@ -89,7 +89,7 @@ namespace OpenVisionLab
 
         private void SaveRecipeStepPipeline(
             string recipeName,
-            Lib.OpenCV.Pipeline.VisionPipeline pipeline)
+            OpenVisionLab.Vision2D.Pipeline.VisionPipeline pipeline)
         {
             if (failNextRecipeStepSaveForTest)
             {

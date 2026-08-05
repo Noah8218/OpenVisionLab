@@ -1,6 +1,6 @@
-using Lib.OpenCV.Pipeline;
-using Lib.OpenCV.Result;
-using Lib.OpenCV.Tool;
+using OpenVisionLab.Vision2D.Pipeline;
+using OpenVisionLab.Vision2D.Result;
+using OpenVisionLab.Vision2D.Tool;
 using OpenCvSharp;
 using System;
 using System.Collections.Generic;

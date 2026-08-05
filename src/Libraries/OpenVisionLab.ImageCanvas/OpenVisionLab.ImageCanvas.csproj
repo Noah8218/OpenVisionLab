@@ -28,11 +28,7 @@
       <Private>true</Private>
     </Reference>
     <Reference Include="OpenCvSharp">
-      <HintPath>$(OpenVisionLabOpenCvSharpDllRoot)OpenCvSharp.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="OpenCvSharp.Extensions">
-      <HintPath>$(OpenVisionLabOpenCvSharpDllRoot)OpenCvSharp.Extensions.dll</HintPath>
+      <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenCvSharp.dll</HintPath>
       <Private>true</Private>
     </Reference>
     <Reference Include="SharpGL">

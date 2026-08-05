@@ -166,7 +166,7 @@ N-image execution means one frozen configuration is replayed over many images.
 It does not require simultaneous processing.
 
 Phase 1 remains sequential because current code and evidence establish ordered
-`await` loops, not thread-safe shared Library-Noah/OpenCvSharp tool instances.
+`await` loops, not thread-safe shared OpenVisionLab Vision SDK/OpenCvSharp tool instances.
 Sequential execution also preserves deterministic progress, stop-after-current,
 report ordering, and memory usage.
 

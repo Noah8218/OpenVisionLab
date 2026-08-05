@@ -1,9 +1,9 @@
-using Lib.Common;
-using Lib.OpenCV;
-using Lib.OpenCV.Blob;
-using Lib.OpenCV.Pipeline;
-using Lib.OpenCV.Property;
-using Lib.OpenCV.Tool;
+using OpenVisionLab.Core;
+using OpenVisionLab.Vision2D;
+using OpenVisionLab.Vision2D.Blob;
+using OpenVisionLab.Vision2D.Pipeline;
+using OpenVisionLab.Vision2D.Property;
+using OpenVisionLab.Vision2D.Tool;
 using OpenCvSharp;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using System;
@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using static Lib.Common.FormulaUtil;
+using static OpenVisionLab.Core.FormulaUtil;
 
 namespace OpenVisionLab
 {
@@ -269,7 +269,7 @@ namespace OpenVisionLab
 
             MatchingTool tool = new MatchingTool();
             tool.SetProperty(property);
-            if (!Lib.OpenCV.OpenCvHelper.IsImageEmpty(property.ImageTemplate))
+            if (!OpenVisionLab.Vision2D.OpenCvHelper.IsImageEmpty(property.ImageTemplate))
             {
                 tool.SetTemplateImage(property.ImageTemplate);
             }

@@ -1,8 +1,8 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Windows.Controls.WpfPropertyGrid;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
-using Lib.OpenCV.Blob;
-using Lib.OpenCV.Property;
+using OpenVisionLab.Vision2D.Blob;
+using OpenVisionLab.Vision2D.Property;
 using static OpenVisionLab.PropertyGridEditorFactory;
 
 namespace OpenVisionLab

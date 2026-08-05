@@ -1,8 +1,8 @@
 using OpenVisionLab.Services;
 using OpenVisionLab.Contracts;
-using Lib.OpenCV;
-using Lib.OpenCV.Property;
-using Lib.OpenCV.Tool;
+using OpenVisionLab.Vision2D;
+using OpenVisionLab.Vision2D.Property;
+using OpenVisionLab.Vision2D.Tool;
 using OpenCvSharp;
 using OpenVisionLab.Mvvm;
 using System;

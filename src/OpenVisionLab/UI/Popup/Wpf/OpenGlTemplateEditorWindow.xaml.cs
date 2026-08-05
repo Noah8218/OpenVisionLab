@@ -1,5 +1,6 @@
 using MahApps.Metro.IconPacks;
-using Lib.Common;
+using OpenVisionLab.Common;
+using OpenVisionLab.Core;
 using OpenCvSharp;
 using OpenVisionLab.ImageCanvas.CanvasShapes;
 using OpenVisionLab.ImageCanvas.Model;

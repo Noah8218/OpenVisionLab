@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Windows;
 using OpenVisionLab.Pipeline.Controls;
-using Lib.OpenCV.Pipeline;
+using OpenVisionLab.Vision2D.Pipeline;
 
 namespace OpenVisionLab
 {

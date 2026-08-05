@@ -1,5 +1,5 @@
-using Lib.OpenCV.Property;
-using Lib.OpenCV.Result;
+using OpenVisionLab.Vision2D.Property;
+using OpenVisionLab.Vision2D.Result;
 using System;
 using System.Collections.Generic;
 using System.Drawing;

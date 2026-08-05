@@ -2784,18 +2784,19 @@ internal static class Program
     private static void CheckReleaseAndExternalPolicy(string repoRoot)
     {
         string external = Read(repoRoot, @"docs\OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md");
-        RequireContains(external, @"dll\Library-Noah", "DLL reference policy covers vendored Library-Noah DLLs.");
+        RequireContains(external, @"dll\OpenVisionLab-Vision-SDK", "DLL reference policy covers vendored OpenVisionLab Vision SDK DLLs.");
         RequireContains(external, @"dll\OpenCVSharp", "DLL reference policy covers shared OpenCVSharp native runtime.");
         RequireContains(external, "System.Windows.Controls.WpfPropertyGrid.dll", "DLL reference policy covers WPG runtime DLL.");
 
         string release = Read(repoRoot, @"docs\OPENVISIONLAB_RELEASE_VERSION_POLICY.md");
-        RequireContains(release, @"dll\Library-Noah", "Release policy covers Library-Noah DLL versioning.");
+        RequireContains(release, @"dll\OpenVisionLab-Vision-SDK", "Release policy covers OpenVisionLab Vision SDK DLL versioning.");
         RequireContains(release, @"dll\OpenCVSharp", "Release policy covers shared OpenCVSharp native runtime.");
         RequireContains(release, "System.Windows.Controls.WpfPropertyGrid.dll", "Release policy covers WPG runtime versioning.");
         RequireContains(release, "OpenVisionLab", "Release policy covers OpenVisionLab release evidence.");
 
         RequirePathExists(repoRoot, @"dll\OpenCVSharp\OpenCvSharpExtern.dll", "Shared OpenCVSharp native runtime exists.");
-        RequirePathMissing(repoRoot, @"dll\Library-Noah\OpenCvSharpExtern.dll", "Legacy Library-Noah native runtime remains removed.");
+        RequirePathExists(repoRoot, @"dll\OpenVisionLab-Vision-SDK\sdk-manifest.json", "OpenVisionLab Vision SDK provenance manifest exists.");
+        RequirePathMissing(repoRoot, @"dll\Library-Noah", "Legacy Library-Noah DLL root remains removed.");
 
         string aiPolicy = Read(repoRoot, @"docs\OPENVISIONLAB_AI_RECIPE_AUTOMATION_POLICY.md");
         RequireContains(aiPolicy, "acceptance", "AI Recipe automation policy covers acceptance changes.");

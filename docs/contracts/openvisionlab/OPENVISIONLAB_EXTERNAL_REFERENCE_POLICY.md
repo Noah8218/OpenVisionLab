@@ -1,95 +1,70 @@
-# OpenVisionLab DLL Reference Policy
+# OpenVisionLab 외부 DLL 참조 정책
 
-Updated: 2026-06-21
+Updated: 2026-08-05
 
-OpenVisionLab은 GitHub에서 이 저장소 하나만 받아도 빌드할 수 있도록 외부 소스 프로젝트를 직접 참조하지 않습니다. `Library-Noah`와 `WPG-CUSTOM`은 개발 편의를 위한 별도 소스 저장소일 수 있지만, OpenVisionLab 프로젝트 파일은 준비된 DLL만 참조합니다.
+OpenVisionLab은 GitHub 저장소 하나만 복제해 빌드할 수 있어야 합니다. 별도 SDK 소스 경로나 개발자 PC의 절대 경로를 `ProjectReference` 또는 `HintPath`로 사용하지 않습니다.
 
-## 1. Required DLL Layout
-
-필수 런타임 DLL은 저장소 내부 `dll` 폴더에 포함합니다.
+## 필수 DLL 구조
 
 ```text
 dll\
-  System.Windows.Controls.WpfPropertyGrid.dll
-  System.Windows.Controls.WpfPropertyGrid.xml
-  Library-Noah\
-    Lib.Common.dll
-    Lib.OpenCV.dll
-    Lib.OpenCV.Blob.dll
+  OpenVisionLab-Vision-SDK\
+    OpenVisionLab.Core.dll
+    OpenVisionLab.Vision2D.dll
+    OpenVisionLab.Vision2D.Blob.dll
     OpenCvSharp.dll
     OpenCvSharp.Blob.dll
-    OpenCvSharp.Extensions.dll
+    sdk-manifest.json
   OpenCVSharp\
     OpenCvSharpExtern.dll
+  System.Windows.Controls.WpfPropertyGrid.dll
+  System.Windows.Controls.WpfPropertyGrid.xml
 ```
 
-`Directory.Build.props`는 공통 DLL 경로를 제공합니다.
+`Directory.Build.props`의 공통 경로는 다음과 같습니다.
 
 - `OpenVisionLabDllRoot`: `dll\`
-- `OpenVisionLabLibraryNoahDllRoot`: `dll\Library-Noah\`
+- `OpenVisionLabVisionSdkDllRoot`: `dll\OpenVisionLab-Vision-SDK\`
 - `OpenVisionLabOpenCvSharpDllRoot`: `dll\OpenCVSharp\`
 
-## 2. Build Policy
+## SDK 소유권
 
-기본 빌드는 외부 소스 루트 없이 수행되어야 합니다.
+- 알고리즘, Property 모델, Pipeline 런타임과 결과 모델은 OpenVisionLab Vision SDK 3.0이 소유합니다.
+- OpenVisionLab은 SDK 3.0의 `OpenVisionLab.Core`, `OpenVisionLab.Vision2D`, `OpenVisionLab.Vision2D.Blob` 네임스페이스를 사용합니다.
+- `System.Drawing.Bitmap`과 `OpenCvSharp.Mat` 사이의 UI 변환은 SDK가 아니라 OpenVisionLab의 `Common\BitmapImageConverter.cs`가 소유합니다.
+- 구형 `Lib.Common.dll`, `Lib.OpenCV.dll`, `Lib.OpenCV.Blob.dll`, `OpenCvSharp.Extensions.dll`, `dll\Library-Noah` 폴더를 다시 추가하지 않습니다.
+- 네이티브 `OpenCvSharpExtern.dll`은 `dll\OpenCVSharp\`에서 한 번만 공유합니다.
+
+## SDK DLL 갱신 절차
+
+1. `OpenVisionLab-Vision-SDK` 저장소의 확정 커밋에서 Release 빌드, 전체 스모크, 패키지 소비자 스모크를 통과시킵니다.
+2. `OpenVisionLab.Core.dll`, `OpenVisionLab.Vision2D.dll`, `OpenVisionLab.Vision2D.Blob.dll`, `OpenCvSharp.dll`, `OpenCvSharp.Blob.dll`을 `dll\OpenVisionLab-Vision-SDK\`에 복사합니다.
+3. `sdk-manifest.json`에 SDK 버전, 원격 저장소, 커밋, 파일 길이와 SHA-256을 기록합니다.
+4. `OpenCvSharpExtern.dll`이 SDK 빌드본과 동일한지 SHA-256으로 확인합니다. 동일하면 공용 파일을 유지하고, 다르면 SDK와 함께 검증한 공용 파일로 갱신합니다.
+5. 아래 검증을 실행합니다.
 
 ```powershell
-dotnet build OpenVisionLab.sln -c Debug -p:Platform=x64
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestExternalReferences.ps1
+dotnet build OpenVisionLab.sln -c Debug -p:Platform="Any CPU"
+dotnet run --project tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj -c Debug -- <repository-root>
 ```
 
-사전 점검은 저장소 내부 DLL 누락 여부를 확인합니다.
+DLL 이름만 바꾸고 완료로 처리하지 않습니다. Threshold/Edge 같은 실제 OpenCV 실행, Pipeline XML 왕복, Preview/Run, 레이어 생성·삭제·입력 선택, Recipe 검증과 clean runtime 배포 검사를 함께 통과해야 합니다.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File tools\TestExternalReferences.ps1
-```
+## WPG PropertyGrid
 
-`RunVisionPlatformPrecheck.ps1`도 같은 DLL 점검을 빌드 전에 실행합니다.
-
-## 3. Library-Noah Policy
-
-OpenVisionLab은 다음 Library-Noah 산출물을 DLL로 참조합니다.
-
-- `Lib.Common.dll`
-- `Lib.OpenCV.dll`
-- `Lib.OpenCV.Blob.dll`
-- `OpenCvSharp*.dll`
-
-Library-Noah 소스를 수정해야 할 때의 절차:
-
-1. 별도 Library-Noah 저장소에서 수정하고 단독 빌드를 통과시킨다.
-2. 위 DLL을 `dll\Library-Noah\`에 복사한다.
-3. OpenVisionLab 빌드와 플랫폼 프리체크를 통과시킨다.
-4. 변경 사유와 DLL 갱신 사실을 OpenVisionLab 커밋/PR 설명에 남긴다.
-
-## 4. WPG-CUSTOM Policy
-
-OpenVisionLab은 WPG-CUSTOM 소스 프로젝트를 솔루션에 포함하지 않습니다. 프로퍼티그리드는 다음 준비된 DLL을 사용합니다.
+PropertyGrid는 준비된 다음 파일을 사용합니다.
 
 - `dll\System.Windows.Controls.WpfPropertyGrid.dll`
 - `dll\System.Windows.Controls.WpfPropertyGrid.xml`
 
-WPG-CUSTOM 소스를 수정해야 할 때의 절차:
+WPG-CUSTOM을 변경한 경우 별도 저장소에서 빌드한 DLL/XML만 위 위치에 갱신하고 PropertyGrid bridge와 UI 상태 검사를 다시 실행합니다.
 
-1. 별도 WPG-CUSTOM 저장소에서 수정하고 DLL을 생성한다.
-2. 생성된 DLL/XML을 OpenVisionLab `dll\` 폴더에 복사한다.
-3. PropertyGrid bridge 빌드와 src/OpenVisionLab/UI/계약 프리체크를 통과시킨다.
+## 커밋 기록
 
-## 5. Commit Policy
+SDK DLL 갱신 커밋에는 다음을 남깁니다.
 
-OpenVisionLab 커밋에는 다음을 명확히 남깁니다.
-
-- OpenVisionLab 코드 변경 내용
-- `dll\Library-Noah` 갱신 여부
-- WPG PropertyGrid DLL 갱신 여부
-- 실행한 검증 명령과 결과
-
-외부 소스 저장소의 태그나 커밋은 DLL을 갱신한 경우에만 기록합니다. 일반 빌드 사용자는 `Library-Noah` 또는 `WPG-CUSTOM` 소스 클론이 필요하지 않습니다.
-
-## 6. Risk
-
-남은 관리 포인트:
-
-- DLL이 누락되면 빌드가 실패하므로 `tools\TestExternalReferences.ps1`를 먼저 실행한다.
-- DLL만 교체해도 공개 API가 바뀌면 OpenVisionLab 컴파일/런타임이 깨질 수 있으므로 플랫폼 프리체크를 필수로 수행한다.
-- OpenCvSharp native runtime (`OpenCvSharpExtern.dll`) is shared from `dll\OpenCVSharp\`.
-- Do not add `dll\Library-Noah\OpenCvSharpExtern.dll` again.
+- SDK 버전과 정확한 source commit
+- 변경된 DLL과 `sdk-manifest.json`
+- `OpenCvSharpExtern.dll` 갱신 여부
+- 실제 실행한 빌드·스모크·외부 참조 검사의 결과

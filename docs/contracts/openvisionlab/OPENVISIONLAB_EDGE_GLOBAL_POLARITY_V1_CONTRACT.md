@@ -79,7 +79,7 @@ recipe.
 Status: Complete
 Scope: Opt-in whole-candidate global edge-polarity reversal with legacy Same-only default, exact state metrics/drawing, and Product XML/PropertyGrid integration.
 Acceptance criteria: Legacy reversed probe rejects; 20/20 Train/Validation/Held-out rows match labels; successful rows report exact Same/Reversed state and <=2 px center error; no-target rows reject; PropertyGrid/XML round trip and no-auto-Preview contract pass.
-Verification: Library-Noah Release build; Lib.Inspection.Smoke 67/67; OpenVisionLab Debug build; VisionRecipeRunnerSmoke --edge-global-polarity-contract; current-source EdgeBasedMatching Tool View smoke.
+Verification: OpenVisionLab Vision SDK Release build and inspection smoke; OpenVisionLab Debug build; VisionRecipeRunnerSmoke --edge-global-polarity-contract; current-source EdgeBasedMatching Tool View smoke.
 Evidence: artifacts/cvr11_global_polarity_20260728, docs/reports/OPENVISIONLAB_CVR11_GLOBAL_POLARITY_20260728.md
 Boundary / next dependency: Synthetic global reversal only. Physical qualification needs a named feature, labelled representative captures, frozen settings, and held-out replay.
 ```

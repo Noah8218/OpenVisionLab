@@ -1,4 +1,4 @@
-using Lib.OpenCV.Result;
+using OpenVisionLab.Vision2D.Result;
 using OpenVisionLab.Contracts;
 using System;
 using System.Collections.Generic;

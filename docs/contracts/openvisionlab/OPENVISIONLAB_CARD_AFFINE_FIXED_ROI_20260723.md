@@ -10,7 +10,7 @@ observed coarse registration result:
 ```text
 Matching R + Matching 5 + Matching expiry mark
 -> typed Point x3
--> Library-Noah AffineTransform
+-> OpenVisionLab Vision SDK AffineTransform
 -> fixed CardReference ROI
 -> existing Mean measurement
 ```

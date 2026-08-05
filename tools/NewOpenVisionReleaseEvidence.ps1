@@ -3,9 +3,18 @@ param(
     [string]$PlatformPrecheckSummaryPath = "",
     [string]$SampleCatalogSummaryPath = "",
     [string]$TagName = "",
-    [string]$LibraryNoahVersion = "",
+    [string]$VisionSdkVersion = "",
     [string]$WpgCustomVersion = "",
-    [string[]]$PreparedDllPaths = @("dll\System.Windows.Controls.WpfPropertyGrid.dll")
+    [string[]]$PreparedDllPaths = @(
+        "dll\OpenVisionLab-Vision-SDK\sdk-manifest.json",
+        "dll\OpenVisionLab-Vision-SDK\OpenVisionLab.Core.dll",
+        "dll\OpenVisionLab-Vision-SDK\OpenVisionLab.Vision2D.dll",
+        "dll\OpenVisionLab-Vision-SDK\OpenVisionLab.Vision2D.Blob.dll",
+        "dll\OpenVisionLab-Vision-SDK\OpenCvSharp.dll",
+        "dll\OpenVisionLab-Vision-SDK\OpenCvSharp.Blob.dll",
+        "dll\OpenCVSharp\OpenCvSharpExtern.dll",
+        "dll\System.Windows.Controls.WpfPropertyGrid.dll"
+    )
 )
 
 $ErrorActionPreference = "Stop"
@@ -171,7 +180,7 @@ $evidence = [pscustomobject][ordered]@{
         DirtyFiles = $dirtyLines
     }
     References = [pscustomobject][ordered]@{
-        LibraryNoah = $LibraryNoahVersion
+        OpenVisionLabVisionSdk = $VisionSdkVersion
         WpgCustom = $WpgCustomVersion
     }
     PlatformPrecheck = [pscustomobject][ordered]@{

@@ -305,7 +305,7 @@ Stable behavior:
   XML uses `AffineTransform`; `Affine` and `AffineMatrix` remain accepted aliases.
 - The source/destination point order is authoritative. Both point triangles must be
   non-collinear even when the configured minimum-area gate is zero.
-- The separately built Library-Noah `Lib.OpenCV.dll` owns matrix validation,
+- The separately built OpenVisionLab Vision SDK `OpenVisionLab.Vision2D.dll` owns matrix validation,
   `WarpAffine`, matrix/decomposition/triangle/valid-pixel metrics, stable errors,
   and destination-point/triangle/transformed-source-frame drawings. Do not copy a
   second Affine calculation into OpenVisionLab.
@@ -334,7 +334,7 @@ Stable behavior:
 - Detected-point Affine never silently falls back to the saved fixed source
   coordinates. Missing, duplicate, failed/NG, ambiguous, wrong-kind,
   cross-frame, non-finite, or out-of-image Point sources fail closed before the
-  Library-Noah transform executes.
+  Vision SDK transform executes.
 - The ordered source/destination correspondence remains operator-authored.
   OpenVisionLab does not reorder, infer, or automatically select points.
 - Runtime review retains the three resolved source coordinates through
@@ -904,7 +904,7 @@ Stable behavior:
   `UNIQUE_MATCH_MIN_SCORE_MARGIN=0.03`.
 - Enabled mode accepts only `NUM_MATCH=1`, `USE_MULTI_ROI=false`, and a finite
   normalized margin in `0..1`.
-- The Library-Noah matcher retains at least eight internal candidates even when
+- The OpenVisionLab Vision SDK matcher retains at least eight internal candidates even when
   the external result count is one.
 - A candidate below the existing `SCORE_MIN` is `MatchingNoResult`; a
   spatially distinct plausible alternative whose score margin is below the
@@ -916,7 +916,7 @@ Stable behavior:
   points; legacy-disabled rows keep it unavailable.
 - PropertyGrid edits and XML mapping do not auto-run Preview. Pipeline validation
   fails closed for invalid one-result/one-region combinations, and Pipeline
-  diagnostics retain the exact Library-Noah ambiguity reason.
+  diagnostics retain the exact Vision SDK ambiguity reason.
 
 Do not:
 
@@ -1181,7 +1181,7 @@ Stable behavior:
 - Opening the tab, selecting its rows, or reviewing its images must not execute
   Preview/Run, create or select a layer, change the active layer, or mutate
   input/output routes.
-- Library-Noah owns the runtime evidence: exact trained model points/model
+- OpenVisionLab Vision SDK owns the runtime evidence: exact trained model points/model
   center, search ROI, retained primary hypothesis, strongest spatially
   distinct alternative when one exists, candidate score/pose/bounds,
   model/pyramid/candidate/uniqueness metrics, and exact decision state/reason.

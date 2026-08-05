@@ -1,5 +1,5 @@
-using Lib.OpenCV.Blob;
-using Lib.OpenCV.Result;
+using OpenVisionLab.Vision2D.Blob;
+using OpenVisionLab.Vision2D.Result;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;

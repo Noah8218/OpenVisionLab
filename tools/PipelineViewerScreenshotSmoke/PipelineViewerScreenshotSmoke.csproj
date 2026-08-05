@@ -17,39 +17,31 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Lib.Common">
-      <HintPath>$(OpenVisionLabLibraryNoahDllRoot)Lib.Common.dll</HintPath>
+    <Reference Include="OpenVisionLab.Core">
+      <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenVisionLab.Core.dll</HintPath>
       <Private>true</Private>
     </Reference>
-    <Reference Include="Lib.OpenCV">
-      <HintPath>$(OpenVisionLabLibraryNoahDllRoot)Lib.OpenCV.dll</HintPath>
+    <Reference Include="OpenVisionLab.Vision2D">
+      <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenVisionLab.Vision2D.dll</HintPath>
       <Private>true</Private>
     </Reference>
-    <Reference Include="Lib.OpenCV.Blob">
-      <HintPath>$(OpenVisionLabLibraryNoahDllRoot)Lib.OpenCV.Blob.dll</HintPath>
+    <Reference Include="OpenVisionLab.Vision2D.Blob">
+      <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenVisionLab.Vision2D.Blob.dll</HintPath>
       <Private>true</Private>
     </Reference>
     <Reference Include="OpenCvSharp">
-      <HintPath>$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="OpenCvSharp.Extensions">
-      <HintPath>$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.Extensions.dll</HintPath>
+      <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenCvSharp.dll</HintPath>
       <Private>true</Private>
     </Reference>
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.dll">
+    <Content Include="$(OpenVisionLabVisionSdkDllRoot)OpenCvSharp.dll">
       <Link>OpenCvSharp.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.Blob.dll">
+    <Content Include="$(OpenVisionLabVisionSdkDllRoot)OpenCvSharp.Blob.dll">
       <Link>OpenCvSharp.Blob.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="$(OpenVisionLabLibraryNoahDllRoot)OpenCvSharp.Extensions.dll">
-      <Link>OpenCvSharp.Extensions.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="$(OpenVisionLabOpenCvSharpDllRoot)OpenCvSharpExtern.dll">

@@ -9,17 +9,17 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\OpenVisionLab\OpenVisionLab.csproj" />
-    <Reference Include="Lib.Common">
-      <HintPath>..\..\dll\Library-Noah\Lib.Common.dll</HintPath>
+    <Reference Include="OpenVisionLab.Core">
+      <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenVisionLab.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Lib.OpenCV">
-      <HintPath>..\..\dll\Library-Noah\Lib.OpenCV.dll</HintPath>
+    <Reference Include="OpenVisionLab.Vision2D">
+      <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenVisionLab.Vision2D.dll</HintPath>
     </Reference>
-    <Reference Include="Lib.OpenCV.Blob">
-      <HintPath>..\..\dll\Library-Noah\Lib.OpenCV.Blob.dll</HintPath>
+    <Reference Include="OpenVisionLab.Vision2D.Blob">
+      <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenVisionLab.Vision2D.Blob.dll</HintPath>
     </Reference>
     <Reference Include="OpenCvSharp">
-      <HintPath>..\..\dll\Library-Noah\OpenCvSharp.dll</HintPath>
+      <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenCvSharp.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

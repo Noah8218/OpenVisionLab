@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.IO;
 using System.Xml;
 using System.Security.Cryptography;
-using Lib.Common;
+using OpenVisionLab.Logging;
 
 namespace OpenVisionLab
 {
@@ -50,7 +50,7 @@ namespace OpenVisionLab
                                                     CAccount account = new CAccount();
                                                     account.ID = strSplit2[0];
                                                     account.PASSWORD = strSplit2[1];
-                                                    account.AUTHORIZATION = CUtil.ParseEnum<DEFINE.AUTHORIZATION>(strSplit2[2]);
+                                                    account.AUTHORIZATION = Enum.Parse<DEFINE.AUTHORIZATION>(strSplit2[2], true);
 
                                                     Accounts.Add(account.ID, account);
                                                 }
@@ -70,7 +70,7 @@ namespace OpenVisionLab
                     }
                     catch (Exception Desc)
                     {                        
-                        CLOG.ABNORMAL($"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
+                        OVLog.Write(LogLevel.Error, $"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
                         xmlReader.Close();
                     }
 
@@ -105,7 +105,7 @@ namespace OpenVisionLab
             }
             catch (Exception Desc)
             {
-                CLOG.ABNORMAL($"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
+                OVLog.Write(LogLevel.Error, $"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
                 return false;
             }
             return true;
@@ -140,7 +140,7 @@ namespace OpenVisionLab
             }
             catch (Exception Desc)
             {
-                CLOG.ABNORMAL($"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
+                OVLog.Write(LogLevel.Error, $"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
             }
             finally
             {

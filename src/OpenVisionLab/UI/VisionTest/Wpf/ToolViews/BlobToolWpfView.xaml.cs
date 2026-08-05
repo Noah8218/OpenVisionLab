@@ -1,4 +1,4 @@
-using Lib.OpenCV.Blob;
+using OpenVisionLab.Vision2D.Blob;
 using OpenVisionLab.Contracts;
 using System;
 using System.Collections.Generic;

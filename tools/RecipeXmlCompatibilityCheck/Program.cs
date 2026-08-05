@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Collections;
 using System.Globalization;
 using System.Reflection;
@@ -27,7 +27,7 @@ AssemblyLoadContext.Default.Resolving += (_, assemblyName) =>
 };
 
 Assembly appAssembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(appAssemblyPath);
-Assembly? libOpenCvAssembly = LoadOptionalAssembly(outputDirectory, "Lib.OpenCV.dll");
+Assembly? visionSdkAssembly = LoadOptionalAssembly(outputDirectory, "OpenVisionLab.Vision2D.dll");
 Type? openCvPropertyBaseType = appAssembly.GetType("OpenVisionLab.Vision._1._Tools.OpenCV.OpenCvPropertyBase");
 
 var checks = new[]
@@ -62,7 +62,7 @@ var checks = new[]
     new XmlRootCheck("OpenVisionLab.ImageViewProperty", "PROPERTY",
         """<?xml version="1.0" encoding="utf-8"?><PROPERTY><ROWS>10</ROWS><COLUMNS>10</COLUMNS></PROPERTY>""",
         new[] { new ExpectedValue("ROWS", "10"), new ExpectedValue("COLUMNS", "10") }),
-    new XmlRootCheck("Lib.OpenCV.Pipeline.VisionPipeline", "VisionPipeline",
+    new XmlRootCheck("OpenVisionLab.Vision2D.Pipeline.VisionPipeline", "VisionPipeline",
         """<?xml version="1.0" encoding="utf-8"?><VisionPipeline><Name>Inspection</Name><Steps><Step><Name>Threshold1</Name><ToolType>Threshold</ToolType><InputLayer>Main</InputLayer><OutputLayer>Binary</OutputLayer><Parameters><Parameter><Key>Threshold</Key><Value>127</Value></Parameter><Parameter><Key>ThresholdType</Key><Value>Binary</Value></Parameter></Parameters></Step></Steps></VisionPipeline>""",
         new[]
         {
@@ -76,7 +76,7 @@ var checks = new[]
 var failures = new List<string>();
 foreach (XmlRootCheck check in checks)
 {
-    Type? type = ResolveCheckType(check.TypeName, appAssembly, libOpenCvAssembly);
+    Type? type = ResolveCheckType(check.TypeName, appAssembly, visionSdkAssembly);
     if (type == null)
     {
         failures.Add($"{check.TypeName}: type not found");
@@ -123,13 +123,13 @@ foreach (XmlRootCheck check in checks)
     }
 }
 
-ValidatePipelineStepBuilder(appAssembly, libOpenCvAssembly, failures);
-ValidatePipelineNormalizer(appAssembly, libOpenCvAssembly, failures);
+ValidatePipelineStepBuilder(appAssembly, visionSdkAssembly, failures);
+ValidatePipelineNormalizer(appAssembly, visionSdkAssembly, failures);
 
 int recipeXmlFileCount = 0;
 if (Directory.Exists(recipeRootDirectory))
 {
-    recipeXmlFileCount = ValidateRecipeXmlFiles(recipeRootDirectory, checks, appAssembly, libOpenCvAssembly, failures);
+    recipeXmlFileCount = ValidateRecipeXmlFiles(recipeRootDirectory, checks, appAssembly, visionSdkAssembly, failures);
 }
 
 if (failures.Count > 0)
@@ -191,7 +191,7 @@ static Type? ResolveCheckType(string typeName, params Assembly?[] assemblies)
     return Type.GetType(typeName);
 }
 
-static void ValidatePipelineStepBuilder(Assembly appAssembly, Assembly? libOpenCvAssembly, List<string> failures)
+static void ValidatePipelineStepBuilder(Assembly appAssembly, Assembly? visionSdkAssembly, List<string> failures)
 {
     Type? builderType = appAssembly.GetType("OpenVisionLab.VisionPipelineStepBuilder");
     if (builderType == null)
@@ -203,7 +203,7 @@ static void ValidatePipelineStepBuilder(Assembly appAssembly, Assembly? libOpenC
     try
     {
         ValidateBlobPipelineStepBuilder(appAssembly, builderType, failures);
-        ValidateThresholdPipelineStepBuilder(libOpenCvAssembly, builderType, failures);
+        ValidateThresholdPipelineStepBuilder(visionSdkAssembly, builderType, failures);
     }
     catch (Exception exception)
     {
@@ -241,12 +241,12 @@ static void ValidateBlobPipelineStepBuilder(Assembly appAssembly, Type builderTy
     ValidateBuilderValue(step, "Parameters.THRESHOLD", "123", "Blob builder", failures);
 }
 
-static void ValidateThresholdPipelineStepBuilder(Assembly? libOpenCvAssembly, Type builderType, List<string> failures)
+static void ValidateThresholdPipelineStepBuilder(Assembly? visionSdkAssembly, Type builderType, List<string> failures)
 {
-    Type? thresholdType = libOpenCvAssembly?.GetType("Lib.OpenCV.Property.ThresholdToolProperty");
+    Type? thresholdType = visionSdkAssembly?.GetType("OpenVisionLab.Vision2D.Property.ThresholdToolProperty");
     if (thresholdType == null)
     {
-        failures.Add("Lib.OpenCV.Property.ThresholdToolProperty: type not found for pipeline step builder check");
+        failures.Add("OpenVisionLab.Vision2D.Property.ThresholdToolProperty: type not found for pipeline step builder check");
         return;
     }
 
@@ -265,10 +265,10 @@ static void ValidateThresholdPipelineStepBuilder(Assembly? libOpenCvAssembly, Ty
     ValidateBuilderValue(step, "Parameters.Threshold", "77", "Threshold builder", failures);
 }
 
-static void ValidatePipelineNormalizer(Assembly appAssembly, Assembly? libOpenCvAssembly, List<string> failures)
+static void ValidatePipelineNormalizer(Assembly appAssembly, Assembly? visionSdkAssembly, List<string> failures)
 {
-    Type? pipelineType = ResolveCheckType("Lib.OpenCV.Pipeline.VisionPipeline", appAssembly, libOpenCvAssembly);
-    Type? stepType = ResolveCheckType("Lib.OpenCV.Pipeline.VisionPipelineStep", appAssembly, libOpenCvAssembly);
+    Type? pipelineType = ResolveCheckType("OpenVisionLab.Vision2D.Pipeline.VisionPipeline", appAssembly, visionSdkAssembly);
+    Type? stepType = ResolveCheckType("OpenVisionLab.Vision2D.Pipeline.VisionPipelineStep", appAssembly, visionSdkAssembly);
     Type? normalizerType = appAssembly.GetType("OpenVisionLab.VisionPipelineNormalizer");
     MethodInfo? normalizeMethod = normalizerType?
         .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
@@ -437,7 +437,7 @@ static int ValidateRecipeXmlFiles(
     string recipeRootDirectory,
     IReadOnlyList<XmlRootCheck> checks,
     Assembly appAssembly,
-    Assembly? libOpenCvAssembly,
+    Assembly? visionSdkAssembly,
     List<string> failures)
 {
     int checkedFileCount = 0;
@@ -455,14 +455,14 @@ static int ValidateRecipeXmlFiles(
 
         checkedFileCount++;
         IReadOnlyList<XmlRootCheck> fileCandidates = SelectCandidatesForRecipeFile(xmlPath, candidates);
-        if (!CanDeserializeWithAnyCandidate(xmlPath, fileCandidates, appAssembly, libOpenCvAssembly, out string error))
+        if (!CanDeserializeWithAnyCandidate(xmlPath, fileCandidates, appAssembly, visionSdkAssembly, out string error))
         {
             failures.Add($"{xmlPath}: {error}");
             continue;
         }
 
         if (string.Equals(rootName, "VisionPipeline", StringComparison.Ordinal)
-            && !ValidateVisionPipelineSemantics(xmlPath, appAssembly, libOpenCvAssembly, out string validationError))
+            && !ValidateVisionPipelineSemantics(xmlPath, appAssembly, visionSdkAssembly, out string validationError))
         {
             failures.Add($"{xmlPath}: {validationError}");
         }
@@ -514,13 +514,13 @@ static bool CanDeserializeWithAnyCandidate(
     string xmlPath,
     IReadOnlyList<XmlRootCheck> candidates,
     Assembly appAssembly,
-    Assembly? libOpenCvAssembly,
+    Assembly? visionSdkAssembly,
     out string error)
 {
     List<string> errors = new List<string>();
     foreach (XmlRootCheck candidate in candidates)
     {
-        Type? type = ResolveCheckType(candidate.TypeName, appAssembly, libOpenCvAssembly);
+        Type? type = ResolveCheckType(candidate.TypeName, appAssembly, visionSdkAssembly);
         if (type == null)
         {
             errors.Add($"{candidate.TypeName}: type not found");
@@ -552,11 +552,11 @@ static bool CanDeserializeWithAnyCandidate(
 static bool ValidateVisionPipelineSemantics(
     string xmlPath,
     Assembly appAssembly,
-    Assembly? libOpenCvAssembly,
+    Assembly? visionSdkAssembly,
     out string error)
 {
     error = string.Empty;
-    Type? pipelineType = ResolveCheckType("Lib.OpenCV.Pipeline.VisionPipeline", appAssembly, libOpenCvAssembly);
+    Type? pipelineType = ResolveCheckType("OpenVisionLab.Vision2D.Pipeline.VisionPipeline", appAssembly, visionSdkAssembly);
     Type? validatorType = appAssembly.GetType("OpenVisionLab.VisionPipelineValidator");
     MethodInfo? validateMethod = validatorType?.GetMethod(
         "Validate",

@@ -1,5 +1,5 @@
-using Lib.OpenCV;
-using Lib.OpenCV.Tool;
+using OpenVisionLab.Vision2D;
+using OpenVisionLab.Vision2D.Tool;
 using OpenCvSharp;
 using System;
 using System.Drawing;
@@ -32,7 +32,7 @@ namespace OpenVisionLab
             if (result == null || !result.Success)
             {
                 view.ShowResultReview(SimplePreprocessResultExplanation.CreateMean(
-                    Array.Empty<Lib.OpenCV.Result.MeanResult>(),
+                    Array.Empty<OpenVisionLab.Vision2D.Result.MeanResult>(),
                     view.Parameters.GetEnum("MeanType", MeanType.Mean),
                     view.Parameters.GetInt("MeanMin", 100),
                     view.Parameters.GetInt("MeanMax", 240)));
@@ -52,7 +52,7 @@ namespace OpenVisionLab
                 visual = converted;
             }
 
-            foreach (Lib.OpenCV.Result.MeanResult meanResult in tool.results)
+            foreach (OpenVisionLab.Vision2D.Result.MeanResult meanResult in tool.results)
             {
                 Rectangle bounds = meanResult.Bounding;
                 if (bounds.Width <= 0 || bounds.Height <= 0)

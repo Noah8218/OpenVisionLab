@@ -1,4 +1,4 @@
-using Lib.OpenCV.Pipeline;
+using OpenVisionLab.Vision2D.Pipeline;
 using OpenCvSharp;
 using System;
 using System.Collections.Generic;
@@ -470,7 +470,7 @@ namespace OpenVisionLab
                     },
                     new QualifiedRecipeRuntimeFileSource
                     {
-                        Label = "Lib.OpenCV.dll",
+                        Label = "OpenVisionLab.Vision2D.dll",
                         SourcePath = typeof(VisionPipeline).Assembly.Location
                     },
                     new QualifiedRecipeRuntimeFileSource

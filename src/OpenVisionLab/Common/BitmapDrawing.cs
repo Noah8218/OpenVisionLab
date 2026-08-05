@@ -1,10 +1,10 @@
 using OpenVisionLab.Common;
-using Lib.Common;
-using Lib.Line;
-using Lib.OpenCV;
-using Lib.OpenCV.Blob;
-using Lib.OpenCV.Result;
-using Lib.OpenCV.Tool;
+using OpenVisionLab.Core;
+using OpenVisionLab.Core.Geometry2D;
+using OpenVisionLab.Vision2D;
+using OpenVisionLab.Vision2D.Blob;
+using OpenVisionLab.Vision2D.Result;
+using OpenVisionLab.Vision2D.Tool;
 using OpenCvSharp;
 using System;
 using System.Collections.Generic;
@@ -49,7 +49,7 @@ namespace OpenVisionLab
                 if (edgeTool.property.SHOW_CONTOUR) { DrawLines(g, edgeTool.resultList[i].edgeList); }
                 if (edgeTool.property.SHOW_EDGE) { DrawEdge(g, edgeTool.resultList[i].edgeList); }
                 if (edgeTool.property.SHOW_FITLINE) { DrawFitLine(g, edgeTool.resultList[i].FitLine); }
-                if (edgeTool.property.SHOW_VERTICAL_LINE) { DrawVerticalLines(g, Lib.Line.VerticalLineCalculator.GetVerticalLines(edgeTool.resultList[i].edgeList, edgeTool.size.Width, edgeTool.size.Height, edgeTool.property.POINT_RANGE, edgeTool.property.VER_PRJ_DIR)); }
+                if (edgeTool.property.SHOW_VERTICAL_LINE) { DrawVerticalLines(g, OpenVisionLab.Core.Geometry2D.VerticalLineCalculator.GetVerticalLines(edgeTool.resultList[i].edgeList, edgeTool.size.Width, edgeTool.size.Height, edgeTool.property.POINT_RANGE, edgeTool.property.VER_PRJ_DIR)); }
             }
         }
 

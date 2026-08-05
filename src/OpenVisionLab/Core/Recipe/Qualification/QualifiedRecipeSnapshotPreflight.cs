@@ -1,4 +1,4 @@
-using Lib.OpenCV.Pipeline;
+using OpenVisionLab.Vision2D.Pipeline;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -524,7 +524,7 @@ namespace OpenVisionLab
             foreach (string required in new[]
             {
                 "OpenVisionLab",
-                "Lib.OpenCV.dll",
+                "OpenVisionLab.Vision2D.dll",
                 "OpenCvSharp.dll"
             })
             {

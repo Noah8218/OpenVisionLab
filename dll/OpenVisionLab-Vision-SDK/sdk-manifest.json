@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "sdk": {
+    "name": "OpenVisionLab Vision SDK",
+    "version": "3.0.0",
+    "repository": "https://github.com/Noah8218/OpenVisionLab-Vision-SDK.git",
+    "commit": "ba0055b713e0bf434b9d0a7fd3f4b0e445c1f982",
+    "configuration": "Release"
+  },
+  "files": [
+    {
+      "path": "OpenVisionLab.Core.dll",
+      "length": 36352,
+      "sha256": "5A694F8EC3F703E1E0E6FED49D6171203F45BC38A9A5B7445067CD2436A906A8"
+    },
+    {
+      "path": "OpenVisionLab.Vision2D.dll",
+      "length": 342528,
+      "sha256": "D656DB832842521A19D24583F928880092A52AB33A4631C9508A17523B0D22EF"
+    },
+    {
+      "path": "OpenVisionLab.Vision2D.Blob.dll",
+      "length": 20992,
+      "sha256": "AC874C4802FB6C9AB0AE743252A2DA52646A9B5B54EFC0DE08A665D21CEA659D"
+    },
+    {
+      "path": "OpenCvSharp.dll",
+      "length": 862208,
+      "sha256": "A5C477750EB4321B608F4B9183949915D4A42FE0B5D80CFB8376F5A326FA5F24"
+    },
+    {
+      "path": "OpenCvSharp.Blob.dll",
+      "length": 40960,
+      "sha256": "E03FE75D2C9D88886384EDBC445C63DA051EE3450286C8D0982FCD9F4BC24D54"
+    }
+  ],
+  "sharedNativeRuntime": {
+    "path": "../OpenCVSharp/OpenCvSharpExtern.dll",
+    "length": 53231104,
+    "sha256": "C9E02A255DD83C9B06CA56EC6F435F15B53A863435238FCC5D8B9082B035F249"
+  }
+}

@@ -1,8 +1,8 @@
 # OpenVisionLab Release and Version Policy
 
-Updated: 2026-07-30
+Updated: 2026-08-05
 
-이 문서는 OpenVisionLab, vendored Library-Noah DLL, WPG PropertyGrid DLL, ImageCompare standalone 산출물을 어떤 기준으로 릴리즈할지 정의합니다.
+이 문서는 OpenVisionLab, vendored OpenVisionLab Vision SDK DLL, WPG PropertyGrid DLL, ImageCompare standalone 산출물을 어떤 기준으로 릴리즈할지 정의합니다.
 
 ## Repository Roles
 
@@ -10,14 +10,14 @@ Updated: 2026-07-30
 | --- | --- | --- |
 | `OpenVisionLab` | WPF UI, Pipeline, Recipe Runner, Tool View, Tutorial, Sample Catalog | application tag + build artifact |
 | `dll\OpenCVSharp` | shared OpenCVSharp native runtime, including OpenCvSharpExtern.dll | vendored native runtime |
-| `dll\Library-Noah` | Lib.Common/Lib.OpenCV/Lib.OpenCV.Blob 및 OpenCvSharp 런타임 | vendored DLL set |
+| `dll\OpenVisionLab-Vision-SDK` | OpenVisionLab.Core/OpenVisionLab.Vision2D/OpenVisionLab.Vision2D.Blob 및 OpenCvSharp 관리 DLL | manifest-verified vendored SDK 3.0 set |
 | `dll\System.Windows.Controls.WpfPropertyGrid.dll` | WPF PropertyGrid runtime | prepared DLL |
 | `OpenVisionLab.ImageCompare` | Image Compare standalone tool | standalone publish artifact |
 
 ## Version Order
 
-1. Library-Noah 변경이 필요한 경우 별도 저장소에서 먼저 확정한다.
-2. 확정된 DLL을 `dll\Library-Noah\`에 복사한다.
+1. OpenVisionLab Vision SDK 변경이 필요한 경우 SDK 저장소에서 Release 빌드, 전체 스모크와 패키지 소비자 스모크를 먼저 통과시킨다.
+2. 확정된 DLL을 `dll\OpenVisionLab-Vision-SDK\`에 복사하고 `sdk-manifest.json`의 source commit, 파일 길이와 SHA-256을 갱신한다.
 3. WPG-CUSTOM 변경이 필요한 경우 별도 저장소에서 DLL/XML을 생성해 `dll\`에 복사한다.
 4. OpenVisionLab에서 빌드, readiness gate, platform precheck를 실행한다.
 5. 필요한 경우 ImageCompare standalone을 publish한다.
@@ -28,7 +28,7 @@ Updated: 2026-07-30
 
 - OpenVisionLab commit/tag.
 - `dll\OpenCVSharp\OpenCvSharpExtern.dll` update status and source.
-- `dll\Library-Noah` DLL 갱신 여부와 출처.
+- `dll\OpenVisionLab-Vision-SDK` DLL 갱신 여부, SDK 버전과 source commit.
 - WPG PropertyGrid DLL 갱신 여부와 출처.
 - `tools\TestExternalReferences.ps1` 결과.
 - `platform_precheck_summary.json` 경로 또는 첨부.
@@ -71,7 +71,7 @@ Updated: 2026-07-30
 - `dist\` is a generated publish-output root and should not be treated as source.
 - ImageCompare standalone packages are regenerated with `scripts\Publish-ImageCompare.ps1`.
 - Normal clone/build validation must use committed source files and vendored DLLs under `dll\`, not tracked publish outputs.
-- `dll\Library-Noah\OpenCvSharpExtern.dll` must stay removed. The native OpenCVSharp runtime is shared from `dll\OpenCVSharp\OpenCvSharpExtern.dll`.
+- `dll\Library-Noah` must stay removed. The native OpenCVSharp runtime is shared from `dll\OpenCVSharp\OpenCvSharpExtern.dll` and its hash is recorded by `dll\OpenVisionLab-Vision-SDK\sdk-manifest.json`.
 
 ## Clean Runtime Output Contract (2026-07-19)
 
@@ -172,6 +172,6 @@ and commercial GA work require a new explicit user direction.
 
 ## Current Policy Decision
 
-- OpenVisionLab은 `Library-Noah`와 `WPG-CUSTOM` 소스 프로젝트를 직접 참조하지 않는다.
+- OpenVisionLab은 `OpenVisionLab-Vision-SDK`와 `WPG-CUSTOM` 소스 프로젝트를 직접 참조하지 않는다.
 - 다른 PC 검증과 GitHub clone/build는 저장소 내부 DLL만 사용한다.
 - 별도 소스 저장소는 DLL을 갱신해야 할 때만 필요하다.

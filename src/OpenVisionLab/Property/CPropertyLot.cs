@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -9,7 +9,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
-using Lib.Common;
+using OpenVisionLab.Logging;
 using OpenCvSharp;
 
 namespace OpenVisionLab
@@ -89,14 +89,14 @@ namespace OpenVisionLab
             {
                 this.END_TIME = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss");
 
-                CLOG.LOT("");
-                CLOG.LOT("==================== [LOT END] ====================");
-                CLOG.LOT($"WORKER : {this.WORKER}");
-                CLOG.LOT($"LOT_NO : {this.LOT_NO}");                
-                CLOG.LOT($"OPEN DATETIME : {this.OPEN_TIME}");
-                CLOG.LOT($"END DATETIME : {this.END_TIME}");
-                CLOG.LOT("==================== [--------] ====================");
-                CLOG.LOT("");
+                OVLog.Write(LogCategory.Main, LogLevel.Info, "");
+                OVLog.Write(LogCategory.Main, LogLevel.Info, "==================== [LOT END] ====================");
+                OVLog.Write(LogCategory.Main, LogLevel.Info, $"WORKER : {this.WORKER}");
+                OVLog.Write(LogCategory.Main, LogLevel.Info, $"LOT_NO : {this.LOT_NO}");
+                OVLog.Write(LogCategory.Main, LogLevel.Info, $"OPEN DATETIME : {this.OPEN_TIME}");
+                OVLog.Write(LogCategory.Main, LogLevel.Info, $"END DATETIME : {this.END_TIME}");
+                OVLog.Write(LogCategory.Main, LogLevel.Info, "==================== [--------] ====================");
+                OVLog.Write(LogCategory.Main, LogLevel.Info, "");
 
                 IS_LOT_END = true;
                 IS_COMPLETE_LOT_OPEN = false;
@@ -108,7 +108,7 @@ namespace OpenVisionLab
             }
             catch (Exception Desc)
             {
-                CLOG.ABNORMAL( $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
+                OVLog.Write(LogLevel.Error, $"[FAILED] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name}   Execption ==> {Desc.Message}");
             }
         }
 
@@ -143,7 +143,7 @@ namespace OpenVisionLab
                                     case "THICKNESS_DELAY_MINIT": if (xmlReader.Read()) THICKNESS_DELAY_MINIT = double.Parse(xmlReader.Value); break;
                                     case "BASEMETAL_T_MM": if (!xmlReader.Read()) return false; BASEMETAL_T_MM = double.Parse(xmlReader.Value); break;
                                     case "TAPE_T_MM": if (!xmlReader.Read()) return false; TAPE_T_MM = double.Parse(xmlReader.Value); break;
-                                    case "TAPE_TYPE": if (!xmlReader.Read()) return false; TAPE_TYPE = CUtil.ParseEnum<DEFINE.TapeType>(xmlReader.Value); break;
+                                    case "TAPE_TYPE": if (!xmlReader.Read()) return false; TAPE_TYPE = Enum.Parse<DEFINE.TapeType>(xmlReader.Value, true); break;
                                 }
                             }
                             else
@@ -157,7 +157,7 @@ namespace OpenVisionLab
                     }
                     catch (Exception Desc)
                     {
-                        CLOG.ABNORMAL($"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
+                        OVLog.Write(LogLevel.Error, $"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
                         xmlReader.Close();
                     }
 
@@ -171,7 +171,7 @@ namespace OpenVisionLab
             }
             catch (Exception Desc)
             {
-                CLOG.ABNORMAL($"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
+                OVLog.Write(LogLevel.Error, $"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
                 return false;
             }
             return true;
@@ -207,7 +207,7 @@ namespace OpenVisionLab
             }
             catch (Exception Desc)
             {
-                CLOG.ABNORMAL($"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
+                OVLog.Write(LogLevel.Error, $"[ERROR] {MethodBase.GetCurrentMethod().ReflectedType.Name}==>{MethodBase.GetCurrentMethod().Name} Ex ==> {Desc.Message}");
             }
             finally
             {

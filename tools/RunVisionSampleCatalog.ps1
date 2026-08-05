@@ -3,7 +3,6 @@ param(
     [string]$Platform = "Any CPU",
     [string]$CatalogPath = "docs\samples\OpenVisionLab.SampleCatalog.csv",
     [string]$OutputDir = "C:\Users\Public\Documents\ESTsoft\CreatorTemp\openvisionlab_sample_catalog",
-    [string]$LibraryNoahSourceRoot = "",
     [switch]$FailOnExplore,
     [switch]$SkipRestore,
     [switch]$SkipRunnerBuild

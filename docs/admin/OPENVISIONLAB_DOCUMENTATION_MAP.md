@@ -45,6 +45,7 @@ If documents conflict, do not smooth over the conflict. Follow the higher-ranked
 
 | Document | Use it for | Freshness note |
 | --- | --- | --- |
+| `reports/OPENVISIONLAB_VISION_SDK_3_MIGRATION_20260805.md` | P289 SDK 3.0 source identity, namespace/DLL migration, app-owned converter and Affine metadata boundary, standalone/app/package/runtime verification, and promotion boundary. | Current authority for the OpenVisionLab Vision SDK dependency; historical Library-Noah reports remain provenance only. |
 | `reports/OPENVISIONLAB_DOCUMENT_CONTROL_PLANE_CLEANUP_20260805.md` | P285 global/project AGENTS responsibility split, compact live handoff, archived legacy documents, R3 evidence routing, strict UTF-8 and HTML redirect validation. | Current authority for document control-plane ownership; it changes no product runtime, UI, XML, sample, or release behavior. |
 | `README.md` and `LLM_DOCUMENT_INDEX.json` | Fast human/LLM entrypoint and task-to-canonical-document routing. | Current discovery authority; intentionally smaller than this full registry. |
 | `manual/README.md` and `manual/manual-manifest*.json` | Korean/English packaged Guide source ownership, chapter order, UI-visual mapping, build command, and localization contract. | Current manual-authoring entrypoint; preserve 26-section/17-Tool structural parity and same-language current UI evidence. |

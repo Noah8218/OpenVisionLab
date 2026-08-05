@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Reflection;
 using System.Xml.Serialization;
-using Lib.Common;
+using OpenVisionLab.Core;
 
 namespace OpenVisionLab
 {

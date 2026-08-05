@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using System.Windows.Controls.WpfPropertyGrid;
-using Lib.OpenCV.Property;
+using OpenVisionLab.Vision2D.Property;
 using OpenCvSharp;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using static OpenVisionLab.PropertyGridEditorFactory;

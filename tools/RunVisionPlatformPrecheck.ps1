@@ -3,7 +3,6 @@ param(
     [string]$Platform = "Any CPU",
     [string]$OutputDir = "C:\Users\Public\Documents\ESTsoft\CreatorTemp\openvisionlab_platform_precheck",
     [string]$UiTargets = "",
-    [string]$LibraryNoahSourceRoot = "",
     [string]$WpgCustomSourceRoot = "",
     [bool]$WpgCustomBuildEnabled = $false,
     [switch]$SkipUi,
