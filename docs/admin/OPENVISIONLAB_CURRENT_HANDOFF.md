@@ -62,7 +62,8 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   restore, Debug/Release zero-warning builds, readiness, external hashes,
   public assets, fixture, Affine, edge polarity, XML, snapshot, focused UI, and
   clean runtime EXE checks passed.
-- Dev is not yet staged, committed, pushed, or promoted to the original repo.
+- P289 was committed and pushed as Dev `9068a9bd9e58` and exact-ported to
+  original `c34adad70efd`; the publication record followed in both repositories.
 - Evidence:
   `docs/reports/OPENVISIONLAB_VISION_SDK_3_MIGRATION_20260805.md`.
 

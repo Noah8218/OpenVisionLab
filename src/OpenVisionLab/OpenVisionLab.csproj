@@ -2,6 +2,9 @@
   <PropertyGroup>
     <TargetFramework>net8.0-windows7.0</TargetFramework>
     <OutputType>WinExe</OutputType>
+    <Version>2.1.0</Version>
+    <AssemblyVersion>2.1.0.0</AssemblyVersion>
+    <FileVersion>2.1.0.0</FileVersion>
     <Deterministic>true</Deterministic>
     <UseWindowsForms>false</UseWindowsForms>
     <UseWPF>true</UseWPF>
