@@ -25,6 +25,7 @@ namespace OpenVisionLab
         private const string XmlName = "SYSTEM";
         private bool m_IsInitialized = false;
         private string m_strLastRecipe = "Default";
+        private string m_strLastWorkspaceImagePath = string.Empty;
         private string m_strNotice = "-";
         private RunMode m_eMode = RunMode.READY;
         private MenuKind m_SelectedMenu = MenuKind.MAIN;
@@ -64,6 +65,12 @@ namespace OpenVisionLab
         }
 
         public string LastRecipeUpdateTime { get; set; }
+
+        public string LastWorkspaceImagePath
+        {
+            get => m_strLastWorkspaceImagePath;
+            set => m_strLastWorkspaceImagePath = value ?? string.Empty;
+        }
 
         [Category("LogConfig")]
         [DisplayName("LogConfig")]
@@ -138,6 +145,7 @@ namespace OpenVisionLab
             SystemStateConfig loaded = SerializeHelper.LoadOrCreateXmlFile(strPath, CreateConfig(), out bool isLoaded);
             LastRecipe = loaded.LastRecipe;
             LastRecipeUpdateTime = loaded.LastRecipeUpdateTime;
+            LastWorkspaceImagePath = loaded.LastWorkspaceImagePath;
             LogConfig = loaded.LogConfig?.Normalize() ?? new LogConfig().Normalize();
             return isLoaded;
         }
@@ -154,6 +162,7 @@ namespace OpenVisionLab
             {
                 LastRecipe = LastRecipe,
                 LastRecipeUpdateTime = LastRecipeUpdateTime,
+                LastWorkspaceImagePath = LastWorkspaceImagePath,
                 LogConfig = LogConfig?.Normalize() ?? new LogConfig().Normalize()
             };
         }
@@ -236,6 +245,7 @@ namespace OpenVisionLab
         #region Properties
         public string LastRecipe { get; set; } = "Default";
         public string LastRecipeUpdateTime { get; set; } = "";
+        public string LastWorkspaceImagePath { get; set; } = "";
         public LogConfig LogConfig { get; set; } = new LogConfig();
         #endregion
     }

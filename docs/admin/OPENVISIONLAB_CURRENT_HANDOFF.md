@@ -184,6 +184,7 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 | Work | Current result | Evidence |
 | --- | --- | --- |
+| 2026-08-06 Tool/panel and workspace restore regression | all 17 sidebar Tool/Pipeline entries open; floating Tool windows follow the owner monitor; Matching -> Main image reload -> close/reopen -> Line switch leaves no stale Preview or automatic run; last recipe and last image directory restore with safe fallback | `D:\OpenVisionLab-TestData\OpenVisionLab\tool_audit_20260806` |
 | P283 restored-workstation recovery | SDK/build/readiness/references/XML/public samples/current EXE and Guide checks passed | D-drive recovery report referenced by the P284 report |
 | P282 localized user manual | Korean/English language-at-click Guide, schema-2 manifest and exact hashes passed | `docs/reports/OPENVISIONLAB_LOCALIZED_USER_MANUAL_20260801.md` |
 | P278 local data externalization | approved generated/test/cache paths are physically D-backed; tracked source remains portable | `docs/reports/OPENVISIONLAB_LOCAL_DATA_EXTERNALIZATION_20260731.md` |

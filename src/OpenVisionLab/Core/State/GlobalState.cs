@@ -31,6 +31,18 @@ namespace OpenVisionLab
             Recipe.SetRuntime(() => Data, data => Data = data, () => VisionTools);
         }
 
+        public void RestoreLastRecipe()
+        {
+            string requested = System.LastRecipe;
+            string restored = RecipeWorkspaceService.ResolveExistingRecipeName(requested);
+            Recipe.Name = restored;
+            if (!string.Equals(requested, restored, StringComparison.Ordinal))
+            {
+                System.LastRecipe = restored;
+                System.SaveConfig();
+            }
+        }
+
         public bool Close()
         {
             System.SaveConfig();

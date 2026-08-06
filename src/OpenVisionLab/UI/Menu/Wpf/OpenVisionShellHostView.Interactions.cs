@@ -786,6 +786,42 @@ namespace OpenVisionLab
             return string.IsNullOrWhiteSpace(recipeName) ? "Default" : recipeName;
         }
 
+        private void SwitchRuntimeRecipe(string recipeName)
+        {
+            GlobalState global = runtimeContext.Global;
+            global.Recipe.Name = recipeName;
+            string selected = global.Recipe.Name;
+            if (string.IsNullOrWhiteSpace(selected)
+                || string.Equals(global.System.LastRecipe, selected, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            global.System.LastRecipe = selected;
+            global.System.SaveConfig();
+        }
+
+        private void RememberWorkspaceImagePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            {
+                return;
+            }
+
+            string normalized = Path.GetFullPath(path);
+            SystemState system = runtimeContext.Global.System;
+            if (string.Equals(
+                    system.LastWorkspaceImagePath,
+                    normalized,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            system.LastWorkspaceImagePath = normalized;
+            system.SaveConfig();
+        }
+
         private void RefreshRecipeContext()
         {
             recipeContextStore.Refresh();

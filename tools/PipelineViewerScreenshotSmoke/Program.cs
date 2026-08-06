@@ -316,6 +316,8 @@ internal static class Program
         ["wpf_shell_host_feature_matching_tool"] = CaptureShellHostFeatureMatchingTool,
         ["wpf_shell_host_pending_tool"] = CaptureShellHostPendingTool,
         ["wpf_tool_window_reopen_same_tool"] = CaptureToolWindowReopenSameTool,
+        ["wpf_matching_workspace_reload_close_cycle"] = CaptureMatchingWorkspaceReloadCloseCycle,
+        ["persisted_workspace_preferences_contract"] = CapturePersistedWorkspacePreferencesContract,
         ["wpf_tool_window_dock_float_cycle"] = CaptureToolWindowDockFloatCycle,
         ["wpf_tool_open_perf"] = CaptureToolOpenPerf,
         ["wpf_tool_open_fast_click_perf"] = CaptureToolOpenFastClickPerf,
@@ -26353,6 +26355,161 @@ internal static class Program
             AssertVisionToolComboTemplate(inputLayerCombo, "Reopened matching input layer combo");
             AssertComboBoxPopupLayout(inputLayerCombo, "Reopened matching input layer combo");
         });
+    }
+
+    private static CaptureResult CaptureMatchingWorkspaceReloadCloseCycle(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfMatchingWorkspaceReloadCloseCycle");
+        using Bitmap firstImage = CreateMatchingSmokeBitmap();
+        using Bitmap secondImage = CreateMatchingSmokeBitmap();
+        secondImage.SetPixel(0, 0, System.Drawing.Color.White);
+        string templatePath = CreateMatchingTemplateFile(firstImage);
+        try
+        {
+            shellHost.SetMainLayerImageForTest(firstImage);
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                shellHost.SelectToolForTest(VISION_MENU.Matching);
+                Pump(16);
+                shellHost.SetActiveMatchingTemplatePathForTest(templatePath);
+                shellHost.RunActiveNativePreviewForTest();
+                Pump(30);
+                if (!shellHost.IsActiveWpfToolWindowVisibleForTest
+                    || !shellHost.IsNativeDocumentActive
+                    || !shellHost.HasNativePreviewResult)
+                {
+                    throw new InvalidOperationException(
+                        "Matching did not reach an explicit preview result before the workspace reload cycle.");
+                }
+
+                int previewRuns = shellHost.NativePreviewRunCount;
+                shellHost.SetMainLayerImageForTest(secondImage);
+                Pump(24);
+                if (!shellHost.IsActiveWpfToolWindowVisibleForTest
+                    || !shellHost.IsNativeDocumentActive
+                    || shellHost.HasNativePreviewResult
+                    || shellHost.NativePreviewRunCount != previewRuns
+                    || !string.Equals(shellHost.ActiveHostLayerTitle, "Main", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Loading a new Main image while Matching was open left stale preview or window state. "
+                        + $"Visible={shellHost.IsActiveWpfToolWindowVisibleForTest}, Active={shellHost.IsNativeDocumentActive}, "
+                        + $"Preview={shellHost.HasNativePreviewResult}, Runs={previewRuns}->{shellHost.NativePreviewRunCount}, "
+                        + $"ActiveLayer={shellHost.ActiveHostLayerTitle}");
+                }
+
+                if (!shellHost.CloseActiveWpfToolWindowForTest())
+                {
+                    throw new InvalidOperationException("Matching window did not close after the workspace image changed.");
+                }
+
+                Pump(16);
+                if (shellHost.IsActiveWpfToolWindowVisibleForTest || shellHost.IsNativeDocumentActive)
+                {
+                    throw new InvalidOperationException("Closing Matching left a stale active Tool document.");
+                }
+
+                shellHost.SelectToolForTest(VISION_MENU.Matching);
+                Pump(20);
+                if (!shellHost.IsActiveWpfToolWindowVisibleForTest
+                    || !shellHost.IsNativeDocumentActive
+                    || shellHost.HasNativePreviewResult
+                    || !shellHost.ActiveNativeDocumentTypeName.Contains("MatchingToolWpfView", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Matching did not reopen cleanly after image reload and close.");
+                }
+
+                shellHost.SelectToolForTest(VISION_MENU.Line);
+                Pump(20);
+                if (!shellHost.IsActiveWpfToolWindowVisibleForTest
+                    || !shellHost.IsNativeDocumentActive
+                    || !shellHost.ActiveNativeDocumentTypeName.Contains("LineToolWpfView", StringComparison.Ordinal)
+                    || shellHost.HasNativePreviewResult)
+                {
+                    throw new InvalidOperationException(
+                        "Switching from reopened Matching to Line left stale panel state or ran Preview unexpectedly.");
+                }
+            });
+        }
+        finally
+        {
+            TryDeleteFile(templatePath);
+        }
+    }
+
+    private static CaptureResult CapturePersistedWorkspacePreferencesContract(string outputPath)
+    {
+        string recipeName = "RememberedRecipe";
+        RecipeWorkspaceService.EnsureVisionWorkspace(recipeName);
+        string imagePath = Path.Combine(AppPathService.DataRootDirectory, "remembered-image.png");
+        using (Bitmap image = new Bitmap(16, 12))
+        {
+            image.SetPixel(0, 0, System.Drawing.Color.White);
+            image.Save(imagePath, ImageFormat.Png);
+        }
+
+        GlobalState saved = new GlobalState();
+        saved.System.LastRecipe = recipeName;
+        saved.System.LastWorkspaceImagePath = imagePath;
+        if (!saved.System.SaveConfig())
+        {
+            throw new InvalidOperationException("Could not save remembered workspace preferences.");
+        }
+
+        GlobalState restored = new GlobalState();
+        restored.RestoreLastRecipe();
+        string restoredImageDirectory =
+            OpenVisionShellHostCommandController.ResolveExistingImageDirectory(
+                restored.System.LastWorkspaceImagePath);
+        if (!string.Equals(restored.Recipe.Name, recipeName, StringComparison.Ordinal)
+            || !string.Equals(restored.System.LastWorkspaceImagePath, imagePath, StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(
+                restoredImageDirectory,
+                Path.GetDirectoryName(imagePath),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "Saved recipe or workspace image path did not survive a config reload.");
+        }
+
+        if (!RecipeWorkspaceService.DeleteVisionWorkspace(recipeName))
+        {
+            throw new InvalidOperationException("Could not remove the remembered recipe for stale-state validation.");
+        }
+
+        GlobalState staleRecipe = new GlobalState();
+        staleRecipe.RestoreLastRecipe();
+        if (!string.Equals(staleRecipe.Recipe.Name, "Default", StringComparison.Ordinal)
+            || !string.Equals(staleRecipe.System.LastRecipe, "Default", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("A deleted remembered recipe did not fall back to Default.");
+        }
+
+        File.Delete(imagePath);
+        if (OpenVisionShellHostCommandController.ResolveExistingImageDirectory(imagePath) != null)
+        {
+            throw new InvalidOperationException("A deleted remembered image path did not fall back safely.");
+        }
+
+        Border report = new Border
+        {
+            Background = Brushes.White,
+            Padding = new Thickness(24),
+            Child = new TextBlock
+            {
+                Text = string.Join(
+                    Environment.NewLine,
+                    "Persisted workspace preferences: OK",
+                    "Recipe reload: RememberedRecipe",
+                    "Deleted recipe fallback: Default",
+                    "Image directory reload: " + restoredImageDirectory,
+                    "Deleted image fallback: default resolver"),
+                FontSize = 16,
+                Foreground = Brushes.DarkSlateGray
+            }
+        };
+        return CaptureElement(report, outputPath, 760, 300);
     }
 
     private static CaptureResult CaptureToolWindowDockFloatCycle(string outputPath)

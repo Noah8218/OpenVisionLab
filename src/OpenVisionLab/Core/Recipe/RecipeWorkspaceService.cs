@@ -56,6 +56,21 @@ namespace OpenVisionLab
             return names.Length == 0 ? new[] { "Default" } : names;
         }
 
+        public static string ResolveExistingRecipeName(string recipeName)
+        {
+            string requested = recipeName?.Trim();
+            if (!IsValidRecipeName(requested))
+            {
+                return "Default";
+            }
+
+            return GetRecipeNames().FirstOrDefault(name => string.Equals(
+                       name,
+                       requested,
+                       StringComparison.OrdinalIgnoreCase))
+                ?? "Default";
+        }
+
         public static bool IsValidRecipeName(string recipeName)
         {
             string normalized = recipeName?.Trim();

@@ -399,7 +399,9 @@ namespace OpenVisionLab
                     mainActionPresenter.ShowImageReady(txtHostWorkspaceLayerTitle?.Text, txtHostWorkspaceLayerMeta?.Text);
                     chromeController.SetWorkspaceImageReadyStatus();
                     WorkspaceCommands?.RefreshCanExecute();
-                });
+                },
+                initialWorkspaceImagePath: runtimeContext.Global.System.LastWorkspaceImagePath,
+                rememberWorkspaceImagePath: RememberWorkspaceImagePath);
             WorkspaceCommands = new OpenVisionShellHostWorkspaceCommandSurface(
                 commandController,
                 workspacePreviewController,
@@ -413,7 +415,7 @@ namespace OpenVisionLab
                     layerViewerWindows);
             RecipeCommands = new OpenVisionShellHostRecipeCommandSurface(
                 ResolveRuntimeRecipeName,
-                recipeName => runtimeContext.Global.Recipe.Name = recipeName,
+                SwitchRuntimeRecipe,
                 () =>
                 {
                     RefreshRecipeContext();

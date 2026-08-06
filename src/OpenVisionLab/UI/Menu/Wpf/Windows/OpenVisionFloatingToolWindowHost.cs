@@ -1,5 +1,8 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
 
 namespace OpenVisionLab
 {
@@ -24,6 +27,7 @@ namespace OpenVisionLab
 
     internal sealed class OpenVisionFloatingToolWindowHost
     {
+        private const uint MonitorDefaultToNearest = 0x00000002;
         private const double LargeToolSavedBoundsWidthThreshold = 1100D;
         private const double LargeToolSavedBoundsHeightThreshold = 820D;
         private readonly OpenVisionFloatingToolWindowPlacementStore placementStore = new OpenVisionFloatingToolWindowPlacementStore();
@@ -143,7 +147,7 @@ namespace OpenVisionLab
             }
 
             window.WindowStartupLocation = WindowStartupLocation.Manual;
-            Rect workArea = ResolveWorkArea();
+            Rect workArea = ResolveWorkArea(owner);
             if (placementStore != null && placementStore.TryLoad(out Rect savedBounds))
             {
                 ApplyBounds(
@@ -334,9 +338,63 @@ namespace OpenVisionLab
             placementStore.Save(window);
         }
 
-        private static Rect ResolveWorkArea()
+        private static Rect ResolveWorkArea(Window owner)
         {
+            if (owner != null)
+            {
+                IntPtr handle = new WindowInteropHelper(owner).Handle;
+                IntPtr monitor = handle == IntPtr.Zero
+                    ? IntPtr.Zero
+                    : MonitorFromWindow(handle, MonitorDefaultToNearest);
+                if (monitor != IntPtr.Zero)
+                {
+                    MonitorInfo monitorInfo = new MonitorInfo
+                    {
+                        Size = Marshal.SizeOf<MonitorInfo>()
+                    };
+                    if (GetMonitorInfo(monitor, ref monitorInfo))
+                    {
+                        HwndSource source = HwndSource.FromHwnd(handle);
+                        Matrix fromDevice = source?.CompositionTarget?.TransformFromDevice ?? Matrix.Identity;
+                        Point topLeft = fromDevice.Transform(
+                            new Point(monitorInfo.WorkArea.Left, monitorInfo.WorkArea.Top));
+                        Point bottomRight = fromDevice.Transform(
+                            new Point(monitorInfo.WorkArea.Right, monitorInfo.WorkArea.Bottom));
+                        Rect ownerMonitorWorkArea = new Rect(topLeft, bottomRight);
+                        if (ownerMonitorWorkArea.Width > 0D && ownerMonitorWorkArea.Height > 0D)
+                        {
+                            return ownerMonitorWorkArea;
+                        }
+                    }
+                }
+            }
+
             return SystemParameters.WorkArea;
+        }
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo monitorInfo);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct NativeRect
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        private struct MonitorInfo
+        {
+            public int Size;
+            public NativeRect MonitorArea;
+            public NativeRect WorkArea;
+            public uint Flags;
         }
 
         private static Rect CreateRightSideBounds(OpenVisionFloatingToolWindow window, Window owner, Rect workArea)

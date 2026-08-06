@@ -27,6 +27,7 @@ namespace OpenVisionLab
         private readonly Func<string, string, bool> prepareSampleWorkspaceContext;
         private readonly Action<string, string> sampleWorkspaceLoaded;
         private readonly Action manualWorkspaceImageLoaded;
+        private readonly Action<string> rememberWorkspaceImagePath;
         private string lastWorkspaceImageDirectory;
         private OpenVisionLearnWindow learnWindow;
 
@@ -40,7 +41,9 @@ namespace OpenVisionLab
             Action<VISION_MENU> selectToolMenu,
             Func<string, string, bool> prepareSampleWorkspaceContext = null,
             Action<string, string> sampleWorkspaceLoaded = null,
-            Action manualWorkspaceImageLoaded = null)
+            Action manualWorkspaceImageLoaded = null,
+            string initialWorkspaceImagePath = null,
+            Action<string> rememberWorkspaceImagePath = null)
         {
             this.ownerProvider = ownerProvider ?? throw new ArgumentNullException(nameof(ownerProvider));
             this.loadWorkspaceImage = loadWorkspaceImage ?? throw new ArgumentNullException(nameof(loadWorkspaceImage));
@@ -52,6 +55,8 @@ namespace OpenVisionLab
             this.prepareSampleWorkspaceContext = prepareSampleWorkspaceContext;
             this.sampleWorkspaceLoaded = sampleWorkspaceLoaded;
             this.manualWorkspaceImageLoaded = manualWorkspaceImageLoaded;
+            this.rememberWorkspaceImagePath = rememberWorkspaceImagePath;
+            lastWorkspaceImageDirectory = ResolveExistingImageDirectory(initialWorkspaceImagePath);
         }
 
         public void PromptAndLoadWorkspaceImage()
@@ -103,10 +108,22 @@ namespace OpenVisionLab
 
         public void RecordWorkspaceImagePath(string path)
         {
-            string directory = string.IsNullOrWhiteSpace(path) ? null : Path.GetDirectoryName(path);
-            if (!string.IsNullOrWhiteSpace(directory))
+            try
             {
-                lastWorkspaceImageDirectory = directory;
+                string normalizedPath = string.IsNullOrWhiteSpace(path)
+                    ? null
+                    : Path.GetFullPath(path);
+                string directory = string.IsNullOrWhiteSpace(normalizedPath)
+                    ? null
+                    : Path.GetDirectoryName(normalizedPath);
+                if (!string.IsNullOrWhiteSpace(directory))
+                {
+                    lastWorkspaceImageDirectory = directory;
+                    rememberWorkspaceImagePath?.Invoke(normalizedPath);
+                }
+            }
+            catch (Exception)
+            {
             }
         }
 
@@ -292,6 +309,29 @@ namespace OpenVisionLab
         private string ResolveWorkspaceImageDirectory()
         {
             return OpenVisionImageDirectoryResolver.ResolveOpenImageDirectory(lastWorkspaceImageDirectory);
+        }
+
+        internal static string ResolveExistingImageDirectory(string path)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    return null;
+                }
+
+                string normalized = Path.GetFullPath(path);
+                if (File.Exists(normalized))
+                {
+                    return Path.GetDirectoryName(normalized);
+                }
+
+                return Directory.Exists(normalized) ? normalized : null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         private OpenVisionRecipeContext ResolveRecipeContextForSample()

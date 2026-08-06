@@ -57,8 +57,12 @@ var checks = new[]
     new XmlRootCheck("OpenVisionLab.SpecProperty", "CPropertySpec",
         ExpectedValues: new[] { new ExpectedValue("DIST_MIN_MM", "0.5"), new ExpectedValue("DIST_MAX_MM", "2") }),
     new XmlRootCheck("OpenVisionLab.SystemStateConfig", "SYSTEM",
-        """<?xml version="1.0" encoding="utf-8"?><SYSTEM><LastRecipe>SETUP001</LastRecipe><LastRecipeUpdateTime /></SYSTEM>""",
-        new[] { new ExpectedValue("LastRecipe", "SETUP001") }),
+        """<?xml version="1.0" encoding="utf-8"?><SYSTEM><LastRecipe>SETUP001</LastRecipe><LastRecipeUpdateTime /><LastWorkspaceImagePath>D:\Images\part.png</LastWorkspaceImagePath></SYSTEM>""",
+        new[]
+        {
+            new ExpectedValue("LastRecipe", "SETUP001"),
+            new ExpectedValue("LastWorkspaceImagePath", "D:\\Images\\part.png")
+        }),
     new XmlRootCheck("OpenVisionLab.ImageViewProperty", "PROPERTY",
         """<?xml version="1.0" encoding="utf-8"?><PROPERTY><ROWS>10</ROWS><COLUMNS>10</COLUMNS></PROPERTY>""",
         new[] { new ExpectedValue("ROWS", "10"), new ExpectedValue("COLUMNS", "10") }),

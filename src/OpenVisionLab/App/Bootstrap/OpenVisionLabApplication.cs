@@ -41,6 +41,7 @@ namespace OpenVisionLab
                 using var exceptionPolicy = OpenVisionLabUnhandledExceptionPolicy.Attach(application);
 
                 var runtimeContext = ApplicationRuntimeContext.CreateDefault();
+                runtimeContext.Global.RestoreLastRecipe();
                 runtimeContext.Global.System.ApplyLogConfig();
                 OVLog.Write(
                     LogCategory.System,
