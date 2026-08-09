@@ -195,9 +195,9 @@ namespace OpenVisionLab
         {
             Grid grid = new Grid();
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(6) });
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(3) });
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(4) });
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(2) });
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
             Grid header = new Grid();
@@ -238,6 +238,8 @@ namespace OpenVisionLab
             grid.Children.Add(maxRow);
 
             Border row = CreateParameterContainer();
+            row.Padding = new Thickness(0, 0, 0, 3);
+            row.Margin = new Thickness(0, 0, 0, 3);
             row.Child = grid;
             parameterPanel.Children.Add(row);
             parameterRows[groupKey] = row;
@@ -504,7 +506,7 @@ namespace OpenVisionLab
             double clampedValue = Math.Max(minimum, Math.Min(maximum, value));
             Grid row = new Grid();
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(118) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(66) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(76) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
@@ -522,7 +524,7 @@ namespace OpenVisionLab
             {
                 Name = "txt" + key,
                 Text = FormatNumber(clampedValue),
-                Width = 62,
+                Width = 72,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Center
             };

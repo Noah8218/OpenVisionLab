@@ -17,6 +17,7 @@ namespace OpenVisionLab
         private readonly OpenVisionShellHostToolWindowLifecycleController toolWindowLifecycleController;
         private readonly OpenVisionFloatingToolWindowHost floatingToolWindowHost;
         private readonly OpenVisionDockedToolInspectorController dockedToolInspectorController;
+        private readonly OpenVisionDockedDocumentWorkspaceController dockedDocumentWorkspaceController;
         private readonly OpenVisionShellHostChromeController chromeController;
         private readonly OpenVisionShellHostRefreshCoordinator refreshCoordinator;
         private readonly OpenVisionShellHostToolTestFacadeBindings bindings;
@@ -29,6 +30,7 @@ namespace OpenVisionLab
             OpenVisionShellHostToolWindowLifecycleController toolWindowLifecycleController,
             OpenVisionFloatingToolWindowHost floatingToolWindowHost,
             OpenVisionDockedToolInspectorController dockedToolInspectorController,
+            OpenVisionDockedDocumentWorkspaceController dockedDocumentWorkspaceController,
             OpenVisionShellHostChromeController chromeController,
             OpenVisionShellHostRefreshCoordinator refreshCoordinator,
             OpenVisionShellHostToolTestFacadeBindings bindings)
@@ -40,6 +42,7 @@ namespace OpenVisionLab
             this.toolWindowLifecycleController = toolWindowLifecycleController ?? throw new ArgumentNullException(nameof(toolWindowLifecycleController));
             this.floatingToolWindowHost = floatingToolWindowHost ?? throw new ArgumentNullException(nameof(floatingToolWindowHost));
             this.dockedToolInspectorController = dockedToolInspectorController ?? throw new ArgumentNullException(nameof(dockedToolInspectorController));
+            this.dockedDocumentWorkspaceController = dockedDocumentWorkspaceController ?? throw new ArgumentNullException(nameof(dockedDocumentWorkspaceController));
             this.chromeController = chromeController ?? throw new ArgumentNullException(nameof(chromeController));
             this.refreshCoordinator = refreshCoordinator ?? throw new ArgumentNullException(nameof(refreshCoordinator));
             this.bindings = bindings ?? throw new ArgumentNullException(nameof(bindings));
@@ -47,13 +50,17 @@ namespace OpenVisionLab
 
         public string ActiveToolFormTypeName => statePresenter.ActiveToolFormTypeName;
 
-        public string ActiveWpfToolWindowTypeName => IsDockedToolInspectorVisible
-            ? dockedToolInspectorController.ActiveContent?.GetType().Name ?? string.Empty
-            : statePresenter.ActiveWpfToolWindowTypeName;
+        public string ActiveWpfToolWindowTypeName => IsDockedDocumentWorkspaceVisible
+            ? dockedDocumentWorkspaceController.ActiveContent?.GetType().Name ?? string.Empty
+            : IsDockedToolInspectorVisible
+                ? dockedToolInspectorController.ActiveContent?.GetType().Name ?? string.Empty
+                : statePresenter.ActiveWpfToolWindowTypeName;
 
-        public string ActiveWpfToolWindowTitle => IsDockedToolInspectorVisible
-            ? dockedToolInspectorController.ActiveTitle
-            : statePresenter.ActiveWpfToolWindowTitle;
+        public string ActiveWpfToolWindowTitle => IsDockedDocumentWorkspaceVisible
+            ? dockedDocumentWorkspaceController.ActiveTitle
+            : IsDockedToolInspectorVisible
+                ? dockedToolInspectorController.ActiveTitle
+                : statePresenter.ActiveWpfToolWindowTitle;
 
         public string ActiveWpfToolWindowMinimizeToolTip => statePresenter.ActiveWpfToolWindowMinimizeToolTip;
 
@@ -61,9 +68,14 @@ namespace OpenVisionLab
 
         public string ActiveWpfToolWindowCloseToolTip => statePresenter.ActiveWpfToolWindowCloseToolTip;
 
-        public bool IsActiveWpfToolWindowVisible => IsDockedToolInspectorVisible || statePresenter.IsActiveWpfToolWindowVisibleForTest;
+        public bool IsActiveWpfToolWindowVisible =>
+            IsDockedDocumentWorkspaceVisible
+            || IsDockedToolInspectorVisible
+            || statePresenter.IsActiveWpfToolWindowVisibleForTest;
 
         public bool IsDockedToolInspectorVisible => dockedToolInspectorController.IsVisible;
+
+        public bool IsDockedDocumentWorkspaceVisible => dockedDocumentWorkspaceController.IsVisible;
 
         public string ActivePendingToolTitle => statePresenter.ActivePendingToolTitle;
 

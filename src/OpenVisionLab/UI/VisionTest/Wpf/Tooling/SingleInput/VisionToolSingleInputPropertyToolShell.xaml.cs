@@ -96,6 +96,13 @@ namespace OpenVisionLab
                 typeof(VisionToolSingleInputPropertyToolShell),
                 new PropertyMetadata("Learn"));
 
+        public static readonly DependencyProperty LearnButtonAutomationIdProperty =
+            DependencyProperty.Register(
+                nameof(LearnButtonAutomationId),
+                typeof(string),
+                typeof(VisionToolSingleInputPropertyToolShell),
+                new PropertyMetadata("VisionToolHeaderLearnButton"));
+
         public static readonly DependencyProperty LearnTopicIndexProperty =
             DependencyProperty.Register(
                 nameof(LearnTopicIndex),
@@ -115,6 +122,8 @@ namespace OpenVisionLab
         }
 
         public event EventHandler DockedInspectorModeChanged;
+
+        public event EventHandler LearnTopicRequested;
 
         public PackIconMaterialKind TitleIconKind
         {
@@ -186,6 +195,12 @@ namespace OpenVisionLab
         {
             get => (string)GetValue(LearnButtonTextProperty);
             set => SetValue(LearnButtonTextProperty, value);
+        }
+
+        public string LearnButtonAutomationId
+        {
+            get => (string)GetValue(LearnButtonAutomationIdProperty);
+            set => SetValue(LearnButtonAutomationIdProperty, value);
         }
 
         public int LearnTopicIndex
@@ -262,6 +277,12 @@ namespace OpenVisionLab
 
         private void LearnTopicButton_Click(object sender, RoutedEventArgs e)
         {
+            if (LearnTopicRequested != null)
+            {
+                LearnTopicRequested(this, EventArgs.Empty);
+                return;
+            }
+
             learnWindowController.Open(LearnTopicIndex);
         }
 

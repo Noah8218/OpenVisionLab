@@ -104,6 +104,7 @@ namespace OpenVisionLab
         private readonly OpenVisionShellHostMenuPresenter menuPresenter;
         private readonly OpenVisionShellHostChromeController chromeController;
         private readonly OpenVisionDockedToolInspectorController dockedToolInspectorController;
+        private readonly OpenVisionDockedDocumentWorkspaceController dockedDocumentWorkspaceController;
         private OpenVisionShellHostToolWindowLifecycleController toolWindowLifecycleController;
         private readonly OpenVisionShellHostDirectRunPresenter directRunPresenter;
         private readonly OpenVisionShellHostToolPrewarmController toolPrewarmController;
@@ -193,9 +194,11 @@ namespace OpenVisionLab
                 txtWorkspaceEmptyPipelineButtonText,
                 txtWorkspaceEmptyLogHint,
                 txtOpenSelectedLayerWindowButton,
-                txtDockSelectedLayerButton,
-                btnFloatDockedTool,
-                btnCloseDockedTool);
+                 txtDockSelectedLayerButton,
+                 btnFloatDockedTool,
+                 btnCloseDockedTool,
+                 btnFloatDockedDocument,
+                 btnCloseDockedDocument);
             chromeController = new OpenVisionShellHostChromeController(
                 menuPresenter,
                 toolRailPresenter,
@@ -246,10 +249,16 @@ namespace OpenVisionLab
                 toolInspectorSplitterColumn,
                 toolInspectorColumn,
                 floatingToolWindowHost.CloseSilently);
+            dockedDocumentWorkspaceController = new OpenVisionDockedDocumentWorkspaceController(
+                dockedDocumentContentHost,
+                txtDockedDocumentTitle,
+                documentWorkspacePanel,
+                () => floatingToolWindowHost.CloseSilently());
             toolWindowLifecycleController = new OpenVisionShellHostToolWindowLifecycleController(
                 documentController,
                 floatingToolWindowHost,
                 dockedToolInspectorController,
+                dockedDocumentWorkspaceController,
                 chromeController.SetDirectRunSucceeded,
                 chromeController.SetActiveDocumentText,
                 refreshCoordinator.RefreshHostLayerRows,
@@ -274,8 +283,7 @@ namespace OpenVisionLab
                 displayManager,
                 documentController,
                 floatingToolWindowHost,
-                toolWindowLifecycleController.ShowDockedToolWindow,
-                () => toolWindowLifecycleController.IsDockedToolInspectorVisible,
+                toolWindowLifecycleController,
                 () => Window.GetWindow(this),
                 () => recipeContextStore.Current,
                 chromeController.SetDirectRunPending,
@@ -569,6 +577,7 @@ namespace OpenVisionLab
                 toolWindowLifecycleController,
                 floatingToolWindowHost,
                 dockedToolInspectorController,
+                dockedDocumentWorkspaceController,
                 chromeController,
                 refreshCoordinator,
                 new OpenVisionShellHostToolTestFacadeBindings

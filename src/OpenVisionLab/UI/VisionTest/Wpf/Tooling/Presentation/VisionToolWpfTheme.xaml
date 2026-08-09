@@ -334,7 +334,8 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="3"
                             SnapsToDevicePixels="True">
-                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                        <ContentPresenter x:Name="buttonContent"
+                                          Margin="{TemplateBinding Padding}"
                                           HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                     </Border>
@@ -346,6 +347,15 @@
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="buttonChrome" Property="Background" Value="{StaticResource VisionTool.DownBrush}" />
                             <Setter TargetName="buttonChrome" Property="BorderBrush" Value="{StaticResource VisionTool.AccentBrush}" />
+                            <Setter TargetName="buttonContent" Property="RenderTransform">
+                                <Setter.Value>
+                                    <TranslateTransform X="1" Y="1" />
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="buttonChrome" Property="BorderBrush" Value="{StaticResource VisionTool.FieldFocusGlowBrush}" />
+                            <Setter TargetName="buttonChrome" Property="BorderThickness" Value="2" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{StaticResource VisionTool.DisabledTextBrush}" />
@@ -375,7 +385,8 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="4"
                             SnapsToDevicePixels="True">
-                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        <ContentPresenter x:Name="iconButtonContent"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                     </Border>
                     <ControlTemplate.Triggers>
@@ -388,9 +399,15 @@
                             <Setter TargetName="iconButtonChrome" Property="Background" Value="{StaticResource VisionTool.IconButtonDownFillBrush}" />
                             <Setter TargetName="iconButtonChrome" Property="BorderBrush" Value="{StaticResource VisionTool.IconButtonDownFillBrush}" />
                             <Setter Property="Foreground" Value="White" />
+                            <Setter TargetName="iconButtonContent" Property="RenderTransform">
+                                <Setter.Value>
+                                    <TranslateTransform X="1" Y="1" />
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="iconButtonChrome" Property="BorderBrush" Value="{StaticResource VisionTool.FieldFocusGlowBrush}" />
+                            <Setter TargetName="iconButtonChrome" Property="BorderThickness" Value="2" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{StaticResource VisionTool.DisabledTextBrush}" />
@@ -415,7 +432,8 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="3"
                             SnapsToDevicePixels="True">
-                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                        <ContentPresenter x:Name="buttonContent"
+                                          Margin="{TemplateBinding Padding}"
                                           HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                     </Border>
@@ -427,6 +445,15 @@
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="buttonChrome" Property="Background" Value="{StaticResource VisionTool.ActionFillDownBrush}" />
                             <Setter TargetName="buttonChrome" Property="BorderBrush" Value="{StaticResource VisionTool.ActionFillDownBrush}" />
+                            <Setter TargetName="buttonContent" Property="RenderTransform">
+                                <Setter.Value>
+                                    <TranslateTransform X="1" Y="1" />
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="buttonChrome" Property="BorderBrush" Value="{StaticResource VisionTool.FieldFocusGlowBrush}" />
+                            <Setter TargetName="buttonChrome" Property="BorderThickness" Value="2" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{StaticResource VisionTool.DisabledTextBrush}" />

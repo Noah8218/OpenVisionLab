@@ -28,6 +28,7 @@ namespace OpenVisionLab
         private readonly Action<string, string> sampleWorkspaceLoaded;
         private readonly Action manualWorkspaceImageLoaded;
         private readonly Action<string> rememberWorkspaceImagePath;
+        private readonly bool hasRunnableSample;
         private string lastWorkspaceImageDirectory;
         private OpenVisionLearnWindow learnWindow;
 
@@ -57,6 +58,7 @@ namespace OpenVisionLab
             this.manualWorkspaceImageLoaded = manualWorkspaceImageLoaded;
             this.rememberWorkspaceImagePath = rememberWorkspaceImagePath;
             lastWorkspaceImageDirectory = ResolveExistingImageDirectory(initialWorkspaceImagePath);
+            hasRunnableSample = LoadRunnableSamples().Count > 0;
         }
 
         public void PromptAndLoadWorkspaceImage()
@@ -211,7 +213,7 @@ namespace OpenVisionLab
 
         public bool HasRunnableSample()
         {
-            return LoadRunnableSamples().Count > 0;
+            return hasRunnableSample;
         }
 
         public void PromptAndOpenRunnableSample()

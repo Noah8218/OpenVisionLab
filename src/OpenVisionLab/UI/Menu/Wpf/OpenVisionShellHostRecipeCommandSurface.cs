@@ -201,6 +201,7 @@ namespace OpenVisionLab
         private bool isGuidedSetupDraftStale;
         private bool isRefreshingOptions;
         private bool isSelectingRecipe;
+        private bool hasCatalogBenchmarkSamples;
         private OpenVisionRecipePipelineOption selectedPipelineOption;
         private OpenVisionRecipeSampleOption selectedSampleOption;
         private OpenVisionRecipeSampleRunSummary latestSampleRunSummary = OpenVisionRecipeSampleRunSummary.Empty;

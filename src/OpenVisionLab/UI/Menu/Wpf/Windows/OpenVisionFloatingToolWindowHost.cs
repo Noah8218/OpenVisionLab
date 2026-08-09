@@ -189,6 +189,18 @@ namespace OpenVisionLab
             return true;
         }
 
+        public bool HideForReuse()
+        {
+            if (ActiveWindow == null)
+            {
+                return false;
+            }
+
+            placementStore.Save(ActiveWindow);
+            ActiveWindow.Hide();
+            return true;
+        }
+
         public void BringActiveWindowAboveOwnerAirspace()
         {
             // Owner OpenGL HWNDs can reclaim z-order after layer activation; keep the tool window clickable.

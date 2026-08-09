@@ -1428,6 +1428,12 @@ namespace OpenVisionLab
             string pipelineName = SelectedPipelineOption?.PipelineName ?? string.Empty;
             string pipelinePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, pipelineName);
             List<VisionPipelineSampleCatalogItem> samples = BuildCatalogBenchmarkSamples();
+            if (samples.Count == 0)
+            {
+                hasCatalogBenchmarkSamples = false;
+                RefreshCommandState();
+                return;
+            }
 
             executionSession.StartCatalogBenchmark();
             LatestCatalogBenchmarkSummary = OpenVisionRecipeCatalogBenchmarkSummary.CreateRunning(pipelineName, samples.Count);
@@ -2980,7 +2986,7 @@ namespace OpenVisionLab
                 return false;
             }
 
-            return BuildCatalogBenchmarkSamples().Count > 0;
+            return hasCatalogBenchmarkSamples;
         }
 
         private bool CanRunValidationSuite()
@@ -3176,6 +3182,8 @@ namespace OpenVisionLab
                 .Select(sample => new OpenVisionRecipeSampleOption(sample))
                 .ToList();
 
+            hasCatalogBenchmarkSamples = options.Any(option =>
+                option?.Sample?.CatalogSourceKind == VisionPipelineSampleCatalogSourceKind.Product);
             SampleOptions = options;
             SelectedSampleOption = options.FirstOrDefault(option =>
                     string.Equals(option.SampleName, previousSampleName, StringComparison.OrdinalIgnoreCase))

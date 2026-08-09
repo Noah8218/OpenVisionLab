@@ -238,7 +238,8 @@
                             Click="LearnTopicButton_Click"
                             ToolTip="Open Learn topic"
                             Visibility="{Binding LearnButtonVisibility, RelativeSource={RelativeSource AncestorType=local:VisionToolDoubleInputCustomToolShell}}"
-                            AutomationProperties.AutomationId="VisionToolHeaderLearnButton">
+                            AutomationProperties.AutomationId="VisionToolHeaderLearnButton"
+                            AutomationProperties.Name="{Binding LearnButtonText, RelativeSource={RelativeSource AncestorType=local:VisionToolDoubleInputCustomToolShell}}">
                         <StackPanel Orientation="Horizontal"
                                     HorizontalAlignment="Center">
                             <iconPacks:PackIconMaterial Kind="ImageSearch"
@@ -306,7 +307,10 @@
                     <RowDefinition x:Name="rowRunOffsetGap" Height="0" />
                     <RowDefinition x:Name="rowRunOffsetAction" Height="0" />
                 </Grid.RowDefinitions>
-                <Button x:Name="btnAddPipeline" Grid.Row="0">
+                <Button x:Name="btnAddPipeline"
+                        Grid.Row="0"
+                        AutomationProperties.AutomationId="VisionToolAddPipelineButton"
+                        AutomationProperties.Name="{Binding Text, ElementName=txtAddPipelineText}">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <iconPacks:PackIconMaterial Kind="PlaylistPlus" Width="16" Height="16" Margin="0,0,7,0" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         <TextBlock x:Name="txtAddPipelineText" Text="Add Pipeline" FontWeight="SemiBold" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
@@ -314,6 +318,7 @@
                 </Button>
                 <Button x:Name="btnRunPreview"
                         AutomationProperties.AutomationId="VisionToolRunPreviewButton"
+                        AutomationProperties.Name="{Binding Text, ElementName=txtRunPreviewText}"
                         Grid.Row="2"
                         Style="{StaticResource VisionTool.PrimaryActionButtonStyle}">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">

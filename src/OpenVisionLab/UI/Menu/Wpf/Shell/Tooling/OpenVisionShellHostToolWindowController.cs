@@ -12,8 +12,7 @@ namespace OpenVisionLab
         private readonly IDisplayManager displayManager;
         private readonly OpenVisionShellHostDocumentController documentController;
         private readonly OpenVisionFloatingToolWindowHost floatingToolWindowHost;
-        private readonly Func<FrameworkElement, string, double, double, bool> showDockedToolWindow;
-        private readonly Func<bool> isDockedToolWindowVisible;
+        private readonly OpenVisionShellHostToolWindowLifecycleController toolWindowLifecycleController;
         private readonly Func<Window> ownerProvider;
         private readonly Func<OpenVisionRecipeContext> recipeContextProvider;
         private readonly Action setDirectRunPending;
@@ -29,8 +28,7 @@ namespace OpenVisionLab
             IDisplayManager displayManager,
             OpenVisionShellHostDocumentController documentController,
             OpenVisionFloatingToolWindowHost floatingToolWindowHost,
-            Func<FrameworkElement, string, double, double, bool> showDockedToolWindow,
-            Func<bool> isDockedToolWindowVisible,
+            OpenVisionShellHostToolWindowLifecycleController toolWindowLifecycleController,
             Func<Window> ownerProvider,
             Func<OpenVisionRecipeContext> recipeContextProvider,
             Action setDirectRunPending,
@@ -45,8 +43,7 @@ namespace OpenVisionLab
             this.displayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
             this.documentController = documentController ?? throw new ArgumentNullException(nameof(documentController));
             this.floatingToolWindowHost = floatingToolWindowHost ?? throw new ArgumentNullException(nameof(floatingToolWindowHost));
-            this.showDockedToolWindow = showDockedToolWindow ?? throw new ArgumentNullException(nameof(showDockedToolWindow));
-            this.isDockedToolWindowVisible = isDockedToolWindowVisible ?? throw new ArgumentNullException(nameof(isDockedToolWindowVisible));
+            this.toolWindowLifecycleController = toolWindowLifecycleController ?? throw new ArgumentNullException(nameof(toolWindowLifecycleController));
             this.ownerProvider = ownerProvider ?? throw new ArgumentNullException(nameof(ownerProvider));
             this.recipeContextProvider = recipeContextProvider ?? throw new ArgumentNullException(nameof(recipeContextProvider));
             this.setDirectRunPending = setDirectRunPending ?? throw new ArgumentNullException(nameof(setDirectRunPending));
@@ -76,6 +73,9 @@ namespace OpenVisionLab
                 Title = item.Title
             };
             OpenVisionToolOpenProfiler.Begin();
+            bool showPipelineReviewDocked = item.Menu == VISION_MENU.Pipeline
+                && toolWindowLifecycleController.ShouldShowPipelineReviewDocked;
+            toolWindowLifecycleController.PrepareForToolSelection(item.Menu);
 
             if (item.Menu == VISION_MENU.Pipeline)
             {
@@ -83,15 +83,30 @@ namespace OpenVisionLab
                 timing.Title = title;
                 timing.Path = "Pipeline";
                 phaseStopwatch.Restart();
-                OpenVisionPipelineReviewDocument pipelineReviewDocument = new OpenVisionPipelineReviewDocument(displayManager, ResolveRecipeContext());
-                pipelineReviewDocument.OpenWorkspaceSampleRequested += OnPipelineReviewOpenWorkspaceSampleRequested;
-                pipelineReviewDocument.ReturnToRecipeRequested += OnPipelineReviewReturnToRecipeRequested;
-                pipelineReviewDocument.OpenSelectedToolLearnRequested += OnPipelineReviewOpenSelectedToolLearnRequested;
-                pipelineReviewDocument.EditSelectedStepRequested += OnPipelineReviewEditSelectedStepRequested;
-                documentController.ActivatePipelineReview(pipelineReviewDocument);
+                OpenVisionRecipeContext recipeContext = ResolveRecipeContext();
+                if (!documentController.TryRestorePipelineReview(recipeContext, out OpenVisionPipelineReviewDocument pipelineReviewDocument))
+                {
+                    pipelineReviewDocument = new OpenVisionPipelineReviewDocument(displayManager, recipeContext);
+                    pipelineReviewDocument.OpenWorkspaceSampleRequested += OnPipelineReviewOpenWorkspaceSampleRequested;
+                    pipelineReviewDocument.ReturnToRecipeRequested += OnPipelineReviewReturnToRecipeRequested;
+                    pipelineReviewDocument.OpenSelectedToolLearnRequested += OnPipelineReviewOpenSelectedToolLearnRequested;
+                    pipelineReviewDocument.EditSelectedStepRequested += OnPipelineReviewEditSelectedStepRequested;
+                    documentController.ActivatePipelineReview(pipelineReviewDocument);
+                }
+                else
+                {
+                    pipelineReviewDocument.RefreshLayerState();
+                }
                 timing.ActivateDocumentMs = phaseStopwatch.ElapsedMilliseconds;
                 timing.Document = pipelineReviewDocument.View?.GetType().Name ?? pipelineReviewDocument.GetType().Name;
-                ShowWpfToolWindow(pipelineReviewDocument.View, title, 1180, 760, timing);
+                if (showPipelineReviewDocked)
+                {
+                    ShowDockedDocumentWorkspace(pipelineReviewDocument.View, title, 1180, 760, timing);
+                }
+                else
+                {
+                    ShowWpfToolWindow(pipelineReviewDocument.View, title, 1180, 760, timing);
+                }
                 phaseStopwatch.Restart();
                 CompleteToolSelection(title, hasDisplayablePreviewResult: false);
                 timing.CompleteSelectionMs = phaseStopwatch.ElapsedMilliseconds;
@@ -209,7 +224,7 @@ namespace OpenVisionLab
         {
             Stopwatch phaseStopwatch = Stopwatch.StartNew();
             FrameworkElement preparedContent = PrepareHostedWpfDocument(content);
-            if (preferDockedWhenActive && isDockedToolWindowVisible())
+            if (preferDockedWhenActive && toolWindowLifecycleController.IsDockedToolInspectorVisible)
             {
                 ShowDockedToolWindow(preparedContent, title, width, height, timing);
                 return;
@@ -240,7 +255,32 @@ namespace OpenVisionLab
             }
 
             phaseStopwatch.Restart();
-            bool shown = showDockedToolWindow(preparedContent, title, width, height);
+            bool shown = toolWindowLifecycleController.ShowDockedToolWindow(preparedContent, title, width, height);
+            if (timing != null)
+            {
+                timing.FloatingHostShowMs = phaseStopwatch.ElapsedMilliseconds;
+                timing.ReusedFloatingWindow = false;
+            }
+
+            return shown;
+        }
+
+        private bool ShowDockedDocumentWorkspace(
+            FrameworkElement content,
+            string title,
+            double width,
+            double height,
+            OpenVisionToolOpenTiming timing)
+        {
+            Stopwatch phaseStopwatch = Stopwatch.StartNew();
+            FrameworkElement preparedContent = PrepareHostedWpfDocument(content);
+            if (timing != null)
+            {
+                timing.PrepareHostedDocumentMs = phaseStopwatch.ElapsedMilliseconds;
+            }
+
+            phaseStopwatch.Restart();
+            bool shown = toolWindowLifecycleController.ShowDockedDocumentWorkspace(preparedContent, title, width, height);
             if (timing != null)
             {
                 timing.FloatingHostShowMs = phaseStopwatch.ElapsedMilliseconds;

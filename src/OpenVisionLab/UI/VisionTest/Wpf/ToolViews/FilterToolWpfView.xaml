@@ -23,6 +23,7 @@
                                                       LearnButtonVisibility="Visible"
                                                       LearnButtonText="Learn Filter"
                                                       LearnTopicIndex="3"
+                                                      ResultReviewVisibility="Collapsed"
                                                       PropertyGridHostVisibility="Collapsed"
                                                       ParameterContentVisibility="Visible" />
 

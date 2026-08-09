@@ -31,6 +31,8 @@ namespace OpenVisionLab
         private readonly TextBlock dockSelectedLayerButtonText;
         private readonly Button floatDockedToolButton;
         private readonly Button closeDockedToolButton;
+        private readonly Button floatDockedDocumentButton;
+        private readonly Button closeDockedDocumentButton;
 
         public OpenVisionShellHostMenuPresenter(
             MenuItem workspaceLoadImageMenu,
@@ -57,7 +59,9 @@ namespace OpenVisionLab
             TextBlock openSelectedLayerWindowButtonText,
             TextBlock dockSelectedLayerButtonText,
             Button floatDockedToolButton,
-            Button closeDockedToolButton)
+            Button closeDockedToolButton,
+            Button floatDockedDocumentButton,
+            Button closeDockedDocumentButton)
         {
             this.workspaceLoadImageMenu = workspaceLoadImageMenu;
             this.workspaceOpenLayerWindowMenu = workspaceOpenLayerWindowMenu;
@@ -84,6 +88,8 @@ namespace OpenVisionLab
             this.dockSelectedLayerButtonText = dockSelectedLayerButtonText;
             this.floatDockedToolButton = floatDockedToolButton;
             this.closeDockedToolButton = closeDockedToolButton;
+            this.floatDockedDocumentButton = floatDockedDocumentButton;
+            this.closeDockedDocumentButton = closeDockedDocumentButton;
         }
 
         public void ApplyLocalization()
@@ -122,6 +128,8 @@ namespace OpenVisionLab
 
             SetButtonToolTipAndName(floatDockedToolButton, floatText);
             SetButtonToolTipAndName(closeDockedToolButton, closeText);
+            SetButtonToolTipAndName(floatDockedDocumentButton, floatText);
+            SetButtonToolTipAndName(closeDockedDocumentButton, closeText);
         }
 
         private static void SetHeader(MenuItem menuItem, string header)

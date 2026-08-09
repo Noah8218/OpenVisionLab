@@ -1,6 +1,7 @@
 using MahApps.Metro.IconPacks;
 using System;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -143,6 +144,10 @@ namespace OpenVisionLab
                 ? OpenVisionLanguageService.T("Common.Restore")
                 : OpenVisionLanguageService.T("Common.Maximize");
             btnClose.ToolTip = OpenVisionLanguageService.T("Common.Close");
+            AutomationProperties.SetName(btnDock, btnDock.ToolTip?.ToString() ?? string.Empty);
+            AutomationProperties.SetName(btnMinimize, btnMinimize.ToolTip?.ToString() ?? string.Empty);
+            AutomationProperties.SetName(btnMaximize, btnMaximize.ToolTip?.ToString() ?? string.Empty);
+            AutomationProperties.SetName(btnClose, btnClose.ToolTip?.ToString() ?? string.Empty);
             maximizeIcon.Kind = owner?.WindowState == WindowState.Maximized
                 ? PackIconMaterialKind.WindowRestore
                 : PackIconMaterialKind.WindowMaximize;

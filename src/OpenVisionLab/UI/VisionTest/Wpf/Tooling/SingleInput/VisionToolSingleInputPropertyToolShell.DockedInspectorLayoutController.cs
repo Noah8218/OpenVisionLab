@@ -9,10 +9,10 @@ namespace OpenVisionLab
     {
         private sealed class DockedInspectorLayoutController
         {
-            private const double DockedPreviewFrameHeight = 60D;
-            private const double DockedPreviewCardMinHeight = 92D;
+            private const double DockedPreviewFrameHeight = 48D;
+            private const double DockedPreviewCardMinHeight = 76D;
             private const double FloatingPreviewCardPadding = 8D;
-            private const double DockedPreviewCardPadding = 6D;
+            private const double DockedPreviewCardPadding = 4D;
             private const double FloatingParameterGroupMinHeight = 400D;
             private const double DockedParameterGroupMinHeight = 0D;
             private const double FloatingPropertyGridMinHeight = 370D;
@@ -54,8 +54,10 @@ namespace OpenVisionLab
 
                 shell.inputPreviewRow.Height = docked ? new GridLength(DockedPreviewFrameHeight) : new GridLength(1D, GridUnitType.Star);
                 shell.inputPreviewSpacerRow.Height = docked ? new GridLength(4D) : new GridLength(8D);
+                shell.inputComboRow.Height = docked ? new GridLength(28D) : new GridLength(32D);
                 shell.outputPreviewRow.Height = docked ? new GridLength(DockedPreviewFrameHeight) : new GridLength(1D, GridUnitType.Star);
                 shell.outputPreviewSpacerRow.Height = docked ? new GridLength(4D) : new GridLength(8D);
+                shell.outputComboRow.Height = docked ? new GridLength(28D) : new GridLength(32D);
                 shell.bdInputPreview.Visibility = Visibility.Visible;
                 shell.bdOutputPreview.Visibility = Visibility.Visible;
 
@@ -90,8 +92,15 @@ namespace OpenVisionLab
                 ApplyPropertyGridDensity(docked);
                 ApplyToolContentDensity();
                 shell.rowAddPipelineAction.Height = new GridLength(ActionHeight);
-                shell.rowRunPreviewGap.Height = new GridLength(docked ? 2D : ActionGap);
-                shell.rowRunPreviewAction.Height = new GridLength(ActionHeight);
+                shell.rowRunPreviewGap.Height = new GridLength(docked ? 0D : ActionGap);
+                shell.rowRunPreviewAction.Height = new GridLength(docked ? 0D : ActionHeight);
+                shell.runPreviewActionGapColumn.Width = docked ? new GridLength(ActionGap) : new GridLength(0D);
+                shell.runPreviewActionColumn.Width = docked
+                    ? new GridLength(1D, GridUnitType.Star)
+                    : new GridLength(0D);
+                Grid.SetRow(shell.btnRunPreview, docked ? 0 : 2);
+                Grid.SetColumn(shell.btnRunPreview, docked ? 4 : 0);
+                Grid.SetColumnSpan(shell.btnRunPreview, docked ? 1 : 5);
             }
 
             private void ApplyPresetDensity(bool docked)

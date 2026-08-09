@@ -10161,12 +10161,13 @@ internal static class Program
             }
 
             Pump(80);
-            if (!shellHost.IsDockedToolInspectorVisibleForTest)
+            if (!shellHost.IsDockedDocumentWorkspaceVisibleForTest
+                || shellHost.IsDockedToolInspectorVisibleForTest)
             {
-                throw new InvalidOperationException("Recipe manager Pipeline Review docked return precondition was not visible.");
+                throw new InvalidOperationException("Recipe manager Pipeline Review central docked return precondition was not visible.");
             }
 
-            ClickFloatingButtonByName("btnReturnToRecipe", "Pipeline Review return-to-recipe button");
+            ClickVisibleButtonByName("btnReturnToRecipe", "Pipeline Review return-to-recipe button");
             Pump(100);
             if (recipeManagerButton.IsChecked != true
                 || shellHost.IsActiveWpfToolWindowVisibleForTest
@@ -26597,6 +26598,75 @@ internal static class Program
             AssertActivePropertyGridSearchEmptyMessageVisible("Matching docked empty search", true);
             SetActivePropertyGridSearchText("Matching docked empty search clear", string.Empty);
             AssertActivePropertyGridSearchEmptyMessageVisible("Matching docked empty search cleared", false);
+
+            int layerCountBeforePipeline = shellHost.HostLayerRowCount;
+            string workspaceLayerBeforePipeline = shellHost.WorkspaceLayerTitle;
+            string activeLayerBeforePipeline = shellHost.ActiveRecipeContextLayerNameForTest;
+            shellHost.SelectToolForTest(VISION_MENU.Pipeline);
+            Pump(36);
+            if (!shellHost.IsDockedDocumentWorkspaceVisibleForTest
+                || shellHost.IsDockedToolInspectorVisibleForTest
+                || CountVisibleFloatingToolWindows() != 0
+                || !string.Equals(shellHost.ActiveWpfToolWindowTypeName, "OpenVisionPipelineReviewView", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Pipeline Review must use the central document workspace when opened from a docked native tool. "
+                    + $"Central={shellHost.IsDockedDocumentWorkspaceVisibleForTest}, Inspector={shellHost.IsDockedToolInspectorVisibleForTest}, "
+                    + $"Floating={CountVisibleFloatingToolWindows()}, Type={shellHost.ActiveWpfToolWindowTypeName}");
+            }
+
+            string executionStateBeforeDockCycle = shellHost.PipelineReviewExecutionState;
+            if (!shellHost.FloatDockedWpfToolWindowForTest())
+            {
+                throw new InvalidOperationException("Central Pipeline Review did not accept the float request.");
+            }
+
+            Pump(24);
+            if (shellHost.IsDockedDocumentWorkspaceVisibleForTest || CountVisibleFloatingToolWindows() != 1)
+            {
+                throw new InvalidOperationException("Floated Pipeline Review did not leave the central workspace cleanly.");
+            }
+
+            if (!shellHost.DockActiveWpfToolWindowForTest())
+            {
+                throw new InvalidOperationException("Floated Pipeline Review did not accept the central dock request.");
+            }
+
+            Pump(24);
+            if (!shellHost.IsDockedDocumentWorkspaceVisibleForTest
+                || shellHost.IsDockedToolInspectorVisibleForTest
+                || CountVisibleFloatingToolWindows() != 0)
+            {
+                throw new InvalidOperationException("Pipeline Review did not return to the central document workspace.");
+            }
+
+            ClickVisibleButtonByAutomationId(
+                shellHost,
+                "PipelineReviewReturnToRecipeButton",
+                "Central Pipeline Review return-to-recipe button");
+            Pump(24);
+            if (shellHost.IsDockedDocumentWorkspaceVisibleForTest || CountVisibleFloatingToolWindows() != 0)
+            {
+                throw new InvalidOperationException("Return to Recipe did not suspend the central Pipeline Review workspace.");
+            }
+
+            shellHost.SelectToolForTest(VISION_MENU.Pipeline);
+            Pump(24);
+            if (!shellHost.IsDockedDocumentWorkspaceVisibleForTest
+                || shellHost.IsDockedToolInspectorVisibleForTest
+                || CountVisibleFloatingToolWindows() != 0)
+            {
+                throw new InvalidOperationException("Reopened Pipeline Review did not restore its central docked workspace.");
+            }
+
+            if (shellHost.HostLayerRowCount != layerCountBeforePipeline
+                || !string.Equals(shellHost.WorkspaceLayerTitle, workspaceLayerBeforePipeline, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveRecipeContextLayerNameForTest, activeLayerBeforePipeline, StringComparison.Ordinal)
+                || !string.Equals(shellHost.PipelineReviewExecutionState, executionStateBeforeDockCycle, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Pipeline Review open/float/dock changed execution or layer state without an explicit Run action.");
+            }
         });
     }
 
@@ -32541,6 +32611,7 @@ internal static class Program
             VISION_MENU.Morphology,
             VISION_MENU.EdgeDetection,
             VISION_MENU.RotateAndScale,
+            VISION_MENU.AffineTransform,
             VISION_MENU.Arithmetic,
             VISION_MENU.HSV,
             VISION_MENU.Mean,
@@ -35587,7 +35658,7 @@ internal static class Program
 
     private static void AssertDockedCompactPreviewCard(string name, FrameworkElement group, FrameworkElement previewFrame)
     {
-        if (group.ActualHeight > 160D || previewFrame.ActualHeight < 60D || previewFrame.ActualHeight > 84D)
+        if (group.ActualHeight > 160D || previewFrame.ActualHeight < 44D || previewFrame.ActualHeight > 60D)
         {
             throw new InvalidOperationException(
                 name + " is not using the compact docked preview density. "

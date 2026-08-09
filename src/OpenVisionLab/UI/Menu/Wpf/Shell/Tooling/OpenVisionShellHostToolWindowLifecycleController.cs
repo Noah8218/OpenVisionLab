@@ -1,5 +1,6 @@
 using System;
 using System.Windows;
+using static OpenVisionLab.DEFINE;
 
 namespace OpenVisionLab
 {
@@ -8,6 +9,7 @@ namespace OpenVisionLab
         private readonly OpenVisionShellHostDocumentController documentController;
         private readonly OpenVisionFloatingToolWindowHost floatingToolWindowHost;
         private readonly OpenVisionDockedToolInspectorController dockedToolInspectorController;
+        private readonly OpenVisionDockedDocumentWorkspaceController dockedDocumentWorkspaceController;
         private readonly Action setDirectRunSucceeded;
         private readonly Action<string> setActiveDocumentText;
         private readonly Action refreshHostLayerRows;
@@ -18,6 +20,7 @@ namespace OpenVisionLab
             OpenVisionShellHostDocumentController documentController,
             OpenVisionFloatingToolWindowHost floatingToolWindowHost,
             OpenVisionDockedToolInspectorController dockedToolInspectorController,
+            OpenVisionDockedDocumentWorkspaceController dockedDocumentWorkspaceController,
             Action setDirectRunSucceeded,
             Action<string> setActiveDocumentText,
             Action refreshHostLayerRows,
@@ -27,6 +30,7 @@ namespace OpenVisionLab
             this.documentController = documentController ?? throw new ArgumentNullException(nameof(documentController));
             this.floatingToolWindowHost = floatingToolWindowHost ?? throw new ArgumentNullException(nameof(floatingToolWindowHost));
             this.dockedToolInspectorController = dockedToolInspectorController ?? throw new ArgumentNullException(nameof(dockedToolInspectorController));
+            this.dockedDocumentWorkspaceController = dockedDocumentWorkspaceController ?? throw new ArgumentNullException(nameof(dockedDocumentWorkspaceController));
             this.setDirectRunSucceeded = setDirectRunSucceeded ?? throw new ArgumentNullException(nameof(setDirectRunSucceeded));
             this.setActiveDocumentText = setActiveDocumentText ?? throw new ArgumentNullException(nameof(setActiveDocumentText));
             this.refreshHostLayerRows = refreshHostLayerRows ?? throw new ArgumentNullException(nameof(refreshHostLayerRows));
@@ -36,9 +40,31 @@ namespace OpenVisionLab
 
         public bool IsDockedToolInspectorVisible => dockedToolInspectorController.IsVisible;
 
+        public bool IsDockedDocumentWorkspaceVisible => dockedDocumentWorkspaceController.IsVisible;
+
+        public bool ShouldShowPipelineReviewDocked =>
+            dockedToolInspectorController.IsVisible
+            || dockedDocumentWorkspaceController.ShouldRestoreDocked;
+
         public bool ShowDockedToolWindow(FrameworkElement content, string title, double floatingWidth, double floatingHeight)
         {
             return dockedToolInspectorController.Show(content, title, floatingWidth, floatingHeight);
+        }
+
+        public bool ShowDockedDocumentWorkspace(FrameworkElement content, string title, double floatingWidth, double floatingHeight)
+        {
+            return dockedDocumentWorkspaceController.Show(content, title, floatingWidth, floatingHeight);
+        }
+
+        public void PrepareForToolSelection(VISION_MENU menu)
+        {
+            if (menu == VISION_MENU.Pipeline)
+            {
+                dockedToolInspectorController.CloseSilently();
+                return;
+            }
+
+            dockedDocumentWorkspaceController.CloseSilently();
         }
 
         public void CloseActiveDocument()
@@ -49,6 +75,13 @@ namespace OpenVisionLab
 
         public bool CloseActiveWpfToolWindowByUser()
         {
+            if (IsDockedDocumentWorkspaceVisible)
+            {
+                dockedDocumentWorkspaceController.CloseByUser();
+                CloseVisibleDocumentsAndResetActiveText();
+                return true;
+            }
+
             if (IsDockedToolInspectorVisible)
             {
                 CloseDockedToolByUser();
@@ -58,15 +91,37 @@ namespace OpenVisionLab
             return floatingToolWindowHost.CloseByUser();
         }
 
+        public bool SuspendFloatingPipelineReviewForRecipeReturn()
+        {
+            if (IsDockedToolInspectorVisible || documentController.ActivePipelineReviewDocument == null)
+            {
+                return false;
+            }
+
+            bool hostSuspended = IsDockedDocumentWorkspaceVisible
+                ? dockedDocumentWorkspaceController.SuspendForReuse()
+                : floatingToolWindowHost.HideForReuse();
+            if (!hostSuspended || !documentController.SuspendPipelineReviewForRecipeReturn())
+            {
+                return false;
+            }
+
+            setActiveDocumentText(string.Empty);
+            refreshHostLayerRows();
+            return true;
+        }
+
         public void CloseActiveWpfToolWindow()
         {
+            dockedDocumentWorkspaceController.CloseSilently();
             dockedToolInspectorController.CloseSilently();
             floatingToolWindowHost.CloseSilently();
         }
 
         public bool FloatDockedTool(Action<FrameworkElement, string, double, double> showFloatingWindow)
         {
-            return dockedToolInspectorController.Float(showFloatingWindow);
+            return dockedDocumentWorkspaceController.Float(showFloatingWindow)
+                || dockedToolInspectorController.Float(showFloatingWindow);
         }
 
         public void OnFloatingToolWindowClosedByUser(object sender, EventArgs e)
@@ -78,6 +133,12 @@ namespace OpenVisionLab
         {
             if (e == null)
             {
+                return;
+            }
+
+            if (ReferenceEquals(documentController.ActivePipelineReviewDocument?.View, e.Content))
+            {
+                ShowDockedDocumentWorkspace(e.Content, e.Title, e.FloatingWidth, e.FloatingHeight);
                 return;
             }
 
@@ -101,7 +162,7 @@ namespace OpenVisionLab
         public void RefreshAfterNativeLayerStateChanged(bool hasPreviewResult)
         {
             refreshNativePreviewRouteAfterLayerStateChanged(hasPreviewResult);
-            if (!IsDockedToolInspectorVisible)
+            if (!IsDockedToolInspectorVisible && !IsDockedDocumentWorkspaceVisible)
             {
                 floatingToolWindowHost.BringActiveWindowAboveOwnerAirspace();
             }

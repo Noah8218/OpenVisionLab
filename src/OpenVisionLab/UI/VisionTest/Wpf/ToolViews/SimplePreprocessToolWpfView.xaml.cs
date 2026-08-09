@@ -136,6 +136,7 @@ namespace OpenVisionLab
 
         internal void ShowResultReview(SimplePreprocessResultReview review)
         {
+            toolShell.ResultReviewVisibility = Visibility.Visible;
             ShowToolResultReview(review.Summary, review.IsSuccess, review.Items, review.Guidance);
         }
 
@@ -173,6 +174,7 @@ namespace OpenVisionLab
         private void ClearResultReviewAndSignalEvidence()
         {
             ClearResultReview();
+            toolShell.ResultReviewVisibility = Visibility.Collapsed;
             ClearSignalEvidence();
         }
     }

@@ -1,6 +1,6 @@
 # OpenVisionLab Current Project Handoff
 
-Updated: 2026-08-06 KST
+Updated: 2026-08-09 KST
 
 This is the compact live-status source for a new OpenVisionLab task. Read
 `AGENTS.md`, `docs/README.md`, and `docs/LLM_DOCUMENT_INDEX.json` first. Stable
@@ -52,6 +52,44 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   hardware qualification, calibrated metrology, or field robustness.
 
 ## Latest Completed Work
+
+### P292 Tool View Dock And Interaction UX - Complete In Dev
+
+- Native algorithm Tool Views remain in the right inspector, while Pipeline
+  Review now docks in a central document workspace with its complete review
+  surface available in Wide and Compact layouts.
+- The P291 same-context document survives Return to Recipe and reopens in the
+  central workspace. The current dock-cycle regression confirms no automatic
+  Preview/Run, layer-count, active-layer, or routing change.
+- The Compact no-image guide now shows all four steps, four actions, and its
+  operator hint. Common Tool View, dock-header, and title-bar buttons expose
+  themed focus/hover/pressed states and localized accessible names.
+- Recipe Manager top and advanced-review toggles, action buttons, and tabs now
+  expose themed hover/pressed/focus states. The actual-EXE top toggle changed
+  zero pixels before the fix and 884 pixels after it; Korean and English
+  Recipe Manager round-trip smokes pass against the central document workspace.
+- Current-build Korean/English actual-EXE Wide/Compact runs passed on the
+  leftmost monitor. All 16 native Tool Views including Affine Transform passed
+  open/layer regression; Debug build, readiness 13/13, references, and public
+  assets passed. Evidence:
+  `docs/reports/OPENVISIONLAB_TOOLVIEW_DOCK_INTERACTION_UX_20260809.md`.
+
+### P291 Pipeline Review Reopen Performance - Complete In Dev
+
+- Command enablement no longer enumerates sample/catalog files during WPF
+  `CanExecute` reevaluation. The real command still rebuilds and validates the
+  catalog immediately before execution.
+- Returning from a floating Pipeline Review now suspends one exact
+  Recipe/Pipeline document and hides its window. Reopening the same context
+  restores that document and refreshes layer presentation; context changes,
+  another Tool, user close, docked return, and application close still dispose
+  it.
+- Current-build actual-EXE reopen time is 96-115 ms across five cycles, down
+  from the 423-451 ms baseline. All cycles remained responsive and the visible
+  review stayed unexecuted with no automatic Preview/Run.
+- Debug build, Recipe Manager summary smoke, Recipe Context Switch smoke,
+  readiness 13/13, and patch hygiene passed. Evidence:
+  `docs/reports/OPENVISIONLAB_PIPELINE_REOPEN_PERFORMANCE_20260809.md`.
 
 ### P290 Shared Analysis Runtime Stability Review - Complete In Dev
 
@@ -215,6 +253,10 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 ## Current Priority And Activation Conditions
 
+- P292 is complete and verified in Dev. Promotion to the original repository
+  remains a separate explicitly authorized task.
+- P291 is complete and verified in Dev. Promotion to the original repository
+  remains a separate explicitly authorized task.
 - P290 is complete and verified in Dev. Promotion to the original repository
   remains a separate explicitly authorized task.
 - P286 and P287 are published in Dev and original and their hosted GitHub

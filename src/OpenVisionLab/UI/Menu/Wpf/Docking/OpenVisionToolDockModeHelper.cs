@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -31,7 +32,10 @@ namespace OpenVisionLab
 
             ApplyDockedRootSize(root, isDocked);
             root.ApplyTemplate();
-            ApplyToDescendants(root, isDocked);
+            ApplyToDescendants(
+                root,
+                isDocked,
+                new HashSet<DependencyObject>(ReferenceEqualityComparer.Instance));
         }
 
         private static void ApplyDockedRootSize(FrameworkElement root, bool isDocked)
@@ -64,9 +68,12 @@ namespace OpenVisionLab
             }
         }
 
-        private static bool ApplyToDescendants(DependencyObject element, bool isDocked)
+        private static bool ApplyToDescendants(
+            DependencyObject element,
+            bool isDocked,
+            HashSet<DependencyObject> visited)
         {
-            if (element == null)
+            if (element == null || !visited.Add(element))
             {
                 return false;
             }
@@ -86,7 +93,7 @@ namespace OpenVisionLab
             bool applied = false;
             if (element is ContentControl contentControl && contentControl.Content is DependencyObject content)
             {
-                applied |= ApplyToDescendants(content, isDocked);
+                applied |= ApplyToDescendants(content, isDocked, visited);
             }
 
             int childCount;
@@ -101,14 +108,14 @@ namespace OpenVisionLab
 
             for (int index = 0; index < childCount; index++)
             {
-                applied |= ApplyToDescendants(VisualTreeHelper.GetChild(element, index), isDocked);
+                applied |= ApplyToDescendants(VisualTreeHelper.GetChild(element, index), isDocked, visited);
             }
 
             foreach (object logicalChild in EnumerateLogicalChildren(element))
             {
                 if (logicalChild is DependencyObject dependencyObject)
                 {
-                    applied |= ApplyToDescendants(dependencyObject, isDocked);
+                    applied |= ApplyToDescendants(dependencyObject, isDocked, visited);
                 }
             }
 

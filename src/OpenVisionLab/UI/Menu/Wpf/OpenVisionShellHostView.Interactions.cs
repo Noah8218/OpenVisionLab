@@ -312,7 +312,11 @@ namespace OpenVisionLab
 
         private void ReturnToRecipeManagerFromPipelineReview()
         {
-            toolWindowLifecycleController.CloseActiveWpfToolWindowByUser();
+            if (!toolWindowLifecycleController.SuspendFloatingPipelineReviewForRecipeReturn())
+            {
+                toolWindowLifecycleController.CloseActiveWpfToolWindowByUser();
+            }
+
             btnHostRecipeManager.IsChecked = true;
         }
 

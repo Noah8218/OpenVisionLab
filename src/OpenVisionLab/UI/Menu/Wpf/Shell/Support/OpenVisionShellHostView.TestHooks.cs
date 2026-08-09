@@ -26,6 +26,8 @@ namespace OpenVisionLab
         public string ActiveWpfToolWindowCloseToolTip => toolTestFacade.ActiveWpfToolWindowCloseToolTip;
         public bool IsActiveWpfToolWindowVisibleForTest => toolTestFacade.IsActiveWpfToolWindowVisible;
         public bool IsDockedToolInspectorVisibleForTest => toolTestFacade.IsDockedToolInspectorVisible;
+
+        public bool IsDockedDocumentWorkspaceVisibleForTest => toolTestFacade.IsDockedDocumentWorkspaceVisible;
         public string ActivePendingToolTitle => toolTestFacade.ActivePendingToolTitle;
         public string ActivePendingToolStatusText => toolTestFacade.ActivePendingToolStatusText;
         public string ActiveNativeDocumentTypeName => toolTestFacade.ActiveNativeDocumentTypeName;

@@ -100,7 +100,7 @@ namespace OpenVisionLab
             string currentTitle = title;
             double width = floatingWidth;
             double height = floatingHeight;
-            ClearContent(resetMode: true);
+            ClearContent(resetMode: false);
             HideChrome();
             showFloatingWindow(currentContent, currentTitle, width, height);
             return true;

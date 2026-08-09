@@ -20,9 +20,9 @@
             <Style x:Key="ThresholdModeRadioButtonStyle"
                    TargetType="RadioButton"
                    BasedOn="{StaticResource VisionTool.SegmentedRadioButtonStyle}">
-                <Setter Property="Height" Value="56" />
+                <Setter Property="Height" Value="46" />
                 <Setter Property="MinWidth" Value="134" />
-                <Setter Property="Padding" Value="10,0" />
+                <Setter Property="Padding" Value="8,0" />
                 <Setter Property="Margin" Value="0" />
             </Style>
 
@@ -31,7 +31,7 @@
                 <Setter Property="BorderBrush" Value="{StaticResource VisionTool.HeaderBorderBrush}" />
                 <Setter Property="BorderThickness" Value="1" />
                 <Setter Property="CornerRadius" Value="4" />
-                <Setter Property="Padding" Value="12,10,12,14" />
+                <Setter Property="Padding" Value="10,6,10,8" />
             </Style>
         </ResourceDictionary>
     </local:VisionToolSingleInputCustomToolViewBase.Resources>
@@ -39,15 +39,20 @@
     <Grid>
         <local:VisionToolSingleInputPropertyToolShell x:Name="toolShell"
                                                       TitleIconKind="ImageFilterBlackWhite"
+                                                      LearnButtonVisibility="Visible"
+                                                      LearnButtonText="Learn Threshold"
+                                                      LearnButtonAutomationId="ThresholdToolLearnButton"
+                                                      LearnTopicIndex="2"
+                                                      ResultReviewVisibility="Collapsed"
                                                       PropertyGridHostVisibility="Collapsed"
                                                       ParameterContentVisibility="Visible" />
 
         <Grid x:Name="parameterContentHost" Visibility="Collapsed">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="8" />
+                <RowDefinition Height="4" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="12" />
+                <RowDefinition Height="6" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <Grid Grid.Row="0"
@@ -55,32 +60,15 @@
                 <Button x:Name="btnOpenSignalInspector"
                         HorizontalAlignment="Left"
                         MinWidth="132"
-                        Height="30"
+                        Height="26"
                         Padding="10,0"
                         Click="OpenSignalInspector_Click"
                         Content="Review distribution"
                         Visibility="Collapsed"
                         AutomationProperties.AutomationId="ThresholdSignalInspectorOpenButton" />
-                <Button HorizontalAlignment="Right"
-                        MinWidth="120"
-                        Height="30"
-                        Padding="10,0"
-                        Click="OpenThresholdGuide_Click"
-                        AutomationProperties.AutomationId="ThresholdToolLearnButton">
-                    <StackPanel Orientation="Horizontal">
-                        <iconPacks:PackIconMaterial Kind="ImageFilterBlackWhite"
-                                                    Width="15"
-                                                    Height="15"
-                                                    Margin="0,0,6,0"
-                                                    VerticalAlignment="Center"
-                                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                        <TextBlock Text="Learn Threshold"
-                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                    </StackPanel>
-                </Button>
             </Grid>
 
-                <GroupBox x:Name="gbMode" Grid.Row="2" Header="Mode" Padding="12">
+                <GroupBox x:Name="gbMode" Grid.Row="2" Header="Mode" Padding="8">
                                 <UniformGrid Columns="3">
                                     <RadioButton x:Name="rbBasic"
                                                  GroupName="ThresholdMode"
@@ -170,7 +158,7 @@
                                 </UniformGrid>
                             </GroupBox>
 
-            <GroupBox x:Name="gbThresholdParameters" Grid.Row="4" Header="Parameters" Padding="12">
+            <GroupBox x:Name="gbThresholdParameters" Grid.Row="4" Header="Parameters" Padding="8">
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                                     <Grid Margin="0,0,8,16">
                                         <Border x:Name="panelBasic"

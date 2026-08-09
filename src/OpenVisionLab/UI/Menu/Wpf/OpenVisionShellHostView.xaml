@@ -8,8 +8,6 @@
              xmlns:mvvmBehaviors="clr-namespace:OpenVisionLab.Mvvm.Behaviors;assembly=OpenVisionLab.Mvvm"
              xmlns:local="clr-namespace:OpenVisionLab"
              xmlns:webView2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-             MinWidth="1280"
-             MinHeight="760"
              Background="#EEF2F6"
              mvvmBehaviors:InputCommandBehaviors.LoadedCommand="{Binding SessionCommands.LoadedCommand, RelativeSource={RelativeSource Self}}"
              mvvmBehaviors:InputCommandBehaviors.UnloadedCommand="{Binding SessionCommands.UnloadedCommand, RelativeSource={RelativeSource Self}}">
@@ -407,7 +405,8 @@
                                     Background="{TemplateBinding Background}"
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}">
-                                <ContentPresenter HorizontalAlignment="Center"
+                                <ContentPresenter x:Name="buttonContent"
+                                                  HorizontalAlignment="Center"
                                                   VerticalAlignment="Center"
                                                   RecognizesAccessKey="True" />
                             </Border>
@@ -418,6 +417,60 @@
                                 </Trigger>
                                 <Trigger Property="IsPressed" Value="True">
                                     <Setter TargetName="buttonChrome" Property="Background" Value="#15343B" />
+                                    <Setter TargetName="buttonContent" Property="Margin" Value="1,1,-1,-1" />
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter TargetName="buttonChrome" Property="BorderBrush" Value="#EAFBFC" />
+                                    <Setter TargetName="buttonChrome" Property="BorderThickness" Value="2" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="buttonChrome" Property="Opacity" Value="0.45" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="RecipeManagerToggleButtonStyle" TargetType="ToggleButton">
+                <Setter Property="Foreground" Value="{StaticResource ShellHost.FieldTextBrush}" />
+                <Setter Property="Background" Value="{StaticResource ShellHost.FieldBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource ShellHost.FieldBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border x:Name="buttonChrome"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter x:Name="buttonContent"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="buttonChrome" Property="Background" Value="#105F68" />
+                                    <Setter TargetName="buttonChrome" Property="BorderBrush" Value="#8AD7DA" />
+                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="buttonChrome" Property="Background" Value="{StaticResource ShellHost.FieldHoverBrush}" />
+                                    <Setter TargetName="buttonChrome" Property="BorderBrush" Value="{StaticResource ShellHost.FieldFocusBrush}" />
+                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="buttonChrome" Property="Background" Value="#15343B" />
+                                    <Setter TargetName="buttonContent" Property="Margin" Value="1,1,-1,-1" />
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter TargetName="buttonChrome" Property="BorderBrush" Value="#EAFBFC" />
+                                    <Setter TargetName="buttonChrome" Property="BorderThickness" Value="2" />
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
                                     <Setter TargetName="buttonChrome" Property="Opacity" Value="0.45" />
@@ -847,14 +900,12 @@
                           ToolTip="{Binding SelectedItem, ElementName=cbHostRecipe}" />
                 <ToggleButton x:Name="btnHostRecipeManager"
                               DockPanel.Dock="Left"
+                              Style="{StaticResource RecipeManagerToggleButtonStyle}"
                               Width="34"
                               Height="26"
                               Margin="0,0,10,0"
                               Padding="6,0"
                               AutomationProperties.AutomationId="HostRecipeManagerButton"
-                              BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
-                              Background="{StaticResource ShellHost.FieldBrush}"
-                              Foreground="{StaticResource ShellHost.FieldTextBrush}"
                               Checked="HandleRecipeManagerOpenChecked"
                               Unchecked="HandleRecipeManagerOpenUnchecked"
                               Tag="{Binding RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
@@ -864,7 +915,7 @@
                                                     Width="13"
                                                     Height="13"
                                                     Margin="0"
-                                                    Foreground="{StaticResource ShellHost.FieldFocusBrush}" />
+                                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}" />
                     </StackPanel>
                 </ToggleButton>
                 <TextBlock DockPanel.Dock="Left"
@@ -1371,22 +1422,22 @@
                             </Border>
 
                             <Border x:Name="workspaceEmptyOverlay"
-                                    Width="760"
                                     MaxWidth="820"
-                                    Padding="24"
+                                    Margin="12"
+                                    Padding="14"
                                     Background="#F4F8FA"
                                     BorderBrush="#8AD7DA"
                                     BorderThickness="1"
                                     CornerRadius="2"
-                                    HorizontalAlignment="Center"
+                                    HorizontalAlignment="Stretch"
                                     VerticalAlignment="Center"
                                     SnapsToDevicePixels="True">
                                 <StackPanel>
                                     <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
-                                                               Width="32"
-                                                               Height="32"
+                                                               Width="28"
+                                                               Height="28"
                                                                Foreground="#157C86"
-                                                               Margin="0,0,0,10" />
+                                                               Margin="0,0,0,8" />
                                     <TextBlock x:Name="txtHostWorkspaceEmptyTitle"
                                                Text="레이어 없음"
                                                Foreground="#243040"
@@ -1398,22 +1449,15 @@
                                                Foreground="#657487"
                                                TextWrapping="Wrap"
                                                TextTrimming="None"
-                                               Margin="0,6,0,0" />
-                                    <Grid Margin="0,18,0,0"
-                                          AutomationProperties.AutomationId="WorkspaceEmptyBeginnerFlow">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="8" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="8" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="8" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
+                                               Margin="0,4,0,0" />
+                                    <WrapPanel Margin="-3,10,-3,0"
+                                               HorizontalAlignment="Center"
+                                               ItemWidth="148"
+                                               AutomationProperties.AutomationId="WorkspaceEmptyBeginnerFlow">
 
-                                        <Border Grid.Column="0"
+                                        <Border Margin="3"
                                                 AutomationProperties.AutomationId="WorkspaceEmptyBeginnerStepLoadImage"
-                                                Padding="10,9"
+                                                Padding="8,6"
                                                 Background="#E5F0F3"
                                                 BorderBrush="#B4CCD2"
                                                 BorderThickness="1">
@@ -1431,9 +1475,9 @@
                                                            Margin="0,4,0,0" />
                                             </StackPanel>
                                         </Border>
-                                        <Border Grid.Column="2"
+                                        <Border Margin="3"
                                                 AutomationProperties.AutomationId="WorkspaceEmptyBeginnerStepSelectTool"
-                                                Padding="10,9"
+                                                Padding="8,6"
                                                 Background="#E5F0F3"
                                                 BorderBrush="#B4CCD2"
                                                 BorderThickness="1">
@@ -1451,9 +1495,9 @@
                                                            Margin="0,4,0,0" />
                                             </StackPanel>
                                         </Border>
-                                        <Border Grid.Column="4"
+                                        <Border Margin="3"
                                                 AutomationProperties.AutomationId="WorkspaceEmptyBeginnerStepPipeline"
-                                                Padding="10,9"
+                                                Padding="8,6"
                                                 Background="#E5F0F3"
                                                 BorderBrush="#B4CCD2"
                                                 BorderThickness="1">
@@ -1471,9 +1515,9 @@
                                                            Margin="0,4,0,0" />
                                             </StackPanel>
                                         </Border>
-                                        <Border Grid.Column="6"
+                                        <Border Margin="3"
                                                 AutomationProperties.AutomationId="WorkspaceEmptyBeginnerStepPreviewCheck"
-                                                Padding="10,9"
+                                                Padding="8,6"
                                                 Background="#E5F0F3"
                                                 BorderBrush="#B4CCD2"
                                                 BorderThickness="1">
@@ -1491,10 +1535,11 @@
                                                            Margin="0,4,0,0" />
                                             </StackPanel>
                                         </Border>
-                                    </Grid>
-                                    <DockPanel Margin="0,18,0,0" LastChildFill="False">
+                                    </WrapPanel>
+                                    <WrapPanel Margin="-4,10,-4,0"
+                                               HorizontalAlignment="Center">
                                     <Button x:Name="btnWorkspaceLoadImage"
-                                                DockPanel.Dock="Left"
+                                                Margin="4"
                                             HorizontalAlignment="Left"
                                             MinWidth="132"
                                             Command="{Binding WorkspaceCommands.LoadImageCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
@@ -1511,9 +1556,8 @@
                                                        TextTrimming="None" />
                                         </StackPanel>
                                     </Button>
-                                        <Button Margin="10,0,0,0"
+                                        <Button Margin="4"
                                                 AutomationProperties.AutomationId="WorkspaceEmptySampleButton"
-                                                DockPanel.Dock="Left"
                                                 HorizontalAlignment="Left"
                                                 MinWidth="116"
                                                 Command="{Binding WorkspaceCommands.OpenSampleCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
@@ -1530,9 +1574,8 @@
                                                            TextTrimming="None" />
                                             </StackPanel>
                                         </Button>
-                                        <Button Margin="10,0,0,0"
+                                        <Button Margin="4"
                                                 AutomationProperties.AutomationId="WorkspaceEmptyGuideButton"
-                                                DockPanel.Dock="Left"
                                                 HorizontalAlignment="Left"
                                                 MinWidth="116"
                                                 Command="{Binding ChromeCommands.OpenLearnCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
@@ -1550,9 +1593,8 @@
                                             </StackPanel>
                                         </Button>
                                         <Button x:Name="btnWorkspaceEmptyPipeline"
-                                                Margin="10,0,0,0"
+                                                Margin="4"
                                                 AutomationProperties.AutomationId="WorkspaceEmptyPipelineButton"
-                                                DockPanel.Dock="Left"
                                                 HorizontalAlignment="Left"
                                                 MinWidth="126"
                                                 Command="{Binding WorkspaceCommands.OpenSamplePipelineCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
@@ -1569,14 +1611,14 @@
                                                            TextTrimming="None" />
                                             </StackPanel>
                                         </Button>
-                                    </DockPanel>
+                                    </WrapPanel>
                                     <TextBlock x:Name="txtWorkspaceEmptyLogHint"
                                                AutomationProperties.AutomationId="WorkspaceEmptyLogHint"
                                                Text="이미지를 불러오면 이 영역에서 확대, 이동, 픽셀 값을 확인하고 하단 실행 로그에서 상태를 추적합니다."
                                                Foreground="#657487"
                                                FontSize="11"
                                                TextWrapping="Wrap"
-                                               Margin="0,12,0,0" />
+                                               Margin="0,8,0,0" />
                                 </StackPanel>
                             </Border>
 
@@ -1977,6 +2019,81 @@
                 </Border>
             </Grid>
 
+            <Border x:Name="documentWorkspacePanel"
+                    Grid.Column="1"
+                    Panel.ZIndex="60"
+                    Background="#101A1F"
+                    BorderBrush="#157C86"
+                    BorderThickness="1,0,1,0"
+                    Visibility="Collapsed">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="42" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Border Grid.Row="0"
+                            Background="#243238"
+                            BorderBrush="#157C86"
+                            BorderThickness="0,0,0,1"
+                            Padding="10,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="38" />
+                                <ColumnDefinition Width="4" />
+                                <ColumnDefinition Width="38" />
+                            </Grid.ColumnDefinitions>
+                            <iconPacks:PackIconMaterial Grid.Column="0"
+                                                        Kind="SourceBranch"
+                                                        Width="18"
+                                                        Height="18"
+                                                        Foreground="#8AD7DA"
+                                                        VerticalAlignment="Center" />
+                            <TextBlock x:Name="txtDockedDocumentTitle"
+                                       Grid.Column="2"
+                                       Foreground="#F4FAFB"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" />
+                            <Button x:Name="btnFloatDockedDocument"
+                                    Grid.Column="3"
+                                    Style="{StaticResource TopLayerIconButtonStyle}"
+                                    Width="34"
+                                    Height="30"
+                                    ToolTip="Float tool window"
+                                    AutomationProperties.AutomationId="OpenVisionDockedDocumentFloatButton"
+                                    AutomationProperties.Name="Float tool window"
+                                    Command="{Binding ChromeCommands.FloatDockedToolCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                <iconPacks:PackIconMaterial Kind="OpenInNew"
+                                                            Width="15"
+                                                            Height="15"
+                                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </Button>
+                            <Button x:Name="btnCloseDockedDocument"
+                                    Grid.Column="5"
+                                    Style="{StaticResource TopLayerIconButtonStyle}"
+                                    Width="34"
+                                    Height="30"
+                                    ToolTip="Close tool"
+                                    AutomationProperties.AutomationId="OpenVisionDockedDocumentCloseButton"
+                                    AutomationProperties.Name="Close tool"
+                                    Command="{Binding ChromeCommands.CloseDockedToolCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                                <iconPacks:PackIconMaterial Kind="Close"
+                                                            Width="15"
+                                                            Height="15"
+                                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </Button>
+                        </Grid>
+                    </Border>
+                    <ContentControl x:Name="dockedDocumentContentHost"
+                                    Grid.Row="1"
+                                    HorizontalContentAlignment="Stretch"
+                                    VerticalContentAlignment="Stretch" />
+                </Grid>
+            </Border>
+
             <GridSplitter x:Name="toolInspectorSplitter"
                           Grid.Column="2"
                           Width="6"
@@ -2026,6 +2143,7 @@
                                        TextTrimming="CharacterEllipsis" />
                             <Button x:Name="btnFloatDockedTool"
                                     Grid.Column="3"
+                                    Style="{StaticResource TopLayerIconButtonStyle}"
                                     Width="34"
                                     Height="30"
                                     Background="#1C2B31"
@@ -2042,6 +2160,7 @@
                             </Button>
                             <Button x:Name="btnCloseDockedTool"
                                     Grid.Column="5"
+                                    Style="{StaticResource TopLayerIconButtonStyle}"
                                     Width="34"
                                     Height="30"
                                     Background="#1C2B31"
@@ -2369,7 +2488,8 @@
                                         BorderBrush="{TemplateBinding BorderBrush}"
                                         BorderThickness="{TemplateBinding BorderThickness}"
                                         Padding="{TemplateBinding Padding}">
-                                    <ContentPresenter HorizontalAlignment="Center"
+                                    <ContentPresenter x:Name="buttonContent"
+                                                      HorizontalAlignment="Center"
                                                       VerticalAlignment="Center" />
                                 </Border>
                                 <ControlTemplate.Triggers>
@@ -2379,6 +2499,11 @@
                                     </Trigger>
                                     <Trigger Property="IsPressed" Value="True">
                                         <Setter TargetName="buttonChrome" Property="Background" Value="#10545B" />
+                                        <Setter TargetName="buttonContent" Property="Margin" Value="1,1,-1,-1" />
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                        <Setter TargetName="buttonChrome" Property="BorderBrush" Value="#EAFBFC" />
+                                        <Setter TargetName="buttonChrome" Property="BorderThickness" Value="2" />
                                     </Trigger>
                                     <Trigger Property="IsEnabled" Value="False">
                                         <Setter TargetName="buttonChrome" Property="Background" Value="#252A2E" />
@@ -2426,11 +2551,16 @@
                                                       VerticalAlignment="Center" />
                                 </Border>
                                 <ControlTemplate.Triggers>
-                                    <Trigger Property="IsSelected" Value="True">
-                                        <Setter TargetName="tabChrome" Property="Background" Value="#117986" />
-                                        <Setter TargetName="tabChrome" Property="BorderBrush" Value="#8AD7DA" />
-                                        <Setter Property="Foreground" Value="#FFFFFF" />
-                                    </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="tabChrome" Property="Background" Value="#117986" />
+                                    <Setter TargetName="tabChrome" Property="BorderBrush" Value="#8AD7DA" />
+                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="tabChrome" Property="Background" Value="#33464D" />
+                                    <Setter TargetName="tabChrome" Property="BorderBrush" Value="#60C9CF" />
+                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                </Trigger>
                                     <Trigger Property="IsEnabled" Value="False">
                                         <Setter TargetName="tabChrome" Property="Opacity" Value="0.55" />
                                     </Trigger>
@@ -2603,6 +2733,7 @@
                                LastChildFill="True">
                         <ToggleButton x:Name="recipeAdvancedReviewToggle"
                                       DockPanel.Dock="Right"
+                                      Style="{StaticResource RecipeManagerToggleButtonStyle}"
                                       Width="154"
                                       Height="26"
                                       Margin="12,0,0,0"
@@ -2633,7 +2764,8 @@
                                                                 Height="13"
                                                                 Margin="0,1,5,0" />
                                     <TextBlock Text="{Binding RecipeCommands.RecipeAdvancedReviewText}"
-                                               FontSize="11" />
+                                               FontSize="11"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal"
                                             Visibility="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}, Converter={StaticResource ShellHost.BooleanToVisibilityConverter}}">
@@ -2642,7 +2774,8 @@
                                                                 Height="13"
                                                                 Margin="0,1,5,0" />
                                     <TextBlock Text="{Binding RecipeCommands.RecipeReturnToSummaryText}"
-                                               FontSize="11" />
+                                               FontSize="11"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}" />
                                 </StackPanel>
                             </Grid>
                         </ToggleButton>

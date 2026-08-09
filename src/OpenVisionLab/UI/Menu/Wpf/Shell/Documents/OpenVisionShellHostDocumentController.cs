@@ -8,6 +8,7 @@ namespace OpenVisionLab
     {
         private readonly EventHandler layerStateChanged;
         private readonly OpenVisionNativeToolDocumentCache nativeToolDocuments = new OpenVisionNativeToolDocumentCache();
+        private OpenVisionPipelineReviewDocument cachedPipelineReviewDocument;
         private bool disposed;
 
         public OpenVisionShellHostDocumentController(EventHandler layerStateChanged)
@@ -43,6 +44,51 @@ namespace OpenVisionLab
             DeactivateForToolSwitch();
             ActivePipelineReviewDocument = document;
             ActivePipelineReviewDocument.LayerStateChanged += layerStateChanged;
+        }
+
+        public bool TryRestorePipelineReview(
+            OpenVisionRecipeContext recipeContext,
+            out OpenVisionPipelineReviewDocument document)
+        {
+            ThrowIfDisposed();
+            document = null;
+            if (ActivePipelineReviewDocument != null)
+            {
+                if (IsSamePipelineContext(ActivePipelineReviewDocument.RecipeContext, recipeContext))
+                {
+                    document = ActivePipelineReviewDocument;
+                    return true;
+                }
+
+                CloseActivePipelineReviewDocument();
+            }
+
+            if (!IsSamePipelineContext(cachedPipelineReviewDocument?.RecipeContext, recipeContext))
+            {
+                CloseCachedPipelineReviewDocument();
+                return false;
+            }
+
+            ActivePipelineReviewDocument = cachedPipelineReviewDocument;
+            cachedPipelineReviewDocument = null;
+            ActivePipelineReviewDocument.LayerStateChanged += layerStateChanged;
+            document = ActivePipelineReviewDocument;
+            return true;
+        }
+
+        public bool SuspendPipelineReviewForRecipeReturn()
+        {
+            ThrowIfDisposed();
+            if (ActivePipelineReviewDocument == null)
+            {
+                return false;
+            }
+
+            CloseCachedPipelineReviewDocument();
+            cachedPipelineReviewDocument = ActivePipelineReviewDocument;
+            ActivePipelineReviewDocument = null;
+            cachedPipelineReviewDocument.LayerStateChanged -= layerStateChanged;
+            return true;
         }
 
         public bool TryActivateNativeTool(
@@ -86,12 +132,14 @@ namespace OpenVisionLab
         public void CloseAllDocuments()
         {
             CloseVisibleDocuments();
+            CloseCachedPipelineReviewDocument();
             DisposeCachedNativeToolDocuments();
         }
 
         public void DeactivateForToolSwitch()
         {
             CloseVisibleDocuments();
+            CloseCachedPipelineReviewDocument();
         }
 
         public void Dispose()
@@ -116,6 +164,25 @@ namespace OpenVisionLab
             ActivePipelineReviewDocument = null;
             document.LayerStateChanged -= layerStateChanged;
             document.Dispose();
+        }
+
+        private void CloseCachedPipelineReviewDocument()
+        {
+            OpenVisionPipelineReviewDocument document = cachedPipelineReviewDocument;
+            cachedPipelineReviewDocument = null;
+            document?.Dispose();
+        }
+
+        private static bool IsSamePipelineContext(
+            OpenVisionRecipeContext current,
+            OpenVisionRecipeContext requested)
+        {
+            return current != null
+                && requested != null
+                && string.Equals(current.Id, requested.Id, StringComparison.Ordinal)
+                && string.Equals(current.Name, requested.Name, StringComparison.Ordinal)
+                && string.Equals(current.PipelineName, requested.PipelineName, StringComparison.Ordinal)
+                && string.Equals(current.SourcePath, requested.SourcePath, StringComparison.Ordinal);
         }
 
         private void DetachActiveNativeDocument()

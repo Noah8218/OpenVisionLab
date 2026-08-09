@@ -134,6 +134,7 @@
                 <Button x:Name="btnReturnToRecipe"
                         Grid.Column="0"
                         AutomationProperties.AutomationId="PipelineReviewReturnToRecipeButton"
+                        AutomationProperties.Name="{Binding Text, ElementName=txtReturnToRecipeButton}"
                         Height="30"
                         Padding="9,0"
                         Click="BtnReturnToRecipe_Click">
@@ -180,6 +181,7 @@
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
                     <Button x:Name="btnPreviousStep"
+                            AutomationProperties.Name="{Binding Text, ElementName=txtPreviousStepButton}"
                             Height="30"
                             MinWidth="72"
                             Padding="9,0"
@@ -199,6 +201,7 @@
                         </StackPanel>
                     </Button>
                     <Button x:Name="btnNextStep"
+                            AutomationProperties.Name="{Binding Text, ElementName=txtNextStepButton}"
                             Height="30"
                             MinWidth="72"
                             Padding="9,0"
@@ -219,6 +222,7 @@
                     </Button>
                     <Button x:Name="btnFirstIssueStep"
                             AutomationProperties.AutomationId="PipelineReviewFirstIssueStepButton"
+                            AutomationProperties.Name="{Binding Text, ElementName=txtFirstIssueStepButton}"
                             Height="30"
                             MinWidth="82"
                             Padding="9,0"
@@ -238,6 +242,7 @@
                         </Button>
                     <Button x:Name="btnOpenSelectedToolLearn"
                             AutomationProperties.AutomationId="PipelineReviewOpenSelectedToolLearnButton"
+                            AutomationProperties.Name="{Binding Text, ElementName=txtOpenSelectedToolLearnButton}"
                             Height="30"
                             MinWidth="92"
                             Padding="9,0"
@@ -261,6 +266,7 @@
                 <Button x:Name="btnRunReview"
                         Grid.Column="7"
                         AutomationProperties.AutomationId="PipelineReviewRunReviewButton"
+                        AutomationProperties.Name="{Binding RunReviewButtonText}"
                         Height="30"
                         Padding="12,0"
                         IsEnabled="{Binding CanRunReview}"

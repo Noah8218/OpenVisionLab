@@ -66,6 +66,7 @@ namespace OpenVisionLab
                 presenter,
                 thresholdInteractionController,
                 () => Window.GetWindow(this));
+            toolShell.LearnTopicRequested += ToolShell_LearnTopicRequested;
             textPresenter = new ThresholdToolTextPresenter(
                 gbThresholdParameters,
                 gbMode,
@@ -136,6 +137,7 @@ namespace OpenVisionLab
         protected override void DisposeToolResources()
         {
             parameterGuideBinder.Dispose();
+            toolShell.LearnTopicRequested -= ToolShell_LearnTopicRequested;
             learnWindowController.Dispose();
             signalInspector.MarkerValueChangeRequested -= SignalInspector_MarkerValueChangeRequested;
             thresholdInteractionController.Detach();
@@ -271,7 +273,7 @@ namespace OpenVisionLab
             }
         }
 
-        private void OpenThresholdGuide_Click(object sender, RoutedEventArgs e)
+        private void ToolShell_LearnTopicRequested(object sender, EventArgs e)
         {
             learnWindowController.Open();
         }
