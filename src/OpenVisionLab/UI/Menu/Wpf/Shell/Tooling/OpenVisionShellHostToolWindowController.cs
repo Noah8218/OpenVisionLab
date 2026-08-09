@@ -86,11 +86,7 @@ namespace OpenVisionLab
                 OpenVisionRecipeContext recipeContext = ResolveRecipeContext();
                 if (!documentController.TryRestorePipelineReview(recipeContext, out OpenVisionPipelineReviewDocument pipelineReviewDocument))
                 {
-                    pipelineReviewDocument = new OpenVisionPipelineReviewDocument(displayManager, recipeContext);
-                    pipelineReviewDocument.OpenWorkspaceSampleRequested += OnPipelineReviewOpenWorkspaceSampleRequested;
-                    pipelineReviewDocument.ReturnToRecipeRequested += OnPipelineReviewReturnToRecipeRequested;
-                    pipelineReviewDocument.OpenSelectedToolLearnRequested += OnPipelineReviewOpenSelectedToolLearnRequested;
-                    pipelineReviewDocument.EditSelectedStepRequested += OnPipelineReviewEditSelectedStepRequested;
+                    pipelineReviewDocument = CreatePipelineReviewDocument(recipeContext);
                     documentController.ActivatePipelineReview(pipelineReviewDocument);
                 }
                 else
@@ -150,6 +146,33 @@ namespace OpenVisionLab
             return true;
         }
 
+        public void PrewarmPipelineReview()
+        {
+            if (documentController.HasPipelineReviewDocument)
+            {
+                return;
+            }
+
+            OpenVisionPipelineReviewDocument document = CreatePipelineReviewDocument(ResolveRecipeContext());
+            if (!documentController.TryCachePipelineReview(document))
+            {
+                document.Dispose();
+                return;
+            }
+
+            FrameworkElement view = PrepareHostedWpfDocument(document.View);
+            Size warmSize = new Size(1180, 760);
+            toolWindowLifecycleController.PrepareDockedDocumentWorkspace(
+                view,
+                OpenVisionLanguageService.T("PipelineReview.Title"),
+                warmSize.Width,
+                warmSize.Height);
+            view.ApplyTemplate();
+            view.Measure(warmSize);
+            view.Arrange(new Rect(0, 0, warmSize.Width, warmSize.Height));
+            view.UpdateLayout();
+        }
+
         private void OnPipelineReviewOpenWorkspaceSampleRequested(object sender, OpenVisionPipelineReviewSampleOpenRequestedEventArgs e)
         {
             if (e == null || string.IsNullOrWhiteSpace(e.SampleName))
@@ -202,6 +225,16 @@ namespace OpenVisionLab
                 isDirty: false,
                 activeLayerName: "Main",
                 lastReviewState: string.Empty);
+        }
+
+        private OpenVisionPipelineReviewDocument CreatePipelineReviewDocument(OpenVisionRecipeContext recipeContext)
+        {
+            OpenVisionPipelineReviewDocument document = new OpenVisionPipelineReviewDocument(displayManager, recipeContext);
+            document.OpenWorkspaceSampleRequested += OnPipelineReviewOpenWorkspaceSampleRequested;
+            document.ReturnToRecipeRequested += OnPipelineReviewReturnToRecipeRequested;
+            document.OpenSelectedToolLearnRequested += OnPipelineReviewOpenSelectedToolLearnRequested;
+            document.EditSelectedStepRequested += OnPipelineReviewEditSelectedStepRequested;
+            return document;
         }
 
         public void ShowWpfToolWindow(FrameworkElement content, string title, double width, double height)

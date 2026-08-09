@@ -29,7 +29,7 @@ namespace OpenVisionLab
 
         public bool IsVisible => panel.Visibility == Visibility.Visible && content != null;
 
-        public bool ShouldRestoreDocked { get; private set; }
+        public bool ShouldRestoreDocked { get; private set; } = true;
 
         public FrameworkElement ActiveContent => content;
 
@@ -37,27 +37,12 @@ namespace OpenVisionLab
 
         public bool Show(FrameworkElement nextContent, string nextTitle, double nextFloatingWidth, double nextFloatingHeight)
         {
-            if (nextContent == null)
-            {
-                return false;
-            }
+            return Attach(nextContent, nextTitle, nextFloatingWidth, nextFloatingHeight, Visibility.Visible);
+        }
 
-            closeFloatingWindow();
-            if (!ReferenceEquals(content, nextContent))
-            {
-                contentHost.Content = null;
-            }
-
-            content = nextContent;
-            title = nextTitle ?? string.Empty;
-            floatingWidth = nextFloatingWidth;
-            floatingHeight = nextFloatingHeight;
-            ShouldRestoreDocked = true;
-            OpenVisionToolDockModeHelper.Apply(content, false);
-            contentHost.Content = content;
-            titleText.Text = title;
-            panel.Visibility = Visibility.Visible;
-            return true;
+        public bool Prepare(FrameworkElement nextContent, string nextTitle, double nextFloatingWidth, double nextFloatingHeight)
+        {
+            return Attach(nextContent, nextTitle, nextFloatingWidth, nextFloatingHeight, Visibility.Hidden);
         }
 
         public bool SuspendForReuse()
@@ -67,7 +52,9 @@ namespace OpenVisionLab
                 return false;
             }
 
-            ClearContent(keepDockedPreference: true);
+            panel.Visibility = Visibility.Collapsed;
+            titleText.Text = string.Empty;
+            ShouldRestoreDocked = true;
             return true;
         }
 
@@ -101,6 +88,36 @@ namespace OpenVisionLab
         public bool CloseByUser()
         {
             return CloseSilently();
+        }
+
+        private bool Attach(
+            FrameworkElement nextContent,
+            string nextTitle,
+            double nextFloatingWidth,
+            double nextFloatingHeight,
+            Visibility visibility)
+        {
+            if (nextContent == null)
+            {
+                return false;
+            }
+
+            closeFloatingWindow();
+            if (!ReferenceEquals(content, nextContent))
+            {
+                contentHost.Content = null;
+            }
+
+            content = nextContent;
+            title = nextTitle ?? string.Empty;
+            floatingWidth = nextFloatingWidth;
+            floatingHeight = nextFloatingHeight;
+            ShouldRestoreDocked = true;
+            OpenVisionToolDockModeHelper.Apply(content, false);
+            contentHost.Content = content;
+            titleText.Text = title;
+            panel.Visibility = visibility;
+            return true;
         }
 
         private void ClearContent(bool keepDockedPreference)

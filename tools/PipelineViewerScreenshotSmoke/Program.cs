@@ -9929,6 +9929,53 @@ internal static class Program
             recipeManagerButton.IsChecked = true;
             Pump(100);
 
+            FrameworkElement managerPanel = FindVisualChildren<FrameworkElement>(shellHost)
+                .First(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "HostRecipeManagerPanel",
+                    StringComparison.Ordinal));
+            FrameworkElement nameStrip = FindVisualChildren<FrameworkElement>(shellHost)
+                .First(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "HostRecipeManagerNameStrip",
+                    StringComparison.Ordinal));
+            FrameworkElement workbench = FindVisualChildren<FrameworkElement>(shellHost)
+                .First(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "HostRecipeManagerWorkbenchGrid",
+                    StringComparison.Ordinal));
+            TextBox nameEditor = FindVisualChildren<TextBox>(shellHost)
+                .First(item => string.Equals(
+                    AutomationProperties.GetAutomationId(item),
+                    "HostRecipeNameEditor",
+                    StringComparison.Ordinal));
+            nameEditor.ApplyTemplate();
+            Border? fieldChrome = nameEditor.Template.FindName("fieldChrome", nameEditor) as Border;
+            HashSet<DependencyProperty> fieldStateTriggers = nameEditor.Template.Triggers
+                .OfType<Trigger>()
+                .Select(trigger => trigger.Property)
+                .Where(property => property != null)
+                .ToHashSet();
+            Point nameStripPosition = nameStrip.TranslatePoint(new Point(0D, 0D), managerPanel);
+            Point workbenchPosition = workbench.TranslatePoint(new Point(0D, 0D), managerPanel);
+            if (nameStripPosition.Y >= workbenchPosition.Y
+                || fieldChrome?.Background is not SolidColorBrush fieldBackground
+                || nameEditor.Foreground is not SolidColorBrush fieldForeground
+                || !fieldStateTriggers.Contains(UIElement.IsMouseOverProperty)
+                || !fieldStateTriggers.Contains(UIElement.IsKeyboardFocusWithinProperty)
+                || !fieldStateTriggers.Contains(TextBoxBase.IsReadOnlyProperty)
+                || !fieldStateTriggers.Contains(UIElement.IsEnabledProperty)
+                || !fieldStateTriggers.Contains(Validation.HasErrorProperty)
+                || Math.Abs(fieldBackground.Color.R - fieldForeground.Color.R)
+                    + Math.Abs(fieldBackground.Color.G - fieldForeground.Color.G)
+                    + Math.Abs(fieldBackground.Color.B - fieldForeground.Color.B) < 180)
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager lifecycle controls were not above the workbench with a readable themed name field. "
+                    + $"NameY={nameStripPosition.Y:0.0}, WorkbenchY={workbenchPosition.Y:0.0}, "
+                    + $"Chrome={fieldChrome != null}, Text='{nameEditor.Text}'.");
+            }
+
             ToggleButton advancedToggle = FindNamedVisualChild<ToggleButton>(shellHost, "recipeAdvancedReviewToggle")
                 ?? throw new InvalidOperationException("Recipe advanced review toggle was not found.");
             advancedToggle.IsChecked = true;
@@ -10155,7 +10202,8 @@ internal static class Program
                     + $"Result='{shellHost.PipelineReviewResultSummaryText}', Detail='{shellHost.PipelineReviewResultDetailText}'");
             }
 
-            if (!shellHost.DockActiveWpfToolWindowForTest())
+            if (!shellHost.IsDockedDocumentWorkspaceVisibleForTest
+                && !shellHost.DockActiveWpfToolWindowForTest())
             {
                 throw new InvalidOperationException("Recipe manager Pipeline Review could not be docked before return.");
             }

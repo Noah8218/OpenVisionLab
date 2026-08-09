@@ -11,6 +11,7 @@ namespace OpenVisionLab
         private readonly Dispatcher dispatcher;
         private readonly OpenVisionNativeToolPrewarmService nativeToolPrewarmService;
         private readonly OpenVisionFloatingToolWindowHost floatingToolWindowHost;
+        private readonly Action prewarmPipelineReview;
         private readonly Func<bool> canRun;
         private readonly Func<VISION_MENU?> selectedMenuProvider;
         private readonly Func<Window> ownerProvider;
@@ -21,6 +22,7 @@ namespace OpenVisionLab
             Dispatcher dispatcher,
             OpenVisionNativeToolPrewarmService nativeToolPrewarmService,
             OpenVisionFloatingToolWindowHost floatingToolWindowHost,
+            Action prewarmPipelineReview,
             Func<bool> canRun,
             Func<VISION_MENU?> selectedMenuProvider,
             Func<Window> ownerProvider)
@@ -28,6 +30,7 @@ namespace OpenVisionLab
             this.dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
             this.nativeToolPrewarmService = nativeToolPrewarmService ?? throw new ArgumentNullException(nameof(nativeToolPrewarmService));
             this.floatingToolWindowHost = floatingToolWindowHost ?? throw new ArgumentNullException(nameof(floatingToolWindowHost));
+            this.prewarmPipelineReview = prewarmPipelineReview ?? throw new ArgumentNullException(nameof(prewarmPipelineReview));
             this.canRun = canRun ?? throw new ArgumentNullException(nameof(canRun));
             this.selectedMenuProvider = selectedMenuProvider ?? throw new ArgumentNullException(nameof(selectedMenuProvider));
             this.ownerProvider = ownerProvider ?? throw new ArgumentNullException(nameof(ownerProvider));
@@ -41,7 +44,16 @@ namespace OpenVisionLab
         public void ScheduleStartupWork()
         {
             ScheduleFloatingToolWindowPrepareIfEnabled();
+            SchedulePipelineReviewPrewarmIfEnabled();
             ScheduleNativePrewarmIfEnabled();
+        }
+
+        public void SchedulePipelineReviewPrewarmIfEnabled()
+        {
+            if (canRun())
+            {
+                dispatcher.BeginInvoke(new Action(PrewarmPipelineReview), DispatcherPriority.Background);
+            }
         }
 
         public void ScheduleNativePrewarmIfEnabled()
@@ -123,6 +135,14 @@ namespace OpenVisionLab
             }
 
             floatingToolWindowHost.Prepare(ownerProvider());
+        }
+
+        private void PrewarmPipelineReview()
+        {
+            if (canRun())
+            {
+                prewarmPipelineReview();
+            }
         }
 
         private void StartNativeToolPrewarm()

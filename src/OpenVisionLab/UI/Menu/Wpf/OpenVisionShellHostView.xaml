@@ -2475,6 +2475,59 @@
                 <TranslateTransform x:Name="recipeManagerPanelTransform" />
             </Border.RenderTransform>
             <Border.Resources>
+                <Style TargetType="{x:Type TextBox}">
+                    <Setter Property="Background" Value="{StaticResource ShellHost.FieldBrush}" />
+                    <Setter Property="Foreground" Value="{StaticResource ShellHost.FieldTextBrush}" />
+                    <Setter Property="BorderBrush" Value="{StaticResource ShellHost.FieldBorderBrush}" />
+                    <Setter Property="BorderThickness" Value="1" />
+                    <Setter Property="CaretBrush" Value="#8FE8F0" />
+                    <Setter Property="SelectionBrush" Value="#157C86" />
+                    <Setter Property="SelectionOpacity" Value="0.85" />
+                    <Setter Property="Cursor" Value="IBeam" />
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                    <Setter Property="SnapsToDevicePixels" Value="True" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type TextBox}">
+                                <Border x:Name="fieldChrome"
+                                        Padding="{TemplateBinding Padding}"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="2"
+                                        SnapsToDevicePixels="True">
+                                    <ScrollViewer x:Name="PART_ContentHost"
+                                                  HorizontalScrollBarVisibility="Hidden"
+                                                  VerticalScrollBarVisibility="Hidden" />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="fieldChrome" Property="Background" Value="{StaticResource ShellHost.FieldHoverBrush}" />
+                                        <Setter TargetName="fieldChrome" Property="BorderBrush" Value="{StaticResource ShellHost.FieldFocusBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                        <Setter TargetName="fieldChrome" Property="BorderBrush" Value="{StaticResource ShellHost.FieldFocusBrush}" />
+                                        <Setter TargetName="fieldChrome" Property="BorderThickness" Value="2" />
+                                    </Trigger>
+                                    <Trigger Property="IsReadOnly" Value="True">
+                                        <Setter TargetName="fieldChrome" Property="Background" Value="{StaticResource ShellHost.FieldDropBrush}" />
+                                        <Setter Property="Foreground" Value="#C5D7DB" />
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter TargetName="fieldChrome" Property="Background" Value="#252A2E" />
+                                        <Setter TargetName="fieldChrome" Property="BorderBrush" Value="#465157" />
+                                        <Setter Property="Foreground" Value="#91A5AA" />
+                                        <Setter Property="Opacity" Value="0.85" />
+                                    </Trigger>
+                                    <Trigger Property="Validation.HasError" Value="True">
+                                        <Setter TargetName="fieldChrome" Property="BorderBrush" Value="#E45B5B" />
+                                        <Setter TargetName="fieldChrome" Property="BorderThickness" Value="2" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
                 <Style TargetType="{x:Type Button}" BasedOn="{StaticResource LayerDetailActionButtonStyle}">
                     <Setter Property="Foreground" Value="#EAFBFC" />
                     <Setter Property="Background" Value="#2A3034" />
@@ -2602,8 +2655,8 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <Grid x:Name="recipeManagerTitleBar"
                       Grid.Row="0"
@@ -2805,7 +2858,7 @@
                         </Grid>
                     </DockPanel>
                 </Grid>
-                <Grid Grid.Row="2"
+                <Grid Grid.Row="3"
                       Margin="0,12,0,0"
                       AutomationProperties.AutomationId="HostRecipeManagerWorkbenchGrid">
                     <Grid.ColumnDefinitions>
@@ -8359,8 +8412,8 @@
                         </TabControl>
                     </Grid>
                 </Grid>
-                <Grid Grid.Row="3"
-                      Margin="0,8,0,0"
+                <Grid Grid.Row="2"
+                      Margin="0,12,0,0"
                       AutomationProperties.AutomationId="HostRecipeManagerNameStrip">
                     <Grid x:Name="recipeBasicLifecyclePanel">
                         <Grid.Style>

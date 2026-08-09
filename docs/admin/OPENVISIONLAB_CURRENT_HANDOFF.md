@@ -53,6 +53,40 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 ## Latest Completed Work
 
+### P294 Main No-Image Pipeline Open Performance - Complete In Dev
+
+- The corrected scope is the main no-image workspace's `Pipeline 열기` button,
+  not Recipe Manager's Open Pipeline command.
+- Pipeline Review now prepares one exact current Recipe/Pipeline document and
+  its hidden central-workspace layout during startup idle work. The no-image
+  guide remains visible until the explicit click; stale contexts are rejected,
+  and Recipe changes schedule preparation for the new context.
+- Across three fresh actual-EXE processes, visible readiness changed from
+  768-1,075 ms (median 820 ms) to 411-435 ms (median 428 ms). Internal selection
+  changed from 244-327 ms (median 255 ms) to 22-28 ms (median 27 ms).
+- Wide/Compact actual EXE, empty-workspace, Recipe context-switch, dock/float,
+  deterministic public-sample review, Debug build, readiness 13/13, and Vision
+  UI contract checks passed without automatic Preview/Run. Evidence:
+  `docs/reports/OPENVISIONLAB_WORKSPACE_EMPTY_PIPELINE_OPEN_PERFORMANCE_20260809.md`.
+
+### P293 Recipe Manager And Pipeline Entry UX - Complete In Dev
+
+- Recipe lifecycle commands and the name editor now remain together above the
+  Recipe Manager workbench in Wide and Compact layouts. A panel-scoped field
+  template removes the Wpf.Ui light-template leak, so entered names and all
+  normal/focus/hover/read-only/disabled/error states use the shell theme.
+- Pipeline Review now defaults to the central document workspace instead of
+  paying the separate floating-window construction cost on normal first entry.
+  Explicit Float remains available and keeps the operator's floating choice.
+- On the current workstation, the measured two-Step first open changed from
+  860 ms to 661 ms; internal activation changed from 329 ms to 214 ms. Central
+  same-context reopen reached the visible control in 311-322 ms and completed
+  internally in 10-12 ms. The reported three-second delay was not reproduced.
+- Korean/English Recipe Manager and dock-cycle smokes, Debug build, readiness
+  13/13, actual-EXE Wide/Compact control visibility, and no-execution/layer/
+  routing checks passed. Evidence:
+  `docs/reports/OPENVISIONLAB_RECIPE_MANAGER_PIPELINE_ENTRY_UX_20260809.md`.
+
 ### P292 Tool View Dock And Interaction UX - Complete In Dev
 
 - Native algorithm Tool Views remain in the right inspector, while Pipeline
@@ -253,6 +287,10 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 ## Current Priority And Activation Conditions
 
+- P294 is complete and verified in Dev. Promotion to the original repository,
+  commit, and push remain separate explicitly authorized tasks.
+- P293 is complete and verified in Dev. Promotion to the original repository,
+  commit, and push remain separate explicitly authorized tasks.
 - P292 is complete and verified in Dev. Promotion to the original repository
   remains a separate explicitly authorized task.
 - P291 is complete and verified in Dev. Promotion to the original repository

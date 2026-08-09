@@ -50,6 +50,7 @@ namespace OpenVisionLab
             refreshHostLayerRows();
             refreshHostSelectedLayerDetail(displayManager.SelectedItem);
             refreshDirectRouteText();
+            toolPrewarmController.SchedulePipelineReviewPrewarmIfEnabled();
             toolPrewarmController.ScheduleNativePrewarmIfEnabled();
         }
     }

@@ -264,13 +264,6 @@ namespace OpenVisionLab
                 refreshCoordinator.RefreshHostLayerRows,
                 hasPreviewResult => nativePreviewRouteCoordinator.RefreshAfterLayerStateChanged(hasPreviewResult),
                 nativePreviewRouteCoordinator.RefreshLastVisibleNativeOutputWorkspacePreview);
-            toolPrewarmController = new OpenVisionShellHostToolPrewarmController(
-                Dispatcher,
-                nativeToolPrewarmService,
-                floatingToolWindowHost,
-                () => sessionState.Loaded && !sessionState.Disposed,
-                () => viewModel.SelectedItem?.Menu,
-                () => Window.GetWindow(this));
             statePresenter = new OpenVisionShellHostStatePresenter(
                 displayManager,
                 layerListPresenter,
@@ -294,6 +287,14 @@ namespace OpenVisionLab
                 ReturnToRecipeManagerFromPipelineReview,
                 OpenPipelineStepEditorFromPipelineReview,
                 OpenLearnForPipelineReviewTool);
+            toolPrewarmController = new OpenVisionShellHostToolPrewarmController(
+                Dispatcher,
+                nativeToolPrewarmService,
+                floatingToolWindowHost,
+                toolWindowController.PrewarmPipelineReview,
+                () => sessionState.Loaded && !sessionState.Disposed,
+                () => viewModel.SelectedItem?.Menu,
+                () => Window.GetWindow(this));
             toolSelectionController = new OpenVisionShellHostToolSelectionController(
                 viewModel,
                 toolWindowController,

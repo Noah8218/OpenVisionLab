@@ -33,6 +33,26 @@ namespace OpenVisionLab
         public bool IsNativeDocumentActive =>
             ActiveNativeDocument != null || ActivePipelineReviewDocument != null;
 
+        public bool HasPipelineReviewDocument =>
+            ActivePipelineReviewDocument != null || cachedPipelineReviewDocument != null;
+
+        public bool TryCachePipelineReview(OpenVisionPipelineReviewDocument document)
+        {
+            ThrowIfDisposed();
+            if (document == null)
+            {
+                throw new ArgumentNullException(nameof(document));
+            }
+
+            if (ActivePipelineReviewDocument != null || cachedPipelineReviewDocument != null)
+            {
+                return false;
+            }
+
+            cachedPipelineReviewDocument = document;
+            return true;
+        }
+
         public void ActivatePipelineReview(OpenVisionPipelineReviewDocument document)
         {
             ThrowIfDisposed();

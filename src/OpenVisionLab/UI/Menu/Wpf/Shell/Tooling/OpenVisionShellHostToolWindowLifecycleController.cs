@@ -56,6 +56,11 @@ namespace OpenVisionLab
             return dockedDocumentWorkspaceController.Show(content, title, floatingWidth, floatingHeight);
         }
 
+        public bool PrepareDockedDocumentWorkspace(FrameworkElement content, string title, double floatingWidth, double floatingHeight)
+        {
+            return dockedDocumentWorkspaceController.Prepare(content, title, floatingWidth, floatingHeight);
+        }
+
         public void PrepareForToolSelection(VISION_MENU menu)
         {
             if (menu == VISION_MENU.Pipeline)
