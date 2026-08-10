@@ -181,6 +181,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestPublicSampleAssets
 - Before showing any UI image in chat, verify the image path belongs to the current artifact folder, and that the folder was produced by the command just run for this task. Do not show images from earlier artifact folders unless explicitly marked as before/baseline evidence.
 - src/OpenVisionLab/UI/UX changes require current-build before/after evidence. Do not reuse old screenshots.
 - When reviewing UI screenshots, explicitly inspect visible controls for clipped text, clipped icons, hidden button content, combo box text visibility, input text visibility, and incoherent overlap.
+- For every editable text control visible in a changed panel or container, enter a representative non-empty value and verify the rendered value in the current build. A binding value, `Text` property assertion, placeholder-only screenshot, or ViewModel update does not prove input-text visibility.
+- If a focused smoke target exists for the changed panel or container, run it. Any failure blocks `Complete` even when another narrower target passes; repair or separate an unrelated stale precondition before using that smoke as visual evidence.
 - When src/OpenVisionLab/UI/UX work is done, render the relevant before/after screenshots directly in the chat whenever the chat surface supports local image display. Do not report only file paths.
 - Image paths may be included as supporting evidence, but they do not replace direct in-chat image display.
 

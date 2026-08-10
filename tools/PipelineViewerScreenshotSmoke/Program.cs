@@ -1929,22 +1929,52 @@ internal static class Program
             shellHost.ClearToolSearchForTest();
             Pump(8);
             if (!string.IsNullOrEmpty(shellHost.ToolSearchTextForTest)
-                || shellHost.VisibleToolSearchItemCountForTest != 16)
+                || shellHost.VisibleToolSearchItemCountForTest != Enum.GetValues(typeof(VISION_MENU)).Length)
             {
                 throw new InvalidOperationException(
                     "Clearing Tool search did not restore the full palette. "
                     + $"Text='{shellHost.ToolSearchTextForTest}', Visible={shellHost.VisibleToolSearchItemCountForTest}");
             }
 
-            AssertToolSearchResult(shellHost, "핀 간격 mm", 1, "Line");
+            searchBox.Focus();
+            Keyboard.Focus(searchBox);
+            searchBox.SelectAll();
+            searchBox.Text = "핀 간격 mm";
+            searchBox.CaretIndex = searchBox.Text.Length;
+            searchBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+            Pump(8);
+            searchBox.SelectAll();
+            searchBox.ApplyTemplate();
+
+            Border? searchFieldChrome = searchBox.Template.FindName("fieldChrome", searchBox) as Border;
+            HashSet<DependencyProperty> searchFieldStateTriggers = searchBox.Template.Triggers
+                .OfType<Trigger>()
+                .Select(trigger => trigger.Property)
+                .Where(property => property != null)
+                .ToHashSet();
             if (!string.Equals(searchBox.Text, "핀 간격 mm", StringComparison.Ordinal)
+                || !string.Equals(shellHost.ToolSearchTextForTest, "핀 간격 mm", StringComparison.Ordinal)
+                || shellHost.VisibleToolSearchItemCountForTest != 1
+                || !string.Equals(shellHost.VisibleToolSearchCommandIdsForTest, "Line", StringComparison.Ordinal)
                 || !summary.Text.Contains("1", StringComparison.Ordinal)
-                || !clearButton.IsVisible)
+                || !clearButton.IsVisible
+                || !searchBox.IsKeyboardFocusWithin
+                || searchBox.SelectionLength != searchBox.Text.Length
+                || searchFieldChrome == null
+                || !searchFieldStateTriggers.Contains(UIElement.IsMouseOverProperty)
+                || !searchFieldStateTriggers.Contains(UIElement.IsKeyboardFocusWithinProperty)
+                || !searchFieldStateTriggers.Contains(TextBoxBase.IsReadOnlyProperty)
+                || !searchFieldStateTriggers.Contains(UIElement.IsEnabledProperty)
+                || !searchFieldStateTriggers.Contains(Validation.HasErrorProperty))
             {
                 throw new InvalidOperationException(
-                    "Tool search did not expose the final query, result count, and clear action. "
-                    + $"Text='{searchBox.Text}', Summary='{summary.Text}', ClearVisible={clearButton.IsVisible}");
+                    "Tool search did not expose a focused, selected, themed final query with its result count and clear action. "
+                    + $"Text='{searchBox.Text}', ViewModel='{shellHost.ToolSearchTextForTest}', Summary='{summary.Text}', "
+                    + $"ClearVisible={clearButton.IsVisible}, Focus={searchBox.IsKeyboardFocusWithin}, "
+                    + $"Selection={searchBox.SelectionLength}, Chrome={searchFieldChrome != null}");
             }
+
+            AssertBrushContrast(searchBox.Foreground, searchFieldChrome.Background, "Tool search entered text");
 
             Button? guidedSetupShortcut = FindVisualChildren<Button>(shellHost)
                 .FirstOrDefault(item => item.IsVisible
@@ -2097,6 +2127,7 @@ internal static class Program
             (VISION_MENU.EdgeBasedMatching, OpenVisionLearnTopicIndex.EdgeBasedMatching, "edge-matching"),
             (VISION_MENU.Line, OpenVisionLearnTopicIndex.LineDistance, "line"),
             (VISION_MENU.RotateAndScale, OpenVisionLearnTopicIndex.GeometryTransform, "geometry"),
+            (VISION_MENU.AffineTransform, OpenVisionLearnTopicIndex.GeometryTransform, "geometry"),
             (VISION_MENU.Histogram, OpenVisionLearnTopicIndex.Histogram, "mean"),
             (VISION_MENU.Mean, OpenVisionLearnTopicIndex.Mean, "mean"),
             (VISION_MENU.HSV, OpenVisionLearnTopicIndex.ColorHsv, "color-hsv"),
@@ -2107,7 +2138,10 @@ internal static class Program
 
         if (expected.Length != Enum.GetValues(typeof(VISION_MENU)).Length)
         {
-            throw new InvalidOperationException("Tool Learn topic catalog smoke does not cover every Tool rail menu.");
+            throw new InvalidOperationException(
+                "Tool Learn topic catalog smoke does not cover every Tool rail menu. "
+                + $"Expected={expected.Length}, Enum={Enum.GetValues(typeof(VISION_MENU)).Length}:"
+                + string.Join(",", Enum.GetNames(typeof(VISION_MENU))));
         }
 
         foreach ((VISION_MENU menu, OpenVisionLearnTopicIndex topic, string practicePath) in expected)

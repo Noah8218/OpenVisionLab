@@ -37,6 +37,59 @@
             <SolidColorBrush x:Key="ShellHost.FieldFocusBrush" Color="#8AD7DA" />
             <SolidColorBrush x:Key="ShellHost.FieldTextBrush" Color="#F5FAFC" />
             <BooleanToVisibilityConverter x:Key="ShellHost.BooleanToVisibilityConverter" />
+            <Style x:Key="ShellHost.DarkTextBoxStyle" TargetType="{x:Type TextBox}">
+                <Setter Property="Background" Value="{StaticResource ShellHost.FieldBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource ShellHost.FieldTextBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource ShellHost.FieldBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CaretBrush" Value="#8FE8F0" />
+                <Setter Property="SelectionBrush" Value="#157C86" />
+                <Setter Property="SelectionOpacity" Value="0.85" />
+                <Setter Property="Cursor" Value="IBeam" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="SnapsToDevicePixels" Value="True" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type TextBox}">
+                            <Border x:Name="fieldChrome"
+                                    Padding="{TemplateBinding Padding}"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="2"
+                                    SnapsToDevicePixels="True">
+                                <ScrollViewer x:Name="PART_ContentHost"
+                                              HorizontalScrollBarVisibility="Hidden"
+                                              VerticalScrollBarVisibility="Hidden" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="fieldChrome" Property="Background" Value="{StaticResource ShellHost.FieldHoverBrush}" />
+                                    <Setter TargetName="fieldChrome" Property="BorderBrush" Value="{StaticResource ShellHost.FieldFocusBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                    <Setter TargetName="fieldChrome" Property="BorderBrush" Value="{StaticResource ShellHost.FieldFocusBrush}" />
+                                    <Setter TargetName="fieldChrome" Property="BorderThickness" Value="2" />
+                                </Trigger>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter TargetName="fieldChrome" Property="Background" Value="{StaticResource ShellHost.FieldDropBrush}" />
+                                    <Setter Property="Foreground" Value="#C5D7DB" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="fieldChrome" Property="Background" Value="#252A2E" />
+                                    <Setter TargetName="fieldChrome" Property="BorderBrush" Value="#465157" />
+                                    <Setter Property="Foreground" Value="#91A5AA" />
+                                    <Setter Property="Opacity" Value="0.85" />
+                                </Trigger>
+                                <Trigger Property="Validation.HasError" Value="True">
+                                    <Setter TargetName="fieldChrome" Property="BorderBrush" Value="#E45B5B" />
+                                    <Setter TargetName="fieldChrome" Property="BorderThickness" Value="2" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
             <Style x:Key="ShellHost.PinGapIntentVisibilityStyle" TargetType="{x:Type FrameworkElement}">
                 <Setter Property="Visibility" Value="Collapsed" />
                 <Style.Triggers>
@@ -1162,11 +1215,9 @@
                                              AutomationProperties.AutomationId="HostToolSearchTextBox"
                                              AutomationProperties.Name="{Binding ToolSearchHintText}"
                                              Text="{Binding ToolSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource ShellHost.DarkTextBoxStyle}"
                                              Padding="0,4"
-                                             Background="Transparent"
                                              BorderThickness="0"
-                                             Foreground="#F3FAFB"
-                                             CaretBrush="#F3FAFB"
                                              VerticalContentAlignment="Center" />
                                     <TextBlock Text="{Binding ToolSearchHintText}"
                                                Margin="1,0,0,0"
@@ -2520,59 +2571,7 @@
                 <TranslateTransform x:Name="recipeManagerPanelTransform" />
             </Border.RenderTransform>
             <Border.Resources>
-                <Style TargetType="{x:Type TextBox}">
-                    <Setter Property="Background" Value="{StaticResource ShellHost.FieldBrush}" />
-                    <Setter Property="Foreground" Value="{StaticResource ShellHost.FieldTextBrush}" />
-                    <Setter Property="BorderBrush" Value="{StaticResource ShellHost.FieldBorderBrush}" />
-                    <Setter Property="BorderThickness" Value="1" />
-                    <Setter Property="CaretBrush" Value="#8FE8F0" />
-                    <Setter Property="SelectionBrush" Value="#157C86" />
-                    <Setter Property="SelectionOpacity" Value="0.85" />
-                    <Setter Property="Cursor" Value="IBeam" />
-                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-                    <Setter Property="SnapsToDevicePixels" Value="True" />
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="{x:Type TextBox}">
-                                <Border x:Name="fieldChrome"
-                                        Padding="{TemplateBinding Padding}"
-                                        Background="{TemplateBinding Background}"
-                                        BorderBrush="{TemplateBinding BorderBrush}"
-                                        BorderThickness="{TemplateBinding BorderThickness}"
-                                        CornerRadius="2"
-                                        SnapsToDevicePixels="True">
-                                    <ScrollViewer x:Name="PART_ContentHost"
-                                                  HorizontalScrollBarVisibility="Hidden"
-                                                  VerticalScrollBarVisibility="Hidden" />
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="fieldChrome" Property="Background" Value="{StaticResource ShellHost.FieldHoverBrush}" />
-                                        <Setter TargetName="fieldChrome" Property="BorderBrush" Value="{StaticResource ShellHost.FieldFocusBrush}" />
-                                    </Trigger>
-                                    <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                        <Setter TargetName="fieldChrome" Property="BorderBrush" Value="{StaticResource ShellHost.FieldFocusBrush}" />
-                                        <Setter TargetName="fieldChrome" Property="BorderThickness" Value="2" />
-                                    </Trigger>
-                                    <Trigger Property="IsReadOnly" Value="True">
-                                        <Setter TargetName="fieldChrome" Property="Background" Value="{StaticResource ShellHost.FieldDropBrush}" />
-                                        <Setter Property="Foreground" Value="#C5D7DB" />
-                                    </Trigger>
-                                    <Trigger Property="IsEnabled" Value="False">
-                                        <Setter TargetName="fieldChrome" Property="Background" Value="#252A2E" />
-                                        <Setter TargetName="fieldChrome" Property="BorderBrush" Value="#465157" />
-                                        <Setter Property="Foreground" Value="#91A5AA" />
-                                        <Setter Property="Opacity" Value="0.85" />
-                                    </Trigger>
-                                    <Trigger Property="Validation.HasError" Value="True">
-                                        <Setter TargetName="fieldChrome" Property="BorderBrush" Value="#E45B5B" />
-                                        <Setter TargetName="fieldChrome" Property="BorderThickness" Value="2" />
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
+                <Style TargetType="{x:Type TextBox}" BasedOn="{StaticResource ShellHost.DarkTextBoxStyle}" />
                 <Style TargetType="{x:Type Button}" BasedOn="{StaticResource LayerDetailActionButtonStyle}">
                     <Setter Property="Foreground" Value="#EAFBFC" />
                     <Setter Property="Background" Value="#2A3034" />
@@ -3275,12 +3274,7 @@
                                               HorizontalScrollBarVisibility="Disabled">
                                     <StackPanel AutomationProperties.AutomationId="HostRecipeGuidedSetupPanel">
                                         <StackPanel.Resources>
-                                            <Style TargetType="{x:Type TextBox}">
-                                                <Setter Property="Foreground" Value="{StaticResource ShellHost.FieldTextBrush}" />
-                                                <Setter Property="CaretBrush" Value="#8FE8F0" />
-                                                <Setter Property="BorderBrush" Value="{StaticResource ShellHost.FieldBorderBrush}" />
-                                                <Setter Property="Background" Value="{StaticResource ShellHost.FieldBrush}" />
-                                            </Style>
+                                            <Style TargetType="{x:Type TextBox}" BasedOn="{StaticResource ShellHost.DarkTextBoxStyle}" />
                                         </StackPanel.Resources>
                                         <TextBlock Text="{Binding RecipeCommands.GuidedSetupNoLlmText}"
                                                    Foreground="#D7FFF4"
