@@ -92,5 +92,19 @@ Scope: Exact clicked-layer image load, Recipe switching/save/path persistence, E
 Acceptance criteria: 12 reported behaviors -> passed by focused current-source UI/contract checks; no automatic Preview/Run/layer/routing side effects -> passed
 Verification: Debug solution build 0 warnings/errors; readiness 13/13; seven focused WPF targets passed; six Tool families x 30 N-image contract plus gated NG passed
 Evidence: D:\OpenVisionLab-TestData\OpenVisionLab_Dev\artifacts\recipe_layer_nimage_edge_20260811 and this report
-Boundary / next dependency: Original repository promotion, staging, commit, and push were not requested and were not performed
+Boundary / next dependency: Implementation is pushed as Dev dc08dde5f42a and original a6bbf277dea4; PR and Release publication were not requested
 ```
+
+## Repository Promotion
+
+- Dev implementation commit:
+  `dc08dde5f42ab9264a4696e08c920fe338015bbf`
+- Original implementation commit:
+  `a6bbf277dea44e56e773ccf2c8cf954a8de8e131`
+- Both implementation commits have stable patch-id
+  `a6ccfdcf57ed767807cc85f5aaaa0c866839048d`; all 27 resulting file blobs
+  matched before push.
+- The original repository independently passed the Debug build, readiness
+  13/13, six-Tool x 30-image N-image contract, and seven focused WPF targets.
+- Remote branch heads were read back after push and matched both local
+  implementation commits.

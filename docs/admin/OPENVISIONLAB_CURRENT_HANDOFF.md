@@ -68,6 +68,9 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 - Debug build, readiness 13/13, seven focused current-source WPF targets, and
   the six-Tool x 30-image contract plus gated NG check passed. Evidence:
   `docs/reports/OPENVISIONLAB_RECIPE_LAYER_NIMAGE_EDGE_REGRESSION_FIX_20260811.md`.
+- The identical implementation patch is pushed as Dev `dc08dde5f42a` and
+  original `a6bbf277dea4`. The original independently passed the same build,
+  readiness, N-image, and focused WPF gates before push.
 
 ### P294 Main No-Image Pipeline Open Performance - Complete In Dev
 
@@ -303,9 +306,9 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 ## Current Priority And Activation Conditions
 
-- The 2026-08-11 Recipe/layer/N-image/Edge regression batch is complete and
-  verified in Dev. Original promotion, commit, and push remain separate
-  explicitly authorized tasks.
+- The 2026-08-11 Recipe/layer/N-image/Edge regression batch is complete,
+  independently verified, and pushed in Dev and original. No PR or Release
+  publication is active.
 - P294 is complete and verified in Dev. Promotion to the original repository,
   commit, and push remain separate explicitly authorized tasks.
 - P293 is complete and verified in Dev. Promotion to the original repository,
