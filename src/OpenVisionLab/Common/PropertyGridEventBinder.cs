@@ -1,6 +1,7 @@
 using OpenVisionLab.Core;
 using OpenVisionLab.PropertyGrid;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
+using OpenCvSharp;
 using System;
 using System.ComponentModel;
 using System.Reflection;
@@ -148,7 +149,7 @@ namespace OpenVisionLab.Common
                 changed |= SetBrowsableIfExists(propertyGrid, selected, nameof(global::OpenVisionLab.LineGaugeProperty.AVERAGE_FILTER_TYPE), line.USE_AVERAGE_FILTER);
             }
 
-            if (selected is global::OpenVisionLab.AffineTransformProperty)
+            if (selected is global::OpenVisionLab.AffineTransformProperty affine)
             {
                 string[] unrelatedInheritedProperties =
                 {
@@ -178,8 +179,89 @@ namespace OpenVisionLab.Common
                 {
                     changed |= SetBrowsableIfExists(propertyGrid, selected, propertyName, false);
                 }
+
+                changed |= ApplyAffineAdvancedVisibility(
+                    propertyGrid,
+                    selected,
+                    affine.ShowAdvancedSettings,
+                    affine.BorderType);
             }
 
+            PropertyInfo detectedSourceProperty = selected.GetType().GetProperty(
+                "UseDetectedSourcePoints",
+                BindingFlags.Instance | BindingFlags.Public);
+            if (detectedSourceProperty?.PropertyType == typeof(bool))
+            {
+                bool useDetectedSourcePoints = (bool)detectedSourceProperty.GetValue(selected);
+                foreach (string propertyName in new[]
+                {
+                    "SourcePoint1Feature",
+                    "SourcePoint2Feature",
+                    "SourcePoint3Feature"
+                })
+                {
+                    changed |= SetBrowsableIfExists(propertyGrid, selected, propertyName, useDetectedSourcePoints);
+                }
+
+                foreach (string propertyName in new[]
+                {
+                    "SourcePoint1X",
+                    "SourcePoint1Y",
+                    "SourcePoint2X",
+                    "SourcePoint2Y",
+                    "SourcePoint3X",
+                    "SourcePoint3Y"
+                })
+                {
+                    changed |= SetBrowsableIfExists(propertyGrid, selected, propertyName, !useDetectedSourcePoints);
+                }
+
+                PropertyInfo showAdvancedProperty = selected.GetType().GetProperty(
+                    nameof(global::OpenVisionLab.AffineTransformProperty.ShowAdvancedSettings),
+                    BindingFlags.Instance | BindingFlags.Public);
+                PropertyInfo borderTypeProperty = selected.GetType().GetProperty(
+                    nameof(global::OpenVisionLab.AffineTransformProperty.BorderType),
+                    BindingFlags.Instance | BindingFlags.Public);
+                if (showAdvancedProperty?.PropertyType == typeof(bool)
+                    && borderTypeProperty?.PropertyType == typeof(BorderTypes))
+                {
+                    changed |= ApplyAffineAdvancedVisibility(
+                        propertyGrid,
+                        selected,
+                        (bool)showAdvancedProperty.GetValue(selected),
+                        (BorderTypes)borderTypeProperty.GetValue(selected));
+                }
+            }
+
+            return changed;
+        }
+
+        private static bool ApplyAffineAdvancedVisibility(
+            IPropertyGridView propertyGrid,
+            object selected,
+            bool showAdvancedSettings,
+            BorderTypes borderType)
+        {
+            bool changed = false;
+            foreach (string propertyName in new[]
+            {
+                "OutputWidth",
+                "OutputHeight",
+                "Interpolation",
+                "BorderType",
+                "MinimumSourceTriangleArea",
+                "MinimumDestinationTriangleArea",
+                "MinimumValidPixelRatio"
+            })
+            {
+                changed |= SetBrowsableIfExists(propertyGrid, selected, propertyName, showAdvancedSettings);
+            }
+
+            changed |= SetBrowsableIfExists(
+                propertyGrid,
+                selected,
+                "BorderValue",
+                showAdvancedSettings && borderType == BorderTypes.Constant);
             return changed;
         }
 
@@ -221,6 +303,9 @@ namespace OpenVisionLab.Common
                 case nameof(global::OpenVisionLab.LineGaugeProperty.USE_MANUAL_ANGLE):
                 case nameof(global::OpenVisionLab.LineGaugeProperty.USE_EXTEND_FIT_LINE):
                 case nameof(global::OpenVisionLab.LineGaugeProperty.USE_AVERAGE_FILTER):
+                case nameof(global::OpenVisionLab.AffineTransformProperty.ShowAdvancedSettings):
+                case nameof(global::OpenVisionLab.AffineTransformProperty.BorderType):
+                case "UseDetectedSourcePoints":
                     return true;
                 default:
                     return false;

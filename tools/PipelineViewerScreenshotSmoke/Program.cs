@@ -22704,6 +22704,80 @@ internal static class Program
             });
             Pump(20);
 
+            System.Windows.Controls.WpfPropertyGrid.PropertyGrid affineGrid =
+                GetActiveFloatingPropertyGrid("AffineTransform progressive disclosure");
+            AffineTransformProperty affineProperty = affineGrid.SelectedObject as AffineTransformProperty
+                ?? throw new InvalidOperationException("AffineTransform PropertyGrid model was not available.");
+            AssertPropertyBrowsable(
+                affineGrid,
+                nameof(AffineTransformProperty.ShowAdvancedSettings),
+                true,
+                "AffineTransform basic fields");
+            string[] advancedPropertyNames =
+            {
+                nameof(AffineTransformProperty.OutputWidth),
+                nameof(AffineTransformProperty.OutputHeight),
+                nameof(AffineTransformProperty.Interpolation),
+                nameof(AffineTransformProperty.BorderType),
+                nameof(AffineTransformProperty.BorderValue),
+                nameof(AffineTransformProperty.MinimumSourceTriangleArea),
+                nameof(AffineTransformProperty.MinimumDestinationTriangleArea),
+                nameof(AffineTransformProperty.MinimumValidPixelRatio)
+            };
+            foreach (string advancedPropertyName in advancedPropertyNames)
+            {
+                AssertPropertyBrowsable(
+                    affineGrid,
+                    advancedPropertyName,
+                    false,
+                    "AffineTransform collapsed advanced fields");
+            }
+
+            int layerCountBeforeDisclosure = shellHost.LayerDocumentCount;
+            string activeLayerBeforeDisclosure = shellHost.ActiveHostLayerTitle;
+            string inputRouteBeforeDisclosure = shellHost.ActiveNativeRouteInputLayerNameForTest;
+            string outputRouteBeforeDisclosure = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+            double minimumValidPixelRatioBeforeDisclosure = affineProperty.MinimumValidPixelRatio;
+            PropertyGridEventBinder affineVisibilityBinder = new(null);
+            affineProperty.ShowAdvancedSettings = true;
+            affineVisibilityBinder.ApplyVisibilityRules(affineGrid);
+            foreach (string advancedPropertyName in advancedPropertyNames)
+            {
+                AssertPropertyBrowsable(
+                    affineGrid,
+                    advancedPropertyName,
+                    true,
+                    "AffineTransform expanded advanced fields");
+            }
+
+            affineProperty.BorderType = OpenCvSharp.BorderTypes.Reflect;
+            affineVisibilityBinder.ApplyVisibilityRules(affineGrid);
+            AssertPropertyBrowsable(
+                affineGrid,
+                nameof(AffineTransformProperty.BorderValue),
+                false,
+                "AffineTransform non-constant border");
+            affineProperty.BorderType = OpenCvSharp.BorderTypes.Constant;
+            affineVisibilityBinder.ApplyVisibilityRules(affineGrid);
+            AssertPropertyBrowsable(
+                affineGrid,
+                nameof(AffineTransformProperty.BorderValue),
+                true,
+                "AffineTransform constant border");
+            affineProperty.ShowAdvancedSettings = true;
+            affineVisibilityBinder.ApplyVisibilityRules(affineGrid);
+
+            if (shellHost.NativePreviewRunCount != previewCountBeforeOpen
+                || shellHost.LayerDocumentCount != layerCountBeforeDisclosure
+                || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBeforeDisclosure, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBeforeDisclosure, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBeforeDisclosure, StringComparison.Ordinal)
+                || Math.Abs(affineProperty.MinimumValidPixelRatio - minimumValidPixelRatioBeforeDisclosure) > 0.000001D)
+            {
+                throw new InvalidOperationException(
+                    "AffineTransform disclosure changed Preview, layers, routes, or a hidden parameter value.");
+            }
+
             if (shellHost.NativePreviewRunCount != previewCountBeforeOpen || shellHost.HasNativePreviewResult)
             {
                 throw new InvalidOperationException(
@@ -22744,6 +22818,12 @@ internal static class Program
             }
 
             AssertFloatingInlinePreviewSlotCount("AffineTransform", 2);
+            System.Windows.Controls.WpfPropertyGrid.PropertyGrid finalAffineGrid =
+                GetActiveFloatingPropertyGrid("AffineTransform final disclosure state");
+            AffineTransformProperty finalAffineProperty = finalAffineGrid.SelectedObject as AffineTransformProperty
+                ?? throw new InvalidOperationException("AffineTransform final PropertyGrid model was not available.");
+            finalAffineProperty.ShowAdvancedSettings = true;
+            new PropertyGridEventBinder(null).ApplyVisibilityRules(finalAffineGrid);
         });
     }
 
@@ -24019,6 +24099,21 @@ internal static class Program
                 }
 
                 int runsBefore = shellHost.NativePreviewRunCount;
+                object recipeEditObject = shellHost.RecipeCommands.SelectedStepEditObject
+                    ?? throw new InvalidOperationException("P219 selected Step edit object was cleared by disclosure changes.");
+                PropertyDescriptor useDetectedDescriptor = TypeDescriptor.GetProperties(recipeEditObject)
+                    .Find("UseDetectedSourcePoints", true)
+                    ?? throw new InvalidOperationException("P219 selected Step edit object missed UseDetectedSourcePoints before apply.");
+                if (!ReferenceEquals(recipeEditObject, grid.SelectedObject)
+                    || !Convert.ToBoolean(useDetectedDescriptor.GetValue(recipeEditObject), CultureInfo.InvariantCulture)
+                    || !shellHost.RecipeCommands.ApplySelectedStepParametersCommand.CanExecute(null))
+                {
+                    throw new InvalidOperationException(
+                        "P219 disclosure changes invalidated the selected Step edit session. "
+                        + "SameObject=" + ReferenceEquals(recipeEditObject, grid.SelectedObject).ToString(CultureInfo.InvariantCulture)
+                        + ", UseDetected=" + Convert.ToString(useDetectedDescriptor.GetValue(recipeEditObject), CultureInfo.InvariantCulture)
+                        + ", CanApply=" + shellHost.RecipeCommands.ApplySelectedStepParametersCommand.CanExecute(null).ToString(CultureInfo.InvariantCulture));
+                }
                 shellHost.RecipeCommands.ApplySelectedStepParametersCommand.Execute(null);
                 Pump(180);
                 VisionPipeline saved = VisionPipelineStorage.Load(recipeName, pipeline.Name);
@@ -24152,13 +24247,7 @@ internal static class Program
                     "UseDetectedSourcePoints",
                     "SourcePoint1Feature",
                     "SourcePoint2Feature",
-                    "SourcePoint3Feature",
-                    "SourcePoint1X",
-                    "SourcePoint1Y",
-                    "SourcePoint2X",
-                    "SourcePoint2Y",
-                    "SourcePoint3X",
-                    "SourcePoint3Y"
+                    "SourcePoint3Feature"
                 })
                 {
                     if (descriptors.Find(required, true) == null)
@@ -24183,6 +24272,95 @@ internal static class Program
                     }
                 }
 
+                foreach (string propertyName in new[]
+                {
+                    "SourcePoint1Feature",
+                    "SourcePoint2Feature",
+                    "SourcePoint3Feature"
+                })
+                {
+                    AssertPropertyBrowsable(grid, propertyName, true, "P219 detected Point binding");
+                }
+                foreach (string propertyName in new[]
+                {
+                    "SourcePoint1X",
+                    "SourcePoint1Y",
+                    "SourcePoint2X",
+                    "SourcePoint2Y",
+                    "SourcePoint3X",
+                    "SourcePoint3Y",
+                    "OutputWidth",
+                    "OutputHeight",
+                    "Interpolation",
+                    "BorderType",
+                    "BorderValue",
+                    "MinimumSourceTriangleArea",
+                    "MinimumDestinationTriangleArea",
+                    "MinimumValidPixelRatio"
+                })
+                {
+                    AssertPropertyBrowsable(grid, propertyName, false, "P219 collapsed alternatives");
+                }
+
+                int layerCountBeforeDisclosure = shellHost.LayerDocumentCount;
+                string activeLayerBeforeDisclosure = shellHost.ActiveHostLayerTitle;
+                string inputRouteBeforeDisclosure = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string outputRouteBeforeDisclosure = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                PropertyGridEventBinder affineVisibilityBinder = new(null);
+                grid.Properties["UseDetectedSourcePoints"].SetValue(false);
+                affineVisibilityBinder.ApplyVisibilityRules(grid);
+                foreach (string propertyName in new[]
+                {
+                    "SourcePoint1Feature",
+                    "SourcePoint2Feature",
+                    "SourcePoint3Feature"
+                })
+                {
+                    AssertPropertyBrowsable(grid, propertyName, false, "P219 fixed Point binding");
+                }
+                foreach (string propertyName in new[]
+                {
+                    "SourcePoint1X",
+                    "SourcePoint1Y",
+                    "SourcePoint2X",
+                    "SourcePoint2Y",
+                    "SourcePoint3X",
+                    "SourcePoint3Y"
+                })
+                {
+                    AssertPropertyBrowsable(grid, propertyName, true, "P219 fixed Point coordinates");
+                }
+
+                grid.Properties["ShowAdvancedSettings"].SetValue(true);
+                affineVisibilityBinder.ApplyVisibilityRules(grid);
+                foreach (string propertyName in new[]
+                {
+                    "OutputWidth",
+                    "OutputHeight",
+                    "Interpolation",
+                    "BorderType",
+                    "BorderValue",
+                    "MinimumSourceTriangleArea",
+                    "MinimumDestinationTriangleArea",
+                    "MinimumValidPixelRatio"
+                })
+                {
+                    AssertPropertyBrowsable(grid, propertyName, true, "P219 expanded advanced fields");
+                }
+                grid.Properties["UseDetectedSourcePoints"].SetValue(true);
+                grid.Properties["ShowAdvancedSettings"].SetValue(false);
+                affineVisibilityBinder.ApplyVisibilityRules(grid);
+
+                if (shellHost.NativePreviewRunCount != 0
+                    || shellHost.LayerDocumentCount != layerCountBeforeDisclosure
+                    || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBeforeDisclosure, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBeforeDisclosure, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRouteBeforeDisclosure, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "P219 Affine visibility switches changed Preview, layers, or routes.");
+                }
+
                 int runsBefore = shellHost.NativePreviewRunCount;
                 shellHost.RecipeCommands.ApplySelectedStepParametersCommand.Execute(null);
                 Pump(180);
@@ -24193,7 +24371,13 @@ internal static class Program
                     || savedAffine.Parameters.GetValueOrDefault(VisionPipelineAffinePointBindingService.SourcePoint3FeatureParameter) != "LocateBottomLeft/Center"
                     || shellHost.NativePreviewRunCount != runsBefore)
                 {
-                    throw new InvalidOperationException("P219 detected Point bindings did not round-trip or triggered Preview/Run.");
+                    throw new InvalidOperationException(
+                        "P219 detected Point bindings did not round-trip or triggered Preview/Run. "
+                        + "UseDetected=" + savedAffine.Parameters.GetValueOrDefault(VisionPipelineAffinePointBindingService.UseDetectedSourcePointsParameter)
+                        + ", Source1=" + savedAffine.Parameters.GetValueOrDefault(VisionPipelineAffinePointBindingService.SourcePoint1FeatureParameter)
+                        + ", Source3=" + savedAffine.Parameters.GetValueOrDefault(VisionPipelineAffinePointBindingService.SourcePoint3FeatureParameter)
+                        + ", RunsBefore=" + runsBefore.ToString(CultureInfo.InvariantCulture)
+                        + ", RunsAfter=" + shellHost.NativePreviewRunCount.ToString(CultureInfo.InvariantCulture));
                 }
 
                 TextBox search = GetActivePropertyGridSearchTextBox(grid, "P219 AffineTransform recipe step");
@@ -31447,9 +31631,10 @@ internal static class Program
                 liveGrid.SelectedObject as AffineTransformProperty
                 ?? throw new InvalidOperationException(
                     "P267 AffineTransform PropertyGrid was not available.");
+            live.ShowAdvancedSettings = true;
             live.BorderType = OpenCvSharp.BorderTypes.Constant;
             live.MinimumValidPixelRatio = 0.65D;
-            liveGrid.RefreshSelectedObject();
+            new PropertyGridEventBinder(null).ApplyVisibilityRules(liveGrid);
             OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
             Pump(12);
             AssertParameterGuideDetailedCoverage(live, "AffineTransform live");
@@ -33859,6 +34044,62 @@ internal static class Program
             throw new InvalidOperationException(
                 "Localization migration overwrote a customized "
                 + "add-Pipeline value.");
+        }
+
+        foreach ((string Key, string OldKorean, string OldEnglish, string NewKorean, string NewEnglish) migration in new[]
+        {
+            (
+                "PropertyGrid.Property.MinimumSourceTriangleArea.DisplayName",
+                "\uCD5C\uC18C \uC18C\uC2A4 \uC0BC\uAC01\uD615 \uBA74\uC801",
+                "Minimum source triangle area",
+                "\uC18C\uC2A4 \uC0BC\uAC01\uD615 \uCD5C\uC18C\uAC12",
+                "Source triangle minimum"),
+            (
+                "PropertyGrid.Property.MinimumDestinationTriangleArea.DisplayName",
+                "\uCD5C\uC18C \uBAA9\uD45C \uC0BC\uAC01\uD615 \uBA74\uC801",
+                "Minimum destination triangle area",
+                "\uBAA9\uD45C \uC0BC\uAC01\uD615 \uCD5C\uC18C\uAC12",
+                "Target triangle minimum")
+        })
+        {
+            OpenVisionLocalizationEntry shipped = new()
+            {
+                Key = migration.Key,
+                Korean = migration.OldKorean,
+                English = migration.OldEnglish
+            };
+            OpenVisionLocalizationEntry current = new()
+            {
+                Key = migration.Key,
+                Korean = migration.NewKorean,
+                English = migration.NewEnglish
+            };
+            bool migrated = (bool)(migrateDefault.Invoke(
+                null,
+                new object[] { migration.Key, shipped, current }) ?? false);
+            if (!migrated
+                || !string.Equals(shipped.Korean, current.Korean, StringComparison.Ordinal)
+                || !string.Equals(shipped.English, current.English, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "The shipped AffineTransform label did not migrate: " + migration.Key);
+            }
+
+            OpenVisionLocalizationEntry customized = new()
+            {
+                Key = migration.Key,
+                Korean = "\uC0AC\uC6A9\uC790 \uC0BC\uAC01\uD615 \uAE30\uC900",
+                English = "User-customized triangle gate"
+            };
+            bool migratedCustomized = (bool)(migrateDefault.Invoke(
+                null,
+                new object[] { migration.Key, customized, current }) ?? false);
+            if (migratedCustomized
+                || !string.Equals(customized.English, "User-customized triangle gate", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Localization migration overwrote a customized AffineTransform label: " + migration.Key);
+            }
         }
 
         Border report = new()
@@ -36720,16 +36961,25 @@ internal static class Program
     private static void AssertFloatingPropertyBrowsable(string name, string propertyName, bool expected)
     {
         System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid = GetActiveFloatingPropertyGrid(name);
+        AssertPropertyBrowsable(grid, propertyName, expected, name);
+    }
+
+    private static void AssertPropertyBrowsable(
+        System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid,
+        string propertyName,
+        bool expected,
+        string context)
+    {
         OpenVisionLab.PropertyGrid.IPropertyGridProperty? property = grid.Properties?[propertyName];
         if (property == null)
         {
-            throw new InvalidOperationException(name + " property was not found: " + propertyName);
+            throw new InvalidOperationException(context + " property was not found: " + propertyName);
         }
 
         if (property.IsBrowsable != expected)
         {
             throw new InvalidOperationException(
-                name + " property visibility mismatch for "
+                context + " property visibility mismatch for "
                 + propertyName
                 + ". Expected="
                 + expected.ToString(CultureInfo.InvariantCulture)

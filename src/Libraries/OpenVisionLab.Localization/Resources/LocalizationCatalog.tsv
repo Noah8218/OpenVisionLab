@@ -1702,11 +1702,12 @@ PropertyGrid.Property.DestinationPoint2X.DisplayName	목표 점 2 X	Destination 
 PropertyGrid.Property.DestinationPoint2Y.DisplayName	목표 점 2 Y	Destination point 2 Y
 PropertyGrid.Property.DestinationPoint3X.DisplayName	목표 점 3 X	Destination point 3 X
 PropertyGrid.Property.DestinationPoint3Y.DisplayName	목표 점 3 Y	Destination point 3 Y
+PropertyGrid.Property.ShowAdvancedSettings.DisplayName	고급 설정 표시	Show advanced settings
 PropertyGrid.Property.OutputWidth.DisplayName	출력 폭	Output width
 PropertyGrid.Property.OutputHeight.DisplayName	출력 높이	Output height
 PropertyGrid.Property.BorderValue.DisplayName	테두리 값	Border value
-PropertyGrid.Property.MinimumSourceTriangleArea.DisplayName	최소 소스 삼각형 면적	Minimum source triangle area
-PropertyGrid.Property.MinimumDestinationTriangleArea.DisplayName	최소 목표 삼각형 면적	Minimum destination triangle area
+PropertyGrid.Property.MinimumSourceTriangleArea.DisplayName	소스 삼각형 최소값	Source triangle minimum
+PropertyGrid.Property.MinimumDestinationTriangleArea.DisplayName	목표 삼각형 최소값	Target triangle minimum
 PropertyGrid.Property.MinimumValidPixelRatio.DisplayName	최소 유효 픽셀 비율	Minimum valid pixel ratio
 PropertyGrid.Property.MIN_AREA.DisplayName	최소 면적	Min area
 PropertyGrid.Property.MAX_AREA.DisplayName	최대 면적	Max area
@@ -2237,6 +2238,11 @@ VisionTool.ParameterGuide.Affine.DestinationPointY.Impact	Y를 바꾸면 해당 
 VisionTool.ParameterGuide.Affine.DestinationPointY.BestWhen	후속 검사 ROI와 측정 기준이 사용할 출력 Y 좌표를 검토된 기준 영상에서 확정한 뒤 사용하세요.	Use it after fixing the output Y coordinates required by downstream inspection ROIs and measurement references on a reviewed reference image.
 VisionTool.ParameterGuide.Affine.DestinationPointY.Risk	영상 Y 방향이나 대응 순서를 잘못 이해하면 출력이 뒤집히거나 기울어질 수 있습니다. 목표 세 점이 거의 일직선이면 실행은 게이트에서 거부되거나 불안정해집니다.	Misreading image-Y direction or correspondence order can flip or shear the output. Nearly collinear destination points are rejected by the gate or produce unstable teaching.
 VisionTool.ParameterGuide.Affine.DestinationPointY.Check	Preview의 목표 삼각형이 의도한 기준 프레임인지, AffineDestinationTriangleArea·AffineTranslationY·AffineValidPixelRatio와 후속 ROI 위치가 맞는지 확인하세요.	Verify that the Preview destination triangle is the intended reference frame and check AffineDestinationTriangleArea, AffineTranslationY, AffineValidPixelRatio, and downstream ROI position.
+VisionTool.ParameterGuide.Affine.ShowAdvancedSettings.Summary	출력 크기, 보간, 경계 처리, 유효성 검증 항목을 펼칩니다.	Expands output size, interpolation, border, and validation settings.
+VisionTool.ParameterGuide.Affine.ShowAdvancedSettings.Impact	표시만 바꾸며 저장된 값이나 Preview/Run 결과를 바꾸지 않습니다.	Changes only visibility; it does not change saved values or Preview/Run results.
+VisionTool.ParameterGuide.Affine.ShowAdvancedSettings.BestWhen	기본 3점 매핑을 정한 뒤 출력과 검증 조건을 조정할 때 켜세요.	Enable it after teaching the three-point mapping when output or validation settings need adjustment.
+VisionTool.ParameterGuide.Affine.ShowAdvancedSettings.Risk	숨긴 고급 항목의 기존 값은 계속 적용됩니다.	Existing values in hidden advanced fields still apply.
+VisionTool.ParameterGuide.Affine.ShowAdvancedSettings.Check	고급 항목을 열어 저장된 값을 확인한 뒤 명시적으로 Preview를 실행하세요.	Open the advanced fields, verify the saved values, then run Preview explicitly.
 VisionTool.ParameterGuide.Affine.OutputWidth.Summary	Affine 결과 캔버스의 가로 픽셀 수입니다. 0이면 입력 영상 폭을 유지하고, 1..32768은 명시한 출력 폭을 사용합니다.	The affine result canvas width in pixels. Zero keeps the input-image width; 1 through 32768 uses the specified output width.
 VisionTool.ParameterGuide.Affine.OutputWidth.Impact	폭을 늘리면 더 넓은 출력 좌표를 담지만 빈 경계 영역과 처리량이 늘 수 있습니다. 줄이면 목표 점이나 변환된 소스 프레임이 좌우에서 잘리고 유효 픽셀 비율이 낮아질 수 있습니다.	A larger width can retain more output coordinates but adds border area and work. A smaller width can clip destination points or the transformed source frame and lower valid-pixel ratio.
 VisionTool.ParameterGuide.Affine.OutputWidth.BestWhen	후속 고정 ROI와 저장 형식이 요구하는 기준 캔버스 폭을 알고 있을 때 양수로 고정하고, 입력 폭을 그대로 쓸 때만 0을 사용하세요.	Set a positive value when the reference canvas width required by downstream fixed ROIs or storage is known; use zero only to keep the input width.

@@ -673,6 +673,11 @@ namespace OpenVisionLab
                     "DestinationPoint2X",
                     "DestinationPoint2Y",
                     "MinimumDestinationTriangleArea"),
+                ["AffineTransform.ShowAdvancedSettings"] = Guide(
+                    "Affine.ShowAdvancedSettings",
+                    "OutputWidth",
+                    "Interpolation",
+                    "MinimumValidPixelRatio"),
                 ["AffineTransform.OutputWidth"] = Guide(
                     "Affine.OutputWidth",
                     "OutputHeight",

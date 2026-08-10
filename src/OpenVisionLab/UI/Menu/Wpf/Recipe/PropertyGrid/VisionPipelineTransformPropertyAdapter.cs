@@ -406,6 +406,10 @@ namespace OpenVisionLab
             [PropertyOrder(5), Category("Destination Points"), DisplayName("Destination point 3 Y")]
             public new double DestinationPoint3Y { get => base.DestinationPoint3Y; set => base.DestinationPoint3Y = value; }
 
+            [PropertyOrder(6), Category("Destination Points"), DisplayName("Show advanced settings")]
+            [Description("Shows output, sampling, border, and validation settings without changing their values or running Preview.")]
+            public bool ShowAdvancedSettings { get; set; }
+
             [PropertyOrder(0), Category("Output"), DisplayName("Output width")]
             public new int OutputWidth { get => base.OutputWidth; set => base.OutputWidth = value; }
             [PropertyOrder(1), Category("Output"), DisplayName("Output height")]
@@ -418,9 +422,9 @@ namespace OpenVisionLab
             [PropertyOrder(2), Category("Sampling"), DisplayName("Border value")]
             public new double BorderValue { get => base.BorderValue; set => base.BorderValue = value; }
 
-            [PropertyOrder(0), Category("Validation Gates"), DisplayName("Minimum source triangle area")]
+            [PropertyOrder(0), Category("Validation Gates"), DisplayName("Source triangle minimum")]
             public new double MinimumSourceTriangleArea { get => base.MinimumSourceTriangleArea; set => base.MinimumSourceTriangleArea = value; }
-            [PropertyOrder(1), Category("Validation Gates"), DisplayName("Minimum destination triangle area")]
+            [PropertyOrder(1), Category("Validation Gates"), DisplayName("Target triangle minimum")]
             public new double MinimumDestinationTriangleArea { get => base.MinimumDestinationTriangleArea; set => base.MinimumDestinationTriangleArea = value; }
             [PropertyOrder(2), Category("Validation Gates"), DisplayName("Minimum valid pixel ratio")]
             public new double MinimumValidPixelRatio { get => base.MinimumValidPixelRatio; set => base.MinimumValidPixelRatio = value; }

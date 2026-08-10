@@ -304,6 +304,33 @@
                 <Setter Property="BorderBrush" Value="Transparent" />
                 <Setter Property="BorderThickness" Value="0" />
                 <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type Button}">
+                            <Border x:Name="focusChrome"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                <ContentPresenter x:Name="buttonContent"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="buttonContent" Property="Margin" Value="1,1,-1,-1" />
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter TargetName="focusChrome" Property="BorderBrush" Value="{StaticResource ShellHost.FieldTextBrush}" />
+                                    <Setter TargetName="focusChrome" Property="BorderThickness" Value="2" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="focusChrome" Property="Opacity" Value="0.45" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
 
             <Style x:Key="TopNavButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
@@ -649,6 +676,14 @@
                                             <Setter Property="Background" Value="#20363D" />
                                             <Setter Property="BorderBrush" Value="#157C86" />
                                         </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsMouseOver, ElementName=navItemButton}" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource ShellHost.FieldHoverBrush}" />
+                                            <Setter Property="BorderBrush" Value="{StaticResource ShellHost.FieldFocusBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsPressed, ElementName=navItemButton}" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource ShellHost.FieldDropBrush}" />
+                                            <Setter Property="BorderBrush" Value="{StaticResource ShellHost.FieldFocusBrush}" />
+                                        </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
@@ -663,8 +698,18 @@
                                 <iconPacks:PackIconMaterial Kind="{Binding IconKind}"
                                                             Width="16"
                                                             Height="16"
-                                                            Foreground="#8AD7DA"
-                                                            VerticalAlignment="Center" />
+                                                            VerticalAlignment="Center">
+                                    <iconPacks:PackIconMaterial.Style>
+                                        <Style TargetType="{x:Type iconPacks:PackIconMaterial}">
+                                            <Setter Property="Foreground" Value="#8AD7DA" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsMouseOver, ElementName=navItemButton}" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource ShellHost.FieldTextBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </iconPacks:PackIconMaterial.Style>
+                                </iconPacks:PackIconMaterial>
                                 <TextBlock x:Name="navItemTitle"
                                            Grid.Column="2"
                                            Text="{Binding Title}"

@@ -78,6 +78,11 @@ namespace OpenVisionLab
         [NumberRange(-100000, 100000, 1, 3)]
         public double DestinationPoint3Y { get; set; } = 100d;
 
+        [PropertyOrder(6), Category("Destination Points"), DisplayName("Show advanced settings")]
+        [Description("Shows output, sampling, border, and validation settings without changing their values or running Preview.")]
+        [System.Xml.Serialization.XmlIgnore]
+        public bool ShowAdvancedSettings { get; set; }
+
         [PropertyOrder(0), Category("Output"), DisplayName("Output width")]
         [Description("Output width in pixels. Use 0 to keep the input width.")]
         [NumberRange(0, 32768, 1, 0)]
@@ -99,12 +104,12 @@ namespace OpenVisionLab
         [NumberRange(0, 255, 1, 3)]
         public double BorderValue { get; set; }
 
-        [PropertyOrder(0), Category("Validation Gates"), DisplayName("Minimum source triangle area")]
+        [PropertyOrder(0), Category("Validation Gates"), DisplayName("Source triangle minimum")]
         [Description("Reject source teaching whose three points form a smaller pixel area.")]
         [NumberRange(0, 1000000000, 1, 3)]
         public double MinimumSourceTriangleArea { get; set; } = 1d;
 
-        [PropertyOrder(1), Category("Validation Gates"), DisplayName("Minimum destination triangle area")]
+        [PropertyOrder(1), Category("Validation Gates"), DisplayName("Target triangle minimum")]
         [Description("Reject destination teaching whose three points form a smaller pixel area.")]
         [NumberRange(0, 1000000000, 1, 3)]
         public double MinimumDestinationTriangleArea { get; set; } = 1d;

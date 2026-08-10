@@ -227,7 +227,37 @@ namespace System.Windows.Controls.WpfPropertyGrid
             "MANUAL_ANGLE_VALUE",
             "EXTEND_FIT_LINE_VALUE",
             "AVERAGE_Diff",
-            "AVERAGE_FILTER_TYPE"
+            "AVERAGE_FILTER_TYPE",
+            "USE_COARSE_TO_FINE_ANGLE_SEARCH",
+            "COARSE_ANGLE_STEP",
+            "COARSE_ANGLE_TOP_K",
+            "PYRAMID_POSITION_TOP_N",
+            "PYRAMID_POSITION_MIN_SCORE",
+            "HYBRID_VERIFY_TOP_N",
+            "HYBRID_VERIFY_IMAGE_WEIGHT"
+        };
+        private static readonly HashSet<string> AffineAdvancedPropertyNames = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "OutputWidth",
+            "OutputHeight",
+            "Interpolation",
+            "BorderType",
+            "BorderValue",
+            "MinimumSourceTriangleArea",
+            "MinimumDestinationTriangleArea",
+            "MinimumValidPixelRatio"
+        };
+        private static readonly HashSet<string> AffineSourceBindingPropertyNames = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "SourcePoint1Feature",
+            "SourcePoint2Feature",
+            "SourcePoint3Feature",
+            "SourcePoint1X",
+            "SourcePoint1Y",
+            "SourcePoint2X",
+            "SourcePoint2Y",
+            "SourcePoint3X",
+            "SourcePoint3Y"
         };
         private readonly Dictionary<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem, Action<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem, object, object>> propertyValueChangedHandlers =
             new Dictionary<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem, Action<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem, object, object>>();
@@ -1662,7 +1692,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 return;
             }
 
-            if (!ChildParameterPropertyNames.Contains(propertyName))
+            if (!IsChildParameterProperty(propertyName))
             {
                 return;
             }
@@ -1701,6 +1731,21 @@ namespace System.Windows.Controls.WpfPropertyGrid
                     textBlock.Margin.Bottom);
                 textBlock.Foreground = darkTheme ? BrushFromRgb(168, 203, 209) : BrushFromRgb(66, 91, 112);
             }
+        }
+
+        private bool IsChildParameterProperty(string propertyName)
+        {
+            if (ChildParameterPropertyNames.Contains(propertyName))
+            {
+                return true;
+            }
+
+            Type selectedType = SelectedObject?.GetType();
+            return selectedType != null
+                && ((selectedType.GetProperty("ShowAdvancedSettings", BindingFlags.Instance | BindingFlags.Public) != null
+                        && AffineAdvancedPropertyNames.Contains(propertyName))
+                    || (selectedType.GetProperty("UseDetectedSourcePoints", BindingFlags.Instance | BindingFlags.Public) != null
+                        && AffineSourceBindingPropertyNames.Contains(propertyName)));
         }
 
         private void ApplyCompatibilityReadOnlyPresentation(Border rowBorder, string propertyName)

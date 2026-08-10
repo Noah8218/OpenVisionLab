@@ -73,6 +73,18 @@ namespace OpenVisionLab
                     "Average diff")
             },
             {
+                "PropertyGrid.Property.MinimumSourceTriangleArea.DisplayName",
+                new DefaultCatalogMigration(
+                    "\uCD5C\uC18C \uC18C\uC2A4 \uC0BC\uAC01\uD615 \uBA74\uC801",
+                    "Minimum source triangle area")
+            },
+            {
+                "PropertyGrid.Property.MinimumDestinationTriangleArea.DisplayName",
+                new DefaultCatalogMigration(
+                    "\uCD5C\uC18C \uBAA9\uD45C \uC0BC\uAC01\uD615 \uBA74\uC801",
+                    "Minimum destination triangle area")
+            },
+            {
                 "PropertyGrid.Property.USE_AVERAGE_FILTER.DisplayName",
                 new DefaultCatalogMigration(
                     "\uD3C9\uADE0 \uD544\uD130 \uC0AC\uC6A9",
