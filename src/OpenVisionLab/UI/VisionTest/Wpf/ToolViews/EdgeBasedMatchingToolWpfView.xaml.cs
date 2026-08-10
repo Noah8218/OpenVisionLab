@@ -32,9 +32,12 @@ namespace OpenVisionLab
             verificationGuide = toolShell.ToolContent as UIElement
                 ?? throw new InvalidOperationException("Edge Based Matching runtime must provide its verification guide.");
             Grid toolContent = new Grid();
+            toolContent.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            toolContent.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            Grid.SetRow(verificationGuide, 0);
             toolContent.Children.Add(verificationGuide);
             autoMPointPanel.VerticalAlignment = VerticalAlignment.Top;
-            Panel.SetZIndex(autoMPointPanel, 1);
+            Grid.SetRow(autoMPointPanel, 1);
             toolContent.Children.Add(autoMPointPanel);
             toolShell.ToolContent = toolContent;
             toolShell.ToolContentVisibility = Visibility.Visible;
@@ -53,6 +56,25 @@ namespace OpenVisionLab
 
         internal string AutoMPointAppliedTemplatePathForTest =>
             autoMPointController.AppliedTemplatePath;
+
+        internal bool IsTeachingPanelSeparatedFromGuideForTest
+        {
+            get
+            {
+                if (verificationGuide?.IsVisible != true || autoMPointPanel?.IsVisible != true)
+                {
+                    return false;
+                }
+
+                System.Windows.Point guideOrigin = verificationGuide.TranslatePoint(
+                    new System.Windows.Point(0D, 0D),
+                    toolShell);
+                System.Windows.Point panelOrigin = autoMPointPanel.TranslatePoint(
+                    new System.Windows.Point(0D, 0D),
+                    toolShell);
+                return panelOrigin.Y >= guideOrigin.Y + verificationGuide.RenderSize.Height - 0.5D;
+            }
+        }
 
         internal bool ExportAutoMPointReportForTest(string reportPath)
         {

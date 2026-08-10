@@ -26,6 +26,7 @@ namespace OpenVisionLab
         public string PipelineXml { get; init; } = string.Empty;
         public string StepDefinitionSha256 { get; init; } = string.Empty;
         public string BatchSummaryPath { get; init; } = string.Empty;
+        public bool HasAcceptance { get; init; }
         public bool WasCancelled { get; init; }
         public DateTime StartedAt { get; init; }
         public DateTime FinishedAt { get; init; }
@@ -49,6 +50,12 @@ namespace OpenVisionLab
         public string SourceSha256 { get; init; } = string.Empty;
         public string FailedStep { get; init; } = string.Empty;
         public string ReviewReasonText { get; set; } = string.Empty;
+        public bool IsCompleted { get; init; }
+        public bool IsNg => IsCompleted && string.Equals(Status, "NG", StringComparison.OrdinalIgnoreCase);
+        public bool IsError => IsCompleted && string.Equals(Status, "ERROR", StringComparison.OrdinalIgnoreCase);
+        public bool IsUngated => IsCompleted && string.Equals(Status, "RUN OK", StringComparison.OrdinalIgnoreCase);
+        public string ReviewDetailText => string.Join(" · ", new[] { FailedStep, ReviewReasonText, Message }
+            .Where(value => !string.IsNullOrWhiteSpace(value)));
         public bool HasDrawing => !string.IsNullOrWhiteSpace(DrawingPath) && File.Exists(DrawingPath);
     }
 
@@ -117,7 +124,7 @@ namespace OpenVisionLab
                         resolvedRecipeName,
                         normalizeInputToGray,
                         cancellationToken);
-                VisionToolNImageVerificationRow row = CreateRow(index + 1, path, check);
+                VisionToolNImageVerificationRow row = CreateRow(index + 1, path, check, step.UseAcceptance);
                 rows.Add(row);
                 progress?.Report(new VisionToolNImageVerificationProgress
                 {
@@ -139,7 +146,8 @@ namespace OpenVisionLab
                     startedAt,
                     finishedAt,
                     wasCancelled,
-                    normalizeInputToGray);
+                    normalizeInputToGray,
+                    step.UseAcceptance);
             ApplyReviewReasons(summaryPath, rows);
             return new VisionToolNImageVerificationSession
             {
@@ -148,6 +156,7 @@ namespace OpenVisionLab
                 PipelineXml = pipelineXml,
                 StepDefinitionSha256 = definitionSha256,
                 BatchSummaryPath = summaryPath,
+                HasAcceptance = step.UseAcceptance,
                 WasCancelled = wasCancelled,
                 StartedAt = startedAt,
                 FinishedAt = finishedAt,
@@ -200,7 +209,8 @@ namespace OpenVisionLab
         private static VisionToolNImageVerificationRow CreateRow(
             int index,
             string imagePath,
-            VisionPipelineSampleCheckResult check)
+            VisionPipelineSampleCheckResult check,
+            bool hasAcceptance)
         {
             VisionPipelineRunReport report = VisionPipelineRunReportStorage.Load(check?.RunReportPath);
             string reportDirectory = string.IsNullOrWhiteSpace(check?.RunReportPath)
@@ -222,17 +232,33 @@ namespace OpenVisionLab
             {
                 Index = index,
                 ImagePath = imagePath,
-                Status = check?.Status ?? "ERROR",
-                Success = check?.Success == true,
+                Status = ResolveStatus(check, hasAcceptance),
+                Success = check?.ExecutionCompleted == true && (!hasAcceptance || check.Success),
                 TotalMilliseconds = check?.TotalMilliseconds ?? 0D,
                 Message = check?.Message ?? string.Empty,
-                MetricText = string.IsNullOrWhiteSpace(metricText) ? "측정값 없음" : metricText,
+                MetricText = string.IsNullOrWhiteSpace(metricText) ? "-" : metricText,
                 RunReportPath = check?.RunReportPath ?? string.Empty,
                 SourceSnapshotPath = sourcePath,
                 DrawingPath = drawingPath,
                 SourceSha256 = report?.SourceImageSha256 ?? string.Empty,
-                FailedStep = check?.FailedStepText ?? string.Empty
+                FailedStep = check?.FailedStepText ?? string.Empty,
+                IsCompleted = true
             };
+        }
+
+        private static string ResolveStatus(VisionPipelineSampleCheckResult check, bool hasAcceptance)
+        {
+            if (check?.ExecutionCompleted != true)
+            {
+                return "ERROR";
+            }
+
+            if (!hasAcceptance)
+            {
+                return "RUN OK";
+            }
+
+            return check.Success ? "OK" : "NG";
         }
 
         private static string SaveBatchSummary(
@@ -244,7 +270,8 @@ namespace OpenVisionLab
             DateTime startedAt,
             DateTime finishedAt,
             bool wasCancelled,
-            bool normalizeInputToGray)
+            bool normalizeInputToGray,
+            bool hasAcceptance)
         {
             List<VisionPipelineBatchSampleRunResult> results = rows
                 .Select(row => new VisionPipelineBatchSampleRunResult
@@ -259,9 +286,13 @@ namespace OpenVisionLab
                     SampleImagePath = row.ImagePath,
                     PairGroup = "ToolView N-image verification",
                     PairRole = "UNLABELED",
-                    ExpectedText = "Execution-only; operator review required",
+                    ExpectedText = hasAcceptance
+                        ? "Acceptance gate result retained"
+                        : "Execution-only; operator review required",
                     MetricText = row.MetricText,
-                    MetricReviewText = "No acceptance gate; operator drawing review required.",
+                    MetricReviewText = hasAcceptance
+                        ? "Acceptance gate evaluated; operator drawing review retained."
+                        : "No acceptance gate; operator drawing review required.",
                     FinalLayer = "NImageResult",
                     OverlayCount = row.HasDrawing ? "retained" : "missing",
                     ActionSummary = wasCancelled ? "Partial run stopped by operator." : "Completed sequential run.",
@@ -272,7 +303,9 @@ namespace OpenVisionLab
                 $"ToolView={toolName}; StepDefinitionSha256={definitionSha256}; Execution=Sequential; "
                 + $"InputNormalization={(normalizeInputToGray ? "GrayLikeToolPreview" : "PreserveChannels")}; "
                 + $"State={(wasCancelled ? "StoppedPartial" : "Completed")}; "
-                + "No OK/NG acceptance gate was inferred.";
+                + (hasAcceptance
+                    ? "Configured acceptance gate was evaluated."
+                    : "No OK/NG acceptance gate was inferred.");
             return VisionPipelineBatchRunSummaryStorage.Save(
                 recipeName,
                 pipeline.Name,

@@ -1922,6 +1922,7 @@ internal static class Program
 
             AssertToolLearnTopicCatalog();
             AssertToolGuidedSetupCatalog();
+            AssertToolRailIconInteractionTheme(shellHost);
             AssertToolSearchResult(shellHost, "InputLayerB", 1, "Arithmetic");
             AssertToolSearchResult(shellHost, "DistanceMmRange", 1, "Line");
             AssertToolSearchResult(shellHost, "템플릿 ScoreMax", 1, "Matching");
@@ -10145,6 +10146,36 @@ internal static class Program
             recipeManagerButton.IsChecked = true;
             Pump(100);
 
+            Button saveRecipeButton = FindVisualChildren<Button>(shellHost)
+                .FirstOrDefault(button => string.Equals(
+                    AutomationProperties.GetAutomationId(button),
+                    "HostRecipeSaveButton",
+                    StringComparison.Ordinal))
+                ?? throw new InvalidOperationException("Recipe save button was not found in the top command bar.");
+            KeyBinding saveRecipeBinding = shellHost.InputBindings
+                .OfType<KeyBinding>()
+                .FirstOrDefault(binding => binding.Key == Key.S && binding.Modifiers == ModifierKeys.Control)
+                ?? throw new InvalidOperationException("Recipe Ctrl+S binding was not found.");
+            if (!ReferenceEquals(saveRecipeButton.Command, shellHost.RecipeCommands.SaveRecipeCommand)
+                || !ReferenceEquals(saveRecipeBinding.Command, shellHost.RecipeCommands.SaveRecipeCommand)
+                || !string.Equals(saveRecipeButton.ToolTip?.ToString(), shellHost.RecipeCommands.SaveRecipeToolTipText, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Recipe Save button, Ctrl+S, and localized tooltip do not share the save command.");
+            }
+
+            shellHost.RecipeCommands.SaveRecipeCommand.Execute(null);
+            Pump(20);
+            string expectedSaveStatus = language == OpenVisionLanguage.English ? "Recipe saved:" : "레시피 저장 완료:";
+            if (!shellHost.RecipeCommands.StatusText.Contains(expectedSaveStatus, StringComparison.Ordinal)
+                || shellHost.NativePreviewRunCount != beforeRuns
+                || shellHost.LayerDocumentCount != beforeLayerCount)
+            {
+                throw new InvalidOperationException(
+                    "Explicit Recipe Save did not complete cleanly. "
+                    + $"Status='{shellHost.RecipeCommands.StatusText}', Runs={beforeRuns}->{shellHost.NativePreviewRunCount}, "
+                    + $"Layers={beforeLayerCount}->{shellHost.LayerDocumentCount}");
+            }
+
             ToggleButton advancedToggle = FindNamedVisualChild<ToggleButton>(shellHost, "recipeAdvancedReviewToggle")
                 ?? throw new InvalidOperationException("Recipe manager advanced review toggle was not found.");
             TabItem overviewTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipeOverview")
@@ -10218,14 +10249,27 @@ internal static class Program
                     + $"RunsAfter={shellHost.NativePreviewRunCount}, Preview={shellHost.HasNativePreviewResult}");
             }
 
-            DependencyObject pipelineReviewRoot = GetActiveToolVisualRoot("Recipe manager Pipeline Review");
+            DependencyObject pipelineReviewRoot = FindVisualChildren<OpenVisionPipelineReviewView>(shellHost)
+                .FirstOrDefault(view => view.IsVisible)
+                ?? throw new InvalidOperationException(
+                    "Recipe manager Pipeline Review did not expose its active document view.");
             AssertVisibleAutomationIds(
                 pipelineReviewRoot,
                 "Recipe manager Pipeline Review header",
                 "PipelineReviewReturnToRecipeButton",
                 "PipelineReviewRecipeContext",
                 "PipelineReviewRunReviewButton");
-            AssertActiveToolTextsVisible("Recipe manager Pipeline Review context", recipe);
+            string pipelineReviewText = string.Join(
+                " | ",
+                FindVisualChildren<TextBlock>(pipelineReviewRoot)
+                    .Select(item => item.Text)
+                    .Where(item => !string.IsNullOrWhiteSpace(item)));
+            if (!pipelineReviewText.Contains(recipe, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Recipe manager Pipeline Review context did not show the owning recipe. "
+                    + $"Recipe='{recipe}', Text='{pipelineReviewText}'");
+            }
 
             WaitForTaskWithPump(shellHost.RunPipelineReviewForTestAsync(), 30000, "Recipe manager explicit Pipeline Review execution");
             Pump(100);
@@ -12198,6 +12242,7 @@ internal static class Program
     private static CaptureResult CaptureShellHostLayerManagementCommands(string outputPath)
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        string recipeName = "Smoke_LayerManagement_" + Guid.NewGuid().ToString("N").Substring(0, 12);
         string loadImagePath = Path.Combine(
             Path.GetTempPath(),
             "OpenVisionLab_layer_load_smoke_" + Guid.NewGuid().ToString("N") + ".png");
@@ -12208,7 +12253,7 @@ internal static class Program
 
         try
         {
-            OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostLayerManagement", seedMainLayer: true);
+            OpenVisionShellHostView shellHost = CreateShellHost(recipeName, seedMainLayer: true);
             return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
             {
                 AssertHostComboBoxInteraction(shellHost, "cbHostLayer", "Host layer combo");
@@ -12233,9 +12278,27 @@ internal static class Program
                         + $"Created='{loadedLayer}', RowsBefore={initialRows}, RowsAfter={shellHost.HostLayerRowCount}, Workspace='{shellHost.WorkspaceLayerTitle}'");
                 }
 
-                if (!shellHost.LoadImageIntoLayerForTest(loadedLayer, loadImagePath))
+                using Bitmap mainBeforeContextLoad = shellHost.GetLayerImageCloneForTest("Main");
+                DrawingColor mainPixelBeforeContextLoad = mainBeforeContextLoad.GetPixel(0, 0);
+                if (!shellHost.ActivateHostLayerForTest("Main"))
                 {
-                    throw new InvalidOperationException("Layer Load Image command failed for " + loadedLayer);
+                    throw new InvalidOperationException("Layer context-menu smoke could not activate Main before right-clicking another layer.");
+                }
+
+                Pump(20);
+                if (!shellHost.RightClickHostLayerRowForTest(loadedLayer))
+                {
+                    throw new InvalidOperationException("Right-click did not select the exact layer row: " + loadedLayer);
+                }
+
+                Pump(20);
+                if (!string.Equals(shellHost.SelectedHostLayerTitle, loadedLayer, StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(shellHost.ActiveHostLayerTitle, loadedLayer, StringComparison.OrdinalIgnoreCase)
+                    || !shellHost.LoadImageIntoLayerForTest(shellHost.SelectedHostLayerTitle, loadImagePath))
+                {
+                    throw new InvalidOperationException(
+                        "Right-click layer Load Image did not target the clicked layer. "
+                        + $"Clicked={loadedLayer}, Selected={shellHost.SelectedHostLayerTitle}, Active={shellHost.ActiveHostLayerTitle}");
                 }
 
                 Pump(40);
@@ -12246,6 +12309,17 @@ internal static class Program
                         throw new InvalidOperationException(
                             "Layer Load Image command wrote an unexpected image size. "
                             + $"Layer={loadedLayer}, Size={loaded.Width}x{loaded.Height}");
+                    }
+                }
+
+                using (Bitmap mainAfterContextLoad = shellHost.GetLayerImageCloneForTest("Main"))
+                {
+                    if (mainAfterContextLoad.Width != mainBeforeContextLoad.Width
+                        || mainAfterContextLoad.Height != mainBeforeContextLoad.Height
+                        || mainAfterContextLoad.GetPixel(0, 0) != mainPixelBeforeContextLoad)
+                    {
+                        throw new InvalidOperationException(
+                            "Right-click layer Load Image changed Main instead of only the clicked layer.");
                     }
                 }
 
@@ -12303,6 +12377,7 @@ internal static class Program
         finally
         {
             TryDeleteFile(loadImagePath);
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
         }
     }
 
@@ -28588,6 +28663,7 @@ internal static class Program
     private static CaptureResult CaptureToolNImageVerificationWindow(string outputPath)
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        string recipeName = "Smoke_NImageWindow_" + Guid.NewGuid().ToString("N").Substring(0, 12);
         string inputDirectory = Path.Combine(
             Path.GetDirectoryName(outputPath) ?? Path.GetTempPath(),
             "n_image_window_inputs");
@@ -28610,34 +28686,89 @@ internal static class Program
         VisionToolNImageVerificationController controller =
             new VisionToolNImageVerificationController(
                 "Threshold",
-                "Smoke_ToolNImageVerification",
-                () => VisionPipelineStepBuilder.FromThresholdProperty(
-                    new ThresholdToolProperty(),
-                    "Threshold",
-                    "Main",
-                    "NImageResult"),
+                recipeName,
+                () =>
+                {
+                    VisionPipelineStep step = VisionPipelineStepBuilder.FromThresholdProperty(
+                        new ThresholdToolProperty(),
+                        "Threshold",
+                        "Main",
+                        "NImageResult");
+                    step.UseAcceptance = true;
+                    step.ExpectedSuccess = true;
+                    step.AcceptanceMetricName = VisionPipelineKnownMetrics.ResultImageWidth;
+                    step.UseAcceptanceMetricMinimum = true;
+                    step.AcceptanceMetricMinimum = 400D;
+                    return step;
+                },
                 normalizeInputToGray: true);
-        controller.AddImagePaths(imagePaths);
-        Task.Run(controller.RunAsync).GetAwaiter().GetResult();
-        VisionToolNImageVerificationWindow window =
-            new VisionToolNImageVerificationWindow(controller);
-        return CaptureStandaloneWindow(window, outputPath, 1380, 840, () =>
+        try
         {
-            if (controller.Rows.Count != imagePaths.Count)
+            controller.AddImagePaths(imagePaths);
+            if (controller.Rows.Count != imagePaths.Count
+                || controller.Rows.Any(row => row.IsCompleted)
+                || controller.SelectedRow == null
+                || controller.SelectedSourceImage == null)
             {
                 throw new InvalidOperationException(
-                    $"N-image verification window retained {controller.Rows.Count} rows; expected {imagePaths.Count}.");
+                    "N-image verification did not expose the selected file list before Run. "
+                    + $"Rows={controller.Rows.Count}, Completed={controller.Rows.Count(row => row.IsCompleted)}, "
+                    + $"Selected={controller.SelectedRow?.FileName ?? "<none>"}, Source={controller.SelectedSourceImage != null}.");
             }
 
-            if (!controller.CanExport
-                || controller.SelectedRow == null
-                || controller.SelectedSourceImage == null
-                || controller.SelectedDrawingImage == null)
+            Task.Run(controller.RunAsync).GetAwaiter().GetResult();
+            VisionToolNImageVerificationWindow window =
+                new VisionToolNImageVerificationWindow(controller);
+            return CaptureStandaloneWindow(window, outputPath, 1380, 840, () =>
             {
-                throw new InvalidOperationException(
-                    "N-image verification window did not retain selectable source/drawing/report evidence.");
-            }
-        });
+                if (controller.Rows.Count != imagePaths.Count)
+                {
+                    throw new InvalidOperationException(
+                        $"N-image verification window retained {controller.Rows.Count} rows; expected {imagePaths.Count}.");
+                }
+
+                if (!controller.CanExport
+                    || controller.SelectedRow == null
+                    || !controller.SelectedRow.IsNg
+                    || string.IsNullOrWhiteSpace(controller.SelectedRow.ReviewDetailText)
+                    || controller.SelectedSourceImage == null
+                    || controller.SelectedDrawingImage == null)
+                {
+                    throw new InvalidOperationException(
+                        "N-image verification window did not retain a selected NG reason with source/drawing/report evidence.");
+                }
+
+                Button addFilesButton = FindVisualChildren<Button>(window)
+                    .FirstOrDefault(button => string.Equals(
+                        AutomationProperties.GetName(button),
+                        controller.AddFilesText,
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("Localized N-image Add files button was not rendered.");
+                if (!string.Equals(addFilesButton.ToolTip?.ToString(), controller.AddFilesToolTipText, StringComparison.Ordinal)
+                    || !FindVisualChildren<TextBlock>(window).Any(text => string.Equals(text.Text, controller.ImageListTitleText, StringComparison.Ordinal))
+                    || !FindVisualChildren<TextBlock>(window).Any(text => string.Equals(text.Text, controller.ReviewReasonHeaderText, StringComparison.Ordinal)))
+                {
+                    throw new InvalidOperationException("Korean N-image labels, tooltip, or result-reason header did not render.");
+                }
+
+                OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+                Pump(8);
+                if (!string.Equals(AutomationProperties.GetName(addFilesButton), "Add files", StringComparison.Ordinal)
+                    || !string.Equals(addFilesButton.ToolTip?.ToString(), "Select image files to verify.", StringComparison.Ordinal)
+                    || !controller.WindowTitle.Contains("N-image verification", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("N-image labels and tooltip did not switch to English.");
+                }
+
+                OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+                Pump(8);
+            });
+        }
+        finally
+        {
+            controller.Dispose();
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
     }
 
     private static CaptureResult CaptureToolNImageLocatorPromotionWindow(string outputPath)
@@ -29105,7 +29236,8 @@ internal static class Program
     private static CaptureResult CaptureShellHostEdgeBasedMatchingToolCore(string outputPath, bool dockAfterVerification)
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
-        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostEdgeBasedMatching");
+        string recipeName = "Smoke_EdgeBasedMatching_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+        OpenVisionShellHostView shellHost = CreateShellHost(recipeName);
         using Bitmap matchingBitmap = CreateMatchingSmokeBitmap();
         string templatePath = CreateMatchingTemplateFile(matchingBitmap);
         List<string> autoMPointRepresentativePaths =
@@ -29128,8 +29260,14 @@ internal static class Program
                 AssertComboBoxPopupLayout(outputLayerCombo, "EdgeBasedMatching output layer combo");
                 int beforeAutoPreviewRuns = shellHost.NativePreviewRunCount;
                 shellHost.SetActiveEdgeBasedMatchingTemplatePathForTest(templatePath);
-                Thread.Sleep(180);
-                Pump(30);
+                Stopwatch autoPreviewWait = Stopwatch.StartNew();
+                while (shellHost.NativePreviewRunCount <= beforeAutoPreviewRuns
+                    && autoPreviewWait.ElapsedMilliseconds < 5000)
+                {
+                    Pump(2);
+                    Thread.Sleep(10);
+                }
+
                 AssertFloatingPropertyGridDialogButtonsReady("EdgeBasedMatching property grid dialog button");
                 AssertToolHeaderLearnOpensTopic(shellHost, 12, "EdgeBasedMatching header Learn");
                 if (!shellHost.IsNativeDocumentActive || !shellHost.HasNativePreviewResult)
@@ -29159,6 +29297,26 @@ internal static class Program
                 AssertNoAutoDockedLayers(shellHost, "EdgeBasedMatching template auto-preview");
                 AssertResultReviewVisible("EdgeBasedMatching", "Edge Match /", "검출", "점수");
                 AssertActiveToolTextsVisible("EdgeBasedMatching verification guide", "엣지", "Canny", "포인트", "미리보기 OK");
+                AssertFloatingPropertyBrowsable(
+                    "EdgeBasedMatching advanced switch visible",
+                    "ShowAdvancedSettings",
+                    true);
+                AssertFloatingPropertyBrowsable(
+                    "EdgeBasedMatching unique validation compact default",
+                    "USE_UNIQUE_MATCH_VALIDATION",
+                    false);
+                AssertFloatingPropertyBrowsable(
+                    "EdgeBasedMatching Auto MPoint ROI compact default",
+                    "AUTO_MPOINT_USE_ANALYSIS_ROI",
+                    false);
+                AssertFloatingPropertyBrowsable(
+                    "EdgeBasedMatching Canny range companion hidden",
+                    "CANNY_HIGH",
+                    false);
+                AssertFloatingPropertyBrowsable(
+                    "EdgeBasedMatching scale minimum compact default",
+                    "FIND_SCALE_MIN",
+                    false);
 
                 int autoMPointPreviewRuns = shellHost.NativePreviewRunCount;
                 int autoMPointLayerCount = shellHost.LayerDocumentCount;
@@ -29167,6 +29325,8 @@ internal static class Program
                 string autoMPointActiveLayer = shellHost.ActiveHostLayerTitle;
                 shellHost.ConfigureActiveEdgeBasedMatchingForTest(property =>
                 {
+                    property.ShowAdvancedSettings = true;
+                    property.USE_FIND_SCALE = true;
                     property.SCORE_MIN = 0.45D;
                     property.NUM_MATCH = 1;
                     property.USE_UNIQUE_MATCH_VALIDATION = true;
@@ -29175,6 +29335,7 @@ internal static class Program
                     property.SEARCH_STEP = 2;
                     property.USE_POSITION_REFINE = true;
                     property.USE_SUBPIXEL_REFINE = true;
+                    property.AUTO_MPOINT_USE_ANALYSIS_ROI = true;
                     property.AUTO_MPOINT_PATTERN_WIDTH = 96;
                     property.AUTO_MPOINT_PATTERN_HEIGHT = 96;
                     property.AUTO_MPOINT_STRIDE = 32;
@@ -29190,6 +29351,23 @@ internal static class Program
                 {
                     throw new InvalidOperationException("Auto MPoint PropertyGrid teaching settings triggered Preview.");
                 }
+
+                AssertFloatingPropertyBrowsable(
+                    "EdgeBasedMatching unique validation advanced",
+                    "USE_UNIQUE_MATCH_VALIDATION",
+                    true);
+                AssertFloatingPropertyBrowsable(
+                    "EdgeBasedMatching unique margin advanced",
+                    "UNIQUE_MATCH_MIN_SCORE_MARGIN",
+                    true);
+                AssertFloatingPropertyBrowsable(
+                    "EdgeBasedMatching scale minimum advanced",
+                    "FIND_SCALE_MIN",
+                    true);
+                AssertFloatingPropertyBrowsable(
+                    "EdgeBasedMatching Auto MPoint ROI advanced",
+                    "AUTO_MPOINT_USE_ANALYSIS_ROI",
+                    true);
 
                 AssertFloatingSelectedObjectBooleanProperty(
                     "EdgeBasedMatching unique-match option",
@@ -29219,6 +29397,33 @@ internal static class Program
                         .SelectMany(FindVisualChildren<EdgeBasedMatchingToolWpfView>))
                     .FirstOrDefault()
                     ?? throw new InvalidOperationException("Auto MPoint Edge Based Matching view was not visible.");
+                if (!matchingView.IsTeachingPanelSeparatedFromGuideForTest)
+                {
+                    throw new InvalidOperationException(
+                        "EdgeBasedMatching teaching panel overlaps the verification guide.");
+                }
+
+                shellHost.ConfigureActiveEdgeBasedMatchingForTest(property =>
+                {
+                    property.ShowAdvancedSettings = false;
+                    property.USE_FIND_SCALE = false;
+                    property.AUTO_MPOINT_USE_ANALYSIS_ROI = false;
+                });
+                Pump(8);
+                if (shellHost.NativePreviewRunCount != autoMPointPreviewRuns)
+                {
+                    throw new InvalidOperationException(
+                        "EdgeBasedMatching advanced visibility settings triggered Preview.");
+                }
+
+                AssertFloatingPropertyBrowsable(
+                    "EdgeBasedMatching unique validation compact restore",
+                    "USE_UNIQUE_MATCH_VALIDATION",
+                    false);
+                AssertFloatingPropertyBrowsable(
+                    "EdgeBasedMatching scale minimum compact restore",
+                    "FIND_SCALE_MIN",
+                    false);
                 teachingPanel.DetailsExpander.IsExpanded = true;
                 Pump(4);
                 shellHost.SetActiveAutoMPointRepresentativeImagesForTest(
@@ -29593,6 +29798,7 @@ internal static class Program
         }
         finally
         {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
             TryDeleteFile(templatePath);
             TryDeleteFile(autoMPointTemplatePath);
             TryDeleteFile(Path.ChangeExtension(autoMPointTemplatePath, ".roi"));
@@ -35069,6 +35275,59 @@ internal static class Program
                 "Tool rail readiness did not describe the current Main image state. "
                 + $"Count={tools.Count}, Expected='{expectedStatusLabel}', "
                 + $"Mismatch='{mismatch?.Title}:{mismatch?.StatusLabel}:{mismatch?.Description}'");
+        }
+    }
+
+    private static void AssertToolRailIconInteractionTheme(OpenVisionShellHostView shellHost)
+    {
+        Button thresholdButton = FindVisualChildren<Button>(shellHost)
+            .FirstOrDefault(item => string.Equals(
+                AutomationProperties.GetAutomationId(item),
+                "HostToolNav_Threshold",
+                StringComparison.Ordinal))
+            ?? throw new InvalidOperationException("Threshold Tool rail button was not available for icon theme verification.");
+        MahApps.Metro.IconPacks.PackIconMaterial thresholdIcon =
+            FindVisualChildren<MahApps.Metro.IconPacks.PackIconMaterial>(thresholdButton).FirstOrDefault()
+            ?? throw new InvalidOperationException("Threshold Tool rail icon was not rendered.");
+        SolidColorBrush expectedBrush = shellHost.FindResource("ShellHost.FieldFocusBrush") as SolidColorBrush
+            ?? throw new InvalidOperationException("Tool rail semantic icon brush was not available.");
+        if (thresholdIcon.Foreground is not SolidColorBrush actualBrush
+            || actualBrush.Color != expectedBrush.Color)
+        {
+            throw new InvalidOperationException(
+                "Threshold Tool rail icon did not use the semantic focus color. "
+                + $"Expected={expectedBrush.Color}, Actual={thresholdIcon.Foreground}");
+        }
+
+        SolidColorBrush? nearWhiteInteractiveBrush = thresholdIcon.Style?.Triggers
+            .OfType<DataTrigger>()
+            .SelectMany(trigger => trigger.Setters.OfType<Setter>())
+            .Where(setter => setter.Property == Control.ForegroundProperty)
+            .Select(setter => setter.Value as SolidColorBrush)
+            .FirstOrDefault(brush => brush != null
+                && brush.Color.R >= 230
+                && brush.Color.G >= 230
+                && brush.Color.B >= 230);
+        if (nearWhiteInteractiveBrush != null)
+        {
+            throw new InvalidOperationException(
+                "Threshold Tool rail icon still changes to a near-white foreground during pointer interaction. "
+                + $"Color={nearWhiteInteractiveBrush.Color}");
+        }
+
+        SolidColorBrush? focusBorderBrush = thresholdButton.Template.Triggers
+            .OfType<Trigger>()
+            .Where(trigger => trigger.Property == UIElement.IsKeyboardFocusedProperty)
+            .SelectMany(trigger => trigger.Setters.OfType<Setter>())
+            .Where(setter => string.Equals(setter.TargetName, "focusChrome", StringComparison.Ordinal)
+                && setter.Property == Border.BorderBrushProperty)
+            .Select(setter => setter.Value as SolidColorBrush)
+            .FirstOrDefault();
+        if (focusBorderBrush == null || focusBorderBrush.Color != expectedBrush.Color)
+        {
+            throw new InvalidOperationException(
+                "Threshold Tool rail keyboard-focus border did not use the semantic focus color. "
+                + $"Expected={expectedBrush.Color}, Actual={focusBorderBrush?.Color.ToString() ?? "<missing>"}");
         }
     }
 

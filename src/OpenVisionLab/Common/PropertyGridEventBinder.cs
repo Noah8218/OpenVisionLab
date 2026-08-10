@@ -131,13 +131,10 @@ namespace OpenVisionLab.Common
                 changed |= SetBrowsableIfExists(propertyGrid, selected, nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.FIND_ANGLE), edgeMatching.USE_FIND_ANGLE);
                 changed |= SetBrowsableIfExists(propertyGrid, selected, nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.FIND_ANGLE_MIN), edgeMatching.USE_FIND_ANGLE);
                 changed |= SetBrowsableIfExists(propertyGrid, selected, nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.FIND_ANGLE_MAX), edgeMatching.USE_FIND_ANGLE);
-                changed |= SetBrowsableIfExists(propertyGrid, selected, nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH), edgeMatching.USE_FIND_ANGLE);
-                changed |= SetBrowsableIfExists(propertyGrid, selected, nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.COARSE_ANGLE_STEP), edgeMatching.USE_FIND_ANGLE && edgeMatching.USE_COARSE_TO_FINE_ANGLE_SEARCH);
-                changed |= SetBrowsableIfExists(propertyGrid, selected, nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.COARSE_ANGLE_TOP_K), edgeMatching.USE_FIND_ANGLE && edgeMatching.USE_COARSE_TO_FINE_ANGLE_SEARCH);
-                changed |= SetBrowsableIfExists(propertyGrid, selected, nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.PYRAMID_POSITION_TOP_N), edgeMatching.USE_PYRAMID_POSITION_PROPOSAL);
-                changed |= SetBrowsableIfExists(propertyGrid, selected, nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.PYRAMID_POSITION_MIN_SCORE), edgeMatching.USE_PYRAMID_POSITION_PROPOSAL);
-                changed |= SetBrowsableIfExists(propertyGrid, selected, nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.HYBRID_VERIFY_TOP_N), edgeMatching.USE_HYBRID_VERIFY);
-                changed |= SetBrowsableIfExists(propertyGrid, selected, nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.HYBRID_VERIFY_IMAGE_WEIGHT), edgeMatching.USE_HYBRID_VERIFY);
+                changed |= SetBrowsableIfExists(propertyGrid, selected, nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.FIND_SCALE_MIN), edgeMatching.USE_FIND_SCALE);
+                changed |= SetBrowsableIfExists(propertyGrid, selected, nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.FIND_SCALE_MAX), edgeMatching.USE_FIND_SCALE);
+                changed |= SetBrowsableIfExists(propertyGrid, selected, nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.FIND_SCALE_STEP), edgeMatching.USE_FIND_SCALE);
+                changed |= ApplyEdgeBasedMatchingAdvancedVisibility(propertyGrid, selected, edgeMatching);
             }
 
             if (selected is global::OpenVisionLab.LineGaugeProperty line)
@@ -265,6 +262,92 @@ namespace OpenVisionLab.Common
             return changed;
         }
 
+        private static bool ApplyEdgeBasedMatchingAdvancedVisibility(
+            IPropertyGridView propertyGrid,
+            object selected,
+            global::OpenVisionLab.EdgeBasedMatchingProperty property)
+        {
+            bool changed = false;
+            bool advanced = property.ShowAdvancedSettings;
+            foreach (string propertyName in new[]
+            {
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.USE_UNIQUE_MATCH_VALIDATION),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.ALLOW_GLOBAL_POLARITY_REVERSAL),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.AUTO_MPOINT_USE_ANALYSIS_ROI),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.AUTO_MPOINT_PATTERN_WIDTH),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.AUTO_MPOINT_PATTERN_HEIGHT),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.AUTO_MPOINT_STRIDE),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.AUTO_MPOINT_MAX_RESULTS),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_FEATURE_QUALITY),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_UNIQUENESS),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.AUTO_MPOINT_MAX_POSITION_ERROR),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_REPRESENTATIVE_IMAGES),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_REPRESENTATIVE_SUCCESS_RATE),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.CANNY_APERTURE_SIZE),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.USE_L2_GRADIENT),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.CONTOUR_RETRIEVAL_MODE),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.CONTOUR_APPROXIMATION_MODE),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.MAX_TEMPLATE_POINTS),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.MIN_GRADIENT_MAGNITUDE),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.USE_POSITION_REFINE),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.USE_SUBPIXEL_REFINE),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.GREEDINESS),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.USE_PYRAMID_POSITION_PROPOSAL),
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.USE_HYBRID_VERIFY)
+            })
+            {
+                changed |= SetBrowsableIfExists(propertyGrid, selected, propertyName, advanced);
+            }
+
+            changed |= SetBrowsableIfExists(
+                propertyGrid,
+                selected,
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.CANNY_HIGH),
+                false);
+            changed |= SetBrowsableIfExists(
+                propertyGrid,
+                selected,
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN),
+                advanced && property.USE_UNIQUE_MATCH_VALIDATION);
+            changed |= SetBrowsableIfExists(
+                propertyGrid,
+                selected,
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.AUTO_MPOINT_ANALYSIS_ROI),
+                advanced && property.AUTO_MPOINT_USE_ANALYSIS_ROI);
+            changed |= SetBrowsableIfExists(
+                propertyGrid,
+                selected,
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.COARSE_ANGLE_STEP),
+                advanced && property.USE_FIND_ANGLE && property.USE_COARSE_TO_FINE_ANGLE_SEARCH);
+            changed |= SetBrowsableIfExists(
+                propertyGrid,
+                selected,
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.COARSE_ANGLE_TOP_K),
+                advanced && property.USE_FIND_ANGLE && property.USE_COARSE_TO_FINE_ANGLE_SEARCH);
+            changed |= SetBrowsableIfExists(
+                propertyGrid,
+                selected,
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.PYRAMID_POSITION_TOP_N),
+                advanced && property.USE_PYRAMID_POSITION_PROPOSAL);
+            changed |= SetBrowsableIfExists(
+                propertyGrid,
+                selected,
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.PYRAMID_POSITION_MIN_SCORE),
+                advanced && property.USE_PYRAMID_POSITION_PROPOSAL);
+            changed |= SetBrowsableIfExists(
+                propertyGrid,
+                selected,
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.HYBRID_VERIFY_TOP_N),
+                advanced && property.USE_HYBRID_VERIFY);
+            changed |= SetBrowsableIfExists(
+                propertyGrid,
+                selected,
+                nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.HYBRID_VERIFY_IMAGE_WEIGHT),
+                advanced && property.USE_HYBRID_VERIFY);
+            return changed;
+        }
+
         private static bool SetBrowsableIfExists(IPropertyGridView propertyGrid, object selected, string propertyName, bool isBrowsable)
         {
             if (selected.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public) == null)
@@ -299,6 +382,9 @@ namespace OpenVisionLab.Common
                 case nameof(global::OpenVisionLab.MatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH):
                 case nameof(global::OpenVisionLab.MatchingProperty.USE_PYRAMID_POSITION_PROPOSAL):
                 case nameof(global::OpenVisionLab.MatchingProperty.USE_CANNY):
+                case nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.USE_FIND_SCALE):
+                case nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.USE_UNIQUE_MATCH_VALIDATION):
+                case nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.AUTO_MPOINT_USE_ANALYSIS_ROI):
                 case nameof(global::OpenVisionLab.EdgeBasedMatchingProperty.USE_HYBRID_VERIFY):
                 case nameof(global::OpenVisionLab.LineGaugeProperty.USE_MANUAL_ANGLE):
                 case nameof(global::OpenVisionLab.LineGaugeProperty.USE_EXTEND_FIT_LINE):

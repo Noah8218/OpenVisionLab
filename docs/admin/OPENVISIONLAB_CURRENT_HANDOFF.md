@@ -1,6 +1,6 @@
 # OpenVisionLab Current Project Handoff
 
-Updated: 2026-08-09 KST
+Updated: 2026-08-11 KST
 
 This is the compact live-status source for a new OpenVisionLab task. Read
 `AGENTS.md`, `docs/README.md`, and `docs/LLM_DOCUMENT_INDEX.json` first. Stable
@@ -52,6 +52,22 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   hardware qualification, calibrated metrology, or field robustness.
 
 ## Latest Completed Work
+
+### 2026-08-11 Recipe, Layer, N-image, And Edge Regression Batch - Complete In Dev
+
+- Right-click image load now targets the exact clicked layer, Recipe save is
+  available from the toolbar and `Ctrl+S`, and valid last image directories are
+  reused across the affected workspace, Tool View, layer, and N-image dialogs.
+- Recipe create/switch exposes a busy state. Failed Step XML save/round-trip no
+  longer opens a second pending-edit dialog while retaining a dirty editor.
+- N-image verification now lists selected files before Run, distinguishes
+  `ERROR`, `NG`, `OK`, and ungated `RUN OK`, selects failed evidence, and uses
+  localized controls/tooltips/report structure. EdgeBasedMatching separates
+  its guide/teaching panel and defaults to a dependency-aware compact parameter
+  set.
+- Debug build, readiness 13/13, seven focused current-source WPF targets, and
+  the six-Tool x 30-image contract plus gated NG check passed. Evidence:
+  `docs/reports/OPENVISIONLAB_RECIPE_LAYER_NIMAGE_EDGE_REGRESSION_FIX_20260811.md`.
 
 ### P294 Main No-Image Pipeline Open Performance - Complete In Dev
 
@@ -287,6 +303,9 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 ## Current Priority And Activation Conditions
 
+- The 2026-08-11 Recipe/layer/N-image/Edge regression batch is complete and
+  verified in Dev. Original promotion, commit, and push remain separate
+  explicitly authorized tasks.
 - P294 is complete and verified in Dev. Promotion to the original repository,
   commit, and push remain separate explicitly authorized tasks.
 - P293 is complete and verified in Dev. Promotion to the original repository,

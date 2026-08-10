@@ -66,6 +66,7 @@ namespace OpenVisionLab
                 case nameof(BlobProperty.MIN_HEIGHT):
                 case nameof(BlobProperty.MAX_HEIGHT):
                 case nameof(MatchingProperty.USE_FIND_ANGLE):
+                case nameof(MatchingProperty.USE_FIND_SCALE):
                 case nameof(MatchingProperty.USE_COARSE_TO_FINE_ANGLE_SEARCH):
                 case nameof(MatchingProperty.USE_PYRAMID_POSITION_PROPOSAL):
                 case nameof(MatchingProperty.USE_CANNY):
@@ -73,6 +74,7 @@ namespace OpenVisionLab
                 case nameof(EdgeBasedMatchingProperty.USE_UNIQUE_MATCH_VALIDATION):
                 case nameof(EdgeBasedMatchingProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN):
                 case nameof(EdgeBasedMatchingProperty.ALLOW_GLOBAL_POLARITY_REVERSAL):
+                case nameof(EdgeBasedMatchingProperty.ShowAdvancedSettings):
                 case nameof(LineGaugeProperty.USE_MANUAL_ANGLE):
                 case nameof(LineGaugeProperty.USE_EXTEND_FIT_LINE):
                 case nameof(LineGaugeProperty.USE_AVERAGE_FILTER):

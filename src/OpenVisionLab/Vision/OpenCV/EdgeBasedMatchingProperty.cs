@@ -4,6 +4,7 @@ using OpenVisionLab.Vision2D.Property;
 using OpenCvSharp;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using static OpenVisionLab.PropertyGridEditorFactory;
+using System.Xml.Serialization;
 
 namespace OpenVisionLab
 {
@@ -20,6 +21,11 @@ namespace OpenVisionLab
     [System.Xml.Serialization.XmlRoot("CPropertyEdgeBasedMatching")]
     public class EdgeBasedMatchingProperty : OpenCvPropertyBase, IOpenCVPropertyEdgeBasedTemplateMatching, IOpenCvConfigurableProperty<EdgeBasedMatchingProperty>
     {
+        [PropertyOrder(-1)]
+        [Category("Parameter"), Description("Show less frequently used matching, edge-model, teaching, and search controls."), DisplayName("Show advanced settings")]
+        [XmlIgnore]
+        public bool ShowAdvancedSettings { get; set; }
+
         [PropertyOrder(0)]
         [PropertyEditor(typeof(WpgMatchEditor))]
         [Category("Matching"), Description("Registered reference template for edge matching. A rotated ROI template is saved as an upright 0-degree template before matching."), DisplayName("Pattern path")]

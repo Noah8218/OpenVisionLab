@@ -78,6 +78,31 @@ namespace OpenVisionLab
             return false;
         }
 
+        public bool RightClickHostLayerRow(string layerTitle)
+        {
+            if (string.IsNullOrWhiteSpace(layerTitle) || hostLayerRowsList == null)
+            {
+                return false;
+            }
+
+            refreshHostLayerRows();
+            hostLayerRowsList.UpdateLayout();
+            for (int index = 0; index < layerListPresenter.RowCount; index++)
+            {
+                if (!layerListPresenter.TryGetLayerTitle(index, out string currentTitle)
+                    || !string.Equals(currentTitle, layerTitle, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                hostLayerRowsList.SelectedIndex = index;
+                hostLayerRowsList.UpdateLayout();
+                return true;
+            }
+
+            return false;
+        }
+
         private bool AreLayerRowsReadableFromModel()
         {
             return layerListPresenter.Rows.All(row =>

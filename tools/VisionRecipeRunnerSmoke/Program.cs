@@ -835,6 +835,11 @@ static async Task<int> RunToolNImageVerificationContractAsync(string? evidenceDi
             failures.Add(toolName + $": generated success corpus returned {executionFailures} NG/error rows.");
         }
 
+        if (session.Rows.Any(row => !row.IsUngated || !string.Equals(row.Status, "RUN OK", StringComparison.Ordinal)))
+        {
+            failures.Add(toolName + ": execution-only rows were not clearly marked RUN OK/ungated.");
+        }
+
         if (!SerializeHelper.TryLoadFromXmlText(
                 session.PipelineXml,
                 out VisionPipeline frozenPipeline,
@@ -934,13 +939,27 @@ static async Task<int> RunToolNImageVerificationContractAsync(string? evidenceDi
             session.PipelineXml,
             session.StepDefinitionSha256,
             htmlPath,
+            OpenVisionLanguage.English,
             out string htmlError);
+        string koreanHtmlPath = Path.Combine(toolEvidenceDirectory, "n_image_report_ko.html");
+        bool koreanHtmlSaved = VisionToolNImageVerificationHtmlReportExporter.TryExport(
+            session.BatchSummaryPath,
+            session.PipelineXml,
+            session.StepDefinitionSha256,
+            koreanHtmlPath,
+            OpenVisionLanguage.Korean,
+            out string koreanHtmlError);
         if (!htmlSaved
             || !File.Exists(htmlPath)
             || !File.ReadAllText(htmlPath).Contains("data:image", StringComparison.Ordinal)
-            || !File.ReadAllText(htmlPath).Contains(session.StepDefinitionSha256, StringComparison.Ordinal))
+            || !File.ReadAllText(htmlPath).Contains(session.StepDefinitionSha256, StringComparison.Ordinal)
+            || !File.ReadAllText(htmlPath).Contains("N-image verification report", StringComparison.Ordinal)
+            || !koreanHtmlSaved
+            || !File.Exists(koreanHtmlPath)
+            || !File.ReadAllText(koreanHtmlPath).Contains("N장 검증 보고서", StringComparison.Ordinal)
+            || File.ReadAllText(koreanHtmlPath).Contains("?", StringComparison.Ordinal))
         {
-            failures.Add(toolName + ": self-contained HTML export failed: " + htmlError);
+            failures.Add(toolName + ": localized self-contained HTML export failed: " + htmlError + " / " + koreanHtmlError);
         }
 
         if (reportWriteTimes.Any(pair =>
@@ -968,6 +987,38 @@ static async Task<int> RunToolNImageVerificationContractAsync(string? evidenceDi
             equivalent ? "PASS" : "FAIL",
             htmlSaved ? "PASS" : "FAIL",
             session.StepDefinitionSha256));
+    }
+
+    try
+    {
+        VisionToolNImageVerificationSession gatedSession =
+            await VisionToolNImageVerificationService.RunAsync(
+                "Threshold",
+                "P233_Smoke_AcceptanceNg",
+                () =>
+                {
+                    VisionPipelineStep step = thresholdFactory();
+                    step.UseAcceptance = true;
+                    step.ExpectedSuccess = false;
+                    return step;
+                },
+                normalizeInputToGray: true,
+                imagePaths.Take(1).ToList(),
+                progress: null,
+                CancellationToken.None);
+        VisionToolNImageVerificationRow gatedRow = gatedSession.Rows.Single();
+        if (!gatedRow.IsNg
+            || !string.Equals(gatedRow.Status, "NG", StringComparison.Ordinal)
+            || string.IsNullOrWhiteSpace(gatedRow.ReviewDetailText))
+        {
+            failures.Add(
+                "Acceptance-gated N-image result did not expose NG and its review reason. "
+                + $"Status={gatedRow.Status}, Reason={gatedRow.ReviewDetailText}");
+        }
+    }
+    catch (Exception ex)
+    {
+        failures.Add("Acceptance-gated NG contract failed: " + ex.GetBaseException().Message);
     }
 
     File.WriteAllLines(
@@ -1173,6 +1224,7 @@ static async Task<int> RunToolNImageRealFolderAcceptanceAsync(
         session.PipelineXml,
         session.StepDefinitionSha256,
         htmlPath,
+        OpenVisionLanguage.English,
         out string htmlError);
     if (!htmlSaved)
     {

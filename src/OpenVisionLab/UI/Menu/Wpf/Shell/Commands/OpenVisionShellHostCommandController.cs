@@ -58,6 +58,7 @@ namespace OpenVisionLab
             this.manualWorkspaceImageLoaded = manualWorkspaceImageLoaded;
             this.rememberWorkspaceImagePath = rememberWorkspaceImagePath;
             lastWorkspaceImageDirectory = ResolveExistingImageDirectory(initialWorkspaceImagePath);
+            OpenVisionImageDirectoryResolver.RememberImagePath(initialWorkspaceImagePath);
             hasRunnableSample = LoadRunnableSamples().Count > 0;
         }
 
@@ -105,6 +106,7 @@ namespace OpenVisionLab
             if (dialog.ShowDialog(ownerProvider()) == true)
             {
                 workspacePreviewController.SaveCurrentImage(dialog.FileName);
+                OpenVisionImageDirectoryResolver.RememberImagePath(dialog.FileName);
             }
         }
 
@@ -121,6 +123,7 @@ namespace OpenVisionLab
                 if (!string.IsNullOrWhiteSpace(directory))
                 {
                     lastWorkspaceImageDirectory = directory;
+                    OpenVisionImageDirectoryResolver.RememberImagePath(normalizedPath);
                     rememberWorkspaceImagePath?.Invoke(normalizedPath);
                 }
             }

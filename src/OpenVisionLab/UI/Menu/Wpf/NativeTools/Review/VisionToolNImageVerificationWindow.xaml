@@ -106,65 +106,71 @@
                         Command="{Binding AddFilesCommand}"
                         CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
                         IsEnabled="{Binding CanEditImages}"
+                        ToolTip="{Binding AddFilesToolTipText}"
                         Padding="12,6"
-                        AutomationProperties.Name="?대?吏 ?뚯씪 異붽?">
+                        AutomationProperties.Name="{Binding AddFilesText}">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconMaterial Kind="FileImagePlusOutline" Width="16" Height="16" Margin="0,0,6,0" />
-                        <TextBlock Text="?뚯씪 異붽?" />
+                        <TextBlock Text="{Binding AddFilesText}" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="2"
                         Command="{Binding AddFolderCommand}"
                         CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
                         IsEnabled="{Binding CanEditImages}"
+                        ToolTip="{Binding AddFolderToolTipText}"
                         Padding="12,6"
-                        AutomationProperties.Name="?대?吏 ?대뜑 異붽?">
+                        AutomationProperties.Name="{Binding AddFolderText}">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconMaterial Kind="FolderImage" Width="16" Height="16" Margin="0,0,6,0" />
-                        <TextBlock Text="?대뜑 異붽?" />
+                        <TextBlock Text="{Binding AddFolderText}" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="4"
                         Command="{Binding ClearImagesCommand}"
                         CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
                         IsEnabled="{Binding CanEditImages}"
+                        ToolTip="{Binding ClearImagesToolTipText}"
                         Padding="12,6"
-                        AutomationProperties.Name="Clear image list">
+                        AutomationProperties.Name="{Binding ClearImagesText}">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconMaterial Kind="DeleteSweepOutline" Width="16" Height="16" Margin="0,0,6,0" />
-                        <TextBlock Text="Clear" />
+                        <TextBlock Text="{Binding ClearImagesText}" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="6"
                         Command="{Binding RunCommand}"
                         IsEnabled="{Binding CanRun}"
                         Style="{StaticResource VisionTool.PrimaryActionButtonStyle}"
+                        ToolTip="{Binding RunToolTipText}"
                         Padding="14,6"
-                        AutomationProperties.Name="N??寃利??ㅽ뻾">
+                        AutomationProperties.Name="{Binding RunText}">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconMaterial Kind="Play" Width="16" Height="16" Margin="0,0,6,0" />
-                        <TextBlock Text="?쒖감 ?ㅽ뻾" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding RunText}" FontWeight="SemiBold" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="8"
                         Command="{Binding StopCommand}"
                         IsEnabled="{Binding CanStop}"
+                        ToolTip="{Binding StopToolTipText}"
                         Padding="12,6"
-                        AutomationProperties.Name="Stop verification">
+                        AutomationProperties.Name="{Binding StopText}">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconMaterial Kind="Stop" Width="16" Height="16" Margin="0,0,6,0" />
-                        <TextBlock Text="Stop" />
+                        <TextBlock Text="{Binding StopText}" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="10"
                         Command="{Binding ExportHtmlCommand}"
                         CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
                         IsEnabled="{Binding CanExport}"
+                        ToolTip="{Binding ExportHtmlToolTipText}"
                         Padding="12,6"
-                        AutomationProperties.Name="Export verification HTML report">
+                        AutomationProperties.Name="{Binding ExportHtmlText}">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconMaterial Kind="FileExportOutline" Width="16" Height="16" Margin="0,0,6,0" />
-                        <TextBlock Text="Export HTML" />
+                        <TextBlock Text="{Binding ExportHtmlText}" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="12"
@@ -203,7 +209,7 @@
                         <RowDefinition Height="6" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Verification results selected from the image list"
+                    <TextBlock Text="{Binding ImageListTitleText}"
                                FontWeight="SemiBold"
                                Foreground="{StaticResource VisionTool.PrimaryTextBrush}" />
                     <DataGrid x:Name="resultGrid"
@@ -219,13 +225,43 @@
                               HeadersVisibility="Column"
                               GridLinesVisibility="Horizontal"
                               AutomationProperties.AutomationId="VisionToolNImageVerificationResults">
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Setter Property="Foreground" Value="{StaticResource VisionTool.PrimaryTextBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Status}" Value="OK">
+                                        <Setter Property="Foreground" Value="{StaticResource VisionTool.StatusSuccessBrush}" />
+                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="NG">
+                                        <Setter Property="Foreground" Value="{StaticResource VisionTool.StatusErrorBrush}" />
+                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="ERROR">
+                                        <Setter Property="Foreground" Value="{StaticResource VisionTool.StatusErrorBrush}" />
+                                        <Setter Property="FontWeight" Value="Bold" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="RUN OK">
+                                        <Setter Property="Foreground" Value="{StaticResource VisionTool.StatusWarningBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="#" Binding="{Binding Index}" Width="48" />
-                            <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="1.4*" />
-                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="62" />
-                            <DataGridTextColumn Header="Metric" Binding="{Binding MetricText}" Width="1.5*" />
+                            <DataGridTextColumn Binding="{Binding FileName}" Width="1.4*">
+                                <DataGridTextColumn.Header><TextBlock Text="{Binding DataContext.FileHeaderText, RelativeSource={RelativeSource AncestorType=DataGrid}}" /></DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding Status}" Width="78">
+                                <DataGridTextColumn.Header><TextBlock Text="{Binding DataContext.StatusHeaderText, RelativeSource={RelativeSource AncestorType=DataGrid}}" /></DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding MetricText}" Width="1.5*">
+                                <DataGridTextColumn.Header><TextBlock Text="{Binding DataContext.MetricHeaderText, RelativeSource={RelativeSource AncestorType=DataGrid}}" /></DataGridTextColumn.Header>
+                            </DataGridTextColumn>
                             <DataGridTextColumn Header="ms" Binding="{Binding TotalMilliseconds, StringFormat=0.###}" Width="72" />
-                            <DataGridTextColumn Header="Review reason" Binding="{Binding ReviewReasonText}" Width="1.1*" />
+                            <DataGridTextColumn Binding="{Binding ReviewDetailText}" Width="1.5*">
+                                <DataGridTextColumn.Header><TextBlock Text="{Binding DataContext.ReviewReasonHeaderText, RelativeSource={RelativeSource AncestorType=DataGrid}}" /></DataGridTextColumn.Header>
+                            </DataGridTextColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -239,7 +275,7 @@
                     <RowDefinition Height="8" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <GroupBox Header="Verified source image"
+                <GroupBox Header="{Binding SourceImageHeaderText}"
                           Padding="6">
                     <Border Background="#090D13"
                             BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
@@ -250,7 +286,7 @@
                     </Border>
                 </GroupBox>
                 <GroupBox Grid.Row="2"
-                          Header="Verification result image"
+                          Header="{Binding ResultImageHeaderText}"
                           Padding="6">
                     <Border Background="#090D13"
                             BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
@@ -266,9 +302,24 @@
                         BorderThickness="1"
                         Padding="9,7">
                     <TextBlock Text="{Binding SelectedEvidenceText}"
-                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
                                TextWrapping="Wrap"
-                               MaxHeight="100" />
+                               MaxHeight="120">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedRow.IsNg}" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource VisionTool.StatusErrorBrush}" />
+                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding SelectedRow.IsError}" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource VisionTool.StatusErrorBrush}" />
+                                        <Setter Property="FontWeight" Value="Bold" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </Border>
             </Grid>
         </Grid>

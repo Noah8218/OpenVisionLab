@@ -20,6 +20,7 @@ namespace OpenVisionLab
         private readonly Action refreshRows;
         private readonly Action refreshDockedLayerViews;
         private readonly Action refreshDirectRouteText;
+        private readonly Action<string> rememberImagePath;
 
         public OpenVisionShellHostLayerManagementController(
             IDisplayManager displayManager,
@@ -28,7 +29,8 @@ namespace OpenVisionLab
             Action<string> refreshSelectedLayerDetail,
             Action refreshRows,
             Action refreshDockedLayerViews,
-            Action refreshDirectRouteText)
+            Action refreshDirectRouteText,
+            Action<string> rememberImagePath = null)
         {
             this.displayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
             this.documentController = documentController ?? throw new ArgumentNullException(nameof(documentController));
@@ -37,6 +39,7 @@ namespace OpenVisionLab
             this.refreshRows = refreshRows ?? throw new ArgumentNullException(nameof(refreshRows));
             this.refreshDockedLayerViews = refreshDockedLayerViews ?? throw new ArgumentNullException(nameof(refreshDockedLayerViews));
             this.refreshDirectRouteText = refreshDirectRouteText ?? throw new ArgumentNullException(nameof(refreshDirectRouteText));
+            this.rememberImagePath = rememberImagePath;
         }
 
         public string CreateLayer()
@@ -67,8 +70,15 @@ namespace OpenVisionLab
                 InitialDirectory = OpenVisionPreviewImageFileService.ResolveOpenImageDirectory(null)
             };
 
-            return dialog.ShowDialog(ownerProvider()) == true
-                && LoadImageIntoLayer(layerTitle, dialog.FileName);
+            if (dialog.ShowDialog(ownerProvider()) != true
+                || !LoadImageIntoLayer(layerTitle, dialog.FileName))
+            {
+                return false;
+            }
+
+            OpenVisionImageDirectoryResolver.RememberImagePath(dialog.FileName);
+            rememberImagePath?.Invoke(dialog.FileName);
+            return true;
         }
 
         public bool LoadImageIntoLayer(string layerTitle, string path)

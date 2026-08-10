@@ -43,6 +43,7 @@ namespace OpenVisionLab
         private readonly RelayCommand stopCommand;
         private readonly RelayCommand<Window> exportHtmlCommand;
         private readonly RelayCommand<Window> promoteLocatorValidationCommand;
+        private readonly VisionToolLanguageChangeController languageChangeController;
 
         public VisionToolNImageVerificationController(
             string toolName,
@@ -63,6 +64,7 @@ namespace OpenVisionLab
             promoteLocatorValidationCommand = new RelayCommand<Window>(
                 PromptAndPromoteLocatorValidation,
                 _ => CanPromoteLocatorValidation);
+            languageChangeController = VisionToolLanguageChangeController.Attach(RefreshLocalization);
             StatusText = LocalText(
                 "이미지 파일 또는 한 폴더를 선택한 뒤 실행하십시오.",
                 "Select image files or one folder, then run.");
@@ -102,8 +104,28 @@ namespace OpenVisionLab
             $"{ImagePaths.Count:N0} selected");
 
         public string ResultCountText => LocalText(
-            $"결과 {Rows.Count:N0}장 · OK {Rows.Count(row => row.Success):N0} · NG/오류 {Rows.Count(row => !row.Success):N0}",
-            $"Results {Rows.Count:N0} · OK {Rows.Count(row => row.Success):N0} · NG/error {Rows.Count(row => !row.Success):N0}");
+            $"완료 {Rows.Count(row => row.IsCompleted):N0}장 · OK {Rows.Count(row => row.Status == "OK"):N0} · NG {Rows.Count(row => row.IsNg):N0} · 오류 {Rows.Count(row => row.IsError):N0} · 판정 없음 {Rows.Count(row => row.IsUngated):N0}",
+            $"Completed {Rows.Count(row => row.IsCompleted):N0} · OK {Rows.Count(row => row.Status == "OK"):N0} · NG {Rows.Count(row => row.IsNg):N0} · Errors {Rows.Count(row => row.IsError):N0} · Ungated {Rows.Count(row => row.IsUngated):N0}");
+
+        public string AddFilesText => LocalText("파일 추가", "Add files");
+        public string AddFilesToolTipText => LocalText("검증할 이미지 파일을 선택합니다.", "Select image files to verify.");
+        public string AddFolderText => LocalText("폴더 추가", "Add folder");
+        public string AddFolderToolTipText => LocalText("한 폴더의 이미지 파일을 추가합니다.", "Add image files from one folder.");
+        public string ClearImagesText => LocalText("목록 비우기", "Clear list");
+        public string ClearImagesToolTipText => LocalText("선택한 이미지와 이전 실행 결과를 비웁니다.", "Clear selected images and retained results.");
+        public string RunText => LocalText("순차 실행", "Run sequentially");
+        public string RunToolTipText => LocalText("현재 설정을 고정해 선택 이미지를 순차 실행합니다.", "Freeze current settings and run the selected images sequentially.");
+        public string StopText => LocalText("중지", "Stop");
+        public string StopToolTipText => LocalText("현재 이미지 완료 후 중지합니다.", "Stop after the current image finishes.");
+        public string ExportHtmlText => LocalText("HTML 내보내기", "Export HTML");
+        public string ExportHtmlToolTipText => LocalText("저장된 현재 결과를 HTML 보고서로 내보냅니다.", "Export the retained results as an HTML report.");
+        public string ImageListTitleText => LocalText("선택 이미지와 실행 결과", "Selected images and results");
+        public string FileHeaderText => LocalText("파일", "File");
+        public string StatusHeaderText => LocalText("판정", "Decision");
+        public string MetricHeaderText => LocalText("측정값", "Metric");
+        public string ReviewReasonHeaderText => LocalText("NG/오류 원인", "NG/error reason");
+        public string SourceImageHeaderText => LocalText("검증 입력 이미지", "Verified source image");
+        public string ResultImageHeaderText => LocalText("검증 결과 드로잉", "Verification result drawing");
 
         public string StatusText
         {
@@ -191,7 +213,8 @@ namespace OpenVisionLab
                 Title = LocalText("N장 검증 이미지 추가", "Add N-image verification files"),
                 Filter = ImageFilter,
                 Multiselect = true,
-                CheckFileExists = true
+                CheckFileExists = true,
+                InitialDirectory = OpenVisionImageDirectoryResolver.ResolveOpenImageDirectory(null)
             };
             if (dialog.ShowDialog(owner) == true)
             {
@@ -204,12 +227,15 @@ namespace OpenVisionLab
             OpenFolderDialog dialog = new OpenFolderDialog
             {
                 Title = LocalText("N장 검증 폴더 추가", "Add one N-image verification folder"),
-                Multiselect = false
+                Multiselect = false,
+                InitialDirectory = OpenVisionImageDirectoryResolver.ResolveOpenImageDirectory(null)
             };
             if (dialog.ShowDialog(owner) != true)
             {
                 return;
             }
+
+            OpenVisionImageDirectoryResolver.RememberImagePath(dialog.FolderName);
 
             if (!OpenVisionRecipeValidationSetStorage.TryGetTopLevelImagePaths(
                     dialog.FolderName,
@@ -236,6 +262,8 @@ namespace OpenVisionLab
                 }
 
                 ClearRetainedResults();
+                PopulatePendingRows();
+                OpenVisionImageDirectoryResolver.RememberImagePath(ImagePaths.FirstOrDefault());
                 StatusText = LocalText(
                     $"검증 이미지 {ImagePaths.Count:N0}장을 준비했습니다.",
                     $"Prepared {ImagePaths.Count:N0} verification images.");
@@ -270,8 +298,7 @@ namespace OpenVisionLab
 
             cancellationSource?.Dispose();
             cancellationSource = new CancellationTokenSource();
-            Rows.Clear();
-            SelectedRow = null;
+            PopulatePendingRows();
             session = null;
             IsRunning = true;
             StatusText = LocalText(
@@ -281,7 +308,15 @@ namespace OpenVisionLab
             Progress<VisionToolNImageVerificationProgress> progress =
                 new Progress<VisionToolNImageVerificationProgress>(item =>
                 {
-                    Rows.Add(item.Row);
+                    int rowIndex = item.CompletedCount - 1;
+                    if (rowIndex >= 0 && rowIndex < Rows.Count)
+                    {
+                        Rows[rowIndex] = item.Row;
+                    }
+                    else
+                    {
+                        Rows.Add(item.Row);
+                    }
                     ProgressText = $"{item.CompletedCount:N0} / {item.TotalCount:N0}";
                     NotifyResultCounts();
                 });
@@ -308,9 +343,13 @@ namespace OpenVisionLab
                 string state = session.WasCancelled
                     ? LocalText("중지된 부분 결과", "stopped partial result")
                     : LocalText("완료", "completed");
-                StatusText = LocalText(
-                    $"순차 검증 {state}: {Rows.Count:N0}장. 판정 기준은 자동으로 추정하지 않았습니다.",
-                    $"Sequential verification {state}: {Rows.Count:N0} images. No acceptance gate was inferred.");
+                StatusText = session.HasAcceptance
+                    ? LocalText(
+                        $"순차 검증 {state}: {Rows.Count:N0}장. 현재 Tool View의 판정 기준을 적용했습니다.",
+                        $"Sequential verification {state}: {Rows.Count:N0} images. The current Tool View acceptance gate was applied.")
+                    : LocalText(
+                        $"순차 검증 {state}: {Rows.Count:N0}장. 판정 기준은 자동으로 추정하지 않았습니다.",
+                        $"Sequential verification {state}: {Rows.Count:N0} images. No acceptance gate was inferred.");
             }
             catch (Exception ex)
             {
@@ -319,7 +358,8 @@ namespace OpenVisionLab
             finally
             {
                 IsRunning = false;
-                ProgressText = Rows.Count == 0 ? string.Empty : $"{Rows.Count:N0} / {ImagePaths.Count:N0}";
+                int completedCount = Rows.Count(row => row.IsCompleted);
+                ProgressText = completedCount == 0 ? string.Empty : $"{completedCount:N0} / {ImagePaths.Count:N0}";
                 NotifyResultCounts();
             }
         }
@@ -353,7 +393,7 @@ namespace OpenVisionLab
             MessageBoxResult result = MessageBox.Show(
                 owner ?? Application.Current?.MainWindow,
                 PromotionConfirmationText,
-                LocalText("locator ?밴꺽", "Promote locator"),
+                LocalText("위치검출 세트 승격", "Promote locator"),
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question,
                 MessageBoxResult.No);
@@ -378,6 +418,7 @@ namespace OpenVisionLab
                 Filter = "HTML report (*.html)|*.html",
                 AddExtension = true,
                 DefaultExt = ".html",
+                InitialDirectory = OpenVisionImageDirectoryResolver.ResolveOpenImageDirectory(null),
                 FileName =
                     $"OpenVisionLab_{SanitizeFileName(toolName)}_NImage_{DateTime.Now:yyyyMMdd_HHmmss}.html"
             };
@@ -391,8 +432,10 @@ namespace OpenVisionLab
                     session.PipelineXml,
                     session.StepDefinitionSha256,
                     dialog.FileName,
+                    OpenVisionLanguageService.CurrentLanguage,
                     out string error))
             {
+                OpenVisionImageDirectoryResolver.RememberImagePath(dialog.FileName);
                 StatusText = LocalText("HTML 보고서를 저장했습니다: ", "Saved HTML report: ") + dialog.FileName;
             }
             else
@@ -445,6 +488,7 @@ namespace OpenVisionLab
             cancellationSource?.Cancel();
             cancellationSource?.Dispose();
             cancellationSource = null;
+            languageChangeController.Dispose();
         }
 
         private void ClearRetainedResults()
@@ -456,6 +500,25 @@ namespace OpenVisionLab
             NotifyResultCounts();
         }
 
+        private void PopulatePendingRows()
+        {
+            Rows.Clear();
+            int index = 0;
+            foreach (string path in ImagePaths)
+            {
+                Rows.Add(new VisionToolNImageVerificationRow
+                {
+                    Index = ++index,
+                    ImagePath = path,
+                    Status = LocalText("대기", "READY"),
+                    IsCompleted = false
+                });
+            }
+
+            SelectedRow = Rows.FirstOrDefault();
+            NotifyResultCounts();
+        }
+
         private void LoadSelectedEvidence()
         {
             SelectedSourceImage = null;
@@ -463,6 +526,15 @@ namespace OpenVisionLab
             SelectedEvidenceText = string.Empty;
             if (SelectedRow == null)
             {
+                return;
+            }
+
+            if (!SelectedRow.IsCompleted)
+            {
+                SelectedSourceImage = LoadBitmap(SelectedRow.ImagePath);
+                SelectedEvidenceText = LocalText(
+                    "실행 대기 · 순차 실행 후 판정과 드로잉이 표시됩니다.",
+                    "Ready to run. The decision and drawing appear after sequential execution.");
                 return;
             }
 
@@ -482,6 +554,10 @@ namespace OpenVisionLab
                 SelectedRow.MetricText,
                 "Source SHA-256: " + (sourceVerified ? SelectedRow.SourceSha256 : "EVIDENCE MISMATCH")
             };
+            if (!string.IsNullOrWhiteSpace(SelectedRow.FailedStep))
+            {
+                parts.Add(LocalText("실패 Step: ", "Failed step: ") + SelectedRow.FailedStep);
+            }
             if (!string.IsNullOrWhiteSpace(SelectedRow.ReviewReasonText))
             {
                 parts.Add(LocalText("검토 이유: ", "Review reason: ") + SelectedRow.ReviewReasonText);
@@ -544,6 +620,46 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(CanExport));
             OnPropertyChanged(nameof(CanPromoteLocatorValidation));
             OnPropertyChanged(nameof(PromotionConfirmationText));
+        }
+
+        private void RefreshLocalization()
+        {
+            for (int index = 0; index < Rows.Count; index++)
+            {
+                VisionToolNImageVerificationRow row = Rows[index];
+                if (row.IsCompleted)
+                {
+                    continue;
+                }
+
+                Rows[index] = new VisionToolNImageVerificationRow
+                {
+                    Index = row.Index,
+                    ImagePath = row.ImagePath,
+                    Status = LocalText("대기", "READY"),
+                    IsCompleted = false
+                };
+            }
+
+            foreach (string propertyName in new[]
+            {
+                nameof(WindowTitle), nameof(ScopeText), nameof(SelectedCountText), nameof(ResultCountText),
+                nameof(AddFilesText), nameof(AddFilesToolTipText), nameof(AddFolderText), nameof(AddFolderToolTipText),
+                nameof(ClearImagesText), nameof(ClearImagesToolTipText), nameof(RunText), nameof(RunToolTipText),
+                nameof(StopText), nameof(StopToolTipText), nameof(ExportHtmlText), nameof(ExportHtmlToolTipText),
+                nameof(ImageListTitleText), nameof(FileHeaderText), nameof(StatusHeaderText), nameof(MetricHeaderText),
+                nameof(ReviewReasonHeaderText), nameof(SourceImageHeaderText), nameof(ResultImageHeaderText),
+                nameof(PromoteLocatorValidationText), nameof(PromoteLocatorValidationToolTipText),
+                nameof(PromotionConfirmationText)
+            })
+            {
+                OnPropertyChanged(propertyName);
+            }
+
+            if (SelectedRow != null)
+            {
+                LoadSelectedEvidence();
+            }
         }
 
         private bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)

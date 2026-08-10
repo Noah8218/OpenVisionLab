@@ -456,7 +456,12 @@ namespace OpenVisionLab
                 openQualifiedSnapshotEvidence:
                     OpenQualifiedSnapshotEvidence,
                 openPipelineXmlSteps:
-                    () => tabRecipePipelineXmlSteps.IsSelected = true);
+                    () => tabRecipePipelineXmlSteps.IsSelected = true,
+                saveRecipe:
+                    () => this.runtimeContext.Global.Recipe.SaveTools());
+            InputBindings.Add(new KeyBinding(
+                RecipeCommands.SaveRecipeCommand,
+                new KeyGesture(Key.S, ModifierKeys.Control)));
             AttachRecipeStepPropertyGridHost();
             ChromeCommands = new OpenVisionShellHostChromeCommandSurface(
                 () => IsToolRailCompact = !IsToolRailCompact,
@@ -502,7 +507,8 @@ namespace OpenVisionLab
                 refreshCoordinator.RefreshHostSelectedLayerDetail,
                 refreshCoordinator.RefreshHostLayerRows,
                 refreshCoordinator.RefreshDockedLayerViews,
-                chromeController.RefreshDirectRouteText);
+                chromeController.RefreshDirectRouteText,
+                RememberWorkspaceImagePath);
             LayerCommands = new OpenVisionShellHostLayerCommandSurface(
                 layerSelectionController,
                 layerViewerController,

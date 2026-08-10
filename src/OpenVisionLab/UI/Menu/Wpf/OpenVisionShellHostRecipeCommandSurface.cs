@@ -44,6 +44,7 @@ namespace OpenVisionLab
         private readonly Action<VISION_MENU> selectStepTool;
         private readonly Func<bool> commitSelectedStepEdit;
         private readonly Action<string, VisionPipeline> saveStepEditPipeline;
+        private readonly Func<bool> saveRecipe;
         private readonly Func<string, VisionPipeline, OpenVisionRecipeRoundTripValidationResult> validateStepEditRoundTrip;
         private readonly OpenVisionRecipePendingEditTransitionController pendingEditTransitionController;
         private readonly IReadOnlyList<string> llmToolTemplateOptions = new[]
@@ -201,6 +202,7 @@ namespace OpenVisionLab
         private bool isGuidedSetupDraftStale;
         private bool isRefreshingOptions;
         private bool isSelectingRecipe;
+        private bool isSwitchingRecipe;
         private bool hasCatalogBenchmarkSamples;
         private OpenVisionRecipePipelineOption selectedPipelineOption;
         private OpenVisionRecipeSampleOption selectedSampleOption;
@@ -238,7 +240,8 @@ namespace OpenVisionLab
             OpenVisionRecipeQualifiedSnapshotController qualifiedSnapshotController = null,
             Func<string, string, string, bool> confirmQualifiedSnapshotLifecycle = null,
             Func<string, bool> openQualifiedSnapshotEvidence = null,
-            Action openPipelineXmlSteps = null)
+            Action openPipelineXmlSteps = null,
+            Func<bool> saveRecipe = null)
         {
             this.currentRecipeProvider = currentRecipeProvider ?? throw new ArgumentNullException(nameof(currentRecipeProvider));
             this.switchRecipe = switchRecipe ?? throw new ArgumentNullException(nameof(switchRecipe));
@@ -270,6 +273,7 @@ namespace OpenVisionLab
             this.selectStepTool = selectStepTool;
             this.commitSelectedStepEdit = commitSelectedStepEdit ?? (() => true);
             this.saveStepEditPipeline = saveStepEditPipeline ?? VisionPipelineStorage.Save;
+            this.saveRecipe = saveRecipe ?? (() => false);
             this.validateStepEditRoundTrip = validateStepEditRoundTrip
                 ?? ((recipeName, pipeline) =>
                 {
@@ -303,6 +307,7 @@ namespace OpenVisionLab
             DuplicateRecipeCommand = new RelayCommand(DuplicateSelectedRecipe, CanDuplicateSelectedRecipe);
             RenameRecipeCommand = new RelayCommand(RenameSelectedRecipe, CanRenameSelectedRecipe);
             DeleteRecipeCommand = new RelayCommand(DeleteSelectedRecipe, CanDeleteSelectedRecipe);
+            SaveRecipeCommand = new RelayCommand(SaveSelectedRecipe, CanUseSelectedRecipe);
             ImportPipelineXmlCommand = new RelayCommand(ImportPipelineXml, CanUseSelectedRecipe);
             ExportPipelineXmlCommand = new RelayCommand(ExportActivePipelineXml, CanUseSelectedRecipe);
             ExportRecipeReviewBundleCommand = new RelayCommand(ExportActivePipelineReviewBundle, CanUseSelectedRecipe);
@@ -1987,6 +1992,8 @@ namespace OpenVisionLab
 
         public ICommand DeleteRecipeCommand { get; private set; }
 
+        public ICommand SaveRecipeCommand { get; private set; }
+
         public ICommand ImportPipelineXmlCommand { get; private set; }
 
         public ICommand ExportPipelineXmlCommand { get; private set; }
@@ -2110,6 +2117,18 @@ namespace OpenVisionLab
         public string RecipeSelectorToolTipText => LocalText("레시피 선택 / 전환", "Select or switch recipe");
 
         public string ManagerButtonText => LocalText("레시피 관리", "Manage recipes");
+
+        public string SaveRecipeText => LocalText("레시피 저장", "Save recipe");
+
+        public string SaveRecipeToolTipText => LocalText(
+            "현재 레시피 설정을 저장합니다. 단축키: Ctrl+S",
+            "Save the current recipe settings. Shortcut: Ctrl+S");
+
+        public bool IsSwitchingRecipe
+        {
+            get => isSwitchingRecipe;
+            private set => SetProperty(ref isSwitchingRecipe, value);
+        }
 
         public string ManagerButtonShortText => LocalText("관리", "Manage");
 

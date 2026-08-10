@@ -374,7 +374,7 @@
                                     <Setter TargetName="buttonContent" Property="Margin" Value="1,1,-1,-1" />
                                 </Trigger>
                                 <Trigger Property="IsKeyboardFocused" Value="True">
-                                    <Setter TargetName="focusChrome" Property="BorderBrush" Value="{StaticResource ShellHost.FieldTextBrush}" />
+                                    <Setter TargetName="focusChrome" Property="BorderBrush" Value="{StaticResource ShellHost.FieldFocusBrush}" />
                                     <Setter TargetName="focusChrome" Property="BorderThickness" Value="2" />
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
@@ -754,12 +754,7 @@
                                                             VerticalAlignment="Center">
                                     <iconPacks:PackIconMaterial.Style>
                                         <Style TargetType="{x:Type iconPacks:PackIconMaterial}">
-                                            <Setter Property="Foreground" Value="#8AD7DA" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsMouseOver, ElementName=navItemButton}" Value="True">
-                                                    <Setter Property="Foreground" Value="{StaticResource ShellHost.FieldTextBrush}" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
+                                            <Setter Property="Foreground" Value="{StaticResource ShellHost.FieldFocusBrush}" />
                                         </Style>
                                     </iconPacks:PackIconMaterial.Style>
                                 </iconPacks:PackIconMaterial>
@@ -996,6 +991,27 @@
                           ItemsSource="{Binding RecipeCommands.RecipeOptions, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
                           SelectedItem="{Binding RecipeCommands.SelectedRecipeName, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           ToolTip="{Binding SelectedItem, ElementName=cbHostRecipe}" />
+                <ProgressBar DockPanel.Dock="Left"
+                             Width="42"
+                             Height="4"
+                             Margin="0,0,6,0"
+                             VerticalAlignment="Center"
+                             IsIndeterminate="True"
+                             Visibility="{Binding RecipeCommands.IsSwitchingRecipe, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}, Converter={StaticResource ShellHost.BooleanToVisibilityConverter}}" />
+                <Button DockPanel.Dock="Left"
+                        Style="{StaticResource TopLayerIconButtonStyle}"
+                        Width="34"
+                        Height="26"
+                        Margin="0,0,6,0"
+                        Command="{Binding RecipeCommands.SaveRecipeCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                        ToolTip="{Binding RecipeCommands.SaveRecipeToolTipText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
+                        AutomationProperties.AutomationId="HostRecipeSaveButton"
+                        AutomationProperties.Name="{Binding RecipeCommands.SaveRecipeText, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
+                    <iconPacks:PackIconMaterial Kind="ContentSave"
+                                                Width="14"
+                                                Height="14"
+                                                Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                </Button>
                 <ToggleButton x:Name="btnHostRecipeManager"
                               DockPanel.Dock="Left"
                               Style="{StaticResource RecipeManagerToggleButtonStyle}"
@@ -1324,6 +1340,7 @@
                                  ScrollViewer.CanContentScroll="False"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                  ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                 mvvmBehaviors:InputCommandBehaviors.SelectItemOnRightClick="True"
                                  mvvmBehaviors:InputCommandBehaviors.SelectionChangedCommand="{Binding LayerCommands.HandleSelectedLayerChangedCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
                                  mvvmBehaviors:InputCommandBehaviors.MouseDoubleClickCommand="{Binding LayerCommands.OpenSelectedLayerWindowCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
                             <ListBox.ItemsPanel>
@@ -2354,6 +2371,7 @@
                                      ItemContainerStyle="{StaticResource HostLayerListItemStyle}"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                     mvvmBehaviors:InputCommandBehaviors.SelectItemOnRightClick="True"
                                      mvvmBehaviors:InputCommandBehaviors.SelectionChangedCommand="{Binding LayerCommands.HandleSelectedLayerChangedCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}"
                                      mvvmBehaviors:InputCommandBehaviors.MouseDoubleClickCommand="{Binding LayerCommands.OpenSelectedLayerWindowCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}">
                                 <ListBox.ContextMenu>
@@ -8468,6 +8486,7 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="90" />
@@ -8541,6 +8560,13 @@
                                    Text="{Binding RecipeCommands.RecipeEditValidationText}"
                                    TextWrapping="Wrap"
                                    TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Row="2"
+                                   Grid.ColumnSpan="3"
+                                   Margin="0,5,0,0"
+                                   Foreground="#8AD7DA"
+                                   FontSize="10"
+                                   Text="{Binding RecipeCommands.StatusText}"
+                                   TextWrapping="Wrap" />
                     </Grid>
                     <WrapPanel HorizontalAlignment="Right"
                                Visibility="{Binding IsChecked, ElementName=recipeAdvancedReviewToggle, Converter={StaticResource ShellHost.BooleanToVisibilityConverter}}"

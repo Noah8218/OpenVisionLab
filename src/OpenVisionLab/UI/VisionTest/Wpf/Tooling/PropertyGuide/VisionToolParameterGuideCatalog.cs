@@ -405,6 +405,10 @@ namespace OpenVisionLab
                 ["Matching.CvROI"] = GuideWhen("Common.Roi", "USE_ROI", "USE_ROI"),
                 ["Matching.PIXELPERMM"] = Guide("Common.PixelScale"),
 
+                ["EdgeBasedMatching.ShowAdvancedSettings"] = Guide(
+                    "EdgeMatching.ShowAdvancedSettings",
+                    "PATTERN_PATH",
+                    "SCORE_MIN"),
                 ["EdgeBasedMatching.PATTERN_PATH"] = Guide("EdgeMatching.Pattern", "SCORE_MIN", "CANNY_LOW"),
                 ["EdgeBasedMatching.SCORE_MIN"] = Guide("EdgeMatching.ScoreMin", "UNIQUE_MATCH_MIN_SCORE_MARGIN"),
                 ["EdgeBasedMatching.NUM_MATCH"] = Guide("Matching.MatchCount", "SCORE_MIN"),

@@ -138,6 +138,11 @@ namespace OpenVisionLab
             return testAdapter.SelectHostLayerRow(layerTitle);
         }
 
+        public bool RightClickHostLayerRow(string layerTitle)
+        {
+            return testAdapter.RightClickHostLayerRow(layerTitle);
+        }
+
         public bool AddLayerImage(string layerTitle, Bitmap image)
         {
             if (string.IsNullOrWhiteSpace(layerTitle) || image == null)

@@ -6,11 +6,18 @@ namespace OpenVisionLab
 {
     internal static class OpenVisionImageDirectoryResolver
     {
+        private static string lastImageDirectory;
+
         public static string ResolveOpenImageDirectory(string lastDirectory)
         {
             if (IsDirectory(lastDirectory))
             {
                 return lastDirectory;
+            }
+
+            if (IsDirectory(lastImageDirectory))
+            {
+                return lastImageDirectory;
             }
 
             string sampleDirectory = ResolveSampleImageDirectory();
@@ -26,6 +33,28 @@ namespace OpenVisionLab
             }
 
             return Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        }
+
+        public static void RememberImagePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return;
+            }
+
+            try
+            {
+                string directory = Directory.Exists(path)
+                    ? Path.GetFullPath(path)
+                    : Path.GetDirectoryName(Path.GetFullPath(path));
+                if (IsDirectory(directory))
+                {
+                    lastImageDirectory = directory;
+                }
+            }
+            catch
+            {
+            }
         }
 
         private static string ResolveSampleImageDirectory()

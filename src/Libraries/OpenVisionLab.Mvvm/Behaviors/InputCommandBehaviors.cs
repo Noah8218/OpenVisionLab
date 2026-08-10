@@ -82,6 +82,13 @@ namespace OpenVisionLab.Mvvm.Behaviors
                 typeof(InputCommandBehaviors),
                 new PropertyMetadata(false, OnScrollSelectedItemIntoViewChanged));
 
+        public static readonly DependencyProperty SelectItemOnRightClickProperty =
+            DependencyProperty.RegisterAttached(
+                "SelectItemOnRightClick",
+                typeof(bool),
+                typeof(InputCommandBehaviors),
+                new PropertyMetadata(false, OnSelectItemOnRightClickChanged));
+
         public static ICommand GetSelectionChangedCommand(DependencyObject target)
         {
             return (ICommand)target.GetValue(SelectionChangedCommandProperty);
@@ -170,6 +177,46 @@ namespace OpenVisionLab.Mvvm.Behaviors
         public static void SetScrollSelectedItemIntoView(DependencyObject target, bool value)
         {
             target.SetValue(ScrollSelectedItemIntoViewProperty, value);
+        }
+
+        public static bool GetSelectItemOnRightClick(DependencyObject target)
+        {
+            return (bool)target.GetValue(SelectItemOnRightClickProperty);
+        }
+
+        public static void SetSelectItemOnRightClick(DependencyObject target, bool value)
+        {
+            target.SetValue(SelectItemOnRightClickProperty, value);
+        }
+
+        private static bool TrySelectListBoxItem(ListBox listBox, DependencyObject source)
+        {
+            if (listBox == null || source == null)
+            {
+                return false;
+            }
+
+            ListBoxItem item = source as ListBoxItem
+                ?? ItemsControl.ContainerFromElement(listBox, source) as ListBoxItem;
+            if (item == null)
+            {
+                return false;
+            }
+
+            int index = listBox.Items.IndexOf(item.DataContext);
+            if (index < 0)
+            {
+                index = listBox.ItemContainerGenerator.IndexFromContainer(item);
+            }
+
+            if (index < 0)
+            {
+                return false;
+            }
+
+            listBox.SelectedIndex = index;
+            item.Focus();
+            return true;
         }
 
         private static void OnSelectionChangedCommandChanged(DependencyObject target, DependencyPropertyChangedEventArgs e)
@@ -389,6 +436,30 @@ namespace OpenVisionLab.Mvvm.Behaviors
                     }
                 }),
                 System.Windows.Threading.DispatcherPriority.Background);
+        }
+
+        private static void OnSelectItemOnRightClickChanged(DependencyObject target, DependencyPropertyChangedEventArgs e)
+        {
+            if (target is not ListBox listBox)
+            {
+                return;
+            }
+
+            listBox.PreviewMouseDown -= ListBox_PreviewMouseDown;
+            if ((bool)e.NewValue)
+            {
+                listBox.PreviewMouseDown += ListBox_PreviewMouseDown;
+            }
+        }
+
+        private static void ListBox_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is ListBox listBox
+                && e.ChangedButton == MouseButton.Right
+                && e.OriginalSource is DependencyObject source)
+            {
+                TrySelectListBoxItem(listBox, source);
+            }
         }
 
         private static void Execute(ICommand command, object parameter)

@@ -215,6 +215,8 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(NewRecipeButtonText));
             OnPropertyChanged(nameof(RecipeSelectorToolTipText));
             OnPropertyChanged(nameof(ManagerButtonText));
+            OnPropertyChanged(nameof(SaveRecipeText));
+            OnPropertyChanged(nameof(SaveRecipeToolTipText));
             OnPropertyChanged(nameof(ManagerButtonShortText));
             OnPropertyChanged(nameof(ManagerTitleText));
             OnPropertyChanged(nameof(RecipeOverviewTabText));
@@ -544,6 +546,7 @@ namespace OpenVisionLab
             try
             {
                 isSelectingRecipe = true;
+                BeginRecipeSwitchingState(normalized);
                 RecipeWorkspaceService.EnsureVisionWorkspace(normalized);
                 switchRecipe(normalized);
                 StatusText = string.Format(
@@ -555,7 +558,26 @@ namespace OpenVisionLab
             }
             finally
             {
+                IsSwitchingRecipe = false;
                 isSelectingRecipe = false;
+            }
+        }
+
+        private void BeginRecipeSwitchingState(string recipeName)
+        {
+            IsSwitchingRecipe = true;
+            StatusText = string.Format(
+                CultureInfo.CurrentCulture,
+                LocalText("레시피 변경 중: {0}", "Switching recipe: {0}"),
+                recipeName);
+
+            System.Windows.Threading.Dispatcher dispatcher =
+                System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher?.CheckAccess() == true)
+            {
+                dispatcher.Invoke(
+                    System.Windows.Threading.DispatcherPriority.Render,
+                    new Action(() => { }));
             }
         }
 
@@ -3971,7 +3993,6 @@ namespace OpenVisionLab
                 string saveFailure = OpenVisionRecipeText.Local("XML 저장 실패: ", "XML save failed: ")
                     + ex.GetBaseException().Message;
                 TryRestorePipelineAfterFailedApply(recipeName, originalPipeline, out string restoreMessage);
-                RefreshPipelineOptions(pipelineName);
                 SetSelectedStepEditStatus(saveFailure + Environment.NewLine + restoreMessage);
                 return false;
             }
@@ -3992,7 +4013,6 @@ namespace OpenVisionLab
                     recipeName,
                     originalPipeline,
                     out string restoreMessage);
-                RefreshPipelineOptions(pipelineName);
                 SetSelectedStepEditStatus(
                     OpenVisionRecipeText.Local(
                         "XML 왕복 검증에 실패하여 전환을 중단했습니다: ",

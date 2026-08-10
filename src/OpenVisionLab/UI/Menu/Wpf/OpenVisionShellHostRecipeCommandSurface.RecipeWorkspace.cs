@@ -175,13 +175,57 @@ namespace OpenVisionLab
                 return;
             }
 
-            switchRecipe(result.RecipeName);
-            StatusText = string.Format(
-                CultureInfo.CurrentCulture,
-                LocalText("생성됨: {0}", "Created: {0}"),
-                result.RecipeName);
-            RefreshOptions();
-            refreshAfterSwitch();
+            try
+            {
+                BeginRecipeSwitchingState(result.RecipeName);
+                switchRecipe(result.RecipeName);
+                StatusText = string.Format(
+                    CultureInfo.CurrentCulture,
+                    LocalText("생성됨: {0}", "Created: {0}"),
+                    result.RecipeName);
+                RefreshOptions();
+                refreshAfterSwitch();
+            }
+            finally
+            {
+                IsSwitchingRecipe = false;
+            }
+        }
+
+        private void SaveSelectedRecipe()
+        {
+            string recipeName = NormalizeRecipeName(selectedRecipeName);
+            if (string.IsNullOrWhiteSpace(recipeName))
+            {
+                return;
+            }
+
+            if (selectedStepEditSession.IsDirty && !TryApplySelectedStepParameters())
+            {
+                return;
+            }
+
+            try
+            {
+                bool saved = saveRecipe();
+                StatusText = saved
+                    ? string.Format(
+                        CultureInfo.CurrentCulture,
+                        LocalText("레시피 저장 완료: {0}", "Recipe saved: {0}"),
+                        recipeName)
+                    : string.Format(
+                        CultureInfo.CurrentCulture,
+                        LocalText("레시피 저장 실패: {0}", "Recipe save failed: {0}"),
+                        recipeName);
+            }
+            catch (Exception ex)
+            {
+                StatusText = string.Format(
+                    CultureInfo.CurrentCulture,
+                    LocalText("레시피 저장 실패: {0} / {1}", "Recipe save failed: {0} / {1}"),
+                    recipeName,
+                    ex.GetBaseException().Message);
+            }
         }
     }
 }

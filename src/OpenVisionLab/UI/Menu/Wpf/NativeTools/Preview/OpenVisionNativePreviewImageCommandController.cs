@@ -114,6 +114,7 @@ namespace OpenVisionLab
                     : layerName;
                 previewLayerPublisher.RestoreDisplayActivation(activationLayer);
                 lastImageDirectory = Path.GetDirectoryName(path);
+                OpenVisionImageDirectoryResolver.RememberImagePath(path);
                 clearPreviewResult();
                 refreshLayerState();
                 setStatus(string.Format(CultureInfo.CurrentCulture, "Image loaded / {0} / {1}x{2}", layerName, width, height));
@@ -153,6 +154,7 @@ namespace OpenVisionLab
                 using Bitmap savableImage = OpenVisionPreviewImageFileService.CreateSavableBitmap(image);
                 savableImage.Save(path, OpenVisionPreviewImageFileService.ResolveImageFormat(path));
                 lastImageDirectory = Path.GetDirectoryName(path);
+                OpenVisionImageDirectoryResolver.RememberImagePath(path);
                 setStatus("Image saved / " + layerName + " / " + path);
                 return true;
             }

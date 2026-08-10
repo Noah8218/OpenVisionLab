@@ -1,4 +1,5 @@
 Key	Korean	English
+PropertyGrid.Type.EdgeBasedMatchingProperty.ShowAdvancedSettings.Description	고유성 검증, 엣지 모델, Auto MPoint와 검색 최적화처럼 자주 쓰지 않는 항목을 펼칩니다.	Show less frequently used uniqueness, edge-model, Auto MPoint, and search optimization controls.
 PropertyGrid.Type.EdgeBasedMatchingProperty.USE_UNIQUE_MATCH_VALIDATION.DisplayName	고유 매칭 요구	Require unique match
 PropertyGrid.Type.EdgeBasedMatchingProperty.USE_UNIQUE_MATCH_VALIDATION.Description	공간적으로 분리된 후보가 정확히 하나일 때만 통과합니다. 내부 후보 Top-K를 유지하며 점수 여유 기준을 통과하지 못하면 결과 없이 Ambiguous로 종료합니다.	Require exactly one spatially distinct candidate. This opt-in mode keeps internal Top-K candidates and returns Ambiguous with no match when the score-margin gate fails.
 PropertyGrid.Type.EdgeBasedMatchingProperty.UNIQUE_MATCH_MIN_SCORE_MARGIN.DisplayName	최소 고유 점수 여유	Min unique margin
@@ -51,6 +52,11 @@ VisionTool.AutoMPoint.ExportReport	N-이미지 보고서 저장	Save N-image rep
 VisionTool.AutoMPoint.ExportReportToolTip	이미 계산한 선택 후보의 전체 대표 이미지 결과표와 결정적 검토 드로잉을 자체 포함 HTML로 저장합니다. 매칭, Preview/Run, 패턴 적용 또는 레이어 변경을 다시 실행하지 않습니다.	Save the already-computed selected candidate results and deterministic review drawings as a self-contained HTML file. This does not rerun matching, Preview/Run, pattern apply, or layer changes.
 VisionTool.AutoMPoint.ReportExportedFormat	N-이미지 증빙 보고서를 저장했습니다: {0}	Saved N-image evidence report: {0}
 VisionTool.AutoMPoint.ReportExportFailedFormat	N-이미지 보고서 저장 실패: {0}	Failed to save N-image report: {0}
+VisionTool.ParameterGuide.EdgeMatching.ShowAdvancedSettings.Summary	고유성 검증, 엣지 모델, Auto MPoint와 검색 최적화 항목을 펼칩니다.	Expands uniqueness, edge-model, Auto MPoint, and search optimization settings.
+VisionTool.ParameterGuide.EdgeMatching.ShowAdvancedSettings.Impact	표시만 바꾸며 저장값이나 Preview/Run 결과를 바꾸지 않습니다.	Changes only visibility; it does not change saved values or Preview/Run results.
+VisionTool.ParameterGuide.EdgeMatching.ShowAdvancedSettings.BestWhen	기본 템플릿·점수·각도·스케일 설정을 확인한 뒤 추가 튜닝이 필요할 때 켜세요.	Enable it only after the basic template, score, angle, and scale settings need further tuning.
+VisionTool.ParameterGuide.EdgeMatching.ShowAdvancedSettings.Risk	숨긴 고급 항목의 기존 값은 계속 적용됩니다.	Existing values in hidden advanced fields remain active.
+VisionTool.ParameterGuide.EdgeMatching.ShowAdvancedSettings.Check	고급 항목의 저장값을 검토한 뒤 명시적으로 미리보기를 실행하세요.	Review the saved advanced values, then run Preview explicitly.
 Shell.MainAction.ReadyBadge	준비	Ready
 Shell.MainAction.ImageReadyTitle	이미지 준비됨	Image ready
 Shell.MainAction.ImageReadyDetail	다음: 도구 선택 -> 미리보기 실행/확인 -> 파이프라인 추가	Next: select a tool -> run/check preview -> add to pipeline

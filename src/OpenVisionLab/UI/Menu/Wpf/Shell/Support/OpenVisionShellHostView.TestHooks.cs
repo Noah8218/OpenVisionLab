@@ -196,6 +196,8 @@ namespace OpenVisionLab
 
         public bool SelectHostLayerRowForTest(string layerTitle) => layerTestFacade.SelectHostLayerRow(layerTitle);
 
+        public bool RightClickHostLayerRowForTest(string layerTitle) => layerTestFacade.RightClickHostLayerRow(layerTitle);
+
         public bool DockLayerForTest(string layerTitle) => dockingTestFacade.DockLayerDocument(layerTitle);
 
         public bool AddLayerImageForTest(string layerTitle, Bitmap image) => layerTestFacade.AddLayerImage(layerTitle, image);
