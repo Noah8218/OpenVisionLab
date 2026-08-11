@@ -101,6 +101,9 @@ normalization. The original repository independently passed:
 Original actual-EXE evidence:
 `D:\OpenVisionLab-TestData\OpenVisionLab\artifacts\tool_preview_popout_port_20260811`.
 
+The reviewed 29-file batch is pushed in Dev `5134e43c` and original
+`32bc70c`.
+
 ## Boundary
 
 This proves the shared current Tool Preview path with actual-EXE Line and

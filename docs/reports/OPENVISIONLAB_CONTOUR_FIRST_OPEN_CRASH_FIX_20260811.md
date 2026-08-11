@@ -73,3 +73,4 @@ independently passed `learn-contour-practice` with
 `OPENVISIONLAB_DISABLE_FLOATING_PREPARE=1`: Contour opened on
 `\\.\DISPLAY2`, `PreviewRunCount=0`, and `LayerCount=0`. The original full
 Debug build passed with zero warnings/errors and readiness passed 13/13.
+The correction is pushed in Dev `5134e43c` and original `32bc70c`.

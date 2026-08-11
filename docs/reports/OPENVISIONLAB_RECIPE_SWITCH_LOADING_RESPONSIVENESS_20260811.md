@@ -127,5 +127,5 @@ Scope: Existing-Recipe selection and create/switch retain the loading overlay un
 Acceptance criteria: Loading remains while preparation Task is incomplete -> pass; closes after Task completion -> pass; no post-overlay responsiveness stall in the tested Dev and original actual-EXE transitions -> pass; post-load Recipe Manager input works -> pass; Dev/original modified paths match -> pass
 Verification: Dev and original Debug solution and ScreenshotSmoke builds 0 warnings/errors; readiness 13/13; rebuilt Recipe safety/context plus Recipe summary/native Tool targets passed; original documentation index passed; actual-EXE timelines inspected; 9/9 path hashes matched
 Evidence: D:\OpenVisionLab-TestData\OpenVisionLab_Dev\artifacts\recipe_switch_lifetime_20260811, D:\OpenVisionLab-TestData\OpenVisionLab\artifacts\recipe_switch_lifetime_20260811, and this report
-Boundary / next dependency: This proves the tested FieldPilot_BentPin -> Default lifecycle in Dev and Edge_Base -> Default lifecycle in the original working tree; the correction is not staged, committed, or pushed
+Boundary / next dependency: This proves the tested FieldPilot_BentPin -> Default lifecycle in Dev and Edge_Base -> Default lifecycle in original; the correction is pushed in Dev 5134e43c and original 32bc70c
 ```

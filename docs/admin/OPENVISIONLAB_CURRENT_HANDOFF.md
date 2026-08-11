@@ -95,7 +95,7 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   with both native Tool prewarm and floating-window preparation disabled;
   Preview count and layer count remained zero.
 
-### 2026-08-11 Line Signal Non-Blocking Cue - Complete In Dev And Original Working Trees
+### 2026-08-11 Line Signal Non-Blocking Cue - Complete In Dev And Original
 
 - A successful Line Edge/Measure Preview still retains the exact signal
   evidence, but no longer forces the detailed Signal Inspector over the
@@ -116,7 +116,7 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   calibration, acceptance, or routing behavior changed. Evidence:
   `docs/reports/OPENVISIONLAB_LINE_SIGNAL_TRANSIENT_CUE_20260811.md`.
 
-### 2026-08-11 ROI Edge Resize And Zoom Editing - Complete In Dev And Original Working Trees
+### 2026-08-11 ROI Edge Resize And Zoom Editing - Complete In Dev And Original
 
 - Full-image ROI handles now stay inside a 14-pixel fit-view margin, so the
   left edge can shrink inward instead of remaining stuck at X=0.
@@ -134,7 +134,7 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   `docs/reports/OPENVISIONLAB_ROI_ZOOM_RESIZE_20260811.md`.
 
 
-### 2026-08-11 Recipe Switch Loading Lifetime Correction - Complete In Dev And Original Working Trees
+### 2026-08-11 Recipe Switch Loading Lifetime Correction - Complete In Dev And Original
 
 - The pushed `42d840a9`/`0582d226` implementation displayed the loading overlay
   but closed it before deferred Pipeline Review preparation finished. The user
@@ -417,14 +417,10 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 ## Current Priority And Activation Conditions
 
-- The Contour first-open crash correction is complete and verified in Dev.
-  It is not staged, committed, pushed, or promoted to the original repository.
-- The Line signal non-blocking cue correction is complete and independently
-  verified in the Dev and original working trees. It is not staged, committed,
-  or pushed.
-- The Recipe switch loading-lifetime correction is complete and independently
-  verified in the Dev and original working trees. It is not staged, committed,
-  or pushed.
+- The 2026-08-11 Contour first-open, Line signal cue, ROI editing, Recipe
+  loading-lifetime, and Tool Preview large-viewer corrections are complete,
+  independently verified, and pushed in Dev `5134e43c` and original
+  `32bc70c`. No PR or Release publication is active.
 - The 2026-08-11 Recipe/layer/N-image/Edge regression batch is complete,
   independently verified, and pushed in Dev and original. No PR or Release
   publication is active.

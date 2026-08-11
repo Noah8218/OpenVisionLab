@@ -100,4 +100,4 @@ Actual-EXE evidence:
 
 This proves the current ROI editor workflow with the Line Tool and the named
 pin image. It does not qualify metrology accuracy or other algorithm results.
-No commit, stage, or push was performed.
+The change is pushed in Dev `5134e43c` and original `32bc70c`.

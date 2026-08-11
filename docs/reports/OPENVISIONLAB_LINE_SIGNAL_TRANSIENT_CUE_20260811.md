@@ -93,5 +93,4 @@ Original actual EXE:
 - `OpenVisionLab_LineSignal_ParametersRetained.png`
 - `OpenVisionLab_LineSignal_ManualInspector.png`
 
-Boundary: the change is present in both working trees but is not staged,
-committed, or pushed.
+Boundary: the change is pushed in Dev `5134e43c` and original `32bc70c`.
