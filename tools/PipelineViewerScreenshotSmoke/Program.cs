@@ -25996,6 +25996,14 @@ internal static class Program
             AssertResultReviewVisible("Blob result guidance", "미리보기 OK", "합격 기준:", "최대 면적", "박스", "다음:");
             AssertActiveToolTextsVisible("Blob verification guide result", "Blob 검증", "미리보기 OK", "면적 ", "다음:");
 
+            using (Bitmap mainLayer = shellHost.GetLayerImageCloneForTest("Main"))
+            using (Bitmap blobDrawLayer = shellHost.GetLayerImageCloneForTest("Blob_Preview"))
+            {
+                AssertBitmapRetainsSourceBackground(mainLayer, blobDrawLayer, "Blob explicit Preview source background");
+                AssertBitmapPreviewOverlayDifferentFromMain(mainLayer, blobDrawLayer, "Blob explicit Preview detection overlay");
+                SaveDiagnosticBitmap(outputPath, "blob-tool-draw-result.png", blobDrawLayer);
+            }
+
             VisionPipelineStep step = shellHost.AddActiveNativePipelineStepForTest();
             if (step == null
                 || !string.Equals(step.ToolType, "Blob", StringComparison.Ordinal)
@@ -26482,7 +26490,9 @@ internal static class Program
                 AssertActiveToolTextsVisible("English Contour guide result", "Contour", "Preview OK", "Area", "Next:");
             }
             using (Bitmap contourDrawLayer = shellHost.GetLayerImageCloneForTest("Contour_Preview"))
+            using (Bitmap mainLayer = shellHost.GetLayerImageCloneForTest("Main"))
             {
+                AssertBitmapRetainsSourceBackground(mainLayer, contourDrawLayer, "Contour explicit Preview source background");
                 AssertBitmapContainsColorNear(contourDrawLayer, DrawingColor.Red, 30, "Contour draw result red overlay");
                 SaveDiagnosticBitmap(outputPath, "contour-tool-draw-result.png", contourDrawLayer);
             }
@@ -34767,6 +34777,42 @@ internal static class Program
         {
             throw new InvalidOperationException(
                 name + " did not show enough preview overlay/change. "
+                + $"ChangedRatio={changedRatio:0.000}, AverageDelta={averageDelta:0.0}, Sampled={sampled}");
+        }
+    }
+
+    private static void AssertBitmapRetainsSourceBackground(Bitmap expectedSource, Bitmap actualOutput, string name)
+    {
+        AssertBitmapPresent(expectedSource, name + " source");
+        AssertBitmapPresent(actualOutput, name + " output");
+        int width = Math.Min(expectedSource.Width, actualOutput.Width);
+        int height = Math.Min(expectedSource.Height, actualOutput.Height);
+        int sampled = 0;
+        int changed = 0;
+        long totalDelta = 0;
+
+        for (int y = 0; y < height; y += 4)
+        {
+            for (int x = 0; x < width; x += 4)
+            {
+                DrawingColor left = expectedSource.GetPixel(x, y);
+                DrawingColor right = actualOutput.GetPixel(x, y);
+                int delta = Math.Abs(left.R - right.R) + Math.Abs(left.G - right.G) + Math.Abs(left.B - right.B);
+                sampled++;
+                totalDelta += delta;
+                if (delta >= 60)
+                {
+                    changed++;
+                }
+            }
+        }
+
+        double changedRatio = sampled <= 0 ? 0D : changed / (double)sampled;
+        double averageDelta = sampled <= 0 ? 0D : totalDelta / (double)sampled;
+        if (changedRatio > 0.18D || averageDelta > 42D)
+        {
+            throw new InvalidOperationException(
+                name + " replaced too much of the source with a processed image. "
                 + $"ChangedRatio={changedRatio:0.000}, AverageDelta={averageDelta:0.0}, Sampled={sampled}");
         }
     }

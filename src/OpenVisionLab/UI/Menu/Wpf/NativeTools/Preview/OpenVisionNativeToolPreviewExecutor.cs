@@ -32,8 +32,7 @@ namespace OpenVisionLab
             view.SetResultReview(tool.results);
             if (result?.Success == true)
             {
-                // Blob teaching needs to see the inspected binary image, not the untouched input returned by some legacy tool paths.
-                Mat visual = OpenVisionNativeToolPreviewOverlayRenderer.CreateBlobTeachingPreviewImage(source, property, tool.results);
+                Mat visual = OpenVisionNativeToolPreviewOverlayRenderer.CreateBlobResultPreviewImage(source, tool.results);
                 if (visual != null && !visual.Empty())
                 {
                     result.ResultImage?.Dispose();
@@ -61,7 +60,7 @@ namespace OpenVisionLab
 
             if (result?.Success == true)
             {
-                Mat visual = OpenVisionNativeToolPreviewOverlayRenderer.CreateContourTeachingPreviewImage(source, property, tool.results);
+                Mat visual = OpenVisionNativeToolPreviewOverlayRenderer.CreateContourResultPreviewImage(source, property, tool.results);
                 if (visual != null && !visual.Empty())
                 {
                     result.ResultImage?.Dispose();

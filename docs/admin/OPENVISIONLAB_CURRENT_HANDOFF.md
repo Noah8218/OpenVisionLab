@@ -53,6 +53,25 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 ## Latest Completed Work
 
+### 2026-08-11 Recipe Switch And Result Canvas Correction - Complete In Dev And Original
+
+- Recipe changes no longer construct the full Pipeline Review WPF document on
+  the critical path. Comparable actual-EXE `Default -> FieldPilot_BentPin`
+  readiness improved from `1168.2 ms` to `577.6/579.5 ms`; subsequent switches
+  in both directions remained responsive at `577.6-589.7 ms`.
+- Explicit Blob and Contour Preview drawings now use the routed source image as
+  their canvas. The separate threshold-teaching Preview remains binary.
+- Current-source Blob/Contour and recipe-switch smokes passed with zero layout,
+  text, or internal failures. Debug builds, readiness 13/13, vendored external
+  references, and public sample assets passed. The actual EXE Contour Preview
+  retained the source image and reported one detection at `462 ms`.
+- Evidence:
+  `docs/reports/OPENVISIONLAB_RECIPE_SWITCH_AND_RESULT_CANVAS_FIX_20260811.md`.
+- The original independently passed its zero-warning Debug build, four focused
+  Blob/Contour/Recipe smokes, readiness 13/13, external references, public
+  assets, and documentation index. All six promoted Git object hashes match
+  Dev; the unrelated original-only untracked `Temp.txt` was preserved.
+
 ### 2026-08-11 Tool Preview Large Viewer - Complete In Dev And Original
 
 - Double-clicking any non-empty Tool View Input/Output preview now opens the

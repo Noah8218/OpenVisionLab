@@ -19,9 +19,9 @@ namespace OpenVisionLab
             return CreateInternalThresholdPreviewImage(source, property);
         }
 
-        public static Mat CreateBlobTeachingPreviewImage(Mat source, OpenCvPropertyBase property, IEnumerable<BlobResult> blobs)
+        public static Mat CreateBlobResultPreviewImage(Mat source, IEnumerable<BlobResult> blobs)
         {
-            Mat visual = CreateInternalThresholdPreviewImage(source, property);
+            Mat visual = CreateColorCanvas(source);
             if (visual == null || visual.Empty())
             {
                 return visual;
@@ -66,9 +66,9 @@ namespace OpenVisionLab
             return visual;
         }
 
-        public static Mat CreateContourTeachingPreviewImage(Mat source, OpenCvPropertyBase property, IEnumerable<ContourResult> contours)
+        public static Mat CreateContourResultPreviewImage(Mat source, OpenCvPropertyBase property, IEnumerable<ContourResult> contours)
         {
-            Mat visual = CreateInternalThresholdPreviewImage(source, property);
+            Mat visual = CreateColorCanvas(source);
             if (visual == null || visual.Empty())
             {
                 return visual;
